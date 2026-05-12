@@ -1,0 +1,75 @@
+{
+  "servers": {
+    "gitnexus": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "gitnexus@latest",
+        "mcp"
+      ]
+    },
+    "graphify": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "graphify.serve",
+        "graphify-out/graph.json"
+      ]
+    },
+    "io.github.github/github-mcp-server": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN=${input:token}",
+        "ghcr.io/github/github-mcp-server:latest"
+      ],
+      "gallery": "https://api.mcp.github.com"
+    },
+    "microsoft/azure-devops-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp@latest",
+        "${input:ado_org}",
+        "-d",
+        "${input:ado_domain}"
+      ],
+      "gallery": "https://api.mcp.github.com"
+    },
+    "aspire": {
+      "type": "stdio",
+      "command": "aspire",
+      "args": [
+        "mcp",
+        "start"
+      ]
+    }
+  },
+  "inputs": [
+    {
+      "id": "token",
+      "type": "promptString",
+      "description": "GitHub personal access token.",
+      "password": true
+    },
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name (e.g., contoso).",
+      "password": false
+    },
+    {
+      "id": "ado_domain",
+      "type": "promptString",
+      "description": "Azure DevOps domains to enable: core, work, work-items, search, test-plans, repositories, wiki, pipelines, advanced-security.",
+      "password": false
+    }
+  ]
+}
