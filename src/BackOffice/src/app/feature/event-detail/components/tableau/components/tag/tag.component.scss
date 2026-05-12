@@ -1,0 +1,24 @@
+.tag {
+  padding-left: 60px;
+  padding-right: 60px;
+  display: flex;
+  justify-content: center;
+  background-color: white;
+  border-radius: 30px;
+  width: fit-content;
+  border: 3px solid !important;
+  @apply border-primary-color;
+}
+
+p {
+  font-size: 50px;
+  @apply text-primary-color;
+}
+
+.bingo {
+  border: red 5px solid !important;
+}
+
+.bingo p {
+  color: red;
+}

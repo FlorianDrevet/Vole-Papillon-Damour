@@ -1,0 +1,7 @@
+<div class="container-products">
+  @for (p of filteredProducts(); track p.id) {
+    <app-product
+      [Product]="p" class="flex flex-col items-center"></app-product>
+  }
+</div>
+

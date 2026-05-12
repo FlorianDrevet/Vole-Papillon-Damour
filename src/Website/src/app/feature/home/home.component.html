@@ -1,0 +1,81 @@
+<div class="relative">
+  @if(isToday()) {
+    <div class=" flex-row bg-secondary-color hidden lg:flex">
+      <div class="scrolling-text-container w-full pt-3 pb-3 bg-secondary-color">
+        <div class="scrolling-text-ordi text-white text-3xl ">
+          @for (i of [].constructor(40); track i) {
+            Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Venez, petits et grands, vous amusez à notre loto aux profits de l'association ! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          }
+        </div>
+      </div>
+      <div class="flex flex-row justify-evenly mt-3 w-[500px]">
+        <a [href]="'/evenement/' + lotoCard()?.id ">
+          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
+                  style="padding: 0 10px">
+            Plus d'infos >
+          </button>
+        </a>
+        <a  [href]="'/evenement/' + lotoCard()?.id + '/tableau'">
+          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
+                  style="padding: 0 10px">
+            Tableau >
+          </button>
+        </a>
+      </div>
+    </div>
+    <app-navigation class="absolute top-16 z-50 w-full hidden lg:block"></app-navigation>
+    <app-navigation class="absolute top-0 z-50 w-full lg:hidden"></app-navigation>
+  }
+  @else {
+    <app-navigation class="absolute top-0 z-50 w-full"></app-navigation>
+  }
+  <img
+    fetchpriority="high"
+    src="images/loto_black_white.jpg"
+    class="w-full h-auto ml-auto mr-auto top-0 hidden lg:block"
+    alt="Papillon logo"
+    width="35"
+    height="35">
+
+  <img
+    fetchpriority="high"
+    src="images/maxence_accueil.jpg"
+    class="w-full h-auto ml-auto mr-auto top-0  lg:hidden"
+    alt="Papillon logo"
+    width="35"
+    height="35">
+
+  <div class="absolute top-1/2 left-1/2 z-50 hidden lg:block">
+    <div class="relative">
+      <h1 class="text-[7vw] leading-[6vw] text-primary-color">Vole Papillon d'Amour</h1>
+      <img src="images/papillon_without_back.png"
+           class="ml-2 mr-auto  w-auto h-[10vw] absolute -bottom-[4vw] right-[40%]"
+           alt="Papillon logo" fetchpriority="high">
+    </div>
+  </div>
+
+  @if(isToday()) {
+    <div class="scrolling-text-container w-full pt-3 pb-3 bg-secondary-color lg:hidden">
+      <div class="scrolling-text text-white text-3xl">
+        Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} !
+      </div>
+      <div class="flex flex-row justify-evenly mt-3">
+        <a [href]="'/evenement/' + lotoCard()?.id ">
+          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
+                  style="padding: 0 10px">
+            Plus d'infos >
+          </button>
+        </a>
+        <a  [href]="'/evenement/' + lotoCard()?.id + '/tableau'">
+          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
+                  style="padding: 0 10px">
+            Tableau >
+          </button>
+        </a>
+      </div>
+    </div>
+  }
+</div>
+<app-maxence-intro></app-maxence-intro>
+<app-actuality></app-actuality>
+<app-vpd-events-section></app-vpd-events-section>

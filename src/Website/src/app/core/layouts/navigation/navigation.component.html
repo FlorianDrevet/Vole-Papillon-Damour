@@ -1,0 +1,76 @@
+@if (!url().includes("tableau")) {
+  <nav
+    class="z-50 lg:flex flex-row w-[90%] pl-5 pr-7 h-16 text-2xl text-white bg-primary-color rounded-2xl mt-5 justify-between ml-auto mr-auto items-center hidden">
+    <img
+      priority
+      ngSrc="icons/vpd_logo.svg"
+      class="mt-1 mb-1"
+      alt="Papillon logo"
+      width="45"
+      height="45">
+    @for (navigation of navigationUrls; track navigation.url) {
+      <div
+        style="cursor:pointer;"
+        [ngClass]="{'active': Router.url.includes(navigation.url.replace('é', 'e'))}"
+        (click)="OnNavigationClick(navigation)">{{navigation.title}}</div>
+    }
+    <div class="flex flex-row gap-5">
+      <a href="https://www.facebook.com/melvin.drevet.1" target="_blank">
+        <img
+          priority
+          ngSrc="images/facebook.svg"
+          class="mt-1 mb-1"
+          alt="Facebook logo"
+          width="35"
+          height="35">
+      </a>
+      <a href="https://www.instagram.com/vole_papillon_damour?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank">
+        <img
+          priority
+          ngSrc="images/instagram.svg"
+          class="mt-1 mb-1"
+          alt="Instagram logo"
+          width="35"
+          height="35">
+      </a>
+    </div>
+  </nav>
+
+  @if (subNavigation() !== null && subNavigation()!.subNav.length !== 0) {
+    <nav class="lg:flex flex-row w-[90%] h-16 text-2xl text-white bg-secondary-color rounded-lg mt-5 justify-evenly ml-auto mr-auto items-center hidden">
+      @for (navigation of subNavigation()?.subNav; track navigation.url) {
+        <div class="menu-container hover-text">
+          <div class="flex flex-row cursor-pointer hover-text">
+            <p (click)="OnSubNavigationClick(navigation.url)"
+               class="text-white"
+               [ngClass]="{'sub-active': Router.url.includes(navigation.url)}">
+              {{navigation.title}}
+            </p>
+            @if (navigation!.subNav.length !== 0) {
+              <img src="icons/chevron-fleche-vers-le-bas.png" class="h-[15px] ml-2 mt-auto mb-[5px]">
+            }
+          </div>
+          @if(navigation.subNav.length !== 0) {
+            <div class="dropdown-menu min-w-full w-fit">
+              <div class="w-full bg-secondary-color h-4">
+              </div>
+              <ul class="pl-5 pr-5 pt-2 pb-2 border-gold border-b-2 border-l-2 border-r-2 rounded-b-3xl bg-primary-color">
+                @for (subNavigation of navigation.subNav; track subNavigation.url) {
+                  <li (click)="OnSubNavigationClick(navigation.url + subNavigation.url)"
+                      class="p-5 whitespace-nowrap text-white"
+                      [ngClass]="{'sub-active': Router.url.includes(subNavigation.url)}">
+                    {{subNavigation.title}}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      }
+    </nav>
+  }
+
+  <app-navigation-mobile
+    [NavigationItems]="navigationUrls"
+    class="lg:hidden"></app-navigation-mobile>
+}

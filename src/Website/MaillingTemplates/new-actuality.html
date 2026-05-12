@@ -1,0 +1,226 @@
+<html>
+  <head>
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #E9F3FF;
+      }
+      .container {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #E9F3FF;
+        height: 100%;
+      }
+      .header {
+        background-color: #012f5f;
+        padding: 20px;
+        text-align: center;
+        color: white;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        border-radius: 50px;
+        h1 {
+          margin-left: 20px;
+          font-size: 2vw;
+        }
+        img {
+          height: 5vw;
+        }
+      }
+      @media (max-width: 350px) {
+        .header h1 {
+          font-size: 4vw; /* Taille de police pour les écrans plus petits */
+        }
+        .header img {
+          height: 10vw; /* Taille de l'image pour les écrans plus petits */
+        }
+      }
+      .title-actualite {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        color: #012f5f;
+        margin-left: auto;
+        margin-right: auto;
+
+        h2 {
+          font-size: 50px;
+          margin-left: 20px;
+          text-decoration: underline;
+        }
+        img {
+          height: 50px;
+          width: 50px;
+          margin-left: 25px;
+        }
+      }
+      .content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+      .footer {
+        background-color: #f5f5f5;
+        padding: 20px;
+        text-align: center;
+      }
+      .flex {
+        display: flex;
+      }
+      .flex-row {
+        flex-direction: row;
+      }
+      .flex-col {
+        flex-direction: column;
+      }
+      .items-center {
+        align-items: center;
+      }
+      .rounded-3xl {
+        border-radius: 30px;
+      }
+      .border-4 {
+        border-width: 4px;
+      }
+      .border-primary-color {
+        border-color: #012f5f;
+      }
+      .p-5 {
+        padding: 20px;
+      }
+      .bg-white {
+        background-color: white;
+      }
+      .text-primary-color {
+        color: #012f5f;
+      }
+      .text-3xl {
+        font-size: 30px;
+      }
+      .ml-5 {
+        margin-left: 20px;
+      }
+      .mt-5 {
+        margin-top: 20px;
+      }
+      .mb-5 {
+        margin-bottom: 20px;
+      }
+      .text-xl {
+        font-size: 20px;
+      }
+      .text-justify {
+        text-align: justify;
+      }
+      .text-text-color {
+        color: #012f5f;
+      }
+      .overflow-hidden {
+        overflow: hidden;
+      }
+      .mb-2 {
+        margin-bottom: 10px;
+      }
+      .flex-row {
+        flex-direction: row;
+      }
+      .justify-between {
+        justify-content: space-between;
+      }
+      .mt-auto {
+        margin-top: auto;
+      }
+      .text-2xl {
+        font-size: 25px;
+      }
+      .mr-3 {
+        margin-right: 10px;
+      }
+      .h-8 {
+        height: 8px;
+      }
+      .w-4 {
+        width: 4px;
+      }
+      .mt-5 {
+        margin-top: 20px;
+      }
+      .article-box {
+        overflow: hidden;
+      }
+      .h-auto {
+        height: auto;
+      }
+      .flex-row {
+        flex-direction: row;
+      }
+      .items-center {
+        align-items: center;
+      }
+      .bg-primary-color {
+        background-color: #012f5f;
+      }
+      .mt-5 {
+        margin-top: 20px;
+      }
+      .text-3xl {
+        font-size: 30px;
+      }
+      .mt-5 {
+        margin-top: 20px;
+      }
+      .mb-5 {
+        margin-bottom: 20px;
+      }
+      .text-primary-color {
+        color: #012f5f;
+      }
+      .text-xl {
+        font-size: 20px;
+      }
+      .text-justify {
+        text-align: justify;
+      }
+      .text-text-color {
+        color: #012f5f;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <img src="https://volepapillondamourdata.blob.core.windows.net/images-mails/vpd_logo.svg" alt="Papillon logo">
+        <h1>Vole Papillon D'amour</h1>
+      </div>
+
+      <div class="content">
+        <div class="title-actualite">
+          <h2>Nouvelle Actualit&eacute; !</h2>
+          <img src="https://volepapillondamourdata.blob.core.windows.net/images-mails/newspaper-icon.svg" alt="Icon de journal">
+        </div>
+        <div class="flex flex-col rounded-3xl border-4 border-primary-color p-5 bg-white">
+          <div class="flex flex-row items-center">
+            <div class="bg-primary-color" style="width: 10px; height: 25px"></div>
+            <h2 class="text-primary-color text-3xl ml-5">Magnifique loto d’Halloween !</h2>
+          </div>
+          <img src="https://volepapillondamourdata.blob.core.windows.net/actuality-images/IMG_1823.jpeg" class="rounded-3xl  h-auto mt-5 mb-5" style="width: 100%">
+          <p #article class="article-box text-xl text-justify text-text-color overflow-hidden mb-2">Vendredi était une très belle journée avec le loto d’Halloween. Quelques soucis de micro mais une très bonne ambiance! Samedi j’ai repris le travail à la jardinerie. Et après un dimanche de repos, j’ai repris les cours aujourd’hui au lycée agricole de Précieux! On enchaîne, pas le temps de s’ennuyer !!</p>
+          <div class="flex-row flex lg:mt-auto justify-between mt-auto">
+            <a [routerLink]="https://volepapillondamour/actualite/92768526-740b-4a63-bf91-ef45dcc74b50" class="flex flex-row text-2xl">
+              Lire la suite >
+            </a>
+            <div class="flex flex-row">
+              <img src="https://volepapillondamourdata.blob.core.windows.net/images-mails/calendar-icon.svg" height="35" width="35" class="mr-3">
+              <h3 class="text-primary-color text-2xl text-justify">01/11</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

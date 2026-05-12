@@ -1,0 +1,23 @@
+<div [ngClass]="{
+  'border-tertiary-color': Product().available,
+  'border-gray': !Product().available
+  }"
+     class="relative border-4 border-tertiary-color rounded-3xl flex flex-col text-primary-color bg-white w-[45vw] sm:w-[150px] h-[55vw] sm:h-[200px] justify-between">
+  <h3 class="text-2xl sm:text-3xl w-full text-center">{{ Product().name }}</h3>
+  <div class="w-fit mr-auto ml-auto">
+    <img [src]="Product().urlImage" class="max-h-[20vw] sm:max-h-[75px] w-auto">
+  </div>
+  <p class="text-xl sm:text-2xl ml-auto mr-auto">{{ Product().price | price }}</p>
+
+  <button
+    (click)="openDialogUpdate()"
+    class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute right-1 bottom-1">
+    <img class="h-4" fetchpriority="high" src="icons/crayon.png">
+  </button>
+  <button
+    (click)="openDialogDeletion()"
+    class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute left-1 bottom-1">
+    <img class="h-4" fetchpriority="high" src="icons/supprimer.png">
+  </button>
+</div>
+

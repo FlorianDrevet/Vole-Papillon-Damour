@@ -1,0 +1,81 @@
+@if (assoEvent() === null || currentPartie() === null || currentLine() === null) {
+  <mat-spinner class="ml-auto mr-auto"></mat-spinner>
+} @else {
+  <app-modal (closeModal)="isPaused.set(false)" [showModal]="isPaused()">
+    <h1 class="pause-title">Pause</h1>
+    <h2 class="bingo-numero-pause">{{ assoEvent()?.bingoNumeros?.join(" - ") }}</h2>
+  </app-modal>
+
+  <app-modal (closeModal)="isLastNumero.set(false)" [showModal]="isLastNumero()">
+    <h1 class="last-numero-title">Numéro:</h1>
+    <h2 class="last-numero">{{ lastNumero() }}</h2>
+  </app-modal>
+
+  <div class="container-tableau">
+    <div class="info-partie">
+      <div class="partie">
+        <app-tag [value]="currentPartie()?.name ?? ''" class="mr-auto ml-auto lg:mr-10 lg:ml-[6%]"></app-tag>
+        <app-tag class="hidden lg:block" [value]="currentLine()!.numberLine | lineNumberTitle"></app-tag>
+        @if (currentLine()!.numberLine === NumberLineEnum.ONELINE) {
+          <app-tag [value]="titleNbTimes()" class="ml-10 hidden lg:block"></app-tag>
+        }
+        @if (currentPartie()?.partieType !== PartieTypeEnum.STANDARD &&
+        (currentPartie()?.partieType !== PartieTypeEnum.CARTONPLEIN &&
+          currentPartie()?.partieType !== PartieTypeEnum.BINGO)) {
+          <app-tag [isBingo]='true' [value]="(currentPartie()?.partieType?.toString()) ?? ''" class="ml-10 hidden lg:block"></app-tag>
+        }
+      </div>
+    </div>
+    <div class="tableau">
+      @for (i of [].constructor(9); track i; let idx = $index) {
+        <div class="ligne">
+          @for (j of [].constructor(10); track j; let jdx = $index) {
+            <app-number
+              [assoEventId]="assoEvent()?.id ?? ''"
+              [isNeighbour]="isNeighboor((jdx + 1) + (idx) * 10)"
+              [partieId]="currentPartie()?.id ?? ''"
+              [isLastValue]="(jdx + 1) + (idx) * 10 === (currentPartie()?.lastNumeros!.slice(-1))[0]"
+              [isExited]="currentPartie()?.liveNumeros?.includes((jdx + 1) + (idx) * 10) ?? false"
+              [value]="(jdx + 1) + (idx) * 10"></app-number>
+          }
+        </div>
+      }
+    </div>
+    <div class="partie">
+      <app-tag class="lg:hidden ml-5 lg:ml-0 lg:mr-0" [value]="currentLine()!.numberLine | lineNumberTitle"></app-tag>
+      @if (currentLine()!.numberLine === NumberLineEnum.ONELINE) {
+        <app-tag [value]="titleNbTimes()" class="ml-auto mr-5 lg:hidden"></app-tag>
+      }
+      @if (currentPartie()?.partieType !== PartieTypeEnum.STANDARD &&
+      (currentPartie()?.partieType !== PartieTypeEnum.CARTONPLEIN &&
+        currentPartie()?.partieType !== PartieTypeEnum.BINGO)) {
+        <app-tag [isBingo]='true' [value]="(currentPartie()?.partieType?.toString()) ?? ''" class="mr-10 lg:hidden"></app-tag>
+      }
+    </div>
+    <div class="bingo hidden lg:flex">
+      @if ((currentPartie()?.partieType ?? PartieTypeEnum.BINGO).toString() !== 'Bingo') {
+        <app-tag [isBingo]="true"
+                 [value]="'Bingo:  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
+      } @else {
+        <div class="w-1/5"></div> <!-- To put on the right the Lot tag -->
+      }
+      <div class="lots">
+        @for (lot of currentLots(); track lot.id) {
+          <app-tag [value]="lot.name"></app-tag>
+        }
+      </div>
+    </div>
+
+    <div class="flex flex-col lg:hidden ml-5 pb-20">
+      <div class="flex flex-col mb-5 gap-2">
+        @for (lot of currentLots(); track lot.id) {
+          <app-tag [value]="lot.name"></app-tag>
+        }
+      </div>
+      @if ((currentPartie()?.partieType ?? PartieTypeEnum.BINGO).toString() !== 'Bingo') {
+        <app-tag [isBingo]="true"
+                 [value]="'Bingo:  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
+      }
+    </div>
+  </div>
+}

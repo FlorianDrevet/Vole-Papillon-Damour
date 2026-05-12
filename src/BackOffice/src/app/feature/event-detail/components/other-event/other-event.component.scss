@@ -1,0 +1,15 @@
+.info-event {
+  @apply flex-col flex;
+}
+
+p {
+  @apply text-justify text-primary-color text-3xl lg:text-5xl;
+}
+
+.title-section {
+  @apply text-justify text-primary-color text-3xl lg:text-6xl content-center;
+}
+
+.underline-title {
+  @apply h-2 bg-primary-color w-full;
+}

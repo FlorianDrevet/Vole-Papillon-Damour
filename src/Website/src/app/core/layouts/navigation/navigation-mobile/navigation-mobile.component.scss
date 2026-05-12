@@ -1,0 +1,16 @@
+.mobile-navigation-dialog {
+  @apply absolute h-[100%] bg-background-color text-3xl p-5;
+  top: calc(68px);
+  height: calc(100svh - 70px);
+  width: 100%;
+  z-index: 50;
+}
+
+.sub-container-mobile-nav {
+  height: fit-content;
+  min-height: calc(100svh - 110px);
+}
+
+.mobile-navigation-dialog nav {
+  flex: 0 0 auto;
+}

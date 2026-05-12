@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ShopAppVpd.ViewModels"
+             x:DataType="vm:ShoppedProductViewModel"
+             x:Class="ShopAppVpd.Views.ShopedProductCard">
+
+    <Frame Padding="10"
+           Margin="5"
+           BorderColor="{StaticResource Tertiary}"
+           CornerRadius="10"
+           HasShadow="False"
+           BackgroundColor="White">
+
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" VerticalOptions="Center">
+
+            <!-- Image -->
+            <Image Source="{Binding Product.UrlImage}"
+                   WidthRequest="50"
+                   HeightRequest="50"
+                   Aspect="AspectFit"
+                   Grid.Column="0" />
+
+            <!-- Price -->
+            <VerticalStackLayout Grid.Column="1"
+                                 Padding="10,0"
+                                 VerticalOptions="Center">
+                <Label Text="{Binding Product.Name}"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"
+                       FontSize="16" />
+                <Label Text="{Binding Product.Price, StringFormat='{}{0:F2} €'}"
+                       FontSize="14"
+                       TextColor="{StaticResource Primary}" />
+            </VerticalStackLayout>
+
+            <!-- Bouton - -->
+            <Button Text="−"
+                    Grid.Column="2"
+                    WidthRequest="20"
+                    HeightRequest="20"
+                    BackgroundColor="{StaticResource Tertiary}"
+                    Padding="0"
+                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=DecreaseQuantityCommand}"
+                    CommandParameter="{Binding .}" />
+
+            <!-- Quantité -->
+            <Label Text="{Binding Quantity}"
+                   Grid.Column="3"
+                   VerticalOptions="Center"
+                   HorizontalOptions="Center"
+                   FontAttributes="Bold"
+                   FontSize="16"
+                   TextColor="{StaticResource Primary}"
+                   Margin="20,0" />
+
+            <!-- Bouton + -->
+            <Button Text="+"
+                    Grid.Column="4"
+                    WidthRequest="15"
+                    HeightRequest="15"
+                    Padding="0"
+                    BackgroundColor="{StaticResource Tertiary}"
+                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=IncreaseQuantityCommand}"
+                    CommandParameter="{Binding .}" />
+        </Grid>
+    </Frame>
+</ContentView>

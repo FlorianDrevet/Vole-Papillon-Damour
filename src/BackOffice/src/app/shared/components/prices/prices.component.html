@@ -1,0 +1,9 @@
+<div class="container-products">
+  @for (p of filteredProducts(); track p.id) {
+    <app-product
+      (productUpdated)="updateProduct($event)"
+      (productDeleted)="deleteProduct($event)"
+      [Product]="p" class="flex flex-col items-center"></app-product>
+  }
+</div>
+

@@ -1,0 +1,26 @@
+<mat-dialog-content class="h-fit !flex flex-col lg:!max-h-[80vh]">
+  <h1 class="font-caveatbrush text-4xl lg:text-6xl text-primary-color ml-auto mr-auto">
+     Recevez toute l'actualité par mail !
+  </h1>
+  <div class="h-1 bg-primary-color w-full mb-10"></div>
+  <form [formGroup]="emailForm" class="flex flex-row w-full mt-5">
+    <div class="flex flex-col w-full">
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Votre Email :</h1>
+        <mat-form-field appearance="fill" class="w-full mt-3">
+          <mat-label>Email</mat-label>
+          <input class="w-full" formControlName="email"
+                 matInput placeholder="Email">
+        </mat-form-field>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  @if (isLoading()) {
+    <mat-spinner class="ml-5 mr-5" diameter="30"></mat-spinner>
+  } @else {
+    <button (click)="onNoClick()" cdkFocusInitial mat-button>Annuler</button>
+    <button (click)="onYesClick()" mat-button>Ajouter</button>
+  }
+</mat-dialog-actions>

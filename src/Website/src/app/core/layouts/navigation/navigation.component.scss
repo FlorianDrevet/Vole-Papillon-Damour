@@ -1,0 +1,46 @@
+.sub-active {
+  text-decoration: underline;
+}
+
+.active {
+  @apply bg-white text-primary-color p-2 rounded-md;
+}
+
+
+.menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.hover-text {
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  list-style-type: none;
+  border-radius: 5px;
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+}
+
+.dropdown-menu li {
+  padding: 8px 0;
+  text-align: center;
+}
+
+.dropdown-menu li a {
+  color: white;
+  text-decoration: none;
+}
+
+.dropdown-menu li:hover {
+  @apply text-gold;
+}
+
+.menu-container:hover .dropdown-menu,
+.dropdown-menu:hover {
+  display: block;
+}

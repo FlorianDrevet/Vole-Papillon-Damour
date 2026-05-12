@@ -1,0 +1,11 @@
+.footer-section {
+  @apply w-4/5 lg:w-1/6 flex flex-col
+}
+
+.footer-separator {
+  @apply w-full h-1 bg-white mb-5
+}
+
+h3 {
+  @apply text-3xl
+}

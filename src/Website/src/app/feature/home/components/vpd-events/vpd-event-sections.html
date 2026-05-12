@@ -1,0 +1,21 @@
+<div class="flex flex-col items-center bg-primary-color">
+  <div class="flex flex-row items-center mt-10">
+    <h1 class="text-[2.75rem] sm:text-6xl lg:text-7xl text-white text-center">Nos prochains évènements</h1>
+    <img src="icons/vpd_logo.svg"
+         class="hidden lg:block ml-3 mt-2 mr-auto h-[50px] w-[50px] lg:h-[70px] lg:w-[70px]"
+         alt="Papillon logo" fetchpriority="high">
+  </div>
+  <div class="flex flex-row flex-wrap justify-evenly mt-10 w-full mb-10 lg:mb-20 p-5 lg:p-0 gap-10 lg:gap-10 xl:gap-10">
+    @if (lotoCard() !== null) {
+      <app-event-card class="w-full sm:w-[40%] lg:w-[40%] xl:w-[30%] 2xl:w-[25%]" [VpdEvent]="lotoCard()!"></app-event-card>
+    }
+    @if (balCard() !== null) {
+      <app-event-card class="w-full sm:w-[40%] lg:w-[40%] xl:w-[30%] 2xl:w-[25%]" [VpdEvent]="balCard()!"></app-event-card>
+    }
+    @if (otherCard().length !== 0) {
+      @for (otherEvent of otherCard(); track otherEvent.id) {
+        <app-event-card class="w-full sm:w-[40%] lg:w-[40%] xl:w-[30%] 2xl:w-[25%]" [VpdEvent]="otherEvent"></app-event-card>
+      }
+    }
+  </div>
+</div>

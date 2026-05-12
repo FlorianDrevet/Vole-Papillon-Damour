@@ -1,0 +1,88 @@
+<div class="w-full -mt-5 pt-5" [ngClass]="{
+  'bg-background-color': isMobileNavigationOpen()
+  }">
+  <nav class="flex flex-row w-[95%] bg-primary-color rounded-lg mt-5 justify-between ml-auto mr-auto items-center">
+    <a routerLink="/accueil" class="ml-2">
+      <img
+        priority
+        ngSrc="icons/vpd_logo.svg"
+        class="mt-2 mb-1"
+        alt="Papillon logo"
+        width="34"
+        height="34">
+    </a>
+    <a routerLink="/accueil">
+      <h1 class="text-2xl text-white content-center">
+        Vole Papillon D'amour
+      </h1>
+    </a>
+
+    <img [src]="isMobileNavigationOpen() ? 'icons/cross-icon.svg' : 'icons/hamburger-menu-icon.svg'"
+         (click)="OnMobileNavigationClick()"
+         alt="Button to open the navigation" height="25" width="25" class="mr-3">
+  </nav>
+</div>
+
+@if(isMobileNavigationOpen()) {
+  <div class="absolute mobile-navigation-dialog overflow-auto flex">
+    <div class="overflow-auto w-full h-full sub-container-mobile-nav flex">
+      <nav class="rounded-3xl bg-white w-full p-5 flex flex-col">
+        @if (subNavigation() !== null) {
+          <div class="flex flex-row items-center" (click)="onBackNavigationClick()">
+            <div class="flex w-[20px] h-[20px] bg-primary-color rounded-full">
+              <img src="icons/arrow-left-white.svg" class="m-auto" height="10" width="10" alt="<" fetchpriority="high">
+            </div>
+            <h3 class="text-xl text-primary-color ml-3">
+              Retour
+            </h3>
+          </div>
+          <h1 class="text-primary-color text-4xl mt-5 mb-5">{{titleSubNav()}}</h1>
+        }
+        @for (navigation of (subNavigation() === null ? NavigationItems(): subNavigation()); track navigation.url; let first = $first) {
+          <div class="flex flex-col">
+            <div
+              (click)="OnSubNavigationClick(navigation)"
+              class="flex flex-row justify-between w-full mb-5">
+              <h2 [ngClass]="{
+              'mt-5': !first,
+              'text-3xl': subNavigation() === null,
+              'text-2xl': subNavigation() !== null
+              }">{{navigation.title}}</h2>
+              <img
+                height="25"
+                width="25"
+                class="mt-auto mb-1"
+                alt=">"
+                fetchpriority="high"
+                src="icons/angle-small-right.svg">
+            </div>
+
+            <div class="bg-primary-color h-0.5 w-full"></div>
+          </div>
+        }
+
+        <div class="flex flex-row gap-5 mt-auto w-full justify-evenly">
+          <a href="https://www.facebook.com/melvin.drevet.1" target="_blank">
+            <img
+              priority
+              ngSrc="images/facebook.svg"
+              class="mt-1 mb-1"
+              alt="Facebook logo"
+              width="40"
+              height="40">
+          </a>
+          <a href="https://www.instagram.com/vole_papillon_damour?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank">
+            <img
+              priority
+              ngSrc="images/instagram.svg"
+              class="mt-1 mb-1"
+              alt="Instagram logo"
+              width="40"
+              height="40">
+          </a>
+        </div>
+      </nav>
+    </div>
+  </div>
+}
+

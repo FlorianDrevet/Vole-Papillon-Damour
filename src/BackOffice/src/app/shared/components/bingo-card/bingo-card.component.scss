@@ -1,0 +1,13 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(3, 100px);
+}
+
+.cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: black;
+  font-size: 40px;
+}

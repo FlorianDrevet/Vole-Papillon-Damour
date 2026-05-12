@@ -1,0 +1,38 @@
+<app-general-infos [vpdEvent]="vpdEvent()">
+    <div class="flex flex-col gap-5 lg:gap-16 w-full lg:w-fit">
+      <app-section-infos-event
+        Title="Dates :"
+        UrlIcon="icons/calendar-icon.svg"
+        [Value]="'Du ' + (vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC') + ' au ' + (vpdEvent().dateEnd | date: 'dd/MM/yyyy':'UTC')"
+      ></app-section-infos-event>
+
+      <app-section-infos-event
+        Title="Horaires :"
+        UrlIcon="icons/clock-icon.svg"
+        [Value]="'De ' + (vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC') + ' à ' + (vpdEvent().hourCloseDoors | date: 'HH:mm':'UTC')"
+      ></app-section-infos-event>
+    </div>
+    <div>
+      <app-section-infos-event
+        Title="Lieu :"
+        UrlIcon="icons/location-icon.svg"
+        [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city"
+      >
+        <app-vpd-image
+          [backgroundColor]="BackgroundColorEnum.WHITE"
+          [src]="'images/map_bourse_aux_livres.png'"></app-vpd-image>
+      </app-section-infos-event>
+  </div>
+
+
+</app-general-infos>
+
+
+<div class="flex flex-col w-full mb-10">
+  <div class="flex flex-row ml-auto mr-auto bg-white border-primary-color border-2 rounded-3xl p-2 items-center mb-10">
+    <h1 class="text-primary-color text-5xl lg:text-7xl">Tarifs</h1>
+    <img src="icons/argent.png" class="h-10 lg:h-16 ml-2 lg:ml-5 mt-auto mb-auto">
+  </div>
+
+  <app-prices [section]="ProductSectionEnum.Book"></app-prices>
+</div>

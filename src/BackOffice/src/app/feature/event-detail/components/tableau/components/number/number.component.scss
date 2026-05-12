@@ -1,0 +1,39 @@
+.last-value {
+  @apply bg-tertiary-color #{!important};
+}
+
+.neighbour {
+  @apply bg-success #{!important};
+}
+
+.exited {
+  @apply bg-secondary-color #{!important};
+}
+
+.exited p {
+}
+
+p {
+  font-size: 50px;
+  @apply text-primary-color;
+}
+
+.number {
+  background-color: white;
+}
+
+.top-left {
+  border-top-left-radius: 35px;
+}
+
+.top-right {
+  border-top-right-radius: 35px;
+}
+
+.bottom-left {
+  border-bottom-left-radius: 35px;
+}
+
+.bottom-right {
+  border-bottom-right-radius: 35px;
+}

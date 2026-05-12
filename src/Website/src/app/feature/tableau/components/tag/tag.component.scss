@@ -1,0 +1,15 @@
+.tag {
+  @apply border-primary-color pl-3 pr-3 md:pl-[60px] md:pr-[60px] flex justify-center bg-white rounded-[30px] w-fit border-0 md:border-4;
+}
+
+p {
+  @apply text-primary-color md:text-[50px] text-[10vw] leading-[10vw] md:leading-[inherit];
+}
+
+.bingo {
+  border: red 5px solid !important;
+}
+
+.bingo p {
+  color: red;
+}

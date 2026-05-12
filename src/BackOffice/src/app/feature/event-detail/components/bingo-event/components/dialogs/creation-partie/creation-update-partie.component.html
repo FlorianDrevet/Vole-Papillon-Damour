@@ -1,0 +1,47 @@
+<mat-dialog-content class="h-fit !flex flex-col lg:!max-h-[80vh]">
+  <h1 class="font-caveatbrush text-4xl lg:text-6xl text-primary-color ml-auto mr-auto">
+    {{ updatePartie() !== null ? "Modifier une partie" : "Nouvelle Partie" }}
+  </h1>
+  <div class="h-1 bg-primary-color w-full"></div>
+  <form [formGroup]="newPartieForm" class="flex flex-col w-full mt-5">
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Type de partie :</h1>
+      <mat-form-field class="w-full mt-3">
+        <mat-label>Type de partie</mat-label>
+        <mat-select formControlName="partieType" required>
+          <mat-option [value]="PartieTypeEnum.STANDARD">Standard</mat-option>
+          <mat-option [value]="PartieTypeEnum.AMERICAINE">Americaine</mat-option>
+          <mat-option [value]="PartieTypeEnum.CARTONPLEIN">Carton Plein</mat-option>
+          <mat-option [value]="PartieTypeEnum.PLUSUNMOINSUN">Plus un moins un</mat-option>
+          <mat-option [value]="PartieTypeEnum.BINGO">Bingo</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Titre :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Titre</mat-label>
+        <input class="w-full" formControlName="name"
+               matInput placeholder="Titre">
+      </mat-form-field>
+    </div>
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Y a-t-il une pause après ?</h1>
+      <mat-radio-group aria-label="Y a-t-il une pause après ?" formControlName="pauseAfter">
+        <mat-radio-button [value]="false">Non</mat-radio-button>
+        <mat-radio-button [value]="true">Oui</mat-radio-button>
+      </mat-radio-group>
+
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  @if (isLoading()) {
+    <mat-spinner class="ml-5 mr-5" diameter="30"></mat-spinner>
+  } @else {
+    <button (click)="onNoClick()" cdkFocusInitial mat-button>Annuler</button>
+    <button (click)="onYesClick()" mat-button>{{ updatePartie() !== null ? "Modifier" : "Créer" }}</button>
+  }
+</mat-dialog-actions>
