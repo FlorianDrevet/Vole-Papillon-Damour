@@ -47,8 +47,7 @@ public static class BingoCardController
                             error => error.Result());
                     })
                 .WithName("Get bingo card from picture")
-                .DisableAntiforgery()
-                .WithOpenApi();
+                .DisableAntiforgery();
         });
     }
 }

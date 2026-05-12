@@ -42,8 +42,7 @@ public static class PartieController
                             error => error.Result());
                     })
                 .WithName("Remove partie of an event")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             
             endpoints.MapPut("/asso-events/{id:guid}/parties/{partieId:guid}/index/{index:int}",
@@ -68,8 +67,7 @@ public static class PartieController
                             error => error.Result());
                     })
                 .WithName("Change Index of a partie")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapPost("/asso-events/{id:guid}/parties",
                     async ([FromForm] CreatePartiesRequest request,
@@ -92,8 +90,7 @@ public static class PartieController
                     })
                 .WithName("Add partie of an event")
                 .RequireAuthorization("IsAdmin")
-                .DisableAntiforgery()
-                .WithOpenApi();
+                .DisableAntiforgery();
             
             endpoints.MapPut("/asso-events/{id:guid}/parties/{partieId:guid}",
                     async ([FromForm] UpdatePartieRequest request,
@@ -115,8 +112,7 @@ public static class PartieController
                     })
                 .WithName("Update partie of an event")
                 .RequireAuthorization("IsAdmin")
-                .DisableAntiforgery()
-                .WithOpenApi();
+                .DisableAntiforgery();
         });
     }
 }

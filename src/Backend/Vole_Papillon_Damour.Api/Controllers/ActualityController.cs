@@ -41,8 +41,7 @@ public static class ActualityController
                     })
                 .WithName("Add a new actuality")
                 .DisableAntiforgery()
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
 
             endpoints.MapGet("/actuality/all",
                     async (IMediator mediator, IMapper mapper) =>
@@ -58,8 +57,7 @@ public static class ActualityController
                             },
                             error => error.Result());
                     })
-                .WithName("Get all the actuality")
-                .WithOpenApi();
+                .WithName("Get all the actuality");
             
             endpoints.MapGet("/actuality/latest",
                     async (IMediator mediator, IMapper mapper) =>
@@ -75,8 +73,7 @@ public static class ActualityController
                             },
                             error => error.Result());
                     })
-                .WithName("Get the 3 latest actuality")
-                .WithOpenApi();
+                .WithName("Get the 3 latest actuality");
             
             endpoints.MapGet("/actuality/{id}",
                     async (Guid id, IMediator mediator, IMapper mapper) =>
@@ -92,8 +89,7 @@ public static class ActualityController
                             },
                             error => error.Result());
                     })
-                .WithName("Get an actuality by its id")
-                .WithOpenApi();
+                .WithName("Get an actuality by its id");
  
             endpoints.MapDelete("/actuality/{id}",
                     async (Guid id, IMediator mediator, IMapper mapper) =>
@@ -109,8 +105,7 @@ public static class ActualityController
                             error => error.Result());
                     })
                 .WithName("Delete an actuality with its id")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
 
             endpoints.MapPut("/actuality/{id}",
                     async ([FromForm] UpdateActualityRequest request, Guid id, IMediator mediator, IMapper mapper) =>
@@ -127,8 +122,7 @@ public static class ActualityController
                     })
                 .WithName("Update an actuality with its id")
                 .DisableAntiforgery()
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
         });
     }
 }

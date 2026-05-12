@@ -38,8 +38,7 @@ public static class OrdersController
                             error => error.Result());
                     })
                 .WithName("Create an order")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapGet("/orders",
                     async (IMediator mediator, IMapper mapper) =>
@@ -57,8 +56,7 @@ public static class OrdersController
                             error => error.Result());
                     })
                 .WithName("Get all Orders")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
         });
     }
 }

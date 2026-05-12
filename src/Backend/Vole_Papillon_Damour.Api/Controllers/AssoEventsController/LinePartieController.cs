@@ -43,8 +43,7 @@ public static class LinePartieController
                     })
                 .WithName("Add Line Partie to Partie")
                 .DisableAntiforgery()
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapDelete("/asso-events/{assoId:guid}/parties/{partieId:guid}/partie-lines/{linePartieId:guid}",
                     async (Guid assoId, Guid partieId, Guid linePartieId,
@@ -68,8 +67,7 @@ public static class LinePartieController
                             error => error.Result());
                     })
                 .WithName("Remove Line Partie from Partie")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
 
         });
     }

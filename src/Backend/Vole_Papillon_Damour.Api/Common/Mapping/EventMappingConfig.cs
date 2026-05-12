@@ -49,7 +49,11 @@ public class EventMappingConfig : IRegister
         config.NewConfig<(UpdateEventRequest Request, Guid Id), UpdateEventCommand>()
             .Map(dest => dest.Id, src => src.Id)
             .Map(dest => dest.Adresse, src =>
-                new Adresse(src.Request.RoadNumber, src.Request.City, src.Request.Road, src.Request.CityCode ?? 0))
+                new Adresse(
+                    src.Request.RoadNumber,
+                    src.Request.City ?? string.Empty,
+                    src.Request.Road ?? string.Empty,
+                    src.Request.CityCode ?? 0))
             .Map(dest => dest, src => src.Request);
 
         config.NewConfig<AssoEventResult, EventResponse>()

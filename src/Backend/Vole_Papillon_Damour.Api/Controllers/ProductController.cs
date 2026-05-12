@@ -49,8 +49,7 @@ public static class ProductController
                     })
                 .WithName("Update existing Product")
                 .RequireAuthorization("IsAdmin")
-                .DisableAntiforgery()
-                .WithOpenApi();
+                .DisableAntiforgery();
             
             endpoints.MapPost("/product",
                     async ([FromForm] CreateProductRequest request,
@@ -74,8 +73,7 @@ public static class ProductController
                     })
                 .WithName("Create New Product")
                 .RequireAuthorization("IsAdmin")
-                .DisableAntiforgery()
-                .WithOpenApi();
+                .DisableAntiforgery();
             
             endpoints.MapGet("/product",
                     async (IMediator mediator, IMapper mapper) =>
@@ -91,8 +89,7 @@ public static class ProductController
                             },
                             error => error.Result());
                     })
-                .WithName("Get All Products")
-                .WithOpenApi();
+                .WithName("Get All Products");
             
             endpoints.MapDelete("/product/{productId}",
                     async ([FromRoute] Guid productId, IMediator mediator, IMapper mapper) =>
@@ -107,8 +104,7 @@ public static class ProductController
                             },
                             error => error.Result());
                     })
-                .WithName("Delete Product")
-                .WithOpenApi();
+                .WithName("Delete Product");
             #endregion
 
             
@@ -128,8 +124,7 @@ public static class ProductController
                             error => error.Result());
                     })
                 .WithName("Add promotion to a Product")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
                         
             endpoints.MapDelete("/product/promotion",
@@ -147,8 +142,7 @@ public static class ProductController
                             error => error.Result());
                     })
                 .WithName("Delete a promotion")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
         });
     }
 }

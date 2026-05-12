@@ -36,8 +36,7 @@ public static class MailingController
                             res => Results.Created(),
                             error => error.Result());
                     })
-                .WithName("Add to Mailing List")
-                .WithOpenApi();
+                .WithName("Add to Mailing List");
                         
             endpoints.MapDelete("/mailing-list/{email}",
                     async (string email,
@@ -50,8 +49,7 @@ public static class MailingController
                             deletePromotionResult => Results.NoContent(),
                             error => error.Result());
                     })
-                .WithName("Delete from Mailing List")
-                .WithOpenApi();
+                .WithName("Delete from Mailing List");
         });
     }
 }

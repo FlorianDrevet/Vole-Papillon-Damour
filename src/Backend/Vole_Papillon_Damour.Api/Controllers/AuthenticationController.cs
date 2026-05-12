@@ -50,8 +50,7 @@ public static class AuthenticationController
                             );
                     })
                 .WithName("Login")
-                .RequireRateLimiting("Login")
-                .WithOpenApi();
+                .RequireRateLimiting("Login");
         });
     }
 }

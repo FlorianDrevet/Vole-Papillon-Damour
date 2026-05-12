@@ -136,21 +136,23 @@ public sealed class Partie : Entity<PartieId>
         lastNumeros.Add(_liveNumeros.Last());
         _liveNumeros.RemoveAt(_liveNumeros.Count() - 1);
 
-        var linePartie = _lineParties.First(l => l.Index == (CurrentLineIndex != 0 ? CurrentLineIndex - 1 : CurrentLineIndex));
+        var lineIndexToUpdate = CurrentLineIndex >= _lineParties.Count
+            ? _lineParties.Count - 1
+            : CurrentLineIndex;
+
+        var linePartie = _lineParties.First(l => l.Index == lineIndexToUpdate);
         var hasANumberBeenDeleted = linePartie.RemoveNumero(lastNumeros);
+
+        var previousLineIndex = CurrentLineIndex - 1;
+        if (!hasANumberBeenDeleted && previousLineIndex >= 0 && previousLineIndex != lineIndexToUpdate)
+        {
+            var previousLinePartie = _lineParties.First(l => l.Index == previousLineIndex);
+            hasANumberBeenDeleted = previousLinePartie.RemoveNumero(lastNumeros);
+        }
         
         if (CurrentLineIndex != 0 && hasANumberBeenDeleted)
         {
-            if (CurrentLineIndex >= _lineParties.Count())
-            {
-                CurrentLineIndex--;
-            }
-            else
-            {
-                CurrentLineIndex--;
-                var linePartieBefore = _lineParties.First(l => l.Index == CurrentLineIndex);
-                linePartieBefore.RemoveNumero(lastNumeros);
-            }
+            CurrentLineIndex--;
         }
 
         return lastNumero;

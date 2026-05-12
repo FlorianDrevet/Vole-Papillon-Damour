@@ -52,8 +52,11 @@ public class ProductConfiguration: IEntityTypeConfiguration<Product>
         });
 
         
-        builder.Metadata.FindNavigation(nameof(Product.Promotions))!
-            .SetPropertyAccessMode(PropertyAccessMode.Field);
+        var promotionsNavigation = builder.Metadata.FindNavigation(nameof(Product.Promotions));
+        if (promotionsNavigation is not null)
+        {
+            promotionsNavigation.SetPropertyAccessMode(PropertyAccessMode.Field);
+        }
     }
 
 }

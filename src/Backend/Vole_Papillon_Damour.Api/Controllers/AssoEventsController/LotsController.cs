@@ -45,8 +45,7 @@ public static class LotsController
                     })
                 .WithName("Add Lot to PartieLine")
                 .DisableAntiforgery()
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapDelete("/asso-events/{assoId}/parties/{partieId}/partie-lines/{partieLineId}/lots/{lotId}",
                     async (Guid assoId, Guid partieId, Guid partieLineId, Guid lotId,
@@ -71,8 +70,7 @@ public static class LotsController
                             error => error.Result());
                     })
                 .WithName("Remove Lot from PartieLine")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapPut("/asso-events/{assoId}/parties/{partieId}/partie-lines/{partieLineId}/lots/{lotId}",
                     async ([FromForm] UpdateLotRequest request, Guid assoId, Guid partieId, Guid partieLineId, Guid lotId,
@@ -92,8 +90,7 @@ public static class LotsController
                     })
                 .WithName("Update Lot")
                 .DisableAntiforgery()
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
         });
     }
 }

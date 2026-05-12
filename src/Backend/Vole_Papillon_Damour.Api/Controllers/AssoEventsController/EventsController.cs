@@ -49,8 +49,7 @@ public static class EventsController
                     })
                 .WithName("Create an event")
                 .RequireAuthorization("IsAdmin")
-                .DisableAntiforgery()
-                .WithOpenApi();
+                .DisableAntiforgery();
             
             endpoints.MapGet("/asso-events",
                     async (IMediator mediator, IMapper mapper) =>
@@ -66,8 +65,7 @@ public static class EventsController
                             },
                             error => error.Result());
                     })
-                .WithName("Get all events")
-                .WithOpenApi();
+                .WithName("Get all events");
             
             endpoints.MapGet("/asso-events/next-bingo",
                     async (IMediator mediator, IMapper mapper) =>
@@ -83,8 +81,7 @@ public static class EventsController
                             },
                             error => error.Result());
                     })
-                .WithName("Get next bingo event")
-                .WithOpenApi();
+                .WithName("Get next bingo event");
             
             endpoints.MapGet("/asso-events/next-books",
                     async (IMediator mediator, IMapper mapper) =>
@@ -100,8 +97,7 @@ public static class EventsController
                             },
                             error => error.Result());
                     })
-                .WithName("Get next books event")
-                .WithOpenApi();
+                .WithName("Get next books event");
             
             endpoints.MapGet("/asso-events/next-other-event",
                     async (IMediator mediator, IMapper mapper) =>
@@ -117,8 +113,7 @@ public static class EventsController
                             },
                             error => error.Result());
                     })
-                .WithName("Get next other event")
-                .WithOpenApi();
+                .WithName("Get next other event");
             
             endpoints.MapGet("/asso-events/{id}",
                     async (Guid id,
@@ -137,8 +132,7 @@ public static class EventsController
                             },
                             error => error.Result());
                     })
-                .WithName("Get AssoEvent By Id")
-                .WithOpenApi();
+                .WithName("Get AssoEvent By Id");
             
             endpoints.MapDelete("/asso-events/{id}",
                     async (Guid id,
@@ -163,8 +157,7 @@ public static class EventsController
                             },
                             error => error.Result());
                     })
-                .WithName("Delete AssoEvent By Id")
-                .WithOpenApi();
+                .WithName("Delete AssoEvent By Id");
             
             endpoints.MapPut("/asso-events/{id}",
                     async (Guid id, [FromForm] UpdateEventRequest request,
@@ -184,8 +177,7 @@ public static class EventsController
                     })
                 .WithName("Update AssoEvent")
                 .RequireAuthorization("IsAdmin")
-                .DisableAntiforgery()
-                .WithOpenApi();
+                .DisableAntiforgery();
             
             endpoints.MapPost("/asso-events/{id}/numeros",
                     async (AddNumeroToPartieRequest request, 
@@ -211,8 +203,7 @@ public static class EventsController
                             error => error.Result());
                     })
                 .WithName("Add a number to a partie")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapDelete("/asso-events/{id}/numeros",
                     async (Guid id,
@@ -236,8 +227,7 @@ public static class EventsController
                             error => error.Result());
                     })
                 .WithName("Remove last numero of a partie")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapPost("/asso-events/{id}/win-partie",
                     async (Guid id,
@@ -261,8 +251,7 @@ public static class EventsController
                             error => error.Result());
                     })
                 .WithName("Add win to a partie")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapPut("/asso-events/{id}/bingo-win",
                     async (AddBingoWinRequest request, Guid id,
@@ -286,8 +275,7 @@ public static class EventsController
                             error => error.Result());
                     })
                 .WithName("Update Bingo win")
-                .RequireAuthorization("IsAdmin")
-                .WithOpenApi();
+                .RequireAuthorization("IsAdmin");
             
             endpoints.MapGet("/asso-events/{id}/tableau/sse",
                     async (HttpContext ctx, Guid id, 
@@ -307,7 +295,7 @@ public static class EventsController
                         
                         var assoEventResult = await mediator.Send(command, ct);
 
-                        assoEventResult.MatchAsync(
+                        await assoEventResult.MatchAsync(
                             async assoEventResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(assoEventResult);
@@ -340,8 +328,7 @@ public static class EventsController
                             sseClientManager.RemoveClient(clientId);
                         }
                     })
-                .WithName("Get SSE for a tableau")
-                .WithOpenApi();
+                .WithName("Get SSE for a tableau");
         });
     }
 }
