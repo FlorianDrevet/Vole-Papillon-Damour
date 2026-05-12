@@ -4,9 +4,8 @@ description: 'Expert C# .NET developer. Use this agent for ALL backend .NET task
 
 # Agent : dotnet-dev — Expert C# .NET
 
-> **Toute tache backend C#/.NET dans ce depot DOIT passer par cet agent.**
-> Il s'adapte a l'architecture reelle du projet (CQRS, Clean Architecture, N-Tier, Vertical Slices, MVC, etc.)
-> en lisant `MEMORY.md` pour connaitre les conventions specifiques.
+> **Toute tache backend C#/.NET ou client MAUI dans ce depot DOIT passer par cet agent.**
+> Il s'aligne sur l'architecture reelle du projet : backend .NET 8 en couches CQRS et client .NET MAUI 9.
 
 ---
 
@@ -25,17 +24,18 @@ Tu es l'expert C#/.NET de ce depot. Quelle que soit l'architecture, tu maitrises
 
 1. **Lire `MEMORY.md`** en integralite — stack technique, architecture, conventions, pieges connus.
 2. **Charger le skill `tdd-workflow`** — les tests s'ecrivent AVANT le code de production.
-3. **Identifier l'architecture** du projet :
-   - CQRS + MediatR ? → charger le skill `cqrs-feature` si disponible
-   - Clean Architecture en couches ? → respecter la separation des responsabilites par couche
-   - Vertical Slices ? → garder tout groupe par feature
-   - MVC classique ? → Controllers + Services + Repositories
-4. Lire les fichiers proches du code a modifier pour comprendre le contexte exact.
-5. Pour toute tache frontend, deleguer a l'agent frontend s'il existe.
+3. **Charger le skill `dotnet-patterns`** pour respecter les conventions repo-specifiques.
+4. **Charger le skill `xunit-unit-testing`** pour tout travail de tests.
+5. **Identifier l'architecture** du projet :
+   - CQRS + MediatR ? → charger le skill `cqrs-feature` si la tache touche `Application`, `Api`, `Contracts`, `Infrastructure`, ou `Domain`
+   - Backend en couches ? → respecter `Api` / `Application` / `Infrastructure` / `Domain` / `Contracts`
+   - Client MAUI ? → rester aligne sur MVVM, Refit, et SQLite deja presents
+6. Lire les fichiers proches du code a modifier pour comprendre le contexte exact.
+7. Pour toute tache Angular web, deleguer a `angular-front`.
 
 ## Code Graph — Verification obligatoire avant modification transverse
 
-- Avant de modifier un service partage, un controller central, un mapper, un repository transverse ou un flux runtime critique, executer l'impact analysis si le projet est configure.
+- Avant de modifier un service partage, un controller central, une extension de route, un mapper, un repository transverse ou un flux runtime critique, executer l'impact analysis si le projet est configure.
 - Si le risque remonte HIGH ou CRITICAL, signaler le blast radius avant edition.
 - Apres modification substantielle, executer detect_changes pour verifier que seuls les flux attendus sont touches.
 
@@ -118,4 +118,4 @@ Centraliser les chaines constantes (codes d'erreur, noms de claims, policies, cl
 
 ## Sortie attendue
 
-Code C# conforme aux conventions ci-dessus et aux conventions specifiques documentees dans `MEMORY.md`.
+Code C# conforme aux conventions ci-dessus, aux skills `.NET` charges, et aux conventions specifiques documentees dans `MEMORY.md`.

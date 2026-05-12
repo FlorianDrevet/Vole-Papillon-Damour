@@ -1,0 +1,32 @@
+# 05 - Data And Storage
+
+## Primary Persistence
+
+- `Infrastructure.DependencyInjection` wires `ProjectDbContext` with `UseSqlServer`.
+- The current runtime DI uses the `ProjectDatabase` connection string.
+- Repository interfaces live in `Application.Common.Interfaces.Persistence` and implementations live in `Infrastructure.Persistence.Repositories`.
+
+## External Services
+
+- Azure Blob Storage and Azure Table Storage are configured from `AzureBlobStorageConnectionString`.
+- Azure Table Storage is named `MailingListStorage` in DI.
+- Azure Communication Email is configured from the `EmailService` connection string.
+- Azure AI Vision OCR is configured from `OcrSettings`.
+- Azure Monitor OpenTelemetry is enabled in the API startup.
+
+## Authentication
+
+- JWT bearer auth is configured in Infrastructure from `JwtSettings`.
+- The API exposes an `IsAdmin` authorization policy.
+- Auth changes are multi-surface changes because they affect the API, the admin Angular app, and possibly the MAUI client.
+
+## Notable Storage Detail
+
+- PostgreSQL packages exist in the Infrastructure project, but the active DI path currently uses SQL Server.
+- Do not assume PostgreSQL is live without checking runtime configuration first.
+
+## Storage Risk Zones
+
+- Repository changes can impact multiple feature slices at once.
+- Blob/table naming and storage clients are centralized in Infrastructure.
+- Mailing list, OCR, and media flows depend on external Azure services and should be validated carefully.

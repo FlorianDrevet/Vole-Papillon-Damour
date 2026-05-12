@@ -1,35 +1,48 @@
-# Project Memory — socle-agents
+# Project Memory - Vole-Papillon-Damour
 
 > Index file. Detailed knowledge lives in thematic files under `.github/memory/`.
 
-## Memory Architecture
+## Stack Snapshot
+
+- Open-source repository bootstrapped with GitNexus as the code graph engine
+- Backend: ASP.NET Core Web API on .NET 8 under `src/Backend/`
+- Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
+- Web frontends: Angular 18 applications in `src/BackOffice/` and `src/Website/`
+- Native client: .NET MAUI 9 cash app in `src/MauiCashApp/`
+- Tests: xUnit domain tests exist under `src/Backend/Vole_Papillon_Damour.Domain.tests/`
+- CI/CD: no GitHub Actions or Azure DevOps pipeline file detected at bootstrap time
+
+## Thematic Memory
 
 | File | Content |
 |------|---------|
-| `.github/memory/01-solution-overview.md` | Purpose of the bootstrap repository and scope |
-| `.github/memory/02-bootstrap-system.md` | What `memory-bootstrap` must initialize in target projects |
-| `.github/memory/03-agents-skills.md` | Base agents, base skills, conditional generation rules |
-| `.github/memory/04-docs-and-wiki.md` | Documentation and wiki surfaces |
-| `.github/memory/05-mcp-and-code-graph.md` | MCP baseline, GitNexus, Graphify, and workspace config |
-| `.github/memory/06-review-and-audit.md` | Review workflow, audit workflow, quality gates |
+| `.github/memory/01-solution-overview.md` | Scope, runtime surfaces, critical flows |
+| `.github/memory/02-project-structure.md` | Folder map and ownership boundaries |
+| `.github/memory/03-domain-model.md` | CQRS slices, aggregates, contracts, API flow |
+| `.github/memory/04-frontend.md` | Angular and MAUI client conventions |
+| `.github/memory/05-data-and-storage.md` | Persistence, auth, external services |
+| `.github/memory/06-agents-skills.md` | Generated agents, skills, and routing rules |
+| `.github/memory/07-code-graph.md` | GitNexus workflow, commands, and freshness rules |
 | `.github/memory/changelog.md` | Memory changelog |
-| `.github/memory/dream-state.md` | Dream trigger state + code graph engine choice |
+| `.github/memory/dream-state.md` | Dream gate state and code graph choice |
 
-## Quick Reference — Bootstrap Requirements
+## Quick Reference
 
-1. `memory-bootstrap` must ask the user to choose a code graph engine (GitNexus / Graphify / both).
-2. `memory-bootstrap` must initialize a thematic memory system, not a monolithic memory file.
-3. `gitnexus-workflow`, `graphify-corpus`, `memory-management`, `tdd-workflow`, `audit-workflow` are base skills.
-4. `dev` must support Dream gate checks and code-graph-first research.
-5. Bootstrap output must update `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, and `.vscode/mcp.json`.
-6. MCP configuration must include the chosen code graph server as a first-class entry.
-7. Review agents (`review-expert`, `vibe-coding-refractaire`, `review-remediator`) are always generated.
-8. `audit-expert` is always generated for periodic code audits.
-9. The backend specialist is exclusive by detected stack: `dotnet-dev` for `.NET`, `python-dev` for `Python`, or both only for real multi-backend repos.
-10. Python backends also receive `python-patterns`, with framework-specific guidance for FastAPI, Django, or Flask.
+1. Start from `@dev` for day-to-day work; use `@memory-bootstrap` only when the stack or agent foundation changes materially.
+2. Use GitNexus first for impact analysis on shared handlers, repositories, controllers, route extensions, and Angular shared services.
+3. Apply TDD for executable code; record temporary exceptions in `.github/test-debt.md`.
+4. Keep backend changes inside the existing boundaries: API wiring in `Api`, MediatR handlers and validators in `Application`, persistence and adapters in `Infrastructure`, invariants in `Domain`, DTOs in `Contracts`.
+5. Preserve the current frontend split: `BackOffice` for admin surfaces, `Website` for public web surfaces, `MauiCashApp` for the cashier client.
 
-## How Memory Works
+## Commands To Remember
 
-- This repository uses its own thematic memory under `.github/memory/`.
-- A bootstrapped target project should receive the same structure.
-- `@dream` consolidates memory periodically when the configured gates pass.
+- Backend build/test: `dotnet build .\src\Backend\Vole_Papillon_Damour.sln`; `dotnet test .\src\Backend\Vole_Papillon_Damour.sln`
+- Angular apps: `npm install`; `npm run build`; `npm test`
+- MAUI app: `dotnet build .\src\MauiCashApp\ShopAppVpd.sln`
+- GitNexus reindex: `npx gitnexus analyze`
+
+## Memory Rules
+
+- `MEMORY.md` stays short and scannable.
+- Detailed facts belong in the thematic files, not in chat answers.
+- Do not copy secrets or connection string values into memory.

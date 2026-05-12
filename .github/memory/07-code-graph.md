@@ -1,0 +1,28 @@
+# 07 - Code Graph
+
+## Selected Engine
+
+- `codeGraphEngine`: `gitnexus`
+- Reason: the repository is open source and code-first
+
+## GitNexus Commands
+
+- Initial or refresh index: `npx gitnexus analyze`
+- MCP server: `npx -y gitnexus@latest mcp`
+
+## Expected Artifacts
+
+- `.gitnexus/meta.json` - index metadata
+- GitNexus MCP entry in `.vscode/mcp.json`
+
+## Usage Rules
+
+- Run impact analysis before changing shared repositories, handlers, route extensions, or frontend shared services.
+- Use change detection after larger refactors to confirm blast radius stayed inside scope.
+- Reindex after a major merge or when the index is older than about seven days.
+
+## Practical Targets In This Repo
+
+- Backend feature slices under `src/Backend/Vole_Papillon_Damour.Application/`
+- Repository implementations under `src/Backend/Vole_Papillon_Damour.Infrastructure/`
+- Angular shared services and routing under `src/BackOffice/src/` and `src/Website/src/`

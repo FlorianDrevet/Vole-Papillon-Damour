@@ -1,34 +1,43 @@
-# 01 — Solution Overview
+# 01 - Solution Overview
 
-## Purpose
+## Scope
 
-`socle-agents` is a bootstrap template repository. It provides a complete agentic workflow foundation (agents, skills, memory, code graph, MCP servers) that can be applied to any project via the `@memory-bootstrap` agent.
+`Vole-Papillon-Damour` is the application repository itself, not a bootstrap template. It ships three delivery surfaces around one shared business domain:
 
-## What This Repo IS
+- an ASP.NET Core backend API
+- two Angular 18 web applications (`BackOffice` and `Website`)
+- one .NET MAUI cashier client (`MauiCashApp`)
 
-- A collection of `.agent.md`, `SKILL.md`, and configuration files
-- A blueprint for initializing agentic infrastructure on new/existing repos
-- A reference for memory architecture, Dream consolidation, and review workflows
+## Runtime Surfaces
 
-## What This Repo IS NOT
+- `src/Backend/` hosts the main .NET 8 solution and the layered backend projects.
+- `src/BackOffice/` is the Angular admin application.
+- `src/Website/` is the Angular public website.
+- `src/MauiCashApp/` is the MAUI client that calls the deployed backend through Refit.
 
-- Not a runtime application (no build targets, no deployable code)
-- Not a monorepo of projects (single purpose: bootstrap)
-- Not opinionated about tech stack (adapts to what it discovers)
+## Verified Functional Areas
 
-## Target Projects
+The backend and contracts expose features around:
 
-Any .NET, Angular, Python, or mixed project that wants:
-- Structured multi-agent orchestration via VS Code Copilot
-- Code graph intelligence (GitNexus or Graphify)
-- Thematic memory with periodic Dream consolidation
-- Built-in review and audit workflows
-- TDD enforcement via skill
+- authentication
+- actuality content
+- association events
+- products
+- orders
+- mailing list
+- bingo card OCR analysis
 
-## Key Design Decisions
+## Critical Zones
 
-- Agent files are self-contained and composable
-- Skills are lazy-loaded knowledge, not actors
-- Memory is thematic (multiple small files), not monolithic
-- Code graph choice is deferred to bootstrap time (not hardcoded)
-- MCP server config is generated per-project
+- Authentication and JWT configuration in the API and Infrastructure layers.
+- Persistence and repository wiring through `ProjectDbContext` and `Infrastructure.Persistence`.
+- Azure-backed integrations for Blob/Table storage, email, monitoring, and OCR.
+- Cross-app contract drift between `Contracts`, Angular apps, and the MAUI client.
+- Event, order, and product flows that touch both storage and user-facing clients.
+
+## Current Constraints
+
+- The backend currently enables a permissive CORS policy for all origins.
+- Domain tests exist, but cross-layer automated coverage is still thin.
+- No CI pipeline file was detected during bootstrap, so local validation commands matter.
+- GitNexus is the selected and documented code graph engine for this open-source repository.

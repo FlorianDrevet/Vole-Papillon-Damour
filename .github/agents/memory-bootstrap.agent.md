@@ -42,6 +42,8 @@ Stocker le choix dans `.github/memory/dream-state.md` sous une cle `codeGraphEng
 2. Cartographier `src/`, `apps/`, `services/`, `tests/`, `docs/`, `infrastructure/`, `pipelines/`
 3. Lire les points d'entree backend pertinents selon la stack detectee : `Program.cs`, `Startup.cs`, `DependencyInjection.cs`, `main.py`, `app.py`, `wsgi.py`, `asgi.py`, `manage.py`, ainsi que les points d'entree frontend pertinents
 4. Verifier si `.gitnexus/meta.json` ou `graphify-out/graph.json` existent deja
+5. Lire les fichiers de build/run/test evidents (`package.json`, scripts, README, docs/getting-started, solution files) pour capturer des commandes verifiees
+6. Lire au moins un fichier representatif par surface majeure detectee : backend, frontend, client natif, worker, integration majeure, tests, docs
 
 ### Phase 2 — Detect stack and architecture
 
@@ -68,6 +70,21 @@ Detecter explicitement :
 - **Flask** si l'on trouve `flask`, `Flask(`, `Blueprint`, `current_app` ou une app factory explicite
 - Si plusieurs signaux coexistent, documenter le cadre dominant et les exceptions dans la memoire
 
+### Phase 3bis — Build the evidence map for memory
+
+Avant d'ecrire la memoire, reunir un socle minimum de faits verifies :
+
+- **Structure** : noms exacts des projets/apps/solutions et frontieres des dossiers
+- **Runtime** : points d'entree, surfaces deployables, jobs, clients, workers
+- **Architecture** : CQRS, couches, slices, MVC, services, repository pattern, etc.
+- **Data** : ORM, DbContext, repositories, persistence adapters, stockage cloud
+- **Transport** : API HTTP, controllers, minimal APIs, contracts, clients Refit/SDK
+- **Frontend/clients** : frameworks, apps, separations par surface, dependances structurantes
+- **Auth/build/run** : commandes verifiees, auth, policies, pipelines, outillage principal
+- **Critical zones** : flows sensibles, symboles partages, integrations externes, risques de drift entre surfaces
+
+Pour un depot multi-surfaces, ne pas s'arreter apres une lecture superficielle de la stack. Lire suffisamment pour pouvoir nommer les vraies slices, les vrais modules, et les vraies zones de risque.
+
 ### Phase 4 — Generate the memory system
 
 Generer ou mettre a jour :
@@ -75,11 +92,18 @@ Generer ou mettre a jour :
 - `MEMORY.md` comme index leger (~80 lignes max)
 - `.github/memory/01-solution-overview.md`
 - `.github/memory/02-project-structure.md`
-- `.github/memory/03-runtime-and-api.md` (ou `03-domain-model.md` pour CQRS)
-- `.github/memory/04-frontend.md` si frontend detecte
-- `.github/memory/05-data-and-storage.md` si pertinent
-- `.github/memory/06-agents-skills.md`
-- `.github/memory/07-code-graph.md`
+- `.github/memory/03-domain-model.md` ou `.github/memory/03-runtime-and-domain.md` selon la structure detectee
+- `.github/memory/04-cqrs-pattern.md`, `.github/memory/04-application-flow.md`, ou equivalent si l'architecture le justifie
+- `.github/memory/05-api-layer.md` ou `.github/memory/05-data-and-storage.md` si une surface HTTP ou transport existe
+- `.github/memory/06-persistence.md` ou equivalent si persistence significative
+- `.github/memory/07-integrations.md`, `.github/memory/07-generation-engine.md`, ou equivalent si un moteur ou des integrations majeures existent
+- `.github/memory/08-frontend.md` si frontend ou clients detectes
+- `.github/memory/09-runtime-and-orchestration.md` si plusieurs runtimes / orchestration / workers existent
+- `.github/memory/10-auth-and-build.md` si auth et commandes merite un fichier dedie
+- `.github/memory/11-agents-skills.md`
+- `.github/memory/12-api-endpoints.md` si l'API est non triviale
+- `.github/memory/13-code-graph.md`
+- `.github/memory/14-frontend-design-system.md` si un design system ou des conventions UI structurantes existent
 - `.github/memory/changelog.md`
 - `.github/memory/dream-state.md`
 
@@ -88,6 +112,21 @@ Regles :
 - `dream-state.md` initialise `sessionsSinceLastDream` a 0, `lastDreamDate` a la date du jour
 - `dream-state.md` contient aussi `codeGraphEngine: <choix>`
 - `changelog.md` note la date et la nature du bootstrap
+- la profondeur de la memoire doit **suivre la complexite reelle du depot** ; un depot a backend + plusieurs clients + architecture en couches ne doit pas sortir avec 6 ou 7 fichiers vagues
+- preferer des fichiers thematiques dedies pour domaine, architecture, API, persistance, auth/build, endpoints, runtime, code graph, plutot qu'un fichier unique trop large
+- chaque fichier doit contenir des faits verifies, des noms exacts, et des zones a risque concretes
+
+### Phase 4bis — Mandatory memory deepening pass
+
+Avant de considerer le bootstrap termine, relire la memoire produite et verifier :
+
+1. que chaque surface majeure detectee a un fichier ou une section dediee
+2. que `MEMORY.md` contient une vraie quick reference, pas seulement une table de fichiers
+3. que les fichiers thematiques mentionnent des modules/slices/aggregates/projets exacts
+4. que les commandes build/test/run importantes sont capturees quelque part
+5. que les flux critiques, risques de drift, et pieges techniques sont documentes
+
+Si la memoire ressemble encore a un simple inventaire de stack, faire une seconde passe de lecture puis enrichir les fichiers avant de continuer.
 
 ### Phase 5 — Generate the base agents
 
@@ -237,7 +276,9 @@ Le bootstrap doit preparer les projets a utiliser Graphify comme primitive corpu
 ```text
 [ ] MEMORY.md est un index leger
 [ ] .github/memory/ existe avec dream-state et changelog
+[ ] La profondeur de la memoire est adaptee a la complexite du depot (compacte pour petit depot, detaillee pour depot riche)
 [ ] Code graph engine choisi et documente dans dream-state.md
+[ ] Les surfaces majeures du depot ont des fichiers thematiques dedies (domain, architecture, API, persistance, frontend/clients, runtime, auth/build, endpoints, code graph quand pertinents)
 [ ] Agents de base generes ou verifies (incluant review-expert, vibe-coding-refractaire, audit-expert)
 [ ] Agent backend genere exclusivement selon la stack detectee (`dotnet-dev` ou `python-dev`, ou plusieurs seulement si le projet est reellement multi-backend)
 [ ] Skills de base generes ou verifies (incluant tdd-workflow, audit-workflow)

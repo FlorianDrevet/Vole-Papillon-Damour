@@ -88,6 +88,7 @@ Charger ce skill pour toute tache necessitant exploration structurelle, analyse 
 
 - `@dev` verifie la fraicheur de l'index (> 7 jours = reindexer)
 - `@architect` utilise query + context pour comprendre avant de planifier
-- `@dotnet-dev` et `@python-dev` utilisent impact avant modification transverse
+- `@dotnet-dev` utilise impact avant modification transverse backend ou MAUI
+- `@angular-front` utilise impact avant modification transverse frontend
 - `@review-expert` utilise detect_changes pour verifier le scope du diff
 - `@dream` utilise detect_changes pour identifier les signaux recents

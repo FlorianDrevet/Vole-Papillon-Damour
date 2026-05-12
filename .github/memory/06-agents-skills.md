@@ -1,0 +1,41 @@
+# 06 - Agents And Skills
+
+## Generated Agents
+
+- `dev` - main orchestrator
+- `memory-bootstrap` - rebootstrap agent for future structural changes
+- `architect` - architecture analysis and implementation planning
+- `dotnet-dev` - backend .NET and MAUI specialist for this repository
+- `angular-front` - Angular web specialist for `BackOffice` and `Website`
+- `documentation-professor` - docs and onboarding
+- `review-expert` - pre-merge review
+- `vibe-coding-refractaire` - anti-slop technical review
+- `review-remediator` - review backlog remediation
+- `audit-expert` - technical audits
+- `dream` - memory consolidation
+- `merge-main` - semantic merge helper
+- `pr-manager` - PR conventions
+- `memory` - deprecated redirect to `dev`
+
+## Backend Routing Rule
+
+- This repository has a .NET backend and no verified Python backend.
+- Backend and MAUI tasks route to `dotnet-dev`.
+- Angular web tasks route to `angular-front`.
+
+## Active Skills
+
+- Base: `memory-management`, `gitnexus-workflow`, `tdd-workflow`, `audit-workflow`
+- Backend: `cqrs-feature`, `dotnet-patterns`, `xunit-unit-testing`
+- Frontend: `angular-patterns`, `ui-ux-front-saas`
+
+## Skills Not Generated
+
+- `python-patterns` is not part of the active project stack.
+- No CI/CD-specific skill was generated because no pipeline files were detected.
+
+## Routing Heuristics
+
+- Shared backend symbol change -> use GitNexus impact first, then `dotnet-dev`
+- Angular UI or state change -> `angular-front`, plus `ui-ux-front-saas` for visible UI work
+- Cross-surface contract change -> backend first, then Angular and MAUI follow-up validation

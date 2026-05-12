@@ -1,46 +1,43 @@
-# Copilot instructions
+# Copilot Instructions
 
-This repository is set up as a bootstrap template for initializing agentic workflows on new or existing projects.
+This repository has been bootstrapped for the actual `Vole-Papillon-Damour` application stack.
 
-## General recommendations
+## Solution Snapshot
 
-1. Always run `@memory-bootstrap` when applying this socle to a new project.
-2. The bootstrap will ask whether to use GitNexus (open-source) or Graphify (enterprise) as code graph engine.
-3. Make changes incrementally and validate after each step.
-4. Use the code graph tools to understand code before modifying it.
+- Open-source repo using GitNexus for code graph intelligence
+- Backend: .NET 8 ASP.NET Core API with layered CQRS
+- Web frontends: Angular 18 apps in `src/BackOffice/` and `src/Website/`
+- Native client: .NET MAUI 9 app in `src/MauiCashApp/`
+- Tests: xUnit domain tests exist; broader automated coverage still needs to grow
 
-## Running the bootstrap
+## Code Graph Intelligence
 
-To initialize a project with this socle:
+GitNexus is the configured engine for this repository.
 
-1. Copy the `.github/` folder structure to the target project
-2. Run `@memory-bootstrap` in the target project
-3. The bootstrap agent will explore, detect the stack, and generate adapted agents/skills/memory
+### Standard Workflow
 
-## Code Graph Engine Choice
-
-| Engine | Best for | Command |
-|--------|----------|---------|
-| GitNexus | Open-source, code-first projects | `npx gitnexus analyze` then `npx gitnexus mcp` |
-| Graphify | Enterprise, corpus-rich projects | `pip install graphifyy` then `python -m graphify.serve graphify-out/graph.json` |
-| Both | Large projects with rich docs + complex code | Both commands above |
+1. `gitnexus_query()` to locate symbols and flows
+2. `gitnexus_context()` to understand a target in context
+3. `gitnexus_impact()` before cross-cutting edits
+4. `gitnexus_detect_changes()` after significant modifications
+5. `npx gitnexus analyze` to refresh the local index when stale
 
 ## Agents
 
 | Agent | Purpose | File |
 |-------|---------|------|
-| `dev` | Main entry point — reads memory, routes to specialists, loads skills | `.github/agents/dev.agent.md` |
-| `memory-bootstrap` | Explores project and initializes the full agentic foundation | `.github/agents/memory-bootstrap.agent.md` |
+| `dev` | Main entry point for research, routing, memory, and validation | `.github/agents/dev.agent.md` |
+| `memory-bootstrap` | Rebootstrap the project memory, agents, and MCP config after structural changes | `.github/agents/memory-bootstrap.agent.md` |
 | `architect` | Architecture review and implementation planning | `.github/agents/architect.agent.md` |
-| `dotnet-dev` | Backend .NET specialist, generated only for .NET backends | `.github/agents/dotnet-dev.agent.md` |
-| `python-dev` | Backend Python specialist, generated only for Python backends | `.github/agents/python-dev.agent.md` |
-| `documentation-professor` | Technical documentation, onboarding, pedagogy | `.github/agents/documentation-professor.agent.md` |
-| `review-expert` | Pre-merge code review, quality gate | `.github/agents/review-expert.agent.md` |
-| `vibe-coding-refractaire` | Anti-vibe coding review, smell detection | `.github/agents/vibe-coding-refractaire.agent.md` |
-| `review-remediator` | Apply review backlog corrections | `.github/agents/review-remediator.agent.md` |
-| `audit-expert` | Technical audits with GitHub sync | `.github/agents/audit-expert.agent.md` |
+| `dotnet-dev` | Backend .NET and MAUI specialist | `.github/agents/dotnet-dev.agent.md` |
+| `angular-front` | Angular specialist for `BackOffice` and `Website` | `.github/agents/angular-front.agent.md` |
+| `documentation-professor` | Technical documentation and onboarding | `.github/agents/documentation-professor.agent.md` |
+| `review-expert` | Pre-merge review and quality gate | `.github/agents/review-expert.agent.md` |
+| `vibe-coding-refractaire` | Anti-slop review and maintainability triage | `.github/agents/vibe-coding-refractaire.agent.md` |
+| `review-remediator` | Apply the review backlog | `.github/agents/review-remediator.agent.md` |
+| `audit-expert` | Technical audits | `.github/agents/audit-expert.agent.md` |
 | `dream` | Memory consolidation pass | `.github/agents/dream.agent.md` |
-| `merge-main` | Merge main with semantic conflict resolution | `.github/agents/merge-main.agent.md` |
+| `merge-main` | Merge helper | `.github/agents/merge-main.agent.md` |
 | `pr-manager` | PR conventions | `.github/agents/pr-manager.agent.md` |
 
 ## Skills
@@ -48,32 +45,133 @@ To initialize a project with this socle:
 | Skill | Purpose | File |
 |-------|---------|------|
 | `memory-management` | Memory update rules and routing | `.github/skills/memory-management/SKILL.md` |
-| `gitnexus-workflow` | Structure-aware exploration, impact analysis, change validation | `.github/skills/gitnexus-workflow/SKILL.md` |
-| `graphify-corpus` | Corpus graph, docs-to-code traceability, community detection | `.github/skills/graphify-corpus/SKILL.md` |
-| `tdd-workflow` | Mandatory TDD Red-Green-Refactor cycle | `.github/skills/tdd-workflow/SKILL.md` |
-| `audit-workflow` | Audit report format, findings lifecycle, GitHub sync | `.github/skills/audit-workflow/SKILL.md` |
+| `gitnexus-workflow` | Structure-aware exploration, impact analysis, and change validation | `.github/skills/gitnexus-workflow/SKILL.md` |
+| `tdd-workflow` | Mandatory TDD cycle | `.github/skills/tdd-workflow/SKILL.md` |
+| `audit-workflow` | Audit report format and findings lifecycle | `.github/skills/audit-workflow/SKILL.md` |
+| `cqrs-feature` | CQRS workflow for backend features | `.github/skills/cqrs-feature/SKILL.md` |
+| `dotnet-patterns` | .NET 8 backend conventions used in this repo | `.github/skills/dotnet-patterns/SKILL.md` |
+| `xunit-unit-testing` | xUnit, FluentAssertions, NSubstitute, AutoFixture conventions | `.github/skills/xunit-unit-testing/SKILL.md` |
+| `angular-patterns` | Angular 18 application patterns | `.github/skills/angular-patterns/SKILL.md` |
+| `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |
 
-## Conditional Skills
+## MCP Resources
 
-| Skill | Purpose | File |
-|-------|---------|------|
-| `python-patterns` | Pragmatic Python backend conventions for FastAPI, Django, Flask, typing, tests, and maintainable structure | `.github/skills/python-patterns/SKILL.md` |
+- `gitnexus` via `.vscode/mcp.json`
+- `github` via `.vscode/mcp.json` with token input
 
 ## Always Do
 
-- Run `@memory-bootstrap` on any new project before starting work
-- Let `@memory-bootstrap` generate only the backend specialist that matches the detected stack (`dotnet-dev` or `python-dev`)
-- Use the code graph engine for exploration and impact analysis before modifying shared symbols
-- Update memory after every non-trivial task
-- Use `@dream` periodically to consolidate memory
-- Write tests BEFORE production code (TDD workflow)
-- Run code reviews (`review-expert` + `vibe-coding-refractaire`) before merging
+- Use GitNexus before modifying shared handlers, repositories, route extensions, or frontend shared services.
+- Keep backend work inside the existing layer boundaries.
+- Write tests before executable production changes.
+- Update thematic memory after non-trivial work.
+- Validate the touched application surface locally because no CI pipeline file is currently present.
 
 ## Never Do
 
-- Never edit a shared symbol without running impact analysis first
-- Never ignore HIGH or CRITICAL risk warnings
-- Never commit without validating the change scope
-- Never write production code without tests
-- Never keep both backend agents in a target project unless the repository truly has multiple backends
-- Never create dump files with multiple unrelated types
+- Never edit a shared symbol without checking impact first.
+- Never introduce a second backend technology path that is not already present.
+- Never bypass typed contracts with weakly typed payloads when the schema is known.
+- Never commit visible UI changes without checking responsive behavior.
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **Vole-Papillon-Damour** (3633 symbols, 8697 relationships, 107 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+
+## When Debugging
+
+1. `gitnexus_query({query: "<error or symptom>"})` — find execution flows related to the issue
+2. `gitnexus_context({name: "<suspect function>"})` — see all callers, callees, and process participation
+3. `READ gitnexus://repo/Vole-Papillon-Damour/process/{processName}` — trace the full execution flow step by step
+4. For regressions: `gitnexus_detect_changes({scope: "compare", base_ref: "main"})` — see what your branch changed
+
+## When Refactoring
+
+- **Renaming**: MUST use `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` first. Review the preview — graph edits are safe, text_search edits need manual review. Then run with `dry_run: false`.
+- **Extracting/Splitting**: MUST run `gitnexus_context({name: "target"})` to see all incoming/outgoing refs, then `gitnexus_impact({target: "target", direction: "upstream"})` to find all external callers before moving code.
+- After any refactor: run `gitnexus_detect_changes({scope: "all"})` to verify only expected files changed.
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+
+## Tools Quick Reference
+
+| Tool | When to use | Command |
+|------|-------------|---------|
+| `query` | Find code by concept | `gitnexus_query({query: "auth validation"})` |
+| `context` | 360-degree view of one symbol | `gitnexus_context({name: "validateUser"})` |
+| `impact` | Blast radius before editing | `gitnexus_impact({target: "X", direction: "upstream"})` |
+| `detect_changes` | Pre-commit scope check | `gitnexus_detect_changes({scope: "staged"})` |
+| `rename` | Safe multi-file rename | `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` |
+| `cypher` | Custom graph queries | `gitnexus_cypher({query: "MATCH ..."})` |
+
+## Impact Risk Levels
+
+| Depth | Meaning | Action |
+|-------|---------|--------|
+| d=1 | WILL BREAK — direct callers/importers | MUST update these |
+| d=2 | LIKELY AFFECTED — indirect deps | Should test |
+| d=3 | MAY NEED TESTING — transitive | Test if critical path |
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/Vole-Papillon-Damour/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/Vole-Papillon-Damour/clusters` | All functional areas |
+| `gitnexus://repo/Vole-Papillon-Damour/processes` | All execution flows |
+| `gitnexus://repo/Vole-Papillon-Damour/process/{name}` | Step-by-step execution trace |
+
+## Self-Check Before Finishing
+
+Before completing any code modification task, verify:
+1. `gitnexus_impact` was run for all modified symbols
+2. No HIGH/CRITICAL risk warnings were ignored
+3. `gitnexus_detect_changes()` confirms changes match expected scope
+4. All d=1 (WILL BREAK) dependents were updated
+
+## Keeping the Index Fresh
+
+After committing code changes, the GitNexus index becomes stale. Re-run analyze to update it:
+
+```bash
+npx gitnexus analyze
+```
+
+If the index previously included embeddings, preserve them by adding `--embeddings`:
+
+```bash
+npx gitnexus analyze --embeddings
+```
+
+To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.embeddings` field shows the count (0 means no embeddings). **Running analyze without `--embeddings` will delete any previously generated embeddings.**
+
+> Claude Code users: A PostToolUse hook handles this automatically after `git commit` and `git merge`.
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+
+<!-- gitnexus:end -->

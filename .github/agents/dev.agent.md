@@ -45,20 +45,14 @@ Apres lecture de `MEMORY.md`, lire `.github/memory/dream-state.md` et :
 
 Verifier que le moteur d'intelligence code est a jour :
 
-**Si GitNexus :**
-1. Executer `gitnexus_list_repos()` et lire la date `lastAnalyzed`.
+1. Executer `gitnexus_list_repos()` et lire la date `lastAnalyzed` si le MCP est disponible.
 2. Si `lastAnalyzed` > 7 jours : executer `npx gitnexus analyze` pour reindexer.
 3. Si la commande echoue ou le MCP n'est pas disponible : continuer sans bloquer, mais avertir.
-
-**Si Graphify :**
-1. Verifier que `graphify-out/graph.json` existe et n'est pas vide.
-2. Si le fichier est absent ou date de > 7 jours : executer `python -m graphify update .`
-3. Si la commande echoue : continuer sans bloquer, mais avertir.
 
 ### 2. Analyser la demande et decider
 
 Apres lecture de `MEMORY.md`, identifier :
-- **Quel perimetre** → backend .NET ? backend Python ? frontend detecte ? CQRS feature ? PR ? merge ?
+- **Quel perimetre** → backend .NET ? frontend Angular ? client MAUI ? CQRS feature ? PR ? merge ?
 - **Quel(s) agent(s) specialise(s)** a invoquer → voir table de routage ci-dessous
 - **Quel(s) skill(s)** a charger → voir section Skills ci-dessous
 
@@ -68,15 +62,9 @@ Apres lecture de `MEMORY.md`, identifier :
 
 **Etape 1 — Intelligence code (structurel, rapide) :**
 
-*Si GitNexus :*
 - `gitnexus_query("concept lie a la tache")` → identifier les flux d'execution et symboles concernes
 - `gitnexus_context("SymboleCible")` → vue 360° (appelants, appeles, process)
 - `gitnexus_impact(target, "upstream")` → blast radius si modification prevue
-
-*Si Graphify :*
-- `graphify query "concept"` → identifier les nœuds et communautes concernes
-- Lire `graphify-out/GRAPH_REPORT.md` pour god nodes et communautes pertinentes
-- Utiliser le MCP Graphify pour des liens code ↔ docs
 
 **Etape 2 — @Explore (contenu, detail) :**
 `@Explore` est un sous-agent rapide, read-only, specialise dans l'exploration et le Q&A codebase.
@@ -156,9 +144,9 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
 | Revue technique anti-vibe coding | **`vibe-coding-refractaire`** |
 | Appliquer un backlog de correction issu d'une review | **`review-remediator`** |
 | Analyser une feature / challenger une demande / plan d'implementation | **`architect`** |
-| Modifier/creer du code backend .NET | **`dotnet-dev`** + skills .NET detectes (`tdd-workflow`, `xunit-unit-testing`, etc.) |
-| Modifier/creer du code backend Python | **`python-dev`** + skills Python detectes (`tdd-workflow`, `python-patterns`) + conventions de test detectees |
-| Modifier/creer du code frontend | **`front-dev`** ou l'agent frontend detecte (`angular-front`, etc.) |
+| Modifier/creer du code backend .NET | **`dotnet-dev`** + skills `.NET` detectes (`tdd-workflow`, `dotnet-patterns`, `xunit-unit-testing`, `cqrs-feature`) |
+| Modifier/creer du code frontend Angular | **`angular-front`** + skills frontend detectes (`tdd-workflow`, `angular-patterns`, `ui-ux-front-saas`) |
+| Modifier/creer du code client MAUI | **`dotnet-dev`** + skills `.NET` detectes |
 | Debug runtime Aspire | **`aspire-debug`** (conditionnel) |
 | Creer ou soumettre une Pull Request | **`pr-manager`** |
 | Fusionner la branche main | **`merge-main`** |
@@ -197,16 +185,16 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
   Deleguer d'abord a `review-expert`, puis a `vibe-coding-refractaire` en seconde passe.
 
 - **Backend + Frontend ensemble** :
-  1. Generer le backend avec l'agent specialise de la stack detectee (`dotnet-dev` ou `python-dev`)
+  1. Generer le backend avec `dotnet-dev`
   2. Identifier les contrats modifies
-  3. Deleguer la partie frontend a l'agent frontend detecte
+  3. Deleguer la partie frontend web a `angular-front`
 
 ---
 
 ## Ce que cet agent NE fait PAS
 
-- Il ne genere **pas** de code backend directement (il delegue a `dotnet-dev` ou `python-dev` selon la stack)
-- Il ne genere **pas** de code frontend directement (il delegue a l'agent frontend)
+- Il ne genere **pas** de code backend directement (il delegue a `dotnet-dev`)
+- Il ne genere **pas** de code frontend directement (il delegue a `angular-front`)
 - Il ne cree **pas** de PR directement (il delegue a `pr-manager`)
 
 Son role est de **lire la memoire, analyser, charger les bons outils de connaissance, coordonner**.
