@@ -5,7 +5,8 @@
 ## Stack Snapshot
 
 - Open-source repository bootstrapped with GitNexus as the code graph engine
-- Backend: ASP.NET Core Web API on .NET 8 under `src/Backend/`
+- Backend: ASP.NET Core Web API on .NET 10 under `src/Backend/`
+- Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, SQL Server, and Azurite
 - Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
 - Web frontends: Angular 18 applications in `src/BackOffice/` and `src/Website/`
 - Native client: .NET MAUI 9 cash app in `src/MauiCashApp/`
@@ -43,6 +44,7 @@
 ## Commands To Remember
 
 - Backend build/test: `dotnet build .\src\Backend\Vole_Papillon_Damour.sln`; `dotnet test .\src\Backend\Vole_Papillon_Damour.sln`
+- Backend AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`
 - MAUI app: `dotnet build .\src\MauiCashApp\ShopAppVpd.sln`
 - GitNexus reindex: `npx gitnexus analyze`

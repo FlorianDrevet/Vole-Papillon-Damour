@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Vole_Papillon_Damour.Contracts</RootNamespace>
@@ -11,7 +11,7 @@
         <ProjectReference Include="..\Vole_Papillon_Damour.Domain\Vole_Papillon_Damour.Domain.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Http.Features" Version="6.0.0-preview.4.21253.5" />
-    </ItemGroup>
+        <ItemGroup>
+            <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        </ItemGroup>
 </Project>

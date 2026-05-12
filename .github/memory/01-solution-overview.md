@@ -10,7 +10,8 @@
 
 ## Runtime Surfaces
 
-- `src/Backend/` hosts the main .NET 8 solution and the layered backend projects.
+- `src/Backend/` hosts the main .NET 10 solution and the layered backend projects.
+- `src/Backend/Vole_Papillon_Damour.AppHost/` hosts the Aspire AppHost used for local orchestration of the API and web apps.
 - `src/BackOffice/` is the Angular admin application.
 - `src/Website/` is the Angular public website.
 - `src/MauiCashApp/` is the MAUI client that calls the deployed backend through Refit.
@@ -39,5 +40,6 @@ The backend and contracts expose features around:
 
 - The backend currently enables a permissive CORS policy for all origins.
 - Domain tests exist, but cross-layer automated coverage is still thin.
+- The backend projects remain free of `Aspire.*` packages; local orchestration lives only in the AppHost project.
 - No CI pipeline file was detected during bootstrap, so local validation commands matter.
 - GitNexus is the selected and documented code graph engine for this open-source repository.

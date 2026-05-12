@@ -16,6 +16,7 @@
 ## Configuration Sources
 
 - Backend runtime config lives in `appsettings.json`, `appsettings.Development.json`, and local secrets/connection strings.
+- The Aspire AppHost adds local launch settings for dashboard/resource service endpoints and injects backend connection strings for SQL Server, Azurite, Email, and OCR.
 - The backend README points to `dotnet user-secrets` for local secret storage.
 - `BackOffice` environment config includes `api_url`, `url_vpd_web_site`, and `time_numero_modal`.
 - `Website` environment config includes `api_url`.
@@ -24,6 +25,7 @@
 ## Build And Test Commands
 
 - Backend: `dotnet build .\src\Backend\Vole_Papillon_Damour.sln`; `dotnet test .\src\Backend\Vole_Papillon_Damour.sln`
+- Backend orchestration: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - BackOffice: `npm install`; `npm run start`; `npm run build`; `npm test`
 - Website: `npm install`; `npm run start`; `npm run build`; `npm test`
 - MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.sln`

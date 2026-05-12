@@ -26,11 +26,15 @@ namespace Vole_Papillon_Damour.Infrastructure;
 
 public static class DependencyInjection
 {
+    private const string AzureBlobStorageConnectionStringName = "AzureBlobStorageConnectionString";
+    private const string EmailServiceConnectionStringName = "EmailService";
+    private const string ProjectDatabaseConnectionStringName = "ProjectDatabase";
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         ConfigurationManager builderConfiguration)
     {
-        var connectionString = builderConfiguration.GetConnectionString("ProjectDatabase");
+        var connectionString = builderConfiguration.GetConnectionString(ProjectDatabaseConnectionStringName);
             
         services
             .AddAuth(builderConfiguration)
@@ -58,7 +62,16 @@ public static class DependencyInjection
         var ocrSettings = new OcrSettings();
         builderConfiguration.Bind(OcrSettings.SectionName, ocrSettings);
 
-        services.AddSingleton(new ImageAnalysisClient(new Uri(ocrSettings.VisionEndpoint),
+        var hasVisionKey = !string.IsNullOrWhiteSpace(ocrSettings.VisionKey);
+        var hasVisionEndpoint = Uri.TryCreate(ocrSettings.VisionEndpoint, UriKind.Absolute, out var visionEndpoint);
+
+        if (!hasVisionKey || !hasVisionEndpoint)
+        {
+            services.AddScoped<IOcrService, DisabledOcrService>();
+            return services;
+        }
+
+        services.AddSingleton(new ImageAnalysisClient(visionEndpoint,
             new AzureKeyCredential(ocrSettings.VisionKey)));
         services.AddScoped<IOcrService, OcrService>();
         
@@ -69,7 +82,15 @@ public static class DependencyInjection
         this IServiceCollection services,
         ConfigurationManager builderConfiguration)
     {
-        services.AddSingleton(new EmailClient(builderConfiguration.GetConnectionString("EmailService")));
+        var emailConnectionString = builderConfiguration.GetConnectionString(EmailServiceConnectionStringName);
+
+        if (string.IsNullOrWhiteSpace(emailConnectionString))
+        {
+            services.AddScoped<IEmailService, DisabledEmailService>();
+            return services;
+        }
+
+        services.AddSingleton(new EmailClient(emailConnectionString));
         services.AddScoped<IEmailService, EmailService>();
         
         return services;
@@ -93,7 +114,7 @@ public static class DependencyInjection
         services.AddAzureClients(clientBuilder =>
         {
             // Blob Service
-            string connectionString = builderConfiguration.GetConnectionString("AzureBlobStorageConnectionString") ?? string.Empty;
+            string connectionString = builderConfiguration.GetConnectionString(AzureBlobStorageConnectionStringName) ?? string.Empty;
             clientBuilder.AddBlobServiceClient(connectionString);
             clientBuilder.AddTableServiceClient(connectionString).WithName("MailingListStorage");
         });

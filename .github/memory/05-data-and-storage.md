@@ -29,8 +29,9 @@
 
 ## Notable Storage Detail
 
-- PostgreSQL packages exist in the Infrastructure project, but the active DI path currently uses SQL Server.
-- Do not assume PostgreSQL is live without checking runtime configuration first.
+- PostgreSQL packages were removed during the .NET 10 backend upgrade; the active DI path remains SQL Server.
+- The Aspire AppHost provisions local SQL Server and Azurite for development orchestration.
+- Email and OCR stay external services in local development; when their secrets are absent, Infrastructure now falls back to a no-op email service and a fail-on-use OCR service so the API can still boot.
 
 ## Storage Risk Zones
 
