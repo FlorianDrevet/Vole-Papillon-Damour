@@ -1,14 +1,17 @@
-import {Component, effect, input, Renderer2, signal} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
+import {Component, effect, inject, input, PLATFORM_ID, Renderer2, signal} from '@angular/core';
 import {NavigationItemInterface} from "../../../../shared/interfaces/navigationItem.interface";
 import {Router} from "@angular/router";
 
 @Component({
-    selector: 'app-navigation-mobile',
-    templateUrl: './navigation-mobile.component.html',
-    styleUrl: './navigation-mobile.component.scss',
-    standalone: false
+  selector: 'app-navigation-mobile',
+  templateUrl: './navigation-mobile.component.html',
+  styleUrl: './navigation-mobile.component.scss',
+  standalone: false
 })
 export class NavigationMobileComponent {
+  private readonly platformId = inject(PLATFORM_ID);
+
   Router!: Router
   NavigationItems = input.required<NavigationItemInterface[]>();
 
@@ -19,12 +22,16 @@ export class NavigationMobileComponent {
   subNavBefore = signal<(NavigationItemInterface[] | null)[]>([])
   titleBefore = signal<string[]>([])
 
-  constructor(private renderer: Renderer2, private router: Router) {
+  constructor(private readonly renderer: Renderer2, private readonly router: Router) {
     effect(() => {
+      if (!isPlatformBrowser(this.platformId)) {
+        return;
+      }
+
       if (this.isMobileNavigationOpen()) {
-        this.renderer.addClass(document.body, 'no-scroll');
+        this.renderer.addClass(globalThis.document.body, 'no-scroll');
       } else {
-        this.renderer.removeClass(document.body, 'no-scroll');
+        this.renderer.removeClass(globalThis.document.body, 'no-scroll');
         this.subNavigation.set(null);
       }
     });

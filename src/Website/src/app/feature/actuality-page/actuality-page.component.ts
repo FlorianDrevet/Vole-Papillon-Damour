@@ -1,10 +1,8 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, OnInit, signal} from '@angular/core';
 import {AxiosService} from "../../shared/services/axios.service";
 import {ActualityModel} from "../../shared/models/actuality.model";
 import {MethodEnum} from "../../shared/enums/method.enum";
 import { groupBy } from 'lodash';
-import {MatDialog} from "@angular/material/dialog";
-import {AddEmailDialogComponent} from "../../shared/components/dialogs/add-email-dialog/add-email-dialog.component";
 
 @Component({
     selector: 'app-actuality-page',
@@ -75,15 +73,6 @@ export class ActualityPageComponent implements OnInit{
     });
 
     return groupedArray;
-  }
-
-  readonly dialog = inject(MatDialog);
-  openDialogAddMailClicked(): void {
-    const dialogRef = this.dialog.open(AddEmailDialogComponent, {
-      "maxWidth": "100vw",
-      "width": "fit-content",
-      "height": "fit-content",
-    });
   }
 
 }

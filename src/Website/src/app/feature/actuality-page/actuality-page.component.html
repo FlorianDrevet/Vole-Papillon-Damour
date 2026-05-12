@@ -1,12 +1,9 @@
 <div class="flex flex-col p-5 lg:p-10 mb-10" >
-  <div class="relative w-full flex">
+  <div class="w-full flex">
     <div class="mb-10 lg:mt-5 flex flex-row ml-auto mr-auto items-center">
       <h1 class="text-primary-color text-6xl lg:text-8xl text-center">Toute l'actualité</h1>
       <img class="hidden lg:block h-[100px] ml-5" src="icons/newspaper-icon.svg">
     </div>
-    <app-button class="absolute right-10 top-10" (click)="openDialogAddMailClicked()">
-      <div class="flex flex-row"><img src="icons/cloche.png" height="35" width="35">L'actualité par mail !</div>
-    </app-button>
   </div>
 
   @if(isLoading()) {

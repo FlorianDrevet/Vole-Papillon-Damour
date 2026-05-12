@@ -10,7 +10,7 @@
 ## Frontend And Client Auth Touchpoints
 
 - `BackOffice` includes `@auth0/angular-jwt`, `ngx-cookie-service`, and an `AuthenticationGuard` for admin routes.
-- `Website` does not show the same auth guard pattern in its top-level routing.
+- `Website` does not show the same auth guard pattern in its top-level routing and now runs through Angular SSR with client hydration.
 - `MauiCashApp` currently configures a base API URL but its visible Refit surface is limited to product retrieval.
 
 ## Configuration Sources
@@ -27,11 +27,13 @@
 - Backend: `dotnet build .\src\Backend\Vole_Papillon_Damour.sln`; `dotnet test .\src\Backend\Vole_Papillon_Damour.sln`
 - Backend orchestration: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - BackOffice: `npm install`; `npm run start`; `npm run build`; `npm test`
-- Website: `npm install`; `npm run start`; `npm run build`; `npm test`
+- Website: `npm install`; `npm run start`; `npm run build`; `npm test`; `npm run serve:ssr:vole_papillon_damour_website`
 - MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.sln`
 
 ## Practical Warnings
 
 - Do not store secrets in memory files or commit local connection strings.
 - The Angular README files still look template-oriented; prefer `package.json`, environment files, and actual routing/services over README TODOs when you need the truth.
+- `BackOffice` currently has no Angular `*.spec.ts` files, so `npm test` fails at tsconfig discovery and build validation is the effective safety net until tests are added.
+- `Website` SSR route ownership lives in `src/app/app.routes.server.ts`; update that file when adding public static, SEO, or live routes.
 - No CI pipeline file was detected, so local validation remains part of normal workflow.

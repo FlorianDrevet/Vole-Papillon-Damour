@@ -1,4 +1,5 @@
-import {Injectable, input, OnDestroy, OnInit, signal} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
+import {Injectable, inject, OnDestroy, PLATFORM_ID, signal} from '@angular/core';
 import {VpdEventModel} from "../models/vpdEvent.model";
 import {environment} from "../../../environments/environment";
 
@@ -6,11 +7,16 @@ import {environment} from "../../../environments/environment";
   providedIn: 'root'
 })
 export class SseClientService implements OnDestroy{
+  private readonly platformId = inject(PLATFORM_ID);
 
   private eventSource: EventSource | undefined;
   eventAsso = signal<VpdEventModel | null>(null);
 
   init(id: string): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     if (this.eventSource !== undefined) {
       this.eventSource.close();
     }
@@ -34,6 +40,10 @@ export class SseClientService implements OnDestroy{
   }
 
   ngOnDestroy(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     this.eventSource?.close();
   }
 }

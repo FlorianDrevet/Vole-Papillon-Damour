@@ -8,7 +8,7 @@
 - Backend: ASP.NET Core Web API on .NET 10 under `src/Backend/`
 - Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, SQL Server, and Azurite
 - Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
-- Web frontends: Angular 18 applications in `src/BackOffice/` and `src/Website/`
+- Web frontends: Angular 21 applications in `src/BackOffice/` and `src/Website/`, with Angular SSR enabled on `Website`
 - Native client: .NET MAUI 9 cash app in `src/MauiCashApp/`
 - Tests: xUnit domain tests exist under `src/Backend/Vole_Papillon_Damour.Domain.tests/`
 - CI/CD: no GitHub Actions or Azure DevOps pipeline file detected at bootstrap time
@@ -46,6 +46,7 @@
 - Backend build/test: `dotnet build .\src\Backend\Vole_Papillon_Damour.sln`; `dotnet test .\src\Backend\Vole_Papillon_Damour.sln`
 - Backend AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`
+- Website SSR: `npm run serve:ssr:vole_papillon_damour_website` from `src/Website/`
 - MAUI app: `dotnet build .\src\MauiCashApp\ShopAppVpd.sln`
 - GitNexus reindex: `npx gitnexus analyze`
 

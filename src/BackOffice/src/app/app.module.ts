@@ -1,4 +1,4 @@
-import {NgModule, provideExperimentalZonelessChangeDetection} from '@angular/core';
+import {NgModule, provideZonelessChangeDetection} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 
 import {AppRoutingModule} from './app-routing.module';
@@ -19,7 +19,7 @@ import {FeatureModule} from "./feature/feature.module";
   ],
   providers: [
     provideAnimationsAsync(),
-    provideExperimentalZonelessChangeDetection()
+    provideZonelessChangeDetection()
   ],
   bootstrap: [AppComponent]
 })

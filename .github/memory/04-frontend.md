@@ -2,10 +2,10 @@
 
 ## Angular Applications
 
-Both web apps are Angular 18 projects with Angular Material and Tailwind in the toolchain.
+Both web apps are Angular 21 projects with Angular Material and Tailwind in the toolchain.
 
-- `src/BackOffice/` - admin UI, includes `@auth0/angular-jwt` and `ngx-cookie-service`
-- `src/Website/` - public UI for the association website
+- `src/BackOffice/` - admin UI, includes `@auth0/angular-jwt`, `ngx-cookie-service`, and `@dhutaryan/ngx-mat-timepicker`
+- `src/Website/` - public UI for the association website, now built with Angular SSR and hydration support
 
 ## App Structure
 
@@ -25,13 +25,21 @@ Verified feature roots:
 - Preserve the split between admin and public concerns.
 - Reuse the HTTP/data access pattern already present in the targeted app instead of introducing a second style in the same slice.
 - Keep shared models typed and aligned with backend contracts.
+- Both apps currently keep zoneless change detection via `provideZonelessChangeDetection()`.
 - Validate responsive behavior on desktop and mobile when UI changes.
+
+## Website Rendering Modes
+
+- `src/Website/` uses Angular SSR with `provideClientHydration(withEventReplay())` in `AppModule` and render-mode mapping in `src/app/app.routes.server.ts`.
+- Static association and Maxence leaf pages are prerendered.
+- Content-driven routes such as `accueil`, `toute-l-actualite`, `actualite/:id`, `evenement`, `evenement/all`, and `evenement/:id` are server-rendered.
+- The live route `evenement/:id/tableau` stays client-rendered because it depends on `EventSource` updates.
 
 ## Data Access And Live Updates
 
 - Both Angular apps centralize HTTP base URL setup through `shared/services/axios.service.ts` with `axios.defaults.baseURL = environment.api_url`.
 - `BackOffice` uses an `AuthenticationGuard` to protect its routed admin screens.
-- `Website` has an `sse-client.service` that subscribes to `/asso-events/{id}/tableau/sse` for live event updates.
+- `Website` has an `sse-client.service` that subscribes to `/asso-events/{id}/tableau/sse` for live event updates and now guards `EventSource` usage behind `isPlatformBrowser()` for SSR safety.
 
 ## MAUI Client
 
@@ -53,4 +61,5 @@ Verified feature roots:
 ## Validation Commands
 
 - `npm run start`, `npm run build`, and `npm test` in each Angular app
+- `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.sln` for the MAUI client

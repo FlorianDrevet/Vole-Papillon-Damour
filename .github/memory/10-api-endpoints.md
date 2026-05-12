@@ -29,12 +29,11 @@
 - `POST/DELETE /asso-events/{assoId}/parties/{partieId}/partie-lines...` - admin-protected line management
 - `POST/PUT/DELETE /asso-events/{assoId}/parties/{partieId}/partie-lines/{partieLineId}/lots...` - admin-protected lot management
 
-## Product, Order, Mailing, And OCR Endpoints
+## Product, Order, And OCR Endpoints
 
 - `GET /product` - public product listing; consumed by the MAUI Refit client
 - `POST /product`, `PUT /product/{id}`, `POST /product/promotion`, `DELETE /product/promotion` - admin-protected product writes
 - `POST /orders`, `GET /orders` - admin-protected order routes
-- `POST /mailing-list`, `DELETE /mailing-list/{email}` - public mailing-list subscription management
 - `POST /bingo-card` - public OCR analysis route using form upload
 
 ## Current Auth Asymmetries To Recheck Before Editing

@@ -1,5 +1,5 @@
-import {NgModule, provideExperimentalZonelessChangeDetection} from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import {NgModule, provideZonelessChangeDetection} from '@angular/core';
+import { BrowserModule, provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -20,7 +20,8 @@ import {FeatureModule} from "./feature/feature.module";
   ],
   providers: [
     provideAnimationsAsync(),
-    provideExperimentalZonelessChangeDetection()
+    provideZonelessChangeDetection(),
+    provideClientHydration(withEventReplay())
   ],
   bootstrap: [AppComponent]
 })

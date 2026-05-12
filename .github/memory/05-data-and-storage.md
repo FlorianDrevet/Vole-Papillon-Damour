@@ -9,9 +9,7 @@
 
 ## External Services
 
-- Azure Blob Storage and Azure Table Storage are configured from `AzureBlobStorageConnectionString`.
-- Azure Table Storage is named `MailingListStorage` in DI.
-- Azure Communication Email is configured from the `EmailService` connection string.
+- Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
 - Azure AI Vision OCR is configured from `OcrSettings`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
 - Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, and `product-images`.
@@ -31,10 +29,11 @@
 
 - PostgreSQL packages were removed during the .NET 10 backend upgrade; the active DI path remains SQL Server.
 - The Aspire AppHost provisions local SQL Server and Azurite for development orchestration.
-- Email and OCR stay external services in local development; when their secrets are absent, Infrastructure now falls back to a no-op email service and a fail-on-use OCR service so the API can still boot.
+- The mailing-list subscription flow and Azure Communication Email integration were removed; actuality creation no longer broadcasts emails.
+- OCR stays an external service in local development; when its secrets are absent, Infrastructure falls back to a fail-on-use OCR service so the API can still boot.
 
 ## Storage Risk Zones
 
 - Repository changes can impact multiple feature slices at once.
 - Blob/table naming and storage clients are centralized in Infrastructure.
-- Mailing list, OCR, and media flows depend on external Azure services and should be validated carefully.
+- OCR and media flows depend on external Azure services and should be validated carefully.
