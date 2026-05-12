@@ -3,9 +3,10 @@ import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.ser
 import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 
 @Component({
-  selector: 'app-vpd-events',
-  templateUrl: './vpd-events-page.component.html',
-  styleUrl: './vpd-events-page.component.scss'
+    selector: 'app-vpd-events',
+    templateUrl: './vpd-events-page.component.html',
+    styleUrl: './vpd-events-page.component.scss',
+    standalone: false
 })
 export class VpdEventsPageComponent implements OnInit{
   constructor(private eventFacade: VpdEventsFacadeService) {

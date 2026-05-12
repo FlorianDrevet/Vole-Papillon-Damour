@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-go-up',
-  templateUrl: './go-up.component.html',
-  styleUrl: './go-up.component.scss'
+    selector: 'app-go-up',
+    templateUrl: './go-up.component.html',
+    styleUrl: './go-up.component.scss',
+    standalone: false
 })
 export class GoUpComponent {
   scrollToTop(): void {

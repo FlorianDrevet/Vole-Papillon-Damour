@@ -7,9 +7,10 @@ import {SseClientService} from "../../shared/clients/sse-client.service";
 import {NumberLineEnum} from "../../shared/enums/numberLine.enum";
 
 @Component({
-  selector: 'app-tableau',
-  templateUrl: './tableau.component.html',
-  styleUrl: './tableau.component.scss'
+    selector: 'app-tableau',
+    templateUrl: './tableau.component.html',
+    styleUrl: './tableau.component.scss',
+    standalone: false
 })
 export class TableauComponent implements OnInit {
   sseClient = inject(SseClientService);

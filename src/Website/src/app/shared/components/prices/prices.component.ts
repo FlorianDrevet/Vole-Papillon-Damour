@@ -5,9 +5,10 @@ import {ProductModel} from "../../models/product.model";
 import {ProductCategoryEnum} from "../../enums/productCategory.enum";
 
 @Component({
-  selector: 'app-prices',
-  templateUrl: './prices.component.html',
-  styleUrl: './prices.component.scss'
+    selector: 'app-prices',
+    templateUrl: './prices.component.html',
+    styleUrl: './prices.component.scss',
+    standalone: false
 })
 export class PricesComponent implements OnInit {
   productFacade = inject(ProductFacadeService);

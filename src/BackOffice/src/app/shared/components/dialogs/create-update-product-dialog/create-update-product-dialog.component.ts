@@ -13,9 +13,10 @@ import {ImageUtils} from "../../../utils/image.utils";
 import {ProductCategoryEnum} from "../../../enums/productCategory.enum";
 
 @Component({
-  selector: 'app-create-update-product-dialog',
-  templateUrl: './create-update-product-dialog.component.html',
-  styleUrl: './create-update-product-dialog.component.scss'
+    selector: 'app-create-update-product-dialog',
+    templateUrl: './create-update-product-dialog.component.html',
+    styleUrl: './create-update-product-dialog.component.scss',
+    standalone: false
 })
 export class CreateUpdateProductDialogComponent implements OnInit {
   newProductForm: FormGroup;

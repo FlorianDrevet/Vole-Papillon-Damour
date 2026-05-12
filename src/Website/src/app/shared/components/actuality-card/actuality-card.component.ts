@@ -2,9 +2,10 @@ import {AfterViewInit, Component, ElementRef, inject, input, Renderer2, ViewChil
 import {ActualityModel} from "../../models/actuality.model";
 
 @Component({
-  selector: 'app-actuality-card',
-  templateUrl: './actuality-card.component.html',
-  styleUrl: './actuality-card.component.scss'
+    selector: 'app-actuality-card',
+    templateUrl: './actuality-card.component.html',
+    styleUrl: './actuality-card.component.scss',
+    standalone: false
 })
 export class ActualityCardComponent implements AfterViewInit{
   ActualityModel = input.required<ActualityModel>()

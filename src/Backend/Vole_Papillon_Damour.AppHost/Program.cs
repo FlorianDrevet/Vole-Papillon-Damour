@@ -4,8 +4,6 @@ const string ApiResourceName = "api";
 const string AzureBlobStorageConnectionStringEnvironmentName = "ConnectionStrings__AzureBlobStorageConnectionString";
 const string BackOfficeResourceName = "backoffice";
 const string DefaultHttpEndpointName = "http";
-const string EmailServiceConnectionStringName = "EmailService";
-const string EmailServiceEnvironmentName = "ConnectionStrings__EmailService";
 const string OcrVisionEndpointConfigurationName = "OcrSettings:VisionEndpoint";
 const string OcrVisionEndpointEnvironmentName = "OcrSettings__VisionEndpoint";
 const string OcrVisionKeyConfigurationName = "OcrSettings:VisionKey";
@@ -32,7 +30,6 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WaitFor(projectDatabase)
     .WaitFor(storage)
     .WithEnvironment(AzureBlobStorageConnectionStringEnvironmentName, UseDevelopmentStorageConnectionString)
-    .WithEnvironment(EmailServiceEnvironmentName, builder.Configuration.GetConnectionString(EmailServiceConnectionStringName) ?? string.Empty)
     .WithEnvironment(OcrVisionEndpointEnvironmentName, builder.Configuration[OcrVisionEndpointConfigurationName] ?? string.Empty)
     .WithEnvironment(OcrVisionKeyEnvironmentName, builder.Configuration[OcrVisionKeyConfigurationName] ?? string.Empty)
     .WithExternalHttpEndpoints();

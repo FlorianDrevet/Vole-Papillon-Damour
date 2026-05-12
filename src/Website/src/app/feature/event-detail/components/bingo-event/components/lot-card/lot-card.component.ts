@@ -4,9 +4,10 @@ import {before} from "lodash";
 import {NumberLineEnum} from "../../../../../../shared/enums/numberLine.enum";
 
 @Component({
-  selector: 'app-lot-card',
-  templateUrl: './lot-card.component.html',
-  styleUrl: './lot-card.component.scss'
+    selector: 'app-lot-card',
+    templateUrl: './lot-card.component.html',
+    styleUrl: './lot-card.component.scss',
+    standalone: false
 })
 export class LotCardComponent {
   LinePartie = input.required<VpdEventPartieLineModel>()

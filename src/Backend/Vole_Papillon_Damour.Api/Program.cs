@@ -72,6 +72,5 @@ app.UseProductController();
 app.UseOrdersController();
 app.UseEventsController();
 app.UseBingoCardController();
-app.UseMailingListController();
 
 app.Run();

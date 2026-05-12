@@ -4,9 +4,10 @@ import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum
 import {ProductSectionEnum} from "../../../../shared/enums/productSection.enum";
 
 @Component({
-  selector: 'app-books-event',
-  templateUrl: './books-event.component.html',
-  styleUrl: './books-event.component.scss'
+    selector: 'app-books-event',
+    templateUrl: './books-event.component.html',
+    styleUrl: './books-event.component.scss',
+    standalone: false
 })
 export class BooksEventComponent {
 

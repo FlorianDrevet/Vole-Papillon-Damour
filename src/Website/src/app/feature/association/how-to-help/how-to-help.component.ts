@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-how-to-help',
-  templateUrl: './how-to-help.component.html',
-  styleUrl: './how-to-help.component.scss'
+    selector: 'app-how-to-help',
+    templateUrl: './how-to-help.component.html',
+    styleUrl: './how-to-help.component.scss',
+    standalone: false
 })
 export class HowToHelpComponent {
   readonly listPictures: string[] = [

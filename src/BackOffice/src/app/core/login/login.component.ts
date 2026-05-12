@@ -7,9 +7,10 @@ import {AuthenticationFacadeService} from "../../shared/facades/authentication.f
 import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+    selector: 'app-login',
+    templateUrl: './login.component.html',
+    styleUrl: './login.component.scss',
+    standalone: false
 })
 export class LoginComponent {
   loginForm: FormGroup;

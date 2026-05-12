@@ -3,9 +3,10 @@ import {Router} from "@angular/router";
 import {NavigationItemInterface} from "../../../shared/interfaces/navigationItem.interface";
 
 @Component({
-  selector: 'app-navigation',
-  templateUrl: './navigation.component.html',
-  styleUrl: './navigation.component.scss'
+    selector: 'app-navigation',
+    templateUrl: './navigation.component.html',
+    styleUrl: './navigation.component.scss',
+    standalone: false
 })
 export class NavigationComponent implements OnInit {
   router = inject(Router)

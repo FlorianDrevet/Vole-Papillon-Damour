@@ -3,9 +3,10 @@ import {environment} from "../../../../environments/environment";
 import {Router} from "@angular/router";
 
 @Component({
-  selector: 'app-footer',
-  templateUrl: './footer.component.html',
-  styleUrl: './footer.component.scss'
+    selector: 'app-footer',
+    templateUrl: './footer.component.html',
+    styleUrl: './footer.component.scss',
+    standalone: false
 })
 export class FooterComponent {
   router = inject(Router)

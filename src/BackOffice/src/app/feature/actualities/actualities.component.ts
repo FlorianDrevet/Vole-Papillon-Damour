@@ -12,7 +12,8 @@ import {
 @Component({
     selector: 'app-actualities',
     templateUrl: './actualities.component.html',
-    styleUrl: './actualities.component.scss'
+    styleUrl: './actualities.component.scss',
+    standalone: false
 })
 export class ActualitiesComponent implements OnInit {
     actualities = signal<ActualityModel[]>([])

@@ -3,9 +3,10 @@ import {VpdEventModel} from "../../../../../../shared/models/vpdEvent.model";
 import {LotoFacadeService} from "../../../../../../shared/facades/loto.facade.service";
 
 @Component({
-  selector: 'app-number',
-  templateUrl: './number.component.html',
-  styleUrl: './number.component.scss'
+    selector: 'app-number',
+    templateUrl: './number.component.html',
+    styleUrl: './number.component.scss',
+    standalone: false
 })
 export class NumberComponent {
   @Input() public value: number = 0;

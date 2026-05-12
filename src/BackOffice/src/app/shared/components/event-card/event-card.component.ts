@@ -10,9 +10,10 @@ import {
 } from "../dialogs/create-update-event-dialog/create-update-event-dialog.component";
 
 @Component({
-  selector: 'app-event-card',
-  templateUrl: './event-card.component.html',
-  styleUrl: './event-card.component.scss'
+    selector: 'app-event-card',
+    templateUrl: './event-card.component.html',
+    styleUrl: './event-card.component.scss',
+    standalone: false
 })
 export class EventCardComponent {
   eventDeleted = output<VpdEventModel>()

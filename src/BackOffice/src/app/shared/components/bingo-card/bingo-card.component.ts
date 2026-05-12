@@ -2,9 +2,10 @@ import {Component, input} from '@angular/core';
 import {BingoCardInterface} from "../../interfaces/bingoCard.interface";
 
 @Component({
-  selector: 'app-bingo-card',
-  templateUrl: './bingo-card.component.html',
-  styleUrl: './bingo-card.component.scss'
+    selector: 'app-bingo-card',
+    templateUrl: './bingo-card.component.html',
+    styleUrl: './bingo-card.component.scss',
+    standalone: false
 })
 export class BingoCardComponent {
   public bingoCard = input.required<BingoCardInterface>();

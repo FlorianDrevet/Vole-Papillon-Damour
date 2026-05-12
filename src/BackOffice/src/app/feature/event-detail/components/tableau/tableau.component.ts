@@ -8,9 +8,10 @@ import {PartieTypeEnum} from "../../../../shared/enums/partieType.enum";
 import {NumberLineEnum} from "../../../../shared/enums/numberLine.enum";
 
 @Component({
-  selector: 'app-tableau',
-  templateUrl: './tableau.component.html',
-  styleUrl: './tableau.component.scss'
+    selector: 'app-tableau',
+    templateUrl: './tableau.component.html',
+    styleUrl: './tableau.component.scss',
+    standalone: false
 })
 export class TableauComponent implements OnInit {
   _indexPartie = computed(() => {

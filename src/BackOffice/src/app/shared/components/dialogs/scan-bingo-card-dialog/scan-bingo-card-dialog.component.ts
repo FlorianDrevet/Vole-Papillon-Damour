@@ -9,9 +9,10 @@ import {BingoCardFacadeService} from "../../../facades/bingo-card.facade.service
 import {BingoCardInterface} from "../../../interfaces/bingoCard.interface";
 
 @Component({
-  selector: 'app-create-update-event-dialog',
-  templateUrl: './scan-bingo-card-dialog.component.html',
-  styleUrl: './scan-bingo-card-dialog.component.scss'
+    selector: 'app-create-update-event-dialog',
+    templateUrl: './scan-bingo-card-dialog.component.html',
+    styleUrl: './scan-bingo-card-dialog.component.scss',
+    standalone: false
 })
 export class ScanBingoCardDialogComponent implements OnInit {
   newEventForm: FormGroup;

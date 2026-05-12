@@ -11,9 +11,10 @@ import {VpdEventEnum} from "../../../enums/vpdEvent.enum";
 import {MyDate} from "../../../extensions/MyDate";
 
 @Component({
-  selector: 'app-create-update-event-dialog',
-  templateUrl: './create-update-event-dialog.component.html',
-  styleUrl: './create-update-event-dialog.component.scss'
+    selector: 'app-create-update-event-dialog',
+    templateUrl: './create-update-event-dialog.component.html',
+    styleUrl: './create-update-event-dialog.component.scss',
+    standalone: false
 })
 export class CreateUpdateEventDialogComponent implements OnInit {
   newEventForm: FormGroup;

@@ -7,9 +7,10 @@ import {MatDialog} from "@angular/material/dialog";
 import {AddEmailDialogComponent} from "../../shared/components/dialogs/add-email-dialog/add-email-dialog.component";
 
 @Component({
-  selector: 'app-actuality-page',
-  templateUrl: './actuality-page.component.html',
-  styleUrl: './actuality-page.component.scss'
+    selector: 'app-actuality-page',
+    templateUrl: './actuality-page.component.html',
+    styleUrl: './actuality-page.component.scss',
+    standalone: false
 })
 export class ActualityPageComponent implements OnInit{
   actualities = signal<ActualityModel[]>([])

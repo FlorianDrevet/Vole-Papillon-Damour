@@ -4,9 +4,10 @@ import {compareNumberLines} from "../../../../../../shared/enums/numberLine.enum
 import {PartieTypeEnum} from "../../../../../../shared/enums/partieType.enum";
 
 @Component({
-  selector: 'app-partie-card',
-  templateUrl: './partie-card.component.html',
-  styleUrl: './partie-card.component.scss'
+    selector: 'app-partie-card',
+    templateUrl: './partie-card.component.html',
+    styleUrl: './partie-card.component.scss',
+    standalone: false
 })
 export class PartieCardComponent {
   Partie = input.required<VpdEventPartieModel>()

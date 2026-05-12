@@ -2,9 +2,10 @@ import {Component, input} from '@angular/core';
 import {BackgroundColorEnum} from '../../enums/backgroundColor.enum';
 
 @Component({
-  selector: 'app-vpd-image',
-  templateUrl: './vpd-image.component.html',
-  styleUrl: './vpd-image.component.scss'
+    selector: 'app-vpd-image',
+    templateUrl: './vpd-image.component.html',
+    styleUrl: './vpd-image.component.scss',
+    standalone: false
 })
 export class VpdImageComponent {
   height = input<number>();

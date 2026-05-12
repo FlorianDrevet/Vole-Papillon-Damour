@@ -2,9 +2,10 @@ import {Component, Input} from '@angular/core';
 import {Router} from "@angular/router";
 
 @Component({
-  selector: 'app-button-login',
-  templateUrl: './button-login.component.html',
-  styleUrl: './button-login.component.scss'
+    selector: 'app-button-login',
+    templateUrl: './button-login.component.html',
+    styleUrl: './button-login.component.scss',
+    standalone: false
 })
 export class ButtonLoginComponent {
   @Input() routerUrl: string | null = null;

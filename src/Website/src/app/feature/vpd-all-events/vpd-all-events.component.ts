@@ -4,9 +4,10 @@ import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 
 @Component({
-  selector: 'app-vpd-events',
-  templateUrl: './vpd-all-events.component.html',
-  styleUrl: './vpd-all-events.component.scss'
+    selector: 'app-vpd-events',
+    templateUrl: './vpd-all-events.component.html',
+    styleUrl: './vpd-all-events.component.scss',
+    standalone: false
 })
 export class VpdAllEventsComponent implements OnInit{
   private readonly vpdEventsFacade = inject(VpdEventsFacadeService);

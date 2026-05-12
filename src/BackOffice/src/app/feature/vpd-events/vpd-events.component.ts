@@ -11,9 +11,10 @@ import {
 } from "../../shared/components/dialogs/scan-bingo-card-dialog/scan-bingo-card-dialog.component";
 
 @Component({
-  selector: 'app-vpd-events',
-  templateUrl: './vpd-events.component.html',
-  styleUrl: './vpd-events.component.scss'
+    selector: 'app-vpd-events',
+    templateUrl: './vpd-events.component.html',
+    styleUrl: './vpd-events.component.scss',
+    standalone: false
 })
 export class VpdEventsComponent implements OnInit{
   private readonly vpdEventsFacade = inject(VpdEventsFacadeService);

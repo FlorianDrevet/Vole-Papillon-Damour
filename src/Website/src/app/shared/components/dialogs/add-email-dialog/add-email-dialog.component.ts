@@ -5,9 +5,10 @@ import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
-  selector: 'app-add-email-dialog',
-  templateUrl: './add-email-dialog.component.html',
-  styleUrl: './add-email-dialog.component.scss'
+    selector: 'app-add-email-dialog',
+    templateUrl: './add-email-dialog.component.html',
+    styleUrl: './add-email-dialog.component.scss',
+    standalone: false
 })
 export class AddEmailDialogComponent {
   readonly dialogRef = inject(MatDialogRef<AddEmailDialogComponent>);

@@ -2,7 +2,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 import {NumberLineEnum} from "../enums/numberLine.enum";
 
 @Pipe({
-  name: 'lineNumberTitle'
+    name: 'lineNumberTitle',
+    standalone: false
 })
 export class LineNumberTitlePipe implements PipeTransform {
 

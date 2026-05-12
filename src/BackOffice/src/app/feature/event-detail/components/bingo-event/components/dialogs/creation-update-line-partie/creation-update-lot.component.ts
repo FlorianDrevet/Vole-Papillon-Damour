@@ -19,9 +19,10 @@ import {FileUploadInterface} from "../../../../../../../shared/interfaces/fileUp
 import {ImageUtils} from "../../../../../../../shared/utils/image.utils";
 
 @Component({
-  selector: 'app-creation-update-line-partie',
-  templateUrl: './creation-update-lot.component.html',
-  styleUrl: './creation-update-lot.component.scss'
+    selector: 'app-creation-update-line-partie',
+    templateUrl: './creation-update-lot.component.html',
+    styleUrl: './creation-update-lot.component.scss',
+    standalone: false
 })
 export class CreationUpdateLotComponent {
   newLotForm: FormGroup;

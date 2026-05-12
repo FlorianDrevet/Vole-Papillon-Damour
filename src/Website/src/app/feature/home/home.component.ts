@@ -8,9 +8,10 @@ import {MethodEnum} from "../../shared/enums/method.enum";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html',
-  styleUrl: './home.component.scss'
+    selector: 'app-home',
+    templateUrl: './home.component.html',
+    styleUrl: './home.component.scss',
+    standalone: false
 })
 export class HomeComponent implements OnInit{
   //TODO

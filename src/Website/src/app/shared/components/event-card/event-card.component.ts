@@ -3,9 +3,10 @@ import {VpdEventModel} from "../../models/vpdEvent.model";
 import {VpdEventEnum} from "../../enums/vpdEvent.enum";
 
 @Component({
-  selector: 'app-event-card',
-  templateUrl: './event-card.component.html',
-  styleUrl: './event-card.component.scss'
+    selector: 'app-event-card',
+    templateUrl: './event-card.component.html',
+    styleUrl: './event-card.component.scss',
+    standalone: false
 })
 export class EventCardComponent {
   VpdEvent = input.required<VpdEventModel>()

@@ -6,7 +6,8 @@ import {ActualityModel} from "../../shared/models/actuality.model";
 @Component({
     selector: 'app-actuality-detail',
     templateUrl: './actuality-detail.component.html',
-    styleUrl: './actuality-detail.component.scss'
+    styleUrl: './actuality-detail.component.scss',
+    standalone: false
 })
 export class ActualityDetailComponent implements OnInit {
 

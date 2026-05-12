@@ -2,9 +2,10 @@ import {Component, EventEmitter, inject, Input, Output} from '@angular/core';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 
 @Component({
-  selector: 'app-number',
-  templateUrl: './number.component.html',
-  styleUrl: './number.component.scss'
+    selector: 'app-number',
+    templateUrl: './number.component.html',
+    styleUrl: './number.component.scss',
+    standalone: false
 })
 export class NumberComponent {
   @Input() public value: number = 0;

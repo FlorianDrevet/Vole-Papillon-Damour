@@ -5,9 +5,10 @@ import {ConfirmDeletionInterface} from "../../../interfaces/confirmDeletion.inte
 import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
-  selector: 'app-confirmation-dialog',
-  templateUrl: './confirmation-dialog.component.html',
-  styleUrl: './confirmation-dialog.component.scss'
+    selector: 'app-confirmation-dialog',
+    templateUrl: './confirmation-dialog.component.html',
+    styleUrl: './confirmation-dialog.component.scss',
+    standalone: false
 })
 export class ConfirmationDialogComponent {
   readonly dialogRef = inject(MatDialogRef<ConfirmationDialogComponent>);

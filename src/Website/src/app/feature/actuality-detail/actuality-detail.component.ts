@@ -5,9 +5,10 @@ import {ActualityModel} from "../../shared/models/actuality.model";
 import {ImageOrientationEnum} from "../../shared/enums/imageOrientation.enum";
 
 @Component({
-  selector: 'app-actuality-detail',
-  templateUrl: './actuality-detail.component.html',
-  styleUrl: './actuality-detail.component.scss'
+    selector: 'app-actuality-detail',
+    templateUrl: './actuality-detail.component.html',
+    styleUrl: './actuality-detail.component.scss',
+    standalone: false
 })
 export class ActualityDetailComponent implements OnInit{
 

@@ -3,9 +3,10 @@ import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
 import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum";
 
 @Component({
-  selector: 'app-books-event',
-  templateUrl: './books-event.component.html',
-  styleUrl: './books-event.component.scss'
+    selector: 'app-books-event',
+    templateUrl: './books-event.component.html',
+    styleUrl: './books-event.component.scss',
+    standalone: false
 })
 export class BooksEventComponent {
 

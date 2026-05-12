@@ -11,7 +11,7 @@ using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Events.Commands.CreateEvent;
 
-public class CreateEventCommandHandler(IEventRepository eventRepository, IBlobService blobService, IMapper mapper, IEmailService emailService)
+public class CreateEventCommandHandler(IEventRepository eventRepository, IBlobService blobService, IMapper mapper)
     : IRequestHandler<CreateEventCommand, ErrorOr<AssoEventResult>>
 {
     public async Task<ErrorOr<AssoEventResult>> Handle(CreateEventCommand command, CancellationToken cancellationToken)
@@ -63,11 +63,7 @@ public class CreateEventCommandHandler(IEventRepository eventRepository, IBlobSe
             parties,
             command.Description
         );
-        
-        /*
-        await emailService.SendEmailToMailingListAsync("Nouvel événement", 
-            $"<h1>{events.Name}</h1><p>{events.Description}</p>", cancellationToken);
-        */
+
         return mapper.Map<AssoEventResult>(await eventRepository.AddAsync(events));
     }
 }

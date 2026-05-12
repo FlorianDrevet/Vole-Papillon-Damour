@@ -3,9 +3,10 @@ import {NavigationItemInterface} from "../../../../shared/interfaces/navigationI
 import {Router} from "@angular/router";
 
 @Component({
-  selector: 'app-navigation-mobile',
-  templateUrl: './navigation-mobile.component.html',
-  styleUrl: './navigation-mobile.component.scss'
+    selector: 'app-navigation-mobile',
+    templateUrl: './navigation-mobile.component.html',
+    styleUrl: './navigation-mobile.component.scss',
+    standalone: false
 })
 export class NavigationMobileComponent {
   Router!: Router

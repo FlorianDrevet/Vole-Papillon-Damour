@@ -4,9 +4,10 @@ import {AxiosService} from "../../../../shared/services/axios.service";
 import {MethodEnum} from "../../../../shared/enums/method.enum";
 
 @Component({
-  selector: 'app-actuality',
-  templateUrl: './actuality.component.html',
-  styleUrl: './actuality.component.scss'
+    selector: 'app-actuality',
+    templateUrl: './actuality.component.html',
+    styleUrl: './actuality.component.scss',
+    standalone: false
 })
 export class ActualityComponent implements OnInit{
 

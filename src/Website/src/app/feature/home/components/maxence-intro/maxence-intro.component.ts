@@ -4,9 +4,10 @@ import {ImageOrientationEnum} from "../../../../shared/enums/imageOrientation.en
 import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum";
 
 @Component({
-  selector: 'app-maxence-intro',
-  templateUrl: './maxence-intro.component.html',
-  styleUrl: './maxence-intro.component.scss'
+    selector: 'app-maxence-intro',
+    templateUrl: './maxence-intro.component.html',
+    styleUrl: './maxence-intro.component.scss',
+    standalone: false
 })
 export class MaxenceIntroComponent {
 

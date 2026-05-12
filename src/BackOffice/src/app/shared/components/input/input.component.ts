@@ -2,9 +2,10 @@ import {Component, input} from '@angular/core';
 import {FormGroup} from "@angular/forms";
 
 @Component({
-  selector: 'app-input',
-  templateUrl: './input.component.html',
-  styleUrl: './input.component.scss'
+    selector: 'app-input',
+    templateUrl: './input.component.html',
+    styleUrl: './input.component.scss',
+    standalone: false
 })
 export class InputComponent {
   icon = input<string[]>([]);

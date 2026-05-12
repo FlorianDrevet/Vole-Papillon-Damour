@@ -3,9 +3,10 @@ import {Router} from "@angular/router";
 import {rule} from "postcss";
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.scss',
+    standalone: false
 })
 export class AppComponent {
   title = 'Vole Papillon D\'amour';

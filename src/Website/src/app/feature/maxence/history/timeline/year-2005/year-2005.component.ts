@@ -3,9 +3,10 @@ import {BackgroundColorEnum} from "../../../../../shared/enums/backgroundColor.e
 import {ImageOrientationEnum} from "../../../../../shared/enums/imageOrientation.enum";
 
 @Component({
-  selector: 'app-year-2005',
-  templateUrl: './year-2005.component.html',
-  styleUrl: './year-2005.component.scss'
+    selector: 'app-year-2005',
+    templateUrl: './year-2005.component.html',
+    styleUrl: './year-2005.component.scss',
+    standalone: false
 })
 export class Year2005Component {
 

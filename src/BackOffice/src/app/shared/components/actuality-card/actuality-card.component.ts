@@ -9,9 +9,10 @@ import {ActualityFacadeService} from "../../facades/actuality.facade.service";
 import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
-  selector: 'app-actuality-card',
-  templateUrl: './actuality-card.component.html',
-  styleUrl: './actuality-card.component.scss'
+    selector: 'app-actuality-card',
+    templateUrl: './actuality-card.component.html',
+    styleUrl: './actuality-card.component.scss',
+    standalone: false
 })
 export class ActualityCardComponent implements AfterViewInit {
   actualityDeleted = output<string>()

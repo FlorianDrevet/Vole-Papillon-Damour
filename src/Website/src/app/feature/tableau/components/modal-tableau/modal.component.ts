@@ -1,9 +1,10 @@
 import {AfterViewInit, Component, EventEmitter, Input, Output} from '@angular/core';
 
 @Component({
-  selector: 'app-modal',
-  templateUrl: './modal.component.html',
-  styleUrl: './modal.component.scss'
+    selector: 'app-modal',
+    templateUrl: './modal.component.html',
+    styleUrl: './modal.component.scss',
+    standalone: false
 })
 export class ModalComponent implements AfterViewInit {
   @Input() public showModal = false;

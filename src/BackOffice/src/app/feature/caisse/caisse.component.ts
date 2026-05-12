@@ -8,9 +8,10 @@ import {ProductModel} from "../../shared/models/product.model";
 import {ProductCategoryEnum} from "../../shared/enums/productCategory.enum";
 
 @Component({
-  selector: 'app-caisse',
-  templateUrl: './caisse.component.html',
-  styleUrl: './caisse.component.scss'
+    selector: 'app-caisse',
+    templateUrl: './caisse.component.html',
+    styleUrl: './caisse.component.scss',
+    standalone: false
 })
 export class CaisseComponent {
   filter = signal(ProductSectionEnum.Bar);

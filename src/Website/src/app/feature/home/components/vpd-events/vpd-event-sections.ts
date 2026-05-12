@@ -5,9 +5,10 @@ import {AxiosService} from "../../../../shared/services/axios.service";
 import {MethodEnum} from "../../../../shared/enums/method.enum";
 
 @Component({
-  selector: 'app-vpd-events-section',
-  templateUrl: './vpd-event-sections.html',
-  styleUrl: './vpd-event-sections.scss'
+    selector: 'app-vpd-events-section',
+    templateUrl: './vpd-event-sections.html',
+    styleUrl: './vpd-event-sections.scss',
+    standalone: false
 })
 export class VpdEventSections implements OnInit {
   lotoCard = signal<VpdEventModel | null>(null)

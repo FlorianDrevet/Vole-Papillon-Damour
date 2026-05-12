@@ -9,9 +9,10 @@ import {ActualityModel} from "../../../models/actuality.model";
 import {ImageUtils} from "../../../utils/image.utils";
 
 @Component({
-  selector: 'app-create-update-actuality-dialog',
-  templateUrl: './create-update-actuality-dialog.component.html',
-  styleUrl: './create-update-actuality-dialog.component.scss'
+    selector: 'app-create-update-actuality-dialog',
+    templateUrl: './create-update-actuality-dialog.component.html',
+    styleUrl: './create-update-actuality-dialog.component.scss',
+    standalone: false
 })
 export class CreateUpdateActualityDialogComponent {
   newActualityForm: FormGroup;

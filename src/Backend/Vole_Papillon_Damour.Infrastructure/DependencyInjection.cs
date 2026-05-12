@@ -1,7 +1,6 @@
 using System.Text;
 using Azure;
 using Azure.AI.Vision.ImageAnalysis;
-using Azure.Communication.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
@@ -17,17 +16,14 @@ using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Repositories;
 using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
-using Vole_Papillon_Damour.Infrastructure.Services.EmailService;
 using Vole_Papillon_Damour.Infrastructure.Services.ExtractNumbersOcrService;
 using Vole_Papillon_Damour.Infrastructure.Services.OcrService;
-using Vole_Papillon_Damour.Infrastructure.Services.TableStorageService;
 
 namespace Vole_Papillon_Damour.Infrastructure;
 
 public static class DependencyInjection
 {
     private const string AzureBlobStorageConnectionStringName = "AzureBlobStorageConnectionString";
-    private const string EmailServiceConnectionStringName = "EmailService";
     private const string ProjectDatabaseConnectionStringName = "ProjectDatabase";
 
     public static IServiceCollection AddInfrastructure(
@@ -45,7 +41,6 @@ public static class DependencyInjection
             .AddStorageAccounts(builderConfiguration)
             .AddRepositories()
             .AddOcr(builderConfiguration)
-            .AddEmail(builderConfiguration)
             .AddScoped<IProjectDbContext>(provider => provider.GetRequiredService<ProjectDbContext>());
         
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
@@ -78,24 +73,6 @@ public static class DependencyInjection
         return services;
     }
     
-    private static IServiceCollection AddEmail(
-        this IServiceCollection services,
-        ConfigurationManager builderConfiguration)
-    {
-        var emailConnectionString = builderConfiguration.GetConnectionString(EmailServiceConnectionStringName);
-
-        if (string.IsNullOrWhiteSpace(emailConnectionString))
-        {
-            services.AddScoped<IEmailService, DisabledEmailService>();
-            return services;
-        }
-
-        services.AddSingleton(new EmailClient(emailConnectionString));
-        services.AddScoped<IEmailService, EmailService>();
-        
-        return services;
-    }
-
     private static IServiceCollection AddRepositories(
         this IServiceCollection services)
     {
@@ -116,7 +93,6 @@ public static class DependencyInjection
             // Blob Service
             string connectionString = builderConfiguration.GetConnectionString(AzureBlobStorageConnectionStringName) ?? string.Empty;
             clientBuilder.AddBlobServiceClient(connectionString);
-            clientBuilder.AddTableServiceClient(connectionString).WithName("MailingListStorage");
         });
         return services;
     }
@@ -130,7 +106,6 @@ public static class DependencyInjection
 
         services.AddSingleton(Options.Create(blobSettings));
         services.AddSingleton<IBlobService, BlobService>();
-        services.AddSingleton<ITableStorageService, TableStorageService>();
         return services;
     }
 

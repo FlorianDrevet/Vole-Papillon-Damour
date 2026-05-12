@@ -3,9 +3,10 @@ import {ImageOrientationEnum} from "../../../../shared/enums/imageOrientation.en
 import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum";
 
 @Component({
-  selector: 'app-special-event',
-  templateUrl: './special-event.component.html',
-  styleUrl: './special-event.component.scss'
+    selector: 'app-special-event',
+    templateUrl: './special-event.component.html',
+    styleUrl: './special-event.component.scss',
+    standalone: false
 })
 export class SpecialEventComponent {
   Title = input.required<string>()

@@ -4,9 +4,10 @@ import {ImageOrientationEnum} from "../../../../shared/enums/imageOrientation.en
 import {BackgroundColorEnum} from "../../../../shared/enums/backgroundColor.enum";
 
 @Component({
-  selector: 'app-other-event',
-  templateUrl: './other-event.component.html',
-  styleUrl: './other-event.component.scss'
+    selector: 'app-other-event',
+    templateUrl: './other-event.component.html',
+    styleUrl: './other-event.component.scss',
+    standalone: false
 })
 export class OtherEventComponent {
 
