@@ -23,6 +23,11 @@
 - Backend and MAUI tasks route to `dotnet-dev`.
 - Angular web tasks route to `angular-front`.
 
+## Source Of Truth Note
+
+- Treat this file and `MEMORY.md` as the source of truth for the active project stack.
+- Some generic bootstrap-oriented agent files may still mention optional Graphify, Python, or Aspire branches; those are not the active runtime stack of this repository.
+
 ## Active Skills
 
 - Base: `memory-management`, `gitnexus-workflow`, `tdd-workflow`, `audit-workflow`
