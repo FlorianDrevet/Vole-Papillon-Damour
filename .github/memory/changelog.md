@@ -2,6 +2,8 @@
 
 | Date | Change |
 |------|--------|
+| 2026-05-18 | Fixed Aspire SQL Server local auth drift by making the AppHost SQL password explicit and secret-backed (`Parameters:sql-server-password`), enabling AppHost user secrets, validating that the SQL container restarts without `18456` login failures, and preserving the existing data volume |
+| 2026-05-18 | Fixed Rider/Aspire launch failures caused by duplicate Domain assembly attributes by excluding `src/Backend/Vole_Papillon_Damour.Domain/artifacts/**` from the Domain SDK default items, then verified Domain build, AppHost build, and AppHost startup all succeed again |
 | 2026-05-18 | Fixed Aspire AppHost frontend startup by removing the extra leading `--` from both `AddNpmApp(..., args)` calls, verified `npm run start -- --host ... --port ...` works for BackOffice and Website, and noted a separate baseline AppHost build blocker from duplicate Domain assembly attributes |
 | 2026-05-18 | Created an Infra Flow Sculptor project for ACA deployment of the API, BackOffice, and Website only, added `infra/aca/` Bicep + build helper + frontend Dockerfiles, separated shared/common vs application infra, and validated the ACA Bicep plus both frontend Docker images |
 | 2026-05-18 | Introduced shared `@vpd/ui` design system under `src/SharedUi/` (TS path-mapped, no library project), mutualized title/under-section/button/image/actuality-card/event-card/product-card/product-list/pipes across BackOffice and Website with a display-vs-`[editable]` pattern, refactored both apps' wrappers and SharedModules, deleted per-app duplicates, fixed `NumberLineEnum` to string values, widened `DsVpdEventModel.eventType`, and verified `ng build` passes on both apps |

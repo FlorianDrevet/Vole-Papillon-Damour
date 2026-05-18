@@ -9,6 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsAspireHost>true</IsAspireHost>
     <RootNamespace>Vole_Papillon_Damour.AppHost</RootNamespace>
+    <UserSecretsId>f0f08765-eb0a-429f-9161-12952fdb925d</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

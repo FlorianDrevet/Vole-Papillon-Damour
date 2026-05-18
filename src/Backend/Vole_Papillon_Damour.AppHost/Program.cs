@@ -6,6 +6,7 @@ const string BackOfficeResourceName = "backoffice";
 const string DefaultHttpEndpointName = "http";
 const string ProjectDatabaseName = "ProjectDatabase";
 const string SqlServerName = "sql-server";
+const string SqlServerPasswordParameterName = "sql-server-password";
 const string StorageName = "storage";
 const string UseDevelopmentStorageConnectionString = "UseDevelopmentStorage=true";
 const string WebsiteResourceName = "website";
@@ -14,7 +15,9 @@ const int WebsitePort = 4201;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var projectDatabase = builder.AddSqlServer(SqlServerName)
+var sqlServerPassword = builder.AddParameter(SqlServerPasswordParameterName, secret: true);
+
+var projectDatabase = builder.AddSqlServer(SqlServerName, password: sqlServerPassword)
     .WithDataVolume()
     .AddDatabase(ProjectDatabaseName, "vole-papillon-damour-db");
 

@@ -34,6 +34,7 @@ The API startup wires:
 - The MAUI client loads its backend base URL from embedded configuration and does not share Angular environment files.
 - The repository now includes a verified Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/`.
 - The AppHost orchestrates the API on port `5257`, BackOffice on `4200`, Website on `4201`, plus local SQL Server and Azurite.
+- The AppHost SQL Server resource uses `WithDataVolume()`, so it must keep a stable password across launches through the AppHost secret key `Parameters:sql-server-password`; otherwise SQL Server starts but later rejects `sa` logins with `18456` because the persisted master database still expects the older password.
 - The AppHost `AddNpmApp(..., args)` calls for BackOffice and Website must pass only frontend CLI arguments like `--host` and `--port`; do not include a leading `--` in the args array because Aspire/npm already inserts the separator and Angular CLI fails schema validation on the empty extra argument.
 - The backend itself still stays free of `Aspire.*` packages; orchestration concerns live in the AppHost only.
 - Deployment IaC for Azure Container Apps now lives under `infra/aca/` and targets only the API, BackOffice, and Website surfaces.
