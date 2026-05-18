@@ -1,33 +1,5 @@
-<div
-  class="flex flex-col rounded-3xl border-4 border-primary-color p-5 bg-white w-full sm:w-[430px] h-fit sm:h-[650px]">
-  <div class="flex flex-row items-center">
-    <div class="bg-primary-color h-8 w-4"></div>
-    <h2 class="text-primary-color text-3xl ml-5 lg:w-fit w-[50%]">{{ ActualityModel().title }}</h2>
-    <div class="flex flex-row ml-auto gap-2 w-fit">
-      <button
-        (click)="openDialogUpdate()"
-        class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-        <img class="h-7" fetchpriority="high" src="icons/crayon.png">
-      </button>
-      <button
-        (click)="openDialogDeletion()"
-        class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-        <img class="h-7" fetchpriority="high" src="icons/supprimer.png">
-      </button>
-    </div>
-  </div>
-  <img [src]="ActualityModel().urlPrincipalImage" class="rounded-3xl w-full h-auto mt-5 mb-5">
-  <p #article class="article-box text-xl text-justify text-text-color">{{ ActualityModel().article }}</p>
-  <div class="flex-row flex lg:mt-auto justify-between mt-auto">
-    <a [routerLink]="'/actualite/' + ActualityModel().id" class="flex flex-row text-2xl">
-      Lire la suite >
-    </a>
-    <div class="flex flex-row">
-      <img class="mr-3" height="35" src="icons/calendar-icon.svg" width="35">
-      <h3 class="text-primary-color text-2xl text-justify">
-        {{ ActualityModel().date | date:'dd/MM' }}
-      </h3>
-    </div>
-  </div>
-</div>
-
+<vpd-actuality-card
+  [actuality]="ActualityModel()"
+  [editable]="true"
+  (editRequested)="openDialogUpdate()"
+  (deleteRequested)="openDialogDeletion()"></vpd-actuality-card>

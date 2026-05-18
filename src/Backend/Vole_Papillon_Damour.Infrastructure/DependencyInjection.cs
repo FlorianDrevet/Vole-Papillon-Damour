@@ -1,6 +1,4 @@
 using System.Text;
-using Azure;
-using Azure.AI.Vision.ImageAnalysis;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
@@ -16,8 +14,6 @@ using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Repositories;
 using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
-using Vole_Papillon_Damour.Infrastructure.Services.ExtractNumbersOcrService;
-using Vole_Papillon_Damour.Infrastructure.Services.OcrService;
 
 namespace Vole_Papillon_Damour.Infrastructure;
 
@@ -40,35 +36,10 @@ public static class DependencyInjection
             .AddAzureServices(builderConfiguration)
             .AddStorageAccounts(builderConfiguration)
             .AddRepositories()
-            .AddOcr(builderConfiguration)
             .AddScoped<IProjectDbContext>(provider => provider.GetRequiredService<ProjectDbContext>());
         
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<ISSEClientManager, SSEClientManager>();
-        services.AddScoped<IExtractNumbersOcrService, ExtractNumbersOcrService>();
-        
-        return services;
-    }
-
-    private static IServiceCollection AddOcr(
-        this IServiceCollection services,
-        ConfigurationManager builderConfiguration)
-    {
-        var ocrSettings = new OcrSettings();
-        builderConfiguration.Bind(OcrSettings.SectionName, ocrSettings);
-
-        var hasVisionKey = !string.IsNullOrWhiteSpace(ocrSettings.VisionKey);
-        var hasVisionEndpoint = Uri.TryCreate(ocrSettings.VisionEndpoint, UriKind.Absolute, out var visionEndpoint);
-
-        if (!hasVisionKey || !hasVisionEndpoint)
-        {
-            services.AddScoped<IOcrService, DisabledOcrService>();
-            return services;
-        }
-
-        services.AddSingleton(new ImageAnalysisClient(visionEndpoint,
-            new AzureKeyCredential(ocrSettings.VisionKey)));
-        services.AddScoped<IOcrService, OcrService>();
         
         return services;
     }

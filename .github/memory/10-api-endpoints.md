@@ -29,12 +29,13 @@
 - `POST/DELETE /asso-events/{assoId}/parties/{partieId}/partie-lines...` - admin-protected line management
 - `POST/PUT/DELETE /asso-events/{assoId}/parties/{partieId}/partie-lines/{partieLineId}/lots...` - admin-protected lot management
 
-## Product, Order, And OCR Endpoints
+## Product And Order Endpoints
 
 - `GET /product` - public product listing; consumed by the MAUI Refit client
 - `POST /product`, `PUT /product/{id}`, `POST /product/promotion`, `DELETE /product/promotion` - admin-protected product writes
 - `POST /orders`, `GET /orders` - admin-protected order routes
-- `POST /bingo-card` - public OCR analysis route using form upload
+
+No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 
 ## Current Auth Asymmetries To Recheck Before Editing
 

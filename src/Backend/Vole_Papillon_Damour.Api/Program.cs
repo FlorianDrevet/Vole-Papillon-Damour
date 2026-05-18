@@ -71,6 +71,5 @@ app.UseActualityController();
 app.UseProductController();
 app.UseOrdersController();
 app.UseEventsController();
-app.UseBingoCardController();
 
 app.Run();

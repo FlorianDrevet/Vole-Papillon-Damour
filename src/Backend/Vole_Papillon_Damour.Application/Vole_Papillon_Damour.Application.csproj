@@ -12,7 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Azure.AI.Vision.ImageAnalysis" Version="1.0.0" />
       <PackageReference Include="FluentValidation" Version="12.1.1" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
       <PackageReference Include="Mapster" Version="10.0.7" />
@@ -25,7 +24,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="BingoCard\Commands\" />
       <Folder Include="Events\Commands\Numeros\" />
     </ItemGroup>
 

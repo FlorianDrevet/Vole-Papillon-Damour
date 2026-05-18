@@ -15,17 +15,26 @@
       <div class="footer-separator"></div>
 
       <a href="mailto:volepapillondamour@sfr.fr">volepapillondamour&#64;sfr.fr</a>
-      <p>46 route de Saint Marcellin<br>42170 Saint Just Saint Rambert</p>
+      <p>46 route de Saint Marcellin<br>42170 Saint-Just-Saint-Rambert<br>France</p>
     </div>
 
     <div class="footer-section lg:ml-20">
       <h3>À Propos</h3>
       <div class="footer-separator"></div>
 
-      <p>Mentions légales</p>
-      <p>Confidentialité</p>
-      <p>Cookies</p>
-      <p>Accessibilité: non conforme</p>
+      <div class="footer-link-list">
+        @for (legalRoute of route.config; track legalRoute.path) {
+          @if (legalRoute.path && legalRoute.data?.['legalFooterLabel']) {
+            <a class="footer-link" [routerLink]="['/', legalRoute.path]">
+              <span>{{ legalRoute.data?.['legalFooterLabel'] }}</span>
+
+              @if (legalRoute.data?.['legalFooterStatus']) {
+                <span class="footer-status">&nbsp;: {{ legalRoute.data?.['legalFooterStatus'] }}</span>
+              }
+            </a>
+          }
+        }
+      </div>
     </div>
   </div>
 
@@ -34,7 +43,7 @@
   <p class="mt-2 lg:mt-20">© 2025 Vole Papillon D'Amour. Tous droits réservés.</p>
   <div class="flex flex-row mt-2">
     <p>Réalisé par</p>
-    <a href="https://github.com/FlorianDrevet" class="underline flex flex-row ml-1">Florian Drevet <img src="icons/github-logo.svg" class="h-5 ml-3"></a>
+    <a href="https://github.com/FlorianDrevet" class="underline flex flex-row ml-1">Florian Drevet <img src="icons/github-logo.svg" class="h-5 ml-3" alt="Logo GitHub"></a>
   </div>
 </footer>
 

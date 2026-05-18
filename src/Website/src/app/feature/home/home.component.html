@@ -1,81 +1,106 @@
-<div class="relative">
-  @if(isToday()) {
-    <div class=" flex-row bg-secondary-color hidden lg:flex">
-      <div class="scrolling-text-container w-full pt-3 pb-3 bg-secondary-color">
-        <div class="scrolling-text-ordi text-white text-3xl ">
-          @for (i of [].constructor(40); track i) {
-            Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Venez, petits et grands, vous amusez à notre loto aux profits de l'association ! &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          }
+<section class="home-hero">
+  <app-navigation class="home-navigation home-navigation--desktop hidden lg:block"></app-navigation>
+  <app-navigation class="home-navigation home-navigation--mobile lg:hidden"></app-navigation>
+
+  <div class="home-hero__media" aria-hidden="true">
+    <img
+      fetchpriority="high"
+      src="images/loto_black_white.jpg"
+      class="home-hero__image home-hero__image--desktop"
+      alt="Papillon logo"
+      width="35"
+      height="35">
+
+    <img
+      fetchpriority="high"
+      src="images/maxence_accueil.jpg"
+      class="home-hero__image home-hero__image--mobile"
+      alt="Papillon logo"
+      width="35"
+      height="35">
+
+    <div class="home-hero__veil"></div>
+  </div>
+
+  <div class="home-hero__inner">
+    <div class="home-hero__content">
+      <span class="vpd-pill-badge">Association familiale et solidaire</span>
+      <h1>Vole Papillon d'Amour</h1>
+      <p>
+        Nous soutenons Maxence, sa famille et, au fil des actions menees, d'autres enfants touches par des maladies rares.
+      </p>
+
+      <div class="home-hero__actions">
+        <a routerLink="/association/presentation" class="vpd-button vpd-button--primary">
+          Decouvrir l'association
+        </a>
+        <a routerLink="/evenement/all" class="vpd-button vpd-button--secondary">
+          Nos evenements
+        </a>
+      </div>
+    </div>
+
+    <aside class="home-hero__aside vpd-glass-card">
+      <div class="home-hero__aside-head">
+        <span class="home-hero__aside-mark">
+          <img
+            src="images/papillon_without_back.png"
+            alt="Papillon logo"
+            fetchpriority="high">
+        </span>
+
+        <div class="home-hero__aside-heading">
+          <p class="home-hero__aside-kicker">Notre engagement</p>
+          <p class="home-hero__aside-title">
+            Une association presente, concrete et humaine.
+          </p>
         </div>
       </div>
-      <div class="flex flex-row justify-evenly mt-3 w-[500px]">
-        <a [href]="'/evenement/' + lotoCard()?.id ">
-          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
-                  style="padding: 0 10px">
-            Plus d'infos >
-          </button>
-        </a>
-        <a  [href]="'/evenement/' + lotoCard()?.id + '/tableau'">
-          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
-                  style="padding: 0 10px">
-            Tableau >
-          </button>
-        </a>
+
+      <div class="home-hero__commitments">
+        <div class="home-hero__commitment">
+          <p class="home-hero__commitment-title">Accompagner</p>
+          <p class="home-hero__commitment-text">Maxence et sa famille au quotidien.</p>
+        </div>
+        <div class="home-hero__commitment">
+          <p class="home-hero__commitment-title">Aider</p>
+          <p class="home-hero__commitment-text">D'autres enfants confrontes a des maladies rares.</p>
+        </div>
+        <div class="home-hero__commitment">
+          <p class="home-hero__commitment-title">Rassembler</p>
+          <p class="home-hero__commitment-text">Des evenements solidaires utiles et bien organises.</p>
+        </div>
       </div>
-    </div>
-    <app-navigation class="absolute top-16 z-50 w-full hidden lg:block"></app-navigation>
-    <app-navigation class="absolute top-0 z-50 w-full lg:hidden"></app-navigation>
-  }
-  @else {
-    <app-navigation class="absolute top-0 z-50 w-full"></app-navigation>
-  }
-  <img
-    fetchpriority="high"
-    src="images/loto_black_white.jpg"
-    class="w-full h-auto ml-auto mr-auto top-0 hidden lg:block"
-    alt="Papillon logo"
-    width="35"
-    height="35">
-
-  <img
-    fetchpriority="high"
-    src="images/maxence_accueil.jpg"
-    class="w-full h-auto ml-auto mr-auto top-0  lg:hidden"
-    alt="Papillon logo"
-    width="35"
-    height="35">
-
-  <div class="absolute top-1/2 left-1/2 z-50 hidden lg:block">
-    <div class="relative">
-      <h1 class="text-[7vw] leading-[6vw] text-primary-color">Vole Papillon d'Amour</h1>
-      <img src="images/papillon_without_back.png"
-           class="ml-2 mr-auto  w-auto h-[10vw] absolute -bottom-[4vw] right-[40%]"
-           alt="Papillon logo" fetchpriority="high">
-    </div>
+    </aside>
   </div>
 
   @if(isToday()) {
-    <div class="scrolling-text-container w-full pt-3 pb-3 bg-secondary-color lg:hidden">
-      <div class="scrolling-text text-white text-3xl">
-        Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} ! &nbsp;&nbsp; Aujourd'hui {{lotoCard()?.name}} !
+    <div class="home-event-banner vpd-glass-card">
+      <div class="home-event-banner__top">
+        <span class="vpd-pill-badge vpd-pill-badge--warm">Aujourd'hui</span>
+        <p class="home-event-banner__eyebrow">Evenement du jour</p>
       </div>
-      <div class="flex flex-row justify-evenly mt-3">
-        <a [href]="'/evenement/' + lotoCard()?.id ">
-          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
-                  style="padding: 0 10px">
-            Plus d'infos >
-          </button>
-        </a>
-        <a  [href]="'/evenement/' + lotoCard()?.id + '/tableau'">
-          <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl lg:text-4xl"
-                  style="padding: 0 10px">
-            Tableau >
-          </button>
-        </a>
+
+      <div class="home-event-banner__content">
+        <div class="home-event-banner__copy">
+          <h2>{{lotoCard()?.name}}</h2>
+          <p>
+            Toutes les informations utiles pour participer a la journee et acceder rapidement au tableau si besoin.
+          </p>
+        </div>
+
+        <div class="home-event-banner__actions">
+          <a [href]="'/evenement/' + lotoCard()?.id " class="vpd-button vpd-button--primary">
+            Plus d'infos
+          </a>
+          <a [href]="'/evenement/' + lotoCard()?.id + '/tableau'" class="vpd-button vpd-button--secondary">
+            Voir le tableau
+          </a>
+        </div>
       </div>
     </div>
   }
-</div>
+</section>
 <app-maxence-intro></app-maxence-intro>
 <app-actuality></app-actuality>
 <app-vpd-events-section></app-vpd-events-section>

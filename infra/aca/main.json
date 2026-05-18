@@ -1,0 +1,853 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.42.1.51946",
+      "templateHash": "4400744661595537923"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "FranceCentral",
+      "metadata": {
+        "description": "Primary Azure region for all resources."
+      }
+    },
+    "environmentName": {
+      "type": "string",
+      "allowedValues": [
+        "dev",
+        "prod"
+      ],
+      "metadata": {
+        "description": "Deployment environment. Only dev and prod are supported by this template."
+      }
+    },
+    "commonResourceGroupName": {
+      "type": "string",
+      "defaultValue": "rg-vpd-common",
+      "metadata": {
+        "description": "Shared resource group used by ACR and Log Analytics."
+      }
+    },
+    "applicationResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment-specific resource group used by ACA resources."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Optional extra tags merged into every resource."
+      }
+    },
+    "containerRegistryName": {
+      "type": "string",
+      "metadata": {
+        "description": "Globally unique name for the shared Azure Container Registry."
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the shared Log Analytics workspace."
+      }
+    },
+    "containerAppEnvironmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure Container Apps managed environment."
+      }
+    },
+    "apiContainerAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the API Container App."
+      }
+    },
+    "backOfficeContainerAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the BackOffice Container App."
+      }
+    },
+    "websiteContainerAppName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Website Container App."
+      }
+    },
+    "apiImage": {
+      "type": "string",
+      "metadata": {
+        "description": "Fully qualified API image, including registry, repository, and tag."
+      }
+    },
+    "backOfficeImage": {
+      "type": "string",
+      "metadata": {
+        "description": "Fully qualified BackOffice image, including registry, repository, and tag."
+      }
+    },
+    "websiteImage": {
+      "type": "string",
+      "metadata": {
+        "description": "Fully qualified Website image, including registry, repository, and tag."
+      }
+    },
+    "apiTargetPort": {
+      "type": "int",
+      "defaultValue": 8080,
+      "metadata": {
+        "description": "Target port exposed by the API container."
+      }
+    },
+    "backOfficeTargetPort": {
+      "type": "int",
+      "defaultValue": 8080,
+      "metadata": {
+        "description": "Target port exposed by the BackOffice container."
+      }
+    },
+    "websiteTargetPort": {
+      "type": "int",
+      "defaultValue": 8080,
+      "metadata": {
+        "description": "Target port exposed by the Website container."
+      }
+    },
+    "apiMinReplicas": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Minimum replica count for the API Container App."
+      }
+    },
+    "apiMaxReplicas": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Maximum replica count for the API Container App."
+      }
+    },
+    "backOfficeMinReplicas": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Minimum replica count for the BackOffice Container App."
+      }
+    },
+    "backOfficeMaxReplicas": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Maximum replica count for the BackOffice Container App."
+      }
+    },
+    "websiteMinReplicas": {
+      "type": "int",
+      "defaultValue": 1,
+      "metadata": {
+        "description": "Minimum replica count for the Website Container App."
+      }
+    },
+    "websiteMaxReplicas": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "Maximum replica count for the Website Container App."
+      }
+    },
+    "apiCpu": {
+      "type": "string",
+      "defaultValue": "1",
+      "metadata": {
+        "description": "CPU requested by the API container."
+      }
+    },
+    "apiMemory": {
+      "type": "string",
+      "defaultValue": "2Gi",
+      "metadata": {
+        "description": "Memory requested by the API container."
+      }
+    },
+    "backOfficeCpu": {
+      "type": "string",
+      "defaultValue": "0.5",
+      "metadata": {
+        "description": "CPU requested by the BackOffice container."
+      }
+    },
+    "backOfficeMemory": {
+      "type": "string",
+      "defaultValue": "1Gi",
+      "metadata": {
+        "description": "Memory requested by the BackOffice container."
+      }
+    },
+    "websiteCpu": {
+      "type": "string",
+      "defaultValue": "0.5",
+      "metadata": {
+        "description": "CPU requested by the Website container."
+      }
+    },
+    "websiteMemory": {
+      "type": "string",
+      "defaultValue": "1Gi",
+      "metadata": {
+        "description": "Memory requested by the Website container."
+      }
+    }
+  },
+  "variables": {
+    "commonTags": "[union(parameters('tags'), createObject('project', 'vpd', 'scope', 'shared'))]",
+    "applicationTags": "[union(parameters('tags'), createObject('project', 'vpd', 'scope', 'application', 'environment', parameters('environmentName')))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[parameters('commonResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('commonTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[parameters('applicationResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('applicationTags')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "commonResources",
+      "resourceGroup": "[parameters('commonResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('commonTags')]"
+          },
+          "containerRegistryName": {
+            "value": "[parameters('containerRegistryName')]"
+          },
+          "logAnalyticsWorkspaceName": {
+            "value": "[parameters('logAnalyticsWorkspaceName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "9429144223489716483"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "containerRegistryName": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceName": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2022-10-01",
+              "name": "[parameters('logAnalyticsWorkspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": 30
+              }
+            },
+            {
+              "type": "Microsoft.ContainerRegistry/registries",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('containerRegistryName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Basic"
+              },
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "adminUserEnabled": false,
+                "publicNetworkAccess": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "containerRegistryLoginServer": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName')), '2023-07-01').loginServer]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('commonResourceGroupName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "applicationResources",
+      "resourceGroup": "[parameters('applicationResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('applicationTags')]"
+          },
+          "environmentName": {
+            "value": "[parameters('environmentName')]"
+          },
+          "containerAppEnvironmentName": {
+            "value": "[parameters('containerAppEnvironmentName')]"
+          },
+          "apiContainerAppName": {
+            "value": "[parameters('apiContainerAppName')]"
+          },
+          "backOfficeContainerAppName": {
+            "value": "[parameters('backOfficeContainerAppName')]"
+          },
+          "websiteContainerAppName": {
+            "value": "[parameters('websiteContainerAppName')]"
+          },
+          "apiImage": {
+            "value": "[parameters('apiImage')]"
+          },
+          "backOfficeImage": {
+            "value": "[parameters('backOfficeImage')]"
+          },
+          "websiteImage": {
+            "value": "[parameters('websiteImage')]"
+          },
+          "containerRegistryLoginServer": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('commonResourceGroupName')), 'Microsoft.Resources/deployments', 'commonResources'), '2025-04-01').outputs.containerRegistryLoginServer.value]"
+          },
+          "logAnalyticsWorkspaceResourceGroupName": {
+            "value": "[parameters('commonResourceGroupName')]"
+          },
+          "logAnalyticsWorkspaceName": {
+            "value": "[parameters('logAnalyticsWorkspaceName')]"
+          },
+          "apiTargetPort": {
+            "value": "[parameters('apiTargetPort')]"
+          },
+          "backOfficeTargetPort": {
+            "value": "[parameters('backOfficeTargetPort')]"
+          },
+          "websiteTargetPort": {
+            "value": "[parameters('websiteTargetPort')]"
+          },
+          "apiMinReplicas": {
+            "value": "[parameters('apiMinReplicas')]"
+          },
+          "apiMaxReplicas": {
+            "value": "[parameters('apiMaxReplicas')]"
+          },
+          "backOfficeMinReplicas": {
+            "value": "[parameters('backOfficeMinReplicas')]"
+          },
+          "backOfficeMaxReplicas": {
+            "value": "[parameters('backOfficeMaxReplicas')]"
+          },
+          "websiteMinReplicas": {
+            "value": "[parameters('websiteMinReplicas')]"
+          },
+          "websiteMaxReplicas": {
+            "value": "[parameters('websiteMaxReplicas')]"
+          },
+          "apiCpu": {
+            "value": "[parameters('apiCpu')]"
+          },
+          "apiMemory": {
+            "value": "[parameters('apiMemory')]"
+          },
+          "backOfficeCpu": {
+            "value": "[parameters('backOfficeCpu')]"
+          },
+          "backOfficeMemory": {
+            "value": "[parameters('backOfficeMemory')]"
+          },
+          "websiteCpu": {
+            "value": "[parameters('websiteCpu')]"
+          },
+          "websiteMemory": {
+            "value": "[parameters('websiteMemory')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "12862676330301398233"
+            }
+          },
+          "parameters": {
+            "environmentName": {
+              "type": "string",
+              "allowedValues": [
+                "dev",
+                "prod"
+              ]
+            },
+            "location": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "containerAppEnvironmentName": {
+              "type": "string"
+            },
+            "apiContainerAppName": {
+              "type": "string"
+            },
+            "backOfficeContainerAppName": {
+              "type": "string"
+            },
+            "websiteContainerAppName": {
+              "type": "string"
+            },
+            "apiImage": {
+              "type": "string"
+            },
+            "backOfficeImage": {
+              "type": "string"
+            },
+            "websiteImage": {
+              "type": "string"
+            },
+            "containerRegistryLoginServer": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceResourceGroupName": {
+              "type": "string"
+            },
+            "logAnalyticsWorkspaceName": {
+              "type": "string"
+            },
+            "apiTargetPort": {
+              "type": "int"
+            },
+            "backOfficeTargetPort": {
+              "type": "int"
+            },
+            "websiteTargetPort": {
+              "type": "int"
+            },
+            "apiMinReplicas": {
+              "type": "int"
+            },
+            "apiMaxReplicas": {
+              "type": "int"
+            },
+            "backOfficeMinReplicas": {
+              "type": "int"
+            },
+            "backOfficeMaxReplicas": {
+              "type": "int"
+            },
+            "websiteMinReplicas": {
+              "type": "int"
+            },
+            "websiteMaxReplicas": {
+              "type": "int"
+            },
+            "apiCpu": {
+              "type": "string"
+            },
+            "apiMemory": {
+              "type": "string"
+            },
+            "backOfficeCpu": {
+              "type": "string"
+            },
+            "backOfficeMemory": {
+              "type": "string"
+            },
+            "websiteCpu": {
+              "type": "string"
+            },
+            "websiteMemory": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "aspNetCoreEnvironment": "[if(equals(parameters('environmentName'), 'prod'), 'Production', 'Development')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.App/managedEnvironments",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('containerAppEnvironmentName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "appLogsConfiguration": {
+                  "destination": "log-analytics",
+                  "logAnalyticsConfiguration": {
+                    "customerId": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('logAnalyticsWorkspaceResourceGroupName')), 'Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName')), '2022-10-01').customerId]",
+                    "sharedKey": "[listKeys(format('{0}/sharedKeys', extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('logAnalyticsWorkspaceResourceGroupName')), 'Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))), '2020-08-01').primarySharedKey]"
+                  }
+                },
+                "zoneRedundant": false
+              }
+            },
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('apiContainerAppName')]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvironmentName'))]",
+                "configuration": {
+                  "activeRevisionsMode": "Single",
+                  "ingress": {
+                    "external": true,
+                    "allowInsecure": false,
+                    "targetPort": "[parameters('apiTargetPort')]",
+                    "transport": "auto"
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('containerRegistryLoginServer')]",
+                      "identity": "system"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "api",
+                      "image": "[parameters('apiImage')]",
+                      "env": [
+                        {
+                          "name": "ASPNETCORE_URLS",
+                          "value": "http://0.0.0.0:8080"
+                        },
+                        {
+                          "name": "ASPNETCORE_FORWARDEDHEADERS_ENABLED",
+                          "value": "true"
+                        },
+                        {
+                          "name": "ASPNETCORE_ENVIRONMENT",
+                          "value": "[variables('aspNetCoreEnvironment')]"
+                        }
+                      ],
+                      "resources": {
+                        "cpu": "[json(parameters('apiCpu'))]",
+                        "memory": "[parameters('apiMemory')]"
+                      }
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": "[parameters('apiMinReplicas')]",
+                    "maxReplicas": "[parameters('apiMaxReplicas')]"
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvironmentName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('backOfficeContainerAppName')]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvironmentName'))]",
+                "configuration": {
+                  "activeRevisionsMode": "Single",
+                  "ingress": {
+                    "external": true,
+                    "allowInsecure": false,
+                    "targetPort": "[parameters('backOfficeTargetPort')]",
+                    "transport": "auto"
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('containerRegistryLoginServer')]",
+                      "identity": "system"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "backoffice",
+                      "image": "[parameters('backOfficeImage')]",
+                      "resources": {
+                        "cpu": "[json(parameters('backOfficeCpu'))]",
+                        "memory": "[parameters('backOfficeMemory')]"
+                      }
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": "[parameters('backOfficeMinReplicas')]",
+                    "maxReplicas": "[parameters('backOfficeMaxReplicas')]"
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvironmentName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.App/containerApps",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('websiteContainerAppName')]",
+              "location": "[parameters('location')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvironmentName'))]",
+                "configuration": {
+                  "activeRevisionsMode": "Single",
+                  "ingress": {
+                    "external": true,
+                    "allowInsecure": false,
+                    "targetPort": "[parameters('websiteTargetPort')]",
+                    "transport": "auto"
+                  },
+                  "registries": [
+                    {
+                      "server": "[parameters('containerRegistryLoginServer')]",
+                      "identity": "system"
+                    }
+                  ]
+                },
+                "template": {
+                  "containers": [
+                    {
+                      "name": "website",
+                      "image": "[parameters('websiteImage')]",
+                      "env": [
+                        {
+                          "name": "NODE_ENV",
+                          "value": "production"
+                        },
+                        {
+                          "name": "PORT",
+                          "value": "8080"
+                        }
+                      ],
+                      "resources": {
+                        "cpu": "[json(parameters('websiteCpu'))]",
+                        "memory": "[parameters('websiteMemory')]"
+                      }
+                    }
+                  ],
+                  "scale": {
+                    "minReplicas": "[parameters('websiteMinReplicas')]",
+                    "maxReplicas": "[parameters('websiteMaxReplicas')]"
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvironmentName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "apiPrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('apiContainerAppName')), '2024-03-01', 'full').identity.principalId]"
+            },
+            "backOfficePrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('backOfficeContainerAppName')), '2024-03-01', 'full').identity.principalId]"
+            },
+            "websitePrincipalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.App/containerApps', parameters('websiteContainerAppName')), '2024-03-01', 'full').identity.principalId]"
+            },
+            "apiContainerAppUrl": {
+              "type": "string",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', parameters('apiContainerAppName')), '2024-03-01').configuration.ingress.fqdn)]"
+            },
+            "backOfficeContainerAppUrl": {
+              "type": "string",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', parameters('backOfficeContainerAppName')), '2024-03-01').configuration.ingress.fqdn)]"
+            },
+            "websiteContainerAppUrl": {
+              "type": "string",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', parameters('websiteContainerAppName')), '2024-03-01').configuration.ingress.fqdn)]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('applicationResourceGroupName'))]",
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('commonResourceGroupName')), 'Microsoft.Resources/deployments', 'commonResources')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "commonRoleAssignments",
+      "resourceGroup": "[parameters('commonResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "containerRegistryName": {
+            "value": "[parameters('containerRegistryName')]"
+          },
+          "apiPrincipalId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('applicationResourceGroupName')), 'Microsoft.Resources/deployments', 'applicationResources'), '2025-04-01').outputs.apiPrincipalId.value]"
+          },
+          "backOfficePrincipalId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('applicationResourceGroupName')), 'Microsoft.Resources/deployments', 'applicationResources'), '2025-04-01').outputs.backOfficePrincipalId.value]"
+          },
+          "websitePrincipalId": {
+            "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('applicationResourceGroupName')), 'Microsoft.Resources/deployments', 'applicationResources'), '2025-04-01').outputs.websitePrincipalId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.42.1.51946",
+              "templateHash": "13722157214011900307"
+            }
+          },
+          "parameters": {
+            "containerRegistryName": {
+              "type": "string"
+            },
+            "apiPrincipalId": {
+              "type": "string"
+            },
+            "backOfficePrincipalId": {
+              "type": "string"
+            },
+            "websitePrincipalId": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "acrPullRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName'))]",
+              "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName')), parameters('apiPrincipalId'), 'acrpull')]",
+              "properties": {
+                "roleDefinitionId": "[variables('acrPullRoleDefinitionId')]",
+                "principalId": "[parameters('apiPrincipalId')]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName'))]",
+              "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName')), parameters('backOfficePrincipalId'), 'acrpull')]",
+              "properties": {
+                "roleDefinitionId": "[variables('acrPullRoleDefinitionId')]",
+                "principalId": "[parameters('backOfficePrincipalId')]",
+                "principalType": "ServicePrincipal"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName'))]",
+              "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName')), parameters('websitePrincipalId'), 'acrpull')]",
+              "properties": {
+                "roleDefinitionId": "[variables('acrPullRoleDefinitionId')]",
+                "principalId": "[parameters('websitePrincipalId')]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('applicationResourceGroupName')), 'Microsoft.Resources/deployments', 'applicationResources')]",
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('commonResourceGroupName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "containerRegistryLoginServer": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('commonResourceGroupName')), 'Microsoft.Resources/deployments', 'commonResources'), '2025-04-01').outputs.containerRegistryLoginServer.value]"
+    },
+    "sharedResourceGroup": {
+      "type": "string",
+      "value": "[parameters('commonResourceGroupName')]"
+    },
+    "applicationResourceGroupOutput": {
+      "type": "string",
+      "value": "[parameters('applicationResourceGroupName')]"
+    },
+    "apiContainerAppUrl": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('applicationResourceGroupName')), 'Microsoft.Resources/deployments', 'applicationResources'), '2025-04-01').outputs.apiContainerAppUrl.value]"
+    },
+    "backOfficeContainerAppUrl": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('applicationResourceGroupName')), 'Microsoft.Resources/deployments', 'applicationResources'), '2025-04-01').outputs.backOfficeContainerAppUrl.value]"
+    },
+    "websiteContainerAppUrl": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('applicationResourceGroupName')), 'Microsoft.Resources/deployments', 'applicationResources'), '2025-04-01').outputs.websiteContainerAppUrl.value]"
+    }
+  }
+}

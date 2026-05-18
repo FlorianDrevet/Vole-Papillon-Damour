@@ -2,8 +2,10 @@
 
 | Date | Change |
 |------|--------|
-| 2026-05-12 | Rebootstrapped the repository memory around the actual .NET 8, Angular 18, and .NET MAUI stack; selected GitNexus as the only code graph engine for this open-source repo |
-| 2026-05-12 | Deepened the project memory with runtime/orchestration, auth/build, API endpoints, and frontend design-system knowledge, and enriched existing frontend/data/code-graph notes |
-| 2026-05-12 | Upgraded the backend stack memory to .NET 10, recorded the new Aspire AppHost orchestration path, and documented local SQL Server/Azurite orchestration plus OCR/email fallback behavior |
-| 2026-05-12 | Recorded the Angular 21 upgrade for BackOffice and Website, the Website SSR render-mode map and serve command, and the current BackOffice frontend test gap |
-| 2026-05-12 | Removed the mailing-list subscription feature, actuality email broadcast infrastructure, and the Website actuality signup UI from the active code paths |
+| 2026-05-18 | Fixed Aspire AppHost frontend startup by removing the extra leading `--` from both `AddNpmApp(..., args)` calls, verified `npm run start -- --host ... --port ...` works for BackOffice and Website, and noted a separate baseline AppHost build blocker from duplicate Domain assembly attributes |
+| 2026-05-18 | Created an Infra Flow Sculptor project for ACA deployment of the API, BackOffice, and Website only, added `infra/aca/` Bicep + build helper + frontend Dockerfiles, separated shared/common vs application infra, and validated the ACA Bicep plus both frontend Docker images |
+| 2026-05-18 | Introduced shared `@vpd/ui` design system under `src/SharedUi/` (TS path-mapped, no library project), mutualized title/under-section/button/image/actuality-card/event-card/product-card/product-list/pipes across BackOffice and Website with a display-vs-`[editable]` pattern, refactored both apps' wrappers and SharedModules, deleted per-app duplicates, fixed `NumberLineEnum` to string values, widened `DsVpdEventModel.eventType`, and verified `ng build` passes on both apps |
+| 2026-05-18 | Removed the backend OCR bingo-card slice and the matching BackOffice admin scan UI, cleaned AppHost/API OCR configuration, and verified that Website had no OCR surface while BackOffice build issues remain baseline and unrelated |
+| 2026-05-18 | Added a Website legal slice with prerendered legal routes, footer-driven legal navigation, and content placeholders for unresolved association identifiers, publication director, retention windows, hosting details, and accessibility remediation facts |
+| 2026-05-18 | Dream consolidation: corrected lingering Angular 18 references, aligned runtime memory with the inactive MailingList API wiring, refreshed the GitNexus snapshot stats, and reset the dream gate |
+| 2026-05-12 | Bootstrapped and expanded the repository memory around the actual .NET 10 backend, Angular 21 + Website SSR frontends, Aspire AppHost orchestration, auth/build/endpoints/design-system guidance, removed active mailing-list and actuality-email broadcast flows from the documented runtime, and captured the Website shell and SSR hardening work |

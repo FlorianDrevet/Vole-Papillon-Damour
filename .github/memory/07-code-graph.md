@@ -19,11 +19,11 @@
 ## Current Index Snapshot
 
 - Indexed on `2026-05-12`
-- `783` files
-- `3633` nodes
-- `8697` edges
-- `223` communities
-- `107` processes
+- `776` files
+- `3948` nodes
+- `8734` edges
+- `212` communities
+- `71` processes
 - `0` embeddings
 
 ## Usage Rules

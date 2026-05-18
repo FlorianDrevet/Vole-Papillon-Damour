@@ -2,6 +2,7 @@
 module.exports = {
   content: [
     "./src/**/*.{html,ts}",
+    "../SharedUi/src/**/*.{html,ts}",
   ],
   theme: {
     fontFamily: {

@@ -4,10 +4,6 @@ const string ApiResourceName = "api";
 const string AzureBlobStorageConnectionStringEnvironmentName = "ConnectionStrings__AzureBlobStorageConnectionString";
 const string BackOfficeResourceName = "backoffice";
 const string DefaultHttpEndpointName = "http";
-const string OcrVisionEndpointConfigurationName = "OcrSettings:VisionEndpoint";
-const string OcrVisionEndpointEnvironmentName = "OcrSettings__VisionEndpoint";
-const string OcrVisionKeyConfigurationName = "OcrSettings:VisionKey";
-const string OcrVisionKeyEnvironmentName = "OcrSettings__VisionKey";
 const string ProjectDatabaseName = "ProjectDatabase";
 const string SqlServerName = "sql-server";
 const string StorageName = "storage";
@@ -30,15 +26,13 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WaitFor(projectDatabase)
     .WaitFor(storage)
     .WithEnvironment(AzureBlobStorageConnectionStringEnvironmentName, UseDevelopmentStorageConnectionString)
-    .WithEnvironment(OcrVisionEndpointEnvironmentName, builder.Configuration[OcrVisionEndpointConfigurationName] ?? string.Empty)
-    .WithEnvironment(OcrVisionKeyEnvironmentName, builder.Configuration[OcrVisionKeyConfigurationName] ?? string.Empty)
     .WithExternalHttpEndpoints();
 
-builder.AddNpmApp(BackOfficeResourceName, GetFrontendDirectory("BackOffice"), "start", ["--", "--host", "0.0.0.0", "--port", BackOfficePort.ToString()])
+builder.AddNpmApp(BackOfficeResourceName, GetFrontendDirectory("BackOffice"), "start", ["--host", "0.0.0.0", "--port", BackOfficePort.ToString()])
     .WithHttpEndpoint(targetPort: BackOfficePort, port: BackOfficePort, name: DefaultHttpEndpointName, isProxied: false)
     .WaitFor(api);
 
-builder.AddNpmApp(WebsiteResourceName, GetFrontendDirectory("Website"), "start", ["--", "--host", "0.0.0.0", "--port", WebsitePort.ToString()])
+builder.AddNpmApp(WebsiteResourceName, GetFrontendDirectory("Website"), "start", ["--host", "0.0.0.0", "--port", WebsitePort.ToString()])
     .WithHttpEndpoint(targetPort: WebsitePort, port: WebsitePort, name: DefaultHttpEndpointName, isProxied: false)
     .WaitFor(api);
 

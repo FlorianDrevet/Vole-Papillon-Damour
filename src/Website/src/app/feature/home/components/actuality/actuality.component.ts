@@ -20,5 +20,6 @@ export class ActualityComponent implements OnInit{
     this.axiosService.request(MethodEnum.GET, "/actuality/latest", {}).then(a => {
       this.actualities.set(a);
     })
+      .catch(() => undefined)
   }
 }

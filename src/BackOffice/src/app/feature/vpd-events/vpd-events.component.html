@@ -1,19 +1,10 @@
 <div class="flex flex-col w-full p-5 lg:p-10 font-caveatbrush">
   <div class="relative flex w-full items-center ml-auto mr-auto">
-    <button
-      (click)="openDialogScanBingoCard()"
-      class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl left-0 top-0 absolute lg:hidden"
-      style="padding: 0px 10px">
-      +
-    </button>
-    <app-vpd-button (click)="openDialogScanBingoCard()" class="left-10 top-10 hidden absolute lg:block">
-      Scannez un carton
-    </app-vpd-button>
     <div class="mb-10 lg:mt-5 flex flex-row ml-auto mr-auto items-center">
       <h1 class="text-primary-color text-6xl lg:text-8xl text-center">Tous les évènements</h1>
-      <img class="hidden lg:block h-[100px] ml-5" fetchpriority="high" src="icons/calendar-icon.svg">
+      <img class="hidden lg:block h-[100px] ml-5" fetchpriority="high" src="icons/calendar-icon.svg" alt="Calendrier des évènements">
     </div>
-    <app-vpd-button (click)="openDialogCreation()" class="right-10 top-10 hidden absolute lg:block">
+    <app-vpd-button (click)="openDialogCreation()" (keydown.enter)="openDialogCreation()" class="right-10 top-10 hidden absolute lg:block">
       Créer un évènement
     </app-vpd-button>
     <button

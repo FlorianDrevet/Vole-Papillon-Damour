@@ -1,0 +1,11 @@
+<div class="vpd-container-products">
+  @for (p of products(); track p.id) {
+    <vpd-product-card
+      [product]="p"
+      [editable]="editable()"
+      [showPromotions]="showPromotions()"
+      (editRequested)="productEditRequested.emit($event)"
+      (deleteRequested)="productDeleteRequested.emit($event)"
+      class="flex flex-col items-center"></vpd-product-card>
+  }
+</div>

@@ -1,5 +1,7 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
+import { LEGAL_PAGE_PATHS } from './feature/legal/legal-page-paths';
+
 export const serverRoutes: ServerRoute[] = [
   {
     path: 'association',
@@ -116,6 +118,22 @@ export const serverRoutes: ServerRoute[] = [
   {
     path: 'evenement/:id',
     renderMode: RenderMode.Server,
+  },
+  {
+    path: LEGAL_PAGE_PATHS.mentionsLegales,
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: LEGAL_PAGE_PATHS.politiqueConfidentialite,
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: LEGAL_PAGE_PATHS.politiqueCookies,
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: LEGAL_PAGE_PATHS.accessibilite,
+    renderMode: RenderMode.Prerender,
   },
   {
     path: '**',

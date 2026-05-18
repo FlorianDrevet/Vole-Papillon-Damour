@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Vole_Papillon_Damour.Domain</RootNamespace>
+        <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
     </PropertyGroup>
     
     <ItemGroup>

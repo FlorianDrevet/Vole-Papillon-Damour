@@ -10,7 +10,6 @@
 ## External Services
 
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
-- Azure AI Vision OCR is configured from `OcrSettings`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
 - Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, and `product-images`.
 
@@ -30,10 +29,10 @@
 - PostgreSQL packages were removed during the .NET 10 backend upgrade; the active DI path remains SQL Server.
 - The Aspire AppHost provisions local SQL Server and Azurite for development orchestration.
 - The mailing-list subscription flow and Azure Communication Email integration were removed; actuality creation no longer broadcasts emails.
-- OCR stays an external service in local development; when its secrets are absent, Infrastructure falls back to a fail-on-use OCR service so the API can still boot.
+- The former OCR-specific Azure Vision integration and `OcrSettings` configuration were removed in May 2026.
 
 ## Storage Risk Zones
 
 - Repository changes can impact multiple feature slices at once.
 - Blob/table naming and storage clients are centralized in Infrastructure.
-- OCR and media flows depend on external Azure services and should be validated carefully.
+- Media upload flows depend on centralized Azure Blob configuration and should be validated carefully.

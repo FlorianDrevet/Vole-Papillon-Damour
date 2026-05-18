@@ -34,11 +34,12 @@ Verified slices in `Application` and `Contracts` include:
 
 - `Actuality`
 - `Authentication`
-- `BingoCard`
 - `Events`
-- `MailingList`
 - `Orders`
 - `Products`
+
+Residual `MailingList` folders still exist in `Application` and `Contracts`, but `Program.cs` no longer wires a mailing-list endpoint surface into the active API runtime.
+The dedicated `BingoCard` OCR slice was removed from `Application`, `Contracts`, and `Api` in May 2026; automatic loto-card analysis no longer exists in the active runtime.
 
 ## Domain Aggregates
 

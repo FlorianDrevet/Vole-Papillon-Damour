@@ -3,8 +3,8 @@
 ## Top-Level Layout
 
 - `src/Backend/` - main backend solution and class libraries
-- `src/BackOffice/` - Angular 18 admin UI
-- `src/Website/` - Angular 18 public website
+- `src/BackOffice/` - Angular 21 admin UI
+- `src/Website/` - Angular 21 public website
 - `src/MauiCashApp/` - .NET MAUI 9 client app
 
 ## Backend Structure
@@ -13,7 +13,7 @@
 - `Vole_Papillon_Damour.Application/` - CQRS commands/queries, handlers, validators, behaviors, interfaces
 - `Vole_Papillon_Damour.Contracts/` - DTOs exchanged across layers and clients
 - `Vole_Papillon_Damour.Domain/` - aggregates, domain rules, value logic
-- `Vole_Papillon_Damour.Infrastructure/` - EF Core persistence, repositories, auth, Azure services, OCR, email
+- `Vole_Papillon_Damour.Infrastructure/` - EF Core persistence, repositories, auth, Azure services, and storage adapters
 - `Vole_Papillon_Damour.Domain.tests/` - xUnit domain-focused tests
 
 ## Backend Ownership Boundaries

@@ -1,5 +1,12 @@
 {
   "servers": {
+    "infraflowsculptor-mcp": {
+			"type": "http",
+			"url": "http://127.0.0.1:5258/mcp",
+			"headers": {
+				"Authorization": "Bearer ${input:ifs_pat}"
+			}
+		},
     "gitnexus": {
       "type": "stdio",
       "command": "npx",
@@ -24,6 +31,12 @@
     }
   },
   "inputs": [
+    {
+			"id": "ifs_pat",
+			"type": "promptString",
+			"description": "InfraFlowSculptor personal access token (generate from Settings > Personal Access Tokens).",
+			"password": true
+		},
     {
       "id": "token",
       "type": "promptString",

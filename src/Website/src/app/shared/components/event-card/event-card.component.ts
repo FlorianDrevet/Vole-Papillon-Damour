@@ -1,14 +1,14 @@
-import {Component, input} from '@angular/core';
-import {VpdEventModel} from "../../models/vpdEvent.model";
-import {VpdEventEnum} from "../../enums/vpdEvent.enum";
+import { Component, input } from '@angular/core';
+import { VpdEventModel } from '../../models/vpdEvent.model';
 
+/**
+ * Wrapper Website autour de `vpd-event-card`. Mode lecture seule.
+ */
 @Component({
-    selector: 'app-event-card',
-    templateUrl: './event-card.component.html',
-    styleUrl: './event-card.component.scss',
-    standalone: false
+  selector: 'app-event-card',
+  templateUrl: './event-card.component.html',
+  standalone: false,
 })
 export class EventCardComponent {
-  VpdEvent = input.required<VpdEventModel>()
-  protected readonly VpdEventEnum = VpdEventEnum;
+  VpdEvent = input.required<VpdEventModel>();
 }

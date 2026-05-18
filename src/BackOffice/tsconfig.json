@@ -18,7 +18,16 @@
     "moduleResolution": "bundler",
     "importHelpers": true,
     "target": "ES2022",
-    "module": "ES2022"
+    "module": "ES2022",
+    "baseUrl": ".",
+    "paths": {
+      "@vpd/ui": ["../SharedUi/src/public-api.ts"],
+      "@vpd/ui/*": ["../SharedUi/src/*"],
+      "@angular/*": ["./node_modules/@angular/*"],
+      "rxjs": ["./node_modules/rxjs"],
+      "rxjs/*": ["./node_modules/rxjs/*"],
+      "tslib": ["./node_modules/tslib"]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

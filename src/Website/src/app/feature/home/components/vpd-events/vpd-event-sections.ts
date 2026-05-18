@@ -24,7 +24,8 @@ export class VpdEventSections implements OnInit {
         data.date = new Date(data.date);
         data.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
         this.lotoCard.set(data)
-      });
+      })
+      .catch(() => undefined);
 
     this.axiosService.request(MethodEnum.GET, '/asso-events/next-books', {})
       .then((data: any) => {
@@ -32,7 +33,7 @@ export class VpdEventSections implements OnInit {
         data.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
         this.balCard.set(data)
       })
-      .catch();
+      .catch(() => undefined);
 
 
     this.axiosService.request(MethodEnum.GET, '/asso-events/next-other-event', {})
@@ -43,6 +44,7 @@ export class VpdEventSections implements OnInit {
           return data
         })
         this.otherCard.set(data)
-      }).catch()
+      })
+      .catch(() => undefined)
   }
 }

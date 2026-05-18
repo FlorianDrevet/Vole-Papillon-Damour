@@ -32,12 +32,14 @@ export class HomeComponent implements OnInit{
   }
 
   ngOnInit(): void {
-    this.axiosService.request(MethodEnum.GET, '/asso-events/next-bingo', {})
+    void this.axiosService.request(MethodEnum.GET, '/asso-events/next-bingo', {})
       .then((data: any) => {
         data.date = new Date(data.date);
         data.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
         this.lotoCard.set(data)
-        console.log(data)
+      })
+      .catch(() => {
+        this.lotoCard.set(null);
       });
   }
 

@@ -6,9 +6,6 @@ import {MatDialog} from "@angular/material/dialog";
 import {
   CreateUpdateEventDialogComponent
 } from "../../shared/components/dialogs/create-update-event-dialog/create-update-event-dialog.component";
-import {
-  ScanBingoCardDialogComponent
-} from "../../shared/components/dialogs/scan-bingo-card-dialog/scan-bingo-card-dialog.component";
 
 @Component({
     selector: 'app-vpd-events',
@@ -27,23 +24,14 @@ export class VpdEventsComponent implements OnInit{
 
   ngOnInit(): void {
     this.vpdEventsFacade.getAllEvents$().then((events : any[]) => {
-      events.map(event => {
+      events.forEach(event => {
         event.eventType = VpdEventEnum[event.eventType as keyof typeof VpdEventEnum];
-        return
       });
       this.allBingoEvents.set(events.filter(event => event.eventType === VpdEventEnum.Bingo));
       this.allBooksEvents.set(events.filter(event => event.eventType === VpdEventEnum.Books));
       this.allOtherEvents.set(events.filter(event => event.eventType === VpdEventEnum.Other));
       this.isLoading.set(false);
     })
-  }
-
-  openDialogScanBingoCard() {
-    const dialogRef = this.dialog.open(ScanBingoCardDialogComponent, {
-      "maxWidth": "90vw",
-      "width": "fit-content",
-      "height": "fit-content",
-    });
   }
 
   openDialogCreation() {

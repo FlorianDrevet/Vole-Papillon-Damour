@@ -29,6 +29,8 @@ import {MisfortuneComponent} from "./feature/maxence/daily-life/misfortune/misfo
 import {OrgansTransplantComponent} from "./feature/maxence/daily-life/organs-transplant/organs-transplant.component";
 import {TableauComponent} from "./feature/tableau/tableau.component";
 import {VpdAllEventsComponent} from "./feature/vpd-all-events/vpd-all-events.component";
+import {LegalPageComponent} from "./feature/legal/legal-page.component";
+import {LEGAL_PAGE_PATHS} from "./feature/legal/legal-page-paths";
 
 const routes: Routes = [
   {
@@ -188,6 +190,43 @@ const routes: Routes = [
         ]
       }
     ]
+  },
+  {
+    path: LEGAL_PAGE_PATHS.mentionsLegales,
+    component: LegalPageComponent,
+    title: "Mentions légales | Vole Papillon d'Amour",
+    data: {
+      legalPagePath: LEGAL_PAGE_PATHS.mentionsLegales,
+      legalFooterLabel: 'Mentions légales'
+    }
+  },
+  {
+    path: LEGAL_PAGE_PATHS.politiqueConfidentialite,
+    component: LegalPageComponent,
+    title: "Politique de confidentialité | Vole Papillon d'Amour",
+    data: {
+      legalPagePath: LEGAL_PAGE_PATHS.politiqueConfidentialite,
+      legalFooterLabel: 'Confidentialité'
+    }
+  },
+  {
+    path: LEGAL_PAGE_PATHS.politiqueCookies,
+    component: LegalPageComponent,
+    title: "Politique de cookies | Vole Papillon d'Amour",
+    data: {
+      legalPagePath: LEGAL_PAGE_PATHS.politiqueCookies,
+      legalFooterLabel: 'Cookies'
+    }
+  },
+  {
+    path: LEGAL_PAGE_PATHS.accessibilite,
+    component: LegalPageComponent,
+    title: "Accessibilité | Vole Papillon d'Amour",
+    data: {
+      legalPagePath: LEGAL_PAGE_PATHS.accessibilite,
+      legalFooterLabel: 'Accessibilité',
+      legalFooterStatus: 'non conforme'
+    }
   },
 
   { path: '**', redirectTo: '/accueil', pathMatch: 'full' }
