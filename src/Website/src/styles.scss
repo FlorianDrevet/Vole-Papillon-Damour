@@ -3,7 +3,7 @@
 @use '@angular/material' as mat;
 
 // Plus imports for other components in your app.
-@import "scss/main";
+@use "scss/main";
 
 // Include the common styles for Angular Material. We include this here so that you only
 // have to load a single css file for Angular Material in your app.

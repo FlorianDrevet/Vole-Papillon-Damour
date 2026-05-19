@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-05-18 | Migrated the Website Sass entrypoint from deprecated `@import` to `@use`/`@forward`, verified the Website build stays green, and removed the `angular-sass` deprecation warnings while leaving unrelated bundle-budget/CommonJS warnings untouched |
 | 2026-05-18 | Fixed Aspire SQL Server local auth drift by making the AppHost SQL password explicit and secret-backed (`Parameters:sql-server-password`), enabling AppHost user secrets, validating that the SQL container restarts without `18456` login failures, and preserving the existing data volume |
 | 2026-05-18 | Fixed Rider/Aspire launch failures caused by duplicate Domain assembly attributes by excluding `src/Backend/Vole_Papillon_Damour.Domain/artifacts/**` from the Domain SDK default items, then verified Domain build, AppHost build, and AppHost startup all succeed again |
 | 2026-05-18 | Fixed Aspire AppHost frontend startup by removing the extra leading `--` from both `AddNpmApp(..., args)` calls, verified `npm run start -- --host ... --port ...` works for BackOffice and Website, and noted a separate baseline AppHost build blocker from duplicate Domain assembly attributes |

@@ -27,6 +27,7 @@ Verified Tailwind theme tokens include:
 - `body` uses a flex column layout and the `font-caveatbrush` utility.
 - `Website` also defines a global `.no-scroll` helper class.
 - `Website` centralizes shell-heavy styling in `src/styles.scss` with reusable primitives such as `.vpd-glass-card`, `.vpd-pill-badge`, and `.vpd-button`, which keeps shared navigation/home polish out of Angular component style budgets.
+- The Website Sass entrypoint now uses `@use "scss/main"` and `src/scss/_main.scss` re-exports its partials via `@forward`, which removes the Dart Sass `@import` deprecation warnings without changing the rendered CSS.
 
 ## UX Structure Notes
 
