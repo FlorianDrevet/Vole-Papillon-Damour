@@ -20,7 +20,8 @@ public class AddBingoWinCommandHandler(IEventRepository eventRepository, IMapper
         }
 
         if (assoEvent.Parties is null ||
-            assoEvent.CurrentPartieIndex >= assoEvent.Parties?.Count)
+            assoEvent.CurrentPartieIndex < 0 ||
+            assoEvent.CurrentPartieIndex >= assoEvent.Parties.Count)
         {
             return mapper.Map<AssoEventResult>(assoEvent);
         } 

@@ -2,6 +2,8 @@
 
 | Date | Change |
 |------|--------|
+| 2026-05-19 | Hardened the live loto tableau flow with event-scoped SSE broadcasts, safer rollback/win handlers, Website SSE parse/reconnect guards, new Application/Infrastructure test projects, and verified 100% targeted coverage on live handlers/SSE manager plus backend and Website validations |
+| 2026-05-19 | Dream consolidation: verified the May 18 durable stack/runtime/frontend facts were already present in thematic memory, made no thematic rewrites, and reset the dream gate |
 | 2026-05-18 | Migrated the Website Sass entrypoint from deprecated `@import` to `@use`/`@forward`, verified the Website build stays green, and removed the `angular-sass` deprecation warnings while leaving unrelated bundle-budget/CommonJS warnings untouched |
 | 2026-05-18 | Fixed Aspire SQL Server local auth drift by making the AppHost SQL password explicit and secret-backed (`Parameters:sql-server-password`), enabling AppHost user secrets, validating that the SQL container restarts without `18456` login failures, and preserving the existing data volume |
 | 2026-05-18 | Fixed Rider/Aspire launch failures caused by duplicate Domain assembly attributes by excluding `src/Backend/Vole_Papillon_Damour.Domain/artifacts/**` from the Domain SDK default items, then verified Domain build, AppHost build, and AppHost startup all succeed again |

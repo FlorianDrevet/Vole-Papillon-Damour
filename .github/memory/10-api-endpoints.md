@@ -23,6 +23,8 @@
 - `POST /asso-events/{id}/numeros`, `DELETE /asso-events/{id}/numeros`, `POST /asso-events/{id}/win-partie`, `PUT /asso-events/{id}/bingo-win` - admin-protected live bingo mutations
 - `GET /asso-events/{id}/tableau/sse` - public SSE stream used by the website live tableau
 
+Live bingo mutations broadcast the updated `EventResponse` only to SSE clients registered for the same `{id}`. The SSE endpoint sends an initial snapshot after registration and removes the client when the request is aborted.
+
 ## Nested Event Subresources
 
 - `POST/PUT/DELETE /asso-events/{id}/parties...` - admin-protected party management

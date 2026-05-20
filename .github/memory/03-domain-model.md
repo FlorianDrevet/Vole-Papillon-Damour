@@ -28,6 +28,14 @@ The usual change path is:
 4. handler uses repositories or services from `Infrastructure`
 5. contracts and results flow back to clients
 
+## Live Loto Tableau Flow
+
+- The live bingo/loto mutation path is `EventsController` -> `AddNumeroToEvent`, `RemoveLastNumero`, `AddWinPartie`, or `AddBingoWin` handler -> `IEventRepository.UpdateAsync` -> event-scoped SSE broadcast.
+- SSE delivery is scoped by `AssoEventsId` through `ISSEClientManager.SendToEvent`; do not reintroduce all-client broadcasts for `/asso-events/{id}/tableau/sse`.
+- `RemoveLastNumeroCommandHandler` supports rollback from an empty current partie to the previous partie and cleans the previous partie's `AddedBingoNumber` from `BingoNumeros`.
+- `Partie.AddWin()` now safely returns `false` when no numero is drawn, when the current line is missing, or when the last numero already won.
+- Critical live-flow tests live in `Vole_Papillon_Damour.Application.tests`, `Vole_Papillon_Damour.Infrastructure.tests`, and `Domain.tests`; May 2026 coverage verified 100% line/branch on the four live handlers and `SSEClientManager`, plus 100% executable line coverage on modified `Partie.AddWin()` lines.
+
 ## Feature Slices
 
 Verified slices in `Application` and `Contracts` include:

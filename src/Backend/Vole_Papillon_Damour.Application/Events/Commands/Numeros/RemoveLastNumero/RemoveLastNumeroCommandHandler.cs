@@ -21,30 +21,39 @@ public class RemoveLastNumeroCommandHandler(IEventRepository eventRepository, IM
             return Errors.AssoEvent.AssoEventNotFound(command.AssoEventsId);
         }
 
+        var parties = assoEvent.Parties?.ToList();
         if (assoEvent.CurrentPartieIndex < 0 || 
-            assoEvent.Parties is null ||
-            assoEvent.CurrentPartieIndex >= assoEvent.Parties?.Count)
+            parties is null ||
+            assoEvent.CurrentPartieIndex >= parties.Count)
         {
             return mapper.Map<AssoEventResult>(assoEvent);
         }
         
-        var partie = assoEvent.Parties?.ToList().Find(p => p.Index == assoEvent.CurrentPartieIndex);
-        int? numeroRemoved = partie!.RemoveLastNumero();
-        if (numeroRemoved is null)
+        var partie = parties.Find(p => p.Index == assoEvent.CurrentPartieIndex);
+        if (partie is null)
         {
-            if (assoEvent.CurrentPartieIndex > 0)
+            return Errors.AssoEvent.Partie.PartieWithIndexNotFound(command.AssoEventsId, assoEvent.CurrentPartieIndex);
+        }
+
+        var partieWithRemovedNumero = partie;
+        int? numeroRemoved = partieWithRemovedNumero.RemoveLastNumero();
+        if (numeroRemoved is null && assoEvent.CurrentPartieIndex > 0)
+        {
+            assoEvent.CurrentPartieIndex--;
+            partieWithRemovedNumero = parties.Find(p => p.Index == assoEvent.CurrentPartieIndex);
+            if (partieWithRemovedNumero is null)
             {
-                assoEvent.CurrentPartieIndex--;
-                var partieBefore = assoEvent.Parties?.ToList().Find(p => p.Index == assoEvent.CurrentPartieIndex);
-                partieBefore!.RemoveLastNumero();
+                return Errors.AssoEvent.Partie.PartieWithIndexNotFound(command.AssoEventsId, assoEvent.CurrentPartieIndex);
             }
+
+            numeroRemoved = partieWithRemovedNumero.RemoveLastNumero();
         }
         
         // If the numero removed is the one added by this partie to the bingo
         // We need to remove it from the bingo numerous
-        if (numeroRemoved != null && numeroRemoved == partie.AddedBingoNumber)
+        if (numeroRemoved != null && numeroRemoved == partieWithRemovedNumero.AddedBingoNumber)
         {
-            partie.AddedBingoNumber = null;
+            partieWithRemovedNumero.AddedBingoNumber = null;
             if (!assoEvent.RemoveBingoNumero(numeroRemoved!.Value))
             {
                 return Errors.AssoEvent.CantRemoveBingoNumero(command.AssoEventsId, numeroRemoved.Value);

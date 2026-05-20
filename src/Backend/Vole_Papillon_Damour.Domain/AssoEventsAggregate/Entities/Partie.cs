@@ -164,13 +164,24 @@ public sealed class Partie : Entity<PartieId>
     /// <returns>true if all lots has been won</returns>
     public bool AddWin()
     {
-        var linePartie = _lineParties.First(l => l.Index == CurrentLineIndex);
-        
-        // Exit when click on win twice or then no numero clicked before
-        if (linePartie.GetLastWinningNumber().Contains(_lastNumeros.Last()) || !_lastNumeros.Any())
+        if (!_lastNumeros.Any())
+        {
             return false;
+        }
 
-        if (linePartie.AddWin(_lastNumeros.Last()))
+        var linePartie = _lineParties.FirstOrDefault(l => l.Index == CurrentLineIndex);
+        if (linePartie is null)
+        {
+            return false;
+        }
+
+        var lastNumero = _lastNumeros[^1];
+        if (linePartie.GetLastWinningNumber().Contains(lastNumero))
+        {
+            return false;
+        }
+
+        if (linePartie.AddWin(lastNumero))
         {
             CurrentLineIndex++;
             if (CurrentLineIndex == _lineParties.Count())

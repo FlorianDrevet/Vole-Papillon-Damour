@@ -1,4 +1,3 @@
-using System.Text.Json;
 using MapsterMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +25,7 @@ namespace Vole_Papillon_Damour.Api.Controllers.AssoEventsController;
 
 public static class EventsController
 {
+    private const string AdminPolicyName = "IsAdmin";
     public static IApplicationBuilder UseEventsController(this IApplicationBuilder builder)
     {
         builder.UseLotsController();
@@ -48,7 +48,7 @@ public static class EventsController
                             error => error.Result());
                     })
                 .WithName("Create an event")
-                .RequireAuthorization("IsAdmin")
+                .RequireAuthorization(AdminPolicyName)
                 .DisableAntiforgery();
             
             endpoints.MapGet("/asso-events",
@@ -176,7 +176,7 @@ public static class EventsController
                             error => error.Result());
                     })
                 .WithName("Update AssoEvent")
-                .RequireAuthorization("IsAdmin")
+                .RequireAuthorization(AdminPolicyName)
                 .DisableAntiforgery();
             
             endpoints.MapPost("/asso-events/{id}/numeros",
@@ -190,20 +190,20 @@ public static class EventsController
                         
                         var addNumeroResult = await mediator.Send(command);
 
-                        return addNumeroResult.Match(
-                            addNumeroResult =>
+                        return await addNumeroResult.MatchAsync(
+                            async addNumeroResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(addNumeroResult);
                                 
                                 var jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                sseClientManager.SendToAllClients(jsonMessage);
+                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => error.Result());
+                            error => Task.FromResult(error.Result()));
                     })
                 .WithName("Add a number to a partie")
-                .RequireAuthorization("IsAdmin");
+                .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapDelete("/asso-events/{id}/numeros",
                     async (Guid id,
@@ -214,20 +214,20 @@ public static class EventsController
                         
                         var removeLastNumeroResult = await mediator.Send(command);
 
-                        return removeLastNumeroResult.Match(
-                            removeLastNumeroResult =>
+                        return await removeLastNumeroResult.MatchAsync(
+                            async removeLastNumeroResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(removeLastNumeroResult);
                                 
                                 var jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                sseClientManager.SendToAllClients(jsonMessage);
+                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => error.Result());
+                            error => Task.FromResult(error.Result()));
                     })
                 .WithName("Remove last numero of a partie")
-                .RequireAuthorization("IsAdmin");
+                .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapPost("/asso-events/{id}/win-partie",
                     async (Guid id,
@@ -238,20 +238,20 @@ public static class EventsController
                                     
                         var createPartieResult = await mediator.Send(command);
             
-                        return createPartieResult.Match(
-                            createPartieResult =>
+                        return await createPartieResult.MatchAsync(
+                            async createPartieResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(createPartieResult);
                                 
                                 var  jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                sseClientManager.SendToAllClients(jsonMessage);
+                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => error.Result());
+                            error => Task.FromResult(error.Result()));
                     })
                 .WithName("Add win to a partie")
-                .RequireAuthorization("IsAdmin");
+                .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapPut("/asso-events/{id}/bingo-win",
                     async (AddBingoWinRequest request, Guid id,
@@ -262,20 +262,20 @@ public static class EventsController
                                     
                         var createPartieResult = await mediator.Send(command);
             
-                        return createPartieResult.Match(
-                            createPartieResult =>
+                        return await createPartieResult.MatchAsync(
+                            async createPartieResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(createPartieResult);
                                 
                                 var jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                sseClientManager.SendToAllClients(jsonMessage);
+                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => error.Result());
+                            error => Task.FromResult(error.Result()));
                     })
                 .WithName("Update Bingo win")
-                .RequireAuthorization("IsAdmin");
+                .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapGet("/asso-events/{id}/tableau/sse",
                     async (HttpContext ctx, Guid id, 
@@ -288,7 +288,7 @@ public static class EventsController
                         var clientId = ctx.Connection.Id;
                         var streamWriter = new StreamWriter(ctx.Response.Body);
 
-                        sseClientManager.AddClient(clientId, streamWriter);
+                        sseClientManager.AddClient(new AssoEventsId(id), clientId, streamWriter);
                         
                         var command = new GetAssoEventByIdQuery(
                             new AssoEventsId(id));
@@ -307,21 +307,12 @@ public static class EventsController
                                 return Task.CompletedTask;
                             });
 
+                        var connectionClosed = new TaskCompletionSource();
+                        using var cancellationRegistration = ctx.RequestAborted.Register(() => connectionClosed.TrySetResult());
+
                         try
                         {
-                            // Keep the connection open
-                            while (!ctx.RequestAborted.IsCancellationRequested)
-                            {
-                                await Task.Delay(100, ct);
-                            }
-                        }
-                        catch (TaskCanceledException e)
-                        {
-                            await sseClientManager.SendToClient(clientId, $"data: {e.Message}\n\n");
-                        }
-                        catch (Exception e)
-                        {
-                            await sseClientManager.SendToClient(clientId, $"data: {e.Message}\n\n");
+                            await connectionClosed.Task;
                         }
                         finally
                         {

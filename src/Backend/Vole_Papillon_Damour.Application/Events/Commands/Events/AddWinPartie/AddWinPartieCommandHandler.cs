@@ -20,28 +20,32 @@ public class AddWinPartieCommandHandler(IEventRepository eventRepository, IMappe
             return Errors.AssoEvent.AssoEventNotFound(command.AssoEventsId);
         }
 
-        if (assoEvent.Parties is null ||
-            assoEvent.CurrentPartieIndex >= assoEvent.Parties?.Count)
+        var parties = assoEvent.Parties?.ToList();
+        if (parties is null ||
+            assoEvent.CurrentPartieIndex < 0 ||
+            assoEvent.CurrentPartieIndex >= parties.Count)
         {
             return mapper.Map<AssoEventResult>(assoEvent);
         } 
         
-        var partie = assoEvent.Parties?.ToList().Find(p => p.Index == assoEvent.CurrentPartieIndex);
-        if (partie?.AddWin() ?? false)
+        var partie = parties.Find(p => p.Index == assoEvent.CurrentPartieIndex);
+        if (partie is null)
+        {
+            return Errors.AssoEvent.Partie.PartieWithIndexNotFound(command.AssoEventsId, assoEvent.CurrentPartieIndex);
+        }
+        
+        if (partie.AddWin())
         {
             assoEvent.CurrentPartieIndex++;
-            var partieNext = assoEvent.Parties?.ToList().Find(p => p.Index == assoEvent.CurrentPartieIndex);
-            if (partieNext!.PartieType.Value == PartieType.PartieTypeEnum.Bingo)
+            var partieNext = parties.Find(p => p.Index == assoEvent.CurrentPartieIndex);
+            if (partieNext?.PartieType.Value == PartieType.PartieTypeEnum.Bingo && assoEvent.BingoHasBeenWon)
             {
-                if (assoEvent.BingoHasBeenWon)
-                {
-                    assoEvent.CurrentPartieIndex++;
-                }
+                assoEvent.CurrentPartieIndex++;
             }
         }
 
         // When on Bingo partie pass the bingo has been won
-        if (partie!.LastNumeros.Count != 0 && partie.PartieType.Value == PartieType.PartieTypeEnum.Bingo)
+        if (partie.LastNumeros.Count != 0 && partie.PartieType.Value == PartieType.PartieTypeEnum.Bingo)
         {
             assoEvent.BingoHasBeenWon = true;
         }
