@@ -1,0 +1,51 @@
+<div class="flex flex-col w-full p-5 lg:p-10 font-caveatbrush">
+  <div class="relative flex w-full items-center ml-auto mr-auto">
+    <div class="mb-10 lg:mt-5 flex flex-row ml-auto mr-auto items-center">
+      <h1 class="text-primary-color text-6xl lg:text-8xl text-center">Tous les évènements</h1>
+      <img class="hidden lg:block h-[100px] ml-5" fetchpriority="high" src="icons/calendar-icon.svg">
+    </div>
+  </div>
+
+  <div class="flex flex-col mb-10">
+    <div class="flex flex-col mb-10">
+      <h2 class="text-primary-color text-4xl lg:text-6xl">Les lotos</h2>
+      <div class="h-2 w-full bg-primary-color"></div>
+    </div>
+
+    <div class="flex flex-row flex-wrap gap-10 gap-y-5">
+      @for (event of allBingoEvents(); track event.id) {
+        <app-event-card
+          [VpdEvent]="event"></app-event-card>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-col mb-10">
+    <div class="flex flex-col mb-10">
+      <h2 class="text-primary-color text-4xl lg:text-6xl">Les bourses aux livres</h2>
+      <div class="h-2 w-full bg-primary-color"></div>
+    </div>
+
+    <div class="flex flex-row flex-wrap gap-10 gap-y-5">
+      @for (event of allBooksEvents(); track event.id) {
+        <app-event-card
+          [VpdEvent]="event"></app-event-card>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-col">
+    <div class="flex flex-col mb-10">
+      <h2 class="text-primary-color text-4xl lg:text-6xl">Les autres évènements</h2>
+      <div class="h-2 w-full bg-primary-color"></div>
+    </div>
+
+    <div class="flex flex-row flex-wrap gap-10 gap-y-5">
+      @for (event of allOtherEvents(); track event.id) {
+        <app-event-card
+          [VpdEvent]="event"></app-event-card>
+      }
+    </div>
+  </div>
+</div>
+

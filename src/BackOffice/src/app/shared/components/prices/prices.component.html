@@ -1,0 +1,6 @@
+<vpd-product-list
+  [products]="filteredProducts()"
+  [editable]="true"
+  [showPromotions]="false"
+  (productEditRequested)="onEditRequested($event)"
+  (productDeleteRequested)="onDeleteRequested($event)"></vpd-product-list>

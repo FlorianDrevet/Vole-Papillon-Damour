@@ -1,0 +1,29 @@
+<div
+  [id]="'date-'+ Year()"
+  [ngClass]="{'bg-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
+   'bg-background-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
+  class="flex flex-row w-full">
+  <div
+    [ngClass]="{'bg-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
+   'bg-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
+    class="w-4 lg:w-5 ml-5 lg:ml-10"></div>
+  <div class="flex flex-col w-full">
+    <div class="flex flex-row w-full items-center mt-10">
+      <div
+        [ngClass]="{'bg-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
+          'bg-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
+        class="h-4 lg:h-5 w-12 lg:w-16 mr-7 lg:mr-5"></div>
+      <h2
+        [ngClass]="{'text-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
+          'text-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
+        class="text-5xl lg:text-7xl">{{Title()}}<br>{{Year()}} - {{Year() + 1}}</h2>
+    </div>
+    <div
+      [ngClass]="{'text-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
+          'text-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
+      class="p-7 lg:p-16 text-2xl lg:text-4xl flex flex-col items-center content-history gap-10 lg:gap-16">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>
+

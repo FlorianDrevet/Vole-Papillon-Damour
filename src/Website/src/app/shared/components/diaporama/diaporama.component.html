@@ -1,0 +1,9 @@
+<div class="flex flex-row items-center w-fit bg-white p-4 rounded-3xl">
+  <p (click)="next()" class="mr-5 text-5xl lg:text-7xl"><</p>
+  <div class="d">
+      <img [src]="pictureList()[currentPicture()]"
+           width="400px">
+  </div>
+  <p (click)="previous()" class="ml-5 text-5xl lg:text-7xl">></p>
+</div>
+

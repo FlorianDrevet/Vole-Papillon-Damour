@@ -1,0 +1,69 @@
+# 03 - Domain Model And Runtime Flow
+
+## Backend Runtime
+
+The API boots from `Vole_Papillon_Damour.Api/Program.cs` and wires:
+
+- Swagger in development
+- controllers with camelCase JSON output
+- authorization policy `IsAdmin`
+- Azure Monitor OpenTelemetry
+- custom error handling middleware
+- rate limiting
+- authentication and authorization
+
+## CQRS Flow
+
+Application setup registers:
+
+- MediatR handlers from the Application assembly
+- FluentValidation validators from the Application assembly
+- a `ValidationBehavior<,>` pipeline behavior
+
+The usual change path is:
+
+1. API endpoint or controller extension receives HTTP input
+2. request maps to a command or query in `Application`
+3. MediatR dispatches to a handler
+4. handler uses repositories or services from `Infrastructure`
+5. contracts and results flow back to clients
+
+## Live Loto Tableau Flow
+
+- The live bingo/loto mutation path is `EventsController` -> `AddNumeroToEvent`, `RemoveLastNumero`, `AddWinPartie`, or `AddBingoWin` handler -> `IEventRepository.UpdateAsync` -> event-scoped SSE broadcast.
+- SSE delivery is scoped by `AssoEventsId` through `ISSEClientManager.SendToEvent`; do not reintroduce all-client broadcasts for `/asso-events/{id}/tableau/sse`.
+- `RemoveLastNumeroCommandHandler` supports rollback across multiple empty previous parties, cleans the removed partie's `AddedBingoNumber` from `BingoNumeros`, and resets `BingoHasBeenWon` when undoing a bingo partie numero.
+- `Partie.RemoveLastNumero()` tolerates parties without line parties and inconsistent live state where the last drawn numero is absent from `LiveNumeros`.
+- `Partie.AddWin()` now safely returns `false` when no numero is drawn, when the current line is missing, or when the last numero already won.
+- Critical live-flow tests live in `Vole_Papillon_Damour.Application.tests`, `Vole_Papillon_Damour.Infrastructure.tests`, and `Domain.tests`; May 2026 coverage verified 100% line/branch on live add/remove/win handlers and validator, plus 100% line/branch on targeted domain methods `Partie.AddLiveNumero()`, `Partie.RemoveLastNumero()`, `Partie.AddWin()`, `LinePartie.AddWin()`, `LinePartie.RemoveNumero()`, `Lot.IsWonByLastNumber()`, `AssoEvents.AddBingoNumero()`, and `AssoEvents.RemoveBingoNumero()`.
+
+## Feature Slices
+
+Verified slices in `Application` and `Contracts` include:
+
+- `Actuality`
+- `Authentication`
+- `Events`
+- `Orders`
+- `Products`
+
+Residual `MailingList` folders still exist in `Application` and `Contracts`, but `Program.cs` no longer wires a mailing-list endpoint surface into the active API runtime.
+The dedicated `BingoCard` OCR slice was removed from `Application`, `Contracts`, and `Api` in May 2026; automatic loto-card analysis no longer exists in the active runtime.
+
+## Domain Aggregates
+
+Verified aggregate folders in `Domain` include:
+
+- `ActualityAggregate`
+- `AssoEventsAggregate`
+- `OrderAggregate`
+- `ProductAggregate`
+- `UserAggregate`
+
+## Conventions To Preserve
+
+- Keep commands and queries in their feature folders under `Application`.
+- Keep validators and MediatR handlers close to the feature they serve.
+- Keep domain rules in aggregates and domain types, not in controllers.
+- Keep transport DTOs in `Contracts`, not inside Angular or MAUI code.
+- When a shared contract changes, review both Angular apps and the MAUI client.

@@ -1,0 +1,194 @@
+<mat-dialog-content class="h-fit !flex flex-col lg:!max-h-[80vh]">
+  <h1 class="font-caveatbrush text-4xl lg:text-6xl text-primary-color ml-auto mr-auto">
+    {{ updateEvent() !== null ? "Modifier un évènement" : "Nouvelle évènement" }}
+  </h1>
+  <div class="h-1 bg-primary-color w-full"></div>
+  <form [formGroup]="newEventForm" class="flex flex-col w-full mt-5">
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Type d'évènement :</h1>
+      <mat-form-field class="w-full mt-3">
+        <mat-label>Type d'évènement</mat-label>
+        <mat-select formControlName="eventType"
+                    required>
+          <mat-option [value]="VpdEventEnum.Bingo">Loto</mat-option>
+          <mat-option [value]="VpdEventEnum.Books">Bourse aux livres</mat-option>
+          <mat-option [value]="VpdEventEnum.Other">Autre</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Titre :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Titre</mat-label>
+        <input class="w-full" formControlName="name"
+               matInput placeholder="Titre">
+      </mat-form-field>
+    </div>
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color ">Description :</h1>
+      <mat-form-field class="w-full  mt-3">
+        <mat-label>Description</mat-label>
+        <textarea #autosize="cdkTextareaAutosize"
+                  cdkAutosizeMinRows="1"
+                  cdkTextareaAutosize
+                  formControlName="description"
+                  matInput
+        ></textarea>
+      </mat-form-field>
+    </div>
+
+
+    <div class="flex w-full">
+      <div class="mt-auto mb-auto flex flex-col">
+        <div class="flex flex-col lg:flex-row">
+          <p class="font-caveatbrush text-3xl lg:text-4xl text-primary-color mb-3">Image :</p>
+          <div class="ml-5 mt-2 mb-5 lg:mb-0">
+            <input #fileInput
+                   (change)="ImageUtils.onFileSelected(document.getElementById('file-event'), principalImage)"
+                   [required]="true"
+                   formControlName="image"
+                   hidden id="file-event" required type="file"
+            >
+            <button (click)="fileInput.click()" mat-raised-button
+                    type="button">Choisir une image
+            </button>
+          </div>
+        </div>
+        @if (this.principalImage().fileContent !== '') {
+          <div class="preview-img-container ml-auto mr-auto">
+            <img [src]="this.principalImage().fileContent" alt="Image de l'event">
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="w-full flex flex-row gap-10 mt-3">
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">
+         Date de début
+        </h1>
+        <mat-form-field class="w-full  mt-3">
+          <mat-label>Date de début</mat-label>
+          <input [matDatepicker]="picker" formControlName="dateStart" matInput>
+          <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+      @if (type() !== VpdEventEnum.Books) {
+        <div class="w-full">
+          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Heure de début :</h1>
+          <mat-form-field class="w-full  mt-3">
+            <mat-label>Heure de début</mat-label>
+            <input type="text" matInput [matTimepicker]="timepicker" formControlName="hourStart"/>
+            <mat-timepicker-toggle matSuffix [for]="timepicker"></mat-timepicker-toggle>
+            <mat-timepicker #timepicker></mat-timepicker>
+          </mat-form-field>
+        </div>
+      } @else {
+        <div class="w-full">
+          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">
+            Date de fin
+          </h1>
+          <mat-form-field class="w-full  mt-3">
+            <mat-label>Date de fin</mat-label>
+            <input [matDatepicker]="pickerEnd" required formControlName="dateEnd" matInput>
+            <mat-datepicker-toggle [for]="pickerEnd" matIconSuffix></mat-datepicker-toggle>
+            <mat-datepicker #pickerEnd></mat-datepicker>
+          </mat-form-field>
+        </div>
+      }
+    </div>
+
+    @if (type() === VpdEventEnum.Bingo) {
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color text-nowrap">Heure d'ouverture des portes
+          :</h1>
+        <mat-form-field class="w-full  mt-3">
+          <mat-label>Heure d'ouverture des portes</mat-label>
+          <input type="text" matInput [matTimepicker]="timepicker" formControlName="hourOpenDoors"/>
+          <mat-timepicker-toggle matSuffix [for]="timepicker"></mat-timepicker-toggle>
+          <mat-timepicker #timepicker></mat-timepicker>
+        </mat-form-field>
+      </div>
+    }
+
+    @if (type() === VpdEventEnum.Books) {
+      <div class="w-full flex flex-row gap-10">
+        <div class="w-full">
+          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color text-nowrap">Heure d'ouverture :</h1>
+          <mat-form-field class="w-full  mt-3">
+            <mat-label>Heure d'ouverture</mat-label>
+            <input type="text" matInput [matTimepicker]="timepicker" formControlName="hourOpenDoors"/>
+            <mat-timepicker-toggle matSuffix [for]="timepicker"></mat-timepicker-toggle>
+            <mat-timepicker #timepicker></mat-timepicker>
+          </mat-form-field>
+        </div>
+        <div class="w-full">
+          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color text-nowrap">Heure de fermeture :</h1>
+          <mat-form-field class="w-full  mt-3">
+            <mat-label>Heure de fermeture</mat-label>
+            <input type="text" matInput required [matTimepicker]="timepickerEnd" formControlName="hourCloseDoors" />
+            <mat-timepicker-toggle matSuffix [for]="timepickerEnd"></mat-timepicker-toggle>
+            <mat-timepicker #timepickerEnd></mat-timepicker>
+          </mat-form-field>
+        </div>
+      </div>
+    }
+
+    @if (type() === VpdEventEnum.Other) {
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color ">Lien d'inscription :</h1>
+        <mat-form-field class="w-full  mt-3">
+          <mat-label>Lien d'inscription</mat-label>
+          <input class="w-full" formControlName="urlRegistration"
+                 matInput placeholder="Lien d'inscription">
+        </mat-form-field>
+      </div>
+    }
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Ville :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Ville</mat-label>
+        <input class="w-full" formControlName="city"
+               matInput placeholder="Ville">
+      </mat-form-field>
+    </div>
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Code postal :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Code postal</mat-label>
+        <input class="w-full" formControlName="cityCode"
+               matInput placeholder="Code postal">
+      </mat-form-field>
+    </div>
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Numéro de rue :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Numéro de rue</mat-label>
+        <input class="w-full" formControlName="roadNumber"
+               matInput placeholder="Numéro de rue">
+      </mat-form-field>
+    </div>
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Rue :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Rue</mat-label>
+        <input class="w-full" formControlName="road"
+               matInput placeholder="Rue">
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  @if (isLoading()) {
+    <mat-spinner class="ml-5 mr-5" diameter="30"></mat-spinner>
+  } @else {
+    <button (click)="onNoClick()" cdkFocusInitial mat-button>Annuler</button>
+    <button (click)="onYesClick()" mat-button>{{ updateEvent() !== null ? "Modifier" : "Créer" }}</button>
+  }
+</mat-dialog-actions>
+
+

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.votredomaine.com/accueil</loc>
+  </url>
+  <url>
+    <loc>https://www.votredomaine.com/association/presentation</loc>
+  </url>
+  <url>
+    <loc>https://www.votredomaine.com/association/comment-aider</loc>
+  </url>
+  <url>
+    <loc>https://www.votredomaine.com/association/revue-de-presses</loc>
+  </url>
+  <url>
+    <loc>https://www.votredomaine.com/association/photos</loc>
+  </url>
+  <url>
+    <loc>https://www.votredomaine.com/toute-l-actualite</loc>
+  </url>
+  <!-- plusieurs URL <loc> pour chaque détail d'actualité par ID peuvent être ajoutées ici -->
+  <url>
+    <loc>https://www.votredomaine.com/evenement</loc>
+  </url>
+  <!-- plusieurs URL <loc> pour chaque détail d'événement par ID peuvent être ajoutées ici -->
+  <url>
+    <loc>https://www.votredomaine.com/maxence/histoire</loc>
+  </url>
+  <url>
+    <loc>https://www.votredomaine.com/maxence/maladies/gastrostomie</loc>
+  </url>
+  <url>
+    <loc>https://www.votredomaine.com/maxence/maladies/hirschsprung</loc>
+  </url>
+  <!-- Ajoutez des URL supplémentaires pour les autres maladies et sections similaires -->
+  <!-- ... -->
+  <url>
+    <loc>https://www.votredomaine.com/maxence/vie-quotidienne/soins-quotidiens</loc>
+  </url>
+  <!-- Ajoutez des URL supplémentaires pour les autres aspects de la vie quotidienne -->
+  <!-- ... -->
+</urlset>

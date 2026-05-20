@@ -1,0 +1,121 @@
+<mat-dialog-content class="h-fit !flex flex-col lg:!max-h-[80vh]">
+  <h1 class="font-caveatbrush text-4xl lg:text-6xl text-primary-color ml-auto mr-auto">
+    {{ updateActuality() !== null ? "Modifier une actualité" : "Nouvelle Actualité" }}
+  </h1>
+  <div class="h-1 bg-primary-color w-full"></div>
+  <form [formGroup]="newActualityForm" class="flex flex-row w-full mt-5">
+    <div class="flex flex-col">
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Titre :</h1>
+        <mat-form-field appearance="fill" class="w-full mt-3">
+          <mat-label>Titre</mat-label>
+          <input class="w-full" formControlName="title"
+                 matInput placeholder="Titre">
+        </mat-form-field>
+      </div>
+
+      <div class="flex w-full">
+        <div class="mt-auto mb-auto flex flex-col">
+          <div class="flex flex-col lg:flex-row">
+            <p class="font-caveatbrush text-3xl lg:text-4xl text-primary-color mb-3">Image Principale :</p>
+            <div class="ml-5 mt-2 mb-5 lg:mb-0">
+              <input #fileInput (change)="ImageUtils.onFileSelected(document.getElementById('file'), principalImage)" [disabled]="!modification "
+                     [required]="true"
+                     formControlName="principalImage"
+                     hidden id="file" required type="file"
+              >
+              <button (click)="fileInput.click()" [disabled]="!modification" mat-raised-button
+                      type="button">Choisir une image
+              </button>
+            </div>
+          </div>
+          @if (this.principalImage().fileContent !== '') {
+            <div class="preview-img-container ml-auto mr-auto">
+              <img [src]="this.principalImage().fileContent" alt="Image du produit">
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Date :</h1>
+        <mat-form-field class="w-full  mt-3">
+          <mat-label>Date</mat-label>
+          <input [matDatepicker]="picker" formControlName="date" matInput>
+          <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color ">Article :</h1>
+        <mat-form-field class="w-full  mt-3">
+          <mat-label>Article</mat-label>
+          <textarea #autosize="cdkTextareaAutosize"
+                    cdkAutosizeMinRows="1"
+                    cdkTextareaAutosize
+                    formControlName="article"
+                    matInput
+          ></textarea>
+        </mat-form-field>
+      </div>
+
+      <div class="flex flex-col lg:flex-row justify-between w-full lg:gap-10">
+        <div>
+          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Lien Facebook :</h1>
+          <mat-form-field appearance="fill" class="mt-3 w-full lg:w-fit">
+            <mat-label>Lien Facebook</mat-label>
+            <input formControlName="facebook" matInput placeholder="Lien Facebook">
+          </mat-form-field>
+        </div>
+        <div>
+          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Lien Instagram :</h1>
+          <mat-form-field appearance="fill" class=" mt-3  w-full lg:w-fit">
+            <mat-label>Lien Instagram</mat-label>
+            <input formControlName="instagram" matInput placeholder="Lien Instagram">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="flex w-full">
+        <div class="mt-auto mb-auto">
+          <div class="flex flex-col lg:flex-row ">
+            <p class="font-caveatbrush text-3xl lg:text-4xl text-primary-color mb-3">Images :</p>
+            <div class="ml-5 mt-2">
+              <input #filesInput (change)="ImageUtils.onFilesSelected(document.getElementById('files'), optionalImages)" [disabled]="!modification "
+                     formControlName="images"
+                     hidden
+                     id="files" multiple type="file"
+              >
+              <button (click)="filesInput.click()" [disabled]="!modification" mat-raised-button
+                      type="button">Choisir des images
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-row flex-wrap gap-x-5 gap-y-5 mt-5">
+            @for (image of this.optionalImages(); track image; let i = $index) {
+              <div class="preview-img-container relative">
+                <img [src]="image.fileContent" alt="Image">
+                <img src="icons/supprimer.png" class="!h-10 !w-auto absolute top-0 right-0"
+                     (click)="deleteOptionalImage(i)">
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      @if (error()) {
+        <p class="text-red-700 font-librebaskerville text-xl mt-10 w-4/5 text-center">{{ error()?.toString() }}</p>
+      }
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  @if (isLoading()) {
+    <mat-spinner class="ml-5 mr-5" diameter="30"></mat-spinner>
+  } @else {
+    <button (click)="onNoClick()" cdkFocusInitial mat-button>Annuler</button>
+    <button (click)="onYesClick()" mat-button>{{ updateActuality() !== null ? "Modifier" : "Créer" }}</button>
+  }
+</mat-dialog-actions>

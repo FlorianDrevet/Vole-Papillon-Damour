@@ -1,0 +1,35 @@
+<div class="flex flex-col rounded-3xl border-4 border-primary-color p-5 bg-white w-full sm:w-[430px] h-fit sm:h-[650px] max-h-[650px] sm:max-h-none">
+  <div class="flex flex-row items-center">
+    <div class="bg-primary-color h-8 w-4"></div>
+    <h2 class="text-primary-color text-3xl ml-5 lg:w-fit w-[50%]">{{ actuality().title }}</h2>
+    @if (editable()) {
+      <div class="flex flex-row ml-auto gap-2 w-fit">
+        <button
+          type="button"
+          (click)="onEdit()"
+          class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
+          <img class="h-7" fetchpriority="high" src="icons/crayon.png" alt="Modifier">
+        </button>
+        <button
+          type="button"
+          (click)="onDelete()"
+          class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
+          <img class="h-7" fetchpriority="high" src="icons/supprimer.png" alt="Supprimer">
+        </button>
+      </div>
+    }
+  </div>
+  <img [src]="actuality().urlPrincipalImage" class="rounded-3xl w-full h-auto mt-5 mb-5 max-h-[450px]" alt="">
+  <p #article class="article-box text-xl text-justify text-text-color overflow-hidden mb-2">{{ actuality().article }}</p>
+  <div class="flex-row flex lg:mt-auto justify-between mt-auto">
+    <a [routerLink]="'/actualite/' + actuality().id" class="flex flex-row text-2xl">
+      Lire la suite >
+    </a>
+    <div class="flex flex-row">
+      <img class="mr-3" height="35" src="icons/calendar-icon.svg" width="35" alt="">
+      <h3 class="text-primary-color text-2xl text-justify">
+        {{ actuality().date | date:'dd/MM' }}
+      </h3>
+    </div>
+  </div>
+</div>

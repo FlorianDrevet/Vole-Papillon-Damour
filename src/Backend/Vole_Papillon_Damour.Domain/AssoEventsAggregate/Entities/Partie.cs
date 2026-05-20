@@ -1,0 +1,229 @@
+using System.Collections;
+using System.Reflection.Metadata.Ecma335;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.Common.Models;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+
+namespace Vole_Papillon_Damour.Domain.AssoEventsAggregate.Entities;
+
+public sealed class Partie : Entity<PartieId>
+{
+    public string? Name { get; private set; } = null!;
+    public PartieType PartieType { get; private set; } = null!;
+    public int Index { get; set; }
+    public bool PauseAfter { get; private set; }
+    public int? AddedBingoNumber { get; set; }
+    public int CurrentLineIndex { get; set; }
+    
+    private IList<int> _lastNumeros = new List<int>();
+    public IReadOnlyList<int> LastNumeros => _lastNumeros.AsReadOnly();
+    
+    private IList<int> _liveNumeros = new List<int>();
+    public IReadOnlyList<int> LiveNumeros => _liveNumeros.AsReadOnly();
+
+    private IList<LinePartie> _lineParties = new List<LinePartie>();
+    public IReadOnlyList<LinePartie> LineParties => _lineParties.AsReadOnly();
+
+    private Partie(PartieId id, string? name, PartieType partieType, int index, bool pauseAfter, IList<int> lastNumero,
+       IList<LinePartie> lineParties, IList<int> liveNumeros, int? addedBingoNumber, int currentLineIndex)
+        : base(id)
+    {
+        Name = name;
+        this.PartieType = partieType;
+        Index = index;
+        PauseAfter = pauseAfter;
+        _lastNumeros = lastNumero;
+        _lineParties = lineParties;
+        _liveNumeros = liveNumeros;
+        AddedBingoNumber = addedBingoNumber;
+        CurrentLineIndex = currentLineIndex;
+    }
+
+    public static Partie Create(string? name, PartieType partieType, int index, bool pauseAfter,
+        IList<LinePartie> lineParties)
+    {
+        return new Partie(PartieId.CreateUnique(),
+            name,
+            partieType,
+            index,
+            pauseAfter,
+            [],
+            lineParties,
+            [],
+            null,
+            0
+            );
+    }
+    
+    public void Update(string name, PartieType partieType, bool pauseAfter)
+    {
+        Name = name;
+        PartieType = partieType;
+        PauseAfter = pauseAfter;
+    }
+
+    public Partie()
+    { 
+    }
+
+    public void SetLastNumero(List<int> lastNumeros)
+    {
+        _lastNumeros = lastNumeros;
+    }
+
+    public void SetLiveNumeros(List<int> liveNumeros)
+    {
+        _liveNumeros = liveNumeros;
+    }
+    
+    public bool AddLiveNumero(int numero)
+    {
+        if (PartieType.Value == PartieType.PartieTypeEnum.PlusUnMoinsUn)
+        {
+            if (_lastNumeros.Contains(numero))
+            {
+                return false;
+            }
+            _lastNumeros.Add(numero);
+            _liveNumeros.Add(numero);
+            
+            var numeroBefore = numero - 1 < 1 ? 90 : numero - 1;
+            if (!_liveNumeros.Contains(numeroBefore))
+            {
+                _liveNumeros.Add(numeroBefore);
+            }
+
+            var numeroAfter = numero + 1 > 90 ? 1 : numero + 1;
+            if (!_liveNumeros.Contains(numeroAfter))
+            {
+                _liveNumeros.Add(numeroAfter);
+            }
+            return true;
+        }
+        
+        if (_liveNumeros.Contains(numero))
+        {
+            return false;
+        }
+
+        _lastNumeros.Add(numero);
+        _liveNumeros.Add(numero);
+        return true;
+    }
+
+    /// <summary>
+    /// Remove last numero and update CurrentLineIndex
+    /// </summary>
+    /// <returns>true if all numeros removed and no last numero</returns>
+    public int? RemoveLastNumero()
+    {
+        if (!_lastNumeros.Any())
+        {
+            return null;
+        }
+
+        List<int> lastNumeros = new List<int>();
+        
+        int lastNumero = _lastNumeros[_lastNumeros.Count - 1];
+        _lastNumeros.RemoveAt(_lastNumeros.Count() - 1);
+
+        while (_liveNumeros.Count > 0)
+        {
+            var liveNumero = _liveNumeros[_liveNumeros.Count - 1];
+            lastNumeros.Add(liveNumero);
+            _liveNumeros.RemoveAt(_liveNumeros.Count() - 1);
+
+            if (liveNumero == lastNumero)
+            {
+                break;
+            }
+        }
+
+        if (!_lineParties.Any())
+        {
+            return lastNumero;
+        }
+
+        var lineIndexToUpdate = CurrentLineIndex >= _lineParties.Count
+            ? _lineParties.Count - 1
+            : CurrentLineIndex;
+
+        var linePartie = _lineParties.First(l => l.Index == lineIndexToUpdate);
+        var hasANumberBeenDeleted = linePartie.RemoveNumero(lastNumeros);
+
+        var previousLineIndex = CurrentLineIndex - 1;
+        if (!hasANumberBeenDeleted && previousLineIndex >= 0 && previousLineIndex != lineIndexToUpdate)
+        {
+            var previousLinePartie = _lineParties.First(l => l.Index == previousLineIndex);
+            hasANumberBeenDeleted = previousLinePartie.RemoveNumero(lastNumeros);
+        }
+        
+        if (CurrentLineIndex != 0 && hasANumberBeenDeleted)
+        {
+            CurrentLineIndex--;
+        }
+
+        return lastNumero;
+    }
+
+    /// <summary>
+    /// Say that the last numero has won
+    /// </summary>
+    /// <returns>true if all lots has been won</returns>
+    public bool AddWin()
+    {
+        if (!_lastNumeros.Any())
+        {
+            return false;
+        }
+
+        var linePartie = _lineParties.FirstOrDefault(l => l.Index == CurrentLineIndex);
+        if (linePartie is null)
+        {
+            return false;
+        }
+
+        var lastNumero = _lastNumeros[^1];
+        if (linePartie.GetLastWinningNumber().Contains(lastNumero))
+        {
+            return false;
+        }
+
+        if (linePartie.AddWin(lastNumero))
+        {
+            CurrentLineIndex++;
+            if (CurrentLineIndex == _lineParties.Count())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void AddLinePartie(LinePartie linePartie)
+    {
+        var existingLinePartie = _lineParties.FirstOrDefault(x => x.Index == linePartie.Index);
+        if (existingLinePartie is null)
+        {
+            _lineParties.Add(linePartie);
+        }
+        else
+        {
+            int indexExistingLinePartie = _lineParties.IndexOf(existingLinePartie);
+            foreach (var lot in linePartie.Lots)
+            {
+                _lineParties[indexExistingLinePartie].AddLot(lot);
+            }
+        }
+    }
+
+    public bool DeleteLinePartie(LinePartieId commandLinePartieId)
+    {
+        var linePartie = _lineParties.ToList().Find(x => x.Id == commandLinePartieId);
+        if (linePartie is null)
+            return false;
+
+        return _lineParties.Remove(linePartie);
+    }
+}

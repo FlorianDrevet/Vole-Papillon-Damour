@@ -1,0 +1,23 @@
+<div class="flex flex-col w-full lg:mt-10 mb-16 items-center">
+  <div
+    class="flex w-fit flex-col lg:flex-row flex-wrap lg:items-start items-center lg:justify-evenly gap-y-5 lg:gap-y-10 lg:gap-x-16">
+    <div class="w-fit">
+      <app-vpd-image [backgroundColor]="BackgroundColorEnum.WHITE"
+                     [rounded]="true"
+                     [src]="vpdEvent().urlImage"
+      ></app-vpd-image>
+    </div>
+    <ng-content></ng-content>
+  </div>
+
+  <div class="mt-10 lg:mt-0 w-full">
+    <div>
+      <h3 class="text-primary-color text-5xl lg:text-7xl">Détails</h3>
+      <div class="bg-primary-color h-2 w-full mt-2"></div>
+    </div>
+    <p class="mt-5 text-text-color text-justify text-2xl lg:text-4xl">{{ vpdEvent().description }}</p>
+  </div>
+</div>
+
+
+

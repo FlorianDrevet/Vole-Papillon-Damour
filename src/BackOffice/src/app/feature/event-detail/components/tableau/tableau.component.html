@@ -1,0 +1,69 @@
+@if (assoEvent() === null || currentPartie() === null || currentLine() === null) {
+  <mat-spinner class="ml-auto mr-auto"></mat-spinner>
+} @else {
+  <app-modal (closeModal)="isPaused.set(false)" [showModal]="isPaused()">
+    <h1 class="pause-title">Pause</h1>
+    <h2 class="bingo-numero-pause">{{ assoEvent()?.bingoNumeros?.join(" - ") }}</h2>
+  </app-modal>
+
+  <app-modal (closeModal)="isLastNumero.set(false)" [showModal]="isLastNumero()">
+    <h1 class="last-numero-title">Numéro:</h1>
+    <h2 class="last-numero">{{ lastNumero() }}</h2>
+  </app-modal>
+
+  <div class="container-tableau">
+    <div class="info-partie">
+      <div class="partie">
+        <app-tag [value]="currentPartie()?.name ?? ''" class="mr-10 ml-[6%]"></app-tag>
+        <app-tag [value]="currentLine()!.numberLine | lineNumberTitle"></app-tag>
+        @if (currentLine()!.numberLine === NumberLineEnum.ONELINE) {
+          <app-tag [value]="titleNbTimes()" class="ml-10"></app-tag>
+        }
+        @if (currentPartie()?.partieType !== PartieTypeEnum.STANDARD &&
+        (currentPartie()?.partieType !== PartieTypeEnum.CARTONPLEIN &&
+          currentPartie()?.partieType !== PartieTypeEnum.BINGO)) {
+          <app-tag [isBingo]='true' [value]="(currentPartie()?.partieType?.toString()) ?? ''" class="ml-10"></app-tag>
+        }
+      </div>
+      <div class="utils">
+        <div (click)="onRollBackClicked()" class="rollback">
+          <img src="/icons/retour.png">
+        </div>
+        <div (click)="onWinClicked()" class="win">
+          <img src="/icons/verifier.png">
+        </div>
+        <div (click)="onBingoWinClicked()" class="bingo-won">
+          <img src="/icons/trophee.png">
+        </div>
+      </div>
+    </div>
+    <div class="tableau">
+      @for (i of [].constructor(9); track i; let idx = $index) {
+        <div class="ligne">
+          @for (j of [].constructor(10); track j; let jdx = $index) {
+            <app-number
+              [assoEventId]="assoEvent()?.id ?? ''"
+              [isNeighbour]="isNeighboor((jdx + 1) + (idx) * 10)"
+              [partieId]="currentPartie()?.id ?? ''"
+              [isLastValue]="(jdx + 1) + (idx) * 10 === (currentPartie()?.lastNumeros!.slice(-1))[0]"
+              [isExited]="currentPartie()?.liveNumeros?.includes((jdx + 1) + (idx) * 10) ?? false"
+              [value]="(jdx + 1) + (idx) * 10" (newAssoEvent)="onNumberClicked($event)"></app-number>
+          }
+        </div>
+      }
+    </div>
+    <div class="bingo">
+      @if ((currentPartie()?.partieType ?? PartieTypeEnum.BINGO).toString() !== 'Bingo') {
+        <app-tag [isBingo]="true"
+                 [value]="'Bingo:  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
+      } @else {
+        <div class="w-1/5"></div> <!-- To put on the right the Lot tag -->
+      }
+      <div class="lots">
+        @for (lot of currentLots(); track lot.id) {
+          <app-tag [value]="lot.name"></app-tag>
+        }
+      </div>
+    </div>
+  </div>
+}

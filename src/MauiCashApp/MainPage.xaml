@@ -1,0 +1,217 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:ShopAppVpd.Views"
+             xmlns:vm="clr-namespace:ShopAppVpd.ViewModels"
+             Background="{StaticResource White}"
+             x:Class="ShopAppVpd.MainPage">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- BARRE EN HAUT -->
+        <Grid BackgroundColor="{StaticResource Primary}"
+              Row="0"
+              HeightRequest="60"
+              Padding="10">
+
+            <HorizontalStackLayout HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   Spacing="8">
+                <Label Text="Vole Papillon D'Amour"
+                       VerticalOptions="Center"
+                       TextColor="White"
+                       FontSize="30"
+                       FontFamily="CaveatBrushRegular"
+                       FontAttributes="Bold" />
+
+                <Image Source="logo.png"
+                       HeightRequest="60"
+                       WidthRequest="60"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- CONTENU -->
+        <Grid ColumnDefinitions="7*,4,3*" Grid.Row="1">
+
+            <!-- Partie gauche -->
+            <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto">
+
+                <!-- BARRE DES CATEGORIES -->
+                <FlexLayout Grid.Row="0"
+                            BindableLayout.ItemsSource="{Binding Categories}"
+                            Direction="Row"
+                            Wrap="NoWrap"
+                            JustifyContent="SpaceAround"
+                            AlignItems="Center"
+                            Padding="16"
+                            BackgroundColor="{StaticResource Secondary}"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Center">
+
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <Frame Padding="8"
+                                   HasShadow="False"
+                                   BackgroundColor="Transparent"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=SetSelectedCategoryCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+
+                                <HorizontalStackLayout Spacing="8" VerticalOptions="Center" HorizontalOptions="Center">
+                                    <Image Source="{Binding Icon}" WidthRequest="35" HeightRequest="35" VerticalOptions="Center"/>
+                                    <Label Text="{Binding Name}"
+                                           VerticalOptions="Center"
+                                           FontSize="25"
+                                           FontFamily="CaveatBrushRegular"
+                                           TextColor="White"
+                                           FontAttributes="Bold"/>
+                                </HorizontalStackLayout>
+                            </Frame>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+
+
+
+                <!-- LISTE PRODUITS -->
+                <CollectionView x:Name="ProductCollection"
+                                Grid.Row="1"
+                                Margin="0,20,0,20"
+                                ItemsSource="{Binding FilteredProducts}"
+                                Background="{StaticResource White}">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical"
+                                         Span="2"
+                                         VerticalItemSpacing="15"
+                                         HorizontalItemSpacing="15" />
+                    </CollectionView.ItemsLayout>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <views:ProductCard />
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- BARRE DES CATEGORIES DE NOURRITURE-->
+                <FlexLayout Grid.Row="2"
+                            BindableLayout.ItemsSource="{Binding FoodSections}"
+                            IsVisible="{Binding IsFoodSectionVisible}"
+                            Direction="Row"
+                            Wrap="NoWrap"
+                            JustifyContent="SpaceAround"
+                            AlignItems="Center"
+                            Padding="16"
+                            BackgroundColor="{StaticResource Secondary}"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Center">
+
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <Frame Padding="8"
+                                   HasShadow="False"
+                                   BackgroundColor="Transparent"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center">
+                                <Frame.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=SetSelectedFoodSectionCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Frame.GestureRecognizers>
+
+                                <HorizontalStackLayout Spacing="8" VerticalOptions="Center" HorizontalOptions="Center">
+                                    <Image Source="{Binding Icon}" WidthRequest="35" HeightRequest="35"
+                                           VerticalOptions="Center" />
+                                    <Label Text="{Binding Name}"
+                                           VerticalOptions="Center"
+                                           FontSize="25"
+                                           FontFamily="CaveatBrushRegular"
+                                           TextColor="White"
+                                           FontAttributes="Bold" />
+                                </HorizontalStackLayout>
+                            </Frame>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </FlexLayout>
+
+            </Grid>
+
+            <!-- Séparateur vertical -->
+            <BoxView Grid.Column="1"
+                     Color="{StaticResource Primary}"
+                     WidthRequest="4"
+                     HorizontalOptions="Fill"
+                     VerticalOptions="Fill" />
+
+            <!-- Partie droite -->
+            <Grid Grid.Column="2"
+                  RowDefinitions="Auto, *, Auto"
+                  BackgroundColor="{StaticResource White}"
+                  Padding="20">
+                
+                <Label
+                    Grid.Row="0"
+                    Text="Le Panier"
+                    HorizontalOptions="Center"
+                    TextColor="{StaticResource Primary}"
+                    FontSize="40"
+                    FontFamily="CaveatBrushRegular"
+                    FontAttributes="Bold" />
+                
+                <CollectionView ItemsSource="{Binding ShoppedProducts}"
+                                Grid.Row="1"
+                                BackgroundColor="Transparent">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <views:ShopedProductCard />
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                
+                <Button Text="{Binding CartTotal, StringFormat='{0:F2}€'}"
+                        Grid.Row="2"
+                        Command="{Binding ValidateCartCommand}"
+                        BackgroundColor="{StaticResource Tertiary}"
+                        TextColor="White"
+                        FontFamily="CaveatBrushRegular"
+                        FontSize="30"
+                        FontAttributes="Bold"
+                        CornerRadius="25"
+                        HeightRequest="50"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Center"
+                        Padding="10"/>
+            </Grid>
+
+        </Grid>
+        
+        <!-- BARRE EN BAS -->
+        <Grid BackgroundColor="{StaticResource Primary}"
+              Row="2"
+              HeightRequest="40"
+              Padding="10">
+
+            <HorizontalStackLayout HorizontalOptions="Center"
+                                   VerticalOptions="Center"
+                                   Spacing="8">
+                <Image Source="caisse.png"
+                       HeightRequest="25"
+                       WidthRequest="25"
+                       VerticalOptions="Center" />
+                
+                <Label Text="Caisse"
+                       VerticalOptions="Center"
+                       TextColor="White"
+                       FontSize="20"
+                       FontFamily="CaveatBrushRegular"
+                       FontAttributes="Bold" />
+            </HorizontalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

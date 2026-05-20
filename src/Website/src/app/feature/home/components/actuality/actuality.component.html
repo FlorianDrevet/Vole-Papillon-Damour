@@ -1,0 +1,17 @@
+<div class="bg-background-color w-full flex flex-col items-center">
+  <div class="flex flex-row ml-auto mr-auto items-center bg-primary-color p-3 rounded-3xl mt-10 mb-5 lg:mb-10">
+    <h1 class="text-3xl lg:text-5xl text-white ">L'actualité</h1>
+    <img src="icons/vpd_logo.svg"
+         class="ml-3 mr-auto h-[50px] w-[50px] lg:h-[70px] lg:w-[70px]"
+         alt="Papillon logo" fetchpriority="high">
+  </div>
+  <div class="flex flex-col sm:flex-row flex-wrap justify-evenly w-full p-5 md:p-10 lg:p-0 gap-10 md:gap:0">
+    @for(actu of actualities(); track actu.id) {
+        <app-actuality-card [ActualityModel]="actu"></app-actuality-card>
+    }
+  </div>
+  <a href="/toute-l-actualite" class="mt-10 mb-10">
+    <app-button>Toute l'actualité</app-button>
+  </a>
+</div>
+

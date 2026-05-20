@@ -1,0 +1,62 @@
+<div class="mb-20">
+  <div
+    class="bg-secondary-color flex flex-row justify-evenly w-[90%] ml-auto mr-auto rounded-2xl mt-5 text-white text-4xl h-16 items-center relative">
+    <div class="flex flex-row">
+      <img class="h-10 mr-2" src="icons/boissons.png">
+      <p (click)="changeFilter(ProductSectionEnum.Bar)"
+         [ngClass]="{'underline': filter() === ProductSectionEnum.Bar}">Buvette</p>
+    </div>
+    <div class="flex flex-row">
+      <img class="h-10 mr-2" src="icons/bingo.png">
+      <p (click)="changeFilter(ProductSectionEnum.Bingo)"
+         [ngClass]="{'underline': filter() === ProductSectionEnum.Bingo}">Loto</p>
+    </div>
+    <div class="flex flex-row">
+      <img class="h-10 mr-2" src="icons/pile-de-livres.png">
+      <p (click)="changeFilter(ProductSectionEnum.Book)"
+         [ngClass]="{'underline': filter() === ProductSectionEnum.Book}">Livres</p>
+    </div>
+
+    <button
+      (click)="openDialogCreation()"
+      class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute right-5">
+      <img class="h-4" fetchpriority="high" src="icons/plus.png">
+    </button>
+
+    <button
+      (click)="downloadCaisseApp()"
+      class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute right-20">
+      <img class="h-4" fetchpriority="high" src="icons/telecharger.png">
+    </button>
+  </div>
+
+  @if (filter() === ProductSectionEnum.Bar) {
+    <div
+      class="bg-tertiary-color flex flex-row justify-evenly w-[90%] ml-auto mr-auto rounded-2xl mt-5 text-white text-4xl h-16 items-center relative">
+      <div class="flex flex-row">
+        <img class="h-10 mr-2" src="icons/sel.png">
+        <p (click)="changeFilterBar(ProductCategoryEnum.Salt)"
+           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.Salt}">Salé</p>
+      </div>
+      <div class="flex flex-row">
+        <img class="h-10 mr-2" src="icons/un-carre-de-sucre.png">
+        <p (click)="changeFilterBar(ProductCategoryEnum.Sugar)"
+           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.Sugar}">Sucré</p>
+      </div>
+      <div class="flex flex-row">
+        <img class="h-10 mr-2" src="icons/citron.png">
+        <p (click)="changeFilterBar(ProductCategoryEnum.ColdDrink)"
+           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.ColdDrink}">Boisson Froide</p>
+      </div>
+      <div class="flex flex-row">
+        <img class="h-10 mr-2" src="icons/cafe.png">
+        <p (click)="changeFilterBar(ProductCategoryEnum.HotDrink)"
+           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.HotDrink}">Boisson Chaude</p>
+      </div>
+    </div>
+  }
+
+  <div class="sm:ml-20 sm:mr-20 mt-10 ">
+    <app-prices [category]="filterBar()" [newProduct]="eventUpdated()" [section]="filter()"></app-prices>
+  </div>
+</div>

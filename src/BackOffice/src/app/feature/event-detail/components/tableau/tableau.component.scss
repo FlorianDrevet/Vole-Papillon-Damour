@@ -1,0 +1,123 @@
+.container-tableau {
+  @apply w-screen h-screen bg-primary-color;
+}
+
+.info-partie {
+  height: 150px;
+  @apply flex flex-row justify-between;
+}
+
+.partie {
+  margin-top: auto;
+  margin-bottom: auto;
+  @apply flex flex-row mb-[20px] w-screen;
+}
+
+.tableau {
+  @apply flex flex-col w-[90%] m-auto;
+}
+
+app-number {
+  border-width: 2px;
+  @apply w-full border-primary-color;
+}
+
+app-number:last-child {
+  border-bottom-right-radius: 25px;
+}
+
+.ligne {
+  @apply flex flex-row;
+}
+
+.lots {
+  @apply flex flex-col mr-[5%] justify-end
+}
+
+.lots app-tag {
+  width: fit-content;
+  margin-bottom: 10px;
+  margin-left: auto;
+}
+
+.bingo {
+  margin-top: 70px;
+  margin-left: 5%;
+  @apply flex flex-row justify-between;
+}
+
+.utils {
+  margin-right: 5%;
+  @apply flex flex-row;
+}
+
+.win {
+  border: green 5px solid;
+  border-radius: 500px;
+  height: fit-content;
+  padding: 10px;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-right: 10px;
+}
+
+.win img {
+  margin: auto;
+  height: auto;
+  width: 100px;
+}
+
+.bingo-won {
+  border: yellow 5px solid;
+  border-radius: 500px;
+  height: fit-content;
+  padding: 10px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.bingo-won img {
+  margin: auto;
+  height: auto;
+  width: 100px;
+}
+
+.rollback {
+  border: red 5px solid;
+  border-radius: 500px;
+  height: fit-content;
+  padding: 10px;
+  margin-top: auto;
+  margin-bottom: auto;
+  margin-right: 10px;
+}
+
+.rollback img {
+  margin: auto;
+  height: auto;
+  width: 100px;
+}
+
+.pause-title {
+  font-size: 200px;
+  width: fit-content;
+  @apply ml-auto mr-auto text-primary-color;
+}
+
+.bingo-numero-pause {
+  font-size: 150px;
+  text-align: center;
+  @apply ml-auto mr-auto text-primary-color;
+}
+
+.last-numero-title {
+  font-size: 150px;
+  width: fit-content;
+  @apply mr-auto text-primary-color;
+}
+
+.last-numero {
+  font-size: 250px;
+  text-align: center;
+  @apply ml-auto mr-auto text-primary-color;
+}

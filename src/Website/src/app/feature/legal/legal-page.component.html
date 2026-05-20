@@ -1,0 +1,63 @@
+<main class="legal-page">
+	<section class="legal-page__hero" aria-labelledby="legal-page-title">
+		<p class="legal-page__eyebrow">{{ page.eyebrow }}</p>
+		<h1 id="legal-page-title">{{ page.title }}</h1>
+		<p class="legal-page__intro">{{ page.intro }}</p>
+
+		<div class="legal-page__facts">
+			<article class="legal-page__fact">
+				<span class="legal-page__fact-label">Association</span>
+				<p>{{ associationName }}</p>
+			</article>
+
+			<article class="legal-page__fact">
+				<span class="legal-page__fact-label">Site public</span>
+				<a [href]="publicWebsiteUrl">{{ publicWebsiteUrl }}</a>
+			</article>
+
+			<article class="legal-page__fact">
+				<span class="legal-page__fact-label">Contact</span>
+				<a [href]="contactEmailHref">{{ contactEmail }}</a>
+			</article>
+
+			<article class="legal-page__fact">
+				<span class="legal-page__fact-label">Adresse</span>
+				<p>{{ postalAddress }}</p>
+			</article>
+
+			<article class="legal-page__fact">
+				<span class="legal-page__fact-label">Mise à jour</span>
+				<p>{{ lastUpdatedLabel }}</p>
+			</article>
+
+			<article class="legal-page__fact">
+				<span class="legal-page__fact-label">Hébergement</span>
+				<a [href]="hostingProviderUrl">{{ hostingProviderName }}</a>
+			</article>
+		</div>
+	</section>
+
+	<section class="legal-page__content" aria-label="Contenu de la page légale">
+		@for (section of page.sections; track section.title) {
+			<article class="legal-page__section">
+				<h2>{{ section.title }}</h2>
+
+				@for (paragraph of section.paragraphs; track paragraph) {
+					<p>{{ paragraph }}</p>
+				}
+
+				@if (section.bullets?.length) {
+					<ul>
+						@for (bullet of section.bullets; track bullet) {
+							<li>{{ bullet }}</li>
+						}
+					</ul>
+				}
+
+				@if (section.note) {
+					<p class="legal-page__note">{{ section.note }}</p>
+				}
+			</article>
+		}
+	</section>
+</main>

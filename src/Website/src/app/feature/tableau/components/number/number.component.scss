@@ -1,0 +1,38 @@
+.last-value {
+  @apply bg-tertiary-color #{!important};
+}
+
+.neighbour {
+  @apply bg-success #{!important};
+}
+
+.exited {
+  @apply bg-secondary-color #{!important};
+}
+
+.exited p {
+}
+
+p {
+  @apply text-primary-color md:text-[50px] text-[8vw] leading-[10vw] md:leading-[inherit];
+}
+
+.number {
+  background-color: white;
+}
+
+.top-left {
+  border-top-left-radius: 35px;
+}
+
+.top-right {
+  border-top-right-radius: 35px;
+}
+
+.bottom-left {
+  border-bottom-left-radius: 35px;
+}
+
+.bottom-right {
+  border-bottom-right-radius: 35px;
+}

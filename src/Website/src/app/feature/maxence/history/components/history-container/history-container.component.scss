@@ -1,0 +1,8 @@
+::ng-deep .content-history p {
+  line-height: 3rem !important; //TODO
+  @apply w-full text-justify leading-9 sm:leading-[3rem]
+}
+
+::ng-deep .multiple-images {
+  @apply flex flex-col sm:flex-row flex-wrap justify-evenly w-fit sm:w-full gap-10 lg:gap-5 items-center
+}

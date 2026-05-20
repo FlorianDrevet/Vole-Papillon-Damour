@@ -1,0 +1,40 @@
+<app-general-infos [vpdEvent]="vpdEvent()">
+  <div class="flex flex-col gap-5 lg:mb-10 w-full lg:w-fit">
+    <app-section-infos-event
+      Title="Date :"
+      UrlIcon="icons/calendar-icon.svg"
+      [Value]="vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC'"
+    ></app-section-infos-event>
+    <app-section-infos-event
+      Title="Lieu :"
+      UrlIcon="icons/location-icon.svg"
+      [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city"
+    ></app-section-infos-event>
+  </div>
+
+  <div class="flex w-full flex-col lg:flex-row 2xl:w-fit 2xl:flex-col gap-5 justify-evenly mb-10">
+    <app-section-infos-event
+      class="hidden lg:block"
+      Title="Heure de début :"
+      UrlIcon="icons/clock-icon.svg"
+      [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'"
+    ></app-section-infos-event>
+    <app-section-infos-event
+      class="lg:hidden"
+      Title="Début :"
+      UrlIcon="icons/clock-icon.svg"
+      [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'"
+    ></app-section-infos-event>
+
+    @if (vpdEvent().urlRegistration !== null) {
+      <app-section-infos-event
+        Title="S'enregitrer :"
+        UrlIcon="icons/signe.png"
+      >
+        <a ngProjectAs="value" [href]="vpdEvent().urlRegistration!">
+          <app-button>C'est par ici ></app-button>
+        </a>
+      </app-section-infos-event>
+    }
+  </div>
+</app-general-infos>

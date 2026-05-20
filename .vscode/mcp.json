@@ -1,0 +1,47 @@
+{
+  "servers": {
+    "infraflowsculptor-mcp": {
+			"type": "http",
+			"url": "http://127.0.0.1:5258/mcp",
+			"headers": {
+				"Authorization": "Bearer ${input:ifs_pat}"
+			}
+		},
+    "gitnexus": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "gitnexus@latest",
+        "mcp"
+      ]
+    },
+    "io.github.github/github-mcp-server": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN=${input:token}",
+        "ghcr.io/github/github-mcp-server:latest"
+      ],
+      "gallery": "https://api.mcp.github.com"
+    }
+  },
+  "inputs": [
+    {
+			"id": "ifs_pat",
+			"type": "promptString",
+			"description": "InfraFlowSculptor personal access token (generate from Settings > Personal Access Tokens).",
+			"password": true
+		},
+    {
+      "id": "token",
+      "type": "promptString",
+      "description": "GitHub personal access token.",
+      "password": true
+    }
+  ]
+}

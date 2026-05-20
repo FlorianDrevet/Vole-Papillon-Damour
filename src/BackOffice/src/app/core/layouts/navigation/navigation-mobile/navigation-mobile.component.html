@@ -1,0 +1,62 @@
+<nav class="flex flex-row w-full bg-primary-color justify-between ml-auto mr-auto items-center">
+  <a class="ml-2" routerLink="/dashboard-vole-papillon-damour">
+    <img
+      alt="Papillon logo"
+      class="mt-2 mb-1"
+      fetchpriority="high"
+      height="34"
+      src="logos/papillon_without_back.png"
+      width="34">
+  </a>
+  <a routerLink="/accueil">
+    <h1 class="text-2xl text-white content-center">
+      Vole Papillon D'amour
+    </h1>
+  </a>
+
+  <img (click)="OnMobileNavigationClick()"
+       [src]="isMobileNavigationOpen() ? 'icons/cross-icon.svg' : 'icons/hamburger-menu-icon.svg'"
+       alt="Button to open the navigation" class="mr-3" height="25" width="25">
+</nav>
+
+@if (isMobileNavigationOpen()) {
+  <div class="absolute mobile-navigation-dialog overflow-auto flex">
+    <div class="overflow-auto w-full h-full sub-container-mobile-nav flex">
+      <nav class="rounded-3xl bg-white w-full p-5 flex flex-col">
+        @if (subNavigation() !== null) {
+          <div class="flex flex-row items-center" (click)="onBackNavigationClick()">
+            <div class="flex w-[20px] h-[20px] bg-primary-color rounded-full">
+              <img src="icons/arrow-left-white.svg" class="m-auto" height="10" width="10" alt="arrow back">
+            </div>
+            <h3 class="text-xl text-primary-color ml-3">
+              Retour
+            </h3>
+          </div>
+          <h1 class="text-primary-color text-4xl mt-5 mb-5">{{ titleSubNav() }}</h1>
+        }
+        @for (navigation of (subNavigation() === null ? NavigationItems() : subNavigation()); track navigation.url; let first = $first) {
+          <div class="flex flex-col">
+            <div
+              (click)="OnSubNavigationClick(navigation)"
+              class="flex flex-row justify-between w-full mb-5">
+              <h2 [ngClass]="{
+              'mt-5': !first,
+              'text-3xl': subNavigation() === null,
+              'text-2xl': subNavigation() !== null
+              }">{{ navigation.title }}</h2>
+              <img
+                height="25"
+                width="25"
+                class="mt-auto mb-1"
+                alt="Icon next navigation"
+                src="icons/angle-small-right.svg">
+            </div>
+
+            <div class="bg-primary-color h-0.5 w-full"></div>
+          </div>
+        }
+      </nav>
+    </div>
+  </div>
+}
+

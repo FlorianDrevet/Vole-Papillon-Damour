@@ -1,0 +1,31 @@
+<div class="flex flex-col p-5 lg:p-10 mb-10 w-full font-caveatbrush">
+  <div class="relative flex w-full items-center">
+    <div class="mb-10 lg:mt-5 flex flex-row ml-auto mr-auto items-center">
+      <h1 class="text-primary-color text-6xl lg:text-8xl text-center">Toute l'actualité</h1>
+      <img class="hidden lg:block h-[100px] ml-5" fetchpriority="high" src="icons/newspaper-icon.svg">
+    </div>
+    <app-vpd-button (click)="openDialogCreation()" class="right-10 top-10 hidden absolute lg:block">
+      Nouvelle Actualité
+    </app-vpd-button>
+    <button
+      (click)="openDialogCreation()"
+      class="rounded-full bg-white border-primary-color border-2 text-primary-color text-3xl right-0 top-0 absolute lg:hidden"
+      style="padding: 0px 10px">
+      +
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <mat-spinner class="ml-auto mr-auto"></mat-spinner>
+  } @else {
+    <div class="flex flex-col gap-10">
+      @for (month of groupedActualities(); track month) {
+        <app-actuality-by-month
+          (actualityDeleted)="actualityDeleted($event)"
+          (actualityUpdated)="actualityUpdated($event)"
+          Title="{{month.month | capitalize}} {{month.year}}"
+          [Actualities]="month.actualities"></app-actuality-by-month>
+      }
+    </div>
+  }
+</div>

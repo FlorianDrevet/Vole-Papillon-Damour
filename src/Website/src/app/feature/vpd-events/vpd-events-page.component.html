@@ -1,0 +1,45 @@
+<div class="flex flex-col items-center w-full p-5 lg:p-10">
+  <div class="mb-5 lg:mb-10 lg:mt-5 flex flex-col lg:flex-row w-full justify-center">
+    <h1 class="text-primary-color text-6xl lg:text-8xl text-center">Nos évènements</h1>
+    <img src="icons/calendar-icon.svg" class="h-50 ml-5 hidden lg:block">
+  </div>
+
+  <div class="">
+    <app-special-event
+      [Date]="nextBooks()?.dateStart"
+      [DateEnd]="nextBooks()?.dateEnd"
+      [IdEvent]="nextBooks()?.id"
+      UrlImage="/images/Association/don-livre.jpg"
+      Title="Bourse aux livres">
+      La Bourse au Livre est un événement incontournable pour tous les passionnés de lecture et de littérature.
+      Que vous soyez un lecteur assidu, un collectionneur de livres rares, un étudiant à la recherche de manuels
+      scolaires à prix réduit, ou simplement quelqu'un qui aime flâner parmi les livres, cet événement est fait
+      pour vous.
+    </app-special-event>
+    <div class="mt-10"></div>
+    <app-special-event
+      [Date]="nextBingo()?.dateStart"
+      [IdEvent]="nextBingo()?.id"
+      UrlImage="/images/loto.png"
+      Title="Loto">
+      Le Loto est un jeu de hasard et de convivialité qui rassemble des joueurs de tous âges autour d'une même passion
+      : l'excitation de cocher les bons numéros et de crier "Bingo !" lorsque la victoire est à portée de main.
+      Simple à comprendre et accessible à tous, le bingo est le jeu idéal pour s’amuser dans une ambiance convivial !
+    </app-special-event>
+  </div>
+
+  @if(nextOthers().length !== 0) {
+    <div class="mt-20 mb-20 w-full">
+      <div class="flex flex-col mb-5 lg:mb-16">
+        <h2 class="text-primary-color text-4xl lg:text-6xl">Tous les autres évènements</h2>
+        <div class="h-2 w-full bg-primary-color"></div>
+      </div>
+
+      <div class="flex flex-row flex-wrap gap-10 items-end mt-10 lg:mt-0">
+        @for (vpdEvent of nextOthers(); track vpdEvent.id) {
+          <app-event-card [VpdEvent]="vpdEvent"></app-event-card>
+        }
+      </div>
+    </div>
+  }
+</div>

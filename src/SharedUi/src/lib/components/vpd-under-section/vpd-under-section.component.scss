@@ -1,0 +1,9 @@
+::ng-deep .vpd-under-section p,
+::ng-deep .vpd-under-section li,
+::ng-deep .vpd-under-section ul {
+  @apply text-text-color text-justify text-2xl lg:text-3xl;
+}
+
+::ng-deep .vpd-under-section em {
+  @apply underline mr-3;
+}

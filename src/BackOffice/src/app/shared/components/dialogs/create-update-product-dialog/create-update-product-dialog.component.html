@@ -1,0 +1,94 @@
+<mat-dialog-content class="h-fit !flex flex-col lg:!max-h-[80vh]">
+  <h1 class="font-caveatbrush text-4xl lg:text-6xl text-primary-color ml-auto mr-auto">
+    {{ updateProduct() !== null ? "Modifier un produit" : "Nouveau produit" }}
+  </h1>
+  <div class="h-1 bg-primary-color w-full"></div>
+  <form [formGroup]="newProductForm" class="flex flex-col w-full mt-5">
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Nom :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Nom</mat-label>
+        <input class="w-full" formControlName="name"
+               matInput placeholder="Nom">
+      </mat-form-field>
+    </div>
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Prix :</h1>
+      <mat-form-field appearance="fill" class="w-full mt-3">
+        <mat-label>Prix</mat-label>
+        <input class="w-full" formControlName="price"
+               matInput placeholder="Prix">
+      </mat-form-field>
+    </div>
+
+    <div class="flex w-full">
+      <div class="mt-auto mb-auto flex flex-col w-full">
+        <div class="flex flex-col lg:flex-row w-full">
+          <p class="font-caveatbrush text-3xl lg:text-4xl text-primary-color mb-3">Image :</p>
+          <div class="ml-5 mt-2 mb-5 lg:mb-0">
+            <input #fileInput
+                   (change)="ImageUtils.onFileSelected(document.getElementById('file-product'), principalImage)"
+                   [required]="true"
+                   formControlName="image"
+                   hidden id="file-product" required type="file"
+            >
+            <button (click)="fileInput.click()" mat-raised-button
+                    type="button">Choisir une image
+            </button>
+          </div>
+        </div>
+        @if (this.principalImage().fileContent !== '') {
+          <div class="preview-img-container ml-auto mr-auto">
+            <img [src]="this.principalImage().fileContent" alt="Image du produit" class="w-auto !max-h-[300px]">
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Section :</h1>
+      <mat-form-field class="w-full mt-3">
+        <mat-label>Section</mat-label>
+        <mat-select formControlName="section"
+                    required>
+          <mat-option [value]="ProductSectionEnum.Bingo">Loto</mat-option>
+          <mat-option [value]="ProductSectionEnum.Book">Bourse aux livres</mat-option>
+          <mat-option [value]="ProductSectionEnum.Bar">Buvette</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+
+    @if (section() === ProductSectionEnum.Bar) {
+      <div class="w-full">
+        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Catégorie :</h1>
+        <mat-form-field class="w-full mt-3">
+          <mat-label>Catégorie</mat-label>
+          <mat-select formControlName="category">
+            <mat-option [value]="ProductCategoryEnum.Salt">Salé</mat-option>
+            <mat-option [value]="ProductCategoryEnum.Sugar">Sucré</mat-option>
+            <mat-option [value]="ProductCategoryEnum.ColdDrink">Boisson Froide</mat-option>
+            <mat-option [value]="ProductCategoryEnum.HotDrink">Boisson Chaude</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    }
+
+    <div class="w-full">
+      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Disponible ?</h1>
+      <mat-slide-toggle class="mt-3" formControlName="available">Disponible</mat-slide-toggle>
+    </div>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions>
+  @if (isLoading()) {
+    <mat-spinner class="ml-5 mr-5" diameter="30"></mat-spinner>
+  } @else {
+    <button (click)="onNoClick()" cdkFocusInitial mat-button>Annuler</button>
+    <button (click)="onYesClick()" mat-button>{{ updateProduct() !== null ? "Modifier" : "Créer" }}</button>
+  }
+</mat-dialog-actions>
+
+
+
