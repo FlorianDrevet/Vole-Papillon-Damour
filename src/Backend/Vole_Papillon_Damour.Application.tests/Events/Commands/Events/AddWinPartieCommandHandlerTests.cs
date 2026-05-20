@@ -73,6 +73,7 @@ public class AddWinPartieCommandHandlerTests
         var result = await handler.Handle(new AddWinPartieCommand(assoEvent.Id), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
+        partie.LineParties.Single().Lots.Single().IsWon.Should().Be(42);
         assoEvent.CurrentPartieIndex.Should().Be(1);
         await eventRepository.Received(1).UpdateAsync(assoEvent);
     }

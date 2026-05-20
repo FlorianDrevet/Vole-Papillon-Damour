@@ -37,8 +37,8 @@ public class RemoveLastNumeroTests
         // Assert
         partie.LastNumeros.Count().Should().Be(nbLastNumeros);
         partie.LiveNumeros.Count().Should().Be(nbLiveNumeros);
-        partie.LastNumeros.Last().Should().Be(lastNumero);
-        partie.LiveNumeros.Last().Should().Be(lastLiveNumero);
+        partie.LastNumeros[^1].Should().Be(lastNumero);
+        partie.LiveNumeros[^1].Should().Be(lastLiveNumero);
 
         numeroRemoved.Should().Be(36);
     }
@@ -92,7 +92,97 @@ public class RemoveLastNumeroTests
         // Assert
         numeroRemoved.Should().Be(36);
         partie.CurrentLineIndex.Should().Be(0);
-        partie.LastNumeros.Last().Should().Be(1);
-        partie.LiveNumeros.Last().Should().Be(1);
+        partie.LastNumeros[^1].Should().Be(1);
+        partie.LiveNumeros[^1].Should().Be(1);
+    }
+
+    [Fact]
+    public void RemoveLastNumero_WhenWinningNumberBelongsToPreviousLine_RemovesWinAndDecreasesIndex()
+    {
+        var firstLine = LinePartie.Create(
+            [Lot.Create("First lot", "first-lot.jpg", 0, 25)],
+            new NumberLine(NumberLine.NumberLineEnum.OneLine),
+            0);
+        var secondLine = LinePartie.Create(
+            [Lot.Create("Second lot", "second-lot.jpg", 0)],
+            new NumberLine(NumberLine.NumberLineEnum.TwoLine),
+            1);
+        var partie = Partie.Create(
+            "Test Remove Numero",
+            new PartieType(PartieType.PartieTypeEnum.Standard),
+            0,
+            false,
+            [firstLine, secondLine]);
+        partie.SetLastNumero([25]);
+        partie.SetLiveNumeros([25]);
+        partie.CurrentLineIndex = 1;
+
+        var numeroRemoved = partie.RemoveLastNumero();
+
+        numeroRemoved.Should().Be(25);
+        firstLine.Lots.Single().IsWon.Should().BeNull();
+        partie.CurrentLineIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public void RemoveLastNumero_WhenCurrentLineIndexIsPastLastLine_UsesLastExistingLine()
+    {
+        var linePartie = LinePartie.Create(
+            [Lot.Create("Lot", "lot.jpg", 0, 25)],
+            new NumberLine(NumberLine.NumberLineEnum.OneLine),
+            0);
+        var partie = Partie.Create(
+            "Test Remove Numero",
+            new PartieType(PartieType.PartieTypeEnum.Standard),
+            0,
+            false,
+            [linePartie]);
+        partie.SetLastNumero([25]);
+        partie.SetLiveNumeros([25]);
+        partie.CurrentLineIndex = 1;
+
+        var numeroRemoved = partie.RemoveLastNumero();
+
+        numeroRemoved.Should().Be(25);
+        linePartie.Lots.Single().IsWon.Should().BeNull();
+        partie.CurrentLineIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public void RemoveLastNumero_WhenNoLineParties_RemovesLastNumeroWithoutThrowing()
+    {
+        var partie = Partie.Create(
+            "Test Remove Numero",
+            new PartieType(PartieType.PartieTypeEnum.Standard),
+            0,
+            false,
+            []);
+        partie.SetLastNumero([25]);
+        partie.SetLiveNumeros([25]);
+
+        var action = () => partie.RemoveLastNumero();
+
+        action.Should().NotThrow().Which.Should().Be(25);
+        partie.LastNumeros.Should().BeEmpty();
+        partie.LiveNumeros.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RemoveLastNumero_WhenLastNumeroIsMissingFromLiveState_RemovesLastNumeroWithoutThrowing()
+    {
+        var partie = Partie.Create(
+            "Test Remove Numero",
+            new PartieType(PartieType.PartieTypeEnum.Standard),
+            0,
+            false,
+            []);
+        partie.SetLastNumero([25]);
+        partie.SetLiveNumeros([12, 13]);
+
+        var action = () => partie.RemoveLastNumero();
+
+        action.Should().NotThrow().Which.Should().Be(25);
+        partie.LastNumeros.Should().BeEmpty();
+        partie.LiveNumeros.Should().BeEmpty();
     }
 }

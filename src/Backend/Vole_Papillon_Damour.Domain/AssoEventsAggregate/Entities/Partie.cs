@@ -124,17 +124,25 @@ public sealed class Partie : Entity<PartieId>
 
         List<int> lastNumeros = new List<int>();
         
-        int lastNumero = _lastNumeros.Last();
+        int lastNumero = _lastNumeros[_lastNumeros.Count - 1];
         _lastNumeros.RemoveAt(_lastNumeros.Count() - 1);
 
-        //TODO check not found 
-        while (_liveNumeros.Last() != lastNumero)
+        while (_liveNumeros.Count > 0)
         {
-            lastNumeros.Add(_liveNumeros.Last());
+            var liveNumero = _liveNumeros[_liveNumeros.Count - 1];
+            lastNumeros.Add(liveNumero);
             _liveNumeros.RemoveAt(_liveNumeros.Count() - 1);
+
+            if (liveNumero == lastNumero)
+            {
+                break;
+            }
         }
-        lastNumeros.Add(_liveNumeros.Last());
-        _liveNumeros.RemoveAt(_liveNumeros.Count() - 1);
+
+        if (!_lineParties.Any())
+        {
+            return lastNumero;
+        }
 
         var lineIndexToUpdate = CurrentLineIndex >= _lineParties.Count
             ? _lineParties.Count - 1

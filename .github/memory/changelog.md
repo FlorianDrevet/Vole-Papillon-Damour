@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-05-20 | Completed a focused backend live loto tableau business-core pass for add numero, undo/back, and won-lot validation: added validator/domain/handler tests, hardened multi-party rollback and bingo undo, and verified 100% line/branch on targeted live business methods |
 | 2026-05-19 | Hardened the live loto tableau flow with event-scoped SSE broadcasts, safer rollback/win handlers, Website SSE parse/reconnect guards, new Application/Infrastructure test projects, and verified 100% targeted coverage on live handlers/SSE manager plus backend and Website validations |
 | 2026-05-19 | Dream consolidation: verified the May 18 durable stack/runtime/frontend facts were already present in thematic memory, made no thematic rewrites, and reset the dream gate |
 | 2026-05-18 | Migrated the Website Sass entrypoint from deprecated `@import` to `@use`/`@forward`, verified the Website build stays green, and removed the `angular-sass` deprecation warnings while leaving unrelated bundle-budget/CommonJS warnings untouched |

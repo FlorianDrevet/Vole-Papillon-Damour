@@ -98,4 +98,46 @@ public class AddNumeroToEventCommandHandlerTests
         assoEvent.BingoNumeros.Should().BeEmpty();
         await eventRepository.Received(1).UpdateAsync(assoEvent);
     }
+
+    [Fact]
+    public async Task Handle_WhenPartieAlreadyAddedBingoNumber_AddsLiveNumeroWithoutOverwritingPauseBingoNumero()
+    {
+        var eventRepository = Substitute.For<IEventRepository>();
+        var partie = LiveTableauTestData.CreatePartie(0);
+        var assoEvent = LiveTableauTestData.CreateEvent(partie);
+        LiveTableauTestData.DrawNumeroAddingBingoNumber(assoEvent, partie, 25);
+        eventRepository.GetByIdAsync(assoEvent.Id).Returns(Task.FromResult<AssoEvents?>(assoEvent));
+        eventRepository.UpdateAsync(Arg.Any<AssoEvents>()).Returns(callInfo => Task.FromResult(callInfo.Arg<AssoEvents>()));
+        var handler = new AddNumeroToEventCommandHandler(eventRepository, TestMapperFactory.Create());
+
+        var result = await handler.Handle(new AddNumeroToEventCommand(assoEvent.Id, 26), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        partie.LiveNumeros.Should().ContainInOrder(25, 26);
+        partie.LastNumeros.Should().ContainInOrder(25, 26);
+        partie.AddedBingoNumber.Should().Be(25);
+        assoEvent.BingoNumeros.Should().ContainSingle().Which.Should().Be(25);
+        await eventRepository.Received(1).UpdateAsync(assoEvent);
+    }
+
+    [Fact]
+    public async Task Handle_WhenBingoHasBeenWon_AddsLiveNumeroWithoutAddingPauseBingoNumero()
+    {
+        var eventRepository = Substitute.For<IEventRepository>();
+        var partie = LiveTableauTestData.CreatePartie(0);
+        var assoEvent = LiveTableauTestData.CreateEvent(partie);
+        assoEvent.BingoHasBeenWon = true;
+        eventRepository.GetByIdAsync(assoEvent.Id).Returns(Task.FromResult<AssoEvents?>(assoEvent));
+        eventRepository.UpdateAsync(Arg.Any<AssoEvents>()).Returns(callInfo => Task.FromResult(callInfo.Arg<AssoEvents>()));
+        var handler = new AddNumeroToEventCommandHandler(eventRepository, TestMapperFactory.Create());
+
+        var result = await handler.Handle(new AddNumeroToEventCommand(assoEvent.Id, 25), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        partie.LiveNumeros.Should().ContainSingle().Which.Should().Be(25);
+        partie.LastNumeros.Should().ContainSingle().Which.Should().Be(25);
+        partie.AddedBingoNumber.Should().BeNull();
+        assoEvent.BingoNumeros.Should().BeEmpty();
+        await eventRepository.Received(1).UpdateAsync(assoEvent);
+    }
 }

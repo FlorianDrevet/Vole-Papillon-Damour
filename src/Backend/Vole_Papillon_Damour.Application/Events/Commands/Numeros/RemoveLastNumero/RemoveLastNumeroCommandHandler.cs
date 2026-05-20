@@ -37,7 +37,7 @@ public class RemoveLastNumeroCommandHandler(IEventRepository eventRepository, IM
 
         var partieWithRemovedNumero = partie;
         int? numeroRemoved = partieWithRemovedNumero.RemoveLastNumero();
-        if (numeroRemoved is null && assoEvent.CurrentPartieIndex > 0)
+        while (numeroRemoved is null && assoEvent.CurrentPartieIndex > 0)
         {
             assoEvent.CurrentPartieIndex--;
             partieWithRemovedNumero = parties.Find(p => p.Index == assoEvent.CurrentPartieIndex);
@@ -58,6 +58,11 @@ public class RemoveLastNumeroCommandHandler(IEventRepository eventRepository, IM
             {
                 return Errors.AssoEvent.CantRemoveBingoNumero(command.AssoEventsId, numeroRemoved.Value);
             }
+        }
+
+        if (numeroRemoved is not null && partieWithRemovedNumero.PartieType.Value == PartieType.PartieTypeEnum.Bingo)
+        {
+            assoEvent.BingoHasBeenWon = false;
         }
 
         assoEvent = await eventRepository.UpdateAsync(assoEvent);

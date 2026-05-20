@@ -32,9 +32,10 @@ The usual change path is:
 
 - The live bingo/loto mutation path is `EventsController` -> `AddNumeroToEvent`, `RemoveLastNumero`, `AddWinPartie`, or `AddBingoWin` handler -> `IEventRepository.UpdateAsync` -> event-scoped SSE broadcast.
 - SSE delivery is scoped by `AssoEventsId` through `ISSEClientManager.SendToEvent`; do not reintroduce all-client broadcasts for `/asso-events/{id}/tableau/sse`.
-- `RemoveLastNumeroCommandHandler` supports rollback from an empty current partie to the previous partie and cleans the previous partie's `AddedBingoNumber` from `BingoNumeros`.
+- `RemoveLastNumeroCommandHandler` supports rollback across multiple empty previous parties, cleans the removed partie's `AddedBingoNumber` from `BingoNumeros`, and resets `BingoHasBeenWon` when undoing a bingo partie numero.
+- `Partie.RemoveLastNumero()` tolerates parties without line parties and inconsistent live state where the last drawn numero is absent from `LiveNumeros`.
 - `Partie.AddWin()` now safely returns `false` when no numero is drawn, when the current line is missing, or when the last numero already won.
-- Critical live-flow tests live in `Vole_Papillon_Damour.Application.tests`, `Vole_Papillon_Damour.Infrastructure.tests`, and `Domain.tests`; May 2026 coverage verified 100% line/branch on the four live handlers and `SSEClientManager`, plus 100% executable line coverage on modified `Partie.AddWin()` lines.
+- Critical live-flow tests live in `Vole_Papillon_Damour.Application.tests`, `Vole_Papillon_Damour.Infrastructure.tests`, and `Domain.tests`; May 2026 coverage verified 100% line/branch on live add/remove/win handlers and validator, plus 100% line/branch on targeted domain methods `Partie.AddLiveNumero()`, `Partie.RemoveLastNumero()`, `Partie.AddWin()`, `LinePartie.AddWin()`, `LinePartie.RemoveNumero()`, `Lot.IsWonByLastNumber()`, `AssoEvents.AddBingoNumero()`, and `AssoEvents.RemoveBingoNumero()`.
 
 ## Feature Slices
 
