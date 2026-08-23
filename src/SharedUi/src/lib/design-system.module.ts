@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { VpdTitleComponent } from './components/vpd-title/vpd-title.component';
-import { VpdUnderSectionComponent } from './components/vpd-under-section/vpd-under-section.component';
 import { VpdButtonComponent } from './components/vpd-button/vpd-button.component';
 import { VpdImageComponent } from './components/vpd-image/vpd-image.component';
 import { VpdActualityCardComponent } from './components/vpd-actuality-card/vpd-actuality-card.component';
@@ -17,7 +16,6 @@ import { VpdLineNumberTitlePipe } from './pipes/vpd-line-number-title.pipe';
 
 const COMPONENTS = [
   VpdTitleComponent,
-  VpdUnderSectionComponent,
   VpdButtonComponent,
   VpdImageComponent,
   VpdActualityCardComponent,

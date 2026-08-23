@@ -1,17 +1,18 @@
-<div [ngClass]="{
-       'border-tertiary-color': product().available,
+<div
+  [ngClass]="{
+       'border-[#f0801c]': product().available,
        'border-gray': !product().available
      }"
-     class="relative border-4 border-tertiary-color rounded-3xl flex flex-col text-primary-color bg-white w-[45vw] sm:w-[150px] h-[55vw] sm:h-[200px] justify-between">
-  <h3 class="text-2xl sm:text-3xl w-full text-center">{{ product().name }}</h3>
-  <div class="w-fit mr-auto ml-auto">
-    <img [src]="product().urlImage" class="max-h-[20vw] sm:max-h-[75px] w-auto" alt="">
+  class="relative flex h-[55vw] w-[45vw] flex-col justify-between rounded-sm border-2 bg-white text-[#072b45] sm:h-[200px] sm:w-[150px]">
+  <h3 class="w-full pt-2 text-center text-lg font-semibold sm:text-xl">{{ product().name }}</h3>
+  <div class="mx-auto w-fit">
+    <img [src]="product().urlImage" class="max-h-[20vw] w-auto sm:max-h-[75px]" alt="">
   </div>
-  <p class="text-xl sm:text-2xl ml-auto mr-auto">{{ product().price | price }}</p>
+  <p class="mx-auto pb-2 text-xl font-medium sm:text-2xl">{{ product().price | price }}</p>
 
   @if (showPromotions()) {
     @for (promo of product().promotions; track promo.discountedPrice) {
-      <p class="text-xl sm:text-2xl ml-auto mr-auto text-rose-600">
+      <p class="mx-auto pb-2 text-sm text-[#dc6412] sm:text-base">
         {{ promo.discountedPrice | price }} les {{ promo.quantity }}
       </p>
     }
@@ -21,13 +22,13 @@
     <button
       type="button"
       (click)="onEdit()"
-      class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute right-1 bottom-1">
+      class="absolute bottom-1 right-1 rounded-full border-2 border-[#072b45] bg-white p-2 text-[#072b45]">
       <img class="h-4" fetchpriority="high" src="icons/crayon.png" alt="Modifier">
     </button>
     <button
       type="button"
       (click)="onDelete()"
-      class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute left-1 bottom-1">
+      class="absolute bottom-1 left-1 rounded-full border-2 border-[#072b45] bg-white p-2 text-[#072b45]">
       <img class="h-4" fetchpriority="high" src="icons/supprimer.png" alt="Supprimer">
     </button>
   }

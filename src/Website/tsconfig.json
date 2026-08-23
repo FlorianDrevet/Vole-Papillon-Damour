@@ -23,9 +23,9 @@
     "paths": {
       "@vpd/ui": ["../SharedUi/src/public-api.ts"],
       "@vpd/ui/*": ["../SharedUi/src/*"],
-      "@angular/*": ["./node_modules/@angular/*"],
-      "rxjs": ["./node_modules/rxjs"],
-      "rxjs/*": ["./node_modules/rxjs/*"],
+      "@angular/core": ["./node_modules/@angular/core"],
+      "@angular/common": ["./node_modules/@angular/common"],
+      "@angular/router": ["./node_modules/@angular/router"],
       "tslib": ["./node_modules/tslib"]
     }
   },

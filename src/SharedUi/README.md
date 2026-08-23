@@ -9,7 +9,6 @@ Tous les composants "métier" (actualité, événement, produit) supportent un m
 ## Composants exposés
 
 - `vpd-title`
-- `vpd-under-section`
 - `vpd-button`
 - `vpd-image`
 - `vpd-actuality-card`

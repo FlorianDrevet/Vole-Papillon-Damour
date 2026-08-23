@@ -13,7 +13,6 @@ export * from './lib/enums/product-category.enum';
 export * from './lib/enums/number-line.enum';
 
 export * from './lib/components/vpd-title/vpd-title.component';
-export * from './lib/components/vpd-under-section/vpd-under-section.component';
 export * from './lib/components/vpd-button/vpd-button.component';
 export * from './lib/components/vpd-image/vpd-image.component';
 export * from './lib/components/vpd-actuality-card/vpd-actuality-card.component';
