@@ -18,13 +18,17 @@
     <app-pill-button routerLink="/maxence/histoire" class="mt-2 self-start">Lire l'histoire de Maxence</app-pill-button>
   </div>
 
+  <!-- Portrait "arche" de la maquette 7a : pas de découpe papillon ici, mais un bloc
+       dégradé décalé en haut-gauche derrière une photo au rayon asymétrique. -->
   <div class="relative mx-auto w-full max-w-[400px]">
-    <div class="absolute inset-0 scale-105" style="background: linear-gradient(155deg, #7fd8f5 0%, #1497d6 34%, #f9a93c 74%, #f0801c 100%); clip-path: url(#papillon-clip)"></div>
+    <span
+      class="absolute -left-4 -top-4 bottom-4 right-4 rounded-[260px_8px_260px_8px] lg:-left-6 lg:-top-6 lg:bottom-6 lg:right-6"
+      style="background: linear-gradient(155deg, #7fd8f5 0%, #1497d6 34%, #f9a93c 74%, #f0801c 100%)"
+      aria-hidden="true"></span>
     <img
       ngSrc="images/maxence_accueil.jpg"
       alt="Maxence"
       width="400" height="440"
-      class="relative block h-[300px] w-full object-cover object-[center_16%] lg:h-[440px]"
-      style="clip-path: url(#papillon-clip)">
+      class="relative block h-[300px] w-full rounded-[240px_6px_240px_6px] object-cover object-[center_16%] shadow-[0_26px_50px_-30px_rgba(0,0,0,.6)] lg:h-[440px]">
   </div>
 </section>
