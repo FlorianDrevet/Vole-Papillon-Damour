@@ -3,8 +3,12 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "link:shared-ui": "node scripts/link-shared-ui.mjs",
+    "prestart": "npm run link:shared-ui",
     "start": "ng serve --configuration=development",
+    "prebuild": "npm run link:shared-ui",
     "build": "ng build",
+    "prewatch": "npm run link:shared-ui",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:vole_papillon_damour_website": "node dist/vole_papillon_damour_website/server/server.mjs"
