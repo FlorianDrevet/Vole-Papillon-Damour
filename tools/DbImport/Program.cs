@@ -61,7 +61,7 @@ foreach (var table in missingInTarget)
 // Rows are inserted in whatever order the tables come in, so foreign keys are
 // switched off for the duration and switched back on WITH CHECK at the end:
 // re-enabling is itself the integrity verification.
-await ExecuteAsync(target, "EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL'");
+await SetConstraintsAsync(target, targetTables, enabled: false);
 
 var report = new List<(string Table, long Source, long Target)>();
 var failed = false;
@@ -108,7 +108,7 @@ finally
 {
     // WITH CHECK makes SQL Server validate every existing row against the
     // foreign keys, so a broken reference surfaces here rather than at runtime.
-    await ExecuteAsync(target, "EXEC sp_MSforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL'");
+    await SetConstraintsAsync(target, targetTables, enabled: true);
 }
 
 Console.WriteLine();
@@ -231,6 +231,20 @@ static async Task<long> CopyTableAsync(
     await bulkCopy.WriteToServerAsync(reader);
 
     return bulkCopy.RowsCopied64;
+}
+
+// Azure SQL Database does not ship sp_MSforeachtable, so the statements are
+// generated from the table list instead.
+static async Task SetConstraintsAsync(SqlConnection connection, IEnumerable<TableName> tables, bool enabled)
+{
+    foreach (var table in tables)
+    {
+        var sql = enabled
+            ? $"ALTER TABLE {table.Quoted} WITH CHECK CHECK CONSTRAINT ALL"
+            : $"ALTER TABLE {table.Quoted} NOCHECK CONSTRAINT ALL";
+
+        await ExecuteAsync(connection, sql);
+    }
 }
 
 static async Task ExecuteAsync(SqlConnection connection, string sql)
