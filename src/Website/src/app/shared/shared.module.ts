@@ -16,6 +16,7 @@ import { StatCardComponent } from './components/stat-card/stat-card.component';
 import { QuoteBlockComponent } from './components/quote-block/quote-block.component';
 import { PhotoPlaceholderComponent } from './components/photo-placeholder/photo-placeholder.component';
 import { ActionCardComponent } from './components/action-card/action-card.component';
+import { DiseaseSectionComponent } from './components/disease-section/disease-section.component';
 
 @NgModule({
   declarations: [
@@ -31,6 +32,7 @@ import { ActionCardComponent } from './components/action-card/action-card.compon
     QuoteBlockComponent,
     PhotoPlaceholderComponent,
     ActionCardComponent,
+    DiseaseSectionComponent,
   ],
   exports: [
     PapillonIconComponent,
@@ -45,6 +47,7 @@ import { ActionCardComponent } from './components/action-card/action-card.compon
     QuoteBlockComponent,
     PhotoPlaceholderComponent,
     ActionCardComponent,
+    DiseaseSectionComponent,
     DesignSystemModule,
   ],
   imports: [CommonModule, RouterLink, DesignSystemModule],

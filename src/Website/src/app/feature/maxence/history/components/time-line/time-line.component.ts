@@ -22,7 +22,7 @@ export class TimeLineComponent {
     { year: 2011, title: 'Maxence a 7 ans' },
     { year: 2012, title: 'Maxence a 8 ans' },
     { year: 2013, title: 'Maxence a 9 ans' },
-    { year: 2014, title: 'Maxence a 9 ans' },
+    { year: 2014, title: 'Maxence a 10 ans' },
     { year: 2015, title: 'Maxence a 10 ans' },
     { year: 2016, title: 'Maxence a 11 ans' },
   ];
