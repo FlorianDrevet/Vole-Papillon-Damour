@@ -1,6 +1,4 @@
-import {Component, inject} from '@angular/core';
-import {Router} from "@angular/router";
-import {rule} from "postcss";
+import { Component } from '@angular/core';
 
 @Component({
     selector: 'app-root',
@@ -9,8 +7,5 @@ import {rule} from "postcss";
     standalone: false
 })
 export class AppComponent {
-  title = 'Vole Papillon D\'amour';
-
-  router = inject(Router);
-  protected readonly rule = rule;
+  title = "Vole Papillon d'Amour";
 }

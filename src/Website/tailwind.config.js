@@ -7,39 +7,57 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        'caveatbrush': ["CaveatBrush", "Segoe UI", "cursive"],
-        'dancing': ["DancingScript-Regular", "CaveatBrush", "cursive"],
+        serif: ["Newsreader", "Georgia", "serif"],
+        sans: ["Libre Franklin", "system-ui", "sans-serif"],
+        mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
       },
       colors: {
-        'primary-color': 'rgb(var(--vpd-primary) / <alpha-value>)',
-        'secondary-color': 'rgb(var(--vpd-secondary) / <alpha-value>)',
-        'tertiary-color': 'rgb(var(--vpd-tertiary) / <alpha-value>)',
-        'text-color': 'rgb(var(--vpd-text) / <alpha-value>)',
-        'background-color': 'rgb(var(--vpd-background) / <alpha-value>)',
-        'surface': 'rgb(var(--vpd-surface) / <alpha-value>)',
-        'surface-soft': 'rgb(var(--vpd-surface-soft) / <alpha-value>)',
-        'surface-strong': 'rgb(var(--vpd-surface-strong) / <alpha-value>)',
-        'ink': 'rgb(var(--vpd-ink) / <alpha-value>)',
-        'ink-soft': 'rgb(var(--vpd-ink-soft) / <alpha-value>)',
-        'line': 'rgb(var(--vpd-line) / <alpha-value>)',
-        'gold': '#E3BB71',
-        'success': '#28A745',
-      },
-      boxShadow: {
-        'vpd-soft': '0 18px 40px -24px rgb(var(--vpd-shadow) / 0.45)',
-        'vpd-panel': '0 28px 80px -38px rgb(var(--vpd-shadow) / 0.52)',
-        'vpd-float': '0 22px 48px -28px rgb(var(--vpd-shadow) / 0.38)',
-      },
-      borderRadius: {
-        'vpd': '1.5rem',
-        'vpd-xl': '2rem',
-        'vpd-2xl': '2.5rem',
+        paper: "#f7fbfe",
+        "paper-2": "#e9f4fb",
+        ink: "#041d30",
+        "ink-2": "#072b45",
+        slate: "#33536e",
+        "slate-2": "#4e6c84",
+        "slate-3": "#6d8ba2",
+        mist: "#9dc2da",
+        "mist-2": "#dcecf7",
+        blue: "#0c6ea6",
+        "blue-2": "#1497d6",
+        cyan: "#7fd8f5",
+        orange: "#f0801c",
+        "orange-2": "#f9a93c",
+        "orange-3": "#dc6412",
+        line: "#d9e9f4",
+        "line-2": "#e2eef7",
+
+        // Alias temporaires vers l'ancienne palette --vpd-*, le temps de migrer
+        // les derniers gabarits non encore réécrits (à retirer en fin de refonte).
+        "primary-color": "#072b45",
+        "secondary-color": "#1497d6",
+        "tertiary-color": "#f0801c",
+        "text-color": "#33536e",
+        "background-color": "#f7fbfe",
+        success: "#28A745",
       },
       backgroundImage: {
-        'vpd-hero-glow': 'radial-gradient(circle at 12% 18%, rgb(var(--vpd-secondary) / 0.22), transparent 34%), radial-gradient(circle at 88% 12%, rgb(var(--vpd-tertiary) / 0.18), transparent 26%), linear-gradient(180deg, rgb(var(--vpd-background) / 0.96), rgb(var(--vpd-surface-soft) / 0.98))',
+        "vpd-brand": "linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c)",
+        "vpd-hero": "linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%)",
+      },
+      animation: {
+        "vpd-float": "vpdFloat 8s ease-in-out infinite",
+        "vpd-marquee": "vpdMarquee 22s linear infinite",
+      },
+      keyframes: {
+        vpdFloat: {
+          "0%, 100%": { transform: "translateY(0) rotate(var(--r, 0deg))" },
+          "50%": { transform: "translateY(-9px) rotate(var(--r, 0deg))" },
+        },
+        vpdMarquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
       },
     },
   },
   plugins: [],
 }
-

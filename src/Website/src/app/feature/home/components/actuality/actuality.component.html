@@ -1,17 +1,23 @@
-<div class="bg-background-color w-full flex flex-col items-center">
-  <div class="flex flex-row ml-auto mr-auto items-center bg-primary-color p-3 rounded-3xl mt-10 mb-5 lg:mb-10">
-    <h1 class="text-3xl lg:text-5xl text-white ">L'actualité</h1>
-    <img src="icons/vpd_logo.svg"
-         class="ml-3 mr-auto h-[50px] w-[50px] lg:h-[70px] lg:w-[70px]"
-         alt="Papillon logo" fetchpriority="high">
+<section class="flex flex-col gap-7 bg-white px-6 py-16 lg:px-11 lg:py-18">
+  <div class="flex items-baseline justify-between gap-6 border-b border-line-2 pb-4">
+    <app-section-eyebrow label="Actualités" [lineWidthClass]="'w-16'">
+      <h2 class="font-serif text-3xl font-medium lg:text-[38px]">Ce qui se passe chez nous.</h2>
+    </app-section-eyebrow>
+    <a routerLink="/toute-l-actualite" class="whitespace-nowrap font-mono text-xs tracking-[.08em] text-orange">TOUTE L'ACTUALITÉ →</a>
   </div>
-  <div class="flex flex-col sm:flex-row flex-wrap justify-evenly w-full p-5 md:p-10 lg:p-0 gap-10 md:gap:0">
-    @for(actu of actualities(); track actu.id) {
-        <app-actuality-card [ActualityModel]="actu"></app-actuality-card>
-    }
-  </div>
-  <a href="/toute-l-actualite" class="mt-10 mb-10">
-    <app-button>Toute l'actualité</app-button>
-  </a>
-</div>
 
+  @if (actualities().length) {
+    <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
+      @for (actuality of actualities().slice(0, 3); track actuality.id) {
+        <a [routerLink]="['/actualite', actuality.id]" class="flex flex-col gap-3.5">
+          <img [src]="actuality.urlPrincipalImage" [alt]="actuality.title" class="h-48 w-full rounded object-cover">
+          <span class="font-mono text-[11px] tracking-[.1em] text-slate-3">{{ actuality.date | date:'d MMM yyyy' }}</span>
+          <h3 class="font-serif text-xl font-medium leading-tight text-ink-2">{{ actuality.title }}</h3>
+          <p class="text-sm leading-relaxed text-slate-2">{{ actuality.article.slice(0, 130) }}{{ actuality.article.length > 130 ? '…' : '' }}</p>
+        </a>
+      }
+    </div>
+  } @else {
+    <app-photo-placeholder label="Les dernières actualités arrivent bientôt" class="h-40 rounded"></app-photo-placeholder>
+  }
+</section>

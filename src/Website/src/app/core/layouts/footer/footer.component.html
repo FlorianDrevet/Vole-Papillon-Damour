@@ -1,49 +1,60 @@
-<footer class="bg-primary-color text-white flex flex-col items-center pb-10 pt-10">
-  <div class="bg-secondary-color flex flex-col w-full items-center pt-5 pb-10 mb-20">
-    <div class="mb-10">
-      <h2 class="text-4xl sm:text-6xl text-white">Nos partenaires</h2>
-      <div class="bg-white h-1 sm:h-2 mt-2"></div>
+<footer class="flex flex-col gap-9 bg-ink px-6 py-10 font-sans text-mist-2 lg:px-11 lg:pb-8 lg:pt-12">
+  <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1.2fr_1fr_1fr_1fr] lg:gap-8">
+    <div class="flex flex-col gap-3.5">
+      <span class="flex items-center gap-2.5">
+        <img ngSrc="images/papillon_without_back.png" alt="" width="38" height="38" class="h-[38px] w-[38px] object-contain">
+        <span class="font-serif text-lg text-white">Vole Papillon d'Amour</span>
+      </span>
+      <p class="max-w-[34ch] text-[13px] leading-relaxed text-mist">
+        Association familiale créée en 2010 à Saint-Just-Saint-Rambert pour soutenir Maxence et les enfants touchés par des maladies rares.
+      </p>
+      <span class="flex gap-2.5">
+        <a href="https://www.facebook.com/melvin.drevet.1" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-cyan/[.14]" aria-label="Facebook">
+          <img ngSrc="images/facebook.svg" alt="" width="16" height="16">
+        </a>
+        <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-cyan/[.14]" aria-label="Instagram">
+          <img ngSrc="images/instagram.svg" alt="" width="16" height="16">
+        </a>
+      </span>
     </div>
-    <app-carousel class="sm:w-4/5 ml-auto mr-auto"></app-carousel>
+
+    <div class="flex flex-col gap-2.5 text-[13px]">
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan">L'association</span>
+      <a routerLink="/association/presentation" class="hover:text-white">Qui sommes-nous ?</a>
+      <a routerLink="/association/comment-aider" class="hover:text-white">Comment nous aider ?</a>
+      <a routerLink="/association/revue-de-presses" class="hover:text-white">La presse en parle</a>
+      <a routerLink="/association/photos" class="hover:text-white">Galerie photos</a>
+    </div>
+
+    <div class="flex flex-col gap-2.5 text-[13px]">
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan">Maxence</span>
+      <a routerLink="/maxence/histoire" class="hover:text-white">Son histoire</a>
+      <a routerLink="/maxence/maladies" class="hover:text-white">Ses maladies</a>
+      <a routerLink="/maxence/vie-quotidienne/soins-quotidiens" class="hover:text-white">Son quotidien, ses combats</a>
+      <a routerLink="/maxence/vie-quotidienne/greffe" class="hover:text-white">La greffe</a>
+    </div>
+
+    <div class="flex flex-col gap-2.5 text-[13px]">
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan">Contact</span>
+      <a href="mailto:volepapillondamour@sfr.fr" class="hover:text-white">volepapillondamour&#64;sfr.fr</a>
+      <span class="leading-relaxed text-mist">46 route de Saint-Marcellin<br>42170 Saint-Just-Saint-Rambert</span>
+    </div>
   </div>
-  <div class="w-full flex flex-col items-center lg:items-start lg:flex-row gap-10 lg:gap-0">
 
-    <img src="icons/vpd_logo.svg" class="w-36 ml-20 mr-20 hidden lg:block" alt="Logo vole papillon d'amour">
-
-    <div class="footer-section">
-      <h3>Contact</h3>
-      <div class="footer-separator"></div>
-
-      <a href="mailto:volepapillondamour@sfr.fr">volepapillondamour&#64;sfr.fr</a>
-      <p>46 route de Saint Marcellin<br>42170 Saint-Just-Saint-Rambert<br>France</p>
-    </div>
-
-    <div class="footer-section lg:ml-20">
-      <h3>À Propos</h3>
-      <div class="footer-separator"></div>
-
-      <div class="footer-link-list">
-        @for (legalRoute of route.config; track legalRoute.path) {
-          @if (legalRoute.path && legalRoute.data?.['legalFooterLabel']) {
-            <a class="footer-link" [routerLink]="['/', legalRoute.path]">
-              <span>{{ legalRoute.data?.['legalFooterLabel'] }}</span>
-
-              @if (legalRoute.data?.['legalFooterStatus']) {
-                <span class="footer-status">&nbsp;: {{ legalRoute.data?.['legalFooterStatus'] }}</span>
-              }
-            </a>
-          }
+  <div class="flex flex-col gap-3 border-t border-cyan/[.18] pt-5 text-xs text-mist lg:flex-row lg:items-center lg:justify-between">
+    <span>© 2025 Vole Papillon d'Amour. Tous droits réservés.</span>
+    <span class="flex flex-wrap gap-4">
+      @for (legalRoute of route.config; track legalRoute.path) {
+        @if (legalRoute.path && legalRoute.data?.['legalFooterLabel']) {
+          <a [routerLink]="['/', legalRoute.path]" class="hover:text-white">
+            {{ legalRoute.data?.['legalFooterLabel'] }}
+            @if (legalRoute.data?.['legalFooterStatus']) {
+              <span>&nbsp;: {{ legalRoute.data?.['legalFooterStatus'] }}</span>
+            }
+          </a>
         }
-      </div>
-    </div>
-  </div>
-
-  <img src="icons/vpd_logo.svg" class="w-20 mt-20 lg:hidden" alt="Logo vole papillon d'amour">
-
-  <p class="mt-2 lg:mt-20">© 2025 Vole Papillon D'Amour. Tous droits réservés.</p>
-  <div class="flex flex-row mt-2">
-    <p>Réalisé par</p>
-    <a href="https://github.com/FlorianDrevet" class="underline flex flex-row ml-1">Florian Drevet <img src="icons/github-logo.svg" class="h-5 ml-3" alt="Logo GitHub"></a>
+      }
+      <a href="https://github.com/FlorianDrevet" target="_blank" rel="noopener noreferrer" class="hover:text-white">Réalisé par Florian Drevet</a>
+    </span>
   </div>
 </footer>
-

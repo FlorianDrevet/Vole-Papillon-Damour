@@ -1,0 +1,17 @@
+<div
+  class="flex h-full flex-col gap-3.5 rounded-sm shadow-[0_30px_50px_-34px_rgba(7,43,69,0.7)] motion-safe:animate-vpd-float hover:[animation-play-state:paused]"
+  [class]="tone() === 'dark' ? 'bg-ink-2 px-6 py-6 text-paper' : 'bg-white p-3 pb-5'"
+  [style.--r.deg]="rotateDeg()"
+  [style.animation-delay.s]="floatDelayS()">
+  @if (photoLabel()) {
+    <app-photo-placeholder [label]="photoLabel()!" class="h-[220px] rounded-sm"></app-photo-placeholder>
+  }
+  <div class="flex flex-col gap-1.5" [class.px-1.5]="tone() === 'light' && photoLabel()">
+    <span class="font-mono text-[10px] uppercase tracking-[.14em]" [class]="tone() === 'dark' ? 'text-cyan' : 'text-orange-3'">{{ meta() }}</span>
+    <h4 class="font-serif text-xl font-medium leading-[1.15]" [class]="tone() === 'dark' ? 'text-white' : 'text-ink-2'">{{ title() }}</h4>
+    @if (description()) {
+      <p class="text-sm leading-relaxed" [class]="tone() === 'dark' ? 'text-mist' : 'text-slate-2'">{{ description() }}</p>
+    }
+  </div>
+  <ng-content></ng-content>
+</div>

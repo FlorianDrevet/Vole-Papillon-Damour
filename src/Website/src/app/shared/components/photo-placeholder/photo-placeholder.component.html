@@ -1,0 +1,9 @@
+<div
+  class="flex h-full w-full items-center justify-center px-4 text-center"
+  [class]="tone() === 'dark'
+    ? 'bg-[repeating-linear-gradient(135deg,rgba(127,216,245,.10)_0_8px,rgba(127,216,245,.04)_8px_16px)]'
+    : 'bg-[repeating-linear-gradient(135deg,#dceffa_0_8px,#f2fafd_8px_16px)]'">
+  <span
+    class="font-mono text-[11px] uppercase tracking-[.12em]"
+    [class]="tone() === 'dark' ? 'text-mist' : 'text-slate-3'">{{ label() }}</span>
+</div>

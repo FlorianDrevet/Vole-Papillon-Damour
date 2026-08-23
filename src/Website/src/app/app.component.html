@@ -1,10 +1,9 @@
-<ng-container class="flex flex-col items-center">
-  @if (router.url !== '/accueil') {
-    <app-navigation></app-navigation>
-  }
-  <main class="ml-auto mr-auto">
+<ng-container>
+  <app-navigation></app-navigation>
+  <main>
     <router-outlet></router-outlet>
   </main>
   <app-footer></app-footer>
+  <app-go-up></app-go-up>
 </ng-container>
 

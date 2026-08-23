@@ -1,28 +1,15 @@
-<section>
-  <article>
-    <div>
-      <ul>
+<div class="group overflow-hidden">
+  <div class="flex w-max animate-vpd-marquee items-center gap-16 group-hover:[animation-play-state:paused]">
+    @for (group of [0, 1]; track group) {
+      <ul class="flex items-center gap-16" aria-hidden="{{ group === 1 }}">
         @for (p of partners; track p.url) {
           <li>
-            <a href="{{p.url}}" target="_blank">
-              <img src="{{p.logo}}"/>
+            <a [href]="p.url" target="_blank" rel="noopener noreferrer" class="flex h-16 w-32 items-center justify-center opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0">
+              <img [src]="p.logo" [alt]="p.alt" class="max-h-14 max-w-full object-contain">
             </a>
           </li>
         }
       </ul>
-    </div>
-    <div>
-      <ul>
-        @for (p of partners; track p.url) {
-          <li>
-            <a href="{{p.url}}" target="_blank">
-              <img src="{{p.logo}}"/>
-            </a>
-          </li>
-        }
-      </ul>
-    </div>
-  </article>
-</section>
-
-
+    }
+  </div>
+</div>

@@ -18,7 +18,8 @@ import {SharedModule} from "../shared/shared.module";
   ],
   exports: [
     FooterComponent,
-    NavigationComponent
+    NavigationComponent,
+    CarouselComponent,
   ],
   imports: [
     CommonModule,

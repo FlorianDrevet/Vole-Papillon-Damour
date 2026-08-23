@@ -10,6 +10,12 @@ import { DiaporamaComponent } from './components/diaporama/diaporama.component';
 import { GoUpComponent } from './components/go-up/go-up.component';
 import { PricesComponent } from './components/prices/prices.component';
 import { ProductComponent } from './components/prices/components/product/product.component';
+import { SectionEyebrowComponent } from './components/section-eyebrow/section-eyebrow.component';
+import { PillButtonComponent } from './components/pill-button/pill-button.component';
+import { StatCardComponent } from './components/stat-card/stat-card.component';
+import { QuoteBlockComponent } from './components/quote-block/quote-block.component';
+import { PhotoPlaceholderComponent } from './components/photo-placeholder/photo-placeholder.component';
+import { ActionCardComponent } from './components/action-card/action-card.component';
 
 @NgModule({
   declarations: [
@@ -19,6 +25,12 @@ import { ProductComponent } from './components/prices/components/product/product
     GoUpComponent,
     PricesComponent,
     ProductComponent,
+    SectionEyebrowComponent,
+    PillButtonComponent,
+    StatCardComponent,
+    QuoteBlockComponent,
+    PhotoPlaceholderComponent,
+    ActionCardComponent,
   ],
   exports: [
     PapillonIconComponent,
@@ -27,6 +39,12 @@ import { ProductComponent } from './components/prices/components/product/product
     GoUpComponent,
     PricesComponent,
     ProductComponent,
+    SectionEyebrowComponent,
+    PillButtonComponent,
+    StatCardComponent,
+    QuoteBlockComponent,
+    PhotoPlaceholderComponent,
+    ActionCardComponent,
     DesignSystemModule,
   ],
   imports: [CommonModule, RouterLink, DesignSystemModule],

@@ -1,25 +1,30 @@
-<div class="bg-primary-color flex p-5 sm:p-10 md:p-20 flex-col md:flex-row md:justify-between items-center w-full">
-  <div class="flex flex-col md:w-3/5">
-    <div class="flex flex-row align-middle items-center">
-      <app-title class="ml-auto text-center">Vole Papillon d'Amour</app-title>
-      <img src="icons/vpd_logo.svg"
-           class="ml-2 mr-auto h-[50px] w-auto md:h-[100px]"
-           alt="Papillon logo" fetchpriority="high">
-    </div>
-    <p class="text-white text-xl sm:text-2xl md:text-3xl lg:text-4xl text-justify mt-10 xl:mt-20">
-      L’association a pour but d’aider  matériellement, financièrement et moralement Maxence et sa famille,
-      afin de permettre à Maxence DREVET d'avoir la vie la plus normale  possible qui soit, malgré le handicap lié
-      à ses maladies, et aider également d'autres enfants atteints de plusieurs maladies rares.
+<section class="grid grid-cols-1 items-center gap-10 bg-ink px-6 py-16 text-mist-2 lg:grid-cols-[1fr_400px] lg:gap-16 lg:px-11 lg:py-20">
+  <div class="flex flex-col gap-5">
+    <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
+    <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-2">Pourquoi l'association existe</span>
+    <h2 class="max-w-[24ch] font-serif text-[34px] font-medium leading-[1.06] text-white lg:text-[42px]">
+      Tout a commencé par un diagnostic que personne ne connaissait.
+    </h2>
+    <p class="max-w-[58ch] text-[16px] leading-relaxed text-mist">
+      Une mutation cellulaire jamais décrite ailleurs dans le monde, huit maladies rares, une vie de soins
+      quotidiens et hospitaliers. Ses parents ont créé l'association en 2010 pour lui donner du matériel,
+      de l'autonomie et un cadre de vie décent — puis ils ont ouvert cette aide aux autres familles.
     </p>
-  </div>
-  <div class="flex flex-col items-center justify-center 2xl:w-2/5 2xl:pl-5 mt-5 lg:mt-0">
-    <div class="p-2 md:p-4 lg:p-8 flex justify-center items-center bg-white rotate-6">
-      <img src="images/maxence.svg"
-           class="h-[200px] sm:h-[300px] md:h-[350px] lg:h-[400px] 2xl:h-[500px] w-auto"
-           alt="image">
+    <div class="mt-1.5 flex gap-8 font-mono text-[11px] tracking-[.12em] text-cyan">
+      <span class="flex flex-col gap-1.5"><span class="font-serif text-3xl tracking-normal text-white">2010</span>CRÉATION</span>
+      <span class="flex flex-col gap-1.5"><span class="font-serif text-3xl tracking-normal text-white">8</span>MALADIES RARES</span>
+      <span class="flex flex-col gap-1.5"><span class="font-serif text-3xl tracking-normal text-white">1<span class="text-lg">er</span></span>CAS AU MONDE</span>
     </div>
-    <a routerLink="/maxence/histoire" class="text-white flex flex-row text-4xl underline mt-10 ">
-      Découvrir Maxence >
-    </a>
+    <app-pill-button routerLink="/maxence/histoire" class="mt-2 self-start">Lire l'histoire de Maxence</app-pill-button>
   </div>
-</div>
+
+  <div class="relative mx-auto w-full max-w-[400px]">
+    <div class="absolute inset-0 scale-105" style="background: linear-gradient(155deg, #7fd8f5 0%, #1497d6 34%, #f9a93c 74%, #f0801c 100%); clip-path: url(#papillon-clip)"></div>
+    <img
+      ngSrc="images/maxence_accueil.jpg"
+      alt="Maxence"
+      width="400" height="440"
+      class="relative block h-[300px] w-full object-cover object-[center_16%] lg:h-[440px]"
+      style="clip-path: url(#papillon-clip)">
+  </div>
+</section>

@@ -1,0 +1,30 @@
+@if (routerLink()) {
+  <a
+    [routerLink]="routerLink()"
+    class="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition"
+    [class]="variantClasses[variant()]"
+    [class.px-7]="!small()" [class.py-[15px]]="!small()" [class.text-[15px]]="!small()"
+    [class.px-5]="small()" [class.py-2.5]="small()" [class.text-sm]="small()">
+    <ng-content></ng-content>
+  </a>
+} @else if (href()) {
+  <a
+    [href]="href()"
+    [target]="target() ?? null"
+    [rel]="target() === '_blank' ? 'noopener noreferrer' : null"
+    class="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition"
+    [class]="variantClasses[variant()]"
+    [class.px-7]="!small()" [class.py-[15px]]="!small()" [class.text-[15px]]="!small()"
+    [class.px-5]="small()" [class.py-2.5]="small()" [class.text-sm]="small()">
+    <ng-content></ng-content>
+  </a>
+} @else {
+  <button
+    type="submit"
+    class="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition"
+    [class]="variantClasses[variant()]"
+    [class.px-7]="!small()" [class.py-[15px]]="!small()" [class.text-[15px]]="!small()"
+    [class.px-5]="small()" [class.py-2.5]="small()" [class.text-sm]="small()">
+    <ng-content></ng-content>
+  </button>
+}

@@ -1,13 +1,6 @@
-@font-face {
-  font-family: 'CaveatBrush';
-  src: url('./../../public/fonts/CaveatBrush-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'DancingScript-Regular';
-  src: url('./../../public/fonts/DancingScript-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
+// Polices du nouveau design system, chargées via Google Fonts dans index.html.
+// CaveatBrush / DancingScript (ancien habillage) ne sont plus référencées ici ;
+// les fichiers restent dans public/fonts/ (aucun asset supprimé).
+$font-serif: "Newsreader", Georgia, serif;
+$font-sans: "Libre Franklin", system-ui, sans-serif;
+$font-mono: "IBM Plex Mono", ui-monospace, monospace;

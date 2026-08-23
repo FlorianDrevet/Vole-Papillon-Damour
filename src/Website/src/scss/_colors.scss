@@ -1,7 +1,27 @@
-$primary-color: #16293B;
-$secondary-color: #1ACDF8;
-$tertiary-color: #F67700;
-$text-color: #37628A;
-$background-color: #E9F3FF;
-$white: #FFFFFF;
+// Palette du nouveau design system (direction "7a"). Miroir des couleurs
+// déclarées dans tailwind.config.js, pour les rares cas SCSS qui ont besoin
+// d'une valeur hex brute (dégradés, clip-path) plutôt que d'une classe Tailwind.
+$paper: #f7fbfe;
+$paper-2: #e9f4fb;
+$white: #ffffff;
+$ink: #041d30;
+$ink-2: #072b45;
 
+$slate: #33536e;
+$slate-2: #4e6c84;
+$slate-3: #6d8ba2;
+$mist: #9dc2da;
+$mist-2: #dcecf7;
+
+$blue: #0c6ea6;
+$blue-2: #1497d6;
+$cyan: #7fd8f5;
+$orange: #f0801c;
+$orange-2: #f9a93c;
+$orange-3: #dc6412;
+
+$line: #d9e9f4;
+$line-2: #e2eef7;
+
+$brand-gradient: linear-gradient(90deg, $blue-2, $cyan 50%, $orange);
+$hero-gradient: linear-gradient(205deg, $cyan 0%, $blue-2 26%, $blue 52%, #062a44 100%);
