@@ -1,7 +1,11 @@
-<div class="flex flex-col gap-3.5">
-  <span class="h-[3px] rounded-full bg-vpd-brand" [ngClass]="lineWidthClass()"></span>
+<div class="flex" [ngClass]="orientation() === 'left' ? 'items-stretch gap-4' : 'flex-col gap-3.5'">
   <span
-    class="font-mono text-[11px] font-medium uppercase tracking-[.18em]"
-    [ngClass]="labelClass()">{{ label() }}</span>
-  <ng-content></ng-content>
+    class="shrink-0 rounded-full"
+    [ngClass]="orientation() === 'left' ? 'w-1 bg-vpd-brand-v' : 'h-[3px] bg-vpd-brand ' + lineWidthClass()"></span>
+  <div class="flex flex-col" [ngClass]="orientation() === 'left' ? 'gap-1' : 'gap-3.5'">
+    <span
+      class="font-mono text-[11px] font-medium uppercase tracking-[.18em]"
+      [ngClass]="labelClass()">{{ label() }}</span>
+    <ng-content></ng-content>
+  </div>
 </div>

@@ -6,7 +6,9 @@
   </defs>
 </svg>
 
-<section class="grid grid-cols-1 items-center gap-10 bg-paper px-shell py-14 lg:grid-cols-[1fr_480px] lg:gap-14 lg:py-20">
+<!-- Le bas du hero est volontairement très respirant : la bande agenda qui suit y remonte
+     (marge négative) pour venir se coller au titre, comme dans la maquette. -->
+<section class="grid grid-cols-1 items-center gap-10 bg-paper px-shell pb-10 pt-14 lg:grid-cols-[1fr_480px] lg:gap-14 lg:pb-[110px] lg:pt-[60px]">
   <div class="flex flex-col gap-6">
     <span class="inline-flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-blue">
       <span class="h-px w-6 bg-blue-2"></span>Maladies rares · Saint-Just-Saint-Rambert
@@ -29,14 +31,16 @@
     <div class="absolute -right-6 top-1.5 h-[150px] w-[150px] rounded-full border border-blue-2 opacity-30"></div>
     <div class="absolute inset-0 scale-105 opacity-[.62]" style="background: linear-gradient(150deg, #0c6ea6 0%, #1497d6 22%, #7fd8f5 44%, #f9a93c 68%, #f0801c 92%); clip-path: url(#papillon-clip)"></div>
     <!-- Le cadrage est piloté ici et non par object-position : le sujet est haut dans la photo, le zoom
-         le descend sous l'encoche centrale du papillon et centre le visage sur l'axe des ailes. -->
+         le descend sous l'encoche centrale du papillon et centre le visage sur l'axe des ailes.
+         translate-y ne doit pas dépasser ~5% : au-delà, le haut de la photo ne couvre plus la pointe
+         de l'aile gauche et l'aura dégradée apparaît en liseré. -->
     <div class="relative aspect-[24/29] overflow-hidden" style="clip-path: url(#papillon-clip)">
       <img
         priority
         fill
         ngSrc="images/maxence.png"
         alt="Maxence"
-        class="origin-[47%_0] scale-[1.15] object-cover object-top">
+        class="origin-[47%_0] translate-y-[4%] scale-[1.02] object-cover object-top">
     </div>
     <div class="absolute left-[-16px] top-[38%] h-[150px] w-1.5 rounded-full" style="background: linear-gradient(180deg, #1497d6 0%, #7fd8f5 55%, #f0801c 100%)"></div>
   </div>

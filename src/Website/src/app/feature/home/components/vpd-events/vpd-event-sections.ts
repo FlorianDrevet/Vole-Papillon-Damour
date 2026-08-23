@@ -18,6 +18,25 @@ export class VpdEventSections implements OnInit {
   constructor(private axiosService: AxiosService) {
   }
 
+  /**
+   * Inclinaison et cadence du flottement des cartes « autres évènements ».
+   * La maquette fige trois cartes (-1.4deg / 1.1deg / -0.7deg, 7s / 7.6s / 8.2s) ;
+   * comme le nombre de cartes est variable ici, on prolonge la série au-delà de la
+   * troisième en alternant le sens et en décalant durée et départ, pour éviter que
+   * les cartes ne montent et descendent en même temps.
+   */
+  protected otherRotationDeg(index: number): number {
+    return index % 2 === 0 ? -0.7 : 1.2;
+  }
+
+  protected otherDurationS(index: number): number {
+    return 8.2 + index * 0.4;
+  }
+
+  protected otherDelayS(index: number): number {
+    return 1.4 + index * 0.6;
+  }
+
   ngOnInit(): void {
     this.axiosService.request(MethodEnum.GET, '/asso-events/next-bingo', {})
       .then((data: any) => {

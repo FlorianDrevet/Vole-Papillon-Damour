@@ -51,6 +51,9 @@ module.exports = {
       },
       backgroundImage: {
         "vpd-brand": "linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c)",
+        // Même filet de marque, tourné à la verticale : utilisé par le chapeau de
+        // section en orientation "left" (barre à gauche du label, cf. maquette 7a).
+        "vpd-brand-v": "linear-gradient(180deg, #1497d6, #7fd8f5 55%, #f0801c)",
         "vpd-hero": "linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%)",
       },
       animation: {

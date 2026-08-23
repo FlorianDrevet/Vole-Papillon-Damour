@@ -1,51 +1,83 @@
-<section class="flex flex-col gap-9 bg-paper px-shell py-16 lg:py-20">
-  <div class="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-end">
-    <app-section-eyebrow label="Prochains rendez-vous">
-      <h2 class="font-serif text-3xl font-medium lg:text-[34px]">Venez nous voir.</h2>
-    </app-section-eyebrow>
-    <a routerLink="/evenement/all" class="border-b border-mist pb-1 font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
-  </div>
+<!-- La bande remonte sous le hero (marge négative) comme dans la maquette : l'agenda
+     est collé au titre d'accueil, et la courbe en pointillé relie le chapeau aux cartes. -->
+<section class="bg-paper px-shell pb-3 pt-10 lg:-mt-24 lg:pb-2 lg:pt-0">
+  <div class="relative">
+    <svg
+      class="pointer-events-none absolute inset-x-0 top-1.5 hidden h-[120px] w-full overflow-visible sm:block"
+      viewBox="0 0 1152 120"
+      preserveAspectRatio="none"
+      aria-hidden="true">
+      <path
+        d="M20 96 C 200 6, 380 6, 560 74 S 940 22, 1130 66"
+        fill="none"
+        stroke="#1497d6"
+        stroke-width="1.2"
+        stroke-dasharray="5 7"
+        opacity=".5"></path>
+    </svg>
 
-  @if (lotoCard() || balCard() || otherCard().length) {
-    <div class="grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      @if (lotoCard(); as event) {
-        <a [routerLink]="['/evenement', event.id]" class="flex flex-col gap-2.5 rounded bg-ink-2 px-6 py-6 text-paper shadow-[0_26px_44px_-30px_rgba(7,43,69,0.85)] transition hover:-translate-y-0.5">
-          <span class="flex items-baseline justify-between">
-            <span class="font-serif text-4xl leading-none">{{ event.dateStart | date:'dd' }}</span>
-            <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-2">{{ event.dateStart | date:'MMM' }}</span>
-          </span>
-          <span class="h-px bg-cyan/[.28]"></span>
-          <strong class="text-base font-semibold">{{ event.name }}</strong>
-          <span class="text-[13px] leading-snug text-mist">{{ event.city }} · {{ event.hourOpenDoors | date:'HH:mm' }}</span>
-          <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-orange-2">RÉSERVER →</span>
-        </a>
-      }
-      @if (balCard(); as event) {
-        <a [routerLink]="['/evenement', event.id]" class="mt-4 flex flex-col gap-2.5 rounded border border-line bg-white px-6 py-6 shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)] transition hover:-translate-y-0.5">
-          <span class="flex items-baseline justify-between">
-            <span class="font-serif text-4xl leading-none text-ink-2">{{ event.dateStart | date:'dd' }}</span>
-            <span class="font-mono text-[11px] uppercase tracking-[.14em] text-blue">{{ event.dateStart | date:'MMM' }}</span>
-          </span>
-          <span class="h-px bg-line-2"></span>
-          <strong class="text-base font-semibold text-ink-2">{{ event.name }}</strong>
-          <span class="text-[13px] leading-snug text-slate-2">{{ event.city }}</span>
-          <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-blue">HORAIRES →</span>
-        </a>
-      }
-      @for (event of otherCard(); track event.id) {
-        <a [routerLink]="['/evenement', event.id]" class="flex flex-col gap-2.5 rounded border border-line bg-white px-6 py-6 shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)] transition hover:-translate-y-0.5">
-          <span class="flex items-baseline justify-between">
-            <span class="font-serif text-4xl leading-none text-ink-2">{{ event.dateStart | date:'dd' }}</span>
-            <span class="font-mono text-[11px] uppercase tracking-[.14em] text-blue">{{ event.dateStart | date:'MMM' }}</span>
-          </span>
-          <span class="h-px bg-line-2"></span>
-          <strong class="text-base font-semibold text-ink-2">{{ event.name }}</strong>
-          <span class="text-[13px] leading-snug text-slate-2">{{ event.city }}</span>
-          <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-blue">DÉTAILS →</span>
-        </a>
-      }
+    <div class="relative flex flex-col items-start justify-between gap-4 px-1 pb-[22px] lg:flex-row lg:items-end">
+      <app-section-eyebrow label="Prochains rendez-vous" orientation="left">
+        <h2 class="font-serif text-3xl font-medium leading-none lg:text-[34px]">Venez nous voir.</h2>
+      </app-section-eyebrow>
+      <a routerLink="/evenement/all" class="border-b border-mist pb-1 font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
     </div>
-  } @else {
-    <app-photo-placeholder label="Aucun évènement à venir pour le moment" class="h-40 rounded"></app-photo-placeholder>
-  }
+
+    @if (lotoCard() || balCard() || otherCard().length) {
+      <div class="relative grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        @if (lotoCard(); as event) {
+          <a
+            [routerLink]="['/evenement', event.id]"
+            class="flex animate-vpd-float flex-col gap-2.5 rounded bg-ink-2 px-6 py-6 text-paper shadow-[0_26px_44px_-30px_rgba(7,43,69,0.85)] hover:shadow-[0_34px_54px_-28px_rgba(7,43,69,0.9)] hover:[animation-play-state:paused]"
+            [style.--r]="'-1.4deg'"
+            [style.animation-duration.s]="7">
+            <span class="flex items-baseline justify-between">
+              <span class="font-serif text-[40px] leading-[.9]">{{ event.dateStart | date:'dd' }}</span>
+              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-2">{{ event.dateStart | date:'MMM' }}</span>
+            </span>
+            <span class="h-px bg-cyan/[.28]"></span>
+            <strong class="text-base font-semibold">{{ event.name }}</strong>
+            <span class="text-[13px] leading-snug text-mist">{{ event.city }} · {{ event.hourOpenDoors | date:'HH:mm' }}</span>
+            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-orange-2">RÉSERVER →</span>
+          </a>
+        }
+        @if (balCard(); as event) {
+          <a
+            [routerLink]="['/evenement', event.id]"
+            class="mt-4 flex animate-vpd-float flex-col gap-2.5 rounded border border-line bg-white px-6 py-6 shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)] hover:[animation-play-state:paused]"
+            [style.--r]="'1.1deg'"
+            [style.animation-duration.s]="7.6"
+            [style.animation-delay.s]="0.7">
+            <span class="flex items-baseline justify-between">
+              <span class="font-serif text-[40px] leading-[.9] text-ink-2">{{ event.dateStart | date:'dd' }}</span>
+              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-blue">{{ event.dateStart | date:'MMM' }}</span>
+            </span>
+            <span class="h-px bg-line-2"></span>
+            <strong class="text-base font-semibold text-ink-2">{{ event.name }}</strong>
+            <span class="text-[13px] leading-snug text-slate-2">{{ event.city }}</span>
+            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-blue">HORAIRES →</span>
+          </a>
+        }
+        @for (event of otherCard(); track event.id; let i = $index) {
+          <a
+            [routerLink]="['/evenement', event.id]"
+            class="mt-1 flex animate-vpd-float flex-col gap-2.5 rounded border border-line bg-white px-6 py-6 shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)] hover:[animation-play-state:paused]"
+            [style.--r]="otherRotationDeg(i) + 'deg'"
+            [style.animation-duration.s]="otherDurationS(i)"
+            [style.animation-delay.s]="otherDelayS(i)">
+            <span class="flex items-baseline justify-between">
+              <span class="font-serif text-[40px] leading-[.9] text-ink-2">{{ event.dateStart | date:'dd' }}</span>
+              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-blue">{{ event.dateStart | date:'MMM' }}</span>
+            </span>
+            <span class="h-px bg-line-2"></span>
+            <strong class="text-base font-semibold text-ink-2">{{ event.name }}</strong>
+            <span class="text-[13px] leading-snug text-slate-2">{{ event.city }}</span>
+            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-blue">DÉTAILS →</span>
+          </a>
+        }
+      </div>
+    } @else {
+      <app-photo-placeholder label="Aucun évènement à venir pour le moment" class="relative block h-40 rounded"></app-photo-placeholder>
+    }
+  </div>
 </section>
