@@ -104,6 +104,10 @@ param keyVaultEnablePurgeProtection = false
 
 // Serverless: the database auto-pauses after an hour of inactivity, which
 // suits an environment deployed on demand.
+// The subscription is not allowed to provision Azure SQL in West Europe
+// (ProvisioningDisabled), so the database sits in France Central.
+param sqlLocation = 'francecentral'
+
 param sqlDatabaseName = 'vole-papillon-damour-db'
 param sqlDatabaseSku = {
   name: 'GP_S_Gen5_1'

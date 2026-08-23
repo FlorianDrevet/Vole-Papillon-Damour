@@ -83,6 +83,9 @@ param sqlAdministratorLogin string
 @secure()
 param sqlAdministratorLoginPassword string
 
+@description('Region hosting the SQL Server. Kept separate from the environment region: the subscription is not allowed to provision Azure SQL everywhere.')
+param sqlLocation string
+
 @description('Name of the application database')
 param sqlDatabaseName string
 
@@ -230,7 +233,7 @@ module sqlServerModule './modules/SqlServer/sqlServer.module.bicep' = {
   name: 'sqlServer'
   scope: applicationResourceGroup
   params: {
-    location: env.location
+    location: sqlLocation
     name: BuildResourceName('vpd', 'sql', env)
     tags: tags
     databaseName: sqlDatabaseName
@@ -492,6 +495,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       }
     ]
   }
+  dependsOn: [
+    containerAppApiAcrRoles
+    containerAppApiKeyVaultRoles
+  ]
 }
 
 module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bicep' = {
@@ -526,6 +533,9 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
       }
     ]
   }
+  dependsOn: [
+    containerAppWebsiteAcrRoles
+  ]
 }
 
 module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.bicep' = {
@@ -552,6 +562,9 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
       }
     ]
   }
+  dependsOn: [
+    containerAppBackOfficeAcrRoles
+  ]
 }
 
 // -----------------------------------------------------------------------
