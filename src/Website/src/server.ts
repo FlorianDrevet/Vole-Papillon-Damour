@@ -10,7 +10,13 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+const angularApp = new AngularNodeAppEngine({
+  // Azure Container Apps terminates TLS at its ingress and forwards over plain
+  // HTTP, so the original scheme, host and path only survive in the
+  // X-Forwarded-* headers. Without trusting them the engine cannot rebuild the
+  // request URL and falls back to the client-side shell for every route.
+  trustProxyHeaders: true,
+});
 
 /**
  * Example Express Rest API endpoints can be defined here.
