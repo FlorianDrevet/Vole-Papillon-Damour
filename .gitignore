@@ -1,1 +1,8 @@
 .gitnexus
+graphify-out/
+**/node_modules/
+**/dist/
+**/build/
+**/out/
+**/.next/
+**/.nuxt/
