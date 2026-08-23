@@ -1,4 +1,4 @@
-<footer class="flex flex-col gap-9 bg-ink px-6 py-10 font-sans text-mist-2 lg:px-11 lg:pb-8 lg:pt-12">
+<footer class="flex flex-col gap-9 bg-ink px-shell py-10 font-sans text-mist-2 lg:pb-8 lg:pt-12">
   <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1.2fr_1fr_1fr_1fr] lg:gap-8">
     <div class="flex flex-col gap-3.5">
       <span class="flex items-center gap-2.5">
@@ -54,6 +54,7 @@
           </a>
         }
       }
+      <button type="button" (click)="consent.reopen()" class="hover:text-white">Gérer les cookies</button>
       <a href="https://github.com/FlorianDrevet" target="_blank" rel="noopener noreferrer" class="hover:text-white">Réalisé par Florian Drevet</a>
     </span>
   </div>

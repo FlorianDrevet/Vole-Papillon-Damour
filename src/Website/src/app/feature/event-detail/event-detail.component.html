@@ -1,7 +1,7 @@
 @if (vpdEvent() === null) {
   <div class="flex justify-center py-24"><mat-spinner></mat-spinner></div>
 } @else {
-  <section class="flex flex-col gap-4 bg-ink px-6 py-14 text-mist-2 lg:px-11 lg:py-16">
+  <section class="flex flex-col gap-4 bg-ink px-shell py-14 text-mist-2 lg:py-16">
     <a routerLink="/evenement" class="font-mono text-xs tracking-[.1em] text-cyan">← TOUS LES ÉVÈNEMENTS</a>
     <h1 class="max-w-[24ch] font-serif text-[34px] font-medium leading-tight text-white lg:text-[46px]">{{ vpdEvent()!.name }}</h1>
   </section>

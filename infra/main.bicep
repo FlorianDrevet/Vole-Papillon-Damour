@@ -1,438 +1,577 @@
 targetScope = 'subscription'
 
 import { EnvironmentName, environments } from './types.bicep'
-import { BuildContainerRegistryName, BuildResourceGroupName, BuildResourceName } from './functions.bicep'
+import { BuildContainerRegistryName, BuildResourceGroupName, BuildResourceName, BuildStorageAccountName } from './functions.bicep'
 import { RbacRoles } from './constants.bicep'
 import { ContainerRuntimeConfig, HealthProbeConfig, IngressConfig, ScalingConfig } from './modules/ContainerApp/types.bicep'
-import { SkuName } from './modules/KeyVault/types.bicep'
+import { SkuName as KeyVaultSkuName } from './modules/KeyVault/types.bicep'
+import { SkuName as StorageSkuName } from './modules/StorageAccount/types.bicep'
+import { DatabaseSkuConfig } from './modules/SqlServer/types.bicep'
+
+// -----------------------------------------------------------------------
+// Environment
+// -----------------------------------------------------------------------
 
 @description('The target deployment environment')
 param environmentName EnvironmentName
 
-@description('Value for containerRuntime of ContainerApp resource bd-back.')
-param containerAppBdBackContainerRuntime ContainerRuntimeConfig
-@description('Value for scaling of ContainerApp resource bd-back.')
-param containerAppBdBackScaling ScalingConfig
-@description('Value for ingress of ContainerApp resource bd-back.')
-param containerAppBdBackIngress IngressConfig
-@description('Value for healthProbes of ContainerApp resource bd-back.')
-param containerAppBdBackHealthProbes HealthProbeConfig
-@description('Value for containerRuntime of ContainerApp resource bd-front.')
-param containerAppBdFrontContainerRuntime ContainerRuntimeConfig
-@description('Value for scaling of ContainerApp resource bd-front.')
-param containerAppBdFrontScaling ScalingConfig
-@description('Value for ingress of ContainerApp resource bd-front.')
-param containerAppBdFrontIngress IngressConfig
-@description('Value for healthProbes of ContainerApp resource bd-front.')
-param containerAppBdFrontHealthProbes HealthProbeConfig
-@description('Value for sku of KeyVault resource bd.')
-param keyVaultBdSku SkuName
+// -----------------------------------------------------------------------
+// Container Apps — runtime configuration
+// -----------------------------------------------------------------------
 
-// The following inputs are used as environment variables for application bd-back.
-// Static value
-param bdBackCosmosdbDeploymentrequestscollectionname string
-param bdBackCosmosdbDatabasename string
-param bdBackCosmosdbUsersettingscollectionname string
-param bdBackCosmosdbProjectscollectionname string
-param bdBackCosmosdbRuncollectionname string
-param bdBackCosmosdbProjectdefinitionscollectionname string
-param bdBackAzureadInstance string
-// Dynamic values from Variable group
-param bdAzureAdTenantId string
+@description('Value for containerRuntime of ContainerApp resource api.')
+param containerAppApiContainerRuntime ContainerRuntimeConfig
+@description('Value for scaling of ContainerApp resource api.')
+param containerAppApiScaling ScalingConfig
+@description('Value for ingress of ContainerApp resource api.')
+param containerAppApiIngress IngressConfig
+@description('Value for healthProbes of ContainerApp resource api.')
+param containerAppApiHealthProbes HealthProbeConfig
 
+@description('Value for containerRuntime of ContainerApp resource website.')
+param containerAppWebsiteContainerRuntime ContainerRuntimeConfig
+@description('Value for scaling of ContainerApp resource website.')
+param containerAppWebsiteScaling ScalingConfig
+@description('Value for ingress of ContainerApp resource website.')
+param containerAppWebsiteIngress IngressConfig
+@description('Value for healthProbes of ContainerApp resource website.')
+param containerAppWebsiteHealthProbes HealthProbeConfig
+
+@description('Value for containerRuntime of ContainerApp resource backoffice.')
+param containerAppBackOfficeContainerRuntime ContainerRuntimeConfig
+@description('Value for scaling of ContainerApp resource backoffice.')
+param containerAppBackOfficeScaling ScalingConfig
+@description('Value for ingress of ContainerApp resource backoffice.')
+param containerAppBackOfficeIngress IngressConfig
+@description('Value for healthProbes of ContainerApp resource backoffice.')
+param containerAppBackOfficeHealthProbes HealthProbeConfig
+
+// -----------------------------------------------------------------------
+// Container images
+// -----------------------------------------------------------------------
+// The application pipelines own the image tag. Leave these empty when creating
+// a brand-new environment; on later runs the infra pipeline reads the image
+// currently running on each Container App and passes it back here, so that
+// re-deploying the infra never rolls an application back to the placeholder.
+
+@description('Image for the API Container App. Empty deploys the placeholder image.')
+param apiImage string = ''
+@description('Image for the Website Container App. Empty deploys the placeholder image.')
+param websiteImage string = ''
+@description('Image for the BackOffice Container App. Empty deploys the placeholder image.')
+param backOfficeImage string = ''
+
+// -----------------------------------------------------------------------
+// Key Vault
+// -----------------------------------------------------------------------
+
+@description('SKU of the Key Vault')
+param keyVaultSku KeyVaultSkuName
+
+@description('Enable purge protection on the Key Vault. Keep false outside production.')
+param keyVaultEnablePurgeProtection bool = false
+
+// -----------------------------------------------------------------------
+// SQL
+// -----------------------------------------------------------------------
+
+@description('SQL administrator login')
 @secure()
-param bdAzureAdClientSecret string
+param sqlAdministratorLogin string
 
-param bdAzureAdClientId string
-param bdAzureAdAudience string
-param bdAzureAdApiScope string
+@description('SQL administrator password')
+@secure()
+param sqlAdministratorLoginPassword string
 
-param bdSpaClientId string
-param bdSpaAuthority string
+@description('Name of the application database')
+param sqlDatabaseName string
 
-param bdGroupIdConsultation string
-param bdGroupIdAdministration string
+@description('SKU of the application database')
+param sqlDatabaseSku DatabaseSkuConfig
 
-// Static values from bicepparam
-param bdBackDevopsResourceId string
+// -----------------------------------------------------------------------
+// Storage
+// -----------------------------------------------------------------------
+
+@description('SKU of the Storage Account')
+param storageAccountSku StorageSkuName
+
+@description('Blob container holding the loto images (BlobSettings__ContainerName)')
+param blobContainerLotoImages string
+@description('Blob container holding the actuality images (BlobSettings__ContainerActualityImagesName)')
+param blobContainerActualityImages string
+@description('Blob container holding the event images (BlobSettings__BlobContainerEventImagesClient)')
+param blobContainerEventImages string
+@description('Blob container holding the product images (BlobSettings__BlobContainerProductsImagesClient)')
+param blobContainerProductImages string
+
+// -----------------------------------------------------------------------
+// API application settings
+// -----------------------------------------------------------------------
+
+@description('Signing key for the API JWT tokens')
+@secure()
+param jwtSecret string
+
+@description('Issuer of the API JWT tokens')
+param jwtIssuer string
+
+@description('Audience of the API JWT tokens')
+param jwtAudience string
+
+@description('Lifetime of the API JWT tokens, in minutes')
+param jwtExpiryMinutes int
+
+// -----------------------------------------------------------------------
+// Computed
+// -----------------------------------------------------------------------
 
 var env = environments[environmentName]
-
 var tags = env.tags
 
-var bdFrontOrigin = 'https://${BuildResourceName('bd-front', 'ca', env)}.${containerAppEnvironmentBdModule.outputs.defaultDomain}'
-var bdFrontUri = '${bdFrontOrigin}/'
+// Deployed until an application pipeline pushes the first real image.
+var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-resource bootstrapDevops 'Microsoft.Resources/resourceGroups@2024-07-01' = {
-  name: BuildResourceGroupName('bootstrap-devops', 'rg', env)
+resource applicationResourceGroup 'Microsoft.Resources/resourceGroups@2024-07-01' = {
+  name: BuildResourceGroupName('vpd', 'rg', env)
   location: env.location
   tags: tags
 }
 
-module containerRegistryBdModule './modules/ContainerRegistry/containerRegistry.module.bicep' = {
-  name: 'containerRegistryBd'
-  scope: bootstrapDevops
+// -----------------------------------------------------------------------
+// Platform
+// -----------------------------------------------------------------------
+
+module containerRegistryModule './modules/ContainerRegistry/containerRegistry.module.bicep' = {
+  name: 'containerRegistry'
+  scope: applicationResourceGroup
   params: {
     location: env.location
-    name: BuildContainerRegistryName('bd', 'acr', env)
+    name: BuildContainerRegistryName('vpd', 'acr', env)
     tags: tags
   }
 }
 
-module applicationInsightsBdModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
-  name: 'applicationInsightsBdBack'
-  scope: bootstrapDevops
+module logAnalyticsWorkspaceModule './modules/LogAnalyticsWorkspace/logAnalyticsWorkspace.module.bicep' = {
+  name: 'logAnalyticsWorkspace'
+  scope: applicationResourceGroup
   params: {
     location: env.location
-    name: BuildResourceName('bd-back', 'appi', env)
-    tags: tags
-    logAnalyticsWorkspaceId: logAnalyticsWorkspaceBdModule.outputs.logAnalyticsWorkspaceId
-    disableLocalAuth: true
-  }
-}
-
-module applicationInsightsBdFrontModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
-  name: 'applicationInsightsBdFront'
-  scope: bootstrapDevops
-  params: {
-    location: env.location
-    name: BuildResourceName('bd-front', 'appi', env)
-    tags: tags
-    logAnalyticsWorkspaceId: logAnalyticsWorkspaceBdModule.outputs.logAnalyticsWorkspaceId
-  }
-}
-
-
-module containerAppBdBackModule './modules/ContainerApp/containerApp.module.bicep' = {
-  name: 'containerAppBdBack'
-  scope: bootstrapDevops
-  params: {
-    location: env.location
-    name: BuildResourceName('bd-back', 'ca', env)
-    tags: tags
-    containerRuntime: containerAppBdBackContainerRuntime
-    scaling: containerAppBdBackScaling
-    ingress: containerAppBdBackIngress
-    healthProbes: containerAppBdBackHealthProbes
-    containerAppEnvironmentId: containerAppEnvironmentBdModule.outputs.id
-    acrLoginServer: containerRegistryBdModule.outputs.loginServer
-    userAssignedIdentityId: userAssignedIdentityBdBackModule.outputs.resourceId
-    keyVaultSecrets: [
-      {
-        name: 'azuread-clientsecret'
-        keyVaultUrl: bdKvSecretsModule.outputs.secretUris['bd-azuread-clientsecret']
-      }
-    ]
-    envVars: [
-      {
-        name: 'AzureAd__Instance'
-        value: bdBackAzureadInstance
-      }
-      {
-        name: 'AzureAd__TenantId'
-        value: bdAzureAdTenantId
-      }
-      {
-        name: 'AzureAd__ClientId'
-        value: bdAzureAdClientId
-      }
-      {
-        name: 'AzureAd__ClientSecret'
-        secretRef: 'azuread-clientsecret'
-      }
-      {
-        name: 'AzureAd__Audience'
-        value: bdAzureAdAudience
-      }
-
-      {
-        name: 'GroupId__Consultation'
-        value: bdGroupIdConsultation
-      }
-      {
-        name: 'GroupId__Administration'
-        value: bdGroupIdAdministration
-      }
-
-      {
-        name: 'DevOps__ResourceId'
-        value: bdBackDevopsResourceId
-      }
-
-      {
-        name: 'ConnectionStrings__cosmosdb'
-        value: cosmosDbBdModule.outputs.documentEndpoint
-      }
-      {
-        name: 'AZURE_CLIENT_ID'
-        value: userAssignedIdentityBdBackModule.outputs.clientId
-      }
-      {
-        name: 'CosmosDB__DatabaseName'
-        value: bdBackCosmosdbDatabasename
-      }
-      {
-        name: 'CosmosDB__ProjectsContainerName'
-        value: bdBackCosmosdbProjectscollectionname
-      }
-      {
-        name: 'CosmosDB__RunContainerName'
-        value: bdBackCosmosdbRuncollectionname
-      }
-      {
-        name: 'CosmosDB__ProjectDefinitionsContainerName'
-        value: bdBackCosmosdbProjectdefinitionscollectionname
-      }
-      {
-        name: 'CosmosDB__UserSettingsContainerName'
-        value: bdBackCosmosdbUsersettingscollectionname
-      }
-      {
-        name: 'CosmosDB__DeploymentRequestsContainerName'
-        value: bdBackCosmosdbDeploymentrequestscollectionname
-      }
-      {
-        name: 'SPA__ClientId'
-        value: bdSpaClientId
-      }
-      {
-        name: 'SPA__Authority'
-        value: bdSpaAuthority
-      }
-      {
-        name: 'SPA__ApiScope'
-        value: bdAzureAdApiScope
-      }
-      {
-        name: 'SPA__RedirectUri'
-        value: bdFrontUri
-      }
-      {
-        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-        value: applicationInsightsBdModule.outputs.connectionString
-      }
-      {
-        name: 'APPLICATIONINSIGHTS_AUTHENTICATION_STRING'
-        value: 'ClientId=${userAssignedIdentityBdBackModule.outputs.clientId};Authorization=AAD'
-      }
-      {
-        name: 'Cors__AllowedOrigins__0'
-        value: bdFrontOrigin
-      }
-    ]
-  }
-}
-
-module containerAppBdFrontModule './modules/ContainerApp/containerApp.module.bicep' = {
-  name: 'containerAppBdFront'
-  scope: bootstrapDevops
-  params: {
-    location: env.location
-    name: BuildResourceName('bd-front', 'ca', env)
-    tags: tags
-    containerRuntime: containerAppBdFrontContainerRuntime
-    scaling: containerAppBdFrontScaling
-    ingress: containerAppBdFrontIngress
-    healthProbes: containerAppBdFrontHealthProbes
-    containerAppEnvironmentId: containerAppEnvironmentBdModule.outputs.id
-    acrLoginServer: containerRegistryBdModule.outputs.loginServer
-    userAssignedIdentityId: userAssignedIdentityBdFrontModule.outputs.resourceId
-    envVars: [
-  {
-    name: 'VITE_APPINSIGHTS_CONNECTION_STRING'
-    value: applicationInsightsBdFrontModule.outputs.connectionString
-  }
-  {
-    name: 'VITE_CLIENT_ID'
-    value: bdSpaClientId
-  }
-  {
-    name: 'VITE_TENANT_ID'
-    value: bdAzureAdTenantId
-  }
-  {
-    name: 'VITE_AUTHORITY'
-    value: bdSpaAuthority
-  }
-  {
-    name: 'VITE_API_SCOPE'
-    value: bdAzureAdApiScope
-  }
-  {
-    name: 'VITE_REDIRECT_URI'
-    value: bdFrontUri
-  }
-  {
-    name: 'VITE_API_BASE_URL'
-    value: 'https://${containerAppBdBackModule.outputs.containerAppFqdn}/api'
-  }
-]
-  }
-}
-
-module keyVaultBdModule './modules/KeyVault/keyVault.module.bicep' = {
-  name: 'keyVaultBd'
-  scope: bootstrapDevops
-  params: {
-    location: env.location
-    name: BuildResourceName('bd', 'kv', env)
-    tags: tags
-    sku: keyVaultBdSku
-  }
-}
-
-module logAnalyticsWorkspaceBdModule './modules/LogAnalyticsWorkspace/logAnalyticsWorkspace.module.bicep' = {
-  name: 'logAnalyticsWorkspaceBd'
-  scope: bootstrapDevops
-  params: {
-    location: env.location
-    name: BuildResourceName('bd', 'law', env)
+    name: BuildResourceName('vpd', 'law', env)
     tags: tags
   }
 }
 
-module containerAppEnvironmentBdModule './modules/ContainerAppEnvironment/containerAppEnvironment.module.bicep' = {
-  name: 'containerAppEnvironmentBd'
-  scope: bootstrapDevops
+module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containerAppEnvironment.module.bicep' = {
+  name: 'containerAppEnvironment'
+  scope: applicationResourceGroup
   params: {
     location: env.location
-    name: BuildResourceName('bd', 'cae', env)
+    name: BuildResourceName('vpd', 'cae', env)
     tags: tags
-    logAnalyticsWorkspaceId: logAnalyticsWorkspaceBdModule.outputs.logAnalyticsWorkspaceId
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
   }
 }
 
-module cosmosDbBdModule './modules/CosmosDb/cosmosDb.module.bicep' = {
-  name: 'cosmosDbBd'
-  scope: bootstrapDevops
+module keyVaultModule './modules/KeyVault/keyVault.module.bicep' = {
+  name: 'keyVault'
+  scope: applicationResourceGroup
   params: {
-    location: 'francecentral'
-    name: BuildResourceName('bd', 'cosmos', env)
+    location: env.location
+    name: BuildResourceName('vpd', 'kv', env)
     tags: tags
-    databaseName: bdBackCosmosdbDatabasename
+    sku: keyVaultSku
+    enablePurgeProtection: keyVaultEnablePurgeProtection
+  }
+}
+
+// -----------------------------------------------------------------------
+// Observability — one Application Insights per application
+// -----------------------------------------------------------------------
+
+module applicationInsightsApiModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
+  name: 'applicationInsightsApi'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-api', 'appi', env)
+    tags: tags
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+  }
+}
+
+module applicationInsightsWebsiteModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
+  name: 'applicationInsightsWebsite'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-web', 'appi', env)
+    tags: tags
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+  }
+}
+
+module applicationInsightsBackOfficeModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
+  name: 'applicationInsightsBackOffice'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-bo', 'appi', env)
+    tags: tags
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+  }
+}
+
+// -----------------------------------------------------------------------
+// Data
+// -----------------------------------------------------------------------
+
+module sqlServerModule './modules/SqlServer/sqlServer.module.bicep' = {
+  name: 'sqlServer'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd', 'sql', env)
+    tags: tags
+    databaseName: sqlDatabaseName
+    databaseSku: sqlDatabaseSku
+    administratorLogin: sqlAdministratorLogin
+    administratorLoginPassword: sqlAdministratorLoginPassword
+  }
+}
+
+module storageAccountModule './modules/StorageAccount/storageAccount.module.bicep' = {
+  name: 'storageAccount'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildStorageAccountName('vpd', 'st', env)
+    tags: tags
+    sku: storageAccountSku
     containers: [
       {
-        name: bdBackCosmosdbProjectscollectionname
-        partitionKeyPath: '/id'
+        name: blobContainerLotoImages
+        publicAccess: 'Blob'
       }
       {
-        name: bdBackCosmosdbProjectdefinitionscollectionname
-        partitionKeyPath: '/ProjectId'
+        name: blobContainerActualityImages
+        publicAccess: 'Blob'
       }
       {
-        name: bdBackCosmosdbRuncollectionname
-        partitionKeyPath: '/ProjectId'
+        name: blobContainerEventImages
+        publicAccess: 'Blob'
       }
       {
-        name: bdBackCosmosdbUsersettingscollectionname
-        partitionKeyPath: '/UserEmail'
-      }
-      {
-        name: bdBackCosmosdbDeploymentrequestscollectionname
-        partitionKeyPath: '/ProjectId'
+        name: blobContainerProductImages
+        publicAccess: 'Blob'
       }
     ]
   }
 }
 
-module userAssignedIdentityBdFrontModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
-  name: 'userAssignedIdentityBdFront'
-  scope: bootstrapDevops
+module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
+  name: 'appSecrets'
+  scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('bd-front', 'id', env)
-    tags: tags
-  }
-}
-
-module userAssignedIdentityBdBackModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
-  name: 'userAssignedIdentityBdBack'
-  scope: bootstrapDevops
-  params: {
-    location: env.location
-    name: BuildResourceName('bd-back', 'id', env)
-    tags: tags
-  }
-}
-
-// -- Key Vault secrets (batch per Key Vault) ------------------------------
-
-module bdKvSecretsModule './modules/KeyVault/kvSecrets.module.bicep' = {
-  name: 'bd-kv-secrets'
-  scope: bootstrapDevops
-  params: {
-    keyVaultName: BuildResourceName('bd', 'kv', env)
-    secrets: [
-      {
-        name: 'bd-azuread-clientsecret'
-        value: bdAzureAdClientSecret
-      }
-    ]
+    keyVaultName: BuildResourceName('vpd', 'kv', env)
+    storageAccountName: storageAccountModule.outputs.name
+    sqlServerFqdn: sqlServerModule.outputs.fullyQualifiedDomainName
+    sqlDatabaseName: sqlServerModule.outputs.databaseName
+    sqlAdministratorLogin: sqlAdministratorLogin
+    sqlAdministratorLoginPassword: sqlAdministratorLoginPassword
+    jwtSecret: jwtSecret
   }
   dependsOn: [
-    keyVaultBdModule
+    keyVaultModule
   ]
 }
 
-module containerAppBdFrontcontainerRegistryBdRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
-  name: 'containerAppBdFrontcontainerRegistryBdRoles'
-  scope: bootstrapDevops
+// -----------------------------------------------------------------------
+// Identities — one per application, so each app only gets what it needs
+// -----------------------------------------------------------------------
+
+module userAssignedIdentityApiModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
+  name: 'userAssignedIdentityApi'
+  scope: applicationResourceGroup
   params: {
-    name: BuildContainerRegistryName('bd', 'acr', env)
-    principalId: userAssignedIdentityBdFrontModule.outputs.principalId
+    location: env.location
+    name: BuildResourceName('vpd-api', 'id', env)
+    tags: tags
+  }
+}
+
+module userAssignedIdentityWebsiteModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
+  name: 'userAssignedIdentityWebsite'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-web', 'id', env)
+    tags: tags
+  }
+}
+
+module userAssignedIdentityBackOfficeModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
+  name: 'userAssignedIdentityBackOffice'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-bo', 'id', env)
+    tags: tags
+  }
+}
+
+// -----------------------------------------------------------------------
+// Role assignments
+// -----------------------------------------------------------------------
+
+module containerAppApiAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
+  name: 'containerAppApiAcrRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildContainerRegistryName('vpd', 'acr', env)
+    principalId: userAssignedIdentityApiModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
+  dependsOn: [
+    containerRegistryModule
+  ]
 }
 
-module containerAppBdBackcontainerRegistryBdRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
-  name: 'containerAppBdBackcontainerRegistryBdRoles'
-  scope: bootstrapDevops
+module containerAppWebsiteAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
+  name: 'containerAppWebsiteAcrRoles'
+  scope: applicationResourceGroup
   params: {
-    name: BuildContainerRegistryName('bd', 'acr', env)
-    principalId: userAssignedIdentityBdBackModule.outputs.principalId
+    name: BuildContainerRegistryName('vpd', 'acr', env)
+    principalId: userAssignedIdentityWebsiteModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
+  dependsOn: [
+    containerRegistryModule
+  ]
 }
 
-module containerAppBdBackkeyVaultBdRoles './modules/KeyVault/keyvault.roleassignments.module.bicep' = {
-  name: 'containerAppBdBackkeyVaultBdRoles'
-  scope: bootstrapDevops
+module containerAppBackOfficeAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
+  name: 'containerAppBackOfficeAcrRoles'
+  scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('bd', 'kv', env)
-    principalId: userAssignedIdentityBdBackModule.outputs.principalId
+    name: BuildContainerRegistryName('vpd', 'acr', env)
+    principalId: userAssignedIdentityBackOfficeModule.outputs.principalId
+    roles: [
+      RbacRoles.containerregistry.AcrPull
+    ]
+  }
+  dependsOn: [
+    containerRegistryModule
+  ]
+}
+
+// Only the API reads secrets: the front-ends carry no secretRef.
+module containerAppApiKeyVaultRoles './modules/KeyVault/keyvault.roleassignments.module.bicep' = {
+  name: 'containerAppApiKeyVaultRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd', 'kv', env)
+    principalId: userAssignedIdentityApiModule.outputs.principalId
     roles: [
       RbacRoles.keyvault['Key Vault Secrets User']
     ]
   }
+  dependsOn: [
+    keyVaultModule
+  ]
 }
 
-module containerAppBdBackApplicationInsightsBdRoles './modules/ApplicationInsights/applicationinsights.roleassignments.module.bicep' = {
-  name: 'containerAppBdBackApplicationInsightsBdRoles'
-  scope: bootstrapDevops
+module containerAppApiApplicationInsightsRoles './modules/ApplicationInsights/applicationinsights.roleassignments.module.bicep' = {
+  name: 'containerAppApiApplicationInsightsRoles'
+  scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('bd-back', 'appi', env)
-    principalId: userAssignedIdentityBdBackModule.outputs.principalId
+    name: BuildResourceName('vpd-api', 'appi', env)
+    principalId: userAssignedIdentityApiModule.outputs.principalId
     roles: [
       RbacRoles.monitor.MonitoringMetricsPublisher
     ]
   }
   dependsOn: [
-    applicationInsightsBdModule
+    applicationInsightsApiModule
   ]
 }
 
-module containerAppBdBackCosmosDbRoles './modules/CosmosDb/cosmosDb.roleassignments.module.bicep' = {
-  name: 'containerAppBdBackCosmosDbRoles'
-  scope: bootstrapDevops
+// -----------------------------------------------------------------------
+// Applications
+// -----------------------------------------------------------------------
+
+module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' = {
+  name: 'containerAppApi'
+  scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('bd', 'cosmos', env)
-    principalId: userAssignedIdentityBdBackModule.outputs.principalId
+    location: env.location
+    name: BuildResourceName('vpd-api', 'ca', env)
+    tags: tags
+    containerImage: empty(apiImage) ? placeholderImage : apiImage
+    containerRuntime: containerAppApiContainerRuntime
+    scaling: containerAppApiScaling
+    ingress: containerAppApiIngress
+    healthProbes: containerAppApiHealthProbes
+    containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
+    acrLoginServer: containerRegistryModule.outputs.loginServer
+    userAssignedIdentityId: userAssignedIdentityApiModule.outputs.resourceId
+    keyVaultSecrets: [
+      {
+        name: 'sql-connectionstring'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['sql-connectionstring']
+      }
+      {
+        name: 'storage-connectionstring'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['storage-connectionstring']
+      }
+      {
+        name: 'jwt-secret'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['jwt-secret']
+      }
+    ]
+    envVars: [
+      {
+        name: 'ASPNETCORE_ENVIRONMENT'
+        value: env.envName
+      }
+      {
+        name: 'ASPNETCORE_URLS'
+        value: 'http://+:${containerAppApiIngress.targetPort}'
+      }
+      {
+        name: 'ConnectionStrings__ProjectDatabase'
+        secretRef: 'sql-connectionstring'
+      }
+      {
+        name: 'ConnectionStrings__AzureBlobStorageConnectionString'
+        secretRef: 'storage-connectionstring'
+      }
+      {
+        name: 'JwtSettings__Secret'
+        secretRef: 'jwt-secret'
+      }
+      {
+        name: 'JwtSettings__Issuer'
+        value: jwtIssuer
+      }
+      {
+        name: 'JwtSettings__Audience'
+        value: jwtAudience
+      }
+      {
+        name: 'JwtSettings__ExpiryMinutes'
+        value: string(jwtExpiryMinutes)
+      }
+      {
+        name: 'BlobSettings__ContainerName'
+        value: blobContainerLotoImages
+      }
+      {
+        name: 'BlobSettings__ContainerActualityImagesName'
+        value: blobContainerActualityImages
+      }
+      {
+        name: 'BlobSettings__BlobContainerEventImagesClient'
+        value: blobContainerEventImages
+      }
+      {
+        name: 'BlobSettings__BlobContainerProductsImagesClient'
+        value: blobContainerProductImages
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: applicationInsightsApiModule.outputs.connectionString
+      }
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: userAssignedIdentityApiModule.outputs.clientId
+      }
+    ]
   }
-  dependsOn: [
-    cosmosDbBdModule
-  ]
 }
+
+module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bicep' = {
+  name: 'containerAppWebsite'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-web', 'ca', env)
+    tags: tags
+    containerImage: empty(websiteImage) ? placeholderImage : websiteImage
+    containerRuntime: containerAppWebsiteContainerRuntime
+    scaling: containerAppWebsiteScaling
+    ingress: containerAppWebsiteIngress
+    healthProbes: containerAppWebsiteHealthProbes
+    containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
+    acrLoginServer: containerRegistryModule.outputs.loginServer
+    userAssignedIdentityId: userAssignedIdentityWebsiteModule.outputs.resourceId
+    envVars: [
+      {
+        name: 'NODE_ENV'
+        value: 'production'
+      }
+      {
+        name: 'PORT'
+        value: string(containerAppWebsiteIngress.targetPort)
+      }
+      // The Angular bundle is built with its api_url baked in by the application
+      // pipeline; this one is read by the SSR server process.
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: applicationInsightsWebsiteModule.outputs.connectionString
+      }
+    ]
+  }
+}
+
+module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.bicep' = {
+  name: 'containerAppBackOffice'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-bo', 'ca', env)
+    tags: tags
+    containerImage: empty(backOfficeImage) ? placeholderImage : backOfficeImage
+    containerRuntime: containerAppBackOfficeContainerRuntime
+    scaling: containerAppBackOfficeScaling
+    ingress: containerAppBackOfficeIngress
+    healthProbes: containerAppBackOfficeHealthProbes
+    containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
+    acrLoginServer: containerRegistryModule.outputs.loginServer
+    userAssignedIdentityId: userAssignedIdentityBackOfficeModule.outputs.resourceId
+    envVars: [
+      // The BackOffice image is static content served by nginx: this value is
+      // exposed for tooling only, the browser SDK is wired in at build time.
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: applicationInsightsBackOfficeModule.outputs.connectionString
+      }
+    ]
+  }
+}
+
+// -----------------------------------------------------------------------
+// Outputs — consumed by the application pipelines
+// -----------------------------------------------------------------------
+
+output resourceGroupName string = applicationResourceGroup.name
+output containerRegistryName string = BuildContainerRegistryName('vpd', 'acr', env)
+output containerRegistryLoginServer string = containerRegistryModule.outputs.loginServer
+
+output apiContainerAppName string = BuildResourceName('vpd-api', 'ca', env)
+output websiteContainerAppName string = BuildResourceName('vpd-web', 'ca', env)
+output backOfficeContainerAppName string = BuildResourceName('vpd-bo', 'ca', env)
+
+output apiUrl string = 'https://${containerAppApiModule.outputs.containerAppFqdn}'
+output websiteUrl string = 'https://${containerAppWebsiteModule.outputs.containerAppFqdn}'
+output backOfficeUrl string = 'https://${containerAppBackOfficeModule.outputs.containerAppFqdn}'
+
+output sqlServerName string = sqlServerModule.outputs.name
+output sqlServerFqdn string = sqlServerModule.outputs.fullyQualifiedDomainName
+output sqlDatabaseName string = sqlServerModule.outputs.databaseName
+output storageAccountName string = storageAccountModule.outputs.name
+output keyVaultName string = BuildResourceName('vpd', 'kv', env)

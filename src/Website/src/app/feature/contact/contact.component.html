@@ -1,11 +1,11 @@
-<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+<section class="flex flex-col gap-4 bg-paper px-shell py-14 lg:py-16">
   <h1 class="max-w-[18ch] font-serif text-[36px] font-medium leading-tight text-ink-2 lg:text-[48px]">Écrivez-nous, on répond.</h1>
   <p class="max-w-[54ch] text-[16px] leading-relaxed text-slate-2">
     C'est la famille qui lit les messages, entre deux soins. Comptez deux à trois jours, une semaine en période de foire.
   </p>
 </section>
 
-<section class="grid grid-cols-1 gap-8 bg-paper px-6 pb-16 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:px-11 lg:pb-20">
+<section class="grid grid-cols-1 gap-8 bg-paper px-shell pb-16 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:pb-20">
   <form class="flex flex-col gap-5 rounded bg-white px-7 py-8 shadow-[0_22px_44px_-30px_rgba(7,43,69,0.35)]" (submit)="$event.preventDefault(); send(nameInput.value, emailInput.value, messageInput.value)">
     <div class="flex flex-wrap gap-2">
       @for (r of reasons; track r) {

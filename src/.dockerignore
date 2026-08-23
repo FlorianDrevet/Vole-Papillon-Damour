@@ -1,7 +1,16 @@
+# Build context root for the Website and BackOffice images: the Dockerfiles
+# need both their own folder and SharedUi, so the context is src/ and the
+# per-app .dockerignore files no longer apply.
 **/node_modules
 **/dist
 **/.angular
 **/coverage
 **/bin
 **/obj
-MauiCashApp/
+**/artifacts
+**/.idea
+**/.vs
+**/npm-debug.log
+.git
+Backend
+MauiCashApp

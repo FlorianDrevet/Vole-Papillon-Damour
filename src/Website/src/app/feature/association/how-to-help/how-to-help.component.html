@@ -1,4 +1,4 @@
-<section class="grid grid-cols-1 items-center gap-10 bg-paper px-6 py-14 lg:grid-cols-[1fr_400px] lg:gap-14 lg:px-11 lg:py-18">
+<section class="grid grid-cols-1 items-center gap-10 bg-paper px-shell py-14 lg:grid-cols-[1fr_400px] lg:gap-14 lg:py-18">
   <div class="flex flex-col gap-5">
     <h1 class="max-w-[16ch] font-serif text-[36px] font-medium leading-tight text-ink-2 lg:text-[50px]">On ne vous demande pas d'argent.</h1>
     <p class="max-w-[52ch] text-[16px] leading-relaxed text-slate-2">
@@ -9,7 +9,7 @@
   <app-diaporama [pictureList]="listPictures"></app-diaporama>
 </section>
 
-<section class="grid grid-cols-1 gap-5 bg-white px-6 py-14 lg:grid-cols-3 lg:px-11 lg:py-16">
+<section class="grid grid-cols-1 gap-5 bg-white px-shell py-14 lg:grid-cols-3 lg:py-16">
   <div class="relative flex flex-col justify-between gap-5 overflow-hidden rounded-sm px-7 py-8 text-white" style="background: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%)">
     <img ngSrc="images/papillon_without_back.png" alt="" width="180" height="180" class="absolute -bottom-8 -right-8 w-[180px] opacity-[.16]">
     <span class="relative font-mono text-[11px] tracking-[.14em] text-white/80">LE PLUS UTILE</span>
@@ -28,7 +28,7 @@
   </div>
 </section>
 
-<section class="flex flex-col gap-10 bg-ink px-6 py-16 text-mist-2 lg:px-11 lg:py-20">
+<section class="flex flex-col gap-10 bg-ink px-shell py-16 text-mist-2 lg:py-20">
   <div class="flex flex-col gap-3">
     <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">Don de livres</span>
     <h2 class="font-serif text-[30px] font-medium text-white lg:text-[38px]">Ce qu'on prend, ce qu'on ne prend pas.</h2>
@@ -57,7 +57,7 @@
   </p>
 </section>
 
-<section class="flex flex-col gap-6 bg-white px-6 py-14 lg:px-11 lg:py-16">
+<section class="flex flex-col gap-6 bg-white px-shell py-14 lg:py-16">
   <div class="flex flex-col gap-3">
     <span class="font-mono text-[11px] uppercase tracking-[.16em] text-slate-3">Bénévolat</span>
     <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Trier, porter, tenir un stand.</h2>
@@ -70,7 +70,7 @@
   <app-pill-button routerLink="/contact" class="self-start">Nous écrire</app-pill-button>
 </section>
 
-<section class="flex flex-col gap-6 bg-paper-2 px-6 py-14 lg:px-11 lg:py-16">
+<section class="flex flex-col gap-6 bg-paper-2 px-shell py-14 lg:py-16">
   <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Questions fréquentes</h2>
   <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
     @for (item of faq; track item.q) {

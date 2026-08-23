@@ -43,6 +43,6 @@ describe('LegalPageComponent', () => {
 
     expect(content).toContain('Microsoft Clarity');
     expect(content).toContain('nwy66l4uol');
-    expect(content).toContain('Aucun bandeau de consentement');
+    expect(content).toContain('Gérer les cookies');
   });
 });

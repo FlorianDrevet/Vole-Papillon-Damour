@@ -6,6 +6,16 @@ module.exports = {
   ],
   theme: {
     extend: {
+      // Gouttière des bandes de page : la valeur normale tant que l'écran est étroit,
+      // puis la moitié du débordement dès que l'écran dépasse --vpd-shell-max, ce qui
+      // borne et centre le contenu sans toucher au fond de la bande.
+      // Variables définies dans src/styles.scss.
+      spacing: {
+        shell: "max(var(--vpd-shell-gutter), (100% - var(--vpd-shell-max)) / 2)",
+      },
+      maxWidth: {
+        shell: "var(--vpd-shell-max)",
+      },
       fontFamily: {
         serif: ["Newsreader", "Georgia", "serif"],
         sans: ["Libre Franklin", "system-ui", "sans-serif"],

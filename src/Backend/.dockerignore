@@ -1,0 +1,7 @@
+# Build context root for the API image.
+**/bin
+**/obj
+**/artifacts
+**/.idea
+**/.vs
+.git

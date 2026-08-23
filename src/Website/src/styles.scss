@@ -31,6 +31,20 @@ $custom-theme: mat.define-theme((
 /* You can add global styles to this file, and also import other style files */
 @tailwind base;
 @layer base {
+  :root {
+    // Largeur maximale du contenu d'une bande de page, et gouttière minimale.
+    // Utilisées par l'utilitaire `px-shell` (voir tailwind.config.js) : les bandes
+    // gardent leur fond sur toute la largeur, seul leur contenu est borné et centré.
+    --vpd-shell-max: 1280px;
+    --vpd-shell-gutter: 1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --vpd-shell-gutter: 2.75rem;
+    }
+  }
+
   html, body {
     overflow-x: clip !important;
     min-height: 100vh !important;

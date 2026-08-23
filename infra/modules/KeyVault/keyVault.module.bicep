@@ -17,6 +17,9 @@ param name string
 @description('SKU of the Key Vault')
 param sku SkuName = 'standard'
 
+@description('Blocks permanent deletion during the soft-delete window. Keep disabled outside production: with it enabled, a deleted vault name cannot be reused for 90 days.')
+param enablePurgeProtection bool = false
+
 @description('Resource tags')
 param tags object = {}
 
@@ -34,7 +37,7 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enabledForDeployment: false
     enabledForDiskEncryption: false
     enabledForTemplateDeployment: false
-    enablePurgeProtection: true
+    enablePurgeProtection: enablePurgeProtection ? true : null
     enableSoftDelete: true
   }
 }

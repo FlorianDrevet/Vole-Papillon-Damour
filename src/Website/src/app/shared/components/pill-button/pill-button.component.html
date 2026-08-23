@@ -1,30 +1,22 @@
+<!-- Le contenu projeté n'est déclaré qu'une seule fois : Angular ne le projette
+     que dans le premier <ng-content> du template, donc dupliquer la balise dans
+     chaque branche laissait les boutons rendus par les autres branches vides. -->
+<ng-template #content><ng-content></ng-content></ng-template>
+
 @if (routerLink()) {
-  <a
-    [routerLink]="routerLink()"
-    class="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition"
-    [class]="variantClasses[variant()]"
-    [class.px-7]="!small()" [class.py-[15px]]="!small()" [class.text-[15px]]="!small()"
-    [class.px-5]="small()" [class.py-2.5]="small()" [class.text-sm]="small()">
-    <ng-content></ng-content>
+  <a [routerLink]="routerLink()" [class]="classes()">
+    <ng-container [ngTemplateOutlet]="content"></ng-container>
   </a>
 } @else if (href()) {
   <a
     [href]="href()"
     [target]="target() ?? null"
     [rel]="target() === '_blank' ? 'noopener noreferrer' : null"
-    class="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition"
-    [class]="variantClasses[variant()]"
-    [class.px-7]="!small()" [class.py-[15px]]="!small()" [class.text-[15px]]="!small()"
-    [class.px-5]="small()" [class.py-2.5]="small()" [class.text-sm]="small()">
-    <ng-content></ng-content>
+    [class]="classes()">
+    <ng-container [ngTemplateOutlet]="content"></ng-container>
   </a>
 } @else {
-  <button
-    type="submit"
-    class="inline-flex items-center justify-center gap-2 rounded-full font-semibold transition"
-    [class]="variantClasses[variant()]"
-    [class.px-7]="!small()" [class.py-[15px]]="!small()" [class.text-[15px]]="!small()"
-    [class.px-5]="small()" [class.py-2.5]="small()" [class.text-sm]="small()">
-    <ng-content></ng-content>
+  <button type="submit" [class]="classes()">
+    <ng-container [ngTemplateOutlet]="content"></ng-container>
   </button>
 }

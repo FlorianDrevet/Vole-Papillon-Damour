@@ -20,6 +20,9 @@ var environments = {
     envPrefix: 'dev-'
     location: 'westeurope'
     tags: {
+      project: 'Vole-Papillon-Damour'
+      environment: 'development'
+      managedBy: 'bicep'
     }
   }
 }

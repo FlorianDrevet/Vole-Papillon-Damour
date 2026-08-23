@@ -1,0 +1,87 @@
+name: Website - deploy
+
+# Manual only: the pipeline never fires on a push.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to build and deploy (default - the commit sha)
+        type: string
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  REGISTRY_NAME: vpdacrdev
+  CONTAINER_APP: vpd-web-ca-dev
+  API_CONTAINER_APP: vpd-api-ca-dev
+  IMAGE_NAME: vpd-web
+  DOCKERFILE: src/Website/Dockerfile
+  BUILD_CONTEXT: src
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Azure CLI
+        run: az config set extension.use_dynamic_install=yes_without_prompt
+
+      # The Angular bundle hardcodes its api_url, so the API address has to be
+      # known before the image is built. It is read from the deployed API.
+      - name: Resolve the image reference and the API address
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
+          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
+          API_FQDN=$(az containerapp show --name "$API_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          {
+            echo "IMAGE=$LOGIN_SERVER/$IMAGE_NAME:$TAG"
+            echo "API_URL=https://$API_FQDN"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and push the image
+        run: |
+          set -euo pipefail
+          az acr login --name "$REGISTRY_NAME"
+          docker build \
+            --file "$DOCKERFILE" \
+            --build-arg "API_URL=$API_URL" \
+            --tag "$IMAGE" \
+            "$BUILD_CONTEXT"
+          docker push "$IMAGE"
+
+      - name: Roll the Container App onto the new image
+        run: |
+          set -euo pipefail
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE" \
+            --output none
+
+      - name: Report the deployed revision
+        run: |
+          set -euo pipefail
+          FQDN=$(az containerapp show --name "$CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          {
+            echo "### Website deployed"
+            echo ""
+            echo "- Image: \`$IMAGE\`"
+            echo "- API baked into the bundle: $API_URL"
+            echo "- URL: https://$FQDN"
+          } >> "$GITHUB_STEP_SUMMARY"

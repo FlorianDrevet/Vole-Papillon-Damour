@@ -2,21 +2,27 @@ using '../main.bicep'
 
 param environmentName = 'development'
 
-param containerAppBdBackContainerRuntime = {
-  cpuCores: '0.25'
-  memoryGi: '0.5Gi'
+// -----------------------------------------------------------------------
+// Container Apps
+// -----------------------------------------------------------------------
+// Every image listens on 8080: the API through ASPNETCORE_URLS, the Website
+// through the SSR server's PORT, the BackOffice through nginx.conf.
+
+param containerAppApiContainerRuntime = {
+  cpuCores: '0.5'
+  memoryGi: '1.0Gi'
 }
-param containerAppBdBackScaling = {
+param containerAppApiScaling = {
   minReplicas: 0
-  maxReplicas: 1
+  maxReplicas: 2
 }
-param containerAppBdBackIngress = {
+param containerAppApiIngress = {
   enabled: true
-  targetPort: 80
+  targetPort: 8080
   external: true
   transportMethod: 'auto'
 }
-param containerAppBdBackHealthProbes = {
+param containerAppApiHealthProbes = {
   readiness: {
     path: ''
     port: 0
@@ -31,24 +37,21 @@ param containerAppBdBackHealthProbes = {
   }
 }
 
-param containerAppBdFrontContainerRuntime = {
-  cpuCores: '0.25'
-  memoryGi: '0.5Gi'
+param containerAppWebsiteContainerRuntime = {
+  cpuCores: '0.5'
+  memoryGi: '1.0Gi'
 }
-
-param containerAppBdFrontScaling = {
+param containerAppWebsiteScaling = {
   minReplicas: 0
-  maxReplicas: 1
+  maxReplicas: 2
 }
-
-param containerAppBdFrontIngress = {
+param containerAppWebsiteIngress = {
   enabled: true
-  targetPort: 80
+  targetPort: 8080
   external: true
   transportMethod: 'auto'
 }
-
-param containerAppBdFrontHealthProbes = {
+param containerAppWebsiteHealthProbes = {
   readiness: {
     path: ''
     port: 0
@@ -63,36 +66,76 @@ param containerAppBdFrontHealthProbes = {
   }
 }
 
-param keyVaultBdSku = 'standard'
+param containerAppBackOfficeContainerRuntime = {
+  cpuCores: '0.25'
+  memoryGi: '0.5Gi'
+}
+param containerAppBackOfficeScaling = {
+  minReplicas: 0
+  maxReplicas: 2
+}
+param containerAppBackOfficeIngress = {
+  enabled: true
+  targetPort: 8080
+  external: true
+  transportMethod: 'auto'
+}
+param containerAppBackOfficeHealthProbes = {
+  readiness: {
+    path: ''
+    port: 0
+  }
+  liveness: {
+    path: ''
+    port: 0
+  }
+  startup: {
+    path: ''
+    port: 0
+  }
+}
 
 // -----------------------------------------------------------------------
-// Static values from bicepparam
+// Platform
 // -----------------------------------------------------------------------
 
-param bdBackCosmosdbDeploymentrequestscollectionname = 'DeploymentRequests'
-param bdBackCosmosdbDatabasename = 'bootstrapper'
-param bdBackCosmosdbUsersettingscollectionname = 'UserSettings'
-param bdBackCosmosdbProjectscollectionname = 'RegisteredProjects'
-param bdBackCosmosdbRuncollectionname = 'RunArchive'
-param bdBackCosmosdbProjectdefinitionscollectionname = 'ProjectDefinitions'
+param keyVaultSku = 'standard'
+param keyVaultEnablePurgeProtection = false
 
-param bdBackAzureadInstance = 'https://login.microsoftonline.com/'
+// Serverless: the database auto-pauses after an hour of inactivity, which
+// suits an environment deployed on demand.
+param sqlDatabaseName = 'vole-papillon-damour-db'
+param sqlDatabaseSku = {
+  name: 'GP_S_Gen5_1'
+  tier: 'GeneralPurpose'
+  family: 'Gen5'
+  capacity: 1
+  maxSizeBytes: 34359738368
+  autoPauseDelayMinutes: 60
+}
+
+param storageAccountSku = 'Standard_LRS'
+
+// Container names must match the BlobSettings section consumed by BlobService.
+param blobContainerLotoImages = 'loto-images'
+param blobContainerActualityImages = 'actuality-images'
+param blobContainerEventImages = 'event-images'
+param blobContainerProductImages = 'product-images'
+
+param jwtIssuer = 'Vole_Papillon_Damour'
+param jwtAudience = 'Vole_Papillon_Damour'
+param jwtExpiryMinutes = 1000
 
 // -----------------------------------------------------------------------
-// Dynamic values from Azure DevOps Variable Group
-// Keep empty here. Values must be injected by pipeline.
+// Values injected by the pipeline
 // -----------------------------------------------------------------------
+// Secrets come from GitHub secrets and images from the current state of the
+// Container Apps — never commit a value here.
 
-param bdAzureAdTenantId = ''
-param bdAzureAdClientSecret = ''
-param bdAzureAdClientId = ''
-param bdAzureAdAudience = ''
-param bdAzureAdApiScope = ''
+param sqlAdministratorLogin = readEnvironmentVariable('SQL_ADMIN_LOGIN', 'vpdadmin')
+param sqlAdministratorLoginPassword = readEnvironmentVariable('SQL_ADMIN_PASSWORD', '')
+param jwtSecret = readEnvironmentVariable('JWT_SECRET', '')
 
-param bdSpaClientId = ''
-param bdSpaAuthority = ''
-
-param bdGroupIdConsultation = ''
-param bdGroupIdAdministration = ''
-
-param bdBackDevopsResourceId = ''
+param apiImage = readEnvironmentVariable('API_IMAGE', '')
+param websiteImage = readEnvironmentVariable('WEBSITE_IMAGE', '')
+param backOfficeImage = readEnvironmentVariable('BACKOFFICE_IMAGE', '')

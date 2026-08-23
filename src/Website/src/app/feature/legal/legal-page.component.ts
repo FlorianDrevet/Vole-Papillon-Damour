@@ -17,7 +17,6 @@ const SIREN_PLACEHOLDER = '[A COMPLETER - numéro SIREN ou SIRET de l\'associati
 const PHONE_PLACEHOLDER = '[A COMPLETER - numéro de téléphone public si vous souhaitez le diffuser]';
 const HOSTING_POSTAL_ADDRESS_PLACEHOLDER = '[A COMPLETER - adresse postale complète de l\'hébergeur Render]';
 const RETENTION_PLACEHOLDER = '[A COMPLETER - durées de conservation applicables selon vos pratiques]';
-const CONSENT_CONFIGURATION_PLACEHOLDER = '[A COMPLETER - confirmer le paramétrage de consentement réellement retenu]';
 const TRANSFER_PLACEHOLDER = '[A COMPLETER - garanties et lieux exacts des éventuels transferts hors Union européenne]';
 const ACCESSIBILITY_LIMITATIONS_PLACEHOLDER = '[A COMPLETER - limitations d\'accessibilité actuellement identifiées]';
 const ACCESSIBILITY_PLAN_PLACEHOLDER = '[A COMPLETER - calendrier et priorités d\'amélioration de l\'accessibilité]';
@@ -128,7 +127,7 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
         bullets: [
           'Fonctionnement et sécurité du site : intérêt légitime de l\'association à maintenir un site accessible et stable.',
           'Réponse à un message reçu par email : traitement nécessaire pour répondre à votre demande.',
-          `Mesure d'audience et amélioration du contenu : consentement lorsqu'il est requis pour les traceurs concernés, sous réserve de validation du dispositif effectif (${CONSENT_CONFIGURATION_PLACEHOLDER}).`
+          `Mesure d'audience et amélioration du contenu : consentement recueilli via la bannière de cookies affichée lors de votre première visite, modifiable à tout moment depuis le lien « Gérer les cookies » en pied de page.`
         ]
       },
       {
@@ -202,33 +201,37 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
       {
         title: 'Mesure d\'audience et Microsoft Clarity',
         paragraphs: [
-          `Le site charge actuellement Microsoft Clarity dans son fichier d'entrée, avec l'identifiant ${CLARITY_TAG_ID}.`,
+          `Microsoft Clarity n'est chargé qu'après votre consentement explicite, donné via la bannière de cookies affichée lors de votre première visite. L'identifiant de balise utilisé est ${CLARITY_TAG_ID}.`,
           'Cet outil peut collecter des informations d\'usage comme les pages visitées, les interactions de navigation, des informations sur le navigateur et l\'appareil utilisé afin d\'aider à comprendre la consultation du site.'
         ],
         bullets: [
           'Outil identifié dans le code : Microsoft Clarity.',
-          `Identifiant de balise observé : ${CLARITY_TAG_ID}.`,
-          'Finalité annoncée : mesure d\'audience et compréhension des parcours de navigation.'
+          `Identifiant de balise utilisé : ${CLARITY_TAG_ID}.`,
+          'Finalité annoncée : mesure d\'audience et compréhension des parcours de navigation.',
+          'Déclenchement : uniquement après acceptation, totale ou partielle, des cookies de mesure d\'audience.'
         ]
       },
       {
         title: 'Consentement et paramétrage actuel',
         paragraphs: [
-          "Aucun bandeau de consentement n'est actuellement déployé sur ce site.",
-          'Le paramétrage de conformité doit donc être finalisé si les traceurs de mesure utilisés nécessitent un consentement préalable avant dépôt ou lecture.'
+          "Une bannière de consentement s'affiche lors de votre première visite. Elle vous permet de tout accepter, de tout refuser, ou de personnaliser votre choix pour la mesure d'audience.",
+          'Tant que vous n\'avez pas donné votre accord, Microsoft Clarity n\'est ni chargé ni exécuté : aucun cookie de mesure d\'audience n\'est déposé avant votre consentement.'
         ],
-        note: CONSENT_CONFIGURATION_PLACEHOLDER
+        bullets: [
+          'Votre choix est mémorisé dans votre navigateur (stockage local) afin de ne pas vous solliciter à chaque visite.',
+          'Vous pouvez modifier votre choix à tout moment via le lien « Gérer les cookies » en pied de page.'
+        ]
       },
       {
         title: 'Comment gérer vos choix ?',
         paragraphs: [
-          'Vous pouvez limiter ou supprimer certains cookies depuis les réglages de votre navigateur, tout en gardant à l\'esprit que cela peut dégrader certaines fonctions techniques.',
+          'Vous pouvez revenir sur votre choix à tout moment, ou limiter et supprimer certains cookies depuis les réglages de votre navigateur (ce qui peut dégrader certaines fonctions techniques).',
           `Pour toute question sur les traceurs utilisés, vous pouvez contacter l'association à ${CONTACT_EMAIL}.`
         ],
         bullets: [
+          'Utilisez le lien « Gérer les cookies » en pied de page pour rouvrir la bannière et modifier votre choix.',
           'Consultez les paramètres de confidentialité de votre navigateur.',
-          'Supprimez les cookies déjà déposés si vous souhaitez repartir avec une navigation vierge.',
-          'Revenez consulter cette page après mise à jour du dispositif de consentement.'
+          'Supprimez les cookies déjà déposés si vous souhaitez repartir avec une navigation vierge.'
         ]
       }
     ]

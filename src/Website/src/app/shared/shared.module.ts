@@ -8,6 +8,7 @@ import { PapillonIconComponent } from './components/papillon-icon/papillon-icon.
 import { ActualityCardComponent } from './components/actuality-card/actuality-card.component';
 import { DiaporamaComponent } from './components/diaporama/diaporama.component';
 import { GoUpComponent } from './components/go-up/go-up.component';
+import { CookieBannerComponent } from './components/cookie-banner/cookie-banner.component';
 import { PricesComponent } from './components/prices/prices.component';
 import { ProductComponent } from './components/prices/components/product/product.component';
 import { SectionEyebrowComponent } from './components/section-eyebrow/section-eyebrow.component';
@@ -33,6 +34,7 @@ import { TitledSectionComponent } from './components/titled-section/titled-secti
     PhotoPlaceholderComponent,
     ActionCardComponent,
     TitledSectionComponent,
+    CookieBannerComponent,
   ],
   exports: [
     PapillonIconComponent,
@@ -48,6 +50,7 @@ import { TitledSectionComponent } from './components/titled-section/titled-secti
     PhotoPlaceholderComponent,
     ActionCardComponent,
     TitledSectionComponent,
+    CookieBannerComponent,
     DesignSystemModule,
   ],
   imports: [CommonModule, RouterLink, DesignSystemModule],

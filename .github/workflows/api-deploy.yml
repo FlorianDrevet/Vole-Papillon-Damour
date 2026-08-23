@@ -1,0 +1,130 @@
+name: API - deploy
+
+# Manual only: the pipeline never fires on a push.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to build and deploy (default - the commit sha)
+        type: string
+        default: ''
+      run_migrations:
+        description: Apply the EF Core migrations to the database after deploying
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  REGISTRY_NAME: vpdacrdev
+  CONTAINER_APP: vpd-api-ca-dev
+  IMAGE_NAME: vpd-api
+  SQL_SERVER: vpd-sql-dev
+  SQL_DATABASE: vole-papillon-damour-db
+  DOCKERFILE: src/Backend/Vole_Papillon_Damour.Api/Dockerfile
+  BUILD_CONTEXT: src/Backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Azure CLI
+        run: az config set extension.use_dynamic_install=yes_without_prompt
+
+      - name: Resolve the image reference
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
+          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
+          {
+            echo "IMAGE_TAG=$TAG"
+            echo "IMAGE=$LOGIN_SERVER/$IMAGE_NAME:$TAG"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and push the image
+        run: |
+          set -euo pipefail
+          az acr login --name "$REGISTRY_NAME"
+          docker build --file "$DOCKERFILE" --tag "$IMAGE" "$BUILD_CONTEXT"
+          docker push "$IMAGE"
+
+      - name: Roll the Container App onto the new image
+        run: |
+          set -euo pipefail
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE" \
+            --output none
+
+      # Azure SQL only accepts Azure egress by default, so the runner opens a
+      # rule for its own address and closes it again whatever happens.
+      - name: Open the database to this runner
+        if: inputs.run_migrations
+        run: |
+          set -euo pipefail
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          az sql server firewall-rule create \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-runner-${{ github.run_id }}" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP" \
+            --output none
+
+      - uses: actions/setup-dotnet@v4
+        if: inputs.run_migrations
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Apply the EF Core migrations
+        if: inputs.run_migrations
+        env:
+          SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+          # Never used at design time, but the host resolves it while building.
+          ConnectionStrings__AzureBlobStorageConnectionString: UseDevelopmentStorage=true
+        run: |
+          set -euo pipefail
+          SQL_FQDN=$(az sql server show --resource-group "$RESOURCE_GROUP" --name "$SQL_SERVER" \
+            --query fullyQualifiedDomainName --output tsv)
+          CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$SQL_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+          dotnet tool install --global dotnet-ef --version 8.*
+          dotnet ef database update \
+            --project src/Backend/Vole_Papillon_Damour.Infrastructure \
+            --startup-project src/Backend/Vole_Papillon_Damour.Api \
+            --connection "$CONNECTION"
+
+      - name: Close the database to this runner
+        if: always() && inputs.run_migrations
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-runner-${{ github.run_id }}" \
+            --output none || true
+
+      - name: Report the deployed revision
+        run: |
+          set -euo pipefail
+          FQDN=$(az containerapp show --name "$CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          {
+            echo "### API deployed"
+            echo ""
+            echo "- Image: \`$IMAGE\`"
+            echo "- URL: https://$FQDN"
+          } >> "$GITHUB_STEP_SUMMARY"
