@@ -7,16 +7,16 @@
 
 ## 📋 Type de changement
 
-- [ ] `feat` — Nouvelle fonctionnalité
-- [ ] `fix` — Correction de bug
-- [ ] `refactor` — Refactoring sans changement fonctionnel
-- [ ] `perf` — Amélioration des performances
-- [ ] `docs` — Documentation uniquement
-- [ ] `test` — Ajout ou modification de tests
-- [ ] `chore` — Maintenance, dépendances, CI
-- [ ] `ci` — Changements liés aux pipelines CI/CD
-- [ ] `style` — Formatage, lint (sans impact fonctionnel)
-- [ ] `revert` — Annulation d'un commit précédent
+- [ ] `feat` - Nouvelle fonctionnalité
+- [ ] `fix` - Correction de bug
+- [ ] `refactor` - Refactoring sans changement fonctionnel
+- [ ] `perf` - Amélioration des performances
+- [ ] `docs` - Documentation uniquement
+- [ ] `test` - Ajout ou modification de tests
+- [ ] `chore` - Maintenance, dépendances, CI
+- [ ] `ci` - Changements liés aux pipelines CI/CD
+- [ ] `style` - Formatage, lint (sans impact fonctionnel)
+- [ ] `revert` - Annulation d'un commit précédent
 
 ---
 

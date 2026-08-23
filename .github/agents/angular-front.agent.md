@@ -2,7 +2,7 @@
 description: 'Expert Angular developer. Use this agent for ALL Angular web tasks in this repo.'
 ---
 
-# Agent : angular-front — Expert Angular 18
+# Agent : angular-front - Expert Angular 18
 
 > **Toute tache frontend web Angular dans ce depot DOIT passer par cet agent.**
 > Il couvre les deux applications Angular du depot : `src/BackOffice/` et `src/Website/`.
@@ -30,7 +30,7 @@ Tu privilegies :
 5. Identifier l'application cible : `BackOffice` ou `Website`.
 6. Lire les fichiers proches pour reprendre les conventions exactes du slice cible.
 
-## Code Graph — Verification obligatoire avant modification transverse
+## Code Graph - Verification obligatoire avant modification transverse
 
 - Avant de modifier un service partage, un guard, un modele transverse, un module de routing, ou un composant central, executer l'impact analysis si le projet est configure.
 - Si le risque remonte HIGH ou CRITICAL, signaler le blast radius avant edition.

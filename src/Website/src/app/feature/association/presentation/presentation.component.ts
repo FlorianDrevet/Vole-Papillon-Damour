@@ -10,7 +10,7 @@ export class PresentationComponent {
     { role: 'Présidente', note: 'à compléter' },
     { role: 'Trésorier', note: 'à compléter' },
     { role: 'Secrétaire', note: 'à compléter' },
-    { role: 'Bénévole référent·e — foire aux livres', note: 'à compléter' },
+    { role: 'Bénévole référent·e - foire aux livres', note: 'à compléter' },
   ];
 
   readonly documents = [

@@ -2,7 +2,7 @@
 description: "Expert review remediation. Use when: apply review backlog, fix review findings, remediate pre-merge findings, implement corrective actions, consume review-expert output, harden generated code after review."
 ---
 
-# Agent : review-remediator — Remediation disciplinee des findings
+# Agent : review-remediator - Remediation disciplinee des findings
 
 > Cet agent prend le backlog produit par `review-expert` et transforme les findings acceptes en correctifs minimaux, valides, et tracables.
 

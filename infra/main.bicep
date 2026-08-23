@@ -16,7 +16,7 @@ import { DatabaseSkuConfig } from './modules/SqlServer/types.bicep'
 param environmentName EnvironmentName
 
 // -----------------------------------------------------------------------
-// Container Apps — runtime configuration
+// Container Apps - runtime configuration
 // -----------------------------------------------------------------------
 
 @description('Value for containerRuntime of ContainerApp resource api.')
@@ -189,7 +189,7 @@ module keyVaultModule './modules/KeyVault/keyVault.module.bicep' = {
 }
 
 // -----------------------------------------------------------------------
-// Observability — one Application Insights per application
+// Observability - one Application Insights per application
 // -----------------------------------------------------------------------
 
 module applicationInsightsApiModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
@@ -290,7 +290,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
 }
 
 // -----------------------------------------------------------------------
-// Identities — one per application, so each app only gets what it needs
+// Identities - one per application, so each app only gets what it needs
 // -----------------------------------------------------------------------
 
 module userAssignedIdentityApiModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
@@ -568,7 +568,7 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
 }
 
 // -----------------------------------------------------------------------
-// Outputs — consumed by the application pipelines
+// Outputs - consumed by the application pipelines
 // -----------------------------------------------------------------------
 
 output resourceGroupName string = applicationResourceGroup.name

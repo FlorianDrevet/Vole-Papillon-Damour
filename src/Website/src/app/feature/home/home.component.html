@@ -6,7 +6,7 @@
   </defs>
 </svg>
 
-<section class="grid grid-cols-1 items-center gap-10 bg-paper px-shell py-14 lg:grid-cols-[1fr_440px] lg:gap-14 lg:py-20">
+<section class="grid grid-cols-1 items-center gap-10 bg-paper px-shell py-14 lg:grid-cols-[1fr_480px] lg:gap-14 lg:py-20">
   <div class="flex flex-col gap-6">
     <span class="inline-flex items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-blue">
       <span class="h-px w-6 bg-blue-2"></span>Maladies rares · Saint-Just-Saint-Rambert
@@ -15,8 +15,8 @@
       Personne ne devrait se battre seul.
     </h1>
     <p class="max-w-[46ch] text-[17px] leading-relaxed text-slate-2">
-      Née pour soutenir Maxence — <em class="font-serif italic text-ink-2">premier cas au monde</em>
-      d'une mutation cellulaire aux multiples maladies rares — l'association aide aujourd'hui des dizaines
+      Née pour soutenir Maxence - <em class="font-serif italic text-ink-2">premier cas au monde</em>
+      d'une mutation cellulaire aux multiples maladies rares - l'association aide aujourd'hui des dizaines
       d'enfants que le système laisse de côté.
     </p>
     <div class="mt-1 flex flex-wrap gap-3">
@@ -25,16 +25,19 @@
     </div>
   </div>
 
-  <div class="relative mx-auto w-full max-w-[440px]">
+  <div class="relative mx-auto w-full max-w-[480px]">
     <div class="absolute -right-6 top-1.5 h-[150px] w-[150px] rounded-full border border-blue-2 opacity-30"></div>
     <div class="absolute inset-0 scale-105 opacity-[.62]" style="background: linear-gradient(150deg, #0c6ea6 0%, #1497d6 22%, #7fd8f5 44%, #f9a93c 68%, #f0801c 92%); clip-path: url(#papillon-clip)"></div>
-    <img
-      priority
-      ngSrc="images/maxence_accueil.jpg"
-      alt="Maxence"
-      width="440" height="500"
-      class="relative block h-[380px] w-full object-cover object-[center_13%] lg:h-[500px]"
-      style="clip-path: url(#papillon-clip)">
+    <!-- Le cadrage est piloté ici et non par object-position : le sujet est haut dans la photo, le zoom
+         le descend sous l'encoche centrale du papillon et centre le visage sur l'axe des ailes. -->
+    <div class="relative aspect-[24/29] overflow-hidden" style="clip-path: url(#papillon-clip)">
+      <img
+        priority
+        fill
+        ngSrc="images/maxence.png"
+        alt="Maxence"
+        class="origin-[47%_0] scale-[1.15] object-cover object-top">
+    </div>
     <div class="absolute left-[-16px] top-[38%] h-[150px] w-1.5 rounded-full" style="background: linear-gradient(180deg, #1497d6 0%, #7fd8f5 55%, #f0801c 100%)"></div>
   </div>
 </section>
@@ -62,7 +65,7 @@
       meta="MONTANT ET DATE À COMPLÉTER"
       title="Un exemple d'aide à la mobilité"
       description="Illustration : matériel de transport adapté financé par l'association."
-      photoLabel="PHOTO — À COMPLÉTER"
+      photoLabel="PHOTO - À COMPLÉTER"
       [rotateDeg]="-1.6">
     </app-action-card>
 
@@ -81,7 +84,7 @@
       class="lg:[grid-column:span_3] lg:mt-3"
       meta="MONTANT À COMPLÉTER"
       title="Un exemple d'aide informatique"
-      photoLabel="PHOTO — À COMPLÉTER"
+      photoLabel="PHOTO - À COMPLÉTER"
       [rotateDeg]="-0.9"
       [floatDelayS]="1.6">
     </app-action-card>
@@ -90,7 +93,7 @@
       class="sm:[grid-column:span_1] lg:[grid-column:span_4]"
       meta="MONTANT À COMPLÉTER"
       title="Un exemple de séjour de répit"
-      photoLabel="PHOTO — À COMPLÉTER"
+      photoLabel="PHOTO - À COMPLÉTER"
       [rotateDeg]="1"
       [floatDelayS]="2.2">
     </app-action-card>
@@ -129,7 +132,7 @@
       <span class="relative font-mono text-[11px] tracking-[.16em] text-white/80">01 · VOS LIVRES</span>
       <span class="relative flex flex-col gap-3">
         <span class="max-w-[20ch] font-serif text-[30px] font-medium leading-[1.06] lg:text-[36px]">Vous avez des livres. Nous avons des enfants à aider.</span>
-        <span class="max-w-[42ch] text-[15px] leading-relaxed text-white/90">Dépôt 24 h/24 au 46 route de Saint-Marcellin — ou nous venons les chercher avec la camionnette.</span>
+        <span class="max-w-[42ch] text-[15px] leading-relaxed text-white/90">Dépôt 24 h/24 au 46 route de Saint-Marcellin - ou nous venons les chercher avec la camionnette.</span>
         <span class="mt-1.5 font-mono text-xs tracking-[.12em]">ORGANISER UN DÉPÔT →</span>
       </span>
     </a>

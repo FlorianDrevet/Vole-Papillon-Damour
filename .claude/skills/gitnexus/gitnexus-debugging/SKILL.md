@@ -48,7 +48,7 @@ description: "Use when the user is debugging a bug, tracing an error, or asking 
 
 ## Tools
 
-**gitnexus_query** — find code related to error:
+**gitnexus_query** - find code related to error:
 
 ```
 gitnexus_query({query: "payment validation error"})
@@ -56,7 +56,7 @@ gitnexus_query({query: "payment validation error"})
 → Symbols: validatePayment, handlePaymentError, PaymentException
 ```
 
-**gitnexus_context** — full context for a suspect:
+**gitnexus_context** - full context for a suspect:
 
 ```
 gitnexus_context({name: "validatePayment"})
@@ -65,7 +65,7 @@ gitnexus_context({name: "validatePayment"})
 → Processes: CheckoutFlow (step 3/7)
 ```
 
-**gitnexus_cypher** — custom call chain traces:
+**gitnexus_cypher** - custom call chain traces:
 
 ```cypher
 MATCH path = (a)-[:CodeRelation {type: 'CALLS'}*1..2]->(b:Function {name: "validatePayment"})

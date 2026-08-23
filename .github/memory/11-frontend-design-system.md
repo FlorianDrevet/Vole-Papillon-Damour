@@ -55,7 +55,7 @@ Verified Tailwind theme tokens include:
   - `vpd-title` (`vpd-title, app-title`)
   - `vpd-under-section` (`vpd-under-section, app-under-section`)
   - `vpd-button` (`vpd-button, app-button, app-vpd-button`)
-  - `vpd-image` (`vpd-image, app-vpd-image`) — superset of both apps (rounded, backgroundColor, rotation, orientation, highPriorityFetching, height, width)
+  - `vpd-image` (`vpd-image, app-vpd-image`) - superset of both apps (rounded, backgroundColor, rotation, orientation, highPriorityFetching, height, width)
   - `vpd-actuality-card`, `vpd-event-card`, `vpd-product-card`, `vpd-product-list`
 - Pipes (kept legacy names so templates still write `| price`, `| capitalize`, `| lineNumberTitle`): `VpdPricePipe`, `VpdCapitalizePipe`, `VpdLineNumberTitlePipe`.
 - Enums use string values (`OneLine`, `Bingo`, etc.) so they line up with API payloads. `DsVpdEventModel.eventType` is `VpdEventEnum | string | number` to remain compatible with Website's local numeric `VpdEventEnum` (which the Website itself converts at runtime).
@@ -75,11 +75,11 @@ DS card components are display-only by default. To enable edit/delete actions, p
 
 ### App-side wrappers
 
-Each app keeps thin "smart wrapper" components with the legacy `app-*` selectors and original input/output names (`ActualityModel`, `VpdEvent`, `Product`, `(actualityDeleted)`, `(actualityUpdated)`, etc.). These wrappers forward the model to the DS component, set `[editable]` to the right mode, and bind dialogs/facades — they hold no presentation logic.
+Each app keeps thin "smart wrapper" components with the legacy `app-*` selectors and original input/output names (`ActualityModel`, `VpdEvent`, `Product`, `(actualityDeleted)`, `(actualityUpdated)`, etc.). These wrappers forward the model to the DS component, set `[editable]` to the right mode, and bind dialogs/facades - they hold no presentation logic.
 
 - BackOffice wrappers: `editable=true`, delegate edit/delete to Material dialogs + facades.
 - Website wrappers: `editable=false`, pass-through only (read-only public site).
 
 ### Duplicates removed
 
-Both `src/BackOffice/src/app/shared/components/{title,under-section,vpd-button,vpd-image}/` and `src/Website/src/app/shared/components/{title,under-section,button,vpd-image}/`, plus the per-app `capitalize.pipe.ts` / `line-number-title.pipe.ts` / `price.pipe.ts` are gone — `@vpd/ui` is the single source. SharedModules now only declare app-specific components and pull in `DesignSystemModule`. Dialog components (`CreateUpdateActualityDialog`, `CreateUpdateProductDialog`) remain declared in `FeatureModule` where they already lived; `SharedModule` keeps only `ConfirmationDialogComponent` + `CreateUpdateEventDialogComponent` on the BackOffice side.
+Both `src/BackOffice/src/app/shared/components/{title,under-section,vpd-button,vpd-image}/` and `src/Website/src/app/shared/components/{title,under-section,button,vpd-image}/`, plus the per-app `capitalize.pipe.ts` / `line-number-title.pipe.ts` / `price.pipe.ts` are gone - `@vpd/ui` is the single source. SharedModules now only declare app-specific components and pull in `DesignSystemModule`. Dialog components (`CreateUpdateActualityDialog`, `CreateUpdateProductDialog`) remain declared in `FeatureModule` where they already lived; `SharedModule` keeps only `ConfirmationDialogComponent` + `CreateUpdateEventDialogComponent` on the BackOffice side.

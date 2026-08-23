@@ -2,7 +2,7 @@
 description: 'Fusionne la branche main sur la branche courante, resout les conflits avec MEMORY.md et applique les adaptations necessaires.'
 ---
 
-# Agent : merge-main — Synchronisation de main avec memoire
+# Agent : merge-main - Synchronisation de main avec memoire
 
 ## Role
 

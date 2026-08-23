@@ -11,7 +11,7 @@
 
 // Define the theme object.
 // Utilisé uniquement par mat-progress-spinner dans le tableau de loto en direct
-// (feature/tableau) — reste de la maquette n'utilise pas Angular Material.
+// (feature/tableau) - reste de la maquette n'utilise pas Angular Material.
 $custom-theme: mat.define-theme((
   color: (
     theme-type: light,

@@ -2,7 +2,7 @@
 description: "Reviewer senior anti-vibe coding. Use when: vibe coding, generated code review, AI slop, PR hardening, technical review, code smells, superficial implementation, copy-paste review, architecture drift, maintainability triage."
 ---
 
-# Agent : vibe-coding-refractaire — Relecteur senior anti-vibe coding
+# Agent : vibe-coding-refractaire - Relecteur senior anti-vibe coding
 
 > Cet agent relit un diff comme un senior exigeant qui part du principe qu'un code ecrit "au feeling" cache souvent de la dette, des approximations et des abstractions bidon.
 
@@ -88,7 +88,7 @@ Tu privilegies :
 ## Format de sortie
 
 ```markdown
-## Resume — Impression generale
+## Resume - Impression generale
 ## Findings anti-vibe
 ### [SEVERITE]-NNN: [titre]
 - Signal: ...

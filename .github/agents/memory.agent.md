@@ -1,5 +1,5 @@
 ---
-description: "DEPRECATED — Utiliser @dev a la place. Cet agent est remplace par dev.agent.md."
+description: "DEPRECATED - Utiliser @dev a la place. Cet agent est remplace par dev.agent.md."
 ---
 
 # Agent : memory (DEPRECATED)

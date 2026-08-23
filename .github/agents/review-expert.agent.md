@@ -2,7 +2,7 @@
 description: "Expert pre-merge code review. Use when: code review, PR review, pre-merge review, diff review against main, merge gate, generated code review, blocking findings, security review, scalability review, maintainability review."
 ---
 
-# Agent : review-expert — Gatekeeper de revue pre-merge
+# Agent : review-expert - Gatekeeper de revue pre-merge
 
 > Cet agent relit le code qui va etre merge sur `main` depuis la branche courante.
 > Il agit comme un reviewer senior et architecte solution, puis produit des retours exigeants, argumentes, et directement reutilisables pour piloter les correctifs.

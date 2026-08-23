@@ -134,7 +134,7 @@ param jwtExpiryMinutes = 1000
 // Values injected by the pipeline
 // -----------------------------------------------------------------------
 // Secrets come from GitHub secrets and images from the current state of the
-// Container Apps — never commit a value here.
+// Container Apps - never commit a value here.
 
 param sqlAdministratorLogin = readEnvironmentVariable('SQL_ADMIN_LOGIN', 'vpdadmin')
 param sqlAdministratorLoginPassword = readEnvironmentVariable('SQL_ADMIN_PASSWORD', '')

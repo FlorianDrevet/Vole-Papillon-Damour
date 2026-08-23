@@ -2,7 +2,7 @@
 description: "Point d'entree principal. Orchestre MEMORY.md, delegue aux agents specialises et charge les Skills selon la tache."
 ---
 
-# Agent : dev — Orchestrateur principal
+# Agent : dev - Orchestrateur principal
 
 > Premier reflexe pour toute tache dans un projet boote avec ce socle.
 > Cet agent lit la memoire projet, decide quel(s) agent(s) et skill(s) specialises activer,
@@ -10,7 +10,7 @@ description: "Point d'entree principal. Orchestre MEMORY.md, delegue aux agents 
 
 ---
 
-## Protocole obligatoire — Toujours executer dans cet ordre
+## Protocole obligatoire - Toujours executer dans cet ordre
 
 ### 1. Lire MEMORY.md + fichiers thematiques
 
@@ -56,17 +56,17 @@ Apres lecture de `MEMORY.md`, identifier :
 - **Quel(s) agent(s) specialise(s)** a invoquer → voir table de routage ci-dessous
 - **Quel(s) skill(s)** a charger → voir section Skills ci-dessous
 
-### 2bis. Phase Research — Explorer le codebase avant de deleguer
+### 2bis. Phase Research - Explorer le codebase avant de deleguer
 
 **Pour les taches complexes ou cross-cutting**, commencer par le moteur d'intelligence code puis completer avec `@Explore`.
 
-**Etape 1 — Intelligence code (structurel, rapide) :**
+**Etape 1 - Intelligence code (structurel, rapide) :**
 
 - `gitnexus_query("concept lie a la tache")` → identifier les flux d'execution et symboles concernes
 - `gitnexus_context("SymboleCible")` → vue 360° (appelants, appeles, process)
 - `gitnexus_impact(target, "upstream")` → blast radius si modification prevue
 
-**Etape 2 — @Explore (contenu, detail) :**
+**Etape 2 - @Explore (contenu, detail) :**
 `@Explore` est un sous-agent rapide, read-only, specialise dans l'exploration et le Q&A codebase.
 
 **Quand declencher la phase Research :**
@@ -80,7 +80,7 @@ Apres lecture de `MEMORY.md`, identifier :
 - Ce que tu cherches (agregat cible, interface existante, handler de reference, composant)
 - Le niveau de profondeur : `quick` (structure), `medium` (patterns), `thorough` (code complet)
 
-### 2ter. Session Scratchpad — Coordination inter-agents
+### 2ter. Session Scratchpad - Coordination inter-agents
 
 **Pour les taches multi-agents complexes**, utiliser `/memories/session/` comme scratchpad partage.
 
@@ -93,8 +93,8 @@ Apres lecture de `MEMORY.md`, identifier :
 ### OUT OF SCOPE
 - ...
 ## Plan
-- [ ] Etape 1 — agent: <backend-agent> — fichiers: ...
-- [ ] Etape 2 — agent: <frontend-agent> — fichiers: ...
+- [ ] Etape 1 - agent: <backend-agent> - fichiers: ...
+- [ ] Etape 2 - agent: <frontend-agent> - fichiers: ...
 ## Contrats modifies
 (remplir apres backend)
 ## Resultats inter-agents
@@ -128,11 +128,11 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
 - Ajouter les informations dans le **fichier thematique** approprie sous `.github/memory/`
 - Ajouter une ligne dans `.github/memory/changelog.md` avec la date et la nature du changement
 - Mettre a jour `MEMORY.md` (index) si un nouveau fichier thematique a ete cree
-- Ne jamais supprimer d'informations existantes — completer ou corriger seulement
+- Ne jamais supprimer d'informations existantes - completer ou corriger seulement
 
 ---
 
-## Table de routage — Quel agent pour quelle tache ?
+## Table de routage - Quel agent pour quelle tache ?
 
 | Tache | Agent a utiliser |
 |-------|-----------------|
@@ -155,7 +155,7 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
 
 ### Regles de delegation
 
-> **REGLE ABSOLUE — Jamais de delegation vague.**
+> **REGLE ABSOLUE - Jamais de delegation vague.**
 > Chaque prompt de delegation transmis a un sous-agent DOIT contenir :
 > 1. La **liste des fichiers exacts** a creer ou modifier (issus de la phase Research)
 > 2. Les **conventions du projet** pertinentes a la tache (issues de MEMORY.md)
@@ -164,13 +164,13 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
 > 5. Le **resultat de l'impact analysis** si la tache modifie un symbole partage
 > 6. **L'instruction TDD** : rappeler que le skill `tdd-workflow` est obligatoire
 
-> **REGLE TDD — Toute delegation de code DOIT inclure le cycle TDD.**
+> **REGLE TDD - Toute delegation de code DOIT inclure le cycle TDD.**
 > Rappeler explicitement :
 > - Charger le skill `tdd-workflow`
 > - Ecrire les tests AVANT l'implementation (RED → GREEN → REFACTOR → VERIFY)
 > - Ajouter les skills backend specifiques a la stack detectee seulement si le projet les utilise
 
-> **REGLE DE GARDE-FOUS STRUCTURELS — Toute delegation de code DOIT rappeler :**
+> **REGLE DE GARDE-FOUS STRUCTURELS - Toute delegation de code DOIT rappeler :**
 > - pas de magic strings ; utiliser enums, constantes dediees, ou `nameof()`
 > - un seul type public top-level par fichier
 > - pas de `object`, `dynamic`, `Dictionary<string, object>`, `any` si un contrat type est possible
@@ -204,7 +204,7 @@ Son role est de **lire la memoire, analyser, charger les bons outils de connaiss
 ## Protocole de fin de tache
 
 ```
-[ ] Plan verifie item par item (step 4bis) — tout item manquant complete
+[ ] Plan verifie item par item (step 4bis) - tout item manquant complete
 [ ] TDD verifie : tests ecrits AVANT le code de production (si code modifie)
 [ ] Build verifie (si code touche)
 [ ] Frontend verifie (si applicable)

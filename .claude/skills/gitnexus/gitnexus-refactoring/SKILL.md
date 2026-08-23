@@ -29,39 +29,39 @@ description: "Use when the user wants to rename, extract, split, move, or restru
 ### Rename Symbol
 
 ```
-- [ ] gitnexus_rename({symbol_name: "oldName", new_name: "newName", dry_run: true}) — preview all edits
+- [ ] gitnexus_rename({symbol_name: "oldName", new_name: "newName", dry_run: true}) - preview all edits
 - [ ] Review graph edits (high confidence) and ast_search edits (review carefully)
-- [ ] If satisfied: gitnexus_rename({..., dry_run: false}) — apply edits
-- [ ] gitnexus_detect_changes() — verify only expected files changed
+- [ ] If satisfied: gitnexus_rename({..., dry_run: false}) - apply edits
+- [ ] gitnexus_detect_changes() - verify only expected files changed
 - [ ] Run tests for affected processes
 ```
 
 ### Extract Module
 
 ```
-- [ ] gitnexus_context({name: target}) — see all incoming/outgoing refs
-- [ ] gitnexus_impact({target, direction: "upstream"}) — find all external callers
+- [ ] gitnexus_context({name: target}) - see all incoming/outgoing refs
+- [ ] gitnexus_impact({target, direction: "upstream"}) - find all external callers
 - [ ] Define new module interface
 - [ ] Extract code, update imports
-- [ ] gitnexus_detect_changes() — verify affected scope
+- [ ] gitnexus_detect_changes() - verify affected scope
 - [ ] Run tests for affected processes
 ```
 
 ### Split Function/Service
 
 ```
-- [ ] gitnexus_context({name: target}) — understand all callees
+- [ ] gitnexus_context({name: target}) - understand all callees
 - [ ] Group callees by responsibility
-- [ ] gitnexus_impact({target, direction: "upstream"}) — map callers to update
+- [ ] gitnexus_impact({target, direction: "upstream"}) - map callers to update
 - [ ] Create new functions/services
 - [ ] Update callers
-- [ ] gitnexus_detect_changes() — verify affected scope
+- [ ] gitnexus_detect_changes() - verify affected scope
 - [ ] Run tests for affected processes
 ```
 
 ## Tools
 
-**gitnexus_rename** — automated multi-file rename:
+**gitnexus_rename** - automated multi-file rename:
 
 ```
 gitnexus_rename({symbol_name: "validateUser", new_name: "authenticateUser", dry_run: true})
@@ -70,7 +70,7 @@ gitnexus_rename({symbol_name: "validateUser", new_name: "authenticateUser", dry_
 → Changes: [{file_path, edits: [{line, old_text, new_text, confidence}]}]
 ```
 
-**gitnexus_impact** — map all dependents first:
+**gitnexus_impact** - map all dependents first:
 
 ```
 gitnexus_impact({target: "validateUser", direction: "upstream"})
@@ -78,7 +78,7 @@ gitnexus_impact({target: "validateUser", direction: "upstream"})
 → Affected Processes: LoginFlow, TokenRefresh
 ```
 
-**gitnexus_detect_changes** — verify your changes after refactoring:
+**gitnexus_detect_changes** - verify your changes after refactoring:
 
 ```
 gitnexus_detect_changes({scope: "all"})
@@ -87,7 +87,7 @@ gitnexus_detect_changes({scope: "all"})
 → Risk: MEDIUM
 ```
 
-**gitnexus_cypher** — custom reference queries:
+**gitnexus_cypher** - custom reference queries:
 
 ```cypher
 MATCH (caller)-[:CodeRelation {type: 'CALLS'}]->(f:Function {name: "validateUser"})
@@ -117,5 +117,5 @@ RETURN caller.name, caller.filePath ORDER BY caller.filePath
 
 4. gitnexus_detect_changes({scope: "all"})
    → Affected: LoginFlow, TokenRefresh
-   → Risk: MEDIUM — run tests for these flows
+   → Risk: MEDIUM - run tests for these flows
 ```

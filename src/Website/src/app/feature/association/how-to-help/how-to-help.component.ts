@@ -35,8 +35,8 @@ export class HowToHelpComponent {
 
   readonly faq = [
     { q: 'Puis-je vous faire un chèque quand même ?', a: 'Contactez-nous directement : nous vous conseillerons selon votre situation.' },
-    { q: 'Délivrez-vous un reçu fiscal ?', a: 'À nous demander par écrit — cela dépend du type de soutien.' },
-    { q: 'Reprenez-vous des jouets ou des vêtements ?', a: 'Occasionnellement, sur demande — écrivez-nous avant de vous déplacer.' },
+    { q: 'Délivrez-vous un reçu fiscal ?', a: 'À nous demander par écrit - cela dépend du type de soutien.' },
+    { q: 'Reprenez-vous des jouets ou des vêtements ?', a: 'Occasionnellement, sur demande - écrivez-nous avant de vous déplacer.' },
     { q: 'Puis-je demander une aide pour mon enfant ?', a: 'Oui, voir la page « Nos actions » pour la marche à suivre.' },
   ];
 }

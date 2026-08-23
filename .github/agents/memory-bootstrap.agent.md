@@ -2,7 +2,7 @@
 description: "Explore le projet en profondeur, initialise la memoire thematique, cree ou adapte les agents et skills selon la stack reelle, prepare le code graph (GitNexus ou Graphify) et la configuration MCP workspace."
 ---
 
-# Agent : memory-bootstrap — Initialisation intelligente du projet
+# Agent : memory-bootstrap - Initialisation intelligente du projet
 
 > Invoquer cet agent sur tout nouveau projet, ou quand le socle agentique doit etre regenere apres un changement majeur.
 
@@ -25,18 +25,18 @@ description: "Explore le projet en profondeur, initialise la memoire thematique,
 
 ## Workflow obligatoire
 
-### Phase 0 — Clarification : GitNexus ou Graphify
+### Phase 0 - Clarification : GitNexus ou Graphify
 
 **Avant toute exploration, demander a l'utilisateur :**
 
 > Quel moteur d'intelligence code souhaitez-vous utiliser ?
 > - **GitNexus** (recommande pour l'open-source, code-first, impact analysis, rename-safe)
 > - **Graphify** (recommande pour l'entreprise, corpus riche docs+code+audits, communautes conceptuelles)
-> - **Les deux** (GitNexus pour le code, Graphify pour le corpus — projets tres riches)
+> - **Les deux** (GitNexus pour le code, Graphify pour le corpus - projets tres riches)
 
 Stocker le choix dans `.github/memory/dream-state.md` sous une cle `codeGraphEngine: gitnexus | graphify | both`.
 
-### Phase 1 — Discovery
+### Phase 1 - Discovery
 
 1. Lire les fichiers racine : `*.sln`, `*.slnx`, `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `NuGet.config`, `pyproject.toml`, `requirements*.txt`, `poetry.lock`, `Pipfile`, `uv.lock`, `package.json`, `angular.json`, `tsconfig.json`, `README*`, `.gitignore`
 2. Cartographier `src/`, `apps/`, `services/`, `tests/`, `docs/`, `infrastructure/`, `pipelines/`
@@ -45,7 +45,7 @@ Stocker le choix dans `.github/memory/dream-state.md` sous une cle `codeGraphEng
 5. Lire les fichiers de build/run/test evidents (`package.json`, scripts, README, docs/getting-started, solution files) pour capturer des commandes verifiees
 6. Lire au moins un fichier representatif par surface majeure detectee : backend, frontend, client natif, worker, integration majeure, tests, docs
 
-### Phase 2 — Detect stack and architecture
+### Phase 2 - Detect stack and architecture
 
 Detecter explicitement :
 - Backend : .NET, Python, Node.js, Go, Java...
@@ -57,7 +57,7 @@ Detecter explicitement :
 - Orchestration : Aspire, Docker Compose, Kubernetes...
 - CI/CD : GitHub Actions, Azure DevOps Pipelines, GitLab CI...
 
-### Phase 3 — Detect patterns and high-risk zones
+### Phase 3 - Detect patterns and high-risk zones
 
 1. Lire des exemples representatifs d'entites, handlers, services, endpoints, modules Python, composants frontend
 2. Identifier les conventions de nommage et d'organisation
@@ -70,7 +70,7 @@ Detecter explicitement :
 - **Flask** si l'on trouve `flask`, `Flask(`, `Blueprint`, `current_app` ou une app factory explicite
 - Si plusieurs signaux coexistent, documenter le cadre dominant et les exceptions dans la memoire
 
-### Phase 3bis — Build the evidence map for memory
+### Phase 3bis - Build the evidence map for memory
 
 Avant d'ecrire la memoire, reunir un socle minimum de faits verifies :
 
@@ -85,7 +85,7 @@ Avant d'ecrire la memoire, reunir un socle minimum de faits verifies :
 
 Pour un depot multi-surfaces, ne pas s'arreter apres une lecture superficielle de la stack. Lire suffisamment pour pouvoir nommer les vraies slices, les vrais modules, et les vraies zones de risque.
 
-### Phase 4 — Generate the memory system
+### Phase 4 - Generate the memory system
 
 Generer ou mettre a jour :
 
@@ -116,7 +116,7 @@ Regles :
 - preferer des fichiers thematiques dedies pour domaine, architecture, API, persistance, auth/build, endpoints, runtime, code graph, plutot qu'un fichier unique trop large
 - chaque fichier doit contenir des faits verifies, des noms exacts, et des zones a risque concretes
 
-### Phase 4bis — Mandatory memory deepening pass
+### Phase 4bis - Mandatory memory deepening pass
 
 Avant de considerer le bootstrap termine, relire la memoire produite et verifier :
 
@@ -128,7 +128,7 @@ Avant de considerer le bootstrap termine, relire la memoire produite et verifier
 
 Si la memoire ressemble encore a un simple inventaire de stack, faire une seconde passe de lecture puis enrichir les fichiers avant de continuer.
 
-### Phase 5 — Generate the base agents
+### Phase 5 - Generate the base agents
 
 **Toujours verifier ou creer :**
 - `dev.agent.md`
@@ -154,7 +154,7 @@ Si la memoire ressemble encore a un simple inventaire de stack, faire une second
 - si le backend detecte est `Python`, generer `python-dev` et ne pas generer `dotnet-dev`
 - si plusieurs backends coexistent reellement dans le projet, documenter explicitement les zones et generer un agent par backend present
 
-### Phase 6 — Generate the base skills
+### Phase 6 - Generate the base skills
 
 **Toujours verifier ou creer :**
 - `.github/skills/memory-management/SKILL.md`
@@ -178,7 +178,7 @@ Si la memoire ressemble encore a un simple inventaire de stack, faire une second
 - ajouter des consignes de test alignees sur la stack detectee (`pytest`, `unittest`, etc.) en plus du skill `tdd-workflow`
 - documenter explicitement le framework detecte (FastAPI, Django, Flask, autre) dans la memoire et dans l'agent backend genere
 
-### Phase 7 — Update workspace instructions and docs
+### Phase 7 - Update workspace instructions and docs
 
 Mettre a jour : `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`.
 
@@ -195,7 +195,7 @@ Mettre a jour : `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`.
 **CLAUDE.md** doit contenir :
 - La meme section Code Graph Intelligence (pour compatibilite Claude Code)
 
-### Phase 8 — Prepare MCP workspace config
+### Phase 8 - Prepare MCP workspace config
 
 Creer ou mettre a jour `.vscode/mcp.json` avec :
 
@@ -230,7 +230,7 @@ Si **both** : inclure les deux entrees.
 - `azure-devops` si Azure DevOps detecte
 - `aspire` si le projet utilise Aspire
 
-### Phase 9 — Initialize the code graph
+### Phase 9 - Initialize the code graph
 
 **Si GitNexus :**
 1. Verifier que `npx gitnexus` est disponible
@@ -249,9 +249,9 @@ Si **both** : inclure les deux entrees.
 
 ---
 
-## Code Graph — Resume des regles par moteur
+## Code Graph - Resume des regles par moteur
 
-### GitNexus — Regle standard
+### GitNexus - Regle standard
 
 Le bootstrap doit preparer les projets a utiliser GitNexus comme primitive de base :
 - `gitnexus_query()` pour comprendre le code
@@ -260,7 +260,7 @@ Le bootstrap doit preparer les projets a utiliser GitNexus comme primitive de ba
 - `gitnexus_detect_changes()` pour valider l'impact reel
 - `gitnexus_rename()` pour les renommages safe
 
-### Graphify — Regle standard
+### Graphify - Regle standard
 
 Le bootstrap doit preparer les projets a utiliser Graphify comme primitive corpus :
 - `graphify query "concept"` pour trouver les nœuds pertinents

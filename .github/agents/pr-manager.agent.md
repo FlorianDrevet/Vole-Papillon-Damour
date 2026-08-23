@@ -39,12 +39,12 @@ refactor(member): extract MemberCommandHelper
 
 ### Ce qui est obligatoire
 
-1. **But principal** — une phrase resumant l'objectif global
-2. **Type de changement** — cocher les cases correspondantes
-3. **Changements par couche** — decrire par couche impactee, pas par fichier
-4. **Migration** — indiquer si une migration a ete ajoutee
-5. **Tickets lies** — syntaxe appropriee au provider (AB#, #issue, etc.)
-6. **Checklist** — valider chaque point avant de soumettre
+1. **But principal** - une phrase resumant l'objectif global
+2. **Type de changement** - cocher les cases correspondantes
+3. **Changements par couche** - decrire par couche impactee, pas par fichier
+4. **Migration** - indiquer si une migration a ete ajoutee
+5. **Tickets lies** - syntaxe appropriee au provider (AB#, #issue, etc.)
+6. **Checklist** - valider chaque point avant de soumettre
 
 ---
 

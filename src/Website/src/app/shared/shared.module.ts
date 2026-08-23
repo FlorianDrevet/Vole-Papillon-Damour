@@ -18,6 +18,7 @@ import { QuoteBlockComponent } from './components/quote-block/quote-block.compon
 import { PhotoPlaceholderComponent } from './components/photo-placeholder/photo-placeholder.component';
 import { ActionCardComponent } from './components/action-card/action-card.component';
 import { TitledSectionComponent } from './components/titled-section/titled-section.component';
+import { MaxenceSubnavComponent } from './components/maxence-subnav/maxence-subnav.component';
 
 @NgModule({
   declarations: [
@@ -35,6 +36,7 @@ import { TitledSectionComponent } from './components/titled-section/titled-secti
     ActionCardComponent,
     TitledSectionComponent,
     CookieBannerComponent,
+    MaxenceSubnavComponent,
   ],
   exports: [
     PapillonIconComponent,
@@ -51,6 +53,7 @@ import { TitledSectionComponent } from './components/titled-section/titled-secti
     ActionCardComponent,
     TitledSectionComponent,
     CookieBannerComponent,
+    MaxenceSubnavComponent,
     DesignSystemModule,
   ],
   imports: [CommonModule, RouterLink, DesignSystemModule],

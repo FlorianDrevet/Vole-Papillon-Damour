@@ -34,7 +34,11 @@ builder.Services.AddControllers()
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy("IsAdmin", policy => policy.RequireRole("Admin"));
 
-builder.Services.AddOpenTelemetry().UseAzureMonitor();
+var applicationInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+{
+    builder.Services.AddOpenTelemetry().UseAzureMonitor();
+}
 
 builder.Services
     .AddPresentation()

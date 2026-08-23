@@ -2,7 +2,7 @@
 description: "Expert code audit engineer. Use when: code audit, technical audit, security review, performance review, scalability review, database audit, GitHub audit issues, audit markdown, reconcile audit issues, create audit issues, close resolved audit issues, manage audit labels."
 ---
 
-# Agent : audit-expert — Audit technique expert
+# Agent : audit-expert - Audit technique expert
 
 > Cet agent produit des audits techniques complets, puis synchronise les findings avec GitHub.
 

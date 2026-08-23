@@ -3,7 +3,7 @@ name: tdd-workflow
 description: "Use when: any code modification, feature implementation, bug fix, refactoring. Enforces TDD Red-Green-Refactor cycle. Mandatory for all coding agents."
 ---
 
-# Skill : tdd-workflow — Cycle TDD obligatoire
+# Skill : tdd-workflow - Cycle TDD obligatoire
 
 > Charger ce skill des qu'un agent doit modifier, creer, ou corriger du code executable.
 > Le TDD est obligatoire pour tout code de production.
@@ -12,27 +12,27 @@ description: "Use when: any code modification, feature implementation, bug fix, 
 
 ## Cycle obligatoire : RED → GREEN → REFACTOR → VERIFY
 
-### 1. RED — Ecrire le test en premier
+### 1. RED - Ecrire le test en premier
 
 - Ecrire un test qui echoue pour le comportement attendu
 - Le test doit etre precis : un seul comportement par test
 - Nommer le test avec la convention `Given_When_Then` ou `MethodName_Scenario_Expected`
 - Verifier que le test echoue pour la bonne raison (pas une erreur de compilation)
 
-### 2. GREEN — Implementer le minimum
+### 2. GREEN - Implementer le minimum
 
 - Ecrire le code de production minimal pour faire passer le test
 - Ne pas anticiper les cas futurs
 - Ne pas optimiser prematurement
 
-### 3. REFACTOR — Ameliorer sans casser
+### 3. REFACTOR - Ameliorer sans casser
 
 - Nettoyer le code de production et les tests
 - Supprimer la duplication
 - Ameliorer les noms
 - Verifier que tous les tests passent encore
 
-### 4. VERIFY — Valider l'ensemble
+### 4. VERIFY - Valider l'ensemble
 
 - Lancer la suite de tests complete du projet ou du module
 - Verifier qu'aucun test existant n'a ete casse
@@ -65,7 +65,7 @@ Si le projet de tests n'existe pas :
 Si du code existant n'a pas de tests et que le TDD strict n'est pas applicable (ex: correction urgente, code existant trop couple) :
 
 1. Documenter la dette dans `.github/test-debt.md`
-2. Format : `- [ ] [Date] [Fichier/Classe] — Raison de la dette`
+2. Format : `- [ ] [Date] [Fichier/Classe] - Raison de la dette`
 3. Ne pas laisser la dette s'accumuler sans trace
 
 ---

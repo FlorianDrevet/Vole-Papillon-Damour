@@ -1,4 +1,4 @@
-# Infrastructure Azure — Vole-Papillon-Damour
+# Infrastructure Azure - Vole-Papillon-Damour
 
 Déploiement de l'environnement `development` : un Container App Environment
 hébergeant les trois applications, chacune avec son Application Insights.
@@ -133,7 +133,7 @@ Azure sans un lancement manuel.
 2. `Infra - deploy` en mode `deploy`. Les trois Container Apps démarrent sur
    l'image placeholder `containerapps-helloworld` : c'est normal, elles n'ont
    pas encore d'image applicative.
-3. `API - deploy` avec `run_migrations` coché — le schéma de la base est vide
+3. `API - deploy` avec `run_migrations` coché - le schéma de la base est vide
    au premier passage.
 4. `Website - deploy`, puis `BackOffice - deploy`.
 
@@ -151,7 +151,7 @@ une application au placeholder.
 
 `run_migrations` ouvre une règle de firewall SQL sur l'IP du runner, applique
 `dotnet ef database update`, puis referme la règle même en cas d'échec. Le
-reste du temps, la base n'accepte que le trafic Azure — c'est par cette règle
+reste du temps, la base n'accepte que le trafic Azure - c'est par cette règle
 que les Container Apps la joignent, leurs IP de sortie n'étant pas fixes.
 
 ## Points à traiter côté application

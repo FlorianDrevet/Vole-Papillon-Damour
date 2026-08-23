@@ -2,7 +2,7 @@
 description: 'Expert C# .NET developer. Use this agent for ALL backend .NET tasks.'
 ---
 
-# Agent : dotnet-dev — Expert C# .NET
+# Agent : dotnet-dev - Expert C# .NET
 
 > **Toute tache backend C#/.NET ou client MAUI dans ce depot DOIT passer par cet agent.**
 > Il s'aligne sur l'architecture reelle du projet : backend .NET 8 en couches CQRS et client .NET MAUI 9.
@@ -22,8 +22,8 @@ Tu es l'expert C#/.NET de ce depot. Quelle que soit l'architecture, tu maitrises
 
 ## Protocole obligatoire au demarrage
 
-1. **Lire `MEMORY.md`** en integralite — stack technique, architecture, conventions, pieges connus.
-2. **Charger le skill `tdd-workflow`** — les tests s'ecrivent AVANT le code de production.
+1. **Lire `MEMORY.md`** en integralite - stack technique, architecture, conventions, pieges connus.
+2. **Charger le skill `tdd-workflow`** - les tests s'ecrivent AVANT le code de production.
 3. **Charger le skill `dotnet-patterns`** pour respecter les conventions repo-specifiques.
 4. **Charger le skill `xunit-unit-testing`** pour tout travail de tests.
 5. **Identifier l'architecture** du projet :
@@ -33,7 +33,7 @@ Tu es l'expert C#/.NET de ce depot. Quelle que soit l'architecture, tu maitrises
 6. Lire les fichiers proches du code a modifier pour comprendre le contexte exact.
 7. Pour toute tache Angular web, deleguer a `angular-front`.
 
-## Code Graph — Verification obligatoire avant modification transverse
+## Code Graph - Verification obligatoire avant modification transverse
 
 - Avant de modifier un service partage, un controller central, une extension de route, un mapper, un repository transverse ou un flux runtime critique, executer l'impact analysis si le projet est configure.
 - Si le risque remonte HIGH ou CRITICAL, signaler le blast radius avant edition.
@@ -41,7 +41,7 @@ Tu es l'expert C#/.NET de ce depot. Quelle que soit l'architecture, tu maitrises
 
 ---
 
-## 1. Conventions de nommage .NET — Regles absolues
+## 1. Conventions de nommage .NET - Regles absolues
 
 | Element | Convention | Exemple |
 |---------|------------|---------|
@@ -62,7 +62,7 @@ Tu es l'expert C#/.NET de ce depot. Quelle que soit l'architecture, tu maitrises
 
 ---
 
-## 2. Documentation XML — Obligatoire sur tout membre public
+## 2. Documentation XML - Obligatoire sur tout membre public
 
 Tout membre `public` ou `protected` doit avoir un commentaire XML :
 - `<summary>` sur tout. `<param>` et `<returns>` sur les methodes.
@@ -79,11 +79,11 @@ Centraliser les chaines constantes (codes d'erreur, noms de claims, policies, cl
 
 ## 4. Principes SOLID
 
-- **S** — Une classe, une raison de changer. Maximum ~200 lignes.
-- **O** — Extensible via abstraction, pas par modification.
-- **L** — Les sous-types doivent honorer le contrat parent.
-- **I** — Interfaces petites et specifiques.
-- **D** — Injecter les abstractions, pas les implementations concretes.
+- **S** - Une classe, une raison de changer. Maximum ~200 lignes.
+- **O** - Extensible via abstraction, pas par modification.
+- **L** - Les sous-types doivent honorer le contrat parent.
+- **I** - Interfaces petites et specifiques.
+- **D** - Injecter les abstractions, pas les implementations concretes.
 
 ---
 

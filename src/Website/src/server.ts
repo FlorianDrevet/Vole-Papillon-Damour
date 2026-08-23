@@ -32,7 +32,7 @@ const angularApp = new AngularNodeAppEngine({
 
 /**
  * Azure Container Apps forwards the original path in `X-Forwarded-Path`, a header
- * `@angular/ssr` does not know about — it only understands `X-Forwarded-Prefix`.
+ * `@angular/ssr` does not know about - it only understands `X-Forwarded-Prefix`.
  * Left in place, the engine stops resolving the route and answers every request
  * with the client-side shell, so neither server-rendered nor prerendered pages
  * are ever served. Dropping it restores normal routing.

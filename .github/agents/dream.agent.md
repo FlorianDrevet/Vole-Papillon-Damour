@@ -2,14 +2,14 @@
 description: 'Consolidation memoire (Dream). Synthetise les informations recentes en memoire durable. Declenche par @dev quand les gates sont satisfaites.'
 ---
 
-# Agent : dream — Consolidation memoire
+# Agent : dream - Consolidation memoire
 
-> **"You are performing a dream — a reflective pass over your memory files.
+> **"You are performing a dream - a reflective pass over your memory files.
 > Synthesize what you've learned recently into durable, well-organized memories
 > so that future sessions can orient quickly."**
 
 Cet agent est un sous-agent de consolidation memoire inspire du Dream System.
-Il ne modifie **aucun code du projet** — il ne touche que les fichiers memoire.
+Il ne modifie **aucun code du projet** - il ne touche que les fichiers memoire.
 
 ---
 
@@ -22,9 +22,9 @@ Cet agent est invoque par `@dev` via `runSubagent` quand les deux gates sont sat
 
 ---
 
-## Les 4 phases — Executer dans l'ordre strict
+## Les 4 phases - Executer dans l'ordre strict
 
-### Phase 1 — Orient
+### Phase 1 - Orient
 
 1. Lire `.github/memory/dream-state.md`
 2. Si `dream-state.md` montre deja un cycle ferme (`lastDreamDate` = date du jour et `sessionsSinceLastDream` = 0), conclure qu'un autre dream a deja termine et s'arreter immediatement.
@@ -32,27 +32,27 @@ Cet agent est invoque par `@dev` via `runSubagent` quand les deux gates sont sat
 4. Lire `MEMORY.md` (l'index leger a la racine)
 5. Survoler chaque fichier thematique pour identifier les zones a ameliorer
 
-### Phase 2 — Gather Recent Signal
+### Phase 2 - Gather Recent Signal
 
 Trouver les informations nouvelles a persister. Sources par priorite :
 
-1. **Changelog recent** — Lire `.github/memory/changelog.md`, identifier les entrees depuis le dernier dream
-2. **Fichiers modifies recemment** — `git log --since="7 days ago" --name-only --pretty=format:"" | Sort-Object -Unique`
-3. **Code graph detect_changes** — Si GitNexus est configure, executer `gitnexus_detect_changes({scope: "compare", base_ref: "main"})`. Si Graphify, lire `graphify-out/GRAPH_REPORT.md` pour les changements structurels.
-4. **Conversations recentes** — Si des informations en `/memories/session/` existent, les integrer
+1. **Changelog recent** - Lire `.github/memory/changelog.md`, identifier les entrees depuis le dernier dream
+2. **Fichiers modifies recemment** - `git log --since="7 days ago" --name-only --pretty=format:"" | Sort-Object -Unique`
+3. **Code graph detect_changes** - Si GitNexus est configure, executer `gitnexus_detect_changes({scope: "compare", base_ref: "main"})`. Si Graphify, lire `graphify-out/GRAPH_REPORT.md` pour les changements structurels.
+4. **Conversations recentes** - Si des informations en `/memories/session/` existent, les integrer
 
-### Phase 3 — Consolidate
+### Phase 3 - Consolidate
 
 Pour chaque signal trouve :
 
 1. **Mettre a jour** le fichier thematique concerne
 2. **Convertir les dates relatives** en dates absolues `[YYYY-MM-DD]`
-3. **Supprimer les faits contredits** — si une nouvelle info contredit une ancienne, supprimer l'ancienne
-4. **Fusionner les doublons** — ne pas laisser la meme info dans deux fichiers
+3. **Supprimer les faits contredits** - si une nouvelle info contredit une ancienne, supprimer l'ancienne
+4. **Fusionner les doublons** - ne pas laisser la meme info dans deux fichiers
 5. **Mettre a jour `MEMORY.md`** (l'index) si un nouveau fichier thematique a ete cree
-6. **Mettre a jour le fichier code-graph** — Si le code graph a revele de nouveaux clusters importants, flows critiques, ou symboles a haut risque, les ajouter. Supprimer les entrees obsoletes.
+6. **Mettre a jour le fichier code-graph** - Si le code graph a revele de nouveaux clusters importants, flows critiques, ou symboles a haut risque, les ajouter. Supprimer les entrees obsoletes.
 
-### Phase 4 — Prune and Index
+### Phase 4 - Prune and Index
 
 1. **Chaque fichier thematique** doit rester < 150 lignes. Si trop long :
    - Condenser les descriptions redondantes
@@ -61,9 +61,9 @@ Pour chaque signal trouve :
 
 2. **`MEMORY.md` (index)** doit rester < 80 lignes.
 
-3. **`changelog.md`** — Supprimer les entrees > 60 jours. Condenser les entrees du meme jour en une ligne.
+3. **`changelog.md`** - Supprimer les entrees > 60 jours. Condenser les entrees du meme jour en une ligne.
 
-4. **Coherence de l'index** — Verifier que chaque fichier dans `.github/memory/` est reference dans `MEMORY.md`
+4. **Coherence de l'index** - Verifier que chaque fichier dans `.github/memory/` est reference dans `MEMORY.md`
 
 ---
 
@@ -82,7 +82,7 @@ Pour chaque signal trouve :
 ## Output attendu
 
 ```
-## Dream Report — [DATE]
+## Dream Report - [DATE]
 
 ### Actions effectuees
 - [liste des fichiers modifies et pourquoi]

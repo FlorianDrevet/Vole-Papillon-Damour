@@ -3,7 +3,7 @@ name: graphify-corpus
 description: "Use when: corpus-level questions, documentation graph, architecture overview from docs+code, onboarding orientation, audit context, cross-file conceptual links, god nodes, community detection, surprising connections, diagram-to-code traceability."
 ---
 
-# Skill : graphify-corpus — Graphe de connaissance corpus
+# Skill : graphify-corpus - Graphe de connaissance corpus
 
 > Charger ce skill pour toute tache necessitant une vue transversale entre code et documentation,
 > une orientation architecturale rapide, une analyse de communautes, ou une exploration de liens
@@ -19,7 +19,7 @@ Si les deux moteurs sont actives sur le projet :
 |-----------|----------|----------|
 | **Perimetre** | Code source uniquement | Corpus complet (code + docs + audits + diagrammes) |
 | **Force principale** | Impact analysis, blast radius, rename-safe | Communautes conceptuelles, god nodes, connexions surprenantes |
-| **Mutations** | `rename()`, `detect_changes()` | Aucune — lecture seule |
+| **Mutations** | `rename()`, `detect_changes()` | Aucune - lecture seule |
 | **Docs / images / audits** | Non couvert | Couvert nativement |
 
 **Aucun des deux ne remplace l'autre.**

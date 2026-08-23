@@ -3,7 +3,7 @@ name: audit-workflow
 description: "Use when: code audit, technical audit, security audit, performance audit, scalability audit, database audit, audit markdown, GitHub audit issues, findings reconciliation, labels sync."
 ---
 
-# Skill : audit-workflow — Audit technique et reconciliation
+# Skill : audit-workflow - Audit technique et reconciliation
 
 > Charger ce skill pour toute tache d'audit technique, que ce soit la production du rapport, la creation d'issues GitHub, ou la reconciliation entre deux audits successifs.
 
@@ -13,14 +13,14 @@ description: "Use when: code audit, technical audit, security audit, performance
 
 Un audit complet doit couvrir :
 
-1. **Securite** — injection, auth, secrets, IDOR, CSRF, headers
-2. **Performance** — N+1, allocations, pagination, index
-3. **Maintenabilite** — SOLID, couplage, complexite cyclomatique, dead code
-4. **Scalabilite** — contention, parallelisme, caching, limites
-5. **Persistance** — migrations, contraintes FK, index, requetes non optimisees
-6. **Architecture** — coherence des couches, separation des responsabilites, drift
-7. **Tests** — couverture, qualite des assertions, zones sans filet
-8. **Observabilite** — logging, tracing, health checks, metriques
+1. **Securite** - injection, auth, secrets, IDOR, CSRF, headers
+2. **Performance** - N+1, allocations, pagination, index
+3. **Maintenabilite** - SOLID, couplage, complexite cyclomatique, dead code
+4. **Scalabilite** - contention, parallelisme, caching, limites
+5. **Persistance** - migrations, contraintes FK, index, requetes non optimisees
+6. **Architecture** - coherence des couches, separation des responsabilites, drift
+7. **Tests** - couverture, qualite des assertions, zones sans filet
+8. **Observabilite** - logging, tracing, health checks, metriques
 
 ---
 
@@ -31,7 +31,7 @@ Emplacement : `audits/audit-dd-MM-yyyy.md`
 Structure :
 
 ```markdown
-# Audit Technique — [DATE]
+# Audit Technique - [DATE]
 
 ## Resume executif
 - CRITICAL: X
@@ -60,9 +60,9 @@ Structure :
 ...
 
 ## Plan d'action
-### Phase 1 — Critique (< 1 semaine)
-### Phase 2 — Important (< 1 mois)
-### Phase 3 — Amelioration continue
+### Phase 1 - Critique (< 1 semaine)
+### Phase 2 - Important (< 1 mois)
+### Phase 3 - Amelioration continue
 
 ## Metriques cibles
 ```

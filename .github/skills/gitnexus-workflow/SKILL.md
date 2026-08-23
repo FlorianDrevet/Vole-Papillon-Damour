@@ -18,26 +18,26 @@ Charger ce skill pour toute tache necessitant exploration structurelle, analyse 
 
 ### Exploration
 
-1. `gitnexus_query("concept")` — trouver les processus et symboles pertinents
-2. `gitnexus_context("SymbolName")` — vue 360° d'un symbole (appelants, appeles, processus)
+1. `gitnexus_query("concept")` - trouver les processus et symboles pertinents
+2. `gitnexus_context("SymbolName")` - vue 360° d'un symbole (appelants, appeles, processus)
 3. Lecture ciblee des fichiers identifies
 
 ### Impact avant modification
 
-1. `gitnexus_impact(target: "SymbolName", direction: "upstream")` — blast radius
+1. `gitnexus_impact(target: "SymbolName", direction: "upstream")` - blast radius
 2. Mettre a jour les dependants d=1 (WILL BREAK)
 3. Signaler les risques HIGH ou CRITICAL avant edition
 
 ### Validation apres modification
 
-1. `gitnexus_detect_changes()` — verifier que seuls les flux attendus sont touches
+1. `gitnexus_detect_changes()` - verifier que seuls les flux attendus sont touches
 2. Si des flux inattendus apparaissent, investiguer avant de continuer
 
 ### Refactoring safe
 
-1. `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` — preview
+1. `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: true})` - preview
 2. Revoir les graph edits (safe) et text_search edits (review manual)
-3. `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: false})` — appliquer
+3. `gitnexus_rename({symbol_name: "old", new_name: "new", dry_run: false})` - appliquer
 
 ---
 
@@ -45,9 +45,9 @@ Charger ce skill pour toute tache necessitant exploration structurelle, analyse 
 
 | Depth | Signification | Action |
 |-------|---------------|--------|
-| d=1 | WILL BREAK — appelants/importeurs directs | DOIT mettre a jour |
-| d=2 | LIKELY AFFECTED — dependances indirectes | Devrait tester |
-| d=3 | MAY NEED TESTING — transitif | Tester si chemin critique |
+| d=1 | WILL BREAK - appelants/importeurs directs | DOIT mettre a jour |
+| d=2 | LIKELY AFFECTED - dependances indirectes | Devrait tester |
+| d=3 | MAY NEED TESTING - transitif | Tester si chemin critique |
 
 ---
 

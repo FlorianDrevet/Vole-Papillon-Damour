@@ -23,7 +23,7 @@ param internalLoadBalancerEnabled bool = false
 @description('Whether zone redundancy is enabled')
 param zoneRedundancyEnabled bool = false
 
-@description('Resource ID of the Log Analytics workspace. When provided, logs are routed to this workspace via Azure Monitor — no shared key required.')
+@description('Resource ID of the Log Analytics workspace. When provided, logs are routed to this workspace via Azure Monitor - no shared key required.')
 param logAnalyticsWorkspaceId string = ''
 
 @description('Resource tags')

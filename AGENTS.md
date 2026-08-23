@@ -75,7 +75,7 @@ GitNexus is the configured engine for this repository.
 - Never commit visible UI changes without checking responsive behavior.
 
 <!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+# GitNexus - Code Intelligence
 
 This project is indexed by GitNexus as **Vole-Papillon-Damour** (3948 symbols, 8734 relationships, 71 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
@@ -87,13 +87,13 @@ This project is indexed by GitNexus as **Vole-Papillon-Damour** (3948 symbols, 8
 - **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
 - **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
 - When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+- When you need full context on a specific symbol - callers, callees, which execution flows it participates in - use `gitnexus_context({name: "symbolName"})`.
 
 ## Never Do
 
 - NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
 - NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER rename symbols with find-and-replace - use `gitnexus_rename` which understands the call graph.
 - NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
 
 ## Resources
