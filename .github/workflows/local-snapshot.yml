@@ -1,0 +1,96 @@
+name: Local - build a snapshot
+
+# Manual only. Produces an artifact holding the deployed rows and blobs, so a
+# developer can fill the emulated environment Aspire runs locally without
+# needing any Azure credential on their machine.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  SQL_SERVER: vpd-sql-dev
+  SQL_DATABASE: vole-papillon-damour-db
+  STORAGE_ACCOUNT: vpdstdev
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Open the database to this runner
+        run: |
+          set -euo pipefail
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          az sql server firewall-rule create \
+            --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "gh-snapshot-${{ github.run_id }}" \
+            --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP" --output none
+
+      - name: Export the rows
+        env:
+          SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SQL_FQDN=$(az sql server show --resource-group "$RESOURCE_GROUP" --name "$SQL_SERVER" \
+            --query fullyQualifiedDomainName --output tsv)
+          CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$SQL_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+          dotnet run --project tools/DbSnapshot --configuration Release -- export "$CONNECTION" snapshot
+
+      - name: Close the database to this runner
+        if: always()
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "gh-snapshot-${{ github.run_id }}" --output none || true
+
+      - name: Download the blobs
+        run: |
+          set -euo pipefail
+          KEY=$(az storage account keys list --account-name "$STORAGE_ACCOUNT" \
+            --resource-group "$RESOURCE_GROUP" --query "[0].value" --output tsv)
+          echo "::add-mask::$KEY"
+
+          for container in $(az storage container list --account-name "$STORAGE_ACCOUNT" \
+            --account-key "$KEY" --query "[].name" --output tsv); do
+            mkdir -p "snapshot/blobs/$container"
+            az storage blob download-batch \
+              --account-name "$STORAGE_ACCOUNT" --account-key "$KEY" \
+              --source "$container" --destination "snapshot/blobs/$container" --output none
+            echo "$container: $(find "snapshot/blobs/$container" -type f | wc -l) blobs"
+          done
+
+      - name: Report the snapshot
+        run: |
+          set -euo pipefail
+          {
+            echo "### Snapshot"
+            echo ""
+            echo "| File | Size |"
+            echo "| --- | ---: |"
+            find snapshot -type f -printf "| %p | %s |\n" | sort | head -60
+            echo ""
+            echo "Total: $(du -sh snapshot | cut -f1)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: local-snapshot
+          path: snapshot
+          retention-days: 7
