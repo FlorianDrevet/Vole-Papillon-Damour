@@ -5,5 +5,6 @@ export const environment : EnvironmentInterface =
     production: false,
     api_url: "http://localhost:5257",
     url_vpd_web_site: "https://vole-papillon-damour-website.onrender.com/accueil",
-    time_numero_modal: 300
+    time_numero_modal: 300,
+    appinsights_connection_string: ""
   };

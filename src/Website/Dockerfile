@@ -9,7 +9,10 @@ COPY Website .
 
 ARG API_URL=https://api.example.com
 
+ARG APPINSIGHTS_CONNECTION_STRING=
+
 RUN sed -i "s#https://vole-papillon-damour-backend.onrender.com#${API_URL}#g" src/environments/environment.ts \
+ && sed -i "s#__APPINSIGHTS_CONNECTION_STRING__#${APPINSIGHTS_CONNECTION_STRING}#g" src/environments/environment.ts \
  && npm run build
 
 FROM node:22-alpine AS final

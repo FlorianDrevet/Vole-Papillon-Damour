@@ -10,8 +10,11 @@ COPY BackOffice .
 ARG API_URL=https://api.example.com
 ARG WEBSITE_URL=https://website.example.com/accueil
 
+ARG APPINSIGHTS_CONNECTION_STRING=
+
 RUN sed -i "s#https://vole-papillon-damour-backend.onrender.com#${API_URL}#g" src/environments/environment.ts \
  && sed -i "s#https://vole-papillon-damour-website.onrender.com/accueil#${WEBSITE_URL}#g" src/environments/environment.ts \
+ && sed -i "s#__APPINSIGHTS_CONNECTION_STRING__#${APPINSIGHTS_CONNECTION_STRING}#g" src/environments/environment.ts \
  && npm run build
 
 FROM nginx:1.27-alpine AS final

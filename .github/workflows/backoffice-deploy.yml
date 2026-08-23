@@ -19,6 +19,7 @@ env:
   CONTAINER_APP: vpd-bo-ca-dev
   API_CONTAINER_APP: vpd-api-ca-dev
   WEBSITE_CONTAINER_APP: vpd-web-ca-dev
+  APPLICATION_INSIGHTS: vpd-bo-appi-dev
   IMAGE_NAME: vpd-bo
   DOCKERFILE: src/BackOffice/Dockerfile
   BUILD_CONTEXT: src
@@ -51,10 +52,13 @@ jobs:
             --query properties.configuration.ingress.fqdn --output tsv)
           WEBSITE_FQDN=$(az containerapp show --name "$WEBSITE_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
             --query properties.configuration.ingress.fqdn --output tsv)
+          APPINSIGHTS=$(az monitor app-insights component show --app "$APPLICATION_INSIGHTS" \
+            --resource-group "$RESOURCE_GROUP" --query connectionString --output tsv)
           {
             echo "IMAGE=$LOGIN_SERVER/$IMAGE_NAME:$TAG"
             echo "API_URL=https://$API_FQDN"
             echo "WEBSITE_URL=https://$WEBSITE_FQDN/accueil"
+            echo "APPINSIGHTS_CONNECTION_STRING=$APPINSIGHTS"
           } >> "$GITHUB_ENV"
 
       - name: Build and push the image
@@ -65,6 +69,7 @@ jobs:
             --file "$DOCKERFILE" \
             --build-arg "API_URL=$API_URL" \
             --build-arg "WEBSITE_URL=$WEBSITE_URL" \
+            --build-arg "APPINSIGHTS_CONNECTION_STRING=$APPINSIGHTS_CONNECTION_STRING" \
             --tag "$IMAGE" \
             "$BUILD_CONTEXT"
           docker push "$IMAGE"

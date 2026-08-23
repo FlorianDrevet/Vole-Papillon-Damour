@@ -436,7 +436,7 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
     envVars: [
       {
         name: 'ASPNETCORE_ENVIRONMENT'
-        value: env.envName
+        value: 'Production'
       }
       {
         name: 'ASPNETCORE_URLS'
