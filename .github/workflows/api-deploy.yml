@@ -102,6 +102,8 @@ jobs:
           SQL_FQDN=$(az sql server show --resource-group "$RESOURCE_GROUP" --name "$SQL_SERVER" \
             --query fullyQualifiedDomainName --output tsv)
           CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$SQL_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+          # dotnet ef builds the projects, so they need their NuGet assets.
+          dotnet restore src/Backend/Vole_Papillon_Damour.Api/Vole_Papillon_Damour.Api.csproj
           dotnet tool install --global dotnet-ef --version 10.*
           dotnet ef database update \
             --project src/Backend/Vole_Papillon_Damour.Infrastructure \
