@@ -1,0 +1,167 @@
+name: Storage - migrate blobs
+
+# Manual only. Server-side copies every blob of the old storage account into the
+# new one, then repoints the URLs held in the database. The old account is only
+# ever read, so it keeps serving the images until you decide to retire it.
+on:
+  workflow_dispatch:
+    inputs:
+      source_account:
+        description: Storage account to copy the blobs from
+        type: string
+        default: vpdstowebsite
+      rewrite_urls:
+        description: Rewrite the image URLs stored in the database
+        type: boolean
+        default: true
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  TARGET_ACCOUNT: vpdstdev
+  SQL_SERVER: vpd-sql-dev
+  SQL_DATABASE: vole-papillon-damour-db
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Copy the blobs
+        run: |
+          set -euo pipefail
+          SOURCE="${{ inputs.source_account }}"
+          SOURCE_RG=$(az storage account show --name "$SOURCE" --query resourceGroup --output tsv)
+          SOURCE_KEY=$(az storage account keys list --account-name "$SOURCE" --resource-group "$SOURCE_RG" \
+            --query "[0].value" --output tsv)
+          TARGET_KEY=$(az storage account keys list --account-name "$TARGET_ACCOUNT" --resource-group "$RESOURCE_GROUP" \
+            --query "[0].value" --output tsv)
+          echo "::add-mask::$SOURCE_KEY"
+          echo "::add-mask::$TARGET_KEY"
+
+          containers=$(az storage container list --account-name "$SOURCE" --account-key "$SOURCE_KEY" \
+            --query "[].name" --output tsv)
+
+          for container in $containers; do
+            echo "::group::$container"
+
+            # The old account holds a container the new one was never given, so
+            # it is created rather than skipped — a missing one would break
+            # every URL pointing into it.
+            az storage container create --name "$container" \
+              --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
+              --public-access blob --output none
+
+            az storage blob copy start-batch \
+              --source-account-name "$SOURCE" --source-account-key "$SOURCE_KEY" \
+              --source-container "$container" \
+              --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
+              --destination-container "$container" \
+              --output none
+
+            echo "::endgroup::"
+          done
+
+          echo "CONTAINERS<<EOF" >> "$GITHUB_ENV"
+          echo "$containers" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+          echo "TARGET_KEY=$TARGET_KEY" >> "$GITHUB_ENV"
+
+      # start-batch returns as soon as the service accepts the copies, so the
+      # run waits for them rather than reporting a success the blobs have not
+      # reached yet.
+      - name: Wait for the copies to settle
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            pending=0
+            for container in $CONTAINERS; do
+              count=$(az storage blob list --container-name "$container" \
+                --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
+                --query "length([?properties.copy.status=='pending'])" --output tsv)
+              pending=$((pending + count))
+            done
+            if [ "$pending" -eq 0 ]; then echo "all copies settled"; break; fi
+            echo "attempt $attempt: $pending blobs still copying"
+            sleep 5
+          done
+
+      - name: Report the blob counts
+        run: |
+          set -euo pipefail
+          SOURCE="${{ inputs.source_account }}"
+          SOURCE_RG=$(az storage account show --name "$SOURCE" --query resourceGroup --output tsv)
+          SOURCE_KEY=$(az storage account keys list --account-name "$SOURCE" --resource-group "$SOURCE_RG" \
+            --query "[0].value" --output tsv)
+          echo "::add-mask::$SOURCE_KEY"
+          {
+            echo "### Blobs"
+            echo ""
+            echo "| Container | $SOURCE | $TARGET_ACCOUNT |"
+            echo "| --- | ---: | ---: |"
+            for container in $CONTAINERS; do
+              a=$(az storage blob list --container-name "$container" --account-name "$SOURCE" \
+                --account-key "$SOURCE_KEY" --query "length(@)" --output tsv)
+              b=$(az storage blob list --container-name "$container" --account-name "$TARGET_ACCOUNT" \
+                --account-key "$TARGET_KEY" --query "length(@)" --output tsv)
+              echo "| $container | $a | $b |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open the database to this runner
+        if: inputs.rewrite_urls
+        run: |
+          set -euo pipefail
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          az sql server firewall-rule create \
+            --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "gh-rewrite-${{ github.run_id }}" \
+            --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP" --output none
+
+      - name: Rewrite the stored URLs
+        if: inputs.rewrite_urls
+        env:
+          SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SQL_FQDN=$(az sql server show --resource-group "$RESOURCE_GROUP" --name "$SQL_SERVER" \
+            --query fullyQualifiedDomainName --output tsv)
+          CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$SQL_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+          OLD="https://${{ inputs.source_account }}.blob.core.windows.net/"
+          NEW="https://$TARGET_ACCOUNT.blob.core.windows.net/"
+          dotnet run --project tools/DbRewriteUrls --configuration Release -- \
+            "$CONNECTION" "$OLD" "$NEW" --apply | tee rewrite.log
+
+      - name: Close the database to this runner
+        if: always() && inputs.rewrite_urls
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
+            --name "gh-rewrite-${{ github.run_id }}" --output none || true
+
+      - name: Report the rewrite
+        if: always() && inputs.rewrite_urls
+        run: |
+          {
+            echo "### URLs"
+            echo ""
+            echo '```'
+            cat rewrite.log 2>/dev/null || echo "no output captured"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
