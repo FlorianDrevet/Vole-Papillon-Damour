@@ -1,9 +1,9 @@
 <div
-  class="flex flex-col gap-2.5 rounded shadow-[0_26px_44px_-30px_rgba(7,43,69,0.6)] motion-safe:animate-vpd-float hover:[animation-play-state:paused]"
+  class="flex flex-col gap-2.5 rounded shadow-[0_26px_44px_-30px_rgba(7,43,69,0.6)] animate-vpd-float hover:[animation-play-state:paused]"
   [class]="tone() === 'dark'
     ? 'bg-ink-2 text-paper px-6 py-6'
     : 'bg-white border border-line px-6 py-6'"
-  [style.--r.deg]="rotateDeg()"
+  [style.--r]="rotateDeg() + 'deg'"
   [style.animation-delay.s]="floatDelayS()"
   [style.animation-duration.s]="floatDurationS()">
   <span class="font-serif text-4xl leading-none" [class]="tone() === 'dark' ? 'text-white' : 'text-ink-2'">{{ value() }}</span>
