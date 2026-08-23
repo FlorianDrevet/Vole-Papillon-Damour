@@ -56,7 +56,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
-    path: 'maxence/maladies/ostéoporose',
+    path: 'maxence/maladies/osteoporose',
     renderMode: RenderMode.Prerender,
   },
   {

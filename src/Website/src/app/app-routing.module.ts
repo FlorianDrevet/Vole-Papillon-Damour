@@ -148,7 +148,7 @@ const routes: Routes = [
             pathMatch: 'full'
           },
           {
-            path: 'ostéoporose',
+            path: 'osteoporose',
             component: LosteoporoseComponent,
             pathMatch: 'full'
           },
