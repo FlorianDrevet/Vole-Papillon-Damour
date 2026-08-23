@@ -1,56 +1,83 @@
-<div class="flex flex-col p-5 lg:p-10 mt-5 lg:mt-0 mb-32 ml-auto mr-auto items-center">
-
-  <div class="flex flex-col items-center mb-10 lg:mb-16 w-fit">
-    <h1 class="text-5xl lg:text-7xl text-primary-color text-center">Comment nous aider ?</h1>
-  </div>
-
-
-  <div class="flex flex-col w-full">
-    <div class="flex-col flex">
-      <h1 class="text-primary-color text-3xl lg:text-6xl">Don de livres / CDs / DVDs</h1>
-      <div class="w-full h-2 bg-primary-color"></div>
-    </div>
-
-    <div class="flex flex-col xl:flex-row justify-between mt-10 items-center gap-10">
-      <div class="xl:w-2/5 flex">
-        <app-diaporama class="ml-auto mr-auto" [pictureList]="listPictures"></app-diaporama>
-      </div>
-      <div class="xl:w-3/5">
-        <p class="">
-          Notre association, domiciliée à St Just St Rambert, collecte des livres puis nos bénévoles les trient et les
-          remettent en vente au cours d'une foire aux livres durant 6 jours, une fois par mois dans notre local situé au Parc des Essarts, rue Pierre-Georges Latécoère à Andrézieux. Le prix des livres est petit et varie entre 1 et 3 euros afin que la lecture reste abordable pour tous.
-          Ainsi, notre action remplit 3 objectifs :
-        </p>
-        <ul class="mt-5 ml-10">
-          <li class="list-disc">Financer nos actions au profit de jeunes en situation de handicap ou autre</li>
-          <li class="list-disc">Permettre aux personnes ayant un petit budget de pouvoir s'acheter des livres,</li>
-          <li class="list-disc">Offrir une seconde vie aux livres, DVD, CD et disques.</li>
-        </ul>
-      </div>
-    </div>
-    <p class="mt-10">
-      Peut-être êtes-vous confrontez certaines fois à une quantité plus ou moins importante de livres à
-      débarrasser. Dans ce cas, n'hésitez pas à nous contacter.
-      Nous pouvons venir avec notre camionnette afin de vider le logement de ses livres en travaillant
-      rapidement et proprement avec nos caisses et cartons ou vous pouvez les déposer 24h/24, 7j/7 au 46 route de St Marcellin à St Rambert.
-      Si vous êtes intéressé pour en savoir plus, n'hésitez pas à nous contacter.
+<section class="grid grid-cols-1 items-center gap-10 bg-paper px-6 py-14 lg:grid-cols-[1fr_400px] lg:gap-14 lg:px-11 lg:py-18">
+  <div class="flex flex-col gap-5">
+    <h1 class="max-w-[16ch] font-serif text-[36px] font-medium leading-tight text-ink-2 lg:text-[50px]">On ne vous demande pas d'argent.</h1>
+    <p class="max-w-[52ch] text-[16px] leading-relaxed text-slate-2">
+      Nous n'avons pas de bouton de don, pas de prélèvement automatique, pas de campagne d'appel aux dons. Trois
+      choses nous sont utiles : vos livres, votre temps, et votre présence à nos évènements.
     </p>
   </div>
+  <app-diaporama [pictureList]="listPictures"></app-diaporama>
+</section>
 
-  <div class="flex flex-col w-full mt-12">
-    <div class="flex-col flex">
-      <h1 class="text-primary-color text-3xl lg:text-6xl">Bénévolat</h1>
-      <div class="w-full h-2 bg-primary-color"></div>
-    </div>
-
-    <img src="images/benevolat.png" class="w-full rounded-3xl mt-10">
-    <p class="mt-10">
-      Peut-être êtes-vous confrontez certaines fois à une quantité plus ou moins importante de livres à
-      débarrasser. Dans ce cas, n'hésitez pas à nous contacter.
-      Nous pouvons venir avec notre camionnette afin de vider le logement de ses livres en travaillant
-      rapidement et proprement avec nos caisses et cartons ou vous pouvez les déposer 24h/24, 7j/7 au 46 route de St Marcellin à St Rambert.
-      Si vous êtes intéressé pour en savoir plus, n'hésitez pas à nous contacter.
-    </p>
+<section class="grid grid-cols-1 gap-5 bg-white px-6 py-14 lg:grid-cols-3 lg:px-11 lg:py-16">
+  <div class="relative flex flex-col justify-between gap-5 overflow-hidden rounded-sm px-7 py-8 text-white" style="background: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%)">
+    <img ngSrc="images/papillon_without_back.png" alt="" width="180" height="180" class="absolute -bottom-8 -right-8 w-[180px] opacity-[.16]">
+    <span class="relative font-mono text-[11px] tracking-[.14em] text-white/80">LE PLUS UTILE</span>
+    <h2 class="relative font-serif text-2xl font-medium">Déposez vos livres</h2>
+    <p class="relative text-sm text-white/90">46 route de Saint-Marcellin, 42170 Saint-Just-Saint-Rambert — 24h/24.</p>
   </div>
-</div>
+  <div class="flex flex-col justify-between gap-5 rounded-sm border border-line-2 px-7 py-8">
+    <span class="font-mono text-[11px] tracking-[.14em] text-orange-3">SUR LE TERRAIN</span>
+    <h2 class="font-serif text-2xl font-medium text-ink-2">Donnez un coup de main</h2>
+    <app-pill-button routerLink="/contact" variant="secondary" [small]="true">Devenir bénévole</app-pill-button>
+  </div>
+  <div class="flex flex-col justify-between gap-5 rounded-sm border border-line-2 px-7 py-8">
+    <span class="font-mono text-[11px] tracking-[.14em] text-orange-3">LE PLUS SIMPLE</span>
+    <h2 class="font-serif text-2xl font-medium text-ink-2">Venez à la foire ou au loto</h2>
+    <app-pill-button routerLink="/evenement" variant="secondary" [small]="true">Voir les dates</app-pill-button>
+  </div>
+</section>
 
+<section class="flex flex-col gap-10 bg-ink px-6 py-16 text-mist-2 lg:px-11 lg:py-20">
+  <div class="flex flex-col gap-3">
+    <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">Don de livres</span>
+    <h2 class="font-serif text-[30px] font-medium text-white lg:text-[38px]">Ce qu'on prend, ce qu'on ne prend pas.</h2>
+  </div>
+  <div class="grid grid-cols-1 gap-8 sm:grid-cols-2">
+    <div class="flex flex-col gap-3">
+      <span class="font-mono text-xs uppercase tracking-[.1em] text-cyan">Oui, volontiers</span>
+      <ul class="flex flex-col gap-2 text-[15px] text-mist">
+        @for (item of accepted; track item) {
+          <li class="flex gap-2"><span class="text-cyan">✓</span>{{ item }}</li>
+        }
+      </ul>
+    </div>
+    <div class="flex flex-col gap-3">
+      <span class="font-mono text-xs uppercase tracking-[.1em] text-orange-2">Non, merci</span>
+      <ul class="flex flex-col gap-2 text-[15px] text-mist">
+        @for (item of refused; track item) {
+          <li class="flex gap-2"><span class="text-orange-2">✕</span>{{ item }}</li>
+        }
+      </ul>
+    </div>
+  </div>
+  <p class="max-w-[62ch] text-[15px] leading-relaxed text-mist">
+    Une quantité plus ou moins importante de livres à débarrasser ? Contactez-nous : nous pouvons venir avec
+    notre camionnette, ou vous pouvez les déposer 24h/24, 7j/7 au 46 route de Saint-Marcellin.
+  </p>
+</section>
+
+<section class="flex flex-col gap-6 bg-white px-6 py-14 lg:px-11 lg:py-16">
+  <div class="flex flex-col gap-3">
+    <span class="font-mono text-[11px] uppercase tracking-[.16em] text-slate-3">Bénévolat</span>
+    <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Trier, porter, tenir un stand.</h2>
+  </div>
+  <img ngSrc="images/benevolat.png" alt="Bénévoles de l'association" width="1200" height="500" class="h-64 w-full rounded-sm object-cover lg:h-80">
+  <p class="max-w-[64ch] text-[16px] leading-relaxed text-slate-2">
+    Nos bénévoles font tourner le loto, la foire aux livres et le marché de Noël : du tri des cartons à la tenue
+    du stand. Venez pour une matinée, restez si ça vous plaît.
+  </p>
+  <app-pill-button routerLink="/contact" class="self-start">Nous écrire</app-pill-button>
+</section>
+
+<section class="flex flex-col gap-6 bg-paper-2 px-6 py-14 lg:px-11 lg:py-16">
+  <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Questions fréquentes</h2>
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    @for (item of faq; track item.q) {
+      <div class="flex flex-col gap-1.5">
+        <strong class="text-[15px] font-semibold text-ink-2">{{ item.q }}</strong>
+        <span class="text-sm text-slate-2">{{ item.a }}</span>
+      </div>
+    }
+  </div>
+</section>

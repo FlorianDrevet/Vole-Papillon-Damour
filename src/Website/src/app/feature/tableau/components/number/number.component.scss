@@ -1,5 +1,5 @@
 .last-value {
-  @apply bg-tertiary-color #{!important};
+  @apply bg-orange #{!important};
 }
 
 .neighbour {
@@ -7,14 +7,14 @@
 }
 
 .exited {
-  @apply bg-secondary-color #{!important};
+  @apply bg-blue-2 #{!important};
 }
 
 .exited p {
 }
 
 p {
-  @apply text-primary-color md:text-[50px] text-[8vw] leading-[10vw] md:leading-[inherit];
+  @apply text-ink-2 md:text-[50px] text-[8vw] leading-[10vw] md:leading-[inherit];
 }
 
 .number {

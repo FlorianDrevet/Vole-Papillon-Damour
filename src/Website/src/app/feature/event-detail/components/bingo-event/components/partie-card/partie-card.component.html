@@ -1,23 +1,10 @@
-<div [ngClass]="{
-  'sm:border-primary-color': Partie().partieType === PartieTypeEnum.STANDARD,
-  'sm:border-tertiary-color': Partie().partieType !== PartieTypeEnum.STANDARD,
-  }"
-     class="sm:border-4 sm:border-primary-color sm:bg-white rounded-3xl sm:p-5 flex flex-col w-full">
-  <div>
-    <h2 [ngClass]="{
-  'sm:text-primary-color': Partie().partieType === PartieTypeEnum.STANDARD,
-  'sm:text-tertiary-color': Partie().partieType !== PartieTypeEnum.STANDARD,
-  }"
-        class="text-primary-color text-5xl">{{Partie().name}}</h2>
-    <div [ngClass]="{
-  'sm:bg-primary-color': Partie().partieType === PartieTypeEnum.STANDARD,
-  'sm:bg-tertiary-color': Partie().partieType !== PartieTypeEnum.STANDARD,
-  }" class="h-2 w-full mt-2"></div>
-  </div>
-  <div class="flex flex-col flex-wrap gap-3 w-full mt-5">
+<div
+  class="flex w-full flex-col gap-4 rounded-sm border px-5 py-5"
+  [class]="Partie().partieType === PartieTypeEnum.STANDARD ? 'border-line-2' : 'border-orange/40 bg-orange/[.04]'">
+  <h4 class="font-serif text-xl font-medium" [class]="Partie().partieType === PartieTypeEnum.STANDARD ? 'text-ink-2' : 'text-orange-3'">{{ Partie().name }}</h4>
+  <div class="flex flex-col gap-3">
     @for (linePartie of lineParties(); track linePartie.id) {
-      <app-lot-card class="w-full" [LinePartie]="linePartie"></app-lot-card>
+      <app-lot-card [LinePartie]="linePartie"></app-lot-card>
     }
   </div>
 </div>
-

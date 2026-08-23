@@ -84,16 +84,20 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
-    path: 'maxence/vie-quotidienne/malchance',
-    renderMode: RenderMode.Prerender,
-  },
-  {
     path: 'maxence/vie-quotidienne/greffe',
     renderMode: RenderMode.Prerender,
   },
   {
     path: 'accueil',
     renderMode: RenderMode.Server,
+  },
+  {
+    path: 'nos-actions',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'contact',
+    renderMode: RenderMode.Prerender,
   },
   {
     path: 'toute-l-actualite',

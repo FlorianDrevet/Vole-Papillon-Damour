@@ -1,45 +1,52 @@
-<div class="flex flex-col items-center w-full p-5 lg:p-10">
-  <div class="mb-5 lg:mb-10 lg:mt-5 flex flex-col lg:flex-row w-full justify-center">
-    <h1 class="text-primary-color text-6xl lg:text-8xl text-center">Nos évènements</h1>
-    <img src="icons/calendar-icon.svg" class="h-50 ml-5 hidden lg:block">
-  </div>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Évènements · toute la saison</span>
+  <h1 class="font-serif text-[36px] font-medium text-ink-2 lg:text-[50px]">Venez nous voir.</h1>
+</section>
 
-  <div class="">
+<section class="flex flex-col gap-10 bg-paper px-6 pb-16 lg:px-11 lg:pb-20">
+  @if (nextBingo(); as loto) {
     <app-special-event
-      [Date]="nextBooks()?.dateStart"
-      [DateEnd]="nextBooks()?.dateEnd"
-      [IdEvent]="nextBooks()?.id"
-      UrlImage="/images/Association/don-livre.jpg"
-      Title="Bourse aux livres">
-      La Bourse au Livre est un événement incontournable pour tous les passionnés de lecture et de littérature.
-      Que vous soyez un lecteur assidu, un collectionneur de livres rares, un étudiant à la recherche de manuels
-      scolaires à prix réduit, ou simplement quelqu'un qui aime flâner parmi les livres, cet événement est fait
-      pour vous.
+      Title="Loto solidaire"
+      [Date]="loto.dateStart"
+      [IdEvent]="loto.id"
+      [UrlImage]="loto.urlImage || 'images/loto.png'">
+      Le loto est un rendez-vous convivial ouvert à tous, autour de nombreux lots offerts par nos partenaires.
     </app-special-event>
-    <div class="mt-10"></div>
-    <app-special-event
-      [Date]="nextBingo()?.dateStart"
-      [IdEvent]="nextBingo()?.id"
-      UrlImage="/images/loto.png"
-      Title="Loto">
-      Le Loto est un jeu de hasard et de convivialité qui rassemble des joueurs de tous âges autour d'une même passion
-      : l'excitation de cocher les bons numéros et de crier "Bingo !" lorsque la victoire est à portée de main.
-      Simple à comprendre et accessible à tous, le bingo est le jeu idéal pour s’amuser dans une ambiance convivial !
-    </app-special-event>
-  </div>
-
-  @if(nextOthers().length !== 0) {
-    <div class="mt-20 mb-20 w-full">
-      <div class="flex flex-col mb-5 lg:mb-16">
-        <h2 class="text-primary-color text-4xl lg:text-6xl">Tous les autres évènements</h2>
-        <div class="h-2 w-full bg-primary-color"></div>
-      </div>
-
-      <div class="flex flex-row flex-wrap gap-10 items-end mt-10 lg:mt-0">
-        @for (vpdEvent of nextOthers(); track vpdEvent.id) {
-          <app-event-card [VpdEvent]="vpdEvent"></app-event-card>
-        }
-      </div>
-    </div>
   }
-</div>
+
+  @if (nextBooks(); as livres) {
+    <app-special-event
+      Title="Foire aux livres"
+      [Date]="livres.dateStart"
+      [DateEnd]="livres.dateEnd"
+      [IdEvent]="livres.id"
+      [UrlImage]="livres.urlImage || 'images/Association/don-livre.jpg'">
+      Plusieurs jours durant lesquels nos bénévoles proposent des milliers d'ouvrages triés, à petit prix.
+    </app-special-event>
+  }
+</section>
+
+@if (nextOthers().length) {
+  <section class="flex flex-col gap-6 bg-white px-6 py-14 lg:px-11 lg:py-16">
+    <div class="flex items-baseline justify-between gap-4 border-b border-line-2 pb-3">
+      <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-[32px]">Les autres évènements</h2>
+      <a routerLink="/evenement/all" class="whitespace-nowrap font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
+    </div>
+    <div class="flex flex-col">
+      @for (vpdEvent of nextOthers(); track vpdEvent.id) {
+        <app-event-card [VpdEvent]="vpdEvent"></app-event-card>
+      }
+    </div>
+  </section>
+}
+
+<section class="grid grid-cols-1 items-center gap-8 bg-ink px-6 py-14 text-mist-2 lg:grid-cols-[1fr_440px] lg:px-11 lg:py-16">
+  <div class="flex flex-col gap-3">
+    <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">Nous trouver</span>
+    <h2 class="font-serif text-2xl font-medium text-white lg:text-3xl">Dépôt de livres 24h/24</h2>
+    <p class="text-[15px] leading-relaxed text-mist">46 route de Saint-Marcellin, 42170 Saint-Just-Saint-Rambert.</p>
+    <h3 class="mt-3 font-serif text-2xl font-medium text-white lg:text-3xl">Foire aux livres</h3>
+    <p class="text-[15px] leading-relaxed text-mist">Parc des Essarts, Andrézieux-Bouthéon.</p>
+  </div>
+  <app-photo-placeholder label="CARTE — À COMPLÉTER" class="h-56 rounded-sm lg:h-72" [tone]="'dark'"></app-photo-placeholder>
+</section>

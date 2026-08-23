@@ -5,7 +5,6 @@ import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 @Component({
     selector: 'app-vpd-events',
     templateUrl: './vpd-events-page.component.html',
-    styleUrl: './vpd-events-page.component.scss',
     standalone: false
 })
 export class VpdEventsPageComponent implements OnInit{
@@ -17,13 +16,8 @@ export class VpdEventsPageComponent implements OnInit{
   nextOthers = signal<VpdEventModel[]>([])
 
   ngOnInit(): void {
-    this.eventFacade.getLatestEventBingo().then(e => {
-      console.log(e)
-      console.log("eeeeeeeeeeeeeee", e.id)
-      this.nextBingo.set(e)
-      console.log(this.nextBingo()?.id)
-    });
-    this.eventFacade.getLatestEventBooks().then(e => this.nextBooks.set(e));
-    this.eventFacade.getLatestEventOthers().then(e => this.nextOthers.set(e));
+    this.eventFacade.getLatestEventBingo().then(e => this.nextBingo.set(e)).catch(() => undefined);
+    this.eventFacade.getLatestEventBooks().then(e => this.nextBooks.set(e)).catch(() => undefined);
+    this.eventFacade.getLatestEventOthers().then(e => this.nextOthers.set(e)).catch(() => undefined);
   }
 }

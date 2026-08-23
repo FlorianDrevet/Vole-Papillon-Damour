@@ -7,7 +7,6 @@ import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 @Component({
     selector: 'app-event-detail',
     templateUrl: './event-detail.component.html',
-    styleUrl: './event-detail.component.scss',
     standalone: false
 })
 export class EventDetailComponent implements OnInit {
@@ -26,10 +25,9 @@ export class EventDetailComponent implements OnInit {
     this.route.paramMap.subscribe(params => {
       if (params.get('id') !== null) {
         this.eventsFacadeService.getEventById(params.get('id')!).then(response => {
-          let data: any = response
+          const data: any = response
           response.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
           this.vpdEvent.set(response)
-          console.log(response)
         })
       }
     })

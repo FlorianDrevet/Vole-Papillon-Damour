@@ -1,5 +1,5 @@
 .container-tableau {
-  @apply w-screen bg-primary-color pb-10;
+  @apply w-screen bg-ink-2 pb-10;
 }
 
 .info-partie {
@@ -16,7 +16,7 @@
 
 app-number {
   border-width: 2px;
-  @apply w-full border-primary-color;
+  @apply w-full border-ink-2;
 }
 
 app-number:last-child {
@@ -98,23 +98,23 @@ app-number:last-child {
 .pause-title {
   font-size: 200px;
   width: fit-content;
-  @apply ml-auto mr-auto text-primary-color;
+  @apply ml-auto mr-auto text-ink-2;
 }
 
 .bingo-numero-pause {
   font-size: 150px;
   text-align: center;
-  @apply ml-auto mr-auto text-primary-color;
+  @apply ml-auto mr-auto text-ink-2;
 }
 
 .last-numero-title {
   font-size: 150px;
   width: fit-content;
-  @apply mr-auto text-primary-color;
+  @apply mr-auto text-ink-2;
 }
 
 .last-numero {
   font-size: 250px;
   text-align: center;
-  @apply ml-auto mr-auto text-primary-color;
+  @apply ml-auto mr-auto text-ink-2;
 }

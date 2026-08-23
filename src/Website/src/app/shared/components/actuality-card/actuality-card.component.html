@@ -1,1 +1,6 @@
-<vpd-actuality-card [actuality]="ActualityModel()"></vpd-actuality-card>
+<a [routerLink]="['/actualite', ActualityModel().id]" class="flex flex-col gap-3.5">
+  <img [src]="ActualityModel().urlPrincipalImage" [alt]="ActualityModel().title" class="h-48 w-full rounded object-cover">
+  <span class="font-mono text-[11px] tracking-[.1em] text-slate-3">{{ ActualityModel().date | date:'d MMM yyyy' }}</span>
+  <h3 class="font-serif text-xl font-medium leading-tight text-ink-2">{{ ActualityModel().title }}</h3>
+  <p class="text-sm leading-relaxed text-slate-2">{{ excerpt(ActualityModel().article) }}</p>
+</a>

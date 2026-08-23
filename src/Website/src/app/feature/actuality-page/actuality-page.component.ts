@@ -7,7 +7,6 @@ import { groupBy } from 'lodash';
 @Component({
     selector: 'app-actuality-page',
     templateUrl: './actuality-page.component.html',
-    styleUrl: './actuality-page.component.scss',
     standalone: false
 })
 export class ActualityPageComponent implements OnInit{
@@ -50,7 +49,6 @@ export class ActualityPageComponent implements OnInit{
       const date = new Date(actuality.date);
       return date.toLocaleString('fr-FR', { month: 'long', year: 'numeric' });
     });
-    console.log(grouped);
 
     const groupedArray = [];
 

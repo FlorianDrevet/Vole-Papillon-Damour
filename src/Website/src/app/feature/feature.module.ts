@@ -49,7 +49,6 @@ import { HyperthyroidieComponent } from './maxence/diseases/hyperthyroidie/hyper
 import { DailyCareComponent } from './maxence/daily-life/daily-care/daily-care.component';
 import { HospitalCareComponent } from './maxence/daily-life/hospital-care/hospital-care.component';
 import { SchoolComponent } from './maxence/daily-life/school/school.component';
-import { MisfortuneComponent } from './maxence/daily-life/misfortune/misfortune.component';
 import { OrgansTransplantComponent } from './maxence/daily-life/organs-transplant/organs-transplant.component';
 import { ContactComponent } from './contact/contact.component';
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
@@ -61,6 +60,8 @@ import {ModalComponent} from "./tableau/components/modal-tableau/modal.component
 import {TagComponent} from "./tableau/components/tag/tag.component";
 import {NumberComponent} from "./tableau/components/number/number.component";
 import {VpdAllEventsComponent} from "./vpd-all-events/vpd-all-events.component";
+import {MaladiesListComponent} from "./maxence/diseases/maladies-list/maladies-list.component";
+import {ActionsComponent} from "./actions/actions.component";
 
 
 @NgModule({
@@ -68,7 +69,6 @@ import {VpdAllEventsComponent} from "./vpd-all-events/vpd-all-events.component";
     VpdEventsPageComponent,
     HomeComponent,
     HistoryComponent,
-    MaxenceIntroComponent,
     MaxenceIntroComponent,
     ActualityComponent,
     VpdEventSections,
@@ -113,9 +113,10 @@ import {VpdAllEventsComponent} from "./vpd-all-events/vpd-all-events.component";
     DailyCareComponent,
     HospitalCareComponent,
     SchoolComponent,
-    MisfortuneComponent,
     OrgansTransplantComponent,
     ContactComponent,
+    MaladiesListComponent,
+    ActionsComponent,
     PartieCardComponent,
     LotCardComponent,
     TableauComponent,

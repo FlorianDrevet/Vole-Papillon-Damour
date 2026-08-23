@@ -1,20 +1,20 @@
-<div class="flex flex-col p-5 lg:p-10 mb-10" >
-  <div class="w-full flex">
-    <div class="mb-10 lg:mt-5 flex flex-row ml-auto mr-auto items-center">
-      <h1 class="text-primary-color text-6xl lg:text-8xl text-center">Toute l'actualité</h1>
-      <img class="hidden lg:block h-[100px] ml-5" src="icons/newspaper-icon.svg">
-    </div>
-  </div>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Actualités</span>
+  <h1 class="font-serif text-[36px] font-medium text-ink-2 lg:text-[50px]">Ce qui se passe chez nous.</h1>
+  <p class="max-w-[54ch] text-[16px] leading-relaxed text-slate-2">
+    Les nouvelles de Maxence, les aides que nous venons de financer, les dates à retenir. Écrit par la famille,
+    sans langue de bois.
+  </p>
+</section>
 
-  @if(isLoading()) {
-    <mat-spinner class="ml-auto mr-auto"></mat-spinner>
-  }
-  @else {
-    <div class="flex flex-col gap-10">
-      @for(month of groupedActualities(); track month) {
-        <app-actuality-by-month Title="{{month.month | capitalize}} {{month.year}}" [Actualities]="month.actualities"></app-actuality-by-month>
-      }
-    </div>
+<div class="flex flex-col gap-14 bg-white px-6 py-14 lg:px-11 lg:py-16">
+  @if (isLoading()) {
+    <div class="flex justify-center py-10"><mat-spinner></mat-spinner></div>
+  } @else if (groupedActualities().length) {
+    @for (month of groupedActualities(); track month.month + month.year) {
+      <app-actuality-by-month [Title]="(month.month | capitalize) + ' ' + month.year" [Actualities]="month.actualities"></app-actuality-by-month>
+    }
+  } @else {
+    <p class="text-slate-2">Pas encore d'actualité publiée.</p>
   }
 </div>
-

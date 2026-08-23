@@ -1,0 +1,62 @@
+<section class="flex flex-col gap-8 bg-paper px-6 py-14 lg:px-11 lg:py-18">
+  <div class="flex flex-col gap-4">
+    <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Nos actions</span>
+    <h1 class="max-w-[18ch] font-serif text-[36px] font-medium leading-tight text-ink-2 lg:text-[50px]">On ne promet rien. On montre.</h1>
+    <p class="max-w-[56ch] text-[16px] leading-relaxed text-slate-2">
+      Chaque aide financée est présentée ici avec la preuve à l'appui. Cette page est en cours de constitution :
+      les exemples ci-dessous seront remplacés par les actions réelles au fur et à mesure.
+    </p>
+  </div>
+  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <app-stat-card value="—" label="Enfants aidés" description="Depuis 2010, chiffre à confirmer." [rotateDeg]="-1"></app-stat-card>
+    <app-stat-card value="2010" label="Depuis" description="Année de création de l'association." tone="dark" [rotateDeg]="1" [floatDelayS]="0.5"></app-stat-card>
+    <app-stat-card value="—" label="Frais de structure" description="Chiffre à confirmer." [rotateDeg]="-0.6" [floatDelayS]="1"></app-stat-card>
+    <app-stat-card value="—" label="Délai moyen de réponse" description="Chiffre à confirmer." [rotateDeg]="0.8" [floatDelayS]="1.5"></app-stat-card>
+  </div>
+</section>
+
+<section class="flex flex-col gap-8 bg-white px-6 py-14 lg:px-11 lg:py-16">
+  <div class="flex flex-wrap items-center gap-2.5">
+    @for (filter of filters; track filter; let i = $index) {
+      <span
+        class="rounded-full px-4 py-2 font-mono text-xs tracking-[.06em]"
+        [class]="i === 0 ? 'bg-ink-2 text-white' : 'border border-line-2 text-slate-2'">{{ filter }}</span>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-12">
+    <app-action-card class="lg:[grid-column:span_5]" meta="MONTANT ET DATE À COMPLÉTER" title="Exemple : une aide à la mobilité" photoLabel="PHOTO — À COMPLÉTER" [rotateDeg]="-1.4"></app-action-card>
+    <app-action-card class="lg:[grid-column:span_4] lg:mt-10" meta="MONTANT À COMPLÉTER" title="Exemple : un équipement informatique" photoLabel="PHOTO — À COMPLÉTER" tone="dark" [rotateDeg]="1.2" [floatDelayS]="0.6"></app-action-card>
+    <app-action-card class="lg:[grid-column:span_3]" meta="MONTANT À COMPLÉTER" title="Exemple : un mobilier adapté" photoLabel="PHOTO — À COMPLÉTER" [rotateDeg]="-0.8" [floatDelayS]="1.2"></app-action-card>
+    <app-action-card class="lg:[grid-column:span_4]" meta="MONTANT À COMPLÉTER" title="Exemple : un séjour de répit" photoLabel="PHOTO — À COMPLÉTER" [rotateDeg]="1" [floatDelayS]="1.8"></app-action-card>
+    <app-action-card class="lg:[grid-column:span_4]" meta="MONTANT À COMPLÉTER" title="Exemple : une aide à l'autonomie" photoLabel="PHOTO — À COMPLÉTER" [rotateDeg]="-1.1" [floatDelayS]="2.2"></app-action-card>
+    <a routerLink="/contact" class="flex flex-col justify-center gap-3 rounded-sm border border-line-2 px-7 py-8 transition hover:border-blue-2 lg:[grid-column:span_4]">
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-3">Une situation à nous exposer ?</span>
+      <span class="font-serif text-xl font-medium text-ink-2">Écrivez-nous, on en discute.</span>
+      <span class="font-mono text-xs tracking-[.12em] text-blue">NOUS CONTACTER →</span>
+    </a>
+  </div>
+</section>
+
+<section class="flex flex-col gap-9 bg-ink px-6 py-16 text-mist-2 lg:px-11 lg:py-20">
+  <h2 class="max-w-[24ch] font-serif text-[30px] font-medium leading-tight text-white lg:text-[38px]">Quatre étapes pour demander une aide.</h2>
+  <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="flex flex-col gap-2.5 border-t-2 border-orange pt-4">
+      <span class="font-mono text-[11px] text-orange-2">01</span>
+      <p class="text-[15px] leading-relaxed">Vous nous écrivez et décrivez la situation.</p>
+    </div>
+    <div class="flex flex-col gap-2.5 border-t-2 border-cyan/30 pt-4">
+      <span class="font-mono text-[11px] text-cyan">02</span>
+      <p class="text-[15px] leading-relaxed">On en discute ensemble, par téléphone ou par écrit.</p>
+    </div>
+    <div class="flex flex-col gap-2.5 border-t-2 border-cyan/30 pt-4">
+      <span class="font-mono text-[11px] text-cyan">03</span>
+      <p class="text-[15px] leading-relaxed">Le bureau étudie la demande et décide.</p>
+    </div>
+    <div class="flex flex-col gap-2.5 border-t-2 border-cyan/30 pt-4">
+      <span class="font-mono text-[11px] text-cyan">04</span>
+      <p class="text-[15px] leading-relaxed">Nous payons directement le fournisseur.</p>
+    </div>
+  </div>
+  <app-pill-button routerLink="/contact" class="self-start">Nous exposer une situation</app-pill-button>
+</section>

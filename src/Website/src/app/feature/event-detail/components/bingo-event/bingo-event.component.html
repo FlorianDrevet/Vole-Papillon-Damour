@@ -1,58 +1,42 @@
-<div class="flex flex-col w-full">
+<div class="flex flex-col gap-10">
   <app-general-infos [vpdEvent]="vpdEvent()">
-    <div class="flex flex-col gap-5 lg:mb-10 w-full lg:w-fit">
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
       <app-section-infos-event
-        Title="Date:"
+        Title="Date"
         UrlIcon="icons/calendar-icon.svg"
-        [Value]="vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC'"
-      ></app-section-infos-event>
-
+        [Value]="vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC'">
+      </app-section-infos-event>
       <app-section-infos-event
-        Title="Lieu :"
+        Title="Lieu"
         UrlIcon="icons/location-icon.svg"
-        [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city"
-      ></app-section-infos-event>
-    </div>
-
-    <div class="flex w-full flex-col lg:flex-row 2xl:w-fit 2xl:flex-col gap-5 justify-evenly mb-10">
-
+        [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city">
+      </app-section-infos-event>
       <app-section-infos-event
-        Title="Ouverture portes :"
+        Title="Ouverture des portes"
         UrlIcon="icons/door-icon.svg"
-        [Value]="vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC'"
-      ></app-section-infos-event>
-
+        [Value]="vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC'">
+      </app-section-infos-event>
       <app-section-infos-event
-        Title="Heure de début :"
+        Title="Heure de début"
         UrlIcon="icons/clock-icon.svg"
-        [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'"
-      ></app-section-infos-event>
+        [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'">
+      </app-section-infos-event>
     </div>
-
   </app-general-infos>
 
-  <div class="flex flex-col w-full mb-20">
-    <div class="flex flex-row ml-auto mr-auto bg-white border-primary-color border-2 rounded-3xl p-2 items-center mb-10">
-      <h1 class="text-primary-color text-5xl lg:text-7xl">Tarifs</h1>
-      <img src="icons/argent.png" class="h-10 lg:h-16 ml-2 lg:ml-5 mt-auto mb-auto">
-    </div>
-
+  <div class="flex flex-col gap-5">
+    <h3 class="font-serif text-2xl font-medium text-ink-2">Tarifs</h3>
     <app-prices [section]="ProductSectionEnum.Bingo"></app-prices>
   </div>
 
-  <div class="flex flex-col w-full">
-    <div class="flex flex-row ml-auto mr-auto bg-white border-primary-color border-2 rounded-3xl p-2 items-center">
-      <h1 class="text-primary-color text-5xl lg:text-7xl">Lots du loto</h1>
-      <img src="icons/boite-cadeau.png" class="h-10 lg:h-16 ml-2 lg:ml-5 mt-auto mb-auto">
-    </div>
-
+  <div class="flex flex-col gap-5">
+    <h3 class="font-serif text-2xl font-medium text-ink-2">Lots du loto</h3>
     @if (vpdEvent().parties.length === 0) {
-      <p class="text-primary-color text-3xl lg:text-5xl mt-10 mb-10 text-justify ml-auto mr-auto">Liste des lots prochainement disponible ...</p>
-    }
-    @else {
-      <div class="container-parties">
+      <p class="text-[16px] text-slate-2">Liste des lots bientôt disponible…</p>
+    } @else {
+      <div class="flex flex-col gap-6">
         @for (partie of vpdEvent().parties; track partie.id) {
-          <app-partie-card class="flex flex-col items-center" [Partie]="partie"></app-partie-card>
+          <app-partie-card [Partie]="partie"></app-partie-card>
         }
       </div>
     }

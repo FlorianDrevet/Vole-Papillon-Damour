@@ -1,1 +1,66 @@
-<p>contact works!</p>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <h1 class="max-w-[18ch] font-serif text-[36px] font-medium leading-tight text-ink-2 lg:text-[48px]">Écrivez-nous, on répond.</h1>
+  <p class="max-w-[54ch] text-[16px] leading-relaxed text-slate-2">
+    C'est la famille qui lit les messages, entre deux soins. Comptez deux à trois jours, une semaine en période de foire.
+  </p>
+</section>
+
+<section class="grid grid-cols-1 gap-8 bg-paper px-6 pb-16 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:px-11 lg:pb-20">
+  <form class="flex flex-col gap-5 rounded bg-white px-7 py-8 shadow-[0_22px_44px_-30px_rgba(7,43,69,0.35)]" (submit)="$event.preventDefault(); send(nameInput.value, emailInput.value, messageInput.value)">
+    <div class="flex flex-wrap gap-2">
+      @for (r of reasons; track r) {
+        <button
+          type="button"
+          (click)="reason.set(r)"
+          class="rounded-full px-4 py-2 font-mono text-xs tracking-[.05em] transition"
+          [class]="reason() === r ? 'bg-ink-2 text-white' : 'border border-line-2 text-slate-2'">{{ r }}</button>
+      }
+    </div>
+
+    <label class="flex flex-col gap-1.5 text-sm text-slate-2">
+      Prénom et nom
+      <input #nameInput type="text" required class="rounded border border-line-2 px-4 py-2.5 text-ink-2 outline-none focus:border-blue-2">
+    </label>
+
+    <label class="flex flex-col gap-1.5 text-sm text-slate-2">
+      Adresse e-mail
+      <input #emailInput type="email" required class="rounded border border-line-2 px-4 py-2.5 text-ink-2 outline-none focus:border-blue-2">
+    </label>
+
+    <label class="flex flex-col gap-1.5 text-sm text-slate-2">
+      Message
+      <textarea #messageInput rows="5" required class="rounded border border-line-2 px-4 py-2.5 text-ink-2 outline-none focus:border-blue-2"></textarea>
+    </label>
+
+    <label class="flex items-start gap-2.5 text-xs text-slate-3">
+      <input type="checkbox" required class="mt-0.5" [checked]="consent()" (change)="consent.set(!consent())">
+      J'accepte que mon message soit utilisé pour me répondre. Aucune autre utilisation n'en sera faite.
+    </label>
+
+    <div class="flex flex-wrap items-center gap-4">
+      <app-pill-button>Envoyer le message</app-pill-button>
+      <span class="font-mono text-[11px] tracking-[.08em] text-slate-3">RÉPONSE EN 2 À 3 JOURS</span>
+    </div>
+  </form>
+
+  <div class="flex flex-col gap-5">
+    <div class="flex flex-col gap-3 rounded bg-ink-2 px-7 py-7 text-mist-2">
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan">En direct</span>
+      <a href="mailto:volepapillondamour@sfr.fr" class="text-lg text-white hover:underline">volepapillondamour&#64;sfr.fr</a>
+      <span class="text-sm leading-relaxed text-mist">46 route de Saint-Marcellin<br>42170 Saint-Just-Saint-Rambert</span>
+      <span class="mt-2 flex gap-3">
+        <a href="https://www.facebook.com/melvin.drevet.1" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-cyan/[.14]" aria-label="Facebook">
+          <img ngSrc="images/facebook.svg" alt="" width="16" height="16">
+        </a>
+        <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-cyan/[.14]" aria-label="Instagram">
+          <img ngSrc="images/instagram.svg" alt="" width="16" height="16">
+        </a>
+      </span>
+    </div>
+    <div class="flex flex-col gap-2 rounded border border-line-2 px-7 py-7 text-sm text-slate-2">
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-slate-3">Dépôt de livres</span>
+      <span>Dépôt de cartons 24h/24 au 46 route de Saint-Marcellin.</span>
+      <span class="text-slate-3">Horaires de permanence à confirmer.</span>
+    </div>
+  </div>
+</section>

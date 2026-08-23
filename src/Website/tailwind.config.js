@@ -29,15 +29,15 @@ module.exports = {
         "orange-3": "#dc6412",
         line: "#d9e9f4",
         "line-2": "#e2eef7",
+        success: "#28A745",
 
-        // Alias temporaires vers l'ancienne palette --vpd-*, le temps de migrer
-        // les derniers gabarits non encore réécrits (à retirer en fin de refonte).
+        // @vpd/ui (src/SharedUi, partagée avec BackOffice) référence encore ces noms
+        // de couleur dans ses propres styles : à conserver ici tant que ce paquet
+        // n'est pas migré vers la nouvelle palette (hors périmètre de cette refonte).
         "primary-color": "#072b45",
         "secondary-color": "#1497d6",
         "tertiary-color": "#f0801c",
         "text-color": "#33536e",
-        "background-color": "#f7fbfe",
-        success: "#28A745",
       },
       backgroundImage: {
         "vpd-brand": "linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c)",

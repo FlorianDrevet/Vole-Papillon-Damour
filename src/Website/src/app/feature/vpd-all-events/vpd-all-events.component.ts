@@ -4,9 +4,8 @@ import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 
 @Component({
-    selector: 'app-vpd-events',
+    selector: 'app-vpd-all-events',
     templateUrl: './vpd-all-events.component.html',
-    styleUrl: './vpd-all-events.component.scss',
     standalone: false
 })
 export class VpdAllEventsComponent implements OnInit{
@@ -19,9 +18,8 @@ export class VpdAllEventsComponent implements OnInit{
 
   ngOnInit(): void {
     this.vpdEventsFacade.getAllEvents$().then((events : any[]) => {
-      events.map(event => {
+      events.forEach(event => {
         event.eventType = VpdEventEnum[event.eventType as keyof typeof VpdEventEnum];
-        return
       });
       this.allBingoEvents.set(events.filter(event => event.eventType === VpdEventEnum.Bingo));
       this.allBooksEvents.set(events.filter(event => event.eventType === VpdEventEnum.Books));

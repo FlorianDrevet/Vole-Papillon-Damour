@@ -1,1 +1,16 @@
-<p>newspapers works!</p>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">La presse en parle</span>
+  <h1 class="font-serif text-[36px] font-medium text-ink-2 lg:text-[50px]">Ce que les médias ont écrit sur nous.</h1>
+  <p class="max-w-[54ch] text-[16px] leading-relaxed text-slate-2">
+    Cette page recensera les articles de presse consacrés à l'association et à Maxence, avec leur date, leur
+    média et un lien vers l'article original.
+  </p>
+</section>
+
+<section class="flex flex-col items-start gap-4 bg-white px-6 py-16 lg:px-11 lg:py-20">
+  <app-photo-placeholder label="ARTICLE DE PRESSE — À AJOUTER" class="h-40 w-full max-w-[420px] rounded-sm"></app-photo-placeholder>
+  <p class="max-w-[54ch] text-[15px] text-slate-2">
+    Aucun article n'est référencé pour le moment. Contactez-nous si vous avez un article à ajouter ici.
+  </p>
+  <app-pill-button routerLink="/contact" variant="secondary" [small]="true">Nous signaler un article</app-pill-button>
+</section>

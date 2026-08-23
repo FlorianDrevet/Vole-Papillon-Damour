@@ -1,1 +1,39 @@
-<p>pictures works!</p>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Galerie photos</span>
+  <h1 class="font-serif text-[36px] font-medium text-ink-2 lg:text-[50px]">Quinze ans de cartons et de sourires.</h1>
+</section>
+
+<section class="flex flex-col gap-10 bg-ink px-6 py-16 text-mist-2 lg:px-11 lg:py-20">
+  <div class="flex flex-col gap-2">
+    <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">L'histoire de Maxence</span>
+    <h2 class="font-serif text-2xl font-medium text-white lg:text-3xl">Des centaines de photos, année par année.</h2>
+    <p class="max-w-[60ch] text-[15px] leading-relaxed text-mist">
+      Les photos les plus personnelles vivent directement dans le récit de sa mère, chapitre après chapitre.
+    </p>
+  </div>
+  <app-pill-button routerLink="/maxence/histoire" class="self-start">Voir son histoire en photos</app-pill-button>
+</section>
+
+<section class="flex flex-col gap-6 bg-white px-6 py-14 lg:px-11 lg:py-16">
+  <div class="flex flex-col gap-1">
+    <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Dons de livres</h2>
+    <span class="font-mono text-xs text-slate-3">{{ donationPhotos.length }} photos</span>
+  </div>
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    @for (photo of donationPhotos; track photo) {
+      <img [src]="photo" alt="Don de livres" class="h-40 w-full rounded-sm object-cover sm:h-48">
+    }
+  </div>
+</section>
+
+<section class="flex flex-col gap-6 bg-paper-2 px-6 py-14 lg:px-11 lg:py-16">
+  <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Albums à venir</h2>
+  <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    @for (album of upcomingAlbums; track album) {
+      <div class="flex flex-col gap-2">
+        <app-photo-placeholder [label]="'PHOTO — ' + album" class="h-32 rounded-sm"></app-photo-placeholder>
+        <span class="text-sm text-slate-2">{{ album }}</span>
+      </div>
+    }
+  </div>
+</section>

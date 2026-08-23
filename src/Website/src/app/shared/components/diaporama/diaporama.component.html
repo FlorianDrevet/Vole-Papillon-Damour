@@ -1,9 +1,5 @@
-<div class="flex flex-row items-center w-fit bg-white p-4 rounded-3xl">
-  <p (click)="next()" class="mr-5 text-5xl lg:text-7xl"><</p>
-  <div class="d">
-      <img [src]="pictureList()[currentPicture()]"
-           width="400px">
-  </div>
-  <p (click)="previous()" class="ml-5 text-5xl lg:text-7xl">></p>
+<div class="flex items-center gap-4">
+  <button type="button" (click)="previous()" aria-label="Photo précédente" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-2 text-lg text-slate-2 hover:border-blue-2">‹</button>
+  <img [src]="pictureList()[currentPicture()]" alt="" class="h-64 w-full max-w-[380px] rounded-sm object-cover sm:h-80">
+  <button type="button" (click)="next()" aria-label="Photo suivante" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-2 text-lg text-slate-2 hover:border-blue-2">›</button>
 </div>
-

@@ -1,38 +1,20 @@
 @if (vpdEvent() === null) {
-  <mat-spinner class="ml-auto mr-auto"></mat-spinner>
+  <div class="flex justify-center py-24"><mat-spinner></mat-spinner></div>
 } @else {
-  <a class="absolute right-3 top-20 lg:hidden" href="/evenement">
-    <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-2xl lg:text-4xl"
-            style="padding: 0px 10px">
-      < Retour
-    </button>
-  </a>
-  <div class="p-5 lg:p-0 lg:w-[95%] flex flex-col items-center ml-auto mr-auto mt-10 ">
-    <div class="flex w-full relative">
-      <div class="ml-auto mr-auto">
-        <h1 class="text-primary-color text-5xl lg:text-7xl">{{ vpdEvent()?.name }}</h1>
-        <div class="bg-primary-color h-2 w-full mt-2"></div>
-      </div>
-      <a class="absolute left-0 top-5 hidden lg:block" href="/evenement">
-        <app-button>< Retour</app-button>
-      </a>
-    </div>
+  <section class="flex flex-col gap-4 bg-ink px-6 py-14 text-mist-2 lg:px-11 lg:py-16">
+    <a routerLink="/evenement" class="font-mono text-xs tracking-[.1em] text-cyan">← TOUS LES ÉVÈNEMENTS</a>
+    <h1 class="max-w-[24ch] font-serif text-[34px] font-medium leading-tight text-white lg:text-[46px]">{{ vpdEvent()!.name }}</h1>
+  </section>
 
-
+  <div class="mx-auto flex max-w-[860px] flex-col gap-10 px-6 py-12 lg:px-11 lg:py-14">
     @if (vpdEvent()!.eventType === VpdEventEnum.Bingo) {
-      <app-bingo-event class="w-full mt-10" [vpdEvent]="vpdEvent()!"></app-bingo-event>
+      <app-bingo-event [vpdEvent]="vpdEvent()!"></app-bingo-event>
     } @else if (vpdEvent()!.eventType === VpdEventEnum.Books) {
-      <app-books-event class="w-full mt-10" [vpdEvent]="vpdEvent()!"></app-books-event>
+      <app-books-event [vpdEvent]="vpdEvent()!"></app-books-event>
     } @else {
-      <app-other-event class="w-full mt-10" [vpdEvent]="vpdEvent()!"></app-other-event>
+      <app-other-event [vpdEvent]="vpdEvent()!"></app-other-event>
     }
 
-    <a class="lg:hidden" href="/evenement">
-      <app-button>< Retour</app-button>
-    </a>
-    <a class="hidden lg:block  mb-20" href="/evenement">
-      <app-button>< Retour aux évènements</app-button>
-    </a>
+    <a routerLink="/evenement" class="self-start font-mono text-xs tracking-[.1em] text-blue">← Retour aux évènements</a>
   </div>
 }
-

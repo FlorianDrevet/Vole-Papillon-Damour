@@ -1,29 +1,24 @@
-<div class="flex flex-row gap-2 w-full pt-3 pb-3 items-center">
-  @if(LinePartie().lots.length > 1) {
-    <img class="h-5 sm:ml-0 -ml-4" src="icons/arrow-left-triangle.svg" (click)="previousLot()">
+<div class="flex w-full items-center gap-3 py-1">
+  @if (LinePartie().lots.length > 1) {
+    <button type="button" (click)="previousLot()" aria-label="Lot précédent">
+      <img class="h-4" src="icons/arrow-left-triangle.svg" alt="">
+    </button>
   }
-  <div class="bg-primary-color flex flex-row rounded-3xl p-3 w-full sm:gap-5 gap-2">
-    <div class="flex bg-white rounded-3xl sm:h-[100px] p-2 sm:p-2 mt-auto mb-auto sm:flex-[1_0_100px] h-[75px] flex-[1_0_75px]" >
-      <img [src]="currentLot().urlImage" class="m-auto h-full w-auto">
+  <div class="flex w-full items-center gap-4 rounded-sm bg-paper-2 px-4 py-3">
+    <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-sm bg-white p-2">
+      <img [src]="currentLot().urlImage" alt="" class="h-full w-full object-contain">
     </div>
-    <div class="flex flex-col w-full gap-3">
-      <div class="flex flex-row w-full justify-between">
-        <div class="title-lot">
-          {{LinePartie().numberLine | lineNumberTitle}}
-        </div>
-        @if (LinePartie().lots.length > 1) {
-          <div class="title-lot">
-            ou
-          </div>
-        }
-      </div>
-      <div class="label-lot w-full mt-auto">
-        {{currentLot().name}}
-      </div>
+    <div class="flex flex-col gap-1">
+      <span class="font-mono text-[11px] uppercase tracking-[.1em] text-blue">
+        {{ LinePartie().numberLine | lineNumberTitle }}
+        @if (LinePartie().lots.length > 1) { <span class="text-slate-3">· ou</span> }
+      </span>
+      <span class="text-sm font-medium text-ink-2">{{ currentLot().name }}</span>
     </div>
   </div>
-  @if(LinePartie().lots.length > 1) {
-    <img class="h-5 -mr-4 sm:mr-0" src="icons/arrow-right-triangle.svg" (click)="nextLot()">
+  @if (LinePartie().lots.length > 1) {
+    <button type="button" (click)="nextLot()" aria-label="Lot suivant">
+      <img class="h-4" src="icons/arrow-right-triangle.svg" alt="">
+    </button>
   }
 </div>
-
