@@ -1,8 +1,37 @@
-::ng-deep .content-history p {
-  line-height: 3rem !important; //TODO
-  @apply w-full text-justify leading-9 sm:leading-[3rem]
+// Le contenu de chaque chapitre est projeté depuis les composants year-20XX
+// (texte intégral de la maman, préservé mot pour mot) : ::ng-deep reste le
+// seul moyen d'habiller cette lumière projetée depuis ce composant conteneur.
+::ng-deep .content-history > p:first-of-type::first-letter {
+  float: left;
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 3.6rem;
+  line-height: 0.85;
+  padding-right: 0.5rem;
+  padding-top: 0.35rem;
+  color: #072b45;
 }
 
 ::ng-deep .multiple-images {
-  @apply flex flex-col sm:flex-row flex-wrap justify-evenly w-fit sm:w-full gap-10 lg:gap-5 items-center
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+::ng-deep .multiple-images vpd-image,
+::ng-deep .multiple-images app-vpd-image,
+::ng-deep .content-history > vpd-image,
+::ng-deep .content-history > app-vpd-image {
+  display: block;
+}
+
+::ng-deep .multiple-images img,
+::ng-deep .content-history > vpd-image img,
+::ng-deep .content-history > app-vpd-image img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: none;
+  object-fit: cover;
+  border-radius: 2px;
 }

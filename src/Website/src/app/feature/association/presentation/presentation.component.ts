@@ -1,15 +1,21 @@
 import { Component } from '@angular/core';
-import {ImageOrientationEnum} from "../../../shared/enums/imageOrientation.enum";
-import {BackgroundColorEnum} from "../../../shared/enums/backgroundColor.enum";
 
 @Component({
     selector: 'app-presentation',
     templateUrl: './presentation.component.html',
-    styleUrl: './presentation.component.scss',
     standalone: false
 })
 export class PresentationComponent {
+  readonly board = [
+    { role: 'Présidente', note: 'à compléter' },
+    { role: 'Trésorier', note: 'à compléter' },
+    { role: 'Secrétaire', note: 'à compléter' },
+    { role: 'Bénévole référent·e — foire aux livres', note: 'à compléter' },
+  ];
 
-  protected readonly ImageOrientationEnum = ImageOrientationEnum;
-  protected readonly BackgroundColorEnum = BackgroundColorEnum;
+  readonly documents = [
+    'Statuts de l’association',
+    'Rapport d’activité',
+    'Récépissé de déclaration en préfecture',
+  ];
 }

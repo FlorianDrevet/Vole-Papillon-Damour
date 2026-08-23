@@ -1,46 +1,127 @@
-<div class="w-4/5 flex flex-col items-center ml-auto mr-auto mt-10 lg:mt-10 mb-20">
-  <div class="flex flex-col items-center mb-10 lg:mb-16">
-    <h1 class="text-4xl lg:text-7xl text-primary-color">Qui sommes-nous ?</h1>
-    <div class="h-2 w-full bg-primary-color"></div>
-  </div>
-  <p>
-    Vole Papillon d'Amour, association loi 1909, est née en 2010 afin de soutenir Maxence
-    atteint de multiples maladies rares dues à une mutation cellulaire, 1er cas mis en
-    évidence dans le monde.
-  </p>
-
-  <p>
-    Elle met à sa disposition du matériel et un environnement propice à son autonomie et continuera
-    à le faire tant qu'il en aura besoin.
-  </p>
-
-  <div class="flex flex-row justify-evenly flex-wrap items-center w-full mt-10 mb-10 gap-5">
-    <app-vpd-image
-      [backgroundColor]="BackgroundColorEnum.BLUE"
-      [src]="'images/Association/maxence-aquarium.jpg'"
-    ></app-vpd-image>
-    <app-vpd-image
-      [backgroundColor]="BackgroundColorEnum.BLUE"
-      [src]="'images/Association/maxence-voiture.jpg'"
-    ></app-vpd-image>
+<section class="grid grid-cols-1 items-center gap-10 bg-paper px-6 py-14 lg:grid-cols-[1fr_460px] lg:gap-14 lg:px-11 lg:py-20">
+  <div class="flex flex-col gap-6">
+    <span class="font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-blue">Association loi 1901 · depuis 2010</span>
+    <h1 class="font-serif text-[38px] font-medium leading-[1.05] text-ink-2 lg:text-[56px]">
+      Une famille, une camionnette, et beaucoup de livres.
+    </h1>
+    <p class="max-w-[54ch] text-[17px] leading-relaxed text-slate-2">
+      Vole Papillon d'Amour, association loi 1901, est née en 2010 pour soutenir Maxence, atteint de
+      multiples maladies rares dues à une mutation cellulaire — premier cas mis en évidence dans le monde.
+      Pas de bureau salarié, pas de campagne d'appel aux dons : nous collectons des livres, nous les
+      revendons, et l'argent part directement en matériel pour des enfants malades.
+    </p>
+    <div class="mt-1 flex flex-wrap gap-3">
+      <app-pill-button routerLink="/association/comment-aider">Nous aider</app-pill-button>
+      <app-pill-button routerLink="/maxence/histoire" variant="secondary">L'histoire de Maxence</app-pill-button>
+    </div>
   </div>
 
-  <p>
-    Toutefois, depuis 5 ans, l'association apporte son aide à d'autres enfants et adolescents
-    en souffrance en leur offrant ce dont ils ont besoin comme des ordinateurs,
-    permis de conduire, séjour en famille dans des parcs d'attractions comme Disney,
-    mobiliers adaptés, jeux éducatifs, tenues vestimentaires spécialisées, reste à charge
-    de matériel médical ...
-  </p>
+  <img
+    ngSrc="images/Association/maxence-aquarium.jpg"
+    alt="Maxence"
+    width="460" height="480"
+    class="h-[320px] w-full rounded-[220px_8px_220px_8px] object-cover lg:h-[480px]">
+</section>
 
-  <div class="flex flex-row justify-evenly flex-wrap items-center w-full mt-10 lg:mb-10 gap-5">
-    <app-vpd-image
-      [backgroundColor]="BackgroundColorEnum.BLUE"
-      [src]="'images/Association/maxence-aide.jpg'"
-    ></app-vpd-image>
-    <app-vpd-image
-      [backgroundColor]="BackgroundColorEnum.BLUE"
-      [src]="'images/Association/maxence-aide2.jpg'"
-    ></app-vpd-image>
+<section class="grid grid-cols-1 gap-5 bg-paper px-6 pb-14 sm:grid-cols-3 lg:px-11 lg:pb-16">
+  <img ngSrc="images/Association/maxence-voiture.jpg" alt="" width="360" height="260" class="h-[220px] w-full rounded-sm object-cover">
+  <img ngSrc="images/Association/maxence-aide.jpg" alt="" width="360" height="260" class="h-[220px] w-full rounded-sm object-cover">
+  <img ngSrc="images/Association/maxence-aide2.jpg" alt="" width="360" height="260" class="h-[220px] w-full rounded-sm object-cover">
+</section>
+
+<section class="flex flex-col gap-11 bg-ink px-6 py-16 text-mist-2 lg:px-11 lg:py-20">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_420px] lg:items-end">
+    <div class="flex flex-col gap-3.5">
+      <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-2">Ce que nous faisons</span>
+      <h2 class="font-serif text-[32px] font-medium leading-tight text-white lg:text-[42px]">Trois missions, dans cet ordre.</h2>
+    </div>
+    <p class="text-[15px] leading-relaxed text-mist">
+      L'association est née pour un enfant. Elle sert aujourd'hui plusieurs autres familles confrontées à
+      des maladies rares.
+    </p>
   </div>
-</div>
+
+  <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+    <div class="flex flex-col gap-3 rounded-sm border border-cyan/[.16] bg-white/[.03] px-6 py-7">
+      <span class="font-mono text-[11px] tracking-[.14em] text-cyan">01 · MAXENCE</span>
+      <h3 class="font-serif text-xl font-medium text-white">Du matériel et de l'autonomie</h3>
+      <p class="text-sm leading-relaxed text-mist">
+        Fauteuil, lit médicalisé, véhicule adapté, informatique : tout ce qui permet à Maxence de vivre
+        chez lui et d'apprendre. Nous continuerons aussi longtemps qu'il en aura besoin.
+      </p>
+    </div>
+    <div class="flex flex-col gap-3 rounded-sm border border-cyan/[.16] bg-white/[.03] px-6 py-7">
+      <span class="font-mono text-[11px] tracking-[.14em] text-cyan">02 · LES AUTRES ENFANTS</span>
+      <h3 class="font-serif text-xl font-medium text-white">Le reste à charge que personne ne paie</h3>
+      <p class="text-sm leading-relaxed text-mist">
+        Ordinateurs, permis de conduire, mobilier adapté, jeux éducatifs, tenues vestimentaires
+        spécialisées, séjours en famille. Nous payons ce que la sécu, la MDPH et les mutuelles refusent.
+      </p>
+    </div>
+    <div class="relative flex flex-col gap-3 overflow-hidden rounded-sm px-6 py-7 text-white" style="background: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%)">
+      <img ngSrc="images/papillon_without_back.png" alt="" width="180" height="180" class="absolute -bottom-8 -right-8 w-[180px] opacity-[.16]">
+      <span class="relative font-mono text-[11px] tracking-[.14em] text-white/80">03 · LE FINANCEMENT</span>
+      <h3 class="relative font-serif text-xl font-medium">Des livres, pas des subventions</h3>
+      <p class="relative text-sm leading-relaxed text-white/90">
+        Foire aux livres, loto solidaire, marché de Noël : nos ressources viennent des cartons que vous
+        nous déposez, pas de campagnes de dons.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="flex flex-col gap-9 bg-paper-2 px-6 py-16 lg:px-11 lg:py-20">
+  <div class="flex flex-col gap-3.5">
+    <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
+    <h2 class="font-serif text-[32px] font-medium">Où va l'argent des livres.</h2>
+    <p class="max-w-[62ch] text-[15px] leading-relaxed text-slate-2">
+      Le local est prêté, la camionnette appartient à la famille, les bénévoles ne sont pas remboursés. Ce
+      qui rentre ressort en matériel. <em class="not-italic text-slate-3">(Chiffres à confirmer par l'association avant mise en ligne.)</em>
+    </p>
+  </div>
+  <div class="grid grid-cols-2 gap-5 lg:grid-cols-4">
+    <app-stat-card value="—" label="Salarié" description="Chiffre à confirmer." [rotateDeg]="-1.2"></app-stat-card>
+    <app-stat-card value="—" label="Bénévole" description="Chiffre à confirmer." tone="dark" [rotateDeg]="1.1" [floatDelayS]="0.7"></app-stat-card>
+    <app-stat-card value="—" label="Le livre" description="Chiffre à confirmer." [rotateDeg]="-0.8" [floatDelayS]="1.3"></app-stat-card>
+    <app-stat-card value="—" label="Enfants aidés" description="Chiffre à confirmer." [rotateDeg]="1.4" [floatDelayS]="0.4"></app-stat-card>
+  </div>
+</section>
+
+<section class="flex flex-col gap-8 bg-white px-6 py-16 lg:px-11 lg:py-18">
+  <div class="flex flex-col gap-2">
+    <span class="font-mono text-[11px] uppercase tracking-[.18em] text-slate-3">Le bureau</span>
+    <h2 class="font-serif text-3xl font-medium text-ink-2">Élu en assemblée générale.</h2>
+  </div>
+  <div class="grid grid-cols-2 gap-6 lg:grid-cols-4">
+    @for (member of board; track member.role) {
+      <div class="flex flex-col gap-3">
+        <app-photo-placeholder label="PORTRAIT" class="h-40 rounded-sm"></app-photo-placeholder>
+        <div class="flex flex-col gap-0.5">
+          <span class="font-serif text-lg text-ink-2">Nom {{ member.note }}</span>
+          <span class="font-mono text-[11px] uppercase tracking-[.1em] text-blue">{{ member.role }}</span>
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="grid grid-cols-1 gap-10 bg-paper px-6 py-16 lg:grid-cols-2 lg:px-11 lg:py-18">
+  <div class="flex flex-col gap-5">
+    <h2 class="font-serif text-3xl font-medium text-ink-2">Tout est public, tout est téléchargeable.</h2>
+    <ul class="flex flex-col divide-y divide-line-2 border-y border-line-2">
+      @for (doc of documents; track doc) {
+        <li class="flex items-center justify-between gap-4 py-4">
+          <span class="text-[15px] text-ink-2">{{ doc }}</span>
+          <span class="font-mono text-[11px] uppercase tracking-[.1em] text-slate-3">Document à ajouter</span>
+        </li>
+      }
+    </ul>
+  </div>
+  <div class="flex flex-col justify-center gap-5 rounded bg-ink-2 px-8 py-9 text-mist-2">
+    <app-quote-block
+      quote="Chaque achat est présenté en assemblée générale, facture à l'appui. On ne demande pas d'argent, on demande des livres."
+      tone="dark">
+    </app-quote-block>
+    <app-pill-button routerLink="/contact" class="self-start">Nous écrire</app-pill-button>
+  </div>
+</section>

@@ -1,29 +1,15 @@
-<div
-  [id]="'date-'+ Year()"
-  [ngClass]="{'bg-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
-   'bg-background-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
-  class="flex flex-row w-full">
-  <div
-    [ngClass]="{'bg-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
-   'bg-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
-    class="w-4 lg:w-5 ml-5 lg:ml-10"></div>
-  <div class="flex flex-col w-full">
-    <div class="flex flex-row w-full items-center mt-10">
-      <div
-        [ngClass]="{'bg-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
-          'bg-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
-        class="h-4 lg:h-5 w-12 lg:w-16 mr-7 lg:mr-5"></div>
-      <h2
-        [ngClass]="{'text-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
-          'text-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
-        class="text-5xl lg:text-7xl">{{Title()}}<br>{{Year()}} - {{Year() + 1}}</h2>
+<section
+  [id]="'date-' + Year()"
+  class="scroll-mt-24 px-6 py-14 lg:px-11 lg:py-20"
+  [class]="ContainerBackgroundContainer() === BackgroundColorEnum.BLUE ? 'bg-paper-2' : 'bg-paper'">
+  <div class="mx-auto flex max-w-[760px] flex-col gap-8">
+    <div class="flex items-center gap-4">
+      <span class="h-px w-10 bg-vpd-brand"></span>
+      <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Chapitre · {{ Year() }}–{{ Year() + 1 }}</span>
     </div>
-    <div
-      [ngClass]="{'text-white': ContainerBackgroundContainer() === BackgroundColorEnum.BLUE,
-          'text-primary-color': ContainerBackgroundContainer() === BackgroundColorEnum.WHITE}"
-      class="p-7 lg:p-16 text-2xl lg:text-4xl flex flex-col items-center content-history gap-10 lg:gap-16">
+    <h3 class="font-serif text-[32px] font-medium leading-tight text-ink-2 lg:text-[42px]">{{ Title() }}</h3>
+    <div class="content-history flex flex-col gap-8 text-[17px] leading-[1.78] text-slate">
       <ng-content></ng-content>
     </div>
   </div>
-</div>
-
+</section>

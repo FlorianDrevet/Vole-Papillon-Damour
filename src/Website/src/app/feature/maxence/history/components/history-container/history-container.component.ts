@@ -1,5 +1,5 @@
-import {Component, input} from '@angular/core';
-import {BackgroundColorEnum} from "../../../../../shared/enums/backgroundColor.enum";
+import { Component, input } from '@angular/core';
+import { BackgroundColorEnum } from '../../../../../shared/enums/backgroundColor.enum';
 
 @Component({
     selector: 'app-history-container',
@@ -9,7 +9,7 @@ import {BackgroundColorEnum} from "../../../../../shared/enums/backgroundColor.e
 })
 export class HistoryContainerComponent {
   ContainerBackgroundContainer = input.required<BackgroundColorEnum>();
-  Year = input.required<number>()
-  Title = input.required<string>()
+  Year = input.required<number>();
+  Title = input.required<string>();
   protected readonly BackgroundColorEnum = BackgroundColorEnum;
 }
