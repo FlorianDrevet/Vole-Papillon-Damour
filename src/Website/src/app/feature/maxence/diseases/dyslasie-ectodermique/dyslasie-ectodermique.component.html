@@ -1,41 +1,47 @@
-<div class="flex flex-col p-5 lg:p-0 lg:w-[85%] gap-10 lg:gap-16 ml-auto mr-auto items-center mt-3 lg:mt-16 mb-16">
-  <div class="w-fit lg:mb-10">
-    <h1 class="text-5xl lg:text-7xl text-primary-color text-center">Dysplasies Ectodermiques</h1>
-    <div class="bg-primary-color h-2 w-full hidden lg:block"></div>
-  </div>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <a routerLink="/maxence/maladies" class="font-mono text-xs tracking-[.1em] text-blue">← TOUTES LES MALADIES</a>
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-3">04 · Peau et dents</span>
+  <h1 class="max-w-[22ch] font-serif text-[34px] font-medium leading-tight text-ink-2 lg:text-[46px]">Dysplasies ectodermiques</h1>
+</section>
 
-  <app-under-section Title="Qu'est-ce que les Dysplasies Ectodermiques ?">
+<div class="mx-auto flex max-w-[760px] flex-col gap-10 px-6 py-12 lg:px-11 lg:py-14">
+  <app-disease-section title="Qu'est-ce que les dysplasies ectodermiques ?">
     <p>
       Les dysplasies ectodermiques forment un groupe hétérogène de plus de 200 syndromes rares caractérisés par
       l'atteinte d'au moins deux des dérivés du tissu ectodermique embryonnaire : dents, ongles, glandes sudorales et
       poils. Ce groupe de maladies présentes dès la naissance affecte des structures dérivées du feuillet embryonnaire
       ectodermique, ce qui peut entraîner une variété de symptômes manifestés à divers degrés de sévérité.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Description"  class="w-full">
-    <ul class="list-disc ml-10">
-      <li><em>Dérivés Ectodermiques :</em> Les syndromes associés aux dysplasies ectodermiques comprennent des anomalies des dents, des ongles, des glandes sudorales et des poils.</li>
-      <li><em>Manifestations Complémentaires : </em> Certains syndromes plus complexes peuvent également inclure des anomalies ophtalmologiques, une hypoacousie ou surdité, des fentes labio-palatines, ou encore des anomalies du développement des extrémités comme les mains et les pieds.</li>
+  <app-disease-section title="Description">
+    <ul>
+      <li><em>Dérivés ectodermiques :</em> les syndromes associés aux dysplasies ectodermiques comprennent des anomalies des dents, des ongles, des glandes sudorales et des poils.</li>
+      <li><em>Manifestations complémentaires :</em> certains syndromes plus complexes peuvent également inclure des anomalies ophtalmologiques, une hypoacousie ou surdité, des fentes labio-palatines, ou encore des anomalies du développement des extrémités comme les mains et les pieds.</li>
     </ul>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Signes et Diagnostic"  class="w-full">
+  <app-disease-section title="Signes et diagnostic">
     <p>
       Le diagnostic de dysplasie ectodermique est avant tout clinique et repose sur l'observation de plusieurs signes distinctifs.
     </p>
-    <ul class="list-disc ml-10">
-      <li><em>Croissance et Développement :</em> La croissance staturo-pondérale doit être surveillée attentivement. Les anomalies dentaires peuvent affecter la prise alimentaire, rendant le développement physique plus lent et modifiant la diction.</li>
-      <li><em>Régulation de la Température :</em> La plupart des patients souffrent de troubles de régulation de la température corporelle, nécessitant un environnement tempéré pour leur confort et leur sécurité, aussi bien pour les enfants que pour les adultes.</li>
+    <ul>
+      <li><em>Croissance et développement :</em> la croissance staturo-pondérale doit être surveillée attentivement. Les anomalies dentaires peuvent affecter la prise alimentaire, rendant le développement physique plus lent et modifiant la diction.</li>
+      <li><em>Régulation de la température :</em> la plupart des patients souffrent de troubles de régulation de la température corporelle, nécessitant un environnement tempéré pour leur confort et leur sécurité, aussi bien pour les enfants que pour les adultes.</li>
       <li>
-        <em>Sécheresse des Muqueuses :</em>
-        La sécheresse peut affecter différentes muqueuses :
-        <ul class="list-disc ml-10">
-          <li><em>Nasales :</em> Peut provoquer des épistaxis (saignements de nez)</li>
-          <li><em>Oculaires :</em> Peut causer une fatigabilité visuelle accrue</li>
-          <li><em>Buccales :</em> Peut rendre l'élocution difficile</li>
+        <em>Sécheresse des muqueuses :</em> la sécheresse peut affecter différentes muqueuses :
+        <ul>
+          <li><em>Nasales :</em> peut provoquer des épistaxis (saignements de nez)</li>
+          <li><em>Oculaires :</em> peut causer une fatigabilité visuelle accrue</li>
+          <li><em>Buccales :</em> peut rendre l'élocution difficile</li>
         </ul>
       </li>
     </ul>
-  </app-under-section>
+  </app-disease-section>
+
+  <div class="flex flex-col gap-2 rounded-sm bg-paper-2 px-6 py-6">
+    <span class="font-mono text-[11px] uppercase tracking-[.14em] text-slate-3">En savoir plus</span>
+    <a href="https://www.orpha.net/consor/cgi-bin/Disease_Search.php?lng=FR" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Rechercher « dysplasie ectodermique » sur Orphanet</a>
+    <a href="https://www.filieresmaladiesrares.fr/" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Filières de santé maladies rares (France)</a>
+  </div>
 </div>

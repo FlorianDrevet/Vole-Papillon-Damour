@@ -1,0 +1,37 @@
+<section class="grid grid-cols-1 items-center gap-10 bg-paper px-6 py-14 lg:grid-cols-[1fr_400px] lg:gap-14 lg:px-11 lg:py-18">
+  <div class="flex flex-col gap-5">
+    <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Maxence · ses maladies</span>
+    <h1 class="max-w-[18ch] font-serif text-[34px] font-medium leading-tight text-ink-2 lg:text-[48px]">Huit maladies rares, une seule cause.</h1>
+    <p class="max-w-[52ch] text-[16px] leading-relaxed text-slate-2">
+      Toutes ces maladies découlent d'une même mutation cellulaire, jamais décrite ailleurs dans le monde avant
+      Maxence. Chaque fiche explique la maladie en général, puis ce qu'elle change concrètement au quotidien.
+    </p>
+  </div>
+  <div class="flex flex-col gap-3 rounded bg-white px-7 py-7 shadow-[0_22px_44px_-30px_rgba(7,43,69,0.5)]">
+    <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-3">La cause commune</span>
+    <h2 class="font-serif text-xl font-medium text-ink-2">Une mutation cellulaire, premier cas mis en évidence dans le monde</h2>
+    <p class="text-sm leading-relaxed text-slate-2">
+      Elle explique à elle seule pourquoi Maxence cumule des atteintes digestives, osseuses, nerveuses,
+      hormonales et cardiaques.
+    </p>
+  </div>
+</section>
+
+<section class="grid grid-cols-1 gap-5 bg-white px-6 py-14 sm:grid-cols-2 lg:grid-cols-4 lg:px-11 lg:py-16">
+  @for (disease of diseases; track disease.route; let i = $index) {
+    <a
+      [routerLink]="disease.route"
+      class="flex flex-col gap-3 rounded-sm px-6 py-6 transition"
+      [class]="i === 0 ? 'bg-ink-2 text-paper' : 'border border-line-2 text-ink-2 hover:border-blue-2'">
+      <span class="font-mono text-[10px] uppercase tracking-[.14em]" [class]="i === 0 ? 'text-cyan' : 'text-orange-3'">{{ disease.code }} · {{ disease.category }}</span>
+      <h3 class="font-serif text-xl font-medium leading-snug">{{ disease.name }}</h3>
+      <p class="text-sm leading-relaxed" [class]="i === 0 ? 'text-mist' : 'text-slate-2'">{{ disease.description }}</p>
+      <span class="mt-1 font-mono text-[11px] tracking-[.1em]" [class]="i === 0 ? 'text-orange-2' : 'text-blue'">LIRE LA FICHE →</span>
+    </a>
+  }
+</section>
+
+<section class="flex flex-col items-start gap-5 bg-ink px-6 py-16 lg:flex-row lg:items-center lg:justify-between lg:px-11 lg:py-18">
+  <h2 class="max-w-[28ch] font-serif text-[28px] font-medium leading-tight text-white lg:text-[34px]">Découvrir comment ces maladies rythment son quotidien.</h2>
+  <app-pill-button routerLink="/maxence/vie-quotidienne/soins-quotidiens">Son quotidien</app-pill-button>
+</section>

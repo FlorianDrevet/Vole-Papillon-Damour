@@ -1,10 +1,11 @@
-<div class="flex flex-col p-5 lg:p-0 lg:w-[85%] gap-10 lg:gap-16 ml-auto mr-auto items-center mt-3 lg:mt-16 mb-16">
-  <div class="w-fit lg:mb-10">
-    <h1 class="text-5xl lg:text-7xl text-primary-color text-center">l'Ostéoporose</h1>
-    <div class="bg-primary-color h-2 w-full hidden lg:block"></div>
-  </div>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <a routerLink="/maxence/maladies" class="font-mono text-xs tracking-[.1em] text-blue">← TOUTES LES MALADIES</a>
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-3">06 · Os</span>
+  <h1 class="max-w-[22ch] font-serif text-[34px] font-medium leading-tight text-ink-2 lg:text-[46px]">L'ostéoporose</h1>
+</section>
 
-  <app-under-section Title="Qu'est-ce que l'Ostéoporose ?">
+<div class="mx-auto flex max-w-[760px] flex-col gap-10 px-6 py-12 lg:px-11 lg:py-14">
+  <app-disease-section title="Qu'est-ce que l'ostéoporose ?">
     <p>
       L'ostéoporose est une maladie caractérisée par une fragilité excessive du squelette, due à une diminution de
       la masse osseuse et à l'altération de la microarchitecture des os. Cette condition affecte la solidité des os,
@@ -12,64 +13,66 @@
       qui résorbent les os). Si les ostéoclastes deviennent trop actifs, cela conduit à une perte de densité osseuse
       et à une fragilité accrue des os, augmentant ainsi le risque de fractures.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Causes et Facteurs de Risque"  class="w-full">
-    <ul class="list-disc ml-10">
-      <li><em>Capital Osseux Insuffisant :</em> L'ostéoporose peut être due à un capital osseux insuffisant à la fin de la croissance.</li>
-      <li><em>Perte Osseuse Exagérée :</em> Elle peut également résulter d'une perte osseuse excessive avec l'âge, souvent exacerbée par la carence en œstrogènes chez les femmes ménopausées.</li>
-      <li><em>Facteurs Génétiques, Nutritionnels et Environnementaux :</em> Divers facteurs influencent la densité osseuse, notamment les gènes, l'alimentation et l'environnement.</li>
+  <app-disease-section title="Causes et facteurs de risque">
+    <ul>
+      <li><em>Capital osseux insuffisant :</em> l'ostéoporose peut être due à un capital osseux insuffisant à la fin de la croissance.</li>
+      <li><em>Perte osseuse exagérée :</em> elle peut également résulter d'une perte osseuse excessive avec l'âge, souvent exacerbée par la carence en œstrogènes chez les femmes ménopausées.</li>
+      <li><em>Facteurs génétiques, nutritionnels et environnementaux :</em> divers facteurs influencent la densité osseuse, notamment les gènes, l'alimentation et l'environnement.</li>
     </ul>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Prévalence"  class="w-full">
-    <ul class="list-disc ml-10 ">
+  <app-disease-section title="Prévalence">
+    <ul>
       <li>L'ostéoporose est fréquente chez les femmes après la ménopause en raison de la diminution des hormones féminines (œstrogènes).</li>
-      <li>L'ostéoporose touche moins souvent les hommes et est exceptionnelle chez les enfants (sachant que Maxence l'a depuis sa naissance ...)</li>
+      <li>Elle touche moins souvent les hommes et est exceptionnelle chez les enfants — Maxence l'a depuis sa naissance.</li>
     </ul>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Complications" class="w-full">
+  <app-disease-section title="Complications">
     <p>
       Le principal risque associé à l'ostéoporose est la fracture osseuse, qui peut sérieusement affecter la qualité de vie.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Traitement de l'Ostéoporose">
-    <p>
-      Le traitement vise principalement à réduire le risque de fractures par diverses approches :
-    </p>
-
-    <ul class="mt-5 list-decimal ml-10 w-full">
+  <app-disease-section title="Traitement de l'ostéoporose">
+    <p>Le traitement vise principalement à réduire le risque de fractures par diverses approches :</p>
+    <ul>
       <li>
-        <em>Modes de Vie :</em>
-        <ul class="list-decimal ml-10 mb-10">
-          <li><em>Exercice Physique : </em> Activités comme la course à pied et la musculation sont recommandées, car elles soumettent les os à des forces de torsion importantes, favorisant ainsi leur densification.</li>
-          <li><em>Activités Moins Efficaces :</em> La natation et le cyclisme n'ont pas d'effets significatifs sur la densité osseuse.</li>
+        <em>Modes de vie :</em>
+        <ul>
+          <li><em>Exercice physique :</em> activités comme la course à pied et la musculation, car elles soumettent les os à des forces de torsion importantes, favorisant ainsi leur densification.</li>
+          <li><em>Activités moins efficaces :</em> la natation et le cyclisme n'ont pas d'effets significatifs sur la densité osseuse.</li>
         </ul>
       </li>
       <li>
         <em>Alimentation :</em>
-        <ul class="list-decimal ml-10 mb-10">
-          <li><em>Calcium et Vitamine D : </em> Un régime riche en ces éléments est impératif. Une supplémentation en calcium, surtout chez les femmes ménopausées, peut être nécessaire. La vitamine D, notamment sous forme d’analogues, est également d'une grande importance pour la santé osseuse.</li>
-          <li><em>Produits Lactés et Alcalins :</em> La consommation de fruits et légumes est encouragée pour créer un environnement corporel alcalin. Un régime riche en protéines peut augmenter l'acidité corporelle, que le calcium aide à neutraliser, ce qui peut entraîner une perte de calcium.</li>
+        <ul>
+          <li><em>Calcium et vitamine D :</em> un régime riche en ces éléments est impératif. Une supplémentation en calcium, surtout chez les femmes ménopausées, peut être nécessaire. La vitamine D est également d'une grande importance pour la santé osseuse.</li>
+          <li><em>Produits lactés et alcalins :</em> la consommation de fruits et légumes est encouragée pour créer un environnement corporel alcalin. Un régime riche en protéines peut augmenter l'acidité corporelle, que le calcium aide à neutraliser, ce qui peut entraîner une perte de calcium.</li>
         </ul>
       </li>
       <li>
         <em>Médicaments :</em>
-        <ul class="list-decimal ml-10 mb-10">
-          <li><em>Bisphosphonates, SERMs, et Ranélate de Strontium : </em>  Ces médicaments ont prouvé leur efficacité dans la prévention des fractures, bien qu'aucun n'ait démontré une supériorité décisive.</li>
-          <li><em>Parathormone Injectable :</em> Utilisée dans les cas sévères avec multiples fractures vertébrales.</li>
-          <li><em>Traitement Hormonal de la Ménopause :</em> Ce traitement, autrefois courant, est actuellement controversé en raison des risques potentiels de cancer du sein et de maladies cardiovasculaires, bien que son efficacité sur la prévention des fractures reste débattue.</li>
+        <ul>
+          <li><em>Bisphosphonates, SERMs et ranélate de strontium :</em> ces médicaments ont prouvé leur efficacité dans la prévention des fractures, bien qu'aucun n'ait démontré une supériorité décisive.</li>
+          <li><em>Parathormone injectable :</em> utilisée dans les cas sévères avec de multiples fractures vertébrales.</li>
+          <li><em>Traitement hormonal de la ménopause :</em> ce traitement, autrefois courant, est actuellement controversé en raison des risques potentiels de cancer du sein et de maladies cardiovasculaires, bien que son efficacité sur la prévention des fractures reste débattue.</li>
         </ul>
       </li>
       <li>
-        <em>Prévention des Chutes :</em>
-        <ul class="list-decimal ml-10">
-          <li><em>Sécurisation des Environnements : </em> La prévention des chutes est essentielle pour réduire le risque de fractures chez les personnes âgées.</li>
+        <em>Prévention des chutes :</em>
+        <ul>
+          <li><em>Sécurisation des environnements :</em> la prévention des chutes est essentielle pour réduire le risque de fractures chez les personnes âgées.</li>
         </ul>
       </li>
     </ul>
+  </app-disease-section>
 
-  </app-under-section>
+  <div class="flex flex-col gap-2 rounded-sm bg-paper-2 px-6 py-6">
+    <span class="font-mono text-[11px] uppercase tracking-[.14em] text-slate-3">En savoir plus</span>
+    <a href="https://www.orpha.net/consor/cgi-bin/Disease_Search.php?lng=FR" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Rechercher « ostéoporose » sur Orphanet</a>
+    <a href="https://www.filieresmaladiesrares.fr/" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Filières de santé maladies rares (France)</a>
+  </div>
 </div>

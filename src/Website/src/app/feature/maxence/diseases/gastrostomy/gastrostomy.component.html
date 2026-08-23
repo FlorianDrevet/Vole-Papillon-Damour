@@ -1,93 +1,96 @@
-<div class="flex flex-col p-5 lg:p-0 lg:w-[85%] gap-10 lg:gap-16 ml-auto mr-auto items-center mt-3 lg:mt-16 mb-16">
-  <div class="w-fit lg:mb-10">
-    <h1 class="text-5xl lg:text-7xl text-primary-color text-center">La gastrostomie</h1>
-    <div class="bg-primary-color h-2 w-full hidden lg:block"></div>
-  </div>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <a routerLink="/maxence/maladies" class="font-mono text-xs tracking-[.1em] text-blue">← TOUTES LES MALADIES</a>
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-3">03 · Nutrition</span>
+  <h1 class="max-w-[22ch] font-serif text-[34px] font-medium leading-tight text-ink-2 lg:text-[46px]">La gastrostomie</h1>
+</section>
 
-  <app-under-section Title="Qu'est-ce qu'une gastrostomie ?" class="w-full">
+<div class="mx-auto flex max-w-[760px] flex-col gap-10 px-6 py-12 lg:px-11 lg:py-14">
+  <app-disease-section title="Qu'est-ce qu'une gastrostomie ?">
     <p>
-      Courament appelée stomie, il s'agit en fait de l'abouchement d'un organe sur la peau de l'abdomen.
+      Couramment appelée stomie, il s'agit en fait de l'abouchement d'un organe sur la peau de l'abdomen.
       La gastrostomie est donc une intervention consistant à réaliser, au niveau de l'abdomen, un orifice faisant
       communiquer l'estomac avec l'extérieur. Elle nécessite une incision de la paroi abdominale. Cette intervention
-      a pour but de mettre en place une sonde qui permettra d'introduire l'alimentation directement dans l'estomac .
+      a pour but de mettre en place une sonde qui permettra d'introduire l'alimentation directement dans l'estomac.
       On parle alors de nutrition entérale.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Quels types de sonde de gastrostomie ?" class="w-full">
-    <p>
-      Deux sondes différentes peuvent être utilisées :
-    </p>
-
-    <ul class="list-disc ml-10">
-      <li>Un petit tuyau qui dépasse du ventre, appelé "sonde de gastrostomie" et qui est fermé par un bouchon.</li>
+  <app-disease-section title="Quels types de sonde de gastrostomie ?">
+    <p>Deux sondes différentes peuvent être utilisées :</p>
+    <ul>
+      <li>Un petit tuyau qui dépasse du ventre, appelé « sonde de gastrostomie » et qui est fermé par un bouchon.</li>
       <li>Un bouton, situé à ras de la peau du ventre dans lequel on connecte une tubulure au moment de l'alimentation.</li>
     </ul>
-
     <p>
       Actuellement, le bouton de gastrostomie est la solution la plus répandue. Un bouton de gastrostomie est en
-      général posé après cicatrisation de la stomie, c'est à dire deux mois (au moins) après sa réalisation. Le
-      dispositif initial utilisé est alors une sonde de gastrostomie ("le petit tuyau").
+      général posé après cicatrisation de la stomie, c'est-à-dire deux mois (au moins) après sa réalisation. Le
+      dispositif initial utilisé est alors une sonde de gastrostomie (« le petit tuyau »).
     </p>
-
     <p>
-      Il faut savoir qu'une sonde ou un bouton a une durée de vie. Un bouton ou une sonde dure à peu près 6 mois, parfois plus, parfois moins ...
-      La sonde doit être changée à l'hopital et nécessitera une anesthésie. Le bouton lui peut être changé par les parents
-      eux-même après avoir eu une petite formation.
-
-      Une sonde et plus facilement un bouton peut être perdu ou arraché. Il faut alors replacer un nouveau bouton ou une
-      sonde à urine par exemple très rapidement car l'orifice se referme très très vite ! En quelques heures !!
-
-      Le balon du bouton doit être vérifié régulièrement pour s'assurer de son volume (5 ml d'eau) plus particulièrement
-      en fin de vie. Le balon devient au contact de l'acide gastrique petit à petit poreux et peut diminuer de volume. Si
-      le balon est dégonflé, il ne jouera plus son rôle et le bouton risque de s'ôter !
+      Il faut savoir qu'une sonde ou un bouton a une durée de vie. Un bouton ou une sonde dure à peu près 6 mois, parfois plus, parfois moins.
+      La sonde doit être changée à l'hôpital et nécessitera une anesthésie. Le bouton, lui, peut être changé par les parents
+      eux-mêmes après avoir eu une petite formation.
     </p>
-  </app-under-section>
-
-  <app-under-section Title="Comment la gastrostomie est-elle réalisée ?" class="w-full">
     <p>
-      La gastrostomie est faite par:
+      Une sonde, et plus facilement un bouton, peut être perdu ou arraché. Il faut alors replacer un nouveau bouton ou une
+      sonde très rapidement car l'orifice se referme très vite ! En quelques heures !
     </p>
+    <p>
+      Le ballon du bouton doit être vérifié régulièrement pour s'assurer de son volume (5 ml d'eau), plus particulièrement
+      en fin de vie. Le ballon devient, au contact de l'acide gastrique, petit à petit poreux et peut diminuer de volume. Si
+      le ballon est dégonflé, il ne jouera plus son rôle et le bouton risque de s'ôter.
+    </p>
+  </app-disease-section>
 
-    <ul class="list-disc ml-10">
-      <li><em>Voie percutanée endoscopique :</em> ne sonde fine est passée par l'œsophage jusqu'à l'estomac et est ressortie par le ventre après avoir fait un petit orifice.</li>
-      <li><em>Acte chirurgical :</em> La partie souple de l'estomac est rapprochée de la paroi du ventre et un orifice est réalisé. Un orifice fait chirurgicalement demandera 3 mois environ pour être cicatrisé.</li>
+  <app-disease-section title="Comment la gastrostomie est-elle réalisée ?">
+    <p>La gastrostomie est faite par :</p>
+    <ul>
+      <li><em>Voie percutanée endoscopique :</em> une sonde fine est passée par l'œsophage jusqu'à l'estomac et est ressortie par le ventre après avoir fait un petit orifice.</li>
+      <li><em>Acte chirurgical :</em> la partie souple de l'estomac est rapprochée de la paroi du ventre et un orifice est réalisé. Un orifice fait chirurgicalement demandera environ 3 mois pour cicatriser.</li>
     </ul>
-
     <p>
-      Le choix du type de gastrostomie dépend de l'expérience de l'équipe qui la réalise. Quelque soit la méthode, la nutrition par la sonde peut être mise en place quelques heures après la pose.
+      Le choix du type de gastrostomie dépend de l'expérience de l'équipe qui la réalise. Quelle que soit la méthode, la nutrition par la sonde peut être mise en place quelques heures après la pose.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Comment se fait l'alimentation entérale?" class="w-full">
+  <app-disease-section title="Comment se fait l'alimentation entérale ?">
     <p>
       Les aliments sont introduits par une tubulure que l'on branche sur la sonde.
-
-      Depuis 1999, les mélanges industriels sont quasiment toujours utilisés. Le liquide nutritif est conditionné en pack ou en bouteilles stériles distribués en pharmacie ou par des associations ou organismes (ALLP, Nestlé HomeCare, ...). A chaque "repas", un pack ou une bouteille de produit nutritif est relié au bouton de gastrostomie par un système de tubulures et son contenu est injecté dans l'estomac.
-      Il est préférable d'utiliser une pompe pour administrer la nourriture (l'utilisation d'une seringue est à éviter car elle a pour inconvénient majeur de remplir rapidement l'estomac et provoquer ainisi des douleurs, nausés, diarrhé, ...). La pompe est une petite machine électrique qui instille les aliments à un débit constant. Les pompes disponibles dans le commerce sont de petits volumes et munies de batteries rechargeables ce qui permet de les utiliser quand on est à l'extérieur de la maison. L'utilisation d'une pompe permet de régler le débit des aliments (1 à 300 ml/h) et le volume de repas. Il est possible de moduler le débit selon la tolérance de l'enfant.
-
-      Il existe plusieurs types de pompes dont une livrée avec un sac type sac-à-dos, bien utile pour transporter partout. Il faudra toujours en avoir deux avec soi au cas où l'une viendrait à tomber en panne.
-
-      C'est le médecin, un gastro-entérologue de préférence, qui détermine les produits nutritionnels à utiliser. Il calculera la ration alimentaire par jour que l'enfant doit avoir (en volume et en kilojoules), puis le nombre et les horaires des repas, ainsi que la ration pour chaque repas et que le débit de la pompe. Le plus souvent, la nutrition est administrée de façon cyclique la nuit sur 12 heures, avec parfois des fractions la journée selon les besoins de l'enfant. Il est recommandé chez les nourissons de ne pas dépasser des débits de (50 ml/h environ).
     </p>
-  </app-under-section>
-
-  <app-under-section Title="Pourquoi la nourriture doit-elle passer si doucement ?" class="w-full">
     <p>
-      Après avoir été mâchés et avalés, les aliments forment un liquide nutritif qui est est normalement stocké dans l'estomac. Immédiatement, les contractions de la paroi de l'estomac cessent, la pression de l'estomac reste basse ce qui permet au liquide nutritif de stagner dans l'estomac et d'y être partiellement digéré avant de passer lentement dans l'intestin.
+      Depuis 1999, les mélanges industriels sont quasiment toujours utilisés. Le liquide nutritif est conditionné en pack ou en bouteilles stériles distribués en pharmacie ou par des associations ou organismes. À chaque « repas », un pack ou une bouteille de produit nutritif est relié au bouton de gastrostomie par un système de tubulures et son contenu est injecté dans l'estomac.
+      Il est préférable d'utiliser une pompe pour administrer la nourriture (l'utilisation d'une seringue est à éviter car elle a pour inconvénient majeur de remplir rapidement l'estomac et de provoquer ainsi des douleurs, nausées, diarrhées...). La pompe est une petite machine électrique qui instille les aliments à un débit constant. Les pompes disponibles dans le commerce sont de petit volume et munies de batteries rechargeables, ce qui permet de les utiliser à l'extérieur de la maison. L'utilisation d'une pompe permet de régler le débit des aliments (1 à 300 ml/h) et le volume du repas. Il est possible de moduler le débit selon la tolérance de l'enfant.
+    </p>
+    <p>
+      Il existe plusieurs types de pompes, dont une livrée avec un sac type sac-à-dos, bien utile pour transporter partout. Il faut toujours en avoir deux avec soi au cas où l'une viendrait à tomber en panne.
+    </p>
+    <p>
+      C'est le médecin, un gastro-entérologue de préférence, qui détermine les produits nutritionnels à utiliser. Il calcule la ration alimentaire par jour que l'enfant doit avoir (en volume et en kilojoules), puis le nombre et les horaires des repas, ainsi que la ration pour chaque repas et le débit de la pompe. Le plus souvent, la nutrition est administrée de façon cyclique la nuit sur 12 heures, avec parfois des fractions la journée selon les besoins de l'enfant. Il est recommandé chez les nourrissons de ne pas dépasser des débits d'environ 50 ml/h.
+    </p>
+  </app-disease-section>
 
-      Après une chirurgie de l'estomac, la diminution des contractions de l'estomac n'a pas toujours lieu quand il se remplit, ce qui entraîne un passage rapide du liquide nutritif de l'estomac vers l'intestin. Ces modifications de la motilité de l'estomac après une chirurgie ne semble pas encore bien expliquées. Le fait est que l'arrivée brutale d'une solution nutritive trop concentrée dans l'intestin grêle provoque un appel d'eau dans la cavité intestinale, une augmentation de la circulation sanguine de l'intestin, et par conséquent une diminution du volume du sang dans circulation générale : d'où les douleurs abdominales, la pâleur et les palpitations.
-
+  <app-disease-section title="Pourquoi la nourriture doit-elle passer si doucement ?">
+    <p>
+      Après avoir été mâchés et avalés, les aliments forment un liquide nutritif normalement stocké dans l'estomac. Immédiatement, les contractions de la paroi de l'estomac cessent, la pression de l'estomac reste basse, ce qui permet au liquide nutritif de stagner dans l'estomac et d'y être partiellement digéré avant de passer lentement dans l'intestin.
+    </p>
+    <p>
+      Après une chirurgie de l'estomac, la diminution des contractions de l'estomac n'a pas toujours lieu quand il se remplit, ce qui entraîne un passage rapide du liquide nutritif de l'estomac vers l'intestin. Ces modifications de la motilité de l'estomac après une chirurgie ne semblent pas encore bien expliquées. Le fait est que l'arrivée brutale d'une solution nutritive trop concentrée dans l'intestin grêle provoque un appel d'eau dans la cavité intestinale, une augmentation de la circulation sanguine de l'intestin, et par conséquent une diminution du volume du sang en circulation générale : d'où les douleurs abdominales, la pâleur et les palpitations.
+    </p>
+    <p>
       Comme les capacités d'absorption et de digestion de l'intestin grêle sont largement dépassées par ce remplissage trop important et rapide, la solution nutritive mal digérée est évacuée rapidement dans le reste de l'intestin. Ce passage trop rapide est à l'origine des diarrhées.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="A quoi cela sert-elle à Maxence?" class="w-full">
+  <app-disease-section title="À quoi cela sert-il à Maxence ?">
     <p>
       Son estomac a de très grosses difficultés à se vidanger seul. Le bouton de gastrostomie nous permet de le vidanger mécaniquement. De plus, depuis août 2015, on lui passe une petite quantité d'alimentation entérale afin de faire travailler un minimum
       son intestin pour empêcher une colite d'exclusion.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-
+  <div class="flex flex-col gap-2 rounded-sm bg-paper-2 px-6 py-6">
+    <span class="font-mono text-[11px] uppercase tracking-[.14em] text-slate-3">En savoir plus</span>
+    <a href="https://www.orpha.net/consor/cgi-bin/Disease_Search.php?lng=FR" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Rechercher « gastrostomie » sur Orphanet</a>
+    <a href="https://www.filieresmaladiesrares.fr/" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Filières de santé maladies rares (France)</a>
+  </div>
 </div>

@@ -1,3 +1,4 @@
+using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Configuration;
 
 const string ApiResourceName = "api";
@@ -19,10 +20,11 @@ var sqlServerPassword = builder.AddParameter(SqlServerPasswordParameterName, sec
 
 var projectDatabase = builder.AddSqlServer(SqlServerName, password: sqlServerPassword)
     .WithDataVolume()
+    .WithLifetime(ContainerLifetime.Persistent)
     .AddDatabase(ProjectDatabaseName, "vole-papillon-damour-db");
 
 var storage = builder.AddAzureStorage(StorageName)
-    .RunAsEmulator();
+    .RunAsEmulator(container => container.WithLifetime(ContainerLifetime.Persistent));
 
 var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithReference(projectDatabase)

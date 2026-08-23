@@ -1,10 +1,11 @@
-<div class="flex flex-col p-5 lg:p-0 lg:w-[85%] gap-10 lg:gap-16 ml-auto mr-auto items-center mt-3 lg:mt-16 mb-16">
-  <div class="w-fit lg:mb-10">
-    <h1 class="text-5xl lg:text-7xl text-primary-color text-center">Le syndrome de la P.O.I.C.</h1>
-    <div class="bg-primary-color h-2 w-full hidden lg:block"></div>
-  </div>
+<section class="flex flex-col gap-4 bg-paper px-6 py-14 lg:px-11 lg:py-16">
+  <a routerLink="/maxence/maladies" class="font-mono text-xs tracking-[.1em] text-blue">← TOUTES LES MALADIES</a>
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-3">02 · Digestif</span>
+  <h1 class="max-w-[22ch] font-serif text-[34px] font-medium leading-tight text-ink-2 lg:text-[46px]">Le syndrome de la P.O.I.C.</h1>
+</section>
 
-  <app-under-section Title="Qu’est-ce que la maladie de P.O.I.C ?">
+<div class="mx-auto flex max-w-[760px] flex-col gap-10 px-6 py-12 lg:px-11 lg:py-14">
+  <app-disease-section title="Qu’est-ce que la maladie de P.O.I.C ?">
     <p>
       La pseudo obstruction intestinale chronique, communément appelée P.O.I.C, est une affection rare qui affecte le
       fonctionnement normal de l'intestin. Contrairement à une obstruction physique, où une partie de l'intestin est
@@ -12,51 +13,50 @@
       de se déplacer normalement à travers le système digestif. Cette affection peut toucher différents segments de
       l'intestin, et les symptômes varient en fonction de la gravité de la maladie et de la partie de l'intestin concernée.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Est-ce une maladie courante ?">
+  <app-disease-section title="Est-ce une maladie courante ?">
     <p>
       La P.O.I.C est une condition rare, touchant environ 1 à 3 personnes sur 100 000, bien que l'incidence puisse être
       plus élevée chez ceux ayant des antécédents familiaux ou d'autres anomalies d'origine congénitale. Les
       professionnels estiment que la maladie est plus fréquente chez les femmes que chez les hommes.
     </p>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Causes de la P.O.I.C."  class="w-full">
-    <p>
-      La POIC peut être due à plusieurs facteurs :
-    </p>
-    <ul class="list-disc ml-10">
-      <li><em>Dysfonction musculaire :</em> Les muscles qui contrôlent les mouvements de l’intestin ne se contractent pas correctement.</li>
-      <li><em>Neurologiques :</em> Les nerfs qui envoient des signaux aux muscles intestinaux peuvent être affectés.</li>
-      <li><em>Maladies systémiques :</em> Certaines maladies, comme le lupus ou la myasthénie, peuvent causer ou exacerber la POIC.</li>
-      <li><em>Post-chirurgicale :</em> Dans certains cas, la POIC peut se développer après une chirurgie abdominale.</li>
-      <li><em>Facteurs Génétiques :</em> Comme pour Maxence, la POIC peut être d'origine génétique.</li>
+  <app-disease-section title="Causes de la P.O.I.C.">
+    <p>La POIC peut être due à plusieurs facteurs :</p>
+    <ul>
+      <li><em>Dysfonction musculaire :</em> les muscles qui contrôlent les mouvements de l’intestin ne se contractent pas correctement.</li>
+      <li><em>Neurologiques :</em> les nerfs qui envoient des signaux aux muscles intestinaux peuvent être affectés.</li>
+      <li><em>Maladies systémiques :</em> certaines maladies, comme le lupus ou la myasthénie, peuvent causer ou exacerber la POIC.</li>
+      <li><em>Post-chirurgicale :</em> dans certains cas, la POIC peut se développer après une chirurgie abdominale.</li>
+      <li><em>Facteurs génétiques :</em> comme pour Maxence, la POIC peut être d'origine génétique.</li>
     </ul>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Symptômes de la maladie de P.O.I.C"  class="w-full">
-    <p>
-      Les symptômes de la P.O.I.C peuvent être très variés et inclure :
-    </p>
-    <ul class="list-disc ml-10">
+  <app-disease-section title="Symptômes de la maladie de P.O.I.C">
+    <p>Les symptômes de la P.O.I.C peuvent être très variés et inclure :</p>
+    <ul>
       <li>Douleurs abdominales récurrentes</li>
       <li>Ballonnements</li>
       <li>Constipation sévère ou diarrhée</li>
       <li>Perte de poids liée à une mauvaise assimilation des nutriments</li>
       <li>Fatigue chronique</li>
     </ul>
-  </app-under-section>
+  </app-disease-section>
 
-  <app-under-section Title="Traitement de la maladie de P.O.I.C"  class="w-full">
-    <p>
-      Le traitement de la P.O.I.C est souvent multidisciplinaire et individualisé. Il peut inclure :
-    </p>
-
-    <ul class="list-disc ml-10">
-      <li><em>Gestion diététique :</em> Un régime alimentaire spécifique, riche en fibres et en liquides, peut être recommandé pour aider à faciliter le transit intestinal.</li>
-      <li><em>Médicaments :</em> Des médicaments peuvent être prescrits pour aider à réguler la motilité intestinale et à traiter des symptômes comme la douleur ou les nausées.</li>
-      <li><em>Interventions chirurgicales :</em> Dans des cas graves, une intervention chirurgicale peut être envisagée pour corriger des anomalies structurelles ou pour créer un passage alternatif pour les matières fécales.</li>
+  <app-disease-section title="Traitement de la maladie de P.O.I.C">
+    <p>Le traitement de la P.O.I.C est souvent multidisciplinaire et individualisé. Il peut inclure :</p>
+    <ul>
+      <li><em>Gestion diététique :</em> un régime alimentaire spécifique, riche en fibres et en liquides, peut être recommandé pour aider à faciliter le transit intestinal.</li>
+      <li><em>Médicaments :</em> des médicaments peuvent être prescrits pour aider à réguler la motilité intestinale et à traiter des symptômes comme la douleur ou les nausées.</li>
+      <li><em>Interventions chirurgicales :</em> dans des cas graves, une intervention chirurgicale peut être envisagée pour corriger des anomalies structurelles ou pour créer un passage alternatif pour les matières fécales.</li>
     </ul>
-  </app-under-section>
+  </app-disease-section>
+
+  <div class="flex flex-col gap-2 rounded-sm bg-paper-2 px-6 py-6">
+    <span class="font-mono text-[11px] uppercase tracking-[.14em] text-slate-3">En savoir plus</span>
+    <a href="https://www.orpha.net/consor/cgi-bin/Disease_Search.php?lng=FR" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Rechercher « P.O.I.C. » sur Orphanet</a>
+    <a href="https://www.filieresmaladiesrares.fr/" target="_blank" rel="noopener noreferrer" class="text-sm text-blue hover:underline">Filières de santé maladies rares (France)</a>
+  </div>
 </div>
