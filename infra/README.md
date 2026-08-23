@@ -10,7 +10,7 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | Ressource | Nom | Rôle |
 | --- | --- | --- |
 | Container App Environment | `vpd-cae-dev` | Héberge les trois Container Apps |
-| Container App | `vpd-api-ca-dev` | API .NET 8, port 8080 |
+| Container App | `vpd-api-ca-dev` | API .NET 10, port 8080 |
 | Container App | `vpd-web-ca-dev` | Website Angular SSR, port 8080 |
 | Container App | `vpd-bo-ca-dev` | BackOffice Angular servi par nginx, port 8080 |
 | Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` | Un par application |
@@ -47,24 +47,28 @@ done
 
 ### 2. Créer l'identité utilisée par GitHub (OIDC, sans secret)
 
+Le tenant Entra ID interdit `az ad app create` aux utilisateurs standard
+(*Insufficient privileges*). On passe donc par une identité managée
+user-assigned, qui accepte les federated credentials sans aucun droit annuaire
+et que `azure/login` traite exactement comme une app registration.
+
 ```bash
 SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-APP_ID=$(az ad app create --display-name vpd-github-deploy --query appId --output tsv)
-az ad sp create --id "$APP_ID"
-OBJECT_ID=$(az ad sp show --id "$APP_ID" --query id --output tsv)
+
+az group create -n rg-vpd-identity-dev -l westeurope
+az identity create -g rg-vpd-identity-dev -n vpd-github-deploy-id -l westeurope   --query "{clientId:clientId, principalId:principalId}" -o json
 ```
 
-Deux rôles au niveau **subscription** sont nécessaires :
+Deux rôles au niveau **subscription** sont nécessaires. `Role Based Access
+Control Administrator` est indispensable : `main.bicep` attribue lui-même
+`AcrPull` et `Key Vault Secrets User` aux identités des Container Apps.
 
 ```bash
-az role assignment create --assignee-object-id "$OBJECT_ID" \
-  --assignee-principal-type ServicePrincipal \
-  --role "Contributor" --scope "/subscriptions/$SUBSCRIPTION_ID"
+PRINCIPAL_ID=<principalId retourné ci-dessus>
 
-# Indispensable : main.bicep crée les role assignments des identités managées.
-az role assignment create --assignee-object-id "$OBJECT_ID" \
-  --assignee-principal-type ServicePrincipal \
-  --role "Role Based Access Control Administrator" --scope "/subscriptions/$SUBSCRIPTION_ID"
+az role assignment create --assignee-object-id "$PRINCIPAL_ID"   --assignee-principal-type ServicePrincipal   --role "Contributor" --scope "/subscriptions/$SUBSCRIPTION_ID"
+
+az role assignment create --assignee-object-id "$PRINCIPAL_ID"   --assignee-principal-type ServicePrincipal   --role "Role Based Access Control Administrator" --scope "/subscriptions/$SUBSCRIPTION_ID"
 ```
 
 ### 3. Déclarer la federated credential
@@ -73,12 +77,7 @@ Les quatre workflows tournent dans l'environnement GitHub `development`, donc
 le `subject` doit viser l'environnement, pas une branche :
 
 ```bash
-az ad app federated-credential create --id "$APP_ID" --parameters '{
-  "name": "github-development",
-  "issuer": "https://token.actions.githubusercontent.com",
-  "subject": "repo:<OWNER>/<REPO>:environment:development",
-  "audiences": ["api://AzureADTokenExchange"]
-}'
+az identity federated-credential create   --name github-development   --identity-name vpd-github-deploy-id   --resource-group rg-vpd-identity-dev   --issuer https://token.actions.githubusercontent.com   --subject "repo:<OWNER>/<REPO>:environment:development"   --audiences api://AzureADTokenExchange
 ```
 
 ### 4. Créer l'environnement et les secrets GitHub
@@ -87,7 +86,7 @@ Dans *Settings → Environments*, créer `development`, puis y ajouter :
 
 | Secret | Valeur |
 | --- | --- |
-| `AZURE_CLIENT_ID` | `$APP_ID` de l'étape 2 |
+| `AZURE_CLIENT_ID` | le `clientId` de l'identité managée, étape 2 |
 | `AZURE_TENANT_ID` | `az account show --query tenantId -o tsv` |
 | `AZURE_SUBSCRIPTION_ID` | `az account show --query id -o tsv` |
 | `SQL_ADMIN_LOGIN` | login administrateur SQL, par exemple `vpdadmin` |
@@ -103,6 +102,18 @@ C'est aussi l'endroit où activer une *required reviewer* si un déploiement doi
 l'échelle d'Azure. En cas de collision, changer le préfixe `vpd` dans
 `main.bicep` et répercuter les valeurs `REGISTRY_NAME` / `SQL_SERVER` des
 workflows.
+
+### 6. Vérifier la région autorisée pour Azure SQL
+
+La subscription n'a pas le droit de provisionner Azure SQL partout, et la
+restriction n'apparaît qu'à la création (`ProvisioningDisabled`) : `az provider
+show` liste des régions qui sont en fait refusées. `sqlLocation` vaut
+`francecentral`, validé sur cette subscription ; le reste de l'environnement
+est en `westeurope`. Pour tester une autre région :
+
+```bash
+az sql server create -n vpd-sql-probe-$RANDOM -g rg-vpd-identity-dev   -l <region> -u probeadmin -p "<mot-de-passe-sans-caractère-!>"
+```
 
 ## Pipelines
 
@@ -145,21 +156,18 @@ que les Container Apps la joignent, leurs IP de sortie n'étant pas fixes.
 
 ## Points à traiter côté application
 
-- `src/Backend/Vole_Papillon_Damour.Api/appsettings.json` contient une
-  connection string Application Insights réelle, commitée. La variable
-  d'environnement injectée par le Container App la surcharge, mais la clé reste
-  exposée dans l'historique git : à retirer et à régénérer.
-- Le BackOffice est du statique servi par nginx : son Application Insights est
-  créé et sa connection string exposée sur le Container App, mais aucun SDK
-  navigateur ne la consomme aujourd'hui. Idem pour le Website côté navigateur —
-  seul le process SSR peut l'utiliser.
+- Une connection string Application Insights réelle a été commitée dans
+  `src/Backend/Vole_Papillon_Damour.Api/appsettings.json`. Elle en a été
+  retirée, mais **elle reste dans l'historique git** : la clé correspondante
+  est à révoquer côté Azure.
 - L'API autorise toutes les origines (`AllowAnyOrigin`). Aucune configuration
   CORS n'est donc nécessaire pour que les fronts l'appellent, mais c'est à
   resserrer avant une mise en production.
-- `ASPNETCORE_ENVIRONMENT` vaut `Development` sur `vpd-api-ca-dev` : Swagger est
-  donc exposé et les pages d'exception détaillées sont actives. Voulu pour un
-  environnement de dev ; à basculer sur `Production` pour un environnement
-  ouvert au public.
+- Le Website et le BackOffice envoient leur télémétrie navigateur via
+  `@microsoft/applicationinsights-web`, initialisé dans `main.ts`. La
+  connection string est figée dans le bundle au build de l'image, comme
+  l'`api_url` : une image construite hors pipeline n'envoie rien, plutôt que
+  d'échouer.
 
 ## Travailler en local
 
