@@ -38,7 +38,7 @@
             <span class="h-px bg-cyan/[.28]"></span>
             <strong class="text-base font-semibold">{{ event.name }}</strong>
             <span class="text-[13px] leading-snug text-mist">{{ event.city }} · {{ event.hourOpenDoors | date:'HH:mm' }}</span>
-            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-orange-2">RÉSERVER →</span>
+            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-orange-2">DÉTAILS →</span>
           </a>
         }
         @if (balCard(); as event) {
@@ -47,7 +47,7 @@
             class="mt-4 flex animate-vpd-float flex-col gap-2.5 rounded border border-line bg-white px-6 py-6 shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)] hover:[animation-play-state:paused]"
             [style.--r]="'1.1deg'"
             [style.animation-duration.s]="7.6"
-            [style.animation-delay.s]="0.7">
+            [style.animation-delay.s]="-0.7">
             <span class="flex items-baseline justify-between">
               <span class="font-serif text-[40px] leading-[.9] text-ink-2">{{ event.dateStart | date:'dd' }}</span>
               <span class="font-mono text-[11px] uppercase tracking-[.14em] text-blue">{{ event.dateStart | date:'MMM' }}</span>

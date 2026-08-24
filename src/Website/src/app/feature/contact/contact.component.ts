@@ -9,7 +9,7 @@ import { Component, inject, PLATFORM_ID, signal } from '@angular/core';
 export class ContactComponent {
   private readonly platformId = inject(PLATFORM_ID);
 
-  readonly reasons = ['Un dépôt de livres', 'Une demande d’aide', 'Le bénévolat', 'Une réservation', 'La presse', 'Autre'];
+  readonly reasons = ['Un dépôt de livres', 'Une demande d’aide', 'Le bénévolat', 'La presse', 'Autre'];
 
   reason = signal(this.reasons[0]);
   consent = signal(false);

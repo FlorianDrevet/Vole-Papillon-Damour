@@ -33,8 +33,13 @@ export class VpdEventSections implements OnInit {
     return 8.2 + index * 0.4;
   }
 
+  /**
+   * Décalage appliqué en délai *négatif* : l'animation démarre déjà en cours, donc la
+   * carte est inclinée et flotte dès la première frame. Avec un délai positif elle
+   * resterait droite et immobile avant de basculer d'un coup sur son inclinaison.
+   */
   protected otherDelayS(index: number): number {
-    return 1.4 + index * 0.6;
+    return -(1.4 + index * 0.6);
   }
 
   ngOnInit(): void {

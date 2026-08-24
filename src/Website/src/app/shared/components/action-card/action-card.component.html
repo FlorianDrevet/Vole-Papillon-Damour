@@ -2,7 +2,7 @@
   class="flex h-full flex-col gap-3.5 rounded-sm shadow-[0_30px_50px_-34px_rgba(7,43,69,0.7)] animate-vpd-float hover:[animation-play-state:paused]"
   [class]="tone() === 'dark' ? 'bg-ink-2 px-6 py-6 text-paper' : 'bg-white p-3 pb-5'"
   [style.--r]="rotateDeg() + 'deg'"
-  [style.animation-delay.s]="floatDelayS()">
+  [style.animation-delay.s]="floatOffsetS()">
   @if (photoLabel()) {
     <app-photo-placeholder [label]="photoLabel()!" class="h-[220px] rounded-sm"></app-photo-placeholder>
   }

@@ -9,8 +9,6 @@ import { SITE_NAV_ITEMS, getActiveNavUrl, getBreadcrumb, SiteNavItem } from './n
 })
 export class NavigationComponent implements OnInit {
   readonly navItems: SiteNavItem[] = SITE_NAV_ITEMS;
-  // TODO association : remplacer par le texte du prochain évènement réel (ou brancher sur les données d'évènements).
-  readonly announce = "Suivez nos prochains évènements solidaires";
 
   url = signal<string>('');
   activeUrl = signal<string | null>(null);

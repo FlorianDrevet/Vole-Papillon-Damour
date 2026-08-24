@@ -4,7 +4,7 @@
     ? 'bg-ink-2 text-paper px-6 py-6'
     : 'bg-white border border-line px-6 py-6'"
   [style.--r]="rotateDeg() + 'deg'"
-  [style.animation-delay.s]="floatDelayS()"
+  [style.animation-delay.s]="floatOffsetS()"
   [style.animation-duration.s]="floatDurationS()">
   <span class="font-serif text-4xl leading-none" [class]="tone() === 'dark' ? 'text-white' : 'text-ink-2'">{{ value() }}</span>
   <span class="h-px" [class]="tone() === 'dark' ? 'bg-cyan/25' : 'bg-line-2'"></span>
