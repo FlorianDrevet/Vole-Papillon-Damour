@@ -3,6 +3,8 @@ export interface SiteNavItem {
   label: string;
   /** Accroche affichée sous le libellé dans le sous-menu desktop. */
   hint?: string;
+  /** Préfixe d'URL qui surligne l'entrée, quand `url` pointe une page parmi plusieurs. */
+  matchPrefix?: string;
   /** Sous-rubriques : dépliées au survol sur desktop, listées sous le parent sur mobile. */
   children?: SiteNavItem[];
 }
@@ -22,7 +24,22 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
       { url: '/association/photos', label: 'Galerie photos', hint: 'Les foires, le loto, le marché de Noël' },
     ],
   },
-  { url: '/maxence', label: 'Maxence' },
+  {
+    url: '/maxence',
+    label: 'Maxence',
+    // Reprend les trois onglets de l'ancienne barre `app-maxence-subnav`,
+    // supprimée au profit de ce sous-menu.
+    children: [
+      { url: '/maxence/histoire', label: 'Son histoire', hint: 'La chronologie, année par année' },
+      { url: '/maxence/maladies', label: 'Ses maladies', hint: 'Les pathologies expliquées simplement' },
+      {
+        url: '/maxence/vie-quotidienne/soins-quotidiens',
+        label: 'Son quotidien, ses combats',
+        hint: "Les soins, l'école, la greffe",
+        matchPrefix: '/maxence/vie-quotidienne',
+      },
+    ],
+  },
   { url: '/nos-actions', label: 'Nos actions' },
   { url: '/evenement', label: 'Évènements' },
   { url: '/toute-l-actualite', label: 'Actualités' },

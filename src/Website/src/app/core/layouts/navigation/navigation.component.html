@@ -19,10 +19,11 @@
           @if (item.children) {
             <!-- Sous-menu 100 % CSS (group-hover + group-focus-within) : pas d'état à
                  hydrater, et `invisible` sort les liens repliés de l'ordre de tabulation. -->
-            <div class="group relative">
+            <div class="group relative" (mouseenter)="releaseMenu(item.url)" (focusin)="releaseMenu(item.url)">
               <a
                 [routerLink]="item.url"
                 aria-haspopup="true"
+                (click)="closeMenu(item.url)"
                 class="flex items-center gap-1.5 border-b-2 pb-[3px]"
                 [class]="activeUrl() === item.url
                   ? 'border-orange font-semibold text-ink-2'
@@ -36,6 +37,7 @@
               </a>
 
               <div
+                [hidden]="isMenuSuppressed(item.url)"
                 class="invisible absolute left-1/2 top-full z-50 -translate-x-1/2 translate-y-1 pt-3 opacity-0 transition-[opacity,transform] duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                 <div class="w-[302px] overflow-hidden rounded-sm border border-line bg-white shadow-[0_22px_44px_-24px_rgba(7,43,69,.45)]">
                   <span class="block h-[3px] w-full bg-vpd-brand" aria-hidden="true"></span>
@@ -44,11 +46,12 @@
                       <li>
                         <a
                           [routerLink]="child.url"
+                          (click)="closeMenu(item.url)"
                           class="flex flex-col gap-0.5 px-5 py-3 transition-colors hover:bg-paper-2"
-                          [class.bg-paper]="isChildActive(child.url)">
+                          [class.bg-paper]="isChildActive(child)">
                           <span
                             class="text-[14px] leading-snug"
-                            [class]="isChildActive(child.url) ? 'font-semibold text-blue' : 'font-medium text-ink-2'">{{ child.label }}</span>
+                            [class]="isChildActive(child) ? 'font-semibold text-blue' : 'font-medium text-ink-2'">{{ child.label }}</span>
                           @if (child.hint) {
                             <span class="text-[12px] leading-snug text-slate-3">{{ child.hint }}</span>
                           }

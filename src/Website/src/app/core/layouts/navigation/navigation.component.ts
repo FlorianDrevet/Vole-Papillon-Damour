@@ -28,8 +28,29 @@ export class NavigationComponent implements OnInit {
     });
   }
 
+  /**
+   * Sous-menu neutralisé après un clic : le lien cliqué garde le focus, donc
+   * `group-focus-within` (et le survol résiduel) laisseraient le panneau ouvert
+   * après la navigation. La neutralisation est levée dès qu'on revient sur la rubrique.
+   */
+  private readonly suppressedMenu = signal<string | null>(null);
+
+  isMenuSuppressed(itemUrl: string): boolean {
+    return this.suppressedMenu() === itemUrl;
+  }
+
+  closeMenu(itemUrl: string): void {
+    this.suppressedMenu.set(itemUrl);
+  }
+
+  releaseMenu(itemUrl: string): void {
+    if (this.suppressedMenu() === itemUrl) {
+      this.suppressedMenu.set(null);
+    }
+  }
+
   /** Surligne la sous-rubrique courante dans le sous-menu déplié. */
-  isChildActive(childUrl: string): boolean {
-    return this.url().startsWith(childUrl);
+  isChildActive(child: SiteNavItem): boolean {
+    return this.url().startsWith(child.matchPrefix ?? child.url);
   }
 }

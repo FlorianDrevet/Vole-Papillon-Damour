@@ -56,7 +56,7 @@
                     [routerLink]="child.url"
                     (click)="close()"
                     class="block py-1.5 text-[15px]"
-                    [class]="isChildActive(child.url) ? 'font-semibold text-orange-2' : 'text-mist-2'">{{ child.label }}</a>
+                    [class]="isChildActive(child) ? 'font-semibold text-orange-2' : 'text-mist-2'">{{ child.label }}</a>
                 </li>
               }
             </ul>

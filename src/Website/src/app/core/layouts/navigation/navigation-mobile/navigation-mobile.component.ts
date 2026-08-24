@@ -37,7 +37,7 @@ export class NavigationMobileComponent {
   }
 
   /** Surligne la sous-rubrique courante dans la liste dépliée sous son parent. */
-  isChildActive(childUrl: string): boolean {
-    return this.currentUrl().startsWith(childUrl);
+  isChildActive(child: SiteNavItem): boolean {
+    return this.currentUrl().startsWith(child.matchPrefix ?? child.url);
   }
 }
