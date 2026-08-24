@@ -4,7 +4,7 @@
       <ul class="flex items-center gap-16" aria-hidden="{{ group === 1 }}">
         @for (p of partners; track p.url) {
           <li>
-            <a [href]="p.url" target="_blank" rel="noopener noreferrer" class="flex h-16 w-32 items-center justify-center opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0">
+            <a [href]="p.url" target="_blank" rel="noopener noreferrer" class="flex h-16 w-32 items-center justify-center opacity-90 transition hover:opacity-100">
               <img [src]="p.logo" [alt]="p.alt" class="max-h-14 max-w-full object-contain">
             </a>
           </li>
