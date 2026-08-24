@@ -51,6 +51,14 @@ $custom-theme: mat.define-theme((
     height: 100%;
   }
 
+  // Filet de sécurité : iOS Safari autorise un dézoom élastique sous l'échelle 1
+  // malgré `minimum-scale=1` (voir index.html). La zone révélée hors viewport
+  // peint le fond de `html`, pas celui de `body` : sans ça elle reste blanche et
+  // la page paraît décalée à gauche.
+  html {
+    @apply bg-paper;
+  }
+
   body {
     @apply m-0 p-0 flex flex-col bg-paper text-ink-2 font-sans;
     scroll-behavior: smooth;

@@ -45,7 +45,7 @@
 
   <!-- Bande d'années : sous lg, où la frise complète mangerait tout l'écran -->
   <nav class="-mx-6 lg:hidden" aria-label="Chapitres du récit">
-    <ul class="flex snap-x gap-2 overflow-x-auto px-6 pb-2">
+    <ul class="flex snap-x scroll-px-6 gap-2 overflow-x-auto px-6 pb-2">
       @for (chapter of reader.chapters; track chapter.year; let i = $index) {
         <li class="snap-start">
           <button
