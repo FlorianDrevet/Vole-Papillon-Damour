@@ -1,15 +1,18 @@
 <div
-  class="flex flex-col gap-2.5 rounded shadow-[0_26px_44px_-30px_rgba(7,43,69,0.6)] animate-vpd-float hover:[animation-play-state:paused]"
+  class="flex flex-col gap-2 rounded shadow-[0_26px_44px_-30px_rgba(7,43,69,0.6)] animate-vpd-float hover:[animation-play-state:paused]"
   [class]="tone() === 'dark'
-    ? 'bg-ink-2 text-paper px-6 py-6'
-    : 'bg-white border border-line px-6 py-6'"
+    ? 'bg-ink-2 text-paper px-6 py-[26px]'
+    : 'bg-white border border-line px-6 py-[26px]'"
   [style.--r]="rotateDeg() + 'deg'"
   [style.animation-delay.s]="floatOffsetS()"
   [style.animation-duration.s]="floatDurationS()">
-  <span class="font-serif text-4xl leading-none" [class]="tone() === 'dark' ? 'text-white' : 'text-ink-2'">{{ value() }}</span>
-  <span class="h-px" [class]="tone() === 'dark' ? 'bg-cyan/25' : 'bg-line-2'"></span>
-  <strong class="text-base font-semibold">{{ label() }}</strong>
+  <span class="font-serif text-[38px] leading-[.9] lg:text-[46px]" [class]="tone() === 'dark' ? 'text-white' : 'text-ink-2'">
+    {{ value() }}@if (unit()) {<span class="text-[26px]">&nbsp;{{ unit() }}</span>}
+  </span>
+  <span
+    class="font-mono text-[10.5px] uppercase tracking-[.14em]"
+    [class]="tone() === 'dark' ? 'text-orange-2' : 'text-orange-3'">{{ label() }}</span>
   @if (description()) {
-    <span class="text-[13px] leading-snug" [class]="tone() === 'dark' ? 'text-mist' : 'text-slate-2'">{{ description() }}</span>
+    <span class="text-[13.5px] leading-snug" [class]="tone() === 'dark' ? 'text-mist' : 'text-slate-2'">{{ description() }}</span>
   }
 </div>

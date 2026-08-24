@@ -1,44 +1,158 @@
-<section class="flex flex-col gap-4 bg-paper px-shell py-14 lg:py-16">
-  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Évènements · toute la saison</span>
-  <h1 class="font-serif text-[36px] font-medium text-ink-2 lg:text-[50px]">Venez nous voir.</h1>
+<!-- Ligne du bandeau "prochaines dates" du hero, instanciée pour le loto puis pour la
+     bourse aux livres : même mise en forme, seuls le label et la teinte changent. -->
+<ng-template #nextDateRow let-event="event" let-label="label" let-accentClass="accentClass" let-fallback="fallback">
+  @if (event) {
+    <a [routerLink]="['/evenement', event.id]" class="flex items-center justify-between gap-4 py-3.5">
+      <span class="flex flex-col gap-1">
+        <span class="font-mono text-[10px] uppercase tracking-[.16em]" [ngClass]="accentClass">{{ label }}</span>
+        <strong class="text-[15px] font-semibold text-ink-2 first-letter:uppercase">
+          @if (event.dateEnd) {
+            Du {{ event.dateStart | date:'d MMMM' }} au {{ event.dateEnd | date:'d MMMM yyyy' }}
+          } @else {
+            {{ event.dateStart | date:'EEEE d MMMM yyyy' }}
+          }
+        </strong>
+        <span class="text-[13px] text-slate-3">
+          {{ event.city }}@if (event.hourOpenDoors) { · ouverture à {{ event.hourOpenDoors | date:'HH:mm':'UTC' }}}
+        </span>
+      </span>
+      <span class="font-mono text-[11px] tracking-[.12em] text-blue">→</span>
+    </a>
+  } @else {
+    <span class="flex flex-col gap-1 py-3.5">
+      <span class="font-mono text-[10px] uppercase tracking-[.16em]" [ngClass]="accentClass">{{ label }}</span>
+      <strong class="text-[15px] font-semibold text-slate-2">{{ fallback }}</strong>
+    </span>
+  }
+</ng-template>
+
+<section class="grid grid-cols-1 items-end gap-9 bg-paper px-shell py-14 lg:grid-cols-[1fr_400px] lg:gap-14 lg:py-[70px]">
+  <div class="flex flex-col gap-6">
+    <app-section-eyebrow label="Évènements · toute la saison">
+      <h1 class="max-w-[14ch] font-serif text-[38px] font-medium leading-[1.02] tracking-[-.02em] text-ink-2 lg:text-[56px]">
+        Venez nous voir.
+      </h1>
+    </app-section-eyebrow>
+    <p class="max-w-[50ch] text-[16px] leading-relaxed text-slate-2">
+      Deux grands rendez-vous rythment notre année - le loto et la bourse aux livres - et
+      quelques autres dates au fil des saisons. À chaque fois, la même chose : on remplit une
+      salle, et ce qu'elle rapporte part directement dans l'aide aux enfants.
+    </p>
+  </div>
+
+  <!-- Les deux prochaines dates sont visibles dès le haut de page, sans avoir à faire défiler. -->
+  <div class="flex flex-col divide-y divide-line rounded-lg border border-line bg-white px-6 py-3 shadow-[0_24px_46px_-38px_rgba(7,43,69,0.6)]">
+    <ng-container
+      [ngTemplateOutlet]="nextDateRow"
+      [ngTemplateOutletContext]="{
+        event: nextBingo(),
+        label: 'Prochain loto',
+        accentClass: 'text-orange-3',
+        fallback: isLoading() ? 'Chargement...' : 'Date bientôt annoncée'
+      }"></ng-container>
+    <ng-container
+      [ngTemplateOutlet]="nextDateRow"
+      [ngTemplateOutletContext]="{
+        event: nextBooks(),
+        label: 'Prochaine bourse aux livres',
+        accentClass: 'text-blue',
+        fallback: isLoading() ? 'Chargement...' : 'Date bientôt annoncée'
+      }"></ng-container>
+  </div>
 </section>
 
-<section class="flex flex-col gap-10 bg-paper px-shell pb-16 lg:pb-20">
-  @if (nextBingo(); as loto) {
-    <app-special-event
-      Title="Loto solidaire"
-      [Date]="loto.dateStart"
-      [IdEvent]="loto.id"
-      [UrlImage]="loto.urlImage || 'images/loto.png'">
-      Le loto est un rendez-vous convivial ouvert à tous, autour de nombreux lots offerts par nos partenaires.
-    </app-special-event>
-  }
+<!-- Les deux piliers : photos et description permanentes, date de la prochaine édition. -->
+<section class="grid grid-cols-1 gap-6 bg-paper px-shell pb-16 lg:grid-cols-2 lg:gap-7 lg:pb-20">
+  <app-special-event
+    Kicker="01 · Le loto"
+    Title="Le grand loto"
+    Accent="orange"
+    [Photos]="lotoPhotos"
+    [Highlights]="lotoHighlights"
+    [NextEvent]="nextBingo()"
+    [UpcomingCount]="bingoCount()">
+    Une salle pleine, un tableau lumineux, des cartons sur toutes les tables : le loto est notre
+    plus gros rendez-vous de l'année. Une après-midi conviviale, ouverte à tous, autour de
+    nombreux lots offerts par nos partenaires.
+  </app-special-event>
 
-  @if (nextBooks(); as livres) {
-    <app-special-event
-      Title="Foire aux livres"
-      [Date]="livres.dateStart"
-      [DateEnd]="livres.dateEnd"
-      [IdEvent]="livres.id"
-      [UrlImage]="livres.urlImage || 'images/Association/don-livre.jpg'">
-      Plusieurs jours durant lesquels nos bénévoles proposent des milliers d'ouvrages triés, à petit prix.
-    </app-special-event>
-  }
+  <app-special-event
+    Kicker="02 · La bourse aux livres"
+    Title="La bourse aux livres"
+    Accent="blue"
+    [Photos]="booksPhotos"
+    [Highlights]="booksHighlights"
+    [NextEvent]="nextBooks()"
+    [UpcomingCount]="booksCount()">
+    Toute l'année, vous nous déposez vos livres ; nos bénévoles les trient, les rangent par
+    catégories et les remettent en vente le temps de quelques jours. Des milliers d'ouvrages à
+    petits prix, et de quoi financer ce que personne d'autre ne prend en charge.
+  </app-special-event>
 </section>
 
-@if (nextOthers().length) {
-  <section class="flex flex-col gap-6 bg-white px-shell py-14 lg:py-16">
-    <div class="flex items-baseline justify-between gap-4 border-b border-line-2 pb-3">
-      <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-[32px]">Les autres évènements</h2>
-      <a routerLink="/evenement/all" class="whitespace-nowrap font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
-    </div>
-    <div class="flex flex-col">
-      @for (vpdEvent of nextOthers(); track vpdEvent.id) {
-        <app-event-card [VpdEvent]="vpdEvent"></app-event-card>
+<section class="flex flex-col gap-8 bg-white px-shell py-14 lg:py-[70px]">
+  <div class="flex flex-col items-start justify-between gap-4 border-b border-line-2 pb-4 lg:flex-row lg:items-end">
+    <app-section-eyebrow label="Le reste de l'agenda" orientation="left">
+      <h2 class="font-serif text-[26px] font-medium leading-none text-ink-2 lg:text-[34px]">Les autres rendez-vous.</h2>
+    </app-section-eyebrow>
+    <a routerLink="/evenement/all" class="whitespace-nowrap font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
+  </div>
+
+  @if (otherEvents().length) {
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      @for (event of otherEvents(); track event.id) {
+        <a
+          [routerLink]="['/evenement', event.id]"
+          class="flex flex-col overflow-hidden rounded-lg border border-line bg-white shadow-[0_22px_40px_-36px_rgba(7,43,69,0.6)] hover:border-blue-2">
+          <span class="relative block h-36 overflow-hidden bg-vpd-hero">
+            @if (event.urlImage) {
+              <img
+                [src]="event.urlImage"
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+                class="h-full w-full object-cover">
+            } @else {
+              <img
+                ngSrc="images/papillon_without_back.png"
+                alt=""
+                aria-hidden="true"
+                width="180"
+                height="180"
+                class="absolute -bottom-6 -right-4 w-[180px] opacity-[.22]">
+            }
+            <span class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent"></span>
+            <span class="absolute bottom-3.5 left-5 flex items-baseline gap-2 text-white">
+              <span class="font-serif text-[34px] leading-none">{{ event.dateStart | date:'dd' }}</span>
+              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-2">{{ event.dateStart | date:'MMM yyyy' }}</span>
+            </span>
+          </span>
+
+          <span class="flex flex-1 flex-col gap-2 px-6 py-5">
+            <strong class="text-base font-semibold leading-snug text-ink-2">{{ event.name }}</strong>
+            <span class="text-[13px] text-slate-2">
+              {{ event.city }}@if (event.hourOpenDoors) { · ouverture à {{ event.hourOpenDoors | date:'HH:mm':'UTC' }}}
+            </span>
+            @if (event.description) {
+              <span class="line-clamp-2 text-[13px] leading-relaxed text-slate-3">{{ event.description }}</span>
+            }
+            <span class="mt-auto pt-3 font-mono text-[11px] tracking-[.12em] text-blue">DÉTAILS →</span>
+          </span>
+        </a>
       }
     </div>
-  </section>
-}
+  } @else if (!isLoading()) {
+    <div class="flex flex-col items-start gap-3 rounded-lg border border-dashed border-line bg-paper px-7 py-9">
+      <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Rien d'autre pour l'instant</span>
+      <p class="max-w-[46ch] text-[15px] leading-relaxed text-slate-2">
+        En dehors du loto et de la bourse aux livres, aucun autre rendez-vous n'est programmé
+        à ce jour. Les nouvelles dates apparaissent ici dès qu'elles sont fixées.
+      </p>
+      <a routerLink="/evenement/all" class="font-mono text-[11px] tracking-[.12em] text-blue">VOIR TOUT L'AGENDA →</a>
+    </div>
+  }
+</section>
 
 <section class="grid grid-cols-1 items-center gap-8 bg-ink px-shell py-14 text-mist-2 lg:grid-cols-[1fr_440px] lg:py-16">
   <div class="flex flex-col gap-3">
