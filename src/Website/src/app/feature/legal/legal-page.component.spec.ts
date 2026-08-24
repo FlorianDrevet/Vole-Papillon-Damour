@@ -34,7 +34,9 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('Mentions légales');
     expect(content).toContain("Vole Papillon d'Amour");
     expect(content).toContain('volepapillondamour@sfr.fr');
-    expect(content).toContain('[A COMPLETER - responsable de publication]');
+    expect(content).toContain('W421002487');
+    expect(content).toContain('Corinne Drevet');
+    expect(content).toContain('Render Services, Inc.');
   });
 
   it('should mention Microsoft Clarity on the cookies page', async () => {

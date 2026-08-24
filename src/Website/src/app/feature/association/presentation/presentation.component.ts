@@ -7,18 +7,23 @@ import { Component } from '@angular/core';
 })
 export class PresentationComponent {
   /**
-   * Bureau élu en assemblée générale. La maquette 7a montre quatre portraits
-   * nommés ; les noms réels n'ayant pas encore été communiqués, on conserve la
-   * mise en page définitive avec des emplacements de substitution.
+   * Bureau élu en assemblée générale. Seule la présidente est une donnée publique
+   * (annuaire des associations de la mairie de Saint-Just-Saint-Rambert) ; les trois
+   * autres postes restent en substitution tant que les noms ne sont pas communiqués.
    */
   readonly board = [
-    { name: 'Nom à compléter', role: 'Présidente · maman de Maxence' },
+    { name: 'Corinne Drevet', role: 'Présidente · maman de Maxence' },
     { name: 'Nom à compléter', role: 'Trésorier · papa de Maxence' },
     { name: 'Nom à compléter', role: 'Secrétaire' },
     { name: 'Nom à compléter', role: 'Foire aux livres' },
   ];
 
-  /** `meta` porte le poids du PDF une fois le document déposé (cf. maquette : « PDF · 180 Ko »). */
+  /**
+   * `meta` porte le poids du PDF une fois le document déposé (cf. maquette : « PDF · 180 Ko »).
+   * Les statuts et le récépissé ne sont pas publiés en ligne : il faut les obtenir auprès de
+   * l'association ou de la sous-préfecture de Montbrison (déclaration du 15 février 2010,
+   * RNA W421002487) avant de pouvoir les mettre en téléchargement ici.
+   */
   readonly documents = [
     { label: 'Statuts de l’association', meta: 'Document à ajouter' },
     { label: 'Rapport d’activité 2024', meta: 'Document à ajouter' },

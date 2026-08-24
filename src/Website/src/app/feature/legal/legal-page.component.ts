@@ -5,17 +5,23 @@ import { LEGAL_PAGE_PATHS } from './legal-page-paths';
 
 const ASSOCIATION_NAME = "Vole Papillon d'Amour";
 const CONTACT_EMAIL = 'volepapillondamour@sfr.fr';
+// Adresse de correspondance et d'activite reelle de l'association. Le siege declare au RNA
+// pointe encore sur 89 rue du Pere Sambardier : une declaration de changement de siege reste
+// a deposer en sous-prefecture de Montbrison pour aligner le registre sur cette adresse.
 const POSTAL_ADDRESS = '46 route de Saint Marcellin, 42170 Saint-Just-Saint-Rambert, France';
 const PUBLIC_WEBSITE_URL = 'https://volepapillondamour.fr';
 const HOSTING_PROVIDER_NAME = 'Render';
 const HOSTING_PROVIDER_URL = 'https://render.com';
 const CLARITY_TAG_ID = 'nwy66l4uol';
 const LAST_UPDATED_LABEL = '18 mai 2026';
-const RESPONSABLE_PUBLICATION_PLACEHOLDER = '[A COMPLETER - responsable de publication]';
-const RNA_PLACEHOLDER = '[A COMPLETER - numéro RNA de l\'association]';
-const SIREN_PLACEHOLDER = '[A COMPLETER - numéro SIREN ou SIRET de l\'association]';
-const PHONE_PLACEHOLDER = '[A COMPLETER - numéro de téléphone public si vous souhaitez le diffuser]';
-const HOSTING_POSTAL_ADDRESS_PLACEHOLDER = '[A COMPLETER - adresse postale complète de l\'hébergeur Render]';
+const DECLARED_NAME = 'VOLE, PAPILLON D\'AMOUR';
+const RNA_NUMBER = 'W421002487';
+const DECLARATION_LABEL = 'déclarée le 15 février 2010 à la sous-préfecture de Montbrison et publiée au Journal officiel des associations du 6 mars 2010';
+/** Aucune immatriculation n'a jamais été demandée : l'API Sirene ne renvoie aucun SIREN pour ce RNA. */
+const SIREN_STATEMENT = 'l\'association n\'est pas immatriculée au répertoire Sirene et ne dispose donc ni de numéro SIREN ni de numéro SIRET';
+const PHONE = '06 10 83 52 93';
+const RESPONSABLE_PUBLICATION = 'Corinne Drevet, présidente de l\'association';
+const HOSTING_POSTAL_ADDRESS = 'Render Services, Inc., 525 Brannan Street, Suite 300, San Francisco, CA 94107, États-Unis';
 const RETENTION_PLACEHOLDER = '[A COMPLETER - durées de conservation applicables selon vos pratiques]';
 const TRANSFER_PLACEHOLDER = '[A COMPLETER - garanties et lieux exacts des éventuels transferts hors Union européenne]';
 const ACCESSIBILITY_LIMITATIONS_PLACEHOLDER = '[A COMPLETER - limitations d\'accessibilité actuellement identifiées]';
@@ -41,29 +47,30 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
   [LEGAL_PAGE_PATHS.mentionsLegales]: {
     title: 'Mentions légales',
     eyebrow: 'Informations légales',
-    intro: 'Cette page présente les informations publiques actuellement disponibles pour le site de l\'association et signale clairement les éléments qui restent à compléter.',
+    intro: 'Cette page présente les informations légales du site de l\'association : identité de l\'éditeur, responsable de publication, hébergeur et conditions d\'utilisation des contenus.',
     sections: [
       {
         title: 'Éditeur du site',
         paragraphs: [
           `Le site public ${PUBLIC_WEBSITE_URL} est édité pour l'association ${ASSOCIATION_NAME}.`,
-          'Les informations ci-dessous doivent être relues et validées par le bureau de l\'association avant publication définitive.'
+          'Les éléments d\'identification ci-dessous proviennent de la déclaration de l\'association au Répertoire national des associations (RNA).'
         ],
         bullets: [
-          `Nom de l'association : ${ASSOCIATION_NAME}`,
+          `Nom de l'association : ${ASSOCIATION_NAME} (dénomination déclarée : « ${DECLARED_NAME} »)`,
+          `Forme juridique : association loi 1901 à but non lucratif, ${DECLARATION_LABEL}`,
+          `Numéro RNA : ${RNA_NUMBER}`,
           `Adresse postale : ${POSTAL_ADDRESS}`,
           `Adresse email : ${CONTACT_EMAIL}`,
-          `Téléphone : ${PHONE_PLACEHOLDER}`,
-          `Numéro RNA : ${RNA_PLACEHOLDER}`,
-          `Numéro SIREN / SIRET : ${SIREN_PLACEHOLDER}`,
+          `Téléphone : ${PHONE}`,
+          `Immatriculation : ${SIREN_STATEMENT}`,
           'Crédits de réalisation : Florian Drevet'
         ]
       },
       {
         title: 'Directeur ou responsable de publication',
         paragraphs: [
-          `Le directeur ou la directrice de publication à mentionner est : ${RESPONSABLE_PUBLICATION_PLACEHOLDER}.`,
-          'Cette personne doit être identifiée nominativement pour que la page soit complète.'
+          `La directrice de publication du site est ${RESPONSABLE_PUBLICATION}.`,
+          `Toute demande relative au contenu éditorial du site peut lui être adressée à ${CONTACT_EMAIL} ou au ${PHONE}.`
         ]
       },
       {
@@ -75,7 +82,7 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
         bullets: [
           `Hébergeur : ${HOSTING_PROVIDER_NAME}`,
           `Site web de l'hébergeur : ${HOSTING_PROVIDER_URL}`,
-          `Adresse postale de l'hébergeur : ${HOSTING_POSTAL_ADDRESS_PLACEHOLDER}`
+          `Adresse postale de l'hébergeur : ${HOSTING_POSTAL_ADDRESS}`
         ]
       },
       {
@@ -95,7 +102,7 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
       {
         title: 'Contact',
         paragraphs: [
-          `Pour toute question au sujet du site ou de son contenu, vous pouvez écrire à ${CONTACT_EMAIL} ou adresser un courrier à ${POSTAL_ADDRESS}.`,
+          `Pour toute question au sujet du site ou de son contenu, vous pouvez écrire à ${CONTACT_EMAIL}, appeler le ${PHONE} ou adresser un courrier à ${POSTAL_ADDRESS}.`,
           'Si vous nous contactez pour exercer un droit lié à vos données personnelles, indiquez clairement l\'objet de votre demande pour faciliter son traitement.'
         ]
       }
