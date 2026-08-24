@@ -1,5 +1,5 @@
-<div class="flex items-center gap-4">
+<div class="flex w-full max-w-full items-center gap-2 sm:gap-4">
   <button type="button" (click)="previous()" aria-label="Photo précédente" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-2 text-lg text-slate-2 hover:border-blue-2">‹</button>
-  <img [src]="pictureList()[currentPicture()]" alt="" class="h-64 w-full max-w-[380px] rounded-sm object-cover sm:h-80">
+  <img [src]="pictureList()[currentPicture()]" alt="" class="h-64 min-w-0 max-w-[380px] flex-1 rounded-sm object-cover sm:h-80">
   <button type="button" (click)="next()" aria-label="Photo suivante" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-2 text-lg text-slate-2 hover:border-blue-2">›</button>
 </div>
