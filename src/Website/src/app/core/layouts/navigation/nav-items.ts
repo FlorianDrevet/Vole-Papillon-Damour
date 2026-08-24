@@ -1,12 +1,27 @@
 export interface SiteNavItem {
   url: string;
   label: string;
+  /** Accroche affichée sous le libellé dans le sous-menu desktop. */
+  hint?: string;
+  /** Sous-rubriques : dépliées au survol sur desktop, listées sous le parent sur mobile. */
+  children?: SiteNavItem[];
 }
 
 /** Les 7 entrées du header, dans l'ordre de la maquette. */
 export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { url: '/accueil', label: 'Accueil' },
-  { url: '/association', label: "L'association" },
+  {
+    url: '/association',
+    label: "L'association",
+    // Les quatre pages de la rubrique n'étaient atteignables que par le footer :
+    // le sous-menu leur redonne une entrée depuis le header.
+    children: [
+      { url: '/association/presentation', label: 'Qui sommes-nous ?', hint: 'Nos missions, le bureau, les comptes' },
+      { url: '/association/comment-aider', label: 'Comment nous aider ?', hint: 'Donner des livres, devenir bénévole' },
+      { url: '/association/revue-de-presses', label: 'La presse en parle', hint: 'Les articles consacrés à Maxence' },
+      { url: '/association/photos', label: 'Galerie photos', hint: 'Les foires, le loto, le marché de Noël' },
+    ],
+  },
   { url: '/maxence', label: 'Maxence' },
   { url: '/nos-actions', label: 'Nos actions' },
   { url: '/evenement', label: 'Évènements' },

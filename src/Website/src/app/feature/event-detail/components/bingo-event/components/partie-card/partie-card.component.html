@@ -1,10 +1,20 @@
-<div
-  class="flex w-full flex-col gap-4 rounded-sm border px-5 py-5"
-  [class]="Partie().partieType === PartieTypeEnum.STANDARD ? 'border-line-2' : 'border-orange/40 bg-orange/[.04]'">
-  <h4 class="font-serif text-xl font-medium" [class]="Partie().partieType === PartieTypeEnum.STANDARD ? 'text-ink-2' : 'text-orange-3'">{{ Partie().name }}</h4>
-  <div class="flex flex-col gap-3">
+<article
+  class="flex h-full flex-col gap-4 rounded-lg border bg-white px-6 py-6 shadow-[0_22px_40px_-36px_rgba(7,43,69,0.6)]"
+  [class]="isSpecial() ? 'border-orange/40' : 'border-line'">
+  <header class="flex flex-wrap items-center justify-between gap-3 border-b border-line-2 pb-3.5">
+    <h3 class="font-serif text-xl font-medium" [class]="isSpecial() ? 'text-orange-3' : 'text-ink-2'">
+      {{ Partie().name }}
+    </h3>
+    @if (isSpecial()) {
+      <span class="rounded-full bg-orange/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-orange-3">
+        Partie spéciale
+      </span>
+    }
+  </header>
+
+  <div class="flex flex-col gap-2.5">
     @for (linePartie of lineParties(); track linePartie.id) {
       <app-lot-card [LinePartie]="linePartie"></app-lot-card>
     }
   </div>
-</div>
+</article>

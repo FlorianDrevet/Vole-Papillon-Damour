@@ -17,5 +17,7 @@ export class PartieCardComponent {
     l.sort((a, b) => compareNumberLines(a.numberLine, b.numberLine));
     return l.filter(linePartie => linePartie.lots.length > 0);
   });
-  protected readonly PartieTypeEnum = PartieTypeEnum;
+
+  /** Les parties hors "standard" (américaine, carton plein, bingo…) sont mises en avant. */
+  isSpecial = computed(() => this.Partie().partieType !== PartieTypeEnum.STANDARD);
 }

@@ -1,27 +1,21 @@
-<div class="flex flex-col gap-10">
-  <app-general-infos [vpdEvent]="vpdEvent()">
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-      <app-section-infos-event
-        Title="Dates"
-        UrlIcon="icons/calendar-icon.svg"
-        [Value]="'Du ' + (vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC') + ' au ' + (vpdEvent().dateEnd | date: 'dd/MM/yyyy':'UTC')">
-      </app-section-infos-event>
-      <app-section-infos-event
-        Title="Horaires"
-        UrlIcon="icons/clock-icon.svg"
-        [Value]="'De ' + (vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC') + ' à ' + (vpdEvent().hourCloseDoors | date: 'HH:mm':'UTC')">
-      </app-section-infos-event>
-    </div>
-    <app-section-infos-event
-      Title="Lieu"
-      UrlIcon="icons/location-icon.svg"
-      [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city">
-      <img ngSrc="images/map_bourse_aux_livres.png" alt="Plan d'accès" width="360" height="220" class="mt-2 w-full max-w-[360px] rounded-sm">
-    </app-section-infos-event>
-  </app-general-infos>
+<app-general-infos [vpdEvent]="vpdEvent()" mapImage="images/map_bourse_aux_livres.png">
+  <app-section-infos-event
+    Title="Dates"
+    UrlIcon="icons/calendar-icon.svg"
+    [Value]="'Du ' + (vpdEvent().dateStart | date: 'EEEE d MMMM') + '<br>au ' + (vpdEvent().dateEnd | date: 'EEEE d MMMM yyyy')">
+  </app-section-infos-event>
+  <app-section-infos-event
+    Title="Horaires"
+    UrlIcon="icons/clock-icon.svg"
+    [Value]="'De ' + (vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC') + ' à ' + (vpdEvent().hourCloseDoors | date: 'HH:mm':'UTC')">
+  </app-section-infos-event>
+</app-general-infos>
 
-  <div class="flex flex-col gap-5">
-    <h3 class="font-serif text-2xl font-medium text-ink-2">Tarifs</h3>
-    <app-prices [section]="ProductSectionEnum.Book"></app-prices>
+<section class="flex flex-col gap-8 bg-white px-shell py-14 lg:py-[70px]">
+  <div class="border-b border-line-2 pb-4">
+    <app-section-eyebrow label="Sur place" orientation="left">
+      <h2 class="font-serif text-[26px] font-medium leading-none text-ink-2 lg:text-[34px]">Les tarifs.</h2>
+    </app-section-eyebrow>
   </div>
-</div>
+  <app-prices [section]="ProductSectionEnum.Book"></app-prices>
+</section>

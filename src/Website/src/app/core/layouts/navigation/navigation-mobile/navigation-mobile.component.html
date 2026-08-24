@@ -34,20 +34,37 @@
 
 @if (isOpen()) {
   <div class="fixed inset-0 z-50 flex flex-col bg-ink/95 px-6 py-8 text-paper">
-    <button type="button" (click)="close()" class="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/10" aria-label="Fermer le menu">✕</button>
-    <nav class="mt-8 flex flex-col gap-1" aria-label="Navigation mobile">
+    <button type="button" (click)="close()" class="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10" aria-label="Fermer le menu">✕</button>
+    <nav class="mt-8 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto" aria-label="Navigation mobile">
       @for (item of navItems(); track item.url; let i = $index) {
-        <a
-          [routerLink]="item.url"
-          (click)="close()"
-          class="flex items-center gap-4 border-b border-white/10 py-4"
-          [class]="activeUrl() === item.url ? 'text-orange-2' : 'text-paper'">
-          <span class="font-mono text-xs text-mist">{{ i + 1 < 10 ? '0' + (i + 1) : i + 1 }}</span>
-          <span class="font-serif text-2xl">{{ item.label }}</span>
-        </a>
+        <div class="border-b border-white/10">
+          <a
+            [routerLink]="item.url"
+            (click)="close()"
+            class="flex items-center gap-4 py-4"
+            [class]="activeUrl() === item.url ? 'text-orange-2' : 'text-paper'">
+            <span class="font-mono text-xs text-mist">{{ i + 1 < 10 ? '0' + (i + 1) : i + 1 }}</span>
+            <span class="font-serif text-2xl">{{ item.label }}</span>
+          </a>
+          <!-- Sous-rubriques listées à plat sous leur parent : pas d'accordéon à
+               déplier, elles sont visibles dès l'ouverture du menu. -->
+          @if (item.children) {
+            <ul class="ml-[34px] flex flex-col gap-px border-l border-white/15 pb-3.5 pl-4">
+              @for (child of item.children; track child.url) {
+                <li>
+                  <a
+                    [routerLink]="child.url"
+                    (click)="close()"
+                    class="block py-1.5 text-[15px]"
+                    [class]="isChildActive(child.url) ? 'font-semibold text-orange-2' : 'text-mist-2'">{{ child.label }}</a>
+                </li>
+              }
+            </ul>
+          }
+        </div>
       }
     </nav>
-    <div class="mt-auto flex gap-4 pt-8">
+    <div class="flex shrink-0 gap-4 pt-8">
       <a href="https://www.facebook.com/melvin.drevet.1" target="_blank" rel="noopener noreferrer" class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan/[.14]" aria-label="Facebook">
         <img priority ngSrc="images/facebook.svg" alt="" width="16" height="16">
       </a>

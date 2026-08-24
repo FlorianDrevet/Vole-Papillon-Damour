@@ -1,24 +1,34 @@
-<div class="flex w-full items-center gap-3 py-1">
-  @if (LinePartie().lots.length > 1) {
-    <button type="button" (click)="previousLot()" aria-label="Lot précédent">
-      <img class="h-4" src="icons/arrow-left-triangle.svg" alt="">
-    </button>
-  }
-  <div class="flex w-full items-center gap-4 rounded-sm bg-paper-2 px-4 py-3">
-    <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-sm bg-white p-2">
-      <img [src]="currentLot().urlImage" alt="" class="h-full w-full object-contain">
-    </div>
-    <div class="flex flex-col gap-1">
-      <span class="font-mono text-[11px] uppercase tracking-[.1em] text-blue">
-        {{ LinePartie().numberLine | lineNumberTitle }}
-        @if (LinePartie().lots.length > 1) { <span class="text-slate-3">· ou</span> }
+<div class="flex items-center gap-4 rounded-md border border-line-2 bg-paper px-3.5 py-3">
+  <span class="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
+    <img [src]="currentLot().urlImage" alt="" class="h-full w-full object-contain p-1.5">
+  </span>
+
+  <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+    <span class="font-mono text-[10px] uppercase tracking-[.14em] text-blue">{{ LinePartie().numberLine | lineNumberTitle }}</span>
+    <span class="text-[15px] font-medium leading-snug text-ink-2">{{ currentLot().name }}</span>
+  </span>
+
+  <!-- Plusieurs lots pour une même ligne : ils sont au choix du gagnant, on les fait
+       défiler sur place plutôt que d'allonger la carte. -->
+  @if (hasSeveralLots()) {
+    <span class="flex shrink-0 items-center gap-1.5">
+      <button
+        type="button"
+        (click)="previousLot()"
+        aria-label="Lot précédent"
+        class="flex h-7 w-7 items-center justify-center rounded-full border border-line transition hover:border-blue-2 hover:bg-white">
+        <img class="h-2.5" src="icons/arrow-left-triangle.svg" alt="">
+      </button>
+      <span class="w-8 text-center font-mono text-[10px] tracking-[.08em] text-slate-3">
+        {{ currentLotIndex() + 1 }}/{{ LinePartie().lots.length }}
       </span>
-      <span class="text-sm font-medium text-ink-2">{{ currentLot().name }}</span>
-    </div>
-  </div>
-  @if (LinePartie().lots.length > 1) {
-    <button type="button" (click)="nextLot()" aria-label="Lot suivant">
-      <img class="h-4" src="icons/arrow-right-triangle.svg" alt="">
-    </button>
+      <button
+        type="button"
+        (click)="nextLot()"
+        aria-label="Lot suivant"
+        class="flex h-7 w-7 items-center justify-center rounded-full border border-line transition hover:border-blue-2 hover:bg-white">
+        <img class="h-2.5" src="icons/arrow-right-triangle.svg" alt="">
+      </button>
+    </span>
   }
 </div>

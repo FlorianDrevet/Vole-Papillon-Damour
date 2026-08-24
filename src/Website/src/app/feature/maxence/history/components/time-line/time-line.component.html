@@ -1,12 +1,83 @@
-<nav aria-label="Sommaire du récit" class="flex flex-col gap-1">
-  @for (chapter of chapters; track chapter.year; let i = $index) {
+<div class="flex flex-col gap-5">
+  <!-- Jauge d'avancement -->
+  <div class="flex flex-col gap-2.5">
+    <div class="flex items-baseline justify-between gap-3">
+      <span class="font-mono text-[10px] font-medium uppercase tracking-[.18em] text-slate-3">Le récit</span>
+      <span class="font-mono text-[10px] tracking-[.08em] text-slate-3">
+        <span class="text-blue">{{ reader.activeIndex() + 1 }}</span> / {{ reader.total }}
+      </span>
+    </div>
+    <span class="block h-[3px] w-full overflow-hidden rounded-full bg-line">
+      <span
+        class="block h-full rounded-full bg-vpd-brand transition-[width] duration-500 ease-out"
+        [style.width.%]="reader.progress()"></span>
+    </span>
+  </div>
+
+  <!-- Frise verticale : colonne latérale à partir de lg -->
+  <ol
+    class="chapter-rail relative hidden lg:block"
+    role="tablist"
+    aria-orientation="vertical"
+    aria-label="Chapitres du récit"
+    (keydown)="onKeydown($event)">
+    <span class="chapter-rail__marker" aria-hidden="true" [style.transform]="markerTransform()"></span>
+    @for (chapter of reader.chapters; track chapter.year; let i = $index) {
+      <li>
+        <button
+          type="button"
+          role="tab"
+          [id]="'chapitre-' + chapter.year"
+          [attr.aria-selected]="reader.isActive(chapter.year)"
+          [attr.aria-controls]="'date-' + chapter.year"
+          [tabIndex]="reader.isActive(chapter.year) ? 0 : -1"
+          (click)="select.emit(i)"
+          class="chapter-rail__item group flex w-full items-center gap-3 pl-4 pr-2 text-left text-sm transition-colors"
+          [class]="reader.isActive(chapter.year) ? 'text-ink-2' : 'text-slate-2 hover:text-blue'">
+          <span
+            class="font-mono text-[11px] tabular-nums transition-colors"
+            [class]="reader.isActive(chapter.year) ? 'text-orange-3' : 'text-slate-3 group-hover:text-blue'">{{ chapter.year }}</span>
+          <span class="truncate" [class.font-semibold]="reader.isActive(chapter.year)">{{ chapter.title }}</span>
+        </button>
+      </li>
+    }
+  </ol>
+
+  <!-- Bande d'années : sous lg, où la frise complète mangerait tout l'écran -->
+  <nav class="-mx-6 lg:hidden" aria-label="Chapitres du récit">
+    <ul class="flex snap-x gap-2 overflow-x-auto px-6 pb-2">
+      @for (chapter of reader.chapters; track chapter.year; let i = $index) {
+        <li class="snap-start">
+          <button
+            type="button"
+            [attr.aria-current]="reader.isActive(chapter.year) ? 'true' : null"
+            (click)="select.emit(i)"
+            class="rounded-full border px-3.5 py-1.5 font-mono text-[12px] tabular-nums transition"
+            [class]="reader.isActive(chapter.year)
+              ? 'border-ink-2 bg-ink-2 text-paper'
+              : 'border-line bg-white text-slate-2 hover:border-blue-2 hover:text-blue'">
+            {{ chapter.year }}
+            <span class="sr-only"> — {{ chapter.title }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  </nav>
+
+  <!-- Passerelles vers les deux autres onglets de la rubrique -->
+  <div class="hidden flex-col gap-1 border-t border-line-2 pt-4 lg:flex">
+    <span class="pb-1 font-mono text-[10px] uppercase tracking-[.18em] text-slate-3">Aller plus loin</span>
     <a
-      routerLink="/maxence/histoire"
-      [fragment]="'date-' + chapter.year"
-      class="flex items-baseline gap-2.5 border-b border-line-2 py-2 text-sm text-slate-2 hover:text-blue">
-      <span class="font-mono text-[11px] text-slate-3">{{ i + 1 < 10 ? '0' + (i + 1) : i + 1 }}</span>
-      <span>{{ chapter.title }}</span>
+      routerLink="/maxence/maladies"
+      class="group flex items-baseline justify-between gap-2 py-1.5 text-sm text-slate-2 hover:text-blue">
+      Ses maladies
+      <span class="font-mono text-[11px] text-orange transition-transform group-hover:translate-x-0.5">→</span>
     </a>
-  }
-  <a routerLink="/maxence/maladies" class="mt-3 font-mono text-xs tracking-[.1em] text-orange">SES MALADIES EN DÉTAIL →</a>
-</nav>
+    <a
+      routerLink="/maxence/vie-quotidienne/soins-quotidiens"
+      class="group flex items-baseline justify-between gap-2 py-1.5 text-sm text-slate-2 hover:text-blue">
+      Son quotidien
+      <span class="font-mono text-[11px] text-orange transition-transform group-hover:translate-x-0.5">→</span>
+    </a>
+  </div>
+</div>

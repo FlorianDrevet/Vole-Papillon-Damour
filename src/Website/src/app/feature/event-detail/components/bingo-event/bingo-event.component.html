@@ -1,44 +1,55 @@
-<div class="flex flex-col gap-10">
-  <app-general-infos [vpdEvent]="vpdEvent()">
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-      <app-section-infos-event
-        Title="Date"
-        UrlIcon="icons/calendar-icon.svg"
-        [Value]="vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC'">
-      </app-section-infos-event>
-      <app-section-infos-event
-        Title="Lieu"
-        UrlIcon="icons/location-icon.svg"
-        [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city">
-      </app-section-infos-event>
-      <app-section-infos-event
-        Title="Ouverture des portes"
-        UrlIcon="icons/door-icon.svg"
-        [Value]="vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC'">
-      </app-section-infos-event>
-      <app-section-infos-event
-        Title="Heure de début"
-        UrlIcon="icons/clock-icon.svg"
-        [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'">
-      </app-section-infos-event>
-    </div>
-  </app-general-infos>
+<app-general-infos [vpdEvent]="vpdEvent()">
+  <app-section-infos-event
+    Title="Date"
+    UrlIcon="icons/calendar-icon.svg"
+    [Value]="vpdEvent().dateStart | date: 'EEEE d MMMM yyyy'">
+  </app-section-infos-event>
+  <app-section-infos-event
+    Title="Ouverture des portes"
+    UrlIcon="icons/door-icon.svg"
+    [Value]="vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC'">
+  </app-section-infos-event>
+  <app-section-infos-event
+    Title="Heure de début"
+    UrlIcon="icons/clock-icon.svg"
+    [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'">
+  </app-section-infos-event>
+</app-general-infos>
 
-  <div class="flex flex-col gap-5">
-    <h3 class="font-serif text-2xl font-medium text-ink-2">Tarifs</h3>
-    <app-prices [section]="ProductSectionEnum.Bingo"></app-prices>
+<section class="flex flex-col gap-8 bg-white px-shell py-14 lg:py-[70px]">
+  <div class="border-b border-line-2 pb-4">
+    <app-section-eyebrow label="Sur place" orientation="left">
+      <h2 class="font-serif text-[26px] font-medium leading-none text-ink-2 lg:text-[34px]">Les tarifs.</h2>
+    </app-section-eyebrow>
   </div>
+  <app-prices [section]="ProductSectionEnum.Bingo"></app-prices>
+</section>
 
-  <div class="flex flex-col gap-5">
-    <h3 class="font-serif text-2xl font-medium text-ink-2">Lots du loto</h3>
-    @if (vpdEvent().parties.length === 0) {
-      <p class="text-[16px] text-slate-2">Liste des lots bientôt disponible…</p>
-    } @else {
-      <div class="flex flex-col gap-6">
-        @for (partie of vpdEvent().parties; track partie.id) {
-          <app-partie-card [Partie]="partie"></app-partie-card>
-        }
-      </div>
+<section class="flex flex-col gap-8 bg-paper-2 px-shell py-14 lg:py-[70px]">
+  <div class="flex flex-col items-start justify-between gap-4 border-b border-line pb-4 lg:flex-row lg:items-end">
+    <app-section-eyebrow label="Le détail des parties" orientation="left" labelClass="text-orange-3">
+      <h2 class="font-serif text-[26px] font-medium leading-none text-ink-2 lg:text-[34px]">Les lots à gagner.</h2>
+    </app-section-eyebrow>
+    @if (vpdEvent().parties.length) {
+      <span class="whitespace-nowrap font-mono text-[11px] uppercase tracking-[.12em] text-slate-3">
+        {{ vpdEvent().parties.length }} partie{{ vpdEvent().parties.length > 1 ? 's' : '' }}
+      </span>
     }
   </div>
-</div>
+
+  @if (vpdEvent().parties.length === 0) {
+    <div class="flex flex-col items-start gap-3 rounded-lg border border-dashed border-line bg-white/70 px-7 py-9">
+      <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Liste en préparation</span>
+      <p class="max-w-[46ch] text-[15px] leading-relaxed text-slate-2">
+        Les lots de cette édition ne sont pas encore arrêtés. Ils apparaîtront ici, partie par
+        partie, dès que nos partenaires nous les auront confirmés.
+      </p>
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      @for (partie of vpdEvent().parties; track partie.id) {
+        <app-partie-card [Partie]="partie"></app-partie-card>
+      }
+    </div>
+  }
+</section>

@@ -27,4 +27,9 @@ export class NavigationComponent implements OnInit {
       this.crumb.set(getBreadcrumb(this.router.url));
     });
   }
+
+  /** Surligne la sous-rubrique courante dans le sous-menu déplié. */
+  isChildActive(childUrl: string): boolean {
+    return this.url().startsWith(childUrl);
+  }
 }

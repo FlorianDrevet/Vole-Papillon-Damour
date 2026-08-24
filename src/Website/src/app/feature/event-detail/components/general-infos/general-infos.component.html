@@ -1,14 +1,37 @@
-<div class="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
-  <img
-    [src]="vpdEvent().urlImage"
-    [alt]="vpdEvent().name"
-    class="h-64 w-full rounded-sm object-cover lg:h-72 lg:w-72 lg:shrink-0">
-  <div class="flex flex-1 flex-col gap-5">
-    <ng-content></ng-content>
+<section class="grid grid-cols-1 gap-10 bg-paper px-shell py-14 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-14 lg:py-[70px]">
+  <div class="flex flex-col gap-5">
+    <app-section-eyebrow label="Le rendez-vous">
+      <h2 class="max-w-[16ch] font-serif text-[28px] font-medium leading-[1.06] text-ink-2 lg:text-[38px]">
+        Ce qui vous attend.
+      </h2>
+    </app-section-eyebrow>
+    <p class="max-w-[58ch] text-[16px] leading-relaxed text-slate-2" style="text-wrap: pretty">
+      {{ vpdEvent().description }}
+    </p>
   </div>
-</div>
 
-<div class="mt-8 flex flex-col gap-3 border-t border-line-2 pt-8">
-  <h3 class="font-serif text-2xl font-medium text-ink-2">Détails</h3>
-  <p class="text-[16px] leading-relaxed text-slate">{{ vpdEvent().description }}</p>
-</div>
+  <!-- Carte récapitulative : mêmes lignes séparées d'un filet que le bandeau
+       "prochaines dates" de la page évènements. -->
+  <aside class="flex h-fit flex-col divide-y divide-line rounded-lg border border-line bg-white px-6 shadow-[0_24px_46px_-38px_rgba(7,43,69,0.6)] lg:sticky lg:top-24">
+    <ng-content></ng-content>
+
+    <app-section-infos-event Title="Lieu" UrlIcon="icons/location-icon.svg" [Value]="address()">
+      <a
+        [href]="mapsUrl()"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-1.5 inline-block font-mono text-[11px] uppercase tracking-[.12em] text-blue transition hover:text-blue-2">
+        Itinéraire →
+      </a>
+      @if (mapImage(); as map) {
+        <img
+          [ngSrc]="map"
+          alt="Plan d'accès"
+          width="360"
+          height="220"
+          loading="lazy"
+          class="mt-3 h-auto w-full rounded-md border border-line-2">
+      }
+    </app-section-infos-event>
+  </aside>
+</section>

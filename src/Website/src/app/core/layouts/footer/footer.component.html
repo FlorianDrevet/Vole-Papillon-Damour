@@ -43,7 +43,7 @@
 
   <div class="flex flex-col gap-3 border-t border-cyan/[.18] pt-5 text-xs text-mist lg:flex-row lg:items-center lg:justify-between">
     <span>© 2025 Vole Papillon d'Amour. Tous droits réservés.</span>
-    <span class="flex flex-wrap gap-4">
+    <span data-testid="legal-links" class="flex flex-wrap gap-4">
       @for (legalRoute of route.config; track legalRoute.path) {
         @if (legalRoute.path && legalRoute.data?.['legalFooterLabel']) {
           <a [routerLink]="['/', legalRoute.path]" class="hover:text-white">

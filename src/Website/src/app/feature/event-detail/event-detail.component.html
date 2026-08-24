@@ -1,20 +1,86 @@
-@if (vpdEvent() === null) {
-  <div class="flex justify-center py-24"><mat-spinner></mat-spinner></div>
-} @else {
-  <section class="flex flex-col gap-4 bg-ink px-shell py-14 text-mist-2 lg:py-16">
-    <a routerLink="/evenement" class="font-mono text-xs tracking-[.1em] text-cyan">← TOUS LES ÉVÈNEMENTS</a>
-    <h1 class="max-w-[24ch] font-serif text-[34px] font-medium leading-tight text-white lg:text-[46px]">{{ vpdEvent()!.name }}</h1>
+@if (vpdEvent(); as event) {
+  <!-- Hero : la photo de l'édition et les trois informations que l'on vient chercher en
+       premier (quand, à quelle heure, où) sont visibles sans avoir à faire défiler. -->
+  <section class="grid grid-cols-1 items-center gap-10 bg-ink px-shell py-12 text-mist-2 lg:grid-cols-[1fr_440px] lg:gap-14 lg:py-[70px]">
+    <div class="flex flex-col gap-5">
+      <a routerLink="/evenement" class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan transition hover:text-white">
+        ← Tous les évènements
+      </a>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-orange-2">{{ kicker() }}</span>
+        <span
+          class="rounded-full border px-3 py-[3px] font-mono text-[10px] uppercase tracking-[.14em]"
+          [class]="isPast() ? 'border-mist/25 text-mist' : 'border-cyan/40 text-cyan'">
+          {{ isPast() ? 'Édition passée' : 'À venir' }}
+        </span>
+      </div>
+
+      <h1 class="max-w-[18ch] font-serif text-[36px] font-medium leading-[1.03] tracking-[-.02em] text-white lg:text-[52px]">
+        {{ event.name }}
+      </h1>
+
+      <dl class="flex flex-wrap gap-x-11 gap-y-5 border-t border-white/10 pt-6 font-mono text-[10px] uppercase tracking-[.14em] text-cyan">
+        <!-- flex-col-reverse : le terme reste avant sa définition dans le DOM (lecture
+             d'écran, HTML valide) alors que la valeur s'affiche au-dessus du libellé. -->
+        <div class="flex flex-col-reverse gap-1.5">
+          <dt>{{ event.dateStart | date:'yyyy' }}</dt>
+          @if (event.dateEnd) {
+            <dd class="font-serif text-[22px] normal-case tracking-normal text-white">
+              {{ event.dateStart | date:'d MMM' }} → {{ event.dateEnd | date:'d MMM' }}
+            </dd>
+          } @else {
+            <dd class="font-serif text-[22px] normal-case tracking-normal text-white first-letter:uppercase">
+              {{ event.dateStart | date:'EEEE d MMMM' }}
+            </dd>
+          }
+        </div>
+
+        <div class="flex flex-col-reverse gap-1.5">
+          <dt>{{ event.hourOpenDoors ? 'Ouverture' : 'Début' }}</dt>
+          <dd class="font-serif text-[22px] normal-case tracking-normal text-white">
+            {{ (event.hourOpenDoors ?? event.dateStart) | date:'HH:mm':'UTC' }}
+          </dd>
+        </div>
+
+        <div class="flex flex-col-reverse gap-1.5">
+          <dt>{{ event.cityCode }}</dt>
+          <dd class="font-serif text-[22px] normal-case tracking-normal text-white">{{ event.city }}</dd>
+        </div>
+      </dl>
+
+      <div class="mt-1 flex flex-wrap gap-3">
+        @if (event.urlRegistration) {
+          <app-pill-button [href]="event.urlRegistration!" target="_blank" [small]="true">S'inscrire</app-pill-button>
+        }
+        <app-pill-button [href]="mapsUrl()" target="_blank" variant="secondary-dark" [small]="true">Voir l'itinéraire</app-pill-button>
+      </div>
+    </div>
+
+    <img
+      [src]="event.urlImage"
+      [alt]="event.name"
+      class="h-[240px] w-full rounded-lg object-cover shadow-[0_34px_60px_-32px_rgba(0,0,0,0.75)] lg:h-[400px]">
   </section>
 
-  <div class="mx-auto flex max-w-[860px] flex-col gap-10 px-6 py-12 lg:px-11 lg:py-14">
-    @if (vpdEvent()!.eventType === VpdEventEnum.Bingo) {
-      <app-bingo-event [vpdEvent]="vpdEvent()!"></app-bingo-event>
-    } @else if (vpdEvent()!.eventType === VpdEventEnum.Books) {
-      <app-books-event [vpdEvent]="vpdEvent()!"></app-books-event>
-    } @else {
-      <app-other-event [vpdEvent]="vpdEvent()!"></app-other-event>
-    }
+  @if (event.eventType === VpdEventEnum.Bingo) {
+    <app-bingo-event [vpdEvent]="event"></app-bingo-event>
+  } @else if (event.eventType === VpdEventEnum.Books) {
+    <app-books-event [vpdEvent]="event"></app-books-event>
+  } @else {
+    <app-other-event [vpdEvent]="event"></app-other-event>
+  }
 
-    <a routerLink="/evenement" class="self-start font-mono text-xs tracking-[.1em] text-blue">← Retour aux évènements</a>
-  </div>
+  <section class="flex flex-col items-start justify-between gap-5 border-t border-line-2 bg-white px-shell py-12 lg:flex-row lg:items-center">
+    <div class="flex flex-col gap-1.5">
+      <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Et ensuite</span>
+      <p class="font-serif text-xl font-medium text-ink-2 lg:text-2xl">D'autres dates vous attendent.</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <app-pill-button routerLink="/evenement" variant="secondary" [small]="true">Retour aux évènements</app-pill-button>
+      <app-pill-button routerLink="/evenement/all" [small]="true">Tout l'agenda</app-pill-button>
+    </div>
+  </section>
+} @else {
+  <div class="flex justify-center py-24"><mat-spinner></mat-spinner></div>
 }

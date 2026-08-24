@@ -1,15 +1,20 @@
-<section
+<article
   [id]="'date-' + Year()"
-  class="scroll-mt-24 px-shell py-14 lg:py-20"
-  [class]="ContainerBackgroundContainer() === BackgroundColorEnum.BLUE ? 'bg-paper-2' : 'bg-paper'">
-  <div class="mx-auto flex max-w-[760px] flex-col gap-8">
-    <div class="flex items-center gap-4">
-      <span class="h-px w-10 bg-vpd-brand"></span>
-      <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Chapitre · {{ Year() }}–{{ Year() + 1 }}</span>
+  role="tabpanel"
+  [attr.aria-labelledby]="'chapitre-' + Year()"
+  [hidden]="!isOpen()"
+  class="chapter-panel scroll-mt-8">
+  <header class="border-b border-line-2 pb-7">
+    <div class="flex flex-wrap items-center gap-3">
+      <span class="rounded-full bg-paper-2 px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-[.16em] text-blue">
+        Chapitre {{ position() }} / {{ reader.total }}
+      </span>
+      <span class="h-px w-8 bg-vpd-brand"></span>
+      <span class="font-mono text-[11px] tracking-[.16em] text-orange-3">{{ Year() }}</span>
     </div>
-    <h3 class="font-serif text-[32px] font-medium leading-tight text-ink-2 lg:text-[42px]">{{ Title() }}</h3>
-    <div class="content-history flex flex-col gap-8 text-[17px] leading-[1.78] text-slate">
-      <ng-content></ng-content>
-    </div>
+    <h2 class="mt-4 font-serif text-[32px] font-medium leading-tight text-ink-2 lg:text-[42px]">{{ Title() }}</h2>
+  </header>
+  <div class="content-history flex flex-col gap-8 pt-9 text-[17px] leading-[1.78] text-slate">
+    <ng-content></ng-content>
   </div>
-</section>
+</article>

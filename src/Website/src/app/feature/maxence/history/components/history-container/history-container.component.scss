@@ -1,3 +1,40 @@
+// Le chapitre fermé reste dans le DOM (rendu serveur, référencement) mais ne
+// doit rien occuper : `!important` parce que l'attribut `hidden` perd contre
+// n'importe quelle utilitaire `display` de Tailwind posée plus tard.
+.chapter-panel[hidden] {
+  display: none !important;
+}
+
+// Passage d'un chapitre à l'autre : l'élément repasse de `display: none` à
+// `display: block`, ce qui suffit à relancer l'animation d'entrée. Une seule
+// courbe, courte, pour que la lecture reprenne tout de suite.
+.chapter-panel {
+  animation: vpd-chapter-in 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+// Les premiers blocs du chapitre arrivent en cascade ; au-delà, ils sont déjà
+// hors écran, animer plus n'ajouterait que du bruit.
+.chapter-panel ::ng-deep .content-history > *:nth-child(-n + 4) {
+  animation: vpd-chapter-in 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.chapter-panel ::ng-deep .content-history > *:nth-child(1) { animation-delay: 90ms; }
+.chapter-panel ::ng-deep .content-history > *:nth-child(2) { animation-delay: 150ms; }
+.chapter-panel ::ng-deep .content-history > *:nth-child(3) { animation-delay: 210ms; }
+.chapter-panel ::ng-deep .content-history > *:nth-child(4) { animation-delay: 260ms; }
+
+@keyframes vpd-chapter-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 // Le contenu de chaque chapitre est projeté depuis les composants year-20XX
 // (texte intégral de la maman, préservé mot pour mot) : ::ng-deep reste le
 // seul moyen d'habiller cette lumière projetée depuis ce composant conteneur.

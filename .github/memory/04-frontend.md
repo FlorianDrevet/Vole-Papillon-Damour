@@ -41,6 +41,7 @@ Verified feature roots:
 ## Website Shell Notes
 
 - The public footer now derives legal link labels and paths from Angular router config data instead of hard-coded placeholder paragraphs.
+- Header sub-navigation is data-driven: `core/layouts/navigation/nav-items.ts` gives each `SiteNavItem` an optional `children`/`hint`, the desktop header renders them as a pure-CSS dropdown (`group-hover` + `group-focus-within`, collapsed state uses `invisible` so folded links stay out of the tab order), and the mobile overlay lists the same children indented under their parent. Only "L'association" declares children today; adding a submenu elsewhere is a data change, not a template change.
 - The Website legal slice documents the current Microsoft Clarity usage seen in `src/index.html` and keeps explicit placeholders for unresolved association identifiers, publication director, retention windows, and accessibility remediation details until the association validates them.
 
 ## Data Access And Live Updates

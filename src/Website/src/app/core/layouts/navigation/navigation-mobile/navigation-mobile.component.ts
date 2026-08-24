@@ -12,6 +12,7 @@ export class NavigationMobileComponent {
 
   navItems = input.required<SiteNavItem[]>();
   activeUrl = input<string | null>(null);
+  currentUrl = input<string>('');
   crumb = input<string>('Accueil');
 
   isOpen = signal(false);
@@ -33,5 +34,10 @@ export class NavigationMobileComponent {
 
   close(): void {
     this.isOpen.set(false);
+  }
+
+  /** Surligne la sous-rubrique courante dans la liste dépliée sous son parent. */
+  isChildActive(childUrl: string): boolean {
+    return this.currentUrl().startsWith(childUrl);
   }
 }

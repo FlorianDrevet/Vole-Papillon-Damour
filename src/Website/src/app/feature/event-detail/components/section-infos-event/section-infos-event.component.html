@@ -1,12 +1,15 @@
-<div class="flex flex-col gap-1.5">
-  <span class="flex items-center gap-2.5">
-    <img [src]="UrlIcon()" alt="" class="h-4 w-4 opacity-70">
-    <span class="font-mono text-[11px] uppercase tracking-[.12em] text-slate-3">{{ Title() }}</span>
+<!-- Une ligne de la carte récapitulative : pastille d'icône, libellé en petites
+     capitales, valeur. La valeur peut être une chaîne (avec <br> pour l'adresse) ou
+     du contenu projeté (lien, plan d'accès). -->
+<div class="flex gap-4 py-5">
+  <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-paper-2">
+    <img [src]="UrlIcon()" alt="" class="h-4 w-4 opacity-80">
   </span>
-  @if (Value()) {
-    <p class="pl-6 text-[15px] text-ink-2" [innerHTML]="Value()"></p>
-  }
-  <div class="pl-6">
+  <div class="flex min-w-0 flex-1 flex-col gap-1">
+    <span class="font-mono text-[10px] uppercase tracking-[.16em] text-slate-3">{{ Title() }}</span>
+    @if (Value()) {
+      <p class="text-[15px] font-medium leading-snug text-ink-2" [innerHTML]="Value()"></p>
+    }
     <ng-content select="value"></ng-content>
     <ng-content></ng-content>
   </div>

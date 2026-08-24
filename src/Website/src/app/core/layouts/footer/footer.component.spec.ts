@@ -60,7 +60,10 @@ describe('FooterComponent', () => {
   });
 
   it('should render the legal links declared in the router configuration', () => {
+    // Le pied de page contient aussi le plan du site : on ne regarde que le bloc
+    // des liens légaux, seul à être construit depuis la configuration du routeur.
     const legalLinks = fixture.debugElement
+      .query(By.css('[data-testid="legal-links"]'))
       .queryAll(By.directive(RouterLink))
       .map((linkDebugElement) => ({
         text: linkDebugElement.nativeElement.textContent.replace(/\s+/g, ' ').trim(),

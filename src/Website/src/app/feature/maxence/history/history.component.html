@@ -1,16 +1,18 @@
 <app-maxence-subnav></app-maxence-subnav>
+
 <section class="grid grid-cols-1 items-center gap-10 bg-ink px-shell py-14 text-mist-2 lg:grid-cols-[1fr_420px] lg:gap-14 lg:py-20">
   <div class="flex flex-col gap-6">
     <span class="font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-orange-2">Le récit · 2004 → aujourd'hui</span>
     <h1 class="font-serif text-[38px] font-medium leading-[1.05] text-white lg:text-[56px]">L'histoire de Maxence</h1>
     <p class="max-w-[50ch] text-[16px] leading-relaxed text-mist">
       Racontée par sa mère, année après année : le diagnostic, les hospitalisations, les combats, et les
-      petites victoires du quotidien.
+      petites victoires du quotidien. Le récit se lit chapitre par chapitre, à votre rythme.
     </p>
-    <div class="mt-1 flex gap-8 font-mono text-[11px] tracking-[.12em] text-cyan">
+    <div class="mt-1 flex flex-wrap gap-x-8 gap-y-5 font-mono text-[11px] tracking-[.12em] text-cyan">
       <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">2004</span>NAISSANCE</span>
       <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">8</span>MALADIES RARES</span>
       <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">1<span class="text-base">er</span></span>CAS AU MONDE</span>
+      <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">13</span>CHAPITRES</span>
     </div>
   </div>
   <img
@@ -21,26 +23,110 @@
     class="h-[300px] w-full rounded-[220px_8px_220px_8px] object-cover lg:h-[440px]">
 </section>
 
-<div class="mx-auto grid max-w-[1180px] grid-cols-1 gap-10 px-6 py-12 lg:grid-cols-[230px_1fr] lg:items-start lg:gap-14 lg:px-11">
-  <aside class="lg:sticky lg:top-24">
-    <app-time-line></app-time-line>
-  </aside>
-  <div class="flex flex-col">
-    <app-year-2004></app-year-2004>
-    <app-year-2005></app-year-2005>
-    <app-year-2006></app-year-2006>
-    <app-year-2007></app-year-2007>
-    <app-year-2008></app-year-2008>
-    <app-year-2009></app-year-2009>
-    <app-year-2010></app-year-2010>
-    <app-year-2011></app-year-2011>
-    <app-year-2012></app-year-2012>
-    <app-year-2013></app-year-2013>
-    <app-year-2014></app-year-2014>
-    <app-year-2015></app-year-2015>
-    <app-year-2016></app-year-2016>
+<section class="bg-paper" aria-label="Le récit, chapitre par chapitre">
+  <div class="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-6 py-10 lg:grid-cols-[248px_1fr] lg:items-start lg:gap-14 lg:px-11 lg:py-14">
+    <aside class="lg:sticky lg:top-10">
+      <app-time-line (select)="open($event)"></app-time-line>
+    </aside>
+
+    <div class="flex min-w-0 flex-col">
+      <app-year-2004></app-year-2004>
+      <app-year-2005></app-year-2005>
+      <app-year-2006></app-year-2006>
+      <app-year-2007></app-year-2007>
+      <app-year-2008></app-year-2008>
+      <app-year-2009></app-year-2009>
+      <app-year-2010></app-year-2010>
+      <app-year-2011></app-year-2011>
+      <app-year-2012></app-year-2012>
+      <app-year-2013></app-year-2013>
+      <app-year-2014></app-year-2014>
+      <app-year-2015></app-year-2015>
+      <app-year-2016></app-year-2016>
+
+      <nav
+        class="mt-12 grid grid-cols-1 gap-3 border-t border-line-2 pt-8 sm:grid-cols-2"
+        aria-label="Navigation entre les chapitres">
+        @if (reader.previous(); as previous) {
+          <button type="button" (click)="open(reader.activeIndex() - 1)" class="chapter-step group">
+            <span class="chapter-step__meta"><span class="chapter-step__arrow">←</span> Chapitre précédent</span>
+            <span class="chapter-step__title">{{ previous.year }} · {{ previous.title }}</span>
+          </button>
+        } @else {
+          <span class="hidden sm:block"></span>
+        }
+
+        @if (reader.next(); as next) {
+          <button type="button" (click)="open(reader.activeIndex() + 1)" class="chapter-step chapter-step--forward group">
+            <span class="chapter-step__meta">Chapitre suivant <span class="chapter-step__arrow">→</span></span>
+            <span class="chapter-step__title">{{ next.year }} · {{ next.title }}</span>
+          </button>
+        } @else {
+          <a routerLink="/maxence/vie-quotidienne/soins-quotidiens" class="chapter-step chapter-step--forward group">
+            <span class="chapter-step__meta">Fin du récit <span class="chapter-step__arrow">→</span></span>
+            <span class="chapter-step__title">Découvrir son quotidien</span>
+          </a>
+        }
+      </nav>
+    </div>
   </div>
-</div>
+</section>
+
+<section class="bg-white px-shell py-16 lg:py-20">
+  <app-section-eyebrow label="Comprendre ce que le récit raconte">
+    <h2 class="max-w-[26ch] font-serif text-[30px] font-medium leading-tight text-ink-2 lg:text-[38px]">
+      Les deux autres volets de la rubrique Maxence.
+    </h2>
+  </app-section-eyebrow>
+
+  <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <div class="group flex flex-col gap-4 rounded-sm border border-line-2 bg-paper p-7 transition focus-within:border-blue-2 hover:border-blue-2 lg:p-9">
+      <span class="font-mono text-[10px] uppercase tracking-[.16em] text-orange-3">Onglet · Ses maladies</span>
+      <h3 class="font-serif text-2xl font-medium leading-snug text-ink-2 lg:text-[28px]">
+        <a routerLink="/maxence/maladies" class="hover:text-blue">Huit maladies rares, une seule cause</a>
+      </h3>
+      <p class="text-[15px] leading-relaxed text-slate-2">
+        Toutes découlent d'une même mutation cellulaire, jamais décrite ailleurs dans le monde avant Maxence.
+        Chaque fiche explique la maladie, puis ce qu'elle change concrètement au quotidien.
+      </p>
+      <ul class="mt-1 flex flex-wrap gap-2">
+        @for (link of diseaseLinks; track link.route) {
+          <li>
+            <a
+              [routerLink]="link.route"
+              class="inline-block rounded-full border border-line bg-white px-3 py-1.5 text-[13px] text-slate-2 transition hover:border-blue-2 hover:text-blue">{{ link.label }}</a>
+          </li>
+        }
+      </ul>
+      <a routerLink="/maxence/maladies" class="mt-2 inline-flex items-center gap-2 font-mono text-[11px] tracking-[.12em] text-blue">
+        VOIR LES 8 FICHES <span class="transition-transform group-hover:translate-x-1">→</span>
+      </a>
+    </div>
+
+    <div class="group flex flex-col gap-4 rounded-sm border border-line-2 bg-paper p-7 transition focus-within:border-blue-2 hover:border-blue-2 lg:p-9">
+      <span class="font-mono text-[10px] uppercase tracking-[.16em] text-orange-3">Onglet · Son quotidien</span>
+      <h3 class="font-serif text-2xl font-medium leading-snug text-ink-2 lg:text-[28px]">
+        <a routerLink="/maxence/vie-quotidienne/soins-quotidiens" class="hover:text-blue">Son quotidien, ses combats</a>
+      </h3>
+      <p class="text-[15px] leading-relaxed text-slate-2">
+        Ce que le récit laisse deviner, raconté en détail : les soins sur vingt-quatre heures, les séjours à
+        l'hôpital, l'école malgré tout, et l'attente d'une greffe.
+      </p>
+      <ul class="mt-1 flex flex-wrap gap-2">
+        @for (link of dailyLifeLinks; track link.route) {
+          <li>
+            <a
+              [routerLink]="link.route"
+              class="inline-block rounded-full border border-line bg-white px-3 py-1.5 text-[13px] text-slate-2 transition hover:border-blue-2 hover:text-blue">{{ link.label }}</a>
+          </li>
+        }
+      </ul>
+      <a routerLink="/maxence/vie-quotidienne/soins-quotidiens" class="mt-2 inline-flex items-center gap-2 font-mono text-[11px] tracking-[.12em] text-blue">
+        ENTRER DANS SON QUOTIDIEN <span class="transition-transform group-hover:translate-x-1">→</span>
+      </a>
+    </div>
+  </div>
+</section>
 
 <section class="relative flex flex-col gap-6 overflow-hidden px-shell py-16 text-white lg:py-20" style="background: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%)">
   <img ngSrc="images/papillon_without_back.png" alt="" width="260" height="260" class="absolute -bottom-14 -right-11 w-[260px] opacity-[.16]">
