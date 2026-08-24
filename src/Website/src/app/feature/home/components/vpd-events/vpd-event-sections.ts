@@ -4,6 +4,9 @@ import {VpdEventEnum} from "../../../../shared/enums/vpdEvent.enum";
 import {AxiosService} from "../../../../shared/services/axios.service";
 import {MethodEnum} from "../../../../shared/enums/method.enum";
 
+/** Nombre de cartes de la bande « Prochains rendez-vous » sur l'accueil. */
+const UPCOMING_EVENTS_COUNT = 3;
+
 @Component({
     selector: 'app-vpd-events-section',
     templateUrl: './vpd-event-sections.html',
@@ -11,26 +14,31 @@ import {MethodEnum} from "../../../../shared/enums/method.enum";
     standalone: false
 })
 export class VpdEventSections implements OnInit {
-  lotoCard = signal<VpdEventModel | null>(null)
-  balCard = signal<VpdEventModel | null>(null)
-  otherCard = signal<VpdEventModel[]>([])
+  /**
+   * Les trois prochains rendez-vous, tous types confondus et dans l'ordre chronologique :
+   * la bande peut donc afficher trois lotos d'affilée. Auparavant elle figeait « le prochain
+   * loto + la prochaine bourse aux livres + les autres évènements », ce qui remontait des
+   * dates lointaines devant des rendez-vous bien plus proches.
+   */
+  upcomingEvents = signal<VpdEventModel[]>([])
 
   constructor(private axiosService: AxiosService) {
   }
 
   /**
-   * Inclinaison et cadence du flottement des cartes « autres évènements ».
-   * La maquette fige trois cartes (-1.4deg / 1.1deg / -0.7deg, 7s / 7.6s / 8.2s) ;
-   * comme le nombre de cartes est variable ici, on prolonge la série au-delà de la
-   * troisième en alternant le sens et en décalant durée et départ, pour éviter que
-   * les cartes ne montent et descendent en même temps.
+   * Inclinaison et cadence du flottement des cartes.
+   * La maquette fige trois cartes (-1.4deg / 1.1deg / -0.7deg, 7s / 7.6s / 8.2s) ; la série
+   * est prolongée au-delà de la troisième en alternant le sens, au cas où le nombre de cartes
+   * augmenterait, pour éviter que les cartes ne montent et descendent en même temps.
    */
-  protected otherRotationDeg(index: number): number {
-    return index % 2 === 0 ? -0.7 : 1.2;
+  private static readonly floatRotationsDeg = [-1.4, 1.1, -0.7];
+
+  protected cardRotationDeg(index: number): number {
+    return VpdEventSections.floatRotationsDeg[index] ?? (index % 2 === 0 ? -0.7 : 1.2);
   }
 
-  protected otherDurationS(index: number): number {
-    return 8.2 + index * 0.4;
+  protected cardDurationS(index: number): number {
+    return 7 + index * 0.6;
   }
 
   /**
@@ -38,37 +46,31 @@ export class VpdEventSections implements OnInit {
    * carte est inclinée et flotte dès la première frame. Avec un délai positif elle
    * resterait droite et immobile avant de basculer d'un coup sur son inclinaison.
    */
-  protected otherDelayS(index: number): number {
-    return -(1.4 + index * 0.6);
+  protected cardDelayS(index: number): number {
+    return -(index * 0.7);
   }
 
   ngOnInit(): void {
-    this.axiosService.request(MethodEnum.GET, '/asso-events/next-bingo', {})
-      .then((data: any) => {
-        data.date = new Date(data.date);
-        data.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
-        this.lotoCard.set(data)
-      })
-      .catch(() => undefined);
-
-    this.axiosService.request(MethodEnum.GET, '/asso-events/next-books', {})
-      .then((data: any) => {
-        data.date = new Date(data.date);
-        data.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
-        this.balCard.set(data)
-      })
-      .catch(() => undefined);
-
-
-    this.axiosService.request(MethodEnum.GET, '/asso-events/next-other-event', {})
+    // `/asso-events` ne renvoie que les évènements à venir, déjà triés par date de début.
+    this.axiosService.request(MethodEnum.GET, '/asso-events', {})
       .then((data: any[]) => {
-        data.map(data => {
-          data.date = new Date(data.date);
-          data.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
-          return data
-        })
-        this.otherCard.set(data)
+        const events = (data ?? [])
+          .map(event => this.toVpdEvent(event))
+          .sort((a, b) => a.dateStart.getTime() - b.dateStart.getTime())
+          .slice(0, UPCOMING_EVENTS_COUNT);
+
+        this.upcomingEvents.set(events)
       })
-      .catch(() => undefined)
+      .catch(() => undefined);
+  }
+
+  private toVpdEvent(event: any): VpdEventModel {
+    return {
+      ...event,
+      dateStart: new Date(event.dateStart),
+      dateEnd: event.dateEnd ? new Date(event.dateEnd) : null,
+      hourOpenDoors: event.hourOpenDoors ? new Date(event.hourOpenDoors) : null,
+      eventType: VpdEventEnum[event.eventType as keyof typeof VpdEventEnum]
+    };
   }
 }

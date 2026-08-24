@@ -4,37 +4,30 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { VpdEventSections } from './vpd-event-sections';
 import { AxiosService } from '../../../../shared/services/axios.service';
 import { MethodEnum } from '../../../../shared/enums/method.enum';
+import { VpdEventEnum } from '../../../../shared/enums/vpdEvent.enum';
 
 describe('VpdEventSections', () => {
   let component: VpdEventSections;
   let fixture: ComponentFixture<VpdEventSections>;
   let axiosServiceSpy: jasmine.SpyObj<AxiosService>;
 
-  const createEventResponse = (eventType: string) => ({
-    date: '2026-05-12T10:00:00.000Z',
-    eventType
+  const createEventResponse = (id: string, eventType: string, dateStart: string) => ({
+    id,
+    eventType,
+    dateStart,
+    dateEnd: null,
+    hourOpenDoors: null,
+    name: `Évènement ${id}`,
+    city: 'Verrières'
   });
 
-  const configureRequests = (failingUrl: string) => {
+  const configureRequests = (events: unknown) => {
     axiosServiceSpy.request.and.callFake((method: MethodEnum, url: string) => {
-      if (method !== MethodEnum.GET) {
-        return Promise.reject(new Error('Unexpected method'));
+      if (method !== MethodEnum.GET || url !== '/asso-events') {
+        return Promise.reject(new Error(`Unexpected request ${method} ${url}`));
       }
 
-      if (url === failingUrl) {
-        return Promise.reject(new Error(`Request failed for ${url}`));
-      }
-
-      switch (url) {
-        case '/asso-events/next-bingo':
-          return Promise.resolve(createEventResponse('Bingo'));
-        case '/asso-events/next-books':
-          return Promise.resolve(createEventResponse('Books'));
-        case '/asso-events/next-other-event':
-          return Promise.resolve([createEventResponse('Other')]);
-        default:
-          return Promise.reject(new Error(`Unexpected url ${url}`));
-      }
+      return Promise.resolve(events);
     });
   };
 
@@ -58,27 +51,34 @@ describe('VpdEventSections', () => {
     }).compileComponents();
   });
 
-  it('should keep lotoCard null when next bingo request fails', async () => {
-    configureRequests('/asso-events/next-bingo');
+  it('should keep the three closest events, whatever their type', async () => {
+    configureRequests([
+      createEventResponse('books-1', 'Books', '2026-06-10T10:00:00.000Z'),
+      createEventResponse('bingo-1', 'Bingo', '2026-05-12T10:00:00.000Z'),
+      createEventResponse('bingo-2', 'Bingo', '2026-05-20T10:00:00.000Z'),
+      createEventResponse('bingo-3', 'Bingo', '2026-05-28T10:00:00.000Z')
+    ]);
 
     await createComponent();
 
-    expect(component.lotoCard()).toBeNull();
+    expect(component.upcomingEvents().map(event => event.id)).toEqual(['bingo-1', 'bingo-2', 'bingo-3']);
   });
 
-  it('should keep balCard null when next books request fails', async () => {
-    configureRequests('/asso-events/next-books');
+  it('should map dates and event type of the displayed events', async () => {
+    configureRequests([createEventResponse('bingo-1', 'Bingo', '2026-05-12T10:00:00.000Z')]);
 
     await createComponent();
 
-    expect(component.balCard()).toBeNull();
+    const event = component.upcomingEvents()[0];
+    expect(event.dateStart instanceof Date).toBeTrue();
+    expect(event.eventType).toBe(VpdEventEnum.Bingo);
   });
 
-  it('should keep otherCard empty when next other event request fails', async () => {
-    configureRequests('/asso-events/next-other-event');
+  it('should keep upcomingEvents empty when the request fails', async () => {
+    axiosServiceSpy.request.and.returnValue(Promise.reject(new Error('Request failed')));
 
     await createComponent();
 
-    expect(component.otherCard()).toEqual([]);
+    expect(component.upcomingEvents()).toEqual([]);
   });
 });

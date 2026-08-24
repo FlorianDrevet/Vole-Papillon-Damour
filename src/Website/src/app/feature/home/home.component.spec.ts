@@ -24,13 +24,11 @@ describe('HomeComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('should keep lotoCard null when next bingo request fails', async () => {
-    axiosServiceSpy.request.and.returnValue(Promise.reject(new Error('AssoEvent not found for next bingo')));
-
-    fixture.detectChanges();
-    await fixture.whenStable();
+  // Les cartes de l'agenda sont désormais portées par VpdEventSections : leur
+  // chargement est couvert par vpd-event-sections.spec.ts.
+  it('should create', () => {
     fixture.detectChanges();
 
-    expect(component.lotoCard()).toBeNull();
+    expect(component).toBeTruthy();
   });
 });

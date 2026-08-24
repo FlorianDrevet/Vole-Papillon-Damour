@@ -23,56 +23,29 @@
       <a routerLink="/evenement/all" class="border-b border-mist pb-1 font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
     </div>
 
-    @if (lotoCard() || balCard() || otherCard().length) {
+    @if (upcomingEvents().length) {
       <div class="relative grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        @if (lotoCard(); as event) {
+        <!-- Les rendez-vous sont affichés dans l'ordre chronologique, tous types confondus :
+             la première carte (le rendez-vous le plus proche) porte le fond sombre de la
+             maquette, les suivantes restent en papier blanc, quel que soit leur type. -->
+        @for (event of upcomingEvents(); track event.id; let i = $index; let first = $first) {
           <a
             [routerLink]="['/evenement', event.id]"
-            class="flex animate-vpd-float flex-col gap-2.5 rounded bg-ink-2 px-6 py-6 text-paper shadow-[0_26px_44px_-30px_rgba(7,43,69,0.85)] hover:shadow-[0_34px_54px_-28px_rgba(7,43,69,0.9)] hover:[animation-play-state:paused]"
-            [style.--r]="'-1.4deg'"
-            [style.animation-duration.s]="7">
+            class="flex animate-vpd-float flex-col gap-2.5 rounded px-6 py-6 hover:[animation-play-state:paused]"
+            [ngClass]="first
+              ? 'bg-ink-2 text-paper shadow-[0_26px_44px_-30px_rgba(7,43,69,0.85)] hover:shadow-[0_34px_54px_-28px_rgba(7,43,69,0.9)]'
+              : 'mt-4 border border-line bg-white shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)]'"
+            [style.--r]="cardRotationDeg(i) + 'deg'"
+            [style.animation-duration.s]="cardDurationS(i)"
+            [style.animation-delay.s]="cardDelayS(i)">
             <span class="flex items-baseline justify-between">
-              <span class="font-serif text-[40px] leading-[.9]">{{ event.dateStart | date:'dd' }}</span>
-              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-2">{{ event.dateStart | date:'MMM' }}</span>
+              <span class="font-serif text-[40px] leading-[.9]" [ngClass]="first ? '' : 'text-ink-2'">{{ event.dateStart | date:'dd' }}</span>
+              <span class="font-mono text-[11px] uppercase tracking-[.14em]" [ngClass]="first ? 'text-orange-2' : 'text-blue'">{{ event.dateStart | date:'MMM' }}</span>
             </span>
-            <span class="h-px bg-cyan/[.28]"></span>
-            <strong class="text-base font-semibold">{{ event.name }}</strong>
-            <span class="text-[13px] leading-snug text-mist">{{ event.city }} · {{ event.hourOpenDoors | date:'HH:mm' }}</span>
-            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-orange-2">DÉTAILS →</span>
-          </a>
-        }
-        @if (balCard(); as event) {
-          <a
-            [routerLink]="['/evenement', event.id]"
-            class="mt-4 flex animate-vpd-float flex-col gap-2.5 rounded border border-line bg-white px-6 py-6 shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)] hover:[animation-play-state:paused]"
-            [style.--r]="'1.1deg'"
-            [style.animation-duration.s]="7.6"
-            [style.animation-delay.s]="-0.7">
-            <span class="flex items-baseline justify-between">
-              <span class="font-serif text-[40px] leading-[.9] text-ink-2">{{ event.dateStart | date:'dd' }}</span>
-              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-blue">{{ event.dateStart | date:'MMM' }}</span>
-            </span>
-            <span class="h-px bg-line-2"></span>
-            <strong class="text-base font-semibold text-ink-2">{{ event.name }}</strong>
-            <span class="text-[13px] leading-snug text-slate-2">{{ event.city }}</span>
-            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-blue">HORAIRES →</span>
-          </a>
-        }
-        @for (event of otherCard(); track event.id; let i = $index) {
-          <a
-            [routerLink]="['/evenement', event.id]"
-            class="mt-1 flex animate-vpd-float flex-col gap-2.5 rounded border border-line bg-white px-6 py-6 shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)] hover:[animation-play-state:paused]"
-            [style.--r]="otherRotationDeg(i) + 'deg'"
-            [style.animation-duration.s]="otherDurationS(i)"
-            [style.animation-delay.s]="otherDelayS(i)">
-            <span class="flex items-baseline justify-between">
-              <span class="font-serif text-[40px] leading-[.9] text-ink-2">{{ event.dateStart | date:'dd' }}</span>
-              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-blue">{{ event.dateStart | date:'MMM' }}</span>
-            </span>
-            <span class="h-px bg-line-2"></span>
-            <strong class="text-base font-semibold text-ink-2">{{ event.name }}</strong>
-            <span class="text-[13px] leading-snug text-slate-2">{{ event.city }}</span>
-            <span class="mt-1 font-mono text-[11px] tracking-[.12em] text-blue">DÉTAILS →</span>
+            <span class="h-px" [ngClass]="first ? 'bg-cyan/[.28]' : 'bg-line-2'"></span>
+            <strong class="text-base font-semibold" [ngClass]="first ? '' : 'text-ink-2'">{{ event.name }}</strong>
+            <span class="text-[13px] leading-snug" [ngClass]="first ? 'text-mist' : 'text-slate-2'">{{ event.city }}@if (event.hourOpenDoors) { · {{ event.hourOpenDoors | date:'HH:mm' }}}</span>
+            <span class="mt-1 font-mono text-[11px] tracking-[.12em]" [ngClass]="first ? 'text-orange-2' : 'text-blue'">DÉTAILS →</span>
           </a>
         }
       </div>
