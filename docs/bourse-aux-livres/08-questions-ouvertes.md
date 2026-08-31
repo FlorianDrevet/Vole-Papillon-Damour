@@ -6,7 +6,7 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 
 | # | Sujet | Statut | Qui décide |
 |---|---|---|---|
-| `Q-01` | Passage du tri au rayon | 🔴 **Bloquant** | Association + technique |
+| `Q-01` | Passage du tri au rayon | ✅ **Tranchée** | — |
 | `Q-02` | Source de la valeur marchande | 🟠 À instruire | Étude technique |
 | `Q-03` | Proportion de livres sans ISBN | 🟠 À mesurer | Palier 0 |
 | `Q-04` | Dérive du stock | 🟡 Risque assumé | — |
@@ -14,64 +14,58 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 | `Q-06` | Deux applications d'administration | 🟡 Risque assumé | — |
 | `Q-07` | Genres et classement | 🟡 À préciser | Association |
 | `Q-08` | Choix du matériel de scan | 🟢 Après palier 0 | Association |
+| `Q-09` | Bourse annoncée puis déplacée | 🟡 Risque assumé | — |
 
 ---
 
 ## `Q-01` — Comment les livres passent-ils du tri au rayon ?
 
-> 🔴 **Cette question doit être tranchée avant de commencer l'architecture technique.**
-> Elle détermine s'il existe une entité « lot », si elle porte un code-barres, si elle
-> a un cycle de vie propre, et comment le travail de plusieurs bénévoles en parallèle
-> se concilie. La reprendre après coup coûterait une refonte du modèle de données et
-> des écrans de scan.
+> ✅ **Tranchée.** Aucune des trois options initialement proposées n'a été retenue.
+> La solution adoptée supprime l'étape.
 
-Le besoin est constant, quelle que soit l'option : **rien ne doit être publié ni
-notifié tant que les livres ne sont pas physiquement disponibles** (`RG-20`). Plusieurs
-jours peuvent séparer le tri de la mise en rayon.
+### La solution retenue : deux modes choisis avant de scanner
 
-### Option A — Le carton étiqueté *(recommandée)*
+Avant de commencer une session de tri, le bénévole choisit entre deux modes, qui
+s'appliquent à tous les scans de la session (`RG-20`) :
 
-Le bénévole ouvre un carton dans l'application, y scanne des livres, puis le ferme :
-l'application produit une **étiquette code-barres à imprimer et à coller sur le carton
-physique**. À la bourse, un autre bénévole scanne l'étiquette et valide : tout le
-contenu passe en rayon d'un coup.
-
-| Pour | Contre |
+| Mode | Effet |
 |---|---|
-| Le lien entre le carton physique et son contenu numérique est matérialisé : on ne se demande jamais « quel lot est-ce ? » | Nécessite une imprimante et des étiquettes dans le local de tri |
-| Aucun livre n'est scanné deux fois | Un carton dont l'étiquette est perdue ou déchirée doit pouvoir être rattrapé par une recherche manuelle |
-| Plusieurs bénévoles peuvent trier en parallèle sans se gêner | Impose de définir ce qui se passe si un carton est ouvert puis vidé ailleurs |
-| Traçabilité complète : qui a trié, quand, quel contenu | |
+| `DISPONIBLE MAINTENANT` | Les livres sont vendables immédiatement et apparaissent comme disponibles sur le site (`RG-21`) |
+| `PROCHAINE BOURSE` | Les livres sont **annoncés en ligne avec la date de la prochaine bourse**, sans être vendables. À cette date, ils deviennent disponibles **automatiquement** (`RG-22`, `RG-23`) |
 
-### Option B — Le lot nommé avec bouton de validation
+### Pourquoi cette solution est meilleure que les trois options écartées
 
-Des lots nommés (« Tri du 12 mars ») restent ouverts, plusieurs en parallèle. Un bouton
-bascule un lot entier en rayon.
+Le besoin d'origine était : *ne pas annoncer comme disponible un livre encore dans un
+carton*. Les trois options y répondaient toutes par un **geste humain de publication**,
+et c'est précisément ce geste qui posait problème.
 
-| Pour | Contre |
+| Option écartée | Ce qui la disqualifie |
 |---|---|
-| Aucun matériel supplémentaire | **Rien ne relie un lot au carton physique.** Il faut se souvenir que le carton rouge correspond au lot du 12 mars |
-| Le plus simple à concevoir | Devient ingérable dès que plusieurs cartons attendent en même temps |
-| | Risque de valider le mauvais lot, erreur silencieuse et difficile à rattraper |
+| **A — Carton étiqueté** | Imprimante et étiquettes dans le local ; un carton dont l'étiquette est perdue devient un problème ; le geste de scan de l'étiquette peut être oublié |
+| **B — Lot nommé** | Rien ne relie un lot au carton physique ; ingérable dès que plusieurs cartons attendent ; risque de valider le mauvais lot |
+| **C — Double scan** | Double le travail de scan : sur mille livres par session, une heure de bénévolat perdue à chaque fois |
 
-### Option C — Le double scan
+La solution retenue **supprime le geste au lieu de l'optimiser**. Elle apporte :
 
-Un mode « tri » qui n'enregistre rien, et un mode « rangement » qui publie. Les livres
-sont scannés une fois au tri pour la décision, une seconde fois au rangement pour la
-publication.
+- **Aucune tâche supplémentaire dans le local.** Le rangement physique reste manuel,
+  mais ne s'accompagne d'aucune saisie.
+- **Rien qui puisse être oublié.** La bascule est pilotée par une date, pas par une
+  personne. Il n'existe plus de carton qu'on aurait négligé de déclarer.
+- **Aucun matériel supplémentaire.** Ni imprimante, ni étiquettes.
+- **Aucun double scan.** Chaque livre est scanné une fois.
+- **Une promesse publique datée**, donc tenable : le site n'affiche jamais « disponible »
+  pour un livre qui ne l'est pas, il affiche « disponible à partir du 14 mars ».
 
-| Pour | Contre |
+### Ce que cette solution coûte en retour
+
+Elle n'est pas gratuite, et les documents en tirent les conséquences :
+
+| Contrepartie | Traitement |
 |---|---|
-| Le plus simple techniquement : aucune notion de lot | **Double le travail de scan.** Sur mille livres par session, c'est une heure de bénévolat perdue à chaque fois |
-| Le stock ne reflète que ce qui est réellement rangé | Le scan de rangement est un travail sans contrepartie visible pour celui qui le fait : c'est celui qu'on cessera de faire en premier |
-| | Aucune trace des livres triés mais jamais rangés |
-
-### Ce qu'il faut pour décider
-
-- Combien de cartons attendent en moyenne entre le tri et la mise en rayon ?
-- Le tri et la mise en rayon se font-ils dans le même local ?
-- Une imprimante est-elle envisageable dans le local de tri ?
-- Le tri se fait-il par plusieurs personnes en même temps ?
+| **Le risque se déplace sur une erreur de mode.** Une session de deux cents livres scannée dans le mauvais mode publie tout immédiatement, sans que rien ne le signale | Mode affiché en permanence à l'écran (`ENF-19`), rappelé à la clôture de session (`03` §3.6), et **rattrapable en bloc** par un administrateur (`RG-25`) |
+| **L'agenda des bourses devient critique.** Ce n'était qu'un affichage ; il pilote désormais la disponibilité réelle du catalogue | `RG-36` en fait la source unique, et `RG-38` traite les bourses déplacées, annulées ou passées |
+| **Il faut gérer l'absence de bourse programmée** | `RG-24` : annonce sans date, rattachement automatique à la création de la bourse, alertes différées, et une file de travail en administration (`05` §4) |
+| **Les alertes partent plus tôt qu'avant**, dès le tri | Assumé : elles portent une date, donc n'invitent jamais à un déplacement prématuré (`RG-28`) |
 
 ---
 
@@ -219,6 +213,31 @@ téléphone ordinaire.
 
 ---
 
+## `Q-09` — Une bourse annoncée puis déplacée
+
+> 🟡 Risque assumé, conséquence directe de la solution retenue en `Q-01`.
+
+Un membre reçoit « ce livre sera disponible à la bourse du 14 mars ». La bourse est
+ensuite reportée au 21.
+
+En v1, **aucun e-mail de correction n'est envoyé** (`RG-38`). Le site affiche bien la
+nouvelle date, la bascule automatique suit, mais l'e-mail déjà parti reste faux. Un
+membre peut donc se déplacer le 14 pour rien.
+
+C'est le seul cas où le système peut faire déplacer quelqu'un inutilement — exactement
+le risque que l'on cherchait à éviter au départ, réintroduit par une autre porte.
+
+**Ce qui limite la portée du problème** : les dates de bourse sont fixées longtemps à
+l'avance et bougent rarement, et le report d'une bourse est de toute façon communiqué
+par les canaux habituels de l'association.
+
+**À trancher si le cas se produit** : envoyer un e-mail de correction aux membres
+alertés sur une bourse dont la date a changé. Techniquement simple, puisque
+l'historique des alertes est conservé (`02` §4) — mais à ne construire que si le besoin
+est réel.
+
+---
+
 ## Journal des décisions
 
 | Date | Décision | Retenu |
@@ -238,4 +257,7 @@ téléphone ordinaire.
 | 2026-08-31 | Catalogue public | Complet et parcourable |
 | 2026-08-31 | Comptes du public | Microsoft Entra External ID |
 | 2026-08-31 | Découpage de livraison | Palier 0 (sonde) puis socle interne, vitrine, alertes |
-| 2026-08-31 | Passage du tri au rayon | **Non tranché** — voir `Q-01` |
+| 2026-08-31 | Passage du tri au rayon | **Deux modes choisis avant de scanner**, plus bascule automatique à la date de la bourse. Aucune des trois options lot/carton n'a été retenue — `Q-01` |
+| 2026-08-31 | Moment d'envoi de l'alerte | Au scan, avec la date annoncée — pas à la bascule |
+| 2026-08-31 | Mode « prochaine bourse » sans bourse programmée | Accepté ; rattachement à la prochaine bourse créée, alertes différées |
+| 2026-08-31 | Correction d'une erreur de mode | Reprise en bloc de la session entière |

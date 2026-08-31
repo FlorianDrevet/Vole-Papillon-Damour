@@ -125,7 +125,7 @@ structure de titres cohérente.
 ### `ENF-21` — Continuité de la vente
 Une indisponibilité du système ne doit jamais empêcher de vendre. La caisse reste
 physique ; en dernier recours, les ventes se font sans scan et sont régularisées par
-une remise à plat (`RG-31`).
+une remise à plat (`RG-34`).
 
 ### `ENF-22` — Sauvegardes
 Les mouvements constituent l'historique comptable de l'activité. Ils doivent être

@@ -8,74 +8,108 @@ documents et le code.
 | Terme | Définition |
 |---|---|
 | **ISBN** | Identifiant international unique d'une édition, encodé dans le code-barres au dos du livre. Deux éditions différentes d'un même texte ont deux ISBN différents. Existe en 10 et 13 chiffres ; on stocke toujours la forme à 13 chiffres. |
-| **Fiche livre** | L'unité de gestion du système. Une fiche par ISBN : métadonnées, quantité en rayon, historique de vente, statut. **Il n'existe pas d'entité « exemplaire ».** |
-| **Quantité en rayon** | Nombre d'exemplaires de cette fiche considérés comme disponibles à la vente. C'est un compteur, pas une liste. |
+| **Fiche livre** | L'unité de gestion du système. Une fiche par ISBN : métadonnées, quantités, historique de vente, statut. **Il n'existe pas d'entité « exemplaire ».** |
+| **Quantité disponible** | Nombre d'exemplaires vendables dès à présent. |
+| **Quantité annoncée** | Nombre d'exemplaires promis pour une bourse à venir, pas encore vendables. |
 | **Métadonnées** | Titre, auteur, éditeur, année, genre, image de couverture. Obtenues automatiquement à partir de l'ISBN. |
 | **Tri** | Opération par laquelle un bénévole décide, don en main, de garder ou d'écarter un livre. |
-| **Retenu** | Livre gardé au tri. Il n'est pas encore en rayon. |
-| **Écarté** | Livre refusé au tri. Il quitte définitivement le circuit. Compté, jamais mis en rayon. |
-| **Mise en rayon** | Geste par lequel des livres retenus deviennent effectivement disponibles. **C'est le seul moment où un livre devient visible en ligne et où les alertes partent.** |
-| **Lot** | Regroupement de livres retenus entre le tri et la mise en rayon. Sa forme concrète — carton étiqueté, lot nommé, ou absence de lot — dépend de l'arbitrage `Q-01`. |
+| **Écarté** | Livre refusé au tri. Il quitte définitivement le circuit. Compté, jamais mis à disposition. |
+| **Mode de mise à disposition** | Choix fait **avant de commencer à scanner**, valable pour toute la session : `DISPONIBLE MAINTENANT` ou `PROCHAINE BOURSE`. C'est ce choix qui détermine l'effet public de chaque scan. |
+| **Session de scan** | Ensemble des scans réalisés par un bénévole sous un même mode, entre le début et la fin de son tri. **C'est l'unité de correction** : une erreur de mode se répare en rebasculant la session entière. |
+| **Annoncé** | État d'un livre scanné en mode `PROCHAINE BOURSE`. Visible en ligne avec sa date, mais pas encore vendable. |
+| **Bascule** | Passage automatique d'annoncé à disponible, à la date d'ouverture de la bourse de rattachement. Aucun geste humain. |
 | **Session de bourse** | Période de vente ouverte au public. Correspond à un `AssoEvents` de type `Books` existant. |
-| **Vente** | Sortie d'un exemplaire, enregistrée par un scan à la caisse. Décrémente la quantité en rayon. |
+| **Vente** | Sortie d'un exemplaire, enregistrée par un scan à la caisse. Décrémente la quantité disponible. |
 | **Livre rare** | Fiche dont la valeur estimée dépasse le seuil de l'association. Vendue hors du tarif 1–2 €, dans une section dédiée. |
 | **Liste de recherche** | Ensemble des ISBN qu'un membre inscrit déclare rechercher. |
-| **Alerte** | E-mail envoyé à un membre quand un livre de sa liste de recherche est mis en rayon. |
-| **Remise à plat** | Correction périodique de la quantité en rayon pour absorber les ventes non scannées. Voir `RG-31`. |
+| **Alerte** | E-mail envoyé à un membre quand un livre de sa liste devient disponible ou est annoncé pour une bourse datée. |
+| **Remise à plat** | Correction périodique des quantités pour absorber les ventes non scannées. Voir `RG-31`. |
 
 ### Termes à ne pas employer
 
 | À éviter | Pourquoi | Employer |
 |---|---|---|
 | « Produit » | Réservé à la buvette (agrégat `Product` existant). Les livres ne sont pas des produits. | Fiche livre |
-| « Stock » seul | Ambigu entre le local et la quantité d'une fiche | Quantité en rayon |
+| « Stock » seul | Ambigu entre le local et les quantités d'une fiche | Quantité disponible / annoncée |
 | « Commande » | Réservé à l'agrégat `Order` de la buvette | Vente |
+| « Lot », « carton » | Ces notions ont été écartées (`Q-01`). Il n'existe aucun regroupement physique suivi par le système. | Session de scan |
+| « Mise en rayon » | Suggère un geste humain de publication, qui n'existe pas | Mise à disposition |
 | « Réservé » | Aucune réservation n'existe en v1 | — |
 
 ## 2. Cycle de vie d'un livre
 
 ```
-                         don reçu
-                            │
-                            ▼
-                    ┌───────────────┐
-                    │  scan au tri  │
-                    └───────┬───────┘
-                            │
-              ┌─────────────┴──────────────┐
-              ▼                            ▼
-       ┌────────────┐               ┌─────────────┐
-       │  ÉCARTÉ    │               │   RETENU    │
-       │ (terminal) │               │ (dans un    │
-       └────────────┘               │    lot)     │
-                                    └──────┬──────┘
-                                           │  mise en rayon
-                                           ▼
-                                    ┌─────────────┐
-                        ┌──────────►│  EN RAYON   │◄─────────┐
-                        │           └──────┬──────┘          │
-                        │                  │                 │
-             remise à plat            scan de vente     autre don du
-             (correction)                  │            même titre
-                        │                  ▼                 │
-                        │           ┌─────────────┐          │
-                        └───────────┤    VENDU    │          │
-                                    │ (compteur)  ├──────────┘
-                                    └─────────────┘
+                              don reçu
+                                 │
+                                 ▼
+                      ┌────────────────────┐
+                      │    scan au tri     │
+                      │  (dans une session │
+                      │   ayant un mode)   │
+                      └─────────┬──────────┘
+                                │
+                 ┌──────────────┴───────────────┐
+                 ▼                              ▼
+          ┌────────────┐                    gardé
+          │  ÉCARTÉ    │                       │
+          │ (terminal) │          ┌────────────┴────────────┐
+          └────────────┘          │  selon le mode de la    │
+                                  │        session          │
+                                  └────────────┬────────────┘
+                mode PROCHAINE BOURSE          │       mode DISPONIBLE MAINTENANT
+                       ┌───────────────────────┴───────────────────────┐
+                       ▼                                               │
+                ┌─────────────┐                                        │
+                │   ANNONCÉ   │   visible en ligne avec sa date,       │
+                │  (bourse X) │   non vendable                         │
+                └──────┬──────┘                                        │
+                       │  bascule automatique                          │
+                       │  à la date d'ouverture de X                   │
+                       ▼                                               ▼
+                ┌────────────────────────────────────────────────────────┐
+       ┌───────►│                      DISPONIBLE                        │◄──────┐
+       │        └───────────────────────┬────────────────────────────────┘       │
+       │                                │                                        │
+ remise à plat                   scan de vente                            autre don du
+ (correction)                           │                                 même titre
+       │                                ▼                                        │
+       │                         ┌─────────────┐                                 │
+       └─────────────────────────┤    VENDU    ├─────────────────────────────────┘
+                                 │ (compteur)  │
+                                 └─────────────┘
 ```
 
 **Points d'attention sur ce schéma.**
 
 - Les états ne portent pas sur un exemplaire mais sur **des quantités attachées à une
-  fiche**. Une même fiche peut simultanément avoir 3 exemplaires en rayon, 2 dans un
-  lot non encore rangé et 47 ventes cumulées.
-- **Aucune transition ne rend un livre public en dehors de la mise en rayon.** C'est la
-  garantie centrale du système : un livre trié mais pas encore rangé n'existe pas pour
-  le public et ne déclenche aucune alerte.
+  fiche**. Une même fiche peut simultanément avoir 3 exemplaires disponibles,
+  2 annoncés pour la bourse de mars et 47 ventes cumulées.
+- **La seule décision humaine de publication est le choix du mode, fait une fois avant
+  de scanner.** Il n'existe aucun geste de validation ultérieur.
+- **La bascule est automatique et pilotée par la date de l'événement.** Personne ne la
+  déclenche ; personne ne peut l'oublier.
 - L'état `ÉCARTÉ` est terminal et sans quantité récupérable : on n'incrémente qu'un
   compteur de refus, pour la statistique.
 
-## 3. Modèle conceptuel
+## 3. Les deux modes de mise à disposition
+
+C'est le cœur du dispositif. Le mode est choisi avant le premier scan et s'applique à
+toute la session (`RG-20`).
+
+| | `DISPONIBLE MAINTENANT` | `PROCHAINE BOURSE` |
+|---|---|---|
+| **Quand l'utiliser** | Les livres partent directement en rayon, ou y sont déjà | Les livres sont triés en avance et seront rangés d'ici la prochaine bourse |
+| **Effet immédiat** | Quantité disponible +1 | Quantité annoncée +1, rattachée à une bourse |
+| **Sur le site public** | « Disponible » | « Disponible à partir du 14 mars » |
+| **Effet différé** | aucun | Bascule automatique en disponible à la date d'ouverture |
+| **Alerte e-mail** | « disponible » | « sera disponible le 14 mars » |
+
+Ce dispositif répond au besoin d'origine — ne pas annoncer comme disponible un livre
+encore dans un carton — **sans imposer un second scan ni un geste de validation**. Le
+livre annoncé est visible en ligne dès le tri, mais avec une date : la promesse faite
+au public est datée, donc tenable.
+
+## 4. Modèle conceptuel
 
 Description fonctionnelle des informations à conserver. Ce n'est pas un schéma de base
 de données : la modélisation technique est un travail distinct.
@@ -89,12 +123,13 @@ Identifiée par son ISBN-13.
 | ISBN-13 | identifiant | scan |
 | Titre, auteur(s), éditeur, année, genre | métadonnées | source externe, corrigeable par un administrateur |
 | Image de couverture | métadonnée | source externe |
-| Quantité en rayon | compteur | calculé par les mouvements |
+| Quantité disponible | compteur | calculé par les mouvements |
+| Quantité annoncée, par bourse de rattachement | compteur | calculé par les mouvements |
 | Ventes cumulées | compteur | scans de vente |
 | Refus cumulés | compteur | scans de tri écartés |
 | Valeur estimée + date d'estimation | métadonnée | source de prix, voir `Q-02` |
 | Marquée « rare » | indicateur | automatique par seuil, ou manuel |
-| Date de première entrée, date de dernière mise en rayon | horodatage | mouvements |
+| Date de première entrée, date de dernière mise à disposition | horodatage | mouvements |
 | Masquée du catalogue public | indicateur | administrateur |
 
 ### Mouvement
@@ -105,26 +140,30 @@ fiche en découlent.
 | Information | Exemple |
 |---|---|
 | ISBN concerné | `9782070408504` |
-| Type | `MISE_EN_RAYON`, `VENTE`, `REFUS`, `CORRECTION`, `RETRAIT` |
+| Type | `ENTREE_ANNONCE`, `ENTREE_DIRECTE`, `BASCULE`, `VENTE`, `REFUS`, `CORRECTION`, `RETRAIT` |
 | Quantité | `+1`, `-1`, `-12` |
 | Date et heure | `2026-03-14T10:32:17+01:00` |
+| Session de scan d'origine | identifiant de session |
 | Bénévole auteur du geste | identifiant du compte bénévole |
-| Session de bourse rattachée, si applicable | identifiant `AssoEvents` |
-| Lot d'origine, si applicable | identifiant de lot |
+| Bourse de rattachement, si applicable | identifiant `AssoEvents` |
 
 Conserver les mouvements plutôt que le seul compteur permet les statistiques par
-bourse, l'annulation d'une erreur de scan, et l'audit d'un écart d'inventaire.
+bourse, l'annulation d'une erreur de scan, la reprise en bloc d'une session au mauvais
+mode (`RG-22`), et l'audit d'un écart d'inventaire.
 
-### Lot
+### Session de scan
 
-Existe sous une forme ou une autre selon l'arbitrage `Q-01`.
+Remplace la notion de lot, écartée en `Q-01`. Elle n'a **aucune existence physique** :
+c'est une unité de travail et de correction, pas un carton.
 
 | Information |
 |---|
-| Identifiant, et code-barres imprimable si l'option carton est retenue |
-| Statut : `OUVERT`, `FERMÉ`, `MIS_EN_RAYON` |
-| Contenu : liste des ISBN et quantités |
-| Bénévole créateur, dates de création, de fermeture et de mise en rayon |
+| Identifiant |
+| Mode : `DISPONIBLE_MAINTENANT` ou `PROCHAINE_BOURSE` |
+| Bourse de rattachement, si le mode l'exige et si elle est connue |
+| Bénévole, date de début, date de fin |
+| Mouvements produits, et compteur de livres gardés / écartés |
+| Statut : `EN_COURS`, `TERMINEE`, `REPRISE` (si rebasculée par un administrateur) |
 
 ### Membre du site
 
@@ -134,21 +173,21 @@ Existe sous une forme ou une autre selon l'arbitrage `Q-01`.
 | Adresse e-mail | canal des alertes |
 | Liste de recherche : ISBN + date d'ajout | |
 | Préférences d'alerte, statut du compte (actif / bloqué) | |
-| Historique des alertes envoyées | évite les doublons d'envoi — `RG-24` |
+| Historique des alertes envoyées | évite les doublons d'envoi — `RG-26` |
 
 ### Bénévole
 
 | Information |
 |---|
 | Identifiant, nom, statut actif ou non |
-| Droits : tri, mise en rayon, caisse, administration |
+| Droits : tri, caisse, administration |
 | Appareils associés |
 
-## 4. Relation avec le domaine existant
+## 5. Relation avec le domaine existant
 
 | Élément existant | Relation |
 |---|---|
-| `AssoEvents` (type `Books`) | Une session de bourse **est** un `AssoEvents` existant. Les ventes s'y rattachent. Aucune duplication de la notion d'événement. |
+| `AssoEvents` (type `Books`) | Une session de bourse **est** un `AssoEvents` existant. Sa date d'ouverture **pilote la bascule automatique** (`RG-21`) et les ventes s'y rattachent. La dépendance est désormais forte : la qualité de l'agenda conditionne le bon fonctionnement du dispositif. |
 | `Product`, `Order` (buvette) | **Aucune relation.** Les livres ne sont pas des produits et les ventes de livres ne sont pas des commandes. Toute tentative de réutiliser ces agrégats introduirait une confusion durable. |
 | `User` | Les bénévoles peuvent s'appuyer sur le mécanisme d'authentification existant. Les membres du public relèvent d'Entra External ID, qui est un mécanisme distinct. |
 | `Website`, `BackOffice` | Le site public du catalogue est une application distincte. Seul un lien depuis le site de l'association vers le catalogue est prévu. |

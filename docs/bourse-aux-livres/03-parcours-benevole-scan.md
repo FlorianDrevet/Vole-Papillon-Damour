@@ -33,9 +33,6 @@ Au lancement, un seul choix, en gros boutons :
    │   │   📖   TRIER DES LIVRES       │ │
    │   └───────────────────────────────┘ │
    │   ┌───────────────────────────────┐ │
-   │   │   📦   METTRE EN RAYON        │ │
-   │   └───────────────────────────────┘ │
-   │   ┌───────────────────────────────┐ │
    │   │   💶   CAISSE                 │ │
    │   └───────────────────────────────┘ │
    │                                     │
@@ -50,16 +47,55 @@ l'écran, libellé en toutes lettres. Un scan de vente déclenché depuis le mod
 serait une erreur coûteuse et silencieuse : la couleur du bandeau est la garantie
 principale contre cette confusion.
 
-## 3. Mode TRI — l'écran central du projet
+Il n'existe pas de mode de mise en rayon : la publication ne repose sur aucun geste de
+validation. Elle découle du mode de mise à disposition choisi à l'ouverture d'une
+session de tri (§3.1) et, le cas échéant, d'une bascule automatique à la date de la
+bourse (`RG-23`).
 
-C'est l'écran qui porte toute la valeur du produit. Il doit être lisible en une
-demi-seconde, à bout de bras.
+## 3. Mode TRI
 
-### Écran d'attente
+### 3.1 Choisir le mode de mise à disposition
+
+**C'est l'écran le plus important du dispositif, et le plus dangereux.** Il n'apparaît
+qu'une fois, à l'ouverture d'une session de tri, et engage tous les scans qui suivent
+(`RG-20`).
 
 ```
 ┌───────────────────────────────────────┐
-│ 📖 TRI          Michel   ·   127 triés│  ← bandeau permanent
+│   Nouvelle session de tri             │
+│   Ces livres seront…                  │
+│                                       │
+│   ┌───────────────────────────────┐   │
+│   │  📗  DISPONIBLES MAINTENANT   │   │
+│   │      mis en vente tout de     │   │
+│   │      suite                    │   │
+│   └───────────────────────────────┘   │
+│                                       │
+│   ┌───────────────────────────────┐   │
+│   │  📅  À LA PROCHAINE BOURSE    │   │
+│   │      annoncés en ligne pour   │   │
+│   │      le 14 mars               │   │
+│   └───────────────────────────────┘   │
+│                                       │
+└───────────────────────────────────────┘
+```
+
+- La date réelle de la prochaine bourse est affichée sur le bouton, jamais un libellé
+  générique. Le bénévole doit voir ce qu'il promet au public.
+- Si aucune bourse n'est programmée, le second bouton indique « date à préciser » et
+  reste utilisable : les livres seront rattachés à la prochaine bourse créée (`RG-24`).
+- Le mode ne peut pas être changé en cours de session. Pour en changer, on termine la
+  session et on en ouvre une autre (`RG-20`).
+
+### 3.2 Écran d'attente
+
+L'écran de scan porte toute la valeur du produit. Il doit être lisible en une
+demi-seconde, à bout de bras.
+
+```
+┌───────────────────────────────────────┐
+│ 📅 PROCHAINE BOURSE (14 mars)         │  ← bandeau de mode, permanent
+│ Michel   ·   127 triés                │
 ├───────────────────────────────────────┤
 │                                       │
 │              [ viseur ]               │
@@ -75,9 +111,9 @@ demi-seconde, à bout de bras.
 ```
 
 Le compteur de la session (`127 triés`) est la seule statistique affichée : il entretient
-le rythme sans distraire.
+le rythme sans distraire. Le bandeau de mode, lui, ne disparaît jamais.
 
-### Écran de résultat
+### 3.3 Écran de résultat
 
 Le verdict occupe le haut de l'écran, en couleur, lisible sans lire le détail.
 
@@ -85,20 +121,22 @@ Le verdict occupe le haut de l'écran, en couleur, lisible sans lire le détail.
 
 ```
 ┌───────────────────────────────────────┐
-│ 📖 TRI          Michel   ·   128 triés│
+│ 📅 PROCHAINE BOURSE (14 mars)         │
+│ Michel   ·   128 triés                │
 ├───────────────────────────────────────┤
 │ ╔═══════════════════════════════════╗ │
 │ ║  🔴   INUTILE D'EN GARDER         ║ │
-│ ║       déjà 6 en rayon             ║ │
+│ ║       déjà 6 (4 dispo + 2 annonc.)║ │
 │ ╚═══════════════════════════════════╝ │
 │  ┌────┐                               │
 │  │couv│  Le Petit Prince              │
 │  │    │  Antoine de Saint-Exupéry     │
 │  └────┘  Gallimard · 1999             │
 │                                       │
-│  En rayon      6                      │
-│  Déjà vendus   2                      │
-│  Recherché par —                      │
+│  Disponibles    4                     │
+│  Annoncés       2                     │
+│  Déjà vendus    2                     │
+│  Recherché par  —                     │
 ├───────────────────────────────────────┤
 │   ┌──────────┐      ┌──────────────┐  │
 │   │  ÉCARTER │      │    GARDER    │  │
@@ -136,7 +174,7 @@ Le verdict occupe le haut de l'écran, en couleur, lisible sans lire le détail.
 Le verdict affiché est déterminé par les règles `RG-10` à `RG-16`, qui définissent
 aussi leur ordre de priorité lorsque plusieurs s'appliquent.
 
-### Enchaîner sans toucher l'écran
+### 3.4 Enchaîner sans toucher l'écran
 
 **Scanner le livre suivant vaut « garder » pour le précédent.** C'est le comportement
 par défaut, et c'est ce qui rend la cadence tenable : le bénévole regarde le verdict,
@@ -151,7 +189,7 @@ signifie qu'un scan par erreur compte comme un livre gardé. D'où `RG-17` (annu
 dernier scan) et `RG-18` (le geste d'annulation reste accessible pendant toute la
 session).
 
-### Saisie manuelle du code
+### 3.5 Saisie manuelle du code
 
 Un code-barres illisible arrive régulièrement sur des livres d'occasion. L'écran de
 saisie accepte un ISBN à 10 ou 13 chiffres tapé au clavier numérique, avec contrôle
@@ -159,38 +197,60 @@ de la clé de validité (`RG-01`).
 
 C'est le seul cas où l'on tape. Il ne doit jamais être le chemin nominal.
 
-## 4. Mode MISE EN RAYON
+### 3.6 Terminer la session
 
-**Ce mode dépend entièrement de l'arbitrage `Q-01`.** Les trois organisations possibles
-et leurs conséquences sont décrites dans `08-questions-ouvertes.md`. Ce qui suit décrit
-l'option **carton étiqueté**, recommandée, à titre d'illustration du parcours cible.
+Un bouton `TERMINER` clôt la session. L'écran de fin récapitule ce qui vient d'être
+fait et, surtout, **ce que cela a produit publiquement** :
 
-### Côté tri : constituer un carton
+```
+┌───────────────────────────────────────┐
+│   Session terminée                    │
+│                                       │
+│   183 livres gardés                   │
+│    47 livres écartés                  │
+│                                       │
+│   📅 Annoncés en ligne pour la        │
+│      bourse du 14 mars                │
+│                                       │
+│   ✉ 6 personnes ont été prévenues    │
+│      qu'un livre qu'elles cherchent   │
+│      sera disponible                  │
+└───────────────────────────────────────┘
+```
 
-1. Le bénévole ouvre un carton dans l'application. Il reçoit un numéro.
-2. Il trie et scanne normalement ; les livres gardés s'ajoutent au carton en cours.
-3. Le carton plein, il le ferme. **L'application produit une étiquette code-barres à
-   imprimer et à coller sur le carton physique.**
+Cet écran n'est pas décoratif : c'est le dernier moment où un bénévole peut se rendre
+compte qu'il a scanné dans le mauvais mode. Le mode y est répété en clair, et l'effet
+public est énoncé en langage ordinaire.
 
-L'écran affiche en permanence le carton en cours et son nombre de livres.
+## 4. Ce qui remplace la mise en rayon
 
-### Côté local : mettre en rayon
+Il n'y a **aucun geste de mise en rayon**. La question `Q-01` a été tranchée dans un
+sens qui supprime l'étape : la publication est décidée en amont, par le mode de la
+session, et la disponibilité effective survient toute seule.
 
-1. Le bénévole passe en mode `METTRE EN RAYON`.
-2. Il scanne l'étiquette du carton.
-3. L'application affiche : `Carton n° 42 — 87 livres — trié le 3 mars par Michel`.
-4. Il valide.
+| Mode de la session | À la fin du scan | À la date de la bourse |
+|---|---|---|
+| `DISPONIBLE MAINTENANT` | Le livre est disponible et vendable immédiatement (`RG-21`) | — |
+| `PROCHAINE BOURSE` | Le livre est annoncé en ligne avec sa date, non vendable (`RG-22`) | **Bascule automatique** en disponible (`RG-23`) |
 
-**C'est cette validation, et elle seule, qui rend les 87 livres visibles en ligne et
-déclenche les alertes** (`RG-20`).
+Conséquences pour les bénévoles :
 
-Aucun livre n'est re-scanné individuellement : c'est tout l'intérêt de l'étiquette.
-Un carton ne peut être mis en rayon qu'une fois (`RG-21`).
+- **Personne n'a de geste supplémentaire à faire dans le local.** Le rangement physique
+  des livres reste un travail manuel, mais il ne s'accompagne d'aucune saisie.
+- **Rien ne peut être oublié.** Il n'existe pas de carton qu'on aurait négligé de
+  déclarer : la bascule est pilotée par la date.
+- **Le risque s'est déplacé.** Il ne porte plus sur un oubli, mais sur une erreur de
+  mode au départ. C'est pourquoi le mode est répété en permanence à l'écran, rappelé à
+  la clôture, et rattrapable en bloc par un administrateur (`RG-25`).
+
+L'autre dépendance nouvelle est l'agenda : si la bourse n'est pas saisie ou si sa date
+est fausse, la bascule l'est aussi. L'agenda n'est plus un simple affichage, il pilote
+la disponibilité (`RG-36`).
 
 ## 5. Mode CAISSE
 
 Utilisé pendant une session de bourse. L'application se rattache automatiquement à la
-session de bourse ouverte (`RG-30`).
+session de bourse ouverte (`RG-33`).
 
 ```
 ┌───────────────────────────────────────┐
@@ -216,9 +276,12 @@ Points de conception :
 - `Annuler dernier` traite le cas fréquent du double scan.
 - `ENCAISSER` clôt la vente et enregistre les mouvements. Le calcul du rendu de monnaie
   n'est pas dans le périmètre : la caisse reste physique.
-- **Un livre scanné alors que la quantité en rayon est à zéro est quand même vendu** :
+- **Un livre scanné alors que la quantité disponible est à zéro est quand même vendu** :
   le client le tient en main, la réalité prime sur le compteur. L'écart est enregistré
-  pour la remise à plat (`RG-34`).
+  pour la remise à plat (`RG-37`).
+- **Un livre encore annoncé et non basculé est signalé au caissier** — il n'était pas
+  censé être en rayon — mais la vente n'est pas bloquée pour autant (`RG-37`). C'est le
+  signe que des livres ont été rangés en avance sur leur date d'annonce.
 
 ## 6. Mode CONSULTATION (palier 0 uniquement)
 
@@ -237,7 +300,9 @@ polluer les données. À conserver au-delà du palier 0.
 | ISBN valide mais inconnu des sources de métadonnées | La fiche est créée avec le seul ISBN. Le bénévole peut la garder ; le titre sera complété plus tard par un administrateur (`RG-03`) |
 | Même livre scanné deux fois de suite en quelques secondes | Signaler « déjà scanné à l'instant » sans bloquer : deux exemplaires identiques dans un don sont fréquents (`RG-04`) |
 | Perte de réseau | L'application continue de scanner et met les gestes en attente. Le verdict affiché s'appuie sur les données locales, avec une mention explicite de leur fraîcheur (`ENF-05`) |
-| Application fermée avec un carton ouvert | Le carton est retrouvé à la réouverture, quel que soit l'appareil |
+| Application fermée avec une session ouverte | La session est retrouvée à la réouverture, **avec son mode**, et le mode est reconfirmé avant de reprendre le scan |
+| Mode `PROCHAINE BOURSE` alors qu'aucune bourse n'est programmée | Le mode reste utilisable ; les livres sont annoncés sans date et se rattacheront à la prochaine bourse créée. Les alertes sont différées (`RG-24`) |
+| Session entière scannée dans le mauvais mode | Un administrateur la rebascule en bloc (`RG-25`). C'est l'erreur la plus probable du système ; elle est silencieuse et ne se voit pas à l'écran de scan |
 | Deux bénévoles scannent le même ISBN en même temps | Aucun conflit : chaque scan est un mouvement indépendant |
 | Batterie de la scanette à plat en pleine session | Les gestes non synchronisés doivent survivre à l'extinction (`ENF-05`) |
 

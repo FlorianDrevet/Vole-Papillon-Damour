@@ -7,7 +7,7 @@ successives, aujourd'hui déconnectées les unes des autres :
 
 1. **Le tri.** Des bénévoles écartent les livres abîmés, les exemplaires en trop
    grand nombre et les titres jugés invendables.
-2. **La mise en rayon.** Les livres retenus rejoignent un local de vente déjà saturé.
+2. **Le rangement.** Les livres retenus rejoignent un local de vente déjà saturé.
 3. **La vente.** Les livres partent à 1–2 €, hors section « livres rares » vendue plus cher.
 
 Le tri est le point de décision central, et c'est celui où l'information manque. Le
@@ -18,8 +18,8 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 
 | # | Objectif | Comment on saura que c'est atteint |
 |---|---|---|
-| O1 | Donner au bénévole, au moment du tri, l'information qui manque pour décider | Le nombre d'exemplaires en rayon, le nombre de ventes passées et la demande sont affichés en moins d'une seconde après le scan |
-| O2 | Réduire la saturation du local | Baisse du nombre de doublons excédentaires mis en rayon d'une bourse à l'autre |
+| O1 | Donner au bénévole, au moment du tri, l'information qui manque pour décider | Le nombre d'exemplaires disponibles et annoncés, le nombre de ventes passées et la demande sont affichés en moins d'une seconde après le scan |
+| O2 | Réduire la saturation du local | Baisse du nombre de doublons excédentaires conservés d'une bourse à l'autre |
 | O3 | Ne plus écarter de livres demandés ou qui se vendent | Les titres à historique de vente positif ne sont plus écartés pour cause de doublon |
 | O4 | Identifier les livres de valeur avant qu'ils partent à 1 € | Les livres au-dessus d'un seuil de valeur sont systématiquement orientés vers la section « rares » |
 | O5 | Faire venir du monde à la bourse | Consultations du catalogue en ligne, et alertes suivies d'une visite |
@@ -29,7 +29,7 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 | Acteur | Rôle | Contexte d'usage |
 |---|---|---|
 | **Bénévole trieur** | Scanne les dons, décide de garder ou d'écarter | Debout, cadence soutenue, souvent en bavardant. Peut être âgé, peu à l'aise avec le numérique |
-| **Bénévole rangeur** | Met les livres retenus en rayon et déclare leur disponibilité | Dans le local, avec des cartons |
+| **Bénévole rangeur** | Range physiquement les livres retenus dans le local | **Aucune saisie à faire** : la disponibilité découle du mode choisi au tri et de la date de la bourse |
 | **Bénévole caissier** | Scanne les livres vendus | Jour de bourse, avec de la file d'attente |
 | **Administrateur** | Pilote le catalogue, consulte les statistiques, gère les comptes | Sur ordinateur, hors événement |
 | **Visiteur du site** | Cherche des livres, consulte le catalogue | Non connecté, sur mobile ou ordinateur |
@@ -40,11 +40,13 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 ### Application de scan (usage bénévole)
 
 - Scan d'un code-barres ISBN et affichage immédiat des informations du livre
-- Aide à la décision : exemplaires en rayon, historique de vente, demande exprimée,
+- Aide à la décision : exemplaires disponibles et annoncés, historique de vente, demande exprimée,
   signalement de valeur
 - Enregistrement de la décision : gardé ou écarté
-- Regroupement des livres triés jusqu'à leur mise en rayon effective (**modalité à
-  arbitrer — voir `Q-01`**)
+- Choix, avant chaque session de tri, du mode de mise à disposition :
+  `DISPONIBLE MAINTENANT` ou `PROCHAINE BOURSE` (`RG-20`)
+- Bascule automatique des exemplaires annoncés en exemplaires disponibles à la date
+  d'ouverture de la bourse, sans intervention humaine (`RG-23`)
 - Mode vente : scan de sortie à la caisse
 - Fonctionnement sur téléphone d'abord, sur terminal de scan dédié ensuite
 
@@ -54,7 +56,7 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 - Recherche par titre, auteur, ISBN ; navigation par genre
 - Fiche livre avec le nombre d'exemplaires disponibles
 - Création de compte et liste de livres recherchés
-- Alerte e-mail à la mise en rayon d'un livre recherché
+- Alerte e-mail dès qu'un livre recherché devient disponible ou est annoncé
 - Espace d'administration : statistiques, gestion du catalogue et des comptes
 
 ### Rattachement à l'existant
@@ -82,13 +84,14 @@ documentées car elles pèsent sur le reste.
 
 | Décision | Conséquence à assumer |
 |---|---|
-| **Suivi par ISBN avec quantité**, pas par exemplaire | On ne peut pas savoir *quel* exemplaire est parti, ni depuis quand un livre dort en rayon. Un livre vendu sans être scanné reste « disponible » indéfiniment : d'où l'obligation d'une remise à plat périodique (`RG-31`). |
+| **Suivi par ISBN avec quantité**, pas par exemplaire | On ne peut pas savoir *quel* exemplaire est parti, ni depuis quand un livre dort en rayon. Un livre vendu sans être scanné reste « disponible » indéfiniment : d'où l'obligation d'une remise à plat périodique (`RG-34`). |
 | **Scan systématique en caisse** | La fiabilité du catalogue public dépend entièrement de la discipline des caissiers. C'est le principal risque humain du projet. |
 | **Livres sans ISBN hors périmètre** | Une partie du stock restera invisible du système comme du site. |
 | **Site public en application distincte** | Une charte graphique, une authentification et un déploiement de plus à maintenir, en marge du `Website` et du `BackOffice` existants. |
 | **Administration dans le site public**, pas dans le `BackOffice` existant | L'authentification administrateur doit être refaite dans la nouvelle application ; les administrateurs auront deux outils. |
 | **Comptes publics via Microsoft Entra External ID** | Le service qui remplace Azure AD B2C, cohérent avec l'hébergement Azure existant. L'association ne stocke aucun mot de passe. |
 | **Écart au tri enregistré sans motif** | On connaîtra le volume écarté, pas les raisons. Impossible d'affiner les seuils de tri à partir des données. |
+| **Deux modes de mise à disposition choisis avant le scan**, plutôt qu'un geste de mise en rayon (`Q-01`) | Aucun geste de publication à faire dans le local, et rien qui puisse être oublié. En contrepartie : le risque se déplace sur une **erreur de mode en début de session**, silencieuse, qui n'est rattrapable qu'en bloc (`RG-25`). Et l'agenda des bourses cesse d'être un simple affichage : sa date **pilote la disponibilité réelle** du catalogue (`RG-36`). |
 
 ## 7. Paliers de livraison
 
@@ -116,8 +119,9 @@ l'association avant de lancer le test.
 
 ### Palier 1 — Le socle interne
 
-**Contenu.** Fiches livres, stock, tri, mise en rayon, scan de vente, écran de
-statistiques minimal. Aucune exposition publique.
+**Contenu.** Fiches livres, quantités disponible et annoncée, tri avec ses deux modes,
+bascule automatique, scan de vente, écran de statistiques minimal. Aucune exposition
+publique.
 
 **Critère de passage.** Après une bourse complète, l'écart entre le stock théorique et
 un comptage physique par échantillon reste dans une marge acceptable, à définir avec
@@ -151,7 +155,7 @@ remonté au bénévole trieur.
 
 | Grandeur | Ordre de grandeur retenu |
 |---|---|
-| Livres en rayon | 3 000 à 15 000 |
+| Livres disponibles | 3 000 à 15 000 |
 | Livres triés par session | environ 1 000 |
 | Appareils de scan simultanés | 2 à 5 |
 | Fréquence des bourses | environ une semaine par mois |

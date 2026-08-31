@@ -1,6 +1,6 @@
 # Bourse aux livres — spécifications fonctionnelles
 
-Ce dossier décrit **ce que doit faire** le futur outil de tri, de mise en rayon et de
+Ce dossier décrit **ce que doit faire** le futur outil de tri, de mise à disposition et de
 mise en ligne des livres de la bourse aux livres. Il ne décrit pas *comment* le
 construire : l'architecture technique fera l'objet d'un travail séparé, à partir de
 ces documents.

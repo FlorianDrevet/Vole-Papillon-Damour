@@ -57,14 +57,32 @@ se souvient à sa place.
 
 ### Pour le bénévole qui range les rayons
 
-Rien ne change dans son travail physique. Un geste s'ajoute au moment où un carton
-arrive dans le local : il signale à l'application que ces livres sont désormais en
-rayon. C'est ce geste qui les rend visibles en ligne et qui déclenche les e-mails
-aux personnes qui les attendaient.
+**Rien ne change, et aucune saisie ne lui est demandée.**
 
-Ce point mérite d'être souligné : **rien n'est publié tant que les livres ne sont pas
-réellement disponibles**. Un livre trié le mardi et rangé le samedi n'apparaît en
-ligne que le samedi. On ne fera venir personne pour un livre encore dans un carton.
+Le problème était le suivant : un livre trié un mardi peut n'être rangé que plusieurs
+jours plus tard. Il ne fallait pas l'annoncer disponible entre-temps, sous peine de
+faire venir quelqu'un pour rien.
+
+La solution ne passe pas par un geste supplémentaire dans le local, mais par une
+question posée **au début du tri** :
+
+> *Ces livres seront disponibles…*
+> **maintenant** ou **à la prochaine bourse ?**
+
+Si le bénévole répond « à la prochaine bourse », le site affiche « disponible à partir
+du 14 mars » — jamais « disponible ». Et le 14 mars, les livres deviennent disponibles
+tout seuls, sans que personne n'ait à s'en occuper.
+
+Deux avantages concrets : **personne ne peut oublier de déclarer un carton**, et
+**aucun livre n'est scanné deux fois**.
+
+En contrepartie, un point de vigilance : si le bénévole se trompe de réponse au début
+de son tri, tous les livres de la session partent dans le mauvais état, et l'erreur ne
+se voit pas. C'est pourquoi la réponse choisie reste affichée en permanence à l'écran,
+est rappelée à la fin du tri, et peut être corrigée d'un coup pour toute la session.
+
+**Cela suppose aussi que les dates des bourses soient tenues à jour dans l'outil**,
+puisque ce sont elles qui déclenchent la mise à disposition.
 
 ### Pour le bénévole à la caisse
 
@@ -89,8 +107,9 @@ consultable donne une raison de venir à la bourse plutôt que d'y passer par ha
 | | |
 |---|---|
 | **Matériel** | Un ou deux appareils de scan (type scanette de livreur), à acheter **seulement après une phase de test sur un téléphone personnel**. On ne dépense rien tant que l'on n'a pas vérifié que la méthode fonctionne sur de vrais dons. |
-| **Habitudes** | Un geste de scan au tri, un geste au rangement des cartons, un scan à la caisse. |
+| **Habitudes** | Un geste de scan au tri, un scan à la caisse. Rien de plus au rangement. |
 | **Rigueur** | Le scan en caisse est la condition de fiabilité de l'ensemble. C'est le principal engagement demandé. |
+| **Agenda à jour** | Les dates des bourses doivent être saisies à l'avance : ce sont elles qui rendent automatiquement disponibles les livres annoncés. |
 | **Données personnelles** | Le site collectera des adresses e-mail, uniquement de personnes qui s'inscrivent volontairement. Cela impose des obligations légales simples mais réelles : information des personnes, possibilité de se désinscrire et de supprimer son compte. Elles sont prévues dans la conception. |
 | **Développement** | Réalisé en interne, bénévolement. Pas de coût de prestataire. Restent les frais d'hébergement, dans la continuité de ce qui existe déjà. |
 
@@ -116,7 +135,7 @@ permettant de s'arrêter si l'expérience n'est pas concluante.
 | Étape | Ce qui est livré | Ce que l'on vérifie |
 |---|---|---|
 | **0 — Test** | Une application de scan qui *affiche* les informations d'un livre sans rien enregistrer, utilisée sur un téléphone personnel | Les codes-barres se lisent-ils bien sur des livres d'occasion abîmés ? Les informations remontent-elles pour les livres français ? Un bénévole tient-il ce rythme sur 300 livres ? |
-| **1 — Le socle** | Tri, mise en rayon et scan de vente. Usage interne, rien de public | Les bénévoles adoptent-ils l'outil ? Les chiffres de stock sont-ils justes après une bourse complète ? |
+| **1 — Le socle** | Tri avec ses deux réponses, mise à disposition automatique et scan de vente. Usage interne, rien de public | Les bénévoles adoptent-ils l'outil ? Se trompent-ils de réponse au début du tri ? Les chiffres de stock sont-ils justes après une bourse complète ? |
 | **2 — La vitrine** | Le catalogue en ligne, consultable par tous | Le public s'en saisit-il ? |
 | **3 — Les alertes** | Comptes, listes de recherche, e-mails d'arrivée | |
 
@@ -128,11 +147,12 @@ d'autre que du temps et elle conditionne tout le reste.
 1. **L'accord de principe** sur la démarche et sur l'engagement de scanner les ventes
    en caisse.
 2. **Le lancement de l'étape 0**, sans achat de matériel.
-3. **La manière de faire passer les livres du tri au rayon.** Trois organisations sont
-   possibles et elles n'ont pas les mêmes conséquences sur le travail des bénévoles.
-   Elles sont décrites dans [`08-questions-ouvertes.md`](08-questions-ouvertes.md),
-   question `Q-01`. Un avis sur ce qui est réalisable dans le local serait précieux
-   avant de trancher.
+3. **L'engagement de tenir les dates des bourses à jour** dans l'outil, puisque ce sont
+   elles qui déclenchent la mise à disposition des livres annoncés.
+
+*La question de la manière de faire passer les livres du tri au rayon a été tranchée :
+c'est la réponse donnée au début de chaque tri, décrite plus haut. Le détail figure
+dans [`08-questions-ouvertes.md`](08-questions-ouvertes.md), question `Q-01`.*
 
 ---
 
