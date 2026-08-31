@@ -132,8 +132,13 @@ date de la dernière alerte reçue s'il y en a eu une.
 
 ### Déclenchement
 
-Une alerte part **au moment du scan**, dès qu'un livre d'une liste de recherche est
-rendu disponible ou annoncé pour une bourse datée (`RG-28`).
+Une alerte est **constituée au scan**, dès qu'un livre d'une liste de recherche est
+rendu disponible ou annoncé pour une bourse datée (`RG-28`), et **envoyée à la clôture
+de la session de tri** (`RG-44`).
+
+Aucun e-mail ne part pendant qu'un bénévole scanne. Cela garantit un seul message par
+membre et par session, et laisse une fenêtre pendant laquelle une erreur reste sans
+conséquence pour le public.
 
 Le message diffère selon le mode de la session de tri :
 
@@ -166,9 +171,11 @@ e-mail annonçant un livre « prochainement » n'aide personne à se déplacer.
 | Situation | Comportement |
 |---|---|
 | Une session de tri de 200 livres contient 12 titres de la liste d'un même membre | **Un seul e-mail regroupant les 12 titres**, envoyé à la clôture de la session (`RG-29`). Douze e-mails simultanés feraient fuir le destinataire et abîmeraient la réputation d'envoi du domaine. |
+| Le bénévole range son appareil sans clôturer | La session se clôt d'elle-même après 2 h sans scan (`RG-43`), et les e-mails partent à ce moment-là. Retard maximal : deux heures. |
 | Le même livre est réapprovisionné quatre fois en deux mois | Une alerte au plus par livre et par membre sur une période donnée (`RG-30`) |
 | Le livre passe d'annoncé à disponible | **Aucun second e-mail.** L'alerte a déjà été envoyée à l'annonce, avec la date (`RG-23`) |
-| Une session est rebasculée dans l'autre mode par erreur | Les alertes parties depuis moins d'une heure sont annulées ; au-delà, l'administrateur est informé qu'elles ne sont plus rattrapables (`RG-25`) |
+| Une session est corrigée avant sa clôture | Aucun e-mail n'était parti : la correction est intégrale et invisible du public (`RG-45`) |
+| Une session est corrigée après sa clôture | Les e-mails sont partis. Les quantités sont rétablies, l'administrateur est informé de ce qui n'est plus rattrapable (`RG-25`) |
 | La bourse annoncée est déplacée ou annulée | Aucun e-mail de correction en v1. Le site, lui, affiche la nouvelle date (`RG-38`). C'est une limite assumée : un membre peut se déplacer sur la foi d'une date périmée |
 | Le livre est vendu avant que le membre ne vienne | Aucune action. C'est le fonctionnement annoncé. |
 | Adresse e-mail en échec de remise répété | Alertes suspendues, membre informé à sa prochaine connexion (`RG-31`) |

@@ -4,6 +4,10 @@ Chaque règle est numérotée, formulée pour être vérifiable, et référencé
 autres documents. Les valeurs de seuil citées sont des **valeurs de départ à ajuster** :
 elles sont paramétrables (`05` §9) et seront toutes fausses au premier essai.
 
+> Les numéros sont des **identifiants stables**, pas un ordre de lecture. Une règle
+> ajoutée après coup prend un numéro libre plutôt que de décaler les autres : les
+> sections sont thématiques, la numérotation ne l'est pas.
+
 ---
 
 ## Identification du livre
@@ -67,23 +71,40 @@ plus utile à un bénévole qu'un jugement de l'application.
 Affiché si au moins un membre actif a cet ISBN dans sa liste de recherche. Le nombre de
 demandeurs est affiché, **jamais leur identité**.
 
-### `RG-14` — Signal « livre de valeur »
-Déclenché si la valeur estimée dépasse le seuil de rareté *(valeur de départ : 15 €)*.
-Le livre est orienté vers le bac « livres rares » pour expertise, **jamais tarifé
-automatiquement** : le prix reste une décision humaine.
+### `RG-14` — Signal « livre de valeur » *(hors v1 — voir `Q-02`)*
 
-Si aucune source de valeur n'est disponible, cette règle s'appuie sur le repli défini
-en `Q-02`.
+**Cette règle n'est pas implémentée en v1.** L'estimation de valeur marchande est
+reportée : elle n'est pas prioritaire, et aucune source fiable n'est identifiée.
+
+Quand elle le sera, elle fonctionnera **en asynchrone et jamais pendant le scan** :
+interroger plusieurs sources et calculer une moyenne est trop lent pour tenir le délai
+d'affichage du verdict (`ENF-01`). L'estimation est calculée en arrière-plan et ses
+résultats apparaissent :
+
+- dans le récapitulatif de fin de session (`03` §3.6), pour les livres qui viennent
+  d'être triés,
+- et dans une file de travail en administration (`05` §4), pour traitement différé.
+
+**Conséquence à assumer d'ici là** : un livre de valeur passe en rayon au tarif
+ordinaire et devra être retiré physiquement une fois signalé. Le repérage à l'œil par
+les bénévoles expérimentés reste donc le seul filet en v1. L'objectif `O4` n'est pas
+couvert par la v1.
+
+Le marquage manuel « rare » par un administrateur, lui, existe dès la v1 (`05` §4) :
+c'est ce qui alimente la section « livres rares » et le signalement en caisse.
 
 ### `RG-15` — Priorité des verdicts
 Un livre peut relever de plusieurs règles à la fois. Un seul verdict principal est
 affiché, dans cet ordre :
 
-1. Livre de valeur (`RG-14`)
-2. Recherché par un membre (`RG-13`)
-3. Ce titre se vend (`RG-12`)
-4. Inutile d'en garder (`RG-10`)
-5. Premier exemplaire (`RG-11`)
+1. Recherché par un membre (`RG-13`)
+2. Ce titre se vend (`RG-12`)
+3. Inutile d'en garder (`RG-10`)
+4. Premier exemplaire (`RG-11`)
+
+Un livre déjà marqué « rare » à la main affiche ce signalement en complément du verdict,
+sans le remplacer. Quand `RG-14` sera implémentée, elle n'entrera pas non plus dans
+cette liste : son résultat arrive après le scan, pas pendant.
 
 **« Recherché » et « ça se vend » l'emportent délibérément sur « trop d'exemplaires ».**
 Un sixième exemplaire d'un titre que quelqu'un attend doit être gardé. Les signaux non
@@ -105,6 +126,70 @@ dernier scan, tant que la session n'est pas clôturée.
 En mode tri, scanner un nouveau livre vaut « garder » pour le précédent. Ce
 comportement doit être vérifié au palier 0 : s'il produit trop de faux « gardés », il
 est remplacé par une validation explicite.
+
+---
+
+## Sessions de scan
+
+La session est l'unité de travail du tri. Elle porte le mode, regroupe les mouvements,
+déclenche les alertes à sa clôture et constitue l'unité de correction.
+
+### `RG-43` — Ouverture et clôture d'une session
+Une session **s'ouvre** au moment où le bénévole choisit un mode de mise à disposition
+(`RG-20`). Il n'y a pas d'autre manière d'en ouvrir une, et un bénévole ne peut avoir
+qu'une seule session ouverte à la fois.
+
+Elle **se clôture** dans quatre cas :
+
+| Cause | Détail |
+|---|---|
+| Clôture explicite | Le bénévole appuie sur `TERMINER` |
+| Inactivité | Aucun scan pendant 2 heures *(valeur paramétrable)* |
+| Déconnexion | Le bénévole se déconnecte de l'application |
+| Expiration du jeton d'authentification | La session de travail suit la session d'authentification |
+
+Une session close ne peut plus recevoir de scan. Reprendre le tri ouvre une nouvelle
+session, avec un nouveau choix de mode.
+
+La clôture par inactivité a une conséquence directe sur les alertes (`RG-44`) : un
+bénévole qui range son appareil sans appuyer sur `TERMINER` retarde les e-mails de
+deux heures au maximum. C'est acceptable, et c'est la raison pour laquelle le délai
+est court plutôt qu'illimité.
+
+### `RG-44` — Les alertes partent à la clôture de la session
+Les alertes constituées pendant une session (`RG-28`) sont **envoyées au moment où la
+session se clôture**, quelle qu'en soit la cause. Aucun e-mail ne part pendant que le
+bénévole scanne.
+
+Cela produit trois effets voulus :
+
+- **Un seul e-mail par membre et par session** (`RG-29`), au lieu d'un par livre.
+- **Une fenêtre de correction naturelle** : tant que la session est ouverte, une erreur
+  de mode ou un livre scanné par erreur se corrige sans qu'aucun e-mail ne soit parti.
+- **Un fait générateur unique et observable**, plutôt qu'un envoi diffus dans le temps.
+
+Une fois la session close, les e-mails sont partis et ne sont plus rattrapables. C'est
+pourquoi le récapitulatif de fin de session (`03` §3.6) énonce en clair ce qui vient
+d'être publié et combien de personnes ont été prévenues.
+
+*À envisager si le besoin apparaît : un court délai de grâce entre la clôture et
+l'envoi effectif, pour rattraper une clôture manifestement erronée. Non retenu en v1
+pour ne pas ajouter un état intermédiaire de plus.*
+
+### `RG-45` — Correction d'une session
+Un administrateur peut, depuis l'écran des sessions (`05` §4 bis) :
+
+| Correction | Effet |
+|---|---|
+| Changer le mode de la session | Rebascule tous ses livres (`RG-25`) |
+| Changer la bourse de rattachement | Pour une session annoncée sur la mauvaise date |
+| Retirer un livre de la session | Annule les mouvements de ce livre et corrige les quantités |
+| Annuler la session entière | Annule tous ses mouvements |
+
+Toute correction produit des mouvements tracés et attribués (`RG-35`) ; rien n'est
+effacé. Si la session est déjà close, les alertes correspondantes sont parties : la
+correction rétablit les quantités mais l'administrateur est informé des e-mails qui ne
+sont plus rattrapables.
 
 ---
 
@@ -166,14 +251,21 @@ en une seule action. La reprise :
 
 - inverse les mouvements produits et les rejoue dans le mode correct,
 - corrige les quantités disponibles et annoncées en conséquence,
-- annule les alertes parties à tort si elles datent de moins d'un délai court
-  *(valeur de départ : 1 heure)*, sans quoi elle signale à l'administrateur les alertes
-  déjà envoyées qu'il n'est plus possible de rattraper,
 - marque la session comme `REPRISE`, sans effacer son historique.
 
 Cette règle traite **l'erreur la plus probable et la plus silencieuse du système** :
 une session de deux cents livres scannée dans le mauvais mode. Sans elle, la seule
 issue serait une correction fiche par fiche.
+
+**Le moment de la correction est déterminant** (`RG-44`) :
+
+| Quand | Effet sur les alertes |
+|---|---|
+| Session encore ouverte | Aucun e-mail n'est parti. La correction est intégrale. |
+| Session déjà close | Les e-mails sont partis. Les quantités sont rétablies, mais l'administrateur est informé de ce qui n'est plus rattrapable. |
+
+C'est ce qui donne sa valeur au récapitulatif de fin de session côté bénévole : c'est
+le dernier instant où l'erreur reste sans conséquence.
 
 ### `RG-26` — Fiche à quantité nulle
 Une fiche dont les quantités disponible et annoncée tombent à zéro **reste dans le
@@ -187,12 +279,16 @@ C'est le cas d'usage central des alertes.
 ### `RG-27` — Taille d'une liste de recherche
 Limitée à un nombre raisonnable d'entrées par membre *(valeur de départ : 100)*.
 
-### `RG-28` — Déclenchement d'une alerte
-Une alerte est envoyée à un membre lorsqu'un ISBN de sa liste est **rendu disponible ou
-annoncé pour une bourse datée**, si son compte est actif et ses alertes non suspendues.
+### `RG-28` — Constitution d'une alerte
+Une alerte est **constituée** lorsqu'un ISBN de la liste d'un membre est rendu
+disponible ou annoncé pour une bourse datée, si son compte est actif et ses alertes non
+suspendues.
 
-L'alerte part donc **au moment du scan**, pas à la bascule. Le message diffère selon le
-mode :
+Elle est constituée **au scan** mais **envoyée à la clôture de la session** (`RG-44`).
+Elle ne l'est jamais à la bascule automatique : le membre a déjà été prévenu, avec la
+date.
+
+Le message diffère selon le mode :
 
 | Mode de la session | Message |
 |---|---|
@@ -206,11 +302,11 @@ apportée auparavant par le geste de mise en rayon.
 
 ### `RG-29` — Regroupement
 Plusieurs livres d'un même membre rendus disponibles ou annoncés dans une même session
-de scan donnent lieu à **un seul e-mail** listant tous les titres concernés.
+donnent lieu à **un seul e-mail** listant tous les titres concernés.
 
-Le regroupement est calculé à la fin de la session, ou après un délai court si la
-session reste ouverte, afin de ne pas envoyer un e-mail par livre pendant que le
-bénévole scanne.
+Le regroupement découle directement de `RG-44` : puisque l'envoi a lieu à la clôture,
+toutes les alertes d'une session sont connues au même instant. Aucun mécanisme de
+temporisation supplémentaire n'est nécessaire.
 
 ### `RG-30` — Anti-répétition
 Un même couple membre/ISBN ne peut pas donner lieu à plus d'une alerte sur une période

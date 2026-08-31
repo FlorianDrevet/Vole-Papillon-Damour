@@ -7,7 +7,7 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 | # | Sujet | Statut | Qui décide |
 |---|---|---|---|
 | `Q-01` | Passage du tri au rayon | ✅ **Tranchée** | — |
-| `Q-02` | Source de la valeur marchande | 🟠 À instruire | Étude technique |
+| `Q-02` | Source de la valeur marchande | 🟢 **Reportée hors v1** | — |
 | `Q-03` | Proportion de livres sans ISBN | 🟠 À mesurer | Palier 0 |
 | `Q-04` | Dérive du stock | 🟡 Risque assumé | — |
 | `Q-05` | Prix de vente et section « rares » | 🟡 À préciser | Association |
@@ -71,37 +71,60 @@ Elle n'est pas gratuite, et les documents en tirent les conséquences :
 
 ## `Q-02` — Où trouver la valeur marchande d'un livre ?
 
-> 🟠 Fonctionnalité retenue (`RG-14`), faisabilité non garantie.
+> 🟢 **Reportée hors v1.** Non prioritaire, et faisabilité non acquise.
 
-La détection automatique des livres de valeur a été retenue plutôt qu'un simple drapeau
-manuel. C'est **le seul point de la spécification dont la faisabilité n'est pas
-acquise**.
+**Décision.** L'estimation automatique de la valeur marchande ne fait pas partie de la
+v1. Elle reste souhaitable mais ne conditionne rien d'autre : `RG-14` est spécifiée et
+inactive, et son absence n'a d'effet sur aucune autre règle.
 
-**Le problème.** Il n'existe pas de source gratuite, fiable et légalement exploitable
-donnant le prix d'occasion d'un livre en France à partir de son ISBN. Les places de
-marché n'offrent pas d'accès public à cette donnée, et leurs conditions d'utilisation
-interdisent généralement l'extraction automatisée.
+**Deux raisons.**
 
-**À instruire en phase technique :**
+*Ce n'est pas prioritaire.* Le cœur du besoin est l'aide au tri sur le doublon et la
+demande. Les livres rares sont un cas minoritaire, aujourd'hui traité à l'œil par les
+bénévoles expérimentés — imparfaitement, mais traité.
 
-1. Existe-t-il une source, gratuite ou payante, exploitable et dont les conditions
-   d'utilisation autorisent cet usage ?
-2. À quel coût, pour le volume envisagé (environ 1 000 interrogations par session) ?
-   Le cadre est fixé par `ENF-23`.
-3. Une consultation à la demande, uniquement sur les livres présentant des indices de
-   valeur, suffirait-elle à réduire ce volume ?
+*La faisabilité n'est pas acquise.* Il n'existe pas de source gratuite, fiable et
+légalement exploitable donnant le prix d'occasion d'un livre en France à partir de son
+ISBN. Les places de marché n'offrent pas d'accès public à cette donnée et leurs
+conditions d'utilisation interdisent généralement l'extraction automatisée.
 
-**Repli si aucune source acceptable n'est trouvée.** `RG-14` s'appuie alors sur des
-indices internes, sans source externe :
+### La contrainte à retenir pour plus tard : l'asynchrone
 
-- année d'édition antérieure à un seuil,
-- éditeur ou collection figurant sur une liste tenue par l'association,
-- ISBN inscrit sur une liste blanche alimentée par les bénévoles expérimentés,
-- livre déjà vendu par le passé au-dessus du tarif ordinaire.
+Même avec une source disponible, **l'estimation ne peut pas se faire pendant le scan**.
+Interroger plusieurs sources, agréger les résultats et calculer une moyenne prend
+plusieurs secondes, là où le verdict doit s'afficher en moins d'une (`ENF-01`). Un scan
+qui attend une réponse réseau externe casse la cadence du tri, et c'est la cadence qui
+fait l'adoption de l'outil.
 
-Le verdict devient « à faire expertiser » au lieu d'afficher un montant. **Le reste de
-la spécification est inchangé** : c'est une bascule interne à une seule règle, prévue
-pour ne rien coûter d'autre.
+La conception cible est donc :
+
+| Étape | Où |
+|---|---|
+| Le livre est scanné | Verdict immédiat sur les seules données internes |
+| L'estimation est calculée en arrière-plan | Sans bloquer quoi que ce soit |
+| Les résultats apparaissent | Au **récapitulatif de fin de session** (`03` §3.6) pour les livres qui viennent d'être triés, et dans une **file de travail en administration** (`05` §4) |
+
+**Conséquence à assumer** : le livre a déjà été trié, voire rangé, quand le signalement
+arrive. Il faudra aller le rechercher physiquement en rayon. C'est faisable — le titre
+et l'ISBN sont connus — mais c'est un travail manuel, et c'est le prix de l'asynchrone.
+
+### Si le sujet est repris
+
+1. Existe-t-il une source, gratuite ou payante, dont les conditions d'utilisation
+   autorisent cet usage ?
+2. À quel coût pour le volume envisagé ? Le cadre est fixé par `ENF-23`.
+3. Peut-on réduire le volume en n'interrogeant que les livres présentant des indices
+   internes de valeur — année d'édition ancienne, éditeur ou collection listés par
+   l'association, titre déjà vendu au-dessus du tarif ordinaire ?
+
+La troisième piste est la plus prometteuse : elle transforme un problème de volume en
+un problème de filtre, et le filtre peut être construit sans aucune source externe.
+
+### En attendant
+
+Le marquage manuel « rare » par un administrateur existe dès la v1 (`05` §4). Il
+alimente la section « livres rares » et le signalement en caisse (`03` §5). C'est ce
+qui fait vivre la section aujourd'hui, et cela continuera de fonctionner tel quel.
 
 ---
 
@@ -261,3 +284,6 @@ est réel.
 | 2026-08-31 | Moment d'envoi de l'alerte | Au scan, avec la date annoncée — pas à la bascule |
 | 2026-08-31 | Mode « prochaine bourse » sans bourse programmée | Accepté ; rattachement à la prochaine bourse créée, alertes différées |
 | 2026-08-31 | Correction d'une erreur de mode | Reprise en bloc de la session entière |
+| 2026-08-31 | Estimation de la valeur marchande | **Reportée hors v1**, et asynchrone quand elle existera — jamais pendant le scan |
+| 2026-08-31 | Cycle de vie d'une session | Ouverte au choix du mode ; close sur demande, après 2 h d'inactivité, à la déconnexion ou à l'expiration du jeton |
+| 2026-08-31 | Moment d'envoi des alertes | **À la clôture de la session**, et non au scan |

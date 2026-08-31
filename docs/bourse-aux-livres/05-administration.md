@@ -15,7 +15,8 @@ Vue d'ouverture, en chiffres, sur la période en cours et la précédente pour c
 | Livres triés sur la période, gardés / écartés | Mesure de l'activité de tri et du taux de rejet |
 | Ventes sur la dernière bourse : nombre et montant | Résultat de l'événement |
 | Titres disponibles jamais vendus depuis leur première mise à disposition | **Le principal levier de désengorgement.** Ce sont les candidats au retrait. |
-| Livres rares en attente d'expertise | File de travail |
+| Livres marqués rares en attente d'expertise | File de travail |
+| Sessions ouvertes en ce moment | Sessions non clôturées, dont les alertes ne sont pas encore parties (`RG-44`) |
 | Fiches sans métadonnées | File de travail |
 | Écart d'inventaire estimé | Signal de dérive du compteur (`RG-34`) |
 
@@ -58,7 +59,9 @@ qu'il se vend ? ».
 Des listes de travail concrètes, plutôt que des écrans de recherche :
 
 - **Fiches sans métadonnées** — à compléter à la main.
-- **Livres signalés de valeur** — à expertiser et à tarifer.
+- **Livres marqués rares** — à expertiser et à tarifer. Alimentée à la main en v1 ; elle
+  recevra les résultats de l'estimation asynchrone si celle-ci est un jour implémentée
+  (`RG-14`).
 - **Annonces sans date** — exemplaires annoncés alors qu'aucune bourse n'était
   programmée (`RG-24`). Ils se rattachent automatiquement dès qu'une bourse est créée,
   mais **leurs alertes restent en attente d'ici là**. Une file qui s'allonge est le
@@ -66,21 +69,56 @@ Des listes de travail concrètes, plutôt que des écrans de recherche :
 
 ## 4 bis. Sessions de scan
 
-Écran indispensable depuis l'abandon du geste de mise en rayon : le mode d'une session
-est désormais ce qui détermine l'effet public de deux cents scans, et une erreur de
-mode ne se voit nulle part ailleurs.
+Écran indispensable depuis l'abandon du geste de mise en rayon. Le mode d'une session
+détermine l'effet public de deux cents scans, et sa clôture déclenche les e-mails
+(`RG-44`) : c'est le seul endroit d'où l'on voit ce qui s'est réellement passé.
 
-La liste des sessions affiche, pour chacune : le bénévole, la date, **le mode**, la
-bourse de rattachement, le nombre de livres gardés et écartés, et les alertes envoyées.
+### Liste des sessions
 
-| Action | Détail |
+| Colonne | Contenu |
 |---|---|
-| Rebasculer une session entière | D'un mode à l'autre, en une action (`RG-25`). Corrige les quantités, rejoue les mouvements, annule les alertes récentes et signale celles qui sont déjà parties |
-| Rattacher une session à une autre bourse | Pour une session annoncée sur la mauvaise date |
+| Bénévole | Qui a tenu la session |
+| Début, fin, durée | Horodatages et temps de tri effectif |
+| Cause de clôture | `TERMINER`, inactivité, déconnexion, jeton expiré (`RG-43`) |
+| **Mode** | `DISPONIBLE MAINTENANT` ou `PROCHAINE BOURSE` |
+| Bourse de rattachement | Pour les sessions annoncées |
+| Livres scannés | Total |
+| Gardés / écartés | Répartition de la décision de tri |
+| Alertes envoyées | Nombre d'e-mails partis à la clôture |
+| Statut | `EN_COURS`, `TERMINEE`, `REPRISE` |
+
+Les sessions encore ouvertes sont mises en évidence : ce sont les seules qu'on peut
+corriger sans conséquence, puisque aucun e-mail n'en est parti.
+
+### Corrections possibles (`RG-45`)
+
+| Action | Effet |
+|---|---|
+| Changer le mode de la session | Rebascule tous ses livres entre disponible et annoncé (`RG-25`) |
+| Changer la bourse de rattachement | Pour une session annoncée sur la mauvaise date |
+| Retirer un livre de la session | Annule ses mouvements et corrige les quantités |
+| Annuler la session entière | Annule tous ses mouvements |
 | Consulter le détail des mouvements | Diagnostic d'un écart de stock |
+
+Toute correction produit des mouvements tracés et attribués (`RG-35`) ; rien n'est
+effacé, la session est marquée `REPRISE`.
+
+**Le moment de la correction change tout :**
+
+| Session | Alertes |
+|---|---|
+| Encore ouverte | Aucun e-mail parti. Correction intégrale. |
+| Déjà close | E-mails partis. Les quantités sont rétablies, mais l'administrateur est explicitement informé de ce qui n'est plus rattrapable. |
 
 **C'est la fonction de rattrapage la plus importante de l'administration.** Sans elle,
 une session scannée dans le mauvais mode ne se corrige que fiche par fiche.
+
+### Suivi de l'activité
+
+La même liste sert de suivi du bénévolat : qui trie, combien de temps, à quel rythme,
+avec quel taux de rejet. Sous réserve de `ENF-15` — ces chiffres servent à corriger des
+erreurs et à mesurer la charge de travail, **jamais à comparer les bénévoles entre
+eux**.
 
 ## 5. Désengorgement du local
 

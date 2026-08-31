@@ -153,13 +153,13 @@ Le verdict occupe le haut de l'écran, en couleur, lisible sans lire le détail.
 │ ╚═══════════════════════════════════╝ │
 ```
 
-**Cas « livre de valeur »**
+**Cas « livre déjà marqué rare »** — marquage manuel par un administrateur (`05` §4).
+L'estimation automatique de valeur, elle, n'existe pas en v1 et n'apparaîtra jamais sur
+cet écran : son calcul est trop lent pour tenir le délai de scan (`RG-14`, `ENF-01`).
 
 ```
 │ ╔═══════════════════════════════════╗ │
-│ ║  🟣   METTRE DE CÔTÉ              ║ │
-│ ║       valeur estimée ~35 €        ║ │
-│ ║       → bac « livres rares »      ║ │
+│ ║  🟣   BAC « LIVRES RARES »        ║ │
 │ ╚═══════════════════════════════════╝ │
 ```
 
@@ -199,28 +199,53 @@ C'est le seul cas où l'on tape. Il ne doit jamais être le chemin nominal.
 
 ### 3.6 Terminer la session
 
-Un bouton `TERMINER` clôt la session. L'écran de fin récapitule ce qui vient d'être
-fait et, surtout, **ce que cela a produit publiquement** :
+La session s'est ouverte au choix du mode (§3.1). Elle se clôture de quatre manières
+(`RG-43`) :
+
+| Cause | Détail |
+|---|---|
+| `TERMINER` | Le bénévole clôt lui-même sa session |
+| Inactivité | Aucun scan pendant 2 heures |
+| Déconnexion | Le bénévole quitte l'application |
+| Jeton expiré | La session de travail suit la session d'authentification |
+
+**La clôture est le fait générateur des e-mails d'alerte** (`RG-44`). Rien ne part
+pendant que le bénévole scanne : tant que la session est ouverte, une erreur se corrige
+sans conséquence pour personne.
+
+L'écran de fin récapitule ce qui vient d'être fait et, surtout, **ce que cela a produit
+publiquement** :
 
 ```
 ┌───────────────────────────────────────┐
 │   Session terminée                    │
+│   2 h 14 de tri                       │
 │                                       │
-│   183 livres gardés                   │
-│    47 livres écartés                  │
+│   230 livres scannés                  │
+│   183 gardés                          │
+│    47 écartés                         │
 │                                       │
 │   📅 Annoncés en ligne pour la        │
 │      bourse du 14 mars                │
 │                                       │
-│   ✉ 6 personnes ont été prévenues    │
-│      qu'un livre qu'elles cherchent   │
-│      sera disponible                  │
+│   ✉ 6 personnes viennent d'être      │
+│      prévenues qu'un livre qu'elles   │
+│      cherchent sera disponible        │
 └───────────────────────────────────────┘
 ```
 
-Cet écran n'est pas décoratif : c'est le dernier moment où un bénévole peut se rendre
-compte qu'il a scanné dans le mauvais mode. Le mode y est répété en clair, et l'effet
-public est énoncé en langage ordinaire.
+Cet écran n'est pas décoratif. Le mode y est répété en clair et l'effet public est
+énoncé en langage ordinaire, parce que **c'est le dernier moment où le bénévole peut
+constater qu'il a scanné dans le mauvais mode** — et le premier où les e-mails sont
+partis.
+
+Une session close par inactivité ou par expiration du jeton ne montre cet écran à
+personne. C'est acceptable : les e-mails partent quand même, avec au plus deux heures
+de retard, et l'administration garde la trace complète de la session (`05` §4 bis).
+
+Si l'estimation de valeur marchande est un jour implémentée, c'est aussi sur cet écran
+qu'apparaîtront les livres signalés comme potentiellement chers (`RG-14`) : le calcul
+étant asynchrone, ses résultats arrivent après le scan, jamais pendant.
 
 ## 4. Ce qui remplace la mise en rayon
 

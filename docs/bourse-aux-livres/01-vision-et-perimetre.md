@@ -21,7 +21,7 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 | O1 | Donner au bénévole, au moment du tri, l'information qui manque pour décider | Le nombre d'exemplaires disponibles et annoncés, le nombre de ventes passées et la demande sont affichés en moins d'une seconde après le scan |
 | O2 | Réduire la saturation du local | Baisse du nombre de doublons excédentaires conservés d'une bourse à l'autre |
 | O3 | Ne plus écarter de livres demandés ou qui se vendent | Les titres à historique de vente positif ne sont plus écartés pour cause de doublon |
-| O4 | Identifier les livres de valeur avant qu'ils partent à 1 € | Les livres au-dessus d'un seuil de valeur sont systématiquement orientés vers la section « rares » |
+| O4 | Identifier les livres de valeur avant qu'ils partent à 1 € | **Non couvert par la v1** (`Q-02`). Seul le marquage manuel « rare » existe ; l'estimation automatique est reportée et fonctionnera en asynchrone |
 | O5 | Faire venir du monde à la bourse | Consultations du catalogue en ligne, et alertes suivies d'une visite |
 
 ## 3. Acteurs
@@ -40,8 +40,8 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 ### Application de scan (usage bénévole)
 
 - Scan d'un code-barres ISBN et affichage immédiat des informations du livre
-- Aide à la décision : exemplaires disponibles et annoncés, historique de vente, demande exprimée,
-  signalement de valeur
+- Aide à la décision : exemplaires disponibles et annoncés, historique de vente,
+  demande exprimée
 - Enregistrement de la décision : gardé ou écarté
 - Choix, avant chaque session de tri, du mode de mise à disposition :
   `DISPONIBLE MAINTENANT` ou `PROCHAINE BOURSE` (`RG-20`)
@@ -76,6 +76,7 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 | Gestion des dons en amont (donateurs, reçus fiscaux) | Sujet distinct. |
 | Intégration à l'application MAUI de caisse buvette | Les livres ont leur propre mode vente dans l'application de scan. Les deux caisses restent séparées. |
 | Notifications push | Reportées en v2. L'e-mail seul en v1. |
+| **Estimation automatique de la valeur marchande** | Reportée : non prioritaire, et aucune source fiable identifiée. Quand elle existera, elle sera **asynchrone** — jamais pendant le scan — et ses résultats apparaîtront en fin de session et en administration. Voir `Q-02` et `RG-14`. Le marquage manuel « rare », lui, existe dès la v1. |
 
 ## 6. Décisions structurantes déjà prises
 
@@ -144,6 +145,8 @@ remonté au bénévole trieur.
 
 ### Évolutions identifiées, non planifiées
 
+- **Estimation asynchrone de la valeur marchande** (`Q-02`), avec restitution en fin de
+  session et dans une file d'administration
 - Notifications push web
 - Réservation avec mise de côté
 - Application mobile native pour le public
