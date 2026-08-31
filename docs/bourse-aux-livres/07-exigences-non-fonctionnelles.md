@@ -1,0 +1,146 @@
+# 07 — Exigences non fonctionnelles
+
+## Réactivité du scan
+
+### `ENF-01` — Délai d'affichage du verdict
+Entre la lecture du code-barres et l'affichage du verdict, **une seconde au maximum**,
+réseau nominal.
+
+Ce n'est pas un confort. Un bénévole qui attend deux secondes par livre perd plus d'une
+demi-heure sur mille livres, et cessera d'utiliser l'application.
+
+### `ENF-02` — Pas d'attente sur les sources externes
+La consultation d'une source de métadonnées ou de valeur ne doit jamais bloquer
+l'affichage. Une information indisponible dans le délai s'affiche en différé ou pas du
+tout ; le verdict de doublon et de vente, lui, provient des données de l'association et
+est toujours disponible.
+
+### `ENF-03` — Cadence soutenue
+L'application doit tenir un scan toutes les deux secondes pendant une heure sans
+dégradation ni fuite de mémoire.
+
+### `ENF-04` — Autonomie
+Une session de tri complète doit tenir sur une charge de l'appareil. À vérifier sur le
+matériel réel avant tout achat en nombre.
+
+---
+
+## Fonctionnement dégradé
+
+### `ENF-05` — Mode hors-ligne au tri et en caisse
+Le local et la salle de bourse peuvent être mal couverts. L'application doit :
+
+- continuer à scanner et à enregistrer les gestes sans réseau,
+- afficher les verdicts à partir des données locales, **en signalant explicitement leur
+  date de fraîcheur**,
+- conserver les gestes en attente à travers une fermeture de l'application ou une
+  coupure de batterie,
+- synchroniser automatiquement au retour du réseau.
+
+### `ENF-06` — Résolution des conflits
+Les gestes sont des mouvements indépendants et cumulatifs : deux appareils ayant scanné
+le même ISBN hors-ligne produisent deux mouvements, pas un conflit. Aucune fusion
+manuelle ne doit être demandée à un bénévole.
+
+### `ENF-07` — Visibilité de l'état de synchronisation
+Le nombre de gestes en attente est visible en permanence. Un bénévole ne doit jamais
+ranger un appareil en croyant son travail enregistré alors qu'il ne l'est pas.
+
+---
+
+## Site public
+
+### `ENF-08` — Temps de réponse de la recherche
+Résultats en moins d'une seconde sur un catalogue de 15 000 titres.
+
+### `ENF-09` — Usage mobile et référencement
+La majorité des visites viendra du téléphone. Les fiches livres doivent être indexables
+par les moteurs de recherche : c'est le principal canal d'acquisition gratuit pour
+l'association, et il vaut plus que n'importe quelle campagne de communication.
+
+---
+
+## Données personnelles
+
+### `ENF-10` — Minimisation
+Seules sont collectées l'adresse e-mail et la liste de recherche. Ni nom, ni adresse
+postale, ni téléphone, ni date de naissance.
+
+### `ENF-11` — Information et consentement
+La finalité est annoncée au moment de l'inscription, en clair, et pas seulement dans
+les mentions légales. Aucune case pré-cochée.
+
+### `ENF-12` — Droit à l'effacement
+La suppression du compte est accessible en deux clics depuis « Mon compte » et supprime
+effectivement la liste de recherche et l'historique d'alertes. Les mouvements de vente,
+qui ne contiennent aucune donnée personnelle, sont conservés.
+
+### `ENF-13` — Conservation
+Un compte inactif depuis trois ans est supprimé après une relance par e-mail.
+
+### `ENF-14` — Absence de cession et de traçage
+Aucune adresse e-mail n'est transmise à un tiers. Aucun traceur publicitaire sur le site
+public. Les statistiques de fréquentation, si elles existent, doivent fonctionner sans
+consentement — c'est-à-dire sans bandeau de cookies.
+
+### `ENF-15` — Données des bénévoles
+L'activité individuelle des bénévoles est visible des administrateurs pour la
+correction d'erreurs et le suivi d'activité. Elle ne doit servir à aucune forme de
+classement ou de comparaison entre bénévoles.
+
+---
+
+## Authentification
+
+### `ENF-16` — Membres du public
+Via **Microsoft Entra External ID** (successeur d'Azure AD B2C pour les nouveaux
+locataires). L'association ne stocke ni ne gère aucun mot de passe.
+
+### `ENF-17` — Bénévoles
+Comptes individuels, session longue sur l'appareil : la reconnexion à chaque session de
+tri est exclue. Le mécanisme peut s'appuyer sur l'authentification JWT existante du
+backend.
+
+### `ENF-18` — Administrateurs
+L'administration se trouve dans la nouvelle application (`05`). Elle exige une
+authentification distincte de celle des membres du public, avec un rôle explicite.
+
+---
+
+## Accessibilité
+
+### `ENF-19` — Application de scan
+Contraste élevé, typographie large, cibles tactiles généreuses. Les verdicts ne
+reposent **jamais sur la seule couleur** : chaque verdict porte un libellé écrit et un
+pictogramme. Une part des bénévoles est âgée et le local est parfois mal éclairé.
+
+### `ENF-20` — Site public
+Navigation au clavier, contrastes conformes, textes alternatifs sur les couvertures,
+structure de titres cohérente.
+
+---
+
+## Exploitation
+
+### `ENF-21` — Continuité de la vente
+Une indisponibilité du système ne doit jamais empêcher de vendre. La caisse reste
+physique ; en dernier recours, les ventes se font sans scan et sont régularisées par
+une remise à plat (`RG-31`).
+
+### `ENF-22` — Sauvegardes
+Les mouvements constituent l'historique comptable de l'activité. Ils doivent être
+sauvegardés au même niveau d'exigence que les données existantes de l'association.
+
+### `ENF-23` — Coût d'hébergement
+Le projet doit rester dans la continuité de l'hébergement Azure actuel. Toute
+dépendance payante — en particulier une source de valeur marchande, voir `Q-02` — doit
+être chiffrée et validée avant adoption.
+
+### `ENF-24` — Maintenabilité
+Le projet est développé et maintenu bénévolement, par une seule personne le plus
+souvent. Ce critère prime sur la sophistication : une fonctionnalité qui ne peut pas
+être maintenue dans ces conditions ne doit pas être construite.
+
+### `ENF-25` — Paramétrage sans redéploiement
+Tous les seuils listés en `05` §9 sont modifiables par un administrateur sans
+intervention technique.
