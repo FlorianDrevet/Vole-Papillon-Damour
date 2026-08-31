@@ -209,9 +209,10 @@ La session s'est ouverte au choix du mode (§3.1). Elle se clôture de quatre ma
 | Déconnexion | Le bénévole quitte l'application |
 | Jeton expiré | La session de travail suit la session d'authentification |
 
-**La clôture est le fait générateur des e-mails d'alerte** (`RG-44`). Rien ne part
-pendant que le bénévole scanne : tant que la session est ouverte, une erreur se corrige
-sans conséquence pour personne.
+**La clôture met les e-mails d'alerte en file d'attente ; ils partent 2 heures plus
+tard** (`RG-44`). Rien ne part pendant que le bénévole scanne, ni au moment où il
+termine. Une erreur repérée dans les deux heures qui suivent se corrige donc encore
+sans que personne n'ait été prévenu à tort.
 
 L'écran de fin récapitule ce qui vient d'être fait et, surtout, **ce que cela a produit
 publiquement** :
@@ -228,20 +229,23 @@ publiquement** :
 │   📅 Annoncés en ligne pour la        │
 │      bourse du 14 mars                │
 │                                       │
-│   ✉ 6 personnes viennent d'être      │
-│      prévenues qu'un livre qu'elles   │
+│   ✉ 6 personnes seront prévenues     │
+│      dans 2 h qu'un livre qu'elles    │
 │      cherchent sera disponible        │
+│                                       │
+│      En cas d'erreur, prévenez un     │
+│      responsable avant l'envoi        │
 └───────────────────────────────────────┘
 ```
 
 Cet écran n'est pas décoratif. Le mode y est répété en clair et l'effet public est
-énoncé en langage ordinaire, parce que **c'est le dernier moment où le bénévole peut
-constater qu'il a scanné dans le mauvais mode** — et le premier où les e-mails sont
-partis.
+énoncé en langage ordinaire, parce que **c'est le moment où le bénévole peut encore
+constater qu'il a scanné dans le mauvais mode** — et où il lui reste deux heures pour
+le signaler avant que quoi que ce soit ne parte.
 
 Une session close par inactivité ou par expiration du jeton ne montre cet écran à
-personne. C'est acceptable : les e-mails partent quand même, avec au plus deux heures
-de retard, et l'administration garde la trace complète de la session (`05` §4 bis).
+personne. Le délai de deux heures joue alors son rôle de filet : l'administration voit
+les alertes en attente et peut encore les annuler (`05` §4 bis).
 
 Si l'estimation de valeur marchande est un jour implémentée, c'est aussi sur cet écran
 qu'apparaîtront les livres signalés comme potentiellement chers (`RG-14`) : le calcul

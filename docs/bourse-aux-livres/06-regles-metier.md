@@ -156,25 +156,42 @@ bénévole qui range son appareil sans appuyer sur `TERMINER` retarde les e-mail
 deux heures au maximum. C'est acceptable, et c'est la raison pour laquelle le délai
 est court plutôt qu'illimité.
 
-### `RG-44` — Les alertes partent à la clôture de la session
-Les alertes constituées pendant une session (`RG-28`) sont **envoyées au moment où la
-session se clôture**, quelle qu'en soit la cause. Aucun e-mail ne part pendant que le
-bénévole scanne.
+### `RG-44` — Les alertes sont mises en attente à la clôture, puis envoyées après un délai
+Les alertes constituées pendant une session (`RG-28`) sont **mises en file d'attente au
+moment où la session se clôture**, quelle qu'en soit la cause, et **envoyées 2 heures
+plus tard** *(délai paramétrable)*.
 
-Cela produit trois effets voulus :
+Aucun e-mail ne part pendant que le bénévole scanne, ni au moment même où il termine.
+
+```
+   scan …  scan …  scan …     clôture              envoi
+   ─────────────────────────────●───────────────────●──────►
+                                │◄─── délai 2 h ───►│
+                                │                   │
+              correction sans   │   correction      │  plus
+              conséquence       │   possible :      │  rattrapable
+                                │   les e-mails     │
+                                │   sont annulés    │
+```
+
+Cela produit quatre effets voulus :
 
 - **Un seul e-mail par membre et par session** (`RG-29`), au lieu d'un par livre.
-- **Une fenêtre de correction naturelle** : tant que la session est ouverte, une erreur
-  de mode ou un livre scanné par erreur se corrige sans qu'aucun e-mail ne soit parti.
+- **Une fenêtre de correction qui survit à la clôture.** Une erreur constatée après
+  coup — mauvais mode, session close par mégarde, livres scannés par erreur — se
+  corrige encore sans qu'aucun e-mail ne soit parti (`RG-45`).
+- **Un rattrapage possible sur les sessions closes automatiquement**, par inactivité ou
+  par expiration du jeton, dont personne n'a vu le récapitulatif.
 - **Un fait générateur unique et observable**, plutôt qu'un envoi diffus dans le temps.
 
-Une fois la session close, les e-mails sont partis et ne sont plus rattrapables. C'est
-pourquoi le récapitulatif de fin de session (`03` §3.6) énonce en clair ce qui vient
-d'être publié et combien de personnes ont été prévenues.
+**Ce que cela coûte** : le délai s'ajoute à celui de la clôture automatique. Entre le
+dernier scan d'un bénévole qui range son appareil sans terminer et l'envoi effectif, il
+peut s'écouler jusqu'à 4 heures. C'est sans conséquence : les livres annoncés ne sont
+de toute façon disponibles qu'à la date de la bourse, et les livres rendus disponibles
+immédiatement ne le sont qu'à la prochaine ouverture du local.
 
-*À envisager si le besoin apparaît : un court délai de grâce entre la clôture et
-l'envoi effectif, pour rattraper une clôture manifestement erronée. Non retenu en v1
-pour ne pas ajouter un état intermédiaire de plus.*
+Les alertes en attente sont visibles et actionnables en administration (`05` §4 bis) :
+on peut les annuler, ou forcer leur envoi sans attendre le délai.
 
 ### `RG-45` — Correction d'une session
 Un administrateur peut, depuis l'écran des sessions (`05` §4 bis) :
@@ -187,9 +204,15 @@ Un administrateur peut, depuis l'écran des sessions (`05` §4 bis) :
 | Annuler la session entière | Annule tous ses mouvements |
 
 Toute correction produit des mouvements tracés et attribués (`RG-35`) ; rien n'est
-effacé. Si la session est déjà close, les alertes correspondantes sont parties : la
-correction rétablit les quantités mais l'administrateur est informé des e-mails qui ne
-sont plus rattrapables.
+effacé.
+
+Effet sur les alertes selon le moment (`RG-44`) : tant que le délai de 2 h suivant la
+clôture n'est pas écoulé, les alertes en attente sont annulées ou recalculées avec la
+correction. Passé ce délai, les e-mails sont partis et l'administrateur en est informé.
+
+L'écran des sessions permet également d'agir directement sur la file d'attente :
+annuler les alertes d'une session, ou forcer leur envoi immédiat sans attendre la fin
+du délai.
 
 ---
 
@@ -261,11 +284,12 @@ issue serait une correction fiche par fiche.
 
 | Quand | Effet sur les alertes |
 |---|---|
-| Session encore ouverte | Aucun e-mail n'est parti. La correction est intégrale. |
-| Session déjà close | Les e-mails sont partis. Les quantités sont rétablies, mais l'administrateur est informé de ce qui n'est plus rattrapable. |
+| Session encore ouverte | Aucune alerte n'est en file. Correction intégrale. |
+| Session close, délai de 2 h non écoulé | Les alertes sont en attente et sont **annulées** avec la correction. Correction intégrale, invisible du public. |
+| Délai écoulé | Les e-mails sont partis. Les quantités sont rétablies, mais l'administrateur est informé de ce qui n'est plus rattrapable. |
 
-C'est ce qui donne sa valeur au récapitulatif de fin de session côté bénévole : c'est
-le dernier instant où l'erreur reste sans conséquence.
+En pratique, une erreur repérée dans les deux heures suivant la fin d'un tri se corrige
+donc entièrement. Au-delà, seul l'état du catalogue est rétabli.
 
 ### `RG-26` — Fiche à quantité nulle
 Une fiche dont les quantités disponible et annoncée tombent à zéro **reste dans le
@@ -284,9 +308,9 @@ Une alerte est **constituée** lorsqu'un ISBN de la liste d'un membre est rendu
 disponible ou annoncé pour une bourse datée, si son compte est actif et ses alertes non
 suspendues.
 
-Elle est constituée **au scan** mais **envoyée à la clôture de la session** (`RG-44`).
-Elle ne l'est jamais à la bascule automatique : le membre a déjà été prévenu, avec la
-date.
+Elle est constituée **au scan**, mise en file **à la clôture de la session**, et
+**envoyée 2 heures plus tard** (`RG-44`). Elle n'est jamais constituée à la bascule
+automatique : le membre a déjà été prévenu, avec la date.
 
 Le message diffère selon le mode :
 

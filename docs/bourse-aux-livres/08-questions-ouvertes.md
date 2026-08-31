@@ -286,4 +286,4 @@ est réel.
 | 2026-08-31 | Correction d'une erreur de mode | Reprise en bloc de la session entière |
 | 2026-08-31 | Estimation de la valeur marchande | **Reportée hors v1**, et asynchrone quand elle existera — jamais pendant le scan |
 | 2026-08-31 | Cycle de vie d'une session | Ouverte au choix du mode ; close sur demande, après 2 h d'inactivité, à la déconnexion ou à l'expiration du jeton |
-| 2026-08-31 | Moment d'envoi des alertes | **À la clôture de la session**, et non au scan |
+| 2026-08-31 | Moment d'envoi des alertes | Mises en file **à la clôture de la session**, envoyées **2 h après** — jamais au scan. Le délai est la fenêtre de rattrapage d'une erreur constatée après coup |

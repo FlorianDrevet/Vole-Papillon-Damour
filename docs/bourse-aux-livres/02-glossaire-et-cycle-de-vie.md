@@ -15,7 +15,7 @@ documents et le code.
 | **Tri** | Opération par laquelle un bénévole décide, don en main, de garder ou d'écarter un livre. |
 | **Écarté** | Livre refusé au tri. Il quitte définitivement le circuit. Compté, jamais mis à disposition. |
 | **Mode de mise à disposition** | Choix fait **avant de commencer à scanner**, valable pour toute la session : `DISPONIBLE MAINTENANT` ou `PROCHAINE BOURSE`. C'est ce choix qui détermine l'effet public de chaque scan. |
-| **Session de scan** | Ensemble des scans réalisés par un bénévole sous un même mode. Elle s'ouvre au choix du mode et se clôt sur demande, après 2 h d'inactivité, à la déconnexion ou à l'expiration du jeton (`RG-43`). **C'est l'unité de correction** — une erreur de mode se répare en rebasculant la session entière — **et le fait générateur des alertes**, envoyées à sa clôture (`RG-44`). |
+| **Session de scan** | Ensemble des scans réalisés par un bénévole sous un même mode. Elle s'ouvre au choix du mode et se clôt sur demande, après 2 h d'inactivité, à la déconnexion ou à l'expiration du jeton (`RG-43`). **C'est l'unité de correction** — une erreur de mode se répare en rebasculant la session entière — **et le fait générateur des alertes**, mises en file à sa clôture puis envoyées 2 h plus tard (`RG-44`). |
 | **Annoncé** | État d'un livre scanné en mode `PROCHAINE BOURSE`. Visible en ligne avec sa date, mais pas encore vendable. |
 | **Bascule** | Passage automatique d'annoncé à disponible, à la date d'ouverture de la bourse de rattachement. Aucun geste humain. |
 | **Session de bourse** | Période de vente ouverte au public. Correspond à un `AssoEvents` de type `Books` existant. |
@@ -164,7 +164,7 @@ c'est une unité de travail et de correction, pas un carton.
 | Bénévole, date de début, date de fin, durée |
 | Cause de clôture : `MANUELLE`, `INACTIVITE`, `DECONNEXION`, `JETON_EXPIRE` |
 | Mouvements produits, compteurs de livres scannés / gardés / écartés |
-| Alertes envoyées à la clôture |
+| Alertes : état (`EN_ATTENTE` / `ENVOYEES` / `ANNULEES`), heure d'envoi prévue, nombre |
 | Statut : `EN_COURS`, `TERMINEE`, `REPRISE` (si corrigée par un administrateur) |
 
 ### Membre du site

@@ -16,7 +16,7 @@ Vue d'ouverture, en chiffres, sur la période en cours et la précédente pour c
 | Ventes sur la dernière bourse : nombre et montant | Résultat de l'événement |
 | Titres disponibles jamais vendus depuis leur première mise à disposition | **Le principal levier de désengorgement.** Ce sont les candidats au retrait. |
 | Livres marqués rares en attente d'expertise | File de travail |
-| Sessions ouvertes en ce moment | Sessions non clôturées, dont les alertes ne sont pas encore parties (`RG-44`) |
+| Alertes en attente d'envoi | Sessions dont les e-mails ne sont pas encore partis, avec le temps restant. **Fenêtre de rattrapage** (`RG-44`) |
 | Fiches sans métadonnées | File de travail |
 | Écart d'inventaire estimé | Signal de dérive du compteur (`RG-34`) |
 
@@ -84,11 +84,15 @@ détermine l'effet public de deux cents scans, et sa clôture déclenche les e-m
 | Bourse de rattachement | Pour les sessions annoncées |
 | Livres scannés | Total |
 | Gardés / écartés | Répartition de la décision de tri |
-| Alertes envoyées | Nombre d'e-mails partis à la clôture |
+| Alertes | Nombre d'e-mails, et leur état : `EN_ATTENTE` avec l'heure d'envoi prévue, ou `ENVOYES` |
 | Statut | `EN_COURS`, `TERMINEE`, `REPRISE` |
 
-Les sessions encore ouvertes sont mises en évidence : ce sont les seules qu'on peut
-corriger sans conséquence, puisque aucun e-mail n'en est parti.
+**Les sessions encore corrigeables sont mises en évidence** : celles qui sont ouvertes,
+et celles dont le délai de 2 h avant envoi n'est pas écoulé (`RG-44`). Ce sont les
+seules où une erreur se répare sans que personne n'ait été prévenu à tort.
+
+Un compte à rebours affiche le temps restant avant l'envoi. C'est l'information utile
+quand quelqu'un signale une erreur au téléphone : sait-on encore la rattraper ?
 
 ### Corrections possibles (`RG-45`)
 
@@ -98,6 +102,8 @@ corriger sans conséquence, puisque aucun e-mail n'en est parti.
 | Changer la bourse de rattachement | Pour une session annoncée sur la mauvaise date |
 | Retirer un livre de la session | Annule ses mouvements et corrige les quantités |
 | Annuler la session entière | Annule tous ses mouvements |
+| Annuler les alertes en attente | Sans toucher aux quantités : cas d'une annonce correcte qu'on ne souhaite pas diffuser |
+| Forcer l'envoi immédiat | Sans attendre la fin du délai, quand la session est vérifiée et qu'on veut prévenir les gens tout de suite |
 | Consulter le détail des mouvements | Diagnostic d'un écart de stock |
 
 Toute correction produit des mouvements tracés et attribués (`RG-35`) ; rien n'est
@@ -107,8 +113,9 @@ effacé, la session est marquée `REPRISE`.
 
 | Session | Alertes |
 |---|---|
-| Encore ouverte | Aucun e-mail parti. Correction intégrale. |
-| Déjà close | E-mails partis. Les quantités sont rétablies, mais l'administrateur est explicitement informé de ce qui n'est plus rattrapable. |
+| Encore ouverte | Aucune alerte en file. Correction intégrale. |
+| Close, délai de 2 h non écoulé | Alertes en attente, **annulées ou recalculées** avec la correction. Correction intégrale, invisible du public. |
+| Délai écoulé | E-mails partis. Les quantités sont rétablies, mais l'administrateur est explicitement informé de ce qui n'est plus rattrapable. |
 
 **C'est la fonction de rattrapage la plus importante de l'administration.** Sans elle,
 une session scannée dans le mauvais mode ne se corrige que fiche par fiche.
@@ -180,6 +187,8 @@ Valeurs qui pilotent les règles métier, modifiables sans intervention techniqu
 | Ancienneté et quantité déclenchant une proposition de retrait | §5 |
 | Limite d'entrées d'une liste de recherche | `RG-27` |
 | Délai minimum entre deux alertes pour un même livre et un même membre | `RG-30` |
+| Délai d'inactivité avant clôture automatique d'une session | `RG-43` |
+| Délai entre la clôture d'une session et l'envoi des alertes | `RG-44` |
 
 Ces valeurs seront fausses au départ. Les rendre modifiables sans redéploiement est ce
 qui permettra de les ajuster au vu du terrain.
