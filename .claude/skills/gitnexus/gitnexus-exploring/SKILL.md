@@ -47,7 +47,7 @@ description: "Use when the user asks how code works, wants to understand archite
 
 ## Tools
 
-**gitnexus_query** - find execution flows related to a concept:
+**gitnexus_query** — find execution flows related to a concept:
 
 ```
 gitnexus_query({query: "payment processing"})
@@ -55,7 +55,7 @@ gitnexus_query({query: "payment processing"})
 → Symbols grouped by flow with file locations
 ```
 
-**gitnexus_context** - 360-degree view of a symbol:
+**gitnexus_context** — 360-degree view of a symbol:
 
 ```
 gitnexus_context({name: "validateUser"})
