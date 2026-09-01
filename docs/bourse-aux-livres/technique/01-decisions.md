@@ -9,11 +9,12 @@ comprendre plus tard pourquoi un choix a été fait avec l'information de l'épo
 | `DT-01` | BnF en source principale, Open Library en complément | Prise |
 | `DT-02` | Tout dans SQL Server, aucune base supplémentaire | Prise |
 | `DT-03` | Outbox en table, pas de broker de messages | Prise |
-| `DT-04` | Worker différé en Container App `kind=functionapp` dédié | Prise, sous réserve de `QT-02` |
+| `DT-04` | Worker différé en Container App `kind=functionapp` dédié | ⛔ **Remplacée par `DT-09`** |
 | `DT-05` | La fiche livre est le cache ; pas de couche de cache serveur | Prise |
 | `DT-06` | Unité de travail explicite pour les écritures multi-agrégats | Prise |
 | `DT-07` | Recherche par le plein texte SQL Server d'abord | Prise |
 | `DT-08` | App de scan en PWA Angular | Prise |
+| `DT-09` | Traitements différés hébergés dans l'API | Prise — remplace `DT-04` |
 
 ---
 
@@ -144,7 +145,12 @@ abonnés. À ce moment, des topics se discuteront.
 
 ## `DT-04` — Worker différé en Container App `kind=functionapp` dédié
 
-**Contexte.** Les Container Apps sont configurées avec `minReplicas: 0`. Un
+> ⛔ **Remplacée par [`DT-09`](#dt-09--traitements-différés-hébergés-dans-lapi).**
+> Sa prémisse — l'API à `minReplicas: 0` — n'est plus valable : l'API passe à 1, car
+> elle ne peut pas être indisponible pour le site web. Conservée telle quelle, sans
+> réécriture, pour garder trace du raisonnement d'origine.
+
+**Contexte.** Les Container Apps étaient configurées avec `minReplicas: 0`. Un
 `BackgroundService` hébergé dans l'API ne s'exécuterait donc qu'au hasard du trafic
 HTTP : les alertes de `RG-44` et la bascule de `RG-23` ne partiraient pas.
 
@@ -268,3 +274,57 @@ sujet du volume sans objet : on synchronise tout, par delta.
 valider au palier 0 sur des couvertures abîmées et plastifiées (`QT-03`). Une scanette
 à gâchette se comporte comme un clavier, ce qui est plus simple — mais l'achat vient
 après la mesure.
+
+---
+
+## `DT-09` — Traitements différés hébergés dans l'API
+
+**Remplace `DT-04`.**
+
+**Contexte.** L'API passe à `minReplicas: 1` : elle ne peut pas être indisponible pour
+le site web. La prémisse de `DT-04` — un processus toujours susceptible d'être éteint —
+disparaît.
+
+**Décision.** Les traitements différés sont des services hébergés (`BackgroundService`)
+**dans le projet API**. Pas d'application dédiée, pas de `kind=functionapp`, pas de
+Functions.
+
+**Motivation.**
+
+*Le problème que `DT-04` résolvait n'existe plus.* Avec un réplica permanent, un service
+hébergé s'exécute de façon fiable. C'était l'unique raison d'extraire le worker.
+
+*`QT-02` disparaît entièrement.* La question du réveil d'une application à zéro réplica
+par un déclencheur planifié — l'une des deux mesures bloquantes — devient sans objet.
+C'est le gain le plus net de ce changement.
+
+*C'est nettement plus simple.* Un projet, une image, un déploiement, aucune image de
+base Functions, aucune contrainte d'ingress ni de compte de stockage obligatoire, aucune
+question de révisions multiples. `ENF-24` s'en satisfait mieux.
+
+*Le coût marginal est nul.* Le conteneur tourne de toute façon.
+
+**Ce qu'il faut respecter.**
+
+`maxReplicas: 2` signifie que **deux répliques peuvent exécuter les mêmes balayages
+simultanément**. C'est acceptable parce que toutes les opérations sont déjà conçues en
+réclamation conditionnelle (`06` §5) : la relève d'outbox par `ClaimedUntil`, la bascule
+filtrée sur `Status = Announced`, la clôture filtrée sur `Status = EnCours`. Aucune
+n'est doublonnable.
+
+Pour la lisibilité d'exploitation plutôt que par nécessité, une **ligne de bail en base**
+peut réserver l'exécution à une seule réplique : une vingtaine de lignes, et des
+journaux qui ne racontent qu'une histoire à la fois.
+
+**La contrepartie.** Les traitements de fond partagent le processeur avec le traitement
+des requêtes, ce qui pourrait dégrader `ENF-01`. Le risque est faible : le balayage est
+constitué de quelques requêtes SQL toutes les cinq minutes, et l'enrichissement est
+limité en débit et dominé par l'attente réseau, pas par le calcul.
+
+**Réversibilité.** Si le travail de fond devenait lourd, l'extraire reste peu coûteux :
+il vit déjà dans les bibliothèques `Application` et `Infrastructure` (`06` §2). Changer
+d'hôte ne déplace aucune logique métier.
+
+**Ce que cela ne change pas.** `DT-03` (outbox en table) reste valide et le devient
+davantage : la mise en file et la clôture de session partagent désormais non seulement
+la même transaction mais le même processus.

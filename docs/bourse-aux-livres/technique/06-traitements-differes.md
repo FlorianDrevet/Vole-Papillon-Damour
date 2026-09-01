@@ -1,37 +1,25 @@
 # 06 — Traitements différés
 
-## 1. Pourquoi un composant séparé
+## 1. Où vivent ces traitements
 
-Les trois Container Apps existantes sont configurées avec `minReplicas: 0`. Un
-`BackgroundService` hébergé dans l'API ne s'exécuterait donc qu'au hasard du trafic
-HTTP : sans visite, pas de conteneur, donc **pas d'alerte à +2 h et pas de bascule**.
-L'échec serait silencieux.
+**Dans l'API**, sous forme de services hébergés (`BackgroundService`). Pas
+d'application dédiée, pas de Functions.
 
-D'où `DT-04` : une application dédiée, `Microsoft.App/containerApps` avec
-`kind=functionapp`, dans le `managedEnvironment` déjà déclaré. Ce n'est **pas** un
-environnement nouveau.
+C'est `DT-09`, qui remplace `DT-04`. Le raisonnement initial partait de
+`minReplicas: 0` : un service hébergé dans un conteneur susceptible d'être éteint ne
+s'exécuterait qu'au hasard du trafic, et **les alertes de `RG-44` comme la bascule de
+`RG-23` ne partiraient pas** — en silence.
 
-## 2. Comment le worker partage le code de l'API
+**L'API passe à `minReplicas: 1`**, parce qu'elle ne peut pas être indisponible pour le
+site web. La prémisse tombe, et avec elle le besoin d'un composant séparé. Gain
+collatéral : la question du réveil d'une application à zéro réplica par un déclencheur
+planifié — l'une des deux mesures bloquantes — **disparaît entièrement**.
 
-**Rien n'est dupliqué.** Le worker est un second *hôte* au-dessus des mêmes
-bibliothèques, par référence de projet dans la même solution.
+## 2. Comment c'est câblé
 
-```
-Vole_Papillon_Damour.Domain           (bibliothèque)
-Vole_Papillon_Damour.Application      (bibliothèque) ──► Domain
-Vole_Papillon_Damour.Infrastructure   (bibliothèque) ──► Application
-Vole_Papillon_Damour.Contracts        (bibliothèque)
-
-Vole_Papillon_Damour.Api      (hôte web)       ──┐
-Vole_Papillon_Damour.Worker   (hôte Functions) ──┴──► Application + Infrastructure
-```
-
-Un seul domaine, un seul `ProjectDbContext`, un seul jeu de migrations, une seule
-définition de `RG-23`. Deux processus, un code — le schéma classique du monolithe
-modulaire. Le découpage actuel s'y prête déjà : `Application` et `Infrastructure` sont
-des bibliothèques, pas des morceaux de l'API.
-
-### Le worker appelle les mêmes handlers
+Les services hébergés vivent dans le projet API mais s'appuient sur les mêmes
+bibliothèques `Application`, `Domain` et `Infrastructure` que les contrôleurs. Aucune
+logique métier ne leur est propre.
 
 ```csharp
 await sender.Send(new ReleaseDueAnnouncementsCommand(), ct);   // RG-23
@@ -43,51 +31,51 @@ sur `TERMINER`. C'est voulu : `RG-43` définit quatre causes de clôture, et il 
 absurde que la clôture manuelle et la clôture par inactivité suivent deux chemins de
 code distincts — ils divergeraient au premier correctif.
 
-### Pourquoi pas un appel HTTP vers l'API
+### Deux répliques peuvent balayer en même temps
 
-C'est l'option qui vient naturellement, et elle est mauvaise **ici** pour une raison
-précise : l'API est à `minReplicas: 0`. Le worker devrait la réveiller à chaque
-balayage, subir le démarrage à froid, et introduire une dépendance de disponibilité
-entre deux composants qui n'ont aucun besoin de se parler.
+`maxReplicas: 2` : rien ne garantit qu'un seul processus exécute un balayage donné.
 
-S'y ajoute la surface d'attaque : réclamer des lignes d'outbox ou basculer des annonces
-en masse sont des opérations internes. Les exposer en HTTP crée des routes qui ne
-doivent jamais être appelables de l'extérieur — et qu'il faudrait donc protéger. Deux
-sauts réseau pour ce qui est une opération de base de données.
+C'est acceptable **parce que toutes les opérations sont déjà en réclamation
+conditionnelle** (§5) : relève d'outbox par `ClaimedUntil`, bascule filtrée sur
+`Status = Announced`, clôture filtrée sur `Status = EnCours`. Aucune n'est doublonnable.
 
-Dupliquer le domaine est exclu : divergence garantie dès la première évolution de
-`RG-15`. Un contexte borné séparé avec son propre modèle serait défendable si le worker
-appartenait à une autre équipe et à un autre cycle de vie ; ici, un développeur, un
-domaine, des données qui se référencent en permanence.
-
-### Ce que ce choix coûte
-
-| Contrepartie | Portée |
-|---|---|
-| **Couplage de version sur le schéma** | API et worker **doivent être construits et déployés depuis le même commit**. Deux images distinctes — le worker exige une image de base Functions, l'API une image ASP.NET — mais une seule construction et une seule étiquette de version |
-| Deux composants portent les accès à la base | Inévitable dès qu'on découple le traitement de fond du trafic HTTP |
-| Un changement dans `Application` impose de redéployer les deux | Sans conséquence à ce rythme de livraison |
+Pour la lisibilité d'exploitation plutôt que par nécessité, une **ligne de bail en
+base** peut réserver l'exécution à une seule réplique : une vingtaine de lignes, et des
+journaux qui ne racontent qu'une histoire à la fois.
 
 ### Trois contraintes de conception
 
-Ce sont les pièges réels de ce montage.
-
-**Aucun handler appelé par le worker ne dépend d'un utilisateur ambiant.** Pas
-d'`IHttpContextAccessor`, pas d'« utilisateur courant » tiré du JWT : le worker n'en a
-pas. L'acteur se passe explicitement en paramètre de la commande, ou vaut « système » —
+**Aucun handler déclenché par un balayage ne dépend d'un utilisateur ambiant.** Pas
+d'`IHttpContextAccessor`, pas d'« utilisateur courant » tiré du JWT : un balayage n'a
+pas d'utilisateur. L'acteur se passe explicitement en paramètre, ou vaut « système » —
 ce qui doit apparaître dans le `VolunteerId` des mouvements (`RG-41`).
 
-**Une portée d'injection par exécution.** Dans l'API, le `DbContext` vit le temps d'une
-requête. Dans le worker, ouvrir explicitement un `IServiceScope` par exécution, sinon le
-contexte accumule les entités suivies et finit par tout garder en mémoire — ce qui
-contredirait `ENF-03`.
+**Le piège est plus vicieux depuis que le code partage le processus de l'API** : un
+accès à `HttpContext` compile, passe les tests manuels lancés depuis une requête, puis
+renvoie `null` à trois heures du matin.
+
+**Une portée d'injection par exécution.** Dans un contrôleur, le `DbContext` vit le
+temps d'une requête. Un service hébergé est un singleton : il doit ouvrir explicitement
+un `IServiceScope` par exécution, sinon un `DbContext` capturé accumule les entités
+suivies jusqu'à tout garder en mémoire.
 
 **Distinguer les deux natures d'opération.** La réclamation de lignes d'outbox est du
 SQL mécanique (§4), qui vit dans `Infrastructure` comme méthode de dépôt. La transition
 métier — basculer une annonce, clôturer une session — passe par le domaine, parce que
-c'est lui qui porte les invariants. **Le worker n'écrit jamais un `UPDATE` direct sur
-les quantités** : il court-circuiterait `RG-35`, qui exige qu'aucune quantité ne soit
-modifiée sans mouvement tracé.
+c'est lui qui porte les invariants. **Jamais d'`UPDATE` direct sur les quantités** : il
+court-circuiterait `RG-35`, qui exige qu'aucune quantité ne soit modifiée sans mouvement
+tracé.
+
+### La contrepartie, et la sortie de secours
+
+Les traitements de fond partagent le processeur avec le traitement des requêtes, ce qui
+pourrait dégrader `ENF-01`. Le risque est faible : le balayage se réduit à quelques
+requêtes SQL toutes les cinq minutes, et l'enrichissement est limité en débit et dominé
+par l'attente réseau, pas par le calcul.
+
+Si cela devenait un problème, **l'extraction reste peu coûteuse** : la logique vit dans
+`Application` et `Infrastructure`, donc un second hôte se contenterait de référencer les
+mêmes bibliothèques. Changer d'hôte ne déplace aucune logique métier.
 
 ## 3. Le travail à faire
 
@@ -191,47 +179,35 @@ Non négociable : les exécutions peuvent être relancées ou se chevaucher.
 
 Tout traitement qui suppose « je ne tourne qu'une fois » est un défaut.
 
-## 7. Le point ouvert — `QT-02`
+## 7. Un point ouvert refermé
 
-La documentation liste le déclencheur planifié parmi ceux qui montent depuis zéro via
-KEDA. Des retours indiquent l'inverse : une application descendue à zéro ne serait pas
-réveillée par son minuteur. Pour `RG-44`, ce serait un échec silencieux.
+Une mesure bloquante figurait ici : le déclencheur planifié d'une application à zéro
+réplica se réveille-t-il seul ? La documentation disait oui, des retours disaient non,
+et pour `RG-44` l'échec aurait été silencieux.
 
-**À mesurer avant de construire dessus** : déployer une fonction planifiée avec
-`minReplicas: 0`, ne pas y toucher pendant deux heures, vérifier qu'elle s'est exécutée.
-
-| Si | Alors |
-|---|---|
-| Le réveil fonctionne | `minReplicas: 0`, coût nul |
-| Le réveil ne fonctionne pas | `minReplicas: 1` — un conteneur permanent, de l'ordre d'une dizaine d'euros par mois |
-| On veut éviter les deux | **Temporisation par file Azure Queue Storage** : un message peut rester invisible jusqu'à sept jours, et son déclencheur réveille bien une application à zéro |
-
-La troisième voie mérite attention : le compte de stockage est **obligatoire** pour
-toute Function sur Container Apps, et le projet en a déjà un. Le délai de `RG-44`
-devient natif. La table reste la source de vérité ; le message n'est qu'un réveil.
-
-Resteraient les traitements réellement périodiques — bascule, rattrapage — qu'un **ACA
-Job en cron** couvrirait : planification garantie par la plateforme, facturation à
-l'exécution seule.
+**`DT-09` la rend sans objet.** L'API tourne en permanence : un service hébergé s'y
+exécute sans dépendre d'un mécanisme de réveil. `QT-02` est close, et le palier 1 n'a
+plus qu'une mesure bloquante devant lui au lieu de deux.
 
 ## 8. Coût
 
-Les Container Apps offrent **180 000 vCPU-secondes et 360 000 Gio-secondes gratuits par
-mois**, et un job ne facture que pendant son exécution.
+**Nul en marginal.** Le conteneur de l'API tourne de toute façon, puisqu'il doit rester
+disponible pour le site web. Les balayages consomment quelques requêtes SQL toutes les
+cinq minutes et de l'attente réseau — rien qui déplace la facture.
 
-288 exécutions/jour × 10 s × 0,25 vCPU ≈ **21 600 vCPU-secondes/mois**, soit 12 % du
-quota, partagé avec trois applications à zéro réplica la plupart du temps.
-**En pratique : gratuit** — sauf dans l'hypothèse `minReplicas: 1` ci-dessus.
+À noter pour `08-infrastructure.md` : ce n'est plus un worker qui pèse sur le quota
+gratuit des Container Apps, c'est **le passage de l'API à `minReplicas: 1`**. Le
+traitement différé, lui, ne coûte rien de plus.
 
 ## 9. Observabilité
 
 Application Insights est déjà en place. Trois mesures à exposer, sans lesquelles les
 pannes seront silencieuses :
 
-- **Âge du plus vieux message `Pending` échu.** S'il croît, le worker ne tourne plus.
+- **Âge du plus vieux message `Pending` échu.** S'il croît, le balayage ne tourne plus.
   C'est l'alerte la plus importante du système.
 - **Appels sortants par source et par jour.** Inutile au quotidien, décisif le jour où
   un rattrapage se met à marteler la BnF en boucle — dont les conditions prévoient un
   blocage « immédiatement et sans préavis ».
 - **Annonces en retard de bascule.** Une bourse commencée dont les annonces n'ont pas
-  basculé signale un worker arrêté ou un agenda incohérent.
+  basculé signale un balayage arrêté ou un agenda incohérent.

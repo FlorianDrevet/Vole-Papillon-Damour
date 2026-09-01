@@ -9,37 +9,37 @@ ressource.
 
 **Aucune Function, aucun Service Bus, aucune file** à ce jour.
 
-Les trois applications sont paramétrées avec `minReplicas: 0` et `maxReplicas: 2`.
-C'est ce réglage qui impose un worker séparé (`DT-04`).
+Les applications étaient paramétrées avec `minReplicas: 0` et `maxReplicas: 2`.
+
+**L'API passe à `minReplicas: 1`** : elle ne peut pas être indisponible pour le site
+web. Ce changement retire sa raison d'être au worker séparé et fonde `DT-09`.
 
 ## 2. Ce qui s'ajoute
 
-**Aucune ressource Azure d'un type nouveau.** Trois Container Apps de plus dans
-l'environnement existant :
+**Aucune ressource Azure d'un type nouveau, et aucun worker.** Deux Container Apps de
+plus dans l'environnement existant :
 
 | Application | Nature | Ingress | Réplicas |
 |---|---|---|---|
 | `scan` | PWA Angular | Externe | 0 → 2 |
 | `catalog` | Angular SSR + administration | Externe | 0 → 2 |
-| `worker` | `kind=functionapp` | Interne (requis pour la mise à l'échelle) | 0 → 1, **sous réserve de `QT-02`** |
 
-Le module `ContainerApp` existant se réutilise tel quel. Pour le worker, le delta est
-`kind: functionapp` sur `Microsoft.App/containerApps`.
+Le module `ContainerApp` existant se réutilise tel quel.
 
-**Ne pas confondre les deux voies** : celle par `Microsoft.Web/sites` avec
-`managedEnvironmentId` est marquée *legacy* dans la documentation. C'est `Microsoft.App`
-qu'il faut.
+Les traitements différés sont des services hébergés **dans l'API** (`DT-09`) : pas
+d'application supplémentaire, pas d'image de base Functions, pas de compte de stockage
+dédié, pas de contrainte d'ingress interne, pas de question de révisions multiples.
 
-Points d'attention pour le worker :
+L'API, elle, change de paramétrage dans `infra/parameters/` :
 
-- **Compte de stockage obligatoire** pour toute Function sur Container Apps — celui du
-  projet convient.
-- **Ingress requis** pour la mise à l'échelle événementielle, même sans endpoint public.
-  Un ingress interne suffit.
-- **Pas de slots de déploiement**, pas de clés de fonction générées depuis le portail.
-  Utiliser Key Vault, déjà en place.
-- **Révision unique** de préférence : le mode multi-révision impose un compte de
-  stockage par révision pour éviter les conflits de déclencheurs.
+| Paramètre | Avant | Après |
+|---|---|---|
+| `containerAppApiScaling.minReplicas` | 0 | **1** |
+| `containerAppApiScaling.maxReplicas` | 2 | 2 (inchangé) |
+
+`maxReplicas: 2` implique que deux répliques peuvent exécuter les mêmes balayages. Les
+opérations étant conçues en réclamation conditionnelle, c'est sans danger — voir
+[`06-traitements-differes.md`](06-traitements-differes.md) §2.
 
 ## 3. Secrets et identité
 
@@ -68,9 +68,12 @@ les images existantes — pas de substitution au démarrage.
 
 ## 5. Intégration continue
 
-**Point à traiter, et il n'est pas optionnel.** La mémoire projet note qu'aucun fichier
-de CI n'existe. Or Functions sur Container Apps **ne supporte pas le déploiement continu
-intégré** : il faut GitHub Actions ou Azure Pipelines.
+**Point à traiter.** La mémoire projet note qu'aucun fichier de CI n'existe.
+
+L'abandon de Functions (`DT-09`) retire la contrainte qui rendait la CI *obligatoire* —
+Functions sur Container Apps ne supporte pas le déploiement continu intégré. Elle reste
+néanmoins **fortement souhaitable**, pour une raison plus banale : trois applications à
+construire et publier, et des migrations à appliquer.
 
 Le minimum utile, par ordre de valeur :
 
@@ -96,16 +99,32 @@ le même quota gratuit.
 
 | Poste | Coût attendu |
 |---|---|
-| Container Apps | Quota gratuit mensuel : 180 000 vCPU-s, 360 000 Gio-s. Trois applications à zéro réplica plus un worker à ~21 600 vCPU-s tiennent dedans |
+| Container Apps — API à `minReplicas: 1` | **Le seul poste réellement nouveau.** Voir ci-dessous |
+| Container Apps — `scan` et `catalog` | À zéro réplica la plupart du temps, dans le quota gratuit |
+| Traitements différés | **0 €** — hébergés dans l'API, qui tourne déjà (`DT-09`) |
 | SQL Server | **Inchangé** — le module livres ajoute moins de 100 Mo (`DT-02`) |
 | Storage | Couvertures, quelques Go. Négligeable |
 | BnF, Open Library | **0 €** |
-| Entra External ID | Paliers gratuits pour quelques centaines de comptes ; à confirmer au dimensionnement |
+| Entra External ID | Paliers gratuits pour quelques centaines de comptes ; à confirmer (`QT-04`) |
 | Envoi d'e-mails | Quelques dizaines par semaine ; palier gratuit chez la plupart des fournisseurs |
 
-**Le seul poste susceptible de basculer** est le worker, si `QT-02` impose
-`minReplicas: 1` : de l'ordre d'une dizaine d'euros par mois. C'est la raison d'être de
-cette mesure.
+### L'API en permanence
+
+Avec le gabarit actuel — 0,5 vCPU, 1 Gio — un réplica allumé en continu consomme de
+l'ordre de **1,3 million de vCPU-secondes par mois**, contre 180 000 offertes. Le quota
+gratuit des Container Apps est donc dépassé, et il ne couvre plus les autres
+applications.
+
+Deux éléments atténuent la facture, sans l'annuler : Container Apps facture un réplica
+inactif à un **tarif de veille** nettement inférieur au tarif actif, et le gabarit de
+l'API pourrait être réduit puisqu'elle sert une charge modeste.
+
+**Ordre de grandeur : quelques euros à une quinzaine par mois. À confirmer sur le
+calculateur Azure avant de s'engager**, plutôt que sur cette estimation.
+
+C'est un coût décidé pour une raison indépendante du module livres — la disponibilité du
+site web — et non induit par lui. Le projet en bénéficie gratuitement : c'est ce qui
+permet `DT-09` et referme `QT-02`.
 
 ## 8. Sauvegarde et restauration
 
@@ -127,7 +146,7 @@ Aligné sur les paliers fonctionnels de `01` §7 :
 | Palier | Infrastructure |
 |---|---|
 | 0 — sonde | **Rien.** Application locale, aucun déploiement |
-| 1 — socle | Migrations 1, application `scan`, worker, CI |
+| 1 — socle | Migrations 1, application `scan`, API à `minReplicas: 1`, CI |
 | 2 — vitrine | Application `catalog`, index plein texte |
 | 3 — alertes | Entra External ID, envoi d'e-mails, migrations 3 |
 
