@@ -4,5 +4,6 @@ export const environment : EnvironmentInterface =
   {
     production: false,
     api_url: "http://localhost:5257",
-    appinsights_connection_string: ""
+    appinsights_connection_string: "",
+    google_analytics_measurement_id: ""
   };

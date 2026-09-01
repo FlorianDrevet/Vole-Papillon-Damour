@@ -1,42 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://www.votredomaine.com/accueil</loc>
-  </url>
-  <url>
-    <loc>https://www.votredomaine.com/association/presentation</loc>
-  </url>
-  <url>
-    <loc>https://www.votredomaine.com/association/comment-aider</loc>
-  </url>
-  <url>
-    <loc>https://www.votredomaine.com/association/revue-de-presses</loc>
-  </url>
-  <url>
-    <loc>https://www.votredomaine.com/association/photos</loc>
-  </url>
-  <url>
-    <loc>https://www.votredomaine.com/toute-l-actualite</loc>
-  </url>
-  <!-- plusieurs URL <loc> pour chaque détail d'actualité par ID peuvent être ajoutées ici -->
-  <url>
-    <loc>https://www.votredomaine.com/evenement</loc>
-  </url>
-  <!-- plusieurs URL <loc> pour chaque détail d'événement par ID peuvent être ajoutées ici -->
-  <url>
-    <loc>https://www.votredomaine.com/maxence/histoire</loc>
-  </url>
-  <url>
-    <loc>https://www.votredomaine.com/maxence/maladies/gastrostomie</loc>
-  </url>
-  <url>
-    <loc>https://www.votredomaine.com/maxence/maladies/hirschsprung</loc>
-  </url>
-  <!-- Ajoutez des URL supplémentaires pour les autres maladies et sections similaires -->
-  <!-- ... -->
-  <url>
-    <loc>https://www.votredomaine.com/maxence/vie-quotidienne/soins-quotidiens</loc>
-  </url>
-  <!-- Ajoutez des URL supplémentaires pour les autres aspects de la vie quotidienne -->
-  <!-- ... -->
+  <url><loc>https://volepapillondamour.fr/accueil</loc></url>
+  <url><loc>https://volepapillondamour.fr/association/presentation</loc></url>
+  <url><loc>https://volepapillondamour.fr/association/comment-aider</loc></url>
+  <url><loc>https://volepapillondamour.fr/association/revue-de-presses</loc></url>
+  <url><loc>https://volepapillondamour.fr/association/photos</loc></url>
+  <url><loc>https://volepapillondamour.fr/nos-actions</loc></url>
+  <url><loc>https://volepapillondamour.fr/contact</loc></url>
+  <url><loc>https://volepapillondamour.fr/toute-l-actualite</loc></url>
+  <url><loc>https://volepapillondamour.fr/evenement</loc></url>
+  <url><loc>https://volepapillondamour.fr/evenement/all</loc></url>
+
+  <url><loc>https://volepapillondamour.fr/maxence/histoire</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/gastrostomie</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/hirschsprung</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/wolff-parkinson-white</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/dysplasie-ectodermique</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/neuropathie</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/osteoporose</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/poic</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/maladies/hyperthyroidie</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/vie-quotidienne/soins-quotidiens</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/vie-quotidienne/soins-hospitaliers</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/vie-quotidienne/ecole</loc></url>
+  <url><loc>https://volepapillondamour.fr/maxence/vie-quotidienne/greffe</loc></url>
+
+  <url><loc>https://volepapillondamour.fr/mentions-legales</loc></url>
+  <url><loc>https://volepapillondamour.fr/politique-de-confidentialite</loc></url>
+  <url><loc>https://volepapillondamour.fr/politique-de-cookies</loc></url>
+  <url><loc>https://volepapillondamour.fr/accessibilite</loc></url>
 </urlset>

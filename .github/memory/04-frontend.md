@@ -43,6 +43,8 @@ Verified feature roots:
 - The public footer now derives legal link labels and paths from Angular router config data instead of hard-coded placeholder paragraphs.
 - Header sub-navigation is data-driven: `core/layouts/navigation/nav-items.ts` gives each `SiteNavItem` an optional `children`/`hint`, the desktop header renders them as a pure-CSS dropdown (`group-hover` + `group-focus-within`, collapsed state uses `invisible` so folded links stay out of the tab order), and the mobile overlay lists the same children indented under their parent. Only "L'association" declares children today; adding a submenu elsewhere is a data change, not a template change.
 - The Website legal slice documents the current Microsoft Clarity usage seen in `src/index.html` and keeps explicit placeholders for unresolved association identifiers, publication director, retention windows, and accessibility remediation details until the association validates them.
+- Website audience measurement is centralized in `shared/services/google-analytics.service.ts`: GA4 loads only after the cookie consent service grants the audience-measurement category, sends explicit pageviews on `NavigationEnd`, disables collection when consent is revoked, and stays inactive when `environment.google_analytics_measurement_id` is empty or still a build placeholder.
+- The Website Docker build and `.github/workflows/website-deploy.yml` inject the public GA4 measurement ID from the GitHub `development` environment variable `GOOGLE_ANALYTICS_MEASUREMENT_ID`; `public/robots.txt` points crawlers to the real-domain `public/sitemap.xml`, which lists the static routes.
 
 ## Data Access And Live Updates
 

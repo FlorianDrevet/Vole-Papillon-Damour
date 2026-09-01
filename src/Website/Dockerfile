@@ -10,6 +10,7 @@ COPY Website .
 ARG API_URL=https://api.example.com
 
 ARG APPINSIGHTS_CONNECTION_STRING=
+ARG GOOGLE_ANALYTICS_MEASUREMENT_ID=
 # Angular compiles security.allowedHosts into the SSR server, so the host the
 # app is served from has to be known when the bundle is built. Left empty the
 # placeholder simply stays in the list: the schema requires unique entries, so a
@@ -18,6 +19,7 @@ ARG DEPLOY_HOST=
 
 RUN sed -i "s#https://vole-papillon-damour-backend.onrender.com#${API_URL}#g" src/environments/environment.ts \
  && sed -i "s#__APPINSIGHTS_CONNECTION_STRING__#${APPINSIGHTS_CONNECTION_STRING}#g" src/environments/environment.ts \
+ && sed -i "s#__GOOGLE_ANALYTICS_MEASUREMENT_ID__#${GOOGLE_ANALYTICS_MEASUREMENT_ID}#g" src/environments/environment.ts \
  && if [ -n "${DEPLOY_HOST}" ]; then sed -i "s#__DEPLOY_HOST__#${DEPLOY_HOST}#g" angular.json; fi \
  && npm run build
 

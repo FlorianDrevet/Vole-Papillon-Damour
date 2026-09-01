@@ -44,6 +44,7 @@ describe('LegalPageComponent', () => {
     const content = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 
     expect(content).toContain('Microsoft Clarity');
+    expect(content).toContain('Google Analytics 4');
     expect(content).toContain('nwy66l4uol');
     expect(content).toContain('Gérer les cookies');
   });
