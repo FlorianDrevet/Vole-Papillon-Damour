@@ -46,7 +46,9 @@
               "allowedHosts": [
                 "localhost",
                 "127.0.0.1",
-                "__DEPLOY_HOST__"
+                "__DEPLOY_HOST__",
+                "volepapillondamour.fr",
+                "www.volepapillondamour.fr"
               ]
             },
             "ssr": {
