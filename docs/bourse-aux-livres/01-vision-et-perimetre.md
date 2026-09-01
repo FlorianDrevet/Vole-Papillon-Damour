@@ -54,8 +54,11 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 
 - Catalogue consultable et parcourable sans compte
 - Recherche par titre, auteur, ISBN ; navigation par genre
+- **Recherche élargie à un référentiel bibliographique externe**, pour suivre un livre
+  que l'association n'a jamais reçu (`RG-47`)
 - Fiche livre avec le nombre d'exemplaires disponibles
-- Création de compte et liste de livres recherchés
+- Création de compte et liste de livres recherchés, **au niveau de l'œuvre ou d'une
+  édition précise** (`RG-46`)
 - Alerte e-mail dès qu'un livre recherché devient disponible ou est annoncé
 - Espace d'administration : statistiques, gestion du catalogue et des comptes
 
@@ -127,6 +130,21 @@ publique.
 **Critère de passage.** Après une bourse complète, l'écart entre le stock théorique et
 un comptage physique par échantillon reste dans une marge acceptable, à définir avec
 l'association. C'est le test réel de la discipline de scan en caisse.
+
+**Montée en charge.** Le catalogue démarre vide alors que le local contient déjà
+plusieurs milliers de livres. Il n'y a **pas de reprise préalable de l'existant** : le
+catalogue se remplit au fil des tris (`RG-48`). Pendant cette période, l'aide à la
+décision est partielle — « inutile d'en garder » ne se déclenche presque jamais et
+« premier exemplaire » se déclenche à tort sur des titres déjà en rayon.
+
+C'est un choix assumé : la reprise de l'existant représenterait des milliers de scans
+sans contrepartie immédiate. Elle peut se faire progressivement, par des sessions de
+scan des rayons en mode `DISPONIBLE MAINTENANT`, en commençant par les rayons les plus
+denses. Ce n'est pas un prérequis.
+
+**Ce point doit être annoncé aux bénévoles.** Un outil qui répond « premier exemplaire »
+sur un livre qu'ils savent présent en cinq exemplaires perd leur confiance si personne
+ne les a prévenus que le système apprend en marchant.
 
 ### Palier 2 — La vitrine
 

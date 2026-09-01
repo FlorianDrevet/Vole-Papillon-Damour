@@ -96,8 +96,13 @@ l'organisation de la caisse les jours de forte affluence.
 ### Pour le public
 
 Un site où l'on peut chercher un titre, parcourir le catalogue par genre, et voir ce
-qui est disponible. On peut y créer un compte pour déclarer les livres que l'on
-cherche et être prévenu par e-mail quand ils arrivent.
+qui est disponible.
+
+On peut aussi y créer un compte pour déclarer les livres que l'on cherche et être
+prévenu par e-mail quand ils arrivent — **y compris des livres que l'association n'a
+jamais reçus**. C'est même l'intérêt principal : quelqu'un qui cherche un titre depuis
+des mois le déclare une fois, et sera prévenu le jour où un donateur l'apporte. Le
+bénévole qui trie, lui, verra au moment du scan que ce livre est attendu, et le gardera.
 
 C'est aussi, pour l'association, un outil de visibilité : un catalogue en ligne
 consultable donne une raison de venir à la bourse plutôt que d'y passer par hasard.
@@ -141,6 +146,23 @@ permettant de s'arrêter si l'expérience n'est pas concluante.
 
 **L'étape 0 est la plus importante à valider aujourd'hui**, car elle ne coûte rien
 d'autre que du temps et elle conditionne tout le reste.
+
+### Un point d'honnêteté : l'outil ne sera pas utile tout de suite
+
+L'application ne connaît que les livres qu'elle a scannés. Or le local en contient déjà
+plusieurs milliers, qui n'y sont pas.
+
+Concrètement, pendant les premiers mois, l'outil dira souvent « premier exemplaire » sur
+un livre qui est en réalité déjà présent en cinq exemplaires — simplement parce qu'il ne
+le sait pas encore. **Ce n'est pas une panne, c'est une période d'apprentissage.**
+
+Nous avons choisi de ne pas scanner tout le stock existant avant de démarrer : ce serait
+des milliers de livres à passer sans bénéfice immédiat. Le catalogue se remplira au fil
+des tris. Si l'on veut accélérer, on peut scanner les rayons petit à petit, en
+commençant par les plus remplis — mais ce n'est pas obligatoire.
+
+**Il faut prévenir les bénévoles**, sans quoi ils concluront à juste titre que l'outil
+raconte n'importe quoi.
 
 ## Ce sur quoi une décision est attendue
 

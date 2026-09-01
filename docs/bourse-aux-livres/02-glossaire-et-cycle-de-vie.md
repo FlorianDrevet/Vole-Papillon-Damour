@@ -7,8 +7,11 @@ documents et le code.
 
 | Terme | Définition |
 |---|---|
-| **ISBN** | Identifiant international unique d'une édition, encodé dans le code-barres au dos du livre. Deux éditions différentes d'un même texte ont deux ISBN différents. Existe en 10 et 13 chiffres ; on stocke toujours la forme à 13 chiffres. |
-| **Fiche livre** | L'unité de gestion du système. Une fiche par ISBN : métadonnées, quantités, historique de vente, statut. **Il n'existe pas d'entité « exemplaire ».** |
+| **ISBN** | Identifiant international unique d'une **édition**, encodé dans le code-barres au dos du livre. Deux éditions d'un même texte ont deux ISBN différents. Existe en 10 et 13 chiffres ; on stocke toujours la forme à 13 chiffres. |
+| **Œuvre** | Le texte, indépendamment de ses éditions. *Le Petit Prince* est une œuvre ; ses dizaines de tirages chez différents éditeurs en sont les éditions. Sert exclusivement à rapprocher une demande d'un livre scanné (`RG-46`) — **le stock n'est jamais géré au niveau de l'œuvre**. |
+| **Édition** | Un tirage précis d'une œuvre : éditeur, format, année. Identifiée par son ISBN. **C'est l'unité de gestion du stock.** |
+| **Fiche livre** | L'unité de gestion du système. Une fiche par ISBN, donc par édition : métadonnées, quantités, historique de vente, statut, et l'œuvre dont elle relève. **Il n'existe pas d'entité « exemplaire ».** |
+| **Référentiel bibliographique** | Source externe décrivant les livres publiés, interrogeable par titre, auteur ou ISBN. Alimente les métadonnées au scan et permet de suivre un livre que l'association n'a jamais reçu (`RG-47`). Choix de la source : `Q-10`. |
 | **Quantité disponible** | Nombre d'exemplaires vendables dès à présent. |
 | **Quantité annoncée** | Nombre d'exemplaires promis pour une bourse à venir, pas encore vendables. |
 | **Métadonnées** | Titre, auteur, éditeur, année, genre, image de couverture. Obtenues automatiquement à partir de l'ISBN. |
@@ -121,6 +124,7 @@ Identifiée par son ISBN-13.
 | Information | Nature | Origine |
 |---|---|---|
 | ISBN-13 | identifiant | scan |
+| Identifiant de l'œuvre | rattachement | référentiel bibliographique. Peut être absent : la fiche reste exploitable, mais aucune demande de portée `ŒUVRE` ne s'y rapprochera (`RG-46`) |
 | Titre, auteur(s), éditeur, année, genre | métadonnées | source externe, corrigeable par un administrateur |
 | Image de couverture | métadonnée | source externe |
 | Quantité disponible | compteur | calculé par les mouvements |
@@ -173,7 +177,7 @@ c'est une unité de travail et de correction, pas un carton.
 |---|---|
 | Identifiant Entra External ID | l'association ne stocke aucun mot de passe |
 | Adresse e-mail | canal des alertes |
-| Liste de recherche : ISBN + date d'ajout | |
+| Liste de recherche : une entrée par livre suivi | Chaque entrée porte une **portée** (`OEUVRE` ou `EDITION`), la cible correspondante (identifiant d'œuvre ou ISBN-13), et sa date d'ajout (`RG-46`). Une entrée peut ne correspondre à aucune fiche : le livre n'a jamais été reçu (`RG-47`) |
 | Préférences d'alerte, statut du compte (actif / bloqué) | |
 | Historique des alertes envoyées | évite les doublons d'envoi — `RG-26` |
 

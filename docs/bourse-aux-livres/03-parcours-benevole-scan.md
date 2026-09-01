@@ -35,12 +35,19 @@ Au lancement, un seul choix, en gros boutons :
    │   ┌───────────────────────────────┐ │
    │   │   💶   CAISSE                 │ │
    │   └───────────────────────────────┘ │
+   │   ┌───────────────────────────────┐ │
+   │   │   🔍   CONSULTER              │ │
+   │   │        n'enregistre rien      │ │
+   │   └───────────────────────────────┘ │
    │                                     │
    │   Changer d'utilisateur             │
    └─────────────────────────────────────┘
 ```
 
 Seuls les modes autorisés par les droits du bénévole sont affichés (`RG-40`).
+
+Seul `TRIER` ouvre une session (`RG-43`). La caisse enregistre des mouvements isolés
+rattachés à la bourse en cours, et la consultation n'enregistre rien du tout.
 
 **Le mode actif est visible en permanence** — bandeau de couleur distincte en haut de
 l'écran, libellé en toutes lettres. Un scan de vente déclenché depuis le mode tri
@@ -302,7 +309,12 @@ Points de conception :
 - Le scan enchaîne sans confirmation : on scanne les livres d'un client à la suite.
 - Un livre marqué rare (🟣) est **visuellement signalé** pour éviter qu'il parte au
   tarif ordinaire.
-- `Annuler dernier` traite le cas fréquent du double scan.
+- `Annuler dernier` traite le cas fréquent du double scan, avant encaissement.
+- **Une vente déjà encaissée peut être annulée** tant que la bourse est ouverte : le
+  client change d'avis, une erreur est constatée après coup. La quantité disponible est
+  rétablie et l'annulation est tracée (`RG-49`).
+- Plusieurs postes de caisse peuvent fonctionner en parallèle sans coordination : chaque
+  vente est un mouvement indépendant rattaché à la bourse (`RG-33`).
 - `ENCAISSER` clôt la vente et enregistre les mouvements. Le calcul du rendu de monnaie
   n'est pas dans le périmètre : la caisse reste physique.
 - **Un livre scanné alors que la quantité disponible est à zéro est quand même vendu** :
@@ -312,13 +324,15 @@ Points de conception :
   censé être en rayon — mais la vente n'est pas bloquée pour autant (`RG-37`). C'est le
   signe que des livres ont été rangés en avance sur leur date d'annonce.
 
-## 6. Mode CONSULTATION (palier 0 uniquement)
+## 6. Mode CONSULTATION
 
-Version réduite, sans enregistrement : on scanne, on voit la fiche, rien n'est
-mémorisé. C'est l'outil de la sonde de faisabilité décrite en `01` §7.
+On scanne, on voit la fiche, **rien n'est mémorisé** : aucun mouvement, aucune session,
+aucune alerte. C'est l'outil de la sonde de faisabilité du palier 0 (`01` §7), et il est
+**conservé ensuite** comme mode « je vérifie quelque chose » sans risque de polluer les
+données.
 
-Elle sert aussi, plus tard, de mode « je vérifie quelque chose » sans risque de
-polluer les données. À conserver au-delà du palier 0.
+Usage courant après le palier 0 : savoir combien d'exemplaires d'un titre sont en rayon
+avant de réorganiser une étagère, ou lever un doute sans ouvrir une session de tri.
 
 ## 7. Cas d'erreur et de bord
 

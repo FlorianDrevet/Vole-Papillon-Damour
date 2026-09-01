@@ -15,6 +15,8 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 | `Q-07` | Genres et classement | 🟡 À préciser | Association |
 | `Q-08` | Choix du matériel de scan | 🟢 Après palier 0 | Association |
 | `Q-09` | Bourse annoncée puis déplacée | 🟡 Risque assumé | — |
+| `Q-10` | Choix du référentiel bibliographique | 🟠 À instruire | Étude technique |
+| `Q-11` | Amorçage du catalogue | ✅ Tranchée | — |
 
 ---
 
@@ -261,6 +263,66 @@ est réel.
 
 ---
 
+## `Q-10` — Quel référentiel bibliographique ?
+
+> 🟠 À instruire. La fonctionnalité est retenue ; le choix de la source ne l'est pas.
+
+Le référentiel sert à trois choses, d'importance très inégale :
+
+| Usage | Criticité |
+|---|---|
+| Métadonnées d'un ISBN scanné : titre, auteur, éditeur, couverture | **Indispensable.** Sans lui, l'écran de tri n'affiche qu'un numéro |
+| Recherche par titre ou auteur d'un livre jamais reçu (`RG-47`) | **Indispensable** au cas d'usage central des alertes |
+| Regroupement des éditions en œuvres (`RG-46`) | **Souhaitable.** Son absence dégrade la fonctionnalité sans l'empêcher |
+
+**Ce qu'il faut vérifier :**
+
+1. **La couverture du fonds français**, y compris l'édition ancienne et le livre
+   jeunesse. C'est la mesure la plus utile du palier 0 : un référentiel qui ignore un
+   tiers des dons rend l'écran de tri inutilisable.
+2. **La présence d'un regroupement en œuvres.** Certaines sources modélisent
+   explicitement l'œuvre et ses éditions ; d'autres ne renvoient que des notices d'ISBN
+   isolées. Sans regroupement, `RG-46` doit se rabattre sur un rapprochement
+   titre + auteur normalisés — qui produit des faux positifs sur les séries, les
+   homonymes et les adaptations.
+3. **Les conditions d'utilisation et les limites de débit**, pour environ un millier
+   d'interrogations par session de tri (`ENF-23`).
+4. **La possibilité de conserver localement les notices déjà vues.** Un livre scanné une
+   fois ne devrait plus jamais nécessiter d'appel externe : c'est ce qui permet de tenir
+   `ENF-01` et de fonctionner hors ligne (`ENF-05`).
+
+**Repli sur le regroupement en œuvres.** Si aucune source fiable n'est trouvée, on
+conserve la portée `ÉDITION` seule et la portée `ŒUVRE` s'appuie sur un rapprochement
+titre + auteur, en assumant les faux positifs — un membre prévenu à tort vaut mieux
+qu'un membre jamais prévenu, dans un contexte sans réservation ni engagement.
+
+---
+
+## `Q-11` — Amorçage du catalogue
+
+> ✅ **Tranchée.** Remplissage progressif, pas de reprise préalable de l'existant.
+
+**Le problème.** Le local contient déjà plusieurs milliers de livres. Le catalogue
+démarre vide, et le système ne connaît que ce qu'il a scanné.
+
+**La décision.** On ne reprend pas l'existant avant de démarrer. Le catalogue se
+remplit au fil des tris. Une ou plusieurs sessions de scan des rayons déjà remplis
+peuvent accélérer les choses, en mode `DISPONIBLE MAINTENANT`, mais ce n'est **pas un
+prérequis** et cela ne conditionne aucun palier.
+
+**Ce que cela coûte**, détaillé en `RG-48` : pendant plusieurs mois, `RG-10` (« inutile
+d'en garder ») ne se déclenche presque jamais, `RG-11` (« premier exemplaire ») se
+déclenche à tort, `RG-12` (« ce titre se vend ») reste muet faute d'historique, et le
+catalogue public n'expose qu'une fraction du fonds réel.
+
+**La conséquence à ne pas négliger est humaine.** Un bénévole à qui l'outil annonce
+« premier exemplaire » sur un livre qu'il sait présent en cinq exemplaires conclura que
+l'outil ne marche pas. Il faut le dire avant, pas après. C'est aussi un argument pour
+prioriser le scan des rayons les plus denses : c'est là que le doublon coûte le plus
+cher, et là que l'outil devient crédible le plus vite.
+
+---
+
 ## Journal des décisions
 
 | Date | Décision | Retenu |
@@ -287,3 +349,7 @@ est réel.
 | 2026-08-31 | Estimation de la valeur marchande | **Reportée hors v1**, et asynchrone quand elle existera — jamais pendant le scan |
 | 2026-08-31 | Cycle de vie d'une session | Ouverte au choix du mode ; close sur demande, après 2 h d'inactivité, à la déconnexion ou à l'expiration du jeton |
 | 2026-08-31 | Moment d'envoi des alertes | Mises en file **à la clôture de la session**, envoyées **2 h après** — jamais au scan. Le délai est la fenêtre de rattrapage d'une erreur constatée après coup |
+| 2026-09-01 | Suivre un livre jamais reçu | La recherche s'élargit à un référentiel bibliographique externe ; on peut suivre n'importe quel livre publié — `RG-47` |
+| 2026-09-01 | Granularité d'une demande | **Œuvre par défaut** (toutes éditions), édition précise en option — `RG-46` |
+| 2026-09-01 | Amorçage du catalogue | Progressif, sans reprise préalable de l'existant — `Q-11`, `RG-48` |
+| 2026-09-01 | Périmètre de la session | Le tri seul. La caisse et la consultation n'ouvrent pas de session — `RG-43` |

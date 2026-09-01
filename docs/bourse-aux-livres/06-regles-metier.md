@@ -68,8 +68,9 @@ Le nombre de ventes est affiché en clair plutôt qu'interprété : « vendu 7 f
 plus utile à un bénévole qu'un jugement de l'application.
 
 ### `RG-13` — Signal « recherché »
-Affiché si au moins un membre actif a cet ISBN dans sa liste de recherche. Le nombre de
-demandeurs est affiché, **jamais leur identité**.
+Affiché si au moins un membre actif recherche ce livre, que sa demande porte sur l'ISBN
+scanné ou sur l'œuvre à laquelle il appartient (`RG-46`). Le nombre de demandeurs est
+affiché, **jamais leur identité**.
 
 ### `RG-14` — Signal « livre de valeur » *(hors v1 — voir `Q-02`)*
 
@@ -150,6 +151,12 @@ Elle **se clôture** dans quatre cas :
 
 Une session close ne peut plus recevoir de scan. Reprendre le tri ouvre une nouvelle
 session, avec un nouveau choix de mode.
+
+**La notion de session ne concerne que le tri.** La caisse ne choisit aucun mode de mise
+à disposition et n'ouvre donc pas de session : une vente est un mouvement isolé rattaché
+à la session de bourse en cours (`RG-33`). Plusieurs postes de caisse peuvent donc
+fonctionner en parallèle sans coordination. Le mode consultation, qui n'enregistre rien,
+n'ouvre pas de session non plus.
 
 La clôture par inactivité a une conséquence directe sur les alertes (`RG-44`) : un
 bénévole qui range son appareil sans appuyer sur `TERMINER` retarde les e-mails de
@@ -300,13 +307,59 @@ C'est le cas d'usage central des alertes.
 
 ## Listes de recherche et alertes
 
+### `RG-46` — Une demande porte sur une œuvre ou sur une édition précise
+Un ISBN identifie une **édition** — un éditeur, un format, une année —, pas un texte.
+*Le Petit Prince* existe en dizaines d'éditions, donc en dizaines d'ISBN.
+
+Une entrée de liste de recherche a donc une **portée**, choisie par le membre :
+
+| Portée | Ce qui déclenche l'alerte | Usage |
+|---|---|---|
+| `ŒUVRE` *(défaut)* | N'importe quelle édition de cette œuvre | « Je veux lire ce livre. » C'est le cas courant dans une bourse à 1–2 €. |
+| `ÉDITION` | Uniquement l'ISBN choisi | « Je veux cette édition-là. » Collectionneur, édition illustrée, format précis. |
+
+La portée `ŒUVRE` est proposée par défaut : quelqu'un qui cherche un roman se moque de
+l'éditeur. Le choix d'une édition précise reste possible mais n'est jamais imposé.
+
+Conséquences :
+
+- Une fiche livre porte, en plus de son ISBN, **l'identifiant de l'œuvre** dont elle est
+  une édition (`02` §4).
+- Le rapprochement se fait au scan : l'ISBN scanné est résolu en œuvre, puis comparé aux
+  demandes portant sur cette œuvre et à celles portant sur cet ISBN.
+- L'e-mail d'alerte précise **quelle édition est arrivée** (éditeur, année, format), afin
+  que le membre sache ce qu'il va trouver (`04` §7).
+
+**Limite à assumer.** Le regroupement en œuvres provient d'une source externe
+(`RG-47`). Si elle ignore l'ISBN scanné ou ne le rattache à aucune œuvre, la demande de
+portée `ŒUVRE` ne se déclenchera pas : l'alerte est manquée, silencieusement. Un repli
+par rapprochement titre + auteur normalisés est possible mais produit des faux positifs
+(tomes d'une série, homonymes, adaptations). À arbitrer en `Q-10`.
+
+### `RG-47` — Rechercher un livre que l'association n'a jamais eu
+La recherche du site public interroge **deux ensembles distincts**, jamais mélangés :
+
+| Périmètre | Contenu | Usage |
+|---|---|---|
+| **Le catalogue** | Les livres reçus par l'association, disponibles, annoncés ou épuisés | « Qu'est-ce qu'il y a à la bourse ? » |
+| **Le référentiel bibliographique** | Tous les livres publiés, via une source externe interrogée par titre, auteur ou ISBN | « Je cherche ce livre, prévenez-moi s'il arrive. » |
+
+Un membre peut ajouter à sa liste de recherche **n'importe quel livre du référentiel**,
+qu'il ait été donné à l'association ou non. C'est le cas d'usage central des alertes :
+sans lui, on ne pourrait déclarer que des livres déjà en rayon.
+
+Un livre ainsi suivi mais jamais reçu **n'apparaît pas au catalogue public** : il
+n'existe que dans la liste du membre. Aucune fiche n'est créée tant qu'aucun exemplaire
+n'a été scanné.
+
 ### `RG-27` — Taille d'une liste de recherche
-Limitée à un nombre raisonnable d'entrées par membre *(valeur de départ : 100)*.
+Limitée à un nombre raisonnable d'entrées par membre *(valeur de départ : 100)*. Une
+entrée de portée `ŒUVRE` compte pour une, quel que soit le nombre d'éditions couvertes.
 
 ### `RG-28` — Constitution d'une alerte
-Une alerte est **constituée** lorsqu'un ISBN de la liste d'un membre est rendu
-disponible ou annoncé pour une bourse datée, si son compte est actif et ses alertes non
-suspendues.
+Une alerte est **constituée** lorsqu'un livre correspondant à une entrée de la liste
+d'un membre (`RG-46` : cet ISBN, ou une édition de cette œuvre) est rendu disponible ou
+annoncé pour une bourse datée, si son compte est actif et ses alertes non suspendues.
 
 Elle est constituée **au scan**, mise en file **à la clôture de la session**, et
 **envoyée 2 heures plus tard** (`RG-44`). Elle n'est jamais constituée à la bascule
@@ -386,6 +439,40 @@ enregistrée, et l'écart est comptabilisé pour la remise à plat.
 
 Si le livre est annoncé mais pas encore basculé, la caisse le signale au caissier
 — l'exemplaire n'était pas censé être en rayon — mais **ne bloque pas la vente**.
+
+### `RG-48` — Montée en charge du catalogue
+Le catalogue démarre vide, alors que le local contient déjà plusieurs milliers de
+livres. **Le système ne connaît que ce qu'il a scanné**, et il n'y a pas de reprise
+préalable de l'existant : le catalogue se remplit progressivement, au fil des tris.
+
+Conséquences pendant la montée en charge, à connaître et à accepter :
+
+| Règle | Comportement au démarrage |
+|---|---|
+| `RG-10` « inutile d'en garder » | Ne se déclenche presque jamais : les exemplaires déjà en rayon sont invisibles du système |
+| `RG-11` « premier exemplaire » | Se déclenche sur presque tout, y compris des titres présents en cinq exemplaires |
+| `RG-12` « ce titre se vend » | Sans historique, reste muet plusieurs bourses durant |
+| Catalogue public | N'affiche que les livres passés par le scan, pas le fonds déjà en place |
+
+**L'aide à la décision devient donc réellement utile après plusieurs mois d'usage.**
+Ce point doit être annoncé aux bénévoles : un outil qui répond « premier exemplaire »
+sur un livre qu'ils savent présent en rayon perd leur confiance si personne ne les a
+prévenus.
+
+Deux moyens d'accélérer, ni l'un ni l'autre obligatoire :
+
+- une ou plusieurs **sessions de scan de l'existant**, en mode `DISPONIBLE MAINTENANT`,
+  menées sur les rayons déjà remplis ;
+- la priorité donnée aux rayons les plus denses, où le doublon est le plus coûteux.
+
+### `RG-49` — Annulation d'une vente encaissée
+Une vente déjà validée peut être annulée depuis l'écran de caisse tant que la session
+de bourse est ouverte : le client change d'avis, une erreur de scan est constatée après
+coup. L'annulation produit un mouvement inverse tracé (`RG-35`) et rétablit la quantité
+disponible.
+
+Au-delà de la fermeture de la bourse, la correction relève de l'administration et de la
+remise à plat (`RG-34`).
 
 ### `RG-38` — Bourse déplacée, annulée ou supprimée
 Les annonces suivent leur bourse de rattachement :

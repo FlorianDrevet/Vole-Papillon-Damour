@@ -42,6 +42,26 @@ Le catalogue complet est parcourable (décision arrêtée) mais l'accueil ne dé
 l'absence d'accents, les fautes de frappe légères et l'inversion titre/auteur — sans
 quoi elle sera jugée inutilisable dès le premier essai.
 
+Elle porte sur **deux périmètres distincts, jamais mélangés** (`RG-47`) :
+
+```
+   Recherche : « le petit prince »
+
+   ── À la bourse ────────────────────────────────
+   ✅ Le Petit Prince · Gallimard 1999 · 3 dispo
+   📅 Le Petit Prince · Folio 2015 · dès le 14 mars
+
+   ── Pas encore reçu ────────────────────────────
+   Le Petit Prince · Gallimard Jeunesse, grand format
+   Le Petit Prince · édition illustrée, 2021
+                              [ Suivre ce livre 🔔 ]
+```
+
+Le catalogue arrive toujours en premier : la question la plus fréquente reste
+« qu'est-ce qu'il y a à la bourse ? ». Le second bloc existe pour une seule raison —
+permettre de suivre un livre que l'association n'a jamais reçu — et ne doit jamais
+donner l'impression que ces livres sont disponibles.
+
 **Filtres** : genre, disponibilité, livres rares.
 **Tris** : pertinence (défaut), arrivée récente.
 
@@ -116,17 +136,51 @@ L'inscription n'est proposée qu'au moment où elle sert : au clic sur
 
 ### Liste de recherche
 
-- Ajout depuis une fiche livre, ou par recherche depuis « Mon compte ».
+- Ajout depuis une fiche du catalogue, **ou depuis un résultat du référentiel
+  bibliographique** — c'est-à-dire y compris un livre que l'association n'a jamais reçu
+  (`RG-47`). C'est le cas d'usage principal.
 - On peut y mettre un livre actuellement disponible : cela signifie « préviens-moi au
   prochain réapprovisionnement ».
 - Retrait à tout moment, en un clic.
-- Une limite raisonnable par compte évite les listes de plusieurs milliers d'entrées
-  (`RG-27`).
+- Limite raisonnable par compte (`RG-27`).
+
+### Choisir la portée : l'œuvre ou une édition précise
+
+Un ISBN désigne une édition, pas un texte. *Le Petit Prince* existe en dizaines
+d'éditions, donc en dizaines d'ISBN. À l'ajout, le membre choisit ce qu'il suit
+(`RG-46`) :
+
+```
+┌──────────────────────────────────────────────┐
+│  Le Petit Prince — Antoine de Saint-Exupéry  │
+│                                              │
+│  Que souhaitez-vous suivre ?                 │
+│                                              │
+│  ◉  N'importe quelle édition                 │
+│     Vous serez prévenu dès qu'un exemplaire  │
+│     arrive, quel que soit l'éditeur          │
+│                                              │
+│  ○  Une édition précise                      │
+│     ┌──────────────────────────────────┐     │
+│     │ Gallimard, Folio, 1999         ▾ │     │
+│     └──────────────────────────────────┘     │
+│                                              │
+│              [ Ajouter à ma liste ]          │
+└──────────────────────────────────────────────┘
+```
+
+« N'importe quelle édition » est **pré-sélectionné** : dans une bourse à 1–2 €, la
+quasi-totalité des gens cherchent un texte, pas un tirage. L'édition précise sert au
+collectionneur, à l'édition illustrée, au grand format.
 
 ### Ce que le membre voit sur sa liste
 
-Pour chaque entrée : couverture, titre, disponibilité actuelle, date d'ajout, et la
-date de la dernière alerte reçue s'il y en a eu une.
+Pour chaque entrée : couverture, titre, auteur, **portée suivie** (« toutes éditions »
+ou l'édition choisie), disponibilité actuelle au catalogue, date d'ajout, et la date de
+la dernière alerte reçue s'il y en a eu une.
+
+Une entrée qui ne correspond à aucune fiche du catalogue s'affiche comme
+« pas encore reçu par l'association » — sans que cela ait l'air d'une erreur.
 
 ## 7. Alertes
 
@@ -161,6 +215,9 @@ e-mail annonçant un livre « prochainement » n'aide personne à se déplacer.
 ### Contenu de l'e-mail
 
 - Le titre, l'auteur, la couverture
+- **Quelle édition est arrivée** — éditeur, année, format. Indispensable pour une
+  demande de portée « toutes éditions » (`RG-46`) : le membre doit savoir ce qu'il va
+  trouver, et ne pas croire qu'on lui promet l'édition qu'il avait en tête
 - **La date à laquelle le livre sera effectivement disponible**, en évidence
 - Les dates, horaires et adresse de la bourse concernée
 - **Une mention explicite de non-réservation** : « Ce livre n'est pas mis de côté.
