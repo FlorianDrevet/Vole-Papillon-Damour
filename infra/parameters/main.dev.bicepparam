@@ -13,7 +13,7 @@ param containerAppApiContainerRuntime = {
   memoryGi: '1.0Gi'
 }
 param containerAppApiScaling = {
-  minReplicas: 0
+  minReplicas: 1
   maxReplicas: 2
 }
 param containerAppApiIngress = {
@@ -42,7 +42,7 @@ param containerAppWebsiteContainerRuntime = {
   memoryGi: '1.0Gi'
 }
 param containerAppWebsiteScaling = {
-  minReplicas: 0
+  minReplicas: 1
   maxReplicas: 2
 }
 param containerAppWebsiteIngress = {
@@ -71,7 +71,7 @@ param containerAppBackOfficeContainerRuntime = {
   memoryGi: '0.5Gi'
 }
 param containerAppBackOfficeScaling = {
-  minReplicas: 0
+  minReplicas: 1
   maxReplicas: 2
 }
 param containerAppBackOfficeIngress = {
