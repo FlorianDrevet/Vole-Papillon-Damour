@@ -11,7 +11,85 @@ D'où `DT-04` : une application dédiée, `Microsoft.App/containerApps` avec
 `kind=functionapp`, dans le `managedEnvironment` déjà déclaré. Ce n'est **pas** un
 environnement nouveau.
 
-## 2. Le travail à faire
+## 2. Comment le worker partage le code de l'API
+
+**Rien n'est dupliqué.** Le worker est un second *hôte* au-dessus des mêmes
+bibliothèques, par référence de projet dans la même solution.
+
+```
+Vole_Papillon_Damour.Domain           (bibliothèque)
+Vole_Papillon_Damour.Application      (bibliothèque) ──► Domain
+Vole_Papillon_Damour.Infrastructure   (bibliothèque) ──► Application
+Vole_Papillon_Damour.Contracts        (bibliothèque)
+
+Vole_Papillon_Damour.Api      (hôte web)       ──┐
+Vole_Papillon_Damour.Worker   (hôte Functions) ──┴──► Application + Infrastructure
+```
+
+Un seul domaine, un seul `ProjectDbContext`, un seul jeu de migrations, une seule
+définition de `RG-23`. Deux processus, un code — le schéma classique du monolithe
+modulaire. Le découpage actuel s'y prête déjà : `Application` et `Infrastructure` sont
+des bibliothèques, pas des morceaux de l'API.
+
+### Le worker appelle les mêmes handlers
+
+```csharp
+await sender.Send(new ReleaseDueAnnouncementsCommand(), ct);   // RG-23
+await sender.Send(new CloseIdleSessionsCommand(), ct);         // RG-43
+```
+
+`CloseScanSession` est **le même handler** que celui déclenché quand un bénévole appuie
+sur `TERMINER`. C'est voulu : `RG-43` définit quatre causes de clôture, et il serait
+absurde que la clôture manuelle et la clôture par inactivité suivent deux chemins de
+code distincts — ils divergeraient au premier correctif.
+
+### Pourquoi pas un appel HTTP vers l'API
+
+C'est l'option qui vient naturellement, et elle est mauvaise **ici** pour une raison
+précise : l'API est à `minReplicas: 0`. Le worker devrait la réveiller à chaque
+balayage, subir le démarrage à froid, et introduire une dépendance de disponibilité
+entre deux composants qui n'ont aucun besoin de se parler.
+
+S'y ajoute la surface d'attaque : réclamer des lignes d'outbox ou basculer des annonces
+en masse sont des opérations internes. Les exposer en HTTP crée des routes qui ne
+doivent jamais être appelables de l'extérieur — et qu'il faudrait donc protéger. Deux
+sauts réseau pour ce qui est une opération de base de données.
+
+Dupliquer le domaine est exclu : divergence garantie dès la première évolution de
+`RG-15`. Un contexte borné séparé avec son propre modèle serait défendable si le worker
+appartenait à une autre équipe et à un autre cycle de vie ; ici, un développeur, un
+domaine, des données qui se référencent en permanence.
+
+### Ce que ce choix coûte
+
+| Contrepartie | Portée |
+|---|---|
+| **Couplage de version sur le schéma** | API et worker **doivent être construits et déployés depuis le même commit**. Deux images distinctes — le worker exige une image de base Functions, l'API une image ASP.NET — mais une seule construction et une seule étiquette de version |
+| Deux composants portent les accès à la base | Inévitable dès qu'on découple le traitement de fond du trafic HTTP |
+| Un changement dans `Application` impose de redéployer les deux | Sans conséquence à ce rythme de livraison |
+
+### Trois contraintes de conception
+
+Ce sont les pièges réels de ce montage.
+
+**Aucun handler appelé par le worker ne dépend d'un utilisateur ambiant.** Pas
+d'`IHttpContextAccessor`, pas d'« utilisateur courant » tiré du JWT : le worker n'en a
+pas. L'acteur se passe explicitement en paramètre de la commande, ou vaut « système » —
+ce qui doit apparaître dans le `VolunteerId` des mouvements (`RG-41`).
+
+**Une portée d'injection par exécution.** Dans l'API, le `DbContext` vit le temps d'une
+requête. Dans le worker, ouvrir explicitement un `IServiceScope` par exécution, sinon le
+contexte accumule les entités suivies et finit par tout garder en mémoire — ce qui
+contredirait `ENF-03`.
+
+**Distinguer les deux natures d'opération.** La réclamation de lignes d'outbox est du
+SQL mécanique (§4), qui vit dans `Infrastructure` comme méthode de dépôt. La transition
+métier — basculer une annonce, clôturer une session — passe par le domaine, parce que
+c'est lui qui porte les invariants. **Le worker n'écrit jamais un `UPDATE` direct sur
+les quantités** : il court-circuiterait `RG-35`, qui exige qu'aucune quantité ne soit
+modifiée sans mouvement tracé.
+
+## 3. Le travail à faire
 
 | Traitement | Règle | Cadence |
 |---|---|---|
@@ -37,7 +115,7 @@ et espacé. Neuf déploiements distincts contreviendraient à `ENF-24`.
 s'applique** : N fiches par exécution, une requête à la fois. Personne n'attend de
 résultat de ce côté.
 
-## 3. La table d'outbox
+## 4. La table d'outbox
 
 `DT-03` : une table, pas un broker.
 
@@ -77,7 +155,7 @@ Deux exécutions qui se chevauchent ne peuvent pas réclamer la même ligne. Auc
 **Relire l'état en base avant d'envoyer.** Le message n'est qu'un réveil : entre la mise
 en file et l'échéance, une reprise de session a pu tout invalider (`RG-45`).
 
-## 4. Le délai de deux heures
+## 5. Le délai de deux heures
 
 `RG-44` : mise en file à la clôture, envoi 2 h plus tard.
 
@@ -100,7 +178,7 @@ sont disponibles qu'à la date de la bourse, les autres qu'à l'ouverture du loc
 
 Les deux délais sont paramétrables (`ENF-25`).
 
-## 5. Idempotence
+## 6. Idempotence
 
 Non négociable : les exécutions peuvent être relancées ou se chevaucher.
 
@@ -113,7 +191,7 @@ Non négociable : les exécutions peuvent être relancées ou se chevaucher.
 
 Tout traitement qui suppose « je ne tourne qu'une fois » est un défaut.
 
-## 6. Le point ouvert — `QT-02`
+## 7. Le point ouvert — `QT-02`
 
 La documentation liste le déclencheur planifié parmi ceux qui montent depuis zéro via
 KEDA. Des retours indiquent l'inverse : une application descendue à zéro ne serait pas
@@ -136,7 +214,7 @@ Resteraient les traitements réellement périodiques — bascule, rattrapage —
 Job en cron** couvrirait : planification garantie par la plateforme, facturation à
 l'exécution seule.
 
-## 7. Coût
+## 8. Coût
 
 Les Container Apps offrent **180 000 vCPU-secondes et 360 000 Gio-secondes gratuits par
 mois**, et un job ne facture que pendant son exécution.
@@ -145,7 +223,7 @@ mois**, et un job ne facture que pendant son exécution.
 quota, partagé avec trois applications à zéro réplica la plupart du temps.
 **En pratique : gratuit** — sauf dans l'hypothèse `minReplicas: 1` ci-dessus.
 
-## 8. Observabilité
+## 9. Observabilité
 
 Application Insights est déjà en place. Trois mesures à exposer, sans lesquelles les
 pannes seront silencieuses :

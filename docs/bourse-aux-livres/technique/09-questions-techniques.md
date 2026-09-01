@@ -52,7 +52,7 @@ pas y toucher pendant deux heures, vérifier dans les journaux qu'elle s'est ex�
 échéances attendues.
 
 **Les trois issues** sont décrites en
-[`06-traitements-differes.md`](06-traitements-differes.md) §6 : `minReplicas: 0` si le
+[`06-traitements-differes.md`](06-traitements-differes.md) §7 : `minReplicas: 0` si le
 réveil fonctionne ; `minReplicas: 1` sinon, au prix d'un conteneur permanent ; ou
 temporisation par file Azure Queue Storage, dont le déclencheur réveille bien depuis
 zéro.

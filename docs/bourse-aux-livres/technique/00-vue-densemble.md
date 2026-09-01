@@ -91,8 +91,11 @@ Justifications en [`01-decisions.md`](01-decisions.md).
 ```
 
 Le worker ne parle qu'à SQL, au stockage et aux services externes. **Il ne passe pas
-par l'API** : il partage la même base et les mêmes couches `Application` et
-`Infrastructure`, dans un processus distinct.
+par l'API.** Concrètement : c'est un second projet exécutable de la même solution, qui
+**référence les mêmes bibliothèques** `Application`, `Domain` et `Infrastructure` et
+appelle les mêmes handlers MediatR en direct. Rien n'est dupliqué ; deux processus, un
+seul code. Le détail, les alternatives écartées et les trois contraintes que cela
+impose sont en [`06-traitements-differes.md`](06-traitements-differes.md) §2.
 
 ## 5. Les trois flux qui comptent
 
