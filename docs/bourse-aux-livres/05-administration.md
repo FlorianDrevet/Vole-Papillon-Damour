@@ -13,7 +13,7 @@ Vue d'ouverture, en chiffres, sur la période en cours et la précédente pour c
 |---|---|
 | Livres disponibles et annoncés (total et titres distincts) | Mesure de la saturation du local |
 | Livres triés sur la période, gardés / écartés | Mesure de l'activité de tri et du taux de rejet |
-| Ventes sur la dernière bourse : nombre et montant | Résultat de l'événement |
+| Ventes sur la dernière bourse : **nombre de livres** | Résultat de l'événement. Le système ne connaît aucun prix (`RG-50`) : la recette n'apparaît que si elle a été saisie à la main (`RG-51`) |
 | Titres disponibles jamais vendus depuis leur première mise à disposition | **Le principal levier de désengorgement.** Ce sont les candidats au retrait. |
 | Livres marqués rares en attente d'expertise | File de travail |
 | Alertes en attente d'envoi | Sessions dont les e-mails ne sont pas encore partis, avec le temps restant. **Fenêtre de rattrapage** (`RG-44`) |
@@ -28,12 +28,26 @@ moyen de vérifier que le palier 1 a atteint son critère de passage.
 Chaque session de bourse est un `AssoEvents` de type `Books` existant (`RG-36`). Aucune
 saisie de dates en double.
 
-Pour une bourse donnée : nombre de livres vendus, recette, répartition par genre,
-meilleures ventes, comparaison avec les bourses précédentes, et courbe des ventes par
-journée d'ouverture.
+Pour une bourse donnée : **nombre de livres vendus**, répartition par genre, meilleures
+ventes, comparaison avec les bourses précédentes, et courbe des ventes par journée
+d'ouverture.
 
 C'est ce qui permet de répondre à « quel jour ouvrir », « quels genres marchent »,
 « la bourse de mars a-t-elle mieux marché que celle de février ».
+
+### La recette se saisit à la main
+
+Les prix étant décidés au comptoir, le système ne peut pas les connaître (`RG-50`).
+Un administrateur saisit donc, à la clôture de chaque bourse, **un seul montant** :
+celui du comptage de caisse que l'association effectue de toute façon.
+
+Rapproché du nombre de livres vendus, ce montant donne le **panier moyen** et permet de
+comparer les bourses entre elles. Une bourse à 800 livres pour 1 100 € et une autre à
+800 livres pour 700 € ne racontent pas la même histoire — et cette comparaison
+s'obtient avec un champ, sans jamais avoir à tarifer un livre.
+
+La saisie est facultative : son absence ne bloque rien, elle prive seulement les
+statistiques de leur volet financier.
 
 ## 3. Statistiques par livre
 
@@ -51,7 +65,8 @@ qu'il se vend ? ».
 | Retirer des livres | Mouvement `RETRAIT` : désherbage, don à une autre structure, mise au rebut |
 | Masquer une fiche du catalogue public | Sans la supprimer ni perdre son historique |
 | Supprimer une fiche | Réservé aux fiches créées par erreur. Refusé si des ventes y sont rattachées (`RG-06`) |
-| Marquer ou démarquer « rare », fixer un prix | Complète ou corrige la détection automatique |
+| Marquer ou démarquer « rare » | Déclenche le signalement en caisse (`03` §5). **Aucun prix n'est saisi** : il est porté physiquement sur le livre (`RG-50`) |
+| Saisir la recette d'une bourse | Un montant unique à la clôture, facultatif (`RG-51`) |
 | Fusionner deux fiches | Cas des ISBN-10 et ISBN-13 d'une même édition mal normalisés (`RG-07`) |
 
 ### Files de travail
@@ -59,7 +74,8 @@ qu'il se vend ? ».
 Des listes de travail concrètes, plutôt que des écrans de recherche :
 
 - **Fiches sans métadonnées** — à compléter à la main.
-- **Livres marqués rares** — à expertiser et à tarifer. Alimentée à la main en v1 ; elle
+- **Livres marqués rares** — à expertiser, et à étiqueter physiquement d'un prix
+  puisque le système n'en porte aucun (`RG-50`). Alimentée à la main en v1 ; elle
   recevra les résultats de l'estimation asynchrone si celle-ci est un jour implémentée
   (`RG-14`).
 - **Annonces sans date** — exemplaires annoncés alors qu'aucune bourse n'était

@@ -79,6 +79,7 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 | Gestion des dons en amont (donateurs, reçus fiscaux) | Sujet distinct. |
 | Intégration à l'application MAUI de caisse buvette | Les livres ont leur propre mode vente dans l'application de scan. Les deux caisses restent séparées. |
 | Notifications push | Reportées en v2. L'e-mail seul en v1. |
+| **Gestion des prix et encaissement** | Les prix sont décidés au comptoir ; le système n'en connaît aucun et ne calcule aucun total (`RG-50`). La caisse reste physique. Seule la recette globale d'une bourse peut être saisie à la main (`RG-51`). |
 | **Estimation automatique de la valeur marchande** | Reportée : non prioritaire, et aucune source fiable identifiée. Quand elle existera, elle sera **asynchrone** — jamais pendant le scan — et ses résultats apparaîtront en fin de session et en administration. Voir `Q-02` et `RG-14`. Le marquage manuel « rare », lui, existe dès la v1. |
 
 ## 6. Décisions structurantes déjà prises

@@ -288,35 +288,49 @@ la disponibilité (`RG-36`).
 Utilisé pendant une session de bourse. L'application se rattache automatiquement à la
 session de bourse ouverte (`RG-33`).
 
+**Le système ne connaît aucun prix** (`RG-50`). Les prix sont décidés au comptoir par le
+bénévole. L'écran ne sert donc qu'à enregistrer *quels* livres sortent, pas *combien*
+ils rapportent.
+
 ```
 ┌───────────────────────────────────────┐
 │ 💶 CAISSE    Bourse du 14 mars        │
 ├───────────────────────────────────────┤
 │                                       │
-│  Le Petit Prince            1,00 €    │
-│  Astérix chez les Belges    2,00 €    │
-│  Atlas Larousse 1932       35,00 €  🟣│
+│  Le Petit Prince                      │
+│  Astérix chez les Belges              │
+│                                       │
+│  ╔═════════════════════════════════╗  │
+│  ║ 🟣 Atlas Larousse 1932          ║  │
+│  ║    LIVRE RARE — voir le prix    ║  │
+│  ║    indiqué sur le livre         ║  │
+│  ╚═════════════════════════════════╝  │
 │                                       │
 │  ─────────────────────────────────    │
-│  3 livres                  38,00 €    │
+│  3 livres                             │
 ├───────────────────────────────────────┤
-│  ↩ Annuler dernier   │   ENCAISSER    │
+│  ↩ Annuler dernier   │   VALIDER      │
 └───────────────────────────────────────┘
 ```
 
 Points de conception :
 
 - Le scan enchaîne sans confirmation : on scanne les livres d'un client à la suite.
-- Un livre marqué rare (🟣) est **visuellement signalé** pour éviter qu'il parte au
-  tarif ordinaire.
+- **Aucun prix, aucun total.** L'encaissement reste entièrement manuel, comme
+  aujourd'hui. Le bouton s'appelle `VALIDER` et non `ENCAISSER` : il enregistre une
+  sortie de stock, il n'encaisse rien.
+- **Un livre rare est signalé en grand, au milieu de l'écran, pas par une pastille
+  discrète.** C'est le seul garde-fou du système contre un livre à 35 € vendu 2 € par un
+  bénévole qui n'était pas là le jour de l'expertise. Comme le montant n'est écrit nulle
+  part dans l'application, l'écran renvoie au prix porté physiquement sur le livre.
 - `Annuler dernier` traite le cas fréquent du double scan, avant encaissement.
 - **Une vente déjà encaissée peut être annulée** tant que la bourse est ouverte : le
   client change d'avis, une erreur est constatée après coup. La quantité disponible est
   rétablie et l'annulation est tracée (`RG-49`).
 - Plusieurs postes de caisse peuvent fonctionner en parallèle sans coordination : chaque
   vente est un mouvement indépendant rattaché à la bourse (`RG-33`).
-- `ENCAISSER` clôt la vente et enregistre les mouvements. Le calcul du rendu de monnaie
-  n'est pas dans le périmètre : la caisse reste physique.
+- `VALIDER` clôt la vente et enregistre les mouvements. Ni total, ni rendu de monnaie,
+  ni encaissement : la caisse reste entièrement physique.
 - **Un livre scanné alors que la quantité disponible est à zéro est quand même vendu** :
   le client le tient en main, la réalité prime sur le compteur. L'écart est enregistré
   pour la remise à plat (`RG-37`).

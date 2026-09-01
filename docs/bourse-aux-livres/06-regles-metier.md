@@ -465,7 +465,37 @@ Deux moyens d'accélérer, ni l'un ni l'autre obligatoire :
   menées sur les rayons déjà remplis ;
 - la priorité donnée aux rayons les plus denses, où le doublon est le plus coûteux.
 
-### `RG-49` — Annulation d'une vente encaissée
+### `RG-50` — Le système ne connaît aucun prix
+Les prix sont décidés au comptoir par le bénévole, livre en main. **Aucun prix n'est
+stocké, affiché, calculé ni totalisé par l'application**, ni pour les livres ordinaires
+ni pour les livres rares.
+
+Conséquences directes :
+
+| Domaine | Effet |
+|---|---|
+| Écran de caisse | Ni colonne prix, ni total. Il enregistre quels livres sortent, rien d'autre (`03` §5) |
+| Statistiques | On connaît le **nombre** de livres vendus, jamais la recette qui en découle |
+| Livres rares | Le système signale qu'un livre est rare ; **le montant est porté physiquement sur le livre**, pas dans l'application |
+| Fiche livre | Aucun champ de prix. La valeur estimée de `RG-14`, si elle existe un jour, est une aide au tri — jamais un prix de vente |
+
+**Le signalement des livres rares en caisse devient donc critique** (`03` §5). C'est la
+seule protection contre un livre expertisé à 35 € vendu 2 € par un bénévole qui ignore
+son histoire. Il est affiché en grand et renvoie au prix inscrit sur le livre.
+
+### `RG-51` — Recette d'une bourse
+La recette ne pouvant pas être déduite des ventes (`RG-50`), elle est **saisie à la main
+par un administrateur à la clôture de chaque bourse** : un seul montant, celui du
+comptage de caisse que l'association fait de toute façon.
+
+Rapproché du nombre de livres vendus, que le système connaît, ce montant donne le
+panier moyen et permet de comparer les bourses entre elles — sans jamais avoir eu besoin
+d'un prix par livre.
+
+La saisie est facultative : son absence n'empêche rien, elle prive seulement les
+statistiques de leur volet financier.
+
+### `RG-49` — Annulation d'une vente validée
 Une vente déjà validée peut être annulée depuis l'écran de caisse tant que la session
 de bourse est ouverte : le client change d'avis, une erreur de scan est constatée après
 coup. L'annulation produit un mouvement inverse tracé (`RG-35`) et rétablit la quantité

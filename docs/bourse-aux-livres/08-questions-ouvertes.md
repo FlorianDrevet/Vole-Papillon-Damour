@@ -10,7 +10,7 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 | `Q-02` | Source de la valeur marchande | 🟢 **Reportée hors v1** | — |
 | `Q-03` | Proportion de livres sans ISBN | 🟠 À mesurer | Palier 0 |
 | `Q-04` | Dérive du stock | 🟡 Risque assumé | — |
-| `Q-05` | Prix de vente et section « rares » | 🟡 À préciser | Association |
+| `Q-05` | Prix de vente et section « rares » | ✅ **Tranchée** | — |
 | `Q-06` | Deux applications d'administration | 🟡 Risque assumé | — |
 | `Q-07` | Genres et classement | 🟡 À préciser | Association |
 | `Q-08` | Choix du matériel de scan | 🟢 Après palier 0 | Association |
@@ -171,18 +171,39 @@ l'organisation de la caisse, et non ajouter des fonctionnalités.
 
 ## `Q-05` — Prix de vente et section « livres rares »
 
-> 🟡 À préciser avec l'association.
+> ✅ **Tranchée.** Le prix est décidé au comptoir par le bénévole. Le système n'en
+> connaît aucun.
 
-Les livres ordinaires sont vendus 1 à 2 €. Questions restées sans réponse :
+**La décision.** Aucun prix n'est stocké, affiché, calculé ni totalisé par l'application
+(`RG-50`). La caisse enregistre *quels* livres sortent, jamais *combien* ils rapportent.
+L'encaissement reste entièrement manuel, comme aujourd'hui.
 
-- Qu'est-ce qui distingue un livre à 1 € d'un livre à 2 € ? Est-ce une donnée à porter
-  dans le système, ou une décision prise au comptoir ?
-- Le prix d'un livre rare est-il fixé à l'avance et enregistré, ou décidé à la vente ?
-- La section « rares » a-t-elle un tarif propre, ou un prix par livre ?
-- L'encaissement affiche-t-il un total, ou la caisse reste-t-elle entièrement manuelle ?
+### Ce que cela change
 
-L'écran de caisse décrit en `03` §5 suppose un prix connu par livre. Si le prix est
-décidé au comptoir, cet écran doit être revu.
+| | |
+|---|---|
+| **Écran de caisse** | Réécrit (`03` §5) : ni colonne prix, ni total. Le bouton devient `VALIDER` et non `ENCAISSER` — il enregistre une sortie de stock, il n'encaisse rien |
+| **Livres rares** | Le signalement en caisse devient **critique** et passe d'une pastille discrète à un encadré en pleine largeur. C'est la seule protection contre un livre expertisé à 35 € vendu 2 € par quelqu'un qui l'ignore. Le montant est porté **physiquement sur le livre** |
+| **Statistiques** | Le nombre de livres vendus reste connu ; la recette, non |
+| **Fiche livre** | Aucun champ de prix, nulle part |
+
+### Ce que l'on perd, et comment on le récupère
+
+La promesse initiale de `05` §2 — recette par bourse — n'est plus tenable à partir des
+scans. Elle est remplacée par une **saisie manuelle d'un seul montant à la clôture de
+chaque bourse** (`RG-51`) : celui du comptage de caisse que l'association fait de toute
+façon.
+
+Rapproché du nombre de livres vendus, ce montant donne le panier moyen et permet de
+comparer les bourses entre elles. Une bourse à 800 livres pour 1 100 € et une autre à
+800 livres pour 700 € ne racontent pas la même histoire — et l'on obtient cette
+comparaison avec un champ, sans jamais tarifer un seul livre.
+
+### Ce que cela ne remet pas en cause
+
+Le scan de sortie sert d'abord à décrémenter le stock, et cela fonctionne sans connaître
+le moindre prix. Le catalogue public, la fiabilité des quantités, les alertes et l'aide
+au tri sont **totalement indépendants** de cette question.
 
 ---
 
@@ -353,3 +374,5 @@ cher, et là que l'outil devient crédible le plus vite.
 | 2026-09-01 | Granularité d'une demande | **Œuvre par défaut** (toutes éditions), édition précise en option — `RG-46` |
 | 2026-09-01 | Amorçage du catalogue | Progressif, sans reprise préalable de l'existant — `Q-11`, `RG-48` |
 | 2026-09-01 | Périmètre de la session | Le tri seul. La caisse et la consultation n'ouvrent pas de session — `RG-43` |
+| 2026-09-01 | Prix de vente | **Décidés au comptoir. Le système n'en connaît aucun** — `Q-05`, `RG-50` |
+| 2026-09-01 | Recette d'une bourse | Saisie manuelle d'un montant unique à la clôture, facultative — `RG-51` |
