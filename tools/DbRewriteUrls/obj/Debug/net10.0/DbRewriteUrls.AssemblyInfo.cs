@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DbRewriteUrls")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3ab682ef12f7c1d489f63ee54e49f0c8f74231ef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5a2e1d01414cadbe11cacbf54efb50d8835982c7")]
 [assembly: System.Reflection.AssemblyProductAttribute("DbRewriteUrls")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DbRewriteUrls")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
