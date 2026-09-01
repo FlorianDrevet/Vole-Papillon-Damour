@@ -102,12 +102,21 @@ Isbn13         char(13)         FK Books
 Type           tinyint          NOT NULL
                -- EntreeAnnonce|EntreeDirecte|Bascule|Vente|Refus|Correction|Retrait
 Quantity       int              NOT NULL     -- signé
-OccurredAt     datetime2        NOT NULL
+OccurredAt     datetime2        NOT NULL     -- heure client, ordre réel des gestes
+ReceivedAt     datetime2        NOT NULL     -- heure serveur, audit
+ClockSuspect   bit              NOT NULL DEFAULT 0
 ScanSessionId  uniqueidentifier FK NULL      -- NULL pour caisse et corrections
 VolunteerId    uniqueidentifier FK NULL      -- RG-41
 AssoEventsId   uniqueidentifier FK NULL      -- RG-33
 Note           nvarchar(500)    NULL         -- motif d'une correction
 ```
+
+**Deux horodatages, pas un.** Un geste produit hors ligne est daté par le client — le
+serveur ne le voit parfois que des heures plus tard. Mais l'horloge d'un appareil n'est
+pas fiable, et une horloge fausse polluerait les statistiques par bourse. On conserve
+donc `OccurredAt` (client, pour l'ordre réel) **et** `ReceivedAt` (serveur, pour
+l'audit). Si l'heure client est absurde — dans le futur, ou antérieure au début de la
+session — on retient l'heure serveur et on lève `ClockSuspect`.
 
 **Table en ajout seul.** On n'y met jamais à jour, on n'y supprime jamais : une
 annulation (`RG-17`, `RG-49`) produit un mouvement inverse. C'est l'historique
@@ -125,7 +134,9 @@ VolunteerId         uniqueidentifier FK
 Mode                tinyint          NOT NULL -- DisponibleMaintenant|ProchaineBourse
 TargetAssoEventsId  uniqueidentifier NULL     -- bourse visée, NULL si RG-24
 StartedAt           datetime2        NOT NULL
-LastScanAt          datetime2        NOT NULL -- pilote la clôture par inactivité
+LastScanAt          datetime2        NOT NULL -- heure client du dernier scan
+LastSyncAt          datetime2        NOT NULL -- dernier contact de l'appareil
+LateArrivals        bit              NOT NULL DEFAULT 0 -- gestes reçus après clôture
 EndedAt             datetime2        NULL
 CloseReason         tinyint          NULL     -- Manuelle|Inactivite|Deconnexion|JetonExpire
 Status              tinyint          NOT NULL -- EnCours|Terminee|Reprise
@@ -136,6 +147,13 @@ RejectedCount       int              NOT NULL DEFAULT 0
 
 `LastScanAt` porte `RG-43` : le balayage d'inactivité cherche les sessions `EnCours`
 dont `LastScanAt` dépasse le seuil.
+
+**`LastSyncAt` est distinct et indispensable.** Un bénévole qui trie hors ligne pendant
+trois heures paraît inactif au serveur, qui ne juge que sur ce qu'il a reçu : sa session
+serait close et ses alertes envoyées alors qu'il scanne encore. Le balayage exige donc
+que **les deux** horodatages soient périmés. `LateArrivals` marque les sessions ayant
+reçu des gestes après leur clôture, pour que l'administration les repère
+([`04-app-scan.md`](04-app-scan.md) §4).
 
 Contrainte : **une seule session ouverte par bénévole** — index unique filtré sur
 `Status = EnCours`.

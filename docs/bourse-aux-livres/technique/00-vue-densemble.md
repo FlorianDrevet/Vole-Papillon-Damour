@@ -104,10 +104,16 @@ impose sont en [`06-traitements-differes.md`](06-traitements-differes.md) §2.
 1. L'appareil cherche l'ISBN dans sa copie locale du catalogue (IndexedDB).
 2. **Trouvé** — verdict et titre affichés instantanément, aucun réseau.
 3. **Absent** — le verdict « premier exemplaire » s'affiche immédiatement, puisque
-   inconnu signifie zéro exemplaire et zéro vente ; un appel part en parallèle pour
-   obtenir le titre. S'il échoue, la fiche existe quand même (`RG-03`).
-4. Le geste rejoint la file de sortie locale, synchronisée au retour du réseau
-   (`ENF-05`, `ENF-07`).
+   inconnu signifie zéro exemplaire et zéro vente. Une requête de métadonnées part
+   **en parallèle**, c'est-à-dire sans que l'interface l'attende : le titre remplit sa
+   zone s'il arrive à temps, et son échec est sans conséquence (`RG-03`).
+4. Le geste est écrit dans la file de sortie locale **avant toute tentative d'envoi**,
+   puis transmis dès que le réseau le permet (`ENF-05`, `ENF-07`).
+
+Il n'existe pas de chemin « en ligne » distinct : la file est toujours empruntée, et
+être connecté signifie seulement qu'elle se vide tout de suite. Le déroulé complet, les
+pièges du parallélisme et le fonctionnement hors ligne sont détaillés en
+[`04-app-scan.md`](04-app-scan.md) §3 et §4.
 
 ### Clôturer une session de tri
 
