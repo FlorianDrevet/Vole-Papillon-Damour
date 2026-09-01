@@ -167,7 +167,6 @@ remonté au bénévole trieur.
 - **Estimation asynchrone de la valeur marchande** (`Q-02`), avec restitution en fin de
   session et dans une file d'administration
 - Notifications push web
-- Réservation avec mise de côté
 - Application mobile native pour le public
 - Prise en charge des livres sans ISBN
 

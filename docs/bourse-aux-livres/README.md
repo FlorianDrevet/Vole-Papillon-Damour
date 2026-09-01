@@ -27,6 +27,7 @@ ces documents.
 | [`06-regles-metier.md`](06-regles-metier.md) | Règles numérotées et vérifiables |
 | [`07-exigences-non-fonctionnelles.md`](07-exigences-non-fonctionnelles.md) | Performance, hors-ligne, RGPD, accessibilité, authentification |
 | [`08-questions-ouvertes.md`](08-questions-ouvertes.md) | Décisions restant à prendre et risques assumés |
+| [`technique/`](technique/README.md) | **Architecture technique** — comment construire ce que décrit ce dossier |
 
 ## Statut
 
