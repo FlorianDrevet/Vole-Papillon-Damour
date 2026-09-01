@@ -11,6 +11,7 @@ import {ActualityModel} from "../../shared/models/actuality.model";
 export class ActualityDetailComponent implements OnInit{
 
   actuality = signal<ActualityModel | null>(null)
+  isLoading = signal(true);
 
   constructor(private actualityFacade: ActualityFacadeService,
               private route: ActivatedRoute) {
@@ -22,11 +23,14 @@ export class ActualityDetailComponent implements OnInit{
 
   getActuality() {
     this.route.paramMap.subscribe(params => {
-      if (params.get('id') !== null)
-      {
-        this.actualityFacade.getActualityById(params.get('id')!).then(response => {
-          this.actuality.set(response)
-        })
+      const id = params.get('id');
+      if (id !== null) {
+        this.actualityFacade.getActualityById(id)
+          .then(response => this.actuality.set(response))
+          .catch(() => this.actuality.set(null))
+          .finally(() => this.isLoading.set(false));
+      } else {
+        this.isLoading.set(false);
       }
     })
   }

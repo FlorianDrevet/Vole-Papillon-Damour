@@ -81,6 +81,32 @@
       <app-pill-button routerLink="/evenement/all" [small]="true">Tout l'agenda</app-pill-button>
     </div>
   </section>
+} @else if (isLoading()) {
+  <div role="status" aria-label="Chargement de l'événement">
+    <section class="grid grid-cols-1 items-center gap-10 bg-ink px-shell py-12 text-mist-2 lg:grid-cols-[1fr_440px] lg:gap-14 lg:py-[70px]" aria-hidden="true">
+      <div class="flex flex-col gap-5">
+        <span class="skeleton skeleton-dark h-3 w-32 rounded-sm"></span>
+        <span class="skeleton skeleton-dark h-3 w-44 rounded-sm"></span>
+        <span class="skeleton skeleton-dark h-12 w-4/5 rounded-sm lg:h-14"></span>
+        <span class="skeleton skeleton-dark h-12 w-3/5 rounded-sm lg:h-14"></span>
+        <div class="flex flex-wrap gap-x-11 gap-y-5 border-t border-white/10 pt-6">
+          <span class="skeleton skeleton-dark h-12 w-24 rounded-sm"></span>
+          <span class="skeleton skeleton-dark h-12 w-20 rounded-sm"></span>
+          <span class="skeleton skeleton-dark h-12 w-32 rounded-sm"></span>
+        </div>
+        <span class="skeleton skeleton-dark h-9 w-28 rounded-full"></span>
+      </div>
+      <span class="skeleton skeleton-dark h-[240px] w-full rounded-lg lg:h-[400px]"></span>
+    </section>
+    <div class="flex flex-col items-start justify-between gap-5 border-t border-line-2 bg-white px-shell py-12 lg:flex-row lg:items-center" aria-hidden="true">
+      <span class="skeleton h-7 w-48 rounded-sm"></span>
+      <span class="skeleton h-9 w-44 rounded-full"></span>
+    </div>
+  </div>
 } @else {
-  <div class="flex justify-center py-24"><mat-spinner></mat-spinner></div>
+  <div class="mx-auto flex max-w-[680px] flex-col gap-3 px-6 py-16 text-slate-2 lg:px-0">
+    <h1 class="font-serif text-2xl font-medium text-ink-2">Événement indisponible</h1>
+    <p>Cet événement n'est pas disponible pour le moment.</p>
+    <a routerLink="/evenement" class="font-mono text-xs tracking-[.1em] text-blue">RETOUR AUX ÉVÉNEMENTS →</a>
+  </div>
 }

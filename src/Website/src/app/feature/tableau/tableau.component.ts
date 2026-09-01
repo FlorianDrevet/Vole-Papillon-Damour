@@ -14,6 +14,7 @@ import {NumberLineEnum} from "../../shared/enums/numberLine.enum";
 })
 export class TableauComponent implements OnInit {
   sseClient = inject(SseClientService);
+  readonly loadingNumbers = Array.from({ length: 90 }, (_, index) => index);
 
   _indexPartie = computed(() => {
     if (this.assoEvent() === undefined) {

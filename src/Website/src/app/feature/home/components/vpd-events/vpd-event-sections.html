@@ -23,7 +23,30 @@
       <a routerLink="/evenement/all" class="border-b border-mist pb-1 font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
     </div>
 
-    @if (upcomingEvents().length) {
+    @if (isLoading()) {
+      <div class="relative grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Chargement des prochains rendez-vous">
+        @for (card of loadingCards; track card; let first = $first; let i = $index) {
+          <div
+            class="vpd-upcoming-event-skeleton flex animate-vpd-float flex-col gap-2.5 rounded px-6 py-6"
+            [ngClass]="first
+              ? 'bg-ink-2 shadow-[0_26px_44px_-30px_rgba(7,43,69,0.85)]'
+              : 'mt-4 border border-line bg-white shadow-[0_22px_40px_-32px_rgba(7,43,69,0.6)]'"
+            [style.--r]="cardRotationDeg(i) + 'deg'"
+            [style.animation-duration.s]="cardDurationS(i)"
+            [style.animation-delay.s]="cardDelayS(i)"
+            aria-hidden="true">
+            <span class="flex items-baseline justify-between">
+              <span class="skeleton h-10 w-11 rounded-sm" [class.skeleton-dark]="first"></span>
+              <span class="skeleton h-3 w-12 rounded-sm" [class.skeleton-dark]="first"></span>
+            </span>
+            <span class="skeleton h-px w-full" [class.skeleton-dark]="first"></span>
+            <span class="skeleton h-4 w-4/5 rounded-sm" [class.skeleton-dark]="first"></span>
+            <span class="skeleton h-3 w-2/5 rounded-sm" [class.skeleton-dark]="first"></span>
+            <span class="skeleton mt-1 h-3 w-16 rounded-sm" [class.skeleton-dark]="first"></span>
+          </div>
+        }
+      </div>
+    } @else if (upcomingEvents().length) {
       <div class="relative grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <!-- Les rendez-vous sont affichés dans l'ordre chronologique, tous types confondus :
              la première carte (le rendez-vous le plus proche) porte le fond sombre de la

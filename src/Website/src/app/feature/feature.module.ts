@@ -51,7 +51,6 @@ import { HospitalCareComponent } from './maxence/daily-life/hospital-care/hospit
 import { SchoolComponent } from './maxence/daily-life/school/school.component';
 import { OrgansTransplantComponent } from './maxence/daily-life/organs-transplant/organs-transplant.component';
 import { ContactComponent } from './contact/contact.component';
-import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {CoreModule} from "../core/core.module";
 import { PartieCardComponent } from './event-detail/components/bingo-event/components/partie-card/partie-card.component';
 import { LotCardComponent } from './event-detail/components/bingo-event/components/lot-card/lot-card.component';
@@ -130,7 +129,6 @@ import {ActionsComponent} from "./actions/actions.component";
     NgOptimizedImage,
     SharedModule,
     RouterLink,
-    MatProgressSpinner,
     CoreModule
   ]
 })

@@ -81,4 +81,20 @@ describe('VpdEventSections', () => {
 
     expect(component.upcomingEvents()).toEqual([]);
   });
+
+  it('should render three skeleton cards while upcoming events are loading', async () => {
+    let resolveRequest!: (events: unknown[]) => void;
+    axiosServiceSpy.request.and.returnValue(new Promise(resolve => {
+      resolveRequest = resolve;
+    }));
+
+    fixture = TestBed.createComponent(VpdEventSections);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.vpd-upcoming-event-skeleton').length).toBe(3);
+
+    resolveRequest([]);
+    await fixture.whenStable();
+  });
 });

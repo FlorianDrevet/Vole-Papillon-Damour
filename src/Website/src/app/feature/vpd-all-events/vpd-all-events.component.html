@@ -4,40 +4,58 @@
 </section>
 
 <div class="mx-auto flex max-w-[860px] flex-col gap-14 px-6 pb-16 lg:px-11 lg:pb-20">
-  @if (allBingoEvents().length) {
-    <div class="flex flex-col gap-3">
-      <h2 class="font-serif text-2xl font-medium text-ink-2">Les lotos</h2>
-      <div class="flex flex-col">
-        @for (event of allBingoEvents(); track event.id) {
-          <app-event-card [VpdEvent]="event"></app-event-card>
+  @if (isLoading()) {
+    <div class="flex flex-col gap-3" role="status" aria-label="Chargement de l'agenda">
+      <span class="skeleton h-8 w-32 rounded-sm" aria-hidden="true"></span>
+      <div class="flex flex-col" aria-hidden="true">
+        @for (card of loadingCards; track card) {
+          <div class="vpd-all-event-skeleton grid grid-cols-1 items-center gap-2 border-b border-line-2 py-5 sm:grid-cols-[110px_1fr_auto] sm:gap-6 sm:px-3">
+            <span class="skeleton h-8 w-12 rounded-sm"></span>
+            <span class="flex flex-col gap-2">
+              <span class="skeleton h-4 w-4/5 rounded-sm"></span>
+              <span class="skeleton h-3 w-2/5 rounded-sm"></span>
+            </span>
+            <span class="skeleton h-3 w-16 rounded-sm"></span>
+          </div>
         }
       </div>
     </div>
-  }
-
-  @if (allBooksEvents().length) {
-    <div class="flex flex-col gap-3">
-      <h2 class="font-serif text-2xl font-medium text-ink-2">Les foires aux livres</h2>
-      <div class="flex flex-col">
-        @for (event of allBooksEvents(); track event.id) {
-          <app-event-card [VpdEvent]="event"></app-event-card>
-        }
+  } @else {
+    @if (allBingoEvents().length) {
+      <div class="flex flex-col gap-3">
+        <h2 class="font-serif text-2xl font-medium text-ink-2">Les lotos</h2>
+        <div class="flex flex-col">
+          @for (event of allBingoEvents(); track event.id) {
+            <app-event-card [VpdEvent]="event"></app-event-card>
+          }
+        </div>
       </div>
-    </div>
-  }
+    }
 
-  @if (allOtherEvents().length) {
-    <div class="flex flex-col gap-3">
-      <h2 class="font-serif text-2xl font-medium text-ink-2">Les autres évènements</h2>
-      <div class="flex flex-col">
-        @for (event of allOtherEvents(); track event.id) {
-          <app-event-card [VpdEvent]="event"></app-event-card>
-        }
+    @if (allBooksEvents().length) {
+      <div class="flex flex-col gap-3">
+        <h2 class="font-serif text-2xl font-medium text-ink-2">Les foires aux livres</h2>
+        <div class="flex flex-col">
+          @for (event of allBooksEvents(); track event.id) {
+            <app-event-card [VpdEvent]="event"></app-event-card>
+          }
+        </div>
       </div>
-    </div>
-  }
+    }
 
-  @if (!isLoading() && !allBingoEvents().length && !allBooksEvents().length && !allOtherEvents().length) {
-    <p class="text-slate-2">Aucun évènement pour le moment.</p>
+    @if (allOtherEvents().length) {
+      <div class="flex flex-col gap-3">
+        <h2 class="font-serif text-2xl font-medium text-ink-2">Les autres évènements</h2>
+        <div class="flex flex-col">
+          @for (event of allOtherEvents(); track event.id) {
+            <app-event-card [VpdEvent]="event"></app-event-card>
+          }
+        </div>
+      </div>
+    }
+
+    @if (!allBingoEvents().length && !allBooksEvents().length && !allOtherEvents().length) {
+      <p class="text-slate-2">Aucun évènement pour le moment.</p>
+    }
   }
 </div>

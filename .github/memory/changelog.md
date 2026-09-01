@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-01 | Remplacé les spinners et placeholders d'attente du Website par des skeletons qui conservent les gabarits réels : trois cartes sur l'accueil, agenda, actualités, détails, lots et tableau live, avec états d'erreur finis et animation respectueuse de `prefers-reduced-motion` |
 | 2026-09-01 | Remplacé les placeholders de la mosaïque d'actions de la page d'accueil par les trois photos fournies (équithérapie, ordinateurs avec le Kiwanis, collecte de jouets), ajouté le recadrage responsive et reformulé la section autour des aides concrètes rendues possibles |
 | 2026-08-24 | Rendu la revue de presse atteignable depuis le header : `SiteNavItem` accepte desormais `children`/`hint`, l'entree "L'association" ouvre un sous-menu CSS (group-hover + group-focus-within, `invisible` pour garder l'ordre de tabulation propre) listant presentation/comment-aider/revue-de-presses/photos, et le menu mobile deplie les memes sous-rubriques avec une liste scrollable ; la page revue de presse reste un placeholder sans article |
 | 2026-05-20 | Completed a focused backend live loto tableau business-core pass for add numero, undo/back, and won-lot validation: added validator/domain/handler tests, hardened multi-party rollback and bingo undo, and verified 100% line/branch on targeted live business methods |

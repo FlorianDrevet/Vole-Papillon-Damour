@@ -44,6 +44,7 @@ export class VpdEventsPageComponent implements OnInit {
 
   private readonly events = signal<VpdEventModel[]>([]);
   protected readonly isLoading = signal(true);
+  protected readonly loadingCards = [0, 1, 2];
 
   private readonly bingoEvents = computed(() => this.eventsOfType(VpdEventEnum.Bingo));
   private readonly booksEvents = computed(() => this.eventsOfType(VpdEventEnum.Books));

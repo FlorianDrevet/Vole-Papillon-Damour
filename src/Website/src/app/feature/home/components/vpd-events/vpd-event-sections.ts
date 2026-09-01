@@ -21,6 +21,8 @@ export class VpdEventSections implements OnInit {
    * dates lointaines devant des rendez-vous bien plus proches.
    */
   upcomingEvents = signal<VpdEventModel[]>([])
+  readonly isLoading = signal(true);
+  readonly loadingCards = [0, 1, 2];
 
   constructor(private axiosService: AxiosService) {
   }
@@ -61,7 +63,8 @@ export class VpdEventSections implements OnInit {
 
         this.upcomingEvents.set(events)
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => this.isLoading.set(false));
   }
 
   private toVpdEvent(event: any): VpdEventModel {

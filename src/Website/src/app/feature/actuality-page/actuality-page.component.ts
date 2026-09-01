@@ -12,6 +12,7 @@ import { groupBy } from 'lodash';
 export class ActualityPageComponent implements OnInit{
   actualities = signal<ActualityModel[]>([])
   isLoading = signal(true);
+  readonly loadingCards = [0, 1, 2];
   groupedActualities = signal<{ month: string, year: number, actualities: ActualityModel[] }[]>([]);
 
   constructor(private axiosService: AxiosService) {
@@ -38,10 +39,12 @@ export class ActualityPageComponent implements OnInit{
 
   ngOnInit(): void {
     this.axiosService.request(MethodEnum.GET, 'actuality/all', {}).then(actus => {
-      this.actualities.set(actus);
-      this.groupedActualities.set(this.groupByMonth(actus));
-      this.isLoading.set(false);
+      const actualities = actus ?? [];
+      this.actualities.set(actualities);
+      this.groupedActualities.set(this.groupByMonth(actualities));
     })
+      .catch(() => undefined)
+      .finally(() => this.isLoading.set(false));
   }
 
   private groupByMonth(actus: ActualityModel[]): { month: string, year: number, actualities: ActualityModel[] }[] {

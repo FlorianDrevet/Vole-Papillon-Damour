@@ -6,7 +6,25 @@
     <a routerLink="/toute-l-actualite" class="whitespace-nowrap font-mono text-xs tracking-[.08em] text-orange">TOUTE L'ACTUALITÉ →</a>
   </div>
 
-  @if (actualities().length) {
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Chargement des dernières actualités">
+      @for (card of loadingCards; track card) {
+        <div class="vpd-home-actuality-skeleton flex flex-col gap-3.5" aria-hidden="true">
+          <span class="skeleton h-48 w-full rounded"></span>
+          <span class="skeleton h-3 w-28 rounded-sm"></span>
+          <span class="flex flex-col gap-2">
+            <span class="skeleton h-5 w-11/12 rounded-sm"></span>
+            <span class="skeleton h-5 w-3/5 rounded-sm"></span>
+          </span>
+          <span class="flex flex-col gap-2">
+            <span class="skeleton h-3 w-full rounded-sm"></span>
+            <span class="skeleton h-3 w-10/12 rounded-sm"></span>
+            <span class="skeleton h-3 w-2/5 rounded-sm"></span>
+          </span>
+        </div>
+      }
+    </div>
+  } @else if (actualities().length) {
     <div class="grid grid-cols-1 gap-7 sm:grid-cols-2 lg:grid-cols-3">
       @for (actuality of actualities().slice(0, 3); track actuality.id) {
         <a [routerLink]="['/actualite', actuality.id]" class="flex flex-col gap-3.5">

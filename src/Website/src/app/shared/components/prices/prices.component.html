@@ -1,1 +1,13 @@
-<vpd-product-list [products]="filteredProducts()"></vpd-product-list>
+@if (isLoading()) {
+  <div class="container-products" role="status" aria-label="Chargement des lots">
+    @for (product of loadingProducts; track product) {
+      <div class="flex h-[55vw] w-[45vw] flex-col justify-between rounded-sm border-2 border-line-2 bg-white p-3 sm:h-[200px] sm:w-[150px]" aria-hidden="true">
+        <span class="skeleton mx-auto h-5 w-4/5 rounded-sm"></span>
+        <span class="skeleton mx-auto h-16 w-16 rounded-sm sm:h-[75px] sm:w-[75px]"></span>
+        <span class="skeleton mx-auto h-6 w-16 rounded-sm"></span>
+      </div>
+    }
+  </div>
+} @else {
+  <vpd-product-list [products]="filteredProducts()"></vpd-product-list>
+}

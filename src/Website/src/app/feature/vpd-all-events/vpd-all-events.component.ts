@@ -15,16 +15,19 @@ export class VpdAllEventsComponent implements OnInit{
   allBooksEvents = signal<VpdEventModel[]>([])
   allOtherEvents = signal<VpdEventModel[]>([])
   isLoading = signal(true);
+  readonly loadingCards = [0, 1, 2];
 
   ngOnInit(): void {
     this.vpdEventsFacade.getAllEvents$().then((events : any[]) => {
-      events.forEach(event => {
+      const allEvents = events ?? [];
+      allEvents.forEach(event => {
         event.eventType = VpdEventEnum[event.eventType as keyof typeof VpdEventEnum];
       });
-      this.allBingoEvents.set(events.filter(event => event.eventType === VpdEventEnum.Bingo));
-      this.allBooksEvents.set(events.filter(event => event.eventType === VpdEventEnum.Books));
-      this.allOtherEvents.set(events.filter(event => event.eventType === VpdEventEnum.Other));
-      this.isLoading.set(false);
+      this.allBingoEvents.set(allEvents.filter(event => event.eventType === VpdEventEnum.Bingo));
+      this.allBooksEvents.set(allEvents.filter(event => event.eventType === VpdEventEnum.Books));
+      this.allOtherEvents.set(allEvents.filter(event => event.eventType === VpdEventEnum.Other));
     })
+      .catch(() => undefined)
+      .finally(() => this.isLoading.set(false));
   }
 }

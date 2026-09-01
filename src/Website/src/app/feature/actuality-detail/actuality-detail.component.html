@@ -40,6 +40,25 @@
 
     <a routerLink="/toute-l-actualite" class="mt-4 self-start font-mono text-xs tracking-[.1em] text-blue">← Retour à toute l'actualité</a>
   </div>
+} @else if (isLoading()) {
+  <div role="status" aria-label="Chargement de l'actualité">
+    <section class="mx-auto flex max-w-[720px] flex-col items-center gap-4 bg-paper px-shell py-14 lg:py-16" aria-hidden="true">
+      <span class="skeleton h-3 w-32 rounded-sm"></span>
+      <span class="skeleton h-9 w-4/5 rounded-sm lg:h-11"></span>
+      <span class="skeleton h-9 w-3/5 rounded-sm lg:h-11"></span>
+    </section>
+    <div class="skeleton mx-auto block h-[280px] w-full max-w-[1040px] lg:h-[420px]" aria-hidden="true"></div>
+    <div class="mx-auto flex max-w-[680px] flex-col gap-3 px-6 py-14 lg:px-0 lg:py-16" aria-hidden="true">
+      <span class="skeleton h-5 w-full rounded-sm"></span>
+      <span class="skeleton h-5 w-11/12 rounded-sm"></span>
+      <span class="skeleton h-5 w-4/5 rounded-sm"></span>
+      <span class="skeleton h-5 w-2/5 rounded-sm"></span>
+    </div>
+  </div>
 } @else {
-  <div class="flex justify-center py-24"><mat-spinner></mat-spinner></div>
+  <div class="mx-auto flex max-w-[680px] flex-col gap-3 px-6 py-16 text-slate-2 lg:px-0">
+    <h1 class="font-serif text-2xl font-medium text-ink-2">Actualité indisponible</h1>
+    <p>Cette actualité n'est pas disponible pour le moment.</p>
+    <a routerLink="/toute-l-actualite" class="font-mono text-xs tracking-[.1em] text-blue">RETOUR AUX ACTUALITÉS →</a>
+  </div>
 }
