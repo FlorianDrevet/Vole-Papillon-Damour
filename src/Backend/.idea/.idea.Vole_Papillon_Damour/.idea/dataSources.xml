@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="sql-server" uuid="ff3c5a29-5163-47eb-9289-36a8097ea60d">
+    <data-source source="LOCAL" name="sql-server" uuid="5e5c0233-5a3f-41c0-833c-5e33aa254ba3">
       <driver-ref>sqlserver.jb</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.jetbrains.jdbc.sqlserver.SqlServerDriver</jdbc-driver>
-      <jdbc-url>Server=127.0.0.1,58397;User ID=sa;Password=c_6gnEKYEk.0B4+ZW2HgNU;TrustServerCertificate=true</jdbc-url>
+      <jdbc-url>Server=127.0.0.1,62267;User ID=sa;Password=c_6gnEKYEk.0B4+ZW2HgNU;TrustServerCertificate=true</jdbc-url>
       <jdbc-additional-properties>
         <property name="aspireResourceId" value="sql-server-439c137e" />
       </jdbc-additional-properties>

@@ -1,17 +1,11 @@
 <section class="flex flex-col gap-8 bg-paper px-shell py-14 lg:py-18">
   <div class="flex flex-col gap-4">
     <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Nos actions</span>
-    <h1 class="max-w-[18ch] font-serif text-[36px] font-medium leading-tight text-ink-2 lg:text-[50px]">On ne promet rien. On montre.</h1>
+    <h1 class="max-w-[20ch] font-serif text-[36px] font-medium leading-tight text-ink-2 lg:text-[50px]">Voici ce que votre aide et votre générosité rendent possible.</h1>
     <p class="max-w-[56ch] text-[16px] leading-relaxed text-slate-2">
-      Chaque aide financée est présentée ici avec la preuve à l'appui. Cette page est en cours de constitution :
-      les exemples ci-dessous seront remplacés par les actions réelles au fur et à mesure.
+      Grâce à vous, l'association répond à des besoins concrets, aux côtés des enfants, des familles et de ses
+      partenaires. Chaque action présentée ici raconte une aide rendue possible sur le terrain.
     </p>
-  </div>
-  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-    <app-stat-card value="-" label="Enfants aidés" description="Depuis 2010, chiffre à confirmer." [rotateDeg]="-1"></app-stat-card>
-    <app-stat-card value="2010" label="Depuis" description="Année de création de l'association." tone="dark" [rotateDeg]="1" [floatDelayS]="0.5"></app-stat-card>
-    <app-stat-card value="-" label="Frais de structure" description="Chiffre à confirmer." [rotateDeg]="-0.6" [floatDelayS]="1"></app-stat-card>
-    <app-stat-card value="-" label="Délai moyen de réponse" description="Chiffre à confirmer." [rotateDeg]="0.8" [floatDelayS]="1.5"></app-stat-card>
   </div>
 </section>
 
@@ -25,14 +19,62 @@
   </div>
 
   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-12">
-    <app-action-card class="lg:[grid-column:span_5]" meta="MONTANT ET DATE À COMPLÉTER" title="Exemple : une aide à la mobilité" photoLabel="PHOTO - À COMPLÉTER" [rotateDeg]="-1.4"></app-action-card>
-    <app-action-card class="lg:[grid-column:span_4] lg:mt-10" meta="MONTANT À COMPLÉTER" title="Exemple : un équipement informatique" photoLabel="PHOTO - À COMPLÉTER" tone="dark" [rotateDeg]="1.2" [floatDelayS]="0.6"></app-action-card>
-    <app-action-card class="lg:[grid-column:span_3]" meta="MONTANT À COMPLÉTER" title="Exemple : un mobilier adapté" photoLabel="PHOTO - À COMPLÉTER" [rotateDeg]="-0.8" [floatDelayS]="1.2"></app-action-card>
-    <app-action-card class="lg:[grid-column:span_4]" meta="MONTANT À COMPLÉTER" title="Exemple : un séjour de répit" photoLabel="PHOTO - À COMPLÉTER" [rotateDeg]="1" [floatDelayS]="1.8"></app-action-card>
-    <app-action-card class="lg:[grid-column:span_4]" meta="MONTANT À COMPLÉTER" title="Exemple : une aide à l'autonomie" photoLabel="PHOTO - À COMPLÉTER" [rotateDeg]="-1.1" [floatDelayS]="2.2"></app-action-card>
+    <app-action-card
+      class="lg:[grid-column:span_5]"
+      meta="ÉQUITHÉRAPIE · 2025"
+      title="Financement de séances d’équithérapie en 2025 pour 12 enfants d’une classe ULIS de Feurs"
+      photoSrc="images/actions/equitherapie-ulis-feurs.jpg"
+      photoAlt="Séance d’équithérapie pour des enfants d’une classe ULIS de Feurs"
+      photoPosition="center 42%"
+      [rotateDeg]="-1.4">
+    </app-action-card>
+
+    <app-action-card
+      class="lg:[grid-column:span_4] lg:mt-10"
+      meta="INFORMATIQUE · KIWANIS"
+      title="Financement d’ordinateurs portables à de jeunes lycéennes avec le Kiwanis"
+      photoSrc="images/actions/ordinateurs-kiwanis.jpg"
+      photoAlt="Remise d’ordinateurs portables à de jeunes lycéennes avec le Kiwanis"
+      tone="dark"
+      [rotateDeg]="1.2"
+      [floatDelayS]="0.6">
+    </app-action-card>
+
+    <app-action-card
+      class="lg:[grid-column:span_3]"
+      meta="COLLECTE SOLIDAIRE"
+      title="Participation à la récolte de jouets au profit du Père Noël du lundi"
+      photoSrc="images/actions/recolte-jouets-pere-noel-du-lundi.jpg"
+      photoAlt="Récolte de jouets au profit du Père Noël du lundi"
+      photoPosition="center 54%"
+      [rotateDeg]="-0.8"
+      [floatDelayS]="1.2">
+    </app-action-card>
+
+    <app-action-card
+      class="lg:[grid-column:span_4]"
+      meta="JOUETS · PÈRE NOËL DU LUNDI"
+      title="Financement de nombreux jouets offerts au Père Noël du lundi qui les redistribue au sein des hôpitaux pédiatriques de la Loire"
+      photoSrc="images/actions/jouet-pere-noel-du-lundi.jpg"
+      photoAlt="Jouets réunis pour le Père Noël du lundi"
+      photoPosition="center 53%"
+      [rotateDeg]="1"
+      [floatDelayS]="1.8">
+    </app-action-card>
+
+    <app-action-card
+      class="lg:[grid-column:span_4]"
+      meta="PERMIS DE CONDUIRE"
+      title="Financement de permis de conduire à de jeunes étudiants"
+      photoSrc="images/actions/permis-de-conduire.jpg"
+      photoAlt="Jeune étudiant au volant d’une voiture"
+      photoPosition="center 46%"
+      [rotateDeg]="-1.1"
+      [floatDelayS]="2.2">
+    </app-action-card>
     <a routerLink="/contact" class="flex flex-col justify-center gap-3 rounded-sm border border-line-2 px-7 py-8 transition hover:border-blue-2 lg:[grid-column:span_4]">
-      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-3">Une situation à nous exposer ?</span>
-      <span class="font-serif text-xl font-medium text-ink-2">Écrivez-nous, on en discute.</span>
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-3">Vous avez un besoin ?</span>
+      <span class="font-serif text-xl font-medium text-ink-2">Parlons-en ensemble.</span>
       <span class="font-mono text-xs tracking-[.12em] text-blue">NOUS CONTACTER →</span>
     </a>
   </div>
