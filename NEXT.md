@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-8` — enregistrements DNS de l'envoi d'e-mails |
-| **Prochaine action** | `L0-8`/`L0-9` — fixer les valeurs que le plan ne précise pas avant de créer ACS Email et ses enregistrements ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-9` — vérification du domaine d'envoi ACS Email |
+| **Prochaine action** | Après propagation DNS, relever la vérification du domaine ACS et effectuer les tests manuels de `L0-9` ; ne pas commencer `L0-10` avant ce relevé ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `chore/l0-7-deploy-status` |
+| **Branche** | `chore/l0-9-external-resources` |
 
 ---
 
@@ -79,10 +79,16 @@ Les deux fichiers Bicep compilent. Le run GitHub Actions `Infra - deploy #6` a d
 changement le 2026-09-02 ; le portail Azure confirme `Standard S1: 20 DTUs` pour
 `vole-papillon-damour-db`. Le test manuel après plusieurs heures d'inactivité reste à faire.
 
-La suite est `L0-8`/`L0-9`. Le plan fixe le sous-domaine `mail.volepapillondamour.fr` et
-l'usage d'Azure Communication Services Email, mais ne fixe pas le nom de la ressource ACS,
-sa région/localisation des données, ni l'adresse expéditrice. Aucune valeur n'est inventée et
-aucune ressource ACS ou enregistrement mail n'est créé tant que ces choix ne sont pas arrêtés.
+`L0-8` est réalisé côté OVH le 2026-09-02. Les enregistrements de propriété, SPF, DKIM et
+DMARC sont posés pour `mail.volepapillondamour.fr` ; le SPF racine existant et le TXT
+Search Console n'ont pas été modifiés. OVH annonce une propagation pouvant durer jusqu'à
+24 h.
+
+`L0-9` est réalisé côté ressources : le locataire Entra External ID et la ressource ACS
+Email sont créés. ACS est déployé par le run GitHub Actions `Infra - deploy #10` ; la
+vérification du domaine d'envoi reste à relever après propagation DNS. Le choix retenu est
+`vpd-acs-email-dev`, données en France, expéditeur `noreply@mail.volepapillondamour.fr` et
+DMARC `p=none`. Aucun e-mail applicatif n'est envoyé avant `P3`.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -100,15 +106,16 @@ bloquée par l'absence du SDK Android natif (`XA5300`).
 
 ## En attente d'un délai externe
 
-*Rien.*
+La propagation DNS et la vérification du domaine ACS sont en attente. La réputation du
+domaine d'envoi reste volontairement anticipée, conformément à `L0-9`.
 
 > Ce qui va ici : ce qui avance sans vous et qu'il faut penser à relever.
 >
 > | Sujet | Lancé le | Relevable à partir du |
 > |---|---|---|
 > | `QT-08` — session de 48 h puis ouverture en mode avion (page jetable, `L0-12`) | | |
-> | Propagation DNS | | |
-> | Vérification du domaine d'envoi ACS | | |
+> | Propagation DNS des entrées ACS | `2026-09-02` | après le délai OVH annoncé (maximum 24 h) |
+> | Vérification du domaine d'envoi ACS | `2026-09-02` | après propagation DNS, lors du relevé dans Azure |
 > | Réputation du domaine d'envoi | *(des semaines — lancer tôt)* | |
 
 ---
@@ -125,8 +132,8 @@ dans Azure sans être déductible du dépôt.
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
-| Locataire Entra External ID | **Pas créé** | — |
-| ACS Email | **Pas créé** | — |
+| Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
+| ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur retenu `noreply@mail.volepapillondamour.fr` ; vérification du domaine en attente de propagation | `2026-09-02` |
 | Plafonds journaliers App Insights | **Non posés** | — |
 | Règles d'alerte | **Aucune** | — |
 
@@ -136,8 +143,8 @@ Domaine détenu et administré par l'association, main pleine et entière.
 
 | Enregistrement | Lot | Posé ? | Le |
 |---|---|---|---|
-| `TXT` propriété + SPF + DKIM sur `mail` | `L0-8` | Non | — |
-| `DMARC` | `L0-8` | Non | — |
+| `TXT` propriété + SPF + DKIM sur `mail` | `L0-8` | Oui — `TXT mail = "ms-domain-verification=57bdf09a-9c44-4816-b564-9a700cb19d07"`; `TXT mail = "v=spf1 include:spf.protection.outlook.com -all"`; `CNAME selector1-azurecomm-prod-net._domainkey` → `selector1-azurecomm-prod-net._domainkey.azurecomm.net`; `CNAME selector2-azurecomm-prod-net._domainkey` → `selector2-azurecomm-prod-net._domainkey.azurecomm.net` | `2026-09-02` |
+| `DMARC` | `L0-8` | Oui — `TXT _dmarc.mail = "v=DMARC1;p=none;"` | `2026-09-02` |
 | `TXT` Search Console | `L0-8` | Oui — déjà présent | `2026-09-02` |
 | `CNAME` + `TXT asuid` sur `livres` | **Palier 2** — le `CNAME` a besoin du FQDN de la Container App du catalogue, qui n'existe pas avant | Non | — |
 
@@ -145,7 +152,7 @@ Domaine détenu et administré par l'association, main pleine et entière.
 
 | Élément | État |
 |---|---|
-| Locataire | Non créé |
+| Locataire | Créé : `b23c80b3-9776-4840-8255-fcbf3b3500fd` (`volepapillondamour.onmicrosoft.com`) |
 | Enregistrements d'application | Non exécutés (`Configure-EntraApps.ps1` existe, jamais lancé) |
 | Comptes administrateurs recréés | Aucun |
 | Appareils de caisse mis à jour | **Aucun** — voir `L0-10` et `L0-11`, ils ne se mettent pas à jour tout seuls |
@@ -210,6 +217,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | Windows | **L0-8/L0-9 — ressources externes et DNS.** Création du locataire Entra External ID `Vole Papillon Damour` (`b23c80b3-9776-4840-8255-fcbf3b3500fd`, `volepapillondamour.onmicrosoft.com`) rattaché à l'abonnement du projet, et création/déploiement de `vpd-acs-email-dev` dans `rg-vpd-dev` avec données en France, domaine `mail.volepapillondamour.fr` et expéditeur `noreply@mail.volepapillondamour.fr`. Publication OVH de la preuve de domaine, du SPF `-all`, des deux CNAME DKIM et du DMARC `v=DMARC1;p=none;`. La propagation DNS et la vérification ACS restent à relever ; les tests manuels de `L0-9` n'ont pas été exécutés. |
 | 2026-09-02 | Windows | **L0-7 — déploiement SQL.** Le run GitHub Actions `Infra - deploy #6` a appliqué le passage de la base `vole-papillon-damour-db` à `Standard S1: 20 DTUs` ; le portail Azure confirme le niveau fixe, sans pause automatique. Le test manuel après inactivité reste à faire. Le TXT Search Console était déjà présent dans la zone DNS. L0-8/L0-9 attendent les valeurs ACS non fixées par le plan. |
 | 2026-09-02 | - | **L0-7 — base SQL en S1.** Passage du paramètre dev de `GP_S_Gen5_1` serverless à `S1` (`Standard`, 20 DTU, 250 Go, sans pause automatique) et alignement de la documentation du type `DatabaseSkuConfig` du module `SqlServer`. Les deux fichiers Bicep compilent. Le déploiement Azure, le contrôle du portail et le test manuel après inactivité restent à faire ; aucun changement hors dépôt n'a été effectué. |
 | 2026-09-02 | - | **L0-6 — points de santé et sondes.** Ajout de `GET /health` avec contrôle de connexion SQL, test de l'enregistrement du contrôle, sondes API readiness/liveness/startup sur `/health:8080` dans les paramètres dev, et validation locale Aspire (`200 OK`, `Healthy`). La solution backend restaure, compile et passe ses 70 tests ; les deux fichiers Bicep compilent. Aucun déploiement Azure ni test manuel de révision cassée n'a été effectué. |
