@@ -6,6 +6,12 @@ import { filter } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 const GOOGLE_ANALYTICS_SCRIPT_ID = 'google-analytics-script';
+const DEFAULT_CONSENT = {
+  ad_storage: 'denied',
+  analytics_storage: 'denied',
+  ad_user_data: 'denied',
+  ad_personalization: 'denied',
+} as const;
 
 type GoogleAnalyticsWindow = Window & {
   dataLayer?: unknown[];
@@ -19,6 +25,7 @@ export class GoogleAnalyticsService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly measurementId = environment.google_analytics_measurement_id;
   private enabled = false;
+  private consentDefaultInitialized = false;
   private lastTrackedPath: string | null = null;
 
   constructor() {
@@ -47,10 +54,8 @@ export class GoogleAnalyticsService {
     this.setCollectionDisabled(analyticsWindow, false);
     this.ensureTagIsReady(analyticsWindow);
     analyticsWindow.gtag!('consent', 'update', {
-      ad_storage: 'denied',
+      ...DEFAULT_CONSENT,
       analytics_storage: 'granted',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
     });
     analyticsWindow.gtag!('js', new Date());
     analyticsWindow.gtag!('config', this.measurementId, {
@@ -72,19 +77,19 @@ export class GoogleAnalyticsService {
     this.enabled = false;
     this.lastTrackedPath = null;
     this.setCollectionDisabled(this.browserWindow, true);
-    this.browserWindow.gtag?.('consent', 'update', {
-      ad_storage: 'denied',
-      analytics_storage: 'denied',
-      ad_user_data: 'denied',
-      ad_personalization: 'denied',
-    });
+    this.browserWindow.gtag?.('consent', 'update', DEFAULT_CONSENT);
   }
 
   private ensureTagIsReady(analyticsWindow: GoogleAnalyticsWindow): void {
     analyticsWindow.dataLayer ??= [];
-    analyticsWindow.gtag ??= (...args: unknown[]) => {
-      analyticsWindow.dataLayer!.push(args);
+    analyticsWindow.gtag ??= function (): void {
+      analyticsWindow.dataLayer!.push(arguments);
     };
+
+    if (!this.consentDefaultInitialized) {
+      analyticsWindow.gtag('consent', 'default', DEFAULT_CONSENT);
+      this.consentDefaultInitialized = true;
+    }
 
     if (this.document.getElementById(GOOGLE_ANALYTICS_SCRIPT_ID)) {
       return;

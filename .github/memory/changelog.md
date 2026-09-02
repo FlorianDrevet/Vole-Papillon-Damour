@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Corrected the GA4 `dataLayer` queue to use the standard `arguments` shape and initialized denied Consent Mode defaults before events are sent. |
 | 2026-09-01 | Ajouté GA4 au consentement d'audience du Website avec suivi des routes et révocation, remplacé le sitemap placeholder par les URLs publiques réelles et ajouté `robots.txt` ainsi que la documentation Search Console |
 | 2026-09-01 | Remplacé les spinners et placeholders d'attente du Website par des skeletons qui conservent les gabarits réels : trois cartes sur l'accueil, agenda, actualités, détails, lots et tableau live, avec états d'erreur finis et animation respectueuse de `prefers-reduced-motion` |
 | 2026-09-01 | Complété `/nos-actions` avec les cinq actions illustrées (équithérapie, ordinateurs, deux actions autour des jouets et permis de conduire), supprimé les quatre cartes statistiques et reformulé l'introduction autour de l'aide et de la générosité |

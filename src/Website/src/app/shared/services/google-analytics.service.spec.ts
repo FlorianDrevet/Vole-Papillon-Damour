@@ -31,11 +31,22 @@ describe('GoogleAnalyticsService', () => {
     service.enable();
 
     const script = document.getElementById('google-analytics-script') as HTMLScriptElement;
-    const commands = (window as GoogleAnalyticsTestWindow).dataLayer as unknown[][];
+    const commands = (window as GoogleAnalyticsTestWindow).dataLayer as IArguments[];
 
     expect(service.isConfigured).toBeTrue();
     expect(script.src).toBe('https://www.googletagmanager.com/gtag/js?id=G-TEST123');
-    expect(commands[0]).toEqual([
+    expect(Array.isArray(commands[0])).toBeFalse();
+    expect(Array.from(commands[0])).toEqual([
+      'consent',
+      'default',
+      {
+        ad_storage: 'denied',
+        analytics_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+      },
+    ]);
+    expect(Array.from(commands[1])).toEqual([
       'consent',
       'update',
       {
@@ -45,8 +56,8 @@ describe('GoogleAnalyticsService', () => {
         ad_personalization: 'denied',
       },
     ]);
-    expect(commands[1][0]).toBe('js');
-    expect(commands[2]).toEqual([
+    expect(commands[2][0]).toBe('js');
+    expect(Array.from(commands[3])).toEqual([
       'config',
       'G-TEST123',
       {
@@ -89,8 +100,10 @@ describe('GoogleAnalyticsService', () => {
     service.enable();
     await router.navigateByUrl('/accueil');
 
-    const commands = (window as GoogleAnalyticsTestWindow).dataLayer as unknown[][];
-    const pageView = commands.find((command) => command[0] === 'event');
+    const commands = (window as GoogleAnalyticsTestWindow).dataLayer as IArguments[];
+    const pageView = commands
+      .map((command) => Array.from(command))
+      .find((command) => command[0] === 'event');
 
     expect(pageView).toEqual([
       'event',
