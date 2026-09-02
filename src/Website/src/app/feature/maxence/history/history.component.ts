@@ -17,7 +17,6 @@ interface SectionLink {
 const DISEASE_LINKS: SectionLink[] = [
   { label: 'Hirschsprung', route: '/maxence/maladies/hirschsprung' },
   { label: 'P.O.I.C.', route: '/maxence/maladies/poic' },
-  { label: 'Gastrostomie', route: '/maxence/maladies/gastrostomie' },
   { label: 'Dysplasie ectodermique', route: '/maxence/maladies/dysplasie-ectodermique' },
   { label: 'Neuropathie', route: '/maxence/maladies/neuropathie' },
   { label: 'Ostéoporose', route: '/maxence/maladies/osteoporose' },
@@ -31,6 +30,7 @@ const DAILY_LIFE_LINKS: SectionLink[] = [
   { label: 'Soins hospitaliers', route: '/maxence/vie-quotidienne/soins-hospitaliers' },
   { label: 'École', route: '/maxence/vie-quotidienne/ecole' },
   { label: 'Greffe', route: '/maxence/vie-quotidienne/greffe' },
+  { label: 'Nutrition', route: '/maxence/maladies/gastrostomie' },
 ];
 
 /**
