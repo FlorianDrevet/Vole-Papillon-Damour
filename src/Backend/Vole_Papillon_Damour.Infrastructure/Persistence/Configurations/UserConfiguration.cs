@@ -22,6 +22,35 @@ public class UserConfiguration: IEntityTypeConfiguration<User>
                 id => id.Value,
                 value => UserId.Create(value)
             );
+
+        builder.Property(user => user.ExternalId)
+            .HasMaxLength(64)
+            .IsRequired(false);
+
+        builder.HasIndex(user => user.ExternalId)
+            .IsUnique()
+            .HasFilter("[ExternalId] IS NOT NULL");
+
+        builder.Property(user => user.Email)
+            .HasMaxLength(320)
+            .IsRequired(false);
+
+        builder.Property(user => user.CreatedAt)
+            .HasColumnType("datetime2")
+            .IsRequired();
+
+        builder.Property(user => user.LastSeenAt)
+            .HasColumnType("datetime2")
+            .IsRequired();
+
+        builder.Property(user => user.AnonymizedAt)
+            .HasColumnType("datetime2")
+            .IsRequired(false);
+
+        builder.Ignore(user => user.Password);
+        builder.Ignore(user => user.Salt);
+        builder.Ignore(user => user.Role);
+
         builder.ComplexProperty(user => user.Name);
     }
 }

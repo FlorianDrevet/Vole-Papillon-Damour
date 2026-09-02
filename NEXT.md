@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-11` — configuration Entra et préparation du déploiement 1 |
-| **Prochaine action** | Merger la PR [#18](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/18), lancer le workflow manuel de vérification point-in-time, puis trancher la valeur initiale de `CreatedAt`/`LastSeenAt` avant la migration 0 ; aucun déploiement 2 avant ces contrôles ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-11` — préparation du déploiement 2 (migration de base, `BackOffice` et caisse) |
+| **Prochaine action** | Relire/merger la PR de migration 0, puis préparer les composants du déploiement 2 (`BackOffice` MSAL et caisse MSAL) ; la migration ne sera appliquée qu'une fois ce passage prêt ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `chore/l0-11-entra-setup` |
@@ -72,13 +72,21 @@ git pull
 
 ## En cours
 
-Le prérequis de l'étape 4 est préparé dans la PR [#18](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/18) :
-`.github/workflows/database-backup-verify.yml` restaure une copie isolée de la base depuis
-la chaîne de sauvegardes Azure SQL, lit ses tables, puis supprime la copie et sa règle
-firewall. Le dispatch est impossible tant que le workflow n'est pas sur la branche par
-défaut ; aucune restauration ni migration n'a donc encore été exécutée. La migration 0
-reste aussi en attente d'une décision sur le remplissage initial des colonnes obligatoires
-`CreatedAt` et `LastSeenAt` pour les lignes `Users` historiques.
+Le prérequis de l'étape 4 est vérifié par le run GitHub Actions
+`Database - verify point-in-time restore #33690143650` : une copie isolée a été restaurée
+depuis la chaîne de sauvegardes Azure SQL au niveau S1, puis l'outil `DbSnapshot` a lu les
+10 tables applicatives, dont `dbo.Users` avec 2 lignes. Le firewall et la copie
+`vpd-sql-restore-33690143650` ont ensuite été supprimés. La décision est prise de ne pas
+conserver les utilisateurs legacy : la migration 0 supprime toutes les lignes `Users` et
+les recréations se feront dans Entra. Entra ne réplique pas automatiquement ses comptes
+dans cette table ; la projection applicative sera réconciliée par le code d'identité du
+déploiement 2.
+
+La migration 0 est préparée dans `20260902223842_MigrateUsersToEntraIdentity` : elle retire
+`Password`, `Salt` et `Role`, ajoute `ExternalId`, `CreatedAt`, `LastSeenAt` et
+`AnonymizedAt`, rend le nom nullable et crée l'index unique filtré attendu. Elle est
+explicitement non réversible car les identifiants legacy sont supprimés. La migration n'a
+pas encore été appliquée à la base.
 
 `L0-7` est terminé. `infra/parameters/main.dev.bicepparam` cible désormais Azure SQL `S1`
 (`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
@@ -253,6 +261,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — migration 0 préparée.** La décision est prise de perdre les utilisateurs legacy existants et de les recréer dans Entra ; le backup/restauration vérifié par le run `33690143650` couvre ce choix. La migration `20260902223842_MigrateUsersToEntraIdentity` supprime d'abord les lignes `Users`, retire `Password`, `Salt` et `Role`, ajoute les colonnes de projection Entra et l'index `ExternalId`. Elle est volontairement non réversible et n'a pas été appliquée à la base. Les tests backend (71) et le build `.slnx` passent ; les avertissements préexistants sont listés dans la sortie de validation. |
+| 2026-09-03 | Windows | **L0-11 — prérequis de l'étape 4 vérifié.** Après le merge de la PR #18, le run GitHub Actions `Database - verify point-in-time restore #33690143650` a restauré un point-in-time Azure SQL dans `vpd-sql-restore-33690143650`, attendu son état `Online`, puis lu 10 tables avec `DbSnapshot`, dont `dbo.Users` (2 lignes). Le firewall et la base temporaire ont été supprimés. La migration 0 n'est pas commencée : le plan ne fixe pas la valeur initiale de `CreatedAt` et `LastSeenAt` pour les utilisateurs existants. |
 | 2026-09-03 | Windows | **L0-11 — préparation de l'étape 4.** Ajout du workflow manuel `Database - verify point-in-time restore` dans la PR #18. Il restaure une copie Azure SQL isolée au niveau S1, vérifie la lecture des tables avec `DbSnapshot`, puis nettoie la copie ; aucun workflow n'a pu être lancé avant le merge car GitHub ne répertorie pas encore ce nouveau dispatch sur la branche par défaut. La migration 0 n'est pas commencée : le plan ne fixe pas la valeur initiale de `CreatedAt` et `LastSeenAt` pour les utilisateurs existants. |
 | 2026-09-03 | Windows | **L0-11 — étape 3, déploiement 1 API.** Le `ClientId` Entra `ebc68507-2c07-4bab-9448-2d6d489c6112` est désormais la valeur dev par défaut des paramètres Bicep, avec surcharge possible par `ENTRA_API_CLIENT_ID`. Le `what-if` et le déploiement `Infra - deploy` sont passés via GitHub OIDC ; `API - deploy` a construit puis activé `vpd-api:cfd43cb` sans migration de base. `GET /health` répond 200 de façon stable. Les tests backend (71) et le build `.slnx` passent ; les tests manuels Entra restent à faire. |
 | 2026-09-02 | Windows | **L0-11 — étapes 1–2, configuration Entra réelle.** Après une simulation `-WhatIf` réussie, création des cinq applications `dev` et des principaux de service, publication de `access_as_user` et attribution des consentements administrateur. AppId et `ApiClientId` sont consignés dans l’état Entra ci-dessus ; `Administration` a été attribué au compte cible et vérifié. Le rapport JSON reste dans `%TEMP%\vpd-entra-dev.json`. Aucun passage API/front/MAUI ni déploiement applicatif n’a été exécuté. |
