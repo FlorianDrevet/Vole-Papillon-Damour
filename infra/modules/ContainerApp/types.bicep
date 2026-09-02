@@ -34,6 +34,21 @@ type IngressConfig = {
 }
 
 @export()
+@description('Custom domain binding type for an Azure Container App hostname')
+type CustomDomainBindingType = 'Auto' | 'Disabled' | 'SniEnabled'
+
+@export()
+@description('Custom domain and certificate binding for an Azure Container App')
+type CustomDomainConfig = {
+  @description('Hostname bound to the Container App')
+  name: string
+  @description('How TLS is handled for the hostname')
+  bindingType: CustomDomainBindingType
+  @description('Resource ID of the managed certificate in the Container App Environment')
+  certificateId: string?
+}
+
+@export()
 @description('Configuration for a single HTTP health probe')
 type ProbeConfig = {
   @description('HTTP path for the probe (empty to disable)')

@@ -1,4 +1,5 @@
 #Requires -Version 7.0
+#Requires -Modules Microsoft.Graph.Authentication, Microsoft.Graph.Applications, Microsoft.Graph.Users
 <#
 .SYNOPSIS
     Liste qui detient quel role applicatif Vole-Papillon-Damour.
@@ -17,6 +18,10 @@
 .PARAMETER Environment
     Suffixe d'environnement. Defaut : `dev`.
 
+.PARAMETER UseDeviceCode
+    Utilise l'authentification Graph par code appareil, notamment depuis un runner
+    GitHub sans navigateur.
+
 .EXAMPLE
     ./Get-VpdUserRoles.ps1 -TenantId 'vpd.onmicrosoft.com' | Format-Table
 #>
@@ -25,7 +30,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $TenantId,
 
-    [string] $Environment = 'dev'
+    [string] $Environment = 'dev',
+
+    [switch] $UseDeviceCode
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,9 +40,17 @@ Set-StrictMode -Version Latest
 
 $ApiAppName = "vpd-api-$Environment"
 
-Connect-MgGraph -TenantId $TenantId `
-    -Scopes 'Application.Read.All', 'AppRoleAssignment.ReadWrite.All', 'User.Read.All' `
-    -NoWelcome
+$connectParameters = @{
+    TenantId  = $TenantId
+    Scopes    = 'Application.Read.All', 'AppRoleAssignment.ReadWrite.All', 'User.Read.All'
+    NoWelcome = $true
+}
+if ($UseDeviceCode) {
+    $connectParameters.UseDeviceCode = $true
+    $connectParameters.ClientTimeout = 600
+}
+
+Connect-MgGraph @connectParameters
 
 $apiApp = Get-MgApplication -Filter "displayName eq '$ApiAppName'"
 if (-not $apiApp) {

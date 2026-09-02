@@ -46,6 +46,19 @@ param containerAppBackOfficeIngress IngressConfig
 @description('Value for healthProbes of ContainerApp resource backoffice.')
 param containerAppBackOfficeHealthProbes HealthProbeConfig
 
+@description('Apex hostname bound to the Website Container App')
+param websiteCustomDomain string
+@description('WWW hostname bound to the Website Container App')
+param websiteWwwCustomDomain string
+@description('Hostname bound to the BackOffice Container App')
+param backOfficeCustomDomain string
+@description('Existing managed certificate resource name for the Website apex hostname')
+param websiteCustomDomainCertificateName string
+@description('Existing managed certificate resource name for the Website WWW hostname')
+param websiteWwwCustomDomainCertificateName string
+@description('Existing managed certificate resource name for the BackOffice hostname')
+param backOfficeCustomDomainCertificateName string
+
 // -----------------------------------------------------------------------
 // Container images
 // -----------------------------------------------------------------------
@@ -195,6 +208,11 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     name: BuildResourceName('vpd', 'cae', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    managedCertificateNames: [
+      websiteCustomDomainCertificateName
+      websiteWwwCustomDomainCertificateName
+      backOfficeCustomDomainCertificateName
+    ]
   }
 }
 
@@ -561,6 +579,21 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
     containerRuntime: containerAppWebsiteContainerRuntime
     scaling: containerAppWebsiteScaling
     ingress: containerAppWebsiteIngress
+    // The managed certificate resources were created by Azure with generated
+    // names. Their names are kept in the environment parameter file so an ARM
+    // PUT does not remove the existing SNI bindings.
+    customDomains: [
+      {
+        name: websiteCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[0]
+      }
+      {
+        name: websiteWwwCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[1]
+      }
+    ]
     healthProbes: containerAppWebsiteHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: containerRegistryModule.outputs.loginServer
@@ -598,6 +631,13 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
     containerRuntime: containerAppBackOfficeContainerRuntime
     scaling: containerAppBackOfficeScaling
     ingress: containerAppBackOfficeIngress
+    customDomains: [
+      {
+        name: backOfficeCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[2]
+      }
+    ]
     healthProbes: containerAppBackOfficeHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: containerRegistryModule.outputs.loginServer

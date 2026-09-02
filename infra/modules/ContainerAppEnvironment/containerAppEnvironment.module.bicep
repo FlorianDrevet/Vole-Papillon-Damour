@@ -29,6 +29,9 @@ param logAnalyticsWorkspaceId string = ''
 @description('Resource tags')
 param tags object = {}
 
+@description('Existing managed certificate resource names used by Container App custom domains')
+param managedCertificateNames array = []
+
 resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: name
   location: location
@@ -47,6 +50,11 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
     ]
   }
 }
+
+resource managedCertificateResources 'Microsoft.App/managedEnvironments/managedCertificates@2024-03-01' existing = [for certificateName in managedCertificateNames: {
+  parent: containerAppEnv
+  name: certificateName
+}]
 
 resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (logAnalyticsWorkspaceId != '') {
   scope: containerAppEnv
@@ -67,3 +75,6 @@ output id string = containerAppEnv.id
 
 @description('The default domain of the Container App Environment')
 output defaultDomain string = containerAppEnv.properties.defaultDomain
+
+@description('Resource IDs of existing managed certificates, in the same order as managedCertificateNames')
+output managedCertificateIds array = [for (certificateName, index) in managedCertificateNames: managedCertificateResources[index].id]

@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-11` — déploiement 1, double authentification API |
-| **Prochaine action** | Faire relire puis fusionner les tranches de préparation Entra et d’authentification API ; exécuter ensuite le premier `-WhatIf` du script Entra et préparer le déploiement 1 ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-11` — configuration Entra et préparation du déploiement 1 |
+| **Prochaine action** | Merger la PR [#18](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/18), lancer le workflow manuel de vérification point-in-time, puis trancher la valeur initiale de `CreatedAt`/`LastSeenAt` avant la migration 0 ; aucun déploiement 2 avant ces contrôles ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
-| **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `feat/l0-11-api-entra` |
+| **Dernière mise à jour** | 2026-09-03 |
+| **Branche** | `chore/l0-11-entra-setup` |
 
 ---
 
@@ -67,10 +67,18 @@ git pull
 | Node | `24.15.0` | Oui |
 | CLI Aspire | `13.5.3` | Oui |
 | Azure CLI, connecté au bon abonnement | — | — |
-| PowerShell 7 + modules Microsoft.Graph | pour `infra/entra/` | — |
+| PowerShell 7 + modules Microsoft.Graph | `Authentication`, `Applications`, `Identity.SignIns`, `Users` pour `infra/entra/` | Oui — PowerShell `7.6.5`, modules Graph `2.39.0` installés localement |
 | Docker | pour les images | — |
 
 ## En cours
+
+Le prérequis de l'étape 4 est préparé dans la PR [#18](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/18) :
+`.github/workflows/database-backup-verify.yml` restaure une copie isolée de la base depuis
+la chaîne de sauvegardes Azure SQL, lit ses tables, puis supprime la copie et sa règle
+firewall. Le dispatch est impossible tant que le workflow n'est pas sur la branche par
+défaut ; aucune restauration ni migration n'a donc encore été exécutée. La migration 0
+reste aussi en attente d'une décision sur le remplissage initial des colonnes obligatoires
+`CreatedAt` et `LastSeenAt` pour les lignes `Users` historiques.
 
 `L0-7` est terminé. `infra/parameters/main.dev.bicepparam` cible désormais Azure SQL `S1`
 (`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
@@ -102,9 +110,18 @@ enregistré, le schéma composite `Bearer` dirige les jetons Entra External ID v
 schéma `Entra` et conserve le schéma `LegacyJwt` pour les sessions issues de
 `/auth/login`. Les politiques `Tri`, `Caisse` et `Administration` sont posées ; l’alias
 `IsAdmin` et l’inventaire JWT restent volontairement présents jusqu’aux déploiements 2 et
-3. Les enregistrements d’application Entra n’ont pas encore été exécutés et aucun
-déploiement Azure n’a été fait depuis cette branche ; `ENTRA_API_CLIENT_ID` reste donc à
-fournir après l’exécution du script.
+3. Les PR de préparation et d’API sont fusionnées dans `main`. PowerShell 7 et les
+modules Graph sont maintenant installés localement ; `-UseDeviceCode` permet d’exécuter
+les scripts Graph sans `az login`, en validant la connexion dans un navigateur séparé.
+Les cinq enregistrements d’application et les principaux de service ont été créés par
+`Configure-EntraApps.ps1` après simulation `-WhatIf` réussie ; les consentements vers
+`access_as_user` ont été accordés. Le compte cible a reçu le rôle `Administration`,
+attribution vérifiée par `Get-VpdUserRoles.ps1`. Le rapport est conservé hors dépôt dans
+`%TEMP%\vpd-entra-dev.json`. La migration API/front/MAUI et les déploiements applicatifs
+restent volontairement à faire. Le déploiement 1 API est maintenant actif : le run GitHub
+Actions `Infra - deploy #20` a injecté `AzureAd__ClientId` et `AzureAd__Audience`, puis
+`API - deploy #7` a construit et déployé l’image `vpd-api:cfd43cb` sans migration de base ;
+`GET /health` répond 200. Les déploiements Azure de cette branche passent par GitHub OIDC.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -148,6 +165,7 @@ dans Azure sans être déductible du dépôt.
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
+| API Entra | `AzureAd__TenantId`, `AzureAd__ClientId` et `AzureAd__Audience` configurés ; image `vpd-api:cfd43cb` active ; `/health` répond 200 | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur retenu `noreply@mail.volepapillondamour.fr` ; vérification du domaine en attente de propagation | `2026-09-02` |
 | Plafonds journaliers App Insights | **Non posés** | — |
@@ -169,8 +187,9 @@ Domaine détenu et administré par l'association, main pleine et entière.
 | Élément | État |
 |---|---|
 | Locataire | Créé : `b23c80b3-9776-4840-8255-fcbf3b3500fd` (`volepapillondamour.onmicrosoft.com`) |
-| Enregistrements d'application | Non exécutés (`Configure-EntraApps.ps1` existe, jamais lancé) |
-| Comptes administrateurs recréés | Aucun |
+| Enregistrements d'application | Créés en réel le `2026-09-02` par `Configure-EntraApps.ps1` : `vpd-api-dev` → `ebc68507-2c07-4bab-9448-2d6d489c6112` ; `vpd-catalog-dev` → `9ceb5499-d273-4d7c-b0d0-047eff9f0541` ; `vpd-scan-dev` → `cabcb17b-537f-4d87-956b-60477103e0ec` ; `vpd-backoffice-dev` → `b5e7446e-2e87-4eed-8a6a-d40b3c913c9c` ; `vpd-caisse-dev` → `427c90de-bf59-4b01-af63-dc0799248496` |
+| ApiClientId / portée | `ebc68507-2c07-4bab-9448-2d6d489c6112` / `api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user` |
+| Comptes administrateurs recréés | `florian.drevet_magellangroup.eu#EXT#@volepapillondamour.onmicrosoft.com` — rôle `Administration` attribué puis vérifié le `2026-09-02 21:47:41` |
 | Appareils de caisse mis à jour | **Aucun** — voir `L0-10` et `L0-11`, ils ne se mettent pas à jour tout seuls |
 
 ### Appareils de caisse
@@ -234,6 +253,10 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — préparation de l'étape 4.** Ajout du workflow manuel `Database - verify point-in-time restore` dans la PR #18. Il restaure une copie Azure SQL isolée au niveau S1, vérifie la lecture des tables avec `DbSnapshot`, puis nettoie la copie ; aucun workflow n'a pu être lancé avant le merge car GitHub ne répertorie pas encore ce nouveau dispatch sur la branche par défaut. La migration 0 n'est pas commencée : le plan ne fixe pas la valeur initiale de `CreatedAt` et `LastSeenAt` pour les utilisateurs existants. |
+| 2026-09-03 | Windows | **L0-11 — étape 3, déploiement 1 API.** Le `ClientId` Entra `ebc68507-2c07-4bab-9448-2d6d489c6112` est désormais la valeur dev par défaut des paramètres Bicep, avec surcharge possible par `ENTRA_API_CLIENT_ID`. Le `what-if` et le déploiement `Infra - deploy` sont passés via GitHub OIDC ; `API - deploy` a construit puis activé `vpd-api:cfd43cb` sans migration de base. `GET /health` répond 200 de façon stable. Les tests backend (71) et le build `.slnx` passent ; les tests manuels Entra restent à faire. |
+| 2026-09-02 | Windows | **L0-11 — étapes 1–2, configuration Entra réelle.** Après une simulation `-WhatIf` réussie, création des cinq applications `dev` et des principaux de service, publication de `access_as_user` et attribution des consentements administrateur. AppId et `ApiClientId` sont consignés dans l’état Entra ci-dessus ; `Administration` a été attribué au compte cible et vérifié. Le rapport JSON reste dans `%TEMP%\vpd-entra-dev.json`. Aucun passage API/front/MAUI ni déploiement applicatif n’a été exécuté. |
+| 2026-09-02 | Windows | **L0-11 — préparation de l’exécution Entra.** Les scripts déclarent désormais leurs modules Graph requis, dont `Microsoft.Graph.Identity.SignIns` pour les consentements OAuth2 ; le README contient les URI retenues (`https://volepapillondamour.fr`, `http://localhost:4300`, `https://backoffice.volepapillondamour.fr`) et le compte cible. L’exécution reste à faire depuis un PC autorisé : la connexion Azure CLI locale est refusée par Conditional Access, tandis que le déploiement Bicep passe par GitHub OIDC. |
 | 2026-09-02 | Windows | **L0-11 — déploiement 1, API.** Ajout de `Microsoft.Identity.Web` `4.14.2`, du routage d’authentification composite `Bearer` vers Entra External ID ou le JWT historique, et des politiques `Tri`, `Caisse` et `Administration`. Les paramètres Bicep injectent l’autorité, le tenant et l’audience de l’API ; le `ClientId` sera renseigné après l’enregistrement Entra. `dotnet restore`, les 71 tests backend, le build `.slnx` et la compilation Bicep passent. Aucun déploiement ni enregistrement Entra n’a été exécuté ; la suppression du JWT et la migration de la base restent pour les passages suivants. |
 | 2026-09-02 | Windows | **L0-11 — prérequis Entra.** Le script `Configure-EntraApps.ps1` fusionne désormais les URI de redirection au lieu de les écraser, pose l'URI Android `msal<clientId>://auth` pour `vpd-caisse`, et simule les cinq applications en mode `-WhatIf` même lorsqu'elles sont nouvelles. L'analyse syntaxique passe. L'exécution réelle du `-WhatIf` reste en attente de PowerShell 7 et des modules Microsoft.Graph ; aucune ressource Entra n'a été écrite. La migration API/fronts/MAUI attend encore le nom de l'application Graph de suppression, le nom du secret Key Vault et les versions MSAL non fixés dans le plan. |
 | 2026-09-02 | Windows | **L0-10 — Android uniquement.** Choix de l'option A : `ShopAppVpd.csproj` cible désormais `net9.0-android` uniquement ; iOS, Mac Catalyst et Windows ne sont plus des cibles de compilation. Le README et la mémoire indiquent le build direct actuel. `dotnet restore` Android réussit ; `dotnet build` est bloqué localement par l'absence du SDK Android (`XA5300`). Aucun keystore n'a été créé, et les tests manuels d'installation/remplacement sur appareil réel restent à faire. La montée vers `net10.0-android` est conservée pour `L0-11`. |

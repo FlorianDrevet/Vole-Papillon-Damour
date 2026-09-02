@@ -6,7 +6,7 @@
 // See: https://learn.microsoft.com/en-us/azure/templates/microsoft.app/containerapps
 // =======================================================================
 
-import { ContainerRuntimeConfig, ScalingConfig, IngressConfig, HealthProbeConfig, EnvVar, KeyVaultSecretRef } from './types.bicep'
+import { ContainerRuntimeConfig, ScalingConfig, IngressConfig, HealthProbeConfig, EnvVar, KeyVaultSecretRef, CustomDomainConfig } from './types.bicep'
 
 @description('Azure region for the Container App')
 param location string
@@ -44,6 +44,9 @@ param envVars EnvVar[] = []
 @description('Secrets backed by Key Vault, made available to envVars via secretRef. Resolved using the Container App\'s user-assigned identity.')
 param keyVaultSecrets KeyVaultSecretRef[] = []
 
+@description('Custom hostnames and their certificate bindings')
+param customDomains CustomDomainConfig[] = []
+
 @description('Resource tags')
 param tags object = {}
 
@@ -71,7 +74,13 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         keyVaultUrl: s.keyVaultUrl
         identity: userAssignedIdentityId
       }]
-      ingress: ingress.enabled ? { external: ingress.external, targetPort: ingress.targetPort, transport: ingress.transportMethod } : null
+      ingress: ingress.enabled ? {
+        external: ingress.external
+        targetPort: ingress.targetPort
+        transport: ingress.transportMethod
+        allowInsecure: false
+        customDomains: customDomains
+      } : null
     }
     template: {
       containers: [

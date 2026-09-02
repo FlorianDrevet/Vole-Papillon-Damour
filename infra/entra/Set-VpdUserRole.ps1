@@ -1,4 +1,5 @@
 #Requires -Version 7.0
+#Requires -Modules Microsoft.Graph.Authentication, Microsoft.Graph.Applications, Microsoft.Graph.Users
 <#
 .SYNOPSIS
     Attribue ou retire un role applicatif Vole-Papillon-Damour a un compte du locataire.
@@ -27,6 +28,10 @@
 .PARAMETER Environment
     Suffixe d'environnement, pour retrouver l'application de l'API. Defaut : `dev`.
 
+.PARAMETER UseDeviceCode
+    Utilise l'authentification Graph par code appareil, notamment depuis un runner
+    GitHub sans navigateur.
+
 .EXAMPLE
     ./Set-VpdUserRole.ps1 -TenantId 'vpd.onmicrosoft.com' `
         -UserPrincipalName 'marie@exemple.fr' -Role Tri
@@ -54,7 +59,9 @@ param(
 
     [switch] $Remove,
 
-    [string] $Environment = 'dev'
+    [string] $Environment = 'dev',
+
+    [switch] $UseDeviceCode
 )
 
 $ErrorActionPreference = 'Stop'
@@ -69,9 +76,17 @@ $RoleIds = @{
 
 $ApiAppName = "vpd-api-$Environment"
 
-Connect-MgGraph -TenantId $TenantId `
-    -Scopes 'AppRoleAssignment.ReadWrite.All', 'Application.Read.All', 'User.Read.All' `
-    -NoWelcome
+$connectParameters = @{
+    TenantId  = $TenantId
+    Scopes    = 'AppRoleAssignment.ReadWrite.All', 'Application.Read.All', 'User.Read.All'
+    NoWelcome = $true
+}
+if ($UseDeviceCode) {
+    $connectParameters.UseDeviceCode = $true
+    $connectParameters.ClientTimeout = 600
+}
+
+Connect-MgGraph @connectParameters
 
 $apiApp = Get-MgApplication -Filter "displayName eq '$ApiAppName'"
 if (-not $apiApp) {
