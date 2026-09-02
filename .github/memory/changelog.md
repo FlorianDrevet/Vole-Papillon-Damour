@@ -2,6 +2,8 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Actualisé la section `/maxence/vie-quotidienne/soins-quotidiens` sur l’alimentation parentérale : durées, poches sur mesure, aménagement de la chambre et protocole stérile, avec repères visuels et test de contenu |
+| 2026-09-02 | Enrichi la fiche Website `/maxence/maladies/hirschsprung` avec le nouveau texte explicatif, la forme étagée de Maxence et une mise en page éditoriale responsive, avec un test de contenu dédié |
 | 2026-09-02 | Started L0-11 deployment 1 on `feat/l0-11-api-entra`: added `Microsoft.Identity.Web` 4.14.2, staged Entra/legacy JWT scheme selection, and the `Tri`/`Caisse`/`Administration` policies. The legacy login path and JWT settings remain intentionally; backend restore, 71 tests, solution build, and Bicep compilation pass, with no Entra registration or Azure deployment performed. |
 | 2026-09-02 | Started L0-11 with an idempotent, dry-run-safe Entra application setup: redirect URIs are merged, the Android MSAL redirect is derived for the cash app, and new applications are represented during `-WhatIf`; execution remains pending PowerShell 7 and Microsoft Graph modules. |
 | 2026-09-02 | Applied the L0-10 platform decision: `MauiCashApp` now targets Android only (`net9.0-android`); durable APK signing and organized redistribution remain deferred because no keystore exists yet. |
