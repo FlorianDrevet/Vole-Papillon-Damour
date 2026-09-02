@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Aucun — plan écrit, revu, et arbitrages tranchés |
-| **Prochaine action** | `L0-3` — monter Aspire à la dernière version ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-3` — automatisation terminée, lancement manuel de l'AppHost restant |
+| **Prochaine action** | 🧪 `L0-3` — lancer l'AppHost, puis `L0-4` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
 | **Branche** | `docs/bourse-aux-livres` |
@@ -65,7 +65,7 @@ git pull
 |---|---|---|
 | SDK .NET | `10.0.203` | Oui |
 | Node | `24.15.0` | Oui |
-| CLI Aspire | *(à fixer en `L0-3`)* | — |
+| CLI Aspire | `13.5.3` | Oui |
 | Azure CLI, connecté au bon abonnement | — | — |
 | PowerShell 7 + modules Microsoft.Graph | pour `infra/entra/` | — |
 | Docker | pour les images | — |
@@ -87,7 +87,9 @@ cd ../BackOffice  && npm ci
 
 ## En cours
 
-*Rien.*
+`L0-3` est terminé côté dépôt, restauration, compilation et CLI. Il reste à lancer
+manuellement l'AppHost et à confirmer que SQL, le stockage, l'API et les deux applications
+Angular démarrent dans le tableau de bord Aspire. Après ce contrôle, reprendre en `L0-4`.
 
 > Ce qui va ici : une étape commencée et non finie, avec **l'état exact** — quel fichier,
 > quelle idée, ce qui reste. Écrire deux lignes ici coûte moins qu'une demi-heure de
@@ -210,6 +212,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | — | **L0-3 — mise à jour.** Alignement du SDK AppHost, des hébergements SQL/stockage/JavaScript et de la CLI Aspire en `13.5.3`, avec `AspireUseCliBundle=true` dans l'AppHost, après vérification de la disponibilité des packages. `dotnet restore` et `dotnet build` passent sur cette version ; le lancement manuel de l'AppHost reste à faire. |
+| 2026-09-02 | — | **L0-3.** Aspire, AppHost SDK et hébergements SQL/stockage/JavaScript en `13.4.6`. Remplacement de l'intégration legacy `Aspire.Hosting.NodeJs`/`AddNpmApp` par `Aspire.Hosting.JavaScript`/`AddJavaScriptApp`, avec conservation du script `start` et des arguments Angular. CLI Aspire `13.4.6`. `dotnet restore` et `dotnet build` passent ; le lancement manuel de l'AppHost reste à faire. |
 | 2026-09-02 | — | **Arbitrages.** Caisse Android seule, `R-06` ramené en `L0-11`, `Q-07` tranchée (genres depuis les sources, aucun emplacement affiché), `ENF-21` réécrit : aucun repli d'exploitation. Plan débarrassé de ses échéances, tests reformulés pour être faits seul. |
 | 2026-09-02 | — | **Revue du plan.** Lot 0 renuméroté (`L0-1` à `L0-13`) : ajout de l'épinglage Node, de la reproductibilité de `SharedUi`, de la préparation de la distribution de la caisse, et découpage de `L0-11` en trois déploiements. DNS du catalogue renvoyé au palier 2. `QT-07`/`QT-08` dotées d'un support de mesure. Lot 2 : stratégie de test des fronts en `P1-2`, `R-13`/`R-14` en `P1-5`, `R-24`/`R-30` en `P1-8`, repli d'exploitation en `P1-10`. Convention de renvoi `F-nn`/`T-nn`. **Rien d'implémenté.** |
 | 2026-09-02 | — | Revue de la doc technique (30 constats `R-nn`), décisions `DT-11` à `DT-16`, chapitre observabilité, plan d'exécution et ce fichier. **Rien d'implémenté.** |
