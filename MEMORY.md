@@ -9,7 +9,7 @@
 - Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, SQL Server, and Azurite
 - Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
 - Web frontends: Angular 21 applications in `src/BackOffice/` and `src/Website/`, with Angular SSR enabled on `Website`
-- Native client: .NET MAUI 9 cash app in `src/MauiCashApp/`
+- Native client: .NET MAUI 10 Android cash app in `src/MauiCashApp/`
 - Tests: xUnit domain tests exist under `src/Backend/Vole_Papillon_Damour.Domain.tests/`
 - CI/CD: no GitHub Actions or Azure DevOps pipeline file detected at bootstrap time
 
