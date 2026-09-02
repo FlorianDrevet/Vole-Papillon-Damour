@@ -202,23 +202,6 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     name: BuildResourceName('vpd', 'cae', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-    managedCertificates: [
-      {
-        name: 'website-root'
-        subjectName: websiteCustomDomain
-        domainControlValidation: 'TXT'
-      }
-      {
-        name: 'website-www'
-        subjectName: websiteWwwCustomDomain
-        domainControlValidation: 'TXT'
-      }
-      {
-        name: 'backoffice'
-        subjectName: backOfficeCustomDomain
-        domainControlValidation: 'TXT'
-      }
-    ]
   }
 }
 
@@ -585,16 +568,16 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
     containerRuntime: containerAppWebsiteContainerRuntime
     scaling: containerAppWebsiteScaling
     ingress: containerAppWebsiteIngress
+    // Auto reuses the managed certificate already issued for the hostname. Azure
+    // generates the certificate resource name, so it must not be hard-coded here.
     customDomains: [
       {
         name: websiteCustomDomain
-        bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[0]
+        bindingType: 'Auto'
       }
       {
         name: websiteWwwCustomDomain
-        bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[1]
+        bindingType: 'Auto'
       }
     ]
     healthProbes: containerAppWebsiteHealthProbes
@@ -637,8 +620,7 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
     customDomains: [
       {
         name: backOfficeCustomDomain
-        bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[2]
+        bindingType: 'Auto'
       }
     ]
     healthProbes: containerAppBackOfficeHealthProbes

@@ -7,7 +7,6 @@
 // =======================================================================
 
 import { WorkloadProfileType } from './types.bicep'
-import { ManagedCertificateConfig } from '../ContainerApp/types.bicep'
 
 @description('Azure region for the Container App Environment')
 param location string
@@ -30,9 +29,6 @@ param logAnalyticsWorkspaceId string = ''
 @description('Resource tags')
 param tags object = {}
 
-@description('Managed certificates for custom Container App hostnames')
-param managedCertificates ManagedCertificateConfig[] = []
-
 resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: name
   location: location
@@ -51,17 +47,6 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
     ]
   }
 }
-
-resource managedCertificateResources 'Microsoft.App/managedEnvironments/managedCertificates@2024-03-01' = [for certificate in managedCertificates: {
-  parent: containerAppEnv
-  name: certificate.name
-  location: location
-  tags: tags
-  properties: {
-    domainControlValidation: certificate.domainControlValidation
-    subjectName: certificate.subjectName
-  }
-}]
 
 resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (logAnalyticsWorkspaceId != '') {
   scope: containerAppEnv
@@ -82,6 +67,3 @@ output id string = containerAppEnv.id
 
 @description('The default domain of the Container App Environment')
 output defaultDomain string = containerAppEnv.properties.defaultDomain
-
-@description('Resource IDs of managed certificates, in the same order as managedCertificates')
-output managedCertificateIds array = [for (certificate, index) in managedCertificates: managedCertificateResources[index].id]
