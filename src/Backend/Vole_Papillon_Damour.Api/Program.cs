@@ -8,6 +8,7 @@ using Vole_Papillon_Damour.Api.Controllers.AssoEventsController;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application;
 using Vole_Papillon_Damour.Infrastructure;
+using Vole_Papillon_Damour.Infrastructure.Health;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,10 @@ builder.Services
     .AddInfrastructure(builder.Configuration)
     .AddRateLimiting();
 
+builder.Services
+    .AddHealthChecks()
+    .AddInfrastructureHealthChecks();
+
 
 var app = builder.Build();
 
@@ -68,6 +73,8 @@ app.UseRateLimiter(); //After UseRouting
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 //Controllers
 app.UseAuthenticationController();

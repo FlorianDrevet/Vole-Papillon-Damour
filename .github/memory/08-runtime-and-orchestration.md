@@ -26,6 +26,7 @@ The API startup wires:
 - HTTPS redirection
 - routing, rate limiting, authentication, authorization
 - WebSockets support
+- `GET /health`, backed by an Infrastructure database connectivity check, for API liveness and readiness
 - endpoint registration through `UseAuthenticationController()`, `UseActualityController()`, `UseProductController()`, `UseOrdersController()`, and `UseEventsController()`
 
 ## Multi-Runtime Notes
@@ -37,6 +38,7 @@ The API startup wires:
 - The AppHost SQL Server resource uses `WithDataVolume()`, so it must keep a stable password across launches through the AppHost secret key `Parameters:sql-server-password`; otherwise SQL Server starts but later rejects `sa` logins with `18456` because the persisted master database still expects the older password.
 - The AppHost `AddNpmApp(..., args)` calls for BackOffice and Website must pass only frontend CLI arguments like `--host` and `--port`; do not include a leading `--` in the args array because Aspire/npm already inserts the separator and Angular CLI fails schema validation on the empty extra argument.
 - The backend itself still stays free of `Aspire.*` packages; orchestration concerns live in the AppHost only.
+- The API health endpoint is `/health`; local Azure Container Apps probe parameters target it on port `8080` for readiness, liveness, and startup. Website and BackOffice probes remain disabled until their plan specifies health endpoints.
 - Deployment IaC for Azure Container Apps now lives under `infra/aca/` and targets only the API, BackOffice, and Website surfaces.
 - An Infra Flow Sculptor project named `Vole-Papillon-Damour` was created on 2026-05-18 with `dev` and `prod` environments in `FranceCentral`, a shared `rg-vpd-common`, and a separate `VpdApplications` infrastructure config.
 - The Infra Flow Sculptor run created ACR and Log Analytics in the project, but ACA environment and Container App auto-creation failed server-side with a compile exception, so the repository-local Bicep template completes that missing part.
