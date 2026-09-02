@@ -14,7 +14,7 @@
 | | |
 |---|---|
 | **Lot en cours** | Aucun — plan écrit, revu, et arbitrages tranchés |
-| **Prochaine action** | `L0-1` — épingler .NET **et** Node ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Prochaine action** | `L0-3` — monter Aspire à la dernière version ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
 | **Branche** | `docs/bourse-aux-livres` |
