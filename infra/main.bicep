@@ -46,6 +46,13 @@ param containerAppBackOfficeIngress IngressConfig
 @description('Value for healthProbes of ContainerApp resource backoffice.')
 param containerAppBackOfficeHealthProbes HealthProbeConfig
 
+@description('Apex hostname bound to the Website Container App')
+param websiteCustomDomain string
+@description('WWW hostname bound to the Website Container App')
+param websiteWwwCustomDomain string
+@description('Hostname bound to the BackOffice Container App')
+param backOfficeCustomDomain string
+
 // -----------------------------------------------------------------------
 // Container images
 // -----------------------------------------------------------------------
@@ -195,6 +202,23 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     name: BuildResourceName('vpd', 'cae', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    managedCertificates: [
+      {
+        name: 'website-root'
+        subjectName: websiteCustomDomain
+        domainControlValidation: 'TXT'
+      }
+      {
+        name: 'website-www'
+        subjectName: websiteWwwCustomDomain
+        domainControlValidation: 'TXT'
+      }
+      {
+        name: 'backoffice'
+        subjectName: backOfficeCustomDomain
+        domainControlValidation: 'TXT'
+      }
+    ]
   }
 }
 
@@ -561,6 +585,18 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
     containerRuntime: containerAppWebsiteContainerRuntime
     scaling: containerAppWebsiteScaling
     ingress: containerAppWebsiteIngress
+    customDomains: [
+      {
+        name: websiteCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[0]
+      }
+      {
+        name: websiteWwwCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[1]
+      }
+    ]
     healthProbes: containerAppWebsiteHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: containerRegistryModule.outputs.loginServer
@@ -598,6 +634,13 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
     containerRuntime: containerAppBackOfficeContainerRuntime
     scaling: containerAppBackOfficeScaling
     ingress: containerAppBackOfficeIngress
+    customDomains: [
+      {
+        name: backOfficeCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[2]
+      }
+    ]
     healthProbes: containerAppBackOfficeHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: containerRegistryModule.outputs.loginServer

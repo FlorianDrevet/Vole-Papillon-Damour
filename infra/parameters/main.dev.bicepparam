@@ -66,6 +66,12 @@ param containerAppWebsiteHealthProbes = {
   }
 }
 
+// The root and WWW aliases point to the public Website. The BackOffice keeps
+// its own hostname; all three hostnames are validated by the TXT records at OVH.
+param websiteCustomDomain = 'volepapillondamour.fr'
+param websiteWwwCustomDomain = 'www.volepapillondamour.fr'
+param backOfficeCustomDomain = 'backoffice.volepapillondamour.fr'
+
 param containerAppBackOfficeContainerRuntime = {
   cpuCores: '0.25'
   memoryGi: '0.5Gi'
