@@ -16,7 +16,7 @@ L'utilisateur travaille sur **Windows**. Toutes les commandes terminal doivent u
 - Backend: ASP.NET Core Web API on **.NET 10**
 - Architecture: `Domain` / `Application` / `Infrastructure` / `Api` / `Contracts` with CQRS via MediatR + FluentValidation
 - Web UIs: **Angular 21** apps in `src/BackOffice/` and `src/Website/`
-- Native client: .NET MAUI app in `src/MauiCashApp/` (`net9.0-*`, **outside the solution**)
+- Native client: Android-only .NET MAUI app in `src/MauiCashApp/` (`net9.0-android`, **outside the solution**)
 - Tests: xUnit domain tests exist; add focused tests before production edits
 
 ## Agents

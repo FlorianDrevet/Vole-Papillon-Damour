@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-9` — vérification du domaine d'envoi ACS Email |
-| **Prochaine action** | Après propagation DNS, relever la vérification du domaine ACS et effectuer les tests manuels de `L0-9` ; ne pas commencer `L0-10` avant ce relevé ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-10` — caisse Android et redistribution |
+| **Prochaine action** | Installer/configurer un SDK Android local détectable, puis relancer le build direct et effectuer les tests manuels de `L0-10` ; la vérification ACS de `L0-9` reste aussi à relever après propagation ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `chore/l0-9-external-resources` |
+| **Branche** | `chore/l0-10-android-distribution` |
 
 ---
 
@@ -89,6 +89,13 @@ Email sont créés. ACS est déployé par le run GitHub Actions `Infra - deploy 
 vérification du domaine d'envoi reste à relever après propagation DNS. Le choix retenu est
 `vpd-acs-email-dev`, données en France, expéditeur `noreply@mail.volepapillondamour.fr` et
 DMARC `p=none`. Aucun e-mail applicatif n'est envoyé avant `P3`.
+
+`L0-10` est en cours avec l'option A : `MauiCashApp` cible désormais uniquement
+`net9.0-android`; la montée vers `net10.0-android` reste regroupée avec `L0-11` et MSAL.
+Le mode actuel est le build direct de l'application. Aucun magasin de clés n'existe et aucun
+keystore n'a été créé. La restauration Android passe, mais le build local est bloqué par
+l'absence de SDK Android détectable (`XA5300`). La publication signée et la redistribution
+durable sont reportées conformément au choix fait pour cette étape.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -167,9 +174,10 @@ service.
 |---|---|---|---|
 | *(à recenser en `L0-10`)* | | | |
 
-Le **magasin de clés de signature** de l'APK vit hors du dépôt. Noter ici *où il est et qui
-en a une copie* — jamais son mot de passe. Le perdre interdit toute mise à jour des
-installations existantes.
+Le **magasin de clés de signature** de l'APK n'existe pas encore. Le choix actuel est le
+build direct de l'application ; noter ici plus tard *où le magasin sera conservé et qui en
+aura une copie* — jamais son mot de passe. Sa création et la redistribution signée sont
+reportées.
 
 ### Secrets GitHub
 
@@ -217,6 +225,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | Windows | **L0-10 — Android uniquement.** Choix de l'option A : `ShopAppVpd.csproj` cible désormais `net9.0-android` uniquement ; iOS, Mac Catalyst et Windows ne sont plus des cibles de compilation. Le README et la mémoire indiquent le build direct actuel. `dotnet restore` Android réussit ; `dotnet build` est bloqué localement par l'absence du SDK Android (`XA5300`). Aucun keystore n'a été créé, et les tests manuels d'installation/remplacement sur appareil réel restent à faire. La montée vers `net10.0-android` est conservée pour `L0-11`. |
 | 2026-09-02 | Windows | **L0-8/L0-9 — ressources externes et DNS.** Création du locataire Entra External ID `Vole Papillon Damour` (`b23c80b3-9776-4840-8255-fcbf3b3500fd`, `volepapillondamour.onmicrosoft.com`) rattaché à l'abonnement du projet, et création/déploiement de `vpd-acs-email-dev` dans `rg-vpd-dev` avec données en France, domaine `mail.volepapillondamour.fr` et expéditeur `noreply@mail.volepapillondamour.fr`. Publication OVH de la preuve de domaine, du SPF `-all`, des deux CNAME DKIM et du DMARC `v=DMARC1;p=none;`. La propagation DNS et la vérification ACS restent à relever ; les tests manuels de `L0-9` n'ont pas été exécutés. |
 | 2026-09-02 | Windows | **L0-7 — déploiement SQL.** Le run GitHub Actions `Infra - deploy #6` a appliqué le passage de la base `vole-papillon-damour-db` à `Standard S1: 20 DTUs` ; le portail Azure confirme le niveau fixe, sans pause automatique. Le test manuel après inactivité reste à faire. Le TXT Search Console était déjà présent dans la zone DNS. L0-8/L0-9 attendent les valeurs ACS non fixées par le plan. |
 | 2026-09-02 | - | **L0-7 — base SQL en S1.** Passage du paramètre dev de `GP_S_Gen5_1` serverless à `S1` (`Standard`, 20 DTU, 250 Go, sans pause automatique) et alignement de la documentation du type `DatabaseSkuConfig` du module `SqlServer`. Les deux fichiers Bicep compilent. Le déploiement Azure, le contrôle du portail et le test manuel après inactivité restent à faire ; aucun changement hors dépôt n'a été effectué. |
