@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Added `.github/workflows/ci.yml` for push and pull-request validation of the backend solution/tests, Android MAUI target, and both Angular builds; the first GitHub run remains pending because workflows were not launched in this session. |
 | 2026-09-02 | Made SharedUi dependency linking application-local: moved the linker to `src/SharedUi/scripts`, invoked it from both Angular apps' build/start hooks, and verified BackOffice builds after its own `npm ci` without Website installation |
 | 2026-09-02 | Added independent product website visibility: BackOffice toggle, persisted `VisibleOnWebsite` flag, public `/product/public` projection for Website, and regression tests while keeping the full `/product` feed for cash |
 | 2026-09-02 | Corrected the GA4 `dataLayer` queue to use the standard `arguments` shape and initialized denied Consent Mode defaults before events are sent. |

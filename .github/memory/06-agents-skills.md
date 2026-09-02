@@ -37,7 +37,7 @@
 ## Skills Not Generated
 
 - `python-patterns` is not part of the active project stack.
-- No CI/CD-specific skill was generated because no pipeline files were detected.
+- No CI/CD-specific skill was generated; the repository CI entry point is `.github/workflows/ci.yml`.
 
 ## Routing Heuristics
 

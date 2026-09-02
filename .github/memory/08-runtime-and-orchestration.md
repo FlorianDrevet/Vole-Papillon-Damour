@@ -43,13 +43,13 @@ The API startup wires:
 
 ## Verified Local Commands
 
-- Backend build: `dotnet build .\src\Backend\Vole_Papillon_Damour.sln`
-- Backend tests: `dotnet test .\src\Backend\Vole_Papillon_Damour.sln`
+- Backend build: `dotnet build .\src\Backend\Vole_Papillon_Damour.slnx`
+- Backend tests: `dotnet test .\src\Backend\Vole_Papillon_Damour.slnx`
 - Backend AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`
 - ACA Bicep compile: `az bicep build --file .\infra\aca\main.bicep`
 - ACA image build/push helper: `.\infra\aca\build-and-push.ps1 -EnvironmentName <dev|prod> -RegistryName <acr> -ApiUrl <url> -WebsiteUrl <url>`
-- MAUI build: `dotnet build .\src\MauiCashApp\ShopAppVpd.sln`
+- MAUI build: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net9.0-android`
 
 ## Runtime Risks
 

@@ -85,7 +85,7 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 
 - `npm run start`, `npm run build`, and `npm test` in each Angular app
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
-- `dotnet build .\src\MauiCashApp\ShopAppVpd.sln` for the MAUI client
+- `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net9.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
 - As of 2026-09-02, `npm ci` followed by `npm run build` passes in `src/BackOffice/` alone,
   and `npm ci` followed by `npm run build` passes in `src/Website/`; the builds still emit

@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.203'
+
+      - name: Restore backend solution
+        run: dotnet restore src/Backend/Vole_Papillon_Damour.slnx --nologo
+
+      - name: Build backend solution
+        run: dotnet build src/Backend/Vole_Papillon_Damour.slnx --configuration Release --no-restore --nologo
+
+      - name: Test Domain
+        run: dotnet test src/Backend/Vole_Papillon_Damour.Domain.tests/Vole_Papillon_Damour.Domain.tests.csproj --configuration Release --no-build --no-restore --nologo
+
+      - name: Test Application
+        run: dotnet test src/Backend/Vole_Papillon_Damour.Application.tests/Vole_Papillon_Damour.Application.tests.csproj --configuration Release --no-build --no-restore --nologo
+
+      - name: Test Infrastructure
+        run: dotnet test src/Backend/Vole_Papillon_Damour.Infrastructure.tests/Vole_Papillon_Damour.Infrastructure.tests.csproj --configuration Release --no-build --no-restore --nologo
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android
+
+      - name: Restore MAUI Android
+        run: dotnet restore src/MauiCashApp/ShopAppVpd.csproj --property:TargetFramework=net9.0-android --nologo
+
+      - name: Build MAUI Android
+        run: dotnet build src/MauiCashApp/ShopAppVpd.csproj --framework net9.0-android --configuration Release --no-restore --nologo
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            src/BackOffice/package-lock.json
+            src/Website/package-lock.json
+
+      - name: Install BackOffice dependencies
+        working-directory: src/BackOffice
+        run: npm ci --no-audit --no-fund
+
+      - name: Build BackOffice
+        working-directory: src/BackOffice
+        run: npm run build
+
+      - name: Install Website dependencies
+        working-directory: src/Website
+        run: npm ci --no-audit --no-fund
+
+      - name: Build Website
+        working-directory: src/Website
+        run: npm run build

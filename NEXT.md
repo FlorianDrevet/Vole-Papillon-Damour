@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-4` — socle front reproductible validé |
-| **Prochaine action** | `L0-5` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-5` — CI ajoutée, validation du push à faire |
+| **Prochaine action** | `L0-5` — pousser la branche et vérifier le workflow ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
 | **Branche** | `feature/l0-4-front-reproductible` |
@@ -72,12 +72,14 @@ git pull
 
 ## En cours
 
-`L0-4` est terminé côté dépôt. Le script de liaison est maintenant sous
-`src/SharedUi/scripts/link-shared-ui.mjs` et chaque application Angular l'appelle depuis
-ses hooks `prebuild` et `prestart` (Website conserve aussi son hook `prewatch`). Le script
-lie `SharedUi/node_modules` vers l'installation de l'application appelante. Depuis un
-clone propre, `npm ci` puis `npm run build` dans `BackOffice` seul passent ; Website passe
-également après sa propre installation. Reprendre en `L0-5`.
+`L0-5` est implémenté côté dépôt avec `.github/workflows/ci.yml`. Le workflow se déclenche
+sur `push` et `pull_request`, restaure et compile la solution backend `.slnx`, exécute les
+trois projets de tests, installe le workload MAUI Android et compile `net9.0-android`, puis
+installe et construit les deux applications Angular avec la version de Node de `.nvmrc`.
+La première exécution GitHub n'a pas été lancée conformément à la consigne de session.
+Localement, le backend et les fronts passent ; la compilation MAUI reste bloquée sur cette
+machine par l'absence du SDK Android natif (`XA5300`). Reprendre par la validation du push
+en `L0-5`.
 
 > Ce qui va ici : une étape commencée et non finie, avec **l'état exact** — quel fichier,
 > quelle idée, ce qui reste. Écrire deux lignes ici coûte moins qu'une demi-heure de
@@ -200,6 +202,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | - | **L0-5 — CI de compilation et tests.** Ajout de `.github/workflows/ci.yml` sur `push` et `pull_request` : SDK .NET `10.0.203`, solution backend `.slnx`, tests Domain/Application/Infrastructure, workload et build MAUI Android, puis `npm ci`/`npm run build` pour BackOffice et Website avec `.nvmrc`. Validation locale backend et fronts réussie ; le workflow GitHub n'a pas été lancé, et la caisse reste localement bloquée par l'absence du SDK Android natif. |
 | 2026-09-02 | - | **L0-4 — socle front reproductible.** Déplacement de `link-shared-ui.mjs` dans `src/SharedUi/scripts`, ajout des hooks `prebuild`/`prestart` dans Website et BackOffice, et résolution du lien vers les `node_modules` de l'application appelante. Test Node ciblé : 3/3 ; `npm ci` puis `npm run build` réussissent dans BackOffice seul, et Website compile également. |
 | 2026-09-02 | - | **Images Docker — runtime et restore.** Le Dockerfile API copie `Directory.Packages.props` avant le restore centralisé et épingle son SDK sur `10.0.203`, car le contexte Docker ne contient pas le `global.json` racine. Les images Website et BackOffice utilisent désormais Node `24.15.0`, aligné sur `.nvmrc` et leurs champs `engines`. |
 | 2026-09-02 | - | **L0-3 — migrations au démarrage.** À la demande, reprise du mécanisme de `infra-pipeline-editor` : `ProjectDbContext` est migré par un hosted service Infrastructure avant que l'API soit prête, avec stratégie d'exécution EF et source de trace `DbMigrations`. Une base SQL temporaire neuve a reçu les 10 migrations existantes avant l'écoute HTTP ; avec la base Aspire, `/actuality/latest` et `/asso-events` répondent HTTP 200. La spécification technique prévoit encore une migration explicite en déploiement ; décision à réarbitrer avant une production multi-réplique. |
