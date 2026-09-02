@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Applied the L0-10 platform decision: `MauiCashApp` now targets Android only (`net9.0-android`); durable APK signing and organized redistribution remain deferred because no keystore exists yet. |
 | 2026-09-02 | Configured the dev SQL parameter for the decision's fixed Azure SQL `S1` tier (Standard, 20 DTUs, 250 GB, no automatic pause), aligned the `SqlServer` SKU type descriptions, and verified both Bicep files compile; no Azure deployment was performed. |
 | 2026-09-02 | Added the API `/health` endpoint with an Infrastructure database connectivity check, configured API readiness/liveness/startup probe parameters on `/health:8080`, and verified the endpoint locally through Aspire plus Bicep compilation. |
 | 2026-09-02 | Added `.github/workflows/ci.yml` for push and pull-request validation of the backend solution/tests, Android MAUI target, and both Angular builds; the first GitHub run remains pending because workflows were not launched in this session. |
