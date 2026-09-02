@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Authentication;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Infrastructure.Authentication;
+using Vole_Papillon_Damour.Infrastructure.Extensions;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Repositories;
 using Vole_Papillon_Damour.Infrastructure.Services;
@@ -36,6 +37,7 @@ public static class DependencyInjection
             .AddAzureServices(builderConfiguration)
             .AddStorageAccounts(builderConfiguration)
             .AddRepositories()
+            .AddMigration<ProjectDbContext>()
             .AddScoped<IProjectDbContext>(provider => provider.GetRequiredService<ProjectDbContext>());
         
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
