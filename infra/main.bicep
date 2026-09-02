@@ -125,6 +125,15 @@ param communicationEmailSendingDomain string
 // API application settings
 // -----------------------------------------------------------------------
 
+@description('Authority of the Microsoft Entra External ID tenant')
+param entraAuthority string
+
+@description('Tenant ID of the Microsoft Entra External ID tenant')
+param entraTenantId string
+
+@description('Application (client) ID of the protected API registration')
+param entraApiClientId string
+
 @description('Signing key for the API JWT tokens')
 @secure()
 param jwtSecret string
@@ -492,6 +501,22 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'JwtSettings__ExpiryMinutes'
         value: string(jwtExpiryMinutes)
+      }
+      {
+        name: 'AzureAd__Instance'
+        value: entraAuthority
+      }
+      {
+        name: 'AzureAd__TenantId'
+        value: entraTenantId
+      }
+      {
+        name: 'AzureAd__ClientId'
+        value: entraApiClientId
+      }
+      {
+        name: 'AzureAd__Audience'
+        value: 'api://${entraApiClientId}'
       }
       {
         name: 'BlobSettings__ContainerName'

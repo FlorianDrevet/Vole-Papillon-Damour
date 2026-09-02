@@ -125,6 +125,10 @@ param communicationEmailServiceName = 'vpd-acs-email-dev'
 param communicationEmailDataLocation = 'France'
 param communicationEmailSendingDomain = 'mail.volepapillondamour.fr'
 
+param entraAuthority = readEnvironmentVariable('ENTRA_AUTHORITY', 'https://volepapillondamour.ciamlogin.com/')
+param entraTenantId = readEnvironmentVariable('ENTRA_TENANT_ID', 'b23c80b3-9776-4840-8255-fcbf3b3500fd')
+param entraApiClientId = readEnvironmentVariable('ENTRA_API_CLIENT_ID', '')
+
 // Container names must match the BlobSettings section consumed by BlobService.
 param blobContainerLotoImages = 'loto-images'
 param blobContainerActualityImages = 'actuality-images'

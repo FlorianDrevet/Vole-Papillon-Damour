@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-10` — caisse Android et redistribution |
-| **Prochaine action** | Installer/configurer un SDK Android local détectable, puis relancer le build direct et effectuer les tests manuels de `L0-10` ; la vérification ACS de `L0-9` reste aussi à relever après propagation ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-11` — déploiement 1, double authentification API |
+| **Prochaine action** | Faire relire puis fusionner les tranches de préparation Entra et d’authentification API ; exécuter ensuite le premier `-WhatIf` du script Entra et préparer le déploiement 1 ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `chore/l0-10-android-distribution` |
+| **Branche** | `feat/l0-11-api-entra` |
 
 ---
 
@@ -96,6 +96,15 @@ Le mode actuel est le build direct de l'application. Aucun magasin de clés n'ex
 keystore n'a été créé. La restauration Android passe, mais le build local est bloqué par
 l'absence de SDK Android détectable (`XA5300`). La publication signée et la redistribution
 durable sont reportées conformément au choix fait pour cette étape.
+
+`L0-11` est en cours avec le déploiement 1 côté API : `Microsoft.Identity.Web` 4.14.2 est
+enregistré, le schéma composite `Bearer` dirige les jetons Entra External ID vers le
+schéma `Entra` et conserve le schéma `LegacyJwt` pour les sessions issues de
+`/auth/login`. Les politiques `Tri`, `Caisse` et `Administration` sont posées ; l’alias
+`IsAdmin` et l’inventaire JWT restent volontairement présents jusqu’aux déploiements 2 et
+3. Les enregistrements d’application Entra n’ont pas encore été exécutés et aucun
+déploiement Azure n’a été fait depuis cette branche ; `ENTRA_API_CLIENT_ID` reste donc à
+fournir après l’exécution du script.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -225,6 +234,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | Windows | **L0-11 — déploiement 1, API.** Ajout de `Microsoft.Identity.Web` `4.14.2`, du routage d’authentification composite `Bearer` vers Entra External ID ou le JWT historique, et des politiques `Tri`, `Caisse` et `Administration`. Les paramètres Bicep injectent l’autorité, le tenant et l’audience de l’API ; le `ClientId` sera renseigné après l’enregistrement Entra. `dotnet restore`, les 71 tests backend, le build `.slnx` et la compilation Bicep passent. Aucun déploiement ni enregistrement Entra n’a été exécuté ; la suppression du JWT et la migration de la base restent pour les passages suivants. |
 | 2026-09-02 | Windows | **L0-10 — Android uniquement.** Choix de l'option A : `ShopAppVpd.csproj` cible désormais `net9.0-android` uniquement ; iOS, Mac Catalyst et Windows ne sont plus des cibles de compilation. Le README et la mémoire indiquent le build direct actuel. `dotnet restore` Android réussit ; `dotnet build` est bloqué localement par l'absence du SDK Android (`XA5300`). Aucun keystore n'a été créé, et les tests manuels d'installation/remplacement sur appareil réel restent à faire. La montée vers `net10.0-android` est conservée pour `L0-11`. |
 | 2026-09-02 | Windows | **L0-8/L0-9 — ressources externes et DNS.** Création du locataire Entra External ID `Vole Papillon Damour` (`b23c80b3-9776-4840-8255-fcbf3b3500fd`, `volepapillondamour.onmicrosoft.com`) rattaché à l'abonnement du projet, et création/déploiement de `vpd-acs-email-dev` dans `rg-vpd-dev` avec données en France, domaine `mail.volepapillondamour.fr` et expéditeur `noreply@mail.volepapillondamour.fr`. Publication OVH de la preuve de domaine, du SPF `-all`, des deux CNAME DKIM et du DMARC `v=DMARC1;p=none;`. La propagation DNS et la vérification ACS restent à relever ; les tests manuels de `L0-9` n'ont pas été exécutés. |
 | 2026-09-02 | Windows | **L0-7 — déploiement SQL.** Le run GitHub Actions `Infra - deploy #6` a appliqué le passage de la base `vole-papillon-damour-db` à `Standard S1: 20 DTUs` ; le portail Azure confirme le niveau fixe, sans pause automatique. Le test manuel après inactivité reste à faire. Le TXT Search Console était déjà présent dans la zone DNS. L0-8/L0-9 attendent les valeurs ACS non fixées par le plan. |
