@@ -14,9 +14,9 @@
 | | |
 |---|---|
 | **Lot en cours** | `L0-11` — configuration Entra et préparation du déploiement 1 |
-| **Prochaine action** | Poursuivre les étapes 3 à 8 de `L0-11` dans une session distincte ; aucun passage API/front/MAUI ni déploiement n’est lancé dans cette session ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects` |
-| **Dernière mise à jour** | 2026-09-02 |
+| **Prochaine action** | Préparer et vérifier la sauvegarde/restauration de la base avant la migration 0 de l’étape 4 de `L0-11` ; aucun déploiement 2 avant ce contrôle ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
+| **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `chore/l0-11-entra-setup` |
 
 ---
@@ -110,8 +110,10 @@ Les cinq enregistrements d’application et les principaux de service ont été 
 `access_as_user` ont été accordés. Le compte cible a reçu le rôle `Administration`,
 attribution vérifiée par `Get-VpdUserRoles.ps1`. Le rapport est conservé hors dépôt dans
 `%TEMP%\vpd-entra-dev.json`. La migration API/front/MAUI et les déploiements applicatifs
-restent volontairement à faire ; le déploiement Azure de cette branche continue de passer
-par GitHub OIDC.
+restent volontairement à faire. Le déploiement 1 API est maintenant actif : le run GitHub
+Actions `Infra - deploy #20` a injecté `AzureAd__ClientId` et `AzureAd__Audience`, puis
+`API - deploy #7` a construit et déployé l’image `vpd-api:cfd43cb` sans migration de base ;
+`GET /health` répond 200. Les déploiements Azure de cette branche passent par GitHub OIDC.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -155,6 +157,7 @@ dans Azure sans être déductible du dépôt.
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
+| API Entra | `AzureAd__TenantId`, `AzureAd__ClientId` et `AzureAd__Audience` configurés ; image `vpd-api:cfd43cb` active ; `/health` répond 200 | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur retenu `noreply@mail.volepapillondamour.fr` ; vérification du domaine en attente de propagation | `2026-09-02` |
 | Plafonds journaliers App Insights | **Non posés** | — |
@@ -242,6 +245,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — étape 3, déploiement 1 API.** Le `ClientId` Entra `ebc68507-2c07-4bab-9448-2d6d489c6112` est désormais la valeur dev par défaut des paramètres Bicep, avec surcharge possible par `ENTRA_API_CLIENT_ID`. Le `what-if` et le déploiement `Infra - deploy` sont passés via GitHub OIDC ; `API - deploy` a construit puis activé `vpd-api:cfd43cb` sans migration de base. `GET /health` répond 200 de façon stable. Les tests backend (71) et le build `.slnx` passent ; les tests manuels Entra restent à faire. |
 | 2026-09-02 | Windows | **L0-11 — étapes 1–2, configuration Entra réelle.** Après une simulation `-WhatIf` réussie, création des cinq applications `dev` et des principaux de service, publication de `access_as_user` et attribution des consentements administrateur. AppId et `ApiClientId` sont consignés dans l’état Entra ci-dessus ; `Administration` a été attribué au compte cible et vérifié. Le rapport JSON reste dans `%TEMP%\vpd-entra-dev.json`. Aucun passage API/front/MAUI ni déploiement applicatif n’a été exécuté. |
 | 2026-09-02 | Windows | **L0-11 — préparation de l’exécution Entra.** Les scripts déclarent désormais leurs modules Graph requis, dont `Microsoft.Graph.Identity.SignIns` pour les consentements OAuth2 ; le README contient les URI retenues (`https://volepapillondamour.fr`, `http://localhost:4300`, `https://backoffice.volepapillondamour.fr`) et le compte cible. L’exécution reste à faire depuis un PC autorisé : la connexion Azure CLI locale est refusée par Conditional Access, tandis que le déploiement Bicep passe par GitHub OIDC. |
 | 2026-09-02 | Windows | **L0-11 — déploiement 1, API.** Ajout de `Microsoft.Identity.Web` `4.14.2`, du routage d’authentification composite `Bearer` vers Entra External ID ou le JWT historique, et des politiques `Tri`, `Caisse` et `Administration`. Les paramètres Bicep injectent l’autorité, le tenant et l’audience de l’API ; le `ClientId` sera renseigné après l’enregistrement Entra. `dotnet restore`, les 71 tests backend, le build `.slnx` et la compilation Bicep passent. Aucun déploiement ni enregistrement Entra n’a été exécuté ; la suppression du JWT et la migration de la base restent pour les passages suivants. |
