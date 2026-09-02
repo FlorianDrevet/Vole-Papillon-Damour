@@ -1,15 +1,4 @@
-<app-general-infos [vpdEvent]="vpdEvent()">
-  <app-section-infos-event
-    Title="Dates"
-    UrlIcon="icons/calendar-icon.svg"
-    [Value]="'Du ' + (vpdEvent().dateStart | date: 'EEEE d MMMM') + '<br>au ' + (vpdEvent().dateEnd | date: 'EEEE d MMMM yyyy')">
-  </app-section-infos-event>
-  <app-section-infos-event
-    Title="Horaires"
-    UrlIcon="icons/clock-icon.svg"
-    [Value]="'De ' + (vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC') + ' à ' + (vpdEvent().hourCloseDoors | date: 'HH:mm':'UTC')">
-  </app-section-infos-event>
-</app-general-infos>
+<app-general-infos [vpdEvent]="vpdEvent()"></app-general-infos>
 
 <section class="relative flex flex-col gap-8 overflow-hidden bg-white px-shell py-14 lg:gap-9 lg:py-[76px]">
   <div class="flex flex-col items-start justify-between gap-4 border-b border-line-2 pb-5 sm:flex-row sm:items-end">

@@ -41,15 +41,12 @@ describe('GeneralInfosComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders the event map and address in the rendez-vous card', () => {
-    const card = fixture.nativeElement.querySelector('.event-location-card');
-    const map = card?.querySelector('iframe');
-    const address = card?.querySelector('.event-location-address');
+  it('renders an editorial event photo gallery beside the description', () => {
+    const gallery = fixture.nativeElement.querySelector('.event-photo-gallery');
+    const images = gallery?.querySelectorAll('img') ?? [];
 
-    expect(card).not.toBeNull();
-    expect(map).not.toBeNull();
-    expect(map?.getAttribute('src') ?? '').toContain('output=embed');
-    expect(address?.textContent ?? '').toContain('482 rue Pierre-Georges Latécoère');
-    expect(address?.textContent ?? '').toContain('42160 Andrézieux-Bouthéon');
+    expect(gallery).not.toBeNull();
+    expect(images.length).toBeGreaterThan(1);
+    expect(images[0]?.getAttribute('src')).toBe(event.urlImage);
   });
 });

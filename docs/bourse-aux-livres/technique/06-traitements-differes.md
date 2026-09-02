@@ -253,8 +253,12 @@ Une seule consomme déjà bien plus que le quota gratuit. Le détail est en
 
 ## 9. Observabilité
 
-Application Insights est déjà en place. Trois mesures à exposer, sans lesquelles les
-pannes seront silencieuses :
+Application Insights est déjà en place. Les trois mesures ci-dessous sont celles qui
+concernent le worker ; **le dispositif complet — traces, alertes, journalisation,
+débogage — est en [`11-observabilite.md`](11-observabilite.md)**, et `DT-16` en fait une
+condition de livraison plutôt qu'une finition.
+
+Trois mesures à exposer, sans lesquelles les pannes seront silencieuses :
 
 - **Âge du plus vieux message `Pending` échu.** S'il croît, le worker ne tourne plus.
   C'est l'alerte la plus importante du système.
@@ -263,3 +267,8 @@ pannes seront silencieuses :
   blocage « immédiatement et sans préavis ».
 - **Annonces en retard de bascule.** Une bourse commencée dont les annonces n'ont pas
   basculé signale un worker arrêté ou un agenda incohérent.
+
+**Ces trois mesures portent une alerte**, pas seulement un graphique — dont une alerte de
+**battement de cœur**, qui se déclenche sur l'absence de signal du worker. C'est la seule
+qui détecte le scénario de `QT-02`, et une mesure que personne ne regarde n'est pas une
+alerte (`11` §8).

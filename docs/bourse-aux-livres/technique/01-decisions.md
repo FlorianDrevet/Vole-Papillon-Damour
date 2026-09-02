@@ -20,6 +20,8 @@ comprendre plus tard pourquoi un choix a été fait avec l'information de l'épo
 | `DT-12` | Azure Communication Services Email, sur un sous-domaine d'envoi dédié | Prise |
 | `DT-13` | Catalogue sur `livres.volepapillondamour.fr`, URL en slug + ISBN | Prise |
 | `DT-14` | Une seule table de personnes, rapprochée par `oid` | Prise |
+| `DT-15` | Socle unifié : .NET 10 partout, Aspire à jour, versions centralisées | Prise |
+| `DT-16` | L'observabilité s'écrit avec la fonctionnalité, jamais après | Prise |
 
 ---
 
@@ -691,3 +693,114 @@ reste à concevoir : elle suppose un appel Microsoft Graph applicatif, donc un
 enregistrement d'application, un secret, et une exposition à l'authentification M2M que
 `QT-04` déclarait nulle. C'est le constat `R-06` de la revue, et il reste ouvert. `DT-14`
 en fixe seulement la moitié qui nous appartient — la nôtre.
+
+---
+
+## `DT-15` — Socle d'exécution unifié : .NET 10 partout, Aspire à jour, versions centralisées
+
+**Contexte.** Le dépôt part avec un socle presque homogène, et deux dérives déjà
+installées.
+
+| Constat | État relevé |
+|---|---|
+| Cibles | **Neuf projets en `net10.0`**, `MauiCashApp` seul en `net9.0-android;net9.0-ios;net9.0-maccatalyst` (+ `net9.0-windows`) |
+| Aspire | **13.3.0** pour `Aspire.Hosting.AppHost`, `Azure.Storage` et `SqlServer` — mais **`Aspire.Hosting.NodeJs` en 9.5.2**, dans le même AppHost |
+| Versions | Ni `Directory.Packages.props`, ni `Directory.Build.props`, ni `global.json`. `Microsoft.Extensions.*` cohabite en **10.0.7, 9.0.8 et 9.0.5** |
+
+**Décision.** Quatre points, tous à traiter **avant** d'ajouter le projet worker.
+
+1. **`net10.0` partout**, `MauiCashApp` comprise.
+2. **Aspire à la dernière version** — 13.4.6 au moment d'écrire —, `Aspire.Hosting.NodeJs`
+   aligné sur les autres.
+3. **Gestion centralisée des paquets** par un `Directory.Packages.props` à la racine de la
+   solution.
+4. **`global.json`** épinglant la version du SDK.
+
+**Motivation.**
+
+*Le moment est le bon, et il ne se représentera pas.* Le module livres ajoute **deux
+projets** — le worker et ses tests — et trois applications. Unifier un socle à neuf projets
+coûte moins qu'à douze, et le faire avant d'écrire du code neuf évite d'écrire ce code
+contre une version qu'on va changer.
+
+*La MAUI se met à jour en même temps que son authentification.* `DT-10` impose de toute
+façon d'y remplacer le jeton maison par MSAL.NET, donc de reconstruire et de
+**redistribuer l'application sur les appareils de caisse** — le seul composant du système
+qui ne se met pas à jour par un déploiement. Faire les deux dans la même livraison, c'est
+une redistribution au lieu de deux. Séparées, ce sont deux passages sur chaque appareil,
+dont le second sera oublié.
+
+*La gestion centralisée n'est pas du confort.* Trois versions de `Microsoft.Extensions.*`
+dans une même solution produisent des avertissements de rétrogradation aujourd'hui et des
+résolutions surprenantes demain. Avec l'API et le worker qui **doivent être construits
+depuis le même commit** ([`06`](06-traitements-differes.md) §2), un écart de version entre
+les deux hôtes sur une bibliothèque partagée est précisément le genre de panne qu'on
+diagnostique mal.
+
+*`global.json` répond à une contrainte d'exploitation réelle.* Le développement se fait
+**sur plusieurs machines successivement**, et la construction en intégration continue sur
+une troisième. Sans épinglage, ces trois environnements peuvent compiler avec des SDK
+différents — et le jour où l'une produit une erreur que les autres n'ont pas, on cherche
+au mauvais endroit.
+
+*Aspire 13.2 a apporté ce dont ce projet a besoin ensuite.* Sortie structurée en ligne de
+commande, mode détaché, blocage sur les contrôles de santé et **diffusion de la
+télémétrie** — c'est directement le socle du montage local décrit en
+[`11-observabilite.md`](11-observabilite.md) §7.
+
+**Ce que cela ne décide pas.** Que l'intégration Azure Functions d'Aspire existe et
+fonctionne à cette version pour un worker isolé `.NET 10` reste **à vérifier** — `DT-04`
+s'en prévaut sans que le paquet soit référencé aujourd'hui. C'est le constat `R-27` de
+[`revue.md`](revue.md), et cette décision ne le referme pas : elle en fait seulement le
+premier essai à tenter, sur un socle propre.
+
+**Ordre.** Ces quatre points forment le premier lot du palier 1, avant la migration de
+données et avant le worker. Ils ne produisent aucune fonctionnalité, ce qui est
+exactement pourquoi ils ne se feront jamais si on ne les ordonnance pas.
+
+---
+
+## `DT-16` — L'observabilité s'écrit avec la fonctionnalité, jamais après
+
+**Contexte.** Le dossier mentionne l'observabilité en un seul endroit —
+[`06`](06-traitements-differes.md) §9, trois mesures à exposer — et rien n'en dit la forme,
+le coût, ni qui regarde. L'état du dépôt est plus net encore : **`ILogger` n'apparaît que
+dans un seul fichier de production** de tout le backend. Il n'y a pas de pratique à faire
+évoluer, il y a tout à poser.
+
+Or ce système a une propriété qui rend l'instrumentation non négociable : **ses pannes
+sont silencieuses**. Une alerte qui ne part pas, une annonce qui ne bascule pas, un
+appareil dont la file ne se vide pas — rien ne lève d'exception, rien ne renvoie 500,
+personne ne se plaint. On l'apprend une bourse plus tard, par un membre qui n'a pas été
+prévenu.
+
+**Décision.** L'instrumentation fait partie de la définition de « terminé », au même titre
+que les tests. Une tranche livrée sans ses traces, ses mesures et — si elle peut échouer en
+silence — **son alerte** n'est pas livrée.
+
+Concrètement, quatre règles, détaillées en [`11-observabilite.md`](11-observabilite.md) :
+
+1. **OpenTelemetry**, exporté vers l'Application Insights déjà en place. Aucun second
+   système d'observabilité, aucun agent tiers (`ENF-24`).
+2. **Aucun échantillonnage en v1**, et le réglage est explicite plutôt que subi (§5).
+3. **Les identifiants de corrélation traversent la frontière hors ligne** : le
+   `ClientGestureId` de [`02`](02-modele-de-donnees.md) §2 est la clé qui relie un geste
+   fait à 14 h sans réseau à sa transmission de 17 h 32 (§3).
+4. **Un journal est une donnée personnelle.** `RG-42` et `ENF-10` s'appliquent à ce qu'on
+   écrit dans Log Analytics exactement comme à ce qu'on renvoie dans une réponse HTTP (§6).
+
+**Pourquoi une décision et pas une bonne intention.** Parce que l'instrumentation ajoutée
+après coup est toujours la mauvaise : on instrumente ce qu'on se rappelle, pas ce qui a
+cassé, et jamais le chemin qui n'a pas été emprunté. La mesure qui compte le plus dans ce
+système — l'âge du plus vieux message échu non traité — ne s'observe pas depuis le code qui
+fonctionne, mais depuis celui qui ne s'exécute pas. Elle ne peut être posée qu'en écrivant
+le traitement.
+
+**Ce que cela coûte.** Du temps sur chaque tranche, et de l'ingestion Log Analytics —
+chiffrée et plafonnée en [`08`](08-infrastructure.md) §7. Pas de ressource nouvelle : les
+Application Insights et le Log Analytics existent déjà.
+
+**Ce que cela rapporte, et c'est mesurable.** `ENF-24` pose qu'une personne seule maintient
+le système. Le temps de cette personne est la ressource rare du projet — pas le processeur,
+pas les euros. Une panne silencieuse trouvée en trois requêtes plutôt qu'en une soirée de
+reconstitution, c'est le meilleur rendement disponible.

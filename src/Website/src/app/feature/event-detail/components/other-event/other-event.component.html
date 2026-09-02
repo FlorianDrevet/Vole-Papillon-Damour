@@ -1,14 +1,1 @@
-<app-general-infos [vpdEvent]="vpdEvent()">
-  <app-section-infos-event
-    Title="Date"
-    UrlIcon="icons/calendar-icon.svg"
-    [Value]="vpdEvent().dateStart | date: 'EEEE d MMMM yyyy'">
-  </app-section-infos-event>
-  <app-section-infos-event
-    Title="Début"
-    UrlIcon="icons/clock-icon.svg"
-    [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'">
-  </app-section-infos-event>
-  <!-- Le lien d'inscription est porté par le bouton principal du hero : le répéter ici
-       ferait deux appels à l'action pour la même destination. -->
-</app-general-infos>
+<app-general-infos [vpdEvent]="vpdEvent()"></app-general-infos>

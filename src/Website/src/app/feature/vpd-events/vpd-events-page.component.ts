@@ -2,6 +2,7 @@ import {Component, computed, inject, OnInit, signal} from '@angular/core';
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
 import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
+import {EVENT_EDITORIAL_PHOTOS} from '../../shared/data/event-editorial-content';
 
 /**
  * Page « Évènements ».
@@ -21,21 +22,13 @@ export class VpdEventsPageComponent implements OnInit {
   private readonly eventFacade = inject(VpdEventsFacadeService);
 
   /** Photos et points clés des deux piliers : contenu éditorial, indépendant de l'API. */
-  protected readonly lotoPhotos = [
-    'images/MaxencesHistory/2016/Loto2016.jpg',
-    'images/MaxencesHistory/2013/LotoTableau.jpg',
-    'images/MaxencesHistory/2013/LotoSalle.jpg',
-  ];
+  protected readonly lotoPhotos = EVENT_EDITORIAL_PHOTOS[VpdEventEnum.Bingo];
   protected readonly lotoHighlights = [
     'Des dizaines de lots offerts par nos partenaires.',
     'Une après-midi en famille, ouverte à tous.',
     "Les bénéfices partent directement dans l'aide aux enfants.",
   ];
-  protected readonly booksPhotos = [
-    'images/Association/don-livre.jpg',
-    'images/MaxencesHistory/2014/BourseAuxLivresAvril.jpg',
-    'images/Association/don-livre3.jpg',
-  ];
+  protected readonly booksPhotos = EVENT_EDITORIAL_PHOTOS[VpdEventEnum.Books];
   protected readonly booksHighlights = [
     'Des milliers d\'ouvrages triés par catégories : romans, jeunesse, BD, régionalisme.',
     'Petits prix, du livre de poche au beau livre.',

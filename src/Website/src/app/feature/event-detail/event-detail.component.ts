@@ -1,9 +1,10 @@
-import {Component, computed, OnInit, signal} from '@angular/core';
+import {Component, computed, inject, OnInit, signal} from '@angular/core';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute} from "@angular/router";
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
 import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
-import {eventMapsUrl} from "../../shared/utils/event-address.util";
+import {eventMapsEmbedUrl, eventMapsUrl, formatEventAddress} from "../../shared/utils/event-address.util";
 
 @Component({
     selector: 'app-event-detail',
@@ -11,6 +12,8 @@ import {eventMapsUrl} from "../../shared/utils/event-address.util";
     standalone: false
 })
 export class EventDetailComponent implements OnInit {
+  private readonly sanitizer = inject(DomSanitizer);
+
   vpdEvent = signal<VpdEventModel | null>(null)
   isLoading = signal(true);
   protected readonly VpdEventEnum = VpdEventEnum;
@@ -44,6 +47,27 @@ export class EventDetailComponent implements OnInit {
   mapsUrl = computed(() => {
     const event = this.vpdEvent();
     return event === null ? '' : eventMapsUrl(event);
+  });
+
+  address = computed(() => {
+    const event = this.vpdEvent();
+    return event === null ? '' : formatEventAddress(event);
+  });
+
+  mapsEmbedUrl = computed<SafeResourceUrl>(() => {
+    const event = this.vpdEvent();
+    return this.sanitizer.bypassSecurityTrustResourceUrl(
+      event === null ? 'about:blank' : eventMapsEmbedUrl(event),
+    );
+  });
+
+  eventStartTime = computed(() => {
+    const event = this.vpdEvent();
+    if (event === null) return null;
+
+    const dateStart = new Date(event.dateStart);
+    const hasTime = dateStart.getUTCHours() !== 0 || dateStart.getUTCMinutes() !== 0;
+    return hasTime ? dateStart : event.hourOpenDoors ?? dateStart;
   });
 
   constructor(private eventsFacadeService: VpdEventsFacadeService,

@@ -165,7 +165,7 @@ d'où ses `minReplicas: 1`.
 | Domaine et certificat (`DT-13`) | **0 €** — certificat managé gratuit sur Container Apps |
 | Storage | Couvertures, quelques Go. Négligeable |
 | BnF, Open Library | **0 €** |
-| Log Analytics | Ingestion en hausse avec trois applications de plus. À surveiller, pas à provisionner |
+| Log Analytics | Ingestion en hausse avec trois applications de plus, et sans échantillonnage (`11` §5). **Plafond journalier obligatoire** sur chaque Application Insights — voir ci-dessous |
 
 ### La base de données, et pourquoi elle a changé de nature
 
@@ -187,6 +187,27 @@ aux livres.
 
 `QT-09` mesure au palier 1 si `S1` tient sur son stockage à disque dur ; `S2` (~74 $) est
 à un paramètre de distance.
+
+### L'observabilité, et son seul risque financier
+
+`DT-16` retient de **ne pas échantillonner** : les volumes sont trop faibles pour que jeter
+des traces ait un sens, et l'événement qu'on cherchera arrive une fois par mois (`11` §5).
+Le raisonnement tient — mais il retire le garde-fou habituel.
+
+Le risque n'est donc pas le régime nominal, qui reste très en dessous de ce qui compte. Le
+risque est **une boucle bavarde** : un rattrapage mal réglé, une journalisation SQL laissée
+active, un réessai en cascade. Ça monte vite, et en silence.
+
+| Garde-fou | Où |
+|---|---|
+| **Plafond journalier** sur chaque Application Insights | En Bicep, dès la création de la ressource — pas après la première facture |
+| Rétention à la durée incluse | Au-delà, le diagnostic passe par les données métier, conservées par ailleurs (`ENF-22`) |
+| Journalisation SQL désactivée en production | Premier poste d'ingestion inutile, et il contient des valeurs de paramètres |
+
+Trois applications de plus signifient aussi **trois Application Insights et trois identités
+managées de plus** à déclarer — `main.bicep` n'ayant aucune boucle, c'est du Bicep explicite
+(voir `revue.md` `R-22`). Le Log Analytics, lui, **reste unique** : c'est ce qui permet de
+suivre une trace du scan jusqu'au worker (`11` §2).
 
 ### Cinq réplicas permanents
 
@@ -243,7 +264,7 @@ Aligné sur les paliers fonctionnels de `01` §7 :
 |---|---|
 | **Préalable — identité et délais externes** | **Locataire Entra External ID**, enregistrements et rôles par script (`infra/entra/`), suppression de l'authentification maison. **Ressource ACS Email et vérification du sous-domaine d'envoi** (`DT-12`). **Enregistrements DNS** du catalogue et de l'envoi, posés en une fois (`DT-13`) |
 | 0 — sonde | **Rien de plus.** Application locale, aucun déploiement |
-| 1 — socle | **Passage de la base en `S1`** (`DT-11`), migrations 1, application `scan`, worker, compilation et tests au push |
+| 1 — socle | **Socle d'exécution unifié** (`DT-15`), **passage de la base en `S1`** (`DT-11`), migrations 1, application `scan`, worker, compilation et tests au push, **premières règles d'alerte** (`11` §8) |
 | 2 — vitrine | Application `catalog`, **domaine `livres.volepapillondamour.fr` et certificat managé**, index plein texte |
 | 3 — alertes | Ouverture de l'inscription en libre-service, envoi effectif des e-mails, migrations 3 |
 

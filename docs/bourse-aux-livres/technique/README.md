@@ -17,6 +17,7 @@ par leurs identifiants (`RG-nn`, `ENF-nn`, `Q-nn`).
 | Ce qu'il reste à trancher avant de coder | [`09-questions-techniques.md`](09-questions-techniques.md) |
 | Ce qui est faux ou manquant dans ce dossier | [`revue.md`](revue.md) — relecture du 2 septembre 2026 |
 | À implémenter une brique précise | Le document correspondant ci-dessous |
+| À instrumenter ce que vous écrivez | [`11-observabilite.md`](11-observabilite.md) — c'est une condition de livraison (`DT-16`), pas une finition |
 
 ## Contenu
 
@@ -34,6 +35,7 @@ par leurs identifiants (`RG-nn`, `ENF-nn`, `Q-nn`).
 | [`09-questions-techniques.md`](09-questions-techniques.md) | Points ouverts `QT-nn` et mesures à faire au palier 0 |
 | [`revue.md`](revue.md) | **Défauts relevés `R-nn`** à corriger dans les documents ci-dessus |
 | [`10-identite-et-droits.md`](10-identite-et-droits.md) | Entra External ID, rôles applicatifs, suppression de l'authentification maison |
+| [`11-observabilite.md`](11-observabilite.md) | Traces, mesures, alertes, journalisation, débogage — et ce qu'on ne journalise jamais |
 
 ## Conventions
 

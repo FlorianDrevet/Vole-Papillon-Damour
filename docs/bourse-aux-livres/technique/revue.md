@@ -459,7 +459,7 @@ qu'à la sixième application.
 | `R-24` | Le conteneur blob des couvertures n'existe pas : `main.bicep` en déclare quatre, tous en accès public `Blob`. Petit delta, mais réel — paramètre, conteneur, variable d'environnement. Et à décider : accès public comme les autres, ou servi par l'API. |
 | `R-25` | Le worker aura besoin de `Key Vault Secrets User` (chaîne SQL) et de sa propre identité managée. `main.bicep` ne l'accorde qu'à l'API — `08` §3 dit « rien de nouveau », ce qui est vrai en nature, faux en travail. |
 | `R-26` | `08` §7 chiffre les réplicas permanents mais oublie trois postes : la base (`R-01`), l'ingestion Log Analytics qui croît avec trois applications de plus, et l'envoi d'e-mails (`R-05`). |
-| `R-27` | `DT-04` s'appuie sur « .NET Aspire a une intégration Azure Functions » pour préserver le montage local. `AppHost` est en Aspire 13.3 et ne référence pas `Aspire.Hosting.Azure.Functions`. À vérifier avant de s'en prévaloir : que le paquet existe à cette version, et qu'il supporte le worker isolé **.NET 10** — de même que l'image de base Functions correspondante. |
+| `R-27` | `DT-04` s'appuie sur « .NET Aspire a une intégration Azure Functions » pour préserver le montage local. `AppHost` est en Aspire 13.3 et ne référence pas `Aspire.Hosting.Azure.Functions`. À vérifier avant de s'en prévaloir : que le paquet existe à cette version, et qu'il supporte le worker isolé **.NET 10** — de même que l'image de base Functions correspondante. **`DT-15` ne referme pas ce point**, il en fait le premier essai à tenter, sur un socle à jour. |
 | `R-28` | `02` §6 propose une migration par palier, mais oublie celle du **préalable d'identité** : suppression de `Password`, `Salt`, `Role`, ajout de `ExternalId`. Elle vient avant les trois listées. |
 | `R-29` | `infra/entra/README.md` donne en exemple `-CatalogRedirectUri 'https://vpd-web-ca-dev...'` — c'est la Container App du `Website` existant, pas celle du futur catalogue. Et `Configure-EntraApps.ps1` **remplace** la liste des URI (`RedirectUris = @($client.Uri)`) : impossible d'avoir `localhost` et la production sur le même enregistrement. Cela se verra au premier développement local après un passage en production. |
 | `R-30` | Le CORS de l'API est `AllowAnyOrigin` (`Program.cs`). Acceptable avec des jetons porteurs, mais deux applications de plus en font le bon moment pour passer à une liste blanche. |
@@ -477,11 +477,14 @@ document ». Aucune procédure n'est pourtant décrite : que fait le caissier si
 tombe en panne un jour de bourse ? Une feuille de papier, puis quelle saisie, par quel
 écran, rattachée à quoi ? `ENF-04` (autonomie de l'appareil) est dans le même cas.
 
-**L'alerte sur les mesures d'observabilité.** `06` §9 nomme correctement les trois
-indicateurs à exposer, dont « l'âge du plus vieux message `Pending` échu », qualifié
-d'« alerte la plus importante du système ». Rien ne dit comment cette métrique est
-émise, ni quelle règle Azure Monitor la surveille, ni qui reçoit le message. Une métrique
-que personne ne regarde n'est pas une alerte.
+**L'alerte sur les mesures d'observabilité.** ✅ **Traité** par
+[`11-observabilite.md`](11-observabilite.md) et `DT-16`. Le chapitre pose les mesures et
+leurs alertes (§4, §8), la corrélation à travers la frontière hors ligne (§3),
+l'échantillonnage (§5), ce qu'on ne journalise jamais (§6) et les garde-fous de coût. Deux
+apports que la revue n'avait pas vus : un **journal est une donnée personnelle**, donc
+`RG-42` et `ENF-12` s'y appliquent — une adresse écrite dans Log Analytics survit à la
+suppression du compte ; et le **désaccord de verdict entre client et serveur** est une
+mesure gratuite qui donne la péremption réelle de la copie embarquée.
 
 **La stratégie de test au-delà du backend.** `03` §6 traite bien les tests backend et
 leur ordre de valeur. Rien sur les fronts : ni test du mode hors ligne (le chemin le plus
@@ -508,6 +511,12 @@ Ce qu'ils changent dans les paliers :
 **Les quatre constats qui touchaient le modèle de données sont écrits** — `R-02`, `R-03`,
 `R-08` dans `02` §2, et `R-04` par `DT-14`. Le modèle est complet ; le plan
 d'implémentation peut s'appuyer dessus sans réserve.
+
+Deux des trois manques structurels sont comblés depuis :
+[`11-observabilite.md`](11-observabilite.md) traite l'alerte et le débogage, et `DT-15`
+unifie le socle d'exécution. **Reste le repli d'exploitation de `ENF-21`** — que fait un
+caissier dont l'appareil tombe en panne un jour de bourse — et la stratégie de test des
+fronts.
 
 Il reste onze constats ouverts, dont **aucun ne conditionne l'écriture du plan** : ils y
 entrent comme étapes. Trois méritent d'être traités tôt dans l'exécution, parce qu'ils
