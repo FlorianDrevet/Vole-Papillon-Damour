@@ -92,18 +92,38 @@ classement ou de comparaison entre bénévoles.
 
 ## Authentification
 
+### `ENF-26` — Un seul fournisseur d'identité
+**Microsoft Entra External ID pour tous les publics**, sans exception : membres du site,
+bénévoles, administrateurs. L'association ne stocke ni ne gère aucun mot de passe, nulle
+part. L'authentification maison du backend est **supprimée** — voir `DT-10`.
+
+C'est l'exigence dont les trois suivantes découlent. Elle prime sur elles en cas de
+doute.
+
 ### `ENF-16` — Membres du public
-Via **Microsoft Entra External ID** (successeur d'Azure AD B2C pour les nouveaux
-locataires). L'association ne stocke ni ne gère aucun mot de passe.
+Compte créé **en libre-service**, proposé seulement au clic sur « me prévenir » (`04`
+§6), jamais à l'entrée du site. Un membre inscrit n'a **aucun droit particulier** :
+son statut est l'absence de rôle.
 
 ### `ENF-17` — Bénévoles
-Comptes individuels, session longue sur l'appareil : la reconnexion à chaque session de
-tri est exclue. Le mécanisme peut s'appuyer sur l'authentification JWT existante du
-backend.
+Comptes individuels **créés par un administrateur** ; aucune inscription en libre-service
+sur l'application de scan. Session longue sur l'appareil : la reconnexion à chaque
+session de tri est exclue.
+
+Cette dernière phrase entre en tension avec la durée de vie des jetons du fournisseur
+d'identité. La tension est réelle, elle est traitée en `10` §9 et mesurée par `QT-08` :
+l'identité du bénévole est lue sur l'appareil, le jeton ne sert qu'à synchroniser.
 
 ### `ENF-18` — Administrateurs
-L'administration se trouve dans la nouvelle application (`05`). Elle exige une
-authentification distincte de celle des membres du public, avec un rôle explicite.
+Même fournisseur d'identité que les membres, **distingués par un rôle applicatif
+explicite** — `Administration` — et non par un mécanisme d'authentification séparé. Les
+droits de tri et de caisse suivent la même forme (`RG-40`).
+
+### `ENF-27` — Configuration scriptée
+Toute configuration du locataire d'identité se fait **par script** (`infra/entra/`),
+jamais à la main dans le portail : enregistrements d'application, rôles, attribution des
+droits. Deux exceptions assumées et documentées : la création du locataire, et le flux
+d'inscription en libre-service tant que son API reste en préversion.
 
 ---
 

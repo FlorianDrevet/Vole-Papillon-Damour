@@ -195,5 +195,5 @@ c'est une unité de travail et de correction, pas un carton.
 |---|---|
 | `AssoEvents` (type `Books`) | Une session de bourse **est** un `AssoEvents` existant. Sa date d'ouverture **pilote la bascule automatique** (`RG-21`) et les ventes s'y rattachent. La dépendance est désormais forte : la qualité de l'agenda conditionne le bon fonctionnement du dispositif. |
 | `Product`, `Order` (buvette) | **Aucune relation.** Les livres ne sont pas des produits et les ventes de livres ne sont pas des commandes. Toute tentative de réutiliser ces agrégats introduirait une confusion durable. |
-| `User` | Les bénévoles peuvent s'appuyer sur le mécanisme d'authentification existant. Les membres du public relèvent d'Entra External ID, qui est un mécanisme distinct. |
+| `User` | **L'authentification maison est supprimée** (`DT-10`). Bénévoles, administrateurs et membres du public relèvent tous d'Entra External ID. La table `User` subsiste sans mot de passe ni rôle : elle sert de point d'ancrage local pour l'attribution des gestes (`RG-41`), rattachée au compte par son identifiant d'objet. |
 | `Website`, `BackOffice` | Le site public du catalogue est une application distincte. Seul un lien depuis le site de l'association vers le catalogue est prévu. |

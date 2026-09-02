@@ -19,3 +19,11 @@ export function formatEventAddress(event: VpdEventModel): string {
 export function eventMapsUrl(event: VpdEventModel): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formatEventAddress(event))}`;
 }
+
+/**
+ * URL d'embed Google Maps pour la carte affichée dans la fiche d'un événement.
+ * Le domaine est fixe et seule l'adresse issue du modèle est encodée.
+ */
+export function eventMapsEmbedUrl(event: VpdEventModel): string {
+  return `https://www.google.com/maps?q=${encodeURIComponent(formatEventAddress(event))}&hl=fr&z=15&output=embed`;
+}

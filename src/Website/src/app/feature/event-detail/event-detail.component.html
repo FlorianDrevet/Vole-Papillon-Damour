@@ -1,26 +1,33 @@
 @if (vpdEvent(); as event) {
   <!-- Hero : la photo de l'édition et les trois informations que l'on vient chercher en
        premier (quand, à quelle heure, où) sont visibles sans avoir à faire défiler. -->
-  <section class="grid grid-cols-1 items-center gap-10 bg-ink px-shell py-12 text-mist-2 lg:grid-cols-[1fr_440px] lg:gap-14 lg:py-[70px]">
-    <div class="flex flex-col gap-5">
+  <section class="relative isolate overflow-hidden bg-ink px-shell py-12 text-mist-2 lg:py-[78px]">
+    <div aria-hidden="true" class="pointer-events-none absolute -left-32 -top-40 h-[28rem] w-[28rem] rounded-full bg-blue-2/[.12] blur-3xl"></div>
+    <div aria-hidden="true" class="pointer-events-none absolute -bottom-40 right-[28%] h-80 w-80 rounded-full border border-orange-2/10"></div>
+
+    <div class="relative grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_460px] lg:gap-16">
+      <div class="flex min-w-0 flex-col gap-6">
       <a routerLink="/evenement" class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan transition hover:text-white">
         ← Tous les évènements
       </a>
 
       <div class="flex flex-wrap items-center gap-3">
-        <span class="font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-orange-2">{{ kicker() }}</span>
+        <span class="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-orange-2">
+          <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-orange-2"></span>
+          {{ kicker() }}
+        </span>
         <span
-          class="rounded-full border px-3 py-[3px] font-mono text-[10px] uppercase tracking-[.14em]"
+          class="rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[.14em]"
           [class]="isPast() ? 'border-mist/25 text-mist' : 'border-cyan/40 text-cyan'">
           {{ isPast() ? 'Édition passée' : 'À venir' }}
         </span>
       </div>
 
-      <h1 class="max-w-[18ch] font-serif text-[36px] font-medium leading-[1.03] tracking-[-.02em] text-white lg:text-[52px]">
+      <h1 class="max-w-[15ch] font-serif text-[40px] font-medium leading-[.98] tracking-[-.025em] text-white sm:text-[48px] lg:text-[64px]">
         {{ event.name }}
       </h1>
 
-      <dl class="flex flex-wrap gap-x-11 gap-y-5 border-t border-white/10 pt-6 font-mono text-[10px] uppercase tracking-[.14em] text-cyan">
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-6 border-t border-white/10 pt-6 font-mono text-[10px] uppercase tracking-[.14em] text-cyan sm:flex sm:flex-wrap sm:gap-x-11">
         <!-- flex-col-reverse : le terme reste avant sa définition dans le DOM (lecture
              d'écran, HTML valide) alors que la valeur s'affiche au-dessus du libellé. -->
         <div class="flex flex-col-reverse gap-1.5">
@@ -55,12 +62,17 @@
         }
         <app-pill-button [href]="mapsUrl()" target="_blank" variant="secondary-dark" [small]="true">Voir l'itinéraire</app-pill-button>
       </div>
-    </div>
+      </div>
 
-    <img
-      [src]="event.urlImage"
-      [alt]="event.name"
-      class="h-[240px] w-full rounded-lg object-cover shadow-[0_34px_60px_-32px_rgba(0,0,0,0.75)] lg:h-[400px]">
+      <div class="relative">
+        <div aria-hidden="true" class="absolute -inset-3 rounded-[1.15rem] border border-cyan/10"></div>
+        <img
+          [src]="event.urlImage"
+          [alt]="event.name"
+          class="relative h-[270px] w-full rounded-2xl border border-white/10 object-cover shadow-[0_34px_60px_-32px_rgba(0,0,0,0.75)] sm:h-[340px] lg:h-[440px]">
+        <span aria-hidden="true" class="pointer-events-none absolute inset-x-0 bottom-0 h-24 rounded-b-2xl bg-gradient-to-t from-ink/35 to-transparent"></span>
+      </div>
+    </div>
   </section>
 
   @if (event.eventType === VpdEventEnum.Bingo) {

@@ -32,7 +32,8 @@ Application/Books/
   Common/      Interfaces, projections partagées
 
 Application/Watchlist/
-  Commands/    AddWatchlistItem, RemoveWatchlistItem, DeleteMemberAccount
+  Commands/    AddWatchlistItem, RemoveWatchlistItem, DeleteMyAccount,
+               RecordEmailBounce
   Queries/     GetMyWatchlist
 
 Contracts/Books/        DTO de transport
@@ -93,7 +94,9 @@ Le rattrapage le plus important de l'administration. Dans une transaction :
 
 ## 4. Endpoints
 
-Trois familles, trois modes d'authentification distincts.
+Trois familles, **un seul mode d'authentification** depuis `DT-10` : jeton Entra
+External ID, validé côté API. Ce qui les distingue n'est plus le mécanisme, c'est le
+rôle applicatif exigé.
 
 ### Bénévoles — `/books/scan/*`
 
@@ -134,9 +137,11 @@ catalogue, sessions et reprises, alertes en attente, membres, bénévoles, param
 
 | Sujet | Traitement |
 |---|---|
-| Bénévoles | JWT existant, session longue (`ENF-17`), droit par mode (`RG-40`) |
-| Membres | Jeton Entra External ID validé côté API (`ENF-16`) |
-| Administrateurs | Rôle dédié, distinct des membres (`ENF-18`) |
+| Fournisseur d'identité | **Entra External ID pour tous** (`DT-10`). Aucun mot de passe en base, aucune clé de signature à garder |
+| Bénévoles | Rôles `Tri` et `Caisse` dans la revendication `roles` (`RG-40`). Session longue (`ENF-17`) — voir la réserve de `10` §9 |
+| Membres | Jeton valide **sans aucun rôle** : c'est ce qui définit le membre (`ENF-16`). Aucune table distincte — une seule table de personnes (`DT-14`) |
+| Administrateurs | Rôle `Administration` (`ENF-18`), même annuaire que les membres |
+| Autorisation | `RequireRole` sur la revendication `roles`. Aucune lecture en base, aucun appel à l'annuaire |
 | Confidentialité des demandeurs | `RG-42` : l'API ne renvoie **jamais** l'identité, seulement un décompte. À couvrir par un test — c'est une fuite facile à introduire |
 | Limitation de débit | Réutiliser le mécanisme en place ; un limiteur propre à la recherche publique, qui atteint une source externe |
 | Rappel de rebond e-mail | Endpoint dédié, authentifié par secret partagé (`RG-31`) |

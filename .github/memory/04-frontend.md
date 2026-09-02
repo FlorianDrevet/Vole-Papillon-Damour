@@ -53,6 +53,8 @@ Verified feature roots:
 - `Website` has an `sse-client.service` that subscribes to `/asso-events/{id}/tableau/sse` for live event updates and now guards `EventSource` usage behind `isPlatformBrowser()` for SSR safety.
 - The Website SSE client closes the previous `EventSource` before opening a new event, ignores malformed payloads without dropping the last good state, and reconnects with bounded backoff from 250ms to 5s.
 - The Website home SSR path now tolerates missing `next-bingo`, `next-books`, `next-other-event`, and `latest actuality` payloads by keeping default empty state instead of surfacing unhandled promise rejections during server rendering.
+- The Website event detail keeps its location card inside `event-detail/components/general-infos` (map, address, itinerary, and event metadata); the standalone `shared/components/event-locations` block remains reserved for `/evenement`.
+- Website prices now use a dedicated responsive card/grid presentation under `shared/components/prices`; API-provided product images, unit prices, and promotions remain unchanged, while BackOffice keeps the shared design-system list.
 
 ## MAUI Client
 

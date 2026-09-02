@@ -1,4 +1,4 @@
-<app-general-infos [vpdEvent]="vpdEvent()" mapImage="images/map_bourse_aux_livres.png">
+<app-general-infos [vpdEvent]="vpdEvent()">
   <app-section-infos-event
     Title="Dates"
     UrlIcon="icons/calendar-icon.svg"
@@ -11,11 +11,14 @@
   </app-section-infos-event>
 </app-general-infos>
 
-<section class="flex flex-col gap-8 bg-white px-shell py-14 lg:py-[70px]">
-  <div class="border-b border-line-2 pb-4">
+<section class="relative flex flex-col gap-8 overflow-hidden bg-white px-shell py-14 lg:gap-9 lg:py-[76px]">
+  <div class="flex flex-col items-start justify-between gap-4 border-b border-line-2 pb-5 sm:flex-row sm:items-end">
     <app-section-eyebrow label="Sur place" orientation="left">
       <h2 class="font-serif text-[26px] font-medium leading-none text-ink-2 lg:text-[34px]">Les tarifs.</h2>
     </app-section-eyebrow>
+    <p class="max-w-[42ch] text-[14px] leading-relaxed text-slate-2 sm:text-right">
+      Des ouvrages classés par univers, avec des prix simples affichés clairement sur place.
+    </p>
   </div>
   <app-prices [section]="ProductSectionEnum.Book"></app-prices>
 </section>

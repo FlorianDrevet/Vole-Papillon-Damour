@@ -9,5 +9,11 @@
     }
   </div>
 } @else {
-  <vpd-product-list [products]="filteredProducts()"></vpd-product-list>
+  @if (filteredProducts().length) {
+    <div class="prices-grid" role="list" aria-label="Tarifs disponibles">
+      @for (product of filteredProducts(); track product.id) {
+        <app-product role="listitem" [Product]="product"></app-product>
+      }
+    </div>
+  }
 }

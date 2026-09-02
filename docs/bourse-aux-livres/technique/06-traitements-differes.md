@@ -10,9 +10,9 @@ L'argument d'origine était la fiabilité. Les Container Apps étaient toutes à
 hasard du trafic HTTP — sans visite, pas de conteneur, donc **pas d'alerte à +2 h et pas
 de bascule**, en silence.
 
-**Cet argument a changé de nature.** L'API passe à `minReplicas: 1`, pour une raison
-étrangère à ce chapitre : elle ne peut pas être indisponible pour le site web. Un service
-hébergé s'y exécuterait donc de façon fiable. La décision est maintenue quand même, pour
+**Cet argument a changé de nature.** L'API est passée à `minReplicas: 1` (`36b0e50`),
+pour une raison étrangère à ce chapitre : elle ne peut pas être indisponible pour le site
+web. Un service hébergé s'y exécuterait donc de façon fiable. La décision est maintenue quand même, pour
 trois raisons instruites au [réexamen de `DT-04`](01-decisions.md#dt-04--worker-différé-en-container-app-kindfunctionapp-dédié) :
 
 - **L'isolation.** Le réplica permanent existe pour servir le site et le scan. Un
@@ -239,14 +239,16 @@ l'exécution seule.
 ## 8. Coût
 
 Les Container Apps offrent **180 000 vCPU-secondes et 360 000 Gio-secondes gratuits par
-mois**, et un job ne facture que pendant son exécution.
+mois** — quota désormais absorbé par les trois applications permanentes (`08` §7) — et un
+job ne facture que pendant son exécution.
 
 288 exécutions/jour × 10 s × 0,25 vCPU ≈ **21 600 vCPU-secondes/mois**, soit 12 % du
-quota. **En pratique : gratuit** — sauf dans l'hypothèse `minReplicas: 1` ci-dessus.
+quota mensuel. **En pratique : moins d'un euro par mois** — sauf dans l'hypothèse
+`minReplicas: 1` ci-dessus, qui change d'ordre de grandeur.
 
-À ne pas confondre avec le poste vraiment coûteux : **l'API à `minReplicas: 1`**, décidée
-pour la disponibilité du site web et non pour ce chapitre, consomme à elle seule bien
-plus que le quota gratuit. Le détail est en
+À ne pas confondre avec le poste vraiment coûteux : **les trois applications existantes
+à `minReplicas: 1`**, décidées pour la disponibilité du site et non pour ce chapitre.
+Une seule consomme déjà bien plus que le quota gratuit. Le détail est en
 [`08-infrastructure.md`](08-infrastructure.md) §7.
 
 ## 9. Observabilité

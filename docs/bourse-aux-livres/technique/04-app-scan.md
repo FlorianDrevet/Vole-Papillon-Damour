@@ -47,6 +47,13 @@ la question du volume ne se pose pas. Pas de couvertures — elles se chargent e
 postérieur. Quelques centaines de lignes par jour. Aucune résolution de conflit : les
 mouvements sont cumulatifs et en ajout seul (`ENF-06`).
 
+**La réponse porte aussi les paramètres**, systématiquement : les neuf entiers de
+`AssociationSettings` ([`02`](02-modele-de-donnees.md) §2) et leur `UpdatedAt`. Sans eux,
+le verdict calculé hors ligne au §5 n'applique pas les seuils réels de `RG-10` et
+`RG-12` — il applique ceux qui étaient codés en dur le jour de la construction, ce qui
+vide `ENF-25` de son sens dès qu'un administrateur ajuste une valeur. Neuf entiers ne
+coûtent rien, et les joindre au delta évite un second appel susceptible d'échouer seul.
+
 **Afficher la fraîcheur** (`ENF-05`) : un appareil non synchronisé depuis deux jours
 affiche « premier exemplaire » sur un livre entré hier. Prévoir un bandeau « données du
 12 mars » dès que l'écart dépasse un seuil.

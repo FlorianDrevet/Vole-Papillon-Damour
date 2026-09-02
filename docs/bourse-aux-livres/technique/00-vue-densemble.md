@@ -49,17 +49,18 @@ rien d'autre en matière de ressources Azure.
 |---|---|---|
 | **App de scan** | PWA Angular, hors ligne | Outil des bénévoles : tri, caisse, consultation |
 | **Site catalogue** | Angular avec SSR, plus zone d'administration | Public et administration (`04`, `05` fonctionnels) |
+| **Locataire Entra External ID** | Fournisseur d'identité unique | Membres, bénévoles et administrateurs (`DT-10`) |
 | **Worker différé** | Container App `kind=functionapp` | Alertes, bascule, rattrapage |
 | Tranches `Books` dans le backend | Domain, Application, Contracts, Infrastructure | Le métier |
 
 **Aucune base supplémentaire, aucun broker de messages, aucun cache distribué.**
 Justifications en [`01-decisions.md`](01-decisions.md).
 
-Un réglage change par ailleurs : **l'API passe à `minReplicas: 1`**, parce qu'elle ne
-peut pas être indisponible pour le site catalogue. Cela ne dissout pas le worker pour
-autant — le réplica permanent est là pour servir les requêtes, pas pour porter du
-travail de fond. Le raisonnement est instruit au réexamen de `DT-04`, et l'alternative
-écartée en `DT-09`.
+Un réglage a par ailleurs déjà changé, hors de ce module : **les trois applications
+existantes tournent à `minReplicas: 1`** depuis `36b0e50`, pour ne pas être
+indisponibles. Cela ne dissout pas le worker pour autant — un réplica permanent est là
+pour servir les requêtes, pas pour porter du travail de fond. Le raisonnement est
+instruit au réexamen de `DT-04`, et l'alternative écartée en `DT-09`.
 
 ## 4. Carte des composants
 
@@ -84,7 +85,7 @@ travail de fond. Le raisonnement est instruit au réexamen de `DT-04`, et l'alte
         ▼                ▼                ▼
    ┌─────────┐    ┌────────────┐   ┌──────────────┐
    │   SQL   │    │   Blob     │   │Entra Ext. ID │
-   │ Server  │    │couvertures │   │   (public)   │
+   │ Server  │    │couvertures │   │ tous publics │
    └────▲────┘    └─────▲──────┘   └──────────────┘
         │               │
         │ outbox +      │
@@ -146,8 +147,8 @@ partie à l'annonce (`RG-28`).
 | Domaine `Books` ↔ `Product` / `Order` | **Aucune relation.** Les livres ne sont pas des produits (fonctionnel `02` §5) |
 | Domaine `Books` ↔ `AssoEvents` | Référence par identifiant. Les livres lisent la date d'une bourse, ne la modifient jamais |
 | API ↔ worker | Même base, mêmes couches, processus distincts |
-| App de scan ↔ site catalogue | Deux applications sans dépendance, deux publics, deux modes d'authentification |
-| Bénévoles ↔ membres du public | Deux systèmes d'identité disjoints (`ENF-16`, `ENF-17`) |
+| App de scan ↔ site catalogue | Deux applications sans dépendance, deux publics, **un seul fournisseur d'identité** |
+| Bénévoles ↔ membres du public | **Un seul annuaire** (`DT-10`). Ce qui les sépare est le rôle applicatif, pas le système |
 
 ## 7. Ce que cette architecture ne fait pas
 

@@ -124,11 +124,16 @@ sans raison. La Licence Ouverte autorise explicitement la copie.
 Seul canal en v1 (décision fonctionnelle). Volume : quelques dizaines de messages par
 semaine.
 
+**Le fournisseur est Azure Communication Services Email** (`DT-12`), joint par identité
+managée — donc sans clé à conserver — et déclaré dans le même Bicep que le reste.
+
 | Sujet | Traitement |
 |---|---|
+| Fournisseur | **ACS Email** (`DT-12`). Repli documenté : Brevo ou Mailjet, au prix d'un compte tiers et d'une clé |
+| Adresse d'expédition | Sur le **sous-domaine d'envoi dédié** `mail.volepapillondamour.fr`. ACS exige une correspondance SPF **exacte** avec `-all`, incompatible avec le SPF de la messagerie de l'association : le sous-domaine est la parade, et il isole au passage la réputation de l'application de celle des boîtes humaines |
 | Déclenchement | Depuis `sweep` uniquement, jamais depuis l'API |
 | Contenu | Titre, **édition arrivée** (`RG-46`), date de disponibilité, dates de la bourse, mention de non-réservation (`RG-32`), lien de désinscription |
-| Rebonds | Rappel entrant authentifié par secret partagé, incrémente `BounceCount`, suspend au-delà d'un seuil (`RG-31`) |
+| Rebonds | Rapports de remise et de rebond d'ACS, acheminés par **Event Grid** vers un point de terminaison dédié. Incrémente `BounceCount`, suspend au-delà d'un seuil (`RG-31`). L'abonnement Event Grid valide le point de terminaison par une poignée de main : le prévoir, il n'est pas optionnel |
 | Réputation | `RG-29` regroupe par membre : un e-mail par session, jamais un par livre |
 
 L'architecture doit traiter « alerte » comme un **événement métier**, pas comme un envoi

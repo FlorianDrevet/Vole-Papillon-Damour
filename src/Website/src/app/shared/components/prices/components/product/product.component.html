@@ -1,1 +1,32 @@
-<vpd-product-card [product]="Product()"></vpd-product-card>
+<article class="website-product-card group">
+  <div class="website-product-visual">
+    <span class="website-product-visual-label">Sur place</span>
+    <img
+      [src]="Product().urlImage"
+      [alt]="Product().name"
+      loading="lazy"
+      decoding="async"
+      class="website-product-image">
+  </div>
+
+  <div class="website-product-content">
+    <div class="website-product-heading">
+      <h3 class="website-product-name">{{ Product().name }}</h3>
+      <div class="website-product-price">
+        <span class="website-product-price-label">Prix unitaire</span>
+        <strong class="website-product-price-value">{{ Product().price | price }}</strong>
+      </div>
+    </div>
+
+    @if (Product().promotions.length) {
+      <div class="website-product-promotions" aria-label="Tarifs dégressifs">
+        @for (promo of Product().promotions; track promo.quantity) {
+          <span class="website-product-promotion">
+            <strong>{{ promo.discountedPrice | price }}</strong>
+            <span>pour {{ promo.quantity }}</span>
+          </span>
+        }
+      </div>
+    }
+  </div>
+</article>

@@ -128,8 +128,10 @@ qu'une promesse démentie sur place.
 
 ### Création de compte
 
-Via **Microsoft Entra External ID** (décision arrêtée). L'association ne détient et ne
-stocke aucun mot de passe.
+Via **Microsoft Entra External ID** (décision arrêtée, `DT-10`). L'association ne détient
+et ne stocke aucun mot de passe — c'est le même fournisseur d'identité que celui des
+bénévoles et des administrateurs, le site public étant la **seule** application où
+l'inscription en libre-service est ouverte.
 
 L'inscription n'est proposée qu'au moment où elle sert : au clic sur
 « Me prévenir quand il y en aura ». Aucun mur d'inscription à l'entrée du site.

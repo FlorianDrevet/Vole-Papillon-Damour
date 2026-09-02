@@ -18,7 +18,7 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
 | Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | Serverless `GP_S_Gen5_1`, pause auto après 60 min |
 | Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images` |
-| Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT |
+| Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
 | Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` | Une par application |
 
 Chaque Container App tourne sous sa propre identité managée. Les trois ont
@@ -29,9 +29,9 @@ Les conteneurs blob sont en accès `Blob` (lecture anonyme) : `BlobService`
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles
 sans SAS.
 
-Le scaling est à `minReplicas: 0` : la première requête après une période
-d'inactivité paie un démarrage à froid. Passer à `1` dans
-`parameters/main.dev.bicepparam` si ce n'est pas acceptable.
+Le scaling est à `minReplicas: 1` pour les trois applications depuis `36b0e50` :
+aucune ne paie de démarrage à froid, et aucune ne tient plus dans le quota gratuit
+des Container Apps. Le réglage est dans `parameters/main.dev.bicepparam`.
 
 ## Configuration Azure à faire une seule fois
 
@@ -91,7 +91,7 @@ Dans *Settings → Environments*, créer `development`, puis y ajouter :
 | `AZURE_SUBSCRIPTION_ID` | `az account show --query id -o tsv` |
 | `SQL_ADMIN_LOGIN` | login administrateur SQL, par exemple `vpdadmin` |
 | `SQL_ADMIN_PASSWORD` | mot de passe SQL (≥ 12 caractères, 3 des 4 classes majuscule/minuscule/chiffre/spécial) |
-| `JWT_SECRET` | clé de signature des tokens de l'API, ≥ 32 caractères aléatoires |
+| `JWT_SECRET` | clé de signature des tokens de l'API, ≥ 32 caractères aléatoires. **Voué à disparaître** : l'authentification passe à Entra External ID (voir `entra/README.md`) |
 
 C'est aussi l'endroit où activer une *required reviewer* si un déploiement doit
 être approuvé avant de partir.

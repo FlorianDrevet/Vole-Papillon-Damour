@@ -20,13 +20,47 @@ propos de `app.routes.server.ts`.
 L'espace d'administration, lui, n'a aucun besoin de référencement : il reste purement
 client.
 
+### Adresse et forme des URL
+
+`DT-13` tranche trois choses qui ne se changent plus une fois le catalogue indexé.
+
+| Sujet | Décision |
+|---|---|
+| Adresse | **`livres.volepapillondamour.fr`**, domaine personnalisé sur la Container App, certificat managé gratuit |
+| Fiche | **`/livres/{slug-titre-auteur}-{isbn13}`** — le slug porte les mots-clés, l'ISBN porte la stabilité et permet de rediriger en permanent si le titre est corrigé (`RG-05`) |
+| Œuvre | **`/oeuvre/{workId}`**, page canonique vers laquelle pointent les éditions (`RG-46`) |
+
+Le chemin `volepapillondamour.fr/livres` aurait été meilleur en théorie, mais impose un
+routeur devant deux Container Apps — Azure Front Door, 35 $ par mois, davantage que la
+base de données entière. Le raisonnement complet et la condition de réouverture sont en
+`DT-13`.
+
+### Ce que le rendu serveur ne suffit pas à couvrir
+
+Le SSR rend les fiches lisibles par un moteur ; il ne les rend pas trouvables. Restent à
+traiter, et ce n'est pas du détail pour l'exigence présentée comme le principal canal
+d'acquisition :
+
+- **Un sitemap dynamique**, pas un fichier statique comme celui du `Website`. Quinze mille
+  fiches imposent un index de sitemaps, découpé.
+- **Un `robots.txt` propre à l'application**, distinct de celui du site principal.
+- **Des URL canoniques entre éditions d'une même œuvre.** C'est le point qui compte le
+  plus : sans lui, dix éditions d'un même texte produisent dix pages presque identiques.
+- **Le traitement des fiches épuisées.** `RG-26` les maintient au catalogue — c'est le cas
+  d'usage central des alertes et il n'est pas négociable —, mais cela produit des milliers
+  de pages à contenu très mince, exactement le profil que les moteurs déclassent, et qui
+  peut entraîner le reste du domaine. À trancher : canonisation vers l'œuvre, ou `noindex`
+  en dessous d'un seuil de contenu.
+- **Des données structurées `schema.org/Book`**, titres et métadescriptions dérivés de la
+  fiche.
+
 ## 2. Structure
 
 | Zone | Rendu | Authentification |
 |---|---|---|
 | Accueil, recherche, fiches, catalogue par genre | **SSR**, indexable | Aucune |
-| Mon compte, liste de recherche | Client | Entra External ID (`ENF-16`) |
-| Administration | Client | Rôle administrateur (`ENF-18`) |
+| Mon compte, liste de recherche | Client | Entra External ID, jeton sans rôle (`ENF-16`) |
+| Administration | Client | Entra External ID, rôle `Administration` (`ENF-18`) |
 | Mentions légales, confidentialité | SSR | Aucune |
 
 ## 3. Recherche : deux périmètres, jamais mélangés
@@ -64,13 +98,20 @@ formulation neutre, qui ne doit pas ressembler à une erreur.
 
 ## 5. Authentification
 
-**Membres** : Entra External ID, successeur d'Azure AD B2C (`ENF-16`). L'association ne
-détient aucun mot de passe. L'inscription n'est proposée **qu'au clic sur « me
-prévenir »**, jamais à l'entrée du site.
+**Un seul fournisseur pour les deux** : Entra External ID (`DT-10`). L'association ne
+détient aucun mot de passe.
 
-**Administrateurs** : rôle explicite, distinct de l'identité des membres. Conséquence
-assumée de `Q-06` — cette authentification est à mettre en place dans la nouvelle
-application, elle n'est pas héritée du `BackOffice`.
+**Membres** : l'inscription en libre-service n'est proposée **qu'au clic sur « me
+prévenir »**, jamais à l'entrée du site. Le catalogue est la seule application où elle
+est ouverte (`10` §2).
+
+**Administrateurs** : même annuaire, distingués par le rôle applicatif `Administration`
+porté par le jeton. Conséquence assumée de `Q-06` : les administrateurs ont deux outils,
+mais **une seule identité** — c'est ce que change `DT-10` par rapport au plan initial,
+qui prévoyait de refaire une authentification dans la nouvelle application.
+
+Le détail — enregistrements, rôles, migration de l'existant — est en
+[`10-identite-et-droits.md`](10-identite-et-droits.md).
 
 ## 6. Données personnelles
 

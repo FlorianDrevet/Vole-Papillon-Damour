@@ -15,6 +15,7 @@ par leurs identifiants (`RG-nn`, `ENF-nn`, `Q-nn`).
 | Pourquoi tel choix technique a été fait | [`01-decisions.md`](01-decisions.md) — le journal des décisions, avec les alternatives écartées |
 | Une vue générale du système | [`00-vue-densemble.md`](00-vue-densemble.md) |
 | Ce qu'il reste à trancher avant de coder | [`09-questions-techniques.md`](09-questions-techniques.md) |
+| Ce qui est faux ou manquant dans ce dossier | [`revue.md`](revue.md) — relecture du 2 septembre 2026 |
 | À implémenter une brique précise | Le document correspondant ci-dessous |
 
 ## Contenu
@@ -31,6 +32,8 @@ par leurs identifiants (`RG-nn`, `ENF-nn`, `Q-nn`).
 | [`07-integrations-externes.md`](07-integrations-externes.md) | BnF, Open Library, résolution des métadonnées, e-mail |
 | [`08-infrastructure.md`](08-infrastructure.md) | Bicep, déploiement, CI, coûts |
 | [`09-questions-techniques.md`](09-questions-techniques.md) | Points ouverts `QT-nn` et mesures à faire au palier 0 |
+| [`revue.md`](revue.md) | **Défauts relevés `R-nn`** à corriger dans les documents ci-dessus |
+| [`10-identite-et-droits.md`](10-identite-et-droits.md) | Entra External ID, rôles applicatifs, suppression de l'authentification maison |
 
 ## Conventions
 
@@ -43,7 +46,11 @@ par leurs identifiants (`RG-nn`, `ENF-nn`, `Q-nn`).
 
 ## Statut
 
-**Brouillon.** Les trois décisions structurantes sont prises — sources
-bibliographiques, stockage, traitements différés. Deux mesures conditionnent la suite
-et sont à faire **avant** d'écrire du code de production : voir
+**Brouillon.** Les quatre décisions structurantes sont prises — sources
+bibliographiques, stockage, traitements différés, fournisseur d'identité. **Quatre
+mesures** conditionnent la suite et sont à faire **avant** d'écrire du code de
+production : `QT-01`, `QT-02`, `QT-07` et `QT-08`, voir
 [`09-questions-techniques.md`](09-questions-techniques.md).
+
+Le premier élément livré n'est pas fonctionnel : c'est le **socle d'identité**
+(`DT-10`), dont tout le reste dépend.

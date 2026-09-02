@@ -185,14 +185,15 @@ exigible dès le palier 1, sans attendre cet écran.
 | Consulter les alertes envoyées | Diagnostic « je n'ai rien reçu » |
 
 Les comptes sont créés en autonomie via Entra External ID ; il n'y a pas de création
-manuelle de compte membre par un administrateur.
+manuelle de compte membre par un administrateur. Un membre n'a aucun rôle applicatif :
+c'est ce qui le distingue d'un bénévole dans le même annuaire (`DT-10`).
 
 ## 8. Gestion des bénévoles
 
 | Action | Détail |
 |---|---|
-| Créer, désactiver un compte bénévole | |
-| Attribuer les droits | Tri, caisse, administration (`RG-40`) |
+| Créer, désactiver un compte bénévole | Dans le locataire d'identité, jamais en base |
+| Attribuer les droits | Rôles applicatifs `Tri`, `Caisse`, `Administration` (`RG-40`, `ENF-18`), par script `infra/entra/Set-VpdUserRole.ps1` |
 | Voir l'activité d'un bénévole | Nombre de scans, sessions de tri et leur mode |
 | Corriger une série de scans erronés | Voir §4 bis. Deux erreurs à rattraper en bloc : une session tenue dans le mauvais mode de mise à disposition, et des livres scannés en caisse alors qu'il s'agissait d'un tri |
 

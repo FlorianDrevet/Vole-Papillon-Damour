@@ -1,12 +1,12 @@
-import {Component, computed, input} from '@angular/core';
+import {Component, computed, inject, input} from '@angular/core';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {VpdEventModel} from "../../../../shared/models/vpdEvent.model";
-import {eventMapsUrl, formatEventAddress} from "../../../../shared/utils/event-address.util";
+import {eventMapsEmbedUrl, eventMapsUrl, formatEventAddress} from "../../../../shared/utils/event-address.util";
 
 /**
  * Bande "en pratique" de la page de détail : la description de l'évènement d'un côté,
- * la carte récapitulative de l'autre. Les lignes propres au type d'évènement (date,
- * horaires) sont projetées par le composant appelant ; la ligne "Lieu", identique pour
- * tous les types, est rendue ici pour n'exister qu'à un seul endroit.
+ * une carte du lieu de l'autre. Les lignes propres au type d'évènement (date, horaires)
+ * sont projetées par le composant appelant.
  */
 @Component({
     selector: 'app-general-infos',
@@ -15,11 +15,13 @@ import {eventMapsUrl, formatEventAddress} from "../../../../shared/utils/event-a
     standalone: false
 })
 export class GeneralInfosComponent {
-  vpdEvent = input.required<VpdEventModel>()
+  private readonly sanitizer = inject(DomSanitizer)
 
-  /** Plan d'accès optionnel, affiché sous l'adresse (bourse aux livres). */
-  mapImage = input<string | null>(null)
+  vpdEvent = input.required<VpdEventModel>()
 
   address = computed(() => formatEventAddress(this.vpdEvent()))
   mapsUrl = computed(() => eventMapsUrl(this.vpdEvent()))
+  mapsEmbedUrl = computed<SafeResourceUrl>(() =>
+    this.sanitizer.bypassSecurityTrustResourceUrl(eventMapsEmbedUrl(this.vpdEvent())),
+  )
 }

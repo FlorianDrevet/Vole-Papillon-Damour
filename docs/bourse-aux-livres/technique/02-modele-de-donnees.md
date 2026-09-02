@@ -14,10 +14,15 @@ avec `Entities/` et `ValueObjects/`.
 | `BookAggregate` | `Book` | La fiche livre, clé métier = ISBN-13 |
 | `ScanSessionAggregate` | `ScanSession` | La session de tri, son mode, son cycle de vie |
 | `BookMovementAggregate` | `BookMovement` | Le mouvement, source de vérité des quantités |
-| `WatchlistAggregate` | `Member` | Le membre du site et sa liste de recherche |
+| `WatchlistAggregate` | `Watchlist` | La liste de recherche d'une personne, et l'état de ses alertes |
 
 `OutboxMessage` n'est pas un agrégat métier mais une table d'infrastructure — voir
 [`06-traitements-differes.md`](06-traitements-differes.md).
+
+**Il n'y a pas d'agrégat `Member`.** `DT-14` pose qu'il n'existe **qu'une seule table de
+personnes**, la table `Users` existante. Un membre du site est une personne sans rôle
+(`DT-10`) qui possède une `Watchlist` ; un bénévole est une personne avec un rôle. La même
+peut être les deux, et n'a qu'une ligne.
 
 ### Pourquoi le mouvement est un agrégat distinct
 
@@ -109,7 +114,25 @@ ScanSessionId  uniqueidentifier FK NULL      -- NULL pour caisse et corrections
 VolunteerId    uniqueidentifier FK NULL      -- RG-41
 AssoEventsId   uniqueidentifier FK NULL      -- RG-33
 Note           nvarchar(500)    NULL         -- motif d'une correction
+ClientGestureId uniqueidentifier NULL        -- clé d'idempotence, voir ci-dessous
 ```
+
+**`ClientGestureId` est ce qui rend l'endpoint de lot idempotent** (`03` §4, `04` §4).
+Sans lui, la première retransmission après une coupure double les mouvements — c'est-à-dire
+fausse les quantités, en silence, un jour de bourse.
+
+Il est produit par l'appareil, porté par le geste dans la file de sortie, et **recopié sur
+la ligne d'annonce** que le geste engendre le cas échéant : un scan gardé en mode
+`PROCHAINE BOURSE` produit un mouvement **et** une annonce, donc l'identifiant ne peut pas
+être la clé primaire de l'un des deux.
+
+Il vaut `NULL` pour tout mouvement d'origine serveur — bascule (`RG-23`), correction
+administrative (`RG-35`) —, d'où un **index unique filtré sur
+`ClientGestureId IS NOT NULL`**.
+
+La déduplication d'un lot se fait en une lecture : le handler relève les identifiants déjà
+connus parmi ceux du lot, et ne traite que les autres. Une annulation (`RG-17`) est
+elle-même un geste, avec son propre identifiant — elle passe par le même chemin.
 
 **Deux horodatages, pas un.** Un geste produit hors ligne est daté par le client — le
 serveur ne le voit parfois que des heures plus tard. Mais l'horloge d'un appareil n'est
@@ -124,7 +147,7 @@ comptable exigé par `ENF-22`, et c'est ce qui rend `ENF-06` trivial — deux ap
 hors ligne produisent deux lignes, jamais un conflit.
 
 Index : `Isbn13` + `OccurredAt` ; `AssoEventsId` + `Type` (statistiques par bourse) ;
-`ScanSessionId` (reprise en bloc `RG-25`).
+`ScanSessionId` (reprise en bloc `RG-25`) ; **unique filtré sur `ClientGestureId`**.
 
 ### `ScanSessions`
 
@@ -158,27 +181,64 @@ reçu des gestes après leur clôture, pour que l'administration les repère
 Contrainte : **une seule session ouverte par bénévole** — index unique filtré sur
 `Status = EnCours`.
 
-### `Members` et `MemberWatchlistItems`
+### `Users` — la table de personnes, modifiée
 
-Identité déléguée à Entra External ID (`ENF-16`) : **aucun mot de passe stocké**.
+`DT-14` : **une seule table de personnes**, celle qui existe déjà. Identité déléguée à
+Entra External ID (`ENF-26`), donc **aucun mot de passe stocké**.
 
 ```
-Members
-  Id                uniqueidentifier PK
-  ExternalSubjectId nvarchar(200)    NOT NULL UNIQUE  -- claim sub
-  Email             nvarchar(320)    NOT NULL
-  Status            tinyint          NOT NULL -- Actif|Bloque|AlertesSuspendues
-  BounceCount       int              NOT NULL DEFAULT 0   -- RG-31
-  CreatedAt, LastSeenAt   datetime2
+Users                                     -- existante, modifiée
+  Id            uniqueidentifier PK
+  ExternalId    nvarchar(64)     NULL     -- oid Entra ; NULL après anonymisation
+  Email         nvarchar(320)    NULL     -- copie d'affichage ; NULL après anonymisation
+  Name          (value object)   NULL
+  CreatedAt     datetime2        NOT NULL
+  LastSeenAt    datetime2        NOT NULL
+  AnonymizedAt  datetime2        NULL     -- ENF-12, voir plus bas
 
-MemberWatchlistItems
+  -- supprimées par DT-10 : Password, Salt, Role
+```
+
+**La clé de rapprochement est `oid`, jamais `sub`.** Dans un locataire externe, `sub` est
+appairé par application : le même compte présente un `sub` différent au catalogue et à
+l'application de scan. C'est le défaut que `DT-14` corrige, et il est invisible tant qu'on
+ne teste qu'avec une seule application.
+
+Index : **unique filtré** sur `ExternalId WHERE ExternalId IS NOT NULL` — l'anonymisation
+libère la valeur, et deux anonymisations entreraient sinon en collision.
+
+Le rapprochement se fait **à la première connexion** (`10` §5) : au premier appel
+authentifié, si aucune ligne ne porte cet `oid`, l'API en crée une. Pas de tâche de fond,
+pas de synchronisation, pas de dérive.
+
+### `Watchlists` et `WatchlistItems`
+
+La facette « membre » d'une personne : sa liste de recherche, et l'état de ses alertes.
+
+```
+Watchlists
+  UserId        uniqueidentifier PK, FK Users
+  AlertStatus   tinyint          NOT NULL  -- Actif|Suspendu|Bloque
+  BounceCount   int              NOT NULL DEFAULT 0   -- RG-31
+  CreatedAt     datetime2        NOT NULL
+
+WatchlistItems
   Id        uniqueidentifier PK
-  MemberId  uniqueidentifier FK Members
+  UserId    uniqueidentifier FK Watchlists
   Scope     tinyint          NOT NULL -- Oeuvre|Edition, RG-46
   WorkId    nvarchar(64)     NULL     -- si Scope = Oeuvre
   Isbn13    char(13)         NULL     -- si Scope = Edition
   AddedAt   datetime2        NOT NULL
 ```
+
+**Pourquoi le statut d'alerte n'est pas sur `Users`.** Il ne décrit pas une personne, il
+décrit l'usage qu'elle fait des alertes. Le loger sur l'identité obligerait le domaine
+`Books` à écrire dans l'agrégat `User` à chaque rebond, et donnerait des colonnes vides à
+toute personne qui ne s'est jamais inscrite à quoi que ce soit — c'est-à-dire à tous les
+bénévoles. Ici, **la ligne n'existe que pour qui se sert de la fonction**.
+
+Conséquence utile : « membre inscrit » reste ce que `DT-10` en fait — un compte valide
+sans aucun rôle. Rien n'est à écrire nulle part au moment de l'inscription.
 
 Contrainte : exactement l'un des deux champs cibles renseigné, selon `Scope`.
 
@@ -188,9 +248,93 @@ l'implémentation ratera si on ne le lit pas.
 
 Index : `WorkId` et `Isbn13` — ce sont eux qui rendent `RG-13` instantané au scan.
 
-`ENF-13` (suppression après trois ans d'inactivité) s'appuie sur `LastSeenAt`.
-`ENF-12` impose que la suppression efface aussi la liste et l'historique d'alertes :
-cascade explicite.
+### Suppression et anonymisation
+
+`ENF-13` (suppression après trois ans d'inactivité) s'appuie sur `Users.LastSeenAt`.
+
+`ENF-12` impose que la suppression efface la liste **et** l'historique d'alertes : cascade
+explicite depuis `Watchlists`. Mais la ligne de personne elle-même n'est pas toujours
+supprimable — `RG-41` exige que tout mouvement porte l'identité du bénévole qui l'a
+produit, et `ENF-12` conserve explicitement les mouvements de vente. Deux cas :
+
+| Cas | Traitement |
+|---|---|
+| Aucun mouvement ne pointe vers la personne — un membre du public | **Suppression de la ligne `Users`**, cascade sur `Watchlists`, `WatchlistItems` et `UserAlertHistory` |
+| Des mouvements y pointent — une bénévole | **Anonymisation** : `Email`, `Name` et `ExternalId` effacés, `AnonymizedAt` horodaté, cascade identique. Les mouvements pointent vers une ligne qui n'identifie plus personne |
+
+Dans les deux cas, **le compte doit aussi disparaître du locataire** : effacer nos données
+en laissant l'identité vivante n'est pas une suppression. Ce volet-là n'est pas conçu —
+c'est le constat `R-06` de [`revue.md`](revue.md), et il reste ouvert.
+
+### `UserAlertHistory`
+
+```
+Id               uniqueidentifier PK
+UserId           uniqueidentifier FK Users
+Isbn13           char(13)         NOT NULL   -- pas de clé étrangère, voir ci-dessous
+SentAt           datetime2        NOT NULL
+OutboxMessageId  uniqueidentifier NULL FK    -- traçabilité, l'envoi qui l'a produite
+```
+
+**Cette table porte `RG-30` à elle seule.** L'anti-répétition — un même couple
+membre/ISBN pas plus d'une fois sur trente jours glissants — exige d'interroger
+`(membre, ISBN, date d'envoi)`. La table `OutboxMessage` ne le permet pas : elle est par
+membre **et par session**, son contenu est un `PayloadJson` opaque, et une alerte groupée
+(`RG-29`) y couvre plusieurs livres en une ligne. Un message envoyé n'est pas un
+historique requêtable.
+
+**Aucune clé étrangère vers `Books`**, pour la même raison que
+`WatchlistItems` : `RG-47` permet de suivre un livre que l'association n'a jamais
+reçu.
+
+**Elle s'écrit à l'envoi, pas à la mise en file.** C'est le point à ne pas inverser.
+`RG-30` se vérifie **deux fois** :
+
+| Moment | Rôle de la vérification |
+|---|---|
+| À la clôture de session (`CloseScanSession`) | Détermine ce qui sera annoncé au bénévole dans son récapitulatif. **Indicative** |
+| Au moment de l'envoi, dans `sweep` | **Fait foi.** C'est le « relire l'état en base avant d'envoyer » de [`06`](06-traitements-differes.md) §4 |
+
+Sans la seconde, deux sessions closes à quelques minutes d'écart passeraient toutes deux
+le contrôle et enverraient toutes deux — l'anti-répétition serait contournée par un simple
+chevauchement.
+
+Index : `UserId` + `Isbn13` + `SentAt` décroissant.
+
+`ENF-12` impose la cascade : supprimer un membre efface sa liste **et** son historique
+d'alertes. C'est nommément cité par l'exigence.
+
+### `AssociationSettings`
+
+Les huit valeurs de `05` §9, que `ENF-25` exige modifiables **sans redéploiement**.
+
+```
+Id                        tinyint          PK, CHECK (Id = 1)   -- ligne unique
+DuplicateThreshold        int              NOT NULL DEFAULT 5    -- RG-10
+DemandSalesThreshold      int              NOT NULL DEFAULT 1    -- RG-12
+DeadStockMinAgeDays       int              NOT NULL              -- 05 §5
+DeadStockMinQuantity      int              NOT NULL              -- 05 §5
+WatchlistMaxItems         int              NOT NULL DEFAULT 100  -- RG-27
+AlertCooldownDays         int              NOT NULL DEFAULT 30   -- RG-30
+SessionIdleTimeoutMinutes int              NOT NULL DEFAULT 120  -- RG-43
+AlertDelayMinutes         int              NOT NULL DEFAULT 120  -- RG-44
+UpdatedAt                 datetime2        NOT NULL
+UpdatedBy                 uniqueidentifier FK
+```
+
+**Une ligne unique à colonnes typées, pas une table clé/valeur.** L'ensemble est connu et
+fixe ; des colonnes nommées se sérialisent directement vers l'appareil, se valident par le
+type, et se lisent sans convention. Le prix est qu'ajouter un paramètre demande une
+migration — pour une personne seule qui en fait déjà, c'est le moindre des deux maux
+(`ENF-24`).
+
+**Pas de seuil de valeur pour `RG-14`** : la règle est hors v1, et `§3` ci-dessous pose
+qu'on n'ajoute pas ses colonnes avant le jour venu.
+
+**Ces valeurs doivent atteindre l'appareil**, sans quoi le verdict calculé hors ligne
+(`04` §5) n'applique pas les seuils réels. La réponse de
+`GET /scan/catalog/delta` porte donc un bloc `settings` accompagné de `UpdatedAt` — neuf
+entiers, le coût est nul et cela évite un second appel qui pourrait échouer seul.
 
 ### `AssoEventsRevenue`
 
@@ -246,6 +390,7 @@ Trois traitements l'exigent :
 | Clôture de session (`RG-44`) | Statut de la session **et** insertion des lignes d'outbox |
 | Scan gardé | Mouvement, compteurs de la fiche, compteurs de la session, éventuelle annonce |
 | Reprise en bloc (`RG-25`) | Mouvements inverses, mouvements rejoués, quantités, annulation des alertes en attente |
+| Envoi d'une alerte (`RG-30`) | Passage de la ligne d'outbox à `Sent` **et** écriture des lignes de `UserAlertHistory`. Envoyer sans historiser rouvre la fenêtre d'anti-répétition |
 
 Ces handlers écrivent via le `DbContext` avec un `SaveChanges` unique, ou une
 transaction explicite. **Ne pas passer par le `BaseRepository` pour ces cas.**
@@ -255,9 +400,14 @@ transaction explicite. **Ne pas passer par le `BaseRepository` pour ces cas.**
 Le dossier `Infrastructure/Migrations/` existe déjà. Découpage suggéré — une migration
 par palier fonctionnel plutôt qu'une seule massive :
 
-1. `Books`, `BookMovements`, `ScanSessions`, `BookAnnouncements` — palier 1
+0. **Suppression de `User.Password`, `User.Salt`, `User.Role` et ajout de
+   `User.ExternalId`** — au **préalable d'identité** (`10` §6). Elle précède les trois
+   suivantes et conditionne tout ce qui s'authentifie
+1. `Books`, `BookMovements`, `ScanSessions`, `BookAnnouncements`, `AssociationSettings` —
+   palier 1. Les paramètres viennent dès la première : le verdict de `RG-10` et `RG-12`
+   les lit
 2. Index plein texte et collation — palier 2
-3. `Members`, `MemberWatchlistItems`, `OutboxMessage` — palier 3
+3. `Watchlists`, `WatchlistItems`, `UserAlertHistory`, `OutboxMessage` — palier 3
 
 **Aucune reprise de données initiale.** Le catalogue démarre vide, conformément à
 `Q-11` et `RG-48` : il se remplit au fil des tris.
@@ -270,6 +420,8 @@ par palier fonctionnel plutôt qu'une seule massive :
 | `BookMovements` | ~150 000 lignes, ~20 Mo | Croissance linéaire, aucune purge prévue |
 | `BookAnnouncements` | quelques dizaines de milliers | |
 | `ScanSessions` | quelques milliers | |
+| `UserAlertHistory` | quelques dizaines de milliers | Une ligne par membre et par livre annoncé |
+| `AssociationSettings` | **1** | Une ligne, par construction |
 | **Total hors images** | **< 100 Mo** | Justifie `DT-02` |
 
 Les couvertures, en blob, sont le seul poste volumineux — quelques gigaoctets — et ne

@@ -11,6 +11,7 @@ import { ProductCategoryEnum } from '../../enums/productCategory.enum';
 @Component({
   selector: 'app-prices',
   templateUrl: './prices.component.html',
+  styleUrl: './prices.component.scss',
   standalone: false,
 })
 export class PricesComponent implements OnInit {

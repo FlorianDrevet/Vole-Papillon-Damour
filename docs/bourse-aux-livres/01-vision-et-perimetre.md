@@ -33,7 +33,7 @@ exprimée par le public. Il arbitre à l'intuition une ressource rare : la place
 | **Bénévole caissier** | Scanne les livres vendus | Jour de bourse, avec de la file d'attente |
 | **Administrateur** | Pilote le catalogue, consulte les statistiques, gère les comptes | Sur ordinateur, hors événement |
 | **Visiteur du site** | Cherche des livres, consulte le catalogue | Non connecté, sur mobile ou ordinateur |
-| **Membre inscrit** | Tient une liste de livres recherchés, reçoit des alertes | Compte créé via Microsoft Entra External ID |
+| **Membre inscrit** | Tient une liste de livres recherchés, reçoit des alertes | Compte créé en libre-service via Microsoft Entra External ID, sans aucun droit particulier |
 
 ## 4. Ce qui est dans le périmètre
 
@@ -93,8 +93,8 @@ documentées car elles pèsent sur le reste.
 | **Scan systématique en caisse** | La fiabilité du catalogue public dépend entièrement de la discipline des caissiers. C'est le principal risque humain du projet. |
 | **Livres sans ISBN hors périmètre** | Une partie du stock restera invisible du système comme du site. |
 | **Site public en application distincte** | Une charte graphique, une authentification et un déploiement de plus à maintenir, en marge du `Website` et du `BackOffice` existants. |
-| **Administration dans le site public**, pas dans le `BackOffice` existant | L'authentification administrateur doit être refaite dans la nouvelle application ; les administrateurs auront deux outils. |
-| **Comptes publics via Microsoft Entra External ID** | Le service qui remplace Azure AD B2C, cohérent avec l'hébergement Azure existant. L'association ne stocke aucun mot de passe. |
+| **Administration dans le site public**, pas dans le `BackOffice` existant | Les administrateurs auront deux outils. L'authentification, elle, n'est pas à refaire : elle devient la même partout (`DT-10`). |
+| **Microsoft Entra External ID pour tous les publics** | Le service qui remplace Azure AD B2C, cohérent avec l'hébergement Azure existant. L'association ne stocke aucun mot de passe, nulle part. En contrepartie, **l'authentification maison actuelle du `BackOffice` et de la caisse est à supprimer**, ce qui est un chantier en soi (`DT-10`, `10` §6). |
 | **Écart au tri enregistré sans motif** | On connaîtra le volume écarté, pas les raisons. Impossible d'affiner les seuils de tri à partir des données. |
 | **Deux modes de mise à disposition choisis avant le scan**, plutôt qu'un geste de mise en rayon (`Q-01`) | Aucun geste de publication à faire dans le local, et rien qui puisse être oublié. En contrepartie : le risque se déplace sur une **erreur de mode en début de session**, silencieuse, qui n'est rattrapable qu'en bloc (`RG-25`). Et l'agenda des bourses cesse d'être un simple affichage : sa date **pilote la disponibilité réelle** du catalogue (`RG-36`). |
 
@@ -102,6 +102,40 @@ documentées car elles pèsent sur le reste.
 
 Chaque palier a une valeur propre et un critère d'arrêt : si le critère n'est pas
 atteint, on ne passe pas au suivant.
+
+### Préalable — Le socle d'identité
+
+**C'est le premier élément livré, avant la sonde.** Non par importance fonctionnelle,
+mais parce que tout le reste en dépend et qu'un locataire d'identité ne se crée pas la
+veille du besoin.
+
+**Contenu.**
+- Création du locataire Microsoft Entra External ID
+- Enregistrements d'application et rôles applicatifs, par script (`infra/entra/`)
+- Premier compte administrateur, sans qui rien n'est administrable
+- Suppression de l'authentification maison du backend, du `BackOffice` et de la caisse
+  MAUI (`10` §6)
+
+**Ce qu'on vérifie.**
+- `QT-04` — la facturation à l'utilisateur actif mensuel, bénévoles compris
+- `QT-07` — qu'une application peut être en connexion seule, sans offrir l'inscription
+- `QT-08` — le comportement d'une session longue face au mode hors ligne
+
+**Critère de passage.** Un administrateur se connecte au `BackOffice` par Entra, et
+**plus aucun mot de passe n'existe dans la base**. Tant que la clé de signature JWT sert
+encore à quelque chose, ce palier n'est pas fini.
+
+**Pourquoi en premier et pas en cours de route.** Le `BackOffice` est déjà en service :
+il y a donc des comptes administrateurs à recréer dans le locataire, aujourd'hui une
+poignée. Faite plus tard, la même migration porterait sur cette poignée **plus** tous les
+bénévoles inscrits entre-temps, **plus** les membres du public — et se ferait sur un
+outil dont les bourses dépendent. Le chantier ne disparaît pas en attendant, il grossit.
+
+C'est aussi la seule fenêtre où l'on peut se tromper sans conséquence : personne n'est
+encore dépendant du nouveau dispositif.
+
+**Coût.** Le locataire est facturé à l'utilisateur actif mensuel. À ce stade, quelques
+comptes.
 
 ### Palier 0 — Sonde de faisabilité
 
@@ -157,8 +191,11 @@ contre-productif.
 
 ### Palier 3 — Les alertes
 
-**Contenu.** Comptes membres, listes de recherche, alertes e-mail, signal « recherché »
-remonté au bénévole trieur.
+**Contenu.** Ouverture de l'inscription publique, listes de recherche, alertes e-mail,
+signal « recherché » remonté au bénévole trieur.
+
+Le fournisseur d'identité, lui, est en place depuis le préalable : ce palier ouvre
+l'inscription en libre-service sur le catalogue, il ne la construit pas.
 
 **Dépend de** : palier 2 en production et alimenté.
 

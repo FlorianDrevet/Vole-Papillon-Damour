@@ -1,14 +1,27 @@
-.container-products {
-  margin-left: auto;
-  margin-right: auto;
+.prices-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(45vw, 1fr));
-  gap: 3vw;
-  justify-content: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-inline: auto;
 }
 
 @media (min-width: 640px) {
-  .container-products {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  .prices-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.15rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .prices-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.35rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .prices-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.5rem;
   }
 }
