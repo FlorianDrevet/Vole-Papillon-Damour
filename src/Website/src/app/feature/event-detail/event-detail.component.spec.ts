@@ -55,6 +55,7 @@ describe('EventDetailComponent', () => {
     const hero = fixture.nativeElement.querySelector('section.bg-ink');
     const metadata = hero?.querySelector('.event-hero-meta');
     const mapCard = hero?.querySelector('.event-location-card');
+    const time = metadata?.querySelector('.event-hero-time');
 
     expect(mapCard).not.toBeNull();
     expect(mapCard.querySelector('iframe')).not.toBeNull();
@@ -67,7 +68,22 @@ describe('EventDetailComponent', () => {
     expect(metadata?.textContent).toContain('14:00');
     expect(metadata?.textContent).toContain('Fin');
     expect(metadata?.textContent).toContain('18:00');
+    expect(time).not.toBeNull();
+    expect(time?.textContent).toContain('·');
+    expect(getComputedStyle(time).whiteSpace).toBe('nowrap');
     expect(metadata?.textContent).not.toContain('42160');
     expect(metadata?.textContent).not.toContain('Voir l’itinéraire');
+  });
+
+  it('only renders the start time when no closing time is provided', () => {
+    fixture.componentInstance.vpdEvent.set({...event, hourCloseDoors: null});
+    fixture.detectChanges();
+
+    const time = fixture.nativeElement.querySelector('.event-hero-time');
+
+    expect(time?.textContent).toContain('Début');
+    expect(time?.textContent).toContain('14:00');
+    expect(time?.textContent).not.toContain('Fin');
+    expect(time?.textContent).not.toContain('À confirmer');
   });
 });

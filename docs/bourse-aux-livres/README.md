@@ -13,6 +13,7 @@ ces documents.
 | En charge de la conception ou du développement | [`01-vision-et-perimetre.md`](01-vision-et-perimetre.md), puis les suivants dans l'ordre |
 | À la recherche d'une règle précise | [`06-regles-metier.md`](06-regles-metier.md) |
 | En train de préparer le chiffrage technique | [`08-questions-ouvertes.md`](08-questions-ouvertes.md) **en premier** — certaines décisions sont bloquantes |
+| **En train de construire** | [`../../NEXT.md`](../../NEXT.md) pour savoir où l'on en est, puis [`plan/`](plan/README.md) |
 
 ## Contenu
 
@@ -28,6 +29,7 @@ ces documents.
 | [`07-exigences-non-fonctionnelles.md`](07-exigences-non-fonctionnelles.md) | Performance, hors-ligne, RGPD, accessibilité, authentification |
 | [`08-questions-ouvertes.md`](08-questions-ouvertes.md) | Décisions restant à prendre et risques assumés |
 | [`technique/`](technique/README.md) | **Architecture technique** — comment construire ce que décrit ce dossier |
+| [`plan/`](plan/README.md) | **Plan d'exécution** — dans quel ordre construire, quels tests manuels, quels déploiements |
 
 ## Statut
 

@@ -51,12 +51,11 @@
           </span>
           <div class="flex min-w-0 flex-col gap-1">
             <span class="font-mono text-[10px] uppercase tracking-[.16em] text-cyan">Horaires</span>
-            <div class="flex flex-col gap-1 font-serif text-[18px] leading-tight text-white">
+            <div class="event-hero-time flex items-baseline gap-2 whitespace-nowrap font-serif text-[16px] leading-tight text-white">
               <span><span class="font-mono text-[9px] uppercase tracking-[.12em] text-mist/70">Début</span> {{ eventStartTime() | date:'HH:mm':'UTC' }}</span>
+              <span aria-hidden="true" class="text-mist/50">·</span>
               @if (event.hourCloseDoors) {
                 <span><span class="font-mono text-[9px] uppercase tracking-[.12em] text-mist/70">Fin</span> {{ event.hourCloseDoors | date:'HH:mm':'UTC' }}</span>
-              } @else {
-                <span><span class="font-mono text-[9px] uppercase tracking-[.12em] text-mist/70">Fin</span> <span class="text-mist/70">À confirmer</span></span>
               }
             </div>
           </div>

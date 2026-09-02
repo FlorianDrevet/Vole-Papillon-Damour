@@ -10,7 +10,8 @@
     </p>
   </div>
 
-  <div class="event-photo-gallery" role="group" aria-label="Photos du rendez-vous">
+  @if (eventPhotos().length > 0) {
+    <div class="event-photo-gallery" role="group" aria-label="Photos du rendez-vous">
     @if (eventPhotos().length > 1) {
       <div class="grid h-[300px] grid-cols-3 grid-rows-2 gap-1 overflow-hidden rounded-xl border border-line-2 bg-line-2 p-1 sm:h-[360px]">
         <figure class="group relative col-span-2 row-span-2 overflow-hidden rounded-lg">
@@ -48,5 +49,6 @@
           class="h-full w-full rounded-lg object-cover">
       </figure>
     }
-  </div>
+    </div>
+  }
 </section>

@@ -17,6 +17,6 @@ export class GeneralInfosComponent {
 
   eventPhotos = computed(() => {
     const event = this.vpdEvent();
-    return [...new Set([event.urlImage, ...EVENT_EDITORIAL_PHOTOS[event.eventType]])].slice(0, 3);
+    return EVENT_EDITORIAL_PHOTOS[event.eventType] ?? [];
   })
 }

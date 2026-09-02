@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { VpdEventEnum } from '../../../../shared/enums/vpdEvent.enum';
 import { VpdEventModel } from '../../../../shared/models/vpdEvent.model';
+import { EVENT_EDITORIAL_PHOTOS } from '../../../../shared/data/event-editorial-content';
 import { GeneralInfosComponent } from './general-infos.component';
 
 describe('GeneralInfosComponent', () => {
@@ -47,6 +48,14 @@ describe('GeneralInfosComponent', () => {
 
     expect(gallery).not.toBeNull();
     expect(images.length).toBeGreaterThan(1);
-    expect(images[0]?.getAttribute('src')).toBe(event.urlImage);
+    expect(images[0]?.getAttribute('src')).toBe(EVENT_EDITORIAL_PHOTOS[VpdEventEnum.Books][0]);
+    expect(images[0]?.getAttribute('src')).not.toBe(event.urlImage);
+  });
+
+  it('does not render an empty gallery when no editorial photos are configured', () => {
+    fixture.componentRef.setInput('vpdEvent', {...event, eventType: VpdEventEnum.Other});
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.event-photo-gallery')).toBeNull();
   });
 });
