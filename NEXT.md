@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-11` — déploiement 1, double authentification API |
-| **Prochaine action** | Faire relire puis fusionner les tranches de préparation Entra et d’authentification API ; exécuter ensuite le premier `-WhatIf` du script Entra et préparer le déploiement 1 ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-11` — configuration Entra et préparation du déploiement 1 |
+| **Prochaine action** | Depuis un PC autorisé, installer les modules Graph documentés, lancer `Configure-EntraApps.ps1` en `-WhatIf`, relire la simulation, puis rejouer en mode réel et attribuer `Administration` au compte cible ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `feat/l0-11-api-entra` |
+| **Branche** | `chore/l0-11-entra-setup` |
 
 ---
 
@@ -67,7 +67,7 @@ git pull
 | Node | `24.15.0` | Oui |
 | CLI Aspire | `13.5.3` | Oui |
 | Azure CLI, connecté au bon abonnement | — | — |
-| PowerShell 7 + modules Microsoft.Graph | pour `infra/entra/` | — |
+| PowerShell 7 + modules Microsoft.Graph | `Authentication`, `Applications`, `Identity.SignIns`, `Users` pour `infra/entra/` | Oui — PowerShell `7.6.5`, modules Graph `2.39.0` installés localement |
 | Docker | pour les images | — |
 
 ## En cours
@@ -102,9 +102,13 @@ enregistré, le schéma composite `Bearer` dirige les jetons Entra External ID v
 schéma `Entra` et conserve le schéma `LegacyJwt` pour les sessions issues de
 `/auth/login`. Les politiques `Tri`, `Caisse` et `Administration` sont posées ; l’alias
 `IsAdmin` et l’inventaire JWT restent volontairement présents jusqu’aux déploiements 2 et
-3. Les enregistrements d’application Entra n’ont pas encore été exécutés et aucun
-déploiement Azure n’a été fait depuis cette branche ; `ENTRA_API_CLIENT_ID` reste donc à
-fournir après l’exécution du script.
+3. Les PR de préparation et d’API sont fusionnées dans `main`. PowerShell 7 et les
+modules Graph sont maintenant installés localement ; `-UseDeviceCode` permet d’exécuter
+les scripts Graph sans `az login`, en validant la connexion dans un navigateur séparé.
+Les enregistrements d’application et l’attribution du rôle au compte cible restent à
+exécuter depuis un PC autorisé : la politique Conditional Access de Magellan bloque
+`az login --use-device-code` sur cette machine. Le déploiement Azure de cette branche
+continue de passer par GitHub OIDC.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -169,7 +173,7 @@ Domaine détenu et administré par l'association, main pleine et entière.
 | Élément | État |
 |---|---|
 | Locataire | Créé : `b23c80b3-9776-4840-8255-fcbf3b3500fd` (`volepapillondamour.onmicrosoft.com`) |
-| Enregistrements d'application | Non exécutés (`Configure-EntraApps.ps1` existe, jamais lancé) |
+| Enregistrements d'application | Non exécutés (`Configure-EntraApps.ps1` prêt, jamais lancé) |
 | Comptes administrateurs recréés | Aucun |
 | Appareils de caisse mis à jour | **Aucun** — voir `L0-10` et `L0-11`, ils ne se mettent pas à jour tout seuls |
 
@@ -234,6 +238,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | Windows | **L0-11 — préparation de l’exécution Entra.** Les scripts déclarent désormais leurs modules Graph requis, dont `Microsoft.Graph.Identity.SignIns` pour les consentements OAuth2 ; le README contient les URI retenues (`https://volepapillondamour.fr`, `http://localhost:4300`, `https://backoffice.volepapillondamour.fr`) et le compte cible. L’exécution reste à faire depuis un PC autorisé : la connexion Azure CLI locale est refusée par Conditional Access, tandis que le déploiement Bicep passe par GitHub OIDC. |
 | 2026-09-02 | Windows | **L0-11 — déploiement 1, API.** Ajout de `Microsoft.Identity.Web` `4.14.2`, du routage d’authentification composite `Bearer` vers Entra External ID ou le JWT historique, et des politiques `Tri`, `Caisse` et `Administration`. Les paramètres Bicep injectent l’autorité, le tenant et l’audience de l’API ; le `ClientId` sera renseigné après l’enregistrement Entra. `dotnet restore`, les 71 tests backend, le build `.slnx` et la compilation Bicep passent. Aucun déploiement ni enregistrement Entra n’a été exécuté ; la suppression du JWT et la migration de la base restent pour les passages suivants. |
 | 2026-09-02 | Windows | **L0-11 — prérequis Entra.** Le script `Configure-EntraApps.ps1` fusionne désormais les URI de redirection au lieu de les écraser, pose l'URI Android `msal<clientId>://auth` pour `vpd-caisse`, et simule les cinq applications en mode `-WhatIf` même lorsqu'elles sont nouvelles. L'analyse syntaxique passe. L'exécution réelle du `-WhatIf` reste en attente de PowerShell 7 et des modules Microsoft.Graph ; aucune ressource Entra n'a été écrite. La migration API/fronts/MAUI attend encore le nom de l'application Graph de suppression, le nom du secret Key Vault et les versions MSAL non fixés dans le plan. |
 | 2026-09-02 | Windows | **L0-10 — Android uniquement.** Choix de l'option A : `ShopAppVpd.csproj` cible désormais `net9.0-android` uniquement ; iOS, Mac Catalyst et Windows ne sont plus des cibles de compilation. Le README et la mémoire indiquent le build direct actuel. `dotnet restore` Android réussit ; `dotnet build` est bloqué localement par l'absence du SDK Android (`XA5300`). Aucun keystore n'a été créé, et les tests manuels d'installation/remplacement sur appareil réel restent à faire. La montée vers `net10.0-android` est conservée pour `L0-11`. |

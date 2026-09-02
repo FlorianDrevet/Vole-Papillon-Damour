@@ -16,11 +16,25 @@ Trois scripts, et une seule chose qui reste manuelle.
 
 ```powershell
 Install-Module Microsoft.Graph.Authentication, Microsoft.Graph.Applications, `
-               Microsoft.Graph.Users -Scope CurrentUser
+               Microsoft.Graph.Identity.SignIns, Microsoft.Graph.Users `
+               -Scope CurrentUser
 ```
 
 Le compte qui exécute doit être **Administrateur d'application** sur le locataire
 externe. PowerShell 7 requis.
+
+`Microsoft.Graph.Identity.SignIns` est nécessaire pour les cmdlets de consentement
+OAuth2 utilisées par `Configure-EntraApps.ps1`. Les scripts déclarent eux-mêmes leurs
+modules requis et s'arrêtent immédiatement si l'un d'eux manque.
+
+La connexion Graph est indépendante de `az login`. Sur un poste autorisé, le mode
+normal ouvre la connexion interactive du module Graph. Le mode `-UseDeviceCode` est
+disponible si le navigateur interactif ne peut pas être utilisé :
+
+```powershell
+./Configure-EntraApps.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UseDeviceCode -WhatIf
+```
 
 ## Ce qui reste manuel
 
@@ -39,19 +53,31 @@ administrateur. Voir `QT-07` dans
 
 ```powershell
 # 1. Enregistrements et rôles. Rejouable sans effet de bord.
-./Configure-EntraApps.ps1 -TenantId 'vpd.onmicrosoft.com' `
+# Le Website est servi par le domaine public retenu ; le scan n'existe pas encore,
+# donc son URI locale reste celle par défaut jusqu'à la création de l'application.
+./Configure-EntraApps.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -Environment 'dev' `
-    -CatalogRedirectUri    'https://vpd-web-ca-dev.<region>.azurecontainerapps.io' `
-    -ScanRedirectUri       'https://vpd-scan-ca-dev.<region>.azurecontainerapps.io' `
-    -BackOfficeRedirectUri 'https://vpd-bo-ca-dev.<region>.azurecontainerapps.io' `
+    -CatalogRedirectUri    'https://volepapillondamour.fr' `
+    -ScanRedirectUri       'http://localhost:4300' `
+    -BackOfficeRedirectUri 'https://backoffice.volepapillondamour.fr' `
+    -WhatIf
+
+# 1 bis. Après relecture de la simulation, rejouer exactement la même commande
+# sans -WhatIf et conserver le rapport hors du dépôt.
+./Configure-EntraApps.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -Environment 'dev' `
+    -CatalogRedirectUri    'https://volepapillondamour.fr' `
+    -ScanRedirectUri       'http://localhost:4300' `
+    -BackOfficeRedirectUri 'https://backoffice.volepapillondamour.fr' `
     -OutputFile ./entra-dev.json
 
 # 2. Le premier administrateur, sans qui rien n'est administrable.
-./Set-VpdUserRole.ps1 -TenantId 'vpd.onmicrosoft.com' `
-    -UserPrincipalName 'president@exemple.fr' -Role Administration
+./Set-VpdUserRole.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UserPrincipalName 'florian.drevet_magellangroup.eu#EXT#@volepapillondamour.onmicrosoft.com' `
+    -Role Administration
 
 # 3. Contrôle.
-./Get-VpdUserRoles.ps1 -TenantId 'vpd.onmicrosoft.com' | Format-Table
+./Get-VpdUserRoles.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' | Format-Table
 ```
 
 Les scripts acceptent `-WhatIf` : à utiliser systématiquement au premier passage sur un

@@ -1,4 +1,5 @@
 #Requires -Version 7.0
+#Requires -Modules Microsoft.Graph.Authentication, Microsoft.Graph.Applications, Microsoft.Graph.Identity.SignIns
 <#
 .SYNOPSIS
     Configure le locataire Microsoft Entra External ID du projet Vole-Papillon-Damour.
@@ -37,6 +38,10 @@
 .PARAMETER BackOfficeRedirectUri
     Origine du back-office.
 
+.PARAMETER UseDeviceCode
+    Utilise l'authentification Graph par code appareil, notamment depuis un runner
+    GitHub sans navigateur.
+
 .PARAMETER WhatIf
     Affiche les operations sans les appliquer.
 
@@ -65,7 +70,9 @@ param(
     [string] $ScanRedirectUri = 'http://localhost:4300',
     [string] $BackOfficeRedirectUri = 'http://localhost:4400',
 
-    [string] $OutputFile
+    [string] $OutputFile,
+
+    [switch] $UseDeviceCode
 )
 
 $ErrorActionPreference = 'Stop'
@@ -258,7 +265,17 @@ $requiredScopes = @(
     'Directory.ReadWrite.All'
 )
 
-Connect-MgGraph -TenantId $TenantId -Scopes $requiredScopes -NoWelcome
+$connectParameters = @{
+    TenantId  = $TenantId
+    Scopes    = $requiredScopes
+    NoWelcome = $true
+}
+if ($UseDeviceCode) {
+    $connectParameters.UseDeviceCode = $true
+    $connectParameters.ClientTimeout = 600
+}
+
+Connect-MgGraph @connectParameters
 $context = Get-MgContext
 Write-Detail "connecte en tant que $($context.Account) sur $($context.TenantId)"
 
