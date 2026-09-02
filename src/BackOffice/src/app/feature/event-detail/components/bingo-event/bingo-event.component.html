@@ -1,57 +1,47 @@
-<div class="flex flex-col w-full">
+<div class="flex flex-col gap-10">
   <app-general-infos [vpdEvent]="vpdEvent()">
-    <div class="flex flex-col gap-5 lg:mb-10 w-full lg:w-fit">
-      <app-section-infos-event
-        Title="Date:"
-        UrlIcon="icons/calendar-icon.svg"
-        [Value]="vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC'"
-      ></app-section-infos-event>
+    <app-section-infos-event
+      Title="Date"
+      UrlIcon="icons/calendar-icon.svg"
+      [Value]="vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC'"
+    ></app-section-infos-event>
 
-      <app-section-infos-event
-        Title="Lieu :"
-        UrlIcon="icons/location-icon.svg"
-        [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city"
-      ></app-section-infos-event>
-    </div>
+    <app-section-infos-event
+      Title="Lieu"
+      UrlIcon="icons/location-icon.svg"
+      [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city"
+    ></app-section-infos-event>
 
-    <div class="flex w-full flex-col lg:flex-row 2xl:w-fit 2xl:flex-col gap-5 justify-evenly mb-10">
+    <app-section-infos-event
+      Title="Ouverture des portes"
+      UrlIcon="icons/door-icon.svg"
+      [Value]="vpdEvent().hourOpenDoors | date: 'HH:mm' :'UTC'"
+    ></app-section-infos-event>
 
-      <app-section-infos-event
-        Title="Ouverture portes :"
-        UrlIcon="icons/door-icon.svg"
-        [Value]="vpdEvent().hourOpenDoors | date: 'HH:mm' :'UTC'"
-      ></app-section-infos-event>
-
-      <app-section-infos-event
-        Title="Heure de début :"
-        UrlIcon="icons/clock-icon.svg"
-        [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'"
-      ></app-section-infos-event>
-    </div>
-
+    <app-section-infos-event
+      Title="Heure de début"
+      UrlIcon="icons/clock-icon.svg"
+      [Value]="vpdEvent().dateStart | date: 'HH:mm':'UTC'"
+    ></app-section-infos-event>
   </app-general-infos>
 
-  <div class="flex flex-col w-full">
-    <div class="relative w-full flex items-center">
-      <div
-        class="flex flex-row ml-auto mr-auto bg-white border-primary-color border-2 rounded-3xl p-2 items-center w-fit">
-        <h1 class="text-primary-color text-5xl lg:text-7xl">Lots du loto</h1>
-        <img class="h-10 lg:h-16 ml-2 lg:ml-5 mt-auto mb-auto" src="icons/boite-cadeau.png">
-      </div>
-      <app-vpd-button (click)="openCreatePartie()" class="absolute right-0">Créer une partie</app-vpd-button>
+  <div class="flex flex-col gap-6 border-t border-line-2 pt-8">
+    <div class="flex items-center justify-between gap-4">
+      <app-group-heading title="Lots du loto"></app-group-heading>
+      <app-pill-button (click)="openCreatePartie()" type="button" [small]="true" class="shrink-0">
+        <app-icon name="add" [size]="15"></app-icon>
+        Créer une partie
+      </app-pill-button>
     </div>
 
     @if (vpdEvent().parties.length === 0) {
-      <p class="text-primary-color text-3xl lg:text-5xl mt-10 mb-10 text-justify ml-auto mr-auto">Liste des lots
-        prochainement disponible ...</p>
+      <p class="text-[15px] text-slate-2">Liste des lots prochainement disponible…</p>
     } @else {
-      <div class="container-parties">
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 2xl:grid-cols-3">
         @for (partie of vpdEvent().parties; track partie.id) {
-          <app-partie-card class="flex flex-col items-center" [Partie]="partie" [Event]="vpdEvent()"
-                           (eventUpdated)="eventUdpated($event)"></app-partie-card>
+          <app-partie-card [Partie]="partie" [Event]="vpdEvent()" (eventUpdated)="eventUdpated($event)"></app-partie-card>
         }
       </div>
     }
   </div>
 </div>
-

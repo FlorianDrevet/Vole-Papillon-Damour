@@ -30,7 +30,7 @@
 
 ## Active Skills
 
-- Base: `memory-management`, `gitnexus-workflow`, `tdd-workflow`, `audit-workflow`
+- Base: `memory-management`, `graphify-corpus`, `tdd-workflow`, `audit-workflow`
 - Backend: `cqrs-feature`, `dotnet-patterns`, `xunit-unit-testing`
 - Frontend: `angular-patterns`, `ui-ux-front-saas`
 
@@ -41,6 +41,6 @@
 
 ## Routing Heuristics
 
-- Shared backend symbol change -> use GitNexus impact first, then `dotnet-dev`
+- Shared backend symbol change -> perform structural impact review first, then use `dotnet-dev`
 - Angular UI or state change -> `angular-front`, plus `ui-ux-front-saas` for visible UI work
 - Cross-surface contract change -> backend first, then Angular and MAUI follow-up validation

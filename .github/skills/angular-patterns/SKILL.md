@@ -32,5 +32,5 @@ Charger ce skill pour toute tache Angular dans `src/BackOffice/` ou `src/Website
 
 ## Change Discipline
 
-- Une modification de modele partage ou de service commun doit etre precedee d'une impact analysis GitNexus.
+- Une modification de modele partage ou de service commun doit etre precedee d'une analyse d'impact structurelle.
 - Toute modification de contrat backend doit etre reverifiee cote Angular.

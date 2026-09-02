@@ -1,5 +1,7 @@
-.gitnexus
 graphify-out/
+.graphify_*.json
+.graphify_*.md
+.graphify_python
 **/node_modules/
 **/dist/
 **/build/

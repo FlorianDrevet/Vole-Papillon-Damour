@@ -27,7 +27,7 @@ Charger ce skill pour toute tache backend qui touche `Api`, `Application`, `Cont
 ## Impact multi-surface
 
 - Toute modification de `Contracts` doit etre revue cote `BackOffice`, `Website`, et `MauiCashApp` si le contrat est consomme.
-- Toute modification d'une interface de repository ou de service partage demande une impact analysis GitNexus avant edition.
+- Toute modification d'une interface de repository ou de service partage demande une analyse d'impact structurelle avant edition.
 
 ## Tests
 

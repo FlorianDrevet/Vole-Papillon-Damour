@@ -12,7 +12,7 @@ L'utilisateur travaille sur **Windows**. Toutes les commandes terminal doivent u
 
 ## Project Snapshot
 
-- Open-source repo indexed with GitNexus
+- Open-source repository for the association application
 - Backend: ASP.NET Core Web API on **.NET 10**
 - Architecture: `Domain` / `Application` / `Infrastructure` / `Api` / `Contracts` with CQRS via MediatR + FluentValidation
 - Web UIs: **Angular 21** apps in `src/BackOffice/` and `src/Website/`
@@ -43,7 +43,7 @@ L'utilisateur travaille sur **Windows**. Toutes les commandes terminal doivent u
 | Skill | Role | File |
 |-------|------|------|
 | `memory-management` | Maintain `MEMORY.md` and thematic memory files | `.github/skills/memory-management/SKILL.md` |
-| `gitnexus-workflow` | Structure-aware research, impact analysis, and post-change validation | `.github/skills/gitnexus-workflow/SKILL.md` |
+| `graphify-corpus` | Corpus-level architecture and documentation exploration | `.github/skills/graphify-corpus/SKILL.md` |
 | `tdd-workflow` | Mandatory TDD cycle for executable code | `.github/skills/tdd-workflow/SKILL.md` |
 | `audit-workflow` | Audit workflow and findings lifecycle | `.github/skills/audit-workflow/SKILL.md` |
 | `cqrs-feature` | Backend CQRS feature workflow for this solution | `.github/skills/cqrs-feature/SKILL.md` |
@@ -52,14 +52,15 @@ L'utilisateur travaille sur **Windows**. Toutes les commandes terminal doivent u
 | `angular-patterns` | Angular patterns for `BackOffice` and `Website` | `.github/skills/angular-patterns/SKILL.md` |
 | `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |
 
-## Code Graph Intelligence - GitNexus
+## graphify
 
-GitNexus is the only active code graph engine in this repository.
+Graphify is the repository knowledge graph for corpus-level architecture and documentation exploration.
 
-- Explore: `gitnexus_query()` then `gitnexus_context()`
-- Check blast radius before cross-cutting edits: `gitnexus_impact()`
-- Validate scope after larger edits: `gitnexus_detect_changes()`
-- Reindex when stale or after major merges: `npx gitnexus analyze`
+- Read `graphify-out/GRAPH_REPORT.md` for architecture, god-node, and community context.
+- Use `python -m graphify query "concept"`, `path`, and `explain` for conceptual searches when the graph is enabled.
+- Use the `graphify` MCP server from `.vscode/mcp.json` when it is active.
+- Run `python -m graphify update .` after meaningful source changes when the graph is enabled.
+- Type `/graphify` in Copilot Chat for a full corpus build or refresh when the installed Graphify skill is available.
 
 ## Project Guardrails
 

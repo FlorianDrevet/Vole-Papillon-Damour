@@ -1,114 +1,112 @@
-<mat-dialog-content class="h-fit !flex flex-col lg:!max-h-[80vh]">
-  <h1 class="font-caveatbrush text-4xl lg:text-6xl text-primary-color ml-auto mr-auto">
-    {{ updateActuality() !== null ? "Modifier une actualité" : "Nouvelle Actualité" }}
-  </h1>
-  <div class="h-1 bg-primary-color w-full"></div>
-  <form [formGroup]="newActualityForm" class="flex flex-row w-full mt-5">
-    <div class="flex flex-col">
-      <div class="w-full">
-        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Titre :</h1>
-        <mat-form-field appearance="fill" class="w-full mt-3">
-          <mat-label>Titre</mat-label>
-          <input class="w-full" formControlName="title"
-                 matInput placeholder="Titre">
-        </mat-form-field>
-      </div>
+<mat-dialog-content class="h-fit w-[520px] max-w-full !flex flex-col gap-5 lg:!max-h-[80vh]">
+  <div class="flex flex-col gap-2">
+    <h1 class="font-serif text-2xl font-medium text-ink-2">
+      {{ updateActuality() !== null ? "Modifier une actualité" : "Nouvelle actualité" }}
+    </h1>
+    <div class="h-px w-full bg-line-2"></div>
+  </div>
 
-      <div class="flex w-full">
-        <div class="mt-auto mb-auto flex flex-col">
-          <div class="flex flex-col lg:flex-row">
-            <p class="font-caveatbrush text-3xl lg:text-4xl text-primary-color mb-3">Image Principale :</p>
-            <div class="ml-5 mt-2 mb-5 lg:mb-0">
-              <input #fileInput (change)="ImageUtils.onFileSelected(document.getElementById('file'), principalImage)" [disabled]="!modification "
-                     [required]="true"
-                     formControlName="principalImage"
-                     hidden id="file" required type="file"
-              >
-              <button (click)="fileInput.click()" [disabled]="!modification" mat-raised-button
-                      type="button">Choisir une image
-              </button>
-            </div>
-          </div>
-          @if (this.principalImage().fileContent !== '') {
-            <div class="preview-img-container ml-auto mr-auto">
-              <img [src]="this.principalImage().fileContent" alt="Image du produit">
-            </div>
-          }
+  <form [formGroup]="newActualityForm" class="flex w-full flex-col gap-4">
+    <div class="w-full">
+      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Titre</h2>
+      <mat-form-field appearance="fill" class="w-full">
+        <mat-label>Titre</mat-label>
+        <input class="w-full" formControlName="title" matInput placeholder="Titre">
+      </mat-form-field>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-3">
+        <h2 class="font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Image principale</h2>
+        <input #fileInput (change)="ImageUtils.onFileSelected(document.getElementById('file'), principalImage)" [disabled]="!modification"
+               [required]="true"
+               formControlName="principalImage"
+               hidden id="file" required type="file"
+        >
+        <button (click)="fileInput.click()" [disabled]="!modification" type="button"
+                class="rounded-full border border-mist px-4 py-1.5 text-xs font-semibold text-blue hover:bg-blue/5 disabled:pointer-events-none disabled:opacity-50">
+          Choisir une image
+        </button>
+      </div>
+      @if (this.principalImage().fileContent !== '') {
+        <div class="preview-img-container">
+          <img [src]="this.principalImage().fileContent" alt="Image du produit">
         </div>
-      </div>
-
-      <div class="w-full">
-        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Date :</h1>
-        <mat-form-field class="w-full  mt-3">
-          <mat-label>Date</mat-label>
-          <input [matDatepicker]="picker" formControlName="date" matInput>
-          <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
-        </mat-form-field>
-      </div>
-
-
-      <div class="w-full">
-        <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color ">Article :</h1>
-        <mat-form-field class="w-full  mt-3">
-          <mat-label>Article</mat-label>
-          <textarea #autosize="cdkTextareaAutosize"
-                    cdkAutosizeMinRows="1"
-                    cdkTextareaAutosize
-                    formControlName="article"
-                    matInput
-          ></textarea>
-        </mat-form-field>
-      </div>
-
-      <div class="flex flex-col lg:flex-row justify-between w-full lg:gap-10">
-        <div>
-          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Lien Facebook :</h1>
-          <mat-form-field appearance="fill" class="mt-3 w-full lg:w-fit">
-            <mat-label>Lien Facebook</mat-label>
-            <input formControlName="facebook" matInput placeholder="Lien Facebook">
-          </mat-form-field>
-        </div>
-        <div>
-          <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Lien Instagram :</h1>
-          <mat-form-field appearance="fill" class=" mt-3  w-full lg:w-fit">
-            <mat-label>Lien Instagram</mat-label>
-            <input formControlName="instagram" matInput placeholder="Lien Instagram">
-          </mat-form-field>
-        </div>
-      </div>
-
-      <div class="flex w-full">
-        <div class="mt-auto mb-auto">
-          <div class="flex flex-col lg:flex-row ">
-            <p class="font-caveatbrush text-3xl lg:text-4xl text-primary-color mb-3">Images :</p>
-            <div class="ml-5 mt-2">
-              <input #filesInput (change)="ImageUtils.onFilesSelected(document.getElementById('files'), optionalImages)" [disabled]="!modification "
-                     formControlName="images"
-                     hidden
-                     id="files" multiple type="file"
-              >
-              <button (click)="filesInput.click()" [disabled]="!modification" mat-raised-button
-                      type="button">Choisir des images
-              </button>
-            </div>
-          </div>
-          <div class="flex flex-row flex-wrap gap-x-5 gap-y-5 mt-5">
-            @for (image of this.optionalImages(); track image; let i = $index) {
-              <div class="preview-img-container relative">
-                <img [src]="image.fileContent" alt="Image">
-                <img src="icons/supprimer.png" class="!h-10 !w-auto absolute top-0 right-0"
-                     (click)="deleteOptionalImage(i)">
-              </div>
-            }
-          </div>
-        </div>
-      </div>
-
-      @if (error()) {
-        <p class="text-red-700 font-librebaskerville text-xl mt-10 w-4/5 text-center">{{ error()?.toString() }}</p>
       }
     </div>
+
+    <div class="w-full">
+      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Date</h2>
+      <mat-form-field class="w-full">
+        <mat-label>Date</mat-label>
+        <input [matDatepicker]="picker" formControlName="date" matInput>
+        <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    </div>
+
+    <div class="w-full">
+      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Article</h2>
+      <mat-form-field class="w-full">
+        <mat-label>Article</mat-label>
+        <textarea #autosize="cdkTextareaAutosize"
+                  cdkAutosizeMinRows="1"
+                  cdkTextareaAutosize
+                  formControlName="article"
+                  matInput
+        ></textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="flex flex-col gap-4 sm:flex-row sm:gap-6">
+      <div class="w-full">
+        <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Lien Facebook</h2>
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Lien Facebook</mat-label>
+          <input formControlName="facebook" matInput placeholder="Lien Facebook">
+        </mat-form-field>
+      </div>
+      <div class="w-full">
+        <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Lien Instagram</h2>
+        <mat-form-field appearance="fill" class="w-full">
+          <mat-label>Lien Instagram</mat-label>
+          <input formControlName="instagram" matInput placeholder="Lien Instagram">
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-3">
+        <h2 class="font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Images</h2>
+        <input #filesInput (change)="ImageUtils.onFilesSelected(document.getElementById('files'), optionalImages)" [disabled]="!modification"
+               formControlName="images"
+               hidden
+               id="files" multiple type="file"
+        >
+        <button (click)="filesInput.click()" [disabled]="!modification" type="button"
+                class="rounded-full border border-mist px-4 py-1.5 text-xs font-semibold text-blue hover:bg-blue/5 disabled:pointer-events-none disabled:opacity-50">
+          Choisir des images
+        </button>
+      </div>
+      <div class="flex flex-row flex-wrap gap-3">
+        @for (image of this.optionalImages(); track image; let i = $index) {
+          <div class="preview-img-container relative">
+            <img [src]="image.fileContent" alt="Image">
+            <button
+              type="button"
+              (click)="deleteOptionalImage(i)"
+              aria-label="Retirer cette image"
+              class="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border border-danger/30 bg-white text-danger">
+              <app-icon name="close" [size]="12"></app-icon>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (error()) {
+      <p class="text-sm text-danger">{{ error()?.toString() }}</p>
+    }
   </form>
 </mat-dialog-content>
 <mat-dialog-actions>

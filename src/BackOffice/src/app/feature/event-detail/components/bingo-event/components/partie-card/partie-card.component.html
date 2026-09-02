@@ -1,72 +1,44 @@
-<div [ngClass]="{
-  'lg:border-primary-color': Partie().partieType === PartieTypeEnum.STANDARD,
-  'lg:border-tertiary-color': Partie().partieType !== PartieTypeEnum.STANDARD,
-  }"
-     class="lg:border-4 lg:border-primary-color lg:bg-white rounded-3xl lg:p-5 flex flex-col w-full ">
-  <div>
-    <div class="flex flex-row justify-between gap-10">
-      <h2 [ngClass]="{
-  'lg:text-primary-color': Partie().partieType === PartieTypeEnum.STANDARD,
-  'lg:text-tertiary-color': Partie().partieType !== PartieTypeEnum.STANDARD,
-  }"
-          class="text-primary-color text-5xl">
-        {{ Partie().name }}
-      </h2>
-      <div class="flex flex-row gap-2  top-2 ">
-        <button
-          (click)="openDialogUpdate()"
-          class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-          <img class="h-7" fetchpriority="high" src="icons/crayon.png">
-        </button>
-        <button
-          (click)="openDialogDeletion()"
-          class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-          <img class="h-7" fetchpriority="high" src="icons/supprimer.png">
-        </button>
-      </div>
+<div class="flex w-full flex-col gap-4 rounded-sm border border-line bg-white p-5">
+  <div class="flex items-start justify-between gap-4 border-b border-line-2 pb-3">
+    <h3 class="font-serif text-xl font-medium" [class]="Partie().partieType === PartieTypeEnum.STANDARD ? 'text-ink-2' : 'text-orange-3'">
+      {{ Partie().name }}
+    </h3>
+    <div class="flex shrink-0 gap-2">
+      <app-icon-button icon="edit" ariaLabel="Modifier la partie" [small]="true" (click)="openDialogUpdate()"></app-icon-button>
+      <app-icon-button icon="delete" ariaLabel="Supprimer la partie" variant="danger" [small]="true" (click)="openDialogDeletion()"></app-icon-button>
     </div>
-    <div [ngClass]="{
-  'lg:bg-primary-color': Partie().partieType === PartieTypeEnum.STANDARD,
-  'lg:bg-tertiary-color': Partie().partieType !== PartieTypeEnum.STANDARD,
-  }" class="h-2 w-full mt-2"></div>
   </div>
-  <div class="flex flex-col flex-wrap gap-3 w-full mt-5 items-center">
+
+  <div class="flex flex-col gap-3">
     @if (oneLineLots().length === 0 &&
     (Partie().partieType === PartieTypeEnum.STANDARD || Partie().partieType === PartieTypeEnum.PLUSUNMOINSUN)) {
-      <app-vpd-button (click)="openDialogAddPartieLine(NumberLineEnum.ONELINE)">
-        <div class="flex flex-row items-center">
-          <img src="icons/plus.png" class="h-6 mr-2">
-          <p>Lot pour une ligne</p>
-        </div>
-      </app-vpd-button>
+      <app-pill-button (click)="openDialogAddPartieLine(NumberLineEnum.ONELINE)" type="button" variant="secondary" [small]="true">
+        <app-icon name="add" [size]="14"></app-icon>
+        Lot pour une ligne
+      </app-pill-button>
     }
 
     @for (linePartie of lineParties(); track linePartie.id) {
-      <app-lot-card class="w-full"
-                    (lotUpdated)="lotUpdated($event)"
-                    [Event]="Event()"
-                    [Partie]="Partie()"
-                    [LinePartie]="linePartie"></app-lot-card>
+      <app-lot-card
+        (lotUpdated)="lotUpdated($event)"
+        [Event]="Event()"
+        [Partie]="Partie()"
+        [LinePartie]="linePartie"></app-lot-card>
     }
 
     @if (twoLineLots().length === 0 &&
     (Partie().partieType === PartieTypeEnum.STANDARD || Partie().partieType === PartieTypeEnum.PLUSUNMOINSUN)) {
-      <app-vpd-button (click)="openDialogAddPartieLine(NumberLineEnum.TWOLINE)">
-        <div class="flex flex-row items-center">
-          <img src="icons/plus.png" class="h-6 mr-2">
-          <p>Lot pour deux lignes</p>
-        </div>
-      </app-vpd-button>
+      <app-pill-button (click)="openDialogAddPartieLine(NumberLineEnum.TWOLINE)" type="button" variant="secondary" [small]="true">
+        <app-icon name="add" [size]="14"></app-icon>
+        Lot pour deux lignes
+      </app-pill-button>
     }
 
     @if (cartonPleinLots().length === 0) {
-      <app-vpd-button (click)="openDialogAddPartieLine(NumberLineEnum.CARTONPLEIN)">
-        <div class="flex flex-row items-center">
-          <img src="icons/plus.png" class="h-6 mr-2">
-          <p>Lot pour le carton plein</p>
-        </div>
-      </app-vpd-button>
+      <app-pill-button (click)="openDialogAddPartieLine(NumberLineEnum.CARTONPLEIN)" type="button" variant="secondary" [small]="true">
+        <app-icon name="add" [size]="14"></app-icon>
+        Lot pour le carton plein
+      </app-pill-button>
     }
   </div>
 </div>
-

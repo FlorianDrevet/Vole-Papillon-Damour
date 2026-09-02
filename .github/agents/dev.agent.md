@@ -41,13 +41,11 @@ Apres lecture de `MEMORY.md`, lire `.github/memory/dream-state.md` et :
    - **Toujours** liberer le verrou apres le retour de `@dream`, meme en cas d'echec.
 4. **Si non :** continuer normalement.
 
-### 1ter. Code Graph Freshness Check
+### 1ter. Graphify Freshness Check
 
-Verifier que le moteur d'intelligence code est a jour :
-
-1. Executer `gitnexus_list_repos()` et lire la date `lastAnalyzed` si le MCP est disponible.
-2. Si `lastAnalyzed` > 7 jours : executer `npx gitnexus analyze` pour reindexer.
-3. Si la commande echoue ou le MCP n'est pas disponible : continuer sans bloquer, mais avertir.
+Si Graphify est active, verifier que `graphify-out/GRAPH_REPORT.md` existe avant une
+exploration transversale. Si le graphe n'est pas disponible, continuer avec les sources
+du depot et le signaler si cela affecte l'analyse.
 
 ### 2. Analyser la demande et decider
 
@@ -58,13 +56,12 @@ Apres lecture de `MEMORY.md`, identifier :
 
 ### 2bis. Phase Research - Explorer le codebase avant de deleguer
 
-**Pour les taches complexes ou cross-cutting**, commencer par le moteur d'intelligence code puis completer avec `@Explore`.
+**Pour les taches complexes ou cross-cutting**, commencer par l'exploration structurelle puis completer avec `@Explore`.
 
-**Etape 1 - Intelligence code (structurel, rapide) :**
+**Etape 1 - Graphify (si active) :**
 
-- `gitnexus_query("concept lie a la tache")` → identifier les flux d'execution et symboles concernes
-- `gitnexus_context("SymboleCible")` → vue 360° (appelants, appeles, process)
-- `gitnexus_impact(target, "upstream")` → blast radius si modification prevue
+- `python -m graphify query "concept lie a la tache"` → identifier les noeuds et liens pertinents
+- `python -m graphify explain "SymboleCible"` → obtenir le contexte du concept
 
 **Etape 2 - @Explore (contenu, detail) :**
 `@Explore` est un sous-agent rapide, read-only, specialise dans l'exploration et le Q&A codebase.
@@ -137,7 +134,7 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
 | Tache | Agent a utiliser |
 |-------|-----------------|
 | Explorer le codebase avant delegation | **`Explore`** (sous-agent built-in) |
-| Analyse d'impact / exploration structurelle avant modification | Charger le skill **`gitnexus-workflow`** ou **`graphify-corpus`** |
+| Analyse d'impact / exploration structurelle avant modification | Charger le skill **`graphify-corpus`** si le graphe est active |
 | Audit technique complet du depot avec synchronisation GitHub | **`audit-expert`** + skill `audit-workflow` |
 | Documentation technique, onboarding, pedagogie | **`documentation-professor`** |
 | Revue de code pre-merge, gate qualite avant merge | **`review-expert`** |
@@ -161,7 +158,7 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
 > 2. Les **conventions du projet** pertinentes a la tache (issues de MEMORY.md)
 > 3. Un **extrait de code existant** comme reference de style quand applicable
 > 4. Le **resultat attendu** decrit de facon non ambigue
-> 5. Le **resultat de l'impact analysis** si la tache modifie un symbole partage
+> 5. Le **resultat de l'exploration Graphify** si la tache modifie un symbole partage
 > 6. **L'instruction TDD** : rappeler que le skill `tdd-workflow` est obligatoire
 
 > **REGLE TDD - Toute delegation de code DOIT inclure le cycle TDD.**
@@ -208,7 +205,7 @@ Son role est de **lire la memoire, analyser, charger les bons outils de connaiss
 [ ] TDD verifie : tests ecrits AVANT le code de production (si code modifie)
 [ ] Build verifie (si code touche)
 [ ] Frontend verifie (si applicable)
-[ ] Code graph detect_changes verifie (si code modifie)
+[ ] Graphify mis a jour et requete structurelle revalidee (si code modifie)
 [ ] Dette de tests enregistree dans .github/test-debt.md (si dette detectee)
 [ ] Fichier thematique mis a jour dans .github/memory/
 [ ] Changelog : ligne ajoutee dans .github/memory/changelog.md

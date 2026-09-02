@@ -41,5 +41,5 @@ The backend and contracts expose features around:
 - Residual `MailingList` folders still exist in `Application` and `Contracts`, but the API runtime no longer maps mailing-list endpoints.
 - The OCR bingo-card analysis slice was removed from the backend and BackOffice admin UI because automatic loto-card reading is no longer allowed by the business rules.
 - The backend projects remain free of `Aspire.*` packages; local orchestration lives only in the AppHost project.
-- `.github/workflows/ci.yml` runs the backend solution/tests, the Android MAUI target, and both Angular builds on every push and pull request.
-- GitNexus is the selected and documented code graph engine for this open-source repository.
+- No CI pipeline file was detected during bootstrap, so local validation commands matter.
+- A Graphify knowledge graph is available for documentation and corpus-level orientation.

@@ -1,16 +1,12 @@
-<div class="flex flex-col">
-    <div class="flex flex-col mb-5 lg:mb-16">
-        <h2 class="text-primary-color text-4xl lg:text-6xl">{{ Title() }}</h2>
-        <div class="h-2 w-full bg-primary-color"></div>
-    </div>
+<div class="flex flex-col gap-6">
+  <app-group-heading [title]="Title()"></app-group-heading>
 
-  <div class="flex flex-row flex-wrap gap-10">
-        @for (actu of Actualities(); track actu.id) {
-            <app-actuality-card
-              (actualityUpdated)="updateActuality($event)"
-                    (actualityDeleted)="deleteActuality($event)"
-                    [ActualityModel]="actu"></app-actuality-card>
-        }
-    </div>
+  <div class="flex flex-row flex-wrap gap-6">
+    @for (actu of Actualities(); track actu.id) {
+      <app-actuality-card
+        (actualityUpdated)="updateActuality($event)"
+        (actualityDeleted)="deleteActuality($event)"
+        [ActualityModel]="actu"></app-actuality-card>
+    }
+  </div>
 </div>
-

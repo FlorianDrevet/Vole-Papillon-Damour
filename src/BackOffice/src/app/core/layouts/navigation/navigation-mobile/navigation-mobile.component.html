@@ -1,62 +1,51 @@
-<nav class="flex flex-row w-full bg-primary-color justify-between ml-auto mr-auto items-center">
-  <a class="ml-2" routerLink="/dashboard-vole-papillon-damour">
+<nav class="flex flex-row w-full items-center justify-between border-b border-line bg-paper px-shell py-4">
+  <a class="flex items-center gap-2.5" routerLink="/actualites" aria-label="Retour à l'accueil">
     <img
-      alt="Papillon logo"
-      class="mt-2 mb-1"
+      alt="Vole Papillon d'Amour"
       fetchpriority="high"
-      height="34"
+      height="30"
       src="logos/papillon_without_back.png"
-      width="34">
-  </a>
-  <a routerLink="/accueil">
-    <h1 class="text-2xl text-white content-center">
-      Vole Papillon D'amour
-    </h1>
+      width="30">
+    <span class="font-serif text-base leading-none text-ink-2">Vole Papillon d'Amour</span>
   </a>
 
-  <img (click)="OnMobileNavigationClick()"
-       [src]="isMobileNavigationOpen() ? 'icons/cross-icon.svg' : 'icons/hamburger-menu-icon.svg'"
-       alt="Button to open the navigation" class="mr-3" height="25" width="25">
+  <button
+    (click)="OnMobileNavigationClick()"
+    type="button"
+    [attr.aria-label]="isMobileNavigationOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
+    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line text-ink-2">
+    <app-icon [name]="isMobileNavigationOpen() ? 'close' : 'menu'" [size]="18"></app-icon>
+  </button>
 </nav>
 
 @if (isMobileNavigationOpen()) {
-  <div class="absolute mobile-navigation-dialog overflow-auto flex">
-    <div class="overflow-auto w-full h-full sub-container-mobile-nav flex">
-      <nav class="rounded-3xl bg-white w-full p-5 flex flex-col">
+  <div class="mobile-navigation-dialog absolute flex overflow-auto bg-paper">
+    <div class="sub-container-mobile-nav flex h-full w-full overflow-auto">
+      <nav class="flex w-full flex-col p-shell">
         @if (subNavigation() !== null) {
-          <div class="flex flex-row items-center" (click)="onBackNavigationClick()">
-            <div class="flex w-[20px] h-[20px] bg-primary-color rounded-full">
-              <img src="icons/arrow-left-white.svg" class="m-auto" height="10" width="10" alt="arrow back">
-            </div>
-            <h3 class="text-xl text-primary-color ml-3">
-              Retour
-            </h3>
-          </div>
-          <h1 class="text-primary-color text-4xl mt-5 mb-5">{{ titleSubNav() }}</h1>
+          <button
+            (click)="onBackNavigationClick()"
+            type="button"
+            class="mb-6 flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue">
+            <app-icon name="back" [size]="13"></app-icon>
+            Retour
+          </button>
+          <h2 class="mb-4 font-serif text-2xl text-ink-2">{{ titleSubNav() }}</h2>
         }
-        @for (navigation of (subNavigation() === null ? NavigationItems() : subNavigation()); track navigation.url; let first = $first) {
-          <div class="flex flex-col">
-            <div
-              (click)="OnSubNavigationClick(navigation)"
-              class="flex flex-row justify-between w-full mb-5">
-              <h2 [ngClass]="{
-              'mt-5': !first,
-              'text-3xl': subNavigation() === null,
-              'text-2xl': subNavigation() !== null
-              }">{{ navigation.title }}</h2>
-              <img
-                height="25"
-                width="25"
-                class="mt-auto mb-1"
-                alt="Icon next navigation"
-                src="icons/angle-small-right.svg">
-            </div>
-
-            <div class="bg-primary-color h-0.5 w-full"></div>
-          </div>
-        }
+        <ul class="flex flex-col divide-y divide-line-2">
+          @for (navigation of (subNavigation() === null ? NavigationItems() : subNavigation()); track navigation.url) {
+            <li>
+              <button
+                (click)="OnSubNavigationClick(navigation)"
+                type="button"
+                class="flex w-full items-center justify-between py-4 text-left">
+                <span class="font-serif text-xl text-ink-2">{{ navigation.title }}</span>
+                <app-icon name="chevron-right" [size]="16" class="text-slate-3"></app-icon>
+              </button>
+            </li>
+          }
+        </ul>
       </nav>
     </div>
   </div>
 }
-

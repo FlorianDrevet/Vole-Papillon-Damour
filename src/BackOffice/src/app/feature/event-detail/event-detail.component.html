@@ -1,39 +1,22 @@
 @if (vpdEvent() === null) {
-  <p>Loading ...</p>
+  <div class="flex justify-center px-shell py-24">
+    <mat-spinner></mat-spinner>
+  </div>
 } @else {
-  fix<a class="absolute right-3 top-20 lg:hidden" href="/evenements">
-    <button class="rounded-full bg-white border-primary-color border-2 text-primary-color text-2xl lg:text-4xl"
-            style="padding: 0px 10px">
-      < Retour
-    </button>
-  </a>
-  <div class="p-5 lg:p-0 lg:w-[95%] flex flex-col items-center ml-auto mr-auto mt-10 ">
-    <div class="flex w-full relative">
-      <div class="ml-auto mr-auto">
-        <h1 class="text-primary-color text-5xl lg:text-7xl">{{ vpdEvent()?.name }}</h1>
-        <div class="bg-primary-color h-2 w-full mt-2"></div>
-      </div>
-      <a class="absolute left-0 top-5 hidden lg:block" href="/evenements">
-        <app-vpd-button>< Retour</app-vpd-button>
-      </a>
-    </div>
+  <div class="mx-auto flex w-full max-w-shell flex-col gap-10 px-shell py-10 lg:py-14">
+    <a routerLink="/evenements" class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue">
+      <app-icon name="back" [size]="13"></app-icon>
+      Tous les évènements
+    </a>
 
-    @if (vpdEvent() !== null) {
-      @if (vpdEvent()!.eventType === VpdEventEnum.Bingo) {
-        <app-bingo-event class="w-full mt-10" [vpdEvent]="vpdEvent()!"></app-bingo-event>
-      } @else if (vpdEvent()!.eventType === VpdEventEnum.Books) {
-        <app-books-event class="w-full mt-10" [vpdEvent]="vpdEvent()!"></app-books-event>
-      } @else {
-        <app-other-event class="w-full mt-10" [vpdEvent]="vpdEvent()!"></app-other-event>
-      }
+    <h1 class="font-serif text-[34px] font-medium leading-[1.02] text-ink-2 lg:text-[46px]">{{ vpdEvent()?.name }}</h1>
+
+    @if (vpdEvent()!.eventType === VpdEventEnum.Bingo) {
+      <app-bingo-event [vpdEvent]="vpdEvent()!"></app-bingo-event>
+    } @else if (vpdEvent()!.eventType === VpdEventEnum.Books) {
+      <app-books-event [vpdEvent]="vpdEvent()!"></app-books-event>
+    } @else {
+      <app-other-event [vpdEvent]="vpdEvent()!"></app-other-event>
     }
-
-    <a class="lg:hidden" href="/evenement">
-      <app-vpd-button>< Retour</app-vpd-button>
-    </a>
-    <a class="hidden lg:block  mb-20" href="/evenement">
-      <app-vpd-button>< Retour aux évènements</app-vpd-button>
-    </a>
   </div>
 }
-

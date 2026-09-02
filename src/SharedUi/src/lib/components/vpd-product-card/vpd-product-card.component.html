@@ -1,35 +1,43 @@
-<div
-  [ngClass]="{
-       'border-[#f0801c]': product().available,
-       'border-gray': !product().available
-     }"
-  class="relative flex h-[55vw] w-[45vw] flex-col justify-between rounded-sm border-2 bg-white text-[#072b45] sm:h-[200px] sm:w-[150px]">
-  <h3 class="w-full pt-2 text-center text-lg font-semibold sm:text-xl">{{ product().name }}</h3>
-  <div class="mx-auto w-fit">
-    <img [src]="product().urlImage" class="max-h-[20vw] w-auto sm:max-h-[75px]" alt="">
-  </div>
-  <p class="mx-auto pb-2 text-xl font-medium sm:text-2xl">{{ product().price | price }}</p>
-
-  @if (showPromotions()) {
-    @for (promo of product().promotions; track promo.discountedPrice) {
-      <p class="mx-auto pb-2 text-sm text-[#dc6412] sm:text-base">
-        {{ promo.discountedPrice | price }} les {{ promo.quantity }}
-      </p>
-    }
-  }
-
+<div class="relative flex h-[190px] w-[150px] flex-col overflow-hidden rounded-sm border border-line bg-white" [class.opacity-50]="!product().available">
   @if (editable()) {
-    <button
-      type="button"
-      (click)="onEdit()"
-      class="absolute bottom-1 right-1 rounded-full border-2 border-[#072b45] bg-white p-2 text-[#072b45]">
-      <img class="h-4" fetchpriority="high" src="icons/crayon.png" alt="Modifier">
-    </button>
-    <button
-      type="button"
-      (click)="onDelete()"
-      class="absolute bottom-1 left-1 rounded-full border-2 border-[#072b45] bg-white p-2 text-[#072b45]">
-      <img class="h-4" fetchpriority="high" src="icons/supprimer.png" alt="Supprimer">
-    </button>
+    <div class="absolute right-1.5 top-1.5 z-10 flex gap-1.5">
+      <button
+        type="button"
+        (click)="onEdit()"
+        aria-label="Modifier"
+        class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line bg-white text-slate-2 hover:border-blue-2 hover:text-blue">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15.7 4.7a1.9 1.9 0 0 1 2.7 2.7L8.5 17.3 4.5 18.4l1.1-4z"/>
+        </svg>
+      </button>
+      <button
+        type="button"
+        (click)="onDelete()"
+        aria-label="Supprimer"
+        class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-danger/30 bg-white text-danger hover:bg-danger-soft">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 7h14M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M7 7l1 12.5A1.5 1.5 0 0 0 9.5 21h5a1.5 1.5 0 0 0 1.5-1.5L17 7"/>
+        </svg>
+      </button>
+    </div>
   }
+
+  @if (!product().available) {
+    <span class="absolute left-1.5 top-1.5 z-10 rounded-full bg-ink-2/85 px-2 py-0.5 font-mono text-[8px] uppercase tracking-[.08em] text-white">Indisponible</span>
+  }
+
+  <div class="flex flex-1 items-center justify-center bg-paper-2 p-3">
+    <img [src]="product().urlImage" [alt]="product().name" class="max-h-[68px] w-auto object-contain">
+  </div>
+
+  <div class="flex flex-col gap-1 border-t border-line-2 px-3 py-2.5">
+    <span class="text-[13px] font-medium leading-tight text-ink-2">{{ product().name }}</span>
+    <span class="font-serif text-lg leading-none text-orange-3">{{ product().price | price }}</span>
+
+    @if (showPromotions()) {
+      @for (promo of product().promotions; track promo.discountedPrice) {
+        <span class="font-mono text-[10px] text-slate-3">{{ promo.discountedPrice | price }} les {{ promo.quantity }}</span>
+      }
+    }
+  </div>
 </div>

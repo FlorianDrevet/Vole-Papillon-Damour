@@ -19,7 +19,7 @@ Ton objectif est de realiser un merge fiable, de resoudre les conflits intellige
 2. Identifier la branche courante et refuser si c'est `main`.
 3. Verifier l'etat local (`git status --porcelain`).
 4. Recuperer l'etat distant (`git fetch origin main --prune`).
-5. Si le code graph est configure, preparer une validation detect_changes apres le merge.
+5. Si Graphify est configure, preparer une mise a jour du graphe et une requete structurelle apres le merge.
 
 ### Merge principal
 
@@ -64,4 +64,4 @@ Apres un merge :
 
 - Backend : commande de build du projet
 - Frontend (si impact) : `npm run typecheck` puis `npm run build`
-- Code graph (si configure) : detect_changes
+- Graphify (si configure) : `python -m graphify update .` puis requete structurelle ciblee

@@ -1,49 +1,42 @@
-<div class="flex flex-col items-center sm:flex-row sm:w-screen overflow-hidden sm:p-0 p-3">
-  <div class="w-full sm:w-2/3 flex mt-10 sm:mt-0">
-    <div class="sm:m-auto w-full sm:w-[85%] names relative">
-      <div class="flex flex-row w-fit ml-auto mr-auto papillon">
-        <h1 class="text-center">Vole Papillon d'Amour</h1>
-        <img class="hidden left-0 sm:block h-16 lg:h-24 mt-2" src="logos/papillon_without_back.png">
-      </div>
-      <div class="flex flex-row justify-evenly relative">
-        <img class="sm:hidden h-14 absolute left-0 top-1" src="logos/papillon_without_back.png">
-        <h1 class="ml-auto mr-auto">&</h1>
-        <img class=" sm:hidden h-20 absolute right-0 -top-1" src="logos/logo_bulle_de_poils_sans_fond.jpeg.png">
-      </div>
-      <div class="flex flex-row w-fit ml-auto mr-auto bulle">
-        <h1>Bulle de Poils</h1>
-        <img class="hidden sm:block h-20 lg:h-32" src="logos/logo_bulle_de_poils_sans_fond.jpeg.png">
-      </div>
+<div class="flex min-h-screen flex-col lg:flex-row">
+  <div class="relative flex items-center justify-center overflow-hidden bg-vpd-hero px-shell py-16 lg:w-1/2 lg:py-0">
+    <div class="absolute -right-10 top-10 h-[220px] w-[220px] rounded-full border border-cyan/30 opacity-40"></div>
+    <div class="absolute -left-16 bottom-10 h-[280px] w-[280px] rounded-full border border-cyan/20 opacity-30"></div>
+    <div class="relative flex max-w-[26ch] flex-col items-center gap-6 text-center">
+      <img class="h-16 w-16 object-contain" src="logos/papillon_without_back.png" alt="">
+      <span class="font-mono text-[11px] uppercase tracking-[.2em] text-cyan">Espace bénévoles</span>
+      <h1 class="font-serif text-[36px] font-medium leading-[1.05] text-white lg:text-[42px]">
+        Vole Papillon d'Amour <span class="italic text-mist-2">&amp;</span> Bulle de Poils
+      </h1>
     </div>
   </div>
-  <div class="w-1/3 sm:mt-0 mt-10">
-    <form [formGroup]="loginForm" class="flex flex-row sm:h-screen">
-      <div class="w-4/5 sm:w-1/3 flex flex-col items-center mt-auto mb-auto sm:ml-[20%] ml-auto mr-auto">
-        <h1 class="font-librebaskerville text-5xl">Connexion</h1>
 
-        <app-input
-          [form]="loginForm"
-          [required]="true"
-          class="mt-10"
-          controlName="username"
-          placeholder="Identifiant"
-        ></app-input>
+  <div class="flex flex-1 items-center justify-center px-shell py-16">
+    <form [formGroup]="loginForm" class="flex w-full max-w-[380px] flex-col gap-3">
+      <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
+      <h2 class="font-serif text-[30px] font-medium text-ink-2">Connexion</h2>
+      <p class="mb-4 text-[15px] text-slate-2">Réservé aux bénévoles de l'association.</p>
 
-        <app-input
-          [form]="loginForm"
-          [isPassword]="true"
-          [required]="true"
-          class="mt-10"
-          controlName="password"
-          placeholder="Mot de passe"
-        ></app-input>
+      <app-input
+        [form]="loginForm"
+        [required]="true"
+        controlName="username"
+        placeholder="Identifiant"
+      ></app-input>
 
-        @if (error()) {
-          <p class="text-red-700 font-librebaskerville text-xl mt-10 w-4/5 text-center">{{ error()?.toString() }}</p>
-        }
+      <app-input
+        [form]="loginForm"
+        [isPassword]="true"
+        [required]="true"
+        controlName="password"
+        placeholder="Mot de passe"
+      ></app-input>
 
-        <app-button-login (click)="onLoginClick()" class="mt-10">Connexion</app-button-login>
-      </div>
+      @if (error()) {
+        <p class="text-sm text-danger">{{ error()?.toString() }}</p>
+      }
+
+      <app-button-login (click)="onLoginClick()" class="mt-4">Connexion</app-button-login>
     </form>
   </div>
 </div>

@@ -23,6 +23,21 @@ import { PricesComponent } from './components/prices/prices.component';
 import { ProductComponent } from './components/prices/components/product/product.component';
 import { ConfirmationDialogComponent } from './components/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { CreateUpdateEventDialogComponent } from './components/dialogs/create-update-event-dialog/create-update-event-dialog.component';
+import { IconComponent } from './components/icon/icon.component';
+import { PillButtonComponent } from './components/pill-button/pill-button.component';
+import { IconButtonComponent } from './components/icon-button/icon-button.component';
+import { SectionEyebrowComponent } from './components/section-eyebrow/section-eyebrow.component';
+import { PageHeaderComponent } from './components/page-header/page-header.component';
+import { GroupHeadingComponent } from './components/group-heading/group-heading.component';
+
+const DESIGN_SYSTEM_COMPONENTS = [
+  IconComponent,
+  PillButtonComponent,
+  IconButtonComponent,
+  SectionEyebrowComponent,
+  PageHeaderComponent,
+  GroupHeadingComponent,
+];
 
 @NgModule({
   declarations: [
@@ -34,6 +49,7 @@ import { CreateUpdateEventDialogComponent } from './components/dialogs/create-up
     ProductComponent,
     ConfirmationDialogComponent,
     CreateUpdateEventDialogComponent,
+    ...DESIGN_SYSTEM_COMPONENTS,
   ],
   exports: [
     InputComponent,
@@ -43,6 +59,7 @@ import { CreateUpdateEventDialogComponent } from './components/dialogs/create-up
     PricesComponent,
     ProductComponent,
     DesignSystemModule,
+    ...DESIGN_SYSTEM_COMPONENTS,
   ],
   imports: [
     CommonModule,

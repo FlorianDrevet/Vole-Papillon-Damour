@@ -49,7 +49,7 @@ Lire `MEMORY.md` et les fichiers thematiques pertinents.
 
 ### 2. Charger les connaissances specialisees
 
-- Charger le skill d'intelligence code (`gitnexus-workflow` ou `graphify-corpus`)
+- Charger le skill d'intelligence code (`graphify-corpus`) si le graphe est active
 - Charger les skills techniques pertinents au diff (dotnet-patterns, angular-patterns, etc.)
 
 ### 3. Delimiter exactement le diff a reviewer

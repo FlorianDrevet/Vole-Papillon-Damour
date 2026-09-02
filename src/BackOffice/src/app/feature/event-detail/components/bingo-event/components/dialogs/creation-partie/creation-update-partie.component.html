@@ -1,12 +1,15 @@
-<mat-dialog-content class="h-fit !flex flex-col lg:!max-h-[80vh]">
-  <h1 class="font-caveatbrush text-4xl lg:text-6xl text-primary-color ml-auto mr-auto">
-    {{ updatePartie() !== null ? "Modifier une partie" : "Nouvelle Partie" }}
-  </h1>
-  <div class="h-1 bg-primary-color w-full"></div>
-  <form [formGroup]="newPartieForm" class="flex flex-col w-full mt-5">
+<mat-dialog-content class="h-fit w-[420px] max-w-full !flex flex-col gap-5 lg:!max-h-[80vh]">
+  <div class="flex flex-col gap-2">
+    <h1 class="font-serif text-2xl font-medium text-ink-2">
+      {{ updatePartie() !== null ? "Modifier une partie" : "Nouvelle partie" }}
+    </h1>
+    <div class="h-px w-full bg-line-2"></div>
+  </div>
+
+  <form [formGroup]="newPartieForm" class="flex w-full flex-col gap-4">
     <div class="w-full">
-      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Type de partie :</h1>
-      <mat-form-field class="w-full mt-3">
+      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Type de partie</h2>
+      <mat-form-field class="w-full">
         <mat-label>Type de partie</mat-label>
         <mat-select formControlName="partieType" required>
           <mat-option [value]="PartieTypeEnum.STANDARD">Standard</mat-option>
@@ -19,21 +22,19 @@
     </div>
 
     <div class="w-full">
-      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Titre :</h1>
-      <mat-form-field appearance="fill" class="w-full mt-3">
+      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Titre</h2>
+      <mat-form-field appearance="fill" class="w-full">
         <mat-label>Titre</mat-label>
-        <input class="w-full" formControlName="name"
-               matInput placeholder="Titre">
+        <input class="w-full" formControlName="name" matInput placeholder="Titre">
       </mat-form-field>
     </div>
 
     <div class="w-full">
-      <h1 class="font-caveatbrush text-3xl lg:text-4xl text-primary-color">Y a-t-il une pause après ?</h1>
+      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Y a-t-il une pause après ?</h2>
       <mat-radio-group aria-label="Y a-t-il une pause après ?" formControlName="pauseAfter">
         <mat-radio-button [value]="false">Non</mat-radio-button>
         <mat-radio-button [value]="true">Oui</mat-radio-button>
       </mat-radio-group>
-
     </div>
   </form>
 </mat-dialog-content>

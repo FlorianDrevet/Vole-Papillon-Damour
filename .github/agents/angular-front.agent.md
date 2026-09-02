@@ -30,11 +30,11 @@ Tu privilegies :
 5. Identifier l'application cible : `BackOffice` ou `Website`.
 6. Lire les fichiers proches pour reprendre les conventions exactes du slice cible.
 
-## Code Graph - Verification obligatoire avant modification transverse
+## Graphify - Verification obligatoire avant modification transverse
 
-- Avant de modifier un service partage, un guard, un modele transverse, un module de routing, ou un composant central, executer l'impact analysis si le projet est configure.
-- Si le risque remonte HIGH ou CRITICAL, signaler le blast radius avant edition.
-- Apres modification substantielle, executer detect_changes pour verifier que seuls les flux attendus sont touches.
+- Avant de modifier un service partage, un guard, un modele transverse, un module de routing, ou un composant central, lire `graphify-out/GRAPH_REPORT.md` et interroger Graphify si le graphe est configure.
+- Completer cette exploration par l'inspection directe des appelants, imports et contrats avant edition.
+- Apres modification substantielle, executer `python -m graphify update .` et rejouer la requete structurelle utile.
 
 ## Regles de travail
 

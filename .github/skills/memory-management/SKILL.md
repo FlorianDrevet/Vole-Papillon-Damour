@@ -33,7 +33,7 @@ Charger ce skill pour toute mise a jour de `MEMORY.md` ou de `.github/memory/`.
 | Auth / build / run commands | `10-*` |
 | Agents et skills | `11-agents-skills.md` |
 | Endpoints API / surfaces d'entree | `12-*` |
-| Code graph (GitNexus ou Graphify) | `13-code-graph.md` |
+| Code graph (Graphify, si active) | `07-code-graph.md` |
 | Design system / conventions UI | `14-*` |
 | Historique des mises a jour memoire | `changelog.md` |
 | Gates Dream + choix code graph | `dream-state.md` |
@@ -79,7 +79,7 @@ Aucun fichier thematique ne doit se limiter a :
 - `03-runtime-and-domain.md` ou equivalent
 - `05-data-and-storage.md` si pertinent
 - `06-agents-skills.md` ou `11-agents-skills.md`
-- `07-code-graph.md` ou `13-code-graph.md`
+- `07-code-graph.md`
 
 ### Depot moyen/riche en couches ou multi-surfaces
 
@@ -95,7 +95,7 @@ Aucun fichier thematique ne doit se limiter a :
 - `10-auth-and-build.md` si auth/build/run merite un fichier dedie
 - `11-agents-skills.md`
 - `12-api-endpoints.md` si l'API est non triviale
-- `13-code-graph.md`
+- `07-code-graph.md`
 - `14-frontend-design-system.md` si une UI structurante existe
 
 ## Verification avant de considerer la memoire suffisante
@@ -123,7 +123,7 @@ Aucun fichier thematique ne doit se limiter a :
 
 | Key | Value |
 |-----|-------|
-| `codeGraphEngine` | gitnexus / graphify / both |
+| `codeGraphEngine` | graphify / none |
 
 ## Rules
 

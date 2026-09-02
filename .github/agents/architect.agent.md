@@ -9,8 +9,8 @@ Cet agent pense avant d'agir. Il ne code jamais.
 ## Protocole obligatoire
 
 1. Lire `MEMORY.md` et les thematiques pertinentes.
-2. Charger le skill d'intelligence code si le projet l'utilise (`gitnexus-workflow` ou `graphify-corpus`).
-3. Utiliser le code graph en premier pour la comprehension structurelle.
+2. Charger le skill d'intelligence code si le projet l'utilise (`graphify-corpus`).
+3. Utiliser Graphify en premier pour la comprehension structurelle quand le graphe est disponible.
 4. Challenger la demande : pertinence, coherence, duplication, impact, dette technique, alternative.
 5. Produire un plan executable par les agents experts.
 

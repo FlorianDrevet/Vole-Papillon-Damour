@@ -1,5 +1,5 @@
 .last-value {
-  @apply bg-tertiary-color #{!important};
+  @apply bg-orange #{!important};
 }
 
 .neighbour {
@@ -7,15 +7,16 @@
 }
 
 .exited {
-  @apply bg-secondary-color #{!important};
+  @apply bg-blue-2 #{!important};
 }
 
 .exited p {
+  @apply text-white;
 }
 
 p {
-  font-size: 50px;
-  @apply text-primary-color;
+  font-size: 2.4vw;
+  @apply text-ink-2 font-mono;
 }
 
 .number {
@@ -23,17 +24,17 @@ p {
 }
 
 .top-left {
-  border-top-left-radius: 35px;
+  border-top-left-radius: 4px;
 }
 
 .top-right {
-  border-top-right-radius: 35px;
+  border-top-right-radius: 4px;
 }
 
 .bottom-left {
-  border-bottom-left-radius: 35px;
+  border-bottom-left-radius: 4px;
 }
 
 .bottom-right {
-  border-bottom-right-radius: 35px;
+  border-bottom-right-radius: 4px;
 }
