@@ -52,6 +52,12 @@ param websiteCustomDomain string
 param websiteWwwCustomDomain string
 @description('Hostname bound to the BackOffice Container App')
 param backOfficeCustomDomain string
+@description('Existing managed certificate resource name for the Website apex hostname')
+param websiteCustomDomainCertificateName string
+@description('Existing managed certificate resource name for the Website WWW hostname')
+param websiteWwwCustomDomainCertificateName string
+@description('Existing managed certificate resource name for the BackOffice hostname')
+param backOfficeCustomDomainCertificateName string
 
 // -----------------------------------------------------------------------
 // Container images
@@ -568,16 +574,19 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
     containerRuntime: containerAppWebsiteContainerRuntime
     scaling: containerAppWebsiteScaling
     ingress: containerAppWebsiteIngress
-    // Auto reuses the managed certificate already issued for the hostname. Azure
-    // generates the certificate resource name, so it must not be hard-coded here.
+    // The managed certificate resources were created by Azure with generated
+    // names. Their names are kept in the environment parameter file so an ARM
+    // PUT does not remove the existing SNI bindings.
     customDomains: [
       {
         name: websiteCustomDomain
-        bindingType: 'Auto'
+        bindingType: 'SniEnabled'
+        certificateId: resourceId(applicationResourceGroup.name, 'Microsoft.App/managedEnvironments/managedCertificates', BuildResourceName('vpd', 'cae', env), websiteCustomDomainCertificateName)
       }
       {
         name: websiteWwwCustomDomain
-        bindingType: 'Auto'
+        bindingType: 'SniEnabled'
+        certificateId: resourceId(applicationResourceGroup.name, 'Microsoft.App/managedEnvironments/managedCertificates', BuildResourceName('vpd', 'cae', env), websiteWwwCustomDomainCertificateName)
       }
     ]
     healthProbes: containerAppWebsiteHealthProbes
@@ -620,7 +629,8 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
     customDomains: [
       {
         name: backOfficeCustomDomain
-        bindingType: 'Auto'
+        bindingType: 'SniEnabled'
+        certificateId: resourceId(applicationResourceGroup.name, 'Microsoft.App/managedEnvironments/managedCertificates', BuildResourceName('vpd', 'cae', env), backOfficeCustomDomainCertificateName)
       }
     ]
     healthProbes: containerAppBackOfficeHealthProbes
