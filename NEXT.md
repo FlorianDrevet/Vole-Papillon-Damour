@@ -14,7 +14,7 @@
 | | |
 |---|---|
 | **Lot en cours** | `L0-11` — configuration Entra et préparation du déploiement 1 |
-| **Prochaine action** | Préparer et vérifier la sauvegarde/restauration de la base avant la migration 0 de l’étape 4 de `L0-11` ; aucun déploiement 2 avant ce contrôle ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Prochaine action** | Merger la PR [#18](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/18), lancer le workflow manuel de vérification point-in-time, puis trancher la valeur initiale de `CreatedAt`/`LastSeenAt` avant la migration 0 ; aucun déploiement 2 avant ces contrôles ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `chore/l0-11-entra-setup` |
@@ -71,6 +71,14 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+Le prérequis de l'étape 4 est préparé dans la PR [#18](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/18) :
+`.github/workflows/database-backup-verify.yml` restaure une copie isolée de la base depuis
+la chaîne de sauvegardes Azure SQL, lit ses tables, puis supprime la copie et sa règle
+firewall. Le dispatch est impossible tant que le workflow n'est pas sur la branche par
+défaut ; aucune restauration ni migration n'a donc encore été exécutée. La migration 0
+reste aussi en attente d'une décision sur le remplissage initial des colonnes obligatoires
+`CreatedAt` et `LastSeenAt` pour les lignes `Users` historiques.
 
 `L0-7` est terminé. `infra/parameters/main.dev.bicepparam` cible désormais Azure SQL `S1`
 (`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
@@ -245,6 +253,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — préparation de l'étape 4.** Ajout du workflow manuel `Database - verify point-in-time restore` dans la PR #18. Il restaure une copie Azure SQL isolée au niveau S1, vérifie la lecture des tables avec `DbSnapshot`, puis nettoie la copie ; aucun workflow n'a pu être lancé avant le merge car GitHub ne répertorie pas encore ce nouveau dispatch sur la branche par défaut. La migration 0 n'est pas commencée : le plan ne fixe pas la valeur initiale de `CreatedAt` et `LastSeenAt` pour les utilisateurs existants. |
 | 2026-09-03 | Windows | **L0-11 — étape 3, déploiement 1 API.** Le `ClientId` Entra `ebc68507-2c07-4bab-9448-2d6d489c6112` est désormais la valeur dev par défaut des paramètres Bicep, avec surcharge possible par `ENTRA_API_CLIENT_ID`. Le `what-if` et le déploiement `Infra - deploy` sont passés via GitHub OIDC ; `API - deploy` a construit puis activé `vpd-api:cfd43cb` sans migration de base. `GET /health` répond 200 de façon stable. Les tests backend (71) et le build `.slnx` passent ; les tests manuels Entra restent à faire. |
 | 2026-09-02 | Windows | **L0-11 — étapes 1–2, configuration Entra réelle.** Après une simulation `-WhatIf` réussie, création des cinq applications `dev` et des principaux de service, publication de `access_as_user` et attribution des consentements administrateur. AppId et `ApiClientId` sont consignés dans l’état Entra ci-dessus ; `Administration` a été attribué au compte cible et vérifié. Le rapport JSON reste dans `%TEMP%\vpd-entra-dev.json`. Aucun passage API/front/MAUI ni déploiement applicatif n’a été exécuté. |
 | 2026-09-02 | Windows | **L0-11 — préparation de l’exécution Entra.** Les scripts déclarent désormais leurs modules Graph requis, dont `Microsoft.Graph.Identity.SignIns` pour les consentements OAuth2 ; le README contient les URI retenues (`https://volepapillondamour.fr`, `http://localhost:4300`, `https://backoffice.volepapillondamour.fr`) et le compte cible. L’exécution reste à faire depuis un PC autorisé : la connexion Azure CLI locale est refusée par Conditional Access, tandis que le déploiement Bicep passe par GitHub OIDC. |
