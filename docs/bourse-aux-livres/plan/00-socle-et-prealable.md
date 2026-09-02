@@ -86,18 +86,29 @@ partagée est précisément le genre de panne qu'on diagnostique mal.
 
 ### `L0-3` — Monter Aspire à la dernière version
 
-🔧 `Aspire.AppHost.Sdk`, `Aspire.Hosting.AppHost`, `.Azure.Storage`, `.SqlServer` en
-13.4.6. **Aligner `Aspire.Hosting.NodeJs`**, resté en `9.5.2` dans le même AppHost.
-Installer la CLI Aspire à la même version.
+🔧 `Aspire.AppHost.Sdk`, `Aspire.Hosting.AppHost`, `.Azure.Storage`, `.SqlServer` et
+`.JavaScript` en `13.5.3`. `Aspire.Hosting.NodeJs` est un paquet legacy déprécié en
+`9.5.2` ; le remplacer par `Aspire.Hosting.JavaScript`, puis remplacer `AddNpmApp` par
+`AddJavaScriptApp`. Conserver les scripts `start` et les arguments des deux applications
+Angular avec `.WithRunScript("start").WithArgs(...)`. Le choix de `AddJavaScriptApp` est
+documenté dans `DT-15` ; `AddViteApp` n'est pas retenu ici, car le plan ne décide pas de
+changer le montage SSR du `Website`.
 
-✅ `dotnet build` de la solution.
+Installer la CLI Aspire à la même version et activer explicitement le bundle CLI avec
+`AspireUseCliBundle=true` dans l'AppHost. Cette option est recommandée pour les AppHosts
+existants avec Aspire 13.5 ; elle fait utiliser au tableau de bord et au plan de contrôle
+les composants fournis par la CLI correspondante.
+
+✅ `dotnet restore` puis `dotnet build` de la solution, sans `NU1605` ni avertissement de
+version.
 
 🧪 Lancer l'AppHost. **Attendu** : les quatre ressources — SQL, stockage, API, les deux
 applications Angular — démarrent, et le tableau de bord montre traces, journaux et
 mesures. C'est le socle de débogage local de `T-11` §7 ; s'il ne fonctionne pas, tout le
 reste se déboguera en production.
 
-📌 Version d'Aspire retenue, et version de la CLI.
+📌 Version d'Aspire retenue (`13.5.3`), remplacement de l'intégration JavaScript legacy,
+bundle CLI activé dans l'AppHost (`AspireUseCliBundle=true`), et version de la CLI.
 
 ### `L0-4` — Rendre le socle front reproductible
 

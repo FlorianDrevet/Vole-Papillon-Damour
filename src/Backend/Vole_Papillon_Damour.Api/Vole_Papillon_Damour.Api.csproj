@@ -10,16 +10,16 @@
   </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
-        <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.8.0" />
-        <PackageReference Include="Mapster" Version="10.0.7" />
-        <PackageReference Include="Mapster.DependencyInjection" Version="10.0.7" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
+        <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" />
+        <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" />
+        <PackageReference Include="Mapster" />
+        <PackageReference Include="Mapster.DependencyInjection" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+        <PackageReference Include="Swashbuckle.AspNetCore" />
     </ItemGroup>
 
     <ItemGroup>

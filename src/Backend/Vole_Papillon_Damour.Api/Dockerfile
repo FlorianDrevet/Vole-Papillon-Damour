@@ -4,9 +4,12 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# The Docker build context is src/Backend, so pin the SDK explicitly here to
+# the version declared in the repository's root global.json.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.203 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ["Directory.Packages.props", "."]
 COPY ["Vole_Papillon_Damour.Api/Vole_Papillon_Damour.Api.csproj", "Vole_Papillon_Damour.Api/"]
 COPY ["Vole_Papillon_Damour.Application/Vole_Papillon_Damour.Application.csproj", "Vole_Papillon_Damour.Application/"]
 COPY ["Vole_Papillon_Damour.Domain/Vole_Papillon_Damour.Domain.csproj", "Vole_Papillon_Damour.Domain/"]

@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:24.15.0-alpine AS build
 WORKDIR /src/Website
 
 COPY Website/package.json Website/package-lock.json ./
@@ -23,7 +23,7 @@ RUN sed -i "s#https://vole-papillon-damour-backend.onrender.com#${API_URL}#g" sr
  && if [ -n "${DEPLOY_HOST}" ]; then sed -i "s#__DEPLOY_HOST__#${DEPLOY_HOST}#g" angular.json; fi \
  && npm run build
 
-FROM node:22-alpine AS final
+FROM node:24.15.0-alpine AS final
 WORKDIR /app
 
 ENV NODE_ENV=production

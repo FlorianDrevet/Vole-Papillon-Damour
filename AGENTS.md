@@ -9,7 +9,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 - Web frontends: **Angular 21** apps in `src/BackOffice/` and `src/Website/`, sharing
   `src/SharedUi/` through the `@vpd/ui` tsconfig alias
 - Native client: **.NET MAUI** app in `src/MauiCashApp/`, currently `net9.0-*`, **not
-  referenced by `Vole_Papillon_Damour.sln`** — building the solution does not build it
+  referenced by `Vole_Papillon_Damour.slnx`** — building the solution does not build it
 - Tests: xUnit tests in the three `*.tests` projects; `src/BackOffice` has **no** spec
   file, so `npm test` fails there by design until tests exist
 

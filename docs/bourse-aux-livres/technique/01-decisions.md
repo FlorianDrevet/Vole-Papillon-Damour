@@ -701,7 +701,7 @@ en fixe seulement la moitié qui nous appartient — la nôtre.
 **Contexte.** Le dépôt part avec un socle presque homogène, et deux dérives déjà
 installées.
 
-| Constat | État relevé |
+| Constat | État initial relevé avant `L0-1` à `L0-3` |
 |---|---|
 | Cibles | **Neuf projets en `net10.0`**, `MauiCashApp` seul en `net9.0-android;net9.0-ios;net9.0-maccatalyst` (+ `net9.0-windows`) |
 | Aspire | **13.3.0** pour `Aspire.Hosting.AppHost`, `Azure.Storage` et `SqlServer` — mais **`Aspire.Hosting.NodeJs` en 9.5.2**, dans le même AppHost |
@@ -711,8 +711,14 @@ installées.
 **Décision.** Quatre points, tous à traiter **avant** d'ajouter le projet worker.
 
 1. **`net10.0` partout**, `MauiCashApp` comprise — en `net10.0-android` seul, voir plus bas.
-2. **Aspire à la dernière version** — 13.4.6 au moment d'écrire —, `Aspire.Hosting.NodeJs`
-   aligné sur les autres.
+2. **Aspire à la dernière version** — 13.4.6 au moment de la décision, actualisée en
+   13.5.3 par la mise à jour de `L0-3` —, avec
+   `Aspire.Hosting.JavaScript` pour l'orchestration des applications Angular. Le paquet
+   `Aspire.Hosting.NodeJs` n'est pas aligné artificiellement : il est legacy, déprécié et
+   a été renommé en `Aspire.Hosting.JavaScript` à partir d'Aspire 13.
+   L'AppHost active aussi explicitement `AspireUseCliBundle=true` : les composants DCP et
+   Dashboard utilisés localement proviennent ainsi de la CLI Aspire alignée, et non de
+   dépendances d'orchestration restaurées séparément par RID.
 3. **Gestion centralisée des paquets** par un `Directory.Packages.props` à la racine de la
    solution, `src/Backend/`.
 4. **`global.json`** épinglant la version du SDK, **et un épinglage équivalent de Node** —
@@ -774,6 +780,22 @@ au mauvais endroit.
 commande, mode détaché, blocage sur les contrôles de santé et **diffusion de la
 télémétrie** — c'est directement le socle du montage local décrit en
 [`11-observabilite.md`](11-observabilite.md) §7.
+
+**Mise en œuvre de `L0-3`.** Le AppHost utilise `Aspire.Hosting.JavaScript` en `13.5.3`
+et `AddJavaScriptApp` pour `BackOffice` et `Website`. Le script npm `start` reste le point
+d'entrée, et les options `--host`, `--port` et leurs valeurs sont transmises par
+`.WithRunScript("start").WithArgs(...)`. Cette migration suit l'intégration JavaScript
+officielle d'Aspire. `AddViteApp` n'est pas choisi dans ce lot : même si Angular s'appuie
+sur Vite pour son outillage, `Website` est actuellement configuré en SSR et le plan ne
+tranche pas une migration vers un hébergement statique. Ce choix pourra être rouvert avec
+la conception du front public si elle devient nécessaire. Le projet active
+`AspireUseCliBundle=true`, recommandé par la documentation Aspire 13.5 pour les AppHosts
+existants ; le build ne produit ainsi plus `ASPIRE010`.
+
+Références officielles consultées : [nouveautés d'Aspire 13](https://aspire.dev/whats-new/aspire-13/),
+[intégration JavaScript](https://aspire.dev/integrations/frameworks/javascript/),
+[SDK et bundle CLI](https://aspire.dev/get-started/aspire-sdk/) et
+[paquet `Aspire.Hosting.JavaScript` 13.5.3](https://www.nuget.org/packages/Aspire.Hosting.JavaScript/13.5.3).
 
 **Ce que cela ne décide pas.** Que l'intégration Azure Functions d'Aspire existe et
 fonctionne à cette version pour un worker isolé `.NET 10` reste **à vérifier** — `DT-04`

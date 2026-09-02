@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Aucun — plan écrit, revu, et arbitrages tranchés |
-| **Prochaine action** | `L0-1` — épingler .NET **et** Node ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-3` — automatisation et lancement local validés |
+| **Prochaine action** | `L0-4` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
 | **Branche** | `docs/bourse-aux-livres` |
@@ -63,9 +63,9 @@ git pull
 
 | Outil | Version | Posé ? |
 |---|---|---|
-| SDK .NET | *(à épingler en `L0-1`)* | — |
-| Node | *(à épingler en `L0-1`)* | — |
-| CLI Aspire | *(à fixer en `L0-3`)* | — |
+| SDK .NET | `10.0.203` | Oui |
+| Node | `24.15.0` | Oui |
+| CLI Aspire | `13.5.3` | Oui |
 | Azure CLI, connecté au bon abonnement | — | — |
 | PowerShell 7 + modules Microsoft.Graph | pour `infra/entra/` | — |
 | Docker | pour les images | — |
@@ -87,7 +87,17 @@ cd ../BackOffice  && npm ci
 
 ## En cours
 
-*Rien.*
+`L0-3` est terminé côté dépôt, restauration, compilation, CLI et lancement local. SQL, le
+stockage, l'API et les deux applications Angular passent à l'état prêt dans le tableau de
+bord Aspire ; les fronts répondent en HTTP 200 sur les ports 4200 et 4201. La base SQL
+locale était vide : les migrations EF Core existantes ont d'abord été appliquées
+explicitement, puis l'Infrastructure a été complétée à la demande pour appliquer
+automatiquement `Database.MigrateAsync()` au démarrage de l'API, avant sa mise en état
+prête. Le comportement a été vérifié sur une base temporaire neuve (10 migrations, dont
+`Actualities` et `AssoEvents`) et les endpoints `/actuality/latest` et `/asso-events` ont
+répondu HTTP 200. La spécification technique prévoit encore une application explicite
+en déploiement : cette divergence doit être réarbitrée avant une production à plusieurs
+réplicas, car chaque réplique tente la migration au démarrage. Reprendre en `L0-4`.
 
 > Ce qui va ici : une étape commencée et non finie, avec **l'état exact** — quel fichier,
 > quelle idée, ce qui reste. Écrire deux lignes ici coûte moins qu'une demi-heure de
@@ -210,6 +220,12 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | - | **Images Docker — runtime et restore.** Le Dockerfile API copie `Directory.Packages.props` avant le restore centralisé et épingle son SDK sur `10.0.203`, car le contexte Docker ne contient pas le `global.json` racine. Les images Website et BackOffice utilisent désormais Node `24.15.0`, aligné sur `.nvmrc` et leurs champs `engines`. |
+| 2026-09-02 | - | **L0-3 — migrations au démarrage.** À la demande, reprise du mécanisme de `infra-pipeline-editor` : `ProjectDbContext` est migré par un hosted service Infrastructure avant que l'API soit prête, avec stratégie d'exécution EF et source de trace `DbMigrations`. Une base SQL temporaire neuve a reçu les 10 migrations existantes avant l'écoute HTTP ; avec la base Aspire, `/actuality/latest` et `/asso-events` répondent HTTP 200. La spécification technique prévoit encore une migration explicite en déploiement ; décision à réarbitrer avant une production multi-réplique. |
+| 2026-09-02 | - | **L0-3 — correction du lancement frontend.** `AddJavaScriptApp` conserve la commande npm, avec `--` ajouté avant les arguments Angular. `aspire run` démarre SQL, stockage, API, Website et BackOffice ; les ports 4200 et 4201 répondent HTTP 200. |
+| 2026-09-02 | - | **Format des solutions.** Conversion des solutions backend et MAUI de `.sln` vers `.slnx`, puis suppression des anciens fichiers. La restauration et la compilation backend passent avec `.slnx`. La restauration MAUI reste bloquée localement faute du workload `maui-android`. |
+| 2026-09-02 | — | **L0-3 — mise à jour.** Alignement du SDK AppHost, des hébergements SQL/stockage/JavaScript et de la CLI Aspire en `13.5.3`, avec `AspireUseCliBundle=true` dans l'AppHost, après vérification de la disponibilité des packages. `dotnet restore` et `dotnet build` passent sur cette version ; le lancement manuel de l'AppHost reste à faire. |
+| 2026-09-02 | — | **L0-3.** Aspire, AppHost SDK et hébergements SQL/stockage/JavaScript en `13.4.6`. Remplacement de l'intégration legacy `Aspire.Hosting.NodeJs`/`AddNpmApp` par `Aspire.Hosting.JavaScript`/`AddJavaScriptApp`, avec conservation du script `start` et des arguments Angular. CLI Aspire `13.4.6`. `dotnet restore` et `dotnet build` passent ; le lancement manuel de l'AppHost reste à faire. |
 | 2026-09-02 | — | **Arbitrages.** Caisse Android seule, `R-06` ramené en `L0-11`, `Q-07` tranchée (genres depuis les sources, aucun emplacement affiché), `ENF-21` réécrit : aucun repli d'exploitation. Plan débarrassé de ses échéances, tests reformulés pour être faits seul. |
 | 2026-09-02 | — | **Revue du plan.** Lot 0 renuméroté (`L0-1` à `L0-13`) : ajout de l'épinglage Node, de la reproductibilité de `SharedUi`, de la préparation de la distribution de la caisse, et découpage de `L0-11` en trois déploiements. DNS du catalogue renvoyé au palier 2. `QT-07`/`QT-08` dotées d'un support de mesure. Lot 2 : stratégie de test des fronts en `P1-2`, `R-13`/`R-14` en `P1-5`, `R-24`/`R-30` en `P1-8`, repli d'exploitation en `P1-10`. Convention de renvoi `F-nn`/`T-nn`. **Rien d'implémenté.** |
 | 2026-09-02 | — | Revue de la doc technique (30 constats `R-nn`), décisions `DT-11` à `DT-16`, chapitre observabilité, plan d'exécution et ce fichier. **Rien d'implémenté.** |
