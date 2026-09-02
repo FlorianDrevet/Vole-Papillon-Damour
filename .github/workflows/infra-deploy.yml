@@ -102,4 +102,6 @@ jobs:
             echo "| SQL server | \`$(jq -r .sqlServerFqdn.value outputs.json)\` |"
             echo "| Storage account | \`$(jq -r .storageAccountName.value outputs.json)\` |"
             echo "| Key Vault | \`$(jq -r .keyVaultName.value outputs.json)\` |"
+            echo "| ACS Email service | \`$(jq -r .communicationEmailServiceName.value outputs.json)\` |"
+            echo "| ACS sending domain | \`$(jq -r .communicationEmailSendingDomain.value outputs.json)\` |"
           } >> "$GITHUB_STEP_SUMMARY"

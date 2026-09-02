@@ -109,6 +109,19 @@ param blobContainerEventImages string
 param blobContainerProductImages string
 
 // -----------------------------------------------------------------------
+// ACS Email
+// -----------------------------------------------------------------------
+
+@description('Name of the Azure Communication Services Email resource')
+param communicationEmailServiceName string
+
+@description('ACS data-residency geography, not an Azure region')
+param communicationEmailDataLocation string
+
+@description('Customer-managed domain used for sending email')
+param communicationEmailSendingDomain string
+
+// -----------------------------------------------------------------------
 // API application settings
 // -----------------------------------------------------------------------
 
@@ -185,6 +198,17 @@ module keyVaultModule './modules/KeyVault/keyVault.module.bicep' = {
     tags: tags
     sku: keyVaultSku
     enablePurgeProtection: keyVaultEnablePurgeProtection
+  }
+}
+
+module communicationEmailModule './modules/CommunicationEmail/communicationEmail.module.bicep' = {
+  name: 'communicationEmail'
+  scope: applicationResourceGroup
+  params: {
+    name: communicationEmailServiceName
+    dataLocation: communicationEmailDataLocation
+    sendingDomain: communicationEmailSendingDomain
+    tags: tags
   }
 }
 
@@ -588,3 +612,5 @@ output sqlServerFqdn string = sqlServerModule.outputs.fullyQualifiedDomainName
 output sqlDatabaseName string = sqlServerModule.outputs.databaseName
 output storageAccountName string = storageAccountModule.outputs.name
 output keyVaultName string = BuildResourceName('vpd', 'kv', env)
+output communicationEmailServiceName string = communicationEmailModule.outputs.name
+output communicationEmailSendingDomain string = communicationEmailModule.outputs.sendingDomain

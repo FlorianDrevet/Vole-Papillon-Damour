@@ -15,6 +15,7 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | Container App | `vpd-bo-ca-dev` | BackOffice Angular servi par nginx, port 8080 |
 | Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` | Un par application |
 | Log Analytics | `vpd-law-dev` | Workspace commun aux trois Application Insights |
+| ACS Email | `vpd-acs-email-dev` / `mail.volepapillondamour.fr` | Service d'envoi, donnees en France |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
 | Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | Serverless `GP_S_Gen5_1`, pause auto après 60 min |
 | Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images` |
@@ -40,7 +41,7 @@ des Container Apps. Le réglage est dans `parameters/main.dev.bicepparam`.
 ```bash
 for provider in Microsoft.App Microsoft.OperationalInsights Microsoft.Insights \
   Microsoft.ContainerRegistry Microsoft.Sql Microsoft.Storage \
-  Microsoft.KeyVault Microsoft.ManagedIdentity; do
+  Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Communication; do
   az provider register --namespace "$provider"
 done
 ```

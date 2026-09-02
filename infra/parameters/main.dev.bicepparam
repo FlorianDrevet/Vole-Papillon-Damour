@@ -118,6 +118,13 @@ param sqlDatabaseSku = {
 
 param storageAccountSku = 'Standard_LRS'
 
+// ACS Email is a global ARM resource; France is the data-residency geography.
+// The sending domain is customer-managed and is verified through OVH DNS after
+// the infrastructure deployment exposes its generated records.
+param communicationEmailServiceName = 'vpd-acs-email-dev'
+param communicationEmailDataLocation = 'France'
+param communicationEmailSendingDomain = 'mail.volepapillondamour.fr'
+
 // Container names must match the BlobSettings section consumed by BlobService.
 param blobContainerLotoImages = 'loto-images'
 param blobContainerActualityImages = 'actuality-images'
