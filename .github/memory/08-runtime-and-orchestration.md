@@ -39,6 +39,7 @@ The API startup wires:
 - The AppHost `AddNpmApp(..., args)` calls for BackOffice and Website must pass only frontend CLI arguments like `--host` and `--port`; do not include a leading `--` in the args array because Aspire/npm already inserts the separator and Angular CLI fails schema validation on the empty extra argument.
 - The backend itself still stays free of `Aspire.*` packages; orchestration concerns live in the AppHost only.
 - The API health endpoint is `/health`; local Azure Container Apps probe parameters target it on port `8080` for readiness, liveness, and startup. Website and BackOffice probes remain disabled until their plan specifies health endpoints.
+- The SQL deployment parameter is now the fixed `S1` Standard tier (20 DTUs, 250 GB, no automatic pause); the Azure resource has not been changed from this workspace.
 - Deployment IaC for Azure Container Apps now lives under `infra/aca/` and targets only the API, BackOffice, and Website surfaces.
 - An Infra Flow Sculptor project named `Vole-Papillon-Damour` was created on 2026-05-18 with `dev` and `prod` environments in `FranceCentral`, a shared `rg-vpd-common`, and a separate `VpdApplications` infrastructure config.
 - The Infra Flow Sculptor run created ACR and Log Analytics in the project, but ACA environment and Container App auto-creation failed server-side with a compile exception, so the repository-local Bicep template completes that missing part.
