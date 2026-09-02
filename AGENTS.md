@@ -5,10 +5,17 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 ## Solution Snapshot
 
 - Open-source repo using GitNexus for code graph intelligence
-- Backend: .NET 8 ASP.NET Core API with layered CQRS
-- Web frontends: Angular 18 apps in `src/BackOffice/` and `src/Website/`
-- Native client: .NET MAUI 9 app in `src/MauiCashApp/`
-- Tests: xUnit domain tests exist; broader automated coverage still needs to grow
+- Backend: **.NET 10** ASP.NET Core API with layered CQRS, in `src/Backend/`
+- Web frontends: **Angular 21** apps in `src/BackOffice/` and `src/Website/`, sharing
+  `src/SharedUi/` through the `@vpd/ui` tsconfig alias
+- Native client: **.NET MAUI** app in `src/MauiCashApp/`, currently `net9.0-*`, **not
+  referenced by `Vole_Papillon_Damour.sln`** — building the solution does not build it
+- Tests: xUnit tests in the three `*.tests` projects; `src/BackOffice` has **no** spec
+  file, so `npm test` fails there by design until tests exist
+
+> **Work in progress.** A new module — *bourse aux livres* — is specified, designed and
+> planned but **not implemented**. Read [`NEXT.md`](NEXT.md) before touching anything: it
+> carries the current step and everything git cannot (Azure, DNS, tenant, measurements).
 
 ## Code Graph Intelligence
 
@@ -49,9 +56,9 @@ GitNexus is the configured engine for this repository.
 | `tdd-workflow` | Mandatory TDD cycle | `.github/skills/tdd-workflow/SKILL.md` |
 | `audit-workflow` | Audit report format and findings lifecycle | `.github/skills/audit-workflow/SKILL.md` |
 | `cqrs-feature` | CQRS workflow for backend features | `.github/skills/cqrs-feature/SKILL.md` |
-| `dotnet-patterns` | .NET 8 backend conventions used in this repo | `.github/skills/dotnet-patterns/SKILL.md` |
+| `dotnet-patterns` | .NET backend conventions used in this repo | `.github/skills/dotnet-patterns/SKILL.md` |
 | `xunit-unit-testing` | xUnit, FluentAssertions, NSubstitute, AutoFixture conventions | `.github/skills/xunit-unit-testing/SKILL.md` |
-| `angular-patterns` | Angular 18 application patterns | `.github/skills/angular-patterns/SKILL.md` |
+| `angular-patterns` | Angular application patterns | `.github/skills/angular-patterns/SKILL.md` |
 | `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |
 
 ## MCP Resources

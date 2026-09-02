@@ -13,10 +13,10 @@ L'utilisateur travaille sur **Windows**. Toutes les commandes terminal doivent u
 ## Project Snapshot
 
 - Open-source repo indexed with GitNexus
-- Backend: ASP.NET Core Web API on .NET 8
+- Backend: ASP.NET Core Web API on **.NET 10**
 - Architecture: `Domain` / `Application` / `Infrastructure` / `Api` / `Contracts` with CQRS via MediatR + FluentValidation
-- Web UIs: Angular 18 apps in `src/BackOffice/` and `src/Website/`
-- Native client: .NET MAUI 9 app in `src/MauiCashApp/`
+- Web UIs: **Angular 21** apps in `src/BackOffice/` and `src/Website/`
+- Native client: .NET MAUI app in `src/MauiCashApp/` (`net9.0-*`, **outside the solution**)
 - Tests: xUnit domain tests exist; add focused tests before production edits
 
 ## Agents
@@ -47,9 +47,9 @@ L'utilisateur travaille sur **Windows**. Toutes les commandes terminal doivent u
 | `tdd-workflow` | Mandatory TDD cycle for executable code | `.github/skills/tdd-workflow/SKILL.md` |
 | `audit-workflow` | Audit workflow and findings lifecycle | `.github/skills/audit-workflow/SKILL.md` |
 | `cqrs-feature` | Backend CQRS feature workflow for this solution | `.github/skills/cqrs-feature/SKILL.md` |
-| `dotnet-patterns` | .NET 8 backend patterns used in this repository | `.github/skills/dotnet-patterns/SKILL.md` |
+| `dotnet-patterns` | .NET backend patterns used in this repository | `.github/skills/dotnet-patterns/SKILL.md` |
 | `xunit-unit-testing` | xUnit + FluentAssertions + NSubstitute conventions | `.github/skills/xunit-unit-testing/SKILL.md` |
-| `angular-patterns` | Angular 18 patterns for `BackOffice` and `Website` | `.github/skills/angular-patterns/SKILL.md` |
+| `angular-patterns` | Angular patterns for `BackOffice` and `Website` | `.github/skills/angular-patterns/SKILL.md` |
 | `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |
 
 ## Code Graph Intelligence - GitNexus
