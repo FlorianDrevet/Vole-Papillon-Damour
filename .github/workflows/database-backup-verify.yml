@@ -1,0 +1,147 @@
+name: Database - verify point-in-time restore
+
+# Manual only. Azure SQL manages the production backup chain; this workflow
+# proves that the existing chain can create a readable copy before a destructive
+# schema migration is applied.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  SQL_SERVER: vpd-sql-dev
+  SQL_DATABASE: vole-papillon-damour-db
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Azure CLI
+        run: az config set extension.use_dynamic_install=yes_without_prompt
+
+      - name: Choose a point in time and an isolated destination
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESTORE_DATABASE="vpd-sql-restore-${GITHUB_RUN_ID}"
+          RESTORE_POINT=$(date -u -d '5 minutes ago' +'%Y-%m-%dT%H:%M:%SZ')
+          {
+            echo "RESTORE_DATABASE=$RESTORE_DATABASE"
+            echo "RESTORE_POINT=$RESTORE_POINT"
+          } >> "$GITHUB_ENV"
+          echo "Restore point: $RESTORE_POINT"
+          echo "Destination database: $RESTORE_DATABASE"
+
+      - name: Restore the database from the Azure SQL backup chain
+        run: |
+          set -euo pipefail
+          az sql db restore \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "$SQL_DATABASE" \
+            --dest-name "$RESTORE_DATABASE" \
+            --edition Standard \
+            --service-objective S1 \
+            --time "$RESTORE_POINT" \
+            --output none
+
+      - name: Wait for the restored database
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..60}; do
+            STATUS=$(az sql db show \
+              --resource-group "$RESOURCE_GROUP" \
+              --server "$SQL_SERVER" \
+              --name "$RESTORE_DATABASE" \
+              --query status --output tsv 2>/dev/null || true)
+            echo "Attempt $attempt: ${STATUS:-not available}"
+            if [ "$STATUS" = "Online" ]; then
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "The restored database did not become Online in the allotted time." >&2
+          exit 1
+
+      - name: Open the restored database to this runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          az sql server firewall-rule create \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-backup-verify-${{ github.run_id }}" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP" \
+            --output none
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Read data from the restored database
+        env:
+          SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SQL_FQDN=$(az sql server show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$SQL_SERVER" \
+            --query fullyQualifiedDomainName --output tsv)
+          CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$RESTORE_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+          dotnet restore tools/DbSnapshot/DbSnapshot.csproj --nologo
+          dotnet run --project tools/DbSnapshot --configuration Release --no-restore -- \
+            export "$CONNECTION" restored-snapshot
+          TABLE_COUNT=$(find restored-snapshot/data -type f -name '*.json' | wc -l)
+          if [ "$TABLE_COUNT" -eq 0 ]; then
+            echo "The restored database contains no readable application tables." >&2
+            exit 1
+          fi
+          echo "Readable application tables: $TABLE_COUNT"
+
+      - name: Close the database to this runner
+        if: always()
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-backup-verify-${{ github.run_id }}" \
+            --output none || true
+
+      - name: Remove the isolated restored database
+        if: always()
+        run: |
+          az sql db delete \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "$RESTORE_DATABASE" \
+            --yes \
+            --output none || true
+
+      - name: Report the verification
+        if: always()
+        run: |
+          {
+            echo "### Azure SQL backup verification"
+            echo ""
+            echo "- Source: \`$SQL_DATABASE\`"
+            echo "- Restore point: \`$RESTORE_POINT\`"
+            echo "- Isolated destination: \`$RESTORE_DATABASE\`"
+            echo "- The destination is removed by the cleanup step."
+          } >> "$GITHUB_STEP_SUMMARY"
