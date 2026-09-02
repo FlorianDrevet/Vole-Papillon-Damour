@@ -2,6 +2,8 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Actualisé la section `/maxence/vie-quotidienne/soins-quotidiens` sur l’alimentation parentérale : durées, poches sur mesure, aménagement de la chambre et protocole stérile, avec repères visuels et test de contenu |
+| 2026-09-02 | Enrichi la fiche Website `/maxence/maladies/hirschsprung` avec le nouveau texte explicatif, la forme étagée de Maxence et une mise en page éditoriale responsive, avec un test de contenu dédié |
 | 2026-09-02 | Configured the dev SQL parameter for the decision's fixed Azure SQL `S1` tier (Standard, 20 DTUs, 250 GB, no automatic pause), aligned the `SqlServer` SKU type descriptions, and verified both Bicep files compile; no Azure deployment was performed. |
 | 2026-09-02 | Added the API `/health` endpoint with an Infrastructure database connectivity check, configured API readiness/liveness/startup probe parameters on `/health:8080`, and verified the endpoint locally through Aspire plus Bicep compilation. |
 | 2026-09-02 | Added `.github/workflows/ci.yml` for push and pull-request validation of the backend solution/tests, Android MAUI target, and both Angular builds; the first GitHub run remains pending because workflows were not launched in this session. |
