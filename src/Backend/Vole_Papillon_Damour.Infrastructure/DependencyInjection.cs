@@ -1,11 +1,15 @@
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Identity.Web;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Authentication;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -20,6 +24,9 @@ namespace Vole_Papillon_Damour.Infrastructure;
 
 public static class DependencyInjection
 {
+    private const string CompositeAuthenticationScheme = "Bearer";
+    private const string EntraAuthenticationScheme = "Entra";
+    private const string LegacyAuthenticationScheme = "LegacyJwt";
     private const string AzureBlobStorageConnectionStringName = "AzureBlobStorageConnectionString";
     private const string ProjectDatabaseConnectionStringName = "ProjectDatabase";
 
@@ -94,8 +101,19 @@ public static class DependencyInjection
         services.AddSingleton(Options.Create(jwtSettings));
         services.AddSingleton<IJwtGenerator, JwtGenerator>();
         services.AddSingleton<IHashPassword, HashPassword>();
-        services.AddAuthentication(defaultScheme: JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+
+        services
+            .AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = CompositeAuthenticationScheme;
+                options.DefaultChallengeScheme = CompositeAuthenticationScheme;
+                options.DefaultScheme = CompositeAuthenticationScheme;
+            })
+            .AddPolicyScheme(CompositeAuthenticationScheme, null, options =>
+            {
+                options.ForwardDefaultSelector = SelectAuthenticationScheme;
+            })
+            .AddJwtBearer(LegacyAuthenticationScheme, options => options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -106,7 +124,44 @@ public static class DependencyInjection
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(jwtSettings.Secret)
                     ),
-            });
+                RoleClaimType = "role"
+            })
+            .AddMicrosoftIdentityWebApi(
+                builderConfiguration.GetSection("AzureAd"),
+                EntraAuthenticationScheme);
+
+        services.PostConfigure<JwtBearerOptions>(EntraAuthenticationScheme, options =>
+        {
+            options.TokenValidationParameters.RoleClaimType = "roles";
+        });
+
         return services;
+    }
+
+    private static string SelectAuthenticationScheme(HttpContext context)
+    {
+        var authorization = context.Request.Headers.Authorization.ToString();
+        if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return EntraAuthenticationScheme;
+        }
+
+        var token = authorization["Bearer ".Length..].Trim();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return EntraAuthenticationScheme;
+        }
+
+        try
+        {
+            var issuer = new JwtSecurityTokenHandler().ReadJwtToken(token).Issuer;
+            return issuer.Contains(".ciamlogin.com", StringComparison.OrdinalIgnoreCase)
+                ? EntraAuthenticationScheme
+                : LegacyAuthenticationScheme;
+        }
+        catch (ArgumentException)
+        {
+            return LegacyAuthenticationScheme;
+        }
     }
 }

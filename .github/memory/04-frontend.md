@@ -64,7 +64,7 @@ Verified feature roots:
 
 ## MAUI Client
 
-`src/MauiCashApp/` is a .NET MAUI 9 application with:
+`src/MauiCashApp/` is an Android-only .NET MAUI 9 application targeting `net9.0-android` with:
 
 - MVVM Toolkit (`CommunityToolkit.Mvvm`)
 - Refit for API access
