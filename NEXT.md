@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-3` — automatisation terminée, lancement manuel de l'AppHost restant |
-| **Prochaine action** | 🧪 `L0-3` — lancer l'AppHost, puis `L0-4` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-3` — automatisation et lancement local validés |
+| **Prochaine action** | `L0-4` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
 | **Branche** | `docs/bourse-aux-livres` |
@@ -87,9 +87,12 @@ cd ../BackOffice  && npm ci
 
 ## En cours
 
-`L0-3` est terminé côté dépôt, restauration, compilation et CLI. Il reste à lancer
-manuellement l'AppHost et à confirmer que SQL, le stockage, l'API et les deux applications
-Angular démarrent dans le tableau de bord Aspire. Après ce contrôle, reprendre en `L0-4`.
+`L0-3` est terminé côté dépôt, restauration, compilation, CLI et lancement local. SQL, le
+stockage, l'API et les deux applications Angular passent à l'état prêt dans le tableau de
+bord Aspire ; les fronts répondent en HTTP 200 sur les ports 4200 et 4201. La base SQL
+locale était vide : les migrations EF Core existantes ont été appliquées explicitement,
+conformément à la règle de ne pas migrer au démarrage de l'API, puis les endpoints
+`/actuality/latest` et `/asso-events` ont répondu HTTP 200. Reprendre en `L0-4`.
 
 > Ce qui va ici : une étape commencée et non finie, avec **l'état exact** — quel fichier,
 > quelle idée, ce qui reste. Écrire deux lignes ici coûte moins qu'une demi-heure de
@@ -212,6 +215,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | - | **L0-3 — schéma SQL local.** La base créée par Aspire était vide. Application explicite des migrations EF Core existantes avec `dotnet ef database update`, puis redémarrage de l'API : `/actuality/latest` et `/asso-events` répondent HTTP 200. Aucun lancement automatique des migrations n'a été ajouté. |
+| 2026-09-02 | - | **L0-3 — correction du lancement frontend.** `AddJavaScriptApp` conserve la commande npm, avec `--` ajouté avant les arguments Angular. `aspire run` démarre SQL, stockage, API, Website et BackOffice ; les ports 4200 et 4201 répondent HTTP 200. |
 | 2026-09-02 | - | **Format des solutions.** Conversion des solutions backend et MAUI de `.sln` vers `.slnx`, puis suppression des anciens fichiers. La restauration et la compilation backend passent avec `.slnx`. La restauration MAUI reste bloquée localement faute du workload `maui-android`. |
 | 2026-09-02 | — | **L0-3 — mise à jour.** Alignement du SDK AppHost, des hébergements SQL/stockage/JavaScript et de la CLI Aspire en `13.5.3`, avec `AspireUseCliBundle=true` dans l'AppHost, après vérification de la disponibilité des packages. `dotnet restore` et `dotnet build` passent sur cette version ; le lancement manuel de l'AppHost reste à faire. |
 | 2026-09-02 | — | **L0-3.** Aspire, AppHost SDK et hébergements SQL/stockage/JavaScript en `13.4.6`. Remplacement de l'intégration legacy `Aspire.Hosting.NodeJs`/`AddNpmApp` par `Aspire.Hosting.JavaScript`/`AddJavaScriptApp`, avec conservation du script `start` et des arguments Angular. CLI Aspire `13.4.6`. `dotnet restore` et `dotnet build` passent ; le lancement manuel de l'AppHost reste à faire. |

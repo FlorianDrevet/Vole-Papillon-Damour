@@ -35,13 +35,13 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
 
 builder.AddJavaScriptApp(BackOfficeResourceName, GetFrontendDirectory("BackOffice"))
     .WithRunScript("start")
-    .WithArgs("--host", "0.0.0.0", "--port", BackOfficePort.ToString())
+    .WithArgs("--", "--host", "0.0.0.0", "--port", BackOfficePort.ToString())
     .WithHttpEndpoint(targetPort: BackOfficePort, port: BackOfficePort, name: DefaultHttpEndpointName, isProxied: false)
     .WaitFor(api);
 
 builder.AddJavaScriptApp(WebsiteResourceName, GetFrontendDirectory("Website"))
     .WithRunScript("start")
-    .WithArgs("--host", "0.0.0.0", "--port", WebsitePort.ToString())
+    .WithArgs("--", "--host", "0.0.0.0", "--port", WebsitePort.ToString())
     .WithHttpEndpoint(targetPort: WebsitePort, port: WebsitePort, name: DefaultHttpEndpointName, isProxied: false)
     .WaitFor(api);
 
