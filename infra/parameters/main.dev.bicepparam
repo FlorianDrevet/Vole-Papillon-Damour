@@ -24,16 +24,16 @@ param containerAppApiIngress = {
 }
 param containerAppApiHealthProbes = {
   readiness: {
-    path: ''
-    port: 0
+    path: '/health'
+    port: 8080
   }
   liveness: {
-    path: ''
-    port: 0
+    path: '/health'
+    port: 8080
   }
   startup: {
-    path: ''
-    port: 0
+    path: '/health'
+    port: 8080
   }
 }
 

@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-3` — automatisation et lancement local validés |
-| **Prochaine action** | `L0-4` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-6` — santé de l'API et sondes posées, PR #6 en attente de validation |
+| **Prochaine action** | `L0-7` — passer SQL en S1 après fusion de cette PR ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `docs/bourse-aux-livres` |
+| **Branche** | `feature/l0-4-front-reproductible` |
 
 ---
 
@@ -70,34 +70,21 @@ git pull
 | PowerShell 7 + modules Microsoft.Graph | pour `infra/entra/` | — |
 | Docker | pour les images | — |
 
-**Le piège du front, tant que `L0-4` n'est pas faite.** `src/SharedUi` n'est pas un paquet :
-c'est un dossier de sources, résolu par un alias `@vpd/ui` et par un lien
-`src/SharedUi/node_modules` → `src/Website/node_modules` que crée
-`src/Website/scripts/link-shared-ui.mjs` en `prebuild`. Conséquence sur un clone neuf :
-
-```bash
-cd src/Website    && npm ci   # obligatoire EN PREMIER, même si l'on ne touche qu'au BackOffice
-cd ../BackOffice  && npm ci
-```
-
-`BackOffice` n'a pas ce script et ne compilera pas sans l'installation du `Website`.
-`L0-4` supprime cette contrainte ; jusque-là, elle est à connaître.
-
----
-
 ## En cours
 
-`L0-3` est terminé côté dépôt, restauration, compilation, CLI et lancement local. SQL, le
-stockage, l'API et les deux applications Angular passent à l'état prêt dans le tableau de
-bord Aspire ; les fronts répondent en HTTP 200 sur les ports 4200 et 4201. La base SQL
-locale était vide : les migrations EF Core existantes ont d'abord été appliquées
-explicitement, puis l'Infrastructure a été complétée à la demande pour appliquer
-automatiquement `Database.MigrateAsync()` au démarrage de l'API, avant sa mise en état
-prête. Le comportement a été vérifié sur une base temporaire neuve (10 migrations, dont
-`Actualities` et `AssoEvents`) et les endpoints `/actuality/latest` et `/asso-events` ont
-répondu HTTP 200. La spécification technique prévoit encore une application explicite
-en déploiement : cette divergence doit être réarbitrée avant une production à plusieurs
-réplicas, car chaque réplique tente la migration au démarrage. Reprendre en `L0-4`.
+`L0-6` est implémenté côté dépôt. L'API expose `GET /health` avec un contrôle de connexion à
+la base dans Infrastructure ; les trois sondes API de `infra/parameters/main.dev.bicepparam`
+ciblent `/health` sur le port `8080`. Les sondes Website et BackOffice restent désactivées,
+car le plan ne spécifie pas de endpoint de santé pour ces applications. Aspire a confirmé
+localement `https://localhost:7246/health` en `200 OK` avec `Healthy`, et le Bicep principal
+ainsi que les paramètres compilent. Aucun déploiement Azure n'a été effectué.
+
+`L0-5` est implémenté avec `.github/workflows/ci.yml`, déclenché sur `push` et `pull_request`.
+Il restaure et compile la solution backend `.slnx`, exécute les trois projets de tests,
+installe le workload MAUI Android et compile `net9.0-android`, puis installe et construit les
+deux applications Angular avec la version de Node de `.nvmrc`. Localement, le backend et les
+fronts passent ; la compilation MAUI reste bloquée sur cette machine par l'absence du SDK
+Android natif (`XA5300`). La validation GitHub de la PR est en cours.
 
 > Ce qui va ici : une étape commencée et non finie, avec **l'état exact** — quel fichier,
 > quelle idée, ce qui reste. Écrire deux lignes ici coûte moins qu'une demi-heure de
@@ -133,7 +120,7 @@ dans Azure sans être déductible du dépôt.
 | Ressource | État | Depuis |
 |---|---|---|
 | Base SQL | `GP_S_Gen5_1` serverless, pause auto 60 min — **à passer en `S1` (`L0-7`)** | — |
-| Sondes de santé | Désactivées (chemins vides, ports à 0) — **à poser (`L0-6`)** | — |
+| Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
 | Locataire Entra External ID | **Pas créé** | — |
 | ACS Email | **Pas créé** | — |
@@ -220,6 +207,9 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | - | **L0-6 — points de santé et sondes.** Ajout de `GET /health` avec contrôle de connexion SQL, test de l'enregistrement du contrôle, sondes API readiness/liveness/startup sur `/health:8080` dans les paramètres dev, et validation locale Aspire (`200 OK`, `Healthy`). La solution backend restaure, compile et passe ses 70 tests ; les deux fichiers Bicep compilent. Aucun déploiement Azure ni test manuel de révision cassée n'a été effectué. |
+| 2026-09-02 | - | **L0-5 — CI de compilation et tests.** Ajout de `.github/workflows/ci.yml` sur `push` et `pull_request` : SDK .NET `10.0.203`, solution backend `.slnx`, tests Domain/Application/Infrastructure, workload et build MAUI Android, puis `npm ci`/`npm run build` pour BackOffice et Website avec `.nvmrc`. Validation locale backend et fronts réussie ; le workflow GitHub n'a pas été lancé, et la caisse reste localement bloquée par l'absence du SDK Android natif. |
+| 2026-09-02 | - | **L0-4 — socle front reproductible.** Déplacement de `link-shared-ui.mjs` dans `src/SharedUi/scripts`, ajout des hooks `prebuild`/`prestart` dans Website et BackOffice, et résolution du lien vers les `node_modules` de l'application appelante. Test Node ciblé : 3/3 ; `npm ci` puis `npm run build` réussissent dans BackOffice seul, et Website compile également. |
 | 2026-09-02 | - | **Images Docker — runtime et restore.** Le Dockerfile API copie `Directory.Packages.props` avant le restore centralisé et épingle son SDK sur `10.0.203`, car le contexte Docker ne contient pas le `global.json` racine. Les images Website et BackOffice utilisent désormais Node `24.15.0`, aligné sur `.nvmrc` et leurs champs `engines`. |
 | 2026-09-02 | - | **L0-3 — migrations au démarrage.** À la demande, reprise du mécanisme de `infra-pipeline-editor` : `ProjectDbContext` est migré par un hosted service Infrastructure avant que l'API soit prête, avec stratégie d'exécution EF et source de trace `DbMigrations`. Une base SQL temporaire neuve a reçu les 10 migrations existantes avant l'écoute HTTP ; avec la base Aspire, `/actuality/latest` et `/asso-events` répondent HTTP 200. La spécification technique prévoit encore une migration explicite en déploiement ; décision à réarbitrer avant une production multi-réplique. |
 | 2026-09-02 | - | **L0-3 — correction du lancement frontend.** `AddJavaScriptApp` conserve la commande npm, avec `--` ajouté avant les arguments Angular. `aspire run` démarre SQL, stockage, API, Website et BackOffice ; les ports 4200 et 4201 répondent HTTP 200. |
