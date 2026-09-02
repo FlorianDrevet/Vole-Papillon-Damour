@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0-android</TargetFramework>
+        <TargetFramework>net10.0-android</TargetFramework>
 
         <OutputType>Exe</OutputType>
         <RootNamespace>ShopAppVpd</RootNamespace>
@@ -53,6 +53,7 @@
         <PackageReference Include="ErrorOr" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+        <PackageReference Include="Microsoft.Identity.Client" />
         <PackageReference Include="Microsoft.Maui.Controls" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
         <PackageReference Include="Refit" />

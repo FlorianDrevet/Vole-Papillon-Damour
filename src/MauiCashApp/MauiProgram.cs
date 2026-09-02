@@ -35,13 +35,16 @@ public static class MauiProgram
         
         builder.Services.AddSingleton<ProductDatabase>();
         builder.Services.AddTransient<IProductService, ProductService>();
+        builder.Services.AddSingleton<IAuthService, MsalAuthService>();
+        builder.Services.AddTransient<AuthHandler>();
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<MainPage>();
         
         var vpdSettings = config.GetSection("VpdSettings");
         builder.Services
             .AddRefitClient<IVpdApi>()
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(vpdSettings.GetValue<string>(nameof(VpdSettings.BaseUrl)) ?? throw new InvalidOperationException()));
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(vpdSettings.GetValue<string>(nameof(VpdSettings.BaseUrl)) ?? throw new InvalidOperationException()))
+            .AddHttpMessageHandler<AuthHandler>();
 
 #if DEBUG
         builder.Logging.AddDebug();

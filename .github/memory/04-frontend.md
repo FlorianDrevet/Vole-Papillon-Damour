@@ -68,12 +68,15 @@ Verified feature roots:
 
 ## MAUI Client
 
-`src/MauiCashApp/` is an Android-only .NET MAUI 9 application targeting `net9.0-android` with:
+`src/MauiCashApp/` is an Android-only .NET MAUI 10 application targeting `net10.0-android` with:
 
 - MVVM Toolkit (`CommunityToolkit.Mvvm`)
 - Refit for API access
 - SQLite for local storage
 - embedded `appsettings.json` to configure the backend base URL
+- MSAL.NET 4.88.0 with silent-first token acquisition and the Android redirect
+  `msal427c90de-bf59-4b01-af63-dc0799248496://auth`
+- an `AuthHandler` that adds the acquired Entra API token to Refit requests
 - a currently narrow Refit surface: `IVpdApi.GetProductsAsync()` calls `GET /product`
 
 The MAUI cash surface intentionally continues to use the full `/product` projection, so products hidden from Website remain available at the till.
@@ -89,7 +92,7 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 
 - `npm run start`, `npm run build`, and `npm test` in each Angular app
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
-- `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net9.0-android` for the MAUI client
+- `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
 - As of 2026-09-03, `npm ci` followed by `npm test -- --watch=false --browsers=ChromeHeadless`
   passes with 5 BackOffice tests, and production/development `npm run build` both pass in

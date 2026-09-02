@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `L0-11` — préparation du déploiement 2 (migration de base, `BackOffice` et caisse) |
-| **Prochaine action** | Relire/merger la PR `BackOffice` MSAL, puis préparer la migration MSAL de la caisse ; le déploiement 2 restera à faire après validation des deux clients ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Prochaine action** | Relire/merger la PR MAUI MSAL, puis préparer le déploiement 2 et valider la caisse sur un appareil réel ; le déploiement 3 restera à faire après redistribution ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `feat/l0-11-backoffice-msal` |
+| **Branche** | `feat/l0-11-maui-msal` |
 
 ---
 
@@ -30,6 +30,7 @@ plus de réponse ; ceci est un rappel, le détail est dans les documents cités.
 |---|---|
 | Caisse | **Android seul**, téléphones et tablettes. iOS, Mac Catalyst et Windows retirés du `.csproj`. APK signé, posé à la main sur chaque appareil (`L0-10`) |
 | Authentification BackOffice | **MSAL Angular `5.3.1` avec MSAL Browser `5.20.0`**, dernière ligne compatible avec Angular 21. Les routes utilisent `MsalGuard`, la connexion passe par le redirect Entra et Axios acquiert silencieusement la portée API via un adaptateur dédié ; `MsalInterceptor` n'est pas utilisé car le BackOffice utilise Axios (`L0-11`) |
+| Authentification caisse | **MSAL.NET `4.88.0`**, sans broker pour cette première livraison. `MauiCashApp` acquiert silencieusement la portée API puis utilise le parcours interactif Android avec `msal<clientId>://auth` (`L0-11`) |
 | Suppression du compte dans le locataire | **Au préalable d'identité** (`L0-11`, étape 8), pendant qu'il n'y a encore personne à supprimer |
 | Genres et classement | **Depuis les sources bibliographiques**, et le site n'indique **jamais** où se trouve un livre dans le local (`Q-07`) |
 | Repli d'exploitation | **Aucun.** Une panne fait vendre sans enregistrer, rien n'est rattrapé. Le hors-ligne de la caisse devient la seule protection (`ENF-21`, `P1-10`) |
@@ -108,7 +109,7 @@ vérification du domaine d'envoi reste à relever après propagation DNS. Le cho
 DMARC `p=none`. Aucun e-mail applicatif n'est envoyé avant `P3`.
 
 `L0-10` est en cours avec l'option A : `MauiCashApp` cible désormais uniquement
-`net9.0-android`; la montée vers `net10.0-android` reste regroupée avec `L0-11` et MSAL.
+`net10.0-android`, montée regroupée avec `L0-11` et MSAL comme prévu par `DT-15`.
 Le mode actuel est le build direct de l'application. Aucun magasin de clés n'existe et aucun
 keystore n'a été créé. La restauration Android passe, mais le build local est bloqué par
 l'absence de SDK Android détectable (`XA5300`). La publication signée et la redistribution
@@ -131,12 +132,16 @@ Actions `Infra - deploy #20` a injecté `AzureAd__ClientId` et `AzureAd__Audienc
 `API - deploy #7` a construit et déployé l’image `vpd-api:cfd43cb` sans migration de base ;
 `GET /health` répond 200. Les déploiements Azure de cette branche passent par GitHub OIDC.
 La migration de base 0 est fusionnée dans `main` mais n'est pas encore appliquée. Le
-BackOffice est maintenant migré sur la branche `feat/l0-11-backoffice-msal` : les anciens
+BackOffice est maintenant migré sur `main` après le merge de la PR #20 : les anciens
 formulaires username/mot de passe, le cookie JWT, `@auth0/angular-jwt` et
 `ngx-cookie-service` sont retirés ; les identifiants publics MSAL sont configurés dans les
 environnements et le jeton d'API est ajouté aux requêtes Axios après acquisition silencieuse.
-La PR de cette étape n'est pas encore fusionnée et aucun déploiement applicatif n'a été
-effectué. Pour un essai local, l'enregistrement SPA `vpd-backoffice-dev` doit contenir
+La caisse est en cours sur `feat/l0-11-maui-msal` : `Microsoft.Identity.Client` `4.88.0`,
+acquisition silencieuse puis interactive de la portée `access_as_user`, handler Bearer sur
+Refit et redirection Android `msal427c90de-bf59-4b01-af63-dc0799248496://auth`. Le test ciblé
+du handler passe (1/1) et la restauration MAUI passe. La compilation Android locale reste
+bloquée par l'absence du SDK Android (`XA5300`) ; aucun déploiement 2 n'a été effectué.
+Pour un essai local, l'enregistrement SPA `vpd-backoffice-dev` doit contenir
 `http://localhost:4200` en plus de l'URI de production ; cet état n'est pas confirmé par le
 rapport Entra conservé ci-dessus.
 
@@ -270,6 +275,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — caisse MSAL.** Après le merge de la PR #20 dans `main`, création de `feat/l0-11-maui-msal`. Passage de `MauiCashApp` à `net10.0-android` et ajout de `Microsoft.Identity.Client` `4.88.0`, avec `MsalAuthService` en silent-first, handler Bearer Refit et callback Android `msal427c90de-bf59-4b01-af63-dc0799248496://auth`. Le test ciblé passe (1/1) et `dotnet restore` passe ; `dotnet build` reste bloqué localement par `XA5300` (SDK Android absent). Aucun appareil ni déploiement n'a été modifié ; aucun keystore n'existe. |
 | 2026-09-03 | Windows | **L0-11 — BackOffice MSAL.** Après le merge de la migration 0 dans `main`, création de la branche `feat/l0-11-backoffice-msal`. Migration du login vers le redirect MSAL Angular (`5.3.1`) avec MSAL Browser (`5.20.0`), remplacement du guard maison par `MsalGuard`, sélection de l'identité active au démarrage et acquisition silencieuse de la portée API pour Axios. Suppression du cookie JWT, des services/façades d'authentification maison et des dépendances `@auth0/angular-jwt`/`ngx-cookie-service`. `npm ci`, les 5 tests ChromeHeadless et les builds production/développement passent ; seules des alertes Angular préexistantes restent. Aucun déploiement n'a été effectué. |
 | 2026-09-03 | Windows | **L0-11 — migration 0 préparée.** La décision est prise de perdre les utilisateurs legacy existants et de les recréer dans Entra ; le backup/restauration vérifié par le run `33690143650` couvre ce choix. La migration `20260902223842_MigrateUsersToEntraIdentity` supprime d'abord les lignes `Users`, retire `Password`, `Salt` et `Role`, ajoute les colonnes de projection Entra et l'index `ExternalId`. Elle est volontairement non réversible et n'a pas été appliquée à la base. Les tests backend (71) et le build `.slnx` passent ; les avertissements préexistants sont listés dans la sortie de validation. |
 | 2026-09-03 | Windows | **L0-11 — prérequis de l'étape 4 vérifié.** Après le merge de la PR #18, le run GitHub Actions `Database - verify point-in-time restore #33690143650` a restauré un point-in-time Azure SQL dans `vpd-sql-restore-33690143650`, attendu son état `Online`, puis lu 10 tables avec `DbSnapshot`, dont `dbo.Users` (2 lignes). Le firewall et la base temporaire ont été supprimés. La migration 0 n'est pas commencée : le plan ne fixe pas la valeur initiale de `CreatedAt` et `LastSeenAt` pour les utilisateurs existants. |
