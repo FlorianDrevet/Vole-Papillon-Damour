@@ -208,6 +208,11 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     name: BuildResourceName('vpd', 'cae', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    managedCertificateNames: [
+      websiteCustomDomainCertificateName
+      websiteWwwCustomDomainCertificateName
+      backOfficeCustomDomainCertificateName
+    ]
   }
 }
 
@@ -581,12 +586,12 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
       {
         name: websiteCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: resourceId(applicationResourceGroup.name, 'Microsoft.App/managedEnvironments/managedCertificates', BuildResourceName('vpd', 'cae', env), websiteCustomDomainCertificateName)
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[0]
       }
       {
         name: websiteWwwCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: resourceId(applicationResourceGroup.name, 'Microsoft.App/managedEnvironments/managedCertificates', BuildResourceName('vpd', 'cae', env), websiteWwwCustomDomainCertificateName)
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[1]
       }
     ]
     healthProbes: containerAppWebsiteHealthProbes
@@ -630,7 +635,7 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
       {
         name: backOfficeCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: resourceId(applicationResourceGroup.name, 'Microsoft.App/managedEnvironments/managedCertificates', BuildResourceName('vpd', 'cae', env), backOfficeCustomDomainCertificateName)
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[2]
       }
     ]
     healthProbes: containerAppBackOfficeHealthProbes
