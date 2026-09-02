@@ -11,7 +11,7 @@
 
 | Key | Value |
 |-----|-------|
-| `codeGraphEngine` | gitnexus |
+| `codeGraphEngine` | graphify |
 
 ## Rules
 

@@ -42,4 +42,4 @@ The backend and contracts expose features around:
 - The OCR bingo-card analysis slice was removed from the backend and BackOffice admin UI because automatic loto-card reading is no longer allowed by the business rules.
 - The backend projects remain free of `Aspire.*` packages; local orchestration lives only in the AppHost project.
 - No CI pipeline file was detected during bootstrap, so local validation commands matter.
-- GitNexus is the selected and documented code graph engine for this open-source repository.
+- A Graphify knowledge graph is available for documentation and corpus-level orientation.

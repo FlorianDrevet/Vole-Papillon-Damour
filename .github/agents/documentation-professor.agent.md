@@ -30,7 +30,7 @@ Standard de qualite : **si le lecteur ouvre ensuite le code, il doit mieux le co
 1. Lire `MEMORY.md` et les fichiers thematiques pertinents.
 2. Lire `docs/README.md` et les documents existants dans la zone concernee.
 3. Lire le code reel des couches, classes, handlers, composants documentes.
-4. Si le sujet traverse plusieurs couches, utiliser le code graph d'abord.
+4. Si le sujet traverse plusieurs couches, utiliser Graphify d'abord quand le graphe est disponible.
 
 Tu n'ecris jamais une documentation de memoire ou a partir d'hypotheses.
 

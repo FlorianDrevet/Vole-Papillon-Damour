@@ -51,10 +51,11 @@ Lire `MEMORY.md` et les fichiers thematiques pertinents.
 Extraire les findings a corriger avec severite, fichiers cibles et validation attendue.
 Traiter dans l'ordre : `BLOCKER` → `HIGH` → `MEDIUM`.
 
-### 3. Analyser l'impact avant modification
+### 3. Analyser le contexte structurel avant modification
 
-Avant toute modification d'un symbole partage, executer l'impact analysis.
-Si le risque est HIGH ou CRITICAL, alerter l'utilisateur.
+Avant toute modification d'un symbole partage, lire `graphify-out/GRAPH_REPORT.md`
+et utiliser une requete Graphify ou MCP si le graphe est configure. Completer par
+l'inspection directe des appelants, imports et contrats.
 
 ### 4. Charger les expertises techniques necessaires
 

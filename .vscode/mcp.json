@@ -1,5 +1,14 @@
 {
   "servers": {
+    "graphify": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "graphify.serve",
+        "${workspaceFolder}/graphify-out/graph.json"
+      ]
+    },
     "infraflowsculptor-mcp": {
 			"type": "http",
 			"url": "http://127.0.0.1:5258/mcp",
@@ -7,15 +16,6 @@
 				"Authorization": "Bearer ${input:ifs_pat}"
 			}
 		},
-    "gitnexus": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "gitnexus@latest",
-        "mcp"
-      ]
-    },
     "io.github.github/github-mcp-server": {
       "type": "stdio",
       "command": "docker",

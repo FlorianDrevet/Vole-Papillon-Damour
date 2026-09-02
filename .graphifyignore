@@ -1,0 +1,25 @@
+# Repository metadata and Graphify's own generated output
+.git/
+graphify-out/
+
+# Dependencies and build artifacts
+**/node_modules/
+**/bin/
+**/obj/
+**/dist/
+**/build/
+**/out/
+**/.next/
+**/.nuxt/
+**/.angular/
+**/.idea/
+**/.vs/
+**/coverage/
+**/test-results/
+
+# Generated and binary files that do not add corpus context
+**/*.dll
+**/*.exe
+**/*.pdb
+**/*.zip
+**/*.map

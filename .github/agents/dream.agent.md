@@ -38,7 +38,7 @@ Trouver les informations nouvelles a persister. Sources par priorite :
 
 1. **Changelog recent** - Lire `.github/memory/changelog.md`, identifier les entrees depuis le dernier dream
 2. **Fichiers modifies recemment** - `git log --since="7 days ago" --name-only --pretty=format:"" | Sort-Object -Unique`
-3. **Code graph detect_changes** - Si GitNexus est configure, executer `gitnexus_detect_changes({scope: "compare", base_ref: "main"})`. Si Graphify, lire `graphify-out/GRAPH_REPORT.md` pour les changements structurels.
+3. **Graphify** - Si configure, lire `graphify-out/GRAPH_REPORT.md` pour les changements structurels.
 4. **Conversations recentes** - Si des informations en `/memories/session/` existent, les integrer
 
 ### Phase 3 - Consolidate
@@ -50,7 +50,7 @@ Pour chaque signal trouve :
 3. **Supprimer les faits contredits** - si une nouvelle info contredit une ancienne, supprimer l'ancienne
 4. **Fusionner les doublons** - ne pas laisser la meme info dans deux fichiers
 5. **Mettre a jour `MEMORY.md`** (l'index) si un nouveau fichier thematique a ete cree
-6. **Mettre a jour le fichier code-graph** - Si le code graph a revele de nouveaux clusters importants, flows critiques, ou symboles a haut risque, les ajouter. Supprimer les entrees obsoletes.
+6. **Mettre a jour le fichier code-graph** - Si Graphify a revele de nouvelles communautes, connexions ou zones structurelles, les ajouter. Supprimer les entrees obsoletes.
 
 ### Phase 4 - Prune and Index
 

@@ -4,7 +4,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 
 ## Solution Snapshot
 
-- Open-source repo using GitNexus for code graph intelligence
+- Open-source repo for the `Vole-Papillon-Damour` application stack
 - Backend: **.NET 10** ASP.NET Core API with layered CQRS, in `src/Backend/`
 - Web frontends: **Angular 21** apps in `src/BackOffice/` and `src/Website/`, sharing
   `src/SharedUi/` through the `@vpd/ui` tsconfig alias
@@ -16,18 +16,6 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 > **Work in progress.** A new module — *bourse aux livres* — is specified, designed and
 > planned but **not implemented**. Read [`NEXT.md`](NEXT.md) before touching anything: it
 > carries the current step and everything git cannot (Azure, DNS, tenant, measurements).
-
-## Code Graph Intelligence
-
-GitNexus is the configured engine for this repository.
-
-### Standard Workflow
-
-1. `gitnexus_query()` to locate symbols and flows
-2. `gitnexus_context()` to understand a target in context
-3. `gitnexus_impact()` before cross-cutting edits
-4. `gitnexus_detect_changes()` after significant modifications
-5. `npx gitnexus analyze` to refresh the local index when stale
 
 ## Agents
 
@@ -52,7 +40,7 @@ GitNexus is the configured engine for this repository.
 | Skill | Purpose | File |
 |-------|---------|------|
 | `memory-management` | Memory update rules and routing | `.github/skills/memory-management/SKILL.md` |
-| `gitnexus-workflow` | Structure-aware exploration, impact analysis, and change validation | `.github/skills/gitnexus-workflow/SKILL.md` |
+| `graphify-corpus` | Corpus-level architecture and documentation exploration | `.github/skills/graphify-corpus/SKILL.md` |
 | `tdd-workflow` | Mandatory TDD cycle | `.github/skills/tdd-workflow/SKILL.md` |
 | `audit-workflow` | Audit report format and findings lifecycle | `.github/skills/audit-workflow/SKILL.md` |
 | `cqrs-feature` | CQRS workflow for backend features | `.github/skills/cqrs-feature/SKILL.md` |
@@ -63,12 +51,11 @@ GitNexus is the configured engine for this repository.
 
 ## MCP Resources
 
-- `gitnexus` via `.vscode/mcp.json`
+- `graphify` via `.vscode/mcp.json` (stdio, `graphify.serve`)
 - `github` via `.vscode/mcp.json` with token input
 
 ## Always Do
 
-- Use GitNexus before modifying shared handlers, repositories, route extensions, or frontend shared services.
 - Keep backend work inside the existing layer boundaries.
 - Write tests before executable production changes.
 - Update thematic memory after non-trivial work.
@@ -81,46 +68,13 @@ GitNexus is the configured engine for this repository.
 - Never bypass typed contracts with weakly typed payloads when the schema is known.
 - Never commit visible UI changes without checking responsive behavior.
 
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
+## graphify
 
-This project is indexed by GitNexus as **Vole-Papillon-Damour** (5209 symbols, 10910 relationships, 104 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project has a Graphify knowledge graph at `graphify-out/`.
 
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+Rules:
 
-## Always Do
-
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
-
-## Never Do
-
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
-
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/Vole-Papillon-Damour/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/Vole-Papillon-Damour/clusters` | All functional areas |
-| `gitnexus://repo/Vole-Papillon-Damour/processes` | All execution flows |
-| `gitnexus://repo/Vole-Papillon-Damour/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-
-<!-- gitnexus:end -->
+- Before answering architecture or codebase questions, read `graphify-out/GRAPH_REPORT.md` for god nodes and community structure.
+- If `graphify-out/wiki/index.md` exists, navigate it instead of reading raw files.
+- If the Graphify MCP server is active, use `query_graph`, `get_node`, `get_neighbors`, `get_community`, `god_nodes`, `graph_stats`, and `shortest_path` for graph exploration.
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost).

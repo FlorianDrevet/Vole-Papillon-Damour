@@ -33,11 +33,11 @@ Tu es l'expert C#/.NET de ce depot. Quelle que soit l'architecture, tu maitrises
 6. Lire les fichiers proches du code a modifier pour comprendre le contexte exact.
 7. Pour toute tache Angular web, deleguer a `angular-front`.
 
-## Code Graph - Verification obligatoire avant modification transverse
+## Graphify - Verification obligatoire avant modification transverse
 
-- Avant de modifier un service partage, un controller central, une extension de route, un mapper, un repository transverse ou un flux runtime critique, executer l'impact analysis si le projet est configure.
-- Si le risque remonte HIGH ou CRITICAL, signaler le blast radius avant edition.
-- Apres modification substantielle, executer detect_changes pour verifier que seuls les flux attendus sont touches.
+- Avant de modifier un service partage, un controller central, une extension de route, un mapper, un repository transverse ou un flux runtime critique, lire `graphify-out/GRAPH_REPORT.md` et interroger Graphify si le graphe est configure.
+- Completer cette exploration par l'inspection directe des appelants et des contrats avant edition.
+- Apres modification substantielle, executer `python -m graphify update .` et rejouer la requete structurelle utile.
 
 ---
 
