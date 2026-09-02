@@ -11,7 +11,8 @@ public record ProductResult(
     ProductSection ProductSection,
     List<PromotionResult> Promotions,
     int Index,
-    bool Available
+    bool Available,
+    bool VisibleOnWebsite
 );
 
 public record PromotionResult(

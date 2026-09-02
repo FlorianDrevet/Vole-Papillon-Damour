@@ -60,6 +60,8 @@ Verified aggregate folders in `Domain` include:
 - `ProductAggregate`
 - `UserAggregate`
 
+`Product` keeps `Available` separate from `VisibleOnWebsite`: both gate the public product projection, while the full `/product` projection remains available to cash clients and BackOffice.
+
 ## Conventions To Preserve
 
 - Keep commands and queries in their feature folders under `Application`.

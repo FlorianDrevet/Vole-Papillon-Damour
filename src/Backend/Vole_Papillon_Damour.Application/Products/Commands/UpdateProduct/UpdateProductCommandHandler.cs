@@ -34,7 +34,8 @@ public class UpdateProductCommandHandler(IProductRepository productRepository, I
             urlImagePrincipal,
             command.Available,
             command.ProductSection,
-            command.ProductCategory
+            command.ProductCategory,
+            command.VisibleOnWebsite ?? product.VisibleOnWebsite
         );
 
         product = await productRepository.UpdateAsync(product);

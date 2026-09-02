@@ -10,6 +10,7 @@ export interface ProductModel {
   productSection: ProductSectionEnum,
   index: number,
   available: boolean,
+  visibleOnWebsite: boolean,
   promotions: PromotionModel[],
 }
 

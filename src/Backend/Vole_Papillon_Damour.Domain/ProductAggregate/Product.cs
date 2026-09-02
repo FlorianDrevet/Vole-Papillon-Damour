@@ -13,12 +13,14 @@ public sealed class Product : AggregateRoot<ProductId>
     private List<Promotion> _promotions = new();
     public int Index { get; set; } = 0;
     public bool Available { get; set; }
+    public bool VisibleOnWebsite { get; set; } = true;
 
     public IReadOnlyList<Promotion> Promotions => _promotions.AsReadOnly();
 
     
     private Product(ProductId productId, string name, double price,
-        Uri urlImage, bool available, ProductCategory? productCategory, ProductSection productSection) 
+        Uri urlImage, bool available, bool visibleOnWebsite, ProductCategory? productCategory,
+        ProductSection productSection)
         : base(productId)
     {
         Name = name;
@@ -27,12 +29,14 @@ public sealed class Product : AggregateRoot<ProductId>
         ProductCategory = productCategory;
         ProductSection = productSection;
         Available = available;
+        VisibleOnWebsite = visibleOnWebsite;
     }
     
     public static Product Create(string name, double price, Uri urlImage, ProductSection productSection, bool available,
-        IEnumerable<Product> allProducts, ProductCategory? productCategory = null)
+        IEnumerable<Product> allProducts, ProductCategory? productCategory = null, bool visibleOnWebsite = true)
     {
-        var product = new Product(ProductId.CreateUnique(), name, price, urlImage, available,productCategory, productSection);
+        var product = new Product(ProductId.CreateUnique(), name, price, urlImage, available, visibleOnWebsite,
+            productCategory, productSection);
         //TODO c'est quoi cette merde ?
         product.CalculateIndex(allProducts);
         return product;
@@ -69,7 +73,7 @@ public sealed class Product : AggregateRoot<ProductId>
     }
 
     public void Update(string commandName, double commandPrice, Uri urlImagePrincipal, bool available,
-        ProductSection commandProductSection, ProductCategory? commandProductCategory)
+        ProductSection commandProductSection, ProductCategory? commandProductCategory, bool visibleOnWebsite = true)
     {
         Name = commandName;
         Price = commandPrice;
@@ -77,5 +81,6 @@ public sealed class Product : AggregateRoot<ProductId>
         ProductSection = commandProductSection;
         ProductCategory = commandProductCategory;
         Available = available;
+        VisibleOnWebsite = visibleOnWebsite;
     }
 }

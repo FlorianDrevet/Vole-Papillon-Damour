@@ -19,7 +19,8 @@ public class CreateProductCommandHandler(
                     
         var allProducts = await productRepository.GetAllAsync();
         var product = Domain.ProductAggregate.Product.Create(command.Name, command.Price, urlImage,
-            command.ProductSection, command.Available, allProducts, command.ProductCategory);
+            command.ProductSection, command.Available, allProducts, command.ProductCategory,
+            command.VisibleOnWebsite);
         
         product = await productRepository.AddAsync(product);
         

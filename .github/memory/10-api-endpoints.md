@@ -33,7 +33,8 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
 
 ## Product And Order Endpoints
 
-- `GET /product` - public product listing; consumed by the MAUI Refit client
+- `GET /product` - full product listing; consumed by the MAUI Refit client and BackOffice
+- `GET /product/public` - public product listing filtered by `Product.Available` and `Product.VisibleOnWebsite`; consumed by Website prices
 - `POST /product`, `PUT /product/{id}`, `POST /product/promotion`, `DELETE /product/promotion` - admin-protected product writes
 - `POST /orders`, `GET /orders` - admin-protected order routes
 

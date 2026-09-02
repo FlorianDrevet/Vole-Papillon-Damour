@@ -12,5 +12,6 @@ public record CreateProductCommand(
     string ImageName,
     bool Available,
     ProductSection ProductSection,
-    ProductCategory? ProductCategory = null
+    ProductCategory? ProductCategory = null,
+    bool VisibleOnWebsite = true
     ): IRequest<ErrorOr<ProductResult>>;

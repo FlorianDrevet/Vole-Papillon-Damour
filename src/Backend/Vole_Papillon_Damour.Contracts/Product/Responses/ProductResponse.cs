@@ -11,7 +11,8 @@ public record ProductResponse(
     string ProductSection,
     List<PromotionResponse> Promotions,
     int Index,
-    bool Available
+    bool Available,
+    bool VisibleOnWebsite
     );
     
 public record PromotionResponse(

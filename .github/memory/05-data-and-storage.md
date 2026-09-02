@@ -30,6 +30,7 @@
 - The Aspire AppHost provisions local SQL Server and Azurite for development orchestration.
 - The mailing-list subscription flow and Azure Communication Email integration were removed; actuality creation no longer broadcasts emails.
 - The former OCR-specific Azure Vision integration and `OcrSettings` configuration were removed in May 2026.
+- Product website visibility is persisted as `Products.VisibleOnWebsite` by the `AddProductWebsiteVisibility` EF migration. Existing rows are backfilled to preserve the previous Website availability and legacy `euro`/`centime`/`€` exclusions.
 
 ## Storage Risk Zones
 

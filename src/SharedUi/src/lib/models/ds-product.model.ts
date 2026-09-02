@@ -15,5 +15,6 @@ export interface DsProductModel {
   productSection: ProductSectionEnum;
   index: number;
   available: boolean;
+  visibleOnWebsite: boolean;
   promotions: DsPromotionModel[];
 }

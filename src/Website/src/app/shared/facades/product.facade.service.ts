@@ -14,6 +14,10 @@ export class ProductFacadeService {
     return this.axiosService.request(MethodEnum.GET, `/product`, null);
   }
 
+  public getPublicProducts(): Promise<ProductModel[]> {
+    return this.axiosService.request(MethodEnum.GET, `/product/public`, null);
+  }
+
   public postCreateProduct$(createProductForm: FormData): Promise<ProductModel> {
     return this.axiosService.request(MethodEnum.POST, `/product`, createProductForm, {}, true);
   }
