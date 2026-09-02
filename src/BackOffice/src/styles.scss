@@ -1,58 +1,216 @@
-// Custom Theming for Angular Material
-// For more information: https://material.angular.io/guide/theming
+// Thème Angular Material + base globale du BackOffice.
+// Le BackOffice reprend le design system du Website (src/Website) : mêmes couleurs,
+// mêmes polices, mêmes gouttières. Le thème Material ci-dessous n'est là que pour
+// aligner les composants Material historiques (dialogues, champs, datepicker) sur
+// cette palette — la mise en page, elle, passe par Tailwind.
 @use '@angular/material' as mat;
-@use "@dhutaryan/ngx-mat-timepicker" as mat-timepicker;
+@use '@dhutaryan/ngx-mat-timepicker' as mat-timepicker;
+@use "scss/main" as *;
 
-// Plus imports for other components in your app.
-@import "scss/main";
-
-// Include the common styles for Angular Material. We include this here so that you only
-// have to load a single css file for Angular Material in your app.
-// Be sure that you only ever include this mixin once!
 @include mat.elevation-classes();
 @include mat.app-background();
 
-// Define the theme object.
+// `azure` est la palette retenue par le Website : c'est le bleu le plus proche de
+// $blue-2 dans les palettes M3 fournies par Material.
 $custom-theme: mat.define-theme((
   color: (
     theme-type: light,
-    primary: mat.$blue-palette,
+    primary: mat.$azure-palette,
     tertiary: mat.$blue-palette,
   ),
   typography: (
-    brand-family: 'CaveatBrush',
-    plain-family: 'CaveatBrush',
+    brand-family: 'Newsreader',
+    plain-family: 'Libre Franklin',
   ),
   density: (
     scale: 0,
   )
 ));
 
-// Include theme styles for core and each component used in your app.
-// Alternatively, you can import and @include the theme mixins for each component
-// that you are using.
 :root {
   @include mat.all-component-themes($custom-theme);
   @include mat-timepicker.timepicker-theme($custom-theme);
+  color-scheme: light;
 }
-
-// Comment out the line below if you want to use the pre-defined typography utility classes.
-// For more information: https://material.angular.io/guide/typography#using-typography-styles-in-your-application.
-// @include mat.typography-hierarchy($vcustom-theme);
 
 /* You can add global styles to this file, and also import other style files */
 @tailwind base;
 @layer base {
-  html,body {
-    overflow-x: initial !important;
-    min-height: 100vh !important; /*possible to remove the height of the footer*/
-    height: 100% !important;
-    @apply bg-background-color w-full
+  :root {
+    // Largeur maximale du contenu d'une bande de page, et gouttière minimale.
+    // Utilisées par l'utilitaire `px-shell` (voir tailwind.config.js) : les bandes
+    // gardent leur fond sur toute la largeur, seul leur contenu est borné et centré.
+    // Valeurs identiques au Website.
+    --vpd-shell-max: 1280px;
+    --vpd-shell-gutter: 1.5rem;
   }
+
+  @media (min-width: 1024px) {
+    :root {
+      --vpd-shell-gutter: 2.75rem;
+    }
+  }
+
+  html, body {
+    overflow-x: clip;
+    min-height: 100vh;
+    height: 100%;
+  }
+
+  html {
+    @apply bg-paper;
+  }
+
   body {
-    @apply m-0 p-0 flex flex-col font-caveatbrush
+    @apply m-0 p-0 flex flex-col bg-paper text-ink-2 font-sans;
+    scroll-behavior: smooth;
+  }
+
+  a, button {
+    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease,
+      box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  button {
+    font: inherit;
+  }
+
+  a:focus-visible, button:focus-visible {
+    outline: 3px solid theme('colors.blue-2' / 55%);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: theme('colors.cyan' / 40%);
+    color: theme('colors.ink-2');
+  }
+
+  .no-scroll {
+    overflow: hidden !important;
   }
 }
 
 @tailwind components;
 @tailwind utilities;
+
+// Chargement progressif : les blocs reprennent les dimensions du contenu réel,
+// avec un reflet discret plutôt qu'un spinner isolé. Repris tel quel du Website.
+.skeleton {
+  overflow: hidden;
+  background-color: $mist-2;
+  background-image: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(255, 255, 255, 0.72) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  background-size: 220% 100%;
+  animation: vpd-skeleton 1.45s ease-in-out infinite;
+}
+
+@keyframes vpd-skeleton {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -20% 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Alignement des composants Material sur le design system.
+//
+// Les dialogues de création/édition reposent sur mat-form-field, mat-select,
+// mat-datepicker et mat-timepicker : on les garde (leur comportement clavier et
+// leur validation sont acquis) mais on remplace leur habillage MDC par celui du
+// design system — fond blanc, filet `line` fin, angle quasi droit, focus bleu.
+// ---------------------------------------------------------------------------
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-text-field-wrapper {
+  border: 1px solid $line;
+  border-radius: 2px;
+  background-color: $white !important;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+// Le filet MDC (trait bas animé) fait doublon avec la bordure ci-dessus.
+.mat-mdc-form-field .mdc-line-ripple {
+  display: none;
+}
+
+.mat-mdc-form-field:hover .mat-mdc-text-field-wrapper {
+  border-color: $mist;
+}
+
+.mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+  border-color: $blue-2;
+  box-shadow: 0 0 0 3px rgba(20, 151, 214, 0.16);
+}
+
+.mat-mdc-form-field.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+  border-color: $danger;
+}
+
+.mat-mdc-form-field.mat-form-field-invalid.mat-focused .mat-mdc-text-field-wrapper {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.16);
+}
+
+.mat-mdc-form-field .mdc-floating-label,
+.mat-mdc-form-field .mat-mdc-select-value-text,
+.mat-mdc-form-field input.mat-mdc-input-element,
+.mat-mdc-form-field textarea.mat-mdc-input-element {
+  color: $ink-2;
+  font-family: $font-sans;
+}
+
+.mat-mdc-form-field .mdc-floating-label {
+  color: $slate-2;
+}
+
+.mat-mdc-form-field.mat-focused .mdc-floating-label {
+  color: $blue;
+}
+
+.mat-mdc-form-field .mat-mdc-form-field-error {
+  color: $danger;
+  font-family: $font-sans;
+}
+
+.mat-mdc-select-panel,
+.mat-mdc-autocomplete-panel,
+.mat-datepicker-content,
+.mat-timepicker-panel {
+  border: 1px solid $line;
+  border-radius: 2px !important;
+  box-shadow: 0 22px 44px -24px rgba(7, 43, 69, 0.45) !important;
+}
+
+.mat-mdc-option {
+  font-family: $font-sans;
+  color: $ink-2;
+}
+
+.mat-mdc-option.mdc-list-item--selected:not(.mat-mdc-option-multiple) {
+  background-color: $paper-2 !important;
+}
+
+// Dialogues : surface blanche, angle droit et ombre du design system.
+.mat-mdc-dialog-surface {
+  border-radius: 2px !important;
+  background-color: $white !important;
+  box-shadow: 0 34px 60px -28px rgba(7, 43, 69, 0.55) !important;
+}
+
+.mat-mdc-dialog-container .mat-mdc-dialog-content {
+  font-family: $font-sans;
+  color: $slate;
+}
+
+// Le spinner Material sert d'indicateur de traitement dans les dialogues.
+.mat-mdc-progress-spinner {
+  --mdc-circular-progress-active-indicator-color: #{$blue-2};
+}

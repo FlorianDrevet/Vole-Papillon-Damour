@@ -1,5 +1,7 @@
-<button (click)="redirectToLink()" [disabled]="disabled" class="btn-grad">
+<button
+  (click)="redirectToLink()"
+  [disabled]="disabled"
+  type="submit"
+  class="inline-flex w-full items-center justify-center rounded-full bg-orange px-7 py-[15px] text-[15px] font-semibold text-white transition hover:brightness-[1.04] disabled:pointer-events-none disabled:opacity-50">
   <ng-content></ng-content>
 </button>
-
-

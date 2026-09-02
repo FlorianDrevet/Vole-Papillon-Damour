@@ -1,47 +1,34 @@
-<div class="flex flex-row gap-2 w-full pt-3 pb-3 items-center">
+<div class="flex w-full items-center gap-2 rounded-sm border border-line-2 bg-paper-2 p-3">
   @if (LinePartie().lots.length > 1) {
-    <img class="h-5 sm:ml-0 -ml-4" src="icons/arrow-left-triangle.svg" (click)="previousLot()">
+    <button type="button" (click)="previousLot()" aria-label="Lot précédent" class="shrink-0 text-slate-3 hover:text-blue">
+      <app-icon name="chevron-right" [size]="14" class="rotate-180 block"></app-icon>
+    </button>
   }
-  <div class="bg-primary-color flex flex-row rounded-3xl p-3 w-full sm:gap-5 gap-2">
-    <div
-      class="flex bg-white rounded-3xl sm:h-[100px] p-2 sm:p-2 mt-auto mb-auto sm:flex-[1_0_100px] h-[75px] flex-[1_0_75px]">
-      <img [src]="currentLot().urlImage" class="m-auto h-full w-auto">
+
+  <div class="flex w-full items-center gap-4 rounded-sm bg-white p-3">
+    <div class="flex h-[64px] w-[64px] shrink-0 items-center justify-center rounded-sm bg-paper-2 p-1.5">
+      <img [src]="currentLot().urlImage" class="h-full w-full object-contain" alt="">
     </div>
-    <div class="flex flex-col w-full gap-3">
-      <div class="flex flex-row w-full justify-between">
-        <div class="title-lot">
-          {{ LinePartie().numberLine | lineNumberTitle }}
-        </div>
-        <div class="flex flex-row gap-2  top-2 ">
-          <button
-            (click)="openDialogAddPartieLine(LinePartie().numberLine)"
-            class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-            <img class="h-4" fetchpriority="high" src="icons/plus.png">
-          </button>
-          <button
-            (click)="openDialogUpdate(LinePartie().numberLine)"
-            class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-            <img class="h-4" fetchpriority="high" src="icons/crayon.png">
-          </button>
-          <button
-            (click)="openDialogDeletion()"
-            class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-            <img class="h-4" fetchpriority="high" src="icons/supprimer.png">
-          </button>
+
+    <div class="flex w-full flex-col gap-2">
+      <div class="flex w-full items-center justify-between gap-2">
+        <span class="font-mono text-[11px] uppercase tracking-[.08em] text-blue">{{ LinePartie().numberLine | lineNumberTitle }}</span>
+        <div class="flex gap-1.5">
+          <app-icon-button icon="add" ariaLabel="Ajouter un lot alternatif" [small]="true" (click)="openDialogAddPartieLine(LinePartie().numberLine)"></app-icon-button>
+          <app-icon-button icon="edit" ariaLabel="Modifier ce lot" [small]="true" (click)="openDialogUpdate(LinePartie().numberLine)"></app-icon-button>
+          <app-icon-button icon="delete" ariaLabel="Supprimer ce lot" variant="danger" [small]="true" (click)="openDialogDeletion()"></app-icon-button>
         </div>
         @if (LinePartie().lots.length > 1) {
-          <div class="title-lot">
-            ou
-          </div>
+          <span class="font-mono text-[11px] uppercase tracking-[.08em] text-slate-3">ou</span>
         }
       </div>
-      <div class="label-lot w-full mt-auto">
-        {{ currentLot().name }}
-      </div>
+      <span class="text-[15px] font-medium leading-snug text-ink-2">{{ currentLot().name }}</span>
     </div>
   </div>
+
   @if (LinePartie().lots.length > 1) {
-    <img class="h-5 -mr-4 sm:mr-0" src="icons/arrow-right-triangle.svg" (click)="nextLot()">
+    <button type="button" (click)="nextLot()" aria-label="Lot suivant" class="shrink-0 text-slate-3 hover:text-blue">
+      <app-icon name="chevron-right" [size]="14"></app-icon>
+    </button>
   }
 </div>
-
