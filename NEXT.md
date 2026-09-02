@@ -63,8 +63,8 @@ git pull
 
 | Outil | Version | Posé ? |
 |---|---|---|
-| SDK .NET | *(à épingler en `L0-1`)* | — |
-| Node | *(à épingler en `L0-1`)* | — |
+| SDK .NET | `10.0.203` | Oui |
+| Node | `24.15.0` | Oui |
 | CLI Aspire | *(à fixer en `L0-3`)* | — |
 | Azure CLI, connecté au bon abonnement | — | — |
 | PowerShell 7 + modules Microsoft.Graph | pour `infra/entra/` | — |
