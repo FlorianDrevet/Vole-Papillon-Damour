@@ -4,7 +4,7 @@
 // Creates the Email service and its customer-managed sending domain.
 // Azure exposes the verification TXT/SPF/DKIM values after the domain is
 // provisioned; they must not be guessed or embedded in this template.
-// See: https://learn.microsoft.com/en-us/azure/templates/microsoft.communication/2025-05-01/emailservices
+// See: https://learn.microsoft.com/en-us/azure/templates/microsoft.communication/2026-03-18/emailservices
 // =======================================================================
 
 @description('Name of the Azure Communication Services Email resource')
@@ -19,7 +19,7 @@ param sendingDomain string
 @description('Resource tags')
 param tags object = {}
 
-resource emailService 'Microsoft.Communication/emailServices@2025-05-01' = {
+resource emailService 'Microsoft.Communication/emailServices@2026-03-18' = {
   name: name
   location: 'global'
   tags: tags
@@ -28,7 +28,7 @@ resource emailService 'Microsoft.Communication/emailServices@2025-05-01' = {
   }
 }
 
-resource domain 'Microsoft.Communication/emailServices/domains@2025-05-01' = {
+resource domain 'Microsoft.Communication/emailServices/domains@2026-03-18' = {
   parent: emailService
   name: sendingDomain
   location: 'global'
