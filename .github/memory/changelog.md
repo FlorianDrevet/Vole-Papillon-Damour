@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Started L0-11 with an idempotent, dry-run-safe Entra application setup: redirect URIs are merged, the Android MSAL redirect is derived for the cash app, and new applications are represented during `-WhatIf`; execution remains pending PowerShell 7 and Microsoft Graph modules. |
 | 2026-09-02 | Applied the L0-10 platform decision: `MauiCashApp` now targets Android only (`net9.0-android`); durable APK signing and organized redistribution remain deferred because no keystore exists yet. |
 | 2026-09-02 | Configured the dev SQL parameter for the decision's fixed Azure SQL `S1` tier (Standard, 20 DTUs, 250 GB, no automatic pause), aligned the `SqlServer` SKU type descriptions, and verified both Bicep files compile; no Azure deployment was performed. |
 | 2026-09-02 | Added the API `/health` endpoint with an Infrastructure database connectivity check, configured API readiness/liveness/startup probe parameters on `/health:8080`, and verified the endpoint locally through Aspire plus Bicep compilation. |

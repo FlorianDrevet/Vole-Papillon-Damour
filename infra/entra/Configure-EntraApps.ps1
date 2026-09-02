@@ -133,7 +133,10 @@ function Get-OrNewApplication {
         [hashtable] $Body = @{}
     )
 
-    $existing = Get-MgApplication -Filter "displayName eq '$DisplayName'" -ErrorAction SilentlyContinue
+    $existing = Get-MgApplication `
+        -Filter "displayName eq '$DisplayName'" `
+        -Property 'id','appId','displayName','spa','publicClient','requiredResourceAccess' `
+        -ErrorAction SilentlyContinue
 
     if ($existing) {
         # `Get-MgApplication -Filter` renvoie une collection ; on refuse l'ambiguite
@@ -146,7 +149,14 @@ function Get-OrNewApplication {
     }
 
     if (-not $PSCmdlet.ShouldProcess($DisplayName, 'Creer l''enregistrement d''application')) {
-        return $null
+        Write-Detail "simulation : l''application '$DisplayName' serait creee"
+        return [pscustomobject]@{
+            Id          = $null
+            AppId       = '<planned>'
+            DisplayName = $DisplayName
+            Spa         = $null
+            PublicClient = $null
+        }
     }
 
     $created = New-MgApplication -DisplayName $DisplayName -SignInAudience 'AzureADMyOrg' @Body
@@ -157,12 +167,38 @@ function Get-OrNewApplication {
 function Get-OrNewServicePrincipal {
     param([Parameter(Mandatory)] [string] $AppId)
 
+    if ([string]::IsNullOrWhiteSpace($AppId) -or $AppId -eq '<planned>') {
+        Write-Detail 'simulation : le principal de service serait cree apres l''application'
+        return $null
+    }
+
     $existing = Get-MgServicePrincipal -Filter "appId eq '$AppId'" -ErrorAction SilentlyContinue
     if ($existing) { return $existing }
 
     if (-not $PSCmdlet.ShouldProcess($AppId, 'Creer le principal de service')) { return $null }
 
     return New-MgServicePrincipal -AppId $AppId
+}
+
+function Merge-RedirectUris {
+    param(
+        [Parameter(Mandatory)] $Application,
+        [Parameter(Mandatory)] [ValidateSet('Spa', 'PublicClient')] [string] $Kind,
+        [Parameter(Mandatory)] [string] $Uri
+    )
+
+    $currentPlatform = if ($Kind -eq 'Spa') { $Application.Spa } else { $Application.PublicClient }
+    $currentUris = if ($null -ne $currentPlatform -and $null -ne $currentPlatform.RedirectUris) {
+        @($currentPlatform.RedirectUris)
+    } else {
+        @()
+    }
+
+    return @(
+        $currentUris + $Uri |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Select-Object -Unique
+    )
 }
 
 function Grant-ApiScope {
@@ -292,7 +328,14 @@ foreach ($client in $clients) {
     $app = Get-OrNewApplication -DisplayName $client.Name
     if (-not $app) { continue }
 
-    $redirect = @{ RedirectUris = @($client.Uri) }
+    $clientUri = if ($client.Kind -eq 'PublicClient') {
+        "msal$($app.AppId)://auth"
+    } else {
+        $client.Uri
+    }
+
+    $redirectUris = Merge-RedirectUris -Application $app -Kind $client.Kind -Uri $clientUri
+    $redirect = @{ RedirectUris = $redirectUris }
     $platform = if ($client.Kind -eq 'Spa') { @{ Spa = $redirect } } else { @{ PublicClient = $redirect } }
 
     if ($PSCmdlet.ShouldProcess($client.Name, 'Configurer la plateforme et la permission vers l''API')) {
@@ -305,7 +348,7 @@ foreach ($client in $clients) {
                     )
                 }
             )
-        Write-Detail "redirection $($client.Uri) ($($client.Kind))"
+        Write-Detail "redirections $($redirectUris -join ', ') ($($client.Kind))"
     }
 
     $sp = Get-OrNewServicePrincipal -AppId $app.AppId
@@ -340,7 +383,7 @@ foreach ($client in $clients) {
 Write-Host "    scope = api://$($apiApp.AppId)/access_as_user"
 Write-Host ''
 
-if ($OutputFile) {
+if ($OutputFile -and $PSCmdlet.ShouldProcess($OutputFile, 'Ecrire le rapport de configuration')) {
     $results | ConvertTo-Json -Depth 3 | Set-Content -Path $OutputFile -Encoding utf8
     Write-Detail "ecrit dans $OutputFile"
 }
