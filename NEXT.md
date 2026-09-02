@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-6` — santé de l'API et sondes posées, PR #6 en attente de validation |
-| **Prochaine action** | `L0-7` — passer SQL en S1 après fusion de cette PR ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-7` — paramétrage SQL S1 posé, déploiement opérationnel restant |
+| **Prochaine action** | `L0-7` — exécuter `infra-deploy` et vérifier le portail après fusion de la PR #8 ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `feature/l0-4-front-reproductible` |
+| **Branche** | `feature/l0-7-sql-s1` |
 
 ---
 
@@ -72,19 +72,16 @@ git pull
 
 ## En cours
 
-`L0-6` est implémenté côté dépôt. L'API expose `GET /health` avec un contrôle de connexion à
-la base dans Infrastructure ; les trois sondes API de `infra/parameters/main.dev.bicepparam`
-ciblent `/health` sur le port `8080`. Les sondes Website et BackOffice restent désactivées,
-car le plan ne spécifie pas de endpoint de santé pour ces applications. Aspire a confirmé
-localement `https://localhost:7246/health` en `200 OK` avec `Healthy`, et le Bicep principal
-ainsi que les paramètres compilent. Aucun déploiement Azure n'a été effectué.
+`L0-7` est implémenté côté dépôt. `infra/parameters/main.dev.bicepparam` cible désormais
+Azure SQL `S1` (`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
+`infra/modules/SqlServer/types.bicep` documente explicitement les paramètres des paliers DTU.
+Les deux fichiers Bicep compilent. La montée en gamme (`infra-deploy`) et la vérification du
+portail restent à faire après la fusion de la PR #8 ; aucun changement Azure n'a été effectué.
 
-`L0-5` est implémenté avec `.github/workflows/ci.yml`, déclenché sur `push` et `pull_request`.
-Il restaure et compile la solution backend `.slnx`, exécute les trois projets de tests,
-installe le workload MAUI Android et compile `net9.0-android`, puis installe et construit les
-deux applications Angular avec la version de Node de `.nvmrc`. Localement, le backend et les
-fronts passent ; la compilation MAUI reste bloquée sur cette machine par l'absence du SDK
-Android natif (`XA5300`). La validation GitHub de la PR est en cours.
+`L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
+la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
+La validation locale et la validation GitHub sont réussies ; la compilation MAUI locale reste
+bloquée par l'absence du SDK Android natif (`XA5300`).
 
 > Ce qui va ici : une étape commencée et non finie, avec **l'état exact** — quel fichier,
 > quelle idée, ce qui reste. Écrire deux lignes ici coûte moins qu'une demi-heure de
@@ -119,7 +116,7 @@ dans Azure sans être déductible du dépôt.
 
 | Ressource | État | Depuis |
 |---|---|---|
-| Base SQL | `GP_S_Gen5_1` serverless, pause auto 60 min — **à passer en `S1` (`L0-7`)** | — |
+| Base SQL | Paramètre du dépôt passé à `S1` (`Standard`, 20 DTU, 250 Go), sans pause — Azure non modifié | — |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
 | Locataire Entra External ID | **Pas créé** | — |
@@ -207,6 +204,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | - | **L0-7 — base SQL en S1.** Passage du paramètre dev de `GP_S_Gen5_1` serverless à `S1` (`Standard`, 20 DTU, 250 Go, sans pause automatique) et alignement de la documentation du type `DatabaseSkuConfig` du module `SqlServer`. Les deux fichiers Bicep compilent. Le déploiement Azure, le contrôle du portail et le test manuel après inactivité restent à faire ; aucun changement hors dépôt n'a été effectué. |
 | 2026-09-02 | - | **L0-6 — points de santé et sondes.** Ajout de `GET /health` avec contrôle de connexion SQL, test de l'enregistrement du contrôle, sondes API readiness/liveness/startup sur `/health:8080` dans les paramètres dev, et validation locale Aspire (`200 OK`, `Healthy`). La solution backend restaure, compile et passe ses 70 tests ; les deux fichiers Bicep compilent. Aucun déploiement Azure ni test manuel de révision cassée n'a été effectué. |
 | 2026-09-02 | - | **L0-5 — CI de compilation et tests.** Ajout de `.github/workflows/ci.yml` sur `push` et `pull_request` : SDK .NET `10.0.203`, solution backend `.slnx`, tests Domain/Application/Infrastructure, workload et build MAUI Android, puis `npm ci`/`npm run build` pour BackOffice et Website avec `.nvmrc`. Validation locale backend et fronts réussie ; le workflow GitHub n'a pas été lancé, et la caisse reste localement bloquée par l'absence du SDK Android natif. |
 | 2026-09-02 | - | **L0-4 — socle front reproductible.** Déplacement de `link-shared-ui.mjs` dans `src/SharedUi/scripts`, ajout des hooks `prebuild`/`prestart` dans Website et BackOffice, et résolution du lien vers les `node_modules` de l'application appelante. Test Node ciblé : 3/3 ; `npm ci` puis `npm run build` réussissent dans BackOffice seul, et Website compile également. |

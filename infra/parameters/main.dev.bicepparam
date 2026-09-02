@@ -102,20 +102,18 @@ param containerAppBackOfficeHealthProbes = {
 param keyVaultSku = 'standard'
 param keyVaultEnablePurgeProtection = false
 
-// Serverless: the database auto-pauses after an hour of inactivity, which
-// suits an environment deployed on demand.
+// S1: fixed Standard tier, 20 DTUs and no automatic pause, as decided in DT-11.
 // The subscription is not allowed to provision Azure SQL in West Europe
 // (ProvisioningDisabled), so the database sits in France Central.
 param sqlLocation = 'francecentral'
 
 param sqlDatabaseName = 'vole-papillon-damour-db'
 param sqlDatabaseSku = {
-  name: 'GP_S_Gen5_1'
-  tier: 'GeneralPurpose'
-  family: 'Gen5'
-  capacity: 1
-  maxSizeBytes: 34359738368
-  autoPauseDelayMinutes: 60
+  name: 'S1'
+  tier: 'Standard'
+  capacity: 20
+  maxSizeBytes: 268435456000
+  autoPauseDelayMinutes: 0
 }
 
 param storageAccountSku = 'Standard_LRS'

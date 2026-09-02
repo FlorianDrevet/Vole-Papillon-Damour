@@ -25,6 +25,7 @@
 - Dockerized deployment config now lives in `src/BackOffice/Dockerfile`, `src/Website/Dockerfile`, and `infra/aca/`.
 - The frontend Dockerfiles patch the production Angular environment files at image-build time through `API_URL` and `WEBSITE_URL` build args instead of introducing runtime templating.
 - API health probes are configured in `infra/parameters/main.dev.bicepparam` as readiness, liveness, and startup checks for `/health` on port `8080`; Azure deployment remains a separate operational step.
+- The dev SQL parameter uses Azure SQL Database `S1` (`Standard`, 20 DTUs, 250 GB) with `autoPauseDelayMinutes: 0`; `DatabaseSkuConfig` keeps DTU tiers' family optional.
 
 ## Build And Test Commands
 
