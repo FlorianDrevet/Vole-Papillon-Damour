@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
+import {MsalGuard} from '@azure/msal-angular';
 import {LoginComponent} from "./core/login/login.component";
-import {AuthenticationGuard} from "./shared/guards/authentication.guard";
 import {ActualitiesComponent} from "./feature/actualities/actualities.component";
 import {ActualityDetailComponent} from "./feature/actuality-detail/actuality-detail.component";
 import {CaisseComponent} from "./feature/caisse/caisse.component";
@@ -17,32 +17,32 @@ const routes: Routes = [
   {
     path: 'actualites',
     component: ActualitiesComponent,
-    canActivate: [AuthenticationGuard]
+    canActivate: [MsalGuard]
   },
   {
     path: 'actualite/:id',
     component: ActualityDetailComponent,
-    canActivate: [AuthenticationGuard]
+    canActivate: [MsalGuard]
   },
   {
     path: 'evenements',
     component: VpdEventsComponent,
-    canActivate: [AuthenticationGuard]
+    canActivate: [MsalGuard]
   },
   {
     path: 'evenement/:id',
     component: EventDetailComponent,
-    canActivate: [AuthenticationGuard]
+    canActivate: [MsalGuard]
   },
   {
     path: 'evenement/:id/loto-tableau',
     component: TableauComponent,
-    canActivate: [AuthenticationGuard]
+    canActivate: [MsalGuard]
   },
   {
     path: 'caisse',
     component: CaisseComponent,
-    canActivate: [AuthenticationGuard]
+    canActivate: [MsalGuard]
   },
   {path: '**', redirectTo: '/actualites', pathMatch: 'full'}
 ];

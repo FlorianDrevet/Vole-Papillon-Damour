@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-03 | Migrated the BackOffice from the cookie/JWT login to MSAL Angular 5.3.1 with MSAL Browser 5.20.0: `MsalGuard` protects routes, `MsalRedirectComponent` handles redirect responses, and an Axios adapter acquires the Entra API scope silently. Removed the legacy auth services/dependencies and recorded the 5-test/build validation. |
 | 2026-09-02 | Prepared the Entra Graph setup for execution on an authorized workstation: added the missing `Microsoft.Graph.Identity.SignIns` prerequisite and module guards, documented the real tenant/redirect URIs and target administrator, and recorded the local Conditional Access limitation. |
 | 2026-09-02 | Actualisé la section `/maxence/vie-quotidienne/soins-quotidiens` sur l’alimentation parentérale : durées, poches sur mesure, aménagement de la chambre et protocole stérile, avec repères visuels et test de contenu |
 | 2026-09-02 | Enrichi la fiche Website `/maxence/maladies/hirschsprung` avec le nouveau texte explicatif, la forme étagée de Maxence et une mise en page éditoriale responsive, avec un test de contenu dédié |

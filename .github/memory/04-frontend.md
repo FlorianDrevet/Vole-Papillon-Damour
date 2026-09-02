@@ -4,7 +4,8 @@
 
 Both web apps are Angular 21 projects with Angular Material and Tailwind in the toolchain.
 
-- `src/BackOffice/` - admin UI, includes `@auth0/angular-jwt`, `ngx-cookie-service`, and `@dhutaryan/ngx-mat-timepicker`
+- `src/BackOffice/` - admin UI, with MSAL Angular (`@azure/msal-angular` 5.3.1,
+  `@azure/msal-browser` 5.20.0) and `@dhutaryan/ngx-mat-timepicker`
 - `src/Website/` - public UI for the association website, now built with Angular SSR and hydration support
 
 ## App Structure
@@ -54,7 +55,10 @@ Verified feature roots:
 ## Data Access And Live Updates
 
 - Both Angular apps centralize HTTP base URL setup through `shared/services/axios.service.ts` with `axios.defaults.baseURL = environment.api_url`.
-- `BackOffice` uses an `AuthenticationGuard` to protect its routed admin screens.
+- `BackOffice` uses `MsalGuard` to protect its routed admin screens. `shared/auth/msal-config.ts`
+  owns the Entra External ID client configuration; `shared/services/api-access-token.service.ts`
+  acquires the API scope silently for the existing Axios transport. The Angular `MsalInterceptor`
+  is not registered because the app does not use Angular `HttpClient` for API calls.
 - `Website` has an `sse-client.service` that subscribes to `/asso-events/{id}/tableau/sse` for live event updates and now guards `EventSource` usage behind `isPlatformBrowser()` for SSR safety.
 - The Website SSE client closes the previous `EventSource` before opening a new event, ignores malformed payloads without dropping the last good state, and reconnects with bounded backoff from 250ms to 5s.
 - The Website home SSR path now tolerates missing `next-bingo`, `next-books`, `next-other-event`, and `latest actuality` payloads by keeping default empty state instead of surfacing unhandled promise rejections during server rendering.
@@ -87,6 +91,7 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net9.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
-- As of 2026-09-02, `npm ci` followed by `npm run build` passes in `src/BackOffice/` alone,
-  and `npm ci` followed by `npm run build` passes in `src/Website/`; the builds still emit
-  existing Sass, bundle-budget, and CommonJS warnings.
+- As of 2026-09-03, `npm ci` followed by `npm test -- --watch=false --browsers=ChromeHeadless`
+  passes with 5 BackOffice tests, and production/development `npm run build` both pass in
+  `src/BackOffice/`; the builds still emit existing signal-diagnostic, bundle-budget, CSS,
+  and CommonJS warnings. The same `npm ci`/build validation passes in `src/Website/`.

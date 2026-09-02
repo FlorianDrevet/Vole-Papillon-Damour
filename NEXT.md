@@ -14,21 +14,22 @@
 | | |
 |---|---|
 | **Lot en cours** | `L0-11` — préparation du déploiement 2 (migration de base, `BackOffice` et caisse) |
-| **Prochaine action** | Relire/merger la PR de migration 0, puis préparer les composants du déploiement 2 (`BackOffice` MSAL et caisse MSAL) ; la migration ne sera appliquée qu'une fois ce passage prêt ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Prochaine action** | Relire/merger la PR `BackOffice` MSAL, puis préparer la migration MSAL de la caisse ; le déploiement 2 restera à faire après validation des deux clients ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `chore/l0-11-entra-setup` |
+| **Branche** | `feat/l0-11-backoffice-msal` |
 
 ---
 
 ## Décisions prises
 
-Les quatre arbitrages que le plan ne pouvait pas prendre seul sont tranchés. Rien n'attend
+Les arbitrages que le plan ne pouvait pas prendre seul sont tranchés. Rien n'attend
 plus de réponse ; ceci est un rappel, le détail est dans les documents cités.
 
 | Sujet | Décision |
 |---|---|
 | Caisse | **Android seul**, téléphones et tablettes. iOS, Mac Catalyst et Windows retirés du `.csproj`. APK signé, posé à la main sur chaque appareil (`L0-10`) |
+| Authentification BackOffice | **MSAL Angular `5.3.1` avec MSAL Browser `5.20.0`**, dernière ligne compatible avec Angular 21. Les routes utilisent `MsalGuard`, la connexion passe par le redirect Entra et Axios acquiert silencieusement la portée API via un adaptateur dédié ; `MsalInterceptor` n'est pas utilisé car le BackOffice utilise Axios (`L0-11`) |
 | Suppression du compte dans le locataire | **Au préalable d'identité** (`L0-11`, étape 8), pendant qu'il n'y a encore personne à supprimer |
 | Genres et classement | **Depuis les sources bibliographiques**, et le site n'indique **jamais** où se trouve un livre dans le local (`Q-07`) |
 | Repli d'exploitation | **Aucun.** Une panne fait vendre sans enregistrer, rien n'est rattrapé. Le hors-ligne de la caisse devient la seule protection (`ENF-21`, `P1-10`) |
@@ -125,11 +126,19 @@ Les cinq enregistrements d’application et les principaux de service ont été 
 `Configure-EntraApps.ps1` après simulation `-WhatIf` réussie ; les consentements vers
 `access_as_user` ont été accordés. Le compte cible a reçu le rôle `Administration`,
 attribution vérifiée par `Get-VpdUserRoles.ps1`. Le rapport est conservé hors dépôt dans
-`%TEMP%\vpd-entra-dev.json`. La migration API/front/MAUI et les déploiements applicatifs
-restent volontairement à faire. Le déploiement 1 API est maintenant actif : le run GitHub
+`%TEMP%\vpd-entra-dev.json`. Le déploiement 1 API est maintenant actif : le run GitHub
 Actions `Infra - deploy #20` a injecté `AzureAd__ClientId` et `AzureAd__Audience`, puis
 `API - deploy #7` a construit et déployé l’image `vpd-api:cfd43cb` sans migration de base ;
 `GET /health` répond 200. Les déploiements Azure de cette branche passent par GitHub OIDC.
+La migration de base 0 est fusionnée dans `main` mais n'est pas encore appliquée. Le
+BackOffice est maintenant migré sur la branche `feat/l0-11-backoffice-msal` : les anciens
+formulaires username/mot de passe, le cookie JWT, `@auth0/angular-jwt` et
+`ngx-cookie-service` sont retirés ; les identifiants publics MSAL sont configurés dans les
+environnements et le jeton d'API est ajouté aux requêtes Axios après acquisition silencieuse.
+La PR de cette étape n'est pas encore fusionnée et aucun déploiement applicatif n'a été
+effectué. Pour un essai local, l'enregistrement SPA `vpd-backoffice-dev` doit contenir
+`http://localhost:4200` en plus de l'URI de production ; cet état n'est pas confirmé par le
+rapport Entra conservé ci-dessus.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -261,6 +270,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — BackOffice MSAL.** Après le merge de la migration 0 dans `main`, création de la branche `feat/l0-11-backoffice-msal`. Migration du login vers le redirect MSAL Angular (`5.3.1`) avec MSAL Browser (`5.20.0`), remplacement du guard maison par `MsalGuard`, sélection de l'identité active au démarrage et acquisition silencieuse de la portée API pour Axios. Suppression du cookie JWT, des services/façades d'authentification maison et des dépendances `@auth0/angular-jwt`/`ngx-cookie-service`. `npm ci`, les 5 tests ChromeHeadless et les builds production/développement passent ; seules des alertes Angular préexistantes restent. Aucun déploiement n'a été effectué. |
 | 2026-09-03 | Windows | **L0-11 — migration 0 préparée.** La décision est prise de perdre les utilisateurs legacy existants et de les recréer dans Entra ; le backup/restauration vérifié par le run `33690143650` couvre ce choix. La migration `20260902223842_MigrateUsersToEntraIdentity` supprime d'abord les lignes `Users`, retire `Password`, `Salt` et `Role`, ajoute les colonnes de projection Entra et l'index `ExternalId`. Elle est volontairement non réversible et n'a pas été appliquée à la base. Les tests backend (71) et le build `.slnx` passent ; les avertissements préexistants sont listés dans la sortie de validation. |
 | 2026-09-03 | Windows | **L0-11 — prérequis de l'étape 4 vérifié.** Après le merge de la PR #18, le run GitHub Actions `Database - verify point-in-time restore #33690143650` a restauré un point-in-time Azure SQL dans `vpd-sql-restore-33690143650`, attendu son état `Online`, puis lu 10 tables avec `DbSnapshot`, dont `dbo.Users` (2 lignes). Le firewall et la base temporaire ont été supprimés. La migration 0 n'est pas commencée : le plan ne fixe pas la valeur initiale de `CreatedAt` et `LastSeenAt` pour les utilisateurs existants. |
 | 2026-09-03 | Windows | **L0-11 — préparation de l'étape 4.** Ajout du workflow manuel `Database - verify point-in-time restore` dans la PR #18. Il restaure une copie Azure SQL isolée au niveau S1, vérifie la lecture des tables avec `DbSnapshot`, puis nettoie la copie ; aucun workflow n'a pu être lancé avant le merge car GitHub ne répertorie pas encore ce nouveau dispatch sur la branche par défaut. La migration 0 n'est pas commencée : le plan ne fixe pas la valeur initiale de `CreatedAt` et `LastSeenAt` pour les utilisateurs existants. |

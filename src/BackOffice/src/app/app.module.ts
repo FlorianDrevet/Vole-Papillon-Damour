@@ -6,6 +6,13 @@ import {AppComponent} from './app.component';
 import {provideAnimationsAsync} from '@angular/platform-browser/animations/async';
 import {CoreModule} from "./core/core.module";
 import {FeatureModule} from "./feature/feature.module";
+import {MsalModule, MsalRedirectComponent} from '@azure/msal-angular';
+
+import {
+  msalGuardConfig,
+  msalInstanceFactory,
+  msalInterceptorConfig,
+} from './shared/auth/msal-config';
 
 @NgModule({
   declarations: [
@@ -15,12 +22,17 @@ import {FeatureModule} from "./feature/feature.module";
     BrowserModule,
     AppRoutingModule,
     CoreModule,
-    FeatureModule
+    FeatureModule,
+    MsalModule.forRoot(
+      msalInstanceFactory(),
+      msalGuardConfig,
+      msalInterceptorConfig,
+    )
   ],
   providers: [
     provideAnimationsAsync(),
     provideZonelessChangeDetection()
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent, MsalRedirectComponent]
 })
 export class AppModule { }

@@ -12,31 +12,12 @@
   </div>
 
   <div class="flex flex-1 items-center justify-center px-shell py-16">
-    <form [formGroup]="loginForm" class="flex w-full max-w-[380px] flex-col gap-3">
+    <div class="flex w-full max-w-[380px] flex-col gap-3">
       <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
       <h2 class="font-serif text-[30px] font-medium text-ink-2">Connexion</h2>
       <p class="mb-4 text-[15px] text-slate-2">Réservé aux bénévoles de l'association.</p>
-
-      <app-input
-        [form]="loginForm"
-        [required]="true"
-        controlName="username"
-        placeholder="Identifiant"
-      ></app-input>
-
-      <app-input
-        [form]="loginForm"
-        [isPassword]="true"
-        [required]="true"
-        controlName="password"
-        placeholder="Mot de passe"
-      ></app-input>
-
-      @if (error()) {
-        <p class="text-sm text-danger">{{ error()?.toString() }}</p>
-      }
-
-      <app-button-login (click)="onLoginClick()" class="mt-4">Connexion</app-button-login>
-    </form>
+      <p class="text-sm text-slate-2">Connectez-vous avec votre compte Microsoft de l'association.</p>
+      <app-button-login (click)="onLoginClick()" class="mt-4">Se connecter avec Microsoft</app-button-login>
+    </div>
   </div>
 </div>
