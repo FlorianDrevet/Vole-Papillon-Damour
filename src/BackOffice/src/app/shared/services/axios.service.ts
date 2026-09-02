@@ -3,31 +3,28 @@ import axios from 'axios'
 import {environment} from "../../../environments/environment";
 import {MethodEnum} from "../enums/method.enum";
 import {Router} from "@angular/router";
-import {AuthenticationService} from "./authentication.service";
+import {firstValueFrom} from 'rxjs';
+
+import {ApiAccessTokenService} from './api-access-token.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AxiosService {
 
-  constructor(private auth: AuthenticationService, private router: Router) {
+  constructor(private readonly apiAccessTokenService: ApiAccessTokenService, private readonly router: Router) {
     axios.defaults.baseURL = environment.api_url
 
     axios.interceptors.request.use(
-      function (config) {
-        if (config.url === '/auth/login') {
+      async function (config) {
+        try {
+          const token = await firstValueFrom(apiAccessTokenService.getApiAccessToken$());
+          config.headers.Authorization = `Bearer ${token}`;
           return config;
+        } catch (error) {
+          await router.navigate(['/login']);
+          return Promise.reject(error);
         }
-        const token = auth.getBearerToken();
-
-        if (token) {
-          config.headers['Authorization'] = token;
-        } else {
-          router.navigate(['login']).then(null);
-          return Promise.reject('No token found');
-        }
-
-        return config;
       },
       function (error) {
         return Promise.reject(error);
@@ -40,8 +37,7 @@ export class AxiosService {
       },
       function (error) {
         if (error.response && error.response.status === 401) {
-          auth.logout();
-          router.navigate(['login']).then(null);
+          router.navigate(['/login']).then(null);
         }
         return Promise.reject(error);
       }

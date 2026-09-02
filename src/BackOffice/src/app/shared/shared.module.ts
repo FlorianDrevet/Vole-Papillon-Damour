@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { JWT_OPTIONS, JwtHelperService } from '@auth0/angular-jwt';
 import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogTitle } from '@angular/material/dialog';
 import { MatFormField, MatFormFieldModule, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -86,13 +85,6 @@ const DESIGN_SYSTEM_COMPONENTS = [
     MatSelect,
     MatOption,
     DesignSystemModule,
-  ],
-  providers: [
-    {
-      provide: JWT_OPTIONS,
-      useValue: JWT_OPTIONS,
-    },
-    JwtHelperService,
   ],
 })
 export class SharedModule {}
