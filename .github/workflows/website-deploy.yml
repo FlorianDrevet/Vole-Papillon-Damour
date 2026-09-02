@@ -27,6 +27,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: development
+    env:
+      GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.GOOGLE_ANALYTICS_MEASUREMENT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -68,6 +70,7 @@ jobs:
             --file "$DOCKERFILE" \
             --build-arg "API_URL=$API_URL" \
             --build-arg "APPINSIGHTS_CONNECTION_STRING=$APPINSIGHTS_CONNECTION_STRING" \
+            --build-arg "GOOGLE_ANALYTICS_MEASUREMENT_ID=$GOOGLE_ANALYTICS_MEASUREMENT_ID" \
             --build-arg "DEPLOY_HOST=$DEPLOY_HOST" \
             --tag "$IMAGE" \
             "$BUILD_CONTEXT"

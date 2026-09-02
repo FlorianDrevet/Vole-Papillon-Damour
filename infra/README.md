@@ -141,6 +141,15 @@ Les fronts doivent être déployés après l'API : le bundle Angular embarque
 l'`api_url` en dur, donc la pipeline lit le FQDN de `vpd-api-ca-dev` et le
 passe en `--build-arg` au moment du build de l'image.
 
+### Google Analytics 4 du Website
+
+La pipeline `Website - deploy` lit la variable d'environnement GitHub
+`GOOGLE_ANALYTICS_MEASUREMENT_ID` et la passe au build Docker du Website. Cette
+variable doit contenir l'identifiant GA4 au format `G-XXXXXXXXXX` dans
+l'environnement GitHub `development`. Si elle est absente, le tag reste
+désactivé. Le chargement côté navigateur reste conditionné au consentement
+« mesure d'audience » de la bannière de cookies.
+
 ### Redéployer l'infra sans écraser les applications
 
 `Infra - deploy` lit l'image qui tourne actuellement sur chaque Container App et

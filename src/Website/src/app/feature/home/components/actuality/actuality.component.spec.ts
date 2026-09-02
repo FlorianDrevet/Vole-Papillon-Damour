@@ -32,4 +32,19 @@ describe('ActualityComponent', () => {
 
     expect(component.actualities()).toEqual([]);
   });
+
+  it('should render three skeleton cards while latest actualities are loading', () => {
+    let resolveRequest!: (actualities: unknown[]) => void;
+    axiosServiceSpy.request.and.returnValue(new Promise(resolve => {
+      resolveRequest = resolve;
+    }));
+
+    fixture = TestBed.createComponent(ActualityComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.vpd-home-actuality-skeleton').length).toBe(3);
+
+    resolveRequest([]);
+  });
 });

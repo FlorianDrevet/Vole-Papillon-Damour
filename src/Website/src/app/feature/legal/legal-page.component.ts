@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
+import { environment } from '../../../environments/environment';
 import { LEGAL_PAGE_PATHS } from './legal-page-paths';
 
 const ASSOCIATION_NAME = "Vole Papillon d'Amour";
@@ -13,7 +14,12 @@ const PUBLIC_WEBSITE_URL = 'https://volepapillondamour.fr';
 const HOSTING_PROVIDER_NAME = 'Render';
 const HOSTING_PROVIDER_URL = 'https://render.com';
 const CLARITY_TAG_ID = 'nwy66l4uol';
-const LAST_UPDATED_LABEL = '18 mai 2026';
+const GOOGLE_ANALYTICS_NAME = 'Google Analytics 4 (GA4)';
+const GOOGLE_ANALYTICS_MEASUREMENT_ID = environment.google_analytics_measurement_id;
+const GOOGLE_ANALYTICS_ID_LABEL = GOOGLE_ANALYTICS_MEASUREMENT_ID && !GOOGLE_ANALYTICS_MEASUREMENT_ID.startsWith('__')
+  ? `Identifiant de mesure configuré : ${GOOGLE_ANALYTICS_MEASUREMENT_ID}.`
+  : 'Identifiant de mesure : configuré au moment du déploiement lorsque la mesure GA4 est activée.';
+const LAST_UPDATED_LABEL = '1er septembre 2026';
 const DECLARED_NAME = 'VOLE, PAPILLON D\'AMOUR';
 const RNA_NUMBER = 'W421002487';
 const DECLARATION_LABEL = 'déclarée le 15 février 2010 à la sous-préfecture de Montbrison et publiée au Journal officiel des associations du 6 mars 2010';
@@ -121,7 +127,7 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
         ],
         bullets: [
           'Données de navigation : pages consultées, date et heure de consultation, type de navigateur, système d\'exploitation et informations techniques comparables.',
-          `Données de mesure d'audience : interactions de navigation et signaux collectés par l'outil Microsoft Clarity lorsque son script est chargé sur le site.`,
+          `Données de mesure d'audience : interactions de navigation et signaux collectés par Microsoft Clarity et ${GOOGLE_ANALYTICS_NAME} lorsque leurs scripts sont chargés sur le site.`,
           `Données de contact volontaire : contenu du message, adresse email expéditrice et pièces éventuellement jointes lorsque vous écrivez à ${CONTACT_EMAIL}.`
         ]
       },
@@ -145,7 +151,7 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
         ],
         bullets: [
           'Membres ou bénévoles habilités de l\'association pour le suivi des messages et du site.',
-          `Prestataires techniques d'hébergement et d'analyse, notamment ${HOSTING_PROVIDER_NAME} et Microsoft Clarity selon la configuration réellement utilisée.`
+          `Prestataires techniques d'hébergement et d'analyse, notamment ${HOSTING_PROVIDER_NAME}, Microsoft Clarity et ${GOOGLE_ANALYTICS_NAME} selon la configuration réellement utilisée.`
         ]
       },
       {
@@ -206,14 +212,15 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
         ]
       },
       {
-        title: 'Mesure d\'audience et Microsoft Clarity',
+        title: `Mesure d'audience : Microsoft Clarity et ${GOOGLE_ANALYTICS_NAME}`,
         paragraphs: [
-          `Microsoft Clarity n'est chargé qu'après votre consentement explicite, donné via la bannière de cookies affichée lors de votre première visite. L'identifiant de balise utilisé est ${CLARITY_TAG_ID}.`,
-          'Cet outil peut collecter des informations d\'usage comme les pages visitées, les interactions de navigation, des informations sur le navigateur et l\'appareil utilisé afin d\'aider à comprendre la consultation du site.'
+          `Microsoft Clarity et ${GOOGLE_ANALYTICS_NAME} ne sont chargés qu'après votre consentement explicite, donné via la bannière de cookies affichée lors de votre première visite. L'identifiant Clarity utilisé est ${CLARITY_TAG_ID}.`,
+          'Ces outils peuvent collecter des informations d\'usage comme les pages visitées, les interactions de navigation, des informations sur le navigateur et l\'appareil utilisé afin d\'aider à comprendre la consultation du site.'
         ],
         bullets: [
-          'Outil identifié dans le code : Microsoft Clarity.',
+          `Outils identifiés dans le code : Microsoft Clarity et ${GOOGLE_ANALYTICS_NAME}.`,
           `Identifiant de balise utilisé : ${CLARITY_TAG_ID}.`,
+          GOOGLE_ANALYTICS_ID_LABEL,
           'Finalité annoncée : mesure d\'audience et compréhension des parcours de navigation.',
           'Déclenchement : uniquement après acceptation, totale ou partielle, des cookies de mesure d\'audience.'
         ]
@@ -222,7 +229,7 @@ const LEGAL_PAGES: Record<LegalPagePath, LegalPageViewModel> = {
         title: 'Consentement et paramétrage actuel',
         paragraphs: [
           "Une bannière de consentement s'affiche lors de votre première visite. Elle vous permet de tout accepter, de tout refuser, ou de personnaliser votre choix pour la mesure d'audience.",
-          'Tant que vous n\'avez pas donné votre accord, Microsoft Clarity n\'est ni chargé ni exécuté : aucun cookie de mesure d\'audience n\'est déposé avant votre consentement.'
+          `Tant que vous n'avez pas donné votre accord, Microsoft Clarity et ${GOOGLE_ANALYTICS_NAME} ne sont ni chargés ni exécutés : aucun cookie de mesure d'audience n'est déposé avant votre consentement.`
         ],
         bullets: [
           'Votre choix est mémorisé dans votre navigateur (stockage local) afin de ne pas vous solliciter à chaque visite.',

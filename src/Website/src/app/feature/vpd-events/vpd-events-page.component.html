@@ -1,6 +1,6 @@
 <!-- Ligne du bandeau "prochaines dates" du hero, instanciée pour le loto puis pour la
      bourse aux livres : même mise en forme, seuls le label et la teinte changent. -->
-<ng-template #nextDateRow let-event="event" let-label="label" let-accentClass="accentClass" let-fallback="fallback">
+<ng-template #nextDateRow let-event="event" let-label="label" let-accentClass="accentClass" let-fallback="fallback" let-loading="loading">
   @if (event) {
     <a [routerLink]="['/evenement', event.id]" class="flex items-center justify-between gap-4 py-3.5">
       <span class="flex flex-col gap-1">
@@ -18,6 +18,15 @@
       </span>
       <span class="font-mono text-[11px] tracking-[.12em] text-blue">→</span>
     </a>
+  } @else if (loading) {
+    <span class="vpd-event-date-skeleton flex items-center justify-between gap-4 py-3.5" aria-hidden="true">
+      <span class="flex flex-col gap-2">
+        <span class="skeleton h-3 w-28 rounded-sm"></span>
+        <span class="skeleton h-4 w-48 rounded-sm"></span>
+        <span class="skeleton h-3 w-32 rounded-sm"></span>
+      </span>
+      <span class="skeleton h-3 w-3 rounded-sm"></span>
+    </span>
   } @else {
     <span class="flex flex-col gap-1 py-3.5">
       <span class="font-mono text-[10px] uppercase tracking-[.16em]" [ngClass]="accentClass">{{ label }}</span>
@@ -48,6 +57,7 @@
         event: nextBingo(),
         label: 'Prochain loto',
         accentClass: 'text-orange-3',
+        loading: isLoading(),
         fallback: isLoading() ? 'Chargement...' : 'Date bientôt annoncée'
       }"></ng-container>
     <ng-container
@@ -56,6 +66,7 @@
         event: nextBooks(),
         label: 'Prochaine bourse aux livres',
         accentClass: 'text-blue',
+        loading: isLoading(),
         fallback: isLoading() ? 'Chargement...' : 'Date bientôt annoncée'
       }"></ng-container>
   </div>
@@ -70,7 +81,8 @@
     [Photos]="lotoPhotos"
     [Highlights]="lotoHighlights"
     [NextEvent]="nextBingo()"
-    [UpcomingCount]="bingoCount()">
+    [UpcomingCount]="bingoCount()"
+    [Loading]="isLoading()">
     Une salle pleine, un tableau lumineux, des cartons sur toutes les tables : le loto est notre
     plus gros rendez-vous de l'année. Une après-midi conviviale, ouverte à tous, autour de
     nombreux lots offerts par nos partenaires.
@@ -83,7 +95,8 @@
     [Photos]="booksPhotos"
     [Highlights]="booksHighlights"
     [NextEvent]="nextBooks()"
-    [UpcomingCount]="booksCount()">
+    [UpcomingCount]="booksCount()"
+    [Loading]="isLoading()">
     Toute l'année, vous nous déposez vos livres ; nos bénévoles les trient, les rangent par
     catégories et les remettent en vente le temps de quelques jours. Des milliers d'ouvrages à
     petits prix, et de quoi financer ce que personne d'autre ne prend en charge.
@@ -98,7 +111,22 @@
     <a routerLink="/evenement/all" class="whitespace-nowrap font-mono text-xs tracking-[.08em] text-blue">TOUT L'AGENDA →</a>
   </div>
 
-  @if (otherEvents().length) {
+  @if (isLoading()) {
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Chargement des autres rendez-vous">
+      @for (card of loadingCards; track card) {
+        <div class="vpd-events-other-skeleton flex flex-col overflow-hidden rounded-lg border border-line bg-white shadow-[0_22px_40px_-36px_rgba(7,43,69,0.6)]" aria-hidden="true">
+          <span class="skeleton skeleton-dark block h-36 w-full"></span>
+          <span class="flex flex-1 flex-col gap-2 px-6 py-5">
+            <span class="skeleton h-5 w-4/5 rounded-sm"></span>
+            <span class="skeleton h-3 w-2/5 rounded-sm"></span>
+            <span class="skeleton h-3 w-full rounded-sm"></span>
+            <span class="skeleton h-3 w-10/12 rounded-sm"></span>
+            <span class="skeleton mt-auto h-3 w-16 rounded-sm"></span>
+          </span>
+        </div>
+      }
+    </div>
+  } @else if (otherEvents().length) {
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       @for (event of otherEvents(); track event.id) {
         <a

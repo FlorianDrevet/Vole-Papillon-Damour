@@ -2,6 +2,11 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Corrected the GA4 `dataLayer` queue to use the standard `arguments` shape and initialized denied Consent Mode defaults before events are sent. |
+| 2026-09-01 | Ajouté GA4 au consentement d'audience du Website avec suivi des routes et révocation, remplacé le sitemap placeholder par les URLs publiques réelles et ajouté `robots.txt` ainsi que la documentation Search Console |
+| 2026-09-01 | Remplacé les spinners et placeholders d'attente du Website par des skeletons qui conservent les gabarits réels : trois cartes sur l'accueil, agenda, actualités, détails, lots et tableau live, avec états d'erreur finis et animation respectueuse de `prefers-reduced-motion` |
+| 2026-09-01 | Complété `/nos-actions` avec les cinq actions illustrées (équithérapie, ordinateurs, deux actions autour des jouets et permis de conduire), supprimé les quatre cartes statistiques et reformulé l'introduction autour de l'aide et de la générosité |
+| 2026-09-01 | Remplacé les placeholders de la mosaïque d'actions de la page d'accueil par les trois photos fournies (équithérapie, ordinateurs avec le Kiwanis, collecte de jouets), ajouté le recadrage responsive et reformulé la section autour des aides concrètes rendues possibles |
 | 2026-08-24 | Rendu la revue de presse atteignable depuis le header : `SiteNavItem` accepte desormais `children`/`hint`, l'entree "L'association" ouvre un sous-menu CSS (group-hover + group-focus-within, `invisible` pour garder l'ordre de tabulation propre) listant presentation/comment-aider/revue-de-presses/photos, et le menu mobile deplie les memes sous-rubriques avec une liste scrollable ; la page revue de presse reste un placeholder sans article |
 | 2026-05-20 | Completed a focused backend live loto tableau business-core pass for add numero, undo/back, and won-lot validation: added validator/domain/handler tests, hardened multi-party rollback and bingo undo, and verified 100% line/branch on targeted live business methods |
 | 2026-05-19 | Hardened the live loto tableau flow with event-scoped SSE broadcasts, safer rollback/win handlers, Website SSE parse/reconnect guards, new Application/Infrastructure test projects, and verified 100% targeted coverage on live handlers/SSE manager plus backend and Website validations |

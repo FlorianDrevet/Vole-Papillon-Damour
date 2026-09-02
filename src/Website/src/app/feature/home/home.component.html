@@ -53,51 +53,54 @@
   <div class="grid grid-cols-1 items-end gap-6 lg:grid-cols-[1fr_360px]">
     <div class="flex flex-col gap-3.5">
       <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
-      <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-3">Les preuves</span>
-      <h2 class="max-w-[22ch] font-serif text-[32px] font-medium leading-tight lg:text-[46px]">On ne promet rien. On montre.</h2>
+      <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-3">Nos actions concrètes</span>
+      <h2 class="max-w-[22ch] font-serif text-[32px] font-medium leading-tight lg:text-[46px]">Voici ce que nous rendons possible.</h2>
     </div>
     <p class="text-[15px] leading-relaxed text-slate-2">
-      Chaque photo est un besoin réel, payé par l'association après un refus de prise en charge. Pas de frais
-      de structure, pas de salarié.
+      Chaque image raconte une action concrète : des séances d'équithérapie, des ordinateurs pour étudier et des
+      jouets pour les enfants. Avec vous, l'association répond à des besoins bien réels.
     </p>
   </div>
 
-  <!-- Contenu d'exemple en attendant les vraies actions financées et leurs montants (voir §"Contenu à compléter"). -->
   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-12">
     <app-action-card
       class="lg:[grid-column:span_5]"
-      meta="MONTANT ET DATE À COMPLÉTER"
-      title="Un exemple d'aide à la mobilité"
-      description="Illustration : matériel de transport adapté financé par l'association."
-      photoLabel="PHOTO - À COMPLÉTER"
+      meta="ÉQUITHÉRAPIE · 2025"
+      title="Financement de séances d’équithérapie en 2025 pour 12 enfants d’une classe ULIS de Feurs"
+      photoSrc="images/actions/equitherapie-ulis-feurs.jpg"
+      photoAlt="Séance d’équithérapie pour des enfants d’une classe ULIS de Feurs"
+      photoPosition="center 42%"
       [rotateDeg]="-1.6">
     </app-action-card>
 
     <app-action-card
       class="lg:[grid-column:span_4] lg:mt-14"
-      meta="DEPUIS 2010"
-      title="Des dizaines d'enfants aidés"
-      description="Matériel médical, mobilier adapté, informatique, séjours de répit. Toujours le reste à charge que personne ne paie."
+      meta="AGIR AU PLUS PRÈS DES BESOINS"
+      title="Des actions nées de besoins concrets"
+      description="Nous réunissons bénévoles et partenaires pour apporter une aide adaptée, au plus près des enfants et des familles."
       tone="dark"
       [rotateDeg]="1.3"
       [floatDelayS]="0.8">
-      <a routerLink="/nos-actions" class="mt-1.5 font-mono text-[11px] tracking-[.12em] text-orange-2">NOS RÉALISATIONS →</a>
+      <a routerLink="/nos-actions" class="mt-1.5 font-mono text-[11px] tracking-[.12em] text-orange-2">NOTRE MANIÈRE D'AGIR →</a>
     </app-action-card>
 
     <app-action-card
       class="lg:[grid-column:span_3] lg:mt-3"
-      meta="MONTANT À COMPLÉTER"
-      title="Un exemple d'aide informatique"
-      photoLabel="PHOTO - À COMPLÉTER"
+      meta="INFORMATIQUE · KIWANIS"
+      title="Financement d’ordinateurs portables à de jeunes lycéennes avec le Kiwanis"
+      photoSrc="images/actions/ordinateurs-kiwanis.jpg"
+      photoAlt="Remise d’ordinateurs portables à de jeunes lycéennes avec le Kiwanis"
       [rotateDeg]="-0.9"
       [floatDelayS]="1.6">
     </app-action-card>
 
     <app-action-card
       class="sm:[grid-column:span_1] lg:[grid-column:span_4]"
-      meta="MONTANT À COMPLÉTER"
-      title="Un exemple de séjour de répit"
-      photoLabel="PHOTO - À COMPLÉTER"
+      meta="COLLECTE SOLIDAIRE"
+      title="Participation à la récolte de jouets au profit du Père Noël du lundi"
+      photoSrc="images/actions/recolte-jouets-pere-noel-du-lundi.jpg"
+      photoAlt="Récolte de jouets au profit du Père Noël du lundi"
+      photoPosition="center 54%"
       [rotateDeg]="1"
       [floatDelayS]="2.2">
     </app-action-card>
@@ -105,9 +108,9 @@
     <a
       routerLink="/nos-actions"
       class="flex flex-col justify-center gap-3 rounded-sm border border-line-2 bg-white px-7 py-8 transition hover:border-blue-2 sm:col-span-2 lg:[grid-column:span_5]">
-      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-3">Toutes nos actions</span>
-      <span class="font-serif text-2xl font-medium leading-snug text-ink-2">Voir le détail de chaque aide financée, avec preuve à l'appui.</span>
-      <span class="font-mono text-xs tracking-[.12em] text-blue">NOS RÉALISATIONS →</span>
+      <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-3">Pour aller plus loin</span>
+      <span class="font-serif text-2xl font-medium leading-snug text-ink-2">Découvrir les aides que nous faisons vivre.</span>
+      <span class="font-mono text-xs tracking-[.12em] text-blue">DÉCOUVRIR NOS ACTIONS →</span>
     </a>
   </div>
 </section>

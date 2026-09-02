@@ -31,6 +31,7 @@ export class SpecialEventComponent {
   NextEvent = input<VpdEventModel | null>(null);
   /** Nombre total d'occurrences à venir de ce type, prochaine date incluse. */
   UpcomingCount = input<number>(0);
+  Loading = input<boolean>(false);
 
   readonly mainPhoto = computed(() => this.Photos()[0]);
   readonly thumbnails = computed(() => this.Photos().slice(1, 3));

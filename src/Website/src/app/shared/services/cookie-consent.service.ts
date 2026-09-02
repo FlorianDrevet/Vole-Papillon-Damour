@@ -2,6 +2,8 @@ import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
 
+import { GoogleAnalyticsService } from './google-analytics.service';
+
 const STORAGE_KEY = 'vpd-cookie-consent';
 const CLARITY_PROJECT_ID = 'nwy66l4uol';
 
@@ -24,6 +26,7 @@ declare global {
 @Injectable({ providedIn: 'root' })
 export class CookieConsentService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly googleAnalytics = inject(GoogleAnalyticsService);
 
   bannerVisible$ = new BehaviorSubject<boolean>(false);
   panelOpen$ = new BehaviorSubject<boolean>(false);
@@ -38,7 +41,7 @@ export class CookieConsentService {
     if (stored) {
       this.preferences = stored.preferences;
       if (stored.preferences.analytics) {
-        this.loadClarity();
+        this.enableAnalytics();
       }
     } else {
       this.bannerVisible$.next(true);
@@ -85,8 +88,36 @@ export class CookieConsentService {
     this.bannerVisible$.next(false);
     this.panelOpen$.next(false);
     if (preferences.analytics) {
-      this.loadClarity();
+      this.enableAnalytics();
+    } else {
+      this.disableAnalytics();
     }
+  }
+
+  private enableAnalytics(): void {
+    this.loadClarity();
+    if (this.isBrowser) {
+      window.clarity?.('consentv2', {
+        ad_Storage: 'denied',
+        analytics_Storage: 'granted',
+      });
+    }
+    this.googleAnalytics.enable();
+  }
+
+  private disableAnalytics(): void {
+    this.googleAnalytics.disable();
+    if (!this.isBrowser || !window.clarity) {
+      return;
+    }
+
+    window.clarity('consentv2', {
+      ad_Storage: 'denied',
+      analytics_Storage: 'denied',
+    });
+    // This also clears a Clarity session already created before the visitor
+    // changed their choice. The v2 signal above remains the canonical state.
+    window.clarity('consent', false);
   }
 
   private loadClarity(): void {

@@ -12,6 +12,7 @@ import {eventMapsUrl} from "../../shared/utils/event-address.util";
 })
 export class EventDetailComponent implements OnInit {
   vpdEvent = signal<VpdEventModel | null>(null)
+  isLoading = signal(true);
   protected readonly VpdEventEnum = VpdEventEnum;
 
   /** Famille de l'évènement, affichée en chapeau du hero au-dessus du titre de l'édition. */
@@ -55,12 +56,18 @@ export class EventDetailComponent implements OnInit {
 
   getEvents() {
     this.route.paramMap.subscribe(params => {
-      if (params.get('id') !== null) {
-        this.eventsFacadeService.getEventById(params.get('id')!).then(response => {
-          const data: any = response
-          response.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
-          this.vpdEvent.set(response)
-        })
+      const id = params.get('id');
+      if (id !== null) {
+        this.eventsFacadeService.getEventById(id)
+          .then(response => {
+            const data: any = response;
+            response.eventType = VpdEventEnum[data.eventType as keyof typeof VpdEventEnum];
+            this.vpdEvent.set(response);
+          })
+          .catch(() => this.vpdEvent.set(null))
+          .finally(() => this.isLoading.set(false));
+      } else {
+        this.isLoading.set(false);
       }
     })
   }

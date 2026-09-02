@@ -21,6 +21,8 @@ export class PricesComponent implements OnInit {
   newProduct = input<ProductModel | null>(null);
 
   allProducts = signal<ProductModel[]>([]);
+  readonly isLoading = signal(true);
+  readonly loadingProducts = [0, 1, 2, 3];
   filteredProducts = computed(() => {
     return this.allProducts()
       .filter(
@@ -36,7 +38,9 @@ export class PricesComponent implements OnInit {
 
   ngOnInit(): void {
     this.productFacade.getAllProducts().then((products) => {
-      this.allProducts.set(products);
-    });
+      this.allProducts.set(products ?? []);
+    })
+      .catch(() => undefined)
+      .finally(() => this.isLoading.set(false));
   }
 }
