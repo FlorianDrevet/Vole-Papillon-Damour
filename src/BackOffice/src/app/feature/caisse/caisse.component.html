@@ -1,62 +1,70 @@
-<div class="mb-20">
-  <div
-    class="bg-secondary-color flex flex-row justify-evenly w-[90%] ml-auto mr-auto rounded-2xl mt-5 text-white text-4xl h-16 items-center relative">
-    <div class="flex flex-row">
-      <img class="h-10 mr-2" src="icons/boissons.png">
-      <p (click)="changeFilter(ProductSectionEnum.Bar)"
-         [ngClass]="{'underline': filter() === ProductSectionEnum.Bar}">Buvette</p>
+<div class="flex w-full flex-col gap-8 px-shell pb-16">
+  <app-page-header eyebrow="Vole Papillon d'Amour · Espace bénévoles" title="La Caisse">
+    <div class="flex gap-2">
+      <app-icon-button icon="download" ariaLabel="Télécharger l'application caisse" (click)="downloadCaisseApp()"></app-icon-button>
+      <app-pill-button (click)="openDialogCreation()" type="button" [small]="true">
+        <app-icon name="add" [size]="15"></app-icon>
+        Nouveau produit
+      </app-pill-button>
     </div>
-    <div class="flex flex-row">
-      <img class="h-10 mr-2" src="icons/bingo.png">
-      <p (click)="changeFilter(ProductSectionEnum.Bingo)"
-         [ngClass]="{'underline': filter() === ProductSectionEnum.Bingo}">Loto</p>
-    </div>
-    <div class="flex flex-row">
-      <img class="h-10 mr-2" src="icons/pile-de-livres.png">
-      <p (click)="changeFilter(ProductSectionEnum.Book)"
-         [ngClass]="{'underline': filter() === ProductSectionEnum.Book}">Livres</p>
-    </div>
+  </app-page-header>
 
+  <div class="flex flex-wrap gap-2">
     <button
-      (click)="openDialogCreation()"
-      class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute right-5">
-      <img class="h-4" fetchpriority="high" src="icons/plus.png">
+      type="button"
+      (click)="changeFilter(ProductSectionEnum.Bar)"
+      class="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition"
+      [class]="filter() === ProductSectionEnum.Bar ? 'border-orange bg-orange text-white' : 'border-line bg-white text-slate-2 hover:border-mist'">
+      Buvette
     </button>
-
     <button
-      (click)="downloadCaisseApp()"
-      class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2 absolute right-20">
-      <img class="h-4" fetchpriority="high" src="icons/telecharger.png">
+      type="button"
+      (click)="changeFilter(ProductSectionEnum.Bingo)"
+      class="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition"
+      [class]="filter() === ProductSectionEnum.Bingo ? 'border-orange bg-orange text-white' : 'border-line bg-white text-slate-2 hover:border-mist'">
+      Loto
+    </button>
+    <button
+      type="button"
+      (click)="changeFilter(ProductSectionEnum.Book)"
+      class="inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition"
+      [class]="filter() === ProductSectionEnum.Book ? 'border-orange bg-orange text-white' : 'border-line bg-white text-slate-2 hover:border-mist'">
+      Livres
     </button>
   </div>
 
   @if (filter() === ProductSectionEnum.Bar) {
-    <div
-      class="bg-tertiary-color flex flex-row justify-evenly w-[90%] ml-auto mr-auto rounded-2xl mt-5 text-white text-4xl h-16 items-center relative">
-      <div class="flex flex-row">
-        <img class="h-10 mr-2" src="icons/sel.png">
-        <p (click)="changeFilterBar(ProductCategoryEnum.Salt)"
-           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.Salt}">Salé</p>
-      </div>
-      <div class="flex flex-row">
-        <img class="h-10 mr-2" src="icons/un-carre-de-sucre.png">
-        <p (click)="changeFilterBar(ProductCategoryEnum.Sugar)"
-           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.Sugar}">Sucré</p>
-      </div>
-      <div class="flex flex-row">
-        <img class="h-10 mr-2" src="icons/citron.png">
-        <p (click)="changeFilterBar(ProductCategoryEnum.ColdDrink)"
-           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.ColdDrink}">Boisson Froide</p>
-      </div>
-      <div class="flex flex-row">
-        <img class="h-10 mr-2" src="icons/cafe.png">
-        <p (click)="changeFilterBar(ProductCategoryEnum.HotDrink)"
-           [ngClass]="{'underline': filterBar() === ProductCategoryEnum.HotDrink}">Boisson Chaude</p>
-      </div>
+    <div class="flex flex-wrap gap-2 border-b border-line-2 pb-6">
+      <button
+        type="button"
+        (click)="changeFilterBar(ProductCategoryEnum.Salt)"
+        class="rounded-full px-4 py-2 font-mono text-[11px] uppercase tracking-[.1em] transition"
+        [class]="filterBar() === ProductCategoryEnum.Salt ? 'bg-blue text-white' : 'bg-paper-2 text-slate-2 hover:bg-mist-2'">
+        Salé
+      </button>
+      <button
+        type="button"
+        (click)="changeFilterBar(ProductCategoryEnum.Sugar)"
+        class="rounded-full px-4 py-2 font-mono text-[11px] uppercase tracking-[.1em] transition"
+        [class]="filterBar() === ProductCategoryEnum.Sugar ? 'bg-blue text-white' : 'bg-paper-2 text-slate-2 hover:bg-mist-2'">
+        Sucré
+      </button>
+      <button
+        type="button"
+        (click)="changeFilterBar(ProductCategoryEnum.ColdDrink)"
+        class="rounded-full px-4 py-2 font-mono text-[11px] uppercase tracking-[.1em] transition"
+        [class]="filterBar() === ProductCategoryEnum.ColdDrink ? 'bg-blue text-white' : 'bg-paper-2 text-slate-2 hover:bg-mist-2'">
+        Boisson froide
+      </button>
+      <button
+        type="button"
+        (click)="changeFilterBar(ProductCategoryEnum.HotDrink)"
+        class="rounded-full px-4 py-2 font-mono text-[11px] uppercase tracking-[.1em] transition"
+        [class]="filterBar() === ProductCategoryEnum.HotDrink ? 'bg-blue text-white' : 'bg-paper-2 text-slate-2 hover:bg-mist-2'">
+        Boisson chaude
+      </button>
     </div>
   }
 
-  <div class="sm:ml-20 sm:mr-20 mt-10 ">
-    <app-prices [category]="filterBar()" [newProduct]="eventUpdated()" [section]="filter()"></app-prices>
-  </div>
+  <app-prices [category]="filterBar()" [newProduct]="eventUpdated()" [section]="filter()"></app-prices>
 </div>

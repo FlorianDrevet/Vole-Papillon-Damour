@@ -1,16 +1,14 @@
 .container-tableau {
-  @apply w-screen h-screen bg-primary-color;
+  @apply w-screen h-screen bg-ink-2;
 }
 
 .info-partie {
-  height: 150px;
-  @apply flex flex-row justify-between;
+  height: 8vw;
+  @apply flex flex-row justify-between items-center;
 }
 
 .partie {
-  margin-top: auto;
-  margin-bottom: auto;
-  @apply flex flex-row mb-[20px] w-screen;
+  @apply flex flex-row flex-wrap mb-[20px] w-screen items-center;
 }
 
 .tableau {
@@ -18,12 +16,12 @@
 }
 
 app-number {
-  border-width: 2px;
-  @apply w-full border-primary-color;
+  border-width: 1px;
+  @apply w-full border-cyan/20;
 }
 
 app-number:last-child {
-  border-bottom-right-radius: 25px;
+  border-bottom-right-radius: 4px;
 }
 
 .ligne {
@@ -31,93 +29,65 @@ app-number:last-child {
 }
 
 .lots {
-  @apply flex flex-col mr-[5%] justify-end
+  @apply flex flex-col mr-[5%] justify-end gap-2.5;
 }
 
 .lots app-tag {
   width: fit-content;
-  margin-bottom: 10px;
   margin-left: auto;
 }
 
 .bingo {
-  margin-top: 70px;
+  margin-top: 3.5vw;
   margin-left: 5%;
   @apply flex flex-row justify-between;
 }
 
 .utils {
   margin-right: 5%;
-  @apply flex flex-row;
+  @apply flex flex-row gap-4;
 }
 
-.win {
-  border: green 5px solid;
-  border-radius: 500px;
+.util-btn {
+  border-radius: 999px;
   height: fit-content;
-  padding: 10px;
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-right: 10px;
+  padding: 1vw;
+  border-width: 3px;
+  @apply flex items-center justify-center;
 }
 
-.win img {
-  margin: auto;
-  height: auto;
-  width: 100px;
+.util-btn-danger {
+  @apply border-danger text-danger bg-white;
 }
 
-.bingo-won {
-  border: yellow 5px solid;
-  border-radius: 500px;
-  height: fit-content;
-  padding: 10px;
-  margin-top: auto;
-  margin-bottom: auto;
+.util-btn-success {
+  @apply border-success text-success bg-white;
 }
 
-.bingo-won img {
-  margin: auto;
-  height: auto;
-  width: 100px;
-}
-
-.rollback {
-  border: red 5px solid;
-  border-radius: 500px;
-  height: fit-content;
-  padding: 10px;
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-right: 10px;
-}
-
-.rollback img {
-  margin: auto;
-  height: auto;
-  width: 100px;
+.util-btn-gold {
+  @apply border-orange-2 text-orange-3 bg-white;
 }
 
 .pause-title {
-  font-size: 200px;
+  font-size: 6vw;
   width: fit-content;
-  @apply ml-auto mr-auto text-primary-color;
+  @apply ml-auto mr-auto text-white font-serif;
 }
 
 .bingo-numero-pause {
-  font-size: 150px;
+  font-size: 4.5vw;
   text-align: center;
-  @apply ml-auto mr-auto text-primary-color;
+  @apply ml-auto mr-auto text-mist-2 font-mono mt-4;
 }
 
 .last-numero-title {
-  font-size: 150px;
+  font-size: 4.5vw;
   width: fit-content;
-  @apply mr-auto text-primary-color;
+  @apply mr-auto text-white font-serif;
 }
 
 .last-numero {
-  font-size: 250px;
+  font-size: 8vw;
   text-align: center;
-  @apply ml-auto mr-auto text-primary-color;
+  @apply ml-auto mr-auto text-orange-2 font-serif mt-4;
 }

@@ -1,65 +1,59 @@
-@if (actuality() !== null) {
-    <div class="flex flex-col items-center mt-10 font-caveatbrush">
-        <div class="flex flex-col items-center w-fit">
-            <h1 class="text-primary-color text-5xl lg:text-8xl">{{ actuality()!.title }}</h1>
-            <div class="bg-primary-color h-2 lg:h-3 w-4/5 mt-2"></div>
-            <div class="flex flex-row mt-5">
-                <img
-                        class=" lg:mr-5 h-10 lg:h-[60px]"
-                        height="60"
-                        width="60"
-                        src="icons/calendar-icon.svg" alt="calendar icon">
-                <p class="text-3xl lg:text-5xl text-text-color mt-1">{{ actuality()!.date | date:'dd/MM/yyyy' }}</p>
-            </div>
-        </div>
-
-        <div class="w-4/5 flex flex-col items-center mt-10 ">
-            <img class="h-auto lg:w-2/5 mb-10 rounded-3xl" [src]="actuality()!.urlPrincipalImage">
-            <p class="text-justify text-primary-color lg:w-4/5 text-2xl lg:text-4xl">{{ actuality()!.article }}</p>
-        </div>
-
-        <div class="flex flex-col mt-10">
-            <div class="w-fit">
-                <h2 class="text-primary-color text-5xl lg:text-6xl">Plus d'images</h2>
-                <div class="mt-2 bg-primary-color h-2 w-full"></div>
-            </div>
-            <div class="mt-10 flex-row flex flex-wrap justify-evenly">
-                @for (image of actuality()!.images; track image) {
-                    <app-vpd-image [rounded]="true" [src]="image"></app-vpd-image>
-                }
-            </div>
-        </div>
-
-      @if (actuality()!.instagramLink !== null || actuality()!.facebookLink !== null) {
-        <div class="w-4/5 flex flex-col items-center mt-10 lg:mt-20">
-          <div class="w-fit">
-            <h2 class="hidden lg:block text-primary-color text-5xl lg:text-6xl">Réagissez à cette actualité</h2>
-            <h2 class="lg:hidden text-primary-color text-5xl lg:text-6xl">Réagissez sur</h2>
-            <div class="mt-2 bg-primary-color h-2 w-full"></div>
-          </div>
-          <div class="flex flex-row mt-10 lg:mt-20 justify-between lg:justify-evenly w-full lg:w-2/5">
-            @if (actuality()!.facebookLink !== null) {
-              <a class="flex items-center flex-col ml-auto mr-auto" [href]="actuality()!.facebookLink">
-                <img src="images/facebook.svg" class="h-[60px] lg:h-[100px]">
-                <p class="text-3xl lg:text-5xl text-primary-color">Facebook</p>
-              </a>
-            }
-            @if (actuality()!.instagramLink !== null) {
-              <a class="flex items-center flex-col ml-auto mr-auto" [href]="actuality()!.instagramLink">
-                <img src="images/instagram.svg" class="h-[60px] lg:h-[100px]">
-                <p class="text-3xl lg:text-5xl text-primary-color">Instagram</p>
-              </a>
-            }
-          </div>
-        </div>
-        }
-      <app-vpd-button class=" mt-20 mb-20 hidden lg:block" [routerLink]="'/actualites'">< Retour à toute
-            l'actualité
-        </app-vpd-button>
-      <app-vpd-button class="mt-10 mb-20 lg:hidden" [routerLink]="'/actualites'">< Toute l'actualité
-        </app-vpd-button>
-    </div>
+@if (actuality() === null) {
+  <div class="flex justify-center px-shell py-24">
+    <mat-spinner></mat-spinner>
+  </div>
 } @else {
-    Loading ...
-}
+  <article class="mx-auto flex max-w-[720px] flex-col gap-10 px-shell py-14">
+    <a routerLink="/actualites" class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue">
+      <app-icon name="back" [size]="13"></app-icon>
+      Toute l'actualité
+    </a>
 
+    <header class="flex flex-col gap-3">
+      <span class="inline-flex w-fit items-center gap-2.5 font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-blue">
+        <app-icon name="calendar" [size]="13"></app-icon>
+        {{ actuality()!.date | date:'d MMMM yyyy' }}
+      </span>
+      <h1 class="font-serif text-[34px] font-medium leading-[1.05] text-ink-2 lg:text-[46px]">{{ actuality()!.title }}</h1>
+    </header>
+
+    <img class="w-full rounded object-cover" [src]="actuality()!.urlPrincipalImage" [alt]="actuality()!.title">
+
+    <p class="whitespace-pre-line text-[17px] leading-relaxed text-slate">{{ actuality()!.article }}</p>
+
+    @if (actuality()!.images.length > 0) {
+      <section class="flex flex-col gap-5 border-t border-line-2 pt-8">
+        <app-group-heading title="Plus d'images"></app-group-heading>
+        <div class="flex flex-row flex-wrap gap-4">
+          @for (image of actuality()!.images; track image) {
+            <app-vpd-image [rounded]="true" [src]="image"></app-vpd-image>
+          }
+        </div>
+      </section>
+    }
+
+    @if (actuality()!.instagramLink !== null || actuality()!.facebookLink !== null) {
+      <section class="flex flex-col gap-5 border-t border-line-2 pt-8">
+        <app-group-heading title="Réagissez à cette actualité"></app-group-heading>
+        <div class="flex flex-row gap-4">
+          @if (actuality()!.facebookLink !== null) {
+            <a
+              class="flex items-center gap-2 rounded-full border border-mist px-5 py-2.5 text-sm font-semibold text-blue hover:bg-blue/5"
+              [href]="actuality()!.facebookLink!" target="_blank" rel="noopener noreferrer">
+              <img src="images/facebook.svg" class="h-4 w-4" alt="">
+              Facebook
+            </a>
+          }
+          @if (actuality()!.instagramLink !== null) {
+            <a
+              class="flex items-center gap-2 rounded-full border border-mist px-5 py-2.5 text-sm font-semibold text-blue hover:bg-blue/5"
+              [href]="actuality()!.instagramLink!" target="_blank" rel="noopener noreferrer">
+              <img src="images/instagram.svg" class="h-4 w-4" alt="">
+              Instagram
+            </a>
+          }
+        </div>
+      </section>
+    }
+  </article>
+}

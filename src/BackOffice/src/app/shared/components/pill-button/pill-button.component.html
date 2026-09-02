@@ -1,0 +1,22 @@
+<!-- Le contenu projeté n'est déclaré qu'une seule fois : Angular ne le projette
+     que dans le premier <ng-content> du template, donc dupliquer la balise dans
+     chaque branche laisserait les boutons rendus par les autres branches vides. -->
+<ng-template #content><ng-content></ng-content></ng-template>
+
+@if (routerLink()) {
+  <a [routerLink]="routerLink()" [class]="classes()">
+    <ng-container [ngTemplateOutlet]="content"></ng-container>
+  </a>
+} @else if (href()) {
+  <a
+    [href]="href()"
+    [target]="target() ?? null"
+    [rel]="target() === '_blank' ? 'noopener noreferrer' : null"
+    [class]="classes()">
+    <ng-container [ngTemplateOutlet]="content"></ng-container>
+  </a>
+} @else {
+  <button [type]="type()" [disabled]="disabled()" [class]="classes()">
+    <ng-container [ngTemplateOutlet]="content"></ng-container>
+  </button>
+}

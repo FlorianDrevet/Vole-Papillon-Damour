@@ -1,12 +1,10 @@
-<div
-  [formGroup]="form()"
-  class="flex flex-row gradient-box items-center">
+<div [formGroup]="form()" class="flex flex-row items-center rounded-sm border border-line bg-white px-4 py-3.5 transition focus-within:border-blue-2 focus-within:shadow-[0_0_0_3px_rgba(20,151,214,0.16)]">
   <input
     [formControlName]="controlName()"
     [placeholder]="placeholder()"
     [required]="required()"
     [type]="isPassword() ? 'password' : 'text'"
     [value]="valueInput()"
+    class="w-full bg-transparent font-sans text-[15px] text-ink-2 placeholder:text-slate-3 focus:outline-none"
   >
 </div>
-

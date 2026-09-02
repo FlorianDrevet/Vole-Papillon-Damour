@@ -1,29 +1,23 @@
 <app-general-infos [vpdEvent]="vpdEvent()">
-  <div class="flex flex-col gap-5 lg:gap-16 w-full lg:w-fit">
-    <app-section-infos-event
-      Title="Dates :"
-      UrlIcon="icons/calendar-icon.svg"
-      [Value]="'Du ' + (vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC') + ' au ' + (vpdEvent().dateEnd | date: 'dd/MM/yyyy':'UTC')"
-    ></app-section-infos-event>
+  <app-section-infos-event
+    Title="Dates"
+    UrlIcon="icons/calendar-icon.svg"
+    [Value]="'Du ' + (vpdEvent().dateStart | date: 'dd/MM/yyyy':'UTC') + ' au ' + (vpdEvent().dateEnd | date: 'dd/MM/yyyy':'UTC')"
+  ></app-section-infos-event>
 
-    <app-section-infos-event
-      Title="Horaires :"
-      UrlIcon="icons/clock-icon.svg"
-      [Value]="'De ' + (vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC') + ' à ' + (vpdEvent().hourCloseDoors | date: 'HH:mm':'UTC')"
-    ></app-section-infos-event>
-  </div>
-  <div>
-    <app-section-infos-event
-      Title="Lieu :"
-      UrlIcon="icons/location-icon.svg"
-      [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city"
-    >
-      <app-vpd-image
-        [backgroundColor]="BackgroundColorEnum.WHITE"
-        [src]="'images/map_bourse_aux_livres.png'"></app-vpd-image>
-    </app-section-infos-event>
-  </div>
+  <app-section-infos-event
+    Title="Horaires"
+    UrlIcon="icons/clock-icon.svg"
+    [Value]="'De ' + (vpdEvent().hourOpenDoors | date: 'HH:mm':'UTC') + ' à ' + (vpdEvent().hourCloseDoors | date: 'HH:mm':'UTC')"
+  ></app-section-infos-event>
 
-
+  <app-section-infos-event
+    Title="Lieu"
+    UrlIcon="icons/location-icon.svg"
+    [Value]="vpdEvent().roadNumber + ' ' + vpdEvent().road + '<br>' + vpdEvent().cityCode + ' ' + vpdEvent().city"
+  >
+    <app-vpd-image
+      [backgroundColor]="BackgroundColorEnum.WHITE"
+      [src]="'images/map_bourse_aux_livres.png'"></app-vpd-image>
+  </app-section-infos-event>
 </app-general-infos>
-

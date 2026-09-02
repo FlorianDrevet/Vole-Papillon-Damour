@@ -1,5 +1,7 @@
 @if (assoEvent() === null || currentPartie() === null || currentLine() === null) {
-  <mat-spinner class="ml-auto mr-auto"></mat-spinner>
+  <div class="flex h-screen items-center justify-center bg-ink-2">
+    <mat-spinner></mat-spinner>
+  </div>
 } @else {
   <app-modal (closeModal)="isPaused.set(false)" [showModal]="isPaused()">
     <h1 class="pause-title">Pause</h1>
@@ -7,7 +9,7 @@
   </app-modal>
 
   <app-modal (closeModal)="isLastNumero.set(false)" [showModal]="isLastNumero()">
-    <h1 class="last-numero-title">Numéro:</h1>
+    <h1 class="last-numero-title">Numéro :</h1>
     <h2 class="last-numero">{{ lastNumero() }}</h2>
   </app-modal>
 
@@ -26,15 +28,15 @@
         }
       </div>
       <div class="utils">
-        <div (click)="onRollBackClicked()" class="rollback">
-          <img src="/icons/retour.png">
-        </div>
-        <div (click)="onWinClicked()" class="win">
-          <img src="/icons/verifier.png">
-        </div>
-        <div (click)="onBingoWinClicked()" class="bingo-won">
-          <img src="/icons/trophee.png">
-        </div>
+        <button type="button" (click)="onRollBackClicked()" aria-label="Annuler le dernier numéro" class="util-btn util-btn-danger">
+          <app-icon name="undo" [size]="26"></app-icon>
+        </button>
+        <button type="button" (click)="onWinClicked()" aria-label="Marquer une ligne gagnante" class="util-btn util-btn-success">
+          <app-icon name="check" [size]="26"></app-icon>
+        </button>
+        <button type="button" (click)="onBingoWinClicked()" aria-label="Marquer le bingo gagné" class="util-btn util-btn-gold">
+          <app-icon name="trophy" [size]="26"></app-icon>
+        </button>
       </div>
     </div>
     <div class="tableau">
@@ -55,7 +57,7 @@
     <div class="bingo">
       @if ((currentPartie()?.partieType ?? PartieTypeEnum.BINGO).toString() !== 'Bingo') {
         <app-tag [isBingo]="true"
-                 [value]="'Bingo:  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
+                 [value]="'Bingo :  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
       } @else {
         <div class="w-1/5"></div> <!-- To put on the right the Lot tag -->
       }

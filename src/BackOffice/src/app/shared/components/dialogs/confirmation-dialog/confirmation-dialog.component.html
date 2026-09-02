@@ -1,5 +1,7 @@
-<h2 mat-dialog-title>{{data.title}}</h2>
-<mat-dialog-actions>
-  <button (click)="onNoClick()" cdkFocusInitial mat-button>Non</button>
-  <button (click)="onYesClick()" mat-button>Oui</button>
-</mat-dialog-actions>
+<div class="flex w-[320px] max-w-full flex-col gap-5 p-1">
+  <h2 mat-dialog-title class="!m-0 font-serif text-xl font-medium text-ink-2">{{data.title}}</h2>
+  <mat-dialog-actions class="!m-0 !p-0" align="end">
+    <button (click)="onNoClick()" cdkFocusInitial mat-button>Non</button>
+    <button (click)="onYesClick()" mat-button color="warn">Oui</button>
+  </mat-dialog-actions>
+</div>

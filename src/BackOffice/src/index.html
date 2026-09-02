@@ -6,8 +6,11 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="vpd_icon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Les polices du design system (Newsreader / Libre Franklin / IBM Plex Mono) sont
+       auto-hébergées dans public/fonts et déclarées dans src/scss/_typography.scss :
+       plus aucune requête vers Google Fonts. La feuille Material Icons a été retirée
+       avec elles, l'application n'utilisant aucun <mat-icon> (les seules icônes
+       Material, celles du datepicker et du timepicker, sont des SVG inline). -->
 
   <script type="text/javascript"><!-- TODO Clarity token -->
     (function(c,l,a,r,i,t,y){

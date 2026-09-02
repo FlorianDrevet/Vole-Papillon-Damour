@@ -1,35 +1,33 @@
-<div class="flex flex-col rounded-3xl border-4 border-primary-color p-5 bg-white w-full sm:w-[430px] h-fit sm:h-[650px] max-h-[650px] sm:max-h-none">
-  <div class="flex flex-row items-center">
-    <div class="bg-primary-color h-8 w-4"></div>
-    <h2 class="text-primary-color text-3xl ml-5 lg:w-fit w-[50%]">{{ actuality().title }}</h2>
-    @if (editable()) {
-      <div class="flex flex-row ml-auto gap-2 w-fit">
-        <button
-          type="button"
-          (click)="onEdit()"
-          class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-          <img class="h-7" fetchpriority="high" src="icons/crayon.png" alt="Modifier">
-        </button>
-        <button
-          type="button"
-          (click)="onDelete()"
-          class="rounded-full bg-white border-primary-color border-2 text-primary-color p-2">
-          <img class="h-7" fetchpriority="high" src="icons/supprimer.png" alt="Supprimer">
-        </button>
-      </div>
-    }
-  </div>
-  <img [src]="actuality().urlPrincipalImage" class="rounded-3xl w-full h-auto mt-5 mb-5 max-h-[450px]" alt="">
-  <p #article class="article-box text-xl text-justify text-text-color overflow-hidden mb-2">{{ actuality().article }}</p>
-  <div class="flex-row flex lg:mt-auto justify-between mt-auto">
-    <a [routerLink]="'/actualite/' + actuality().id" class="flex flex-row text-2xl">
-      Lire la suite >
-    </a>
-    <div class="flex flex-row">
-      <img class="mr-3" height="35" src="icons/calendar-icon.svg" width="35" alt="">
-      <h3 class="text-primary-color text-2xl text-justify">
-        {{ actuality().date | date:'dd/MM' }}
-      </h3>
+<div class="relative flex w-full flex-col gap-3.5 rounded-sm border border-line bg-white p-4 sm:w-[280px]">
+  @if (editable()) {
+    <div class="absolute right-3 top-3 z-10 flex gap-2">
+      <button
+        type="button"
+        (click)="onEdit()"
+        aria-label="Modifier"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-slate-2 hover:border-blue-2 hover:text-blue">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15.7 4.7a1.9 1.9 0 0 1 2.7 2.7L8.5 17.3 4.5 18.4l1.1-4z"/>
+        </svg>
+      </button>
+      <button
+        type="button"
+        (click)="onDelete()"
+        aria-label="Supprimer"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-danger/30 bg-white text-danger hover:bg-danger-soft">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 7h14M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M7 7l1 12.5A1.5 1.5 0 0 0 9.5 21h5a1.5 1.5 0 0 0 1.5-1.5L17 7"/>
+        </svg>
+      </button>
     </div>
-  </div>
+  }
+
+  <img [src]="actuality().urlPrincipalImage" [alt]="actuality().title" class="h-44 w-full rounded object-cover">
+  <span class="font-mono text-[11px] tracking-[.1em] text-slate-3">{{ actuality().date | date:'d MMM yyyy' }}</span>
+  <h3 class="font-serif text-xl font-medium leading-tight text-ink-2">{{ actuality().title }}</h3>
+  <p #article class="article-box text-sm leading-relaxed text-slate-2">{{ actuality().article }}</p>
+
+  <a [routerLink]="'/actualite/' + actuality().id" class="mt-auto font-mono text-[11px] uppercase tracking-[.12em] text-blue">
+    Lire la suite →
+  </a>
 </div>
