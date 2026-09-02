@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-02 | Made SharedUi dependency linking application-local: moved the linker to `src/SharedUi/scripts`, invoked it from both Angular apps' build/start hooks, and verified BackOffice builds after its own `npm ci` without Website installation |
 | 2026-09-02 | Added independent product website visibility: BackOffice toggle, persisted `VisibleOnWebsite` flag, public `/product/public` projection for Website, and regression tests while keeping the full `/product` feed for cash |
 | 2026-09-02 | Corrected the GA4 `dataLayer` queue to use the standard `arguments` shape and initialized denied Consent Mode defaults before events are sent. |
 | 2026-09-01 | Ajouté GA4 au consentement d'audience du Website avec suivi des routes et révocation, remplacé le sitemap placeholder par les URLs publiques réelles et ajouté `robots.txt` ainsi que la documentation Search Console |

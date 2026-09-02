@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-3` — automatisation et lancement local validés |
-| **Prochaine action** | `L0-4` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-4` — socle front reproductible validé |
+| **Prochaine action** | `L0-5` ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | *(à renseigner)* |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `docs/bourse-aux-livres` |
+| **Branche** | `feature/l0-4-front-reproductible` |
 
 ---
 
@@ -70,34 +70,14 @@ git pull
 | PowerShell 7 + modules Microsoft.Graph | pour `infra/entra/` | — |
 | Docker | pour les images | — |
 
-**Le piège du front, tant que `L0-4` n'est pas faite.** `src/SharedUi` n'est pas un paquet :
-c'est un dossier de sources, résolu par un alias `@vpd/ui` et par un lien
-`src/SharedUi/node_modules` → `src/Website/node_modules` que crée
-`src/Website/scripts/link-shared-ui.mjs` en `prebuild`. Conséquence sur un clone neuf :
-
-```bash
-cd src/Website    && npm ci   # obligatoire EN PREMIER, même si l'on ne touche qu'au BackOffice
-cd ../BackOffice  && npm ci
-```
-
-`BackOffice` n'a pas ce script et ne compilera pas sans l'installation du `Website`.
-`L0-4` supprime cette contrainte ; jusque-là, elle est à connaître.
-
----
-
 ## En cours
 
-`L0-3` est terminé côté dépôt, restauration, compilation, CLI et lancement local. SQL, le
-stockage, l'API et les deux applications Angular passent à l'état prêt dans le tableau de
-bord Aspire ; les fronts répondent en HTTP 200 sur les ports 4200 et 4201. La base SQL
-locale était vide : les migrations EF Core existantes ont d'abord été appliquées
-explicitement, puis l'Infrastructure a été complétée à la demande pour appliquer
-automatiquement `Database.MigrateAsync()` au démarrage de l'API, avant sa mise en état
-prête. Le comportement a été vérifié sur une base temporaire neuve (10 migrations, dont
-`Actualities` et `AssoEvents`) et les endpoints `/actuality/latest` et `/asso-events` ont
-répondu HTTP 200. La spécification technique prévoit encore une application explicite
-en déploiement : cette divergence doit être réarbitrée avant une production à plusieurs
-réplicas, car chaque réplique tente la migration au démarrage. Reprendre en `L0-4`.
+`L0-4` est terminé côté dépôt. Le script de liaison est maintenant sous
+`src/SharedUi/scripts/link-shared-ui.mjs` et chaque application Angular l'appelle depuis
+ses hooks `prebuild` et `prestart` (Website conserve aussi son hook `prewatch`). Le script
+lie `SharedUi/node_modules` vers l'installation de l'application appelante. Depuis un
+clone propre, `npm ci` puis `npm run build` dans `BackOffice` seul passent ; Website passe
+également après sa propre installation. Reprendre en `L0-5`.
 
 > Ce qui va ici : une étape commencée et non finie, avec **l'état exact** — quel fichier,
 > quelle idée, ce qui reste. Écrire deux lignes ici coûte moins qu'une demi-heure de
@@ -220,6 +200,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | - | **L0-4 — socle front reproductible.** Déplacement de `link-shared-ui.mjs` dans `src/SharedUi/scripts`, ajout des hooks `prebuild`/`prestart` dans Website et BackOffice, et résolution du lien vers les `node_modules` de l'application appelante. Test Node ciblé : 3/3 ; `npm ci` puis `npm run build` réussissent dans BackOffice seul, et Website compile également. |
 | 2026-09-02 | - | **Images Docker — runtime et restore.** Le Dockerfile API copie `Directory.Packages.props` avant le restore centralisé et épingle son SDK sur `10.0.203`, car le contexte Docker ne contient pas le `global.json` racine. Les images Website et BackOffice utilisent désormais Node `24.15.0`, aligné sur `.nvmrc` et leurs champs `engines`. |
 | 2026-09-02 | - | **L0-3 — migrations au démarrage.** À la demande, reprise du mécanisme de `infra-pipeline-editor` : `ProjectDbContext` est migré par un hosted service Infrastructure avant que l'API soit prête, avec stratégie d'exécution EF et source de trace `DbMigrations`. Une base SQL temporaire neuve a reçu les 10 migrations existantes avant l'écoute HTTP ; avec la base Aspire, `/actuality/latest` et `/asso-events` répondent HTTP 200. La spécification technique prévoit encore une migration explicite en déploiement ; décision à réarbitrer avant une production multi-réplique. |
 | 2026-09-02 | - | **L0-3 — correction du lancement frontend.** `AddJavaScriptApp` conserve la commande npm, avec `--` ajouté avant les arguments Angular. `aspire run` démarre SQL, stockage, API, Website et BackOffice ; les ports 4200 et 4201 répondent HTTP 200. |

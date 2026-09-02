@@ -27,6 +27,11 @@ Verified feature roots:
 - Keep shared models typed and aligned with backend contracts.
 - Both apps currently keep zoneless change detection via `provideZonelessChangeDetection()`.
 - Validate responsive behavior on desktop and mobile when UI changes.
+- `src/SharedUi/scripts/link-shared-ui.mjs` is the shared npm linker. Both apps invoke it
+  from `prebuild` and `prestart` through `node ../SharedUi/scripts/link-shared-ui.mjs`; it
+  uses the calling application's `process.cwd()` so `SharedUi/node_modules` resolves to
+  the caller rather than always to Website. BackOffice can therefore build after its own
+  `npm ci`, without installing Website first.
 - The Website public shell now keeps one shared visual language between the home overlay navigation and internal pages; the first modernization wave lives mainly in `src/styles.scss` plus the `navigation`, `navigation-mobile`, and `home` templates.
 - The BackOffice OCR scan dialog, `bingo-card` shared component, and `/bingo-card` facade were removed in May 2026; no equivalent OCR surface exists in `Website`.
 
@@ -82,4 +87,6 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.sln` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
-- As of 2026-05-18, `npm run build` in `src/BackOffice/` still fails on baseline Angular module/declaration issues around `SharedModule`, `FeatureModule`, and `DesignSystemModule`; OCR removal did not resolve or introduce that pre-existing build state.
+- As of 2026-09-02, `npm ci` followed by `npm run build` passes in `src/BackOffice/` alone,
+  and `npm ci` followed by `npm run build` passes in `src/Website/`; the builds still emit
+  existing Sass, bundle-budget, and CommonJS warnings.
