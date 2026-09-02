@@ -36,6 +36,10 @@ public class ProductConfiguration: IEntityTypeConfiguration<Product>
                 category => (int)category.Value,
                 value => new ProductSection((ProductSection.ProductSectionEnum)value)
             );
+
+        builder.Property(x => x.VisibleOnWebsite)
+            .IsRequired()
+            .HasDefaultValue(true);
     }
     
     private void ConfigurePromotionTable(EntityTypeBuilder<Product> builder)

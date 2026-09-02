@@ -55,6 +55,7 @@ Verified feature roots:
 - The Website home SSR path now tolerates missing `next-bingo`, `next-books`, `next-other-event`, and `latest actuality` payloads by keeping default empty state instead of surfacing unhandled promise rejections during server rendering.
 - The Website event detail places its location card in the hero (map, address, and itinerary) and uses `event-detail/components/general-infos` for the description plus editorial event photos; the standalone `shared/components/event-locations` block remains reserved for `/evenement`.
 - Website prices now use a dedicated responsive card/grid presentation under `shared/components/prices`; API-provided product images, unit prices, and promotions remain unchanged, while BackOffice keeps the shared design-system list.
+- Website prices load `ProductFacadeService.getPublicProducts()` from `GET /product/public` and apply a defensive `visibleOnWebsite` filter. BackOffice continues to load `GET /product` and the product dialog exposes the independent `VisibleOnWebsite` toggle for cash-only prices.
 
 ## MAUI Client
 
@@ -65,6 +66,8 @@ Verified feature roots:
 - SQLite for local storage
 - embedded `appsettings.json` to configure the backend base URL
 - a currently narrow Refit surface: `IVpdApi.GetProductsAsync()` calls `GET /product`
+
+The MAUI cash surface intentionally continues to use the full `/product` projection, so products hidden from Website remain available at the till.
 
 ## Client Risk Zones
 

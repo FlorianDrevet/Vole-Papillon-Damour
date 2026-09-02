@@ -11,5 +11,5 @@ public class UpdateProductRequest
     public string ProductCategory { get; set; } = string.Empty;
     public string? ProductSection { get; set; }
     public bool? Available { get; set; }
+    public bool? VisibleOnWebsite { get; set; }
 }
-    

@@ -17,6 +17,7 @@ describe('ProductComponent', () => {
     productSection: ProductSectionEnum.Book,
     index: 1,
     available: true,
+    visibleOnWebsite: true,
     promotions: [{ quantity: 6, discountedPrice: 12 }],
   };
 

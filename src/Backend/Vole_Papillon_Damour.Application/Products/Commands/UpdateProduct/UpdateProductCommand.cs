@@ -14,5 +14,6 @@ public record UpdateProductCommand(
     Uri? UrlImage,
     bool Available,
     ProductCategory? ProductCategory,
-    ProductSection ProductSection
+    ProductSection ProductSection,
+    bool? VisibleOnWebsite = null
 ) : IRequest<ErrorOr<ProductResult>>;

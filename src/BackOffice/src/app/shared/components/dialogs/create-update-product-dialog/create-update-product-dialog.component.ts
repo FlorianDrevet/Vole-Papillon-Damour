@@ -46,6 +46,7 @@ export class CreateUpdateProductDialogComponent implements OnInit {
       section: [null, Validators.required],
       category: [null, null],
       available: [true, null],
+      visibleOnWebsite: [true, null],
     });
 
     if (this.updateProduct() !== null) {
@@ -57,6 +58,7 @@ export class CreateUpdateProductDialogComponent implements OnInit {
       this.newProductForm.get('section')?.setValue(this.updateProduct()!.productSection);
       this.newProductForm.get('category')?.setValue(this.updateProduct()!.productCategory);
       this.newProductForm.get('available')?.setValue(this.updateProduct()!.available);
+      this.newProductForm.get('visibleOnWebsite')?.setValue(this.updateProduct()!.visibleOnWebsite);
 
       const fileName = this.updateProduct()!.urlImage.split('/').pop();
       this.principalImage.set({fileName: fileName!, fileContent: new URL(this.updateProduct()!.urlImage)});
@@ -145,6 +147,7 @@ export class CreateUpdateProductDialogComponent implements OnInit {
     formData.append("Price", this.newProductForm.get('price')?.value);
     formData.append("ProductSection", this.newProductForm.get('section')?.value);
     formData.append("Available", this.newProductForm.get('available')?.value);
+    formData.append("VisibleOnWebsite", this.newProductForm.get('visibleOnWebsite')?.value);
 
     if (this.section() === ProductSectionEnum.Bar) {
       formData.append("ProductCategory", this.newProductForm.get('category')?.value);

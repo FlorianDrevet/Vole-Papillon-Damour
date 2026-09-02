@@ -9,6 +9,7 @@ using Vole_Papillon_Damour.Application.Products.Commands.DeleteProduct;
 using Vole_Papillon_Damour.Application.Products.Commands.DeletePromotions;
 using Vole_Papillon_Damour.Application.Products.Commands.UpdateProduct;
 using Vole_Papillon_Damour.Application.Products.Queries.GetAllProduct;
+using Vole_Papillon_Damour.Application.Products.Queries.GetPublicProducts;
 using Vole_Papillon_Damour.Contracts.Authentication;
 using Vole_Papillon_Damour.Contracts.Product.Requests;
 using Vole_Papillon_Damour.Contracts.Product.Responses;
@@ -90,6 +91,22 @@ public static class ProductController
                             error => error.Result());
                     })
                 .WithName("Get All Products");
+
+            endpoints.MapGet("/product/public",
+                    async (IMediator mediator, IMapper mapper) =>
+                    {
+                        var query = new GetPublicProductsQuery();
+                        var getPublicProductsResult = await mediator.Send(query);
+
+                        return getPublicProductsResult.Match(
+                            getPublicProductsResult =>
+                            {
+                                var products = mapper.Map<List<ProductResponse>>(getPublicProductsResult);
+                                return Results.Ok(products);
+                            },
+                            error => error.Result());
+                    })
+                .WithName("Get Public Products");
             
             endpoints.MapDelete("/product/{productId}",
                     async ([FromRoute] Guid productId, IMediator mediator, IMapper mapper) =>

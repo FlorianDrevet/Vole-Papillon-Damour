@@ -29,7 +29,8 @@ public class ProductMappingConfig : IRegister
 
         config.NewConfig<CreateProductRequest, CreateProductCommand>()
             .Map(dest => dest.ImageName, src => src.Image!.FileName)
-            .Map(dest => dest, src => src);
+            .Map(dest => dest, src => src)
+            .Map(dest => dest.VisibleOnWebsite, src => src.VisibleOnWebsite ?? true);
 
         config.NewConfig<AddPromotionRequest, AddPromotionCommand>()
             .Map(dest => dest.Promotion, src => new Promotion(src.Quantity, src.DiscountedPrice));

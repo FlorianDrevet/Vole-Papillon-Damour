@@ -6,7 +6,7 @@ import { ProductCategoryEnum } from '../../enums/productCategory.enum';
 
 /**
  * Wrapper Website autour de `vpd-product-list`. Filtre les produits disponibles
- * et exclut les monnaies de caisse (saisies internes BackOffice).
+ * et ceux autorisés sur le site public.
  */
 @Component({
   selector: 'app-prices',
@@ -32,13 +32,14 @@ export class PricesComponent implements OnInit {
           (this.category() === null || product.productCategory === this.category()),
       )
       .filter((product) => product.available)
+      .filter((product) => product.visibleOnWebsite)
       .filter((product) => !product.name.includes('euro'))
       .filter((product) => !product.name.includes('centime'))
       .sort((a, b) => a.index - b.index);
   });
 
   ngOnInit(): void {
-    this.productFacade.getAllProducts().then((products) => {
+    this.productFacade.getPublicProducts().then((products) => {
       this.allProducts.set(products ?? []);
     })
       .catch(() => undefined)
