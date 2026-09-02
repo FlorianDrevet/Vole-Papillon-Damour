@@ -12,7 +12,7 @@ description: "Use when the user wants to know what will break if they change som
 - "Show me the blast radius"
 - "Who uses this code?"
 - Before making non-trivial code changes
-- Before committing - to understand what your changes affect
+- Before committing — to understand what your changes affect
 
 ## Workflow
 
@@ -55,7 +55,7 @@ description: "Use when the user wants to know what will break if they change som
 
 ## Tools
 
-**gitnexus_impact** - the primary tool for symbol blast radius:
+**gitnexus_impact** — the primary tool for symbol blast radius:
 
 ```
 gitnexus_impact({
@@ -73,7 +73,7 @@ gitnexus_impact({
   - authRouter (src/routes/auth.ts:22) [CALLS, 95%]
 ```
 
-**gitnexus_detect_changes** - git-diff based impact analysis:
+**gitnexus_detect_changes** — git-diff based impact analysis:
 
 ```
 gitnexus_detect_changes({scope: "staged"})

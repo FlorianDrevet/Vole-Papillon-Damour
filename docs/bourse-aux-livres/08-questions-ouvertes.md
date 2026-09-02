@@ -376,3 +376,4 @@ cher, et là que l'outil devient crédible le plus vite.
 | 2026-09-01 | Périmètre de la session | Le tri seul. La caisse et la consultation n'ouvrent pas de session — `RG-43` |
 | 2026-09-01 | Prix de vente | **Décidés au comptoir. Le système n'en connaît aucun** — `Q-05`, `RG-50` |
 | 2026-09-01 | Recette d'une bourse | Saisie manuelle d'un montant unique à la clôture, facultative — `RG-51` |
+| 2026-09-02 | Écran de remise à plat de l'inventaire | **Reporté.** Non construit avec le reste de l'administration ; la correction fiche par fiche (`05` §4) tient lieu d'interim — `05` §6 |

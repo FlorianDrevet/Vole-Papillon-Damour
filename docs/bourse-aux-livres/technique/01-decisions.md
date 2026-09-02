@@ -9,12 +9,12 @@ comprendre plus tard pourquoi un choix a été fait avec l'information de l'épo
 | `DT-01` | BnF en source principale, Open Library en complément | Prise |
 | `DT-02` | Tout dans SQL Server, aucune base supplémentaire | Prise |
 | `DT-03` | Outbox en table, pas de broker de messages | Prise |
-| `DT-04` | Worker différé en Container App `kind=functionapp` dédié | ⛔ **Remplacée par `DT-09`** |
+| `DT-04` | Worker différé en Container App `kind=functionapp` dédié | Prise — réexaminée, maintenue ; sous réserve de `QT-02` |
 | `DT-05` | La fiche livre est le cache ; pas de couche de cache serveur | Prise |
 | `DT-06` | Unité de travail explicite pour les écritures multi-agrégats | Prise |
 | `DT-07` | Recherche par le plein texte SQL Server d'abord | Prise |
 | `DT-08` | App de scan en PWA Angular | Prise |
-| `DT-09` | Traitements différés hébergés dans l'API | Prise — remplace `DT-04` |
+| `DT-09` | Traitements différés hébergés dans l'API | ⛔ **Écartée** au profit de `DT-04` |
 
 ---
 
@@ -145,12 +145,14 @@ abonnés. À ce moment, des topics se discuteront.
 
 ## `DT-04` — Worker différé en Container App `kind=functionapp` dédié
 
-> ⛔ **Remplacée par [`DT-09`](#dt-09--traitements-différés-hébergés-dans-lapi).**
-> Sa prémisse — l'API à `minReplicas: 0` — n'est plus valable : l'API passe à 1, car
-> elle ne peut pas être indisponible pour le site web. Conservée telle quelle, sans
-> réécriture, pour garder trace du raisonnement d'origine.
+> ♻️ **Réexaminée, et maintenue.** L'API passe à `minReplicas: 1` — elle ne peut pas
+> être indisponible pour le site web — ce qui retire à cette décision **sa prémisse
+> d'origine**, sans emporter la décision elle-même. Elle tient pour des raisons qui
+> n'étaient pas les siennes au départ : voir le [réexamen](#réexamen--pourquoi-le-worker-survit-à-sa-prémisse)
+> en fin de section. Le texte ci-dessous n'est pas retouché. L'alternative — dissoudre
+> le worker dans l'API — est instruite et écartée en [`DT-09`](#dt-09--traitements-différés-hébergés-dans-lapi).
 
-**Contexte.** Les Container Apps étaient configurées avec `minReplicas: 0`. Un
+**Contexte.** Les Container Apps sont configurées avec `minReplicas: 0`. Un
 `BackgroundService` hébergé dans l'API ne s'exécuterait donc qu'au hasard du trafic
 HTTP : les alertes de `RG-44` et la bascule de `RG-23` ne partiraient pas.
 
@@ -182,6 +184,35 @@ la table restant la source de vérité.
 **Alternative conservée en repli.** Un ACA Job en cron : planification garantie par la
 plateforme, facturation à l'exécution seule (~21 600 vCPU-secondes/mois contre 180 000
 gratuits). Moins confortable à l'exploitation, mais sans zone d'ombre.
+
+### Réexamen — pourquoi le worker survit à sa prémisse
+
+*Écrit après coup, le jour où l'API est passée à `minReplicas: 1`.*
+
+La décision ci-dessus reposait sur un argument de fiabilité : un `BackgroundService`
+logé dans un conteneur susceptible d'être éteint ne s'exécute qu'au hasard du trafic.
+Avec un réplica d'API permanent, **cet argument tombe**. Trois raisons le remplacent, et
+elles figuraient déjà, en second rang, dans la motivation d'origine.
+
+*L'isolation devient l'argument principal.* Le réplica permanent est là pour servir le
+site web, pas pour héberger du travail de fond. Un rattrapage d'enrichissement ou un
+balayage d'outbox partagerait alors le processeur avec le rendu SSR et le scan des
+bénévoles, au détriment de `ENF-01`. Le découplage coûte une application ; il achète la
+garantie qu'aucun traitement différé ne dégrade un temps de réponse.
+
+*Les déclencheurs planifiés et les réessais restent déclaratifs.* Un `BackgroundService`
+demande d'écrire soi-même la boucle, le calendrier, la temporisation exponentielle et
+l'exclusion entre répliques. Le modèle Functions les fournit.
+
+*Les cycles de vie restent séparés.* L'API se déploie au rythme du site et du scan ; le
+worker au rythme du métier différé. Chacun se met à l'échelle, se redémarre et se
+diagnostique sans toucher à l'autre.
+
+**Ce que le réexamen ne lave pas.** `QT-02` reste entièrement ouverte et **bloquante** :
+c'est désormais le worker, et lui seul, qui vit à zéro réplica. Si son minuteur ne le
+réveille pas, `RG-44` échoue en silence. La mesure décrite en
+[`09-questions-techniques.md`](09-questions-techniques.md) reste à faire avant le
+palier 1, et les trois issues décrites plus haut restent les trois issues.
 
 ---
 
@@ -279,52 +310,47 @@ après la mesure.
 
 ## `DT-09` — Traitements différés hébergés dans l'API
 
-**Remplace `DT-04`.**
+> ⛔ **Écartée.** Instruite le jour où l'API est passée à `minReplicas: 1`, puis écartée
+> au profit de [`DT-04`](#dt-04--worker-différé-en-container-app-kindfunctionapp-dédié),
+> maintenue. Conservée ici parce qu'elle reste l'alternative sérieuse : si le worker
+> devait un jour coûter plus qu'il ne rapporte, c'est ce document qu'on rouvrirait.
 
-**Contexte.** L'API passe à `minReplicas: 1` : elle ne peut pas être indisponible pour
-le site web. La prémisse de `DT-04` — un processus toujours susceptible d'être éteint —
-disparaît.
+**Ce qu'elle proposait.** Supprimer l'application worker et héberger les traitements
+différés en services hébergés (`BackgroundService`) **dans le projet API**.
 
-**Décision.** Les traitements différés sont des services hébergés (`BackgroundService`)
-**dans le projet API**. Pas d'application dédiée, pas de `kind=functionapp`, pas de
-Functions.
+**L'argument, et il est bon.** L'API passe à `minReplicas: 1` pour une raison étrangère
+au module livres : elle ne peut pas être indisponible pour le site web. Le conteneur
+tourne donc en permanence. La prémisse de `DT-04` — un processus susceptible d'être
+éteint — disparaît, un service hébergé s'exécuterait de façon fiable, et le coût
+marginal serait **nul**. S'y ajoutent un projet au lieu de deux, une image, un
+déploiement, aucune image de base Functions, aucune contrainte d'ingress ni de compte de
+stockage, et la fermeture immédiate de `QT-02` — l'une des deux mesures bloquantes du
+palier 1 — sans avoir à la mesurer.
 
-**Motivation.**
+**Pourquoi elle est écartée.**
 
-*Le problème que `DT-04` résolvait n'existe plus.* Avec un réplica permanent, un service
-hébergé s'exécute de façon fiable. C'était l'unique raison d'extraire le worker.
+*Le réplica permanent est allumé pour le site web, pas pour du travail de fond.* Y loger
+les balayages ferait partager le processeur entre le rendu SSR, les requêtes de scan et
+un rattrapage d'enrichissement potentiellement lourd. `ENF-01` porte sur le délai
+d'affichage du verdict au scan : c'est précisément ce qu'on ne veut pas voir dépendre de
+la charge différée.
 
-*`QT-02` disparaît entièrement.* La question du réveil d'une application à zéro réplica
-par un déclencheur planifié — l'une des deux mesures bloquantes — devient sans objet.
-C'est le gain le plus net de ce changement.
+*`maxReplicas: 2` obligerait à traiter l'exclusion.* Deux répliques d'API exécuteraient
+les mêmes balayages simultanément. Les opérations étant conçues en réclamation
+conditionnelle (`06` §5), rien ne se doublonnerait — mais il faudrait une ligne de bail
+en base pour que les journaux ne racontent qu'une histoire à la fois. Le modèle
+Functions règle la question sans code.
 
-*C'est nettement plus simple.* Un projet, une image, un déploiement, aucune image de
-base Functions, aucune contrainte d'ingress ni de compte de stockage obligatoire, aucune
-question de révisions multiples. `ENF-24` s'en satisfait mieux.
+*Les cycles de vie se retrouveraient liés.* Chaque déploiement du site ou du scan
+redémarrerait les traitements de fond, et l'échelle de l'un imposerait celle des autres.
 
-*Le coût marginal est nul.* Le conteneur tourne de toute façon.
+**Ce que le refus coûte.** `QT-02` reste ouverte et bloquante, et il faut la mesurer.
+C'est le prix assumé de l'isolation — voir le réexamen de `DT-04`.
 
-**Ce qu'il faut respecter.**
+**Quand rouvrir.** Si `QT-02` se révèle mal-comportée au point d'imposer un worker à
+`minReplicas: 1`, on paierait alors **deux** conteneurs permanents pour un travail qui
+tient dans quelques requêtes SQL toutes les cinq minutes. Ce jour-là, `DT-09` redevient
+le bon choix. Le passage d'un hôte à l'autre est peu coûteux : la logique vit dans les
+bibliothèques `Application` et `Infrastructure` (`06` §2), pas dans l'hôte.
 
-`maxReplicas: 2` signifie que **deux répliques peuvent exécuter les mêmes balayages
-simultanément**. C'est acceptable parce que toutes les opérations sont déjà conçues en
-réclamation conditionnelle (`06` §5) : la relève d'outbox par `ClaimedUntil`, la bascule
-filtrée sur `Status = Announced`, la clôture filtrée sur `Status = EnCours`. Aucune
-n'est doublonnable.
-
-Pour la lisibilité d'exploitation plutôt que par nécessité, une **ligne de bail en base**
-peut réserver l'exécution à une seule réplique : une vingtaine de lignes, et des
-journaux qui ne racontent qu'une histoire à la fois.
-
-**La contrepartie.** Les traitements de fond partagent le processeur avec le traitement
-des requêtes, ce qui pourrait dégrader `ENF-01`. Le risque est faible : le balayage est
-constitué de quelques requêtes SQL toutes les cinq minutes, et l'enrichissement est
-limité en débit et dominé par l'attente réseau, pas par le calcul.
-
-**Réversibilité.** Si le travail de fond devenait lourd, l'extraire reste peu coûteux :
-il vit déjà dans les bibliothèques `Application` et `Infrastructure` (`06` §2). Changer
-d'hôte ne déplace aucune logique métier.
-
-**Ce que cela ne change pas.** `DT-03` (outbox en table) reste valide et le devient
-davantage : la mise en file et la clôture de session partagent désormais non seulement
-la même transaction mais le même processus.
+**Ce que cela ne change pas.** `DT-03` (outbox en table) reste valide dans les deux cas.

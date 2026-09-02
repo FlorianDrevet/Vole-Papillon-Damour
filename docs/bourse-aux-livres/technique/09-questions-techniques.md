@@ -6,7 +6,7 @@ mesure, pas par un avis, et l'un d'eux peut invalider une décision déjà prise
 | # | Sujet | Statut | Quand |
 |---|---|---|---|
 | `QT-01` | Couverture réelle des sources bibliographiques | 🔴 **Bloquant** | Palier 0 |
-| `QT-02` | Déclencheur planifié et mise à l'échelle à zéro | ✅ **Close** — sans objet | — |
+| `QT-02` | Déclencheur planifié et mise à l'échelle à zéro | 🔴 **Bloquant** | Avant le palier 1 |
 | `QT-03` | Lecture du code-barres au navigateur | 🟠 À mesurer | Palier 0 |
 | `QT-04` | Dimensionnement Entra External ID | 🟡 À vérifier | Avant le palier 3 |
 | `QT-05` | Unité de travail et `BaseRepository` | 🟢 Tranchée, à cadrer | Palier 1 |
@@ -41,21 +41,31 @@ et éventuellement la réouverture du périmètre « livres sans ISBN ».
 
 ## `QT-02` — Déclencheur planifié et mise à l'échelle à zéro
 
-> ✅ **Close, sans avoir été mesurée.** La question ne se pose plus.
+> 🔴 **Bloquant.** Un échec ici est silencieux : les alertes ne partent jamais.
 
-**Ce qu'elle demandait.** Une application Functions descendue à zéro réplica est-elle
-réveillée par son déclencheur planifié ? La documentation disait oui, des retours
-disaient non, et pour `RG-44` l'échec aurait été silencieux : aucune alerte n'aurait
-jamais été envoyée.
+**Le conflit.** La documentation liste le déclencheur planifié parmi ceux qui montent
+depuis zéro via KEDA. Des retours indiquent qu'une application descendue à zéro n'est
+pas réveillée par son minuteur et attend un autre événement.
 
-**Pourquoi elle disparaît.** L'API passe à `minReplicas: 1`, pour une raison étrangère
-au module livres — elle ne peut pas être indisponible pour le site web. `DT-09` héberge
-donc les traitements différés dans l'API, où ils s'exécutent sans dépendre d'aucun
-mécanisme de réveil.
+**Le test, trente minutes.** Déployer une fonction planifiée avec `minReplicas: 0`, ne
+pas y toucher pendant deux heures, vérifier dans les journaux qu'elle s'est exécutée aux
+échéances attendues.
 
-**Ce que cela change pour le planning.** Le palier 1 n'a plus qu'une mesure bloquante
-devant lui — `QT-01` — au lieu de deux. C'est le gain le plus concret de ce changement
-de paramétrage.
+**Les trois issues** sont décrites en
+[`06-traitements-differes.md`](06-traitements-differes.md) §7 : `minReplicas: 0` si le
+réveil fonctionne ; `minReplicas: 1` sinon, au prix d'un conteneur permanent ; ou
+temporisation par file Azure Queue Storage, dont le déclencheur réveille bien depuis
+zéro.
+
+**Pourquoi l'API à `minReplicas: 1` ne referme pas la question.** L'API tourne désormais
+en permanence, mais le worker n'est pas l'API : il vit à zéro réplica et c'est lui qui
+porte le minuteur. Dissoudre les traitements différés dans l'API refermerait la question
+d'un coup — c'est précisément ce que proposait `DT-09`, écartée au profit de
+l'isolation. La mesure reste donc à faire.
+
+**Ce que le résultat décide.** Le coût mensuel du worker et, éventuellement, la forme du
+délai de `RG-44`. Une issue à `minReplicas: 1` signifierait **deux** conteneurs allumés
+en permanence, et rouvrirait légitimement `DT-09`.
 
 ---
 

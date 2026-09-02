@@ -166,6 +166,9 @@ remonté au bénévole trieur.
 
 - **Estimation asynchrone de la valeur marchande** (`Q-02`), avec restitution en fin de
   session et dans une file d'administration
+- **Écran dédié de remise à plat de l'inventaire** (`05` §6) : comptage en masse et
+  suivi de l'écart dans le temps. En attendant, la remise à plat se fait fiche par
+  fiche via la correction manuelle des quantités (`05` §4)
 - Notifications push web
 - Application mobile native pour le public
 - Prise en charge des livres sans ISBN

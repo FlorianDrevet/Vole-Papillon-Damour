@@ -1,6 +1,6 @@
 ---
 name: gitnexus-guide
-description: "Use when the user asks about GitNexus itself - available tools, how to query the knowledge graph, MCP resources, graph schema, or workflow reference. Examples: \"What GitNexus tools are available?\", \"How do I use GitNexus?\""
+description: "Use when the user asks about GitNexus itself — available tools, how to query the knowledge graph, MCP resources, graph schema, or workflow reference. Examples: \"What GitNexus tools are available?\", \"How do I use GitNexus?\""
 ---
 
 # GitNexus Guide
@@ -11,7 +11,7 @@ Quick reference for all GitNexus MCP tools, resources, and the knowledge graph s
 
 For any task involving code understanding, debugging, impact analysis, or refactoring:
 
-1. **Read `gitnexus://repo/{name}/context`** - codebase overview + check index freshness
+1. **Read `gitnexus://repo/{name}/context`** — codebase overview + check index freshness
 2. **Match your task to a skill below** and **read that skill file**
 3. **Follow the skill's workflow and checklist**
 
@@ -32,10 +32,10 @@ For any task involving code understanding, debugging, impact analysis, or refact
 
 | Tool             | What it gives you                                                        |
 | ---------------- | ------------------------------------------------------------------------ |
-| `query`          | Process-grouped code intelligence - execution flows related to a concept |
-| `context`        | 360-degree symbol view - categorized refs, processes it participates in  |
-| `impact`         | Symbol blast radius - what breaks at depth 1/2/3 with confidence         |
-| `detect_changes` | Git-diff impact - what do your current changes affect                    |
+| `query`          | Process-grouped code intelligence — execution flows related to a concept |
+| `context`        | 360-degree symbol view — categorized refs, processes it participates in  |
+| `impact`         | Symbol blast radius — what breaks at depth 1/2/3 with confidence         |
+| `detect_changes` | Git-diff impact — what do your current changes affect                    |
 | `rename`         | Multi-file coordinated rename with confidence-tagged edits               |
 | `cypher`         | Raw graph queries (read `gitnexus://repo/{name}/schema` first)           |
 | `list_repos`     | Discover indexed repos                                                   |

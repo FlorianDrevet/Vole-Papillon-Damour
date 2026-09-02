@@ -156,15 +156,23 @@ local. Sans cet écran, le système ne fait qu'observer la saturation sans jamai
 
 ## 6. Remise à plat de l'inventaire
 
+> 🟢 **Reportée.** Cet écran dédié n'est pas construit avec le reste de
+> l'administration ; il arrivera plus tard.
+
 Conséquence directe du suivi par ISBN sans exemplaire individuel : le compteur dérive
 à cause des ventes non scannées. Le mécanisme est décrit en `RG-34`.
 
-L'administration doit permettre :
+À terme, l'administration doit permettre :
 
 - de saisir un comptage physique pour un ensemble de fiches et d'ajuster les quantités,
 - de visualiser l'ampleur de l'écart constaté à chaque remise à plat,
 - de suivre cet écart dans le temps : **c'est l'indicateur de la discipline de scan en
   caisse**, donc le principal indicateur de santé du projet.
+
+**En attendant**, la remise à plat s'effectue fiche par fiche via la correction
+manuelle des quantités (§4, mouvement `CORRECTION`, tracé par `RG-35`). Ce n'est pas
+un ajustement en masse et rien n'agrège l'écart dans le temps — mais `RG-34` reste
+exigible dès le palier 1, sans attendre cet écran.
 
 ## 7. Gestion des membres du site
 
