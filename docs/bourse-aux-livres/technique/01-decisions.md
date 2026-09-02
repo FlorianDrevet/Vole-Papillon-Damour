@@ -705,16 +705,31 @@ installées.
 |---|---|
 | Cibles | **Neuf projets en `net10.0`**, `MauiCashApp` seul en `net9.0-android;net9.0-ios;net9.0-maccatalyst` (+ `net9.0-windows`) |
 | Aspire | **13.3.0** pour `Aspire.Hosting.AppHost`, `Azure.Storage` et `SqlServer` — mais **`Aspire.Hosting.NodeJs` en 9.5.2**, dans le même AppHost |
-| Versions | Ni `Directory.Packages.props`, ni `Directory.Build.props`, ni `global.json`. `Microsoft.Extensions.*` cohabite en **10.0.7, 9.0.8 et 9.0.5** |
+| Versions | Ni `Directory.Packages.props`, ni `Directory.Build.props`, ni `global.json`. `Microsoft.Extensions.*` cohabite en **10.0.7, 9.0.8 et 9.0.5** — mais pas dans la même solution, voir ci-dessous |
+| Node | **Rien n'épingle Node** : ni `.nvmrc`, ni `engines`, ni `node-version` dans un seul workflow. Les deux applications Angular se construisent sur la version qui traîne sur la machine |
 
 **Décision.** Quatre points, tous à traiter **avant** d'ajouter le projet worker.
 
-1. **`net10.0` partout**, `MauiCashApp` comprise.
+1. **`net10.0` partout**, `MauiCashApp` comprise — en `net10.0-android` seul, voir plus bas.
 2. **Aspire à la dernière version** — 13.4.6 au moment d'écrire —, `Aspire.Hosting.NodeJs`
    aligné sur les autres.
 3. **Gestion centralisée des paquets** par un `Directory.Packages.props` à la racine de la
-   solution.
-4. **`global.json`** épinglant la version du SDK.
+   solution, `src/Backend/`.
+4. **`global.json`** épinglant la version du SDK, **et un épinglage équivalent de Node** —
+   `.nvmrc` plus `engines` — parce que l'argument des trois environnements vaut à
+   l'identique pour les fronts.
+
+**Une précision qui change la portée du point 3.** `MauiCashApp` **n'est référencée par
+aucune solution** : `Vole_Papillon_Damour.sln` contient neuf projets, tous backend. Les
+versions `9.0.8` et `9.0.5` sont dans `src/MauiCashApp/ShopAppVpd.csproj` seul, et un
+`Directory.Packages.props` posé sous `src/Backend/` ne les verra jamais. Deux conséquences,
+toutes deux traitées dans le plan :
+
+- centraliser les versions de la caisse demande **soit** de remonter le fichier à `src/`,
+  **soit** un second fichier qui lui soit propre (`L0-2`) ;
+- et surtout, « compiler la solution » **ne compile pas la caisse**. Tant qu'aucun workflow
+  ne la construit explicitement, le seul composant qu'on ne peut pas corriger par un
+  redéploiement est aussi le seul sans barrière automatique (`L0-5`).
 
 **Motivation.**
 
@@ -729,6 +744,18 @@ façon d'y remplacer le jeton maison par MSAL.NET, donc de reconstruire et de
 qui ne se met pas à jour par un déploiement. Faire les deux dans la même livraison, c'est
 une redistribution au lieu de deux. Séparées, ce sont deux passages sur chaque appareil,
 dont le second sera oublié.
+
+> **Ce que « redistribuer » veut dire, et que le dossier ne disait pas.** La caisse tourne
+> **uniquement sur des téléphones et des tablettes Android**. Les trois autres cibles du
+> `.csproj` — iOS, Mac Catalyst, Windows — sont retirées : chacune est une chaîne de
+> signature, une redirection MSAL et une compilation à maintenir pour un usage qui n'existe
+> pas. La montée se fait donc en **`net10.0-android`** seul.
+>
+> Le canal est un **APK signé, installé à la main sur chaque appareil**. Cela suppose un
+> magasin de clés conservé hors du dépôt et sauvegardé — le perdre interdit toute mise à
+> jour des installations existantes. Le plan en fait une étape à part, `L0-10`, avec une
+> redistribution d'essai **avant** la migration : c'est le seul composant qu'un
+> redéploiement ne rattrape pas.
 
 *La gestion centralisée n'est pas du confort.* Trois versions de `Microsoft.Extensions.*`
 dans une même solution produisent des avertissements de rétrogradation aujourd'hui et des

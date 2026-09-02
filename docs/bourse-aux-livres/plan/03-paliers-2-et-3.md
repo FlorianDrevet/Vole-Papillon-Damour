@@ -5,8 +5,8 @@ les décisions restant à prendre — pas des étapes numérotées.
 
 **Pourquoi.** Le principe directeur n°4 de l'architecture — « ce qui n'est pas mesuré n'est
 pas décidé » — vaut aussi pour le plan. Détailler ces deux paliers aujourd'hui, c'est
-écrire des étapes contre des hypothèses que `QT-01`, `QT-03` et la bourse d'épreuve du
-palier 1 vont confirmer ou casser. On les détaille quand le palier 1 est validé.
+écrire des étapes contre des hypothèses que `QT-01`, `QT-03` et la répétition générale du
+palier 1 vont confirmer ou casser. On les détaille quand le palier 1 tient.
 
 Ce qui suit sert à **ne pas oublier ce qui est déjà su**, et à repérer ce qui a un délai.
 
@@ -14,14 +14,14 @@ Ce qui suit sert à **ne pas oublier ce qui est déjà su**, et à repérer ce q
 
 ## Palier 2 — La vitrine
 
-**Dépend de** : palier 1 validé. Publier un catalogue sur un stock non fiable serait
+**Dépend de** : le palier 1 tient. Publier un catalogue sur un stock non fiable serait
 contre-productif.
 
 ### Ce qui est déjà décidé
 
 | Sujet | Décision |
 |---|---|
-| Application | Angular avec SSR, distincte du `Website` et du `BackOffice` (`01` §6 fonctionnel) |
+| Application | Angular avec SSR, distincte du `Website` et du `BackOffice` (`F-01` §6) |
 | Adresse | `livres.volepapillondamour.fr`, certificat managé gratuit (`DT-13`) |
 | URL d'une fiche | `/livres/{slug-titre-auteur}-{isbn13}` |
 | Page d'œuvre | `/oeuvre/{workId}`, canonique (`DT-13`) |
@@ -29,12 +29,42 @@ contre-productif.
 | Deux périmètres | Catalogue et référentiel externe, **jamais mélangés** (`RG-47`) |
 | Mesure d'audience | **Aucun traceur.** Ni GA4, ni équivalent — `ENF-14`, et voir ci-dessous |
 
+### Ce qui a un délai, et se lance tôt dans le palier
+
+**Le DNS du catalogue se pose ici, pas au lot 0.** Une version antérieure du plan le mettait
+dans le préalable « même si l'application n'existe pas encore ». Ce n'est pas tenable : le
+`CNAME` de `livres` pointe vers le FQDN de la Container App du catalogue, et la
+vérification `asuid` comme l'émission du certificat managé se font à la liaison du domaine.
+L'ordre réel est donc : créer la Container App, puis poser `CNAME` + `TXT asuid`, puis lier
+le domaine, puis attendre le certificat. À faire **dès que l'application existe**, même
+vide, pour que la propagation et le certificat ne soient pas sur le chemin critique de la
+mise en ligne. La propriété Search Console, elle, est posée depuis `L0-8`.
+
+**Les genres viennent des sources, et rien n'indique où est le livre.** `Q-07` est
+tranchée : le filtre par genre s'appuie sur ce que renvoient les sources bibliographiques,
+normalisé, et sur rien d'autre. Pas de nomenclature maison calquée sur les rayons, donc pas
+de correspondance à tenir à la main — et **aucune indication d'emplacement nulle part** :
+ni sur la fiche, ni dans les résultats, ni dans une alerte. Le système suit des ISBN et des
+quantités, pas des exemplaires : il ne sait pas où est un livre, et l'annoncer serait
+promettre une précision qu'il n'a pas.
+
+*Conséquence à assumer en écrivant l'écran* : les genres des sources sont lacunaires. Le
+filtre est un confort, pas un classement — un livre sans genre doit rester parfaitement
+trouvable par la recherche, qui est le chemin principal. Ne pas construire une navigation
+qui suppose que chaque fiche a un genre.
+
+**Les mentions légales et la politique de confidentialité** (`F-04` §2, `ENF-10`,
+`ENF-11`) sont des pages à écrire, pas du code, et elles conditionnent la mise en ligne :
+le site collecte des adresses e-mail dès le palier 3 et le catalogue est public dès
+celui-ci. À rédiger pendant le palier 2, pas la veille de l'ouverture. `ENF-14` — aucun
+traceur — a au moins l'avantage de rendre le bandeau de cookies inutile.
+
 ### Les points durs
 
-**Le référencement ne s'arrête pas au SSR** (`05` §1, `revue.md` `R-09`). Sitemap dynamique
-découpé pour quinze mille fiches — le sitemap actuel du `Website` est un fichier statique
-—, canoniques entre éditions, `robots.txt` propre à l'application, données structurées
-`schema.org/Book`.
+**Le référencement ne s'arrête pas au SSR** (`T-05` §1, `revue.md` `R-09`). Sitemap
+dynamique découpé pour quinze mille fiches — le sitemap actuel du `Website` est un fichier
+statique —, canoniques entre éditions, `robots.txt` propre à l'application, données
+structurées `schema.org/Book`.
 
 **La décision qui reste à prendre** : que faire des fiches épuisées. `RG-26` les maintient
 au catalogue, et c'est non négociable — c'est le cas d'usage central des alertes. Mais cela
@@ -45,10 +75,10 @@ ou `noindex` sous un seuil de contenu. À trancher **avant la première indexati
 **GA4 est un piège de copier-coller.** Le `Website` existant l'embarque, injecté au build
 par `website-deploy.yml`. Le réflexe en créant une troisième application Angular sera de
 reprendre la configuration — et de mettre l'association en défaut sur sa propre exigence
-(`revue.md` `R-17`). La règle de `11` §7 s'applique : télémétrie sur la zone
+(`revue.md` `R-17`). La règle de `T-11` §7 s'applique : télémétrie sur la zone
 d'administration, **jamais** sur les pages publiques.
 
-**L'écran de désengorgement** (`05` §5) porte la requête la plus lourde du système. Elle
+**L'écran de désengorgement** (`F-05` §5) porte la requête la plus lourde du système. Elle
 n'est consultée que quelques fois par mois, donc aucune optimisation prématurée — mais un
 index adapté dès l'écriture.
 
@@ -76,25 +106,25 @@ chauffé pendant des mois.
 | Envoi | Azure Communication Services, sous-domaine `mail.` (`DT-12`) |
 | Regroupement | Un e-mail par membre et par session (`RG-29`) |
 | Délai | Mise en file à la clôture, envoi 2 h plus tard (`RG-44`), paramétrable |
-| Anti-répétition | `UserAlertHistory`, vérifiée **deux fois** — indicative à la clôture, faisant foi à l'envoi (`02` §2) |
+| Anti-répétition | `UserAlertHistory`, vérifiée **deux fois** — indicative à la clôture, faisant foi à l'envoi (`T-02` §2) |
 | Personnes | Une seule table, `Watchlist` pour la facette membre (`DT-14`) |
-| Rebonds | Rapports ACS via Event Grid (`07` §7) |
+| Rebonds | Rapports ACS via Event Grid (`T-07` §7) |
 
 ### Les points durs
 
-**`R-06` reste ouvert et doit être fermé ici** : la suppression du compte **dans le
-locataire**. `ENF-12` promet un effacement effectif ; effacer nos données en laissant
-l'identité vivante n'est pas une suppression. Cela suppose un appel Microsoft Graph
-applicatif, donc un enregistrement d'application, un secret, et une exposition à
-l'authentification M2M que `QT-04` déclarait nulle. À instruire avant d'ouvrir
-l'inscription, pas après avoir des comptes à supprimer.
+**`R-06` — la suppression du compte dans le locataire — est déjà en place.** Le mécanisme
+Graph, son enregistrement d'application et son secret ont été posés en `L0-11`, et éprouvés
+sur un compte d'essai : c'était le moment où il n'y avait encore personne à supprimer. Ce
+palier n'a donc qu'à **brancher le reste de la cascade** — liste de recherche, historique
+d'alertes, journaux — et à refaire le test de bout en bout, cette fois sur un compte qui a
+réellement vécu.
 
 **Le repli de `RG-46`.** Si `QT-01` a montré une couverture insuffisante en `WorkId`, le
 rapprochement par titre + auteur normalisés devient obligatoire. Il produit des faux
 positifs sur les séries, les homonymes et les adaptations — retenu quand même, parce qu'un
 membre prévenu à tort coûte moins cher qu'un membre jamais prévenu.
 
-**L'ajout à la liste de recherche est l'écran le plus subtil du site** (`05` §4). Deux
+**L'ajout à la liste de recherche est l'écran le plus subtil du site** (`T-05` §4). Deux
 erreurs à ne pas commettre : proposer l'édition avant l'œuvre — dans une bourse à 1–2 €,
 la quasi-totalité des gens cherchent un texte, pas un tirage —, et masquer ensuite la
 portée choisie.
@@ -104,9 +134,10 @@ seule, ouvrir l'inscription sur le catalogue ouvre aussi la création de comptes
 
 ### Les tests manuels qui comptent
 
-- **Un cycle complet, de bout en bout** : s'inscrire, ajouter une œuvre à sa liste, faire
-  scanner une édition de cette œuvre par un bénévole, clôturer la session, et **recevoir
-  l'e-mail deux heures plus tard** — en boîte de réception, pas en indésirables.
+- **Un cycle complet, de bout en bout, seul** : s'inscrire avec une adresse à soi, ajouter
+  une œuvre à sa liste, scanner une édition de cette œuvre côté tri, clôturer la session, et
+  **recevoir l'e-mail deux heures plus tard** — en boîte de réception, pas en indésirables.
+  C'est le seul test qui éprouve la chaîne entière, et il n'a besoin de personne.
 - **La fenêtre de rattrapage** : refaire la même chose, puis corriger la session dans le
   délai, et vérifier qu'aucun e-mail ne part.
 - **La suppression de compte**, et vérifier des deux côtés : plus rien chez nous, plus rien
@@ -118,15 +149,16 @@ seule, ouvrir l'inscription sur le catalogue ouvre aussi la création de comptes
 
 ## Ce qui reste ouvert après le palier 3
 
-Deux manques relevés en revue n'appartiennent à aucun palier et devront trouver une place :
+*Rien de structurel.*
 
-**Le repli d'exploitation de `ENF-21`** — « une indisponibilité ne doit jamais empêcher de
-vendre », présenté comme le critère qui prime sur tout le reste. Aucune procédure n'est
-écrite : que fait le caissier si son appareil tombe en panne un jour de bourse ? Feuille de
-papier, puis quelle saisie, par quel écran ? À traiter au plus tard avant la première
-bourse du palier 1.
+Les deux manques que la revue signalait ici — le repli d'exploitation de `ENF-21` et la
+stratégie de test des fronts — n'appartenaient à ce fichier que faute de mieux. Les deux
+ont trouvé leur place ailleurs. Le repli d'exploitation **n'existera pas** — `ENF-21` est
+réécrit : en cas de panne on vend sans enregistrer, et rien n'est rattrapé —, ce qui reporte
+tout le poids sur le hors-ligne de la caisse, éprouvé en `P1-10`. La stratégie de test des
+fronts se tranche en `P1-2`, avant l'application de scan et non après.
 
-**La stratégie de test des fronts.** `03` §6 traite bien le backend. Rien sur le mode hors
-ligne — le chemin le plus critique et le plus difficile à éprouver à la main —, ni sur la
-survie de la file de sortie, ni sur un jeu de données de démonstration permettant de
-rejouer une session.
+Restent les évolutions déjà identifiées et volontairement non planifiées, listées en
+`F-01` §7 : estimation de la valeur marchande (`Q-02`), écran dédié de remise à plat de
+l'inventaire, notifications push, application native pour le public, prise en charge des
+livres sans ISBN.

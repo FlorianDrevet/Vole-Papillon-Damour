@@ -114,7 +114,9 @@ veille du besoin.
 - Enregistrements d'application et rôles applicatifs, par script (`infra/entra/`)
 - Premier compte administrateur, sans qui rien n'est administrable
 - Suppression de l'authentification maison du backend, du `BackOffice` et de la caisse
-  MAUI (`10` §6)
+  MAUI (`10` §6), celle-ci ramenée à **Android seul** et redistribuée à la main
+- Le mécanisme de **suppression d'un compte dans le locataire**, posé pendant qu'il n'y a
+  encore personne à supprimer — sans lui, `ENF-12` n'est pas tenue
 
 **Ce qu'on vérifie.**
 - `QT-04` — la facturation à l'utilisateur actif mensuel, bénévoles compris
@@ -162,9 +164,13 @@ l'association avant de lancer le test.
 bascule automatique, scan de vente, écran de statistiques minimal. Aucune exposition
 publique.
 
-**Critère de passage.** Après une bourse complète, l'écart entre le stock théorique et
-un comptage physique par échantillon reste dans une marge acceptable, à définir avec
-l'association. C'est le test réel de la discipline de scan en caisse.
+**Critère de passage.** Une répétition générale menée seul — une centaine de livres
+triés, vendus, puis comptés physiquement — se termine avec un écart **nul** entre le stock
+théorique et le comptage. Tout écart y est un défaut du logiciel, puisqu'une seule personne
+attentive a tout scanné.
+
+La discipline de scan en caisse, elle, ne se mesure qu'à l'usage réel : c'est le principal
+risque humain du projet, et il n'y a pas de moyen de l'éprouver d'avance.
 
 **Montée en charge.** Le catalogue démarre vide alors que le local contient déjà
 plusieurs milliers de livres. Il n'y a **pas de reprise préalable de l'existant** : le

@@ -12,10 +12,10 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 | `Q-04` | Dérive du stock | 🟡 Risque assumé | — |
 | `Q-05` | Prix de vente et section « rares » | ✅ **Tranchée** | — |
 | `Q-06` | Deux applications d'administration | 🟡 Risque assumé | — |
-| `Q-07` | Genres et classement | 🟡 À préciser | Association |
+| `Q-07` | Genres et classement | ✅ **Tranchée** | — |
 | `Q-08` | Choix du matériel de scan | 🟢 Après palier 0 | Association |
 | `Q-09` | Bourse annoncée puis déplacée | 🟡 Risque assumé | — |
-| `Q-10` | Choix du référentiel bibliographique | 🟠 À instruire | Étude technique |
+| `Q-10` | Choix du référentiel bibliographique | ✅ **Tranchée** par `DT-01` ; la couverture reste à mesurer (`QT-01`) | — |
 | `Q-11` | Amorçage du catalogue | ✅ Tranchée | — |
 
 ---
@@ -225,20 +225,35 @@ développement.
 
 ## `Q-07` — Genres et classement
 
-> 🟡 À préciser avec l'association.
+> ✅ **Tranchée.** Le genre vient des sources bibliographiques, et **le site n'indique
+> jamais où se trouve physiquement un livre dans le local.**
 
-Le catalogue public propose une navigation par genre (`04` §4). Or :
+**La décision.** La navigation par genre du catalogue (`04` §4) s'appuie sur ce que
+renvoient les sources de métadonnées, normalisé, et sur rien d'autre. Aucune nomenclature
+maison calquée sur les rayons, aucune correspondance à tenir à la main, aucune indication
+d'emplacement — ni sur la fiche, ni dans les résultats, ni dans une alerte.
 
-- Les genres issus des sources de métadonnées sont hétérogènes et souvent absents.
-- Le classement physique du local (rayons, bacs) ne correspond probablement pas à ces
-  genres.
+**Pourquoi.** L'option inverse — une liste courte calquée sur l'organisation réelle des
+rayons — permettait de dire au visiteur *où* chercher. Elle a été écartée pour ce qu'elle
+coûte et pour ce qu'elle promet :
 
-À trancher : le système reprend-il la nomenclature des sources, ou une liste courte
-définie par l'association et calquée sur l'organisation réelle des rayons ?
+| Ce qu'elle aurait coûté | Ce qu'elle aurait promis |
+|---|---|
+| Un travail de correspondance et de correction manuelle sur chaque fiche, indéfiniment | Une information qui cesse d'être vraie à la première réorganisation du local |
+| Une nomenclature à maintenir en parallèle de celle des sources | Une exactitude que le suivi par quantité, sans exemplaire individuel, ne permet de toute façon pas de garantir |
 
-La seconde option est probablement la bonne — elle permet d'indiquer *où* trouver le
-livre dans le local, ce qui est ce que le visiteur veut savoir — mais elle suppose un
-travail de correspondance et de correction manuelle sur les fiches.
+Le système ne sait pas *quel* exemplaire est où : il connaît un ISBN et une quantité
+(`01` §6). Annoncer un emplacement, c'est promettre une précision qu'on n'a pas.
+
+**Ce que cela accepte.** Les genres des sources sont hétérogènes et souvent absents. Le
+filtre par genre sera donc **imparfait et lacunaire** — un livre sans genre reste
+trouvable par la recherche, il ne sort simplement pas des filtres. C'est un confort de
+navigation dégradé, pas une fonctionnalité perdue : la recherche par titre et auteur reste
+le chemin principal, et c'est celui que les gens utilisent.
+
+**Ce que cela évite, et ce n'est pas rien.** Un visiteur qui vient avec un emplacement en
+tête et ne trouve pas le livre tient l'outil pour faux. Un visiteur qui vient avec un titre
+et une disponibilité datée demande à un bénévole, qui sait où sont ses rayons.
 
 ---
 
@@ -286,7 +301,11 @@ est réel.
 
 ## `Q-10` — Quel référentiel bibliographique ?
 
-> 🟠 À instruire. La fonctionnalité est retenue ; le choix de la source ne l'est pas.
+> ✅ **Tranchée depuis la rédaction du dossier technique.** `DT-01` retient un pipeline
+> BnF → Open Library → Google Books, avec cache local des notices déjà vues. Ce qui reste
+> ouvert n'est plus le choix mais sa **validation par la mesure** : `QT-01`, au palier 0,
+> dit si cette chaîne couvre réellement le fonds français, et un écart marqué en faveur
+> d'ISBNdb rouvrirait `DT-01`. Ce qui suit reste la grille de lecture de cette mesure.
 
 Le référentiel sert à trois choses, d'importance très inégale :
 

@@ -144,8 +144,28 @@ structure de titres cohérente.
 
 ### `ENF-21` — Continuité de la vente
 Une indisponibilité du système ne doit jamais empêcher de vendre. La caisse reste
-physique ; en dernier recours, les ventes se font sans scan et sont régularisées par
-une remise à plat (`RG-34`).
+physique : l'argent rentre, le livre part, **et rien n'est enregistré**.
+
+**Aucun repli n'est prévu, et c'est une décision.** Pas de feuille de papier, pas d'écran
+de ressaisie, aucune procédure de rattrapage. Une panne un jour de bourse produit des
+ventes que le système ne verra jamais, et l'écart qui en résulte se résorbe à la prochaine
+remise à plat (`RG-34`), au même titre qu'un livre vendu sans scan.
+
+*Pourquoi ne rien prévoir.* Un dispositif de secours a un coût permanent — l'écrire, le
+tenir à jour, l'expliquer à des bénévoles qui ne s'en serviront peut-être jamais — pour un
+bénéfice qui ne se manifeste qu'en cas de panne, et qui ne serait de toute façon qu'une
+correction de stock. Le système ne tient pas la caisse : il ne connaît ni encaissement, ni
+recette, ni monnaie. Ce qu'une panne fait perdre est une **information de stock**, pas de
+l'argent.
+
+*Ce que cela accepte.* La dérive de `Q-04` s'aggrave à chaque incident, et l'écart mesuré
+au comptage mélange alors deux causes — la discipline de scan et l'indisponibilité. C'est
+tenable tant que les pannes sont rares ; si elles ne le sont pas, c'est la fiabilité qu'il
+faut corriger, pas le repli qu'il faut écrire.
+
+*Ce qui reste exigé, en revanche.* `ENF-05` — le fonctionnement hors ligne de la caisse —
+n'est pas affaibli par cette décision : il en devient la seule protection réelle. Une
+coupure réseau ne doit pas être une panne.
 
 ### `ENF-22` — Sauvegardes
 Les mouvements constituent l'historique comptable de l'activité. Ils doivent être

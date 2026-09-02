@@ -23,6 +23,27 @@ sur ce qui manque autour d'eux.
 | 🟡 **Factuel** — le document décrit un dépôt qui n'existe plus | `R-19` `R-20` `R-21` `R-22` |
 | ⚪ **Mineur** — à corriger au passage | `R-23` à `R-30` |
 
+**Où en est chaque constat ouvert dans le plan.** Un constat traité dans un document est
+barré ci-dessus ; un constat ouvert est soit porté par une étape, soit non. La distinction
+compte, parce que « ouvert » sans étape veut dire « oublié ».
+
+| Constat | Porté par |
+|---|---|
+| `R-06` | `L0-11`, étape 8 — **arbitré en faveur de la recommandation de cette revue** : la suppression Graph se fait au préalable d'identité, pendant qu'il n'y a personne à supprimer |
+| `R-09` | `plan/03`, palier 2 — le sort des fiches épuisées reste à trancher avant la première indexation |
+| `R-10` `R-11` `R-12` `R-16` | `P1-2` |
+| `R-13` `R-14` | ❌ **Aucune étape.** Le filigrane de synchronisation et le décompte des demandeurs dans la projection embarquée relèvent de `P1-5` et n'y sont pas nommés |
+| `R-15` | `P1-4` |
+| `R-17` | `plan/03`, palier 2 |
+| `R-18` `R-29` | `L0-11` |
+| `R-19` | `L0-5` |
+| `R-20` | Correction documentaire seule — les fronts sont en Angular 21, pas 18 |
+| `R-21` `R-22` `R-24` `R-25` `R-30` | `P1-8` |
+| `R-23` | `L0-6` |
+| `R-26` | Traité depuis par `T-08` §7, qui chiffre la base, l'ingestion et l'envoi. Reste « à chiffrer sur le calculateur Azure » les cinq réplicas permanents — sans étape |
+| `R-27` | `P1-1` |
+| `R-28` | `L0-11`, étape 4 — c'est la migration 0 |
+
 ### Traités
 
 | # | Traité par | Le 2 septembre 2026 |
@@ -32,7 +53,7 @@ sur ce qui manque autour d'eux.
 | `R-07` | **`DT-13`** | `livres.volepapillondamour.fr`, URL en slug + ISBN, page d'œuvre canonique. `05` §1 mis à jour |
 | `R-09` | *partiellement* | `05` §1 liste désormais ce que le SSR ne couvre pas. **Reste ouvert** : le traitement des fiches épuisées de `RG-26` — canonisation vers l'œuvre ou `noindex` sous un seuil — n'est pas tranché |
 | `R-02` | `02` §2 | Table `AssociationSettings` à ligne unique et colonnes typées, migration 1, et transport dans le delta (`04` §2) |
-| `R-03` | `02` §2 | Table `MemberAlertHistory`, écrite **à l'envoi** dans la même transaction que le passage à `Sent`, avec la double vérification de `RG-30` |
+| `R-03` | `02` §2 | Table `UserAlertHistory`, écrite **à l'envoi** dans la même transaction que le passage à `Sent`, avec la double vérification de `RG-30` |
 | `R-08` | `02` §2 | Colonne `ClientGestureId` sur `BookMovements`, index unique filtré, recopiée sur l'annonce engendrée |
 | `R-04` | **`DT-14`** | Une seule table de personnes, clé `oid`. `Members` abandonnée, facette « membre » sur `Watchlist`, suppression et anonymisation distinguées pour `ENF-12` |
 
@@ -103,7 +124,7 @@ calcul du verdict.
 
 ### `R-03` — Aucune table d'historique d'alertes, alors que deux règles l'exigent
 
-> ✅ **Traité.** Table `MemberAlertHistory` en [`02`](02-modele-de-donnees.md) §2, écrite
+> ✅ **Traité.** Table `UserAlertHistory` en [`02`](02-modele-de-donnees.md) §2, écrite
 > **à l'envoi** et non à la mise en file, dans la même transaction que le passage à `Sent`.
 > `RG-30` se vérifie deux fois : indicative à la clôture, faisant foi à l'envoi.
 
@@ -116,7 +137,7 @@ historique requêtable par ISBN.
 `ENF-12` cite par ailleurs explicitement « l'historique d'alertes » parmi ce qu'une
 suppression de compte doit effacer. Cet historique n'existe dans aucun des documents.
 
-Il manque une table — `MemberAlertHistory(MemberId, Isbn13, SentAt)` ou équivalent —
+Il manque une table — `UserAlertHistory(MemberId, Isbn13, SentAt)` ou équivalent —
 écrite au moment de l'envoi, indexée pour `RG-30`, et incluse dans la cascade de
 `ENF-12`. Sans elle, `RG-30` est inapplicable et `CloseScanSession` ne peut pas faire ce
 que `03` §3 lui demande (« en respectant `RG-30` »).
@@ -471,11 +492,18 @@ qu'à la sixième application.
 Trois sujets n'ont pas de chapitre, et ne relèvent d'aucun constat ci-dessus parce
 qu'ils sont absents en entier.
 
-**Le repli d'exploitation.** `ENF-21` — « une indisponibilité ne doit jamais empêcher de
-vendre » — est présenté en `07` §8 comme « le critère qui prime sur tout le reste de ce
-document ». Aucune procédure n'est pourtant décrite : que fait le caissier si son appareil
-tombe en panne un jour de bourse ? Une feuille de papier, puis quelle saisie, par quel
-écran, rattachée à quoi ? `ENF-04` (autonomie de l'appareil) est dans le même cas.
+**Le repli d'exploitation.** ✅ **Tranché — il n'y en aura pas.** `ENF-21` est réécrit :
+en cas de panne, on vend sans enregistrer, et rien n'est rattrapé. Le constat ci-dessous
+reste pour mémoire, parce qu'il explique ce que cette décision accepte. Ce qu'elle déplace
+est traité en `P1-10` du [`lot 2`](../plan/02-palier-1-socle-interne.md) : le hors-ligne de
+la caisse devient la seule protection restante, et se teste comme telle. Le constat
+d'origine : `ENF-21` — « une indisponibilité ne doit jamais empêcher de vendre » —
+est présenté en `07` §8 comme « le critère qui prime sur tout le reste de ce document », et
+aucune procédure n'est décrite. Que fait le caissier si son appareil tombe en panne un jour
+de bourse ? Une feuille de papier, puis quelle saisie, par quel écran, rattachée à quoi ?
+`ENF-04` (autonomie de l'appareil) est dans le même cas. **C'est une décision
+d'organisation, pas de conception** : elle appartient à l'association, et l'étape ne fait
+que lui donner une date limite.
 
 **L'alerte sur les mesures d'observabilité.** ✅ **Traité** par
 [`11-observabilite.md`](11-observabilite.md) et `DT-16`. Le chapitre pose les mesures et
@@ -486,12 +514,14 @@ apports que la revue n'avait pas vus : un **journal est une donnée personnelle*
 suppression du compte ; et le **désaccord de verdict entre client et serveur** est une
 mesure gratuite qui donne la péremption réelle de la copie embarquée.
 
-**La stratégie de test au-delà du backend.** `03` §6 traite bien les tests backend et
-leur ordre de valeur. Rien sur les fronts : ni test du mode hors ligne (le chemin le plus
-critique et le plus difficile à éprouver à la main), ni test de la file de sortie et de
-sa survie à une fermeture, ni jeu de données de démonstration permettant de rejouer une
-session de tri. La mémoire projet signale par ailleurs que `npm test` échoue côté
-`BackOffice` faute de fichiers de test.
+**La stratégie de test au-delà du backend.** ✅ **A trouvé une place** — étape `P1-2` du
+[`lot 2`](../plan/02-palier-1-socle-interne.md), avant l'application de scan et non après.
+Le manque, lui, est intact : `03` §6 traite bien les tests backend et leur ordre de valeur,
+mais rien sur les fronts — ni test du mode hors ligne (le chemin le plus critique et le
+plus difficile à éprouver à la main), ni test de la file de sortie et de sa survie à une
+fermeture, ni jeu de données de démonstration permettant de rejouer une session de tri.
+`npm test` échoue par ailleurs côté `BackOffice`, qui ne contient **aucun** fichier de test
+quand le `Website` en compte dix-neuf.
 
 ---
 
@@ -514,16 +544,29 @@ d'implémentation peut s'appuyer dessus sans réserve.
 
 Deux des trois manques structurels sont comblés depuis :
 [`11-observabilite.md`](11-observabilite.md) traite l'alerte et le débogage, et `DT-15`
-unifie le socle d'exécution. **Reste le repli d'exploitation de `ENF-21`** — que fait un
-caissier dont l'appareil tombe en panne un jour de bourse — et la stratégie de test des
-fronts.
+unifie le socle d'exécution. Les deux autres sont réglés depuis : le repli
+d'exploitation **n'existera pas** — `ENF-21` est réécrit, une panne fait vendre sans
+enregistrer et rien n'est rattrapé, `P1-10` en tire la conséquence sur le hors-ligne — et la
+stratégie de test des fronts a une étape, `P1-2`, où elle reste à écrire.
 
-Il reste onze constats ouverts, dont **aucun ne conditionne l'écriture du plan** : ils y
-entrent comme étapes. Trois méritent d'être traités tôt dans l'exécution, parce qu'ils
-sont bon marché maintenant et coûteux plus tard :
+**Combien de constats restent ouverts, et lesquels.** Une version antérieure de cette
+section annonçait « onze constats ouverts ». Le chiffre ne comptait que les bloquants et les
+sérieux : les quatre factuels et les huit mineurs sont ouverts eux aussi. Le compte exact
+est **vingt-trois**, dont vingt-et-un sont portés par une étape du plan — voir le tableau
+« Où en est chaque constat ouvert » plus haut. **Aucun ne conditionnait l'écriture du plan.**
+
+Deux échappent encore à toute étape et ce sont les seuls à surveiller :
+
+- **`R-13` et `R-14`** — le filigrane de synchronisation qui ne couvre pas la projection
+  embarquée, et cette projection qui ne transporte pas le décompte des demandeurs. Les deux
+  relèvent de `P1-5` sans y être nommés ; ils se règlent en écrivant le delta, à condition
+  d'y penser à ce moment-là.
+
+Trois méritent par ailleurs d'être traités tôt, parce qu'ils sont bon marché maintenant et
+coûteux plus tard :
 
 - `R-06`, la suppression du compte dans le locataire — même chantier que `DT-14`, et
-  `ENF-12` n'est pas tenue sans lui ;
+  `ENF-12` n'est pas tenue sans lui. ✅ **Suivi** : le plan l'a ramené en `L0-11` ;
 - `R-10`, le fuseau horaire — une phrase à écrire, un défaut sournois à ne pas laisser
   s'installer dans le code ;
 - `R-23`, les sondes de santé, **avant** d'ajouter trois applications plutôt qu'après.

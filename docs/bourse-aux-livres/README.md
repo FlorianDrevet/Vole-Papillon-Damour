@@ -33,9 +33,24 @@ ces documents.
 
 ## Statut
 
-**Brouillon soumis à validation.** Trois éléments doivent être arbitrés avant tout
-développement, dont un est structurant pour l'architecture : voir
-[`08-questions-ouvertes.md`](08-questions-ouvertes.md).
+**Spécification stabilisée, architecture écrite, plan d'exécution écrit. Rien
+d'implémenté.** Les décisions structurantes de `08` sont tranchées : `Q-01`, `Q-05`,
+`Q-10` et `Q-11` le sont, `Q-02` est reportée hors v1, `Q-04`, `Q-06` et `Q-09` sont des
+risques assumés.
+
+**Ce qui attend encore une réponse**, et qui vient de l'association plus que de la
+technique :
+
+| Question | Attendue pour |
+|---|---|
+| `Q-03` — proportion de livres sans ISBN | Se **mesure** au palier 0, ne se décide pas |
+| `Q-07` — genres et classement | Pendant le palier 1, parce qu'elle bloque le palier 2 |
+| `Q-08` — matériel de scan | Après le palier 0, pas avant |
+| Les chiffres cibles du palier 0 | **Avant** de lancer la campagne (`S0-1`) |
+
+Le plan signale par ailleurs quatre arbitrages qui lui sont propres : voir
+[`plan/README.md`](plan/README.md), « Les décisions que le plan n'a pas le droit de prendre
+seul ».
 
 ## Conventions
 

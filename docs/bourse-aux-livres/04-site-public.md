@@ -65,6 +65,11 @@ donner l'impression que ces livres sont disponibles.
 **Filtres** : genre, disponibilité, livres rares.
 **Tris** : pertinence (défaut), arrivée récente.
 
+Le **genre vient des sources bibliographiques**, normalisé, et de nulle part ailleurs
+(`Q-07`). Il est donc hétérogène et souvent absent : le filtre est un confort de
+navigation, pas un classement exhaustif. Un livre sans genre reste trouvable par la
+recherche — qui est le chemin principal —, il ne sort simplement pas des filtres.
+
 Le filtre de disponibilité propose trois valeurs, qui correspondent aux états du cycle
 de vie :
 
@@ -263,6 +268,11 @@ Le détail des obligations est en `07-exigences-non-fonctionnelles.md` (`ENF-10`
 - Pas de réservation ni de mise de côté.
 - Pas de compte pour les bénévoles : ils utilisent l'application de scan.
 - Pas d'affichage des livres écartés au tri.
+- **Pas d'indication d'emplacement** : le site ne dit jamais dans quel rayon ni dans quel
+  bac se trouve un livre (`Q-07`). Le suivi se fait par ISBN et par quantité, sans
+  exemplaire individuel : le système ne le sait pas, et l'annoncer serait promettre une
+  précision qu'il n'a pas. Le visiteur vient avec un titre ; le bénévole sait où sont ses
+  rayons.
 
 ## 10. Évolution identifiée : la réservation
 

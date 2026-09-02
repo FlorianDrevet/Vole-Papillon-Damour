@@ -197,6 +197,12 @@ et que l'écran obtenu n'offre alors aucun chemin de création de compte.
 **Le test.** Configurer les deux cas sur un locataire d'essai, ouvrir l'écran de
 connexion de `vpd-scan` en navigation privée, et chercher un lien d'inscription.
 
+> **Avec quoi, puisque l'application n'existe pas.** La mesure a lieu au préalable
+> d'identité (`L0-12`), donc avant toute application de scan. Seul l'**enregistrement**
+> `vpd-scan` existe, créé par `Configure-EntraApps.ps1`. Cela suffit : l'écran de connexion
+> s'obtient en construisant l'URL d'autorisation à la main dans une fenêtre privée. C'est
+> l'écran du locataire qu'on teste, pas celui de l'application.
+
 **Ce que le résultat décide.** Si aucune configuration ne donne la connexion seule, il
 faut un autre garde-fou : restreindre l'attribution des rôles suffit à empêcher un
 compte auto-créé de faire quoi que ce soit, mais l'annuaire se remplirait de comptes
@@ -218,11 +224,20 @@ une application monopage est **plafonné à vingt-quatre heures**, sans renouvel
 au-delà. Les sessions de tri sont espacées de plusieurs jours. Sans précaution, chaque
 session commence par une reconnexion, ce que `ENF-17` exclut explicitement.
 
-**Le test, une journée d'attente.** Se connecter sur l'application de scan avec le
-maintien de session activé, ne pas y toucher pendant quarante-huit heures, puis rouvrir
-l'application **en mode avion**. Trois observations : la session est-elle rétablie
-silencieusement une fois le réseau revenu ? Le geste de scan reste-t-il possible sans
-réseau ? L'identité du bénévole est-elle toujours connue de l'appareil ?
+**Le test, une journée d'attente.** Se connecter avec le maintien de session activé, ne pas
+y toucher pendant quarante-huit heures, puis rouvrir **en mode avion**. Trois observations :
+la session est-elle rétablie silencieusement une fois le réseau revenu ? Le geste de scan
+reste-t-il possible sans réseau ? L'identité du bénévole est-elle toujours connue de
+l'appareil ?
+
+> **Le test se coupe en deux, parce qu'il n'y a pas d'application de scan au moment où il
+> faut le lancer.** La mesure doit être lancée tôt — elle attend deux jours — et
+> l'application n'existe qu'au palier 1. Ce qui se mesure au préalable (`L0-12`) sur une
+> **page monopage jetable** : la survie du jeton de rafraîchissement au-delà de
+> vingt-quatre heures, le rétablissement silencieux de la session, et la persistance de
+> l'identité en stockage local — c'est-à-dire tout ce qui met `ENF-17` en jeu et tout ce
+> qui pourrait rouvrir `DT-08`. Ce qui ne peut se vérifier qu'en `P1-5` : que **le geste de
+> scan** reste possible hors ligne, puisqu'il suppose la file de sortie et IndexedDB.
 
 **Ce que le résultat décide.** La forme du démarrage de session dans la PWA. La réponse
 attendue est décrite en `10` §9 : l'identité vient du stockage local, le jeton ne sert

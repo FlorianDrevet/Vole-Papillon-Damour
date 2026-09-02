@@ -405,8 +405,11 @@ par palier fonctionnel plutôt qu'une seule massive :
    suivantes et conditionne tout ce qui s'authentifie
 1. `Books`, `BookMovements`, `ScanSessions`, `BookAnnouncements`, `AssociationSettings` —
    palier 1. Les paramètres viennent dès la première : le verdict de `RG-10` et `RG-12`
-   les lit
-2. Index plein texte et collation — palier 2
+   les lit. **La collation insensible aux accents de §4 en fait partie** : elle porte sur
+   les colonnes créées ici, et la changer plus tard sur des colonnes remplies et indexées
+   est un tout autre chantier
+2. Index plein texte — palier 2. L'index peut attendre le catalogue public, la collation
+   non
 3. `Watchlists`, `WatchlistItems`, `UserAlertHistory`, `OutboxMessage` — palier 3
 
 **Aucune reprise de données initiale.** Le catalogue démarre vide, conformément à

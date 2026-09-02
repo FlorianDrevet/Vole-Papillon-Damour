@@ -7,6 +7,10 @@ elles sont paramétrables (`05` §9) et seront toutes fausses au premier essai.
 > Les numéros sont des **identifiants stables**, pas un ordre de lecture. Une règle
 > ajoutée après coup prend un numéro libre plutôt que de décaler les autres : les
 > sections sont thématiques, la numérotation ne l'est pas.
+>
+> **`RG-08`, `RG-09` et `RG-39` n'existent pas.** Ce sont des règles retirées en cours de
+> rédaction ; leurs numéros restent vacants et ne seront pas réattribués, pour qu'un renvoi
+> écrit ailleurs ne puisse jamais désigner la mauvaise règle. Aucun document ne les cite.
 
 ---
 
