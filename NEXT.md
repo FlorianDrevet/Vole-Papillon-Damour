@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-7` — paramétrage SQL S1 posé, déploiement opérationnel restant |
-| **Prochaine action** | `L0-7` — exécuter `infra-deploy` et vérifier le portail après fusion de la PR #8 ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
-| **Dernière machine** | *(à renseigner)* |
+| **Lot en cours** | `L0-8` — enregistrements DNS de l'envoi d'e-mails |
+| **Prochaine action** | `L0-8`/`L0-9` — fixer les valeurs que le plan ne précise pas avant de créer ACS Email et ses enregistrements ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-02 |
-| **Branche** | `feature/l0-7-sql-s1` |
+| **Branche** | `chore/l0-7-deploy-status` |
 
 ---
 
@@ -72,11 +72,17 @@ git pull
 
 ## En cours
 
-`L0-7` est implémenté côté dépôt. `infra/parameters/main.dev.bicepparam` cible désormais
-Azure SQL `S1` (`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
+`L0-7` est terminé. `infra/parameters/main.dev.bicepparam` cible désormais Azure SQL `S1`
+(`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
 `infra/modules/SqlServer/types.bicep` documente explicitement les paramètres des paliers DTU.
-Les deux fichiers Bicep compilent. La montée en gamme (`infra-deploy`) et la vérification du
-portail restent à faire après la fusion de la PR #8 ; aucun changement Azure n'a été effectué.
+Les deux fichiers Bicep compilent. Le run GitHub Actions `Infra - deploy #6` a déployé le
+changement le 2026-09-02 ; le portail Azure confirme `Standard S1: 20 DTUs` pour
+`vole-papillon-damour-db`. Le test manuel après plusieurs heures d'inactivité reste à faire.
+
+La suite est `L0-8`/`L0-9`. Le plan fixe le sous-domaine `mail.volepapillondamour.fr` et
+l'usage d'Azure Communication Services Email, mais ne fixe pas le nom de la ressource ACS,
+sa région/localisation des données, ni l'adresse expéditrice. Aucune valeur n'est inventée et
+aucune ressource ACS ou enregistrement mail n'est créé tant que ces choix ne sont pas arrêtés.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -116,7 +122,7 @@ dans Azure sans être déductible du dépôt.
 
 | Ressource | État | Depuis |
 |---|---|---|
-| Base SQL | Paramètre du dépôt passé à `S1` (`Standard`, 20 DTU, 250 Go), sans pause — Azure non modifié | — |
+| Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
 | Locataire Entra External ID | **Pas créé** | — |
@@ -132,7 +138,7 @@ Domaine détenu et administré par l'association, main pleine et entière.
 |---|---|---|---|
 | `TXT` propriété + SPF + DKIM sur `mail` | `L0-8` | Non | — |
 | `DMARC` | `L0-8` | Non | — |
-| `TXT` Search Console | `L0-8` | Non | — |
+| `TXT` Search Console | `L0-8` | Oui — déjà présent | `2026-09-02` |
 | `CNAME` + `TXT asuid` sur `livres` | **Palier 2** — le `CNAME` a besoin du FQDN de la Container App du catalogue, qui n'existe pas avant | Non | — |
 
 ### Entra
@@ -204,6 +210,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-02 | Windows | **L0-7 — déploiement SQL.** Le run GitHub Actions `Infra - deploy #6` a appliqué le passage de la base `vole-papillon-damour-db` à `Standard S1: 20 DTUs` ; le portail Azure confirme le niveau fixe, sans pause automatique. Le test manuel après inactivité reste à faire. Le TXT Search Console était déjà présent dans la zone DNS. L0-8/L0-9 attendent les valeurs ACS non fixées par le plan. |
 | 2026-09-02 | - | **L0-7 — base SQL en S1.** Passage du paramètre dev de `GP_S_Gen5_1` serverless à `S1` (`Standard`, 20 DTU, 250 Go, sans pause automatique) et alignement de la documentation du type `DatabaseSkuConfig` du module `SqlServer`. Les deux fichiers Bicep compilent. Le déploiement Azure, le contrôle du portail et le test manuel après inactivité restent à faire ; aucun changement hors dépôt n'a été effectué. |
 | 2026-09-02 | - | **L0-6 — points de santé et sondes.** Ajout de `GET /health` avec contrôle de connexion SQL, test de l'enregistrement du contrôle, sondes API readiness/liveness/startup sur `/health:8080` dans les paramètres dev, et validation locale Aspire (`200 OK`, `Healthy`). La solution backend restaure, compile et passe ses 70 tests ; les deux fichiers Bicep compilent. Aucun déploiement Azure ni test manuel de révision cassée n'a été effectué. |
 | 2026-09-02 | - | **L0-5 — CI de compilation et tests.** Ajout de `.github/workflows/ci.yml` sur `push` et `pull_request` : SDK .NET `10.0.203`, solution backend `.slnx`, tests Domain/Application/Infrastructure, workload et build MAUI Android, puis `npm ci`/`npm run build` pour BackOffice et Website avec `.nvmrc`. Validation locale backend et fronts réussie ; le workflow GitHub n'a pas été lancé, et la caisse reste localement bloquée par l'absence du SDK Android natif. |
