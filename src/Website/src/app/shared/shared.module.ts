@@ -18,6 +18,7 @@ import { QuoteBlockComponent } from './components/quote-block/quote-block.compon
 import { PhotoPlaceholderComponent } from './components/photo-placeholder/photo-placeholder.component';
 import { ActionCardComponent } from './components/action-card/action-card.component';
 import { TitledSectionComponent } from './components/titled-section/titled-section.component';
+import { EventLocationsComponent } from './components/event-locations/event-locations.component';
 
 @NgModule({
   declarations: [
@@ -34,6 +35,7 @@ import { TitledSectionComponent } from './components/titled-section/titled-secti
     PhotoPlaceholderComponent,
     ActionCardComponent,
     TitledSectionComponent,
+    EventLocationsComponent,
     CookieBannerComponent,
   ],
   exports: [
@@ -50,6 +52,7 @@ import { TitledSectionComponent } from './components/titled-section/titled-secti
     PhotoPlaceholderComponent,
     ActionCardComponent,
     TitledSectionComponent,
+    EventLocationsComponent,
     CookieBannerComponent,
     DesignSystemModule,
   ],

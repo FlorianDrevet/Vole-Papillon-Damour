@@ -1,0 +1,63 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",           "x": 0,    "y": 0,    "w": 390, "h": 844, "title": "1 · Accueil — choix du mode" },
+    { "file": "SessionMode.dc.html",    "x": 490,  "y": 0,    "w": 390, "h": 844, "title": "2 · Nouvelle session — mise à disposition" },
+    { "file": "TriAttente.dc.html",     "x": 980,  "y": 0,    "w": 390, "h": 844, "title": "3 · Tri — écran d'attente" },
+    { "file": "VerdictTrop.dc.html",    "x": 1470, "y": 0,    "w": 390, "h": 844, "title": "4 · Verdict — inutile d'en garder" },
+
+    { "file": "VerdictGarder.dc.html",  "x": 0,    "y": 1000, "w": 390, "h": 844, "title": "5 · Verdict — à garder" },
+    { "file": "VerdictRare.dc.html",    "x": 490,  "y": 1000, "w": 390, "h": 844, "title": "6 · Verdict — bac livres rares" },
+    { "file": "VerdictPremier.dc.html", "x": 980,  "y": 1000, "w": 390, "h": 844, "title": "7 · Verdict — premier exemplaire" },
+    { "file": "SaisieManuelle.dc.html", "x": 1470, "y": 1000, "w": 390, "h": 844, "title": "8 · Tri — saisie manuelle du code" },
+
+    { "file": "FinSession.dc.html",     "x": 0,    "y": 2000, "w": 390, "h": 844, "title": "9 · Tri — fin de session" },
+    { "file": "Caisse.dc.html",         "x": 490,  "y": 2000, "w": 390, "h": 844, "title": "10 · Caisse" },
+    { "file": "Consultation.dc.html",   "x": 980,  "y": 2000, "w": 390, "h": 844, "title": "11 · Consultation" },
+    { "file": "HorsLigne.dc.html",      "x": 1470, "y": 2000, "w": 390, "h": 844, "title": "12 · Hors ligne" }
+  ],
+  "annotations": [
+    {
+      "id": "systeme-couleur",
+      "x": 0,
+      "y": -280,
+      "w": 430,
+      "text": "Deux familles de couleur, jamais mélangées.\n\nBandeau de mode : ink #072b45 (disponible maintenant), bleu #1497d6 (prochaine bourse), orange #dc6412 (caisse), ardoise #4e6c84 (consultation).\n\nVerdict : rouge #b02a33, vert #18703a, violet #5f3a86, ink #072b45 — uniquement dans le bloc sous le bandeau.\n\nL'orange VPD ne dit jamais un verdict : il reste la couleur de l'action primaire et de la caisse."
+    },
+    {
+      "id": "zero-appui",
+      "x": 490,
+      "y": -280,
+      "w": 430,
+      "text": "Zéro appui dans le cas nominal.\n\nScanner le livre suivant vaut « garder » — d'où le rappel en petites capitales au-dessus des boutons.\n\nÉCARTER et GARDER sont identiques et à la même place sur les quatre verdicts, y compris quand le verdict appelle clairement l'un des deux. La mémoire du geste prime sur l'optimisation écran par écran : on ne déplace jamais le bouton attendu."
+    },
+    {
+      "id": "zone-pouce",
+      "x": 980,
+      "y": -280,
+      "w": 430,
+      "text": "Tout ce qui se touche vit dans la moitié basse.\n\nCibles de 60 px pour les actions, 74 px pour le pavé numérique, 96 à 110 px pour les gros choix de mode.\n\nLe vide au-dessus n'est pas un manque : il pousse les cibles sous le pouce d'une main qui tient déjà un livre."
+    },
+    {
+      "id": "mode-permanent",
+      "x": 1470,
+      "y": -280,
+      "w": 430,
+      "text": "Le bandeau de mode ne disparaît jamais.\n\nIl porte le mode en toutes lettres et la date réelle de la bourse, jamais un libellé générique.\n\nC'est le garde-fou principal contre l'erreur la plus coûteuse du dispositif : scanner une session entière dans le mauvais mode. Elle est silencieuse et ne se voit nulle part ailleurs."
+    },
+    {
+      "id": "aucun-prix",
+      "x": 490,
+      "y": 2900,
+      "w": 430,
+      "text": "Aucun prix, aucun total, nulle part.\n\nLe système ne connaît pas les prix : la caisse enregistre une sortie de stock, elle n'encaisse pas. D'où « VALIDER » et non « ENCAISSER ».\n\nLe bloc violet du livre rare est le seul garde-fou contre un livre à 35 € vendu 2 € : il occupe le milieu de l'écran, pas une pastille discrète."
+    },
+    {
+      "id": "fraicheur-hors-ligne",
+      "x": 1470,
+      "y": 2900,
+      "w": 430,
+      "text": "Hors ligne ne bloque rien.\n\nOn continue à scanner, les gestes s'empilent. Le verdict reste affiché, mais il dit d'où il vient : la ligne de fraîcheur est dans le bloc de verdict, là où la décision se prend, pas reléguée dans un coin de l'écran."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

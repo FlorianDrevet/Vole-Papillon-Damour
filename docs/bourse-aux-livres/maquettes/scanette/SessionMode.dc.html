@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="flex: none; height: 3px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></div>
+
+  <div style="flex: none; display: flex; flex-direction: column; gap: 10px; padding: 30px 24px 26px; background: #ffffff; border-bottom: 1px solid #e2eef7;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Nouvelle session de tri</span>
+    <span style="font-family: 'Newsreader', Georgia, serif; font-size: 32px; font-weight: 500; line-height: 1.08; color: #072b45;">Ces livres seront…</span>
+  </div>
+
+  <div style="flex: 1 1 auto; background: #f7fbfe;"></div>
+
+  <div style="flex: none; display: flex; flex-direction: column; gap: 16px; padding: 0 20px;">
+
+    <div style="display: flex; gap: 18px; padding: 26px 24px; border-radius: 4px; background: #072b45; box-shadow: 0 26px 44px -30px rgba(7, 43, 69, .6);">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7fd8f5" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 2px;">
+        <path d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
+        <path d="M12 6.5v13"></path>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <span style="font-size: 21px; font-weight: 700; line-height: 1.1; letter-spacing: .04em; text-transform: uppercase; color: #ffffff;">Disponibles maintenant</span>
+        <span style="font-size: 15px; line-height: 1.4; color: #9dc2da;">Mis en vente tout de suite</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 18px; padding: 26px 24px; border-radius: 4px; background: #1497d6; box-shadow: 0 26px 44px -30px rgba(7, 43, 69, .6);">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 2px;">
+        <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
+        <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
+      </svg>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <span style="font-size: 21px; font-weight: 700; line-height: 1.1; letter-spacing: .04em; text-transform: uppercase; color: #ffffff;">À la prochaine bourse</span>
+        <span style="font-size: 15px; line-height: 1.4; color: rgba(255, 255, 255, .88);">Annoncés en ligne pour le <span style="font-weight: 600; color: #ffffff;">samedi 14 mars</span></span>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="flex: none; display: flex; gap: 11px; padding: 22px 24px 28px;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6d8ba2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 1px;">
+      <circle cx="12" cy="12" r="8.5"></circle>
+      <path d="M12 7.8v5M12 16.3h.01"></path>
+    </svg>
+    <span style="font-size: 13.5px; line-height: 1.5; color: #4e6c84;">Ce choix engage tous les scans de la session. Pour en changer, il faudra la terminer et en ouvrir une autre.</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

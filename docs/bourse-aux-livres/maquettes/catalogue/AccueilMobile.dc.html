@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</helmet>
+
+<div style="width: 390px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #f7fbfe; border-bottom: 1px solid #d9e9f4;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background-image: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; font-weight: 600; color: #ffffff;">VPD</span>
+      </div>
+      <span style="font-family: 'Newsreader', Georgia, serif; font-size: 15.5px; line-height: 1.1; color: #072b45;">Bourse aux livres</span>
+    </div>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#072b45" stroke-width="1.9" stroke-linecap="round">
+      <path d="M4 7h16M4 12h16M4 17h16"></path>
+    </svg>
+  </div>
+
+  <div style="padding: 36px 22px 40px; background-image: linear-gradient(180deg, rgba(4, 29, 48, .58) 0%, rgba(4, 29, 48, .72) 100%), linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);">
+    <span style="display: block; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #7fd8f5;">Catalogue</span>
+    <span style="display: block; margin-top: 14px; font-family: 'Newsreader', Georgia, serif; font-size: 34px; font-weight: 500; line-height: 1.08; color: #ffffff; text-wrap: pretty;">Est-ce que ce livre est à la bourse ?</span>
+    <span style="display: block; margin-top: 12px; font-size: 15px; line-height: 1.55; color: #dcecf7;">Un titre, un auteur, ou le code-barres au dos du livre.</span>
+    <div style="display: flex; align-items: center; gap: 12px; margin-top: 26px; height: 56px; padding: 0 20px; border-radius: 999px; background: #ffffff;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6d8ba2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex: none;">
+        <circle cx="11" cy="11" r="6.6"></circle>
+        <path d="m15.8 15.8 4.7 4.7"></path>
+      </svg>
+      <span style="font-size: 15.5px; color: #6d8ba2;">un titre, un auteur…</span>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: center; height: 56px; margin-top: 10px; border-radius: 999px; background: #f0801c;">
+      <span style="font-size: 16px; font-weight: 600; color: #ffffff;">Rechercher</span>
+    </div>
+  </div>
+
+  <div style="padding: 32px 22px 34px; background: #ffffff; border-bottom: 1px solid #e2eef7;">
+    <span style="display: block; width: 48px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <span style="display: block; margin-top: 14px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">La prochaine bourse</span>
+    <span style="display: block; margin-top: 12px; font-family: 'Newsreader', Georgia, serif; font-size: 27px; font-weight: 500; line-height: 1.1; color: #072b45;">Les 14 et 15 mars 2026.</span>
+
+    <div style="display: flex; gap: 14px; margin-top: 18px; padding: 14px 0; border-top: 1px solid #e2eef7;">
+      <span style="flex: none; margin-top: 2px; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; background: #e9f4fb;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
+          <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
+        </svg>
+      </span>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">Dates</span>
+        <span style="font-size: 14.5px; font-weight: 500; line-height: 1.45; color: #072b45;">Samedi 14 et dimanche 15 mars</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid #e2eef7;">
+      <span style="flex: none; margin-top: 2px; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; background: #e9f4fb;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.5"></circle>
+          <path d="M12 7.4V12l3.2 2"></path>
+        </svg>
+      </span>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">Horaires</span>
+        <span style="font-size: 14.5px; font-weight: 500; line-height: 1.45; color: #072b45;">De 9 h 30 à 18 h 00</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 14px; padding: 14px 0; border-top: 1px solid #e2eef7;">
+      <span style="flex: none; margin-top: 2px; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 999px; background: #e9f4fb;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21c4.2-4.6 6.3-7.9 6.3-10.4A6.3 6.3 0 0 0 5.7 10.6C5.7 13.1 7.8 16.4 12 21Z"></path>
+          <circle cx="12" cy="10.4" r="2.4"></circle>
+        </svg>
+      </span>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">Adresse</span>
+        <span style="font-size: 14.5px; font-weight: 500; line-height: 1.45; color: #072b45;">Salle des fêtes<br>[ADRESSE À COMPLÉTER]</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 32px 22px 34px;">
+    <span style="display: block; width: 48px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <span style="display: block; margin-top: 14px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Sur les tables</span>
+    <span style="display: block; margin-top: 12px; font-family: 'Newsreader', Georgia, serif; font-size: 27px; font-weight: 500; line-height: 1.1; color: #072b45;">Arrivés récemment.</span>
+
+    <div style="display: flex; gap: 16px; margin-top: 20px; padding: 16px; border: 1px solid #d9e9f4; border-radius: 2px; background: #ffffff;">
+      <div style="flex: none; width: 68px; height: 98px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Couv.</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500; line-height: 1.15; color: #072b45;">Le Petit Prince</span>
+        <span style="font-size: 13.5px; color: #4e6c84;">Antoine de Saint-Exupéry</span>
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: #6d8ba2;">Gallimard · 1999</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px; margin-top: 5px;">
+          <span style="width: 8px; height: 8px; border-radius: 999px; background: #18703a;"></span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #18703a;">3 disponibles</span>
+        </span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 16px; margin-top: 12px; padding: 16px; border: 1px solid #d9e9f4; border-radius: 2px; background: #ffffff;">
+      <div style="flex: none; width: 68px; height: 98px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Couv.</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500; line-height: 1.15; color: #072b45;">Le Grand Meaulnes</span>
+        <span style="font-size: 13.5px; color: #4e6c84;">Alain-Fournier</span>
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; color: #6d8ba2;">Le Livre de Poche · 2008</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px; margin-top: 5px;">
+          <span style="width: 8px; height: 8px; border-radius: 999px; background: #1497d6;"></span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #0c6ea6;">2 dès le 14 mars</span>
+        </span>
+      </div>
+    </div>
+
+    <span style="display: block; margin-top: 18px; font-size: 14.5px; font-weight: 500; color: #0c6ea6;">Voir les 412 titres →</span>
+  </div>
+
+  <div style="padding: 32px 22px 34px; background: #ffffff; border-top: 1px solid #e2eef7; border-bottom: 1px solid #e2eef7;">
+    <span style="display: block; width: 48px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <span style="display: block; margin-top: 14px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Repérés par les bénévoles</span>
+    <span style="display: block; margin-top: 12px; font-family: 'Newsreader', Georgia, serif; font-size: 27px; font-weight: 500; line-height: 1.1; color: #072b45;">Livres rares.</span>
+
+    <div style="display: flex; gap: 16px; margin-top: 20px; padding: 16px; border: 1px solid #d9e9f4; border-radius: 2px; background: #ffffff;">
+      <div style="flex: none; width: 68px; height: 98px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Couv.</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+        <span style="display: inline-flex; align-self: flex-start; padding: 3px 9px; border: 1px solid #5f3a86; border-radius: 999px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: #5f3a86;">Livre rare</span>
+        <span style="margin-top: 3px; font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500; line-height: 1.15; color: #072b45;">Fables de La Fontaine</span>
+        <span style="font-size: 13.5px; color: #4e6c84;">Illustrées par Gustave Doré</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px; margin-top: 5px;">
+          <span style="width: 8px; height: 8px; border-radius: 999px; background: #18703a;"></span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #18703a;">1 disponible</span>
+        </span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 16px; margin-top: 12px; padding: 16px; border: 1px solid #d9e9f4; border-radius: 2px; background: #ffffff;">
+      <div style="flex: none; width: 68px; height: 98px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: #6d8ba2;">Couv.</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px; min-width: 0;">
+        <span style="display: inline-flex; align-self: flex-start; padding: 3px 9px; border: 1px solid #5f3a86; border-radius: 999px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: #5f3a86;">Livre rare</span>
+        <span style="margin-top: 3px; font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500; line-height: 1.15; color: #072b45;">Les Misérables</span>
+        <span style="font-size: 13.5px; color: #4e6c84;">Victor Hugo — édition illustrée</span>
+        <span style="display: inline-flex; align-items: center; gap: 8px; margin-top: 5px;">
+          <span style="width: 8px; height: 8px; border-radius: 999px; background: #18703a;"></span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #18703a;">1 disponible</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 32px 22px 36px;">
+    <span style="display: block; width: 48px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <span style="display: block; margin-top: 14px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Sans idée précise</span>
+    <span style="display: block; margin-top: 12px; font-family: 'Newsreader', Georgia, serif; font-size: 27px; font-weight: 500; line-height: 1.1; color: #072b45;">Parcourir par genre.</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
+      <span style="display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 14.5px; color: #33536e;">Romans</span>
+      <span style="display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 14.5px; color: #33536e;">Jeunesse</span>
+      <span style="display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 14.5px; color: #33536e;">Bandes dessinées</span>
+      <span style="display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 14.5px; color: #33536e;">Policier</span>
+      <span style="display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 14.5px; color: #33536e;">Histoire</span>
+      <span style="display: inline-flex; align-items: center; height: 42px; padding: 0 18px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 14.5px; color: #33536e;">Cuisine</span>
+    </div>
+  </div>
+
+  <div style="background: #072b45;">
+    <div style="height: 3px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></div>
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 26px 22px 30px;">
+      <span style="font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 500; color: #ffffff;">Vole Papillon d'Amour</span>
+      <span style="font-size: 14px; line-height: 1.6; color: #9dc2da;">Les livres ne sont ni réservés, ni vendus en ligne : tout se passe sur place.</span>
+      <span style="margin-top: 8px; font-size: 14px; color: #dcecf7;">Le site de l'association</span>
+      <span style="font-size: 14px; color: #dcecf7;">Mentions légales</span>
+      <span style="font-size: 14px; color: #dcecf7;">Confidentialité</span>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

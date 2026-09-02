@@ -1,0 +1,250 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; background: #f7fbfe; border-bottom: 1px solid #d9e9f4;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="width: 42px; height: 42px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background-image: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .06em; color: #ffffff;">VPD</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px; line-height: 1; letter-spacing: -.01em; color: #072b45;">Vole Papillon d'Amour</span>
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: #6d8ba2;">Bourse aux livres · catalogue</span>
+      </div>
+      <span style="margin-left: 8px; padding: 6px 12px; border-radius: 999px; background: #072b45; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #7fd8f5;">Administration</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 22px; font-size: 14px;">
+      <span style="color: #0c6ea6;">Voir le catalogue public →</span>
+      <span style="display: inline-flex; align-items: center; gap: 9px; padding: 10px 18px; border: 1px solid #9dc2da; border-radius: 999px; font-size: 14px; font-weight: 600; color: #072b45;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8.5" r="3.6"></circle>
+          <path d="M5 19.6c1.3-3.3 3.9-4.9 7-4.9s5.7 1.6 7 4.9"></path>
+        </svg>
+        Florian
+      </span>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: stretch; min-height: 1218px;">
+
+    <div style="flex: none; width: 244px; padding: 26px 0 40px; background: #072b45;">
+      <span style="display: block; padding: 0 22px; margin-bottom: 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #4e6c84;">Pilotage</span>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Tableau de bord</div>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px 0 19px; border-left: 3px solid #7fd8f5; background: rgba(127, 216, 245, .14); font-size: 14.5px; font-weight: 600; color: #ffffff;">Statistiques par bourse</div>
+
+      <span style="display: block; padding: 0 22px; margin: 26px 0 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #4e6c84;">Travail</span>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Sessions de scan</div>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Catalogue</div>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Désengorgement</div>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Inventaire</div>
+
+      <span style="display: block; padding: 0 22px; margin: 26px 0 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #4e6c84;">Comptes</span>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Membres du site</div>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Bénévoles</div>
+
+      <span style="display: block; padding: 0 22px; margin: 26px 0 10px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #4e6c84;">Réglages</span>
+      <div style="display: flex; align-items: center; height: 42px; padding: 0 22px; font-size: 14.5px; color: #9dc2da;">Paramètres</div>
+    </div>
+
+    <div style="flex: 1 1 auto; min-width: 0; padding: 40px 44px 56px;">
+
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <span style="width: 56px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Pilotage</span>
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 40px; font-weight: 500; line-height: 1.05; color: #072b45;">Bourse des 7 et 8 février 2026.</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; width: 280px; height: 46px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="font-size: 14.5px; color: #072b45;">Février 2026 · close</span>
+          <svg width="12" height="8" viewBox="0 0 10 6" fill="none" stroke="#6d8ba2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 1l4 4 4-4"></path>
+          </svg>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-top: 32px;">
+        <div style="display: flex; flex-direction: column; gap: 7px; padding: 22px 24px 26px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .9; color: #072b45;">812</span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #dc6412;">Livres vendus</span>
+          <span style="font-size: 13.5px; line-height: 1.45; color: #4e6c84;">+ 9 % par rapport à novembre</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; padding: 22px 24px 26px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .9; color: #072b45;">1 140 €</span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #dc6412;">Recette saisie</span>
+          <span style="font-size: 13.5px; line-height: 1.45; color: #4e6c84;">Comptage de caisse du 8 février</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; padding: 22px 24px 26px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .9; color: #072b45;">1,40 €</span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #dc6412;">Panier moyen</span>
+          <span style="font-size: 13.5px; line-height: 1.45; color: #4e6c84;">Recette ÷ livres vendus</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 7px; padding: 22px 24px 26px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: .9; color: #072b45;">2</span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #dc6412;">Jours d'ouverture</span>
+          <span style="font-size: 13.5px; line-height: 1.45; color: #4e6c84;">Samedi et dimanche</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 24px; margin-top: 40px;">
+
+        <div style="flex: 1.5 1 0; min-width: 0; padding: 26px 28px 30px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="display: block; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500; color: #072b45;">Livres vendus, par bourse</span>
+          <span style="display: block; margin-top: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #6d8ba2;">Six dernières bourses</span>
+
+          <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 96px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Juin 2025</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 100%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 46px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">921</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 96px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #072b45;">Fév. 2026</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 88%; height: 22px; border-radius: 0 4px 4px 0; background: #072b45;"></div></div>
+              <span style="flex: none; width: 46px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">812</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 96px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Nov. 2025</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 81%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 46px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">745</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 96px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Sept. 2025</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 75%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 46px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">690</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 96px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Mars 2025</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 74%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 46px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">678</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 96px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Nov. 2024</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 66%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 46px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">604</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+
+          <div style="padding: 26px 28px 30px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+            <span style="display: block; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500; color: #072b45;">Ventes par journée</span>
+            <span style="display: block; margin-top: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #6d8ba2;">Bourse de février</span>
+            <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 24px;">
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="flex: none; width: 76px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Samedi</span>
+                <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 100%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+                <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">468</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="flex: none; width: 76px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Dimanche</span>
+                <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 74%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+                <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">344</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 12px; padding: 24px 26px 26px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #6d8ba2;">La recette</span>
+            <span style="font-size: 14px; line-height: 1.55; color: #33536e;">Les prix sont décidés au comptoir : le système n'en connaît aucun. Un administrateur saisit à la clôture <span style="font-weight: 600;">un seul montant</span>, celui du comptage de caisse.</span>
+            <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+              <div style="flex: 1 1 auto; display: flex; align-items: center; height: 48px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600; color: #072b45;">1 140 €</div>
+              <span style="flex: none; display: inline-flex; align-items: center; height: 48px; padding: 0 22px; border: 1.5px solid #9dc2da; border-radius: 999px; font-size: 14.5px; font-weight: 600; color: #0c6ea6;">Modifier</span>
+            </div>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .04em; color: #6d8ba2;">Saisie le 8 février par Florian · facultative</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 24px; margin-top: 24px;">
+
+        <div style="flex: 1.5 1 0; min-width: 0; padding: 26px 28px 30px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="display: block; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500; color: #072b45;">Répartition par genre</span>
+          <span style="display: block; margin-top: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #6d8ba2;">812 livres vendus</span>
+          <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 130px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Romans</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 100%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">246</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 130px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Jeunesse</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 80%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">198</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 130px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Bandes dessinées</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 58%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">142</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 130px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Policier</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 39%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">96</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 130px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Histoire</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 30%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">74</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <span style="flex: none; width: 130px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6d8ba2;">Autres</span>
+              <div style="flex: 1 1 auto; height: 22px; border-radius: 2px; background: #e9f4fb;"><div style="width: 23%; height: 22px; border-radius: 0 4px 4px 0; background: #1497d6;"></div></div>
+              <span style="flex: none; width: 40px; text-align: right; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">56</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex: 1 1 0; min-width: 0; padding: 26px 28px 30px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+          <span style="display: block; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500; color: #072b45;">Meilleures ventes</span>
+          <span style="display: block; margin-top: 6px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: #6d8ba2;">Par titre</span>
+          <div style="display: flex; flex-direction: column; margin-top: 18px;">
+            <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e2eef7;">
+              <span style="flex: 1 1 auto; font-family: 'Newsreader', Georgia, serif; font-size: 18px; font-weight: 500; color: #072b45;">Le Petit Prince</span>
+              <span style="flex: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">14</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e2eef7;">
+              <span style="flex: 1 1 auto; font-family: 'Newsreader', Georgia, serif; font-size: 18px; font-weight: 500; color: #072b45;">Astérix chez les Belges</span>
+              <span style="flex: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">11</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e2eef7;">
+              <span style="flex: 1 1 auto; font-family: 'Newsreader', Georgia, serif; font-size: 18px; font-weight: 500; color: #072b45;">L'Étranger</span>
+              <span style="flex: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">9</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e2eef7;">
+              <span style="flex: 1 1 auto; font-family: 'Newsreader', Georgia, serif; font-size: 18px; font-weight: 500; color: #072b45;">Le Grand Meaulnes</span>
+              <span style="flex: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">8</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e2eef7;">
+              <span style="flex: 1 1 auto; font-family: 'Newsreader', Georgia, serif; font-size: 18px; font-weight: 500; color: #072b45;">Bonjour tristesse</span>
+              <span style="flex: none; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; font-weight: 600; color: #072b45;">7</span>
+            </div>
+          </div>
+          <span style="display: block; margin-top: 18px; font-size: 13.5px; line-height: 1.5; color: #4e6c84;">« Ce titre revient tout le temps en don, mais est-ce qu'il se vend ? » — la réponse est ici, et sur chaque fiche.</span>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

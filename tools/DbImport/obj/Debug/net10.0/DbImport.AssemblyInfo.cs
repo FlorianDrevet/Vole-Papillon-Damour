@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DbImport")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a76373b91a6d3426beba3c015c4efbe6e3e53a2a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+30c0707249cacdae77070a581e393cd29e5a1bd1")]
 [assembly: System.Reflection.AssemblyProductAttribute("DbImport")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DbImport")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

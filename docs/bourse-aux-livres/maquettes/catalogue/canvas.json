@@ -1,0 +1,100 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Site public" },
+    { "id": "page-2", "name": "Administration" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html",          "page": "page-1", "x": 0,    "y": 0,    "w": 1440, "h": 3050, "title": "1 · Accueil" },
+    { "file": "Recherche.dc.html",     "page": "page-1", "x": 1560, "y": 0,    "w": 1440, "h": 1500, "title": "2 · Résultats de recherche" },
+    { "file": "Fiche.dc.html",         "page": "page-1", "x": 3120, "y": 0,    "w": 1440, "h": 1000, "title": "3 · Fiche livre" },
+
+    { "file": "Catalogue.dc.html",     "page": "page-1", "x": 0,    "y": 3250, "w": 1440, "h": 1550, "title": "4 · Catalogue par genre" },
+    { "file": "MonCompte.dc.html",     "page": "page-1", "x": 1560, "y": 3250, "w": 1440, "h": 1250, "title": "5 · Mon compte — liste de recherche" },
+
+    { "file": "PorteeSuivi.dc.html",   "page": "page-1", "x": 0,    "y": 4950, "w": 760,  "h": 640,  "title": "6 · Portée du suivi (œuvre ou édition)" },
+    { "file": "Email.dc.html",         "page": "page-1", "x": 900,  "y": 4950, "w": 640,  "h": 1000, "title": "7 · E-mail d'alerte" },
+    { "file": "AccueilMobile.dc.html", "page": "page-1", "x": 1660, "y": 4950, "w": 390,  "h": 2050, "title": "8 · Accueil — mobile" },
+    { "file": "FicheMobile.dc.html",   "page": "page-1", "x": 2170, "y": 4950, "w": 390,  "h": 1150, "title": "9 · Fiche livre — mobile" },
+
+    { "file": "AdminTableauDeBord.dc.html",     "page": "page-2", "x": 0,    "y": 0,    "w": 1440, "h": 1100, "title": "A1 · Tableau de bord" },
+    { "file": "AdminSessions.dc.html",          "page": "page-2", "x": 1560, "y": 0,    "w": 1440, "h": 1150, "title": "A2 · Sessions de scan" },
+    { "file": "AdminCorrectionSession.dc.html", "page": "page-2", "x": 3120, "y": 0,    "w": 900,  "h": 1080, "title": "A3 · Corriger une session" },
+
+    { "file": "AdminCatalogue.dc.html",         "page": "page-2", "x": 0,    "y": 1350, "w": 1440, "h": 1250, "title": "A4 · Catalogue — files de travail" },
+    { "file": "AdminFiche.dc.html",             "page": "page-2", "x": 1560, "y": 1350, "w": 1440, "h": 1250, "title": "A5 · Fiche — édition et mouvements" },
+    { "file": "AdminBourse.dc.html",            "page": "page-2", "x": 3120, "y": 1350, "w": 1440, "h": 1300, "title": "A6 · Statistiques par bourse" },
+
+    { "file": "AdminDesengorgement.dc.html",    "page": "page-2", "x": 0,    "y": 2800, "w": 1440, "h": 1100, "title": "A7 · Désengorgement" },
+    { "file": "AdminInventaire.dc.html",        "page": "page-2", "x": 1560, "y": 2800, "w": 1440, "h": 1200, "title": "A8 · Remise à plat de l'inventaire" },
+    { "file": "AdminComptes.dc.html",           "page": "page-2", "x": 3120, "y": 2800, "w": 1440, "h": 1200, "title": "A9 · Bénévoles et membres" },
+
+    { "file": "AdminParametres.dc.html",        "page": "page-2", "x": 0,    "y": 4150, "w": 1440, "h": 1300, "title": "A10 · Paramètres" }
+  ],
+  "annotations": [
+    {
+      "id": "etats-partages",
+      "page": "page-1",
+      "x": 0,
+      "y": -330,
+      "w": 460,
+      "text": "Les états de disponibilité parlent la même langue que la scanette.\n\nVert #18703a = disponible. Bleu #1497d6 = annoncé pour la prochaine bourse. Ardoise #9dc2da = épuisé. Violet #5f3a86 = livre rare.\n\nMêmes couleurs pour le bénévole qui trie et pour le visiteur qui cherche. Ici elles restent des pastilles dans un registre éditorial, jamais les bandeaux pleins de l'outil de terrain."
+    },
+    {
+      "id": "deux-perimetres",
+      "page": "page-1",
+      "x": 1560,
+      "y": -330,
+      "w": 460,
+      "text": "Deux périmètres, jamais mélangés.\n\n« À la bourse » arrive toujours en premier : c'est la question la plus fréquente. « Pas encore reçu » existe pour une seule raison — suivre un livre que l'association n'a jamais eu.\n\nD'où le traitement en retrait : titres en ardoise, trame de couverture affaiblie, aucune pastille verte, et un bouton « Suivre ce livre » au lieu d'un état. Rien ne doit laisser croire que ces livres sont là."
+    },
+    {
+      "id": "jamais-additionne",
+      "page": "page-1",
+      "x": 3120,
+      "y": -330,
+      "w": 460,
+      "text": "Les deux lignes de disponibilité ne s'additionnent jamais.\n\nDeux blocs séparés, deux couleurs, aucun total nulle part — un visiteur qui se déplace aujourd'hui ne doit compter que sur la première.\n\nLa date est toujours affichée : c'est la façon honnête de dire à quel point l'information est fraîche, sachant que le compteur dérive à chaque vente."
+    },
+    {
+      "id": "pas-de-mur",
+      "page": "page-1",
+      "x": 1560,
+      "y": 4560,
+      "w": 460,
+      "text": "Aucun mur d'inscription.\n\nTout le catalogue se consulte sans compte. L'inscription n'apparaît qu'au moment où elle sert : au clic sur « Me prévenir quand il y en aura ».\n\nD'où le bouton « Mon compte » en secondaire dans l'en-tête, et la suppression du compte accessible en deux clics depuis cette page."
+    },
+    {
+      "id": "email-non-reservation",
+      "page": "page-1",
+      "x": 900,
+      "y": 6030,
+      "w": 460,
+      "text": "L'e-mail dit toujours quelle édition est arrivée.\n\nIndispensable pour un suivi « toutes éditions » : le membre doit savoir ce qu'il va trouver, et ne pas croire qu'on lui promet l'édition qu'il avait en tête.\n\nLa date de disponibilité est en évidence, et la non-réservation est écrite en clair sur fond sombre — c'est la phrase qui évite le déplacement déçu."
+    },
+    {
+      "id": "admin-dans-le-site",
+      "page": "page-2",
+      "x": 0,
+      "y": -330,
+      "w": 460,
+      "text": "L'administration vit dans le site public, pas dans le BackOffice existant.\n\nDécision arrêtée, avec sa conséquence assumée : deux outils pour les administrateurs, et une authentification administrateur à mettre en place dans la nouvelle application.\n\nD'où le même en-tête que le catalogue, augmenté d'une pastille ADMINISTRATION et d'une colonne ink-2 — on sait au premier coup d'œil de quel côté on se trouve."
+    },
+    {
+      "id": "admin-rattrapage",
+      "page": "page-2",
+      "x": 1560,
+      "y": -330,
+      "w": 460,
+      "text": "La fonction de rattrapage la plus importante du dispositif.\n\nUne session scannée dans le mauvais mode engage l'effet public de deux cents scans. Sans cet écran, elle ne se corrige que fiche par fiche.\n\nLe compte à rebours avant envoi est l'information utile quand quelqu'un signale une erreur au téléphone : sait-on encore la rattraper ? Les sessions encore corrigeables — ouvertes, ou dans leur délai de 2 h — portent une bordure bleue et un bouton plein."
+    },
+    {
+      "id": "admin-aucun-prix",
+      "page": "page-2",
+      "x": 3120,
+      "y": -330,
+      "w": 460,
+      "text": "Le système ne connaît aucun prix, et l'administration n'en saisit pas non plus.\n\nUn seul montant à la clôture d'une bourse : celui du comptage de caisse que l'association fait de toute façon. Rapproché du nombre de livres vendus, il donne le panier moyen — la seule comparaison financière possible entre deux bourses.\n\nLa saisie est facultative : son absence ne bloque rien, elle prive seulement les statistiques de leur volet financier."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-2" }
+}
