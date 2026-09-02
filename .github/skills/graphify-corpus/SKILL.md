@@ -9,54 +9,41 @@ description: "Use when: corpus-level questions, documentation graph, architectur
 > une orientation architecturale rapide, une analyse de communautes, ou une exploration de liens
 > conceptuels qui depassent le graphe de code pur.
 
----
+## Perimetre
 
-## Regle cardinale : GitNexus pour le code, Graphify pour le corpus
-
-Si les deux moteurs sont actives sur le projet :
-
-| Dimension | GitNexus | Graphify |
-|-----------|----------|----------|
-| **Perimetre** | Code source uniquement | Corpus complet (code + docs + audits + diagrammes) |
-| **Force principale** | Impact analysis, blast radius, rename-safe | Communautes conceptuelles, god nodes, connexions surprenantes |
-| **Mutations** | `rename()`, `detect_changes()` | Aucune - lecture seule |
-| **Docs / images / audits** | Non couvert | Couvert nativement |
-
-**Aucun des deux ne remplace l'autre.**
-
----
+Graphify fournit une vue corpus reliant le code, la documentation, les audits et les
+diagrammes. Il est principalement utilise pour l'orientation architecturale, les
+communautes conceptuelles et les connexions entre fichiers. Il complete les tests,
+la revue de code et l'inspection directe des sources ; il ne les remplace pas.
 
 ## Pre-requis
 
-1. Graphify installe : `pip install graphifyy` ou `uv tool install graphifyy`
+1. Graphify installe : `python -m graphify` doit fonctionner (`pip install graphifyy` si besoin)
 2. Graphe initial construit :
    `python -c "from pathlib import Path; from graphify.watch import _rebuild_code; import sys; ok = _rebuild_code(Path('.')); sys.exit(0 if ok else 1)"`
-3. Le fichier `graphify-out/graph.json` existe et est non vide
+3. Les fichiers `graphify-out/graph.json` et `graphify-out/GRAPH_REPORT.md` existent
+   et sont a jour pour les requetes structurelles
 4. Le `.graphifyignore` a la racine exclut les sorties build et dependances
-5. Le serveur MCP Graphify est declare dans `.vscode/mcp.json`
-6. Pour `python -m graphify.serve`, le package `mcp` doit etre installe
-
----
+5. Pour `python -m graphify.serve`, le package `mcp` doit etre installe
 
 ## Commandes principales
 
 | Commande | Usage |
 |----------|-------|
-| `python -m graphify query "concept"` | Trouver les nœuds lies a un concept |
+| `python -m graphify query "concept"` | Trouver les noeuds lies a un concept |
 | `python -m graphify path "A" "B"` | Chemin entre deux concepts |
-| `python -m graphify explain "node"` | Explication contextuelle d'un nœud |
+| `python -m graphify explain "node"` | Explication contextuelle d'un noeud |
 | `python -m graphify update .` | Mettre a jour le graphe |
-
----
+| `python -m graphify cluster-only .` | Recalculer les communautes a partir du graphe existant |
+| `python -m graphify watch .` | Rebuild local lors des changements de code |
 
 ## Sorties cles
 
 | Fichier | Contenu |
 |---------|---------|
-| `graphify-out/graph.json` | Graphe complet (nœuds + aretes) |
+| `graphify-out/graph.json` | Graphe complet (noeuds + aretes) |
 | `graphify-out/GRAPH_REPORT.md` | God nodes, communautes, connexions surprenantes |
-
----
+| `graphify-out/wiki/index.md` | Wiki corpus optionnel, navigable par les agents |
 
 ## Quand utiliser Graphify
 
@@ -67,31 +54,52 @@ Si les deux moteurs sont actives sur le projet :
 - Tracer un concept depuis la documentation jusqu'au code source
 - Verifier la couverture documentaire d'une zone de code
 
----
+## Quand ne pas utiliser Graphify
 
-## Quand NE PAS utiliser Graphify
+- Pour une modification locale qui ne demande aucune exploration transversale
+- Pour remplacer les tests, la revue de code ou la validation de compilation
+- Lorsque le graphe n'est pas construit ou que ses donnees sont obsoletes
 
-- Pour l'impact analysis avant modification → utiliser GitNexus
-- Pour le rename safe → utiliser GitNexus
-- Pour le blast radius d'un symbole → utiliser GitNexus
-- Pour la validation post-changement → utiliser GitNexus
+## Workflow obligatoire
 
----
+1. Lire `graphify-out/GRAPH_REPORT.md` avant toute question d'architecture ou de corpus.
+2. Utiliser `query`, `path`, `explain` ou les outils MCP pour trouver les concepts et liens pertinents.
+3. Inspecter ensuite les fichiers sources concernes avant toute modification.
+4. Apres une modification significative du code, executer `python -m graphify update .` puis rejouer la requete utile.
+5. Executer les tests/build de la surface touchee separement : le graphe ne prouve pas la correction.
 
-## Integration VS Code controlee
+Si le graphe est absent ou obsolete, le signaler, le construire ou le mettre a jour
+quand c'est possible, puis revenir a l'exploration directe des sources.
 
-Ne pas lancer `graphify vscode install` automatiquement sur un depot qui a deja une orchestration specifique.
+Le serveur MCP stdio se lance avec :
 
-Mode controle recommande :
-1. Installer le skill utilisateur Copilot : `python -m graphify copilot install`
-2. Garder `.github/copilot-instructions.md` du depot comme source de verite
-3. Utiliser `/graphify` explicitement quand une tache justifie la couche corpus
+```powershell
+python -m graphify.serve graphify-out/graph.json
+```
 
----
+Il expose `query_graph`, `get_node`, `get_neighbors`, `get_community`, `god_nodes`,
+`graph_stats` et `shortest_path`. La declaration workspace se trouve dans
+`.vscode/mcp.json`.
+
+## Integration multi-agents
+
+Les instructions persistantes du depot sont dans `AGENTS.md`, `CLAUDE.md` et
+`.github/copilot-instructions.md`. Les skills utilisateur peuvent etre synchronises
+avec le package Graphify :
+
+```powershell
+graphify install --platform codex
+graphify install --platform claude
+graphify install --platform copilot
+```
+
+Pour un nouveau checkout, utiliser `graphify codex install`, `graphify claude install`
+et `graphify vscode install`. Ces commandes doivent conserver les hooks et serveurs
+MCP existants.
 
 ## Bootstrap expectations
 
-- Le bootstrap doit declarer un serveur `graphify` dans `.vscode/mcp.json`
+- Le bootstrap doit declarer un serveur `graphify` dans `.vscode/mcp.json` si le projet l'utilise
 - Le bootstrap doit creer un `.graphifyignore` adapte
-- Le bootstrap doit executer le build initial du graphe
+- Le bootstrap doit executer le build initial du graphe avec le builder code-only
 - Le bootstrap doit documenter la commande de mise a jour dans la memoire

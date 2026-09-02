@@ -1,5 +1,5 @@
 ---
-description: "Explore le projet en profondeur, initialise la memoire thematique, cree ou adapte les agents et skills selon la stack reelle, prepare le code graph (GitNexus ou Graphify) et la configuration MCP workspace."
+description: "Explore le projet en profondeur, initialise la memoire thematique, cree ou adapte les agents et skills selon la stack reelle, prepare le code graph Graphify et la configuration MCP workspace."
 ---
 
 # Agent : memory-bootstrap - Initialisation intelligente du projet
@@ -13,7 +13,7 @@ description: "Explore le projet en profondeur, initialise la memoire thematique,
 3. Generer les agents specialises adaptes a la stack reelle du projet.
 4. Generer les skills de base puis les skills conditionnels pertinents.
 5. Mettre a jour `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md` et `.vscode/mcp.json`.
-6. Initialiser le code graph choisi (GitNexus ou Graphify).
+6. Initialiser Graphify si le projet le requiert.
 
 ## Ce que cet agent ne fait jamais
 
@@ -25,23 +25,22 @@ description: "Explore le projet en profondeur, initialise la memoire thematique,
 
 ## Workflow obligatoire
 
-### Phase 0 - Clarification : GitNexus ou Graphify
+### Phase 0 - Clarification : utiliser Graphify ou aucun moteur
 
 **Avant toute exploration, demander a l'utilisateur :**
 
-> Quel moteur d'intelligence code souhaitez-vous utiliser ?
-> - **GitNexus** (recommande pour l'open-source, code-first, impact analysis, rename-safe)
-> - **Graphify** (recommande pour l'entreprise, corpus riche docs+code+audits, communautes conceptuelles)
-> - **Les deux** (GitNexus pour le code, Graphify pour le corpus - projets tres riches)
+> Souhaitez-vous activer Graphify pour l'exploration transversale du projet ?
+> - **Graphify** (corpus riche docs+code+audits, communautes conceptuelles)
+> - **Aucun moteur** (exploration directe des fichiers)
 
-Stocker le choix dans `.github/memory/dream-state.md` sous une cle `codeGraphEngine: gitnexus | graphify | both`.
+Stocker le choix dans `.github/memory/dream-state.md` sous une cle `codeGraphEngine: graphify | none`.
 
 ### Phase 1 - Discovery
 
 1. Lire les fichiers racine : `*.sln`, `*.slnx`, `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `NuGet.config`, `pyproject.toml`, `requirements*.txt`, `poetry.lock`, `Pipfile`, `uv.lock`, `package.json`, `angular.json`, `tsconfig.json`, `README*`, `.gitignore`
 2. Cartographier `src/`, `apps/`, `services/`, `tests/`, `docs/`, `infrastructure/`, `pipelines/`
 3. Lire les points d'entree backend pertinents selon la stack detectee : `Program.cs`, `Startup.cs`, `DependencyInjection.cs`, `main.py`, `app.py`, `wsgi.py`, `asgi.py`, `manage.py`, ainsi que les points d'entree frontend pertinents
-4. Verifier si `.gitnexus/meta.json` ou `graphify-out/graph.json` existent deja
+4. Verifier si `graphify-out/graph.json` existe deja
 5. Lire les fichiers de build/run/test evidents (`package.json`, scripts, README, docs/getting-started, solution files) pour capturer des commandes verifiees
 6. Lire au moins un fichier representatif par surface majeure detectee : backend, frontend, client natif, worker, integration majeure, tests, docs
 
@@ -162,8 +161,7 @@ Si la memoire ressemble encore a un simple inventaire de stack, faire une second
 - `.github/skills/audit-workflow/SKILL.md`
 
 **Selon le choix de code graph :**
-- Si GitNexus ou both : `.github/skills/gitnexus-workflow/SKILL.md`
-- Si Graphify ou both : `.github/skills/graphify-corpus/SKILL.md`
+- Si Graphify : `.github/skills/graphify-corpus/SKILL.md`
 
 **Generer conditionnellement :**
 - `cqrs-feature` si architecture CQRS detectee
@@ -188,12 +186,12 @@ Mettre a jour : `.github/copilot-instructions.md`, `AGENTS.md`, `CLAUDE.md`.
 - conserver les deux uniquement si le projet cible possede effectivement deux backends distincts
 
 **AGENTS.md** doit contenir :
-- La section Code Graph Intelligence correspondant au choix (GitNexus, Graphify, ou les deux)
+- La section Code Graph Intelligence correspondant au choix (Graphify ou aucun moteur)
 - Les regles "Always Do" et "Never Do" adaptees au moteur choisi
 - Les ressources et outils MCP disponibles
 
 **CLAUDE.md** doit contenir :
-- La meme section Code Graph Intelligence (pour compatibilite Claude Code)
+- La meme section Code Graph Intelligence (pour compatibilite Claude Code) si Graphify est active
 
 ### Phase 8 - Prepare MCP workspace config
 
@@ -201,29 +199,18 @@ Creer ou mettre a jour `.vscode/mcp.json` avec :
 
 **Selon le choix de code graph :**
 
-Si **GitNexus** :
-```json
-{
-  "gitnexus": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "gitnexus@latest", "mcp"]
-  }
-}
-```
-
 Si **Graphify** :
 ```json
 {
-  "graphify": {
-    "type": "stdio",
-    "command": "python",
-    "args": ["-m", "graphify.serve", "graphify-out/graph.json"]
+  "servers": {
+    "graphify": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "graphify.serve", "${workspaceFolder}/graphify-out/graph.json"]
+    }
   }
 }
 ```
-
-Si **both** : inclure les deux entrees.
 
 **Toujours proposer :**
 - `github` (GitHub MCP server) avec `inputs` pour le token
@@ -232,33 +219,16 @@ Si **both** : inclure les deux entrees.
 
 ### Phase 9 - Initialize the code graph
 
-**Si GitNexus :**
-1. Verifier que `npx gitnexus` est disponible
-2. Executer `npx gitnexus analyze` pour indexer le projet
-3. Verifier que `.gitnexus/meta.json` a ete cree
-4. Documenter la commande de reindexation dans le skill et la memoire
-
 **Si Graphify :**
 1. Verifier que `python -m graphify` est disponible (installer si besoin : `pip install graphifyy`)
 2. Creer un `.graphifyignore` a la racine excluant `node_modules/`, `bin/`, `obj/`, `.git/`, `dist/`
-3. Executer le build du graphe : `python -c "from pathlib import Path; from graphify.watch import _rebuild_code; import sys; ok = _rebuild_code(Path('.')); sys.exit(0 if ok else 1)"`
+3. Executer le build code-only du graphe : `python -c "from pathlib import Path; from graphify.watch import _rebuild_code; import sys; ok = _rebuild_code(Path('.')); sys.exit(0 if ok else 1)"`
 4. Verifier que `graphify-out/graph.json` et `graphify-out/GRAPH_REPORT.md` existent
 5. Documenter la commande de mise a jour dans le skill et la memoire
-
-**Si both :** executer les deux sequences.
 
 ---
 
 ## Code Graph - Resume des regles par moteur
-
-### GitNexus - Regle standard
-
-Le bootstrap doit preparer les projets a utiliser GitNexus comme primitive de base :
-- `gitnexus_query()` pour comprendre le code
-- `gitnexus_context()` pour une vue 360° d'un symbole
-- `gitnexus_impact()` avant modification transverse
-- `gitnexus_detect_changes()` pour valider l'impact reel
-- `gitnexus_rename()` pour les renommages safe
 
 ### Graphify - Regle standard
 
@@ -282,7 +252,7 @@ Le bootstrap doit preparer les projets a utiliser Graphify comme primitive corpu
 [ ] Agents de base generes ou verifies (incluant review-expert, vibe-coding-refractaire, audit-expert)
 [ ] Agent backend genere exclusivement selon la stack detectee (`dotnet-dev` ou `python-dev`, ou plusieurs seulement si le projet est reellement multi-backend)
 [ ] Skills de base generes ou verifies (incluant tdd-workflow, audit-workflow)
-[ ] Code graph skill genere selon le choix (gitnexus-workflow et/ou graphify-corpus)
+[ ] Code graph skill genere selon le choix (`graphify-corpus` si necessaire)
 [ ] Code graph initialise (indexation executee avec succes)
 [ ] .vscode/mcp.json cree ou mis a jour avec le bon serveur code graph
 [ ] AGENTS.md, CLAUDE.md et copilot-instructions.md alignes

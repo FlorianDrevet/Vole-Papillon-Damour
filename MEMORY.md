@@ -4,7 +4,7 @@
 
 ## Stack Snapshot
 
-- Open-source repository bootstrapped with GitNexus as the code graph engine
+- Open-source repository for the association application
 - Backend: ASP.NET Core Web API on .NET 10 under `src/Backend/`
 - Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, SQL Server, and Azurite
 - Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
@@ -23,7 +23,7 @@
 | `.github/memory/04-frontend.md` | Angular and MAUI client conventions |
 | `.github/memory/05-data-and-storage.md` | Persistence, auth, external services |
 | `.github/memory/06-agents-skills.md` | Generated agents, skills, and routing rules |
-| `.github/memory/07-code-graph.md` | GitNexus workflow, commands, and freshness rules |
+| `.github/memory/07-code-graph.md` | Graphify workflow and code graph notes |
 | `.github/memory/08-runtime-and-orchestration.md` | Entry points, runtime surfaces, and local execution paths |
 | `.github/memory/09-auth-and-build.md` | Auth behavior, config sources, and verified build/test commands |
 | `.github/memory/10-api-endpoints.md` | Grouped HTTP endpoints, public/admin split, and live routes |
@@ -34,7 +34,7 @@
 ## Quick Reference
 
 1. Start from `@dev` for day-to-day work; use `@memory-bootstrap` only when the stack or agent foundation changes materially.
-2. Use GitNexus first for impact analysis on shared handlers, repositories, controllers, route extensions, and Angular shared services.
+2. Use Graphify (`GRAPH_REPORT.md`, `query`, `path`, `explain`, or MCP) for structural exploration before changing shared handlers, repositories, controllers, route extensions, and Angular shared services.
 3. The API layer uses endpoint-mapping extension classes under `Api/Controllers/`, not MVC `ControllerBase` classes.
 4. Apply TDD for executable code; record temporary exceptions in `.github/test-debt.md`.
 5. Keep backend changes inside the existing boundaries: API wiring in `Api`, MediatR handlers and validators in `Application`, persistence and adapters in `Infrastructure`, invariants in `Domain`, DTOs in `Contracts`.
@@ -48,7 +48,6 @@
 - Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`
 - Website SSR: `npm run serve:ssr:vole_papillon_damour_website` from `src/Website/`
 - MAUI app: `dotnet build .\src\MauiCashApp\ShopAppVpd.slnx`
-- GitNexus reindex: `npx gitnexus analyze`
 
 ## Memory Rules
 

@@ -33,8 +33,8 @@ Charger le skill `audit-workflow`.
 
 ### 2. Explorer avant de conclure
 
-1. Charger le skill d'intelligence code
-2. Utiliser les outils code graph pour identifier les flux critiques et symboles a risque
+1. Charger le skill `graphify-corpus` si le graphe est active
+2. Utiliser Graphify pour identifier les communautes, connexions et zones structurelles pertinentes
 3. Completer avec `grep`, `read_file`, `get_errors`, `semantic_search`
 
 Tu ne dois pas produire un audit base sur des suppositions.
