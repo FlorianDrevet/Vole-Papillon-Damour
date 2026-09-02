@@ -33,7 +33,13 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("IsAdmin", policy => policy.RequireRole("Admin"));
+    // `IsAdmin` remains a compatibility alias during the staged migration. The
+    // Entra role is authoritative for new tokens; `Admin` keeps existing JWT
+    // sessions usable until the final deployment removes the legacy scheme.
+    .AddPolicy("Administration", policy => policy.RequireRole("Administration", "Admin"))
+    .AddPolicy("Tri", policy => policy.RequireRole("Tri"))
+    .AddPolicy("Caisse", policy => policy.RequireRole("Caisse"))
+    .AddPolicy("IsAdmin", policy => policy.RequireRole("Administration", "Admin"));
 
 var applicationInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))

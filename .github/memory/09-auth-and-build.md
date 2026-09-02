@@ -2,8 +2,17 @@
 
 ## Backend Auth Model
 
-- JWT bearer auth is configured from `JwtSettings` in `Infrastructure`.
-- The API defines an `IsAdmin` policy requiring the `Admin` role.
+- L0-11 deployment 1 adds `Microsoft.Identity.Web` 4.14.2 and a composite `Bearer`
+  policy scheme. It forwards Entra External ID tokens (the `*.ciamlogin.com` issuer) to
+  the `Entra` scheme and existing tokens from `/auth/login` to `LegacyJwt`.
+- Entra role claims are read from `roles`; the staged policies are `Tri`, `Caisse`, and
+  `Administration`. `IsAdmin` remains a compatibility alias accepting `Administration`
+  and the legacy `Admin` role until deployment 3.
+- `JwtSettings`, `IJwtGenerator`, and `/auth/login` intentionally remain during deployment
+  1 so the deployed BackOffice and unredistributed MAUI devices continue to work.
+- Entra runtime values are supplied by `AzureAd__Instance`, `AzureAd__TenantId`,
+  `AzureAd__ClientId`, and `AzureAd__Audience`; the API client ID is populated only after
+  `Configure-EntraApps.ps1` has created the registration.
 - `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
 - `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
 
