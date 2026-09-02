@@ -43,11 +43,11 @@
 
 ## Commands To Remember
 
-- Backend build/test: `dotnet build .\src\Backend\Vole_Papillon_Damour.sln`; `dotnet test .\src\Backend\Vole_Papillon_Damour.sln`
+- Backend build/test: `dotnet build .\src\Backend\Vole_Papillon_Damour.slnx`; `dotnet test .\src\Backend\Vole_Papillon_Damour.slnx`
 - Backend AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`
 - Website SSR: `npm run serve:ssr:vole_papillon_damour_website` from `src/Website/`
-- MAUI app: `dotnet build .\src\MauiCashApp\ShopAppVpd.sln`
+- MAUI app: `dotnet build .\src\MauiCashApp\ShopAppVpd.slnx`
 - GitNexus reindex: `npx gitnexus analyze`
 
 ## Memory Rules

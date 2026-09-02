@@ -1,0 +1,20 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="Vole_Papillon_Damour.Api/Vole_Papillon_Damour.Api.csproj" />
+    <Project Path="Vole_Papillon_Damour.AppHost/Vole_Papillon_Damour.AppHost.csproj" />
+    <Project Path="Vole_Papillon_Damour.Application/Vole_Papillon_Damour.Application.csproj" />
+    <Project Path="Vole_Papillon_Damour.Contracts/Vole_Papillon_Damour.Contracts.csproj" />
+    <Project Path="Vole_Papillon_Damour.Domain/Vole_Papillon_Damour.Domain.csproj" />
+    <Project Path="Vole_Papillon_Damour.Infrastructure/Vole_Papillon_Damour.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="Vole_Papillon_Damour.Domain.tests/Vole_Papillon_Damour.Domain.tests.csproj" />
+  </Folder>
+  <Project Path="Vole_Papillon_Damour.Application.tests/Vole_Papillon_Damour.Application.tests.csproj" />
+  <Project Path="Vole_Papillon_Damour.Infrastructure.tests/Vole_Papillon_Damour.Infrastructure.tests.csproj" />
+</Solution>
