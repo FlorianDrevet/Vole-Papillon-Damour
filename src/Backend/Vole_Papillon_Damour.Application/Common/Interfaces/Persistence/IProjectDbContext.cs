@@ -31,4 +31,5 @@ public interface IProjectDbContext
     DbSet<Watchlist> Watchlists { get; }
     DbSet<WatchlistItem> WatchlistItems { get; }
     DbSet<UserAlertHistory> UserAlertHistories { get; }
+    DbSet<EmailBounceEvent> EmailBounceEvents { get; }
 }

@@ -5,12 +5,16 @@ namespace Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 
 public sealed record RecordEmailBounceResult(
     int BounceCount,
-    WatchlistAlertStatus AlertStatus)
+    WatchlistAlertStatus AlertStatus,
+    bool AlreadyRecorded)
 {
-    public static RecordEmailBounceResult From(Watchlist watchlist)
+    public static RecordEmailBounceResult From(
+        Watchlist watchlist,
+        bool alreadyRecorded)
     {
         return new RecordEmailBounceResult(
             watchlist.BounceCount,
-            watchlist.AlertStatus);
+            watchlist.AlertStatus,
+            alreadyRecorded);
     }
 }

@@ -433,6 +433,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
 
+    DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
+
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => AssoEvents;
@@ -443,6 +445,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<User>();
         modelBuilder.Ignore<Order>();
+        modelBuilder.Ignore<EmailBounceEvent>();
         modelBuilder.Ignore<Watchlist>();
         modelBuilder.Ignore<WatchlistItem>();
         modelBuilder.Ignore<UserAlertHistory>();

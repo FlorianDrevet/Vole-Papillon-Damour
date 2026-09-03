@@ -33,6 +33,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<Watchlist> Watchlists => Set<Watchlist>();
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
+    public DbSet<EmailBounceEvent> EmailBounceEvents => Set<EmailBounceEvent>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder

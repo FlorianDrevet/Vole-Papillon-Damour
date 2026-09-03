@@ -28,6 +28,7 @@ public sealed class ProjectDbContextModelTests
         model.FindEntityType(typeof(Watchlist))!.GetTableName().Should().Be("Watchlists");
         model.FindEntityType(typeof(WatchlistItem))!.GetTableName().Should().Be("WatchlistItems");
         model.FindEntityType(typeof(UserAlertHistory))!.GetTableName().Should().Be("UserAlertHistory");
+        model.FindEntityType(typeof(EmailBounceEvent))!.GetTableName().Should().Be("EmailBounceEvents");
 
         var books = model.FindEntityType(typeof(Book))!;
         books.FindProperty(nameof(Book.RowVersion))!.IsConcurrencyToken.Should().BeTrue();
@@ -80,6 +81,14 @@ public sealed class ProjectDbContextModelTests
 
         var outbox = model.FindEntityType(typeof(Vole_Papillon_Damour.Infrastructure.Persistence.Outbox.OutboxMessage))!;
         outbox.FindProperty("Kind")!.GetColumnType().Should().Be("tinyint");
+
+        var bounceEventIndexes = model.FindEntityType(typeof(EmailBounceEvent))!.GetIndexes();
+        bounceEventIndexes
+            .Single(index => index.Properties.Count == 1 &&
+                             index.Properties[0].Name == nameof(EmailBounceEvent.ProviderEventId))
+            .IsUnique
+            .Should()
+            .BeTrue();
     }
 
     private static ProjectDbContext CreateContext()

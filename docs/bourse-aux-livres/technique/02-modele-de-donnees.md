@@ -248,7 +248,17 @@ WatchlistItems
   WorkId    nvarchar(64)     NULL     -- si Scope = Oeuvre
   Isbn13    char(13)         NULL     -- si Scope = Edition
   AddedAt   datetime2        NOT NULL
+
+EmailBounceEvents
+  Id              uniqueidentifier PK
+  ProviderEventId varchar(128)      NOT NULL UNIQUE -- identité ACS/Event Grid
+  UserId          uniqueidentifier FK Users
+  RecordedAt      datetime2         NOT NULL       -- UTC
 ```
+
+`EmailBounceEvents` est le ledger d'idempotence du traitement `RG-31`. L'écriture du
+rebond et de son identifiant fournisseur se fait dans la même transaction ; un rejeu
+séquentiel du même événement ne peut donc pas incrémenter le compteur une seconde fois.
 
 **Pourquoi le statut d'alerte n'est pas sur `Users`.** Il ne décrit pas une personne, il
 décrit l'usage qu'elle fait des alertes. Le loger sur l'identité obligerait le domaine

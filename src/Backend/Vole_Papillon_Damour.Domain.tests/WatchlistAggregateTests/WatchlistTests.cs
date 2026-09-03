@@ -88,6 +88,34 @@ public sealed class WatchlistTests
     }
 
     [Fact]
+    public void CreateEmailBounceEvent_TrimsAndStoresTheProviderIdentity()
+    {
+        var userId = UserId.CreateUnique();
+
+        var bounceEvent = EmailBounceEvent.Create(
+            Guid.NewGuid(),
+            "  acs-event-42  ",
+            userId,
+            CreatedAt);
+
+        bounceEvent.ProviderEventId.Should().Be("acs-event-42");
+        bounceEvent.UserId.Should().Be(userId);
+        bounceEvent.RecordedAt.Should().Be(CreatedAt);
+    }
+
+    [Fact]
+    public void CreateEmailBounceEvent_RejectsAnEmptyProviderIdentity()
+    {
+        var action = () => EmailBounceEvent.Create(
+            Guid.NewGuid(),
+            " ",
+            UserId.CreateUnique(),
+            CreatedAt);
+
+        action.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
     public void CreateEditionItem_StoresOnlyTheEditionTarget()
     {
         var userId = UserId.CreateUnique();

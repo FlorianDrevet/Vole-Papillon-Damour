@@ -2,12 +2,16 @@ using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 
 namespace Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RecordEmailBounce;
 
-public sealed class RecordEmailBounceCommandHandler(IProjectDbContext dbContext)
+public sealed class RecordEmailBounceCommandHandler(
+    IProjectDbContext dbContext,
+    IDateTimeProvider dateTimeProvider)
     : IRequestHandler<RecordEmailBounceCommand, ErrorOr<RecordEmailBounceResult>>
 {
     public async Task<ErrorOr<RecordEmailBounceResult>> Handle(
@@ -21,6 +25,20 @@ public sealed class RecordEmailBounceCommandHandler(IProjectDbContext dbContext)
                 "A valid member identifier is required.");
         }
 
+        if (string.IsNullOrWhiteSpace(command.ProviderEventId) ||
+            command.ProviderEventId.Trim().Length > EmailBounceEvent.MaxProviderEventIdLength)
+        {
+            return Errors.Watchlist.InvalidProviderEventId();
+        }
+
+        var recordedAt = dateTimeProvider.UtcNow;
+        if (recordedAt.Kind != DateTimeKind.Utc)
+        {
+            return Errors.Watchlist.InvalidBounceTimestamp();
+        }
+
+        var providerEventId = command.ProviderEventId.Trim();
+
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var watchlist = await dbContext.Watchlists
             .SingleOrDefaultAsync(
@@ -31,10 +49,30 @@ public sealed class RecordEmailBounceCommandHandler(IProjectDbContext dbContext)
             return Errors.Watchlist.NotFound(command.MemberId.Value);
         }
 
+        var existingEvent = await dbContext.EmailBounceEvents
+            .SingleOrDefaultAsync(
+                candidate => candidate.ProviderEventId == providerEventId,
+                cancellationToken);
+        if (existingEvent is not null)
+        {
+            if (existingEvent.UserId != command.MemberId)
+            {
+                return Errors.Watchlist.ProviderEventMemberMismatch(providerEventId);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return RecordEmailBounceResult.From(watchlist, alreadyRecorded: true);
+        }
+
         watchlist.RecordEmailBounce();
+        dbContext.EmailBounceEvents.Add(EmailBounceEvent.Create(
+            Guid.NewGuid(),
+            providerEventId,
+            command.MemberId,
+            recordedAt));
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return RecordEmailBounceResult.From(watchlist);
+        return RecordEmailBounceResult.From(watchlist, alreadyRecorded: false);
     }
 }
