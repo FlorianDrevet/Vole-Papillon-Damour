@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-2` publié en HTTPS sur Azure ; correctif de rafraîchissement asynchrone et de lecture photo prêt sur `fix/scan-async-refresh` |
-| **Prochaine action** | Relire et merger le correctif Scan, relancer `Scan - deploy`, retester un EAN-13 imprimé sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Lot en cours** | `S0-2` publié en HTTPS sur Azure ; correctif de rafraîchissement asynchrone, lecture photo et repli de couverture prêt sur `fix/scan-async-refresh` |
+| **Prochaine action** | Relire et merger le correctif Scan, relancer `Scan - deploy`, retester une fiche avec couverture sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `fix/scan-async-refresh` — issue de `main` après les PR #25 et #26 fusionnées |
@@ -190,10 +190,13 @@ API `https://vpd-api-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.i
 Scan `vpd-scan:728939f`, image Worker `vpd-worker:728939f`. `/health` du Scan répond `200`
 et l'appel ISBN public répond `200`; le timer Worker s'est exécuté avec succès à `13:20 UTC`.
 Après les PR #25 et #26, le correctif ZXing et le verrou npm multiplateforme sont fusionnés.
-Le nouveau correctif de rafraîchissement zoneless et de lecture photo est sur
-`fix/scan-async-refresh` ; il reste à merger puis à relancer `Scan - deploy` avant de valider
-la caméra et la photo sur un iPhone avec un code EAN imprimé. La photo de test fournie,
-prise sur un écran fortement moiré, reste un cas non fiable pour un décodeur navigateur.
+Le nouveau correctif de rafraîchissement zoneless, de lecture photo et de couverture est sur
+`fix/scan-async-refresh` ; le repli de couverture essaie Open Library par ISBN lorsque la
+source de la notice ne sert pas l'image, puis affiche un état explicite si les deux sources
+échouent. La caméra live et la photo ont été testées avec succès sur iPhone ; il reste à
+merger puis à relancer `Scan - deploy` avant de retester la fiche couverte sur l'URL publique.
+La photo de test fournie, prise sur un écran fortement moiré, reste un cas non fiable pour
+un décodeur navigateur.
 La campagne de mesure sur 300 livres de `S0-4` reste également à faire.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
@@ -322,6 +325,8 @@ reportées.
 |---|---|---|
 | Smoke test Aspire — `GET /books/9783140464079/metadata` via `http://localhost:5257` | `200 OK` après redirection HTTPS ; notice « Le petit prince » renvoyée par Open Library | `2026-09-03` |
 | Démarrage Functions worker via Aspire | `AccountDeletionSweepFunction` découverte ; host lock acquis ; aucune erreur DI ni erreur de listener | `2026-09-03` |
+| POC Scan — détection caméra live sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
+| POC Scan — détection à partir d'une photo sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 
 > Un test manuel non consigné sera refait. Noter au minimum : quoi, quand, et ce qui a été
 > observé — pas seulement « OK ».
@@ -334,6 +339,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **S0-2 — couverture de la fiche.** Le résultat garde d'abord l'URL fournie par la notice, essaie une couverture Open Library par ISBN si l'image échoue, puis rend un placeholder accessible si les deux sources sont indisponibles. Le test de non-régression porte ces deux cas ; le Scan passe 24 tests ChromeHeadless et ses builds production/développement. Les détections caméra live et photo sur iPhone ont été confirmées ; le déploiement du correctif et la campagne `S0-4` sur 300 livres restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — rendu asynchrone et lecture photo.** Sur `fix/scan-async-refresh`, ajout de la notification explicite du rendu Angular zoneless après recherche ISBN, détection caméra et analyse photo. Le fallback photo essaie des recadrages, réductions et variantes noir/blanc ; le message d'erreur est rendu immédiatement. `npm test -- --watch=false --browsers=ChromeHeadless` passe avec 22 tests, ainsi que les builds Scan production/développement. La photo fournie d'un écran moiré reste illisible en test navigateur ; le merge, le déploiement et le retest iPhone sur code imprimé restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |
 | 2026-09-03 | Windows | **S0-2 — publication HTTPS et validation Azure.** Après le merge de la PR #23 (`728939f`), le déploiement de l'infrastructure, du Scan et du Worker est passé par GitHub OIDC. Le Scan public répond `200` sur `/` et `/health`, l'appel ISBN `9783140464079` répond `200`, et le Worker `kind=functionapp` est `Healthy` avec une révision unique, sans ingress public. Le timer `AccountDeletionSweepFunction` s'est exécuté avec succès à `13:20 UTC` (`CompletedCount: 0`). Les secrets ne sont pas exposés ; le test manuel sur iPhone et la campagne `S0-4` restent à faire. |
