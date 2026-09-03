@@ -62,11 +62,11 @@ Verified aggregate folders in `Domain` include:
 
 `Product` keeps `Available` separate from `VisibleOnWebsite`: both gate the public product projection, while the full `/product` projection remains available to cash clients and BackOffice.
 
-## Planned Books module decisions
+## Books module — P1-3 local foundation
 
-As of 2026-09-03, the Books/bourse-aux-livres module remains unimplemented; P1-2 fixed its design before P1-3 code. New module instants are persisted as UTC, while calendar comparisons and local-midnight calculations use Europe/Paris in Application. Book merges keep ISBN as the public key and use a direct RedirectedToIsbn13 link to a canonical Books row; BookMovements remain append-only and retain their original ISBN for audit. An open Books fair is the half-open [OpenAt, CloseAt) interval derived from AssoEvents DateStart/DateEnd/HourOpenDoors/HourCloseDoors, with overlap validation and no guessing when legacy events overlap.
+As of 2026-09-03, the P1-3 domain foundation exists locally in `Domain`: `Book` (ISBN-13 key), `BookMovement` (append-only ledger), `ScanSession`, `AssociationSettings`, and the `BookAnnouncement` entity. Strong IDs are used for movement, announcement, and scan sessions. `Book.RedirectTo()` preserves the absorbed row and prevents self/repeated redirection; movement quantities are signed and non-zero; scan-session counters and close are idempotent; settings are a typed singleton with documented defaults. New module instants are required and persisted as UTC, while calendar comparisons and local-midnight calculations use Europe/Paris in Application. Book merges keep ISBN as the public key and use a direct `RedirectedToIsbn13` link to a canonical Books row; `BookMovements` retain their original ISBN for audit. An open Books fair is the half-open `[OpenAt, CloseAt)` interval derived from `AssoEvents` date/door fields, with overlap validation and no guessing when legacy events overlap.
 
-Do not treat these choices as implemented runtime facts until the P1-3 aggregates, persistence, and tests land.
+P1-3 is not yet an externally deployed runtime fact: handlers, API contracts, the Scan PWA, and migration application remain future work, and `QT-02` must still be closed before the worker is changed.
 
 ## Conventions To Preserve
 

@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-03 | Implemented the P1-3 books foundation locally: added the Book, BookMovement, ScanSession, AssociationSettings, and BookAnnouncement domain types, five EF Core configurations, UTC DateTime converters, model metadata tests, and migration `20260903173750_AddBookExchangeCore`. Domain (49), Infrastructure (21), and solution test runs pass; Azure SQL has not been migrated and QT-02 remains open. |
 | 2026-09-03 | Recorded the user-reported `S0-4` campaign as successful across 300 real books without fabricating unprovided sub-metrics. Deployed `P1-1` through `Infra - deploy` run `33780715179` with the Functions timer at `minReplicas: 0`/`maxReplicas: 1`; the two-hour observation remains open. |
 | 2026-09-03 | Completed the documentation-only `P1-2` design pass for the books exchange: `DT-17` fixes UTC persistence with `Europe/Paris` calendar interpretation, `DT-18` defines Pending/final local outbox states and cancellation semantics, `DT-19` selects ISBN redirection for merges, `DT-20` defines the open-fair interval and overlap behavior, and `DT-21` selects Jasmine/Karma/ChromeHeadless with real IndexedDB and simulated transport. P1-3 implementation remains gated by `QT-02`. |
 | 2026-09-03 | Hardened the Scan result card when a bibliographic cover URL is unavailable: it retries an ISBN-based Open Library cover and then renders an explicit unavailable-cover placeholder. Added regression coverage; 24 ChromeHeadless tests and production/development builds pass. |

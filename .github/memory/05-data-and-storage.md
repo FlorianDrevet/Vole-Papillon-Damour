@@ -7,6 +7,13 @@
 - Repository interfaces live in `Application.Common.Interfaces.Persistence` and implementations live in `Infrastructure.Persistence.Repositories`.
 - `ProjectDbContext` is exposed back into the application layer through `IProjectDbContext`.
 
+## Books module persistence
+
+- `ProjectDbContext` and `IProjectDbContext` expose `Books`, `BookMovements`, `BookAnnouncements`, `ScanSessions`, and the singleton `AssociationSettings` sets.
+- Configurations live in `Infrastructure/Persistence/Configurations/`: ISBN-13 and strong-ID conversions, SQL Server `datetime2`, UTC read/write converters, `Books.RowVersion`, accent-insensitive `Title`/`Authors`, self-redirect and non-zero/positive quantity checks, and filtered unique indexes for `ClientGestureId` and one open scan session per volunteer.
+- Migration `20260903173750_AddBookExchangeCore` creates the five P1-3 tables. It is generated and validated locally but has not been applied to Azure SQL.
+- The Books ledger is append-only by domain convention; cancellation is represented by an inverse movement rather than an update/delete.
+
 ## External Services
 
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
