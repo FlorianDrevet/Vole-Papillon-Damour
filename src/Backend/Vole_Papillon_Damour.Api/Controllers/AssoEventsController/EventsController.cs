@@ -157,7 +157,8 @@ public static class EventsController
                             },
                             error => error.Result());
                     })
-                .WithName("Delete AssoEvent By Id");
+                .WithName("Delete AssoEvent By Id")
+                .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapPut("/asso-events/{id}",
                     async (Guid id, [FromForm] UpdateEventRequest request,
