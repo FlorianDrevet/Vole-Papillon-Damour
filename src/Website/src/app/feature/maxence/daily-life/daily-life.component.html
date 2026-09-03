@@ -7,7 +7,7 @@
     class="absolute -bottom-20 -right-16 w-[280px] opacity-[.14]"
     aria-hidden="true">
 
-  <div class="relative grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end lg:gap-16">
+  <div class="relative mx-auto flex max-w-[900px] flex-col gap-5">
     <div class="flex flex-col gap-5">
       <span class="flex items-center gap-2.5 font-mono text-[11px] font-medium uppercase tracking-[.18em] text-cyan">
         <span class="h-px w-[26px] shrink-0 bg-cyan"></span>Maxence · son quotidien
@@ -21,23 +21,6 @@
         à avancer.
       </p>
     </div>
-
-    <nav class="rounded-sm border border-cyan/[.24] bg-white/[.06] p-5" aria-label="Accéder à une partie de la page">
-      <span class="font-mono text-[10px] uppercase tracking-[.16em] text-cyan">Dans cette page</span>
-      <ol class="mt-3 flex flex-col divide-y divide-white/[.12]">
-        @for (section of sections; track section.id) {
-          <li>
-            <a
-              [href]="'/maxence/vie-quotidienne#' + section.id"
-              class="flex items-center gap-3 py-3 text-sm text-mist-2 transition hover:text-white">
-              <span class="font-mono text-[10px] text-orange-2">{{ section.number }}</span>
-              <span class="flex-1">{{ section.title }}</span>
-              <span aria-hidden="true">↘</span>
-            </a>
-          </li>
-        }
-      </ol>
-    </nav>
   </div>
 </section>
 

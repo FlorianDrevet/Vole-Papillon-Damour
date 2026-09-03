@@ -27,9 +27,6 @@ describe('DailyLifeComponent', () => {
     const sectionIds = Array.from(
       fixture.nativeElement.querySelectorAll('article[id]') as NodeListOf<HTMLElement>,
     ).map(section => section.id);
-    const indexLinks = Array.from(
-      fixture.nativeElement.querySelectorAll('nav a') as NodeListOf<HTMLAnchorElement>,
-    ).map(link => link.getAttribute('href'));
     const schoolLink = fixture.debugElement
       .queryAll(By.directive(RouterLink))
       .find(link => link.injector.get(RouterLink).urlTree?.toString() === '/maxence/vie-quotidienne/ecole');
@@ -37,12 +34,13 @@ describe('DailyLifeComponent', () => {
     expect(pageText).toContain('Son quotidien, ses combats');
     expect(pageText).toContain("L'école");
     expect(sectionIds).toEqual(['soins-quotidiens', 'soins-hospitaliers', 'ecole', 'greffe']);
-    expect(indexLinks).toEqual([
-      '/maxence/vie-quotidienne#soins-quotidiens',
-      '/maxence/vie-quotidienne#soins-hospitaliers',
-      '/maxence/vie-quotidienne#ecole',
-      '/maxence/vie-quotidienne#greffe',
-    ]);
     expect(schoolLink).toBeDefined();
+  });
+
+  it('should keep the hero focused on the introduction without a right-hand page index card', () => {
+    const pageIndex = fixture.nativeElement.querySelector('nav[aria-label="Accéder à une partie de la page"]');
+
+    expect(pageIndex).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Dans cette page');
   });
 });

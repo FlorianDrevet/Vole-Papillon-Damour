@@ -6,7 +6,7 @@ The API boots from `Vole_Papillon_Damour.Api/Program.cs` and wires:
 
 - Swagger in development
 - controllers with camelCase JSON output
-- authorization policy `IsAdmin`
+- staged Entra/legacy bearer authentication with the compatibility authorization policy `IsAdmin`
 - Azure Monitor OpenTelemetry
 - custom error handling middleware
 - rate limiting
@@ -42,7 +42,9 @@ The usual change path is:
 Verified slices in `Application` and `Contracts` include:
 
 - `Actuality`
+- `AccountDeletion`
 - `Authentication`
+- `Books` (consultation-only bibliographic metadata)
 - `Events`
 - `Orders`
 - `Products`
