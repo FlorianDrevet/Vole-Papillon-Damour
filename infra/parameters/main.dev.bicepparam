@@ -105,6 +105,47 @@ param containerAppBackOfficeHealthProbes = {
   }
 }
 
+param containerAppScanContainerRuntime = {
+  cpuCores: '0.25'
+  memoryGi: '0.5Gi'
+}
+param containerAppScanScaling = {
+  minReplicas: 1
+  maxReplicas: 2
+}
+param containerAppScanIngress = {
+  enabled: true
+  targetPort: 8080
+  external: true
+  transportMethod: 'auto'
+}
+param containerAppScanHealthProbes = {
+  readiness: {
+    path: '/health'
+    port: 8080
+  }
+  liveness: {
+    path: '/health'
+    port: 8080
+  }
+  startup: {
+    path: '/health'
+    port: 8080
+  }
+}
+
+param containerAppWorkerContainerRuntime = {
+  cpuCores: '0.5'
+  memoryGi: '1.0Gi'
+}
+// A timer-triggered Function needs one warm host until its ACA scaling
+// behavior has been observed in production; zero is not a safe default for
+// a timer that must process account-deletion requests.
+param containerAppWorkerScaling = {
+  minReplicas: 1
+  maxReplicas: 1
+}
+
 // -----------------------------------------------------------------------
 // Platform
 // -----------------------------------------------------------------------
@@ -166,3 +207,5 @@ param jwtSecret = readEnvironmentVariable('JWT_SECRET', '')
 param apiImage = readEnvironmentVariable('API_IMAGE', '')
 param websiteImage = readEnvironmentVariable('WEBSITE_IMAGE', '')
 param backOfficeImage = readEnvironmentVariable('BACKOFFICE_IMAGE', '')
+param scanImage = readEnvironmentVariable('SCAN_IMAGE', '')
+param workerImage = readEnvironmentVariable('WORKER_IMAGE', '')

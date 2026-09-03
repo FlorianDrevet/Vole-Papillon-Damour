@@ -16,7 +16,7 @@ describe('ScannerComponent', () => {
 
   beforeEach(async () => {
     metadataService = jasmine.createSpyObj<BookMetadataService>('BookMetadataService', ['getMetadata']);
-    cameraService = jasmine.createSpyObj<CameraScannerService>('CameraScannerService', ['start']);
+    cameraService = jasmine.createSpyObj<CameraScannerService>('CameraScannerService', ['start', 'scanFile']);
 
     await TestBed.configureTestingModule({
       declarations: [ScannerComponent],
@@ -67,6 +67,22 @@ describe('ScannerComponent', () => {
     await firstLookup;
 
     expect(component.metadata).toEqual(secondMetadata);
+  });
+
+  it('looks up an ISBN decoded from a camera photo', async () => {
+    const metadata = createMetadata();
+    metadataService.getMetadata.and.returnValue(of(metadata));
+    cameraService.scanFile.and.returnValue(Promise.resolve('9782070363735'));
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    const imageFile = new File(['barcode'], 'book.jpg', {type: 'image/jpeg'});
+    Object.defineProperty(input, 'files', {value: [imageFile]});
+
+    await component.scanImage({target: input} as unknown as Event);
+
+    expect(cameraService.scanFile).toHaveBeenCalledOnceWith(jasmine.any(HTMLElement), imageFile);
+    expect(metadataService.getMetadata).toHaveBeenCalledOnceWith('9782070363735');
+    expect(component.metadata).toEqual(metadata);
+    expect(component.cameraError).toBeNull();
   });
 
   function createMetadata(title = 'Le Petit Prince'): BookMetadata {

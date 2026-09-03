@@ -1,7 +1,7 @@
 # Infrastructure Azure - Vole-Papillon-Damour
 
 Déploiement de l'environnement `development` : un Container App Environment
-hébergeant les trois applications, chacune avec son Application Insights.
+hébergeant les cinq applications, chacune avec son Application Insights.
 
 ## Ressources déployées
 
@@ -9,22 +9,27 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 
 | Ressource | Nom | Rôle |
 | --- | --- | --- |
-| Container App Environment | `vpd-cae-dev` | Héberge les trois Container Apps |
+| Container App Environment | `vpd-cae-dev` | Héberge les cinq Container Apps |
 | Container App | `vpd-api-ca-dev` | API .NET 10, port 8080 |
 | Container App | `vpd-web-ca-dev` | Website Angular SSR, port 8080 |
 | Container App | `vpd-bo-ca-dev` | BackOffice Angular servi par nginx, port 8080 |
-| Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` | Un par application |
+| Container App | `vpd-scan-ca-dev` | App de scan Angular publique, port 8080, HTTPS |
+| Container App | `vpd-worker-ca-dev` | Worker Azure Functions .NET isolated, `kind=functionapp` |
+| Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` / `vpd-scan-appi-dev` / `vpd-worker-appi-dev` | Un par application |
 | Log Analytics | `vpd-law-dev` | Workspace commun aux trois Application Insights |
 | ACS Email | `vpd-acs-email-dev` / `mail.volepapillondamour.fr` | Service d'envoi, donnees en France |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
 | Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | Serverless `GP_S_Gen5_1`, pause auto après 60 min |
 | Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images` |
 | Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
-| Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` | Une par application |
+| Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-worker-id-dev` | Une par application |
 
-Chaque Container App tourne sous sa propre identité managée. Les trois ont
-`AcrPull` sur le registry ; seule celle de l'API a `Key Vault Secrets User` et
-`Monitoring Metrics Publisher`, puisque les fronts ne lisent aucun secret.
+Chaque Container App tourne sous sa propre identité managée. Les cinq ont
+`AcrPull` sur le registry ; l'API et le worker ont en plus `Key Vault Secrets User`.
+L'API et le worker ont chacun `Monitoring Metrics Publisher` sur leur Application
+Insights. Le worker est une Azure Function native (`kind=functionapp`) à une réplique
+minimum et maximum dans ce premier déploiement : le timer ne doit pas être arrêté avant
+que son comportement de scaling ait été mesuré.
 
 Les conteneurs blob sont en accès `Blob` (lecture anonyme) : `BlobService`
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles
@@ -127,6 +132,8 @@ Azure sans un lancement manuel.
 | `API - deploy` | build + push de l'image API, bascule de `vpd-api-ca-dev`, migrations EF optionnelles |
 | `Website - deploy` | build + push de l'image Website, bascule de `vpd-web-ca-dev` |
 | `BackOffice - deploy` | build + push de l'image BackOffice, bascule de `vpd-bo-ca-dev` |
+| `Scan - deploy` | build + push de l'image Scan avec l'URL API, bascule de `vpd-scan-ca-dev` et publication HTTPS |
+| `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev` et contrôle du host |
 
 ### Ordre du premier déploiement
 
@@ -136,7 +143,9 @@ Azure sans un lancement manuel.
    pas encore d'image applicative.
 3. `API - deploy` avec `run_migrations` coché - le schéma de la base est vide
    au premier passage.
-4. `Website - deploy`, puis `BackOffice - deploy`.
+4. `Scan - deploy`, puis `Worker - deploy`.
+5. `Website - deploy`, puis `BackOffice - deploy` si leurs images doivent aussi être
+   reconstruites sur cette branche.
 
 Les fronts doivent être déployés après l'API : le bundle Angular embarque
 l'`api_url` en dur, donc la pipeline lit le FQDN de `vpd-api-ca-dev` et le
@@ -188,3 +197,15 @@ az bicep build --file infra/main.bicep --outfile out/main.json
 # Compiler les paramètres (les secrets viennent des variables d'environnement)
 az bicep build-params --file infra/parameters/main.dev.bicepparam --outfile out/params.json
 ```
+
+## Scan public et worker Functions
+
+Le Scan est servi par nginx sur le port `8080` avec ingress externe et TLS géré par
+Azure Container Apps. Son FQDN HTTPS peut être ouvert directement dans Safari sur un
+iPhone ; aucune redirection DNS ni tunnel depuis le poste de développement n'est
+nécessaire. La caméra est activée seulement après autorisation du site par Safari.
+
+Le worker est une Azure Function native sur Container Apps (`kind=functionapp`). Il
+utilise l'outbox SQL, le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault
+et l'identité managée dédiée. Il reste à `minReplicas: 1`, `maxReplicas: 1` tant que le
+comportement du timer n'a pas été mesuré.

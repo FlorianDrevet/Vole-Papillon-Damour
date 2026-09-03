@@ -46,6 +46,20 @@ param containerAppBackOfficeIngress IngressConfig
 @description('Value for healthProbes of ContainerApp resource backoffice.')
 param containerAppBackOfficeHealthProbes HealthProbeConfig
 
+@description('Value for containerRuntime of ContainerApp resource scan.')
+param containerAppScanContainerRuntime ContainerRuntimeConfig
+@description('Value for scaling of ContainerApp resource scan.')
+param containerAppScanScaling ScalingConfig
+@description('Value for ingress of ContainerApp resource scan.')
+param containerAppScanIngress IngressConfig
+@description('Value for healthProbes of ContainerApp resource scan.')
+param containerAppScanHealthProbes HealthProbeConfig
+
+@description('Value for containerRuntime of the Functions worker Container App.')
+param containerAppWorkerContainerRuntime ContainerRuntimeConfig
+@description('Value for scaling of the Functions worker Container App.')
+param containerAppWorkerScaling ScalingConfig
+
 @description('Apex hostname bound to the Website Container App')
 param websiteCustomDomain string
 @description('WWW hostname bound to the Website Container App')
@@ -73,6 +87,10 @@ param apiImage string = ''
 param websiteImage string = ''
 @description('Image for the BackOffice Container App. Empty deploys the placeholder image.')
 param backOfficeImage string = ''
+@description('Image for the Scan Container App. Empty deploys the placeholder image.')
+param scanImage string = ''
+@description('Image for the account-deletion Functions Container App. Empty deploys the placeholder image.')
+param workerImage string = ''
 
 // -----------------------------------------------------------------------
 // Key Vault
@@ -283,6 +301,28 @@ module applicationInsightsBackOfficeModule './modules/ApplicationInsights/applic
   }
 }
 
+module applicationInsightsScanModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
+  name: 'applicationInsightsScan'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-scan', 'appi', env)
+    tags: tags
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+  }
+}
+
+module applicationInsightsWorkerModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
+  name: 'applicationInsightsWorker'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-worker', 'appi', env)
+    tags: tags
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+  }
+}
+
 // -----------------------------------------------------------------------
 // Data
 // -----------------------------------------------------------------------
@@ -382,6 +422,26 @@ module userAssignedIdentityBackOfficeModule './modules/UserAssignedIdentity/user
   }
 }
 
+module userAssignedIdentityScanModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
+  name: 'userAssignedIdentityScan'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-scan', 'id', env)
+    tags: tags
+  }
+}
+
+module userAssignedIdentityWorkerModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
+  name: 'userAssignedIdentityWorker'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-worker', 'id', env)
+    tags: tags
+  }
+}
+
 // -----------------------------------------------------------------------
 // Role assignments
 // -----------------------------------------------------------------------
@@ -431,7 +491,37 @@ module containerAppBackOfficeAcrRoles './modules/ContainerRegistry/containerregi
   ]
 }
 
-// Only the API reads secrets: the front-ends carry no secretRef.
+module containerAppScanAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
+  name: 'containerAppScanAcrRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildContainerRegistryName('vpd', 'acr', env)
+    principalId: userAssignedIdentityScanModule.outputs.principalId
+    roles: [
+      RbacRoles.containerregistry.AcrPull
+    ]
+  }
+  dependsOn: [
+    containerRegistryModule
+  ]
+}
+
+module containerAppWorkerAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
+  name: 'containerAppWorkerAcrRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildContainerRegistryName('vpd', 'acr', env)
+    principalId: userAssignedIdentityWorkerModule.outputs.principalId
+    roles: [
+      RbacRoles.containerregistry.AcrPull
+    ]
+  }
+  dependsOn: [
+    containerRegistryModule
+  ]
+}
+
+// The API and the worker read secrets: the front-ends carry no secretRef.
 module containerAppApiKeyVaultRoles './modules/KeyVault/keyvault.roleassignments.module.bicep' = {
   name: 'containerAppApiKeyVaultRoles'
   scope: applicationResourceGroup
@@ -459,6 +549,36 @@ module containerAppApiApplicationInsightsRoles './modules/ApplicationInsights/ap
   }
   dependsOn: [
     applicationInsightsApiModule
+  ]
+}
+
+module containerAppWorkerKeyVaultRoles './modules/KeyVault/keyvault.roleassignments.module.bicep' = {
+  name: 'containerAppWorkerKeyVaultRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd', 'kv', env)
+    principalId: userAssignedIdentityWorkerModule.outputs.principalId
+    roles: [
+      RbacRoles.keyvault['Key Vault Secrets User']
+    ]
+  }
+  dependsOn: [
+    keyVaultModule
+  ]
+}
+
+module containerAppWorkerApplicationInsightsRoles './modules/ApplicationInsights/applicationinsights.roleassignments.module.bicep' = {
+  name: 'containerAppWorkerApplicationInsightsRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-worker', 'appi', env)
+    principalId: userAssignedIdentityWorkerModule.outputs.principalId
+    roles: [
+      RbacRoles.monitor.MonitoringMetricsPublisher
+    ]
+  }
+  dependsOn: [
+    applicationInsightsWorkerModule
   ]
 }
 
@@ -680,6 +800,130 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
   ]
 }
 
+module containerAppScanModule './modules/ContainerApp/containerApp.module.bicep' = {
+  name: 'containerAppScan'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-scan', 'ca', env)
+    tags: tags
+    containerImage: empty(scanImage) ? placeholderImage : scanImage
+    containerRuntime: containerAppScanContainerRuntime
+    scaling: containerAppScanScaling
+    ingress: containerAppScanIngress
+    healthProbes: containerAppScanHealthProbes
+    containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
+    acrLoginServer: containerRegistryModule.outputs.loginServer
+    userAssignedIdentityId: userAssignedIdentityScanModule.outputs.resourceId
+    envVars: [
+      // API_URL and the public host are compiled into the Angular bundle by
+      // the Scan application pipeline. This value is still exposed for
+      // runtime diagnostics and follows the same observability contract as
+      // the other frontends.
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: applicationInsightsScanModule.outputs.connectionString
+      }
+    ]
+  }
+  dependsOn: [
+    containerAppScanAcrRoles
+  ]
+}
+
+module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.module.bicep' = {
+  name: 'containerAppWorker'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-worker', 'ca', env)
+    tags: tags
+    containerImage: empty(workerImage) ? placeholderImage : workerImage
+    containerRuntime: containerAppWorkerContainerRuntime
+    scaling: containerAppWorkerScaling
+    containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
+    acrLoginServer: containerRegistryModule.outputs.loginServer
+    userAssignedIdentityId: userAssignedIdentityWorkerModule.outputs.resourceId
+    keyVaultSecrets: [
+      {
+        name: 'sql-connectionstring'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['sql-connectionstring']
+      }
+      {
+        name: 'storage-connectionstring'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['storage-connectionstring']
+      }
+      {
+        name: 'entra-graph-client-secret'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['entra-graph-client-secret']
+      }
+    ]
+    envVars: [
+      {
+        name: 'ASPNETCORE_ENVIRONMENT'
+        value: 'Production'
+      }
+      {
+        name: 'FUNCTIONS_WORKER_RUNTIME'
+        value: 'dotnet-isolated'
+      }
+      {
+        name: 'FUNCTIONS_EXTENSION_VERSION'
+        value: '~4'
+      }
+      {
+        name: 'FUNCTIONS_WORKER_RUNTIME_VERSION'
+        value: '10.0'
+      }
+      {
+        name: 'AzureWebJobsScriptRoot'
+        value: '/home/site/wwwroot'
+      }
+      {
+        name: 'AzureFunctionsJobHost__Logging__Console__IsEnabled'
+        value: 'true'
+      }
+      {
+        name: 'AzureWebJobsStorage'
+        secretRef: 'storage-connectionstring'
+      }
+      {
+        name: 'ConnectionStrings__ProjectDatabase'
+        secretRef: 'sql-connectionstring'
+      }
+      {
+        name: 'ConnectionStrings__AzureBlobStorageConnectionString'
+        secretRef: 'storage-connectionstring'
+      }
+      {
+        name: 'EntraGraph__TenantId'
+        value: entraTenantId
+      }
+      {
+        name: 'EntraGraph__ClientId'
+        value: entraGraphClientId
+      }
+      {
+        name: 'EntraGraph__ClientSecret'
+        secretRef: 'entra-graph-client-secret'
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: applicationInsightsWorkerModule.outputs.connectionString
+      }
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: userAssignedIdentityWorkerModule.outputs.clientId
+      }
+    ]
+  }
+  dependsOn: [
+    containerAppWorkerAcrRoles
+    containerAppWorkerKeyVaultRoles
+    containerAppWorkerApplicationInsightsRoles
+  ]
+}
+
 // -----------------------------------------------------------------------
 // Outputs - consumed by the application pipelines
 // -----------------------------------------------------------------------
@@ -691,10 +935,13 @@ output containerRegistryLoginServer string = containerRegistryModule.outputs.log
 output apiContainerAppName string = BuildResourceName('vpd-api', 'ca', env)
 output websiteContainerAppName string = BuildResourceName('vpd-web', 'ca', env)
 output backOfficeContainerAppName string = BuildResourceName('vpd-bo', 'ca', env)
+output scanContainerAppName string = BuildResourceName('vpd-scan', 'ca', env)
+output workerContainerAppName string = BuildResourceName('vpd-worker', 'ca', env)
 
 output apiUrl string = 'https://${containerAppApiModule.outputs.containerAppFqdn}'
 output websiteUrl string = 'https://${containerAppWebsiteModule.outputs.containerAppFqdn}'
 output backOfficeUrl string = 'https://${containerAppBackOfficeModule.outputs.containerAppFqdn}'
+output scanUrl string = 'https://${containerAppScanModule.outputs.containerAppFqdn}'
 
 output sqlServerName string = sqlServerModule.outputs.name
 output sqlServerFqdn string = sqlServerModule.outputs.fullyQualifiedDomainName

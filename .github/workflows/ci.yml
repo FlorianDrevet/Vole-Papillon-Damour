@@ -77,3 +77,9 @@ jobs:
       - name: Build Scan
         working-directory: src/Scan
         run: npm run build
+
+      - name: Build Scan container
+        run: docker build --file src/Scan/Dockerfile --build-arg API_URL=https://api.example.com --tag vpd-scan-ci:latest src
+
+      - name: Build Worker container
+        run: docker build --file src/Backend/Vole_Papillon_Damour.Worker/Dockerfile --tag vpd-worker-ci:latest src/Backend

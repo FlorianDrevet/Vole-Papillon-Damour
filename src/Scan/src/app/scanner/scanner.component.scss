@@ -142,6 +142,27 @@ h1 {
   background: var(--scan-orange);
 }
 
+.image-picker {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  border: 1px solid var(--scan-orange);
+  border-radius: .3rem;
+  padding: .65rem 1rem;
+  color: var(--scan-orange);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.image-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .camera-preview {
   display: none;
   width: 100%;
@@ -149,11 +170,38 @@ h1 {
   margin-top: 1rem;
   border-radius: .35rem;
   background: #102d41;
-  object-fit: cover;
+  text-align: center;
 }
 
 .camera-preview-visible {
   display: block;
+}
+
+.camera-preview ::ng-deep video {
+  display: block;
+  width: 100%;
+  max-height: 20rem;
+  border-radius: .35rem;
+  object-fit: cover;
+}
+
+.camera-preview ::ng-deep #camera-scanner__scan_region {
+  width: 100% !important;
+  min-height: 0 !important;
+}
+
+.camera-preview ::ng-deep #camera-scanner__scan_region img,
+.camera-preview ::ng-deep #camera-scanner__scan_region canvas {
+  display: none !important;
+}
+
+.file-scanner-container {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .message {

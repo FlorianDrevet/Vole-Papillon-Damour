@@ -7,8 +7,11 @@ var host = new HostBuilder()
     .ConfigureServices((context, services) =>
     {
         services
-            .AddApplication()
-            .AddInfrastructure(context.Configuration, runMigrations: false);
+            .AddAccountDeletionProcessing()
+            .AddInfrastructure(
+                context.Configuration,
+                runMigrations: false,
+                registerAuthentication: false);
     })
     .Build();
 

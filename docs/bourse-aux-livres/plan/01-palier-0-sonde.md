@@ -1,7 +1,10 @@
 # Lot 1 — Palier 0, la sonde de faisabilité
 
-**Rien n'est déployé.** C'est ce qui permet d'abandonner ce palier sans coût si les
-mesures sont mauvaises — et c'est le seul palier du projet dont c'est vrai.
+**La fonctionnalité reste un palier de faisabilité.** Une infrastructure de développement
+publique est néanmoins prévue pour tester la caméra sur un vrai téléphone sans tunnel : le
+Scan est servi en HTTPS par Azure Container Apps et le worker est déployé dans le même
+environnement. Cela ne transforme pas la sonde en produit métier et ne change pas ses
+contraintes de consultation seule.
 
 **Ce qu'on construit.** Une application de scan en **consultation seule** : elle lit un
 ISBN, affiche titre, auteur, éditeur, année, couverture. **Elle n'enregistre rien.** Pas de
@@ -46,18 +49,18 @@ supporter les deux dès le départ coûte peu (`DT-08`).
 Normalisation ISBN-10 → ISBN-13 et contrôle de clé (`RG-01`), refus explicite d'un
 code-barres non-ISBN (`RG-02`).
 
-🔧 **D'où viennent les métadonnées, puisque rien n'est déployé.** Le navigateur ne peut pas
+🔧 **D'où viennent les métadonnées.** Le navigateur ne peut pas
 interroger la BnF ni Google Books directement : ni l'un ni l'autre ne sert les en-têtes
 `CORS` nécessaires, et les clés d'API n'ont rien à faire dans une page. La sonde appelle
-donc **un unique point de terminaison de l'API existante, lancée en local par l'AppHost** —
-`GET /books/{isbn13}/metadata`, qui exécute le pipeline de `T-07` §1 et renvoie titre,
-auteur, éditeur, année, couverture. C'est le seul code backend de ce palier, il est jeté ou
-conservé selon le verdict, et il fait que « rien n'est déployé » reste vrai : tout tourne
-sur votre machine ou sur le réseau local.
+donc **un unique point de terminaison de l'API existante** — `GET
+/books/{isbn13}/metadata`, qui exécute le pipeline de `T-07` §1 et renvoie titre, auteur,
+éditeur, année, couverture. En local, ce point est lancé par l'AppHost ; pour la campagne
+sur téléphone, le même contrat est fourni par l'API Container App publique. C'est le seul
+code backend de ce palier, il est jeté ou conservé selon le verdict.
 
-*Conséquence pratique pour `S0-4` :* la campagne se fait avec un portable qui fait tourner
-l'AppHost et un téléphone sur le même réseau. À vérifier avant de partir dans le local, pas
-sur place.
+*Conséquence pratique pour `S0-4` :* la campagne peut utiliser l'URL HTTPS du Scan publiée
+par Azure, sans que le portable de développement reste allumé et sans tunnel réseau. Le
+mode AppHost/LAN reste disponible pour le développement.
 
 ✅ Tests unitaires sur la conversion et la clé de contrôle — c'est la priorité 3 de
 `T-03` §6, et elle vaut d'être écrite ici puisque le code servira ensuite.

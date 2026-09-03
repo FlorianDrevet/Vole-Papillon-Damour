@@ -1,90 +1,152 @@
-import {Injectable} from '@angular/core';
+import {Inject, Injectable, InjectionToken} from '@angular/core';
+import {
+  Html5Qrcode,
+  Html5QrcodeCameraScanConfig,
+  Html5QrcodeSupportedFormats,
+  QrcodeErrorCallback,
+  QrcodeSuccessCallback,
+} from 'html5-qrcode';
 
-interface BarcodeDetection {
-  rawValue?: string;
+export interface CameraScannerEngine {
+  start(
+    cameraIdOrConfig: string | MediaTrackConstraints,
+    configuration: Html5QrcodeCameraScanConfig,
+    qrCodeSuccessCallback: QrcodeSuccessCallback,
+    qrCodeErrorCallback: QrcodeErrorCallback,
+  ): Promise<null>;
+  stop(): Promise<void>;
+  scanFile(imageFile: File, showImage?: boolean): Promise<string>;
+  clear(): void;
 }
 
-interface BarcodeDetectorLike {
-  detect(source: HTMLVideoElement): Promise<BarcodeDetection[]>;
-}
+export type CameraScannerEngineFactory = (elementId: string) => CameraScannerEngine;
 
-interface BarcodeDetectorConstructor {
-  new (options?: {formats?: string[]}): BarcodeDetectorLike;
-}
+export const CAMERA_SCANNER_ENGINE_FACTORY = new InjectionToken<CameraScannerEngineFactory>(
+  'CAMERA_SCANNER_ENGINE_FACTORY',
+  {
+    providedIn: 'root',
+    factory: () => (elementId: string): CameraScannerEngine => new Html5Qrcode(elementId, {
+      verbose: false,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+      ],
+      // Safari exposes BarcodeDetector only on some versions. ZXing is the
+      // stable cross-browser decoder used by html5-qrcode for iOS as well.
+      useBarCodeDetectorIfSupported: false,
+    }),
+  },
+);
 
 export interface CameraScannerHandle {
-  stop(): void;
+  stop(): Promise<void>;
 }
+
+const CAMERA_CONSTRAINTS: MediaTrackConstraints = {
+  facingMode: {ideal: 'environment'},
+};
+
+const CAMERA_SCAN_CONFIG: Html5QrcodeCameraScanConfig = {
+  fps: 10,
+  qrbox: {width: 280, height: 120},
+  aspectRatio: 1.777778,
+};
 
 @Injectable({providedIn: 'root'})
 export class CameraScannerService {
+  constructor(
+    @Inject(CAMERA_SCANNER_ENGINE_FACTORY)
+    private readonly engineFactory: CameraScannerEngineFactory,
+  ) {}
+
   async start(
-    video: HTMLVideoElement,
+    container: HTMLElement,
     onDetected: (rawValue: string) => void,
   ): Promise<CameraScannerHandle> {
-    const detectorConstructor = (window as Window & {
-      BarcodeDetector?: BarcodeDetectorConstructor;
-    }).BarcodeDetector;
-
-    if (!detectorConstructor) {
-      throw new Error('La lecture caméra n’est pas disponible dans ce navigateur.');
-    }
-
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error('Le navigateur ne donne pas accès à la caméra.');
+      throw new Error('La caméra nécessite une page HTTPS et un navigateur autorisant son accès.');
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {facingMode: {ideal: 'environment'}},
-      audio: false,
-    });
-    const detector = new detectorConstructor({formats: ['ean_13', 'ean_8']});
-    video.srcObject = stream;
+    const engine = this.engineFactory(container.id);
+    let active = true;
+    let stopPromise: Promise<void> | null = null;
+
+    const stop = (): Promise<void> => {
+      if (!stopPromise) {
+        stopPromise = (async (): Promise<void> => {
+          active = false;
+          try {
+            await engine.stop();
+          } catch {
+            // The decoder may already have stopped after a successful match.
+          }
+          try {
+            engine.clear();
+          } catch {
+            // Clearing is best effort when the browser has already removed the video.
+          }
+        })();
+      }
+      return stopPromise;
+    };
 
     try {
-      await video.play();
-    } catch (error) {
-      stream.getTracks().forEach(track => track.stop());
-      video.srcObject = null;
-      throw error;
+      await engine.start(
+        CAMERA_CONSTRAINTS,
+        CAMERA_SCAN_CONFIG,
+        (decodedText: string) => {
+          if (!active) {
+            return;
+          }
+
+          const rawValue = decodedText.trim();
+          if (!rawValue) {
+            return;
+          }
+
+          onDetected(rawValue);
+          void stop();
+        },
+        () => {
+          // A frame without a valid barcode is expected while scanning.
+        },
+      );
+    } catch (error: unknown) {
+      await stop();
+      throw this.toCameraError(error);
     }
 
-    let active = true;
-    let animationFrame: number | null = null;
-    const stop = (): void => {
-      active = false;
-      if (animationFrame !== null) {
-        cancelAnimationFrame(animationFrame);
-      }
-      stream.getTracks().forEach(track => track.stop());
-      video.srcObject = null;
-    };
-
-    const detectNextFrame = async (): Promise<void> => {
-      if (!active) {
-        return;
-      }
-
-      try {
-        const detections = await detector.detect(video);
-        const rawValue = detections.find(
-          detection => typeof detection.rawValue === 'string' && detection.rawValue.length > 0,
-        )?.rawValue;
-        if (rawValue) {
-          onDetected(rawValue);
-          stop();
-          return;
-        }
-      } catch {
-        // A transient frame error must not stop the camera session.
-      }
-
-      if (active) {
-        animationFrame = requestAnimationFrame(() => void detectNextFrame());
-      }
-    };
-
-    void detectNextFrame();
     return {stop};
+  }
+
+  async scanFile(container: HTMLElement, imageFile: File): Promise<string> {
+    const engine = this.engineFactory(container.id);
+    try {
+      return await engine.scanFile(imageFile, false);
+    } finally {
+      try {
+        engine.clear();
+      } catch {
+        // Keep the file fallback usable even if the decoder has already cleaned up.
+      }
+    }
+  }
+
+  private toCameraError(error: unknown): Error {
+    const cameraError = error as {name?: unknown; message?: unknown} | null;
+    switch (cameraError?.name) {
+      case 'NotAllowedError':
+        return new Error('Autorisez l’accès à la caméra dans Safari, puis réessayez.');
+      case 'NotFoundError':
+        return new Error('Aucune caméra utilisable n’a été trouvée sur cet appareil.');
+      case 'NotReadableError':
+        return new Error('La caméra est déjà utilisée par une autre application.');
+      default:
+        return error instanceof Error
+          ? error
+          : new Error(typeof cameraError?.message === 'string'
+            ? cameraError.message
+            : 'La caméra ne peut pas être activée.');
+    }
   }
 }

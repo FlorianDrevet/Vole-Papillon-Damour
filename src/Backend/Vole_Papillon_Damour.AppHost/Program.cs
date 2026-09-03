@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 
 const string ApiResourceName = "api";
 const string AzureBlobStorageConnectionStringEnvironmentName = "ConnectionStrings__AzureBlobStorageConnectionString";
-const string AzureFunctionsStorageEnvironmentName = "AzureWebJobsStorage";
 const string BackOfficeResourceName = "backoffice";
 const string DefaultHttpEndpointName = "http";
 const string ProjectDatabaseName = "ProjectDatabase";
@@ -11,7 +10,6 @@ const string ScanResourceName = "scan";
 const string SqlServerName = "sql-server";
 const string SqlServerPasswordParameterName = "sql-server-password";
 const string StorageName = "storage";
-const string UseDevelopmentStorageConnectionString = "UseDevelopmentStorage=true";
 const string WebsiteResourceName = "website";
 const int BackOfficePort = 4200;
 const int ScanPort = 4202;
@@ -26,20 +24,24 @@ var projectDatabase = builder.AddSqlServer(SqlServerName, password: sqlServerPas
     .WithLifetime(ContainerLifetime.Persistent)
     .AddDatabase(ProjectDatabaseName, "vole-papillon-damour-db");
 
-var storage = builder.AddAzureStorage(StorageName)
-    .RunAsEmulator(container => container.WithLifetime(ContainerLifetime.Persistent));
+var storage = builder.AddAzureStorage(StorageName);
+storage.RunAsEmulator(container => container.WithLifetime(ContainerLifetime.Persistent));
+var blobs = storage.AddBlobs("blobs");
 
 var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithReference(projectDatabase)
     .WaitFor(projectDatabase)
     .WaitFor(storage)
-    .WithEnvironment(AzureBlobStorageConnectionStringEnvironmentName, UseDevelopmentStorageConnectionString)
+    .WithEnvironment(
+        AzureBlobStorageConnectionStringEnvironmentName,
+        blobs.Resource.ConnectionStringExpression)
     .WithExternalHttpEndpoints();
 
 builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
     .WithReference(projectDatabase)
-    .WithEnvironment(AzureBlobStorageConnectionStringEnvironmentName, UseDevelopmentStorageConnectionString)
-    .WithEnvironment(AzureFunctionsStorageEnvironmentName, UseDevelopmentStorageConnectionString)
+    .WithEnvironment(
+        AzureBlobStorageConnectionStringEnvironmentName,
+        blobs.Resource.ConnectionStringExpression)
     .WaitFor(projectDatabase)
     .WaitFor(storage);
 

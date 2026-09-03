@@ -35,12 +35,17 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration builderConfiguration,
-        bool runMigrations = true)
+        bool runMigrations = true,
+        bool registerAuthentication = true)
     {
         var connectionString = builderConfiguration.GetConnectionString(ProjectDatabaseConnectionStringName);
-            
+
+        if (registerAuthentication)
+        {
+            services.AddAuth(builderConfiguration);
+        }
+
         services
-            .AddAuth(builderConfiguration)
             .AddDbContext<ProjectDbContext>(options =>
                 options.UseSqlServer(connectionString)
                 )

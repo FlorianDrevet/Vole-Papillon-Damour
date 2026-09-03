@@ -14,7 +14,8 @@ import {normalizeIsbn} from './isbn.util';
   standalone: false,
 })
 export class ScannerComponent implements OnDestroy {
-  @ViewChild('cameraVideo', {static: true}) private readonly cameraVideo!: ElementRef<HTMLVideoElement>;
+  @ViewChild('cameraContainer', {static: true}) private readonly cameraContainer!: ElementRef<HTMLElement>;
+  @ViewChild('fileScannerContainer', {static: true}) private readonly fileScannerContainer!: ElementRef<HTMLElement>;
 
   isbnInput = '';
   metadata: BookMetadata | null = null;
@@ -83,7 +84,7 @@ export class ScannerComponent implements OnDestroy {
 
     try {
       this.cameraHandle = await this.cameraScanner.start(
-        this.cameraVideo.nativeElement,
+        this.cameraContainer.nativeElement,
         rawValue => {
           this.stopCamera();
           void this.lookup(rawValue);
@@ -94,6 +95,29 @@ export class ScannerComponent implements OnDestroy {
       this.cameraError = error instanceof Error
         ? error.message
         : 'La caméra ne peut pas être activée.';
+    }
+  }
+
+  async scanImage(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const imageFile = input.files?.[0];
+    input.value = '';
+
+    if (!imageFile) {
+      return;
+    }
+
+    this.stopCamera();
+    this.cameraError = null;
+
+    try {
+      const rawValue = await this.cameraScanner.scanFile(
+        this.fileScannerContainer.nativeElement,
+        imageFile,
+      );
+      await this.lookup(rawValue);
+    } catch {
+      this.cameraError = 'Aucun code-barres lisible n’a été trouvé dans cette photo.';
     }
   }
 

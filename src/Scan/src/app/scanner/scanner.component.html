@@ -38,17 +38,25 @@
       <vpd-button (click)="toggleCamera()">
         {{ cameraActive ? 'Arrêter la caméra' : 'Lire avec la caméra' }}
       </vpd-button>
+      <label class="image-picker">
+        <span>Scanner une photo</span>
+        <input
+          #imageInput
+          type="file"
+          accept="image/*"
+          capture="environment"
+          (change)="scanImage($event)">
+      </label>
       <span>Une scanette USB peut aussi envoyer l’ISBN comme un clavier.</span>
     </div>
 
-    <video
-      #cameraVideo
+    <div
+      #cameraContainer
+      id="camera-scanner"
       class="camera-preview"
       [class.camera-preview-visible]="cameraActive"
-      autoplay
-      muted
-      playsinline
-      aria-label="Aperçu de la caméra pour le code-barres"></video>
+      aria-label="Aperçu de la caméra pour le code-barres"></div>
+    <div #fileScannerContainer class="file-scanner-container" aria-hidden="true"></div>
 
     <p *ngIf="cameraError" class="message message-error" role="alert">{{ cameraError }}</p>
     <p *ngIf="errorMessage" class="message message-error" role="alert">{{ errorMessage }}</p>

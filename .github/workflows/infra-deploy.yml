@@ -23,6 +23,8 @@ env:
   API_CONTAINER_APP: vpd-api-ca-dev
   WEBSITE_CONTAINER_APP: vpd-web-ca-dev
   BACKOFFICE_CONTAINER_APP: vpd-bo-ca-dev
+  SCAN_CONTAINER_APP: vpd-scan-ca-dev
+  WORKER_CONTAINER_APP: vpd-worker-ca-dev
 
 jobs:
   deploy:
@@ -54,6 +56,8 @@ jobs:
             echo "API_IMAGE=$(read_image "$API_CONTAINER_APP")"
             echo "WEBSITE_IMAGE=$(read_image "$WEBSITE_CONTAINER_APP")"
             echo "BACKOFFICE_IMAGE=$(read_image "$BACKOFFICE_CONTAINER_APP")"
+            echo "SCAN_IMAGE=$(read_image "$SCAN_CONTAINER_APP")"
+            echo "WORKER_IMAGE=$(read_image "$WORKER_CONTAINER_APP")"
           } >> "$GITHUB_ENV"
 
       - name: Preview the changes
@@ -103,6 +107,8 @@ jobs:
             echo "| API | $(jq -r .apiUrl.value outputs.json) |"
             echo "| Website | $(jq -r .websiteUrl.value outputs.json) |"
             echo "| BackOffice | $(jq -r .backOfficeUrl.value outputs.json) |"
+            echo "| Scan | $(jq -r .scanUrl.value outputs.json) |"
+            echo "| Worker | \`$(jq -r .workerContainerAppName.value outputs.json)\` (Functions timer) |"
             echo "| SQL server | \`$(jq -r .sqlServerFqdn.value outputs.json)\` |"
             echo "| Storage account | \`$(jq -r .storageAccountName.value outputs.json)\` |"
             echo "| Key Vault | \`$(jq -r .keyVaultName.value outputs.json)\` |"
