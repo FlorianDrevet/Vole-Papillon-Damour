@@ -74,6 +74,14 @@ public static partial class Errors
             code: "Book.NotFound",
             description: $"Book not found: {isbn13}.");
 
+        public static Error BookHasSales(string isbn13) => Error.Conflict(
+            code: "Book.BookHasSales",
+            description: $"Book {isbn13} has sales and cannot be deleted.");
+
+        public static Error BookHasHistory(string isbn13) => Error.Conflict(
+            code: "Book.BookHasHistory",
+            description: $"Book {isbn13} has ledger history and cannot be deleted.");
+
         public static Error InvalidCorrectionQuantity() => Error.Validation(
             code: "Book.InvalidCorrectionQuantity",
             description: "The corrected available quantity cannot be negative.");
@@ -81,6 +89,14 @@ public static partial class Errors
         public static Error InvalidCorrectionNote() => Error.Validation(
             code: "Book.InvalidCorrectionNote",
             description: "A correction note is required and cannot exceed 500 characters.");
+
+        public static Error InvalidMetadataFields() => Error.Validation(
+            code: "Book.InvalidMetadataFields",
+            description: "At least one supported metadata field must be selected.");
+
+        public static Error InvalidMetadataValues() => Error.Validation(
+            code: "Book.InvalidMetadataValues",
+            description: "One or more metadata values are invalid for the selected fields.");
 
         public static Error InvalidAssociationSettings() => Error.Validation(
             code: "Book.InvalidAssociationSettings",

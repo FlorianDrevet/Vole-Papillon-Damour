@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Vole_Papillon_Damour.Domain.Common;
 using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -151,6 +153,107 @@ public sealed class Book : AggregateRoot<Isbn13>
         return changed;
     }
 
+    public bool ApplyManualMetadata(BookMetadataPatch patch, DateTime updatedAt)
+    {
+        ArgumentNullException.ThrowIfNull(patch);
+        var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
+        var fields = patch.Fields?.Distinct().ToArray()
+            ?? throw new ArgumentNullException(nameof(patch.Fields));
+
+        if (fields.Length == 0)
+        {
+            throw new ArgumentException(
+                "At least one metadata field must be selected.",
+                nameof(patch));
+        }
+
+        ValidatePatch(patch, fields);
+
+        var manuallyEditedFields = ReadManuallyEditedFields();
+        var changed = MetadataStatus != BookMetadataStatus.Manual ||
+                      MetadataSource != BookMetadataSource.Manual;
+
+        foreach (var field in fields)
+        {
+            if (!manuallyEditedFields.Contains(field))
+            {
+                manuallyEditedFields.Add(field);
+                changed = true;
+            }
+
+            changed |= ApplyField(patch, field);
+        }
+
+        MetadataStatus = BookMetadataStatus.Manual;
+        MetadataSource = BookMetadataSource.Manual;
+        ManuallyEditedFields = JsonSerializer.Serialize(
+            manuallyEditedFields,
+            MetadataJsonOptions);
+        UpdatedAt = utcUpdatedAt;
+        return changed;
+    }
+
+    public bool ApplyAutomaticMetadata(
+        BookMetadataPatch patch,
+        BookMetadataSource source,
+        DateTime fetchedAt,
+        string? rawPayload)
+    {
+        ArgumentNullException.ThrowIfNull(patch);
+        if (source is not (BookMetadataSource.Bnf or BookMetadataSource.OpenLibrary))
+        {
+            throw new ArgumentException(
+                "Automatic metadata must use a bibliographic source.",
+                nameof(source));
+        }
+
+        var utcFetchedAt = DomainTime.RequireUtc(fetchedAt, nameof(fetchedAt));
+        var fields = patch.Fields?.Distinct().ToArray()
+            ?? throw new ArgumentNullException(nameof(patch.Fields));
+        if (fields.Length == 0)
+        {
+            throw new ArgumentException(
+                "At least one metadata field must be selected.",
+                nameof(patch));
+        }
+
+        ValidatePatch(patch, fields);
+
+        var manuallyEditedFields = ReadManuallyEditedFields();
+        var changed = false;
+        foreach (var field in fields)
+        {
+            if (!manuallyEditedFields.Contains(field))
+            {
+                changed |= ApplyField(patch, field);
+            }
+        }
+
+        if (ResolveAttempts < int.MaxValue)
+        {
+            ResolveAttempts++;
+            changed = true;
+        }
+        changed |= LastAttemptAt != utcFetchedAt ||
+                   MetadataFetchedAt != utcFetchedAt ||
+                   RawPayload != rawPayload;
+        LastAttemptAt = utcFetchedAt;
+        MetadataFetchedAt = utcFetchedAt;
+        RawPayload = rawPayload;
+
+        var nextStatus = manuallyEditedFields.Count == 0
+            ? BookMetadataStatus.Resolved
+            : BookMetadataStatus.Manual;
+        var nextSource = manuallyEditedFields.Count == 0
+            ? source
+            : BookMetadataSource.Manual;
+        changed |= MetadataStatus != nextStatus || MetadataSource != nextSource;
+        MetadataStatus = nextStatus;
+        MetadataSource = nextSource;
+        UpdatedAt = utcFetchedAt;
+        return changed;
+    }
+
     public void RecordRejection(DateTime occurredAt)
     {
         var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
@@ -166,4 +269,120 @@ public sealed class Book : AggregateRoot<Isbn13>
             throw new ArgumentException("A valid ISBN-13 is required.", nameof(isbn13));
         }
     }
+
+    private static void ValidatePatch(
+        BookMetadataPatch patch,
+        IEnumerable<BookMetadataField> fields)
+    {
+        foreach (var field in fields)
+        {
+            switch (field)
+            {
+                case BookMetadataField.Title:
+                    ValidateLength(patch.Title, 500, nameof(patch.Title));
+                    break;
+                case BookMetadataField.Authors:
+                    ValidateLength(patch.Authors, 500, nameof(patch.Authors));
+                    break;
+                case BookMetadataField.Publisher:
+                    ValidateLength(patch.Publisher, 200, nameof(patch.Publisher));
+                    break;
+                case BookMetadataField.PublicationYear:
+                    if (patch.PublicationYear is < 1 or > 9999)
+                    {
+                        throw new ArgumentOutOfRangeException(
+                            nameof(patch.PublicationYear),
+                            "The publication year must be between 1 and 9999.");
+                    }
+
+                    break;
+                case BookMetadataField.PhysicalFormat:
+                    ValidateLength(patch.PhysicalFormat, 50, nameof(patch.PhysicalFormat));
+                    break;
+                case BookMetadataField.Language:
+                    ValidateLength(patch.Language, 10, nameof(patch.Language));
+                    break;
+                case BookMetadataField.Genre:
+                    ValidateLength(patch.Genre, 100, nameof(patch.Genre));
+                    break;
+                case BookMetadataField.CoverBlobRef:
+                    ValidateLength(patch.CoverBlobRef, 200, nameof(patch.CoverBlobRef));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(patch.Fields),
+                        field,
+                        "The metadata field is not supported.");
+            }
+        }
+    }
+
+    private static void ValidateLength(string? value, int maxLength, string parameterName)
+    {
+        if (value is not null && value.Length > maxLength)
+        {
+            throw new ArgumentException(
+                $"The metadata field cannot exceed {maxLength} characters.",
+                parameterName);
+        }
+    }
+
+    private bool ApplyField(BookMetadataPatch patch, BookMetadataField field)
+    {
+        switch (field)
+        {
+            case BookMetadataField.Title:
+                return SetValue(Title, patch.Title, value => Title = value);
+            case BookMetadataField.Authors:
+                return SetValue(Authors, patch.Authors, value => Authors = value);
+            case BookMetadataField.Publisher:
+                return SetValue(Publisher, patch.Publisher, value => Publisher = value);
+            case BookMetadataField.PublicationYear:
+                return SetValue(PublicationYear, patch.PublicationYear, value => PublicationYear = value);
+            case BookMetadataField.PhysicalFormat:
+                return SetValue(PhysicalFormat, patch.PhysicalFormat, value => PhysicalFormat = value);
+            case BookMetadataField.Language:
+                return SetValue(Language, patch.Language, value => Language = value);
+            case BookMetadataField.Genre:
+                return SetValue(Genre, patch.Genre, value => Genre = value);
+            case BookMetadataField.CoverBlobRef:
+                return SetValue(CoverBlobRef, patch.CoverBlobRef, value => CoverBlobRef = value);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(field), field, "The metadata field is not supported.");
+        }
+    }
+
+    private static bool SetValue<T>(T current, T value, Action<T> assign)
+    {
+        var changed = !EqualityComparer<T>.Default.Equals(current, value);
+        assign(value);
+        return changed;
+    }
+
+    private List<BookMetadataField> ReadManuallyEditedFields()
+    {
+        if (string.IsNullOrWhiteSpace(ManuallyEditedFields))
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<BookMetadataField>>(
+                       ManuallyEditedFields,
+                       MetadataJsonOptions)
+                   ?.Distinct()
+                   .ToList()
+                   ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    private static readonly JsonSerializerOptions MetadataJsonOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
 }
