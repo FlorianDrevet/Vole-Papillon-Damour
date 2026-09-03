@@ -126,6 +126,41 @@ describe('ScannerComponent', () => {
     expect(component.errorMessage).toContain('Aucune notice bibliographique');
   });
 
+  it('falls back to the ISBN cover when the metadata cover cannot be loaded', async () => {
+    const metadata = createMetadata();
+    metadata.coverUrl = 'https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782070363735&couverture=1';
+    metadataService.getMetadata.and.returnValue(of(metadata));
+
+    await component.lookup(metadata.isbn13);
+    fixture.detectChanges();
+    const image = fixture.nativeElement.querySelector('.cover-frame img') as HTMLImageElement;
+
+    image.dispatchEvent(new Event('error'));
+    await fixture.whenStable();
+
+    expect(image.getAttribute('src'))
+      .toBe('https://covers.openlibrary.org/b/isbn/9782070363735-L.jpg?default=false');
+  });
+
+  it('shows a placeholder when neither cover source can be loaded', async () => {
+    const metadata = createMetadata();
+    metadata.coverUrl = 'https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782070363735&couverture=1';
+    metadataService.getMetadata.and.returnValue(of(metadata));
+
+    await component.lookup(metadata.isbn13);
+    fixture.detectChanges();
+    const originalImage = fixture.nativeElement.querySelector('.cover-frame img') as HTMLImageElement;
+    originalImage.dispatchEvent(new Event('error'));
+    await fixture.whenStable();
+
+    const fallbackImage = fixture.nativeElement.querySelector('.cover-frame img') as HTMLImageElement;
+    fallbackImage.dispatchEvent(new Event('error'));
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('.cover-placeholder')?.textContent)
+      .toContain('Couverture indisponible');
+  });
+
   it('refreshes the rendered error when a camera photo cannot be decoded', async () => {
     cameraService.scanFile.and.returnValue(Promise.reject(new Error('not found')));
     const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
