@@ -399,7 +399,9 @@ glissante *(valeur de départ : 30 jours)*.
 
 ### `RG-31` — Adresse en échec
 Après plusieurs échecs de remise consécutifs, les alertes du membre sont suspendues et
-l'information lui est présentée à sa prochaine connexion.
+l'information lui est présentée à sa prochaine connexion *(valeur de départ : trois
+rebonds consécutifs)*. Une remise réussie remet le compteur consécutif à zéro ; elle ne
+réactive pas automatiquement une liste déjà suspendue.
 
 ### `RG-32` — Absence de réservation
 Une alerte n'engage à rien : le livre n'est ni mis de côté ni décompté. La mention

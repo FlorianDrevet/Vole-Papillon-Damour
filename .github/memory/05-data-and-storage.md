@@ -15,6 +15,7 @@
 - The Books ledger is append-only by domain convention; cancellation, correction, and session reassignment are represented by signed inverse/replay movements rather than an update/delete of the original movement.
 - `BookAlertOutbox` runs inside the close-session transaction through `IBookAlertOutbox`: it matches active edition/work watchlist items, filters recent `UserAlertHistory`, groups one `AlertEmail` payload per member/session, and sets `DueAt` from `AssociationSettings.AlertDelayMinutes`. It deliberately creates no message for an undated next-fair session. The worker sender and final anti-repeat history write remain pending.
 - `IBookAlertOutbox` also exposes transactional administration operations: cancellation changes only pending alert rows to `Cancelled`, while force-send clears a claim and sets `DueAt` to the supplied UTC instant. Session reassignment cancels and recalculates pending alert rows before commit; sent rows are left untouched.
+- `Watchlist` stores the consecutive `BounceCount` and `AlertStatus` used by `RG-31`; the domain suspends alerts at the starting threshold of three bounces, and a successful delivery resets the counter. The `RecordEmailBounce` handler updates the existing row transactionally; provider event identity/idempotence and the ACS/Event Grid adapter remain outside this slice.
 - Application tests use an in-memory SQLite connection with real EF transactions to verify scan/session/cash/correction/reassignment atomicity and idempotent gesture behavior; this provider is test-only.
 
 ## External Services

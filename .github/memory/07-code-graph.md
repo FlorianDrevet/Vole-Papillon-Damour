@@ -11,7 +11,7 @@
 - `graphify-out/GRAPH_REPORT.md` - god nodes, communities, and notable connections
 - `graphify-out/wiki/index.md` - optional crawlable corpus wiki
 - `.graphifyignore` - repository exclusions for Graphify ingestion
-- Latest code refresh (2026-09-03): 2,403 nodes, 3,661 edges, 365 communities.
+- Latest code refresh (2026-09-03): 2,430 nodes, 3,807 edges, 371 communities.
 
 ## Usage Rules
 

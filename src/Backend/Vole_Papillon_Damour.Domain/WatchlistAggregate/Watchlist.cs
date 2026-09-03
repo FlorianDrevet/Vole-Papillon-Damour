@@ -7,6 +7,8 @@ namespace Vole_Papillon_Damour.Domain.WatchlistAggregate;
 
 public sealed class Watchlist : AggregateRoot<UserId>
 {
+    public const int BounceSuspensionThreshold = 3;
+
     public WatchlistAlertStatus AlertStatus { get; private set; } = WatchlistAlertStatus.Active;
     public int BounceCount { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -45,5 +47,19 @@ public sealed class Watchlist : AggregateRoot<UserId>
     public void BlockAlerts()
     {
         AlertStatus = WatchlistAlertStatus.Blocked;
+    }
+
+    public void RecordEmailBounce()
+    {
+        BounceCount++;
+        if (BounceCount >= BounceSuspensionThreshold && AlertStatus != WatchlistAlertStatus.Blocked)
+        {
+            AlertStatus = WatchlistAlertStatus.Suspended;
+        }
+    }
+
+    public void RecordSuccessfulEmailDelivery()
+    {
+        BounceCount = 0;
     }
 }

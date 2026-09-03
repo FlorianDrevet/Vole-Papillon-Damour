@@ -36,6 +36,58 @@ public sealed class WatchlistTests
     }
 
     [Fact]
+    public void RecordEmailBounce_SuspendsAlertsAfterThreeConsecutiveFailures()
+    {
+        var watchlist = Watchlist.Create(UserId.CreateUnique(), CreatedAt);
+
+        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce();
+        watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Active);
+        watchlist.BounceCount.Should().Be(2);
+
+        watchlist.RecordEmailBounce();
+
+        watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Suspended);
+        watchlist.AlertsEnabled.Should().BeFalse();
+        watchlist.BounceCount.Should().Be(3);
+    }
+
+    [Fact]
+    public void RecordSuccessfulEmailDelivery_ResetsConsecutiveBouncesWithoutReactivatingSuspendedAlerts()
+    {
+        var watchlist = Watchlist.Create(UserId.CreateUnique(), CreatedAt);
+        watchlist.RecordEmailBounce();
+        watchlist.RecordSuccessfulEmailDelivery();
+
+        watchlist.BounceCount.Should().Be(0);
+        watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Active);
+
+        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce();
+        watchlist.RecordSuccessfulEmailDelivery();
+
+        watchlist.BounceCount.Should().Be(0);
+        watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Suspended);
+        watchlist.AlertsEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RecordEmailBounce_DoesNotOverrideAnAdministrativeBlock()
+    {
+        var watchlist = Watchlist.Create(UserId.CreateUnique(), CreatedAt);
+        watchlist.BlockAlerts();
+
+        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce();
+
+        watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Blocked);
+        watchlist.BounceCount.Should().Be(3);
+        watchlist.AlertsEnabled.Should().BeFalse();
+    }
+
+    [Fact]
     public void CreateEditionItem_StoresOnlyTheEditionTarget()
     {
         var userId = UserId.CreateUnique();

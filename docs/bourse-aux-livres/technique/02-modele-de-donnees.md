@@ -238,7 +238,7 @@ La facette « membre » d'une personne : sa liste de recherche, et l'état de se
 Watchlists
   UserId        uniqueidentifier PK, FK Users
   AlertStatus   tinyint          NOT NULL  -- Actif|Suspendu|Bloque
-  BounceCount   int              NOT NULL DEFAULT 0   -- RG-31
+  BounceCount   int              NOT NULL DEFAULT 0   -- RG-31, compteur consécutif (seuil de départ : 3)
   CreatedAt     datetime2        NOT NULL
 
 WatchlistItems
