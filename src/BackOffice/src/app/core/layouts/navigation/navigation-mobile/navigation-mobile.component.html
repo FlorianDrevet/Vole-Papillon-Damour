@@ -1,4 +1,4 @@
-<nav class="flex flex-row w-full items-center justify-between border-b border-line bg-paper px-shell py-4">
+<nav class="flex w-full flex-row items-center justify-between bg-paper px-shell py-3.5">
   <a class="flex items-center gap-2.5" routerLink="/actualites" aria-label="Retour à l'accueil">
     <img
       alt="Vole Papillon d'Amour"
@@ -12,40 +12,76 @@
   <button
     (click)="OnMobileNavigationClick()"
     type="button"
-    [attr.aria-label]="isMobileNavigationOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
-    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line text-ink-2">
-    <app-icon [name]="isMobileNavigationOpen() ? 'close' : 'menu'" [size]="18"></app-icon>
+    aria-label="Ouvrir le menu"
+    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-white text-ink-2">
+    <app-icon name="menu" [size]="18"></app-icon>
   </button>
 </nav>
 
 @if (isMobileNavigationOpen()) {
-  <div class="mobile-navigation-dialog absolute flex overflow-auto bg-paper">
-    <div class="sub-container-mobile-nav flex h-full w-full overflow-auto">
-      <nav class="flex w-full flex-col p-shell">
-        @if (subNavigation() !== null) {
-          <button
-            (click)="onBackNavigationClick()"
-            type="button"
-            class="mb-6 flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue">
-            <app-icon name="back" [size]="13"></app-icon>
-            Retour
-          </button>
-          <h2 class="mb-4 font-serif text-2xl text-ink-2">{{ titleSubNav() }}</h2>
-        }
-        <ul class="flex flex-col divide-y divide-line-2">
-          @for (navigation of (subNavigation() === null ? NavigationItems() : subNavigation()); track navigation.url) {
-            <li>
-              <button
-                (click)="OnSubNavigationClick(navigation)"
-                type="button"
-                class="flex w-full items-center justify-between py-4 text-left">
-                <span class="font-serif text-xl text-ink-2">{{ navigation.title }}</span>
-                <app-icon name="chevron-right" [size]="16" class="text-slate-3"></app-icon>
-              </button>
-            </li>
-          }
-        </ul>
-      </nav>
+  <!-- Panneau plein écran : l'ancien panneau était positionné à 65 px du haut avec
+       une hauteur calculée à la main, qui se décalait dès que la barre changeait
+       de hauteur. Ici, plus aucune mesure à tenir à jour. -->
+  <div class="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-paper">
+    <span class="block h-[3px] w-full shrink-0 bg-vpd-brand"></span>
+
+    <div class="flex shrink-0 items-center justify-between px-shell py-3.5">
+      <span class="font-mono text-[10px] uppercase tracking-[.2em] text-slate-3">Espace bénévoles</span>
+      <button
+        (click)="OnMobileNavigationClick()"
+        type="button"
+        aria-label="Fermer le menu"
+        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-white text-ink-2">
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
     </div>
+
+    <nav class="flex flex-1 flex-col px-shell pb-8">
+      @if (subNavigation() !== null) {
+        <button
+          (click)="onBackNavigationClick()"
+          type="button"
+          class="mb-6 flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue">
+          <app-icon name="back" [size]="13"></app-icon>
+          Retour
+        </button>
+        <h2 class="mb-4 font-serif text-2xl text-ink-2">{{ titleSubNav() }}</h2>
+      }
+
+      <ul class="flex flex-col divide-y divide-line-2">
+        @for (navigation of (subNavigation() === null ? NavigationItems() : subNavigation()); track navigation.url) {
+          <li>
+            <button
+              (click)="OnSubNavigationClick(navigation)"
+              type="button"
+              class="flex w-full items-center justify-between py-4 text-left">
+              <span class="font-serif text-xl text-ink-2">{{ navigation.title }}</span>
+              <app-icon name="chevron-right" [size]="16" class="text-slate-3"></app-icon>
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (isAuthenticated()) {
+        <div class="mt-auto flex flex-col gap-4 border-t border-line pt-6">
+          <span class="flex items-center gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-2 font-mono text-[13px] font-medium text-blue">
+              {{ initials() }}
+            </span>
+            <span class="flex min-w-0 flex-col">
+              <span class="truncate text-[15px] font-medium text-ink-2">{{ displayName() }}</span>
+              <span class="truncate text-[13px] text-slate-3">{{ email() }}</span>
+            </span>
+          </span>
+
+          <button
+            type="button"
+            (click)="logout()"
+            class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-danger/40 px-5 py-3 text-sm font-semibold text-danger">
+            Se déconnecter
+          </button>
+        </div>
+      }
+    </nav>
   </div>
 }

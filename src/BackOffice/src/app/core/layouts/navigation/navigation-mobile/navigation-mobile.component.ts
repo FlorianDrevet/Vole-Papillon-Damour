@@ -1,16 +1,25 @@
-import {Component, effect, input, Renderer2, signal} from '@angular/core';
-import {NavigationItemInterface} from "../../../../shared/interfaces/navigationItem.interface";
+import {Component, effect, inject, input, Renderer2, signal} from '@angular/core';
 import {Router} from "@angular/router";
+
+import {NavigationItemInterface} from "../../../../shared/interfaces/navigationItem.interface";
+import {AuthSessionService} from "../../../../shared/auth/auth-session.service";
 
 @Component({
     selector: 'app-navigation-mobile',
     templateUrl: './navigation-mobile.component.html',
-    styleUrl: './navigation-mobile.component.scss',
     standalone: false
 })
 export class NavigationMobileComponent {
-  Router!: Router
   NavigationItems = input.required<NavigationItemInterface[]>();
+
+  private readonly router = inject(Router);
+  private readonly renderer = inject(Renderer2);
+  private readonly authSession = inject(AuthSessionService);
+
+  protected readonly isAuthenticated = this.authSession.isAuthenticated;
+  protected readonly displayName = this.authSession.displayName;
+  protected readonly email = this.authSession.email;
+  protected readonly initials = this.authSession.initials;
 
   isMobileNavigationOpen = signal(false);
   subNavigation = signal<NavigationItemInterface[] | null>(null);
@@ -19,7 +28,7 @@ export class NavigationMobileComponent {
   subNavBefore = signal<(NavigationItemInterface[] | null)[]>([])
   titleBefore = signal<string[]>([])
 
-  constructor(private renderer: Renderer2, private router: Router) {
+  constructor() {
     effect(() => {
       if (this.isMobileNavigationOpen()) {
         this.renderer.addClass(document.body, 'no-scroll');
@@ -28,8 +37,6 @@ export class NavigationMobileComponent {
         this.subNavigation.set(null);
       }
     }, {allowSignalWrites: true});
-
-    this.Router = router;
   }
 
   OnMobileNavigationClick() {
@@ -56,6 +63,11 @@ export class NavigationMobileComponent {
       this.titleSubNav.set(item.title)
       this.subNavigation.set(item.subNav);
     }
+  }
+
+  protected logout(): void {
+    this.isMobileNavigationOpen.set(false);
+    this.authSession.logout().subscribe({error: () => undefined});
   }
 
   private _resetSubNavigation() {

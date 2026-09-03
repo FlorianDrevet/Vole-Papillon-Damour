@@ -7,7 +7,6 @@ import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 @Component({
     selector: 'app-event-detail',
     templateUrl: './event-detail.component.html',
-    styleUrl: './event-detail.component.scss',
     standalone: false
 })
 export class EventDetailComponent implements OnInit {

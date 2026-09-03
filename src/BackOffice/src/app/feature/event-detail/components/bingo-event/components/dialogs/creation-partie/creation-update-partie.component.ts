@@ -12,7 +12,6 @@ import {
 @Component({
     selector: 'app-creation-partie',
     templateUrl: './creation-update-partie.component.html',
-    styleUrl: './creation-update-partie.component.scss',
     standalone: false
 })
 export class CreationUpdatePartieComponent {

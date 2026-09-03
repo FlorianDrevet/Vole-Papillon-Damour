@@ -1,6 +1,26 @@
-<vpd-product-list
-  [products]="filteredProducts()"
-  [editable]="true"
-  [showPromotions]="false"
-  (productEditRequested)="onEditRequested($event)"
-  (productDeleteRequested)="onDeleteRequested($event)"></vpd-product-list>
+@if (isLoading()) {
+  <app-loading-placeholder variant="tiles" [count]="8"></app-loading-placeholder>
+} @else if (hasFailed()) {
+  <app-state-panel
+    icon="undo"
+    tone="danger"
+    title="Les produits n'ont pas pu être chargés"
+    description="Le serveur n'a pas répondu. Vérifiez votre connexion, puis réessayez.">
+    <app-pill-button (click)="load()" type="button" variant="danger" [small]="true">
+      Réessayer
+    </app-pill-button>
+  </app-state-panel>
+} @else if (filteredProducts().length === 0) {
+  <app-state-panel
+    icon="add"
+    title="Aucun produit dans cette catégorie"
+    description="Les produits ajoutés ici alimentent l'application de caisse utilisée le jour de l'évènement.">
+  </app-state-panel>
+} @else {
+  <vpd-product-list
+    [products]="filteredProducts()"
+    [editable]="true"
+    [showPromotions]="false"
+    (productEditRequested)="onEditRequested($event)"
+    (productDeleteRequested)="onDeleteRequested($event)"></vpd-product-list>
+}

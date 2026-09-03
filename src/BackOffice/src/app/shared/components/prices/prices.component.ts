@@ -27,6 +27,9 @@ export class PricesComponent implements OnInit {
   newProduct = input<ProductModel | null>(null);
 
   allProducts = signal<ProductModel[]>([]);
+  isLoading = signal(true);
+  hasFailed = signal(false);
+
   filteredProducts = computed(() => {
     return this.allProducts()
       .filter((product) => product.productSection === this.section())
@@ -56,9 +59,25 @@ export class PricesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.productFacade.getAllProducts().then((products) => {
-      this.allProducts.set(products);
-    });
+    this.load();
+  }
+
+  load(): void {
+    this.isLoading.set(true);
+    this.hasFailed.set(false);
+
+    this.productFacade
+      .getAllProducts()
+      .then((products) => {
+        this.allProducts.set(products);
+        this.isLoading.set(false);
+      })
+      .catch(() => {
+        // La grille restait vide et muette quand l'appel échouait : impossible de
+        // distinguer « aucun produit dans cette catégorie » d'une panne réseau.
+        this.hasFailed.set(true);
+        this.isLoading.set(false);
+      });
   }
 
   onEditRequested(product: ProductModel): void {

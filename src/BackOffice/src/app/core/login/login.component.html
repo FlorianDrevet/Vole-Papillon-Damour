@@ -1,23 +1,114 @@
 <div class="flex min-h-screen flex-col lg:flex-row">
-  <div class="relative flex items-center justify-center overflow-hidden bg-vpd-hero px-shell py-16 lg:w-1/2 lg:py-0">
-    <div class="absolute -right-10 top-10 h-[220px] w-[220px] rounded-full border border-cyan/30 opacity-40"></div>
-    <div class="absolute -left-16 bottom-10 h-[280px] w-[280px] rounded-full border border-cyan/20 opacity-30"></div>
-    <div class="relative flex max-w-[26ch] flex-col items-center gap-6 text-center">
-      <img class="h-16 w-16 object-contain" src="logos/papillon_without_back.png" alt="">
-      <span class="font-mono text-[11px] uppercase tracking-[.2em] text-cyan">Espace bénévoles</span>
-      <h1 class="font-serif text-[36px] font-medium leading-[1.05] text-white lg:text-[42px]">
-        Vole Papillon d'Amour <span class="italic text-mist-2">&amp;</span> Bulle de Poils
-      </h1>
-    </div>
-  </div>
+  <!-- Volet de marque : reprend le dégradé de héros du Website, avec le filet de
+       marque et les cercles flottants qui servent de signature visuelle. -->
+  <section
+    class="relative flex items-center overflow-hidden bg-vpd-hero px-shell py-14 lg:w-[46%] lg:py-0">
+    <div class="pointer-events-none absolute -right-20 top-6 h-[300px] w-[300px] rounded-full border border-cyan/25 motion-safe:animate-vpd-float"></div>
+    <div class="pointer-events-none absolute -left-24 bottom-4 h-[360px] w-[360px] rounded-full border border-cyan/15"></div>
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-vpd-brand"></div>
 
-  <div class="flex flex-1 items-center justify-center px-shell py-16">
-    <div class="flex w-full max-w-[380px] flex-col gap-3">
-      <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
-      <h2 class="font-serif text-[30px] font-medium text-ink-2">Connexion</h2>
-      <p class="mb-4 text-[15px] text-slate-2">Réservé aux bénévoles de l'association.</p>
-      <p class="text-sm text-slate-2">Connectez-vous avec votre compte Microsoft de l'association.</p>
-      <app-button-login (click)="onLoginClick()" class="mt-4">Se connecter avec Microsoft</app-button-login>
+    <div class="relative flex w-full max-w-[30ch] flex-col gap-7">
+      <img class="h-14 w-14 object-contain" src="logos/papillon_without_back.png" alt="">
+
+      <div class="flex flex-col gap-4">
+        <span class="font-mono text-[11px] uppercase tracking-[.2em] text-cyan">Espace bénévoles</span>
+        <h1 class="font-serif text-[38px] font-medium leading-[1.03] text-white lg:text-[46px]">
+          Vole Papillon d'Amour <span class="italic text-mist-2">&amp;</span> Bulle de Poils
+        </h1>
+        <p class="text-[15px] leading-relaxed text-mist-2">
+          Les actualités, les évènements et la caisse de l'association, au même endroit.
+        </p>
+      </div>
+
+      <a
+        [href]="websiteUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="mt-2 w-fit font-mono text-[11px] uppercase tracking-[.14em] text-cyan hover:text-white">
+        Voir le site internet →
+      </a>
     </div>
-  </div>
+  </section>
+
+  <!-- Volet d'action -->
+  <section class="flex flex-1 items-center justify-center bg-paper px-shell py-14 lg:py-0">
+    <div class="flex w-full max-w-[400px] flex-col gap-6">
+      <div class="flex flex-col gap-3.5">
+        <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
+        <h2 class="font-serif text-[32px] font-medium leading-tight text-ink-2">
+          @if (isAuthenticated()) { Vous êtes connecté } @else { Connexion }
+        </h2>
+      </div>
+
+      @if (wasSessionRejected() && !hasFailed()) {
+        <p class="rounded-sm border border-orange/30 bg-orange/5 px-4 py-3 text-sm leading-relaxed text-ink-2">
+          Votre session n'est plus acceptée par le serveur. Reconnectez-vous pour
+          reprendre là où vous en étiez.
+        </p>
+      }
+
+      @if (hasFailed()) {
+        <div class="flex flex-col gap-3 rounded-sm border border-danger/30 bg-danger-soft px-4 py-4">
+          <p class="text-sm font-semibold text-danger">La connexion n'a pas pu démarrer.</p>
+          <p class="text-sm leading-relaxed text-slate">
+            Une tentative précédente est peut-être restée en suspens. Réinitialiser
+            la connexion vide ce que Microsoft a enregistré dans ce navigateur, puis
+            recharge la page.
+          </p>
+          <button
+            type="button"
+            (click)="resetSession()"
+            class="w-fit font-mono text-[11px] uppercase tracking-[.14em] text-danger underline underline-offset-4">
+            Réinitialiser la connexion
+          </button>
+        </div>
+      }
+
+      @if (isAuthenticated()) {
+        <div class="flex items-center gap-3.5 rounded-sm border border-line bg-white px-4 py-3.5">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper-2 font-mono text-[13px] font-medium text-blue">
+            {{ initials() }}
+          </span>
+          <span class="flex min-w-0 flex-col">
+            <span class="truncate text-[15px] font-medium text-ink-2">{{ displayName() }}</span>
+            <span class="truncate text-[13px] text-slate-3">{{ email() }}</span>
+          </span>
+        </div>
+
+        <app-pill-button [routerLink]="homeRoute" class="block w-full [&>a]:w-full">
+          Entrer dans le back-office
+        </app-pill-button>
+
+        <button
+          type="button"
+          (click)="onLogoutClick()"
+          class="mx-auto w-fit font-mono text-[11px] uppercase tracking-[.14em] text-slate-2 underline underline-offset-4 hover:text-ink-2">
+          Se connecter avec un autre compte
+        </button>
+      } @else {
+        <p class="text-[15px] leading-relaxed text-slate-2">
+          L'accès est réservé aux bénévoles de l'association. Utilisez le compte
+          Microsoft qui vous a été fourni.
+        </p>
+
+        <button
+          type="button"
+          (click)="onLoginClick()"
+          class="group inline-flex w-full items-center justify-center gap-3 rounded-full border border-line bg-white px-7 py-[15px] text-[15px] font-semibold text-ink-2 shadow-[0_14px_30px_-22px_rgba(7,43,69,.8)] transition hover:border-mist hover:shadow-[0_18px_34px_-20px_rgba(7,43,69,.6)]">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" class="shrink-0">
+            <rect width="8" height="8" x="0" y="0" fill="#f25022"/>
+            <rect width="8" height="8" x="10" y="0" fill="#7fba00"/>
+            <rect width="8" height="8" x="0" y="10" fill="#00a4ef"/>
+            <rect width="8" height="8" x="10" y="10" fill="#ffb900"/>
+          </svg>
+          Se connecter avec Microsoft
+        </button>
+
+        <p class="text-[13px] leading-relaxed text-slate-3">
+          Vous n'avez pas de compte ? Demandez-le à un membre du bureau : les accès
+          sont créés depuis l'annuaire de l'association.
+        </p>
+      }
+    </div>
+  </section>
 </div>

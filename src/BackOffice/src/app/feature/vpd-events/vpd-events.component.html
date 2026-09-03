@@ -1,21 +1,40 @@
 <div class="flex w-full flex-col gap-10 px-shell pb-16">
   <app-page-header eyebrow="Vole Papillon d'Amour · Espace bénévoles" title="Tous les évènements">
-    <app-pill-button (click)="openDialogCreation()" (keydown.enter)="openDialogCreation()" type="button" [small]="true">
+    <app-pill-button (click)="openDialogCreation()" type="button" [small]="true">
       <app-icon name="add" [size]="15"></app-icon>
       Créer un évènement
     </app-pill-button>
   </app-page-header>
 
   @if (isLoading()) {
-    <mat-spinner class="ml-auto mr-auto mt-10"></mat-spinner>
+    <app-loading-placeholder variant="cards" [count]="4"></app-loading-placeholder>
+  } @else if (hasFailed()) {
+    <app-state-panel
+      icon="undo"
+      tone="danger"
+      title="Les évènements n'ont pas pu être chargés"
+      description="Le serveur n'a pas répondu. Vérifiez votre connexion, puis réessayez.">
+      <app-pill-button (click)="load()" type="button" variant="danger" [small]="true">
+        Réessayer
+      </app-pill-button>
+    </app-state-panel>
+  } @else if (isEmpty()) {
+    <app-state-panel
+      icon="calendar"
+      title="Aucun évènement programmé"
+      description="Lotos, bourses aux livres et autres rendez-vous créés ici apparaissent sur le site de l'association.">
+      <app-pill-button (click)="openDialogCreation()" type="button" [small]="true">
+        Créer le premier évènement
+      </app-pill-button>
+    </app-state-panel>
   } @else {
     <div class="flex flex-col gap-6">
       <app-group-heading title="Les lotos"></app-group-heading>
-      @if (allBingoEvents().length === 0) {
+      @if (bingoEvents().length === 0) {
         <p class="text-[15px] text-slate-2">Aucun loto pour le moment.</p>
       } @else {
         <div class="flex flex-row flex-wrap gap-6">
-          @for (event of allBingoEvents(); track event.id) {
+          @for (event of bingoEvents(); track event.id) {
             <app-event-card
               (eventDeleted)="onEventDeleted($event)"
               (eventUpdated)="onEventUpdated($event)"
@@ -27,11 +46,11 @@
 
     <div class="flex flex-col gap-6">
       <app-group-heading title="Les bourses aux livres"></app-group-heading>
-      @if (allBooksEvents().length === 0) {
+      @if (booksEvents().length === 0) {
         <p class="text-[15px] text-slate-2">Aucune bourse aux livres pour le moment.</p>
       } @else {
         <div class="flex flex-row flex-wrap gap-6">
-          @for (event of allBooksEvents(); track event.id) {
+          @for (event of booksEvents(); track event.id) {
             <app-event-card
               (eventDeleted)="onEventDeleted($event)"
               (eventUpdated)="onEventUpdated($event)"
@@ -43,11 +62,11 @@
 
     <div class="flex flex-col gap-6">
       <app-group-heading title="Les autres évènements"></app-group-heading>
-      @if (allOtherEvents().length === 0) {
+      @if (otherEvents().length === 0) {
         <p class="text-[15px] text-slate-2">Aucun autre évènement pour le moment.</p>
       } @else {
         <div class="flex flex-row flex-wrap gap-6">
-          @for (event of allOtherEvents(); track event.id) {
+          @for (event of otherEvents(); track event.id) {
             <app-event-card
               (eventDeleted)="onEventDeleted($event)"
               (eventUpdated)="onEventUpdated($event)"
