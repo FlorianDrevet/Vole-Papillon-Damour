@@ -52,7 +52,7 @@ describe('CameraScannerService', () => {
 
     expect(createEngine).toHaveBeenCalledOnceWith(container.id);
     expect(engine.start).toHaveBeenCalledOnceWith(
-      {facingMode: {ideal: 'environment'}},
+      {facingMode: 'environment'},
       jasmine.objectContaining({
         fps: 10,
         qrbox: {width: 280, height: 120},

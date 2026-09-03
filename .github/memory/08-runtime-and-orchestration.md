@@ -47,10 +47,10 @@ The API startup wires:
   current Aspire/Angular startup wiring and must be validated if the hosting package changes.
 - The backend itself still stays free of `Aspire.*` packages; orchestration concerns live in the AppHost only.
 - The API health endpoint is `/health`; local Azure Container Apps probe parameters target it on port `8080` for readiness, liveness, and startup. Website and BackOffice probes remain disabled until their plan specifies health endpoints.
-- The Scan image is built from the `src/` context with nginx on port `8080`; `Scan - deploy` injects the public API URL and Application Insights connection string at build time, then rolls `vpd-scan-ca-dev` onto the image. Its generated ACA HTTPS FQDN is the iPhone test URL.
-- The worker is deployed as a native Functions-on-Container-Apps resource (`Microsoft.App/containerApps`, `kind=functionapp`) with a dedicated managed identity, ACR pull, Key Vault secret references, Application Insights, and fixed `minReplicas: 1`/`maxReplicas: 1` until timer scaling is measured.
+- The Scan image is built from the `src/` context with nginx on port `8080`; `Scan - deploy` injects the public API URL and Application Insights connection string at build time, then rolls `vpd-scan-ca-dev` onto the image. Its deployed ACA HTTPS FQDN is `https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io` for the iPhone test.
+- The worker is deployed as a native Functions-on-Container-Apps resource (`Microsoft.App/containerApps`, `kind=functionapp`) with a dedicated managed identity, ACR pull, Key Vault secret references, Application Insights, and fixed `minReplicas: 1`/`maxReplicas: 1` until timer scaling is measured. It is intentionally private (no ingress); the timer was verified in Azure with a successful `AccountDeletionSweepFunction` invocation.
 - The SQL deployment parameter is now the fixed `S1` Standard tier (20 DTUs, 250 GB, no automatic pause); the Azure resource has not been changed from this workspace.
-- Deployment IaC for Azure Container Apps now lives under `infra/aca/` and targets only the API, BackOffice, and Website surfaces.
+- Deployment IaC for Azure Container Apps now lives under `infra/` and targets the API, BackOffice, Website, Scan, and Worker surfaces.
 - An Infra Flow Sculptor project named `Vole-Papillon-Damour` was created on 2026-05-18 with `dev` and `prod` environments in `FranceCentral`, a shared `rg-vpd-common`, and a separate `VpdApplications` infrastructure config.
 - The Infra Flow Sculptor run created ACR and Log Analytics in the project, but ACA environment and Container App auto-creation failed server-side with a compile exception, so the repository-local Bicep template completes that missing part.
 
