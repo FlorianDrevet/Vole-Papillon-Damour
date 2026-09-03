@@ -53,10 +53,11 @@
 - `Website` environment config includes `api_url`.
 - `Scan` development config derives its API host from the browser hostname on port `5257`
   for LAN testing; the production environment points to the configured API deployment.
-- Scan production bundles use `html5-qrcode`/ZXing instead of the optional native
-  `BarcodeDetector` path, which keeps camera decoding available in iOS Safari. The
-  scanner also accepts an image selected from the phone as a fallback. The public ACA
-  deployment is HTTPS, which satisfies the secure-context requirement for camera access.
+- Scan production bundles use `@zxing/browser` directly instead of the optional native
+  `BarcodeDetector` path. The camera scans the full video frame with `TRY_HARDER` and
+  supports EAN-13/EAN-8 ISBN barcodes plus QR codes; the scanner also accepts an image
+  selected from the phone as a fallback. The public ACA deployment is HTTPS, which
+  satisfies the secure-context requirement for camera access.
 - `MauiCashApp/appsettings.json` contains `VpdSettings.BaseUrl`; the MSAL client ID, authority,
   API scope, and Android redirect are application configuration constants in `MsalAuthService`.
 - Dockerized deployment config now lives in `src/BackOffice/Dockerfile`, `src/Website/Dockerfile`, and `infra/aca/`.

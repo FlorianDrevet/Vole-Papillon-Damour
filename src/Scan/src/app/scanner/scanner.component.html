@@ -4,7 +4,8 @@
     <h1>Scanner un livre</h1>
     <p class="intro">
       Cette sonde affiche une notice bibliographique sans enregistrer de tri. Scannez le
-      code-barres avec une scanette, utilisez la caméra ou saisissez l’ISBN.
+      code-barres ISBN (les barres noires, pas le numéro imprimé) avec une scanette,
+      utilisez la caméra ou saisissez l’ISBN.
     </p>
   </header>
 
@@ -47,6 +48,7 @@
           capture="environment"
           (change)="scanImage($event)">
       </label>
+      <span>Placez les barres noires dans le cadre : la détection est automatique.</span>
       <span>Une scanette USB peut aussi envoyer l’ISBN comme un clavier.</span>
     </div>
 
@@ -56,8 +58,6 @@
       class="camera-preview"
       [class.camera-preview-visible]="cameraActive"
       aria-label="Aperçu de la caméra pour le code-barres"></div>
-    <div #fileScannerContainer class="file-scanner-container" aria-hidden="true"></div>
-
     <p *ngIf="cameraError" class="message message-error" role="alert">{{ cameraError }}</p>
     <p *ngIf="errorMessage" class="message message-error" role="alert">{{ errorMessage }}</p>
     <p *ngIf="isLoading" class="message" role="status" aria-live="polite">Recherche de la notice…</p>

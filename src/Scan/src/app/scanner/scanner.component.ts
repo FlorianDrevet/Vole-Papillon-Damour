@@ -15,7 +15,6 @@ import {normalizeIsbn} from './isbn.util';
 })
 export class ScannerComponent implements OnDestroy {
   @ViewChild('cameraContainer', {static: true}) private readonly cameraContainer!: ElementRef<HTMLElement>;
-  @ViewChild('fileScannerContainer', {static: true}) private readonly fileScannerContainer!: ElementRef<HTMLElement>;
 
   isbnInput = '';
   metadata: BookMetadata | null = null;
@@ -111,10 +110,7 @@ export class ScannerComponent implements OnDestroy {
     this.cameraError = null;
 
     try {
-      const rawValue = await this.cameraScanner.scanFile(
-        this.fileScannerContainer.nativeElement,
-        imageFile,
-      );
+      const rawValue = await this.cameraScanner.scanFile(imageFile);
       await this.lookup(rawValue);
     } catch {
       this.cameraError = 'Aucun code-barres lisible n’a été trouvé dans cette photo.';

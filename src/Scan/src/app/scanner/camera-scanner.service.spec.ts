@@ -1,10 +1,14 @@
 import {TestBed} from '@angular/core/testing';
+import {BarcodeFormat, DecodeHintType, Result} from '@zxing/library';
 
 import {
   CAMERA_SCANNER_ENGINE_FACTORY,
+  CameraScannerReader,
+  CameraScannerReaderFactory,
   CameraScannerEngine,
   CameraScannerEngineFactory,
   CameraScannerService,
+  ZxingCameraScannerEngine,
 } from './camera-scanner.service';
 
 describe('CameraScannerService', () => {
@@ -18,9 +22,8 @@ describe('CameraScannerService', () => {
       'start',
       'stop',
       'scanFile',
-      'clear',
     ]);
-    engine.start.and.returnValue(Promise.resolve(null));
+    engine.start.and.returnValue(Promise.resolve());
     engine.stop.and.returnValue(Promise.resolve());
     engine.scanFile.and.returnValue(Promise.resolve('9782070363735'));
     createEngine = jasmine.createSpy('createEngine').and.returnValue(engine);
@@ -45,35 +48,26 @@ describe('CameraScannerService', () => {
     container.remove();
   });
 
-  it('starts the ZXing-backed engine with the rear camera constraints', async () => {
+  it('starts the camera engine with the scanner container', async () => {
     const onDetected = jasmine.createSpy('onDetected');
 
     const handle = await service.start(container, onDetected);
 
-    expect(createEngine).toHaveBeenCalledOnceWith(container.id);
-    expect(engine.start).toHaveBeenCalledOnceWith(
-      {facingMode: 'environment'},
-      jasmine.objectContaining({
-        fps: 10,
-        qrbox: {width: 280, height: 120},
-      }),
-      jasmine.any(Function),
-      jasmine.any(Function),
-    );
+    expect(createEngine as jasmine.Spy).toHaveBeenCalledOnceWith();
+    expect(engine.start as jasmine.Spy).toHaveBeenCalledOnceWith(container, jasmine.any(Function));
 
     await handle.stop();
 
     expect(engine.stop).toHaveBeenCalledOnceWith();
-    expect(engine.clear).toHaveBeenCalledOnceWith();
   });
 
   it('forwards a decoded camera value once', async () => {
     const onDetected = jasmine.createSpy('onDetected');
     const handle = await service.start(container, onDetected);
-    const successCallback = engine.start.calls.mostRecent().args[2];
+    const successCallback = engine.start.calls.mostRecent().args[1] as unknown as (rawValue: string) => void;
 
-    successCallback(' 9782070363735 ', undefined as never);
-    successCallback('9782070363735', undefined as never);
+    successCallback(' 9782070363735 ');
+    successCallback('9782070363735');
     await handle.stop();
 
     expect(onDetected).toHaveBeenCalledOnceWith('9782070363735');
@@ -82,11 +76,72 @@ describe('CameraScannerService', () => {
   it('decodes a photo selected on an iPhone', async () => {
     const photo = new File(['barcode'], 'book.jpg', {type: 'image/jpeg'});
 
-    const value = await service.scanFile(container, photo);
+    const value = await service.scanFile(photo);
 
-    expect(createEngine).toHaveBeenCalledOnceWith(container.id);
-    expect(engine.scanFile).toHaveBeenCalledOnceWith(photo, false);
-    expect(engine.clear).toHaveBeenCalledOnceWith();
+    expect(createEngine as jasmine.Spy).toHaveBeenCalledOnceWith();
+    expect(engine.scanFile).toHaveBeenCalledOnceWith(photo);
     expect(value).toBe('9782070363735');
+  });
+});
+
+describe('ZxingCameraScannerEngine', () => {
+  let reader: jasmine.SpyObj<CameraScannerReader>;
+  let createReader: jasmine.Spy<CameraScannerReaderFactory>;
+  let controls: {stop: jasmine.Spy};
+  let container: HTMLDivElement;
+
+  beforeEach(() => {
+    reader = jasmine.createSpyObj<CameraScannerReader>('CameraScannerReader', [
+      'decodeFromConstraints',
+      'decodeFromImageUrl',
+    ]);
+    controls = {stop: jasmine.createSpy('stop')};
+    reader.decodeFromConstraints.and.returnValue(Promise.resolve(controls));
+    reader.decodeFromImageUrl.and.returnValue(Promise.resolve(
+      jasmine.createSpyObj<Result>('Result', ['getText']),
+    ));
+    createReader = jasmine.createSpy('createReader').and.returnValue(reader);
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  afterEach(() => {
+    container.remove();
+  });
+
+  it('configures try-harder decoding for ISBN and QR formats', async () => {
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, jasmine.createSpy('onDetected'));
+
+    const hints = createReader.calls.mostRecent().args[0];
+    expect(hints.get(DecodeHintType.TRY_HARDER)).toBeTrue();
+    expect(hints.get(DecodeHintType.POSSIBLE_FORMATS)).toEqual([
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+    ]);
+    expect(reader.decodeFromConstraints).toHaveBeenCalledOnceWith(
+      {video: {facingMode: 'environment'}},
+      jasmine.any(HTMLVideoElement),
+      jasmine.any(Function),
+    );
+  });
+
+  it('forwards the first decoded value and stops the active camera', async () => {
+    const onDetected = jasmine.createSpy('onDetected');
+    const result = jasmine.createSpyObj<Result>('Result', ['getText']);
+    result.getText.and.returnValue('9782070363735');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, onDetected);
+    const decodeCallback = reader.decodeFromConstraints.calls.mostRecent().args[2];
+    decodeCallback(result, undefined, controls);
+    decodeCallback(result, undefined, controls);
+
+    expect(onDetected).toHaveBeenCalledOnceWith('9782070363735');
+    expect(controls.stop).toHaveBeenCalledOnceWith();
   });
 });
