@@ -1,4 +1,4 @@
-<section class="grid grid-cols-1 items-center gap-10 bg-paper px-shell py-14 lg:grid-cols-[1fr_460px] lg:gap-14 lg:py-[74px]">
+<section class="grid grid-cols-1 items-center gap-10 bg-paper px-shell py-14 lg:grid-cols-[minmax(0,1fr)_520px] lg:gap-14 lg:py-[74px]">
   <div class="flex flex-col gap-5">
     <span class="flex items-center gap-2.5 font-mono text-[11px] font-medium uppercase tracking-[.18em] text-blue">
       <span class="h-px w-[26px] shrink-0 bg-blue-2"></span>Association loi 1901 · depuis 2010
@@ -33,15 +33,15 @@
        derrière une image au rayon asymétrique inversé (arche à droite, contrairement
        au portrait de l'accueil). Le halo n'apparaît qu'à partir de lg, la maquette
        mobile posant la photo seule. -->
-  <div class="relative mx-auto w-full max-w-[460px]">
+  <div class="relative mx-auto w-full max-w-[520px]">
     <span
       class="absolute -right-[22px] -top-[22px] bottom-[22px] left-[22px] hidden rounded-[8px_240px_8px_240px] opacity-90 lg:block"
       style="background: linear-gradient(155deg, #7fd8f5 0%, #1497d6 34%, #f9a93c 74%, #f0801c 100%)"
       aria-hidden="true"></span>
     <img
-      ngSrc="images/Association/don-livre.jpg"
-      alt="Les rayonnages de la foire aux livres, triés par thème par les bénévoles"
-      width="460" height="430"
+      ngSrc="images/Association/asso.jpg"
+      alt="Bénévoles et familles réunis dans l'espace de tri des livres de l'association"
+      width="520" height="430"
       class="relative block h-[230px] w-full rounded-[4px_140px_4px_140px] object-cover shadow-[0_26px_50px_-30px_rgba(7,43,69,.5)] lg:h-[430px] lg:rounded-[6px_230px_6px_230px]">
   </div>
 </section>
@@ -80,8 +80,8 @@
       <span class="relative font-mono text-[11px] tracking-[.16em] text-white/80">03 · LE FINANCEMENT</span>
       <h3 class="relative font-serif text-2xl font-medium leading-tight lg:text-[28px]">Des livres, pas des subventions</h3>
       <p class="relative text-sm leading-relaxed text-white/90">
-        Six jours de foire aux livres par mois, un loto, un marché de Noël. Nos ressources viennent des
-        cartons que vous nous déposez.
+        Six jours de foire aux livres par mois et un loto. Nos ressources viennent des cartons de livres que vous
+        nous déposez.
       </p>
     </div>
   </div>
@@ -96,7 +96,7 @@
     </app-section-eyebrow>
     <p class="text-[15px] leading-relaxed text-slate-2">
       Nous essayons d'aider du mieux que nous pouvons, avec les moyens du bord et beaucoup de temps donné.
-      Chaque carton trié devient du matériel, un séjour, un coup de pouce pour une famille.
+      Chaque carton de livres trié devient du matériel, un séjour, un coup de pouce pour une famille.
     </p>
   </div>
   <div class="grid grid-cols-2 items-start gap-5 lg:grid-cols-4">
@@ -106,7 +106,7 @@
       [rotateDeg]="-1.2" [floatDurationS]="7.4"></app-stat-card>
     <app-stat-card
       value="100" unit="%" label="Bénévole"
-      description="Une quinzaine de personnes, du tri des cartons à la tenue du stand."
+      description="Une quinzaine de personnes, du tri des cartons de livres à la tenue du stand."
       tone="dark" class="lg:mt-3.5" [rotateDeg]="0.9" [floatDelayS]="0.6"></app-stat-card>
     <app-stat-card
       value="1–3" unit="€" label="Le livre"
@@ -117,42 +117,4 @@
       description="Depuis 2010, dans la Loire et bien au-delà."
       class="lg:mt-2.5" [rotateDeg]="1.1" [floatDelayS]="1.8" [floatDurationS]="8.4"></app-stat-card>
   </div>
-</section>
-
-<section class="flex flex-col gap-8 bg-white px-shell py-16 lg:py-[76px]">
-  <div class="flex flex-col gap-4 border-b border-line-2 pb-[18px] sm:flex-row sm:items-baseline sm:justify-between sm:gap-6">
-    <div class="flex flex-col gap-3.5">
-      <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
-      <h2 class="font-serif text-[28px] font-medium tracking-[-.01em] text-ink-2 lg:text-[38px]">Le bureau</h2>
-    </div>
-    <span class="shrink-0 font-mono text-xs uppercase tracking-[.08em] text-slate-3">Élu en assemblée générale · mars 2025</span>
-  </div>
-  <div class="grid grid-cols-2 gap-6 lg:grid-cols-4">
-    @for (member of board; track member.role) {
-      <div class="flex flex-col gap-3">
-        <app-photo-placeholder label="PORTRAIT" class="h-[200px] rounded-sm"></app-photo-placeholder>
-        <span class="font-serif text-[22px] font-medium text-ink-2">{{ member.name }}</span>
-        <span class="font-mono text-[10.5px] uppercase tracking-[.14em] text-blue">{{ member.role }}</span>
-      </div>
-    }
-  </div>
-</section>
-
-<section class="grid grid-cols-1 items-start gap-8 bg-paper px-shell py-16 lg:grid-cols-[1fr_460px] lg:gap-14 lg:pb-[76px]">
-  <div class="flex flex-col gap-5">
-    <span class="font-mono text-[11px] font-medium uppercase tracking-[.18em] text-slate-3">Les documents</span>
-    <h2 class="max-w-[22ch] font-serif text-[28px] font-medium leading-[1.06] text-ink-2 lg:text-[34px]">
-      Tout est public, tout est téléchargeable.
-    </h2>
-    <app-pill-button routerLink="/contact" class="mt-1 self-start">Nous écrire</app-pill-button>
-  </div>
-
-  <ul class="flex flex-col divide-y divide-line border-y border-line">
-    @for (doc of documents; track doc.label) {
-      <li class="flex items-center justify-between gap-5 py-[18px]">
-        <span class="text-[15px] font-semibold text-ink-2">{{ doc.label }}</span>
-        <span class="shrink-0 font-mono text-[11px] uppercase tracking-[.12em] text-slate-3">{{ doc.meta }}</span>
-      </li>
-    }
-  </ul>
 </section>
