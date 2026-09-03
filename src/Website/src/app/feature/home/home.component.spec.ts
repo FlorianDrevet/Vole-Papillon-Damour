@@ -31,4 +31,15 @@ describe('HomeComponent', () => {
 
     expect(component).toBeTruthy();
   });
+
+  it('should invite people to give some of their time without mentioning a market', () => {
+    fixture.detectChanges();
+
+    const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+
+    expect(pageText).toContain('un peu de votre temps libre');
+    expect(pageText).toContain('DONNER UN PEU DE VOTRE TEMPS');
+    expect(pageText).not.toContain('DEUX HEURES DE VOTRE TEMPS');
+    expect(pageText).not.toContain('marché de Noël');
+  });
 });
