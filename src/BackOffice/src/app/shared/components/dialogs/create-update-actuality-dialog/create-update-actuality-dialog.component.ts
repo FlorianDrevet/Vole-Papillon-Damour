@@ -1,4 +1,4 @@
-import {Component, inject, signal, WritableSignal} from '@angular/core';
+import {Component, inject, signal} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from "@angular/forms";
 import {ErrorsEnum} from "../../../enums/errors.enum";
 import {MatSnackBar} from "@angular/material/snack-bar";
@@ -19,6 +19,7 @@ export class CreateUpdateActualityDialogComponent {
   error = signal<ErrorsEnum | null>(null)
   modification = signal(false);
   isLoading = signal(false);
+  hasValidationErrors = signal(false);
   principalImage = signal<FileUploadInterface>({fileName: '', fileContent: ''});
   optionalImages = signal<FileUploadInterface[]>([]);
   updateActuality = signal<ActualityModel | null>(null);
@@ -62,22 +63,50 @@ export class CreateUpdateActualityDialogComponent {
     }
   }
 
+  /**
+   * Les champs fichier ne sont pas reliés au formulaire (voir le gabarit) : c'est
+   * ici qu'on répercute la sélection sur l'aperçu et sur le contrôle
+   * `principalImage`, qui ne sert plus qu'à porter la validation.
+   */
+  onPrincipalImageSelected(input: HTMLInputElement): void {
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    ImageUtils.onFileSelected(input, this.principalImage);
+
+    const control = this.newActualityForm.get('principalImage');
+    control?.setValue(file.name);
+    control?.markAsDirty();
+  }
+
+  onOptionalImagesSelected(input: HTMLInputElement): void {
+    if (!input.files?.length) {
+      return;
+    }
+
+    ImageUtils.onFilesSelected(input, this.optionalImages);
+
+    // Le champ est vidé pour qu'une deuxième sélection du même fichier déclenche
+    // bien un nouvel évènement `change`.
+    input.value = '';
+  }
+
   onNoClick(): void {
     this._dialogRef.close(null);
   }
 
   onYesClick(): void {
     if (this.newActualityForm.invalid) {
+      // Le bouton ne faisait rien et les erreurs de saisie partaient dans la
+      // console : de l'extérieur, la modale paraissait bloquée.
       this.newActualityForm.markAllAsTouched();
-
-      Object.keys(this.newActualityForm.controls).forEach(key => {
-        const controlErrors = this.newActualityForm.get(key)!.errors;
-        if (controlErrors) {
-          console.log('Control Errors for:', key, controlErrors);
-        }
-      });
+      this.hasValidationErrors.set(true);
       return;
     }
+
+    this.hasValidationErrors.set(false);
     this.isLoading.set(true);
     if (this.updateActuality() === null) {
       this.actualityFacade.postNewActuality$(this.createFormData()).then((result) => {
@@ -116,21 +145,6 @@ export class CreateUpdateActualityDialogComponent {
     }
   }
 
-  onFileSelected(id: string,  upload: WritableSignal<any>) {
-    const inputNode: any = document.querySelector(id);
-
-    if (typeof (FileReader) !== 'undefined') {
-      const reader = new FileReader();
-
-      reader.onload = (e: any) => {
-        this.principalImage.set({fileName: inputNode.files[0].name, fileContent: e.target!.result});
-      };
-
-      reader.readAsDataURL(inputNode.files[0]);
-    }
-  }
-
-
   deleteOptionalImage(index: number) {
     this.optionalImages.update(x => x.filter((_, i) => i !== index));
   }
@@ -168,6 +182,4 @@ export class CreateUpdateActualityDialogComponent {
     return formData;
   }
 
-  protected readonly ImageUtils = ImageUtils;
-  protected readonly document = document;
 }

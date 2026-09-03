@@ -17,5 +17,6 @@
     <Project Path="Vole_Papillon_Damour.Domain.tests/Vole_Papillon_Damour.Domain.tests.csproj" />
   </Folder>
   <Project Path="Vole_Papillon_Damour.Application.tests/Vole_Papillon_Damour.Application.tests.csproj" />
+  <Project Path="Vole_Papillon_Damour.Api.tests/Vole_Papillon_Damour.Api.tests.csproj" />
   <Project Path="Vole_Papillon_Damour.Infrastructure.tests/Vole_Papillon_Damour.Infrastructure.tests.csproj" />
 </Solution>

@@ -121,7 +121,8 @@ public static class ProductController
                             },
                             error => error.Result());
                     })
-                .WithName("Delete Product");
+                .WithName("Delete Product")
+                .RequireAuthorization("IsAdmin");
             #endregion
 
             

@@ -2,12 +2,15 @@
   <!-- Volet de marque : reprend le dégradé de héros du Website, avec le filet de
        marque et les cercles flottants qui servent de signature visuelle. -->
   <section
-    class="relative flex items-center overflow-hidden bg-vpd-hero px-shell py-14 lg:w-[46%] lg:py-0">
+    class="relative flex items-center justify-center overflow-hidden bg-vpd-hero px-shell py-14 lg:w-[46%] lg:py-0">
     <div class="pointer-events-none absolute -right-20 top-6 h-[300px] w-[300px] rounded-full border border-cyan/25 motion-safe:animate-vpd-float"></div>
     <div class="pointer-events-none absolute -left-24 bottom-4 h-[360px] w-[360px] rounded-full border border-cyan/15"></div>
     <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-vpd-brand"></div>
 
-    <div class="relative flex w-full max-w-[30ch] flex-col gap-7">
+    <!-- La colonne occupe la largeur du volet, comme celle de droite : bornée à
+         30ch, le titre se cassait en trois lignes serrées contre le bord gauche
+         alors que la moitié du volet restait vide. -->
+    <div class="relative flex w-full max-w-[34rem] flex-col gap-7">
       <img class="h-14 w-14 object-contain" src="logos/papillon_without_back.png" alt="">
 
       <div class="flex flex-col gap-4">
