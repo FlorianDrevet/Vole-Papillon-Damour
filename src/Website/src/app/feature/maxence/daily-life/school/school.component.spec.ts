@@ -1,6 +1,8 @@
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { DailyLifeChapterHeaderComponent } from '../daily-life-chapter-header/daily-life-chapter-header.component';
+
 import { SchoolComponent } from './school.component';
 
 describe('SchoolComponent', () => {
@@ -8,7 +10,7 @@ describe('SchoolComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [SchoolComponent],
+      declarations: [SchoolComponent, DailyLifeChapterHeaderComponent],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
@@ -28,5 +30,9 @@ describe('SchoolComponent', () => {
 
     const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
     expect(pageText).toContain('Une nouvelle aventure commence.');
+  });
+
+  it('should use the shared chapter header', () => {
+    expect(fixture.nativeElement.querySelector('app-daily-life-chapter-header')).not.toBeNull();
   });
 });

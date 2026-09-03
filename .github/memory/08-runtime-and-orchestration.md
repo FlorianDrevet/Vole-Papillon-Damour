@@ -36,7 +36,7 @@ The API startup wires:
 
 - The Website consumes the backend SSE stream for event table updates.
 - The MAUI client loads its backend base URL from embedded configuration and does not share Angular environment files.
-- `MauiCashApp` targets only `net9.0-android`; its current local distribution remains the direct app build, without a durable signing keystore.
+- `MauiCashApp` targets only `net10.0-android`; its current local distribution remains the direct app build, without a durable signing keystore.
 - The repository now includes a verified Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/`.
 - The AppHost orchestrates the API on port `5257`, Scan on `4202`, BackOffice on `4200`, Website on `4201`, plus local SQL Server and Azurite.
 - The AppHost passes the Aspire-generated Blob Storage connection to the API and worker. The Functions worker uses the host-storage connection supplied by `AddAzureFunctionsProject`; it must not be overridden with `UseDevelopmentStorage=true`, because Aspire publishes Azurite on dynamic host ports.
@@ -64,7 +64,7 @@ The API startup wires:
   port `4202` when started through AppHost.
 - ACA Bicep compile: `az bicep build --file .\infra\aca\main.bicep`
 - ACA image build/push helper: `.\infra\aca\build-and-push.ps1 -EnvironmentName <dev|prod> -RegistryName <acr> -ApiUrl <url> -WebsiteUrl <url>`
-- MAUI build: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net9.0-android`
+- MAUI build: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`
 
 ## Runtime Risks
 

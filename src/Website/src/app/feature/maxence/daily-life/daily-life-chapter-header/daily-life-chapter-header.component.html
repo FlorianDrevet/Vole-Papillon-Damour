@@ -1,0 +1,20 @@
+<section class="relative overflow-hidden bg-ink px-shell py-10 text-mist-2 lg:py-[58px]">
+  <div class="relative mx-auto flex max-w-[1180px] flex-col gap-7">
+    <a
+      routerLink="/maxence/vie-quotidienne"
+      class="inline-flex self-start items-center gap-2 rounded-full border border-cyan/[.36] px-4 py-2 font-mono text-[10px] uppercase tracking-[.14em] text-cyan transition hover:border-cyan hover:bg-cyan/[.1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan">
+      <span aria-hidden="true" class="text-sm leading-none">←</span>
+      <span>Retour à Son quotidien, ses combats</span>
+    </a>
+
+    <div class="flex max-w-[820px] flex-col gap-3">
+      <span class="font-mono text-[11px] uppercase tracking-[.18em] text-orange-2">{{ chapter() }}</span>
+      <h1 class="max-w-[24ch] font-serif text-[36px] font-medium leading-[1.02] tracking-[-.015em] text-white lg:text-[52px]">
+        {{ title() }}
+      </h1>
+      @if (intro()) {
+        <p class="max-w-[66ch] text-[16px] leading-relaxed text-mist">{{ intro() }}</p>
+      }
+    </div>
+  </div>
+</section>

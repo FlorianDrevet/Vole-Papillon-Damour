@@ -5,7 +5,9 @@
 - `src/Backend/` - main backend solution and class libraries
 - `src/BackOffice/` - Angular 21 admin UI
 - `src/Website/` - Angular 21 public website
-- `src/MauiCashApp/` - .NET MAUI 9 client app
+- `src/Scan/` - Angular 21 consultation-only ISBN metadata probe
+- `src/Backend/Vole_Papillon_Damour.Worker/` - .NET 10 isolated account-deletion worker
+- `src/MauiCashApp/` - .NET MAUI 10 Android client app
 
 ## Backend Structure
 

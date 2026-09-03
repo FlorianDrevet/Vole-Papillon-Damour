@@ -118,39 +118,32 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
-- As of 2026-09-03, `npm ci` followed by `npm test -- --watch=false --browsers=ChromeHeadless`
-  passes with 2 BackOffice bootstrap contract tests and 5 Angular tests, and `npm run build`
-  passes in `src/BackOffice/`; the build still emits existing signal-diagnostic,
-  bundle-budget, CSS, and CommonJS warnings. The same `npm ci`/build validation passes in
-  `src/Website/`.
-- As of 2026-09-03, Scan passes 22 ChromeHeadless tests and the Angular production and
-  passes with 5 BackOffice tests, and production/development `npm run build` both pass in
-  `src/BackOffice/`; the builds still emit existing signal-diagnostic, bundle-budget, CSS,
-  and CommonJS warnings. The same `npm ci`/build validation passes in `src/Website/`.
-- As of 2026-09-03, Scan passes 24 ChromeHeadless tests and the Angular production and
-  development builds; the production build has only the expected initial bundle budget
-  warning after adding the ZXing decoder and photo preprocessing. The CI workflow installs
-  its lockfile and builds the app after the existing BackOffice and Website steps.
+- As of 2026-09-03, BackOffice `npm ci`, its 2 bootstrap contract tests and 5 Angular tests,
+  and `npm run build` pass; existing signal-diagnostic, bundle-budget, CSS, and CommonJS
+  warnings remain.
+- As of 2026-09-03, Website `npm ci`, 58 ChromeHeadless tests, the production build, SSR
+  smoke checks, and responsive browser checks pass; its existing bundle/CSS/CommonJS
+  warnings remain.
+- As of 2026-09-03, Scan passes 24 ChromeHeadless tests and production/development builds;
+  its production bundle retains the expected initial-size warning. CI is configured to build the backend,
+  MAUI, and frontend surfaces but does not run frontend unit tests.
 
-## 2026-09-03 — Website editorial update from Famille Drevet
+## 2026-09-03 — Website editorial update
 
-- The Website now presents eight medical conditions, including a dedicated FSHD sheet at
-  `/maxence/maladies/fshd`, and a new `/maxence/souvenirs` route for the editorial memories
-  section. Both routes are exposed through the Maxence navigation and breadcrumb data.
-- The `/maxence/vie-quotidienne` route is now an editorial landing page with four visible
-  chapters (daily care, hospital care, school, and transplant); the school page is reachable
-  from both the landing page and the footer while the existing detail routes remain available.
-- The Website association copy now uses “loi 1901”, invites visitors to give “un peu de votre
-  temps”, removes former market activity, clarifies “cartons de livres”, and omits the removed
-  “Le bureau” and “Tout est public” presentation sections.
-- The association presentation hero uses the supplied `public/images/Association/asso.jpg`
-  photo and a wider 520px desktop image column; the mobile layout keeps the existing compact
-  crop and responsive single-column flow.
-- The Maxence daily-life pages keep long first-person medical and school narratives in the
-  existing `app-titled-section` / editorial shell patterns; daily care orders enteral nutrition,
-  gastrostomy, digestive stoma, left-eye care, then antibiotics.
-- The public `PricesComponent` defensively hides only exact `10c` and `50c` denomination labels,
-  alongside the existing euro/centime exclusions. The authenticated cash surface still uses the
-  full product projection.
-  its lockfile and builds the app after the existing BackOffice and Website steps. Cover
-  fallback and unavailable-cover rendering are covered by the scanner component specs.
+- Famille Drevet content added the FSHD sheet at `/maxence/maladies/fshd` and the memories
+  route `/maxence/souvenirs`, both exposed through Maxence navigation and breadcrumbs.
+- `/maxence/vie-quotidienne` is an editorial landing page with four chapters (daily care,
+  hospital care, school, and transplant); the school detail remains directly reachable.
+- The four Maxence daily-life detail routes share `DailyLifeChapterHeaderComponent`, with a
+  consistent dark chapter banner, a return link to the four-entry landing page, and a common
+  `max-w-[880px]` reading column; the landing page no longer repeats its chapter index in a
+  right-hand hero card.
+- Association copy now says “loi 1901”, asks for “un peu de votre temps”, removes former market
+  activity, clarifies “cartons de livres”, and omits “Le bureau” and “Tout est public”.
+- The presentation hero uses `public/images/Association/asso.jpg` with a wider desktop image
+  zone while preserving the compact responsive mobile flow.
+- Maxence daily-life pages preserve their first-person narratives in the shared editorial shell;
+  daily care orders enteral nutrition, gastrostomy, digestive stoma, left-eye care, then antibiotics.
+- Website prices hide exact `10c` and `50c` denomination labels while the authenticated cash
+  surface keeps the full product projection. Scan cover fallback and unavailable-cover rendering
+  are covered by component specs.

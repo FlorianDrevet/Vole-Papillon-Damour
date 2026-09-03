@@ -1,6 +1,8 @@
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { DailyLifeChapterHeaderComponent } from '../daily-life-chapter-header/daily-life-chapter-header.component';
+
 import { DailyCareComponent } from './daily-care.component';
 
 describe('DailyCareComponent', () => {
@@ -8,7 +10,7 @@ describe('DailyCareComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [DailyCareComponent],
+      declarations: [DailyCareComponent, DailyLifeChapterHeaderComponent],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
   });
@@ -50,5 +52,12 @@ describe('DailyCareComponent', () => {
     expect(sectionTitles).toContain("Les soins de son œil gauche");
     expect(sectionTitles.indexOf("Les soins de son œil gauche")).toBeLessThan(sectionTitles.indexOf('Les antibiotiques'));
     expect(pageText).not.toContain('Les iléostomies');
+  });
+
+  it('should use the shared chapter header', () => {
+    fixture = TestBed.createComponent(DailyCareComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-daily-life-chapter-header')).not.toBeNull();
   });
 });
