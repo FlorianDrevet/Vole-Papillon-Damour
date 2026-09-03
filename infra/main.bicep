@@ -147,6 +147,13 @@ param entraTenantId string
 @description('Application (client) ID of the protected API registration')
 param entraApiClientId string
 
+@description('Application (client) ID of the app-only Graph account-deletion registration')
+param entraGraphClientId string
+
+@description('Client secret of the app-only Graph account-deletion registration')
+@secure()
+param entraGraphClientSecret string
+
 @description('Signing key for the API JWT tokens')
 @secure()
 param jwtSecret string
@@ -334,6 +341,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
     sqlAdministratorLogin: sqlAdministratorLogin
     sqlAdministratorLoginPassword: sqlAdministratorLoginPassword
     jwtSecret: jwtSecret
+    entraGraphClientSecret: entraGraphClientSecret
   }
   dependsOn: [
     keyVaultModule
@@ -486,6 +494,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         name: 'jwt-secret'
         keyVaultUrl: appSecretsModule.outputs.secretUris['jwt-secret']
       }
+      {
+        name: 'entra-graph-client-secret'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['entra-graph-client-secret']
+      }
     ]
     envVars: [
       {
@@ -535,6 +547,18 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'AzureAd__Audience'
         value: 'api://${entraApiClientId}'
+      }
+      {
+        name: 'EntraGraph__TenantId'
+        value: entraTenantId
+      }
+      {
+        name: 'EntraGraph__ClientId'
+        value: entraGraphClientId
+      }
+      {
+        name: 'EntraGraph__ClientSecret'
+        secretRef: 'entra-graph-client-secret'
       }
       {
         name: 'BlobSettings__ContainerName'

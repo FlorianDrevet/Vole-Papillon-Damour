@@ -11,6 +11,8 @@
       - les enregistrements des clients : catalogue public, application de scan,
         back-office, application de caisse MAUI ;
       - les principaux de service correspondants ;
+      - l'enregistrement applicatif de suppression de compte avec la permission
+        applicative Microsoft Graph `User.ReadWrite.All` ;
       - le consentement administrateur du client vers la portee de l'API.
 
     Le script est rejouable : il retrouve les objets par `displayName`, ne recree rien
@@ -42,6 +44,15 @@
     Utilise l'authentification Graph par code appareil, notamment depuis un runner
     GitHub sans navigateur.
 
+.PARAMETER DeletionClientSecretOutputFile
+    Fichier local, hors depot, dans lequel ecrire le secret Graph cree pour
+    `vpd-account-deletion-<environment>`. Le secret n'est jamais ajoute au rapport JSON.
+
+.PARAMETER RotateDeletionClientSecret
+    Cree une nouvelle credential Graph meme si l'application en possede deja une.
+    Le nouveau secret n'est affiche qu'une fois et remplace le precedent dans le fichier
+    de sortie fourni.
+
 .PARAMETER WhatIf
     Affiche les operations sans les appliquer.
 
@@ -71,6 +82,10 @@ param(
     [string] $BackOfficeRedirectUri = 'http://localhost:4400',
 
     [string] $OutputFile,
+
+    [string] $DeletionClientSecretOutputFile,
+
+    [switch] $RotateDeletionClientSecret,
 
     [switch] $UseDeviceCode
 )
@@ -115,6 +130,9 @@ $CatalogAppName    = "vpd-catalog-$Environment"
 $ScanAppName       = "vpd-scan-$Environment"
 $BackOfficeAppName = "vpd-backoffice-$Environment"
 $CashAppName       = "vpd-caisse-$Environment"
+$DeletionAppName   = "vpd-account-deletion-$Environment"
+$GraphResourceAppId = '00000003-0000-0000-c000-000000000000'
+$GraphUserReadWriteAllAppRoleId = '741f803b-c850-494e-b5df-cde7c675a1ca'
 
 # ---------------------------------------------------------------------------
 # Aides
@@ -142,7 +160,7 @@ function Get-OrNewApplication {
 
     $existing = Get-MgApplication `
         -Filter "displayName eq '$DisplayName'" `
-        -Property 'id','appId','displayName','spa','publicClient','requiredResourceAccess' `
+        -Property 'id','appId','displayName','spa','publicClient','requiredResourceAccess','passwordCredentials' `
         -ErrorAction SilentlyContinue
 
     if ($existing) {
@@ -163,6 +181,7 @@ function Get-OrNewApplication {
             DisplayName = $DisplayName
             Spa         = $null
             PublicClient = $null
+            PasswordCredentials = @()
         }
     }
 
@@ -269,6 +288,74 @@ $connectParameters = @{
     TenantId  = $TenantId
     Scopes    = $requiredScopes
     NoWelcome = $true
+}
+
+function Grant-GraphApplicationPermission {
+    param(
+        [Parameter(Mandatory)] $ClientServicePrincipal,
+        [Parameter(Mandatory)] $GraphServicePrincipal,
+        [Parameter(Mandatory)] [string] $AppRoleId
+    )
+
+    $existing = Get-MgServicePrincipalAppRoleAssignment `
+        -ServicePrincipalId $ClientServicePrincipal.Id `
+        -All `
+        -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.ResourceId -eq $GraphServicePrincipal.Id -and
+            $_.AppRoleId -eq [Guid]$AppRoleId
+        }
+
+    if ($existing) {
+        Write-Detail "permission Graph deja accordee a $($ClientServicePrincipal.DisplayName)"
+        return
+    }
+
+    if ($PSCmdlet.ShouldProcess($ClientServicePrincipal.DisplayName, 'Accorder User.ReadWrite.All sur Microsoft Graph')) {
+        New-MgServicePrincipalAppRoleAssignment `
+            -ServicePrincipalId $ClientServicePrincipal.Id `
+            -PrincipalId $ClientServicePrincipal.Id `
+            -ResourceId $GraphServicePrincipal.Id `
+            -AppRoleId ([Guid]$AppRoleId) | Out-Null
+        Write-Detail "permission applicative User.ReadWrite.All accordee"
+    }
+}
+
+function Add-DeletionClientSecret {
+    param(
+        [Parameter(Mandatory)] $Application
+    )
+
+    $hasCredential = @($Application.PasswordCredentials).Count -gt 0
+    $needsCredential = $RotateDeletionClientSecret -or -not $hasCredential
+    if (-not $needsCredential) {
+        Write-Detail 'credential Graph deja presente ; aucune rotation demandee'
+        return
+    }
+
+    if ($WhatIfPreference) {
+        Write-Detail 'simulation : une credential Graph serait creee et restituee une seule fois'
+        return
+    }
+
+    if ([string]::IsNullOrWhiteSpace($DeletionClientSecretOutputFile)) {
+        throw "Le fichier -DeletionClientSecretOutputFile est obligatoire pour creer ou renouveler le secret de '$DeletionAppName'."
+    }
+
+    if (Test-Path -LiteralPath $DeletionClientSecretOutputFile) {
+        throw "Le fichier de secret '$DeletionClientSecretOutputFile' existe deja. Choisir un nouveau chemin pour eviter tout ecrasement."
+    }
+
+    if (-not $PSCmdlet.ShouldProcess($Application.DisplayName, 'Creer une credential Graph')) {
+        return
+    }
+
+    $password = Add-MgApplicationPassword `
+        -ApplicationId $Application.Id `
+        -PasswordCredential @{ displayName = $DeletionAppName }
+
+    $password.SecretText | Set-Content -LiteralPath $DeletionClientSecretOutputFile -NoNewline -Encoding utf8
+    Write-Detail "secret Graph ecrit dans '$DeletionClientSecretOutputFile' ; il ne sera plus restitue par Microsoft Graph"
 }
 if ($UseDeviceCode) {
     $connectParameters.UseDeviceCode = $true
@@ -377,7 +464,53 @@ foreach ($client in $clients) {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Restitution
+# 4. Application applicative de suppression de compte
+# ---------------------------------------------------------------------------
+
+Write-Step $DeletionAppName
+
+$deletionApp = Get-OrNewApplication -DisplayName $DeletionAppName -Body @{
+    RequiredResourceAccess = @(
+        @{
+            ResourceAppId  = $GraphResourceAppId
+            ResourceAccess = @(
+                @{ Id = $GraphUserReadWriteAllAppRoleId; Type = 'Role' }
+            )
+        }
+    )
+}
+
+if ($deletionApp -and $deletionApp.AppId -ne '<planned>') {
+    if ($PSCmdlet.ShouldProcess($DeletionAppName, 'Configurer la permission applicative Microsoft Graph')) {
+        Update-MgApplication -ApplicationId $deletionApp.Id -RequiredResourceAccess @(
+            @{
+                ResourceAppId  = $GraphResourceAppId
+                ResourceAccess = @(
+                    @{ Id = $GraphUserReadWriteAllAppRoleId; Type = 'Role' }
+                )
+            }
+        )
+    }
+
+    $deletionSp = Get-OrNewServicePrincipal -AppId $deletionApp.AppId
+    $graphSp = Get-MgServicePrincipal -Filter "appId eq '$GraphResourceAppId'" -ErrorAction SilentlyContinue
+    if (-not $graphSp) {
+        throw 'Le principal de service Microsoft Graph est introuvable dans le locataire.'
+    }
+    if ($deletionSp) {
+        Grant-GraphApplicationPermission `
+            -ClientServicePrincipal $deletionSp `
+            -GraphServicePrincipal $graphSp `
+            -AppRoleId $GraphUserReadWriteAllAppRoleId
+    }
+
+    Add-DeletionClientSecret -Application $deletionApp
+}
+
+$results['DeletionAppClientId'] = $deletionApp.AppId
+
+# ---------------------------------------------------------------------------
+# 5. Restitution
 # ---------------------------------------------------------------------------
 
 Write-Step 'Configuration a reporter dans les applications'
@@ -398,6 +531,8 @@ foreach ($client in $clients) {
     }
 }
 Write-Host "    scope = api://$($apiApp.AppId)/access_as_user"
+Write-Host "    Graph deletion app clientId = $($deletionApp.AppId)"
+Write-Host "    Graph permission = User.ReadWrite.All (application)"
 Write-Host ''
 
 if ($OutputFile -and $PSCmdlet.ShouldProcess($OutputFile, 'Ecrire le rapport de configuration')) {

@@ -13,6 +13,7 @@ using Microsoft.Identity.Web;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Authentication;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Authentication;
 using Vole_Papillon_Damour.Infrastructure.Extensions;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
@@ -32,7 +33,8 @@ public static class DependencyInjection
 
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        ConfigurationManager builderConfiguration)
+        IConfiguration builderConfiguration,
+        bool runMigrations = true)
     {
         var connectionString = builderConfiguration.GetConnectionString(ProjectDatabaseConnectionStringName);
             
@@ -44,11 +46,19 @@ public static class DependencyInjection
             .AddAzureServices(builderConfiguration)
             .AddStorageAccounts(builderConfiguration)
             .AddRepositories()
-            .AddMigration<ProjectDbContext>()
             .AddScoped<IProjectDbContext>(provider => provider.GetRequiredService<ProjectDbContext>());
+
+        if (runMigrations)
+        {
+            services.AddMigration<ProjectDbContext>();
+        }
         
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<ISSEClientManager, SSEClientManager>();
+        services.AddSingleton<IUserDeletionRetentionPolicy, NoRetainedSalesMovementsPolicy>();
+        services.AddScoped<IAccountDeletionStore, AccountDeletionStore>();
+        services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
+        services.AddHttpClient<IEntraUserDirectory, EntraGraphUserDirectory>();
         
         return services;
     }
@@ -66,7 +76,7 @@ public static class DependencyInjection
     
     private static IServiceCollection AddAzureServices(
         this IServiceCollection services,
-        ConfigurationManager builderConfiguration)
+        IConfiguration builderConfiguration)
     {
         services.AddAzureClients(clientBuilder =>
         {
@@ -79,7 +89,7 @@ public static class DependencyInjection
     
     private static IServiceCollection AddStorageAccounts(
         this IServiceCollection services,
-        ConfigurationManager builderConfiguration)
+        IConfiguration builderConfiguration)
     {
         var blobSettings = new BlobSettings();
         builderConfiguration.Bind(BlobSettings.SectionName, blobSettings);
@@ -93,7 +103,7 @@ public static class DependencyInjection
     
     private static IServiceCollection AddAuth(
         this IServiceCollection services,
-        ConfigurationManager builderConfiguration)
+        IConfiguration builderConfiguration)
     {
         var jwtSettings = new JwtSettings();
         builderConfiguration.Bind(JwtSettings.SectionName, jwtSettings);

@@ -34,9 +34,14 @@ param sqlAdministratorLoginPassword string
 @secure()
 param jwtSecret string
 
+@description('Client secret for the app-only Microsoft Graph account-deletion application')
+@secure()
+param entraGraphClientSecret string
+
 var sqlSecretName = 'sql-connectionstring'
 var storageSecretName = 'storage-connectionstring'
 var jwtSecretName = 'jwt-secret'
+var entraGraphClientSecretName = 'entra-graph-client-secret'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
@@ -70,9 +75,18 @@ resource jwtSigningKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
+resource entraGraphClientSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: entraGraphClientSecretName
+  properties: {
+    value: entraGraphClientSecret
+  }
+}
+
 @description('Dictionary of secret URIs keyed by secret name')
 output secretUris object = {
   '${sqlSecretName}': '${keyVault.properties.vaultUri}secrets/${sqlSecretName}'
   '${storageSecretName}': '${keyVault.properties.vaultUri}secrets/${storageSecretName}'
   '${jwtSecretName}': '${keyVault.properties.vaultUri}secrets/${jwtSecretName}'
+  '${entraGraphClientSecretName}': '${keyVault.properties.vaultUri}secrets/${entraGraphClientSecretName}'
 }

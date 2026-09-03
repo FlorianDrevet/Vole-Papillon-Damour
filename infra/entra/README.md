@@ -6,6 +6,13 @@ reproductible sur un second environnement.
 
 Trois scripts, et une seule chose qui reste manuelle.
 
+`Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
+application n'est pas un client interactif : elle recoit la permission applicative
+Microsoft Graph `User.ReadWrite.All`, utilisee par l'API et le worker pour supprimer un
+objet utilisateur apres une demande d'effacement. Son secret est cree une seule fois,
+ecrit dans un fichier explicitement choisi **hors du depot**, puis transmis au secret
+GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette valeur.
+
 | Script | Rôle | Fréquence |
 |---|---|---|
 | `Configure-EntraApps.ps1` | Enregistrements d'application, portée exposée, rôles applicatifs, consentements | À chaque évolution de la configuration |
@@ -69,7 +76,13 @@ administrateur. Voir `QT-07` dans
     -CatalogRedirectUri    'https://volepapillondamour.fr' `
     -ScanRedirectUri       'http://localhost:4300' `
     -BackOfficeRedirectUri 'https://backoffice.volepapillondamour.fr' `
-    -OutputFile ./entra-dev.json
+    -OutputFile ./entra-dev.json `
+    -DeletionClientSecretOutputFile "$env:TEMP\vpd-entra-graph-secret-dev.txt"
+
+# 1 ter. Reporter la valeur DeletionAppClientId du JSON comme secret GitHub
+# ENTRA_GRAPH_CLIENT_ID, et le contenu du fichier comme ENTRA_GRAPH_CLIENT_SECRET
+# dans l'environnement development. infra-deploy les injecte dans Key Vault ;
+# aucune valeur n'est ajoutee a un fichier suivi par Git.
 
 # 2. Le premier administrateur, sans qui rien n'est administrable.
 ./Set-VpdUserRole.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `

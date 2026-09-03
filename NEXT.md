@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-11` — préparation du déploiement 2 (migration de base, `BackOffice` et caisse) |
-| **Prochaine action** | Relire/merger la PR MAUI MSAL, puis préparer le déploiement 2 et valider la caisse sur un appareil réel ; le déploiement 3 restera à faire après redistribution ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
+| **Lot en cours** | `L0-11` — étape 8 : suppression coordonnée de l'identité Entra et de la projection locale |
+| **Prochaine action** | Relire/merger la PR de l'étape 8, puis exécuter le script Entra sur un poste autorisé, renseigner les secrets GitHub et déployer avant les tests manuels des deux côtés ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `feat/l0-11-maui-msal` |
+| **Branche** | `feat/l0-11-account-deletion` |
 
 ---
 
@@ -145,6 +145,22 @@ Pour un essai local, l'enregistrement SPA `vpd-backoffice-dev` doit contenir
 `http://localhost:4200` en plus de l'URI de production ; cet état n'est pas confirmé par le
 rapport Entra conservé ci-dessus.
 
+L'étape 8 de `L0-11` est implémentée côté dépôt. `DELETE /catalog/me` crée une demande
+d'effacement durable dans `OutboxMessages`, appelle Microsoft Graph avec l'application
+`User.ReadWrite.All`, puis supprime ou anonymise la projection locale. Un `404` Graph est
+traité comme « déjà supprimé » ; une panne avant la finalisation laisse la demande rejouable.
+Le worker Functions partage `Application` et `Infrastructure`, réclame au plus 50 messages
+avec un bail de cinq minutes et ouvre une portée DI par déclenchement. La migration
+`20260903002636_AddAccountDeletionOutbox` est générée mais n'est pas encore appliquée à la
+base. Le worker est intégré à l'AppHost pour le développement local ; sa ressource ACA et
+son déploiement restent dans le périmètre ultérieur lié à `QT-02`/`P1-8`.
+
+La configuration Bicep, le workflow d'infrastructure et `Configure-EntraApps.ps1` sont prêts
+pour l'application `vpd-account-deletion-dev`, son secret hors dépôt et le secret Key Vault
+`entra-graph-client-secret`. Aucun déploiement ni changement Entra n'a été effectué depuis
+cette branche. Validation locale : solution `.slnx` compilée ; 78 tests backend passés ;
+compilation Bicep et analyse syntaxique PowerShell passées.
+
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
 La validation locale et la validation GitHub sont réussies ; la compilation MAUI locale reste
@@ -189,6 +205,8 @@ dans Azure sans être déductible du dépôt.
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
 | API Entra | `AzureAd__TenantId`, `AzureAd__ClientId` et `AzureAd__Audience` configurés ; image `vpd-api:cfd43cb` active ; `/health` répond 200 | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
+| Application Graph de suppression | **Pas encore créée** ; `Configure-EntraApps.ps1` est prêt à créer `vpd-account-deletion-dev` et à accorder `User.ReadWrite.All` | — |
+| Secret Graph dans Key Vault | **Pas encore renseigné** ; dépend de l'exécution du script et des secrets GitHub `ENTRA_GRAPH_CLIENT_ID` / `ENTRA_GRAPH_CLIENT_SECRET` | — |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur retenu `noreply@mail.volepapillondamour.fr` ; vérification du domaine en attente de propagation | `2026-09-02` |
 | Plafonds journaliers App Insights | **Non posés** | — |
 | Règles d'alerte | **Aucune** | — |
@@ -231,7 +249,12 @@ reportées.
 
 ### Secrets GitHub
 
-*Inventaire à compléter au lot 0. Les noms seulement, jamais les valeurs.*
+*Les noms seulement, jamais les valeurs.*
+
+| Secret | État |
+|---|---|
+| `ENTRA_GRAPH_CLIENT_ID` | À ajouter après l'exécution de `Configure-EntraApps.ps1` |
+| `ENTRA_GRAPH_CLIENT_SECRET` | À ajouter avec le contenu du fichier hors dépôt produit par le script |
 
 ---
 
@@ -275,6 +298,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — étape 8, suppression coordonnée de compte.** Sur `feat/l0-11-account-deletion`, ajout du flux `DELETE /catalog/me` avec outbox durable : Graph est appelé avant la finalisation locale, le `404` est idempotent et le worker Functions rejoue les demandes échouées par lots de 50 avec bail de cinq minutes. Ajout de la migration `20260903002636_AddAccountDeletionOutbox`, de l'application Graph et du secret Key Vault dans les scripts/Bicep, ainsi que de l'intégration Aspire Functions locale. La solution compile et les 78 tests backend passent ; Bicep et PowerShell sont valides. Aucun déploiement Azure, secret ou objet Entra n'a été créé ; les tests manuels de suppression restent à faire. |
 | 2026-09-03 | Windows | **L0-11 — caisse MSAL.** Après le merge de la PR #20 dans `main`, création de `feat/l0-11-maui-msal`. Passage de `MauiCashApp` à `net10.0-android` et ajout de `Microsoft.Identity.Client` `4.88.0`, avec `MsalAuthService` en silent-first, handler Bearer Refit et callback Android `msal427c90de-bf59-4b01-af63-dc0799248496://auth`. Le test ciblé passe (1/1) et `dotnet restore` passe ; `dotnet build` reste bloqué localement par `XA5300` (SDK Android absent). Aucun appareil ni déploiement n'a été modifié ; aucun keystore n'existe. |
 | 2026-09-03 | Windows | **L0-11 — BackOffice MSAL.** Après le merge de la migration 0 dans `main`, création de la branche `feat/l0-11-backoffice-msal`. Migration du login vers le redirect MSAL Angular (`5.3.1`) avec MSAL Browser (`5.20.0`), remplacement du guard maison par `MsalGuard`, sélection de l'identité active au démarrage et acquisition silencieuse de la portée API pour Axios. Suppression du cookie JWT, des services/façades d'authentification maison et des dépendances `@auth0/angular-jwt`/`ngx-cookie-service`. `npm ci`, les 5 tests ChromeHeadless et les builds production/développement passent ; seules des alertes Angular préexistantes restent. Aucun déploiement n'a été effectué. |
 | 2026-09-03 | Windows | **L0-11 — migration 0 préparée.** La décision est prise de perdre les utilisateurs legacy existants et de les recréer dans Entra ; le backup/restauration vérifié par le run `33690143650` couvre ce choix. La migration `20260902223842_MigrateUsersToEntraIdentity` supprime d'abord les lignes `Users`, retire `Password`, `Salt` et `Role`, ajoute les colonnes de projection Entra et l'index `ExternalId`. Elle est volontairement non réversible et n'a pas été appliquée à la base. Les tests backend (71) et le build `.slnx` passent ; les avertissements préexistants sont listés dans la sortie de validation. |

@@ -62,6 +62,8 @@ jobs:
           SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
           SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
+          ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
         run: |
           az deployment sub what-if \
             --name "vpd-infra-${{ github.run_number }}" \
@@ -75,6 +77,8 @@ jobs:
           SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
           SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
+          ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           az deployment sub create \

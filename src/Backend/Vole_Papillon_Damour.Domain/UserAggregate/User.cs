@@ -43,4 +43,12 @@ public sealed class User : AggregateRoot<UserId>
     {
         Email = requestEmail;
     }
+
+    public void Anonymize(DateTime anonymizedAt)
+    {
+        ExternalId = null;
+        Email = null;
+        Name = null;
+        AnonymizedAt = anonymizedAt;
+    }
 }

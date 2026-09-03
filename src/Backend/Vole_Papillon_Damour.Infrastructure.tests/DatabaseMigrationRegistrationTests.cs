@@ -23,4 +23,20 @@ public class DatabaseMigrationRegistrationTests
             .Should()
             .ContainSingle(service => service.GetType().Name.StartsWith("MigrationHostedService"));
     }
+
+    [Fact]
+    public void AddInfrastructure_WhenMigrationsAreDisabled_DoesNotRegisterDatabaseMigrationHostedService()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationManager();
+
+        services.AddInfrastructure(configuration, runMigrations: false);
+
+        using var provider = services.BuildServiceProvider();
+
+        provider
+            .GetServices<IHostedService>()
+            .Should()
+            .NotContain(service => service.GetType().Name.StartsWith("MigrationHostedService"));
+    }
 }
