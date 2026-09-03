@@ -9,7 +9,7 @@ export interface SiteNavItem {
   children?: SiteNavItem[];
 }
 
-/** Les 7 entrées du header, dans l'ordre de la maquette. */
+/** Les entrées du header, dans l'ordre de la maquette. */
 export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { url: '/accueil', label: 'Accueil' },
   {
@@ -27,7 +27,7 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   {
     url: '/maxence',
     label: 'Maxence',
-    // Reprend les trois onglets de l'ancienne barre `app-maxence-subnav`,
+    // Reprend les onglets de la rubrique Maxence,
     // supprimée au profit de ce sous-menu.
     children: [
       { url: '/maxence/histoire', label: 'Son histoire', hint: 'La chronologie, année par année' },
@@ -38,6 +38,7 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
         hint: "Les soins, l'école, la greffe",
         matchPrefix: '/maxence/vie-quotidienne',
       },
+      { url: '/maxence/souvenirs', label: 'Des souvenirs plein les yeux', hint: 'Les rencontres, sorties et rêves réalisés' },
     ],
   },
   { url: '/nos-actions', label: 'Nos actions' },
@@ -54,6 +55,7 @@ const BREADCRUMB_ENTRIES: [string, string][] = [
   ['/association/photos', "L'association · galerie photos"],
   ['/maxence/histoire', 'Maxence · son histoire'],
   ['/maxence/maladies', 'Maxence · ses maladies'],
+  ['/maxence/souvenirs', 'Maxence · ses souvenirs'],
   ['/maxence/vie-quotidienne/soins-quotidiens', 'Maxence · soins quotidiens'],
   ['/maxence/vie-quotidienne/soins-hospitaliers', 'Maxence · soins hospitaliers'],
   ['/maxence/vie-quotidienne/ecole', 'Maxence · école'],

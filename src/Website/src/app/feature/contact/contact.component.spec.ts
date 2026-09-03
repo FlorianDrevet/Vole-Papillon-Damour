@@ -29,4 +29,10 @@ describe('ContactComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should explain the volunteer response time', () => {
+    const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+
+    expect(pageText).toContain('Ce sont des bénévoles qui vous répondent.... alors comptez deux à trois jours pour avoir une réponse. Merci pour votre compréhension.');
+  });
 });

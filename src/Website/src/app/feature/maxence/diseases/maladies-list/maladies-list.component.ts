@@ -22,5 +22,6 @@ export class MaladiesListComponent {
     { code: '05', category: 'Os', name: 'Ostéoporose', description: 'Des os fragiles qui se fracturent pour un choc minime, et un besoin permanent de prudence.', route: '/maxence/maladies/osteoporose' },
     { code: '06', category: 'Thyroïde', name: 'Hyperthyroïdie', description: 'Une thyroïde qui s’emballe : cœur rapide, fatigue, perte de poids, traitement à vie.', route: '/maxence/maladies/hyperthyroidie' },
     { code: '07', category: 'Cœur', name: 'Wolff-Parkinson-White', description: 'Un circuit électrique en trop dans le cœur, qui provoque des accès de tachycardie.', route: '/maxence/maladies/wolff-parkinson-white' },
+    { code: '08', category: 'Muscles', name: 'Dystrophie FSH', description: 'Une faiblesse musculaire progressive qui touche notamment le visage, les épaules et les bras.', route: '/maxence/maladies/fshd' },
   ];
 }

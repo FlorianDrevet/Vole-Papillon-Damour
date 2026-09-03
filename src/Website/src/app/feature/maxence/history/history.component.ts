@@ -18,6 +18,7 @@ const DISEASE_LINKS: SectionLink[] = [
   { label: 'Hirschsprung', route: '/maxence/maladies/hirschsprung' },
   { label: 'P.O.I.C.', route: '/maxence/maladies/poic' },
   { label: 'Dysplasie ectodermique', route: '/maxence/maladies/dysplasie-ectodermique' },
+  { label: 'Dystrophie FSH', route: '/maxence/maladies/fshd' },
   { label: 'Neuropathie', route: '/maxence/maladies/neuropathie' },
   { label: 'Ostéoporose', route: '/maxence/maladies/osteoporose' },
   { label: 'Hyperthyroïdie', route: '/maxence/maladies/hyperthyroidie' },
