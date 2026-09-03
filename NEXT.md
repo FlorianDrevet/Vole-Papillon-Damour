@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-2` publié en HTTPS sur Azure ; correctif de détection ISBN iPhone prêt sur `fix/scan-ios-ean-detection`, puis test iPhone et mesure `S0-4` |
-| **Prochaine action** | Merger et déployer le correctif Scan, retester un EAN-13 réel sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Lot en cours** | `S0-2` publié en HTTPS sur Azure ; correctif de rafraîchissement asynchrone et de lecture photo prêt sur `fix/scan-async-refresh` |
+| **Prochaine action** | Relire et merger le correctif Scan, relancer `Scan - deploy`, retester un EAN-13 imprimé sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `fix/scan-ios-ean-detection` — issue de la livraison fusionnée PR #24 |
+| **Branche** | `fix/scan-async-refresh` — issue de `main` après les PR #25 et #26 fusionnées |
 
 ---
 
@@ -175,7 +175,11 @@ port `4202` et l'API sur `5257` pour le développement LAN. L'image Scan est mai
 conteneurisée avec nginx, son ingress HTTPS public est déclaré en Bicep et le workflow
 `Scan - deploy` construit le bundle avec le FQDN public de l'API. Les cibles `S0-1` sont
 `≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre.
-Validation locale : 94 tests backend, 15 tests ChromeHeadless, build de la solution et de
+La caméra et la photo utilisent le décodeur ZXing ; la photo réessaie des recadrages, une
+réduction et un seuillage noir/blanc pour les cas difficiles. Comme l'application utilise
+le mode Angular zoneless, le composant notifie explicitement le rendu après les callbacks
+asynchrones de caméra, photo et API.
+Validation locale : 94 tests backend, 22 tests ChromeHeadless, build de la solution et de
 l'AppHost, ainsi que les builds Scan production/développement. Le build Scan production
 présente uniquement un avertissement de budget initial non bloquant. Le smoke test Aspire du
 2026-09-03 retourne `200 OK` pour l'ISBN `9783140464079`; l'API et le scan sont healthy,
@@ -185,12 +189,12 @@ Le déploiement `development` est opérationnel : Scan `https://vpd-scan-ca-dev.
 API `https://vpd-api-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io`, image
 Scan `vpd-scan:728939f`, image Worker `vpd-worker:728939f`. `/health` du Scan répond `200`
 et l'appel ISBN public répond `200`; le timer Worker s'est exécuté avec succès à `13:20 UTC`.
-L'image Azure actuellement active (`vpd-scan:728939f`) reste celle d'avant le correctif de
-détection ; la branche `fix/scan-ios-ean-detection` remplace `html5-qrcode` par
-`@zxing/browser`, ajoute les formats EAN/QR et la recherche renforcée. Validation locale
-du correctif : `npm ci`, 15 tests ChromeHeadless et build Scan de production réussis (avec
-un avertissement de budget initial non bloquant). Le merge, le déploiement et le test
-caméra sur iPhone restent à faire, ainsi que la campagne de mesure sur 300 livres de `S0-4`.
+Après les PR #25 et #26, le correctif ZXing et le verrou npm multiplateforme sont fusionnés.
+Le nouveau correctif de rafraîchissement zoneless et de lecture photo est sur
+`fix/scan-async-refresh` ; il reste à merger puis à relancer `Scan - deploy` avant de valider
+la caméra et la photo sur un iPhone avec un code EAN imprimé. La photo de test fournie,
+prise sur un écran fortement moiré, reste un cas non fiable pour un décodeur navigateur.
+La campagne de mesure sur 300 livres de `S0-4` reste également à faire.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -330,6 +334,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **S0-2 — rendu asynchrone et lecture photo.** Sur `fix/scan-async-refresh`, ajout de la notification explicite du rendu Angular zoneless après recherche ISBN, détection caméra et analyse photo. Le fallback photo essaie des recadrages, réductions et variantes noir/blanc ; le message d'erreur est rendu immédiatement. `npm test -- --watch=false --browsers=ChromeHeadless` passe avec 22 tests, ainsi que les builds Scan production/développement. La photo fournie d'un écran moiré reste illisible en test navigateur ; le merge, le déploiement et le retest iPhone sur code imprimé restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |
 | 2026-09-03 | Windows | **S0-2 — publication HTTPS et validation Azure.** Après le merge de la PR #23 (`728939f`), le déploiement de l'infrastructure, du Scan et du Worker est passé par GitHub OIDC. Le Scan public répond `200` sur `/` et `/health`, l'appel ISBN `9783140464079` répond `200`, et le Worker `kind=functionapp` est `Healthy` avec une révision unique, sans ingress public. Le timer `AccountDeletionSweepFunction` s'est exécuté avec succès à `13:20 UTC` (`CompletedCount: 0`). Les secrets ne sont pas exposés ; le test manuel sur iPhone et la campagne `S0-4` restent à faire. |
 | 2026-09-03 | Windows | **Correctif local API/worker après le smoke test S0-2.** Le `ClientId` et l'audience Entra dev sont renseignés dans `appsettings.Development.json`, ce qui supprime l'`IDW10106` sur l'endpoint metadata anonyme. Le worker n'enregistre plus l'authentification API ni MediatR/Mapster inutiles ; il démarre avec son seul service de suppression de comptes. L'AppHost transmet désormais les connexions de stockage Aspire et laisse `AzureWebJobsStorage` à l'intégration Functions, au lieu de forcer Azurite sur `127.0.0.1:10000`. Validation : API, Scan et worker healthy, host lock acquis, ISBN `9783140464079` en `200 OK`, 94 tests backend et build Release de la solution sans erreur. |

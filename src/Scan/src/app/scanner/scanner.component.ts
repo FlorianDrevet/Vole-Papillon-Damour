@@ -1,5 +1,12 @@
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, ElementRef, HostListener, OnDestroy, ViewChild} from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  ViewChild,
+} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {BookMetadata} from './book-metadata.model';
@@ -31,6 +38,7 @@ export class ScannerComponent implements OnDestroy {
   constructor(
     private readonly metadataService: BookMetadataService,
     private readonly cameraScanner: CameraScannerService,
+    private readonly changeDetector: ChangeDetectorRef,
   ) {}
 
   async submit(): Promise<void> {
@@ -42,15 +50,18 @@ export class ScannerComponent implements OnDestroy {
     const lookupVersion = ++this.lookupVersion;
     this.metadata = null;
     this.errorMessage = null;
+    this.refreshView();
 
     if (!normalizedIsbn) {
       this.isLoading = false;
       this.errorMessage = 'Saisissez un ISBN-10 ou ISBN-13 valide.';
+      this.refreshView();
       return;
     }
 
     this.isbnInput = normalizedIsbn;
     this.isLoading = true;
+    this.refreshView();
 
     try {
       const metadata = await firstValueFrom(this.metadataService.getMetadata(normalizedIsbn));
@@ -60,6 +71,7 @@ export class ScannerComponent implements OnDestroy {
 
       this.metadata = metadata;
       this.isLoading = false;
+      this.refreshView();
     } catch (error: unknown) {
       if (lookupVersion !== this.lookupVersion) {
         return;
@@ -69,6 +81,7 @@ export class ScannerComponent implements OnDestroy {
       this.errorMessage = error instanceof HttpErrorResponse && error.status === 404
         ? 'Aucune notice bibliographique trouvée pour cet ISBN.'
         : 'La notice ne peut pas être chargée pour le moment.';
+      this.refreshView();
     }
   }
 
@@ -80,6 +93,7 @@ export class ScannerComponent implements OnDestroy {
 
     this.cameraError = null;
     this.cameraActive = true;
+    this.refreshView();
 
     try {
       this.cameraHandle = await this.cameraScanner.start(
@@ -94,6 +108,7 @@ export class ScannerComponent implements OnDestroy {
       this.cameraError = error instanceof Error
         ? error.message
         : 'La caméra ne peut pas être activée.';
+      this.refreshView();
     }
   }
 
@@ -108,12 +123,14 @@ export class ScannerComponent implements OnDestroy {
 
     this.stopCamera();
     this.cameraError = null;
+    this.refreshView();
 
     try {
       const rawValue = await this.cameraScanner.scanFile(imageFile);
       await this.lookup(rawValue);
     } catch {
       this.cameraError = 'Aucun code-barres lisible n’a été trouvé dans cette photo.';
+      this.refreshView();
     }
   }
 
@@ -151,6 +168,10 @@ export class ScannerComponent implements OnDestroy {
     this.cameraHandle?.stop();
     this.cameraHandle = null;
     this.cameraActive = false;
+  }
+
+  private refreshView(): void {
+    this.changeDetector.markForCheck();
   }
 
   private isEditableTarget(target: EventTarget | null): boolean {

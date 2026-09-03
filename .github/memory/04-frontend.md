@@ -33,7 +33,9 @@ Verified feature roots:
   `SharedUi` TypeScript path alias. Its typed `BookMetadataService` calls the backend
   metadata endpoint; `CameraScannerService` uses `@zxing/browser` with `TRY_HARDER` for
   EAN-13/EAN-8 and QR decoding, while `ScannerComponent` also accepts keyboard-wedge
-  scanners, photo capture, and manual ISBNs.
+  scanners, photo capture, and manual ISBNs. Because the app is zoneless, the component
+  explicitly marks the view after asynchronous camera/photo/API callbacks; photo decoding
+  also retries cropped, resized, and thresholded canvas variants for difficult images.
 - Validate responsive behavior on desktop and mobile when UI changes.
 - `src/SharedUi/scripts/link-shared-ui.mjs` is the shared npm linker. Both apps invoke it
   from `prebuild` and `prestart` through `node ../SharedUi/scripts/link-shared-ui.mjs`; it
@@ -113,7 +115,7 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   passes with 5 BackOffice tests, and production/development `npm run build` both pass in
   `src/BackOffice/`; the builds still emit existing signal-diagnostic, bundle-budget, CSS,
   and CommonJS warnings. The same `npm ci`/build validation passes in `src/Website/`.
-- As of 2026-09-03, Scan passes 15 ChromeHeadless tests and the Angular production build;
-  the build has only the expected initial bundle budget warning after adding the ZXing
-  decoder. The CI workflow installs its lockfile and builds the app after the existing
-  BackOffice and Website steps.
+- As of 2026-09-03, Scan passes 22 ChromeHeadless tests and the Angular production and
+  development builds; the production build has only the expected initial bundle budget
+  warning after adding the ZXing decoder and photo preprocessing. The CI workflow installs
+  its lockfile and builds the app after the existing BackOffice and Website steps.

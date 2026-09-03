@@ -11,6 +11,11 @@ QR codes dont le contenu est un ISBN, et fonctionne dans Safari iOS lorsqu'elle 
 ouverte sur une URL HTTPS. Une photo peut aussi être sélectionnée depuis l'iPhone si la
 caméra continue n'est pas disponible.
 
+Pour une photo, le décodeur essaie également des recadrages, une réduction de taille et
+un seuillage noir/blanc afin de mieux tolérer les prises de vue difficiles. Une photo d'un
+écran avec moirage ou reflets peut toutefois rester illisible ; une photo nette du code
+EAN imprimé est le cas de référence.
+
 ## Lancer en local
 
 Depuis `src/Scan` :

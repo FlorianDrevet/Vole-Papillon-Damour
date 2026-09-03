@@ -56,7 +56,9 @@
 - Scan production bundles use `@zxing/browser` directly instead of the optional native
   `BarcodeDetector` path. The camera scans the full video frame with `TRY_HARDER` and
   supports EAN-13/EAN-8 ISBN barcodes plus QR codes; the scanner also accepts an image
-  selected from the phone as a fallback. The public ACA deployment is HTTPS, which
+  selected from the phone as a fallback. Photo decoding retries cropped, resized, and
+  thresholded canvas variants, and the zoneless Scan component explicitly marks the view
+  after asynchronous scan/API state changes. The public ACA deployment is HTTPS, which
   satisfies the secure-context requirement for camera access.
 - `MauiCashApp/appsettings.json` contains `VpdSettings.BaseUrl`; the MSAL client ID, authority,
   API scope, and Android redirect are application configuration constants in `MsalAuthService`.
