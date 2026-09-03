@@ -64,6 +64,10 @@ public sealed class BookMovementConfiguration : IEntityTypeConfiguration<BookMov
                 id => id == null ? (Guid?)null : id.Value,
                 value => value.HasValue ? AssoEventsId.Create(value.Value) : null);
         builder.Property(movement => movement.Note).HasMaxLength(500);
+        builder.Property(movement => movement.ReversalOfMovementId)
+            .HasConversion(
+                id => id == null ? (Guid?)null : id.Value,
+                value => value.HasValue ? BookMovementId.Create(value.Value) : null);
 
         builder.HasOne<Book>()
             .WithMany()
@@ -88,5 +92,13 @@ public sealed class BookMovementConfiguration : IEntityTypeConfiguration<BookMov
         builder.HasIndex(movement => movement.ClientGestureId)
             .IsUnique()
             .HasFilter("[ClientGestureId] IS NOT NULL");
+        builder.HasIndex(movement => movement.ReversalOfMovementId)
+            .IsUnique()
+            .HasFilter("[ReversalOfMovementId] IS NOT NULL");
+
+        builder.HasOne<BookMovement>()
+            .WithMany()
+            .HasForeignKey(movement => movement.ReversalOfMovementId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

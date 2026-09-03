@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
-using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -13,6 +12,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using ScanSessionAggregate = Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession;
+using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 
@@ -190,7 +190,7 @@ public sealed class ScanBookCommandHandler(
 
         var settings = await dbContext.AssociationSettings
             .SingleOrDefaultAsync(
-                candidate => candidate.Id == AssociationSettings.SingletonId,
+                candidate => candidate.Id == AssociationSettingsEntity.SingletonId,
                 cancellationToken);
         var quantityAnnounced = await GetQuantityAnnouncedAsync(movement.Isbn13, cancellationToken);
         var decision = CalculateVerdict(
@@ -210,14 +210,14 @@ public sealed class ScanBookCommandHandler(
             movement.ClockSuspect);
     }
 
-    private async Task<AssociationSettings> GetOrCreateSettingsAsync(
+    private async Task<AssociationSettingsEntity> GetOrCreateSettingsAsync(
         ScanSessionAggregate session,
         DateTime receivedAt,
         CancellationToken cancellationToken)
     {
         var settings = await dbContext.AssociationSettings
             .SingleOrDefaultAsync(
-                candidate => candidate.Id == AssociationSettings.SingletonId,
+                candidate => candidate.Id == AssociationSettingsEntity.SingletonId,
                 cancellationToken);
 
         if (settings is not null)
@@ -225,7 +225,7 @@ public sealed class ScanBookCommandHandler(
             return settings;
         }
 
-        settings = AssociationSettings.Create(session.VolunteerId, receivedAt);
+        settings = AssociationSettingsEntity.Create(session.VolunteerId, receivedAt);
         dbContext.AssociationSettings.Add(settings);
         return settings;
     }
@@ -245,7 +245,7 @@ public sealed class ScanBookCommandHandler(
     private static BookVerdictDecision CalculateVerdict(
         Book book,
         int quantityAnnounced,
-        AssociationSettings settings)
+        AssociationSettingsEntity settings)
     {
         return BookVerdictCalculator.Calculate(
             new BookVerdictFacts(
@@ -270,9 +270,9 @@ public sealed class ScanBookCommandHandler(
             : (clientTimestamp, false);
     }
 
-    private static AssociationSettings CreateDefaultSettingsForCalculation()
+    private static AssociationSettingsEntity CreateDefaultSettingsForCalculation()
     {
-        return AssociationSettings.Create(
+        return AssociationSettingsEntity.Create(
             Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects.UserId.Create(Guid.Empty),
             new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc));
     }

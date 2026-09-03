@@ -87,6 +87,19 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
         return true;
     }
 
+    public bool AttachTo(AssoEventsId assoEventsId)
+    {
+        ArgumentNullException.ThrowIfNull(assoEventsId);
+
+        if (Status != BookAnnouncementStatus.Announced || AssoEventsId is not null)
+        {
+            return false;
+        }
+
+        AssoEventsId = assoEventsId;
+        return true;
+    }
+
     private static void EnsureIsbn(Isbn13 isbn13)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))

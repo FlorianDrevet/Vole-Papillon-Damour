@@ -70,8 +70,8 @@ public sealed class AssociationSettings : AggregateRoot<byte>
         UserId updatedBy,
         DateTime updatedAt)
     {
-        ValidateNonNegative(duplicateThreshold, nameof(duplicateThreshold));
-        ValidateNonNegative(demandSalesThreshold, nameof(demandSalesThreshold));
+        ValidatePositive(duplicateThreshold, nameof(duplicateThreshold));
+        ValidatePositive(demandSalesThreshold, nameof(demandSalesThreshold));
         ValidateNonNegative(deadStockMinAgeDays, nameof(deadStockMinAgeDays));
         ValidateNonNegative(deadStockMinQuantity, nameof(deadStockMinQuantity));
         ValidateNonNegative(watchlistMaxItems, nameof(watchlistMaxItems));

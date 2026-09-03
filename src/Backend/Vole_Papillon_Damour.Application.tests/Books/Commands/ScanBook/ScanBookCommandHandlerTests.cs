@@ -3,10 +3,19 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
+using Vole_Papillon_Damour.Application.Books.Commands.VoidSale;
+using Vole_Papillon_Damour.Application.Books.Commands.AdjustQuantity;
+using Vole_Papillon_Damour.Application.Books.Commands.AssociationSettings;
+using Vole_Papillon_Damour.Application.Books.Queries.GetAssociationSettings;
+using Vole_Papillon_Damour.Application.Books.Commands.AttachUndatedAnnouncements;
+using Vole_Papillon_Damour.Application.Books.Commands.BookFlags;
+using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
+using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
-using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -19,6 +28,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using DomainScanSession = Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession;
+using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 
@@ -257,6 +267,63 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         return session;
     }
 
+    public async Task<Book> AddBookAsync(string isbn, int quantityAvailable)
+    {
+        var book = Book.Create(ParseIsbn(isbn), ScanBookCommandHandlerTests.SessionStartedAt);
+        for (var index = 0; index < quantityAvailable; index++)
+        {
+            book.RecordAvailableEntry(ScanBookCommandHandlerTests.ClientScanAt);
+        }
+
+        Context.Books.Add(book);
+        await Context.SaveChangesAsync();
+        return book;
+    }
+
+    public async Task<AssoEvents> AddFairAsync(
+        DateTimeOffset dateStart,
+        DateTimeOffset? dateEnd,
+        DateTimeOffset? hourOpenDoors,
+        DateTimeOffset? hourCloseDoors)
+    {
+        var fair = AssoEvents.Create(
+            "Test book fair",
+            null,
+            new EventsType(EventsType.EventsTypeEnum.Books),
+            dateStart,
+            dateEnd,
+            hourOpenDoors,
+            hourCloseDoors,
+            null,
+            new Adresse(null, "Paris", "Rue de test", 75000),
+            null,
+            [],
+            string.Empty);
+        Context.AssoEvents.Add(fair);
+        await Context.SaveChangesAsync();
+        return fair;
+    }
+
+    public async Task<AssoEventsId> AddOtherEventAsync()
+    {
+        var otherEvent = AssoEvents.Create(
+            "Test other event",
+            null,
+            new EventsType(EventsType.EventsTypeEnum.Other),
+            DateTimeOffset.Parse("2026-09-03T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-04T00:00:00+02:00"),
+            null,
+            null,
+            null,
+            new Adresse(null, "Paris", "Rue de test", 75000),
+            null,
+            [],
+            string.Empty);
+        Context.AssoEvents.Add(otherEvent);
+        await Context.SaveChangesAsync();
+        return otherEvent.Id;
+    }
+
     public ScanBookCommandHandler CreateHandler()
     {
         var clock = Substitute.For<IDateTimeProvider>();
@@ -264,11 +331,91 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         return new ScanBookCommandHandler(Context, clock);
     }
 
+    public RegisterSaleCommandHandler CreateRegisterSaleHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new RegisterSaleCommandHandler(Context, clock);
+    }
+
+    public VoidSaleCommandHandler CreateVoidSaleHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new VoidSaleCommandHandler(Context, clock);
+    }
+
+    public AdjustQuantityCommandHandler CreateAdjustQuantityHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new AdjustQuantityCommandHandler(Context, clock);
+    }
+
+    public UpdateAssociationSettingsCommandHandler CreateUpdateAssociationSettingsHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new UpdateAssociationSettingsCommandHandler(Context, clock);
+    }
+
+    public GetAssociationSettingsQueryHandler CreateGetAssociationSettingsHandler()
+    {
+        return new GetAssociationSettingsQueryHandler(Context);
+    }
+
+    public AttachUndatedAnnouncementsCommandHandler CreateAttachUndatedAnnouncementsHandler()
+    {
+        return new AttachUndatedAnnouncementsCommandHandler(Context);
+    }
+
+    public MarkBookRareCommandHandler CreateMarkBookRareHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new MarkBookRareCommandHandler(Context, clock);
+    }
+
+    public HideBookCommandHandler CreateHideBookHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new HideBookCommandHandler(Context, clock);
+    }
+
+    public CloseScanSessionCommandHandler CreateCloseScanSessionHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new CloseScanSessionCommandHandler(Context, clock);
+    }
+
+    public ReassignSessionModeCommandHandler CreateReassignSessionModeHandler()
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(_receivedAt);
+        return new ReassignSessionModeCommandHandler(Context, clock);
+    }
+
+    public void SetReceivedAt(DateTime receivedAt)
+    {
+        _receivedAt = receivedAt;
+    }
+
+    private static Isbn13 ParseIsbn(string value)
+    {
+        return Isbn13.TryCreate(value, out var isbn)
+            ? isbn
+            : throw new InvalidOperationException($"Invalid test ISBN: {value}");
+    }
+
     public async ValueTask DisposeAsync()
     {
         await Context.DisposeAsync();
         await _connection.DisposeAsync();
     }
+
+    private DateTime _receivedAt = ScanBookCommandHandlerTests.ReceivedAt;
 }
 
 internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbContext> options)
@@ -278,19 +425,40 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<DomainScanSession> ScanSessions => Set<DomainScanSession>();
-    public DbSet<AssociationSettings> AssociationSettings => Set<AssociationSettings>();
+    public DbSet<AssociationSettingsEntity> AssociationSettings => Set<AssociationSettingsEntity>();
+    public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
-    DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
+    DbSet<AssoEvents> IProjectDbContext.AssoEvents => AssoEvents;
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<User>();
-        modelBuilder.Ignore<AssoEvents>();
         modelBuilder.Ignore<Order>();
+
+        modelBuilder.Entity<AssoEvents>(builder =>
+        {
+            builder.HasKey(assoEvent => assoEvent.Id);
+            builder.Property(assoEvent => assoEvent.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => AssoEventsId.Create(value));
+            builder.Property(assoEvent => assoEvent.EventsType)
+                .HasConversion(
+                    type => (int)type.Value,
+                    value => new EventsType((EventsType.EventsTypeEnum)value));
+            builder.Ignore(assoEvent => assoEvent.UrlImage);
+            builder.Ignore(assoEvent => assoEvent.UrlRegistration);
+            builder.Ignore(assoEvent => assoEvent.UrlImageMap);
+            builder.Ignore(assoEvent => assoEvent.Adresse);
+            builder.Ignore(assoEvent => assoEvent.Description);
+            builder.Ignore(assoEvent => assoEvent.BingoHasBeenWon);
+            builder.Ignore(assoEvent => assoEvent.CurrentPartieIndex);
+            builder.Ignore(assoEvent => assoEvent.Parties);
+            builder.Ignore(assoEvent => assoEvent.BingoNumeros);
+        });
 
         modelBuilder.Entity<Book>(builder =>
         {
@@ -345,7 +513,12 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(
                     (AssoEventsId? id) => id == null ? (Guid?)null : id.Value,
                     (Guid? value) => value.HasValue ? AssoEventsId.Create(value.Value) : null);
+            builder.Property(movement => movement.ReversalOfMovementId)
+                .HasConversion(
+                    (BookMovementId? id) => id == null ? (Guid?)null : id.Value,
+                    (Guid? value) => value.HasValue ? BookMovementId.Create(value.Value) : null);
             builder.HasIndex(movement => movement.ClientGestureId).IsUnique();
+            builder.HasIndex(movement => movement.ReversalOfMovementId).IsUnique();
         });
 
         modelBuilder.Entity<DomainScanSession>(builder =>
@@ -365,7 +538,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
             builder.Property(session => session.Status).HasConversion<byte>();
         });
 
-        modelBuilder.Entity<AssociationSettings>(builder =>
+        modelBuilder.Entity<AssociationSettingsEntity>(builder =>
         {
             builder.HasKey(settings => settings.Id);
             builder.Property(settings => settings.UpdatedBy)

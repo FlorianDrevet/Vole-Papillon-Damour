@@ -103,6 +103,54 @@ public sealed class Book : AggregateRoot<Isbn13>
         UpdatedAt = utcOccurredAt;
     }
 
+    public void ReverseSale(DateTime occurredAt, int quantity = 1)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Sale reversal quantity must be positive.");
+        }
+
+        var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+
+        QuantityAvailable += quantity;
+        SalesCount = Math.Max(0, SalesCount - quantity);
+        UpdatedAt = utcOccurredAt;
+    }
+
+    public int ApplyQuantityCorrection(int quantityAvailable, DateTime occurredAt)
+    {
+        if (quantityAvailable < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(quantityAvailable),
+                "The corrected quantity cannot be negative.");
+        }
+
+        var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+        var delta = quantityAvailable - QuantityAvailable;
+        QuantityAvailable = quantityAvailable;
+        UpdatedAt = utcOccurredAt;
+        return delta;
+    }
+
+    public bool UpdateRareStatus(bool isRare, DateTime updatedAt)
+    {
+        var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
+        var changed = IsRare != isRare;
+        IsRare = isRare;
+        UpdatedAt = utcUpdatedAt;
+        return changed;
+    }
+
+    public bool UpdateCatalogVisibility(bool isHidden, DateTime updatedAt)
+    {
+        var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
+        var changed = IsHiddenFromCatalog != isHidden;
+        IsHiddenFromCatalog = isHidden;
+        UpdatedAt = utcUpdatedAt;
+        return changed;
+    }
+
     public void RecordRejection(DateTime occurredAt)
     {
         var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));

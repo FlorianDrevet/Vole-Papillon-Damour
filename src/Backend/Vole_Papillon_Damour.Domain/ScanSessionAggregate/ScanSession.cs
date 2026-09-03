@@ -80,4 +80,24 @@ public sealed class ScanSession : AggregateRoot<ScanSessionId>
         Status = ScanSessionStatus.Completed;
         return true;
     }
+
+    public bool Reassign(ScanMode mode, AssoEventsId? targetAssoEventsId)
+    {
+        if (Status != ScanSessionStatus.Completed)
+        {
+            return false;
+        }
+
+        if (mode == ScanMode.AvailableNow && targetAssoEventsId is not null)
+        {
+            throw new ArgumentException(
+                "AvailableNow sessions cannot target a fair.",
+                nameof(targetAssoEventsId));
+        }
+
+        Mode = mode;
+        TargetAssoEventsId = targetAssoEventsId;
+        Status = ScanSessionStatus.Resumed;
+        return true;
+    }
 }
