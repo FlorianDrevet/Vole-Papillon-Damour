@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-03 | Recorded the user-reported `S0-4` campaign as successful across 300 real books without fabricating unprovided sub-metrics, and prepared `P1-1` to measure the Functions timer with `minReplicas: 0`/`maxReplicas: 1` for two hours. |
 | 2026-09-03 | Hardened the Scan result card when a bibliographic cover URL is unavailable: it retries an ISBN-based Open Library cover and then renders an explicit unavailable-cover placeholder. Added regression coverage; 24 ChromeHeadless tests and production/development builds pass. |
 | 2026-09-03 | Corrected the Scan probe's zoneless Angular refresh gap: manual ISBN results, camera detections, and photo errors now render immediately after asynchronous work instead of waiting for another click. Photo decoding also retries cropped, resized, and thresholded canvas variants; 22 ChromeHeadless tests plus production/development builds pass. A supplied photo of a moiré-covered screen still cannot be considered a reliable barcode test. |
 | 2026-09-03 | Corrected iPhone ISBN camera detection in the Scan probe after the deployed camera preview activated but did not recognize 1D barcodes. Replaced `html5-qrcode` with `@zxing/browser`, enabled ZXing `TRY_HARDER`, scans the full video frame, supports EAN-13/EAN-8 and QR formats, and keeps photo fallback. Fifteen ChromeHeadless tests pass and the production build succeeds with only its initial bundle-budget warning; deployment and manual iPhone retest remain pending. |

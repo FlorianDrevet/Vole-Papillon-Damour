@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-2` publié en HTTPS sur Azure ; correctif de rafraîchissement asynchrone, lecture photo et repli de couverture déployé depuis `fix/scan-async-refresh` |
-| **Prochaine action** | Relire et merger le correctif Scan, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Lot en cours** | `S0-4` réalisé sur 300 livres ; verdict qualitatif favorable, puis mesure `P1-1` du timer à zéro réplica ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
+| **Prochaine action** | Déployer la configuration `P1-1` (`minReplicas: 0`, `maxReplicas: 1`), laisser le timer fonctionner deux heures et relever ses exécutions dans les journaux |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `fix/scan-async-refresh` — issue de `main` après les PR #25 et #26 fusionnées |
@@ -197,7 +197,13 @@ source de la notice ne sert pas l'image, puis affiche un état explicite si les 
 smoke test public sur l'ISBN `9782070612758` renvoie une fiche BnF avec une image chargée.
 La caméra live et la photo ont été testées avec succès sur iPhone. La photo de test fournie,
 prise sur un écran fortement moiré, reste un cas non fiable pour un décodeur navigateur.
-La campagne de mesure sur 300 livres de `S0-4` reste également à faire.
+La campagne de mesure `S0-4` a été réalisée le 2026-09-03 sur 300 livres réels ; le
+retour manuel est concluant et le flux a fonctionné sur l'ensemble de la campagne. Les
+sous-mesures détaillées (taux au premier essai, délai moyen, recours manuel, cadence à
+200 livres et couverture des sources) n'ont pas été chiffrées dans cette reprise ; le
+verdict `S0-5` est donc favorable sur le fonctionnement observé, sans inventer de
+pourcentages. La suite engagée est `P1-1`, la mesure du réveil du worker sans réplica
+chaud.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -302,7 +308,7 @@ reportées.
 |---|---|---|---|
 | `QT-01` | Couverture des sources bibliographiques | — | — |
 | `QT-02` | Déclencheur planifié à zéro réplica | — | — |
-| `QT-03` | Lecture du code-barres au navigateur | — | — |
+| `QT-03` | Lecture du code-barres au navigateur | Campagne `S0-4` déclarée réussie sur 300 livres ; sous-mesures détaillées non consignées | 2026-09-03 |
 | `QT-04` | Dimensionnement Entra | Coût tranché : gratuit à notre échelle | doc |
 | `QT-07` | Connexion seule, sans inscription | — | — |
 | `QT-08` *(partie jeton, `L0-12`)* | Durée de vie des jetons hors ligne | — | — |
@@ -328,6 +334,7 @@ reportées.
 | POC Scan — détection caméra live sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 | POC Scan — détection à partir d'une photo sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 | Scan public — fiche BnF `9782070612758` après `Scan - deploy` `33778535757` | `200 OK`, couverture chargée dans Chrome (`103 × 150`) | `2026-09-03` |
+| Campagne `S0-4` — 300 livres réels | Test manuel déclaré concluant ; le flux a fonctionné sur les 300 livres, sans relevé chiffré des sous-mesures | `2026-09-03` |
 
 > Un test manuel non consigné sera refait. Noter au minimum : quoi, quand, et ce qui a été
 > observé — pas seulement « OK ».
@@ -340,6 +347,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **S0-4/S0-5 — campagne de faisabilité.** La campagne de 300 livres réels a été déclarée concluante : le flux de scan a fonctionné sur l'ensemble du lot. Les sous-mesures détaillées n'ayant pas été chiffrées, le verdict est favorable mais qualitatif. Passage à `P1-1` : le worker est préparé pour une mesure à `minReplicas: 0` pendant deux heures. |
 | 2026-09-03 | Windows | **S0-2 — couverture de la fiche.** Le résultat garde d'abord l'URL fournie par la notice, essaie une couverture Open Library par ISBN si l'image échoue, puis rend un placeholder accessible si les deux sources sont indisponibles. Le test de non-régression porte ces deux cas ; le Scan passe 24 tests ChromeHeadless et ses builds production/développement. Les détections caméra live et photo sur iPhone ont été confirmées ; le correctif est déployé par `Scan - deploy` `33778535757` avec l'image `vpd-scan:f478a7d`. La campagne `S0-4` sur 300 livres reste à faire. |
 | 2026-09-03 | Windows | **S0-2 — rendu asynchrone et lecture photo.** Sur `fix/scan-async-refresh`, ajout de la notification explicite du rendu Angular zoneless après recherche ISBN, détection caméra et analyse photo. Le fallback photo essaie des recadrages, réductions et variantes noir/blanc ; le message d'erreur est rendu immédiatement. `npm test -- --watch=false --browsers=ChromeHeadless` passe avec 22 tests, ainsi que les builds Scan production/développement. La photo fournie d'un écran moiré reste illisible en test navigateur ; le merge, le déploiement et le retest iPhone sur code imprimé restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |
