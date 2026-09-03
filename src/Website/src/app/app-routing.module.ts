@@ -22,7 +22,9 @@ import {NeuropathieComponent} from "./feature/maxence/diseases/neuropathie/neuro
 import {LosteoporoseComponent} from "./feature/maxence/diseases/losteoporose/losteoporose.component";
 import {PoicComponent} from "./feature/maxence/diseases/poic/poic.component";
 import {HyperthyroidieComponent} from "./feature/maxence/diseases/hyperthyroidie/hyperthyroidie.component";
+import {FshdComponent} from "./feature/maxence/diseases/fshd/fshd.component";
 import {DailyCareComponent} from "./feature/maxence/daily-life/daily-care/daily-care.component";
+import {DailyLifeComponent} from "./feature/maxence/daily-life/daily-life.component";
 import {HospitalCareComponent} from "./feature/maxence/daily-life/hospital-care/hospital-care.component";
 import {SchoolComponent} from "./feature/maxence/daily-life/school/school.component";
 import {OrgansTransplantComponent} from "./feature/maxence/daily-life/organs-transplant/organs-transplant.component";
@@ -33,6 +35,7 @@ import {LEGAL_PAGE_PATHS} from "./feature/legal/legal-page-paths";
 import {MaladiesListComponent} from "./feature/maxence/diseases/maladies-list/maladies-list.component";
 import {ContactComponent} from "./feature/contact/contact.component";
 import {ActionsComponent} from "./feature/actions/actions.component";
+import {SouvenirsComponent} from "./feature/maxence/souvenirs/souvenirs.component";
 
 const routes: Routes = [
   {
@@ -115,6 +118,11 @@ const routes: Routes = [
         pathMatch: 'full'
       },
       {
+        path: 'souvenirs',
+        component: SouvenirsComponent,
+        pathMatch: 'full'
+      },
+      {
         path: 'maladies',
         children: [
           {
@@ -162,6 +170,11 @@ const routes: Routes = [
             component: HyperthyroidieComponent,
             pathMatch: 'full'
           },
+          {
+            path: 'fshd',
+            component: FshdComponent,
+            pathMatch: 'full'
+          },
         ]
       },
       {
@@ -169,8 +182,9 @@ const routes: Routes = [
         children: [
           {
             path: '',
-            redirectTo: 'soins-quotidiens',
-            pathMatch: 'full'
+            component: DailyLifeComponent,
+            pathMatch: 'full',
+            title: "Son quotidien, ses combats | Vole Papillon d'Amour"
           },
           {
             path: 'soins-quotidiens',

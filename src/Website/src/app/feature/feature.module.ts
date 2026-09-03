@@ -46,7 +46,10 @@ import { NeuropathieComponent } from './maxence/diseases/neuropathie/neuropathie
 import { LosteoporoseComponent } from './maxence/diseases/losteoporose/losteoporose.component';
 import { PoicComponent } from './maxence/diseases/poic/poic.component';
 import { HyperthyroidieComponent } from './maxence/diseases/hyperthyroidie/hyperthyroidie.component';
+import { FshdComponent } from './maxence/diseases/fshd/fshd.component';
 import { DailyCareComponent } from './maxence/daily-life/daily-care/daily-care.component';
+import { DailyLifeComponent } from './maxence/daily-life/daily-life.component';
+import { DailyLifeChapterHeaderComponent } from './maxence/daily-life/daily-life-chapter-header/daily-life-chapter-header.component';
 import { HospitalCareComponent } from './maxence/daily-life/hospital-care/hospital-care.component';
 import { SchoolComponent } from './maxence/daily-life/school/school.component';
 import { OrgansTransplantComponent } from './maxence/daily-life/organs-transplant/organs-transplant.component';
@@ -61,6 +64,7 @@ import {NumberComponent} from "./tableau/components/number/number.component";
 import {VpdAllEventsComponent} from "./vpd-all-events/vpd-all-events.component";
 import {MaladiesListComponent} from "./maxence/diseases/maladies-list/maladies-list.component";
 import {ActionsComponent} from "./actions/actions.component";
+import {SouvenirsComponent} from './maxence/souvenirs/souvenirs.component';
 
 
 @NgModule({
@@ -109,13 +113,17 @@ import {ActionsComponent} from "./actions/actions.component";
     LosteoporoseComponent,
     PoicComponent,
     HyperthyroidieComponent,
+    FshdComponent,
     DailyCareComponent,
+    DailyLifeComponent,
+    DailyLifeChapterHeaderComponent,
     HospitalCareComponent,
     SchoolComponent,
     OrgansTransplantComponent,
     ContactComponent,
     MaladiesListComponent,
     ActionsComponent,
+    SouvenirsComponent,
     PartieCardComponent,
     LotCardComponent,
     TableauComponent,

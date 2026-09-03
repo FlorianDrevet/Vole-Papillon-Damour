@@ -27,11 +27,10 @@ import {ImageUtils} from "../../../../../../../shared/utils/image.utils";
 export class CreationUpdateLotComponent {
   newLotForm: FormGroup;
   isLoading = signal(false);
+  hasValidationErrors = signal(false);
   updateLot = signal<VpdEventPartieLotModel | null>(null);
   principalImage = signal<FileUploadInterface>({fileName: '', fileContent: ''});
   protected readonly PartieTypeEnum = PartieTypeEnum;
-  protected readonly document = document;
-  protected readonly ImageUtils = ImageUtils;
   private readonly fb = inject(FormBuilder);
   private readonly lotoFacadeService = inject(LotoFacadeService);
   private readonly _snackBar = inject(MatSnackBar);
@@ -64,22 +63,38 @@ export class CreationUpdateLotComponent {
     }
   }
 
+  /**
+   * Le champ fichier n'est pas relié au formulaire (voir le gabarit) : c'est ici
+   * qu'on répercute la sélection sur l'aperçu et sur le contrôle `image`, qui ne
+   * sert plus qu'à porter la validation « une image est obligatoire ».
+   */
+  onImageSelected(input: HTMLInputElement): void {
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    ImageUtils.onFileSelected(input, this.principalImage);
+
+    const control = this.newLotForm.get('image');
+    control?.setValue(file.name);
+    control?.markAsDirty();
+  }
+
   onNoClick(): void {
     this._dialogRef.close(null);
   }
 
   onYesClick(): void {
     if (this.newLotForm.invalid) {
+      // Le bouton ne faisait rien et les erreurs de saisie partaient dans la
+      // console : de l'extérieur, la modale paraissait bloquée.
       this.newLotForm.markAllAsTouched();
-
-      Object.keys(this.newLotForm.controls).forEach(key => {
-        const controlErrors = this.newLotForm.get(key)!.errors;
-        if (controlErrors) {
-          console.log('Control Errors for:', key, controlErrors);
-        }
-      });
+      this.hasValidationErrors.set(true);
       return;
     }
+
+    this.hasValidationErrors.set(false);
     this.isLoading.set(true);
     if (this.updateLot() === null) {
       this.lotoFacadeService.postCreateLot$(this._event, this._partie.id, this._numberLine, this.createFormData()).then((result) => {
@@ -89,7 +104,6 @@ export class CreationUpdateLotComponent {
           verticalPosition: "top"
         });
         this.isLoading.set(false);
-        console.log(result)
         this._dialogRef.close(result);
       }).catch((error) => {
         this._snackBar.open("Erreur lors de la création du lot", "Fermer", {

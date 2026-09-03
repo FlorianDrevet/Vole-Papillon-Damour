@@ -1,24 +1,31 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {MsalService} from '@azure/msal-angular';
-import {of} from 'rxjs';
+import {ActivatedRoute, convertToParamMap} from '@angular/router';
+import {Subject, throwError} from 'rxjs';
 
+import {AuthSessionService} from '../../shared/auth/auth-session.service';
 import {LoginComponent} from './login.component';
 
 describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
-  let component: LoginComponent;
-  let msalService: jasmine.SpyObj<MsalService>;
+  let component: any;
+  let authSession: jasmine.SpyObj<AuthSessionService>;
 
   beforeEach(async () => {
-    msalService = jasmine.createSpyObj<MsalService>('MsalService', ['loginRedirect']);
-    msalService.loginRedirect.and.returnValue(of(undefined));
+    authSession = jasmine.createSpyObj<AuthSessionService>(
+      'AuthSessionService',
+      ['login', 'logout', 'resetSession'],
+      {isAuthenticated: () => false} as Partial<AuthSessionService>,
+    );
+    authSession.login.and.returnValue(new Subject<void>());
 
     await TestBed.configureTestingModule({
       declarations: [LoginComponent],
       providers: [
-        {provide: MsalService, useValue: msalService},
-        {provide: MatSnackBar, useValue: {open: jasmine.createSpy('open')}},
+        {provide: AuthSessionService, useValue: authSession},
+        {
+          provide: ActivatedRoute,
+          useValue: {snapshot: {queryParamMap: convertToParamMap({})}},
+        },
       ],
     })
       .overrideComponent(LoginComponent, {set: {template: ''}})
@@ -28,11 +35,17 @@ describe('LoginComponent', () => {
     component = fixture.componentInstance;
   });
 
-  it('starts the Entra redirect login with the API scope', () => {
+  it('starts the Entra redirect login', () => {
     component.onLoginClick();
 
-    expect(msalService.loginRedirect).toHaveBeenCalledWith({
-      scopes: ['api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user'],
-    });
+    expect(authSession.login).toHaveBeenCalled();
+  });
+
+  it('keeps a recovery message on screen when the redirect cannot start', () => {
+    authSession.login.and.returnValue(throwError(() => new Error('interaction_in_progress')));
+
+    component.onLoginClick();
+
+    expect(component.hasFailed()).toBeTrue();
   });
 });

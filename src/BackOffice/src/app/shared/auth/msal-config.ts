@@ -11,6 +11,16 @@ import {
 
 import {environment} from '../../../environments/environment';
 
+/**
+ * Page d'atterrissage après une connexion réussie. MSAL revient toujours sur
+ * `redirectUri` (la racine), puis renvoie vers la page d'où la connexion est
+ * partie : depuis l'écran de connexion, cette page serait l'écran de connexion
+ * lui-même, d'où ce point de chute explicite.
+ */
+export const HOME_ROUTE = '/actualites';
+
+export const LOGIN_ROUTE = '/login';
+
 export const loginRequest = {
   scopes: [environment.entra.apiScope],
 };
@@ -41,7 +51,7 @@ export function msalInstanceFactory(): PublicClientApplication {
 export const msalGuardConfig: MsalGuardConfiguration = {
   interactionType: InteractionType.Redirect,
   authRequest: loginRequest,
-  loginFailedRoute: '/login',
+  loginFailedRoute: LOGIN_ROUTE,
 };
 
 // Axios is the BackOffice HTTP client, so MsalInterceptor is intentionally not

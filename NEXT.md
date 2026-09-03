@@ -17,7 +17,7 @@
 | **Prochaine action** | Relever `QT-03`/`QT-08` sur appareil réel et `QT-02` avec une session Azure du locataire de l'abonnement ; ensuite seulement attaquer `P1-6` worker et la migration de base |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-main` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `fix/scan-async-refresh` — issue de `main` après les PR #25 et #26 fusionnées |
+| **Branche** | `fix/scan-async-refresh` — synchronisée avec `main` avant la PR P1-5 |
 
 ---
 
@@ -149,6 +149,33 @@ Pour un essai local, l'enregistrement SPA `vpd-backoffice-dev` doit contenir
 `http://localhost:4200` en plus de l'URI de production ; cet état n'est pas confirmé par le
 rapport Entra conservé ci-dessus.
 
+Le correctif d'audience de `fix/backoffice-event-update-401` a été mergé dans `main` puis
+déployé par l'infrastructure. Le `401` a disparu, mais les PUT BackOffice (`/asso-events/{id}`
+et `/product/{id}`) renvoient désormais `403` avec un token qui porte bien
+`roles=["Administration"]`. La cause est le mapping par défaut des claims JWT : la claim
+Entra `roles` n'est plus reconnue par `RequireRole`. Le correctif `fix/backoffice-authorization-403`
+désactive ce mapping pour le schéma Entra et ajoute une régression qui valide réellement
+`IsInRole("Administration")`. Cette branche nécessite un déploiement applicatif API après
+le merge ; l'infrastructure seule ne met pas à jour le code de l'image.
+
+Après le déploiement applicatif API du correctif des rôles, les écritures fonctionnent. Un
+nouveau défaut reste visible côté BackOffice : un refresh normal après connexion peut laisser
+une page blanche, alors qu'un `Ctrl+Shift+R` la débloque. Le défaut est reproduit sur le domaine
+public avec `BrowserAuthError: uninitialized_public_client_application` : `AuthSessionService`
+lit le cache MSAL dans son constructeur avant l'initialisation de `PublicClientApplication`.
+La branche courante ajoute `provideAppInitializer(() => inject(MsalService).initialize())`
+et son contrat de bootstrap ; un déploiement BackOffice sera nécessaire après le merge.
+
+Un correctif isolé est préparé sur `fix/backoffice-msal-bootstrap` dans le worktree
+`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-backoffice-login-fix`. La cause de
+`NG05104` était l'absence de `<app-redirect>` dans `src/BackOffice/src/index.html` alors que
+`MsalRedirectComponent` était bootstrappé ; MSAL ne s'initialisait donc pas et le clic de
+connexion échouait avant toute requête réseau. L'autorité CIAM des deux environnements a
+également été corrigée pour inclure le tenant. Le contrat de bootstrap (2 tests), les 5 tests
+Angular, le build production et un smoke local qui atteint l'écran Microsoft passent. Aucun
+déploiement n'a été effectué ; après merge, vérifier l'URI SPA
+`https://backoffice.volepapillondamour.fr` et le parcours de redirection sur le domaine public.
+
 L'étape 8 de `L0-11` est implémentée côté dépôt. `DELETE /catalog/me` crée une demande
 d'effacement durable dans `OutboxMessages`, appelle Microsoft Graph avec l'application
 `User.ReadWrite.All`, puis supprime ou anonymise la projection locale. Un `404` Graph est
@@ -264,7 +291,7 @@ dans Azure sans être déductible du dépôt.
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
-| API Entra | `AzureAd__TenantId`, `AzureAd__ClientId` et `AzureAd__Audience` configurés ; image `vpd-api:cfd43cb` active ; `/health` répond 200 | `2026-09-03` |
+| API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | **Pas encore créée** ; `Configure-EntraApps.ps1` est prêt à créer `vpd-account-deletion-dev` et à accorder `User.ReadWrite.All` | — |
 | Secret Graph dans Key Vault | **Pas encore renseigné** ; dépend de l'exécution du script et des secrets GitHub `ENTRA_GRAPH_CLIENT_ID` / `ENTRA_GRAPH_CLIENT_SECRET` | — |
@@ -377,6 +404,10 @@ Une ligne par session de travail. Le plus récent en haut.
 | 2026-09-03 | Windows | **P1-3 — domaine et persistance.** Ajout des agrégats `Book`, `BookMovement`, `ScanSession`, `AssociationSettings`, de l'entité `BookAnnouncement`, des identifiants forts, des invariants UTC/quantité/cycle, des cinq configurations EF et de la migration `20260903173750_AddBookExchangeCore`. La migration porte `rowversion`, collation `Latin1_General_100_CI_AI`, contrôles de redirection/quantité et index filtrés d'idempotence/session. Validation : 49 tests Domain, 21 tests Infrastructure et `dotnet test Vole_Papillon_Damour.slnx --no-restore` passent. La migration n'est pas appliquée à la base ; `QT-02` reste ouverte. |
 | 2026-09-03 | Windows | **P1-1 — mesure du timer.** Après la campagne `S0-4` concluante sur 300 livres, passage du worker à `minReplicas: 0`, `maxReplicas: 1` via `Infra - deploy` `33780715179` (commit `4acfbb2`). L'observation de deux heures est ouverte jusqu'à 20:50 Europe/Paris ; `QT-02` reste à relever dans les journaux. |
 | 2026-09-03 | Windows | **P1-2 — décisions de conception.** Pendant la fenêtre d'observation `P1-1`, ajout de `DT-17` à `DT-21` dans `docs/bourse-aux-livres/technique/01-decisions.md` : instants UTC et calendrier `Europe/Paris`, outbox à états, fusion par redirection ISBN, définition de bourse ouverte et tests Scan par synchronisation isolée avec IndexedDB/transport simulé. Les règles métier, le modèle de données et les flux techniques sont alignés ; `P1-3` a pu commencer localement sans toucher au worker. |
+| 2026-09-03 | Windows | **Correctif BackOffice — refresh après connexion.** Le domaine public reproduit une page blanche sur refresh normal avec `uninitialized_public_client_application`, car `AuthSessionService` lit le cache avant l'initialisation MSAL. Ajout de `provideAppInitializer` autour de `MsalService.initialize()`, contrat de bootstrap en échec puis au vert, 9 tests ChromeHeadless et build production passants. Un déploiement BackOffice reste à faire après merge. |
+| 2026-09-03 | Windows | **Correctif BackOffice — rôles Entra et 403.** Après le déploiement de l'audience, reproduction TDD d'un token v2 portant `roles=["Administration"]` : `IsInRole("Administration")` échoue avec le mapping JWT par défaut. `MapInboundClaims = false` est activé pour le schéma Entra, le test passe, et une nouvelle branche `fix/backoffice-authorization-403` est préparée pour un déploiement applicatif API. |
+| 2026-09-03 | Windows | **Correctif BackOffice — audience Entra v2.** Après `git pull` de `main`, création du worktree `fix/backoffice-event-update-401`. Reproduction TDD du `401` avec un token dont `aud` est l'ID d'application API ; alignement de `AzureAd:Audience` dans `appsettings.Development.json`, `infra/main.bicep` et `Configure-EntraApps.ps1`. Validation : 97 tests backend, compilation Bicep, 9 tests ChromeHeadless et build BackOffice. Aucun déploiement Azure ; le retest des PUT `/asso-events/{id}` et `/product/{id}` reste à faire. |
+| 2026-09-03 | Windows | **L0-11 — correctif BackOffice MSAL.** Sur `fix/backoffice-msal-bootstrap`, ajout de l'hôte `<app-redirect>` requis par `MsalRedirectComponent` et correction de l'autorité CIAM tenant-scoped dans les environnements BackOffice. Ajout d'un test de contrat de bootstrap ; 2 tests de bootstrap, 5 tests Angular, le build production et un smoke local jusqu'à l'écran Microsoft passent. Aucun déploiement n'a été effectué. |
 | 2026-09-03 | Windows | **S0-2 — couverture de la fiche.** Le résultat garde d'abord l'URL fournie par la notice, essaie une couverture Open Library par ISBN si l'image échoue, puis rend un placeholder accessible si les deux sources sont indisponibles. Le test de non-régression porte ces deux cas ; le Scan passe 24 tests ChromeHeadless et ses builds production/développement. Les détections caméra live et photo sur iPhone ont été confirmées ; le correctif est déployé par `Scan - deploy` `33778535757` avec l'image `vpd-scan:f478a7d`. La campagne `S0-4` sur 300 livres reste à faire. |
 | 2026-09-03 | Windows | **S0-2 — rendu asynchrone et lecture photo.** Sur `fix/scan-async-refresh`, ajout de la notification explicite du rendu Angular zoneless après recherche ISBN, détection caméra et analyse photo. Le fallback photo essaie des recadrages, réductions et variantes noir/blanc ; le message d'erreur est rendu immédiatement. `npm test -- --watch=false --browsers=ChromeHeadless` passe avec 22 tests, ainsi que les builds Scan production/développement. La photo fournie d'un écran moiré reste illisible en test navigateur ; le merge, le déploiement et le retest iPhone sur code imprimé restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |

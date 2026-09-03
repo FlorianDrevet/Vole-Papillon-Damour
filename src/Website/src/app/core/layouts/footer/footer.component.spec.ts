@@ -91,4 +91,12 @@ describe('FooterComponent', () => {
       }
     ]);
   });
+
+  it('should identify the association as a loi 1901 since 2010', () => {
+    const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+
+    expect(pageText).toContain('Association loi 1901');
+    expect(pageText).toContain('depuis 2010');
+    expect(pageText).not.toContain('Association familiale');
+  });
 });

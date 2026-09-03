@@ -15,7 +15,6 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { DesignSystemModule } from '@vpd/ui';
 
 import { InputComponent } from './components/input/input.component';
-import { ButtonLoginComponent } from './components/button-login/button-login.component';
 import { ActualityCardComponent } from './components/actuality-card/actuality-card.component';
 import { EventCardComponent } from './components/event-card/event-card.component';
 import { PricesComponent } from './components/prices/prices.component';
@@ -28,6 +27,9 @@ import { IconButtonComponent } from './components/icon-button/icon-button.compon
 import { SectionEyebrowComponent } from './components/section-eyebrow/section-eyebrow.component';
 import { PageHeaderComponent } from './components/page-header/page-header.component';
 import { GroupHeadingComponent } from './components/group-heading/group-heading.component';
+import { StatePanelComponent } from './components/state-panel/state-panel.component';
+import { FilterChipComponent } from './components/filter-chip/filter-chip.component';
+import { LoadingPlaceholderComponent } from './components/loading-placeholder/loading-placeholder.component';
 
 const DESIGN_SYSTEM_COMPONENTS = [
   IconComponent,
@@ -36,12 +38,14 @@ const DESIGN_SYSTEM_COMPONENTS = [
   SectionEyebrowComponent,
   PageHeaderComponent,
   GroupHeadingComponent,
+  StatePanelComponent,
+  LoadingPlaceholderComponent,
+  FilterChipComponent,
 ];
 
 @NgModule({
   declarations: [
     InputComponent,
-    ButtonLoginComponent,
     ActualityCardComponent,
     EventCardComponent,
     PricesComponent,
@@ -52,7 +56,6 @@ const DESIGN_SYSTEM_COMPONENTS = [
   ],
   exports: [
     InputComponent,
-    ButtonLoginComponent,
     ActualityCardComponent,
     EventCardComponent,
     PricesComponent,

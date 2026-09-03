@@ -8,8 +8,7 @@
 
   <form [formGroup]="newPartieForm" class="flex w-full flex-col gap-4">
     <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Type de partie</h2>
-      <mat-form-field class="w-full">
+      <mat-form-field subscriptSizing="dynamic" class="w-full">
         <mat-label>Type de partie</mat-label>
         <mat-select formControlName="partieType" required>
           <mat-option [value]="PartieTypeEnum.STANDARD">Standard</mat-option>
@@ -22,15 +21,13 @@
     </div>
 
     <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Titre</h2>
-      <mat-form-field appearance="fill" class="w-full">
+      <mat-form-field subscriptSizing="dynamic" appearance="fill" class="w-full">
         <mat-label>Titre</mat-label>
-        <input class="w-full" formControlName="name" matInput placeholder="Titre">
+        <input class="w-full" formControlName="name" matInput>
       </mat-form-field>
     </div>
 
     <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Y a-t-il une pause après ?</h2>
       <mat-radio-group aria-label="Y a-t-il une pause après ?" formControlName="pauseAfter">
         <mat-radio-button [value]="false">Non</mat-radio-button>
         <mat-radio-button [value]="true">Oui</mat-radio-button>
@@ -38,11 +35,19 @@
     </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions>
+@if (hasValidationErrors()) {
+  <p class="border-t border-danger/20 bg-danger-soft px-6 py-3 text-sm text-danger">
+    Certains champs sont incomplets ou mal remplis : ils sont signalés en rouge ci-dessus.
+  </p>
+}
+<mat-dialog-actions class="!flex !items-center !justify-end !gap-3 !border-t !border-line-2 !px-6 !py-4">
   @if (isLoading()) {
-    <mat-spinner class="ml-5 mr-5" diameter="30"></mat-spinner>
+    <mat-spinner diameter="26"></mat-spinner>
   } @else {
-    <button (click)="onNoClick()" cdkFocusInitial mat-button>Annuler</button>
-    <button (click)="onYesClick()" mat-button>{{ updatePartie() !== null ? "Modifier" : "Créer" }}</button>
+    <button (click)="onNoClick()" cdkFocusInitial type="button"
+            class="rounded-full px-5 py-2.5 text-sm font-semibold text-slate-2 hover:text-ink-2">
+      Annuler
+    </button>
+    <app-pill-button (click)="onYesClick()" type="button" [small]="true">{{ updatePartie() !== null ? "Modifier" : "Créer" }}</app-pill-button>
   }
 </mat-dialog-actions>

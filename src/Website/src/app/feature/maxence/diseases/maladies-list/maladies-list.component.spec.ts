@@ -13,7 +13,7 @@ describe('MaladiesListComponent', () => {
     }).compileComponents();
   });
 
-  it('should list seven medical conditions without treating gastrostomy as a disease', () => {
+  it('should list eight medical conditions without treating gastrostomy as a disease', () => {
     fixture = TestBed.createComponent(MaladiesListComponent);
     const component = fixture.componentInstance;
 
@@ -24,7 +24,8 @@ describe('MaladiesListComponent', () => {
       'Neuropathie',
       'Ostéoporose',
       'Hyperthyroïdie',
-      'Wolff-Parkinson-White'
+      'Wolff-Parkinson-White',
+      'Dystrophie FSH'
     ]);
   });
 
@@ -34,7 +35,8 @@ describe('MaladiesListComponent', () => {
 
     const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 
-    expect(pageText).toContain('3 maladies rares : la maladie de Hirschsprung, la POIC et la dysplasie ectodermique.');
+    expect(pageText).toContain('4 maladies rares : la maladie de Hirschsprung, la POIC, la dysplasie ectodermique et la dystrophie FSH.');
+    expect(pageText).toContain('Dystrophie FSH');
     expect(pageText).toContain('C’est la mutation du gène ERBB3');
     expect(pageText).toContain('La gastrostomie, une forme de nutrition');
   });

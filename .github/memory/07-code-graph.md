@@ -13,6 +13,10 @@
 - `.graphifyignore` - repository exclusions for Graphify ingestion
 - Latest code refresh (2026-09-03): 2,645 nodes, 4,275 edges, 389 communities.
 
+## Latest Snapshot
+
+- The local report refreshed on 2026-09-03 contains 1,951 nodes, 2,400 edges, and 343 communities. Inferred edges remain hypotheses and should not replace direct source inspection.
+
 ## Usage Rules
 
 - Read `graphify-out/GRAPH_REPORT.md` for architecture and corpus-level orientation.

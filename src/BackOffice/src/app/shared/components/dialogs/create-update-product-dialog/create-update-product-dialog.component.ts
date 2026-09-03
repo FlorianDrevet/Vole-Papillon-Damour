@@ -21,13 +21,12 @@ import {ProductCategoryEnum} from "../../../enums/productCategory.enum";
 export class CreateUpdateProductDialogComponent implements OnInit {
   newProductForm: FormGroup;
   isLoading = signal(false);
+  hasValidationErrors = signal(false);
   updateProduct = signal<ProductModel | null>(null);
   principalImage = signal<FileUploadInterface>({fileName: '', fileContent: ''});
 
   section = signal<ProductSectionEnum | null>(null);
   category = signal<ProductCategoryEnum | null>(null);
-  protected readonly document = document;
-  protected readonly ImageUtils = ImageUtils;
   protected readonly ProductCategoryEnum = ProductCategoryEnum;
   protected readonly ProductSectionEnum = ProductSectionEnum;
   private readonly fb = inject(FormBuilder);
@@ -77,22 +76,38 @@ export class CreateUpdateProductDialogComponent implements OnInit {
     })
   }
 
+  /**
+   * Le champ fichier n'est pas relié au formulaire (voir le gabarit) : c'est ici
+   * qu'on répercute la sélection sur l'aperçu et sur le contrôle `image`, qui ne
+   * sert plus qu'à porter la validation « une image est obligatoire ».
+   */
+  onImageSelected(input: HTMLInputElement): void {
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    ImageUtils.onFileSelected(input, this.principalImage);
+
+    const control = this.newProductForm.get('image');
+    control?.setValue(file.name);
+    control?.markAsDirty();
+  }
+
   onNoClick(): void {
     this._dialogRef.close(null);
   }
 
   onYesClick(): void {
     if (this.newProductForm.invalid) {
+      // Le bouton ne faisait rien et les erreurs de saisie partaient dans la
+      // console : de l'extérieur, la modale paraissait bloquée.
       this.newProductForm.markAllAsTouched();
-
-      Object.keys(this.newProductForm.controls).forEach(key => {
-        const controlErrors = this.newProductForm.get(key)!.errors;
-        if (controlErrors) {
-          console.log('Control Errors for:', key, controlErrors);
-        }
-      });
+      this.hasValidationErrors.set(true);
       return;
     }
+
+    this.hasValidationErrors.set(false);
     this.isLoading.set(true);
     if (this.updateProduct() === null) {
       this.productFacadeService.postCreateProduct$(this.createFormData()).then((result) => {
@@ -102,7 +117,6 @@ export class CreateUpdateProductDialogComponent implements OnInit {
           verticalPosition: "top"
         });
         this.isLoading.set(false);
-        console.log(result)
         this._dialogRef.close(result);
       }).catch((error) => {
         this._snackBar.open("Erreur lors de la création du produit", "Fermer", {

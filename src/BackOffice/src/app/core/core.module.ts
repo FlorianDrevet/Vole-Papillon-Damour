@@ -1,25 +1,31 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {ReactiveFormsModule} from "@angular/forms";
+import {RouterLink} from "@angular/router";
+
 import {FooterComponent} from './layouts/footer/footer.component';
 import {NavigationComponent} from './layouts/navigation/navigation.component';
-import {LoginComponent} from "./login/login.component";
-import {ReactiveFormsModule} from "@angular/forms";
-import {SharedModule} from "../shared/shared.module";
 import {NavigationMobileComponent} from "./layouts/navigation/navigation-mobile/navigation-mobile.component";
-import {RouterLink} from "@angular/router";
+import {AccountMenuComponent} from "./layouts/navigation/account-menu/account-menu.component";
+import {LoginComponent} from "./login/login.component";
+import {AuthLandingComponent} from "./auth-landing/auth-landing.component";
+import {SharedModule} from "../shared/shared.module";
 
 
 @NgModule({
   declarations: [
     FooterComponent,
     NavigationComponent,
+    NavigationMobileComponent,
+    AccountMenuComponent,
     LoginComponent,
-    NavigationMobileComponent
+    AuthLandingComponent
   ],
   exports: [
     FooterComponent,
     NavigationComponent,
-    LoginComponent
+    LoginComponent,
+    AuthLandingComponent
   ],
   imports: [
     CommonModule,

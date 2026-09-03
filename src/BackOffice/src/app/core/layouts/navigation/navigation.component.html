@@ -1,33 +1,41 @@
-@if (url() !== '/login' && !url().includes("loto-tableau")) {
-  <header class="bg-paper font-sans text-ink-2">
-    <div class="hidden items-center justify-between border-b border-line px-shell py-5 lg:flex">
-      <a routerLink="/actualites" class="flex items-center gap-3" aria-label="Retour à l'accueil">
-        <img
-          fetchpriority="high"
-          src="logos/papillon_without_back.png"
-          alt="Vole Papillon d'Amour"
-          width="38" height="38"
-          class="h-[38px] w-[38px] object-contain">
-        <span class="flex flex-col gap-0.5">
-          <span class="font-serif text-lg leading-none tracking-[-.01em]">Vole Papillon d'Amour</span>
-          <span class="font-mono text-[9px] uppercase tracking-[.2em] text-slate-3">Espace bénévoles</span>
-        </span>
-      </a>
+<!-- Fond opaque plutôt qu'un flou d'arrière-plan : `backdrop-filter` fait de
+     l'en-tête le cadre de référence de tout descendant en `position: fixed`, et le
+     panneau de navigation mobile, qui vit à l'intérieur, se retrouvait alors
+     confiné à la hauteur de la barre au lieu de couvrir l'écran. -->
+<header class="sticky top-0 z-40 border-b border-line bg-paper font-sans text-ink-2">
+  <!-- Filet de marque : la signature du design system, reprise en tête de page. -->
+  <span class="block h-[3px] w-full bg-vpd-brand"></span>
 
-      <nav class="flex items-center gap-8 text-sm" aria-label="Navigation principale">
-        @for (navigation of navigationUrls; track navigation.url) {
-          <a
-            [routerLink]="navigation.url"
-            class="border-b-2 pb-[3px]"
-            [class]="router.url.includes(navigation.url)
-              ? 'border-orange font-semibold text-ink-2'
-              : 'border-transparent font-normal text-slate-2 hover:text-ink-2'">{{ navigation.title }}</a>
-        }
-      </nav>
-    </div>
+  <div class="hidden items-center justify-between gap-8 px-shell py-4 lg:flex">
+    <a routerLink="/actualites" class="flex items-center gap-3" aria-label="Retour à l'accueil">
+      <img
+        fetchpriority="high"
+        src="logos/papillon_without_back.png"
+        alt="Vole Papillon d'Amour"
+        width="38" height="38"
+        class="h-[38px] w-[38px] object-contain">
+      <span class="flex flex-col gap-0.5">
+        <span class="font-serif text-lg leading-none tracking-[-.01em]">Vole Papillon d'Amour</span>
+        <span class="font-mono text-[9px] uppercase tracking-[.2em] text-slate-3">Espace bénévoles</span>
+      </span>
+    </a>
 
-    <app-navigation-mobile
-      [NavigationItems]="navigationUrls"
-      class="lg:hidden"></app-navigation-mobile>
-  </header>
-}
+    <nav class="flex items-center gap-8 text-sm" aria-label="Navigation principale">
+      @for (navigation of navigationUrls; track navigation.url) {
+        <a
+          [routerLink]="navigation.url"
+          [attr.aria-current]="isActive(navigation) ? 'page' : null"
+          class="border-b-2 pb-[3px]"
+          [class]="isActive(navigation)
+            ? 'border-orange font-semibold text-ink-2'
+            : 'border-transparent font-normal text-slate-2 hover:text-ink-2'">{{ navigation.title }}</a>
+      }
+    </nav>
+
+    <app-account-menu></app-account-menu>
+  </div>
+
+  <app-navigation-mobile
+    [NavigationItems]="navigationUrls"
+    class="lg:hidden"></app-navigation-mobile>
+</header>

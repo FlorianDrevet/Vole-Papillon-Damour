@@ -8,10 +8,10 @@
 - Backend: ASP.NET Core Web API on .NET 10 under `src/Backend/`
 - Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, SQL Server, and Azurite
 - Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
-- Web frontends: Angular 21 applications in `src/BackOffice/` and `src/Website/`, with Angular SSR enabled on `Website`
-- Native client: .NET MAUI 10 Android cash app in `src/MauiCashApp/`
+- Web frontends: Angular 21 applications in `src/BackOffice/`, `src/Website/`, and the consultation-only `src/Scan/` probe; Angular SSR is enabled on `Website`
+- Native and background clients: .NET MAUI Android cash app in `src/MauiCashApp/` and the .NET isolated account-deletion Worker under `src/Backend/`
 - Tests: xUnit domain tests exist under `src/Backend/Vole_Papillon_Damour.Domain.tests/`
-- CI/CD: no GitHub Actions or Azure DevOps pipeline file detected at bootstrap time
+- CI/CD: `.github/workflows/ci.yml` is configured for backend, MAUI, and frontend builds; frontend unit tests remain a local validation step
 
 ## Thematic Memory
 

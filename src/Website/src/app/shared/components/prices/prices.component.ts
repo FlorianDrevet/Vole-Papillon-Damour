@@ -35,6 +35,7 @@ export class PricesComponent implements OnInit {
       .filter((product) => product.visibleOnWebsite)
       .filter((product) => !product.name.includes('euro'))
       .filter((product) => !product.name.includes('centime'))
+      .filter((product) => !/^(10|50)\s*c$/i.test(product.name.trim()))
       .sort((a, b) => a.index - b.index);
   });
 

@@ -66,6 +66,13 @@ $custom-theme: mat.define-theme((
     scroll-behavior: smooth;
   }
 
+  // `app-root` est l'unique enfant de `body` : sans ça il s'arrête à la hauteur de
+  // son contenu, et sur une page courte le pied de page flottait au milieu de
+  // l'écran avec une bande de fond vide en dessous.
+  app-root {
+    @apply flex flex-1 flex-col;
+  }
+
   a, button {
     transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease,
       box-shadow 180ms ease, transform 180ms ease;
@@ -128,6 +135,15 @@ $custom-theme: mat.define-theme((
 // ---------------------------------------------------------------------------
 .mat-mdc-form-field {
   width: 100%;
+}
+
+// Material réserve 180 px à la zone de saisie et refuse de descendre en dessous.
+// Dans les rangées à deux colonnes des modales (date + heure, heure d'ouverture +
+// heure de fermeture), la somme dépassait la largeur du dialogue : le champ de
+// droite se retrouvait coupé et une barre de défilement horizontale apparaissait.
+.mat-mdc-form-field,
+.mat-mdc-form-field-infix {
+  min-width: 0;
 }
 
 .mat-mdc-text-field-wrapper {

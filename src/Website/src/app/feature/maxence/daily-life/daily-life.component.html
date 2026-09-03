@@ -1,0 +1,75 @@
+<section class="relative overflow-hidden bg-ink px-shell py-14 text-mist-2 lg:py-[78px]">
+  <img
+    ngSrc="images/papillon_without_back.png"
+    alt=""
+    width="280"
+    height="280"
+    class="absolute -bottom-20 -right-16 w-[280px] opacity-[.14]"
+    aria-hidden="true">
+
+  <div class="relative mx-auto flex max-w-[900px] flex-col gap-5">
+    <div class="flex flex-col gap-5">
+      <span class="flex items-center gap-2.5 font-mono text-[11px] font-medium uppercase tracking-[.18em] text-cyan">
+        <span class="h-px w-[26px] shrink-0 bg-cyan"></span>Maxence · son quotidien
+      </span>
+      <h1 class="max-w-[15ch] font-serif text-[42px] font-medium leading-[.98] tracking-[-.025em] text-white lg:text-[64px]">
+        Son quotidien, ses combats
+      </h1>
+      <p class="max-w-[58ch] text-[16px] leading-relaxed text-mist-2">
+        Les soins, les rendez-vous et les adaptations occupent une place importante dans la vie de Maxence. Mais son
+        quotidien ne se résume pas à la maladie : il y a aussi l'école, les proches, les projets et l'envie de continuer
+        à avancer.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="flex flex-col gap-10 bg-paper px-shell py-14 lg:py-[72px]">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_38ch] lg:items-end lg:gap-12">
+    <app-section-eyebrow label="Des repères pour comprendre" labelClass="text-orange-3">
+      <h2 class="max-w-[23ch] font-serif text-[32px] font-medium leading-[1.02] tracking-[-.02em] text-ink-2 lg:text-[46px]">
+        Une vie faite de soins, de liens et d'adaptations.
+      </h2>
+    </app-section-eyebrow>
+    <p class="text-[15px] leading-relaxed text-slate-2">
+      Quatre entrées pour comprendre ce que la maladie change dans une journée — et tout ce qui permet à Maxence de
+      garder sa place parmi les siens.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    @for (section of sections; track section.id) {
+      <article
+        [id]="section.id"
+        class="group flex min-h-[270px] scroll-mt-8 flex-col justify-between gap-8 rounded-sm border border-line-2 bg-white p-6 transition hover:-translate-y-0.5 hover:border-blue-2 hover:shadow-[0_18px_38px_-28px_rgba(7,43,69,.55)] lg:p-8">
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between gap-4">
+            <span class="font-mono text-[11px] tracking-[.16em] text-blue">{{ section.number }}</span>
+            <span class="font-mono text-[10px] uppercase tracking-[.14em] text-orange-3">{{ section.kicker }}</span>
+          </div>
+          <h3 class="font-serif text-[28px] font-medium leading-tight text-ink-2 lg:text-[34px]">{{ section.title }}</h3>
+          <p class="max-w-[48ch] text-[15px] leading-relaxed text-slate-2">{{ section.summary }}</p>
+        </div>
+        <a
+          [routerLink]="section.route"
+          class="inline-flex items-center gap-2 self-start font-mono text-[11px] tracking-[.1em] text-blue hover:text-orange-3">
+          {{ section.cta }} <span aria-hidden="true" class="transition-transform group-hover:translate-x-1">→</span>
+        </a>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="relative flex flex-col gap-6 overflow-hidden bg-ink px-shell py-14 text-mist-2 lg:py-[68px]">
+  <span class="relative font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">Pour aller plus loin</span>
+  <h2 class="relative max-w-[26ch] font-serif text-[30px] font-medium leading-tight text-white lg:text-[40px]">
+    Le quotidien se comprend aussi dans toute l'histoire de Maxence.
+  </h2>
+  <p class="relative max-w-[60ch] text-[15px] leading-relaxed text-mist">
+    Les pages de cette rubrique détaillent chaque étape. Pour retrouver les événements, les rencontres et les
+    changements année après année, vous pouvez aussi suivre le récit complet.
+  </p>
+  <app-pill-button routerLink="/maxence/histoire" variant="secondary-dark" class="relative self-start">
+    Lire toute son histoire
+  </app-pill-button>
+</section>

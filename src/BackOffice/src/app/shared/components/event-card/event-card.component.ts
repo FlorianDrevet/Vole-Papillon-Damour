@@ -34,7 +34,9 @@ export class EventCardComponent {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result !== null) {
+      // Fermer le dialogue par Échap ou en cliquant à côté renvoie `undefined`,
+      // que `!== null` laissait passer : le parent recevait alors une entrée vide.
+      if (result) {
         this.eventUpdated.emit(result);
       }
     });

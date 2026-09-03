@@ -1,0 +1,18 @@
+<div
+  class="mx-auto flex w-full max-w-[560px] flex-col items-center gap-4 rounded-sm border px-6 py-12 text-center"
+  [class]="containerClasses()">
+  <span
+    class="inline-flex h-12 w-12 items-center justify-center rounded-full border"
+    [class]="iconClasses()">
+    <app-icon [name]="icon()" [size]="20"></app-icon>
+  </span>
+
+  <span class="flex max-w-[46ch] flex-col gap-1.5">
+    <span class="font-serif text-xl font-medium text-ink-2">{{ title() }}</span>
+    @if (description()) {
+      <span class="text-[15px] leading-relaxed text-slate-2">{{ description() }}</span>
+    }
+  </span>
+
+  <ng-content></ng-content>
+</div>

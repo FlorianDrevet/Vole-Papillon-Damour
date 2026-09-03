@@ -522,7 +522,7 @@ Write-Host '  API (appsettings.json) :' -ForegroundColor Yellow
 Write-Host "    AzureAd:Instance   = https://<sous-domaine>.ciamlogin.com/"
 Write-Host "    AzureAd:TenantId   = $($context.TenantId)"
 Write-Host "    AzureAd:ClientId   = $($apiApp.AppId)"
-Write-Host "    AzureAd:Audience   = api://$($apiApp.AppId)"
+Write-Host "    AzureAd:Audience   = $($apiApp.AppId)"
 Write-Host ''
 Write-Host '  Clients (environment.ts / MSAL) :' -ForegroundColor Yellow
 foreach ($client in $clients) {

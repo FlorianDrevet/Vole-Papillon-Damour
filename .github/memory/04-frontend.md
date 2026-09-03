@@ -79,6 +79,10 @@ Verified feature roots:
   owns the Entra External ID client configuration; `shared/services/api-access-token.service.ts`
   acquires the API scope silently for the existing Axios transport. The Angular `MsalInterceptor`
   is not registered because the app does not use Angular `HttpClient` for API calls.
+- `BackOffice` bootstraps both `AppComponent` and `MsalRedirectComponent`; its
+  `src/index.html` must therefore contain both `<app-root>` and `<app-redirect>`. The
+  tenant-scoped CIAM authority is configured in both environment files so development and
+  production builds resolve the same Entra tenant.
 - `Website` has an `sse-client.service` that subscribes to `/asso-events/{id}/tableau/sse` for live event updates and now guards `EventSource` usage behind `isPlatformBrowser()` for SSR safety.
 - The Website SSE client closes the previous `EventSource` before opening a new event, ignores malformed payloads without dropping the last good state, and reconnects with bounded backoff from 250ms to 5s.
 - The Website home SSR path now tolerates missing `next-bingo`, `next-books`, `next-other-event`, and `latest actuality` payloads by keeping default empty state instead of surfacing unhandled promise rejections during server rendering.
@@ -118,12 +122,32 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
-- As of 2026-09-03, `npm ci` followed by `npm test -- --watch=false --browsers=ChromeHeadless`
-  passes with 5 BackOffice tests, and production/development `npm run build` both pass in
-  `src/BackOffice/`; the builds still emit existing signal-diagnostic, bundle-budget, CSS,
-  and CommonJS warnings. The same `npm ci`/build validation passes in `src/Website/`.
-- As of 2026-09-03, Scan passes 24 ChromeHeadless tests and the Angular production and
-  development builds; the production build has only the expected initial bundle budget
-  warning after adding the ZXing decoder and photo preprocessing. The CI workflow installs
-  its lockfile and builds the app after the existing BackOffice and Website steps. Cover
-  fallback and unavailable-cover rendering are covered by the scanner component specs.
+- As of 2026-09-03, BackOffice `npm ci`, its 2 bootstrap contract tests and 5 Angular tests,
+  and `npm run build` pass; existing signal-diagnostic, bundle-budget, CSS, and CommonJS
+  warnings remain.
+- As of 2026-09-03, Website `npm ci`, 58 ChromeHeadless tests, the production build, SSR
+  smoke checks, and responsive browser checks pass; its existing bundle/CSS/CommonJS
+  warnings remain.
+- As of 2026-09-03, Scan passes 24 ChromeHeadless tests and production/development builds;
+  its production bundle retains the expected initial-size warning. CI is configured to build the backend,
+  MAUI, and frontend surfaces but does not run frontend unit tests.
+
+## 2026-09-03 — Website editorial update
+
+- Famille Drevet content added the FSHD sheet at `/maxence/maladies/fshd` and the memories
+  route `/maxence/souvenirs`, both exposed through Maxence navigation and breadcrumbs.
+- `/maxence/vie-quotidienne` is an editorial landing page with four chapters (daily care,
+  hospital care, school, and transplant); the school detail remains directly reachable.
+- The four Maxence daily-life detail routes share `DailyLifeChapterHeaderComponent`, with a
+  consistent dark chapter banner, a return link to the four-entry landing page, and a common
+  `max-w-[880px]` reading column; the landing page no longer repeats its chapter index in a
+  right-hand hero card.
+- Association copy now says “loi 1901”, asks for “un peu de votre temps”, removes former market
+  activity, clarifies “cartons de livres”, and omits “Le bureau” and “Tout est public”.
+- The presentation hero uses `public/images/Association/asso.jpg` with a wider desktop image
+  zone while preserving the compact responsive mobile flow.
+- Maxence daily-life pages preserve their first-person narratives in the shared editorial shell;
+  daily care orders enteral nutrition, gastrostomy, digestive stoma, left-eye care, then antibiotics.
+- Website prices hide exact `10c` and `50c` denomination labels while the authenticated cash
+  surface keeps the full product projection. Scan cover fallback and unavailable-cover rendering
+  are covered by component specs.

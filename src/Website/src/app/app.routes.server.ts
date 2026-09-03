@@ -32,6 +32,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
+    path: 'maxence/souvenirs',
+    renderMode: RenderMode.Prerender,
+  },
+  {
     path: 'maxence/maladies',
     renderMode: RenderMode.Server,
   },
@@ -65,6 +69,10 @@ export const serverRoutes: ServerRoute[] = [
   },
   {
     path: 'maxence/maladies/hyperthyroidie',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'maxence/maladies/fshd',
     renderMode: RenderMode.Prerender,
   },
   {

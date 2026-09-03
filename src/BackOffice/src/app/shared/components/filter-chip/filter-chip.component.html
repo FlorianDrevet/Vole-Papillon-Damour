@@ -1,0 +1,7 @@
+<!-- Bouton à deux états, et non un onglet : ces filtres ne révèlent pas un panneau
+     qui leur est propre, ils restreignent la même grille. `aria-pressed` décrit
+     donc la situation plus fidèlement que `role="tab"`, qui exigerait en plus
+     d'être un enfant direct de son `tablist`. -->
+<button type="button" [attr.aria-pressed]="active()" [class]="classes()">
+  <ng-content></ng-content>
+</button>

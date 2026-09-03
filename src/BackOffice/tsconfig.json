@@ -20,13 +20,25 @@
     "target": "ES2022",
     "module": "ES2022",
     "baseUrl": ".",
+    /*
+      Seul `@vpd/ui` est redirigé ici.
+
+      Les redirections `@angular/*`, `rxjs*` et `tslib` qui figuraient aussi dans
+      cette liste ont été retirées : elles réécrivaient `@angular/platform-browser`
+      en chemin de fichier, que le serveur de développement n'assemble pas avec les
+      dépendances communes, tandis que ses sous-chemins (`@angular/platform-browser/
+      animations`) ne correspondaient à aucune redirection et continuaient d'être
+      résolus normalement. Angular se retrouvait avec deux exemplaires du paquet et
+      ne trouvait plus le fournisseur `DomRendererFactory2` : `ng serve` n'affichait
+      qu'une page blanche (NG0201).
+
+      SharedUi trouve de toute façon les paquets Angular de l'application via le
+      lien `SharedUi/node_modules` créé par `npm run link:shared-ui`, qui est la
+      raison d'être de ce script.
+    */
     "paths": {
       "@vpd/ui": ["../SharedUi/src/public-api.ts"],
-      "@vpd/ui/*": ["../SharedUi/src/*"],
-      "@angular/*": ["./node_modules/@angular/*"],
-      "rxjs": ["./node_modules/rxjs"],
-      "rxjs/*": ["./node_modules/rxjs/*"],
-      "tslib": ["./node_modules/tslib"]
+      "@vpd/ui/*": ["../SharedUi/src/*"]
     }
   },
   "angularCompilerOptions": {

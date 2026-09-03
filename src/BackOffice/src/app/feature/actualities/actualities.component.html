@@ -7,12 +7,29 @@
   </app-page-header>
 
   @if (isLoading()) {
-    <mat-spinner class="ml-auto mr-auto mt-10"></mat-spinner>
+    <app-loading-placeholder variant="rows" [count]="3"></app-loading-placeholder>
+  } @else if (hasFailed()) {
+    <app-state-panel
+      icon="undo"
+      tone="danger"
+      title="Les actualités n'ont pas pu être chargées"
+      description="Le serveur n'a pas répondu. Vérifiez votre connexion, puis réessayez.">
+      <app-pill-button (click)="load()" type="button" variant="danger" [small]="true">
+        Réessayer
+      </app-pill-button>
+    </app-state-panel>
   } @else if (groupedActualities().length === 0) {
-    <p class="mt-4 text-[15px] text-slate-2">Aucune actualité pour le moment.</p>
+    <app-state-panel
+      icon="add"
+      title="Aucune actualité publiée"
+      description="Les actualités publiées ici apparaissent sur le site de l'association.">
+      <app-pill-button (click)="openDialogCreation()" type="button" [small]="true">
+        Écrire la première actualité
+      </app-pill-button>
+    </app-state-panel>
   } @else {
     <div class="flex flex-col gap-14">
-      @for (month of groupedActualities(); track month) {
+      @for (month of groupedActualities(); track month.month + month.year) {
         <app-actuality-by-month
           (actualityDeleted)="actualityDeleted($event)"
           (actualityUpdated)="actualityUpdated($event)"

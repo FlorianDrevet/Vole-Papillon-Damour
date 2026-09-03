@@ -1,0 +1,48 @@
+<div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-vpd-hero px-shell py-16">
+  <div class="pointer-events-none absolute -right-24 top-8 h-[320px] w-[320px] rounded-full border border-cyan/25"></div>
+  <div class="pointer-events-none absolute -left-28 bottom-0 h-[380px] w-[380px] rounded-full border border-cyan/15"></div>
+
+  <div class="relative flex w-full max-w-[420px] flex-col items-center gap-7 text-center">
+    <img class="h-14 w-14 object-contain" src="logos/papillon_without_back.png" alt="">
+
+    @if (!isStalled()) {
+      <div class="flex flex-col items-center gap-4">
+        <span class="font-mono text-[11px] uppercase tracking-[.2em] text-cyan">Espace bénévoles</span>
+        <h1 class="font-serif text-[28px] font-medium leading-tight text-white">Connexion en cours…</h1>
+        <p class="text-[15px] leading-relaxed text-mist-2">
+          Nous vérifions votre compte Microsoft. Vous allez être redirigé automatiquement.
+        </p>
+      </div>
+
+      <span
+        class="h-[3px] w-40 overflow-hidden rounded-full bg-white/15"
+        role="status"
+        aria-label="Connexion en cours">
+        <span class="block h-full w-1/3 rounded-full bg-vpd-brand motion-safe:animate-vpd-sweep"></span>
+      </span>
+    } @else {
+      <div class="flex w-full flex-col gap-5 rounded-sm border border-cyan/20 bg-white/[.06] p-7 text-left">
+        <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
+        <h1 class="font-serif text-[26px] font-medium leading-tight text-white">
+          La connexion n'aboutit pas
+        </h1>
+        <p class="text-[15px] leading-relaxed text-mist-2">
+          Une précédente tentative a probablement été interrompue. Réinitialiser la
+          connexion vide les données enregistrées par Microsoft dans ce navigateur,
+          puis vous ramène à l'écran de connexion. Aucune donnée de l'association
+          n'est effacée.
+        </p>
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <app-pill-button (click)="resetSession()" type="button" [small]="true">
+            Réinitialiser la connexion
+          </app-pill-button>
+          <a
+            routerLink="/login"
+            class="inline-flex items-center justify-center rounded-full border border-cyan/40 px-5 py-2.5 text-sm font-semibold text-cyan transition hover:bg-white/10">
+            Retour à la connexion
+          </a>
+        </div>
+      </div>
+    }
+  </div>
+</div>

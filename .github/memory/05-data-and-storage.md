@@ -24,11 +24,12 @@
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
 - Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, and `product-images`.
+- The bibliographic resolver calls BnF SRU first and Open Library second; the current ISBN probe does not persist books.
 
 ## Authentication
 
-- JWT bearer auth is configured in Infrastructure from `JwtSettings`.
-- The API exposes an `IsAdmin` authorization policy.
+- Infrastructure supports the staged Entra bearer scheme alongside the legacy JWT scheme from `JwtSettings`.
+- The API exposes `IsAdmin` as a compatibility policy while the Entra role policies are rolled out.
 - Auth changes are multi-surface changes because they affect the API, the admin Angular app, and possibly the MAUI client.
 
 ## Client-Side Storage
@@ -42,7 +43,9 @@
 
 - PostgreSQL packages were removed during the .NET 10 backend upgrade; the active DI path remains SQL Server.
 - The Aspire AppHost provisions local SQL Server and Azurite for development orchestration.
-- The mailing-list subscription flow and Azure Communication Email integration were removed; actuality creation no longer broadcasts emails.
+- The legacy mailing-list subscription flow and actuality email broadcast were removed; the application runtime no longer sends those messages.
+- The deployment infrastructure provisions an Azure Communication Services Email resource for the deployment plan, but no active actuality mailing-list send path is present in the application runtime.
+- Account deletion is persisted through an outbox-backed local retention flow and completed against the Microsoft Graph directory by the private Worker.
 - The former OCR-specific Azure Vision integration and `OcrSettings` configuration were removed in May 2026.
 - Product website visibility is persisted as `Products.VisibleOnWebsite` by the `AddProductWebsiteVisibility` EF migration. Existing rows are backfilled to preserve the previous Website availability and legacy `euro`/`centime`/`€` exclusions.
 

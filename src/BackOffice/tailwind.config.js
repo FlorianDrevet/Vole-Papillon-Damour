@@ -71,11 +71,18 @@ module.exports = {
       },
       animation: {
         "vpd-float": "vpdFloat 8s ease-in-out infinite",
+        // Propre au BackOffice : barre de progression indéterminée de l'écran
+        // d'atterrissage, pendant que MSAL traite la redirection.
+        "vpd-sweep": "vpdSweep 1.4s ease-in-out infinite",
       },
       keyframes: {
         vpdFloat: {
           "0%, 100%": { transform: "translateY(0) rotate(var(--r, 0deg))" },
           "50%": { transform: "translateY(-9px) rotate(var(--r, 0deg))" },
+        },
+        vpdSweep: {
+          from: { transform: "translateX(-110%)" },
+          to: { transform: "translateX(320%)" },
         },
       },
     },

@@ -11,9 +11,14 @@
 - `JwtSettings`, `IJwtGenerator`, and `/auth/login` intentionally remain during deployment
   1 so the deployed BackOffice and unredistributed MAUI devices continue to work.
 - Entra runtime values are supplied by `AzureAd__Instance`, `AzureAd__TenantId`,
-  `AzureAd__ClientId`, and `AzureAd__Audience`; the development API settings now contain
-  the registered dev API client and audience so anonymous local endpoints do not fail while
-  the authentication scheme is initialized.
+  `AzureAd__ClientId`, and `AzureAd__Audience`. For v2 access tokens, the audience is the
+  bare API application ID; the `api://<id>/access_as_user` form remains the delegated MSAL
+  scope. The development API settings and Bicep deployment use the bare ID so BackOffice
+  write requests validate against the `aud` claim issued by Entra.
+- Entra `JwtBearerOptions` disable inbound claim mapping and use `roles` as the role claim
+  type. This keeps app roles such as `Administration` visible to ASP.NET Core's
+  `RequireRole` policies; leaving the default mapping enabled makes those policies return
+  `403 Forbidden` even when the token contains the role.
 - `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
 - `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
 
@@ -22,10 +27,20 @@
 - `BackOffice` uses `@azure/msal-angular` 5.3.1 with `@azure/msal-browser` 5.20.0,
   compatible with the repository's Angular 21 line. `shared/auth/msal-config.ts` configures
   the Entra External ID authority, SPA redirect URIs, local storage cache, and the
-  `access_as_user` login scope.
+  `access_as_user` login scope. The CIAM custom-domain authority is tenant-scoped
+  (`https://volepapillondamour.ciamlogin.com/<tenantId>/`); `knownAuthorities` remains the
+  custom-domain host.
 - Protected BackOffice routes use `MsalGuard`; `MsalRedirectComponent` handles the redirect
   response at application bootstrap, and `AppComponent` restores/selects the active cached
-  account. `LoginComponent` starts `loginRedirect` instead of posting local credentials.
+  account. Because both root components are bootstrapped, `src/index.html` must declare both
+  `<app-root>` and `<app-redirect>`; omitting the latter raises Angular `NG05104` before the
+  MSAL redirect handler can initialize. `LoginComponent` starts `loginRedirect` instead of
+  posting local credentials.
+- `AppModule` provides an awaited `provideAppInitializer` that calls
+  `MsalService.initialize()` before either root component is created. Without this barrier,
+  a normal refresh can construct `AuthSessionService` before MSAL is initialized and leave
+  the BackOffice blank with `uninitialized_public_client_application`; a hard refresh only
+  masks the race.
 - `ApiAccessTokenService` calls `MsalService.acquireTokenSilent` for the API scope and
   `AxiosService` adds the resulting bearer token to every API request. `MsalInterceptor` is
   intentionally not registered because BackOffice uses Axios rather than Angular `HttpClient`.
@@ -87,9 +102,10 @@
 
 - Do not store secrets in memory files or commit local connection strings.
 - The Angular README files still look template-oriented; prefer `package.json`, environment files, and actual routing/services over README TODOs when you need the truth.
-- `BackOffice` now has focused Angular tests for the MSAL login redirect and API token adapter;
-  `npm test -- --watch=false --browsers=ChromeHeadless` passes locally with 5 tests. The CI
-  workflow currently builds the frontends but does not yet run frontend unit tests.
+- `BackOffice` now has focused tests for the MSAL bootstrap/login redirect and API token adapter;
+  `npm test -- --watch=false --browsers=ChromeHeadless` passes locally with 2 bootstrap
+  contract tests followed by 5 Angular/Karma tests. The CI workflow currently builds the
+  frontends but does not yet run frontend unit tests.
 - `npm run build` in `src/BackOffice/` exits successfully, but keeps pre-existing Angular
   signal-diagnostic, bundle-budget, CSS-budget, and CommonJS warnings unrelated to this
   authentication migration.
@@ -99,7 +115,7 @@
 - The Infra Flow Sculptor project was created with placeholder subscription IDs (`00000000-0000-0000-0000-000000000000`) and those must be replaced in the project settings before real deployment.
 - Rider build-with-surface-heuristics can create generated C# files under `src/Backend/Vole_Papillon_Damour.Domain/artifacts/validation/obj/`; the Domain project now excludes `artifacts/**` from SDK default items so those generated assembly attribute files do not get compiled alongside the normal `obj/` output.
 - Repeated `18456` login failures from the local SQL Server container during Aspire startup usually mean the persisted SQL volume still has an older `sa` password than the one the AppHost is currently using; stabilize the AppHost secret instead of relying on the default generated password.
-- `.github/workflows/ci.yml` is the push/pull-request gate for the backend solution, its three test projects, the Android MAUI target, and the BackOffice, Website, and Scan Angular builds. It deliberately does not run frontend unit tests yet; the Angular tests are currently validated locally.
+- `.github/workflows/ci.yml` is the push/pull-request gate for the backend solution, its three test projects, the Android MAUI target, and the BackOffice, Website, and Scan Angular builds. It deliberately does not run frontend unit tests yet; the Angular tests are currently validated locally. The workflow still requests `net9.0-android` while the MAUI project targets `net10.0-android`, so that Android CI step needs alignment before it is treated as authoritative.
 - `dotnet test .\src\MauiCashApp.Tests\ShopAppVpd.Tests.csproj` covers the platform-independent
   authorization handler. The MAUI Android build remains environment-dependent and currently
   fails locally with `XA5300` when no Android SDK is configured.

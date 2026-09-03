@@ -2,10 +2,12 @@
 
 ## Scope
 
-`Vole-Papillon-Damour` is the application repository itself, not a bootstrap template. It ships three delivery surfaces around one shared business domain:
+`Vole-Papillon-Damour` is the application repository itself, not a bootstrap template. It ships several delivery and runtime surfaces around one shared business domain:
 
 - an ASP.NET Core backend API
 - two Angular 21 web applications (`BackOffice` and `Website`)
+- one Angular 21 consultation-only ISBN probe (`Scan`)
+- one .NET isolated account-deletion Worker
 - one .NET MAUI cashier client (`MauiCashApp`)
 
 ## Runtime Surfaces
@@ -14,6 +16,8 @@
 - `src/Backend/Vole_Papillon_Damour.AppHost/` hosts the Aspire AppHost used for local orchestration of the API and web apps.
 - `src/BackOffice/` is the Angular admin application.
 - `src/Website/` is the Angular public website.
+- `src/Scan/` is the public consultation-only ISBN metadata probe.
+- `src/Backend/Vole_Papillon_Damour.Worker/` hosts the private account-deletion timer worker.
 - `src/MauiCashApp/` is the MAUI client that calls the deployed backend through Refit.
 
 ## Verified Functional Areas
@@ -21,8 +25,10 @@
 The backend and contracts expose features around:
 
 - authentication
+- account deletion and external identity coordination
 - actuality content
 - association events
+- bibliographic ISBN metadata lookup
 - products
 - orders
 
@@ -41,5 +47,6 @@ The backend and contracts expose features around:
 - Residual `MailingList` folders still exist in `Application` and `Contracts`, but the API runtime no longer maps mailing-list endpoints.
 - The OCR bingo-card analysis slice was removed from the backend and BackOffice admin UI because automatic loto-card reading is no longer allowed by the business rules.
 - The backend projects remain free of `Aspire.*` packages; local orchestration lives only in the AppHost project.
-- No CI pipeline file was detected during bootstrap, so local validation commands matter.
+- `.github/workflows/ci.yml` is configured for backend, MAUI, and frontend builds; frontend unit tests are still validated locally.
+- The MAUI Android build remains dependent on an Android SDK being available in the environment.
 - A Graphify knowledge graph is available for documentation and corpus-level orientation.

@@ -12,12 +12,12 @@ import {
 @Component({
     selector: 'app-creation-partie',
     templateUrl: './creation-update-partie.component.html',
-    styleUrl: './creation-update-partie.component.scss',
     standalone: false
 })
 export class CreationUpdatePartieComponent {
   newPartieForm: FormGroup;
   isLoading = signal(false);
+  hasValidationErrors = signal(false);
   updatePartie = signal<VpdEventPartieModel | null>(null);
   protected readonly PartieTypeEnum = PartieTypeEnum;
   private readonly fb = inject(FormBuilder);
@@ -50,16 +50,14 @@ export class CreationUpdatePartieComponent {
 
   onYesClick(): void {
     if (this.newPartieForm.invalid) {
+      // Le bouton ne faisait rien et les erreurs de saisie partaient dans la
+      // console : de l'extérieur, la modale paraissait bloquée.
       this.newPartieForm.markAllAsTouched();
-
-      Object.keys(this.newPartieForm.controls).forEach(key => {
-        const controlErrors = this.newPartieForm.get(key)!.errors;
-        if (controlErrors) {
-          console.log('Control Errors for:', key, controlErrors);
-        }
-      });
+      this.hasValidationErrors.set(true);
       return;
     }
+
+    this.hasValidationErrors.set(false);
     this.isLoading.set(true);
     if (this.updatePartie() === null) {
       this.lotoFacadeService.postCreatePartie$(this._event.id, this.createFormData()).then((result) => {

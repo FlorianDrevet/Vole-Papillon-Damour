@@ -1,44 +1,48 @@
-import {Component} from '@angular/core';
-import {MsalBroadcastService, MsalService} from '@azure/msal-angular';
-import {AuthenticationResult, EventType} from '@azure/msal-browser';
-import {filter} from 'rxjs/operators';
+import {Component, DestroyRef, inject, signal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
+import {filter} from 'rxjs/operators';
+
+import {AuthSessionService} from './shared/auth/auth-session.service';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
-    styleUrl: './app.component.scss',
     standalone: false
 })
 export class AppComponent {
-  title = 'Template Angular'; //TODO Change title
+  private readonly router = inject(Router);
+  private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor(
-    private readonly msalService: MsalService,
-    private readonly msalBroadcastService: MsalBroadcastService,
-  ) {
-    this.setActiveAccountFromCache();
+  // Instancié dès le démarrage : c'est lui qui adopte le compte déjà en cache
+  // comme compte actif et qui suit les évènements MSAL pour toute l'application.
+  private readonly authSession = inject(AuthSessionService);
 
-    this.msalBroadcastService.msalSubject$
+  /**
+   * Certaines pages occupent tout l'écran et n'ont ni barre de navigation ni pied
+   * de page : la connexion, l'atterrissage après redirection, et le tableau du
+   * loto affiché en salle. Chaque route le déclare (`data.chrome`) plutôt que de
+   * laisser la navigation et le pied de page tester l'URL chacun de leur côté —
+   * la règle était dupliquée et divergeait déjà entre les deux.
+   */
+  protected readonly showChrome = signal(this.resolveChrome());
+
+  constructor() {
+    this.router.events
       .pipe(
-        filter(message => message.eventType === EventType.LOGIN_SUCCESS),
-        takeUntilDestroyed(),
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(message => {
-        const result = message.payload as AuthenticationResult;
-        this.msalService.instance.setActiveAccount(result.account);
-      });
+      .subscribe(() => this.showChrome.set(this.resolveChrome()));
   }
 
-  private setActiveAccountFromCache(): void {
-    const activeAccount = this.msalService.instance.getActiveAccount();
-    if (activeAccount) {
-      return;
+  private resolveChrome(): boolean {
+    let route = this.activatedRoute;
+    while (route.firstChild) {
+      route = route.firstChild;
     }
 
-    const firstAccount = this.msalService.instance.getAllAccounts()[0];
-    if (firstAccount) {
-      this.msalService.instance.setActiveAccount(firstAccount);
-    }
+    return route.snapshot.data['chrome'] !== false;
   }
 }

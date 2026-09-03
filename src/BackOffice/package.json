@@ -13,7 +13,8 @@
     "build": "ng build",
     "prewatch": "npm run link:shared-ui",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "npm run test:bootstrap && ng test",
+    "test:bootstrap": "node --test scripts/bootstrap-contract.test.mjs"
   },
   "private": true,
   "dependencies": {

@@ -20,6 +20,7 @@ export class CreateUpdateEventDialogComponent implements OnInit {
   newEventForm: FormGroup;
   error = signal<ErrorsEnum | null>(null)
   isLoading = signal(false);
+  hasValidationErrors = signal(false);
   principalImage = signal<FileUploadInterface>({fileName: '', fileContent: ''});
   updateEvent = signal<VpdEventModel | null>(null);
 
@@ -94,22 +95,38 @@ export class CreateUpdateEventDialogComponent implements OnInit {
     }
   }
 
+  /**
+   * Le champ fichier n'est pas relié au formulaire (voir le gabarit) : c'est ici
+   * qu'on répercute la sélection sur l'aperçu et sur le contrôle `image`, qui ne
+   * sert plus qu'à porter la validation « une image est obligatoire ».
+   */
+  onImageSelected(input: HTMLInputElement): void {
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    ImageUtils.onFileSelected(input, this.principalImage);
+
+    const control = this.newEventForm.get('image');
+    control?.setValue(file.name);
+    control?.markAsDirty();
+  }
+
   onNoClick(): void {
     this._dialogRef.close(null);
   }
 
   onYesClick(): void {
     if (this.newEventForm.invalid) {
+      // Le bouton ne faisait rien et les erreurs de saisie partaient dans la
+      // console : de l'extérieur, la modale paraissait bloquée.
       this.newEventForm.markAllAsTouched();
-
-      Object.keys(this.newEventForm.controls).forEach(key => {
-        const controlErrors = this.newEventForm.get(key)!.errors;
-        if (controlErrors) {
-          console.log('Control Errors for:', key, controlErrors);
-        }
-      });
+      this.hasValidationErrors.set(true);
       return;
     }
+
+    this.hasValidationErrors.set(false);
     this.isLoading.set(true);
     if (this.updateEvent() === null) {
       this._eventFacade.postNewEvent$(this.createFormData()).then((result) => {
@@ -205,6 +222,4 @@ export class CreateUpdateEventDialogComponent implements OnInit {
   }
 
   protected readonly VpdEventEnum = VpdEventEnum;
-  protected readonly ImageUtils = ImageUtils;
-  protected readonly document = document;
 }
