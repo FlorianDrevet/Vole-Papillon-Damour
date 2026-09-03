@@ -163,6 +163,9 @@ public static class DependencyInjection
 
         services.PostConfigure<JwtBearerOptions>(EntraAuthenticationScheme, options =>
         {
+            // Keep Entra's standard `roles` claim name so ASP.NET Core role
+            // policies can evaluate app roles such as `Administration`.
+            options.MapInboundClaims = false;
             options.TokenValidationParameters.RoleClaimType = "roles";
         });
 

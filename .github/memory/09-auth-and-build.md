@@ -15,6 +15,10 @@
   bare API application ID; the `api://<id>/access_as_user` form remains the delegated MSAL
   scope. The development API settings and Bicep deployment use the bare ID so BackOffice
   write requests validate against the `aud` claim issued by Entra.
+- Entra `JwtBearerOptions` disable inbound claim mapping and use `roles` as the role claim
+  type. This keeps app roles such as `Administration` visible to ASP.NET Core's
+  `RequireRole` policies; leaving the default mapping enabled makes those policies return
+  `403 Forbidden` even when the token contains the role.
 - `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
 - `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
 
