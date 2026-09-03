@@ -47,6 +47,8 @@
 - `BackOffice` environment config includes `api_url`, `url_vpd_web_site`, `time_numero_modal`,
   and the public Entra settings (`tenantId`, client ID, authority, redirect URIs, and API scope).
 - `Website` environment config includes `api_url`.
+- `Scan` development config derives its API host from the browser hostname on port `5257`
+  for LAN testing; the production environment points to the configured API deployment.
 - `MauiCashApp/appsettings.json` contains `VpdSettings.BaseUrl`; the MSAL client ID, authority,
   API scope, and Android redirect are application configuration constants in `MsalAuthService`.
 - Dockerized deployment config now lives in `src/BackOffice/Dockerfile`, `src/Website/Dockerfile`, and `infra/aca/`.
@@ -60,6 +62,7 @@
 - Backend orchestration: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - BackOffice: `npm install`; `npm run start`; `npm run build`; `npm test`
 - Website: `npm install`; `npm run start`; `npm run build`; `npm test`; `npm run serve:ssr:vole_papillon_damour_website`
+- Scan: `npm ci`; `npm run start`; `npm run build`; `npm test -- --watch=false --browsers=ChromeHeadless`
 - BackOffice Docker image: `docker build -f .\src\BackOffice\Dockerfile --build-arg API_URL=<url> --build-arg WEBSITE_URL=<url> .\src`
 - Website Docker image: `docker build -f .\src\Website\Dockerfile --build-arg API_URL=<url> .\src`
 - Subscription-scope ACA deploy: `az deployment sub create --location FranceCentral --template-file .\infra\aca\main.bicep --parameters .\infra\aca\parameters\main.dev.bicepparam`
@@ -81,7 +84,7 @@
 - The Infra Flow Sculptor project was created with placeholder subscription IDs (`00000000-0000-0000-0000-000000000000`) and those must be replaced in the project settings before real deployment.
 - Rider build-with-surface-heuristics can create generated C# files under `src/Backend/Vole_Papillon_Damour.Domain/artifacts/validation/obj/`; the Domain project now excludes `artifacts/**` from SDK default items so those generated assembly attribute files do not get compiled alongside the normal `obj/` output.
 - Repeated `18456` login failures from the local SQL Server container during Aspire startup usually mean the persisted SQL volume still has an older `sa` password than the one the AppHost is currently using; stabilize the AppHost secret instead of relying on the default generated password.
-- `.github/workflows/ci.yml` is the push/pull-request gate for the backend solution, its three test projects, the Android MAUI target, and both Angular builds. It deliberately does not run frontend unit tests yet; the BackOffice tests are currently validated locally.
+- `.github/workflows/ci.yml` is the push/pull-request gate for the backend solution, its three test projects, the Android MAUI target, and the BackOffice, Website, and Scan Angular builds. It deliberately does not run frontend unit tests yet; the Angular tests are currently validated locally.
 - `dotnet test .\src\MauiCashApp.Tests\ShopAppVpd.Tests.csproj` covers the platform-independent
   authorization handler. The MAUI Android build remains environment-dependent and currently
   fails locally with `XA5300` when no Android SDK is configured.

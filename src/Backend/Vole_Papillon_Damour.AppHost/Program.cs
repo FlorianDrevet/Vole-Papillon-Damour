@@ -7,12 +7,14 @@ const string AzureFunctionsStorageEnvironmentName = "AzureWebJobsStorage";
 const string BackOfficeResourceName = "backoffice";
 const string DefaultHttpEndpointName = "http";
 const string ProjectDatabaseName = "ProjectDatabase";
+const string ScanResourceName = "scan";
 const string SqlServerName = "sql-server";
 const string SqlServerPasswordParameterName = "sql-server-password";
 const string StorageName = "storage";
 const string UseDevelopmentStorageConnectionString = "UseDevelopmentStorage=true";
 const string WebsiteResourceName = "website";
 const int BackOfficePort = 4200;
+const int ScanPort = 4202;
 const int WebsitePort = 4201;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -40,6 +42,12 @@ builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
     .WithEnvironment(AzureFunctionsStorageEnvironmentName, UseDevelopmentStorageConnectionString)
     .WaitFor(projectDatabase)
     .WaitFor(storage);
+
+builder.AddJavaScriptApp(ScanResourceName, GetFrontendDirectory("Scan"))
+    .WithRunScript("start")
+    .WithArgs("--", "--host", "0.0.0.0", "--port", ScanPort.ToString())
+    .WithHttpEndpoint(targetPort: ScanPort, port: ScanPort, name: DefaultHttpEndpointName, isProxied: false)
+    .WaitFor(api);
 
 builder.AddJavaScriptApp(BackOfficeResourceName, GetFrontendDirectory("BackOffice"))
     .WithRunScript("start")

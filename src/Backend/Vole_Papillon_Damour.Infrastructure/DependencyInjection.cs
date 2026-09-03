@@ -19,6 +19,7 @@ using Vole_Papillon_Damour.Infrastructure.Extensions;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Repositories;
 using Vole_Papillon_Damour.Infrastructure.Services;
+using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
 
 namespace Vole_Papillon_Damour.Infrastructure;
@@ -59,6 +60,21 @@ public static class DependencyInjection
         services.AddScoped<IAccountDeletionStore, AccountDeletionStore>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<IEntraUserDirectory, EntraGraphUserDirectory>();
+        services.Configure<BibliographicOptions>(
+            builderConfiguration.GetSection(BibliographicOptions.SectionName));
+        services.AddHttpClient<IBnfSruClient, BnfSruClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(options.BnfTimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
+        services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(options.OpenLibraryTimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
+        services.AddScoped<IBibliographicMetadataResolver, BibliographicMetadataResolver>();
         
         return services;
     }

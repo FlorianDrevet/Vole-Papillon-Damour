@@ -1,0 +1,36 @@
+:root {
+  color-scheme: light;
+  --scan-ink: #17324d;
+  --scan-blue: #0c6ea6;
+  --scan-blue-soft: #eaf6fc;
+  --scan-orange: #f0801c;
+  --scan-paper: #f7fbfd;
+  --scan-line: #c8dce8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--scan-paper);
+  color: var(--scan-ink);
+  font-family: "Libre Franklin", Arial, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--scan-orange) 65%, white);
+  outline-offset: 2px;
+}

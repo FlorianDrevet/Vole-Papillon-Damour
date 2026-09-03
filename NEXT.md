@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-11` — étape 8 : suppression coordonnée de l'identité Entra et de la projection locale |
-| **Prochaine action** | Relire/merger la PR de l'étape 8, puis exécuter le script Entra sur un poste autorisé, renseigner les secrets GitHub et déployer avant les tests manuels des deux côtés ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
+| **Lot en cours** | `S0-2` — sonde de faisabilité locale du palier 0 ; les déploiements 2–3 de `L0-11` restent à faire hors dépôt |
+| **Prochaine action** | Lancer l'AppHost sur le portable, ouvrir la sonde depuis un téléphone du même réseau et mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `feat/l0-11-account-deletion` |
+| **Branche** | `main` |
 
 ---
 
@@ -35,9 +35,8 @@ plus de réponse ; ceci est un rappel, le détail est dans les documents cités.
 | Genres et classement | **Depuis les sources bibliographiques**, et le site n'indique **jamais** où se trouve un livre dans le local (`Q-07`) |
 | Repli d'exploitation | **Aucun.** Une panne fait vendre sans enregistrer, rien n'est rattrapé. Le hors-ligne de la caisse devient la seule protection (`ENF-21`, `P1-10`) |
 
-Reste à écrire, mais rien ne le bloque : les **chiffres cibles du palier 0** (`S0-1`, avant
-la campagne) et le **choix du matériel de scan** (`Q-08`, après la campagne, s'il s'avère
-nécessaire).
+Les **chiffres cibles du palier 0** (`S0-1`) sont fixés avant la campagne. Le **choix du
+matériel de scan** (`Q-08`) reste à trancher après la campagne, s'il s'avère nécessaire.
 
 ---
 
@@ -161,6 +160,17 @@ pour l'application `vpd-account-deletion-dev`, son secret hors dépôt et le sec
 cette branche. Validation locale : solution `.slnx` compilée ; 78 tests backend passés ;
 compilation Bicep et analyse syntaxique PowerShell passées.
 
+La sonde `S0-2` est maintenant implémentée localement dans `src/Scan` : saisie ISBN,
+scanette clavier, caméra via `BarcodeDetector`, conversion ISBN-10 → ISBN-13 et appel
+consultation seule à `GET /books/{isbn13}/metadata`. L'API interroge la BnF SRU puis Open
+Library en repli, sans session, IndexedDB, authentification ni écriture. L'AppHost expose
+la sonde sur le port `4202` et l'API sur `5257` ; l'URL de développement suit l'hôte du
+portable pour permettre l'essai depuis un téléphone sur le LAN. Les cibles `S0-1` sont
+`≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre.
+Validation locale : 92 tests backend ciblés, 9 tests ChromeHeadless, build de la solution,
+build AppHost et builds Scan production/développement. Aucun déploiement ni test manuel de
+campagne n'a encore été effectué.
+
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
 La validation locale et la validation GitHub sont réussies ; la compilation MAUI locale reste
@@ -275,9 +285,9 @@ reportées.
 
 | Mesure | Cible |
 |---|---|
-| Taux de lecture au premier essai | — |
-| Taux de métadonnées trouvées | — |
-| Cadence tenable au bout de 200 livres | — |
+| Taux de lecture au premier essai | `≥ 90 %` |
+| Taux de métadonnées trouvées | `≥ 85 %` |
+| Cadence tenable au bout de 200 livres | `≤ 3 s par livre` |
 
 ---
 
@@ -298,6 +308,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **S0-1/S0-2 — sonde de faisabilité locale.** Fixation préalable des cibles à `≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre. Ajout de `src/Scan` : saisie ISBN, scanette clavier, caméra `BarcodeDetector`, normalisation ISBN-10/13 et affichage consultation seule. Ajout de `GET /books/{isbn13}/metadata` avec pipeline BnF SRU puis Open Library, parsing UNIMARC/JSON typé, et intégration AppHost sur `4202` avec API locale `5257` accessible depuis le LAN. La CI compile désormais la sonde. 92 tests backend et 9 tests ChromeHeadless passent ; les builds solution, AppHost, Scan production et développement passent. Aucun déploiement ni test manuel de campagne n'a été effectué. |
 | 2026-09-03 | Windows | **L0-11 — étape 8, suppression coordonnée de compte.** Sur `feat/l0-11-account-deletion`, ajout du flux `DELETE /catalog/me` avec outbox durable : Graph est appelé avant la finalisation locale, le `404` est idempotent et le worker Functions rejoue les demandes échouées par lots de 50 avec bail de cinq minutes. Ajout de la migration `20260903002636_AddAccountDeletionOutbox`, de l'application Graph et du secret Key Vault dans les scripts/Bicep, ainsi que de l'intégration Aspire Functions locale. La solution compile et les 78 tests backend passent ; Bicep et PowerShell sont valides. Aucun déploiement Azure, secret ou objet Entra n'a été créé ; les tests manuels de suppression restent à faire. |
 | 2026-09-03 | Windows | **L0-11 — caisse MSAL.** Après le merge de la PR #20 dans `main`, création de `feat/l0-11-maui-msal`. Passage de `MauiCashApp` à `net10.0-android` et ajout de `Microsoft.Identity.Client` `4.88.0`, avec `MsalAuthService` en silent-first, handler Bearer Refit et callback Android `msal427c90de-bf59-4b01-af63-dc0799248496://auth`. Le test ciblé passe (1/1) et `dotnet restore` passe ; `dotnet build` reste bloqué localement par `XA5300` (SDK Android absent). Aucun appareil ni déploiement n'a été modifié ; aucun keystore n'existe. |
 | 2026-09-03 | Windows | **L0-11 — BackOffice MSAL.** Après le merge de la migration 0 dans `main`, création de la branche `feat/l0-11-backoffice-msal`. Migration du login vers le redirect MSAL Angular (`5.3.1`) avec MSAL Browser (`5.20.0`), remplacement du guard maison par `MsalGuard`, sélection de l'identité active au démarrage et acquisition silencieuse de la portée API pour Axios. Suppression du cookie JWT, des services/façades d'authentification maison et des dépendances `@auth0/angular-jwt`/`ngx-cookie-service`. `npm ci`, les 5 tests ChromeHeadless et les builds production/développement passent ; seules des alertes Angular préexistantes restent. Aucun déploiement n'a été effectué. |
