@@ -144,6 +144,16 @@ Pour un essai local, l'enregistrement SPA `vpd-backoffice-dev` doit contenir
 `http://localhost:4200` en plus de l'URI de production ; cet état n'est pas confirmé par le
 rapport Entra conservé ci-dessus.
 
+Un correctif isolé est préparé sur `fix/backoffice-msal-bootstrap` dans le worktree
+`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-backoffice-login-fix`. La cause de
+`NG05104` était l'absence de `<app-redirect>` dans `src/BackOffice/src/index.html` alors que
+`MsalRedirectComponent` était bootstrappé ; MSAL ne s'initialisait donc pas et le clic de
+connexion échouait avant toute requête réseau. L'autorité CIAM des deux environnements a
+également été corrigée pour inclure le tenant. Le contrat de bootstrap (2 tests), les 5 tests
+Angular, le build production et un smoke local qui atteint l'écran Microsoft passent. Aucun
+déploiement n'a été effectué ; après merge, vérifier l'URI SPA
+`https://backoffice.volepapillondamour.fr` et le parcours de redirection sur le domaine public.
+
 L'étape 8 de `L0-11` est implémentée côté dépôt. `DELETE /catalog/me` crée une demande
 d'effacement durable dans `OutboxMessages`, appelle Microsoft Graph avec l'application
 `User.ReadWrite.All`, puis supprime ou anonymise la projection locale. Un `404` Graph est
@@ -334,6 +344,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **L0-11 — correctif BackOffice MSAL.** Sur `fix/backoffice-msal-bootstrap`, ajout de l'hôte `<app-redirect>` requis par `MsalRedirectComponent` et correction de l'autorité CIAM tenant-scoped dans les environnements BackOffice. Ajout d'un test de contrat de bootstrap ; 2 tests de bootstrap, 5 tests Angular, le build production et un smoke local jusqu'à l'écran Microsoft passent. Aucun déploiement n'a été effectué. |
 | 2026-09-03 | Windows | **S0-2 — rendu asynchrone et lecture photo.** Sur `fix/scan-async-refresh`, ajout de la notification explicite du rendu Angular zoneless après recherche ISBN, détection caméra et analyse photo. Le fallback photo essaie des recadrages, réductions et variantes noir/blanc ; le message d'erreur est rendu immédiatement. `npm test -- --watch=false --browsers=ChromeHeadless` passe avec 22 tests, ainsi que les builds Scan production/développement. La photo fournie d'un écran moiré reste illisible en test navigateur ; le merge, le déploiement et le retest iPhone sur code imprimé restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |
 | 2026-09-03 | Windows | **S0-2 — publication HTTPS et validation Azure.** Après le merge de la PR #23 (`728939f`), le déploiement de l'infrastructure, du Scan et du Worker est passé par GitHub OIDC. Le Scan public répond `200` sur `/` et `/health`, l'appel ISBN `9783140464079` répond `200`, et le Worker `kind=functionapp` est `Healthy` avec une révision unique, sans ingress public. Le timer `AccountDeletionSweepFunction` s'est exécuté avec succès à `13:20 UTC` (`CompletedCount: 0`). Les secrets ne sont pas exposés ; le test manuel sur iPhone et la campagne `S0-4` restent à faire. |
