@@ -3,6 +3,8 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Vole_Papillon_Damour.Application.Common.Behaviors;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.AccountDeletion;
 
 namespace Vole_Papillon_Damour.Application;
 
@@ -18,6 +20,8 @@ public static class DependencyInjection
         
         // Validators
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         return services;
     }
 }

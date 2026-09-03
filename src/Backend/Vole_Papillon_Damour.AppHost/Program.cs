@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 const string ApiResourceName = "api";
 const string AzureBlobStorageConnectionStringEnvironmentName = "ConnectionStrings__AzureBlobStorageConnectionString";
+const string AzureFunctionsStorageEnvironmentName = "AzureWebJobsStorage";
 const string BackOfficeResourceName = "backoffice";
 const string DefaultHttpEndpointName = "http";
 const string ProjectDatabaseName = "ProjectDatabase";
@@ -32,6 +33,13 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WaitFor(storage)
     .WithEnvironment(AzureBlobStorageConnectionStringEnvironmentName, UseDevelopmentStorageConnectionString)
     .WithExternalHttpEndpoints();
+
+builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
+    .WithReference(projectDatabase)
+    .WithEnvironment(AzureBlobStorageConnectionStringEnvironmentName, UseDevelopmentStorageConnectionString)
+    .WithEnvironment(AzureFunctionsStorageEnvironmentName, UseDevelopmentStorageConnectionString)
+    .WaitFor(projectDatabase)
+    .WaitFor(storage);
 
 builder.AddJavaScriptApp(BackOfficeResourceName, GetFrontendDirectory("BackOffice"))
     .WithRunScript("start")

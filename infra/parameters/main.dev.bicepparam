@@ -140,6 +140,8 @@ param entraTenantId = readEnvironmentVariable('ENTRA_TENANT_ID', 'b23c80b3-9776-
 // The API application ID is public configuration, recorded after L0-11 steps 1-2.
 // Keep the environment-variable override for another deployment environment.
 param entraApiClientId = readEnvironmentVariable('ENTRA_API_CLIENT_ID', 'ebc68507-2c07-4bab-9448-2d6d489c6112')
+param entraGraphClientId = readEnvironmentVariable('ENTRA_GRAPH_CLIENT_ID', '')
+param entraGraphClientSecret = readEnvironmentVariable('ENTRA_GRAPH_CLIENT_SECRET', '')
 
 // Container names must match the BlobSettings section consumed by BlobService.
 param blobContainerLotoImages = 'loto-images'

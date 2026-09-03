@@ -11,6 +11,7 @@
     <Project Path="Vole_Papillon_Damour.Contracts/Vole_Papillon_Damour.Contracts.csproj" />
     <Project Path="Vole_Papillon_Damour.Domain/Vole_Papillon_Damour.Domain.csproj" />
     <Project Path="Vole_Papillon_Damour.Infrastructure/Vole_Papillon_Damour.Infrastructure.csproj" />
+    <Project Path="Vole_Papillon_Damour.Worker/Vole_Papillon_Damour.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="Vole_Papillon_Damour.Domain.tests/Vole_Papillon_Damour.Domain.tests.csproj" />
