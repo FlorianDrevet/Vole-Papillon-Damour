@@ -15,6 +15,7 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
     public DateTime CreatedAt { get; private set; }
     public DateTime? ReleasedAt { get; private set; }
     public ScanSessionId ScanSessionId { get; private set; } = null!;
+    public Guid? ClientGestureId { get; private set; }
 
     private BookAnnouncement(
         BookAnnouncementId id,
@@ -22,7 +23,8 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
         AssoEventsId? assoEventsId,
         int quantity,
         DateTime createdAt,
-        ScanSessionId scanSessionId) : base(id)
+        ScanSessionId scanSessionId,
+        Guid? clientGestureId) : base(id)
     {
         EnsureIsbn(isbn13);
         if (quantity <= 0)
@@ -36,6 +38,7 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
         Status = BookAnnouncementStatus.Announced;
         CreatedAt = DomainTime.RequireUtc(createdAt, nameof(createdAt));
         ScanSessionId = scanSessionId ?? throw new ArgumentNullException(nameof(scanSessionId));
+        ClientGestureId = clientGestureId;
     }
 
     public static BookAnnouncement Create(
@@ -44,9 +47,17 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
         AssoEventsId? assoEventsId,
         int quantity,
         DateTime createdAt,
-        ScanSessionId scanSessionId)
+        ScanSessionId scanSessionId,
+        Guid? clientGestureId = null)
     {
-        return new BookAnnouncement(id, isbn13, assoEventsId, quantity, createdAt, scanSessionId);
+        return new BookAnnouncement(
+            id,
+            isbn13,
+            assoEventsId,
+            quantity,
+            createdAt,
+            scanSessionId,
+            clientGestureId);
     }
 
     public BookAnnouncement()

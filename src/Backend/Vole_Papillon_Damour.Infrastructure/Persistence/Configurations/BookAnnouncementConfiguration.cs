@@ -55,6 +55,7 @@ public sealed class BookAnnouncementConfiguration : IEntityTypeConfiguration<Boo
             .HasConversion(
                 id => id.Value,
                 value => ScanSessionId.Create(value));
+        builder.Property(announcement => announcement.ClientGestureId);
 
         builder.HasOne<Book>()
             .WithMany()

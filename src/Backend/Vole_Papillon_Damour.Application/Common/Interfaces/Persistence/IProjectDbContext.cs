@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
@@ -13,6 +14,10 @@ namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
 public interface IProjectDbContext
 {
+    DatabaseFacade Database { get; }
+
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
     DbSet<Product> Products { get; }
     DbSet<User> Users { get; }
     DbSet<AssoEvents> AssoEvents { get; }

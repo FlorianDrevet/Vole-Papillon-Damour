@@ -75,6 +75,42 @@ public sealed class Book : AggregateRoot<Isbn13>
         IsHiddenFromCatalog = true;
     }
 
+    public void RecordAvailableEntry(DateTime occurredAt)
+    {
+        var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+
+        QuantityAvailable++;
+        LastAvailableAt = utcOccurredAt;
+        UpdatedAt = utcOccurredAt;
+    }
+
+    public void RecordAnnouncementEntry(DateTime occurredAt)
+    {
+        UpdatedAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+    }
+
+    public void RecordSale(DateTime occurredAt, int quantity = 1)
+    {
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Sale quantity must be positive.");
+        }
+
+        var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+
+        QuantityAvailable = Math.Max(0, QuantityAvailable - quantity);
+        SalesCount += quantity;
+        UpdatedAt = utcOccurredAt;
+    }
+
+    public void RecordRejection(DateTime occurredAt)
+    {
+        var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
+
+        RejectionCount++;
+        UpdatedAt = utcOccurredAt;
+    }
+
     private static void EnsureIsbn(Isbn13 isbn13)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))

@@ -62,11 +62,13 @@ Verified aggregate folders in `Domain` include:
 
 `Product` keeps `Available` separate from `VisibleOnWebsite`: both gate the public product projection, while the full `/product` projection remains available to cash clients and BackOffice.
 
-## Books module — P1-3 local foundation
+## Books module — P1-4 local runtime slice
 
 As of 2026-09-03, the P1-3 domain foundation exists locally in `Domain`: `Book` (ISBN-13 key), `BookMovement` (append-only ledger), `ScanSession`, `AssociationSettings`, and the `BookAnnouncement` entity. Strong IDs are used for movement, announcement, and scan sessions. `Book.RedirectTo()` preserves the absorbed row and prevents self/repeated redirection; movement quantities are signed and non-zero; scan-session counters and close are idempotent; settings are a typed singleton with documented defaults. New module instants are required and persisted as UTC, while calendar comparisons and local-midnight calculations use Europe/Paris in Application. Book merges keep ISBN as the public key and use a direct `RedirectedToIsbn13` link to a canonical Books row; `BookMovements` retain their original ISBN for audit. An open Books fair is the half-open `[OpenAt, CloseAt)` interval derived from `AssoEvents` date/door fields, with overlap validation and no guessing when legacy events overlap.
 
-P1-3 is not yet an externally deployed runtime fact: handlers, API contracts, the Scan PWA, and migration application remain future work, and `QT-02` must still be closed before the worker is changed.
+The first P1-4 application slice is local and tested: `ScanBook` accepts a final `Kept`/`Rejected` decision from the offline client, normalizes ISBN, resolves direct redirects, calculates the `RG-15` verdict without a bibliographic call, and commits the book projection, session counters, movement, and optional fair announcement atomically. `ClientGestureId` is unique on movements and copied to announcements; a replay returns an idempotent result. `OpenScanSession` enforces one active session per volunteer, and `CloseScanSession` is safe to call repeatedly. The API transport, metadata queue, watchlist-driven alert outbox, sales, undo, and session reassignment are not implemented yet.
+
+P1-4 is not yet an externally deployed runtime fact: API contracts, the Scan PWA, metadata queue, alert outbox, remaining handlers, and migration application remain future work, and `QT-02` must still be closed before the worker is changed.
 
 ## Conventions To Preserve
 

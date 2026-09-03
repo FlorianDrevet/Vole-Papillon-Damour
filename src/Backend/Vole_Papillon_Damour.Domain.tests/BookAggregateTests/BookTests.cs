@@ -44,6 +44,55 @@ public sealed class BookTests
         action.Should().Throw<ArgumentException>();
     }
 
+    [Fact]
+    public void RecordAvailableEntry_IncrementsAvailableQuantityAndUpdatesAvailabilityDate()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var occurredAt = FirstSeenAt.AddMinutes(2);
+
+        book.RecordAvailableEntry(occurredAt);
+
+        book.QuantityAvailable.Should().Be(1);
+        book.LastAvailableAt.Should().Be(occurredAt);
+        book.UpdatedAt.Should().Be(occurredAt);
+    }
+
+    [Fact]
+    public void RecordAnnouncementEntry_UpdatesTimestampWithoutAddingAvailableStock()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var occurredAt = FirstSeenAt.AddMinutes(2);
+
+        book.RecordAnnouncementEntry(occurredAt);
+
+        book.QuantityAvailable.Should().Be(0);
+        book.UpdatedAt.Should().Be(occurredAt);
+    }
+
+    [Fact]
+    public void RecordSale_WhenQuantityIsZero_KeepsQuantityAtZeroAndCountsTheSale()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var occurredAt = FirstSeenAt.AddMinutes(2);
+
+        book.RecordSale(occurredAt);
+
+        book.QuantityAvailable.Should().Be(0);
+        book.SalesCount.Should().Be(1);
+        book.UpdatedAt.Should().Be(occurredAt);
+    }
+
+    [Fact]
+    public void RecordRejection_IncrementsRejectionCountWithoutAddingToAvailableQuantity()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.RecordRejection(FirstSeenAt.AddMinutes(2));
+
+        book.RejectionCount.Should().Be(1);
+        book.QuantityAvailable.Should().Be(0);
+    }
+
     private static Isbn13 CreateIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
