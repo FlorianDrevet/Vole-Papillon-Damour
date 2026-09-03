@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
@@ -34,6 +35,10 @@ public sealed class ReassignSessionModeCommandHandlerTests
         await fixture.CreateCloseScanSessionHandler().Handle(
             new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
             CancellationToken.None);
+        fixture.AlertOutbox.CancelPendingForSessionAsync(
+                session.Id,
+                Arg.Any<CancellationToken>())
+            .Returns(1);
         var fair = await fixture.AddFairAsync(
             DateTimeOffset.Parse("2026-09-10T00:00:00+02:00"),
             DateTimeOffset.Parse("2026-09-11T00:00:00+02:00"),
@@ -67,6 +72,13 @@ public sealed class ReassignSessionModeCommandHandlerTests
                     .SingleAsync(movement => movement.Type == BookMovementType.DirectEntry)).Id
                 : null);
         (await fixture.Context.ScanSessions.SingleAsync()).Status.Should().Be(ScanSessionStatus.Resumed);
+        await fixture.AlertOutbox.Received(1).CancelPendingForSessionAsync(
+            session.Id,
+            Arg.Any<CancellationToken>());
+        await fixture.AlertOutbox.Received(2).QueueForSessionAsync(
+            session.Id,
+            ScanBookCommandHandlerTests.ReceivedAt,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

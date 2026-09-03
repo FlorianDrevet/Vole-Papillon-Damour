@@ -8,4 +8,13 @@ public interface IBookAlertOutbox
         ScanSessionId scanSessionId,
         DateTime closedAt,
         CancellationToken cancellationToken);
+
+    Task<int> CancelPendingForSessionAsync(
+        ScanSessionId scanSessionId,
+        CancellationToken cancellationToken);
+
+    Task<int> ForcePendingForSessionAsync(
+        ScanSessionId scanSessionId,
+        DateTime dueAt,
+        CancellationToken cancellationToken);
 }

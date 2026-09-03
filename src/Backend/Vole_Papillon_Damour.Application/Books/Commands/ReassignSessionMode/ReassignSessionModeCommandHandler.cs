@@ -19,7 +19,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 
 public sealed class ReassignSessionModeCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IBookAlertOutbox bookAlertOutbox)
     : IRequestHandler<ReassignSessionModeCommand, ErrorOr<ReassignSessionModeResult>>
 {
     public async Task<ErrorOr<ReassignSessionModeResult>> Handle(
@@ -148,6 +149,18 @@ public sealed class ReassignSessionModeCommandHandler(
         if (!session.Reassign(command.TargetMode, command.TargetAssoEventsId))
         {
             return Errors.Book.ScanSessionAlreadyReassigned(command.ScanSessionId.Value);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        var cancelledAlertCount = await bookAlertOutbox.CancelPendingForSessionAsync(
+            session.Id,
+            cancellationToken);
+        if (cancelledAlertCount > 0)
+        {
+            await bookAlertOutbox.QueueForSessionAsync(
+                session.Id,
+                correctedAt,
+                cancellationToken);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

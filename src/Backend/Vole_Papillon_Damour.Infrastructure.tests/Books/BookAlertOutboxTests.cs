@@ -138,6 +138,105 @@ public sealed class BookAlertOutboxTests
         (await fixture.Context.OutboxMessages.CountAsync()).Should().Be(1);
     }
 
+    [Fact]
+    public async Task CancelPendingForSession_CancelsOnlyPendingAlertMessages()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var otherMember = await fixture.AddMemberAsync("other@example.org");
+        var session = await fixture.AddSessionAsync(member.Id);
+        var otherSession = await fixture.AddSessionAsync(otherMember.Id);
+        var claimedUntil = ClosedAt.AddMinutes(5);
+        fixture.Context.OutboxMessages.AddRange(
+            CreateOutboxMessage(session.Id.Value, OutboxMessageStatus.Pending, claimedUntil),
+            CreateOutboxMessage(session.Id.Value, OutboxMessageStatus.Sent, null),
+            CreateOutboxMessage(session.Id.Value, OutboxMessageStatus.Cancelled, null),
+            CreateOutboxMessage(otherSession.Id.Value, OutboxMessageStatus.Pending, null));
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+
+        var affected = await outbox.CancelPendingForSessionAsync(
+            session.Id,
+            CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        affected.Should().Be(1);
+        var messages = await fixture.Context.OutboxMessages.ToListAsync();
+        var sessionMessages = messages
+            .Where(message => message.ScanSessionId == session.Id.Value)
+            .ToArray();
+        sessionMessages.Should().HaveCount(3);
+        sessionMessages.Count(message => message.Status == OutboxMessageStatus.Cancelled)
+            .Should().Be(2);
+        sessionMessages.Count(message => message.Status == OutboxMessageStatus.Sent)
+            .Should().Be(1);
+        sessionMessages.Should().OnlyContain(message =>
+            message.Status != OutboxMessageStatus.Pending && message.ClaimedUntil == null);
+        messages.Single(message => message.ScanSessionId == otherSession.Id.Value)
+            .Status.Should().Be(OutboxMessageStatus.Pending);
+    }
+
+    [Fact]
+    public async Task ForcePendingForSession_MakesPendingAlertsImmediatelyDueAndReleasesClaims()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var session = await fixture.AddSessionAsync(member.Id);
+        var forcedAt = ClosedAt.AddMinutes(30);
+        fixture.Context.OutboxMessages.AddRange(
+            CreateOutboxMessage(
+                session.Id.Value,
+                OutboxMessageStatus.Pending,
+                ClosedAt.AddMinutes(5),
+                dueAt: ClosedAt.AddHours(2)),
+            CreateOutboxMessage(
+                session.Id.Value,
+                OutboxMessageStatus.Sent,
+                null,
+                dueAt: ClosedAt.AddHours(2)));
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+
+        var affected = await outbox.ForcePendingForSessionAsync(
+            session.Id,
+            forcedAt,
+            CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        affected.Should().Be(1);
+        var messages = await fixture.Context.OutboxMessages
+            .OrderBy(message => message.CreatedAt)
+            .ToListAsync();
+        messages[0].Status.Should().Be(OutboxMessageStatus.Pending);
+        messages[0].DueAt.Should().Be(forcedAt);
+        messages[0].ClaimedUntil.Should().BeNull();
+        messages[1].Status.Should().Be(OutboxMessageStatus.Sent);
+        messages[1].DueAt.Should().Be(ClosedAt.AddHours(2));
+    }
+
+    private static OutboxMessage CreateOutboxMessage(
+        Guid scanSessionId,
+        OutboxMessageStatus status,
+        DateTime? claimedUntil,
+        DateTime? dueAt = null)
+    {
+        return new OutboxMessage
+        {
+            Id = Guid.NewGuid(),
+            Kind = OutboxMessageKind.AlertEmail,
+            PayloadJson = "{\"items\":[]}",
+            DueAt = dueAt ?? ClosedAt,
+            Status = status,
+            Attempts = 0,
+            ClaimedUntil = claimedUntil,
+            ScanSessionId = scanSessionId,
+            MemberId = Guid.NewGuid(),
+            CreatedAt = ClosedAt
+        };
+    }
+
     private sealed class BookAlertFixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;

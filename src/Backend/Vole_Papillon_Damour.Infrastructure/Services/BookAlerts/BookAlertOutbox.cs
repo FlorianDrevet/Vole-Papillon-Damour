@@ -184,6 +184,66 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         }
     }
 
+    public async Task<int> CancelPendingForSessionAsync(
+        ScanSessionId scanSessionId,
+        CancellationToken cancellationToken)
+    {
+        ValidateScanSessionId(scanSessionId);
+
+        var messages = await GetPendingMessagesForSessionAsync(scanSessionId, cancellationToken);
+        foreach (var message in messages)
+        {
+            message.Status = OutboxMessageStatus.Cancelled;
+            message.ClaimedUntil = null;
+        }
+
+        return messages.Count;
+    }
+
+    public async Task<int> ForcePendingForSessionAsync(
+        ScanSessionId scanSessionId,
+        DateTime dueAt,
+        CancellationToken cancellationToken)
+    {
+        ValidateScanSessionId(scanSessionId);
+        if (dueAt.Kind != DateTimeKind.Utc)
+        {
+            throw new ArgumentException("The due time must be expressed in UTC.", nameof(dueAt));
+        }
+
+        var messages = await GetPendingMessagesForSessionAsync(scanSessionId, cancellationToken);
+        foreach (var message in messages)
+        {
+            message.DueAt = dueAt;
+            message.ClaimedUntil = null;
+            message.LastError = null;
+        }
+
+        return messages.Count;
+    }
+
+    private async Task<List<OutboxMessage>> GetPendingMessagesForSessionAsync(
+        ScanSessionId scanSessionId,
+        CancellationToken cancellationToken)
+    {
+        return await dbContext.OutboxMessages
+            .Where(message =>
+                message.Kind == OutboxMessageKind.AlertEmail &&
+                message.ScanSessionId == scanSessionId.Value &&
+                message.Status == OutboxMessageStatus.Pending)
+            .OrderBy(message => message.DueAt)
+            .ThenBy(message => message.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    private static void ValidateScanSessionId(ScanSessionId scanSessionId)
+    {
+        if (scanSessionId is null)
+        {
+            throw new ArgumentNullException(nameof(scanSessionId));
+        }
+    }
+
     private static bool Matches(WatchlistItem item, AlertCandidate candidate)
     {
         return item.Scope switch

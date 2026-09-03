@@ -396,7 +396,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     {
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(_receivedAt);
-        return new ReassignSessionModeCommandHandler(Context, clock);
+        return new ReassignSessionModeCommandHandler(Context, clock, AlertOutbox);
     }
 
     public void SetReceivedAt(DateTime receivedAt)
