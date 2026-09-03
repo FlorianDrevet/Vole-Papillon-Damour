@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-4` réalisé sur 300 livres ; verdict qualitatif favorable, puis mesure `P1-1` du timer à zéro réplica ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
-| **Prochaine action** | Après le 2026-09-03 à 20:50 (Europe/Paris), relever les exécutions du timer `P1-1` dans les journaux et trancher `QT-02` |
+| **Lot en cours** | `S0-4` réalisé sur 300 livres ; `P1-1` déployé et `P1-2` tranché dans les décisions techniques, avec mesure `QT-02` encore ouverte ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
+| **Prochaine action** | Après le 2026-09-03 à 20:50 (Europe/Paris), relever les exécutions du timer `P1-1`, trancher `QT-02`, puis commencer `P1-3` avec les décisions `DT-17` à `DT-21` |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `fix/scan-async-refresh` — issue de `main` après les PR #25 et #26 fusionnées |
@@ -34,6 +34,11 @@ plus de réponse ; ceci est un rappel, le détail est dans les documents cités.
 | Suppression du compte dans le locataire | **Au préalable d'identité** (`L0-11`, étape 8), pendant qu'il n'y a encore personne à supprimer |
 | Genres et classement | **Depuis les sources bibliographiques**, et le site n'indique **jamais** où se trouve un livre dans le local (`Q-07`) |
 | Repli d'exploitation | **Aucun.** Une panne fait vendre sans enregistrer, rien n'est rattrapé. Le hors-ligne de la caisse devient la seule protection (`ENF-21`, `P1-10`) |
+| Fuseau horaire du module livres | **Instants UTC ; calendrier et minuit métier en `Europe/Paris`**, conversion centralisée dans Application (`DT-17`) |
+| Outbox de scan | **`Pending` local puis décision finale ; annulation locale avant transmission, mouvement inverse après transmission** (`DT-18`) |
+| Fusion de fiches | **Redirection ISBN vers une fiche canonique**, sans réécriture de `BookMovements` (`DT-19`) |
+| Bourse ouverte | **Intervalle `[OpenAt, CloseAt)` des seuls `AssoEvents` de type `Books`**, chevauchements refusés (`DT-20`) |
+| Tests du front Scan | **Jasmine/Karma/ChromeHeadless**, IndexedDB réel et transport réseau simulé ; pas de suite E2E en v1 (`DT-21`) |
 
 Les **chiffres cibles du palier 0** (`S0-1`) sont fixés avant la campagne. Le **choix du
 matériel de scan** (`Q-08`) reste à trancher après la campagne, s'il s'avère nécessaire.
@@ -208,6 +213,8 @@ chaud. Le déploiement de la configuration `minReplicas: 0`, `maxReplicas: 1` a 
 (18:50 Europe/Paris). L'observation de deux heures est en cours ; ne pas clore `QT-02`
 avant d'avoir relevé les exécutions attendues du timer `0 */5 * * * *`.
 
+`P1-2` est terminé côté conception : `DT-17` à `DT-21` fixent le temps UTC, les états de l'outbox, la fusion par redirection, l'intervalle d'une bourse ouverte et la stratégie de test du front Scan. Les règles métier et le modèle de données ont été alignés ; aucune production de code n'est lancée avant la validation de `QT-02`.
+
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
 La validation locale et la validation GitHub sont réussies ; la compilation MAUI locale reste
@@ -352,6 +359,7 @@ Une ligne par session de travail. Le plus récent en haut.
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
 | 2026-09-03 | Windows | **P1-1 — mesure du timer.** Après la campagne `S0-4` concluante sur 300 livres, passage du worker à `minReplicas: 0`, `maxReplicas: 1` via `Infra - deploy` `33780715179` (commit `4acfbb2`). L'observation de deux heures est ouverte jusqu'à 20:50 Europe/Paris ; `QT-02` reste à relever dans les journaux. |
+| 2026-09-03 | Windows | **P1-2 — décisions de conception.** Pendant la fenêtre d'observation `P1-1`, ajout de `DT-17` à `DT-21` dans `docs/bourse-aux-livres/technique/01-decisions.md` : instants UTC et calendrier `Europe/Paris`, outbox à états, fusion par redirection ISBN, définition de bourse ouverte et tests Scan par synchronisation isolée avec IndexedDB/transport simulé. Les règles métier, le modèle de données et les flux techniques sont alignés ; `P1-3` attend toujours la clôture de `QT-02`. |
 | 2026-09-03 | Windows | **S0-2 — couverture de la fiche.** Le résultat garde d'abord l'URL fournie par la notice, essaie une couverture Open Library par ISBN si l'image échoue, puis rend un placeholder accessible si les deux sources sont indisponibles. Le test de non-régression porte ces deux cas ; le Scan passe 24 tests ChromeHeadless et ses builds production/développement. Les détections caméra live et photo sur iPhone ont été confirmées ; le correctif est déployé par `Scan - deploy` `33778535757` avec l'image `vpd-scan:f478a7d`. La campagne `S0-4` sur 300 livres reste à faire. |
 | 2026-09-03 | Windows | **S0-2 — rendu asynchrone et lecture photo.** Sur `fix/scan-async-refresh`, ajout de la notification explicite du rendu Angular zoneless après recherche ISBN, détection caméra et analyse photo. Le fallback photo essaie des recadrages, réductions et variantes noir/blanc ; le message d'erreur est rendu immédiatement. `npm test -- --watch=false --browsers=ChromeHeadless` passe avec 22 tests, ainsi que les builds Scan production/développement. La photo fournie d'un écran moiré reste illisible en test navigateur ; le merge, le déploiement et le retest iPhone sur code imprimé restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |

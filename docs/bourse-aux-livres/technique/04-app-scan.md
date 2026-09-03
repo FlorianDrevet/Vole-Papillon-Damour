@@ -67,6 +67,24 @@ lots idempotents (`03` §4) : un rejeu après coupure ne duplique rien.
 (`ENF-05`). Le nombre de gestes en attente reste visible en permanence (`ENF-07`) — un
 bénévole ne doit jamais ranger un appareil en croyant son travail enregistré.
 
+### États de l'outbox
+
+L'outbox locale distingue le geste commencé de la décision transmissible :
+
+| État | Signification | Envoyé au serveur ? |
+|---|---|---|
+| `Pending` | Scan affiché, décision encore attendue | Non |
+| `Kept` | Geste validé, stock et annonce à appliquer | Oui |
+| `Rejected` | Geste écarté, conservation du verdict pour l'audit de session | Oui |
+| `CancelledLocal` | Geste final retiré avant transmission, tombstone conservé | Non |
+
+Le scan suivant passe le précédent à `Kept` conformément à `RG-19`. Un bouton
+explicite peut le passer à `Kept` ou `Rejected`; la fermeture demande le choix pour le
+dernier `Pending`. À la reprise, un `Pending` est affiché avant tout nouveau scan.
+Après transmission, une annulation devient un nouveau geste inverse ; avant
+transmission, elle reste locale. La file ne supprime donc jamais silencieusement le
+travail bénévole.
+
 ## 3. Le déroulé d'un scan
 
 Un scan produit **deux choses indépendantes**. Tout le reste en découle.

@@ -37,6 +37,7 @@ identifiant, ils n'y sont pas contenus.
 
 ```
 Isbn13                char(13)      PK
+RedirectedToIsbn13    char(13)      NULL   -- DT-19, fiche absorbée
 WorkId                nvarchar(64)  NULL   -- RG-46, peut rester vide
 Title                 nvarchar(500) NULL
 Authors               nvarchar(500) NULL
@@ -77,6 +78,11 @@ Index : `WorkId` (rapprochement `RG-46`), `MetadataStatus` + `LastAttemptAt` (fi
 rattrapage), `UpdatedAt` (synchronisation delta), index plein texte sur
 `Title` + `Authors` (`DT-07`).
 
+`RedirectedToIsbn13` est nul pour une fiche canonique. Pour une fiche absorbée, il
+pointe directement vers la fiche canonique ; la résolution est obligatoire avant toute
+nouvelle écriture, et l'historique de la fiche absorbée reste consultable. La contrainte
+interdit l'auto-référence, les cycles et les chaînes de redirection.
+
 ### `BookAnnouncements`
 
 ```
@@ -98,6 +104,10 @@ rattache plus tard.
 
 Index : `AssoEventsId` + `Status` (balayage de bascule) ; index filtré sur
 `AssoEventsId IS NULL` (file « annonces sans date » de `05` §4).
+
+Après une fusion, les annonces actives sont résolues vers l'ISBN canonique dans la
+même transaction. Les annonces historiques conservent leur traçabilité ; les lectures
+du catalogue ne publient qu'une fiche canonique.
 
 ### `BookMovements`
 
@@ -145,6 +155,15 @@ session — on retient l'heure serveur et on lève `ClockSuspect`.
 annulation (`RG-17`, `RG-49`) produit un mouvement inverse. C'est l'historique
 comptable exigé par `ENF-22`, et c'est ce qui rend `ENF-06` trivial — deux appareils
 hors ligne produisent deux lignes, jamais un conflit.
+
+Une annulation locale d'un geste qui n'a jamais quitté l'appareil ne produit aucune
+ligne serveur. Une annulation après transmission est, elle, un nouveau mouvement
+inverse avec un nouvel identifiant client ; cette distinction est celle de `DT-18`.
+
+Toutes les valeurs temporelles de ces tables sont des instants UTC, y compris les
+colonnes `datetime2`. `OccurredAt` représente l'instant client normalisé, `ReceivedAt`
+la réception serveur ; `ClockSuspect` conserve le signal d'une horloge cliente
+incohérente.
 
 Index : `Isbn13` + `OccurredAt` ; `AssoEventsId` + `Type` (statistiques par bourse) ;
 `ScanSessionId` (reprise en bloc `RG-25`) ; **unique filtré sur `ClientGestureId`**.

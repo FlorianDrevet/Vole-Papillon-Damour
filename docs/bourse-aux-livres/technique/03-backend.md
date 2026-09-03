@@ -64,6 +64,11 @@ Le chemin le plus chaud du système (`ENF-01`, `ENF-03`).
 Le point 6 est ce qui fait tenir `ENF-02`. Un appel externe ne doit jamais retarder la
 réponse ni faire échouer l'écriture.
 
+Le serveur ne reçoit pas une intention locale `Pending` : l'application de scan résout
+chaque intention en `Kept` ou `Rejected` avant l'envoi. Une annulation après réception
+passe par le même contrat idempotent avec un nouvel identifiant et produit le mouvement
+inverse prévu par `DT-18`.
+
 ### `CloseScanSession`
 
 Porte `RG-43`, `RG-44` et `RG-29`. Dans **une seule transaction** :
@@ -79,6 +84,8 @@ Porte `RG-43`, `RG-44` et `RG-29`. Dans **une seule transaction** :
 
 Appelé depuis quatre origines — bouton, inactivité, déconnexion, jeton expiré — donc
 **le handler doit être idempotent** : une session déjà `Terminee` ne produit rien.
+La dernière intention locale doit avoir été résolue avant la clôture ; si l'appareil
+reprend avec une intention `Pending`, l'interface demande ce choix avant de terminer.
 
 ### `ReassignSessionMode` (`RG-25`, `RG-45`)
 

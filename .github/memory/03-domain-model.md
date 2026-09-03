@@ -62,6 +62,12 @@ Verified aggregate folders in `Domain` include:
 
 `Product` keeps `Available` separate from `VisibleOnWebsite`: both gate the public product projection, while the full `/product` projection remains available to cash clients and BackOffice.
 
+## Planned Books module decisions
+
+As of 2026-09-03, the Books/bourse-aux-livres module remains unimplemented; P1-2 fixed its design before P1-3 code. New module instants are persisted as UTC, while calendar comparisons and local-midnight calculations use Europe/Paris in Application. Book merges keep ISBN as the public key and use a direct RedirectedToIsbn13 link to a canonical Books row; BookMovements remain append-only and retain their original ISBN for audit. An open Books fair is the half-open [OpenAt, CloseAt) interval derived from AssoEvents DateStart/DateEnd/HourOpenDoors/HourCloseDoors, with overlap validation and no guessing when legacy events overlap.
+
+Do not treat these choices as implemented runtime facts until the P1-3 aggregates, persistence, and tests land.
+
 ## Conventions To Preserve
 
 - Keep commands and queries in their feature folders under `Application`.

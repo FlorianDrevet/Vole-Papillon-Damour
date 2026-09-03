@@ -120,17 +120,21 @@ L'application n'écarte jamais un livre d'elle-même. Elle informe ; le bénévo
 
 ### `RG-17` — Annulation du dernier scan
 Le dernier geste enregistré peut être annulé depuis l'écran de scan, sans passer par
-un menu. L'annulation supprime le mouvement correspondant, et l'alerte qui en découlait
-si elle n'est pas encore partie.
+un menu. Si le geste n'a pas encore été transmis, l'annulation le retire de la file
+locale. S'il a déjà été transmis, elle produit un nouveau geste et un mouvement inverse
+tracé ; elle ne supprime jamais la ligne comptable. Une alerte encore en attente est
+annulée, tandis qu'une alerte déjà partie suit le traitement de correction prévu.
 
 ### `RG-18` — Fenêtre d'annulation
 L'annulation reste possible sur les gestes de la session en cours, et non sur le seul
 dernier scan, tant que la session n'est pas clôturée.
 
 ### `RG-19` — Scan suivant valant validation
-En mode tri, scanner un nouveau livre vaut « garder » pour le précédent. Ce
-comportement doit être vérifié au palier 0 : s'il produit trop de faux « gardés », il
-est remplacé par une validation explicite.
+En mode tri, scanner un nouveau livre vaut « garder » pour le précédent. Le premier
+geste est d'abord `Pending` dans la file locale et ne devient transmissible qu'au
+moment de cette validation, d'un appui explicite sur « garder », ou d'une décision
+explicite pour le dernier geste à la clôture. Une intention `Pending` survit au
+redémarrage et est signalée à la reprise.
 
 ---
 
@@ -406,9 +410,15 @@ figure dans chaque e-mail.
 ## Ventes et fiabilité du stock
 
 ### `RG-33` — Rattachement d'une vente
-Toute vente est rattachée à la session de bourse ouverte au moment du scan
-(`AssoEvents` de type `Books`). Si aucune session n'est ouverte, la vente est
-enregistrée sans rattachement et signalée à l'administration.
+Toute vente est rattachée à l'unique intervalle ouvert d'un événement `AssoEvents` de
+type `Books` au moment du scan. L'ouverture est `HourOpenDoors` ou, à défaut,
+`DateStart` ; la fermeture est `HourCloseDoors`, puis `DateEnd`, puis minuit local le
+lendemain de `DateStart` si aucune fin n'est renseignée. L'intervalle est
+`[OpenAt, CloseAt)`, calculé en `Europe/Paris` puis comparé en UTC. Si aucune session
+n'est ouverte, la vente est enregistrée sans rattachement et signalée à
+l'administration. Si plusieurs événements historiques sont ouverts simultanément, la
+vente reste sans rattachement et le chevauchement est signalé : le système ne devine
+pas.
 
 ### `RG-34` — Remise à plat de l'inventaire
 La quantité disponible est un compteur, non un inventaire physique : elle dérive à
@@ -435,6 +445,12 @@ ressaisie.
 Cette règle a pris une importance nouvelle avec l'abandon du geste de mise en rayon :
 l'agenda n'est plus seulement de l'affichage, il pilote la disponibilité réelle du
 catalogue.
+
+Pour le module livres, `DateStart`, `DateEnd`, `HourOpenDoors` et `HourCloseDoors` sont
+les seules sources de l'intervalle métier. La création ou la modification d'une
+bourse de type `Books` refuse un intervalle invalide ou chevauchant un autre événement
+`Books`. Le calcul partagé est défini par `DT-17` et `DT-20`, puis réutilisé par la
+bascule, le tri et la caisse.
 
 ### `RG-37` — Vente sur quantité nulle
 Un livre scanné en caisse alors que sa quantité disponible est déjà à zéro est **vendu
