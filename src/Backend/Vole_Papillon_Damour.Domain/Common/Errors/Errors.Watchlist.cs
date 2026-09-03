@@ -14,6 +14,10 @@ public static partial class Errors
             code: "Watchlist.InvalidProviderEventId",
             description: "A provider event identifier is required and must not exceed 128 characters.");
 
+        public static Error InvalidRecipient() => Error.Validation(
+            code: "Watchlist.InvalidRecipient",
+            description: "A recipient email address is required and must not exceed 320 characters.");
+
         public static Error ProviderEventMemberMismatch(object providerEventId) => Error.Conflict(
             code: "Watchlist.ProviderEventMemberMismatch",
             description: $"Provider event is already associated with another member: {providerEventId}.");

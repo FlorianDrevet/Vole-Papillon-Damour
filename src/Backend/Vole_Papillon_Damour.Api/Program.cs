@@ -6,6 +6,7 @@ using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Controllers;
 using Vole_Papillon_Damour.Api.Controllers.AssoEventsController;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Api.Integrations.AcsEmail;
 using Vole_Papillon_Damour.Application;
 using Vole_Papillon_Damour.Infrastructure;
 using Vole_Papillon_Damour.Infrastructure.Health;
@@ -53,6 +54,9 @@ builder.Services
     .AddInfrastructure(builder.Configuration)
     .AddRateLimiting();
 
+builder.Services.Configure<EmailBounceWebhookOptions>(
+    builder.Configuration.GetSection(EmailBounceWebhookOptions.SectionName));
+
 builder.Services
     .AddHealthChecks()
     .AddInfrastructureHealthChecks();
@@ -83,6 +87,7 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 
 //Controllers
+app.UseAcsEmailEventGridController();
 app.UseAuthenticationController();
 app.UseAccountController();
 app.UseBookController();

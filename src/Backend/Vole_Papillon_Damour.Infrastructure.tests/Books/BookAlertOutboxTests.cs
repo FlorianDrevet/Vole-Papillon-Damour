@@ -209,11 +209,11 @@ public sealed class BookAlertOutboxTests
         var messages = await fixture.Context.OutboxMessages
             .OrderBy(message => message.CreatedAt)
             .ToListAsync();
-        messages[0].Status.Should().Be(OutboxMessageStatus.Pending);
-        messages[0].DueAt.Should().Be(forcedAt);
-        messages[0].ClaimedUntil.Should().BeNull();
-        messages[1].Status.Should().Be(OutboxMessageStatus.Sent);
-        messages[1].DueAt.Should().Be(ClosedAt.AddHours(2));
+        var pendingMessage = messages.Single(message => message.Status == OutboxMessageStatus.Pending);
+        pendingMessage.DueAt.Should().Be(forcedAt);
+        pendingMessage.ClaimedUntil.Should().BeNull();
+        var sentMessage = messages.Single(message => message.Status == OutboxMessageStatus.Sent);
+        sentMessage.DueAt.Should().Be(ClosedAt.AddHours(2));
     }
 
     private static OutboxMessage CreateOutboxMessage(

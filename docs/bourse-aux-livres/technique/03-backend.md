@@ -151,7 +151,7 @@ catalogue, sessions et reprises, alertes en attente, membres, bénévoles, param
 | Autorisation | `RequireRole` sur la revendication `roles`. Aucune lecture en base, aucun appel à l'annuaire |
 | Confidentialité des demandeurs | `RG-42` : l'API ne renvoie **jamais** l'identité, seulement un décompte. À couvrir par un test — c'est une fuite facile à introduire |
 | Limitation de débit | Réutiliser le mécanisme en place ; un limiteur propre à la recherche publique, qui atteint une source externe |
-| Rappel de rebond e-mail | Endpoint dédié, authentifié par secret partagé (`RG-31`) |
+| Rappel de rebond e-mail | `POST /integrations/acs/email-delivery-reports`, schéma Event Grid standard, poignée de main synchrone `SubscriptionValidationEvent`, secret partagé dans `EmailBounceWebhook:SharedSecret` transmis par `X-Vpd-EventGrid-Secret` (`RG-31`) |
 
 ## 6. Tests
 
