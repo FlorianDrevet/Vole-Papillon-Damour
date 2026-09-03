@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
@@ -80,7 +81,8 @@ public sealed class ScanSessionCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
-        var handler = new CloseScanSessionCommandHandler(fixture.Context, clock);
+        var alertOutbox = Substitute.For<IBookAlertOutbox>();
+        var handler = new CloseScanSessionCommandHandler(fixture.Context, clock, alertOutbox);
 
         var result = await handler.Handle(
             new CloseScanSessionCommand(session.Id, ScanCloseReason.Disconnect),
@@ -93,6 +95,10 @@ public sealed class ScanSessionCommandHandlerTests
         var persisted = await fixture.Context.ScanSessions.SingleAsync();
         persisted.Status.Should().Be(ScanSessionStatus.Completed);
         persisted.EndedAt.Should().Be(ScanBookCommandHandlerTests.ReceivedAt);
+        await alertOutbox.Received(1).QueueForSessionAsync(
+            session.Id,
+            ScanBookCommandHandlerTests.ReceivedAt,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -102,7 +108,8 @@ public sealed class ScanSessionCommandHandlerTests
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
         var firstClock = Substitute.For<IDateTimeProvider>();
         firstClock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
-        var handler = new CloseScanSessionCommandHandler(fixture.Context, firstClock);
+        var alertOutbox = Substitute.For<IBookAlertOutbox>();
+        var handler = new CloseScanSessionCommandHandler(fixture.Context, firstClock, alertOutbox);
 
         var firstResult = await handler.Handle(
             new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
@@ -110,7 +117,7 @@ public sealed class ScanSessionCommandHandlerTests
 
         var secondClock = Substitute.For<IDateTimeProvider>();
         secondClock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt.AddMinutes(10));
-        var retryHandler = new CloseScanSessionCommandHandler(fixture.Context, secondClock);
+        var retryHandler = new CloseScanSessionCommandHandler(fixture.Context, secondClock, alertOutbox);
         var retryResult = await retryHandler.Handle(
             new CloseScanSessionCommand(session.Id, ScanCloseReason.TokenExpired),
             CancellationToken.None);
@@ -120,5 +127,37 @@ public sealed class ScanSessionCommandHandlerTests
         retryResult.Value.EndedAt.Should().Be(ScanBookCommandHandlerTests.ReceivedAt);
         retryResult.Value.CloseReason.Should().Be(ScanCloseReason.Manual);
         (await fixture.Context.ScanSessions.CountAsync()).Should().Be(1);
+        await alertOutbox.Received(1).QueueForSessionAsync(
+            session.Id,
+            ScanBookCommandHandlerTests.ReceivedAt,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Close_WhenAlertQueueFails_RollsBackTheSessionClose()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var alertOutbox = Substitute.For<IBookAlertOutbox>();
+        alertOutbox.QueueForSessionAsync(
+                Arg.Any<ScanSessionId>(),
+                Arg.Any<DateTime>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(
+                new InvalidOperationException("alert queue unavailable")));
+        var handler = new CloseScanSessionCommandHandler(fixture.Context, clock, alertOutbox);
+
+        var action = () => handler.Handle(
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
+            CancellationToken.None);
+
+        await action.Should().ThrowAsync<InvalidOperationException>();
+        var persisted = await fixture.Context.ScanSessions
+            .AsNoTracking()
+            .SingleAsync();
+        persisted.Status.Should().Be(ScanSessionStatus.InProgress);
+        persisted.EndedAt.Should().BeNull();
     }
 }

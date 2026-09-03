@@ -9,6 +9,7 @@ using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
+using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
@@ -27,4 +28,7 @@ public interface IProjectDbContext
     DbSet<BookMovement> BookMovements { get; }
     DbSet<ScanSession> ScanSessions { get; }
     DbSet<AssociationSettings> AssociationSettings { get; }
+    DbSet<Watchlist> Watchlists { get; }
+    DbSet<WatchlistItem> WatchlistItems { get; }
+    DbSet<UserAlertHistory> UserAlertHistories { get; }
 }

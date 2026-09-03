@@ -27,6 +27,7 @@ using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using DomainScanSession = Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession;
 using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
 
@@ -236,6 +237,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     }
 
     public ScanBookTestDbContext Context { get; }
+    public IBookAlertOutbox AlertOutbox { get; } = Substitute.For<IBookAlertOutbox>();
 
     public static async Task<ScanBookFixture> CreateAsync()
     {
@@ -387,7 +389,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     {
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(_receivedAt);
-        return new CloseScanSessionCommandHandler(Context, clock);
+        return new CloseScanSessionCommandHandler(Context, clock, AlertOutbox);
     }
 
     public ReassignSessionModeCommandHandler CreateReassignSessionModeHandler()
@@ -427,6 +429,9 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<DomainScanSession> ScanSessions => Set<DomainScanSession>();
     public DbSet<AssociationSettingsEntity> AssociationSettings => Set<AssociationSettingsEntity>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
+    public DbSet<Watchlist> Watchlists => Set<Watchlist>();
+    public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
+    public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
@@ -438,6 +443,9 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<User>();
         modelBuilder.Ignore<Order>();
+        modelBuilder.Ignore<Watchlist>();
+        modelBuilder.Ignore<WatchlistItem>();
+        modelBuilder.Ignore<UserAlertHistory>();
 
         modelBuilder.Entity<AssoEvents>(builder =>
         {

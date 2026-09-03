@@ -71,7 +71,8 @@ public sealed class UpdateBookMetadataCommandHandler(
                 command.Language,
                 command.Genre,
                 command.CoverBlobRef,
-                fields),
+                fields,
+                command.WorkId),
             updatedAt);
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -96,6 +97,7 @@ public sealed class UpdateBookMetadataCommandHandler(
             {
                 BookMetadataField.Title => IsWithinLength(command.Title, 500),
                 BookMetadataField.Authors => IsWithinLength(command.Authors, 500),
+                BookMetadataField.WorkId => IsWithinLength(command.WorkId, 64),
                 BookMetadataField.Publisher => IsWithinLength(command.Publisher, 200),
                 BookMetadataField.PublicationYear => command.PublicationYear is null or (>= 1 and <= 9999),
                 BookMetadataField.PhysicalFormat => IsWithinLength(command.PhysicalFormat, 50),

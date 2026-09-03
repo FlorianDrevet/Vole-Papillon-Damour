@@ -7,6 +7,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
+using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 
 namespace Vole_Papillon_Damour.Infrastructure.tests.Persistence;
@@ -24,6 +25,9 @@ public sealed class ProjectDbContextModelTests
         model.FindEntityType(typeof(BookMovement))!.GetTableName().Should().Be("BookMovements");
         model.FindEntityType(typeof(ScanSession))!.GetTableName().Should().Be("ScanSessions");
         model.FindEntityType(typeof(AssociationSettings))!.GetTableName().Should().Be("AssociationSettings");
+        model.FindEntityType(typeof(Watchlist))!.GetTableName().Should().Be("Watchlists");
+        model.FindEntityType(typeof(WatchlistItem))!.GetTableName().Should().Be("WatchlistItems");
+        model.FindEntityType(typeof(UserAlertHistory))!.GetTableName().Should().Be("UserAlertHistory");
 
         var books = model.FindEntityType(typeof(Book))!;
         books.FindProperty(nameof(Book.RowVersion))!.IsConcurrencyToken.Should().BeTrue();
@@ -56,6 +60,26 @@ public sealed class ProjectDbContextModelTests
             .GetFilter()
             .Should()
             .Be("[Status] = 0");
+    }
+
+    [Fact]
+    public void Model_ProtectsWatchlistTargetsAndUsesUserIdAsWatchlistKey()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var watchlist = model.FindEntityType(typeof(Watchlist))!;
+        watchlist.FindProperty(nameof(Watchlist.Id))!.GetColumnName().Should().Be("UserId");
+
+        var watchlistItems = model.FindEntityType(typeof(WatchlistItem))!;
+        watchlistItems.GetCheckConstraints()
+            .Single(constraint => constraint.Name == "CK_WatchlistItems_ExactlyOneTarget")
+            .Sql
+            .Should()
+            .Contain("[Scope] = 0");
+
+        var outbox = model.FindEntityType(typeof(Vole_Papillon_Damour.Infrastructure.Persistence.Outbox.OutboxMessage))!;
+        outbox.FindProperty("Kind")!.GetColumnType().Should().Be("tinyint");
     }
 
     private static ProjectDbContext CreateContext()

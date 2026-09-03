@@ -284,6 +284,9 @@ public sealed class Book : AggregateRoot<Isbn13>
                 case BookMetadataField.Authors:
                     ValidateLength(patch.Authors, 500, nameof(patch.Authors));
                     break;
+                case BookMetadataField.WorkId:
+                    ValidateLength(patch.WorkId, 64, nameof(patch.WorkId));
+                    break;
                 case BookMetadataField.Publisher:
                     ValidateLength(patch.Publisher, 200, nameof(patch.Publisher));
                     break;
@@ -335,6 +338,8 @@ public sealed class Book : AggregateRoot<Isbn13>
                 return SetValue(Title, patch.Title, value => Title = value);
             case BookMetadataField.Authors:
                 return SetValue(Authors, patch.Authors, value => Authors = value);
+            case BookMetadataField.WorkId:
+                return SetValue(WorkId, patch.WorkId, value => WorkId = value);
             case BookMetadataField.Publisher:
                 return SetValue(Publisher, patch.Publisher, value => Publisher = value);
             case BookMetadataField.PublicationYear:

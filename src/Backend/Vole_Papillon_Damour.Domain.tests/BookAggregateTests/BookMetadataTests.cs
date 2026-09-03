@@ -148,6 +148,30 @@ public sealed class BookMetadataTests
         book.RawPayload.Should().Be("{\"source\":\"openlibrary\"}");
     }
 
+    [Fact]
+    public void ApplyAutomaticMetadata_StoresWorkIdentifierForWorkWatchlists()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.WorkId],
+                WorkId: "work-42"),
+            BookMetadataSource.Bnf,
+            FirstSeenAt.AddMinutes(1),
+            null);
+
+        book.WorkId.Should().Be("work-42");
+    }
+
     private static Isbn13 CreateIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();

@@ -10,7 +10,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 
 public sealed class CloseScanSessionCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IBookAlertOutbox bookAlertOutbox)
     : IRequestHandler<CloseScanSessionCommand, ErrorOr<ScanSessionResult>>
 {
     public async Task<ErrorOr<ScanSessionResult>> Handle(
@@ -37,6 +38,10 @@ public sealed class CloseScanSessionCommandHandler(
 
         if (session.Close(command.CloseReason, endedAt))
         {
+            await bookAlertOutbox.QueueForSessionAsync(
+                session.Id,
+                endedAt,
+                cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 

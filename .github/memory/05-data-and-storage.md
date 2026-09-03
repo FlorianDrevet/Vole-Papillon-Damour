@@ -9,10 +9,11 @@
 
 ## Books module persistence
 
-- `ProjectDbContext` and `IProjectDbContext` expose `Books`, `BookMovements`, `BookAnnouncements`, `ScanSessions`, and the singleton `AssociationSettings` sets.
+- `ProjectDbContext` and `IProjectDbContext` expose `Books`, `BookMovements`, `BookAnnouncements`, `ScanSessions`, the singleton `AssociationSettings`, `Watchlists`, `WatchlistItems`, and `UserAlertHistories` sets.
 - Configurations live in `Infrastructure/Persistence/Configurations/`: ISBN-13 and strong-ID conversions, SQL Server `datetime2`, UTC read/write converters, `Books.RowVersion`, accent-insensitive `Title`/`Authors`, self-redirect and non-zero/positive quantity checks, and filtered unique indexes for `ClientGestureId` and one open scan session per volunteer.
-- Migrations `20260903173750_AddBookExchangeCore`, `20260903175445_AddClientGestureIdToBookAnnouncements`, and `20260903181307_AddSaleReversalLink` create the five P1-3 tables, complete the announcement gesture trace, and add a filtered-unique self-link for movement inverses. They are generated and validated locally but have not been applied to Azure SQL.
+- Migrations `20260903173750_AddBookExchangeCore`, `20260903175445_AddClientGestureIdToBookAnnouncements`, `20260903181307_AddSaleReversalLink`, and `20260903185500_AddBookWatchlistsAndAlerts` create the Books foundation, complete the announcement gesture trace, add a filtered-unique self-link for movement inverses, and add the watchlist/alert-history tables with target and cascade constraints. They are generated and validated locally but have not been applied to Azure SQL.
 - The Books ledger is append-only by domain convention; cancellation, correction, and session reassignment are represented by signed inverse/replay movements rather than an update/delete of the original movement.
+- `BookAlertOutbox` runs inside the close-session transaction through `IBookAlertOutbox`: it matches active edition/work watchlist items, filters recent `UserAlertHistory`, groups one `AlertEmail` payload per member/session, and sets `DueAt` from `AssociationSettings.AlertDelayMinutes`. It deliberately creates no message for an undated next-fair session. The worker sender and final anti-repeat history write remain pending.
 - Application tests use an in-memory SQLite connection with real EF transactions to verify scan/session/cash/correction/reassignment atomicity and idempotent gesture behavior; this provider is test-only.
 
 ## External Services

@@ -24,6 +24,9 @@ public sealed class UpdateBookMetadataCommandValidator : AbstractValidator<Updat
         RuleFor(command => command.Authors)
             .MaximumLength(500)
             .When(command => command.Fields?.Contains(BookMetadataField.Authors) == true);
+        RuleFor(command => command.WorkId)
+            .MaximumLength(64)
+            .When(command => command.Fields?.Contains(BookMetadataField.WorkId) == true);
         RuleFor(command => command.Publisher)
             .MaximumLength(200)
             .When(command => command.Fields?.Contains(BookMetadataField.Publisher) == true);

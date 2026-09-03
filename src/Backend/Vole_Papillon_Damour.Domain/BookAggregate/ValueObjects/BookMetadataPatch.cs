@@ -9,4 +9,5 @@ public sealed record BookMetadataPatch(
     string? Language,
     string? Genre,
     string? CoverBlobRef,
-    IReadOnlyCollection<BookMetadataField> Fields);
+    IReadOnlyCollection<BookMetadataField> Fields,
+    string? WorkId = null);
