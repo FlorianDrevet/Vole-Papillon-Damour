@@ -71,3 +71,11 @@ test('leaves the Entra redirect landing route unguarded', () => {
     'the root route must not be guarded',
   );
 });
+
+test('initializes MSAL before root components read the cached account', () => {
+  assert.match(
+    appModule,
+    /provideAppInitializer\(\(\)\s*=>\s*inject\(MsalService\)\.initialize\(\)\)/s,
+    'MSAL must be initialized before AuthSessionService reads the account cache',
+  );
+});

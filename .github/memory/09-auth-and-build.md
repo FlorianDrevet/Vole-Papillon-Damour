@@ -36,6 +36,11 @@
   `<app-root>` and `<app-redirect>`; omitting the latter raises Angular `NG05104` before the
   MSAL redirect handler can initialize. `LoginComponent` starts `loginRedirect` instead of
   posting local credentials.
+- `AppModule` provides an awaited `provideAppInitializer` that calls
+  `MsalService.initialize()` before either root component is created. Without this barrier,
+  a normal refresh can construct `AuthSessionService` before MSAL is initialized and leave
+  the BackOffice blank with `uninitialized_public_client_application`; a hard refresh only
+  masks the race.
 - `ApiAccessTokenService` calls `MsalService.acquireTokenSilent` for the API scope and
   `AxiosService` adds the resulting bearer token to every API request. `MsalInterceptor` is
   intentionally not registered because BackOffice uses Axios rather than Angular `HttpClient`.
