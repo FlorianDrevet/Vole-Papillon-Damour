@@ -153,6 +153,14 @@ désactive ce mapping pour le schéma Entra et ajoute une régression qui valide
 `IsInRole("Administration")`. Cette branche nécessite un déploiement applicatif API après
 le merge ; l'infrastructure seule ne met pas à jour le code de l'image.
 
+Après le déploiement applicatif API du correctif des rôles, les écritures fonctionnent. Un
+nouveau défaut reste visible côté BackOffice : un refresh normal après connexion peut laisser
+une page blanche, alors qu'un `Ctrl+Shift+R` la débloque. Le défaut est reproduit sur le domaine
+public avec `BrowserAuthError: uninitialized_public_client_application` : `AuthSessionService`
+lit le cache MSAL dans son constructeur avant l'initialisation de `PublicClientApplication`.
+La branche courante ajoute `provideAppInitializer(() => inject(MsalService).initialize())`
+et son contrat de bootstrap ; un déploiement BackOffice sera nécessaire après le merge.
+
 Un correctif isolé est préparé sur `fix/backoffice-msal-bootstrap` dans le worktree
 `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-backoffice-login-fix`. La cause de
 `NG05104` était l'absence de `<app-redirect>` dans `src/BackOffice/src/index.html` alors que
@@ -260,7 +268,7 @@ dans Azure sans être déductible du dépôt.
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
-| API Entra | Image `vpd-api:cfd43cb` active et `/health` répond 200 ; après le déploiement de l'audience, les PUT BackOffice renvoient `403` car le mapping de la claim `roles` n'est pas encore corrigé dans l'image active | `2026-09-03` |
+| API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | **Pas encore créée** ; `Configure-EntraApps.ps1` est prêt à créer `vpd-account-deletion-dev` et à accorder `User.ReadWrite.All` | — |
 | Secret Graph dans Key Vault | **Pas encore renseigné** ; dépend de l'exécution du script et des secrets GitHub `ENTRA_GRAPH_CLIENT_ID` / `ENTRA_GRAPH_CLIENT_SECRET` | — |
@@ -359,6 +367,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **Correctif BackOffice — refresh après connexion.** Le domaine public reproduit une page blanche sur refresh normal avec `uninitialized_public_client_application`, car `AuthSessionService` lit le cache avant l'initialisation MSAL. Ajout de `provideAppInitializer` autour de `MsalService.initialize()`, contrat de bootstrap en échec puis au vert, 9 tests ChromeHeadless et build production passants. Un déploiement BackOffice reste à faire après merge. |
 | 2026-09-03 | Windows | **Correctif BackOffice — rôles Entra et 403.** Après le déploiement de l'audience, reproduction TDD d'un token v2 portant `roles=["Administration"]` : `IsInRole("Administration")` échoue avec le mapping JWT par défaut. `MapInboundClaims = false` est activé pour le schéma Entra, le test passe, et une nouvelle branche `fix/backoffice-authorization-403` est préparée pour un déploiement applicatif API. |
 | 2026-09-03 | Windows | **Correctif BackOffice — audience Entra v2.** Après `git pull` de `main`, création du worktree `fix/backoffice-event-update-401`. Reproduction TDD du `401` avec un token dont `aud` est l'ID d'application API ; alignement de `AzureAd:Audience` dans `appsettings.Development.json`, `infra/main.bicep` et `Configure-EntraApps.ps1`. Validation : 97 tests backend, compilation Bicep, 9 tests ChromeHeadless et build BackOffice. Aucun déploiement Azure ; le retest des PUT `/asso-events/{id}` et `/product/{id}` reste à faire. |
 | 2026-09-03 | Windows | **L0-11 — correctif BackOffice MSAL.** Sur `fix/backoffice-msal-bootstrap`, ajout de l'hôte `<app-redirect>` requis par `MsalRedirectComponent` et correction de l'autorité CIAM tenant-scoped dans les environnements BackOffice. Ajout d'un test de contrat de bootstrap ; 2 tests de bootstrap, 5 tests Angular, le build production et un smoke local jusqu'à l'écran Microsoft passent. Aucun déploiement n'a été effectué. |
