@@ -21,10 +21,14 @@ import {normalizeIsbn} from './isbn.util';
   standalone: false,
 })
 export class ScannerComponent implements OnDestroy {
+  private static readonly openLibraryCoverUrlTemplate =
+    'https://covers.openlibrary.org/b/isbn/{isbn13}-L.jpg?default=false';
+
   @ViewChild('cameraContainer', {static: true}) private readonly cameraContainer!: ElementRef<HTMLElement>;
 
   isbnInput = '';
   metadata: BookMetadata | null = null;
+  coverUrl: string | null = null;
   errorMessage: string | null = null;
   cameraError: string | null = null;
   isLoading = false;
@@ -49,6 +53,7 @@ export class ScannerComponent implements OnDestroy {
     const normalizedIsbn = normalizeIsbn(rawInput);
     const lookupVersion = ++this.lookupVersion;
     this.metadata = null;
+    this.coverUrl = null;
     this.errorMessage = null;
     this.refreshView();
 
@@ -70,6 +75,7 @@ export class ScannerComponent implements OnDestroy {
       }
 
       this.metadata = metadata;
+      this.coverUrl = metadata.coverUrl;
       this.isLoading = false;
       this.refreshView();
     } catch (error: unknown) {
@@ -83,6 +89,22 @@ export class ScannerComponent implements OnDestroy {
         : 'La notice ne peut pas être chargée pour le moment.';
       this.refreshView();
     }
+  }
+
+  onCoverError(): void {
+    if (!this.metadata) {
+      return;
+    }
+
+    const fallbackCoverUrl = ScannerComponent.openLibraryCoverUrlTemplate.replace(
+      '{isbn13}',
+      encodeURIComponent(this.metadata.isbn13),
+    );
+
+    this.coverUrl = this.coverUrl === fallbackCoverUrl
+      ? null
+      : fallbackCoverUrl;
+    this.refreshView();
   }
 
   async toggleCamera(): Promise<void> {

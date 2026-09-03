@@ -35,7 +35,10 @@ Verified feature roots:
   EAN-13/EAN-8 and QR decoding, while `ScannerComponent` also accepts keyboard-wedge
   scanners, photo capture, and manual ISBNs. Because the app is zoneless, the component
   explicitly marks the view after asynchronous camera/photo/API callbacks; photo decoding
-  also retries cropped, resized, and thresholded canvas variants for difficult images.
+  also retries cropped, resized, and thresholded canvas variants for difficult images. The
+  result card first uses the source-provided cover, retries an ISBN-based Open Library cover
+  when that image fails, and renders an explicit unavailable-cover placeholder when both
+  sources fail.
 - Validate responsive behavior on desktop and mobile when UI changes.
 - `src/SharedUi/scripts/link-shared-ui.mjs` is the shared npm linker. Both apps invoke it
   from `prebuild` and `prestart` through `node ../SharedUi/scripts/link-shared-ui.mjs`; it
@@ -72,6 +75,10 @@ Verified feature roots:
   owns the Entra External ID client configuration; `shared/services/api-access-token.service.ts`
   acquires the API scope silently for the existing Axios transport. The Angular `MsalInterceptor`
   is not registered because the app does not use Angular `HttpClient` for API calls.
+- `BackOffice` bootstraps both `AppComponent` and `MsalRedirectComponent`; its
+  `src/index.html` must therefore contain both `<app-root>` and `<app-redirect>`. The
+  tenant-scoped CIAM authority is configured in both environment files so development and
+  production builds resolve the same Entra tenant.
 - `Website` has an `sse-client.service` that subscribes to `/asso-events/{id}/tableau/sse` for live event updates and now guards `EventSource` usage behind `isPlatformBrowser()` for SSR safety.
 - The Website SSE client closes the previous `EventSource` before opening a new event, ignores malformed payloads without dropping the last good state, and reconnects with bounded backoff from 250ms to 5s.
 - The Website home SSR path now tolerates missing `next-bingo`, `next-books`, `next-other-event`, and `latest actuality` payloads by keeping default empty state instead of surfacing unhandled promise rejections during server rendering.
@@ -112,10 +119,15 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
 - As of 2026-09-03, `npm ci` followed by `npm test -- --watch=false --browsers=ChromeHeadless`
+  passes with 2 BackOffice bootstrap contract tests and 5 Angular tests, and `npm run build`
+  passes in `src/BackOffice/`; the build still emits existing signal-diagnostic,
+  bundle-budget, CSS, and CommonJS warnings. The same `npm ci`/build validation passes in
+  `src/Website/`.
+- As of 2026-09-03, Scan passes 22 ChromeHeadless tests and the Angular production and
   passes with 5 BackOffice tests, and production/development `npm run build` both pass in
   `src/BackOffice/`; the builds still emit existing signal-diagnostic, bundle-budget, CSS,
   and CommonJS warnings. The same `npm ci`/build validation passes in `src/Website/`.
-- As of 2026-09-03, Scan passes 22 ChromeHeadless tests and the Angular production and
+- As of 2026-09-03, Scan passes 24 ChromeHeadless tests and the Angular production and
   development builds; the production build has only the expected initial bundle budget
   warning after adding the ZXing decoder and photo preprocessing. The CI workflow installs
   its lockfile and builds the app after the existing BackOffice and Website steps.
@@ -131,3 +143,5 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - The public `PricesComponent` defensively hides only exact `10c` and `50c` denomination labels,
   alongside the existing euro/centime exclusions. The authenticated cash surface still uses the
   full product projection.
+  its lockfile and builds the app after the existing BackOffice and Website steps. Cover
+  fallback and unavailable-cover rendering are covered by the scanner component specs.
