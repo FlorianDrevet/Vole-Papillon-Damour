@@ -138,11 +138,10 @@ param containerAppWorkerContainerRuntime = {
   cpuCores: '0.5'
   memoryGi: '1.0Gi'
 }
-// A timer-triggered Function needs one warm host until its ACA scaling
-// behavior has been observed in production; zero is not a safe default for
-// a timer that must process account-deletion requests.
+// P1-1 measures whether a timer-triggered Function wakes correctly with no
+// warm host. Keep one maximum replica while observing the production timer.
 param containerAppWorkerScaling = {
-  minReplicas: 1
+  minReplicas: 0
   maxReplicas: 1
 }
 

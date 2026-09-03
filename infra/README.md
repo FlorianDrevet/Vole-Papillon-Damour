@@ -27,9 +27,10 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 Chaque Container App tourne sous sa propre identité managée. Les cinq ont
 `AcrPull` sur le registry ; l'API et le worker ont en plus `Key Vault Secrets User`.
 L'API et le worker ont chacun `Monitoring Metrics Publisher` sur leur Application
-Insights. Le worker est une Azure Function native (`kind=functionapp`) à une réplique
-minimum et maximum dans ce premier déploiement : le timer ne doit pas être arrêté avant
-que son comportement de scaling ait été mesuré.
+Insights. Le worker est une Azure Function native (`kind=functionapp`). La configuration
+de mesure `P1-1` vise `minReplicas: 0` et `maxReplicas: 1` pour vérifier que le timer se
+réveille sans hôte chaud ; il faut revenir à une réplique minimum si l'observation de deux
+heures échoue.
 
 Les conteneurs blob sont en accès `Blob` (lecture anonyme) : `BlobService`
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles
@@ -207,5 +208,5 @@ nécessaire. La caméra est activée seulement après autorisation du site par S
 
 Le worker est une Azure Function native sur Container Apps (`kind=functionapp`). Il
 utilise l'outbox SQL, le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault
-et l'identité managée dédiée. Il reste à `minReplicas: 1`, `maxReplicas: 1` tant que le
-comportement du timer n'a pas été mesuré.
+et l'identité managée dédiée. Pendant `P1-1`, sa cible est `minReplicas: 0`,
+`maxReplicas: 1` pendant la mesure du timer sur deux heures.

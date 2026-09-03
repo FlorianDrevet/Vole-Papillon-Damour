@@ -20,6 +20,7 @@ using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Repositories;
 using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
+using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
 
 namespace Vole_Papillon_Damour.Infrastructure;
@@ -63,6 +64,7 @@ public static class DependencyInjection
         services.AddSingleton<ISSEClientManager, SSEClientManager>();
         services.AddSingleton<IUserDeletionRetentionPolicy, NoRetainedSalesMovementsPolicy>();
         services.AddScoped<IAccountDeletionStore, AccountDeletionStore>();
+        services.AddScoped<IBookAlertOutbox, BookAlertOutbox>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<IEntraUserDirectory, EntraGraphUserDirectory>();
         services.Configure<BibliographicOptions>(

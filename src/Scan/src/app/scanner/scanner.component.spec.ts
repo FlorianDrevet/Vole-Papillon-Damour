@@ -9,6 +9,9 @@ import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerService} from './camera-scanner.service';
 import {ScannerComponent} from './scanner.component';
+import {ScanAuthService} from '../auth/scan-auth.service';
+import {ScanSyncService} from '../offline/scan-sync.service';
+import {ScanWorkflowService} from '../offline/scan-workflow.service';
 
 describe('ScannerComponent', () => {
   let fixture: ComponentFixture<ScannerComponent>;
@@ -26,6 +29,9 @@ describe('ScannerComponent', () => {
       providers: [
         {provide: BookMetadataService, useValue: metadataService},
         {provide: CameraScannerService, useValue: cameraService},
+        {provide: ScanAuthService, useValue: null},
+        {provide: ScanSyncService, useValue: null},
+        {provide: ScanWorkflowService, useValue: null},
       ],
     }).compileComponents();
 

@@ -18,7 +18,8 @@ public sealed class OutboxMessage
 
 public enum OutboxMessageKind : byte
 {
-    AccountDeletion = 0
+    AccountDeletion = 0,
+    AlertEmail = 1
 }
 
 public enum OutboxMessageStatus : byte

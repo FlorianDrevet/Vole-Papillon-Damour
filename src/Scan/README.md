@@ -1,9 +1,23 @@
-# Sonde de scan
+# PWA de scan et de tri
 
-La sonde `S0-2` est une application Angular en consultation seule. Elle accepte un
+Le scanner Angular couvre maintenant `S0-2` et la tranche locale `P1-5`. Il accepte un
 ISBN saisi au clavier, envoyé par une scanette USB, ou lu par la caméra du navigateur,
-puis interroge `GET /books/{isbn13}/metadata` sur l'API. Elle n'enregistre ni session,
-ni file, ni donnée en base.
+puis sépare strictement deux flux :
+
+- le verdict, calculé immédiatement depuis la copie locale du catalogue ;
+- la notice bibliographique, récupérée en tâche de fond par `GET /books/{isbn13}/metadata`.
+
+Les trois magasins IndexedDB (`catalog`, `outbox`, `session`) conservent la copie de
+travail, les décisions et la session active. Une décision `Kept` ou `Rejected` est
+transmise séquentiellement avec son `ClientGestureId` dès que le réseau et un compte
+bénévole portant le rôle Entra `Tri` sont disponibles. Les gestes `Pending` survivent à
+la fermeture et sont restaurés au prochain lancement ; aucune donnée d'outbox n'est
+supprimée par une purge du catalogue.
+
+La connexion Entra est optionnelle pour le mode local : le bouton de connexion active
+la synchronisation du catalogue delta et la vidange de la file. Le service worker
+Angular met en cache la coquille et les notices bibliographiques, sans mélanger le
+cache navigateur avec IndexedDB.
 
 La caméra utilise `@zxing/browser` avec le décodeur ZXing en mode de recherche renforcé
 (`TRY_HARDER`) pour les codes 1D. Elle accepte les EAN-13/EAN-8 des livres, ainsi que les
@@ -22,8 +36,12 @@ Depuis `src/Scan` :
 
 ```bash
 npm ci
-npm start
+npm start -- --port 4300
 ```
+
+Le port `4300` correspond à l'URI SPA locale déclarée par `infra/entra/Configure-EntraApps.ps1`.
+Sans connexion Entra, la saisie et le tri local restent utilisables ; la synchronisation
+protégée attend un compte doté de `Tri`.
 
 Le lancement de l'AppHost est recommandé pour démarrer l'API et la sonde ensemble :
 
@@ -52,3 +70,7 @@ Ordre du premier déploiement : `Infra - deploy` en `what-if`, `Infra - deploy` 
 npm test -- --watch=false --browsers=ChromeHeadless
 npm run build
 ```
+
+Le build de production génère `ngsw-worker.js`, `ngsw.json` et le manifeste PWA. Le
+service worker est désactivé en développement afin de ne pas conserver un bundle obsolète
+pendant les essais.

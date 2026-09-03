@@ -7,7 +7,7 @@ corriger dans les documents `00` à `10`. Chaque constat porte un identifiant `R
 stable, pour que le plan d'implémentation puisse s'y référer. Une fois un constat
 traité dans le document concerné, il se marque `Traité` ici plutôt que de disparaître.
 
-**Ce que la revue ne remet pas en cause.** Les dix décisions `DT-nn` tiennent. Le
+**Ce que la revue ne remet pas en cause.** Les décisions `DT-nn` déjà prises tiennent. Le
 raisonnement de `DT-02` (tout en SQL), de `DT-03` (outbox en table) et le réexamen de
 `DT-04` sont solides et chiffrés. Le chapitre `04-app-scan.md` §3 — le parallélisme du
 scan, la réponse tardive à jeter, le geste qui passe toujours par la file — décrit
@@ -18,8 +18,8 @@ sur ce qui manque autour d'eux.
 
 | Gravité | Constats |
 |---|---|
-| 🔴 **Bloquant** — la conception est fausse ou absente, et ça se paie en refonte | ~~`R-01`~~ ~~`R-02`~~ ~~`R-03`~~ ~~`R-04`~~ `R-06` ~~`R-08`~~ `R-11` |
-| 🟠 **Sérieux** — la conception manque, mais s'ajoute sans casser | ~~`R-05`~~ ~~`R-07`~~ `R-09` `R-10` `R-12` `R-13` `R-14` `R-15` `R-16` `R-17` `R-18` |
+| 🔴 **Bloquant** — la conception est fausse ou absente, et ça se paie en refonte | ~~`R-01`~~ ~~`R-02`~~ ~~`R-03`~~ ~~`R-04`~~ `R-06` ~~`R-08`~~ ~~`R-11`~~ |
+| 🟠 **Sérieux** — la conception manque, mais s'ajoute sans casser | ~~`R-05`~~ ~~`R-07`~~ `R-09` ~~`R-10`~~ ~~`R-12`~~ `R-13` `R-14` `R-15` ~~`R-16`~~ `R-17` `R-18` |
 | 🟡 **Factuel** — le document décrit un dépôt qui n'existe plus | `R-19` `R-20` `R-21` `R-22` |
 | ⚪ **Mineur** — à corriger au passage | `R-23` à `R-30` |
 
@@ -31,7 +31,7 @@ compte, parce que « ouvert » sans étape veut dire « oublié ».
 |---|---|
 | `R-06` | `L0-11`, étape 8 — **arbitré en faveur de la recommandation de cette revue** : la suppression Graph se fait au préalable d'identité, pendant qu'il n'y a personne à supprimer |
 | `R-09` | `plan/03`, palier 2 — le sort des fiches épuisées reste à trancher avant la première indexation |
-| `R-10` `R-11` `R-12` `R-16` | `P1-2` |
+| ~~`R-10`~~ ~~`R-11`~~ ~~`R-12`~~ ~~`R-16`~~ | `P1-2` — **traités par `DT-17` à `DT-20`** |
 | `R-13` `R-14` | ❌ **Aucune étape.** Le filigrane de synchronisation et le décompte des demandeurs dans la projection embarquée relèvent de `P1-5` et n'y sont pas nommés |
 | `R-15` | `P1-4` |
 | `R-17` | `plan/03`, palier 2 |
@@ -216,6 +216,10 @@ c'est-à-dire fausse les quantités, silencieusement, le jour d'une bourse.
 
 ### `R-11` — `RG-19` et la file de sortie se contredisent
 
+> ✅ **Traité par `DT-18`** (`01-decisions.md`). L'outbox écrit l'intention `Pending` au
+> scan, ne transmet que `Kept`/`Rejected`, et distingue l'annulation locale du mouvement
+> inverse après transmission.
+
 `04` §3 est explicite : le geste est écrit dans l'`outbox` **au moment du scan**, avant
 toute tentative d'envoi, et « il n'existe pas de branche en ligne ». `RG-19` est tout
 aussi explicite : en mode tri, c'est **le scan suivant** qui vaut « garder » pour le
@@ -297,6 +301,10 @@ dessous d'un seuil de contenu, ou regroupement par œuvre.
 
 ### `R-10` — Le fuseau horaire n'apparaît nulle part
 
+> ✅ **Traité par `DT-17`** (`01-decisions.md`). Les instants sont persistés en UTC ;
+> les calculs de calendrier sont centralisés en `Europe/Paris` dans Application puis
+> reconvertis en UTC pour la persistance et les requêtes.
+
 `RG-23` bascule les annonces « à la date d'ouverture de la bourse ». `AssoEvents` porte
 des `DateTimeOffset` ; les nouvelles tables de `02` §2 des `datetime2` ; la relève
 d'outbox de `06` §4 du `SYSUTCDATETIME()`.
@@ -310,6 +318,9 @@ Il faut une phrase, et une seule : tout est stocké en UTC, les comparaisons de 
 se font en heure locale `Europe/Paris`, et voici où la conversion a lieu.
 
 ### `R-12` — La fusion de fiches contredit le mouvement en ajout seul
+
+> ✅ **Traité par `DT-19`** (`01-decisions.md`). La fiche absorbée pointe vers une fiche
+> canonique par `RedirectedToIsbn13`; les anciens `BookMovements` ne sont pas réécrits.
 
 `RG-07` permet de fusionner deux fiches désignant la même édition, en additionnant
 mouvements et quantités. Or `Books` a pour clé primaire **l'ISBN-13** et
@@ -363,6 +374,10 @@ aucune commande, alors qu'elles sont décrites ailleurs dans le même dossier :
 | Correction unitaire de quantité tracée | `RG-34`, exigible dès le palier 1 même si l'écran de remise à plat est reporté |
 
 ### `R-16` — `RG-33` n'a pas de critère : qu'est-ce qu'une « bourse ouverte » ?
+
+> ✅ **Traité par `DT-20`** (`01-decisions.md`). Le calcul utilise les cinq champs
+> `AssoEvents`, l'intervalle `[OpenAt, CloseAt)`, le repli à minuit local et un refus
+> explicite des chevauchements futurs.
 
 `RG-33` rattache toute vente « à la session de bourse ouverte au moment du scan ».
 `AssoEvents` porte `DateStart` (obligatoire), `DateEnd`, `HourOpenDoors` et
@@ -514,12 +529,12 @@ apports que la revue n'avait pas vus : un **journal est une donnée personnelle*
 suppression du compte ; et le **désaccord de verdict entre client et serveur** est une
 mesure gratuite qui donne la péremption réelle de la copie embarquée.
 
-**La stratégie de test au-delà du backend.** ✅ **A trouvé une place** — étape `P1-2` du
-[`lot 2`](../plan/02-palier-1-socle-interne.md), avant l'application de scan et non après.
-Le manque, lui, est intact : `03` §6 traite bien les tests backend et leur ordre de valeur,
-mais rien sur les fronts — ni test du mode hors ligne (le chemin le plus critique et le
-plus difficile à éprouver à la main), ni test de la file de sortie et de sa survie à une
-fermeture, ni jeu de données de démonstration permettant de rejouer une session de tri.
+**La stratégie de test au-delà du backend.** ✅ **Traité par `DT-21`** (`01-decisions.md`).
+L'étape `P1-2` du [`lot 2`](../plan/02-palier-1-socle-interne.md) fixe la chaîne
+Jasmine/Karma/ChromeHeadless, la séparation de la machine de synchronisation, les tests
+IndexedDB après redémarrage, le transport réseau simulé et le fixture de démonstration.
+La conception couvre maintenant le mode hors ligne, la survie de la file, les coupures
+en pleine transmission et les doublons ; le code et les cas de test seront livrés en `P1-5`.
 `npm test` échoue par ailleurs côté `BackOffice`, qui ne contient **aucun** fichier de test
 quand le `Website` en compte dix-neuf.
 
@@ -547,12 +562,12 @@ Deux des trois manques structurels sont comblés depuis :
 unifie le socle d'exécution. Les deux autres sont réglés depuis : le repli
 d'exploitation **n'existera pas** — `ENF-21` est réécrit, une panne fait vendre sans
 enregistrer et rien n'est rattrapé, `P1-10` en tire la conséquence sur le hors-ligne — et la
-stratégie de test des fronts a une étape, `P1-2`, où elle reste à écrire.
+stratégie de test des fronts est désormais écrite dans `DT-21` et sera implémentée en `P1-5`.
 
 **Combien de constats restent ouverts, et lesquels.** Une version antérieure de cette
 section annonçait « onze constats ouverts ». Le chiffre ne comptait que les bloquants et les
 sérieux : les quatre factuels et les huit mineurs sont ouverts eux aussi. Le compte exact
-est **vingt-trois**, dont vingt-et-un sont portés par une étape du plan — voir le tableau
+est **dix-neuf**, dont dix-sept sont portés par une étape du plan — voir le tableau
 « Où en est chaque constat ouvert » plus haut. **Aucun ne conditionnait l'écriture du plan.**
 
 Deux échappent encore à toute étape et ce sont les seuls à surveiller :
@@ -562,11 +577,9 @@ Deux échappent encore à toute étape et ce sont les seuls à surveiller :
   relèvent de `P1-5` sans y être nommés ; ils se règlent en écrivant le delta, à condition
   d'y penser à ce moment-là.
 
-Trois méritent par ailleurs d'être traités tôt, parce qu'ils sont bon marché maintenant et
+Deux méritent par ailleurs d'être traités tôt, parce qu'ils sont bon marché maintenant et
 coûteux plus tard :
 
 - `R-06`, la suppression du compte dans le locataire — même chantier que `DT-14`, et
   `ENF-12` n'est pas tenue sans lui. ✅ **Suivi** : le plan l'a ramené en `L0-11` ;
-- `R-10`, le fuseau horaire — une phrase à écrire, un défaut sournois à ne pas laisser
-  s'installer dans le code ;
 - `R-23`, les sondes de santé, **avant** d'ajouter trois applications plutôt qu'après.

@@ -1,0 +1,19 @@
+{
+  "name": "Vole Papillon d’Amour · Tri des livres",
+  "short_name": "VPD Scan",
+  "description": "Scanner et trier les livres même lorsque le réseau est instable.",
+  "lang": "fr-FR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7fbfd",
+  "theme_color": "#17324d",
+  "icons": [
+    {
+      "src": "/assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

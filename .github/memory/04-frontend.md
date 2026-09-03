@@ -10,6 +10,10 @@ Both web apps are Angular 21 projects with Angular Material and Tailwind in the 
 - `src/Scan/` - Angular 21 consultation-only feasibility probe for ISBN capture and
   bibliographic metadata; it has no session, IndexedDB, authentication, or write flow
 
+## Planned Books Scan client decisions
+
+As of 2026-09-03, the existing Scan app is still the S0-2 consultation-only probe; the offline session/outbox flow is not implemented. P1-2 selected the existing Jasmine/Karma/ChromeHeadless toolchain: unit tests cover a typed synchronization state machine with in-memory storage, browser integration tests use real IndexedDB across a service restart, and a fake transport simulates delays, failures, mid-flight disconnects, and duplicate responses. The planned local outbox states are Pending, Kept, Rejected, and CancelledLocal; only final decisions reach the API, while a transmitted cancellation becomes a new inverse gesture.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:

@@ -48,11 +48,14 @@ jobs:
           LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
           API_FQDN=$(az containerapp show --name "$API_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
             --query properties.configuration.ingress.fqdn --output tsv)
+          SCAN_FQDN=$(az containerapp show --name "$CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
           APPINSIGHTS=$(az monitor app-insights component show --app "$APPLICATION_INSIGHTS" \
             --resource-group "$RESOURCE_GROUP" --query connectionString --output tsv)
           {
             echo "IMAGE=$LOGIN_SERVER/$IMAGE_NAME:$TAG"
             echo "API_URL=https://$API_FQDN"
+            echo "SCAN_REDIRECT_URI=https://$SCAN_FQDN"
             echo "APPINSIGHTS_CONNECTION_STRING=$APPINSIGHTS"
           } >> "$GITHUB_ENV"
 
@@ -63,6 +66,7 @@ jobs:
           docker build \
             --file "$DOCKERFILE" \
             --build-arg "API_URL=$API_URL" \
+            --build-arg "SCAN_REDIRECT_URI=$SCAN_REDIRECT_URI" \
             --build-arg "APPINSIGHTS_CONNECTION_STRING=$APPINSIGHTS_CONNECTION_STRING" \
             --tag "$IMAGE" \
             "$BUILD_CONTEXT"

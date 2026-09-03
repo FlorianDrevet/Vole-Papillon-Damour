@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-2` publié en HTTPS sur Azure ; correctif de rafraîchissement asynchrone, lecture photo et repli de couverture déployé depuis `fix/scan-async-refresh` |
-| **Prochaine action** | Relire et merger le correctif Scan, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
+| **Lot en cours** | `P1-5` — contrats API, PWA Scan, IndexedDB, verdict local, authentification Entra et synchronisation delta/outbox livrés localement ; `QT-02` reste bloquée par le mauvais locataire Azure ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
+| **Prochaine action** | Relever `QT-03`/`QT-08` sur appareil réel et `QT-02` avec une session Azure du locataire de l'abonnement ; ensuite seulement attaquer `P1-6` worker et la migration de base |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-main` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `fix/backoffice-authorization-403` — issue du `main` après merge du correctif audience |
+| **Branche** | `fix/scan-async-refresh` — synchronisée avec `main` avant la PR P1-5 |
 
 ---
 
@@ -34,6 +34,11 @@ plus de réponse ; ceci est un rappel, le détail est dans les documents cités.
 | Suppression du compte dans le locataire | **Au préalable d'identité** (`L0-11`, étape 8), pendant qu'il n'y a encore personne à supprimer |
 | Genres et classement | **Depuis les sources bibliographiques**, et le site n'indique **jamais** où se trouve un livre dans le local (`Q-07`) |
 | Repli d'exploitation | **Aucun.** Une panne fait vendre sans enregistrer, rien n'est rattrapé. Le hors-ligne de la caisse devient la seule protection (`ENF-21`, `P1-10`) |
+| Fuseau horaire du module livres | **Instants UTC ; calendrier et minuit métier en `Europe/Paris`**, conversion centralisée dans Application (`DT-17`) |
+| Outbox de scan | **`Pending` local puis décision finale ; annulation locale avant transmission, mouvement inverse après transmission** (`DT-18`) |
+| Fusion de fiches | **Redirection ISBN vers une fiche canonique**, sans réécriture de `BookMovements` (`DT-19`) |
+| Bourse ouverte | **Intervalle `[OpenAt, CloseAt)` des seuls `AssoEvents` de type `Books`**, chevauchements refusés (`DT-20`) |
+| Tests du front Scan | **Jasmine/Karma/ChromeHeadless**, IndexedDB réel et transport réseau simulé ; pas de suite E2E en v1 (`DT-21`) |
 
 Les **chiffres cibles du palier 0** (`S0-1`) sont fixés avant la campagne. Le **choix du
 matériel de scan** (`Q-08`) reste à trancher après la campagne, s'il s'avère nécessaire.
@@ -195,12 +200,15 @@ passés ; compilation Bicep et analyse syntaxique PowerShell passées.
 La sonde `S0-2` est maintenant implémentée dans `src/Scan` : saisie ISBN, scanette
 clavier, caméra avec `@zxing/browser`/ZXing en mode `TRY_HARDER` (sans dépendre de
 `BarcodeDetector`), analyse de toute l'image vidéo, sélection d'une photo sur iPhone,
-conversion ISBN-10 → ISBN-13 et appel consultation seule à
-`GET /books/{isbn13}/metadata`. L'API interroge la BnF SRU puis Open Library en repli,
-sans session, IndexedDB, authentification ni écriture. L'AppHost expose la sonde sur le
-port `4202` et l'API sur `5257` pour le développement LAN. L'image Scan est maintenant
+conversion ISBN-10 → ISBN-13 et appel public à `GET /books/{isbn13}/metadata`. L'API
+interroge la BnF SRU puis Open Library en repli. La tranche `P1-5` ajoute les trois
+magasins IndexedDB, le verdict local, la file durable `Pending`/`Kept`/`Rejected`, la
+restauration du dernier geste, les contrats delta/session/scan, l'idempotence par
+`ClientSessionId`/`ClientGestureId`, l'authentification MSAL du bénévole `Tri` et la
+vidange séquentielle au retour du réseau. L'image Scan est maintenant
 conteneurisée avec nginx, son ingress HTTPS public est déclaré en Bicep et le workflow
-`Scan - deploy` construit le bundle avec le FQDN public de l'API. Les cibles `S0-1` sont
+`Scan - deploy` construit le bundle avec le FQDN public de l'API et l'URI de redirection
+du FQDN Scan. Les cibles `S0-1` sont
 `≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre.
 La caméra et la photo utilisent le décodeur ZXing ; la photo réessaie des recadrages, une
 réduction et un seuillage noir/blanc pour les cas difficiles. Comme l'application utilise
@@ -224,7 +232,21 @@ source de la notice ne sert pas l'image, puis affiche un état explicite si les 
 smoke test public sur l'ISBN `9782070612758` renvoie une fiche BnF avec une image chargée.
 La caméra live et la photo ont été testées avec succès sur iPhone. La photo de test fournie,
 prise sur un écran fortement moiré, reste un cas non fiable pour un décodeur navigateur.
-La campagne de mesure sur 300 livres de `S0-4` reste également à faire.
+La campagne de mesure `S0-4` a été réalisée le 2026-09-03 sur 300 livres réels ; le
+retour manuel est concluant et le flux a fonctionné sur l'ensemble de la campagne. Les
+sous-mesures détaillées (taux au premier essai, délai moyen, recours manuel, cadence à
+200 livres et couverture des sources) n'ont pas été chiffrées dans cette reprise ; le
+verdict `S0-5` est donc favorable sur le fonctionnement observé, sans inventer de
+pourcentages. La suite engagée est `P1-1`, la mesure du réveil du worker sans réplica
+chaud. Le déploiement de la configuration `minReplicas: 0`, `maxReplicas: 1` a réussi via
+`Infra - deploy` `33780715179` sur le commit `4acfbb2`, terminé le 2026-09-03 à 16:50 UTC
+(18:50 Europe/Paris). La fenêtre de deux heures est terminée, mais `QT-02` n'est pas
+relevable depuis la session Azure disponible : le worker et `vpd-law-dev` répondent
+`401 Aucun accès`, car le jeton du locataire `b23c80b3-9776-4840-8255-fcbf3b3500fd`
+ne correspond pas au locataire de l'abonnement `91a30855-a777-43a6-8fad-66854b9a4d1b`.
+Le worker reste gelé jusqu'à un relevé effectué avec une session du bon locataire.
+
+`P1-2` est terminé côté conception : `DT-17` à `DT-21` fixent le temps UTC, les états de l'outbox, la fusion par redirection, l'intervalle d'une bourse ouverte et la stratégie de test du front Scan. `P1-3` est implémenté localement : les agrégats `Book`, `BookMovement`, `ScanSession`, `AssociationSettings`, l'entité `BookAnnouncement`, leurs configurations EF et la migration `20260903173750_AddBookExchangeCore` sont en place. `P1-4` couvre maintenant `ScanBook`, `OpenScanSession`, `CloseScanSession`, `RegisterSale`, `VoidSale`, `AdjustQuantity`, la lecture/écriture des paramètres, le rattachement des annonces sans date, les indicateurs de fiche, `ReassignSessionMode`, la correction manuelle des métadonnées, la suppression contrôlée d'une fiche, la mise en file des alertes, les actions d'administration `RG-45`, le traitement métier de rebond `RG-31`, son ledger d'idempotence fournisseur et son endpoint ACS/Event Grid : ISBN-10/13 normalisé, redirection canonique, verdict sans appel externe, stock/annonce en transaction, geste idempotent, horloge suspecte, clôture idempotente, inversion/rejeu de session, respect des verrous de champs manuels, groupement des alertes par membre avec délai configurable, annulation ciblée des messages `Pending`, envoi forcé par échéance immédiate, recalcul des alertes encore en attente après reprise de session, compteur de rebonds consécutifs et suspension au troisième échec. Une remise réussie remet le compteur consécutif à zéro sans réactiver automatiquement une liste suspendue ; un identifiant ACS déjà enregistré ne réincrémente pas le compteur, et un identifiant déjà lié à un autre membre est rejeté ; une correction automatique ne remplace jamais un champ verrouillé ; une suppression n'est permise que sans vente, mouvement ni annonce afin de préserver le ledger append-only. Les listes de recherche correspondent à un ISBN ou à une œuvre, les membres suspendus et le cooldown sont exclus, et une annonce sans date ne produit aucune alerte. La copie de `ClientGestureId` sur les annonces est portée par `20260903175445_AddClientGestureIdToBookAnnouncements`; le lien unique d'inversion des mouvements par `20260903181307_AddSaleReversalLink`; les tables de listes/historique par `20260903185500_AddBookWatchlistsAndAlerts`; le ledger des événements de rebond et son index unique par `20260903192839_AddEmailBounceEventLedger`. Le point d'entrée `POST /integrations/acs/email-delivery-reports` désérialise le schéma Event Grid typé, répond à la validation synchrone et protège les livraisons par le secret `X-Vpd-EventGrid-Secret`; les destinataires inconnus ou sans liste sont acquittés sans effet. `P1-5` ajoute maintenant les contrats API et la PWA Scan locale : delta compact avec entrées masquées et paramètres, file IndexedDB `Pending`/`Kept`/`Rejected`, restauration du dernier geste, authentification MSAL `Tri`, idempotence `ClientSessionId`/`ClientGestureId`, service worker et vidange séquentielle au retour du réseau. La migration `20260903211547_AddWatchlistUpdatedAt` couvre aussi les changements d'état des listes dans le filigrane. Validation locale finale : 72 tests de domaine, 93 d'application et 29 d'infrastructure ; la suite `.slnx`, le build de solution et le contrôle EF sans modèle en attente passent ; les 49 tests ChromeHeadless et les builds Scan production/développement passent également. Les migrations ne sont pas encore appliquées à Azure SQL. `QT-02` reste indépendante et le worker ne doit pas être modifié avant son relevé avec le bon locataire. Il reste la file de métadonnées, l'envoi worker et les vérifications physiques `QT-03`/`QT-08`.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -249,6 +271,7 @@ domaine d'envoi reste volontairement anticipée, conformément à `L0-9`.
 >
 > | Sujet | Lancé le | Relevable à partir du |
 > |---|---|---|
+> | `QT-02` — timer worker à zéro réplica (`P1-1`) | `2026-09-03 18:50` Europe/Paris | `2026-09-03 20:50` Europe/Paris |
 > | `QT-08` — session de 48 h puis ouverture en mode avion (page jetable, `L0-12`) | | |
 > | Propagation DNS des entrées ACS | `2026-09-02` | après le délai OVH annoncé (maximum 24 h) |
 > | Vérification du domaine d'envoi ACS | `2026-09-02` | après propagation DNS, lors du relevé dans Azure |
@@ -328,8 +351,8 @@ reportées.
 | # | Sujet | Résultat | Le |
 |---|---|---|---|
 | `QT-01` | Couverture des sources bibliographiques | — | — |
-| `QT-02` | Déclencheur planifié à zéro réplica | — | — |
-| `QT-03` | Lecture du code-barres au navigateur | — | — |
+| `QT-02` | Déclencheur planifié à zéro réplica | Non relevable depuis la session disponible — le worker et `vpd-law-dev` renvoient `401 Aucun accès` ; le jeton du locataire `b23c80b3-9776-4840-8255-fcbf3b3500fd` doit être remplacé par une session du locataire d'abonnement `91a30855-a777-43a6-8fad-66854b9a4d1b` | 2026-09-03 18:50 |
+| `QT-03` | Lecture du code-barres au navigateur | Campagne `S0-4` déclarée réussie sur 300 livres ; sous-mesures détaillées non consignées | 2026-09-03 |
 | `QT-04` | Dimensionnement Entra | Coût tranché : gratuit à notre échelle | doc |
 | `QT-07` | Connexion seule, sans inscription | — | — |
 | `QT-08` *(partie jeton, `L0-12`)* | Durée de vie des jetons hors ligne | — | — |
@@ -355,6 +378,7 @@ reportées.
 | POC Scan — détection caméra live sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 | POC Scan — détection à partir d'une photo sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 | Scan public — fiche BnF `9782070612758` après `Scan - deploy` `33778535757` | `200 OK`, couverture chargée dans Chrome (`103 × 150`) | `2026-09-03` |
+| Campagne `S0-4` — 300 livres réels | Test manuel déclaré concluant ; le flux a fonctionné sur les 300 livres, sans relevé chiffré des sous-mesures | `2026-09-03` |
 
 > Un test manuel non consigné sera refait. Noter au minimum : quoi, quand, et ce qui a été
 > observé — pas seulement « OK ».
@@ -367,6 +391,19 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **P1-5 — contrats API, PWA Scan et synchronisation hors ligne.** Ajout des contrats `GET /scan/catalog/delta`, ouverture/rejeu de session, scans et clôture sous autorisation `Tri`, avec projections compactes, suppressions masquées et reprojection lors des changements de listes. Le Scan conserve désormais `catalog`/`outbox`/`session` dans IndexedDB persistant, calcule le verdict local, restaure le dernier geste, protège les appels par MSAL et rejoue la file séquentiellement au retour du réseau ; le service worker ne met en cache que la coquille et les métadonnées publiques. Ajout de la migration locale `20260903211547_AddWatchlistUpdatedAt`, générée avec reprise de `CreatedAt` pour les lignes existantes. Validation finale : 72 tests Domain, 93 Application, 29 Infrastructure, 49 ChromeHeadless, build solution, contrôle EF et builds Scan production/développement. Aucun changement Azure, DNS, secret, déploiement ou migration de production ; `QT-02`, `QT-03` et `QT-08` restent à relever hors dépôt. |
+| 2026-09-03 | Windows | **`QT-02` — relevé tenté après la fenêtre d'observation.** La session Azure ouverte est authentifiée dans le locataire `b23c80b3-9776-4840-8255-fcbf3b3500fd`, alors que l'abonnement et `vpd-law-dev` attendent `91a30855-a777-43a6-8fad-66854b9a4d1b` ; le worker et les journaux répondent `401 Aucun accès`. Aucun changement Azure n'a été effectué ; le worker reste gelé jusqu'à une session du bon locataire. |
+| 2026-09-03 | Windows | **P1-4 — transport ACS/Event Grid et handshake (`RG-31`).** Ajout de `POST /integrations/acs/email-delivery-reports`, protégé par le secret partagé `X-Vpd-EventGrid-Secret`. L'endpoint désérialise les contrats Event Grid typés, renvoie `validationResponse` pour `SubscriptionValidationEvent`, transmet les rapports ACS non réussis au handler de rebond et acquitte les statuts livrés/étendus, les destinataires inconnus et les membres sans watchlist. Validation : 72 tests Domain, 88 Application, 29 Infrastructure, suite `.slnx` et build ; aucune configuration Azure ni migration n'a été appliquée. |
+| 2026-09-03 | Windows | **P1-4 — ledger d'idempotence des rebonds (`RG-31`).** `RecordEmailBounce` accepte l'identifiant fournisseur, le valide, enregistre chaque événement ACS une seule fois dans `EmailBounceEvents` et protège cette identité par un index unique ; un rejeu séquentiel retourne l'état courant sans incrémenter `BounceCount`, et un identifiant déjà associé à un autre membre est rejeté. Ajout de la migration locale `20260903192839_AddEmailBounceEventLedger`, non appliquée à Azure. Validation : 72 tests Domain, 84 Application, 29 Infrastructure, suite `.slnx` et build ; le transport ACS/Event Grid, l'handshake et l'exposition API restent à faire. |
+| 2026-09-03 | Windows | **P1-4 — traitement métier des rebonds (`RG-31`).** `Watchlist` compte les échecs consécutifs, suspend les alertes au troisième rebond et réinitialise le compteur après une remise réussie sans réactiver automatiquement une liste suspendue. `RecordEmailBounce` persiste la transition dans une transaction et renvoie uniquement le compteur/statut. Validation : 70 tests Domain, 82 Application, 29 Infrastructure ; aucun changement de schéma ni action Azure. L'identifiant d'événement fournisseur, le transport ACS/Event Grid, l'exposition API et l'appel worker restent à faire. |
+| 2026-09-03 | Windows | **P1-4 — actions d'administration sur les alertes (`RG-45`).** Ajout en TDD de `CancelBookAlerts` et `ForceBookAlerts`. L'annulation ne touche que les lignes `AlertEmail` `Pending` de la session ; l'envoi forcé libère un éventuel bail et ramène `DueAt` à l'instant UTC, pour laisser le worker effectuer l'envoi. `ReassignSessionMode` annule puis recalcule les alertes encore en attente dans la même transaction, sans recréer celles déjà envoyées. Validation : 67 tests Domain, 80 Application, 29 Infrastructure ; aucun changement de schéma et aucune action sur Azure. Le rappel de rebond, le transport et `QT-02` restent ouverts. |
+| 2026-09-03 | Windows | **P1-4 — listes de recherche et mise en file des alertes.** Ajout en TDD de `Watchlist`, `WatchlistItem`, `UserAlertHistory` et `BookAlertOutbox`. À la clôture, les entrées correspondantes sont groupées par membre dans une seule ligne `AlertEmail`, avec `DueAt` configurable, cooldown anti-répétition et exclusion des membres suspendus ; les annonces `PROCHAINE BOURSE` sans date restent hors file. Ajout de la migration `20260903185500_AddBookWatchlistsAndAlerts`, sans application Azure. Validation : 67 tests Domain, 77 Application, 27 Infrastructure, suite `.slnx`, build et EF sans modèle en attente. L’envoi worker, l’annulation/envoi forcé, les rebonds et le transport restent à faire ; `QT-02` reste ouverte. |
+| 2026-09-03 | Windows | **P1-4 — métadonnées et suppression contrôlée.** Ajout en TDD de `UpdateBookMetadata` et `DeleteBook`. Les champs manuellement sélectionnés sont fusionnés dans `ManuallyEditedFields` et ne peuvent plus être remplacés par un rafraîchissement automatique ; une suppression n'est acceptée que si la fiche n'a aucun mouvement ni annonce, et les ventes sont refusées explicitement. Validation : 61 tests Domain, 76 Application, 21 Infrastructure, suite `.slnx`, build et contrôle EF sans modèle en attente. Aucun schéma ni endpoint n'a changé ; l'outbox d'alertes, le transport et `QT-02` restent à traiter. |
+| 2026-09-03 | Windows | **P1-4 — socle interne élargi.** Ajout en TDD de `RegisterSale`/`VoidSale` (bourse ouverte, stock nul, horloge suspecte, rejeu et inversion tracée), `AdjustQuantity`, paramètres d'association, rattachement des annonces sans date, indicateurs rare/masqué et `ReassignSessionMode` (inversion/rejeu des entrées de session). La migration `20260903181307_AddSaleReversalLink` rend chaque mouvement d'inversion unique et traçable. Validation : 57 tests Domain, 70 Application, 21 Infrastructure, suite `.slnx`, build et modèle EF sans changement en attente. Aucun endpoint, worker, appel bibliographique ou déploiement de migration n'a été ajouté ; `QT-02` reste ouverte. |
+| 2026-09-03 | Windows | **P1-4 — premier flux métier du module livres.** Ajout en TDD de `ScanBook`, `OpenScanSession` et `CloseScanSession`. Le scan normalise ISBN-10/13, suit une redirection canonique, calcule `RG-15` depuis les données internes, écrit mouvement + compteur + éventuelle annonce dans une transaction, rejoue sans doublon via `ClientGestureId`, conserve `OccurredAt`/`ReceivedAt` et marque les horloges suspectes. L'ouverture interdit deux sessions actives par bénévole et la clôture est idempotente. `ClientGestureId` est aussi recopié sur `BookAnnouncements` via la migration `20260903175445_AddClientGestureIdToBookAnnouncements`. Validation : 57 tests Domain, 47 Application, 21 Infrastructure, migration sans changement en attente et build `.slnx` sans erreur. Aucun endpoint, worker, appel bibliographique ou déploiement de migration n'a été ajouté ; `QT-02` reste ouverte. |
+| 2026-09-03 | Windows | **P1-3 — domaine et persistance.** Ajout des agrégats `Book`, `BookMovement`, `ScanSession`, `AssociationSettings`, de l'entité `BookAnnouncement`, des identifiants forts, des invariants UTC/quantité/cycle, des cinq configurations EF et de la migration `20260903173750_AddBookExchangeCore`. La migration porte `rowversion`, collation `Latin1_General_100_CI_AI`, contrôles de redirection/quantité et index filtrés d'idempotence/session. Validation : 49 tests Domain, 21 tests Infrastructure et `dotnet test Vole_Papillon_Damour.slnx --no-restore` passent. La migration n'est pas appliquée à la base ; `QT-02` reste ouverte. |
+| 2026-09-03 | Windows | **P1-1 — mesure du timer.** Après la campagne `S0-4` concluante sur 300 livres, passage du worker à `minReplicas: 0`, `maxReplicas: 1` via `Infra - deploy` `33780715179` (commit `4acfbb2`). L'observation de deux heures est ouverte jusqu'à 20:50 Europe/Paris ; `QT-02` reste à relever dans les journaux. |
+| 2026-09-03 | Windows | **P1-2 — décisions de conception.** Pendant la fenêtre d'observation `P1-1`, ajout de `DT-17` à `DT-21` dans `docs/bourse-aux-livres/technique/01-decisions.md` : instants UTC et calendrier `Europe/Paris`, outbox à états, fusion par redirection ISBN, définition de bourse ouverte et tests Scan par synchronisation isolée avec IndexedDB/transport simulé. Les règles métier, le modèle de données et les flux techniques sont alignés ; `P1-3` a pu commencer localement sans toucher au worker. |
 | 2026-09-03 | Windows | **Correctif BackOffice — refresh après connexion.** Le domaine public reproduit une page blanche sur refresh normal avec `uninitialized_public_client_application`, car `AuthSessionService` lit le cache avant l'initialisation MSAL. Ajout de `provideAppInitializer` autour de `MsalService.initialize()`, contrat de bootstrap en échec puis au vert, 9 tests ChromeHeadless et build production passants. Un déploiement BackOffice reste à faire après merge. |
 | 2026-09-03 | Windows | **Correctif BackOffice — rôles Entra et 403.** Après le déploiement de l'audience, reproduction TDD d'un token v2 portant `roles=["Administration"]` : `IsInRole("Administration")` échoue avec le mapping JWT par défaut. `MapInboundClaims = false` est activé pour le schéma Entra, le test passe, et une nouvelle branche `fix/backoffice-authorization-403` est préparée pour un déploiement applicatif API. |
 | 2026-09-03 | Windows | **Correctif BackOffice — audience Entra v2.** Après `git pull` de `main`, création du worktree `fix/backoffice-event-update-401`. Reproduction TDD du `401` avec un token dont `aud` est l'ID d'application API ; alignement de `AzureAd:Audience` dans `appsettings.Development.json`, `infra/main.bicep` et `Configure-EntraApps.ps1`. Validation : 97 tests backend, compilation Bicep, 9 tests ChromeHeadless et build BackOffice. Aucun déploiement Azure ; le retest des PUT `/asso-events/{id}` et `/product/{id}` reste à faire. |

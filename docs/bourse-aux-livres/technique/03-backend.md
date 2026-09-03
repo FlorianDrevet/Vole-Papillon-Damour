@@ -64,6 +64,11 @@ Le chemin le plus chaud du système (`ENF-01`, `ENF-03`).
 Le point 6 est ce qui fait tenir `ENF-02`. Un appel externe ne doit jamais retarder la
 réponse ni faire échouer l'écriture.
 
+Le serveur ne reçoit pas une intention locale `Pending` : l'application de scan résout
+chaque intention en `Kept` ou `Rejected` avant l'envoi. Une annulation après réception
+passe par le même contrat idempotent avec un nouvel identifiant et produit le mouvement
+inverse prévu par `DT-18`.
+
 ### `CloseScanSession`
 
 Porte `RG-43`, `RG-44` et `RG-29`. Dans **une seule transaction** :
@@ -79,6 +84,8 @@ Porte `RG-43`, `RG-44` et `RG-29`. Dans **une seule transaction** :
 
 Appelé depuis quatre origines — bouton, inactivité, déconnexion, jeton expiré — donc
 **le handler doit être idempotent** : une session déjà `Terminee` ne produit rien.
+La dernière intention locale doit avoir été résolue avant la clôture ; si l'appareil
+reprend avec une intention `Pending`, l'interface demande ce choix avant de terminer.
 
 ### `ReassignSessionMode` (`RG-25`, `RG-45`)
 
@@ -98,7 +105,7 @@ Trois familles, **un seul mode d'authentification** depuis `DT-10` : jeton Entra
 External ID, validé côté API. Ce qui les distingue n'est plus le mécanisme, c'est le
 rôle applicatif exigé.
 
-### Bénévoles — `/books/scan/*`
+### Bénévoles — `/scan/*`
 
 | Verbe | Route | Règles |
 |---|---|---|
@@ -114,6 +121,25 @@ rôle applicatif exigé.
 **`POST /scan/sessions/{id}/scans` doit accepter un lot et être idempotent** : c'est
 par lui que remonte la file de sortie d'un appareil resté hors ligne (`ENF-05`). Chaque
 geste porte un identifiant produit par le client, de sorte qu'un rejeu ne duplique rien.
+
+### Contrats P1-5 effectivement exposés
+
+La première tranche de transport utilisée par la PWA est maintenant disponible dans
+`Vole_Papillon_Damour.Contracts` et branchée dans `BookController` :
+
+| Verbe | Route | Contrat | Autorisation |
+|---|---|---|---|
+| `GET` | `/scan/catalog/delta?since=` | `ScanCatalogDeltaResponse` | `Tri` |
+| `POST` | `/scan/sessions` | `OpenScanSessionRequest` → `ScanSessionResponse` | `Tri` |
+| `POST` | `/scan/sessions/{id}/scans` | `ScanBookRequest` → `ScanBookResponse` | `Tri` |
+| `POST` | `/scan/sessions/{id}/close` | `CloseScanSessionRequest` → `ScanSessionResponse` | `Tri` |
+
+Le delta renvoie une projection compacte, les paramètres d'association, les entrées
+masquées à supprimer et un filigrane UTC. Les modifications de livres, de listes de
+recherche et d'état d'une liste peuvent donc réactualiser `isWanted` sans envoyer
+l'identité des demandeurs. `ClientSessionId` rend l'ouverture rejouable après une coupure ;
+`ClientGestureId` garde la même garantie sur chaque scan. L'API publique de métadonnées
+reste anonyme et séparée de ces routes protégées.
 
 ### Public — `/catalog/*`
 
@@ -144,7 +170,7 @@ catalogue, sessions et reprises, alertes en attente, membres, bénévoles, param
 | Autorisation | `RequireRole` sur la revendication `roles`. Aucune lecture en base, aucun appel à l'annuaire |
 | Confidentialité des demandeurs | `RG-42` : l'API ne renvoie **jamais** l'identité, seulement un décompte. À couvrir par un test — c'est une fuite facile à introduire |
 | Limitation de débit | Réutiliser le mécanisme en place ; un limiteur propre à la recherche publique, qui atteint une source externe |
-| Rappel de rebond e-mail | Endpoint dédié, authentifié par secret partagé (`RG-31`) |
+| Rappel de rebond e-mail | `POST /integrations/acs/email-delivery-reports`, schéma Event Grid standard, poignée de main synchrone `SubscriptionValidationEvent`, secret partagé dans `EmailBounceWebhook:SharedSecret` transmis par `X-Vpd-EventGrid-Secret` (`RG-31`) |
 
 ## 6. Tests
 

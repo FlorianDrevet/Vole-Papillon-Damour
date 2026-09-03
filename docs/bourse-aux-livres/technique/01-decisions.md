@@ -22,6 +22,11 @@ comprendre plus tard pourquoi un choix a été fait avec l'information de l'épo
 | `DT-14` | Une seule table de personnes, rapprochée par `oid` | Prise |
 | `DT-15` | Socle unifié : .NET 10 partout, Aspire à jour, versions centralisées | Prise |
 | `DT-16` | L'observabilité s'écrit avec la fonctionnalité, jamais après | Prise |
+| DT-17 | Instants persistés en UTC, calendrier métier interprété en Europe/Paris | Prise |
+| DT-18 | Geste local d'abord en attente ; annulation locale ou mouvement inverse selon transmission | Prise |
+| DT-19 | Fusion des fiches par redirection ISBN, sans réécriture du ledger | Prise |
+| DT-20 | Bourse ouverte = intervalle explicite d'un AssoEvents Books, sans chevauchement | Prise |
+| DT-21 | Tests Scan en Jasmine/Karma ChromeHeadless, synchronisation isolée et réseau simulé | Prise |
 
 ---
 
@@ -853,3 +858,131 @@ Application Insights et le Log Analytics existent déjà.
 le système. Le temps de cette personne est la ressource rare du projet — pas le processeur,
 pas les euros. Une panne silencieuse trouvée en trois requêtes plutôt qu'en une soirée de
 reconstitution, c'est le meilleur rendement disponible.
+
+## DT-17 — Les instants sont UTC, le calendrier est Europe/Paris
+
+**Contexte.** Les événements existants utilisent DateTimeOffset, tandis que les tables
+du module livres sont décrites avec datetime2. Sans convention unique, le changement
+d'heure d'été peut déplacer la bascule automatique et la notion de bourse ouverte.
+
+**Décision.** Tout instant qui franchit une frontière est normalisé en UTC : API, domaine,
+OccurredAt, ReceivedAt, dates de création et valeurs de SYSUTCDATETIME(). Une colonne
+SQL datetime2 du module livres est donc toujours documentée et interprétée comme UTC ;
+elle ne contient jamais l'heure locale du serveur. Les contrats peuvent recevoir un
+DateTimeOffset, mais l'application le convertit à l'entrée et ne conserve que l'instant
+UTC.
+
+Les comparaisons d'agenda et les regroupements par jour sont les seuls endroits qui
+interprètent le calendrier : ils convertissent l'instant UTC vers Europe/Paris dans
+Application, puis reconvertissent l'intervalle calculé en UTC pour interroger ou écrire.
+La persistance ne dépend jamais du fuseau de la machine. L'horloge injectable du domaine
+est la source de UtcNow ; aucun appel direct à l'horloge locale n'est autorisé dans le
+module.
+
+**Conséquence de test.** Les tests fixent l'horloge en UTC et couvrent au moins les
+passages heure d'été/heure d'hiver, ainsi que minuit local. Une valeur cliente aberrante
+reste conservée comme instant reçu avec ClockSuspect, conformément au modèle des deux
+horodatages.
+
+## DT-18 — L'outbox locale porte d'abord l'intention, puis la décision
+
+**Contexte.** Le mode tri impose que le scan suivant valide le précédent (RG-19),
+alors que la file de sortie doit être durable dès le premier geste (ENF-05). Il faut
+donc distinguer un geste commencé d'un geste transmissible.
+
+**Décision.** Chaque scan écrit immédiatement dans l'outbox locale précieuse une
+intention Pending, avec son ClientGestureId, l'ISBN, la session et l'heure cliente.
+Cette intention n'est pas envoyée et ne modifie pas encore le stock serveur. Elle devient
+Kept au scan suivant en mode tri, ou par le bouton explicite Garder ; le bouton
+Écarter la fait passer à Rejected. La fermeture d'une session demande une décision
+explicite pour la dernière intention Pending : elle ne la valide pas silencieusement.
+Une intention Pending survit au redémarrage et est signalée à la reprise.
+
+Seules les intentions finales (Kept ou Rejected) sont envoyées par lots idempotents.
+Si une décision finale est annulée avant transmission, elle passe à CancelledLocal :
+elle est retirée de la file d'envoi, son identifiant est conservé comme tombstone local,
+et aucun mouvement inverse n'est créé sur le serveur. Si elle a déjà été transmise,
+l'annulation est un nouveau geste avec un nouvel identifiant, qui produit le mouvement
+inverse côté serveur. Le ledger des mouvements n'est jamais supprimé ni mis à jour.
+Une alerte encore en attente est annulée selon RG-44 ; une alerte déjà partie déclenche
+le signalement prévu par RG-45.
+
+Ainsi, « annuler » garde le même résultat fonctionnel pour le bénévole, mais ne mélange
+pas correction locale et correction comptable. Le serveur ne reçoit jamais l'état
+Pending ; il ne traite que des décisions finales et leurs annulations.
+
+## DT-19 — Une fusion conserve les ISBN historiques par redirection
+
+**Contexte.** RG-07 autorise la fusion de deux fiches d'une même édition, alors que
+BookMovements est un ledger en ajout seul et que l'ISBN est aujourd'hui la clé
+publique de la fiche.
+
+**Décision.** Le modèle conserve la clé ISBN et ajoute à Books une colonne nullable
+RedirectedToIsbn13, clé étrangère vers Books.Isbn13. La fiche gardée est la canonique ;
+la fiche absorbée reste présente, pointe directement vers elle, devient invisible comme
+fiche autonome et n'est jamais supprimée. Les chaînes de redirection et les cycles sont
+interdits.
+
+La fusion est transactionnelle : les compteurs de la fiche canonique sont recalculés à
+partir des deux historiques, les annonces actives et les références de lecture résolvent
+vers l'ISBN canonique, et toute nouvelle écriture utilise ce dernier. Les anciens
+mouvements gardent leur ISBN d'origine afin de préserver l'audit ; les statistiques
+regroupent par ISBN canonique. Le choix de la fiche canonique est explicite et
+l'ISBN conservé est celui qui sera exposé dans le catalogue.
+
+Cette stratégie évite une réécriture massive du ledger, maintient les URL ISBN
+historiques lisibles et limite la fusion à une projection/résolution cohérente.
+
+## DT-20 — Une bourse ouverte est un intervalle calculé depuis AssoEvents
+
+**Contexte.** RG-33 doit rattacher une vente au bon événement, y compris lorsque
+plusieurs événements existent dans l'agenda. Les champs faisant foi sont ceux de
+AssoEvents : EventsType, DateStart, DateEnd, HourOpenDoors et HourCloseDoors.
+
+**Décision.** Seuls les événements existants de type Books sont éligibles. Pour chacun,
+l'application calcule un intervalle semi-ouvert [OpenAt, CloseAt) en appliquant :
+
+1. OpenAt = HourOpenDoors ?? DateStart ;
+2. CloseAt = HourCloseDoors ?? DateEnd si une fin existe ;
+3. si aucune fin n'est renseignée, CloseAt est minuit local le lendemain de la date
+   de DateStart, calculé en Europe/Paris puis normalisé en UTC.
+
+La bourse est ouverte si OpenAt <= nowUtc < CloseAt. La limite de fermeture est donc
+exclusive. Un événement sans date de fin ne devient pas illimité ; une bourse de
+plusieurs jours doit porter explicitement DateEnd. Une fin antérieure ou égale à
+l'ouverture est invalide.
+
+La création ou la modification d'un événement Books refuse tout chevauchement avec un
+autre intervalle Books valide. Tant que des données historiques se chevauchent, une
+vente qui correspond à plusieurs événements n'est rattachée à aucun d'eux et produit
+un signal d'administration : le système ne devine pas. Une vente sans événement ouvert
+reste autorisée mais non rattachée, conformément à RG-33. La prochaine bourse est
+l'événement Books valide dont OpenAt est le plus proche dans le futur.
+
+Le calcul est centralisé dans Application et réutilisé par RG-22, RG-23, RG-33 et
+RG-38 ; les contrôleurs et les requêtes SQL ne recodent pas chacun leur variante.
+
+## DT-21 — Stratégie de test du front Scan
+
+**Contexte.** Le chemin hors ligne, la reprise après fermeture et les coupures pendant
+une transmission sont trop silencieux pour être rejoués manuellement à chaque livraison.
+Le dépôt dispose déjà de Jasmine/Karma et de ChromeHeadless dans src/Scan.
+
+**Décision.** La v1 conserve cette chaîne et ne crée pas de suite Playwright/Cypress.
+La couche de synchronisation est séparée derrière des ports typés et testée à trois
+niveaux :
+
+1. tests unitaires rapides de la machine d'état de l'outbox avec un stockage mémoire
+   déterministe ;
+2. tests d'intégration ChromeHeadless avec le vrai IndexedDB du navigateur, fermeture
+   puis nouvelle instance de service pour simuler un redémarrage ;
+3. faux transport réseau capable de retarder, échouer, couper après réception et
+   rejouer une réponse, afin de vérifier l'idempotence sans dépendre du réseau réel.
+
+Un fixture TypeScript versionné fournit un jeu de démonstration stable pour les tests et
+les reprises manuelles ; il est distinct des 300 livres de la campagne S0-4. Les cas
+obligatoires couvrent RG-19, décision du dernier scan, annulation avant/après
+transmission, fermeture de l'application, perte réseau en pleine transmission,
+reconnexion, doublon de lot et séparation catalog/outbox. Un test navigateur
+end-to-end complet reste hors P1-5 ; le parcours d'acceptation réel est conservé pour
+P1-11.

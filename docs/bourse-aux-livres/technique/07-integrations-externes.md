@@ -140,6 +140,19 @@ L'architecture doit traiter « alerte » comme un **événement métier**, pas c
 d'e-mail : l'ajout des notifications push en v2 doit être un consommateur de plus, pas
 une réécriture.
 
+Le point de terminaison local est `POST /integrations/acs/email-delivery-reports`. Il
+accepte le tableau du schéma Event Grid standard, désérialise les données ACS dans des
+contrats typés et transmet l'identifiant `id` de l'événement au traitement `RG-31`.
+L'abonnement est protégé par `EmailBounceWebhook:SharedSecret`, envoyé dans l'en-tête
+`X-Vpd-EventGrid-Secret` via les propriétés de livraison personnalisées d'Event Grid.
+Pour la création de l'abonnement, un tableau contenant uniquement un
+`Microsoft.EventGrid.SubscriptionValidationEvent` reçoit immédiatement
+`{"validationResponse":"..."}` ; aucun événement métier n'est traité pendant cette
+poignée de main. Les statuts `Delivered` et `Expanded` sont acquittés sans modifier le
+compteur. Les autres rapports de remise sont rapprochés du membre par l'adresse
+destinataire ; une adresse inconnue ou un membre sans `Watchlist` est également acquitté
+sans écriture, car il n'y a rien à corriger.
+
 ## 8. Résilience
 
 | Panne | Comportement attendu |

@@ -3,6 +3,29 @@
 PWA Angular (`DT-08`), déployée en Container App dans l'environnement existant.
 Réutilise `SharedUi` (`@vpd/ui`).
 
+## État d'implémentation P1-5
+
+La tranche locale est implémentée dans `src/Scan` :
+
+- `ScanLocalStoreService` ouvre les magasins IndexedDB `catalog`, `outbox` et `session`,
+  demande `navigator.storage.persist()` et conserve les décisions séparément du cache ;
+- `ScanVerdictService` applique localement l'ordre `Wanted` → `Selling` → `TooMany` →
+  `FirstCopy` avec les paramètres reçus du serveur ;
+- `ScanWorkflowService` crée les gestes, restaure un `Pending` au redémarrage et fait
+  passer le scan précédent à `Kept` quand le suivant arrive ;
+- `ScanSyncService` applique les deltas atomiquement, rejoue la session par
+  `ClientSessionId`, transmet les gestes finaux séquentiellement et conserve le premier
+  échec avec son compteur de tentative ;
+- `ScanAuthService` et `MsalInterceptor` permettent la connexion Entra et portent la
+  portée API sur les routes protégées ; le mode local fonctionne avant connexion ;
+- Angular Service Worker met en cache la coquille et les métadonnées bibliographiques,
+  tandis que le manifeste PWA et l'icône sont servis par nginx.
+
+La couverture automatisée utilise ChromeHeadless avec IndexedDB réel et transport HTTP
+simulé : la suite compte 49 tests. Restent les vérifications de terrain de `QT-03` et
+`QT-08` (persistance iPhone, reprise après 48 h, coupure en pleine transmission), qui
+nécessitent un appareil et une session Entra réellement autorisée.
+
 ## 1. Ce qui contraint la conception
 
 | Exigence | Conséquence technique |
@@ -66,6 +89,24 @@ lots idempotents (`03` §4) : un rejeu après coupure ne duplique rien.
 **Elle doit survivre à la fermeture de l'application et à une batterie à plat**
 (`ENF-05`). Le nombre de gestes en attente reste visible en permanence (`ENF-07`) — un
 bénévole ne doit jamais ranger un appareil en croyant son travail enregistré.
+
+### États de l'outbox
+
+L'outbox locale distingue le geste commencé de la décision transmissible :
+
+| État | Signification | Envoyé au serveur ? |
+|---|---|---|
+| `Pending` | Scan affiché, décision encore attendue | Non |
+| `Kept` | Geste validé, stock et annonce à appliquer | Oui |
+| `Rejected` | Geste écarté, conservation du verdict pour l'audit de session | Oui |
+| `CancelledLocal` | Geste final retiré avant transmission, tombstone conservé | Non |
+
+Le scan suivant passe le précédent à `Kept` conformément à `RG-19`. Un bouton
+explicite peut le passer à `Kept` ou `Rejected`; la fermeture demande le choix pour le
+dernier `Pending`. À la reprise, un `Pending` est affiché avant tout nouveau scan.
+Après transmission, une annulation devient un nouveau geste inverse ; avant
+transmission, elle reste locale. La file ne supprime donc jamais silencieusement le
+travail bénévole.
 
 ## 3. Le déroulé d'un scan
 
