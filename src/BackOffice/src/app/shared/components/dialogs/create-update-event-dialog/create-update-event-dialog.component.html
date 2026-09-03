@@ -7,9 +7,8 @@
   </div>
 
   <form [formGroup]="newEventForm" class="flex w-full flex-col gap-4">
-    <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Type d'évènement</h2>
-      <mat-form-field class="w-full">
+    <div class="w-full min-w-0">
+      <mat-form-field subscriptSizing="dynamic" class="w-full">
         <mat-label>Type d'évènement</mat-label>
         <mat-select formControlName="eventType" required>
           <mat-option [value]="VpdEventEnum.Bingo">Loto</mat-option>
@@ -19,17 +18,15 @@
       </mat-form-field>
     </div>
 
-    <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Titre</h2>
-      <mat-form-field appearance="fill" class="w-full">
+    <div class="w-full min-w-0">
+      <mat-form-field subscriptSizing="dynamic" appearance="fill" class="w-full">
         <mat-label>Titre</mat-label>
-        <input class="w-full" formControlName="name" matInput placeholder="Titre">
+        <input class="w-full" formControlName="name" matInput>
       </mat-form-field>
     </div>
 
-    <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Description</h2>
-      <mat-form-field class="w-full">
+    <div class="w-full min-w-0">
+      <mat-form-field subscriptSizing="dynamic" class="w-full">
         <mat-label>Description</mat-label>
         <textarea #autosize="cdkTextareaAutosize"
                   cdkAutosizeMinRows="1"
@@ -43,16 +40,21 @@
     <div class="flex flex-col gap-3">
       <div class="flex items-center gap-3">
         <h2 class="font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Image</h2>
+        <!-- Pas de `formControlName` sur un champ de type fichier : à l'ouverture en
+             modification, Angular tente d'y réécrire le nom du fichier existant, ce
+             que le navigateur interdit (InvalidStateError). Le contrôle est donc
+             alimenté depuis le composant. -->
         <input #fileInput
-               (change)="ImageUtils.onFileSelected(document.getElementById('file-event'), principalImage)"
-               [required]="true"
-               formControlName="image"
-               hidden id="file-event" required type="file"
-        >
+               (change)="onImageSelected(fileInput)"
+               accept="image/*"
+               hidden type="file">
         <button (click)="fileInput.click()" type="button"
                 class="rounded-full border border-mist px-4 py-1.5 text-xs font-semibold text-blue hover:bg-blue/5">
           Choisir une image
         </button>
+        @if (newEventForm.get('image')?.touched && newEventForm.get('image')?.invalid) {
+          <span class="text-xs font-medium text-danger">Obligatoire</span>
+        }
       </div>
       @if (this.principalImage().fileContent !== '') {
         <div class="preview-img-container">
@@ -62,9 +64,8 @@
     </div>
 
     <div class="flex w-full flex-col gap-4 sm:flex-row sm:gap-6">
-      <div class="w-full">
-        <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Date de début</h2>
-        <mat-form-field class="w-full">
+      <div class="w-full min-w-0">
+        <mat-form-field subscriptSizing="dynamic" class="w-full">
           <mat-label>Date de début</mat-label>
           <input [matDatepicker]="picker" formControlName="dateStart" matInput>
           <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
@@ -72,9 +73,8 @@
         </mat-form-field>
       </div>
       @if (type() !== VpdEventEnum.Books) {
-        <div class="w-full">
-          <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Heure de début</h2>
-          <mat-form-field class="w-full">
+        <div class="w-full min-w-0">
+          <mat-form-field subscriptSizing="dynamic" class="w-full">
             <mat-label>Heure de début</mat-label>
             <input type="text" matInput [matTimepicker]="timepicker" formControlName="hourStart"/>
             <mat-timepicker-toggle matSuffix [for]="timepicker"></mat-timepicker-toggle>
@@ -82,9 +82,8 @@
           </mat-form-field>
         </div>
       } @else {
-        <div class="w-full">
-          <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Date de fin</h2>
-          <mat-form-field class="w-full">
+        <div class="w-full min-w-0">
+          <mat-form-field subscriptSizing="dynamic" class="w-full">
             <mat-label>Date de fin</mat-label>
             <input [matDatepicker]="pickerEnd" required formControlName="dateEnd" matInput>
             <mat-datepicker-toggle [for]="pickerEnd" matIconSuffix></mat-datepicker-toggle>
@@ -95,9 +94,8 @@
     </div>
 
     @if (type() === VpdEventEnum.Bingo) {
-      <div class="w-full">
-        <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Heure d'ouverture des portes</h2>
-        <mat-form-field class="w-full">
+      <div class="w-full min-w-0">
+        <mat-form-field subscriptSizing="dynamic" class="w-full">
           <mat-label>Heure d'ouverture des portes</mat-label>
           <input type="text" matInput [matTimepicker]="timepicker" formControlName="hourOpenDoors"/>
           <mat-timepicker-toggle matSuffix [for]="timepicker"></mat-timepicker-toggle>
@@ -108,18 +106,16 @@
 
     @if (type() === VpdEventEnum.Books) {
       <div class="flex w-full flex-col gap-4 sm:flex-row sm:gap-6">
-        <div class="w-full">
-          <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Heure d'ouverture</h2>
-          <mat-form-field class="w-full">
+        <div class="w-full min-w-0">
+          <mat-form-field subscriptSizing="dynamic" class="w-full">
             <mat-label>Heure d'ouverture</mat-label>
             <input type="text" matInput [matTimepicker]="timepicker" formControlName="hourOpenDoors"/>
             <mat-timepicker-toggle matSuffix [for]="timepicker"></mat-timepicker-toggle>
             <mat-timepicker #timepicker></mat-timepicker>
           </mat-form-field>
         </div>
-        <div class="w-full">
-          <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Heure de fermeture</h2>
-          <mat-form-field class="w-full">
+        <div class="w-full min-w-0">
+          <mat-form-field subscriptSizing="dynamic" class="w-full">
             <mat-label>Heure de fermeture</mat-label>
             <input type="text" matInput required [matTimepicker]="timepickerEnd" formControlName="hourCloseDoors"/>
             <mat-timepicker-toggle matSuffix [for]="timepickerEnd"></mat-timepicker-toggle>
@@ -130,50 +126,53 @@
     }
 
     @if (type() === VpdEventEnum.Other) {
-      <div class="w-full">
-        <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Lien d'inscription</h2>
-        <mat-form-field class="w-full">
+      <div class="w-full min-w-0">
+        <mat-form-field subscriptSizing="dynamic" class="w-full">
           <mat-label>Lien d'inscription</mat-label>
-          <input class="w-full" formControlName="urlRegistration" matInput placeholder="Lien d'inscription">
+          <input class="w-full" formControlName="urlRegistration" matInput>
         </mat-form-field>
       </div>
     }
 
-    <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Ville</h2>
-      <mat-form-field appearance="fill" class="w-full">
+    <div class="w-full min-w-0">
+      <mat-form-field subscriptSizing="dynamic" appearance="fill" class="w-full">
         <mat-label>Ville</mat-label>
-        <input class="w-full" formControlName="city" matInput placeholder="Ville">
+        <input class="w-full" formControlName="city" matInput>
       </mat-form-field>
     </div>
-    <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Code postal</h2>
-      <mat-form-field appearance="fill" class="w-full">
+    <div class="w-full min-w-0">
+      <mat-form-field subscriptSizing="dynamic" appearance="fill" class="w-full">
         <mat-label>Code postal</mat-label>
-        <input class="w-full" formControlName="cityCode" matInput placeholder="Code postal">
+        <input class="w-full" formControlName="cityCode" matInput>
       </mat-form-field>
     </div>
-    <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Numéro de rue</h2>
-      <mat-form-field appearance="fill" class="w-full">
+    <div class="w-full min-w-0">
+      <mat-form-field subscriptSizing="dynamic" appearance="fill" class="w-full">
         <mat-label>Numéro de rue</mat-label>
-        <input class="w-full" formControlName="roadNumber" matInput placeholder="Numéro de rue">
+        <input class="w-full" formControlName="roadNumber" matInput>
       </mat-form-field>
     </div>
-    <div class="w-full">
-      <h2 class="mb-1 font-mono text-[11px] font-medium uppercase tracking-[.1em] text-slate-3">Rue</h2>
-      <mat-form-field appearance="fill" class="w-full">
+    <div class="w-full min-w-0">
+      <mat-form-field subscriptSizing="dynamic" appearance="fill" class="w-full">
         <mat-label>Rue</mat-label>
-        <input class="w-full" formControlName="road" matInput placeholder="Rue">
+        <input class="w-full" formControlName="road" matInput>
       </mat-form-field>
     </div>
   </form>
 </mat-dialog-content>
-<mat-dialog-actions>
+@if (hasValidationErrors()) {
+  <p class="border-t border-danger/20 bg-danger-soft px-6 py-3 text-sm text-danger">
+    Certains champs sont incomplets ou mal remplis : ils sont signalés en rouge ci-dessus.
+  </p>
+}
+<mat-dialog-actions class="!flex !items-center !justify-end !gap-3 !border-t !border-line-2 !px-6 !py-4">
   @if (isLoading()) {
-    <mat-spinner class="ml-5 mr-5" diameter="30"></mat-spinner>
+    <mat-spinner diameter="26"></mat-spinner>
   } @else {
-    <button (click)="onNoClick()" cdkFocusInitial mat-button>Annuler</button>
-    <button (click)="onYesClick()" mat-button>{{ updateEvent() !== null ? "Modifier" : "Créer" }}</button>
+    <button (click)="onNoClick()" cdkFocusInitial type="button"
+            class="rounded-full px-5 py-2.5 text-sm font-semibold text-slate-2 hover:text-ink-2">
+      Annuler
+    </button>
+    <app-pill-button (click)="onYesClick()" type="button" [small]="true">{{ updateEvent() !== null ? "Modifier" : "Créer" }}</app-pill-button>
   }
 </mat-dialog-actions>

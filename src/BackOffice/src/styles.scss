@@ -137,6 +137,15 @@ $custom-theme: mat.define-theme((
   width: 100%;
 }
 
+// Material réserve 180 px à la zone de saisie et refuse de descendre en dessous.
+// Dans les rangées à deux colonnes des modales (date + heure, heure d'ouverture +
+// heure de fermeture), la somme dépassait la largeur du dialogue : le champ de
+// droite se retrouvait coupé et une barre de défilement horizontale apparaissait.
+.mat-mdc-form-field,
+.mat-mdc-form-field-infix {
+  min-width: 0;
+}
+
 .mat-mdc-text-field-wrapper {
   border: 1px solid $line;
   border-radius: 2px;
