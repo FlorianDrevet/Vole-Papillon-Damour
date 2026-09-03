@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-2` — sonde de faisabilité locale du palier 0 ; les déploiements 2–3 de `L0-11` restent à faire hors dépôt |
-| **Prochaine action** | Lancer l'AppHost sur le portable, ouvrir la sonde depuis un téléphone du même réseau et mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Lot en cours** | `S0-2` → `S0-3` — sonde locale à valider, puis instrument de comparaison des sources ; les déploiements 2–3 de `L0-11` restent à faire hors dépôt |
+| **Prochaine action** | Faire le smoke test S0-2 avec l'AppHost, implémenter l'instrument `S0-3`, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `main` |
