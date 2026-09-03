@@ -17,7 +17,7 @@
 | **Prochaine action** | Relire et merger le correctif Scan, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `fix/backoffice-event-update-401` — issue de `main` après `git pull` |
+| **Branche** | `fix/backoffice-authorization-403` — issue du `main` après merge du correctif audience |
 
 ---
 
@@ -144,12 +144,14 @@ Pour un essai local, l'enregistrement SPA `vpd-backoffice-dev` doit contenir
 `http://localhost:4200` en plus de l'URI de production ; cet état n'est pas confirmé par le
 rapport Entra conservé ci-dessus.
 
-Un correctif est en cours sur `fix/backoffice-event-update-401` pour les `401` observés
-sur les PUT BackOffice (`/asso-events/{id}` et `/product/{id}`). Le token Entra v2 porte
-l'ID d'application API dans `aud`, tandis que la configuration envoyait `api://<id>` comme
-audience ; la configuration locale, Bicep et la sortie du script Entra utilisent désormais
-l'ID nu. Le test de validation reproduit le token v2 et passe. Le déploiement Azure reste
-à faire avant le retest manuel, car la session locale n'est pas connectée à Azure CLI.
+Le correctif d'audience de `fix/backoffice-event-update-401` a été mergé dans `main` puis
+déployé par l'infrastructure. Le `401` a disparu, mais les PUT BackOffice (`/asso-events/{id}`
+et `/product/{id}`) renvoient désormais `403` avec un token qui porte bien
+`roles=["Administration"]`. La cause est le mapping par défaut des claims JWT : la claim
+Entra `roles` n'est plus reconnue par `RequireRole`. Le correctif `fix/backoffice-authorization-403`
+désactive ce mapping pour le schéma Entra et ajoute une régression qui valide réellement
+`IsInRole("Administration")`. Cette branche nécessite un déploiement applicatif API après
+le merge ; l'infrastructure seule ne met pas à jour le code de l'image.
 
 Un correctif isolé est préparé sur `fix/backoffice-msal-bootstrap` dans le worktree
 `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-backoffice-login-fix`. La cause de
@@ -258,7 +260,7 @@ dans Azure sans être déductible du dépôt.
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
-| API Entra | Image `vpd-api:cfd43cb` active et `/health` répond 200 ; les PUT BackOffice renvoient encore `401 invalid_token` sur la révision actuelle, le correctif d'audience est préparé dans le dépôt mais pas encore déployé | `2026-09-03` |
+| API Entra | Image `vpd-api:cfd43cb` active et `/health` répond 200 ; après le déploiement de l'audience, les PUT BackOffice renvoient `403` car le mapping de la claim `roles` n'est pas encore corrigé dans l'image active | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | **Pas encore créée** ; `Configure-EntraApps.ps1` est prêt à créer `vpd-account-deletion-dev` et à accorder `User.ReadWrite.All` | — |
 | Secret Graph dans Key Vault | **Pas encore renseigné** ; dépend de l'exécution du script et des secrets GitHub `ENTRA_GRAPH_CLIENT_ID` / `ENTRA_GRAPH_CLIENT_SECRET` | — |
@@ -357,6 +359,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **Correctif BackOffice — rôles Entra et 403.** Après le déploiement de l'audience, reproduction TDD d'un token v2 portant `roles=["Administration"]` : `IsInRole("Administration")` échoue avec le mapping JWT par défaut. `MapInboundClaims = false` est activé pour le schéma Entra, le test passe, et une nouvelle branche `fix/backoffice-authorization-403` est préparée pour un déploiement applicatif API. |
 | 2026-09-03 | Windows | **Correctif BackOffice — audience Entra v2.** Après `git pull` de `main`, création du worktree `fix/backoffice-event-update-401`. Reproduction TDD du `401` avec un token dont `aud` est l'ID d'application API ; alignement de `AzureAd:Audience` dans `appsettings.Development.json`, `infra/main.bicep` et `Configure-EntraApps.ps1`. Validation : 97 tests backend, compilation Bicep, 9 tests ChromeHeadless et build BackOffice. Aucun déploiement Azure ; le retest des PUT `/asso-events/{id}` et `/product/{id}` reste à faire. |
 | 2026-09-03 | Windows | **L0-11 — correctif BackOffice MSAL.** Sur `fix/backoffice-msal-bootstrap`, ajout de l'hôte `<app-redirect>` requis par `MsalRedirectComponent` et correction de l'autorité CIAM tenant-scoped dans les environnements BackOffice. Ajout d'un test de contrat de bootstrap ; 2 tests de bootstrap, 5 tests Angular, le build production et un smoke local jusqu'à l'écran Microsoft passent. Aucun déploiement n'a été effectué. |
 | 2026-09-03 | Windows | **S0-2 — couverture de la fiche.** Le résultat garde d'abord l'URL fournie par la notice, essaie une couverture Open Library par ISBN si l'image échoue, puis rend un placeholder accessible si les deux sources sont indisponibles. Le test de non-régression porte ces deux cas ; le Scan passe 24 tests ChromeHeadless et ses builds production/développement. Les détections caméra live et photo sur iPhone ont été confirmées ; le correctif est déployé par `Scan - deploy` `33778535757` avec l'image `vpd-scan:f478a7d`. La campagne `S0-4` sur 300 livres reste à faire. |
