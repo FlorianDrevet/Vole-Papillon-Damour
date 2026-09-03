@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-03 | Added the supplied association group photo as the `/association/presentation` hero image, updated its accessible alternative text, and widened the desktop image zone while preserving the mobile layout; 58 Website tests and the production/SSR build pass. |
 | 2026-09-03 | Refreshed the Website association copy and navigation: replaced the identity with “loi 1901”, softened the volunteer-time invitation, removed obsolete market references, clarified book cartons, removed the presentation's Bureau/public-document sections, and added a responsive `/maxence/vie-quotidienne` landing page with a reachable school chapter. Website tests, production build, SSR smoke checks, and responsive browser checks pass. |
 | 2026-09-03 | Fixed the BackOffice MSAL bootstrap regression on `fix/backoffice-msal-bootstrap`: added the required `<app-redirect>` host for `MsalRedirectComponent`, made the CIAM custom-domain authority tenant-scoped, and added a bootstrap contract test. The bootstrap suite (2 tests), Angular/Karma suite (5 tests), production build, and local production smoke to the Microsoft sign-in page pass; no deployment was performed. |
 | 2026-09-03 | Hardened the Scan result card when a bibliographic cover URL is unavailable: it retries an ISBN-based Open Library cover and then renders an explicit unavailable-cover placeholder. Added regression coverage; 24 ChromeHeadless tests and production/development builds pass. |

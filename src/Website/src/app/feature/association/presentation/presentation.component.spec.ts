@@ -25,4 +25,12 @@ describe('PresentationComponent', () => {
     expect(pageText).not.toContain('Le bureau');
     expect(pageText).not.toContain('Tout est public');
   });
+
+  it('should use the association photo as the presentation hero image', () => {
+    const heroImage = fixture.nativeElement.querySelector('img') as HTMLImageElement;
+    const imageSource = heroImage.getAttribute('ngsrc') ?? heroImage.getAttribute('ng-reflect-ng-src') ?? heroImage.src;
+
+    expect(imageSource).toContain('images/Association/asso.jpg');
+    expect(heroImage.alt).toContain("Bénévoles et familles réunis");
+  });
 });

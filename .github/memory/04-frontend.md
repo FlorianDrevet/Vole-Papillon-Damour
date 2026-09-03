@@ -143,6 +143,9 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - The Website association copy now uses “loi 1901”, invites visitors to give “un peu de votre
   temps”, removes former market activity, clarifies “cartons de livres”, and omits the removed
   “Le bureau” and “Tout est public” presentation sections.
+- The association presentation hero uses the supplied `public/images/Association/asso.jpg`
+  photo and a wider 520px desktop image column; the mobile layout keeps the existing compact
+  crop and responsive single-column flow.
 - The Maxence daily-life pages keep long first-person medical and school narratives in the
   existing `app-titled-section` / editorial shell patterns; daily care orders enteral nutrition,
   gastrostomy, digestive stoma, left-eye care, then antibiotics.
