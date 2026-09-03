@@ -5,10 +5,11 @@ ISBN saisi au clavier, envoyé par une scanette USB, ou lu par la caméra du nav
 puis interroge `GET /books/{isbn13}/metadata` sur l'API. Elle n'enregistre ni session,
 ni file, ni donnée en base.
 
-La caméra utilise `html5-qrcode` avec son décodeur ZXing : elle ne dépend pas de l'API
-native `BarcodeDetector` et fonctionne dans Safari iOS lorsqu'elle est ouverte sur une
-URL HTTPS. Une photo peut aussi être sélectionnée depuis l'iPhone si la caméra continue
-n'est pas disponible.
+La caméra utilise `@zxing/browser` avec le décodeur ZXing en mode de recherche renforcé
+(`TRY_HARDER`) pour les codes 1D. Elle accepte les EAN-13/EAN-8 des livres, ainsi que les
+QR codes dont le contenu est un ISBN, et fonctionne dans Safari iOS lorsqu'elle est
+ouverte sur une URL HTTPS. Une photo peut aussi être sélectionnée depuis l'iPhone si la
+caméra continue n'est pas disponible.
 
 ## Lancer en local
 

@@ -79,7 +79,7 @@ describe('ScannerComponent', () => {
 
     await component.scanImage({target: input} as unknown as Event);
 
-    expect(cameraService.scanFile).toHaveBeenCalledOnceWith(jasmine.any(HTMLElement), imageFile);
+    expect(cameraService.scanFile).toHaveBeenCalledOnceWith(imageFile);
     expect(metadataService.getMetadata).toHaveBeenCalledOnceWith('9782070363735');
     expect(component.metadata).toEqual(metadata);
     expect(component.cameraError).toBeNull();

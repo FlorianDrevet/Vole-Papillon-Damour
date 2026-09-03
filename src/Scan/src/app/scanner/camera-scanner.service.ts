@@ -1,40 +1,34 @@
+import {BrowserMultiFormatReader} from '@zxing/browser';
+import {BarcodeFormat, DecodeHintType} from '@zxing/library';
 import {Inject, Injectable, InjectionToken} from '@angular/core';
-import {
-  Html5Qrcode,
-  Html5QrcodeCameraScanConfig,
-  Html5QrcodeSupportedFormats,
-  QrcodeErrorCallback,
-  QrcodeSuccessCallback,
-} from 'html5-qrcode';
 
-export interface CameraScannerEngine {
-  start(
-    cameraIdOrConfig: string | MediaTrackConstraints,
-    configuration: Html5QrcodeCameraScanConfig,
-    qrCodeSuccessCallback: QrcodeSuccessCallback,
-    qrCodeErrorCallback: QrcodeErrorCallback,
-  ): Promise<null>;
-  stop(): Promise<void>;
-  scanFile(imageFile: File, showImage?: boolean): Promise<string>;
-  clear(): void;
+export interface CameraScannerReader {
+  decodeFromConstraints: BrowserMultiFormatReader['decodeFromConstraints'];
+  decodeFromImageUrl: BrowserMultiFormatReader['decodeFromImageUrl'];
 }
 
-export type CameraScannerEngineFactory = (elementId: string) => CameraScannerEngine;
+export type CameraScannerReaderFactory = (
+  hints: Map<DecodeHintType, any>,
+) => CameraScannerReader;
+
+export interface CameraScannerEngine {
+  start(container: HTMLElement, onDetected: (rawValue: string) => void): Promise<void>;
+  stop(): Promise<void>;
+  scanFile(imageFile: File): Promise<string>;
+}
+
+export type CameraScannerEngineFactory = () => CameraScannerEngine;
 
 export const CAMERA_SCANNER_ENGINE_FACTORY = new InjectionToken<CameraScannerEngineFactory>(
   'CAMERA_SCANNER_ENGINE_FACTORY',
   {
     providedIn: 'root',
-    factory: () => (elementId: string): CameraScannerEngine => new Html5Qrcode(elementId, {
-      verbose: false,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-      ],
-      // Safari exposes BarcodeDetector only on some versions. ZXing is the
-      // stable cross-browser decoder used by html5-qrcode for iOS as well.
-      useBarCodeDetectorIfSupported: false,
-    }),
+    factory: () => (): CameraScannerEngine => new ZxingCameraScannerEngine(
+      hints => new BrowserMultiFormatReader(hints, {
+        delayBetweenScanAttempts: 200,
+        delayBetweenScanSuccess: 1000,
+      }),
+    ),
   },
 );
 
@@ -43,16 +37,112 @@ export interface CameraScannerHandle {
 }
 
 const CAMERA_CONSTRAINTS: MediaTrackConstraints = {
-  // html5-qrcode accepts a string (or an `exact` object) for this argument.
-  // An `ideal` object is rejected before getUserMedia is called, notably on iOS.
   facingMode: 'environment',
 };
 
-const CAMERA_SCAN_CONFIG: Html5QrcodeCameraScanConfig = {
-  fps: 10,
-  qrbox: {width: 280, height: 120},
-  aspectRatio: 1.777778,
-};
+const CAMERA_SCAN_FORMATS: BarcodeFormat[] = [
+  BarcodeFormat.QR_CODE,
+  BarcodeFormat.EAN_13,
+  BarcodeFormat.EAN_8,
+  BarcodeFormat.UPC_A,
+  BarcodeFormat.UPC_E,
+];
+
+type CameraScannerControls = Awaited<ReturnType<CameraScannerReader['decodeFromConstraints']>>;
+
+function createDecoderHints(): Map<DecodeHintType, any> {
+  return new Map<DecodeHintType, any>([
+    [DecodeHintType.POSSIBLE_FORMATS, [...CAMERA_SCAN_FORMATS]],
+    [DecodeHintType.TRY_HARDER, true],
+  ]);
+}
+
+export class ZxingCameraScannerEngine implements CameraScannerEngine {
+  private controls: CameraScannerControls | null = null;
+  private video: HTMLVideoElement | null = null;
+  private active = false;
+
+  constructor(private readonly readerFactory: CameraScannerReaderFactory) {}
+
+  async start(
+    container: HTMLElement,
+    onDetected: (rawValue: string) => void,
+  ): Promise<void> {
+    await this.stop();
+
+    const reader = this.readerFactory(createDecoderHints());
+    const video = document.createElement('video');
+    video.className = 'camera-video';
+    video.autoplay = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('aria-hidden', 'true');
+    container.replaceChildren(video);
+
+    this.video = video;
+    this.active = true;
+
+    try {
+      const controls = await reader.decodeFromConstraints(
+        {video: CAMERA_CONSTRAINTS},
+        video,
+        (result, _error, callbackControls) => {
+          if (!this.active || !result) {
+            return;
+          }
+
+          const rawValue = result.getText().trim();
+          if (!rawValue) {
+            return;
+          }
+
+          this.active = false;
+          callbackControls.stop();
+          onDetected(rawValue);
+        },
+      );
+
+      this.controls = controls;
+      if (!this.active) {
+        controls.stop();
+      }
+    } catch (error: unknown) {
+      await this.stop();
+      throw error;
+    }
+  }
+
+  async stop(): Promise<void> {
+    this.active = false;
+
+    const controls = this.controls;
+    this.controls = null;
+    controls?.stop();
+
+    const video = this.video;
+    this.video = null;
+    if (video) {
+      video.pause();
+      video.srcObject = null;
+      video.remove();
+    }
+  }
+
+  async scanFile(imageFile: File): Promise<string> {
+    const reader = this.readerFactory(createDecoderHints());
+    let imageUrl: string | null = null;
+
+    try {
+      imageUrl = URL.createObjectURL(imageFile);
+      const result = await reader.decodeFromImageUrl(imageUrl);
+      return result.getText();
+    } finally {
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+      }
+    }
+  }
+}
 
 @Injectable({providedIn: 'root'})
 export class CameraScannerService {
@@ -69,7 +159,7 @@ export class CameraScannerService {
       throw new Error('La caméra nécessite une page HTTPS et un navigateur autorisant son accès.');
     }
 
-    const engine = this.engineFactory(container.id);
+    const engine = this.engineFactory();
     let active = true;
     let stopPromise: Promise<void> | null = null;
 
@@ -82,37 +172,25 @@ export class CameraScannerService {
           } catch {
             // The decoder may already have stopped after a successful match.
           }
-          try {
-            engine.clear();
-          } catch {
-            // Clearing is best effort when the browser has already removed the video.
-          }
         })();
       }
       return stopPromise;
     };
 
     try {
-      await engine.start(
-        CAMERA_CONSTRAINTS,
-        CAMERA_SCAN_CONFIG,
-        (decodedText: string) => {
-          if (!active) {
-            return;
-          }
+      await engine.start(container, (decodedText: string) => {
+        if (!active) {
+          return;
+        }
 
-          const rawValue = decodedText.trim();
-          if (!rawValue) {
-            return;
-          }
+        const rawValue = decodedText.trim();
+        if (!rawValue) {
+          return;
+        }
 
-          onDetected(rawValue);
-          void stop();
-        },
-        () => {
-          // A frame without a valid barcode is expected while scanning.
-        },
-      );
+        onDetected(rawValue);
+        void stop();
+      });
     } catch (error: unknown) {
       await stop();
       throw this.toCameraError(error);
@@ -121,17 +199,9 @@ export class CameraScannerService {
     return {stop};
   }
 
-  async scanFile(container: HTMLElement, imageFile: File): Promise<string> {
-    const engine = this.engineFactory(container.id);
-    try {
-      return await engine.scanFile(imageFile, false);
-    } finally {
-      try {
-        engine.clear();
-      } catch {
-        // Keep the file fallback usable even if the decoder has already cleaned up.
-      }
-    }
+  async scanFile(imageFile: File): Promise<string> {
+    const engine = this.engineFactory();
+    return await engine.scanFile(imageFile);
   }
 
   private toCameraError(error: unknown): Error {

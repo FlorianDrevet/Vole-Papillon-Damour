@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-2` validé techniquement et publié en HTTPS sur Azure ; test iPhone et mesure `S0-4` restent à faire, puis `S0-3` — instrument de comparaison des sources |
-| **Prochaine action** | Tester le Scan sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Lot en cours** | `S0-2` publié en HTTPS sur Azure ; correctif de détection ISBN iPhone prêt sur `fix/scan-ios-ean-detection`, puis test iPhone et mesure `S0-4` |
+| **Prochaine action** | Merger et déployer le correctif Scan, retester un EAN-13 réel sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `main` — PR #23 fusionnée (`728939f9915ed206fb1f511486909398122b9eb4`) |
+| **Branche** | `fix/scan-ios-ean-detection` — issue de la livraison fusionnée PR #24 |
 
 ---
 
@@ -166,16 +166,18 @@ le commit `728939f`. Validation locale : solution `.slnx` compilée ; 94 tests b
 passés ; compilation Bicep et analyse syntaxique PowerShell passées.
 
 La sonde `S0-2` est maintenant implémentée dans `src/Scan` : saisie ISBN, scanette
-clavier, caméra avec `html5-qrcode`/ZXing (sans dépendre de `BarcodeDetector`), sélection
-d'une photo sur iPhone, conversion ISBN-10 → ISBN-13 et appel consultation seule à
+clavier, caméra avec `@zxing/browser`/ZXing en mode `TRY_HARDER` (sans dépendre de
+`BarcodeDetector`), analyse de toute l'image vidéo, sélection d'une photo sur iPhone,
+conversion ISBN-10 → ISBN-13 et appel consultation seule à
 `GET /books/{isbn13}/metadata`. L'API interroge la BnF SRU puis Open Library en repli,
 sans session, IndexedDB, authentification ni écriture. L'AppHost expose la sonde sur le
 port `4202` et l'API sur `5257` pour le développement LAN. L'image Scan est maintenant
 conteneurisée avec nginx, son ingress HTTPS public est déclaré en Bicep et le workflow
 `Scan - deploy` construit le bundle avec le FQDN public de l'API. Les cibles `S0-1` sont
 `≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre.
-Validation locale : 94 tests backend, 9 tests ChromeHeadless, build de la solution et de
-l'AppHost, ainsi que les builds Scan production/développement. Le smoke test Aspire du
+Validation locale : 94 tests backend, 15 tests ChromeHeadless, build de la solution et de
+l'AppHost, ainsi que les builds Scan production/développement. Le build Scan production
+présente uniquement un avertissement de budget initial non bloquant. Le smoke test Aspire du
 2026-09-03 retourne `200 OK` pour l'ISBN `9783140464079`; l'API et le scan sont healthy,
 le worker découvre `AccountDeletionSweepFunction` et acquiert son host lock. Le défaut de
 configuration Entra local (`ClientId` absent) et les erreurs DI du worker ont été corrigés.
@@ -183,7 +185,12 @@ Le déploiement `development` est opérationnel : Scan `https://vpd-scan-ca-dev.
 API `https://vpd-api-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io`, image
 Scan `vpd-scan:728939f`, image Worker `vpd-worker:728939f`. `/health` du Scan répond `200`
 et l'appel ISBN public répond `200`; le timer Worker s'est exécuté avec succès à `13:20 UTC`.
-Le test caméra sur iPhone et la campagne de mesure sur 300 livres de `S0-4` restent à faire.
+L'image Azure actuellement active (`vpd-scan:728939f`) reste celle d'avant le correctif de
+détection ; la branche `fix/scan-ios-ean-detection` remplace `html5-qrcode` par
+`@zxing/browser`, ajoute les formats EAN/QR et la recherche renforcée. Validation locale
+du correctif : `npm ci`, 15 tests ChromeHeadless et build Scan de production réussis (avec
+un avertissement de budget initial non bloquant). Le merge, le déploiement et le test
+caméra sur iPhone restent à faire, ainsi que la campagne de mesure sur 300 livres de `S0-4`.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -323,6 +330,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |
 | 2026-09-03 | Windows | **S0-2 — publication HTTPS et validation Azure.** Après le merge de la PR #23 (`728939f`), le déploiement de l'infrastructure, du Scan et du Worker est passé par GitHub OIDC. Le Scan public répond `200` sur `/` et `/health`, l'appel ISBN `9783140464079` répond `200`, et le Worker `kind=functionapp` est `Healthy` avec une révision unique, sans ingress public. Le timer `AccountDeletionSweepFunction` s'est exécuté avec succès à `13:20 UTC` (`CompletedCount: 0`). Les secrets ne sont pas exposés ; le test manuel sur iPhone et la campagne `S0-4` restent à faire. |
 | 2026-09-03 | Windows | **Correctif local API/worker après le smoke test S0-2.** Le `ClientId` et l'audience Entra dev sont renseignés dans `appsettings.Development.json`, ce qui supprime l'`IDW10106` sur l'endpoint metadata anonyme. Le worker n'enregistre plus l'authentification API ni MediatR/Mapster inutiles ; il démarre avec son seul service de suppression de comptes. L'AppHost transmet désormais les connexions de stockage Aspire et laisse `AzureWebJobsStorage` à l'intégration Functions, au lieu de forcer Azurite sur `127.0.0.1:10000`. Validation : API, Scan et worker healthy, host lock acquis, ISBN `9783140464079` en `200 OK`, 94 tests backend et build Release de la solution sans erreur. |
 | 2026-09-03 | Windows | **S0-1/S0-2 — sonde de faisabilité locale.** Fixation préalable des cibles à `≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre. Ajout de `src/Scan` : saisie ISBN, scanette clavier, caméra `BarcodeDetector`, normalisation ISBN-10/13 et affichage consultation seule. Ajout de `GET /books/{isbn13}/metadata` avec pipeline BnF SRU puis Open Library, parsing UNIMARC/JSON typé, et intégration AppHost sur `4202` avec API locale `5257` accessible depuis le LAN. La CI compile désormais la sonde. 92 tests backend et 9 tests ChromeHeadless passent ; les builds solution, AppHost, Scan production et développement passent. Aucun déploiement ni test manuel de campagne n'a été effectué. |
