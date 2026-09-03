@@ -14,7 +14,7 @@
 | | |
 |---|---|
 | **Lot en cours** | `S0-4` réalisé sur 300 livres ; verdict qualitatif favorable, puis mesure `P1-1` du timer à zéro réplica ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
-| **Prochaine action** | Déployer la configuration `P1-1` (`minReplicas: 0`, `maxReplicas: 1`), laisser le timer fonctionner deux heures et relever ses exécutions dans les journaux |
+| **Prochaine action** | Après le 2026-09-03 à 20:50 (Europe/Paris), relever les exécutions du timer `P1-1` dans les journaux et trancher `QT-02` |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
 | **Branche** | `fix/scan-async-refresh` — issue de `main` après les PR #25 et #26 fusionnées |
@@ -203,7 +203,10 @@ sous-mesures détaillées (taux au premier essai, délai moyen, recours manuel, 
 200 livres et couverture des sources) n'ont pas été chiffrées dans cette reprise ; le
 verdict `S0-5` est donc favorable sur le fonctionnement observé, sans inventer de
 pourcentages. La suite engagée est `P1-1`, la mesure du réveil du worker sans réplica
-chaud.
+chaud. Le déploiement de la configuration `minReplicas: 0`, `maxReplicas: 1` a réussi via
+`Infra - deploy` `33780715179` sur le commit `4acfbb2`, terminé le 2026-09-03 à 16:50 UTC
+(18:50 Europe/Paris). L'observation de deux heures est en cours ; ne pas clore `QT-02`
+avant d'avoir relevé les exécutions attendues du timer `0 */5 * * * *`.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -228,6 +231,7 @@ domaine d'envoi reste volontairement anticipée, conformément à `L0-9`.
 >
 > | Sujet | Lancé le | Relevable à partir du |
 > |---|---|---|
+> | `QT-02` — timer worker à zéro réplica (`P1-1`) | `2026-09-03 18:50` Europe/Paris | `2026-09-03 20:50` Europe/Paris |
 > | `QT-08` — session de 48 h puis ouverture en mode avion (page jetable, `L0-12`) | | |
 > | Propagation DNS des entrées ACS | `2026-09-02` | après le délai OVH annoncé (maximum 24 h) |
 > | Vérification du domaine d'envoi ACS | `2026-09-02` | après propagation DNS, lors du relevé dans Azure |
@@ -307,7 +311,7 @@ reportées.
 | # | Sujet | Résultat | Le |
 |---|---|---|---|
 | `QT-01` | Couverture des sources bibliographiques | — | — |
-| `QT-02` | Déclencheur planifié à zéro réplica | — | — |
+| `QT-02` | Déclencheur planifié à zéro réplica | En cours — configuration `0/1` déployée par `Infra - deploy` `33780715179` ; observation de deux heures à relever | 2026-09-03 18:50 |
 | `QT-03` | Lecture du code-barres au navigateur | Campagne `S0-4` déclarée réussie sur 300 livres ; sous-mesures détaillées non consignées | 2026-09-03 |
 | `QT-04` | Dimensionnement Entra | Coût tranché : gratuit à notre échelle | doc |
 | `QT-07` | Connexion seule, sans inscription | — | — |
@@ -347,7 +351,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-03 | Windows | **S0-4/S0-5 — campagne de faisabilité.** La campagne de 300 livres réels a été déclarée concluante : le flux de scan a fonctionné sur l'ensemble du lot. Les sous-mesures détaillées n'ayant pas été chiffrées, le verdict est favorable mais qualitatif. Passage à `P1-1` : le worker est préparé pour une mesure à `minReplicas: 0` pendant deux heures. |
+| 2026-09-03 | Windows | **P1-1 — mesure du timer.** Après la campagne `S0-4` concluante sur 300 livres, passage du worker à `minReplicas: 0`, `maxReplicas: 1` via `Infra - deploy` `33780715179` (commit `4acfbb2`). L'observation de deux heures est ouverte jusqu'à 20:50 Europe/Paris ; `QT-02` reste à relever dans les journaux. |
 | 2026-09-03 | Windows | **S0-2 — couverture de la fiche.** Le résultat garde d'abord l'URL fournie par la notice, essaie une couverture Open Library par ISBN si l'image échoue, puis rend un placeholder accessible si les deux sources sont indisponibles. Le test de non-régression porte ces deux cas ; le Scan passe 24 tests ChromeHeadless et ses builds production/développement. Les détections caméra live et photo sur iPhone ont été confirmées ; le correctif est déployé par `Scan - deploy` `33778535757` avec l'image `vpd-scan:f478a7d`. La campagne `S0-4` sur 300 livres reste à faire. |
 | 2026-09-03 | Windows | **S0-2 — rendu asynchrone et lecture photo.** Sur `fix/scan-async-refresh`, ajout de la notification explicite du rendu Angular zoneless après recherche ISBN, détection caméra et analyse photo. Le fallback photo essaie des recadrages, réductions et variantes noir/blanc ; le message d'erreur est rendu immédiatement. `npm test -- --watch=false --browsers=ChromeHeadless` passe avec 22 tests, ainsi que les builds Scan production/développement. La photo fournie d'un écran moiré reste illisible en test navigateur ; le merge, le déploiement et le retest iPhone sur code imprimé restent à faire. |
 | 2026-09-03 | Windows | **S0-2 — correction de détection iPhone.** Après le test réel où la caméra s'activait mais ne reconnaissait pas le code ISBN, remplacement de `html5-qrcode` par `@zxing/browser`. Le scanner analyse toute l'image avec `TRY_HARDER` et les formats EAN-13/EAN-8, UPC et QR ; le cadre affiché reste un repère visuel. Ajout de la couverture de tests du moteur et clarification de l'aide utilisateur. `npm ci`, 15 tests ChromeHeadless et le build production passent ; l'image Azure et le test manuel attendent le merge/déploiement. |
