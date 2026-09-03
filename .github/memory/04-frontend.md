@@ -75,6 +75,10 @@ Verified feature roots:
   owns the Entra External ID client configuration; `shared/services/api-access-token.service.ts`
   acquires the API scope silently for the existing Axios transport. The Angular `MsalInterceptor`
   is not registered because the app does not use Angular `HttpClient` for API calls.
+- `BackOffice` bootstraps both `AppComponent` and `MsalRedirectComponent`; its
+  `src/index.html` must therefore contain both `<app-root>` and `<app-redirect>`. The
+  tenant-scoped CIAM authority is configured in both environment files so development and
+  production builds resolve the same Entra tenant.
 - `Website` has an `sse-client.service` that subscribes to `/asso-events/{id}/tableau/sse` for live event updates and now guards `EventSource` usage behind `isPlatformBrowser()` for SSR safety.
 - The Website SSE client closes the previous `EventSource` before opening a new event, ignores malformed payloads without dropping the last good state, and reconnects with bounded backoff from 250ms to 5s.
 - The Website home SSR path now tolerates missing `next-bingo`, `next-books`, `next-other-event`, and `latest actuality` payloads by keeping default empty state instead of surfacing unhandled promise rejections during server rendering.
@@ -115,6 +119,11 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
 - As of 2026-09-03, `npm ci` followed by `npm test -- --watch=false --browsers=ChromeHeadless`
+  passes with 2 BackOffice bootstrap contract tests and 5 Angular tests, and `npm run build`
+  passes in `src/BackOffice/`; the build still emits existing signal-diagnostic,
+  bundle-budget, CSS, and CommonJS warnings. The same `npm ci`/build validation passes in
+  `src/Website/`.
+- As of 2026-09-03, Scan passes 22 ChromeHeadless tests and the Angular production and
   passes with 5 BackOffice tests, and production/development `npm run build` both pass in
   `src/BackOffice/`; the builds still emit existing signal-diagnostic, bundle-budget, CSS,
   and CommonJS warnings. The same `npm ci`/build validation passes in `src/Website/`.

@@ -22,10 +22,15 @@
 - `BackOffice` uses `@azure/msal-angular` 5.3.1 with `@azure/msal-browser` 5.20.0,
   compatible with the repository's Angular 21 line. `shared/auth/msal-config.ts` configures
   the Entra External ID authority, SPA redirect URIs, local storage cache, and the
-  `access_as_user` login scope.
+  `access_as_user` login scope. The CIAM custom-domain authority is tenant-scoped
+  (`https://volepapillondamour.ciamlogin.com/<tenantId>/`); `knownAuthorities` remains the
+  custom-domain host.
 - Protected BackOffice routes use `MsalGuard`; `MsalRedirectComponent` handles the redirect
   response at application bootstrap, and `AppComponent` restores/selects the active cached
-  account. `LoginComponent` starts `loginRedirect` instead of posting local credentials.
+  account. Because both root components are bootstrapped, `src/index.html` must declare both
+  `<app-root>` and `<app-redirect>`; omitting the latter raises Angular `NG05104` before the
+  MSAL redirect handler can initialize. `LoginComponent` starts `loginRedirect` instead of
+  posting local credentials.
 - `ApiAccessTokenService` calls `MsalService.acquireTokenSilent` for the API scope and
   `AxiosService` adds the resulting bearer token to every API request. `MsalInterceptor` is
   intentionally not registered because BackOffice uses Axios rather than Angular `HttpClient`.
@@ -87,9 +92,10 @@
 
 - Do not store secrets in memory files or commit local connection strings.
 - The Angular README files still look template-oriented; prefer `package.json`, environment files, and actual routing/services over README TODOs when you need the truth.
-- `BackOffice` now has focused Angular tests for the MSAL login redirect and API token adapter;
-  `npm test -- --watch=false --browsers=ChromeHeadless` passes locally with 5 tests. The CI
-  workflow currently builds the frontends but does not yet run frontend unit tests.
+- `BackOffice` now has focused tests for the MSAL bootstrap/login redirect and API token adapter;
+  `npm test -- --watch=false --browsers=ChromeHeadless` passes locally with 2 bootstrap
+  contract tests followed by 5 Angular/Karma tests. The CI workflow currently builds the
+  frontends but does not yet run frontend unit tests.
 - `npm run build` in `src/BackOffice/` exits successfully, but keeps pre-existing Angular
   signal-diagnostic, bundle-budget, CSS-budget, and CommonJS warnings unrelated to this
   authentication migration.
