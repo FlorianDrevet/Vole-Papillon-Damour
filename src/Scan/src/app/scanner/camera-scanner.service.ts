@@ -43,7 +43,9 @@ export interface CameraScannerHandle {
 }
 
 const CAMERA_CONSTRAINTS: MediaTrackConstraints = {
-  facingMode: {ideal: 'environment'},
+  // html5-qrcode accepts a string (or an `exact` object) for this argument.
+  // An `ideal` object is rejected before getUserMedia is called, notably on iOS.
+  facingMode: 'environment',
 };
 
 const CAMERA_SCAN_CONFIG: Html5QrcodeCameraScanConfig = {

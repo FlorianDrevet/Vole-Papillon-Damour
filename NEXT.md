@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `S0-2` validé techniquement ; publication HTTPS du Scan et du worker en cours, puis `S0-3` — instrument de comparaison des sources |
-| **Prochaine action** | Finaliser le déploiement public, tester le Scan sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Lot en cours** | `S0-2` validé techniquement et publié en HTTPS sur Azure ; test iPhone et mesure `S0-4` restent à faire, puis `S0-3` — instrument de comparaison des sources |
+| **Prochaine action** | Tester le Scan sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `feat/s0-2-book-scan-probe` — PR #23 ouverte |
+| **Branche** | `main` — PR #23 fusionnée (`728939f9915ed206fb1f511486909398122b9eb4`) |
 
 ---
 
@@ -159,10 +159,11 @@ maximum jusqu'à la mesure du timer.
 La configuration Bicep, le workflow d'infrastructure et `Configure-EntraApps.ps1` sont prêts
 pour l'application `vpd-account-deletion-dev`, son secret hors dépôt et le secret Key Vault
 `entra-graph-client-secret`. Les secrets GitHub `ENTRA_GRAPH_CLIENT_ID` et
-`ENTRA_GRAPH_CLIENT_SECRET` sont maintenant présents dans l'environnement `development` ;
-le déploiement Azure reste à exécuter depuis cette branche. Validation locale : solution
-`.slnx` compilée ; 94 tests backend passés ; compilation Bicep et analyse syntaxique
-PowerShell passées.
+`ENTRA_GRAPH_CLIENT_SECRET` sont présents dans l'environnement `development`. Après le merge
+de la PR #23, l'infrastructure a été déployée par `Infra - deploy` (`33758954044`), puis
+`Scan - deploy` (`33759976040`) et `Worker - deploy` (`33759966121`) ont été exécutés depuis
+le commit `728939f`. Validation locale : solution `.slnx` compilée ; 94 tests backend
+passés ; compilation Bicep et analyse syntaxique PowerShell passées.
 
 La sonde `S0-2` est maintenant implémentée dans `src/Scan` : saisie ISBN, scanette
 clavier, caméra avec `html5-qrcode`/ZXing (sans dépendre de `BarcodeDetector`), sélection
@@ -178,7 +179,11 @@ l'AppHost, ainsi que les builds Scan production/développement. Le smoke test As
 2026-09-03 retourne `200 OK` pour l'ISBN `9783140464079`; l'API et le scan sont healthy,
 le worker découvre `AccountDeletionSweepFunction` et acquiert son host lock. Le défaut de
 configuration Entra local (`ClientId` absent) et les erreurs DI du worker ont été corrigés.
-La campagne de mesure sur téléphone et les 300 livres de `S0-4` restent à faire.
+Le déploiement `development` est opérationnel : Scan `https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io`,
+API `https://vpd-api-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io`, image
+Scan `vpd-scan:728939f`, image Worker `vpd-worker:728939f`. `/health` du Scan répond `200`
+et l'appel ISBN public répond `200`; le timer Worker s'est exécuté avec succès à `13:20 UTC`.
+Le test caméra sur iPhone et la campagne de mesure sur 300 livres de `S0-4` restent à faire.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -318,6 +323,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-03 | Windows | **S0-2 — publication HTTPS et validation Azure.** Après le merge de la PR #23 (`728939f`), le déploiement de l'infrastructure, du Scan et du Worker est passé par GitHub OIDC. Le Scan public répond `200` sur `/` et `/health`, l'appel ISBN `9783140464079` répond `200`, et le Worker `kind=functionapp` est `Healthy` avec une révision unique, sans ingress public. Le timer `AccountDeletionSweepFunction` s'est exécuté avec succès à `13:20 UTC` (`CompletedCount: 0`). Les secrets ne sont pas exposés ; le test manuel sur iPhone et la campagne `S0-4` restent à faire. |
 | 2026-09-03 | Windows | **Correctif local API/worker après le smoke test S0-2.** Le `ClientId` et l'audience Entra dev sont renseignés dans `appsettings.Development.json`, ce qui supprime l'`IDW10106` sur l'endpoint metadata anonyme. Le worker n'enregistre plus l'authentification API ni MediatR/Mapster inutiles ; il démarre avec son seul service de suppression de comptes. L'AppHost transmet désormais les connexions de stockage Aspire et laisse `AzureWebJobsStorage` à l'intégration Functions, au lieu de forcer Azurite sur `127.0.0.1:10000`. Validation : API, Scan et worker healthy, host lock acquis, ISBN `9783140464079` en `200 OK`, 94 tests backend et build Release de la solution sans erreur. |
 | 2026-09-03 | Windows | **S0-1/S0-2 — sonde de faisabilité locale.** Fixation préalable des cibles à `≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre. Ajout de `src/Scan` : saisie ISBN, scanette clavier, caméra `BarcodeDetector`, normalisation ISBN-10/13 et affichage consultation seule. Ajout de `GET /books/{isbn13}/metadata` avec pipeline BnF SRU puis Open Library, parsing UNIMARC/JSON typé, et intégration AppHost sur `4202` avec API locale `5257` accessible depuis le LAN. La CI compile désormais la sonde. 92 tests backend et 9 tests ChromeHeadless passent ; les builds solution, AppHost, Scan production et développement passent. Aucun déploiement ni test manuel de campagne n'a été effectué. |
 | 2026-09-03 | Windows | **L0-11 — étape 8, suppression coordonnée de compte.** Sur `feat/l0-11-account-deletion`, ajout du flux `DELETE /catalog/me` avec outbox durable : Graph est appelé avant la finalisation locale, le `404` est idempotent et le worker Functions rejoue les demandes échouées par lots de 50 avec bail de cinq minutes. Ajout de la migration `20260903002636_AddAccountDeletionOutbox`, de l'application Graph et du secret Key Vault dans les scripts/Bicep, ainsi que de l'intégration Aspire Functions locale. La solution compile et les 94 tests backend passent ; Bicep et PowerShell sont valides. Aucun déploiement Azure, secret ou objet Entra n'a été créé ; les tests manuels de suppression restent à faire. |
