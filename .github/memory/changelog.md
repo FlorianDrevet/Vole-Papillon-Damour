@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-03 | Corrected the Entra v2 API audience configuration for BackOffice writes: API validation now receives the application ID carried by the token, while the delegated `api://.../access_as_user` scope remains unchanged. |
 | 2026-09-03 | Consolidated the current delivery state: refreshed Website editorial content and association imagery; harmonized the four Maxence daily-life detail pages with a shared chapter header, return navigation, and wider reading column; staged Entra/MSAL identity across API, BackOffice, and MAUI with account deletion; delivered and deployed the Scan ISBN probe plus the private Worker; fixed BackOffice bootstrap, Scan async rendering, and cover fallback. Local validation results are recorded, including the remaining MAUI/CI target drift (`net10.0-android` in the project versus `net9.0-android` in the workflow). |
 | 2026-09-02 | Advanced the platform foundation with Entra/Graph setup, health probes, the Azure SQL S1 parameter, SharedUi linking, Graphify, CI build coverage, public product visibility, GA4/SEO, event and design refinements, and the bourse aux livres technical documentation. |
 | 2026-09-01 | Added concrete association actions and supplied photos, skeleton loading states, production-host configuration, and the first complete bourse aux livres functional/technical specifications. |

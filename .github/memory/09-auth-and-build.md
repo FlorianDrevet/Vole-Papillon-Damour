@@ -11,9 +11,10 @@
 - `JwtSettings`, `IJwtGenerator`, and `/auth/login` intentionally remain during deployment
   1 so the deployed BackOffice and unredistributed MAUI devices continue to work.
 - Entra runtime values are supplied by `AzureAd__Instance`, `AzureAd__TenantId`,
-  `AzureAd__ClientId`, and `AzureAd__Audience`; the development API settings now contain
-  the registered dev API client and audience so anonymous local endpoints do not fail while
-  the authentication scheme is initialized.
+  `AzureAd__ClientId`, and `AzureAd__Audience`. For v2 access tokens, the audience is the
+  bare API application ID; the `api://<id>/access_as_user` form remains the delegated MSAL
+  scope. The development API settings and Bicep deployment use the bare ID so BackOffice
+  write requests validate against the `aud` claim issued by Entra.
 - `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
 - `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
 

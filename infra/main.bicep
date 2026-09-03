@@ -665,8 +665,11 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         value: entraApiClientId
       }
       {
+        // Entra v2 access tokens carry the API application ID in `aud`.
+        // The `api://<id>/access_as_user` form is the delegated scope, not
+        // the audience used by the token issued for this API.
         name: 'AzureAd__Audience'
-        value: 'api://${entraApiClientId}'
+        value: entraApiClientId
       }
       {
         name: 'EntraGraph__TenantId'
