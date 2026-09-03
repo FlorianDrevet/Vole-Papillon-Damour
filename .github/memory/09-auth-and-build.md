@@ -11,8 +11,9 @@
 - `JwtSettings`, `IJwtGenerator`, and `/auth/login` intentionally remain during deployment
   1 so the deployed BackOffice and unredistributed MAUI devices continue to work.
 - Entra runtime values are supplied by `AzureAd__Instance`, `AzureAd__TenantId`,
-  `AzureAd__ClientId`, and `AzureAd__Audience`; the API client ID is populated only after
-  `Configure-EntraApps.ps1` has created the registration.
+  `AzureAd__ClientId`, and `AzureAd__Audience`; the development API settings now contain
+  the registered dev API client and audience so anonymous local endpoints do not fail while
+  the authentication scheme is initialized.
 - `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
 - `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
 
@@ -42,14 +43,27 @@
 
 - Backend runtime config lives in `appsettings.json`, `appsettings.Development.json`, and local secrets/connection strings.
 - The Aspire AppHost adds local launch settings for dashboard/resource service endpoints and injects backend connection strings for SQL Server and Azurite.
+- The AppHost uses the Aspire storage connection expression for Blob clients and leaves
+  `AzureWebJobsStorage` to the Azure Functions Aspire integration (or an explicit
+  `WithHostStorage` resource), rather than forcing the default Azurite port.
 - The AppHost now also owns a local user-secret-backed SQL password parameter under `Parameters:sql-server-password` so the persisted SQL Server volume keeps matching credentials across Aspire launches.
 - The backend README points to `dotnet user-secrets` for local secret storage.
 - `BackOffice` environment config includes `api_url`, `url_vpd_web_site`, `time_numero_modal`,
   and the public Entra settings (`tenantId`, client ID, authority, redirect URIs, and API scope).
 - `Website` environment config includes `api_url`.
+- `Scan` development config derives its API host from the browser hostname on port `5257`
+  for LAN testing; the production environment points to the configured API deployment.
+- Scan production bundles use `html5-qrcode`/ZXing instead of the optional native
+  `BarcodeDetector` path, which keeps camera decoding available in iOS Safari. The
+  scanner also accepts an image selected from the phone as a fallback. The public ACA
+  deployment is HTTPS, which satisfies the secure-context requirement for camera access.
 - `MauiCashApp/appsettings.json` contains `VpdSettings.BaseUrl`; the MSAL client ID, authority,
   API scope, and Android redirect are application configuration constants in `MsalAuthService`.
 - Dockerized deployment config now lives in `src/BackOffice/Dockerfile`, `src/Website/Dockerfile`, and `infra/aca/`.
+- Dockerized deployment config also lives in `src/Scan/Dockerfile` and
+  `src/Backend/Vole_Papillon_Damour.Worker/Dockerfile`; `.github/workflows/scan-deploy.yml`
+  and `.github/workflows/worker-deploy.yml` build/push immutable commit-tagged images and
+  update the corresponding Container Apps through GitHub OIDC.
 - The frontend Dockerfiles patch the production Angular environment files at image-build time through `API_URL` and `WEBSITE_URL` build args instead of introducing runtime templating.
 - API health probes are configured in `infra/parameters/main.dev.bicepparam` as readiness, liveness, and startup checks for `/health` on port `8080`; Azure deployment remains a separate operational step.
 - The dev SQL parameter uses Azure SQL Database `S1` (`Standard`, 20 DTUs, 250 GB) with `autoPauseDelayMinutes: 0`; `DatabaseSkuConfig` keeps DTU tiers' family optional.
@@ -60,6 +74,7 @@
 - Backend orchestration: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - BackOffice: `npm install`; `npm run start`; `npm run build`; `npm test`
 - Website: `npm install`; `npm run start`; `npm run build`; `npm test`; `npm run serve:ssr:vole_papillon_damour_website`
+- Scan: `npm ci`; `npm run start`; `npm run build`; `npm test -- --watch=false --browsers=ChromeHeadless`
 - BackOffice Docker image: `docker build -f .\src\BackOffice\Dockerfile --build-arg API_URL=<url> --build-arg WEBSITE_URL=<url> .\src`
 - Website Docker image: `docker build -f .\src\Website\Dockerfile --build-arg API_URL=<url> .\src`
 - Subscription-scope ACA deploy: `az deployment sub create --location FranceCentral --template-file .\infra\aca\main.bicep --parameters .\infra\aca\parameters\main.dev.bicepparam`
@@ -81,7 +96,7 @@
 - The Infra Flow Sculptor project was created with placeholder subscription IDs (`00000000-0000-0000-0000-000000000000`) and those must be replaced in the project settings before real deployment.
 - Rider build-with-surface-heuristics can create generated C# files under `src/Backend/Vole_Papillon_Damour.Domain/artifacts/validation/obj/`; the Domain project now excludes `artifacts/**` from SDK default items so those generated assembly attribute files do not get compiled alongside the normal `obj/` output.
 - Repeated `18456` login failures from the local SQL Server container during Aspire startup usually mean the persisted SQL volume still has an older `sa` password than the one the AppHost is currently using; stabilize the AppHost secret instead of relying on the default generated password.
-- `.github/workflows/ci.yml` is the push/pull-request gate for the backend solution, its three test projects, the Android MAUI target, and both Angular builds. It deliberately does not run frontend unit tests yet; the BackOffice tests are currently validated locally.
+- `.github/workflows/ci.yml` is the push/pull-request gate for the backend solution, its three test projects, the Android MAUI target, and the BackOffice, Website, and Scan Angular builds. It deliberately does not run frontend unit tests yet; the Angular tests are currently validated locally.
 - `dotnet test .\src\MauiCashApp.Tests\ShopAppVpd.Tests.csproj` covers the platform-independent
   authorization handler. The MAUI Android build remains environment-dependent and currently
   fails locally with `XA5300` when no Android SDK is configured.

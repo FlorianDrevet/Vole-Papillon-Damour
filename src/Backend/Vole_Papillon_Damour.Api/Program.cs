@@ -85,6 +85,7 @@ app.MapHealthChecks("/health");
 //Controllers
 app.UseAuthenticationController();
 app.UseAccountController();
+app.UseBookController();
 app.UseActualityController();
 app.UseProductController();
 app.UseOrdersController();

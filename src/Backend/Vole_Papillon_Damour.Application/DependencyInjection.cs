@@ -12,6 +12,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        services.AddAccountDeletionProcessing();
+
         // CQRS with MediatR
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(typeof(DependencyInjection).Assembly, Assembly.GetExecutingAssembly()));
         
@@ -21,6 +23,11 @@ public static class DependencyInjection
         // Validators
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+        return services;
+    }
+
+    public static IServiceCollection AddAccountDeletionProcessing(this IServiceCollection services)
+    {
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         return services;
     }

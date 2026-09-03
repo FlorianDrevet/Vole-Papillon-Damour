@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `L0-11` — étape 8 : suppression coordonnée de l'identité Entra et de la projection locale |
-| **Prochaine action** | Relire/merger la PR de l'étape 8, puis exécuter le script Entra sur un poste autorisé, renseigner les secrets GitHub et déployer avant les tests manuels des deux côtés ([lot 0](docs/bourse-aux-livres/plan/00-socle-et-prealable.md)) |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects` |
+| **Lot en cours** | `S0-2` validé techniquement ; publication HTTPS du Scan et du worker en cours, puis `S0-3` — instrument de comparaison des sources |
+| **Prochaine action** | Finaliser le déploiement public, tester le Scan sur iPhone, puis mesurer `S0-4` sur 300 livres ([palier 0](docs/bourse-aux-livres/plan/01-palier-0-sonde.md)) |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `feat/l0-11-account-deletion` |
+| **Branche** | `feat/s0-2-book-scan-probe` — PR #23 ouverte |
 
 ---
 
@@ -35,9 +35,8 @@ plus de réponse ; ceci est un rappel, le détail est dans les documents cités.
 | Genres et classement | **Depuis les sources bibliographiques**, et le site n'indique **jamais** où se trouve un livre dans le local (`Q-07`) |
 | Repli d'exploitation | **Aucun.** Une panne fait vendre sans enregistrer, rien n'est rattrapé. Le hors-ligne de la caisse devient la seule protection (`ENF-21`, `P1-10`) |
 
-Reste à écrire, mais rien ne le bloque : les **chiffres cibles du palier 0** (`S0-1`, avant
-la campagne) et le **choix du matériel de scan** (`Q-08`, après la campagne, s'il s'avère
-nécessaire).
+Les **chiffres cibles du palier 0** (`S0-1`) sont fixés avant la campagne. Le **choix du
+matériel de scan** (`Q-08`) reste à trancher après la campagne, s'il s'avère nécessaire.
 
 ---
 
@@ -152,14 +151,34 @@ traité comme « déjà supprimé » ; une panne avant la finalisation laisse la
 Le worker Functions partage `Application` et `Infrastructure`, réclame au plus 50 messages
 avec un bail de cinq minutes et ouvre une portée DI par déclenchement. La migration
 `20260903002636_AddAccountDeletionOutbox` est générée mais n'est pas encore appliquée à la
-base. Le worker est intégré à l'AppHost pour le développement local ; sa ressource ACA et
-son déploiement restent dans le périmètre ultérieur lié à `QT-02`/`P1-8`.
+base. Le worker est intégré à l'AppHost pour le développement local et dispose désormais
+d'un module Bicep ACA natif (`kind=functionapp`), d'une identité managée dédiée, de secrets
+Key Vault et d'un pipeline `Worker - deploy`. Il reste fixé à une réplique minimum et
+maximum jusqu'à la mesure du timer.
 
 La configuration Bicep, le workflow d'infrastructure et `Configure-EntraApps.ps1` sont prêts
 pour l'application `vpd-account-deletion-dev`, son secret hors dépôt et le secret Key Vault
-`entra-graph-client-secret`. Aucun déploiement ni changement Entra n'a été effectué depuis
-cette branche. Validation locale : solution `.slnx` compilée ; 78 tests backend passés ;
-compilation Bicep et analyse syntaxique PowerShell passées.
+`entra-graph-client-secret`. Les secrets GitHub `ENTRA_GRAPH_CLIENT_ID` et
+`ENTRA_GRAPH_CLIENT_SECRET` sont maintenant présents dans l'environnement `development` ;
+le déploiement Azure reste à exécuter depuis cette branche. Validation locale : solution
+`.slnx` compilée ; 94 tests backend passés ; compilation Bicep et analyse syntaxique
+PowerShell passées.
+
+La sonde `S0-2` est maintenant implémentée dans `src/Scan` : saisie ISBN, scanette
+clavier, caméra avec `html5-qrcode`/ZXing (sans dépendre de `BarcodeDetector`), sélection
+d'une photo sur iPhone, conversion ISBN-10 → ISBN-13 et appel consultation seule à
+`GET /books/{isbn13}/metadata`. L'API interroge la BnF SRU puis Open Library en repli,
+sans session, IndexedDB, authentification ni écriture. L'AppHost expose la sonde sur le
+port `4202` et l'API sur `5257` pour le développement LAN. L'image Scan est maintenant
+conteneurisée avec nginx, son ingress HTTPS public est déclaré en Bicep et le workflow
+`Scan - deploy` construit le bundle avec le FQDN public de l'API. Les cibles `S0-1` sont
+`≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre.
+Validation locale : 94 tests backend, 9 tests ChromeHeadless, build de la solution et de
+l'AppHost, ainsi que les builds Scan production/développement. Le smoke test Aspire du
+2026-09-03 retourne `200 OK` pour l'ISBN `9783140464079`; l'API et le scan sont healthy,
+le worker découvre `AccountDeletionSweepFunction` et acquiert son host lock. Le défaut de
+configuration Entra local (`ClientId` absent) et les erreurs DI du worker ont été corrigés.
+La campagne de mesure sur téléphone et les 300 livres de `S0-4` restent à faire.
 
 `L0-6` est fusionné via la PR #6 : l'API expose `GET /health` avec un contrôle de connexion à
 la base, et les sondes API readiness/liveness/startup ciblent `/health` sur le port `8080`.
@@ -275,9 +294,9 @@ reportées.
 
 | Mesure | Cible |
 |---|---|
-| Taux de lecture au premier essai | — |
-| Taux de métadonnées trouvées | — |
-| Cadence tenable au bout de 200 livres | — |
+| Taux de lecture au premier essai | `≥ 90 %` |
+| Taux de métadonnées trouvées | `≥ 85 %` |
+| Cadence tenable au bout de 200 livres | `≤ 3 s par livre` |
 
 ---
 
@@ -285,7 +304,8 @@ reportées.
 
 | Test | Résultat | Le |
 |---|---|---|
-| *(aucun)* | | |
+| Smoke test Aspire — `GET /books/9783140464079/metadata` via `http://localhost:5257` | `200 OK` après redirection HTTPS ; notice « Le petit prince » renvoyée par Open Library | `2026-09-03` |
+| Démarrage Functions worker via Aspire | `AccountDeletionSweepFunction` découverte ; host lock acquis ; aucune erreur DI ni erreur de listener | `2026-09-03` |
 
 > Un test manuel non consigné sera refait. Noter au minimum : quoi, quand, et ce qui a été
 > observé — pas seulement « OK ».
@@ -298,7 +318,9 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-03 | Windows | **L0-11 — étape 8, suppression coordonnée de compte.** Sur `feat/l0-11-account-deletion`, ajout du flux `DELETE /catalog/me` avec outbox durable : Graph est appelé avant la finalisation locale, le `404` est idempotent et le worker Functions rejoue les demandes échouées par lots de 50 avec bail de cinq minutes. Ajout de la migration `20260903002636_AddAccountDeletionOutbox`, de l'application Graph et du secret Key Vault dans les scripts/Bicep, ainsi que de l'intégration Aspire Functions locale. La solution compile et les 78 tests backend passent ; Bicep et PowerShell sont valides. Aucun déploiement Azure, secret ou objet Entra n'a été créé ; les tests manuels de suppression restent à faire. |
+| 2026-09-03 | Windows | **Correctif local API/worker après le smoke test S0-2.** Le `ClientId` et l'audience Entra dev sont renseignés dans `appsettings.Development.json`, ce qui supprime l'`IDW10106` sur l'endpoint metadata anonyme. Le worker n'enregistre plus l'authentification API ni MediatR/Mapster inutiles ; il démarre avec son seul service de suppression de comptes. L'AppHost transmet désormais les connexions de stockage Aspire et laisse `AzureWebJobsStorage` à l'intégration Functions, au lieu de forcer Azurite sur `127.0.0.1:10000`. Validation : API, Scan et worker healthy, host lock acquis, ISBN `9783140464079` en `200 OK`, 94 tests backend et build Release de la solution sans erreur. |
+| 2026-09-03 | Windows | **S0-1/S0-2 — sonde de faisabilité locale.** Fixation préalable des cibles à `≥ 90 %` de lecture au premier essai, `≥ 85 %` de notices trouvées et `≤ 3 s` par livre. Ajout de `src/Scan` : saisie ISBN, scanette clavier, caméra `BarcodeDetector`, normalisation ISBN-10/13 et affichage consultation seule. Ajout de `GET /books/{isbn13}/metadata` avec pipeline BnF SRU puis Open Library, parsing UNIMARC/JSON typé, et intégration AppHost sur `4202` avec API locale `5257` accessible depuis le LAN. La CI compile désormais la sonde. 92 tests backend et 9 tests ChromeHeadless passent ; les builds solution, AppHost, Scan production et développement passent. Aucun déploiement ni test manuel de campagne n'a été effectué. |
+| 2026-09-03 | Windows | **L0-11 — étape 8, suppression coordonnée de compte.** Sur `feat/l0-11-account-deletion`, ajout du flux `DELETE /catalog/me` avec outbox durable : Graph est appelé avant la finalisation locale, le `404` est idempotent et le worker Functions rejoue les demandes échouées par lots de 50 avec bail de cinq minutes. Ajout de la migration `20260903002636_AddAccountDeletionOutbox`, de l'application Graph et du secret Key Vault dans les scripts/Bicep, ainsi que de l'intégration Aspire Functions locale. La solution compile et les 94 tests backend passent ; Bicep et PowerShell sont valides. Aucun déploiement Azure, secret ou objet Entra n'a été créé ; les tests manuels de suppression restent à faire. |
 | 2026-09-03 | Windows | **L0-11 — caisse MSAL.** Après le merge de la PR #20 dans `main`, création de `feat/l0-11-maui-msal`. Passage de `MauiCashApp` à `net10.0-android` et ajout de `Microsoft.Identity.Client` `4.88.0`, avec `MsalAuthService` en silent-first, handler Bearer Refit et callback Android `msal427c90de-bf59-4b01-af63-dc0799248496://auth`. Le test ciblé passe (1/1) et `dotnet restore` passe ; `dotnet build` reste bloqué localement par `XA5300` (SDK Android absent). Aucun appareil ni déploiement n'a été modifié ; aucun keystore n'existe. |
 | 2026-09-03 | Windows | **L0-11 — BackOffice MSAL.** Après le merge de la migration 0 dans `main`, création de la branche `feat/l0-11-backoffice-msal`. Migration du login vers le redirect MSAL Angular (`5.3.1`) avec MSAL Browser (`5.20.0`), remplacement du guard maison par `MsalGuard`, sélection de l'identité active au démarrage et acquisition silencieuse de la portée API pour Axios. Suppression du cookie JWT, des services/façades d'authentification maison et des dépendances `@auth0/angular-jwt`/`ngx-cookie-service`. `npm ci`, les 5 tests ChromeHeadless et les builds production/développement passent ; seules des alertes Angular préexistantes restent. Aucun déploiement n'a été effectué. |
 | 2026-09-03 | Windows | **L0-11 — migration 0 préparée.** La décision est prise de perdre les utilisateurs legacy existants et de les recréer dans Entra ; le backup/restauration vérifié par le run `33690143650` couvre ce choix. La migration `20260902223842_MigrateUsersToEntraIdentity` supprime d'abord les lignes `Users`, retire `Password`, `Salt` et `Role`, ajoute les colonnes de projection Entra et l'index `ExternalId`. Elle est volontairement non réversible et n'a pas été appliquée à la base. Les tests backend (71) et le build `.slnx` passent ; les avertissements préexistants sont listés dans la sortie de validation. |

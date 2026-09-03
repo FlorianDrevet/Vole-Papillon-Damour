@@ -1,0 +1,97 @@
+<main class="scan-shell">
+  <header class="scan-header">
+    <p class="eyebrow">Vole Papillon d’Amour · bourse aux livres</p>
+    <h1>Scanner un livre</h1>
+    <p class="intro">
+      Cette sonde affiche une notice bibliographique sans enregistrer de tri. Scannez le
+      code-barres avec une scanette, utilisez la caméra ou saisissez l’ISBN.
+    </p>
+  </header>
+
+  <section class="scan-panel" aria-labelledby="scan-title">
+    <div class="panel-heading">
+      <span class="status-dot" aria-hidden="true"></span>
+      <div>
+        <p class="eyebrow">S0-2 · consultation seule</p>
+        <h2 id="scan-title">Identifier une édition</h2>
+      </div>
+    </div>
+
+    <form class="isbn-form" (ngSubmit)="submit()">
+      <label for="isbn">ISBN</label>
+      <div class="input-row">
+        <input
+          id="isbn"
+          name="isbn"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="978-2-07-036373-5"
+          [(ngModel)]="isbnInput">
+        <button type="submit" [disabled]="isLoading">
+          {{ isLoading ? 'Recherche…' : 'Rechercher' }}
+        </button>
+      </div>
+    </form>
+
+    <div class="camera-actions">
+      <vpd-button (click)="toggleCamera()">
+        {{ cameraActive ? 'Arrêter la caméra' : 'Lire avec la caméra' }}
+      </vpd-button>
+      <label class="image-picker">
+        <span>Scanner une photo</span>
+        <input
+          #imageInput
+          type="file"
+          accept="image/*"
+          capture="environment"
+          (change)="scanImage($event)">
+      </label>
+      <span>Une scanette USB peut aussi envoyer l’ISBN comme un clavier.</span>
+    </div>
+
+    <div
+      #cameraContainer
+      id="camera-scanner"
+      class="camera-preview"
+      [class.camera-preview-visible]="cameraActive"
+      aria-label="Aperçu de la caméra pour le code-barres"></div>
+    <div #fileScannerContainer class="file-scanner-container" aria-hidden="true"></div>
+
+    <p *ngIf="cameraError" class="message message-error" role="alert">{{ cameraError }}</p>
+    <p *ngIf="errorMessage" class="message message-error" role="alert">{{ errorMessage }}</p>
+    <p *ngIf="isLoading" class="message" role="status" aria-live="polite">Recherche de la notice…</p>
+  </section>
+
+  <section *ngIf="metadata" class="book-result" aria-live="polite" aria-labelledby="book-title">
+    <div class="cover-frame" *ngIf="metadata.coverUrl; else noCover">
+      <img [src]="metadata.coverUrl" [alt]="'Couverture de ' + (metadata.title || 'ce livre')">
+    </div>
+    <ng-template #noCover>
+      <div class="cover-frame cover-placeholder" aria-hidden="true">Pas de couverture</div>
+    </ng-template>
+
+    <div class="book-details">
+      <p class="eyebrow">Notice trouvée · {{ metadata.source }}</p>
+      <h2 id="book-title">{{ metadata.title || 'Titre non renseigné' }}</h2>
+      <dl>
+        <div *ngIf="metadata.authors">
+          <dt>Auteur</dt>
+          <dd>{{ metadata.authors }}</dd>
+        </div>
+        <div *ngIf="metadata.publisher">
+          <dt>Éditeur</dt>
+          <dd>{{ metadata.publisher }}</dd>
+        </div>
+        <div *ngIf="metadata.publicationYear">
+          <dt>Année</dt>
+          <dd>{{ metadata.publicationYear }}</dd>
+        </div>
+        <div>
+          <dt>ISBN-13</dt>
+          <dd>{{ metadata.isbn13 }}</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+</main>

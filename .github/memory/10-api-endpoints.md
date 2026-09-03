@@ -38,6 +38,14 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
 - `POST /product`, `PUT /product/{id}`, `POST /product/promotion`, `DELETE /product/promotion` - admin-protected product writes
 - `POST /orders`, `GET /orders` - admin-protected order routes
 
+## Bibliographic Probe Endpoints
+
+- `GET /books/{isbn13}/metadata` - anonymous consultation-only ISBN lookup; the route
+  accepts a valid ISBN-10 or ISBN-13, returns the canonical ISBN-13 and typed title,
+  authors, publisher, publication year, cover URL, source, and optional WorkId. The
+  Application handler delegates to Infrastructure's BnF SRU client first and Open
+  Library second; no book is persisted at this palier.
+
 No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 
 ## Current Auth Asymmetries To Recheck Before Editing

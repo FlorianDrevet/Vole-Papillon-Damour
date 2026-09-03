@@ -1,0 +1,49 @@
+{
+  "name": "vole-papillon-damour-scan",
+  "version": "0.0.0",
+  "engines": {
+    "node": "24.15.0"
+  },
+  "scripts": {
+    "ng": "ng",
+    "link:shared-ui": "node ../SharedUi/scripts/link-shared-ui.mjs",
+    "prestart": "npm run link:shared-ui",
+    "start": "ng serve --configuration=development",
+    "prebuild": "npm run link:shared-ui",
+    "build": "ng build",
+    "pretest": "npm run link:shared-ui",
+    "prewatch": "npm run link:shared-ui",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^21.2.12",
+    "@angular/common": "^21.2.12",
+    "@angular/compiler": "^21.2.12",
+    "@angular/core": "^21.2.12",
+    "@angular/forms": "^21.2.12",
+    "@angular/platform-browser": "^21.2.12",
+    "@angular/platform-browser-dynamic": "^21.2.12",
+    "@angular/router": "^21.2.12",
+    "@microsoft/applicationinsights-web": "^3.4.3",
+    "html5-qrcode": "^2.3.8",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1",
+    "zone.js": "^0.16.2"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^21.2.10",
+    "@angular/build": "^21.2.10",
+    "@angular/cli": "^21.2.10",
+    "@angular/compiler-cli": "^21.2.12",
+    "@types/jasmine": "^5.1.12",
+    "jasmine-core": "^5.12.0",
+    "karma": "^6.4.4",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-coverage": "^2.2.1",
+    "karma-jasmine": "^5.1.0",
+    "karma-jasmine-html-reporter": "^2.1.0",
+    "typescript": "^5.9.3"
+  }
+}

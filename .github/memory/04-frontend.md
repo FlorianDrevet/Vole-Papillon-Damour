@@ -7,6 +7,8 @@ Both web apps are Angular 21 projects with Angular Material and Tailwind in the 
 - `src/BackOffice/` - admin UI, with MSAL Angular (`@azure/msal-angular` 5.3.1,
   `@azure/msal-browser` 5.20.0) and `@dhutaryan/ngx-mat-timepicker`
 - `src/Website/` - public UI for the association website, now built with Angular SSR and hydration support
+- `src/Scan/` - Angular 21 consultation-only feasibility probe for ISBN capture and
+  bibliographic metadata; it has no session, IndexedDB, authentication, or write flow
 
 ## App Structure
 
@@ -27,6 +29,10 @@ Verified feature roots:
 - Reuse the HTTP/data access pattern already present in the targeted app instead of introducing a second style in the same slice.
 - Keep shared models typed and aligned with backend contracts.
 - Both apps currently keep zoneless change detection via `provideZonelessChangeDetection()`.
+- The Scan app follows the same zoneless Angular setup and reuses `@vpd/ui` through the
+  `SharedUi` TypeScript path alias. Its typed `BookMetadataService` calls the backend
+  metadata endpoint; `CameraScannerService` uses the browser `BarcodeDetector` when
+  available, while `ScannerComponent` also accepts keyboard-wedge scanners and manual ISBNs.
 - Validate responsive behavior on desktop and mobile when UI changes.
 - `src/SharedUi/scripts/link-shared-ui.mjs` is the shared npm linker. Both apps invoke it
   from `prebuild` and `prestart` through `node ../SharedUi/scripts/link-shared-ui.mjs`; it
@@ -55,6 +61,10 @@ Verified feature roots:
 ## Data Access And Live Updates
 
 - Both Angular apps centralize HTTP base URL setup through `shared/services/axios.service.ts` with `axios.defaults.baseURL = environment.api_url`.
+- Scan deliberately uses Angular `HttpClient` rather than the existing Axios setup. Its
+  development API URL follows the browser host on port `5257`, so a phone opening the
+  dev server on the LAN reaches the laptop's API; production keeps the configured Render
+  API URL.
 - `BackOffice` uses `MsalGuard` to protect its routed admin screens. `shared/auth/msal-config.ts`
   owns the Entra External ID client configuration; `shared/services/api-access-token.service.ts`
   acquires the API scope silently for the existing Axios transport. The Angular `MsalInterceptor`
@@ -91,6 +101,10 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 ## Validation Commands
 
 - `npm run start`, `npm run build`, and `npm test` in each Angular app
+- In `src/Scan/`, use `npm run start`, `npm run build`, and
+  `npm test -- --watch=false --browsers=ChromeHeadless`; production and development
+  builds are both part of the local validation because the environment file replacement
+  is intentionally different between them.
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
@@ -98,3 +112,6 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   passes with 5 BackOffice tests, and production/development `npm run build` both pass in
   `src/BackOffice/`; the builds still emit existing signal-diagnostic, bundle-budget, CSS,
   and CommonJS warnings. The same `npm ci`/build validation passes in `src/Website/`.
+- As of 2026-09-03, Scan passes 9 ChromeHeadless tests and both Angular production and
+  development builds without warnings; the CI workflow installs its lockfile and builds
+  the app after the existing BackOffice and Website steps.
