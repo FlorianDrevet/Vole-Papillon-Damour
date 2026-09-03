@@ -1,6 +1,8 @@
+import {HttpErrorResponse} from '@angular/common/http';
 import {FormsModule} from '@angular/forms';
+import {ChangeDetectorRef} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {of, Subject} from 'rxjs';
+import {of, Subject, throwError} from 'rxjs';
 
 import {DesignSystemModule} from '@vpd/ui';
 import {BookMetadata} from './book-metadata.model';
@@ -44,6 +46,30 @@ describe('ScannerComponent', () => {
     expect(component.errorMessage).toBeNull();
   });
 
+  it('refreshes the rendered result when a manual lookup completes', async () => {
+    const metadata = createMetadata();
+    metadataService.getMetadata.and.returnValue(of(metadata));
+    component.isbnInput = '978-2-07-036373-5';
+
+    await component.submit();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
+  });
+
+  it('notifies Angular when a manual lookup completes outside a template event', async () => {
+    const metadata = createMetadata();
+    metadataService.getMetadata.and.returnValue(of(metadata));
+    const componentChangeDetector = (component as unknown as {
+      changeDetector: ChangeDetectorRef;
+    }).changeDetector;
+    const markForCheck = spyOn(componentChangeDetector, 'markForCheck');
+
+    await component.lookup('9782070363735');
+
+    expect(markForCheck).toHaveBeenCalled();
+  });
+
   it('rejects an invalid ISBN without making a request', async () => {
     component.isbnInput = '4006381333931';
 
@@ -83,6 +109,50 @@ describe('ScannerComponent', () => {
     expect(metadataService.getMetadata).toHaveBeenCalledOnceWith('9782070363735');
     expect(component.metadata).toEqual(metadata);
     expect(component.cameraError).toBeNull();
+  });
+
+  it('keeps a metadata error separate from a successfully decoded camera photo', async () => {
+    cameraService.scanFile.and.returnValue(Promise.resolve('9782070363735'));
+    metadataService.getMetadata.and.returnValue(throwError(
+      () => new HttpErrorResponse({status: 404}),
+    ));
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    const imageFile = new File(['barcode'], 'book.jpg', {type: 'image/jpeg'});
+    Object.defineProperty(input, 'files', {value: [imageFile]});
+
+    await component.scanImage({target: input} as unknown as Event);
+
+    expect(component.cameraError).toBeNull();
+    expect(component.errorMessage).toContain('Aucune notice bibliographique');
+  });
+
+  it('refreshes the rendered error when a camera photo cannot be decoded', async () => {
+    cameraService.scanFile.and.returnValue(Promise.reject(new Error('not found')));
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    const imageFile = new File(['barcode'], 'book.jpg', {type: 'image/jpeg'});
+    Object.defineProperty(input, 'files', {value: [imageFile]});
+
+    await component.scanImage({target: input} as unknown as Event);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('.message-error')?.textContent)
+      .toContain('Aucun code-barres lisible');
+  });
+
+  it('refreshes the rendered result when the live camera detects an ISBN', async () => {
+    const metadata = createMetadata();
+    metadataService.getMetadata.and.returnValue(of(metadata));
+    let onDetected: ((rawValue: string) => void) | undefined;
+    cameraService.start.and.callFake(async (_container, callback) => {
+      onDetected = callback;
+      return {stop: async () => undefined};
+    });
+
+    await component.toggleCamera();
+    onDetected?.('9782070363735');
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
   });
 
   function createMetadata(title = 'Le Petit Prince'): BookMetadata {

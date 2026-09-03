@@ -5,6 +5,7 @@ import {Inject, Injectable, InjectionToken} from '@angular/core';
 export interface CameraScannerReader {
   decodeFromConstraints: BrowserMultiFormatReader['decodeFromConstraints'];
   decodeFromImageUrl: BrowserMultiFormatReader['decodeFromImageUrl'];
+  decodeFromCanvas: BrowserMultiFormatReader['decodeFromCanvas'];
 }
 
 export type CameraScannerReaderFactory = (
@@ -48,6 +49,28 @@ const CAMERA_SCAN_FORMATS: BarcodeFormat[] = [
   BarcodeFormat.UPC_E,
 ];
 
+const MAX_PHOTO_DECODE_DIMENSION = 2000;
+
+interface PhotoDecodeRegion {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  scale: number;
+  threshold: number | null;
+}
+
+const PHOTO_DECODE_REGIONS: PhotoDecodeRegion[] = [
+  {left: 0, top: .15, width: 1, height: .7, scale: 1, threshold: null},
+  {left: 0, top: .3, width: 1, height: .7, scale: 1, threshold: null},
+  {left: .1, top: .15, width: .8, height: .7, scale: 1, threshold: null},
+  {left: 0, top: .15, width: 1, height: .7, scale: 1, threshold: 160},
+  {left: 0, top: .3, width: 1, height: .7, scale: 1, threshold: 160},
+  {left: .1, top: .15, width: .8, height: .7, scale: 1, threshold: 160},
+  {left: 0, top: 0, width: 1, height: 1, scale: .5, threshold: null},
+  {left: .1, top: .15, width: .8, height: .7, scale: .5, threshold: 160},
+];
+
 type CameraScannerControls = Awaited<ReturnType<CameraScannerReader['decodeFromConstraints']>>;
 
 function createDecoderHints(): Map<DecodeHintType, any> {
@@ -55,6 +78,80 @@ function createDecoderHints(): Map<DecodeHintType, any> {
     [DecodeHintType.POSSIBLE_FORMATS, [...CAMERA_SCAN_FORMATS]],
     [DecodeHintType.TRY_HARDER, true],
   ]);
+}
+
+function loadImage(imageUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('La photo ne peut pas être chargée.'));
+    image.src = imageUrl;
+  });
+}
+
+function applyLuminanceThreshold(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  threshold: number,
+): void {
+  const imageData = context.getImageData(0, 0, width, height);
+  const {data} = imageData;
+
+  for (let index = 0; index < data.length; index += 4) {
+    const luminance = .299 * data[index] + .587 * data[index + 1] + .114 * data[index + 2];
+    const value = luminance < threshold ? 0 : 255;
+    data[index] = value;
+    data[index + 1] = value;
+    data[index + 2] = value;
+    data[index + 3] = 255;
+  }
+
+  context.putImageData(imageData, 0, 0);
+}
+
+function createPhotoDecodeCanvases(image: HTMLImageElement): HTMLCanvasElement[] {
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  if (!sourceWidth || !sourceHeight) {
+    throw new Error('La photo ne contient aucune image exploitable.');
+  }
+
+  const baseScale = Math.min(1, MAX_PHOTO_DECODE_DIMENSION / Math.max(sourceWidth, sourceHeight));
+
+  return PHOTO_DECODE_REGIONS.map(region => {
+    const sourceLeft = Math.round(sourceWidth * region.left);
+    const sourceTop = Math.round(sourceHeight * region.top);
+    const regionWidth = Math.max(1, Math.round(sourceWidth * region.width));
+    const regionHeight = Math.max(1, Math.round(sourceHeight * region.height));
+    const scale = baseScale * region.scale;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(regionWidth * scale));
+    canvas.height = Math.max(1, Math.round(regionHeight * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Le navigateur ne permet pas d’analyser cette photo.');
+    }
+
+    context.drawImage(
+      image,
+      sourceLeft,
+      sourceTop,
+      regionWidth,
+      regionHeight,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+
+    if (region.threshold !== null) {
+      applyLuminanceThreshold(context, canvas.width, canvas.height, region.threshold);
+    }
+
+    return canvas;
+  });
 }
 
 export class ZxingCameraScannerEngine implements CameraScannerEngine {
@@ -131,11 +228,27 @@ export class ZxingCameraScannerEngine implements CameraScannerEngine {
   async scanFile(imageFile: File): Promise<string> {
     const reader = this.readerFactory(createDecoderHints());
     let imageUrl: string | null = null;
+    let lastError: unknown;
 
     try {
       imageUrl = URL.createObjectURL(imageFile);
-      const result = await reader.decodeFromImageUrl(imageUrl);
-      return result.getText();
+      try {
+        const result = await reader.decodeFromImageUrl(imageUrl);
+        return result.getText();
+      } catch (error: unknown) {
+        lastError = error;
+      }
+
+      const image = await loadImage(imageUrl);
+      for (const canvas of createPhotoDecodeCanvases(image)) {
+        try {
+          return reader.decodeFromCanvas(canvas).getText();
+        } catch (error: unknown) {
+          lastError = error;
+        }
+      }
+
+      throw lastError ?? new Error('Aucun code-barres lisible n’a été trouvé.');
     } finally {
       if (imageUrl) {
         URL.revokeObjectURL(imageUrl);

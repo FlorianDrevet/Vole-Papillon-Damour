@@ -94,6 +94,7 @@ describe('ZxingCameraScannerEngine', () => {
     reader = jasmine.createSpyObj<CameraScannerReader>('CameraScannerReader', [
       'decodeFromConstraints',
       'decodeFromImageUrl',
+      'decodeFromCanvas',
     ]);
     controls = {stop: jasmine.createSpy('stop')};
     reader.decodeFromConstraints.and.returnValue(Promise.resolve(controls));
@@ -143,5 +144,44 @@ describe('ZxingCameraScannerEngine', () => {
 
     expect(onDetected).toHaveBeenCalledOnceWith('9782070363735');
     expect(controls.stop).toHaveBeenCalledOnceWith();
+  });
+
+  it('falls back to cropped photo decoding when the full photo cannot be decoded', async () => {
+    const result = jasmine.createSpyObj<Result>('Result', ['getText']);
+    result.getText.and.returnValue('9782070363735');
+    reader.decodeFromImageUrl.and.returnValue(Promise.reject(new Error('not found')));
+    reader.decodeFromCanvas.and.returnValue(result);
+    spyOn(URL, 'createObjectURL').and.returnValue(
+      `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1800"></svg>')}`,
+    );
+    spyOn(URL, 'revokeObjectURL');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    const value = await engine.scanFile(new File(['barcode'], 'book.jpg', {type: 'image/jpeg'}));
+
+    expect(reader.decodeFromCanvas).toHaveBeenCalled();
+    expect(value).toBe('9782070363735');
+  });
+
+  it('tries a thresholded photo candidate when screen artifacts prevent direct decoding', async () => {
+    const result = jasmine.createSpyObj<Result>('Result', ['getText']);
+    result.getText.and.returnValue('9782070363735');
+    reader.decodeFromImageUrl.and.returnValue(Promise.reject(new Error('not found')));
+    reader.decodeFromCanvas.and.callFake(canvas => {
+      const pixel = canvas.getContext('2d')?.getImageData(0, 0, 1, 1).data[0];
+      if (pixel !== 0 && pixel !== 255) {
+        throw new Error('candidate is not thresholded');
+      }
+      return result;
+    });
+    spyOn(URL, 'createObjectURL').and.returnValue(
+      `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1800"><rect width="1200" height="1800" fill="rgb(128,128,128)"/></svg>')}`,
+    );
+    spyOn(URL, 'revokeObjectURL');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    const value = await engine.scanFile(new File(['barcode'], 'book.jpg', {type: 'image/jpeg'}));
+
+    expect(value).toBe('9782070363735');
   });
 });
