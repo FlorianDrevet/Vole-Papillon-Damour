@@ -21,15 +21,16 @@ describe('HistoryComponent', () => {
     }).compileComponents();
   });
 
-  it('should separate nutrition from the seven medical conditions', () => {
+  it('should separate nutrition from the eight medical conditions', () => {
     fixture = TestBed.createComponent(HistoryComponent);
     fixture.detectChanges();
 
     const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 
-    expect(pageText).toContain('7 maladies, dont 3 rares');
-    expect(pageText).toContain('VOIR LES 7 FICHES');
+    expect(pageText).toContain('8 maladies, dont 4 rares');
+    expect(pageText).toContain('VOIR LES 8 FICHES');
+    expect(pageText).toContain('Des souvenirs plein les yeux');
     expect(pageText).toContain('Nutrition');
-    expect(pageText).not.toContain('Huit maladies rares');
+    expect(pageText).not.toContain('7 maladies, dont 3 rares');
   });
 });

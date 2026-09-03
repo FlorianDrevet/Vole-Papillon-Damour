@@ -13,15 +13,22 @@ describe('HirschsprungComponent', () => {
     }).compileComponents();
   });
 
-  it('should render the updated explanation and Maxence’s rare form', () => {
+  it('should render the syndromic ERBB3 explanation requested for Maxence', () => {
     fixture = TestBed.createComponent(HirschsprungComponent);
     fixture.detectChanges();
 
     const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 
     expect(pageText).toContain('cellules ganglionnaires');
-    expect(pageText).toContain('forme étagée');
-    expect(pageText).toContain('skip-segment Hirschsprung disease');
+    const sectionTitles = Array.from(
+      fixture.nativeElement.querySelectorAll('app-titled-section') as NodeListOf<Element>,
+    ).map(section => section.getAttribute('title'));
+
+    expect(fixture.nativeElement.querySelector('h2')?.textContent).toContain('Quand Hirschsprung n’est que la partie visible de la maladie');
+    expect(pageText).toContain('mutation du gène ERBB3');
+    expect(sectionTitles).toContain("Une maladie qui ne touche pas seulement l'intestin");
+    expect(pageText).toContain('maladie multisystémique');
+    expect(pageText).toContain('sous forme syndromique liée au gène ERBB3');
     expect(pageText).toContain('comme dans un embouteillage');
     expect(pageText).toContain('vomissements peuvent devenir bilieux');
   });

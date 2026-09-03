@@ -26,7 +26,7 @@ export class VpdEventsPageComponent implements OnInit {
   protected readonly lotoHighlights = [
     'Des dizaines de lots offerts par nos partenaires.',
     'Une après-midi en famille, ouverte à tous.',
-    "Les bénéfices partent directement dans l'aide aux enfants.",
+    'Les bénéfices servent aux besoins de Maxence et au soutien d’autres jeunes.',
   ];
   protected readonly booksPhotos = EVENT_EDITORIAL_PHOTOS[VpdEventEnum.Books];
   protected readonly booksHighlights = [

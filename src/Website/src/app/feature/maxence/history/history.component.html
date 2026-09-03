@@ -8,7 +8,7 @@
     </p>
     <div class="mt-1 flex flex-wrap gap-x-8 gap-y-5 font-mono text-[11px] tracking-[.12em] text-cyan">
       <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">2004</span>NAISSANCE</span>
-      <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">7</span>MALADIES</span>
+      <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">8</span>MALADIES</span>
       <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">1<span class="text-base">er</span></span>CAS AU MONDE</span>
       <span class="flex flex-col gap-1.5"><span class="font-serif text-2xl tracking-normal text-white">13</span>CHAPITRES</span>
     </div>
@@ -73,18 +73,18 @@
 <section class="bg-white px-shell py-16 lg:py-20">
   <app-section-eyebrow label="Comprendre ce que le récit raconte">
     <h2 class="max-w-[26ch] font-serif text-[30px] font-medium leading-tight text-ink-2 lg:text-[38px]">
-      Les deux autres volets de la rubrique Maxence.
+      Les trois autres volets de la rubrique Maxence.
     </h2>
   </app-section-eyebrow>
 
-  <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-2">
+  <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-3">
     <div class="group flex flex-col gap-4 rounded-sm border border-line-2 bg-paper p-7 transition focus-within:border-blue-2 hover:border-blue-2 lg:p-9">
       <span class="font-mono text-[10px] uppercase tracking-[.16em] text-orange-3">Onglet · Ses maladies</span>
       <h3 class="font-serif text-2xl font-medium leading-snug text-ink-2 lg:text-[28px]">
-        <a routerLink="/maxence/maladies" class="hover:text-blue">7 maladies, dont 3 rares</a>
+        <a routerLink="/maxence/maladies" class="hover:text-blue">8 maladies, dont 4 rares</a>
       </h3>
       <p class="text-[15px] leading-relaxed text-slate-2">
-        Maxence est concerné par 3 maladies rares : la maladie de Hirschsprung, la POIC et la dysplasie ectodermique.
+        Maxence est concerné par 4 maladies rares : la maladie de Hirschsprung, la POIC, la dysplasie ectodermique et la dystrophie FSH.
         Chaque fiche explique la maladie, puis ce qu'elle change concrètement au quotidien.
       </p>
       <ul class="mt-1 flex flex-wrap gap-2">
@@ -97,7 +97,21 @@
         }
       </ul>
       <a routerLink="/maxence/maladies" class="mt-2 inline-flex items-center gap-2 font-mono text-[11px] tracking-[.12em] text-blue">
-        VOIR LES 7 FICHES <span class="transition-transform group-hover:translate-x-1">→</span>
+        VOIR LES 8 FICHES <span class="transition-transform group-hover:translate-x-1">→</span>
+      </a>
+    </div>
+
+    <div class="group flex flex-col gap-4 rounded-sm border border-line-2 bg-paper p-7 transition focus-within:border-blue-2 hover:border-blue-2 lg:p-9">
+      <span class="font-mono text-[10px] uppercase tracking-[.16em] text-orange-3">Onglet · Ses souvenirs</span>
+      <h3 class="font-serif text-2xl font-medium leading-snug text-ink-2 lg:text-[28px]">
+        <a routerLink="/maxence/souvenirs" class="hover:text-blue">Des souvenirs plein les yeux</a>
+      </h3>
+      <p class="text-[15px] leading-relaxed text-slate-2">
+        Des rencontres avec des artistes, des sorties et des rêves devenus réalité : les parenthèses qui ont compté
+        dans la vie de Maxence.
+      </p>
+      <a routerLink="/maxence/souvenirs" class="mt-2 inline-flex items-center gap-2 font-mono text-[11px] tracking-[.12em] text-blue">
+        DÉCOUVRIR SES SOUVENIRS <span class="transition-transform group-hover:translate-x-1">→</span>
       </a>
     </div>
 

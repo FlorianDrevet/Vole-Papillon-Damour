@@ -33,9 +33,16 @@ describe('PricesComponent', () => {
     index: 2,
   };
 
+  const coinProduct: ProductModel = {
+    ...publicProduct,
+    id: 'coin-50c',
+    name: '50c',
+    index: 3,
+  };
+
   beforeEach(async () => {
     productFacade = jasmine.createSpyObj<ProductFacadeService>('ProductFacadeService', ['getPublicProducts']);
-    productFacade.getPublicProducts.and.returnValue(Promise.resolve([publicProduct, cashOnlyProduct]));
+    productFacade.getPublicProducts.and.returnValue(Promise.resolve([publicProduct, cashOnlyProduct, coinProduct]));
 
     await TestBed.configureTestingModule({
       declarations: [PricesComponent, ProductComponent],
@@ -54,5 +61,9 @@ describe('PricesComponent', () => {
   it('loads public products and excludes cash-only products', () => {
     expect(productFacade.getPublicProducts).toHaveBeenCalled();
     expect(component.filteredProducts()).toEqual([publicProduct]);
+  });
+
+  it('excludes coin denominations from the public price cards', () => {
+    expect(component.filteredProducts().some(product => product.name === '50c')).toBeFalse();
   });
 });

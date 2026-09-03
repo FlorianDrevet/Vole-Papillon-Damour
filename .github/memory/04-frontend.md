@@ -119,3 +119,15 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   development builds; the production build has only the expected initial bundle budget
   warning after adding the ZXing decoder and photo preprocessing. The CI workflow installs
   its lockfile and builds the app after the existing BackOffice and Website steps.
+
+## 2026-09-03 — Website editorial update from Famille Drevet
+
+- The Website now presents eight medical conditions, including a dedicated FSHD sheet at
+  `/maxence/maladies/fshd`, and a new `/maxence/souvenirs` route for the editorial memories
+  section. Both routes are exposed through the Maxence navigation and breadcrumb data.
+- The Maxence daily-life pages keep long first-person medical and school narratives in the
+  existing `app-titled-section` / editorial shell patterns; daily care orders enteral nutrition,
+  gastrostomy, digestive stoma, left-eye care, then antibiotics.
+- The public `PricesComponent` defensively hides only exact `10c` and `50c` denomination labels,
+  alongside the existing euro/centime exclusions. The authenticated cash surface still uses the
+  full product projection.

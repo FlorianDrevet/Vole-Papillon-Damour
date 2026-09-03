@@ -34,4 +34,21 @@ describe('DailyCareComponent', () => {
     expect(pageText).toContain('dormir en position semi-assise');
     expect(pageText).toContain('Inipomp 80 mg');
   });
+
+  it('should place the enteral nutrition, gastrostomy, stoma and eye sections before antibiotics', () => {
+    fixture = TestBed.createComponent(DailyCareComponent);
+    fixture.detectChanges();
+
+    const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+    const sectionTitles = Array.from(
+      fixture.nativeElement.querySelectorAll('app-titled-section') as NodeListOf<Element>,
+    ).map(section => section.getAttribute('title'));
+
+    expect(sectionTitles).toContain('Plusieurs chemins pour l’alimentation entérale');
+    expect(sectionTitles).toContain('Le bouton de gastrostomie');
+    expect(sectionTitles).toContain("La stomie digestive : lorsque l'intestin débouche sur le ventre");
+    expect(sectionTitles).toContain("Les soins de son œil gauche");
+    expect(sectionTitles.indexOf("Les soins de son œil gauche")).toBeLessThan(sectionTitles.indexOf('Les antibiotiques'));
+    expect(pageText).not.toContain('Les iléostomies');
+  });
 });

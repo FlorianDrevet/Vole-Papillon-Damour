@@ -32,7 +32,7 @@
   <div class="flex flex-1 flex-col gap-5 px-6 py-7 lg:px-8">
     <div class="flex flex-col gap-3">
       <h2 class="font-serif text-[28px] font-medium leading-[1.08] text-ink-2 lg:text-[32px]">{{ Title() }}</h2>
-      <p class="text-[15px] leading-relaxed text-slate-2 lg:min-h-[96px]"><ng-content></ng-content></p>
+      <div class="text-[15px] leading-relaxed text-slate-2 lg:min-h-[96px] [&>p+p]:mt-3"><ng-content></ng-content></div>
     </div>
 
     <!-- Bandeau "prochaine date" : toujours présent, il bascule sur un message
