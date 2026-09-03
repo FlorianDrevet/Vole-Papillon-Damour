@@ -29,6 +29,13 @@ public sealed class OpenScanSessionCommandHandler(
             return Errors.Book.TargetFairOnlyForNextFair();
         }
 
+        if (command.ClientSessionId == Guid.Empty)
+        {
+            return Error.Validation(
+                "Book.InvalidClientSessionId",
+                "The client session identifier cannot be empty.");
+        }
+
         var startedAt = dateTimeProvider.UtcNow;
         if (startedAt.Kind != DateTimeKind.Utc)
         {
@@ -36,6 +43,28 @@ public sealed class OpenScanSessionCommandHandler(
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        if (command.ClientSessionId is { } requestedSessionId)
+        {
+            var existingClientSession = await dbContext.ScanSessions
+                .SingleOrDefaultAsync(
+                    session => session.Id == ScanSessionId.Create(requestedSessionId),
+                    cancellationToken);
+            if (existingClientSession is not null)
+            {
+                if (existingClientSession.VolunteerId != command.VolunteerId ||
+                    existingClientSession.Mode != command.Mode ||
+                    existingClientSession.TargetAssoEventsId != command.TargetAssoEventsId)
+                {
+                    return Error.Conflict(
+                        "Book.ClientSessionConflict",
+                        "The client session identifier is already assigned to another session.");
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+                return ScanSessionResult.From(existingClientSession);
+            }
+        }
 
         var existingSession = await dbContext.ScanSessions
             .SingleOrDefaultAsync(
@@ -49,11 +78,18 @@ public sealed class OpenScanSessionCommandHandler(
             return Errors.Book.ActiveScanSessionExists(command.VolunteerId);
         }
 
-        var session = ScanSessionAggregate.Create(
-            command.VolunteerId,
-            command.Mode,
-            command.TargetAssoEventsId,
-            startedAt);
+        var session = command.ClientSessionId is { } clientSessionId
+            ? ScanSessionAggregate.Create(
+                ScanSessionId.Create(clientSessionId),
+                command.VolunteerId,
+                command.Mode,
+                command.TargetAssoEventsId,
+                startedAt)
+            : ScanSessionAggregate.Create(
+                command.VolunteerId,
+                command.Mode,
+                command.TargetAssoEventsId,
+                startedAt);
         dbContext.ScanSessions.Add(session);
 
         await dbContext.SaveChangesAsync(cancellationToken);

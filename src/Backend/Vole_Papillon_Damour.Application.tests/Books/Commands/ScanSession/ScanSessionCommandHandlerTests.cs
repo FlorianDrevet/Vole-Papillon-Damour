@@ -36,6 +36,30 @@ public sealed class ScanSessionCommandHandlerTests
     }
 
     [Fact]
+    public async Task Open_WhenClientSessionIdIsReplayed_ReturnsTheSameSession()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new OpenScanSessionCommandHandler(fixture.Context, clock);
+        var clientSessionId = Guid.Parse("00000000-0000-0000-0000-000000000099");
+        var command = new OpenScanSessionCommand(
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002")),
+            ScanMode.AvailableNow,
+            null,
+            clientSessionId);
+
+        var firstResult = await handler.Handle(command, CancellationToken.None);
+        var replayResult = await handler.Handle(command, CancellationToken.None);
+
+        firstResult.IsError.Should().BeFalse();
+        replayResult.IsError.Should().BeFalse();
+        firstResult.Value.ScanSessionId.Value.Should().Be(clientSessionId);
+        replayResult.Value.Should().Be(firstResult.Value);
+        (await fixture.Context.ScanSessions.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
     public async Task Open_WhenVolunteerAlreadyHasAnActiveSession_ReturnsConflict()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

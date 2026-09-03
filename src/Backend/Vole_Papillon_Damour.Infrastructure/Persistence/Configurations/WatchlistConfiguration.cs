@@ -30,6 +30,10 @@ public sealed class WatchlistConfiguration : IEntityTypeConfiguration<Watchlist>
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)
             .IsRequired();
+        builder.Property(watchlist => watchlist.UpdatedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)
+            .IsRequired();
 
         builder.HasOne<User>()
             .WithOne()

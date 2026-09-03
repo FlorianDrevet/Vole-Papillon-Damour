@@ -356,7 +356,7 @@ public sealed class BookAlertOutboxTests
             var watchlist = Watchlist.Create(userId, StartedAt);
             if (suspended)
             {
-                watchlist.SuspendAlerts();
+                watchlist.SuspendAlerts(StartedAt.AddMinutes(1));
             }
 
             Context.Watchlists.Add(watchlist);

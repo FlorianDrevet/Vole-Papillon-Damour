@@ -1,11 +1,40 @@
 <main class="scan-shell">
+  <div class="mode-banner" role="status" aria-live="polite">
+    <span class="mode-indicator" [class.mode-indicator-offline]="!isOnline" aria-hidden="true"></span>
+    <div>
+      <strong>{{ isOnline ? 'Connecté' : 'Hors ligne' }}</strong>
+      <span *ngIf="session"> · Session {{ session.mode === 'AvailableNow' ? 'disponible maintenant' : 'prochaine bourse' }}</span>
+      <span *ngIf="pendingCount > 0"> · {{ pendingCount }} geste(s) local(aux) à transmettre</span>
+      <span *ngIf="pendingCount === 0"> · aucun geste en attente</span>
+      <span *ngIf="isAuthenticated && accountName"> · {{ accountName }}</span>
+    </div>
+    <div class="mode-actions" *ngIf="authAvailable">
+      <button *ngIf="!isAuthenticated" type="button" class="mode-action" (click)="login()">
+        Se connecter
+      </button>
+      <ng-container *ngIf="isAuthenticated">
+        <button type="button" class="mode-action" [disabled]="syncStatus === 'syncing' || !isOnline" (click)="syncNow()">
+          {{ syncLabel }}
+        </button>
+        <button type="button" class="mode-action mode-action-secondary" (click)="logout()">Se déconnecter</button>
+      </ng-container>
+    </div>
+  </div>
+
+  <p *ngIf="storageError" class="message message-warning" role="alert">{{ storageError }}</p>
+  <p *ngIf="authAvailable && !isAuthenticated" class="message message-info" role="status">
+    Le tri local fonctionne sans connexion. Connectez-vous avec un compte bénévole <em>Tri</em>
+    pour synchroniser le catalogue et transmettre les décisions.
+  </p>
+  <p *ngIf="syncError" class="message message-warning" role="alert">{{ syncError }}</p>
+
   <header class="scan-header">
     <p class="eyebrow">Vole Papillon d’Amour · bourse aux livres</p>
     <h1>Scanner un livre</h1>
     <p class="intro">
-      Cette sonde affiche une notice bibliographique sans enregistrer de tri. Scannez le
-      code-barres ISBN (les barres noires, pas le numéro imprimé) avec une scanette,
-      utilisez la caméra ou saisissez l’ISBN.
+      Le verdict est calculé immédiatement depuis la copie locale du catalogue. Scannez
+      le code-barres ISBN avec une scanette, utilisez la caméra ou saisissez l’ISBN ; le
+      geste reste conservé même si le réseau disparaît.
     </p>
   </header>
 
@@ -13,7 +42,7 @@
     <div class="panel-heading">
       <span class="status-dot" aria-hidden="true"></span>
       <div>
-        <p class="eyebrow">S0-2 · consultation seule</p>
+        <p class="eyebrow">P1-5 · décision locale</p>
         <h2 id="scan-title">Identifier une édition</h2>
       </div>
     </div>
@@ -61,13 +90,29 @@
     <p *ngIf="cameraError" class="message message-error" role="alert">{{ cameraError }}</p>
     <p *ngIf="errorMessage" class="message message-error" role="alert">{{ errorMessage }}</p>
     <p *ngIf="isLoading" class="message" role="status" aria-live="polite">Recherche de la notice…</p>
+
+    <section *ngIf="localScan" class="local-verdict" aria-labelledby="verdict-title" aria-live="polite">
+      <div>
+        <p class="eyebrow">Verdict local · {{ localScan.entry.status === 'Pending' ? 'décision à confirmer' : 'décision conservée' }}</p>
+        <h2 id="verdict-title">{{ getVerdictLabel() }}</h2>
+        <p>{{ getVerdictDescription() }}</p>
+      </div>
+      <div class="verdict-facts">
+        <span *ngIf="localScan.verdict.isRare">Fiche marquée rare</span>
+        <span>ISBN {{ localScan.entry.isbn13 }}</span>
+      </div>
+      <div class="decision-actions" *ngIf="localScan.entry.status === 'Pending'">
+        <button type="button" class="decision-keep" (click)="keepCurrentScan()">Garder ce livre</button>
+        <button type="button" class="decision-reject" (click)="rejectCurrentScan()">Écarter ce livre</button>
+      </div>
+    </section>
   </section>
 
-  <section *ngIf="metadata" class="book-result" aria-live="polite" aria-labelledby="book-title">
+  <section *ngIf="metadata || localScan" class="book-result" aria-live="polite" aria-labelledby="book-title">
     <div class="cover-frame" *ngIf="coverUrl; else noCover">
       <img
         [src]="coverUrl"
-        [alt]="'Couverture de ' + (metadata.title || 'ce livre')"
+        [alt]="'Couverture de ' + (metadata?.title || 'ce livre')"
         (error)="onCoverError()">
     </div>
     <ng-template #noCover>
@@ -75,26 +120,30 @@
     </ng-template>
 
     <div class="book-details">
-      <p class="eyebrow">Notice trouvée · {{ metadata.source }}</p>
-      <h2 id="book-title">{{ metadata.title || 'Titre non renseigné' }}</h2>
-      <dl>
-        <div *ngIf="metadata.authors">
+      <p class="eyebrow" *ngIf="metadata; else metadataPending">Notice trouvée · {{ metadata.source }}</p>
+      <ng-template #metadataPending><p class="eyebrow">Notice bibliographique en arrière-plan</p></ng-template>
+      <div class="title-slot">
+        <h2 id="book-title">{{ metadata?.title || localScan?.catalogBook?.title || (isLoading ? 'Notice en attente…' : 'Titre non renseigné') }}</h2>
+      </div>
+      <dl *ngIf="metadata">
+        <div *ngIf="metadata && metadata.authors">
           <dt>Auteur</dt>
           <dd>{{ metadata.authors }}</dd>
         </div>
-        <div *ngIf="metadata.publisher">
+        <div *ngIf="metadata && metadata.publisher">
           <dt>Éditeur</dt>
           <dd>{{ metadata.publisher }}</dd>
         </div>
-        <div *ngIf="metadata.publicationYear">
+        <div *ngIf="metadata && metadata.publicationYear">
           <dt>Année</dt>
           <dd>{{ metadata.publicationYear }}</dd>
         </div>
         <div>
           <dt>ISBN-13</dt>
-          <dd>{{ metadata.isbn13 }}</dd>
+          <dd>{{ (metadata && metadata.isbn13) || localScan?.entry?.isbn13 }}</dd>
         </div>
       </dl>
+      <p *ngIf="!metadata" class="message">La notice n’empêche pas le tri : le verdict est déjà disponible.</p>
     </div>
   </section>
 </main>

@@ -10,4 +10,5 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 public sealed record OpenScanSessionCommand(
     UserId VolunteerId,
     ScanMode Mode,
-    AssoEventsId? TargetAssoEventsId) : IRequest<ErrorOr<ScanSessionResult>>;
+    AssoEventsId? TargetAssoEventsId,
+    Guid? ClientSessionId = null) : IRequest<ErrorOr<ScanSessionResult>>;

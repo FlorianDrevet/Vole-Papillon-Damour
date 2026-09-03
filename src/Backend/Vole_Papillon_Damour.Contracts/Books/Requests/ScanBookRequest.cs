@@ -1,0 +1,7 @@
+namespace Vole_Papillon_Damour.Contracts.Books.Requests;
+
+public sealed record ScanBookRequest(
+    string Isbn,
+    bool Kept,
+    DateTime OccurredAt,
+    Guid ClientGestureId);

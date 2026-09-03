@@ -29,7 +29,7 @@ public sealed class WatchlistTests
     {
         var watchlist = Watchlist.Create(UserId.CreateUnique(), CreatedAt);
 
-        watchlist.SuspendAlerts();
+        watchlist.SuspendAlerts(CreatedAt.AddMinutes(1));
 
         watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Suspended);
         watchlist.AlertsEnabled.Should().BeFalse();
@@ -40,12 +40,12 @@ public sealed class WatchlistTests
     {
         var watchlist = Watchlist.Create(UserId.CreateUnique(), CreatedAt);
 
-        watchlist.RecordEmailBounce();
-        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(1));
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(2));
         watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Active);
         watchlist.BounceCount.Should().Be(2);
 
-        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(3));
 
         watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Suspended);
         watchlist.AlertsEnabled.Should().BeFalse();
@@ -56,16 +56,16 @@ public sealed class WatchlistTests
     public void RecordSuccessfulEmailDelivery_ResetsConsecutiveBouncesWithoutReactivatingSuspendedAlerts()
     {
         var watchlist = Watchlist.Create(UserId.CreateUnique(), CreatedAt);
-        watchlist.RecordEmailBounce();
-        watchlist.RecordSuccessfulEmailDelivery();
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(1));
+        watchlist.RecordSuccessfulEmailDelivery(CreatedAt.AddMinutes(2));
 
         watchlist.BounceCount.Should().Be(0);
         watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Active);
 
-        watchlist.RecordEmailBounce();
-        watchlist.RecordEmailBounce();
-        watchlist.RecordEmailBounce();
-        watchlist.RecordSuccessfulEmailDelivery();
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(3));
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(4));
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(5));
+        watchlist.RecordSuccessfulEmailDelivery(CreatedAt.AddMinutes(6));
 
         watchlist.BounceCount.Should().Be(0);
         watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Suspended);
@@ -76,11 +76,11 @@ public sealed class WatchlistTests
     public void RecordEmailBounce_DoesNotOverrideAnAdministrativeBlock()
     {
         var watchlist = Watchlist.Create(UserId.CreateUnique(), CreatedAt);
-        watchlist.BlockAlerts();
+        watchlist.BlockAlerts(CreatedAt.AddMinutes(1));
 
-        watchlist.RecordEmailBounce();
-        watchlist.RecordEmailBounce();
-        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(2));
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(3));
+        watchlist.RecordEmailBounce(CreatedAt.AddMinutes(4));
 
         watchlist.AlertStatus.Should().Be(WatchlistAlertStatus.Blocked);
         watchlist.BounceCount.Should().Be(3);

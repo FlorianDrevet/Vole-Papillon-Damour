@@ -22,8 +22,13 @@ public sealed class ScanSession : AggregateRoot<ScanSessionId>
     public int KeptCount { get; private set; }
     public int RejectedCount { get; private set; }
 
-    private ScanSession(UserId volunteerId, ScanMode mode, AssoEventsId? targetAssoEventsId, DateTime startedAt)
-        : base(ScanSessionId.CreateUnique())
+    private ScanSession(
+        ScanSessionId id,
+        UserId volunteerId,
+        ScanMode mode,
+        AssoEventsId? targetAssoEventsId,
+        DateTime startedAt)
+        : base(id ?? throw new ArgumentNullException(nameof(id)))
     {
         VolunteerId = volunteerId ?? throw new ArgumentNullException(nameof(volunteerId));
         Mode = mode;
@@ -40,7 +45,17 @@ public sealed class ScanSession : AggregateRoot<ScanSessionId>
         AssoEventsId? targetAssoEventsId,
         DateTime startedAt)
     {
-        return new ScanSession(volunteerId, mode, targetAssoEventsId, startedAt);
+        return new ScanSession(ScanSessionId.CreateUnique(), volunteerId, mode, targetAssoEventsId, startedAt);
+    }
+
+    public static ScanSession Create(
+        ScanSessionId id,
+        UserId volunteerId,
+        ScanMode mode,
+        AssoEventsId? targetAssoEventsId,
+        DateTime startedAt)
+    {
+        return new ScanSession(id, volunteerId, mode, targetAssoEventsId, startedAt);
     }
 
     public ScanSession()

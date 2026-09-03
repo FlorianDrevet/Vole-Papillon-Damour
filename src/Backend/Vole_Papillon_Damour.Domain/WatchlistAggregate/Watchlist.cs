@@ -12,6 +12,7 @@ public sealed class Watchlist : AggregateRoot<UserId>
     public WatchlistAlertStatus AlertStatus { get; private set; } = WatchlistAlertStatus.Active;
     public int BounceCount { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public DateTime UpdatedAt { get; private set; }
 
     private Watchlist(UserId userId, DateTime createdAt) : base(userId)
     {
@@ -21,6 +22,7 @@ public sealed class Watchlist : AggregateRoot<UserId>
         }
 
         CreatedAt = DomainTime.RequireUtc(createdAt, nameof(createdAt));
+        UpdatedAt = CreatedAt;
     }
 
     public static Watchlist Create(UserId userId, DateTime createdAt)
@@ -34,32 +36,38 @@ public sealed class Watchlist : AggregateRoot<UserId>
 
     public bool AlertsEnabled => AlertStatus == WatchlistAlertStatus.Active;
 
-    public void SuspendAlerts()
+    public void SuspendAlerts(DateTime updatedAt)
     {
         AlertStatus = WatchlistAlertStatus.Suspended;
+        UpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
     }
 
-    public void ActivateAlerts()
+    public void ActivateAlerts(DateTime updatedAt)
     {
         AlertStatus = WatchlistAlertStatus.Active;
+        UpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
     }
 
-    public void BlockAlerts()
+    public void BlockAlerts(DateTime updatedAt)
     {
         AlertStatus = WatchlistAlertStatus.Blocked;
+        UpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
     }
 
-    public void RecordEmailBounce()
+    public void RecordEmailBounce(DateTime updatedAt)
     {
         BounceCount++;
         if (BounceCount >= BounceSuspensionThreshold && AlertStatus != WatchlistAlertStatus.Blocked)
         {
             AlertStatus = WatchlistAlertStatus.Suspended;
         }
+
+        UpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
     }
 
-    public void RecordSuccessfulEmailDelivery()
+    public void RecordSuccessfulEmailDelivery(DateTime updatedAt)
     {
         BounceCount = 0;
+        UpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
     }
 }

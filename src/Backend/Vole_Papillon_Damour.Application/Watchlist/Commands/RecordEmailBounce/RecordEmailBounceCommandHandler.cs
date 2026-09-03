@@ -64,7 +64,7 @@ public sealed class RecordEmailBounceCommandHandler(
             return RecordEmailBounceResult.From(watchlist, alreadyRecorded: true);
         }
 
-        watchlist.RecordEmailBounce();
+        watchlist.RecordEmailBounce(recordedAt);
         dbContext.EmailBounceEvents.Add(EmailBounceEvent.Create(
             Guid.NewGuid(),
             providerEventId,
