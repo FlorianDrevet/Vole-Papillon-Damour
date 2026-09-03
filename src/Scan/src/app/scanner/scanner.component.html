@@ -64,11 +64,14 @@
   </section>
 
   <section *ngIf="metadata" class="book-result" aria-live="polite" aria-labelledby="book-title">
-    <div class="cover-frame" *ngIf="metadata.coverUrl; else noCover">
-      <img [src]="metadata.coverUrl" [alt]="'Couverture de ' + (metadata.title || 'ce livre')">
+    <div class="cover-frame" *ngIf="coverUrl; else noCover">
+      <img
+        [src]="coverUrl"
+        [alt]="'Couverture de ' + (metadata.title || 'ce livre')"
+        (error)="onCoverError()">
     </div>
     <ng-template #noCover>
-      <div class="cover-frame cover-placeholder" aria-hidden="true">Pas de couverture</div>
+      <div class="cover-frame cover-placeholder">Couverture indisponible</div>
     </ng-template>
 
     <div class="book-details">
