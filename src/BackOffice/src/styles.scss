@@ -66,6 +66,13 @@ $custom-theme: mat.define-theme((
     scroll-behavior: smooth;
   }
 
+  // `app-root` est l'unique enfant de `body` : sans ça il s'arrête à la hauteur de
+  // son contenu, et sur une page courte le pied de page flottait au milieu de
+  // l'écran avec une bande de fond vide en dessous.
+  app-root {
+    @apply flex flex-1 flex-col;
+  }
+
   a, button {
     transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease,
       box-shadow 180ms ease, transform 180ms ease;

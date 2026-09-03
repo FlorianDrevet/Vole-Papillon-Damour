@@ -1,5 +1,11 @@
-<app-navigation></app-navigation>
-<main class="flex-1">
+@if (showChrome()) {
+  <app-navigation></app-navigation>
+}
+
+<main class="flex flex-1 flex-col">
   <router-outlet></router-outlet>
 </main>
-<app-footer></app-footer>
+
+@if (showChrome()) {
+  <app-footer></app-footer>
+}

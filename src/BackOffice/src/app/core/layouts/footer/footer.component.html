@@ -1,15 +1,13 @@
-@if (router.url !== '/login') {
-  <footer class="flex flex-col gap-4 border-t border-cyan/[.18] bg-ink px-shell py-8 font-sans text-mist-2 sm:flex-row sm:items-center sm:justify-between">
-    <span class="flex items-center gap-2.5">
-      <img class="h-8 w-8 object-contain" src="logos/papillon_without_back.png" alt="">
-      <span class="font-serif text-base text-white">Vole Papillon d'Amour · Espace bénévoles</span>
-    </span>
-    <a
-      [href]="environment.url_vpd_web_site"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan hover:text-white">
-      Voir le site internet →
-    </a>
-  </footer>
-}
+<footer class="mt-auto flex flex-col gap-4 border-t border-cyan/[.18] bg-ink px-shell py-8 font-sans text-mist-2 sm:flex-row sm:items-center sm:justify-between">
+  <span class="flex items-center gap-2.5">
+    <img class="h-8 w-8 object-contain" src="logos/papillon_without_back.png" alt="">
+    <span class="font-serif text-base text-white">Vole Papillon d'Amour · Espace bénévoles</span>
+  </span>
+  <a
+    [href]="environment.url_vpd_web_site"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="font-mono text-[11px] uppercase tracking-[.14em] text-cyan hover:text-white">
+    Voir le site internet →
+  </a>
+</footer>

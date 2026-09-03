@@ -1,10 +1,11 @@
 import {Injectable} from '@angular/core';
 import {MsalService} from '@azure/msal-angular';
-import {AccountInfo} from '@azure/msal-browser';
-import {Observable, throwError} from 'rxjs';
+import {AccountInfo, InteractionRequiredAuthError} from '@azure/msal-browser';
+import {catchError, Observable, throwError} from 'rxjs';
 import {map} from 'rxjs/operators';
 
 import {environment} from '../../../environments/environment';
+import {loginRequest} from '../auth/msal-config';
 
 @Injectable({
   providedIn: 'root',
@@ -22,7 +23,23 @@ export class ApiAccessTokenService {
     return this.msalService.acquireTokenSilent({
       account,
       scopes: [environment.entra.apiScope],
-    }).pipe(map(result => result.accessToken));
+    }).pipe(
+      map(result => result.accessToken),
+      catchError((error: unknown) => {
+        // Le compte est encore en cache mais Entra refuse de renouveler le jeton
+        // sans intervention (session expirée, consentement révoqué, MFA demandé).
+        // Renvoyer sur l'écran de connexion ne débloquerait rien — le compte y est
+        // toujours vu comme valide : seule une redirection interactive rétablit la
+        // session, on la déclenche donc directement.
+        if (error instanceof InteractionRequiredAuthError) {
+          this.msalService
+            .acquireTokenRedirect({...loginRequest, account})
+            .subscribe({error: () => undefined});
+        }
+
+        return throwError(() => error);
+      }),
+    );
   }
 
   private getActiveAccount(): AccountInfo | null {

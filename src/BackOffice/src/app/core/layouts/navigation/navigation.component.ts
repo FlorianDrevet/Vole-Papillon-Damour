@@ -1,17 +1,26 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
-import {Router} from "@angular/router";
-import {NavigationItemInterface} from "../../../shared/interfaces/navigationItem.interface";
+import {Component, DestroyRef, inject, signal} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {NavigationEnd, Router} from '@angular/router';
+import {filter} from 'rxjs/operators';
+
+import {NavigationItemInterface} from '../../../shared/interfaces/navigationItem.interface';
 
 @Component({
-    selector: 'app-navigation',
-    templateUrl: './navigation.component.html',
-    styleUrl: './navigation.component.scss',
-    standalone: false
+  selector: 'app-navigation',
+  templateUrl: './navigation.component.html',
+  standalone: false,
 })
-export class NavigationComponent implements OnInit {
-  router = inject(Router)
+export class NavigationComponent {
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
-  url = signal<string>('');
+  /**
+   * URL courante, suivie en signal : la détection de changement du BackOffice est
+   * « zoneless », lire `router.url` directement dans le gabarit ne redéclencherait
+   * aucun rendu à la navigation et la rubrique active resterait figée.
+   */
+  private readonly url = signal(this.router.url);
+
   readonly navigationUrls: NavigationItemInterface[] = [
     {
       url: "/actualites",
@@ -30,9 +39,16 @@ export class NavigationComponent implements OnInit {
     },
   ];
 
-  ngOnInit(): void {
-    this.router.events.subscribe(() => {
-      this.url.set(this.router.url);
-    });
+  constructor() {
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(event => this.url.set(event.urlAfterRedirects));
+  }
+
+  protected isActive(item: NavigationItemInterface): boolean {
+    return this.url().startsWith(item.url);
   }
 }

@@ -1,71 +1,78 @@
-import {Injectable} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import axios from 'axios'
-import {environment} from "../../../environments/environment";
-import {MethodEnum} from "../enums/method.enum";
 import {Router} from "@angular/router";
 import {firstValueFrom} from 'rxjs';
+import {MsalService} from '@azure/msal-angular';
 
+import {environment} from "../../../environments/environment";
+import {MethodEnum} from "../enums/method.enum";
+import {LOGIN_ROUTE} from '../auth/msal-config';
 import {ApiAccessTokenService} from './api-access-token.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AxiosService {
+  private readonly apiAccessTokenService = inject(ApiAccessTokenService);
+  private readonly msalService = inject(MsalService);
+  private readonly router = inject(Router);
 
-  constructor(private readonly apiAccessTokenService: ApiAccessTokenService, private readonly router: Router) {
+  constructor() {
     axios.defaults.baseURL = environment.api_url
 
     axios.interceptors.request.use(
-      async function (config) {
-        try {
-          const token = await firstValueFrom(apiAccessTokenService.getApiAccessToken$());
-          config.headers.Authorization = `Bearer ${token}`;
-          return config;
-        } catch (error) {
-          await router.navigate(['/login']);
-          return Promise.reject(error);
-        }
+      async config => {
+        const token = await firstValueFrom(this.apiAccessTokenService.getApiAccessToken$())
+          .catch(error => {
+            // Renvoyer systématiquement vers l'écran de connexion faisait boucler
+            // l'application dès qu'un compte restait en cache : la page de
+            // connexion voyait ce compte, laissait entrer, l'appel repartait, et
+            // ainsi de suite. On n'y renvoie donc que si plus aucun compte n'est
+            // connu ; sinon la reprise de session est déjà lancée ailleurs
+            // (ApiAccessTokenService) et l'erreur remonte à l'appelant.
+            this.redirectToLoginIfSignedOut();
+            throw error;
+          });
+
+        config.headers.Authorization = `Bearer ${token}`;
+        return config;
       },
-      function (error) {
-        return Promise.reject(error);
-      }
+      error => Promise.reject(error),
     );
 
     axios.interceptors.response.use(
-      function (response) {
-        return response;
-      },
-      function (error) {
-        if (error.response && error.response.status === 401) {
-          router.navigate(['/login']).then(null);
+      response => response,
+      error => {
+        if (error.response?.status === 401) {
+          void this.router.navigate([LOGIN_ROUTE], {queryParams: {raison: 'session'}});
         }
         return Promise.reject(error);
-      }
+      },
     );
   }
 
   public async request$(method: MethodEnum, url: string, data: any, headers: object = {}, isFormFile: boolean = false): Promise<any> {
-    try {
-      if (isFormFile) {
-        headers = {...headers, "Content-Type": "multipart/form-data"};
-      }
-      else {
-        headers = {...headers, "Content-Type": "application/json"};
-      }
+    if (isFormFile) {
+      headers = {...headers, "Content-Type": "multipart/form-data"};
+    }
+    else {
+      headers = {...headers, "Content-Type": "application/json"};
+    }
 
-      const response = await axios({
-        method,
-        url,
-        data,
-        headers: headers,
-        params: method === MethodEnum.GET ? data : {}
-      });
+    const response = await axios({
+      method,
+      url,
+      data,
+      headers: headers,
+      params: method === MethodEnum.GET ? data : {}
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
+    return response.data;
+  }
+
+  private redirectToLoginIfSignedOut(): void {
+    if (this.msalService.instance.getAllAccounts().length === 0) {
+      void this.router.navigate([LOGIN_ROUTE]);
     }
   }
 }
-
-
