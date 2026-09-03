@@ -48,6 +48,7 @@ import { PoicComponent } from './maxence/diseases/poic/poic.component';
 import { HyperthyroidieComponent } from './maxence/diseases/hyperthyroidie/hyperthyroidie.component';
 import { FshdComponent } from './maxence/diseases/fshd/fshd.component';
 import { DailyCareComponent } from './maxence/daily-life/daily-care/daily-care.component';
+import { DailyLifeComponent } from './maxence/daily-life/daily-life.component';
 import { HospitalCareComponent } from './maxence/daily-life/hospital-care/hospital-care.component';
 import { SchoolComponent } from './maxence/daily-life/school/school.component';
 import { OrgansTransplantComponent } from './maxence/daily-life/organs-transplant/organs-transplant.component';
@@ -113,6 +114,7 @@ import {SouvenirsComponent} from './maxence/souvenirs/souvenirs.component';
     HyperthyroidieComponent,
     FshdComponent,
     DailyCareComponent,
+    DailyLifeComponent,
     HospitalCareComponent,
     SchoolComponent,
     OrgansTransplantComponent,

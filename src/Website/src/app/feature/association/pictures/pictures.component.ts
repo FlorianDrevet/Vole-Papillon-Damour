@@ -18,5 +18,5 @@ export class PicturesComponent {
     'images/Association/don-dvd.jpg',
   ];
 
-  readonly upcomingAlbums = ['Loto solidaire', 'Foire aux livres', 'Remises de matériel', 'Marché de Noël'];
+  readonly upcomingAlbums = ['Loto solidaire', 'Foire aux livres', 'Remises de matériel'];
 }

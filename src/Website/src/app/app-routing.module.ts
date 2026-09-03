@@ -24,6 +24,7 @@ import {PoicComponent} from "./feature/maxence/diseases/poic/poic.component";
 import {HyperthyroidieComponent} from "./feature/maxence/diseases/hyperthyroidie/hyperthyroidie.component";
 import {FshdComponent} from "./feature/maxence/diseases/fshd/fshd.component";
 import {DailyCareComponent} from "./feature/maxence/daily-life/daily-care/daily-care.component";
+import {DailyLifeComponent} from "./feature/maxence/daily-life/daily-life.component";
 import {HospitalCareComponent} from "./feature/maxence/daily-life/hospital-care/hospital-care.component";
 import {SchoolComponent} from "./feature/maxence/daily-life/school/school.component";
 import {OrgansTransplantComponent} from "./feature/maxence/daily-life/organs-transplant/organs-transplant.component";
@@ -181,8 +182,9 @@ const routes: Routes = [
         children: [
           {
             path: '',
-            redirectTo: 'soins-quotidiens',
-            pathMatch: 'full'
+            component: DailyLifeComponent,
+            pathMatch: 'full',
+            title: "Son quotidien, ses combats | Vole Papillon d'Amour"
           },
           {
             path: 'soins-quotidiens',

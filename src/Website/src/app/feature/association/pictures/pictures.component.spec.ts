@@ -29,4 +29,11 @@ describe('PicturesComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should not promote a market in the upcoming albums', () => {
+    const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+
+    expect(pageText).not.toContain('Marché de Noël');
+    expect(component.upcomingAlbums).not.toContain('Marché de Noël');
+  });
 });

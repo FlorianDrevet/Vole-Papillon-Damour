@@ -137,6 +137,12 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - The Website now presents eight medical conditions, including a dedicated FSHD sheet at
   `/maxence/maladies/fshd`, and a new `/maxence/souvenirs` route for the editorial memories
   section. Both routes are exposed through the Maxence navigation and breadcrumb data.
+- The `/maxence/vie-quotidienne` route is now an editorial landing page with four visible
+  chapters (daily care, hospital care, school, and transplant); the school page is reachable
+  from both the landing page and the footer while the existing detail routes remain available.
+- The Website association copy now uses “loi 1901”, invites visitors to give “un peu de votre
+  temps”, removes former market activity, clarifies “cartons de livres”, and omits the removed
+  “Le bureau” and “Tout est public” presentation sections.
 - The Maxence daily-life pages keep long first-person medical and school narratives in the
   existing `app-titled-section` / editorial shell patterns; daily care orders enteral nutrition,
   gastrostomy, digestive stoma, left-eye care, then antibiotics.
