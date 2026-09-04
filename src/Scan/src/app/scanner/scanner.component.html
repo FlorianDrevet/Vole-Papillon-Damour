@@ -13,20 +13,6 @@
     [class.camera-engine-host-active]="cameraActive"
     aria-label="Aperçu de la caméra pour le code-barres"></div>
 
-  <section
-    *ngIf="storageError || syncError || cameraError || errorMessage || (authAvailable && !isAuthenticated && screen === 'home')"
-    class="runtime-notices"
-    aria-live="polite">
-    <p *ngIf="storageError" class="notice notice-warning" role="alert">{{ storageError }}</p>
-    <p *ngIf="syncError" class="notice notice-warning" role="alert">{{ syncError }}</p>
-    <p *ngIf="cameraError" class="notice notice-error message-error" role="alert">{{ cameraError }}</p>
-    <p *ngIf="errorMessage" class="notice notice-error message-error" role="alert">{{ errorMessage }}</p>
-    <p *ngIf="authAvailable && !isAuthenticated && screen === 'home'" class="notice notice-info" role="status">
-      Le tri local fonctionne sans connexion. Connectez-vous avec un compte bénévole <em>Tri</em>
-      pour synchroniser le catalogue et transmettre les décisions.
-    </p>
-  </section>
-
   <ng-container [ngSwitch]="screen">
     <section *ngSwitchCase="'home'" class="app-screen home-screen" aria-labelledby="home-title">
       <header class="home-header">
@@ -171,8 +157,21 @@
               <span class="reticle-line"></span>
             </div>
             <h1 id="tri-title">Scannez le code-barres</h1>
-            <p *ngIf="!isLoading">La gâchette de la scanette suffit.</p>
+            <p *ngIf="!isLoading && !cameraActive">La caméra va s’activer automatiquement.</p>
+            <p *ngIf="!isLoading && cameraActive">Cadrez le code-barres dans la vue caméra.</p>
             <p *ngIf="isLoading">Lecture du livre…</p>
+            <p *ngIf="cameraError" class="scan-feedback scan-feedback-error message-error" role="alert">
+              {{ cameraError }}
+            </p>
+            <p *ngIf="errorMessage" class="scan-feedback scan-feedback-error message-error" role="alert">
+              {{ errorMessage }}
+            </p>
+            <p *ngIf="storageError || syncError" class="scan-feedback scan-feedback-warning" role="alert">
+              {{ storageError || syncError }}
+            </p>
+            <button *ngIf="cameraError" type="button" class="camera-retry" (click)="retryCamera()">
+              Réessayer la caméra
+            </button>
           </section>
         </ng-container>
 
@@ -240,6 +239,7 @@
               <div><span>Recherché par</span><strong [class.fact-highlight]="requesterQuantity > 0">{{ requesterQuantity > 0 ? requesterQuantity : '—' }}</strong></div>
             </div>
             <p *ngIf="!metadata" class="result-note">Le verdict est disponible immédiatement ; la notice arrivera en arrière-plan.</p>
+            <p *ngIf="errorMessage" class="result-note message-error" role="alert">{{ errorMessage }}</p>
           </section>
         </ng-template>
       </div>
@@ -252,15 +252,8 @@
           </svg>
           Saisir un code
         </button>
-        <button type="button" class="dock-primary" (click)="toggleCamera()">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3.5 8V5.5a2 2 0 0 1 2-2H8M16 3.5h2.5a2 2 0 0 1 2 2V8M20.5 16v2.5a2 2 0 0 1-2 2H16M8 20.5H5.5a2 2 0 0 1-2-2V16"></path>
-            <path d="M7 12h10"></path>
-          </svg>
-          {{ cameraActive ? 'Arrêter' : 'Scanner' }}
-        </button>
         <label class="dock-photo" for="image-input">Photo</label>
-        <span class="dock-hint">Téléphone uniquement — sur scanette, la gâchette suffit</span>
+        <span class="dock-hint">La caméra reste active jusqu’à la lecture du code</span>
       </footer>
 
       <footer *ngIf="localScan" class="action-dock decision-dock">

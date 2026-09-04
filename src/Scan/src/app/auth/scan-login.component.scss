@@ -1,0 +1,149 @@
+:host {
+  display: block;
+}
+
+.login-screen {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 24px 16px;
+  overflow: hidden;
+  background: #edf5fa;
+}
+
+.login-card {
+  display: flex;
+  width: min(100%, 390px);
+  min-height: min(560px, calc(100dvh - 48px));
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 34px 28px;
+  border: 1px solid #d9e9f4;
+  border-top: 3px solid #1497d6;
+  background: #f7fbfe;
+  box-shadow: 0 24px 60px rgb(7 43 69 / 12%);
+  text-align: center;
+}
+
+.login-kicker {
+  margin: 0 0 32px;
+  color: #dc6412;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.login-mark {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  margin-bottom: 22px;
+  border-radius: 50%;
+  color: #7fd8f5;
+  background: #072b45;
+}
+
+.login-mark svg {
+  width: 34px;
+  height: 34px;
+}
+
+.login-card h1 {
+  margin: 0;
+  color: #072b45;
+  font-family: Newsreader, Georgia, serif;
+  font-size: 38px;
+  font-weight: 500;
+  letter-spacing: -.02em;
+}
+
+.login-message {
+  max-width: 300px;
+  margin: 18px 0 0;
+  color: #4e6c84;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.login-message-error {
+  color: #7d2028;
+  font-weight: 600;
+}
+
+.login-primary,
+.login-secondary {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 28px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.login-primary {
+  color: #fff;
+  background: #dc6412;
+}
+
+.login-secondary {
+  min-height: 46px;
+  margin-top: 10px;
+  color: #1497d6;
+  background: transparent;
+  font-size: 13px;
+}
+
+.login-primary:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.login-footnote {
+  margin: 32px 0 0;
+  color: #6d8ba2;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+@media (max-height: 620px) {
+  .login-card {
+    min-height: calc(100dvh - 32px);
+    padding: 22px 24px;
+  }
+
+  .login-kicker {
+    margin-bottom: 18px;
+  }
+
+  .login-mark {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 14px;
+  }
+
+  .login-card h1 {
+    font-size: 32px;
+  }
+
+  .login-message {
+    margin-top: 12px;
+  }
+
+  .login-primary {
+    margin-top: 18px;
+  }
+
+  .login-footnote {
+    margin-top: 18px;
+  }
+}
