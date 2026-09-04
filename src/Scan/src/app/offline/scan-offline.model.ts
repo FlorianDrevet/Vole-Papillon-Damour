@@ -98,6 +98,11 @@ export interface LocalScanResult {
   catalogBook: ScanCatalogBook | null;
 }
 
+export interface LocalCatalogResult {
+  verdict: LocalVerdict;
+  catalogBook: ScanCatalogBook | null;
+}
+
 export interface PersistentStorageStatus {
   available: boolean;
   persisted: boolean;

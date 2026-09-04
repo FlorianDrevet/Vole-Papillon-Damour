@@ -110,6 +110,32 @@ describe('ScanWorkflowService', () => {
     expect(restored?.verdict.verdict).toBe('FirstCopy');
   });
 
+  it('changes the local session mode without dropping its counters', async () => {
+    await store.saveSettings(createSettings(10, 10));
+    const scan = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:05:00.000Z'),
+    );
+    await service.decide(scan.entry.clientGestureId, true);
+
+    const updated = await service.setSessionMode('NextFair');
+
+    expect(updated.mode).toBe('NextFair');
+    expect(updated.scannedCount).toBe(1);
+    expect(updated.keptCount).toBe(1);
+  });
+
+  it('reads a local catalog result without creating an outbox gesture', async () => {
+    await store.saveSettings(createSettings(10, 10));
+    await store.putCatalogBooks([createBook({title: 'Livre à consulter', qtyAvailable: 2})]);
+
+    const result = await service.lookupCatalog('9782070363735');
+
+    expect(result.catalogBook?.title).toBe('Livre à consulter');
+    expect(result.verdict.totalKnownQuantity).toBe(2);
+    expect(await store.listOutboxEntries()).toHaveSize(0);
+  });
+
   function createBook(overrides: Partial<ScanCatalogBook> = {}): ScanCatalogBook {
     return {
       isbn13: '9782070363735',

@@ -1,149 +1,524 @@
 <main class="scan-shell">
-  <div class="mode-banner" role="status" aria-live="polite">
-    <span class="mode-indicator" [class.mode-indicator-offline]="!isOnline" aria-hidden="true"></span>
-    <div>
-      <strong>{{ isOnline ? 'Connecté' : 'Hors ligne' }}</strong>
-      <span *ngIf="session"> · Session {{ session.mode === 'AvailableNow' ? 'disponible maintenant' : 'prochaine bourse' }}</span>
-      <span *ngIf="pendingCount > 0"> · {{ pendingCount }} geste(s) local(aux) à transmettre</span>
-      <span *ngIf="pendingCount === 0"> · aucun geste en attente</span>
-      <span *ngIf="isAuthenticated && accountName"> · {{ accountName }}</span>
-    </div>
-    <div class="mode-actions" *ngIf="authAvailable">
-      <button *ngIf="!isAuthenticated" type="button" class="mode-action" (click)="login()">
-        Se connecter
-      </button>
-      <ng-container *ngIf="isAuthenticated">
-        <button type="button" class="mode-action" [disabled]="syncStatus === 'syncing' || !isOnline" (click)="syncNow()">
-          {{ syncLabel }}
-        </button>
-        <button type="button" class="mode-action mode-action-secondary" (click)="logout()">Se déconnecter</button>
-      </ng-container>
-    </div>
-  </div>
+  <input
+    id="image-input"
+    class="visually-hidden"
+    type="file"
+    accept="image/*"
+    capture="environment"
+    (change)="scanImage($event)">
 
-  <p *ngIf="storageError" class="message message-warning" role="alert">{{ storageError }}</p>
-  <p *ngIf="authAvailable && !isAuthenticated" class="message message-info" role="status">
-    Le tri local fonctionne sans connexion. Connectez-vous avec un compte bénévole <em>Tri</em>
-    pour synchroniser le catalogue et transmettre les décisions.
-  </p>
-  <p *ngIf="syncError" class="message message-warning" role="alert">{{ syncError }}</p>
+  <div
+    #cameraContainer
+    class="camera-engine-host"
+    [class.camera-engine-host-active]="cameraActive"
+    aria-label="Aperçu de la caméra pour le code-barres"></div>
 
-  <header class="scan-header">
-    <p class="eyebrow">Vole Papillon d’Amour · bourse aux livres</p>
-    <h1>Scanner un livre</h1>
-    <p class="intro">
-      Le verdict est calculé immédiatement depuis la copie locale du catalogue. Scannez
-      le code-barres ISBN avec une scanette, utilisez la caméra ou saisissez l’ISBN ; le
-      geste reste conservé même si le réseau disparaît.
+  <section
+    *ngIf="storageError || syncError || cameraError || errorMessage || (authAvailable && !isAuthenticated && screen === 'home')"
+    class="runtime-notices"
+    aria-live="polite">
+    <p *ngIf="storageError" class="notice notice-warning" role="alert">{{ storageError }}</p>
+    <p *ngIf="syncError" class="notice notice-warning" role="alert">{{ syncError }}</p>
+    <p *ngIf="cameraError" class="notice notice-error message-error" role="alert">{{ cameraError }}</p>
+    <p *ngIf="errorMessage" class="notice notice-error message-error" role="alert">{{ errorMessage }}</p>
+    <p *ngIf="authAvailable && !isAuthenticated && screen === 'home'" class="notice notice-info" role="status">
+      Le tri local fonctionne sans connexion. Connectez-vous avec un compte bénévole <em>Tri</em>
+      pour synchroniser le catalogue et transmettre les décisions.
     </p>
-  </header>
+  </section>
 
-  <section class="scan-panel" aria-labelledby="scan-title">
-    <div class="panel-heading">
-      <span class="status-dot" aria-hidden="true"></span>
-      <div>
-        <p class="eyebrow">P1-5 · décision locale</p>
-        <h2 id="scan-title">Identifier une édition</h2>
-      </div>
-    </div>
+  <ng-container [ngSwitch]="screen">
+    <section *ngSwitchCase="'home'" class="app-screen home-screen" aria-labelledby="home-title">
+      <header class="home-header">
+        <p class="brand-label">Bourse aux livres</p>
+        <h1 id="home-title">Bonjour {{ displayName }}</h1>
+        <p>Que faites-vous maintenant ?</p>
+      </header>
 
-    <form class="isbn-form" (ngSubmit)="submit()">
-      <label for="isbn">ISBN</label>
-      <div class="input-row">
-        <input
-          id="isbn"
-          name="isbn"
-          type="text"
-          inputmode="numeric"
-          autocomplete="off"
-          placeholder="978-2-07-036373-5"
-          [(ngModel)]="isbnInput">
-        <button type="submit" [disabled]="isLoading">
-          {{ isLoading ? 'Recherche…' : 'Rechercher' }}
+      <div class="home-mode-actions">
+        <button type="button" class="home-mode home-mode-tri" (click)="startSorting()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
+            <path d="M12 6.5v13"></path>
+          </svg>
+          <span>Trier des livres</span>
+        </button>
+
+        <button type="button" class="home-mode home-mode-cash" (click)="openCash()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"></circle>
+            <path d="M15.4 8.9a4.3 4.3 0 0 0-6.7 1.3M8.7 13.9a4.3 4.3 0 0 0 6.7 1.2"></path>
+            <path d="M7.4 10.9h6.2M7.4 13.4h6.2"></path>
+          </svg>
+          <span>Caisse</span>
+        </button>
+
+        <button type="button" class="home-mode home-mode-consultation" (click)="openConsultation()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="6.6"></circle>
+            <path d="m15.8 15.8 4.7 4.7"></path>
+          </svg>
+          <span class="home-mode-copy">
+            <span>Consulter</span>
+            <small>N’enregistre rien</small>
+          </span>
         </button>
       </div>
-    </form>
 
-    <div class="camera-actions">
-      <vpd-button (click)="toggleCamera()">
-        {{ cameraActive ? 'Arrêter la caméra' : 'Lire avec la caméra' }}
-      </vpd-button>
-      <label class="image-picker">
-        <span>Scanner une photo</span>
-        <input
-          #imageInput
-          type="file"
-          accept="image/*"
-          capture="environment"
-          (change)="scanImage($event)">
-      </label>
-      <span>Placez les barres noires dans le cadre : la détection est automatique.</span>
-      <span>Une scanette USB peut aussi envoyer l’ISBN comme un clavier.</span>
-    </div>
+      <footer class="home-footer">
+        <button *ngIf="authAvailable && isAuthenticated" type="button" class="quiet-link" (click)="logout()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8.5" r="3.6"></circle>
+            <path d="M5 19.6c1.3-3.3 3.9-4.9 7-4.9s5.7 1.6 7 4.9"></path>
+          </svg>
+          Changer d’utilisateur
+        </button>
+        <button *ngIf="authAvailable && !isAuthenticated" type="button" class="quiet-link" (click)="login()">
+          Se connecter comme bénévole
+        </button>
+        <span *ngIf="!authAvailable" class="home-local-note">Mode local disponible sur cet appareil</span>
+      </footer>
+    </section>
 
-    <div
-      #cameraContainer
-      id="camera-scanner"
-      class="camera-preview"
-      [class.camera-preview-visible]="cameraActive"
-      aria-label="Aperçu de la caméra pour le code-barres"></div>
-    <p *ngIf="cameraError" class="message message-error" role="alert">{{ cameraError }}</p>
-    <p *ngIf="errorMessage" class="message message-error" role="alert">{{ errorMessage }}</p>
-    <p *ngIf="isLoading" class="message" role="status" aria-live="polite">Recherche de la notice…</p>
+    <section *ngSwitchCase="'session-mode'" class="app-screen session-mode-screen" aria-labelledby="session-mode-title">
+      <header class="plain-screen-header">
+        <p class="brand-label">Nouvelle session de tri</p>
+        <h1 id="session-mode-title">Ces livres seront…</h1>
+      </header>
 
-    <section *ngIf="localScan" class="local-verdict" aria-labelledby="verdict-title" aria-live="polite">
-      <div>
-        <p class="eyebrow">Verdict local · {{ localScan.entry.status === 'Pending' ? 'décision à confirmer' : 'décision conservée' }}</p>
-        <h2 id="verdict-title">{{ getVerdictLabel() }}</h2>
-        <p>{{ getVerdictDescription() }}</p>
+      <div class="session-mode-actions">
+        <button
+          type="button"
+          class="session-mode-card session-mode-card-available"
+          [class.is-selected]="selectedMode === 'AvailableNow'"
+          (click)="chooseSessionMode('AvailableNow')">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
+            <path d="M12 6.5v13"></path>
+          </svg>
+          <span class="session-mode-copy">
+            <strong>Disponibles maintenant</strong>
+            <small>Mis en vente tout de suite</small>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          class="session-mode-card session-mode-card-next"
+          [class.is-selected]="selectedMode === 'NextFair'"
+          (click)="chooseSessionMode('NextFair')">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
+            <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
+          </svg>
+          <span class="session-mode-copy">
+            <strong>À la prochaine bourse</strong>
+            <small>Annoncés en ligne pour <b>{{ nextFairLongLabel }}</b></small>
+          </span>
+        </button>
       </div>
-      <div class="verdict-facts">
-        <span *ngIf="localScan.verdict.isRare">Fiche marquée rare</span>
-        <span>ISBN {{ localScan.entry.isbn13 }}</span>
-      </div>
-      <div class="decision-actions" *ngIf="localScan.entry.status === 'Pending'">
-        <button type="button" class="decision-keep" (click)="keepCurrentScan()">Garder ce livre</button>
-        <button type="button" class="decision-reject" (click)="rejectCurrentScan()">Écarter ce livre</button>
+
+      <div class="screen-info">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.5"></circle>
+          <path d="M12 7.8v5M12 16.3h.01"></path>
+        </svg>
+        <p>Ce choix engage tous les scans de la session. Pour en changer, il faudra la terminer et en ouvrir une autre.</p>
       </div>
     </section>
-  </section>
 
-  <section *ngIf="metadata || localScan" class="book-result" aria-live="polite" aria-labelledby="book-title">
-    <div class="cover-frame" *ngIf="coverUrl; else noCover">
-      <img
-        [src]="coverUrl"
-        [alt]="'Couverture de ' + (metadata?.title || 'ce livre')"
-        (error)="onCoverError()">
-    </div>
-    <ng-template #noCover>
-      <div class="cover-frame cover-placeholder">Couverture indisponible</div>
-    </ng-template>
+    <section *ngSwitchCase="'tri'" class="app-screen tri-screen" aria-labelledby="tri-title">
+      <header
+        class="mode-header"
+        [class.mode-header-available]="activeMode === 'AvailableNow'"
+        [class.mode-header-next]="activeMode === 'NextFair'">
+        <svg *ngIf="activeMode === 'AvailableNow'" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
+          <path d="M12 6.5v13"></path>
+        </svg>
+        <svg *ngIf="activeMode === 'NextFair'" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
+          <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
+        </svg>
+        <span>{{ activeModeLabel }}</span>
+        <span class="mode-date">{{ activeMode === 'AvailableNow' ? 'maintenant' : nextFairShortLabel }}</span>
+      </header>
 
-    <div class="book-details">
-      <p class="eyebrow" *ngIf="metadata; else metadataPending">Notice trouvée · {{ metadata.source }}</p>
-      <ng-template #metadataPending><p class="eyebrow">Notice bibliographique en arrière-plan</p></ng-template>
-      <div class="title-slot">
-        <h2 id="book-title">{{ metadata?.title || localScan?.catalogBook?.title || (isLoading ? 'Notice en attente…' : 'Titre non renseigné') }}</h2>
+      <div *ngIf="!isOnline" class="offline-strip">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3.5 20.5 21"></path>
+          <path d="M8 18.5h8.7a3.9 3.9 0 0 0 .7-7.7 5.6 5.6 0 0 0-8-4.1"></path>
+          <path d="M6.1 9.8A4.5 4.5 0 0 0 7.6 18.5"></path>
+        </svg>
+        <strong>Hors ligne</strong>
+        <span>{{ pendingCount }} scan{{ pendingCount > 1 ? 's' : '' }} en attente</span>
       </div>
-      <dl *ngIf="metadata">
-        <div *ngIf="metadata && metadata.authors">
-          <dt>Auteur</dt>
-          <dd>{{ metadata.authors }}</dd>
+
+      <div class="session-bar">
+        <span>{{ displayName }}</span>
+        <span>{{ sessionScannedCount }} trié{{ sessionScannedCount > 1 ? 's' : '' }}</span>
+        <button type="button" class="session-finish" (click)="endSession()">Terminer</button>
+      </div>
+
+      <div class="tri-body">
+        <ng-container *ngIf="!localScan && !metadata; else verdictView">
+          <section class="scan-stage" aria-labelledby="tri-title">
+            <div class="scan-reticle" aria-hidden="true">
+              <span class="reticle-corner reticle-corner-top-left"></span>
+              <span class="reticle-corner reticle-corner-top-right"></span>
+              <span class="reticle-corner reticle-corner-bottom-left"></span>
+              <span class="reticle-corner reticle-corner-bottom-right"></span>
+              <span class="reticle-line"></span>
+            </div>
+            <h1 id="tri-title">Scannez le code-barres</h1>
+            <p *ngIf="!isLoading">La gâchette de la scanette suffit.</p>
+            <p *ngIf="isLoading">Lecture du livre…</p>
+          </section>
+        </ng-container>
+
+        <ng-template #verdictView>
+          <section class="tri-result" aria-live="polite" aria-labelledby="verdict-title">
+            <article
+              class="verdict-card"
+              [class.verdict-card-too-many]="activeVerdictKey === 'TooMany'"
+              [class.verdict-card-wanted]="activeVerdictKey === 'Wanted' || activeVerdictKey === 'Selling'"
+              [class.verdict-card-rare]="activeVerdictKey === 'Rare'"
+              [class.verdict-card-first]="activeVerdictKey === 'FirstCopy'">
+              <div class="verdict-main">
+                <div class="verdict-icon" [ngSwitch]="activeVerdictKey" aria-hidden="true">
+                  <svg *ngSwitchCase="'TooMany'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8.6"></circle>
+                    <path d="M6 18 18 6"></path>
+                  </svg>
+                  <svg *ngSwitchCase="'Wanted'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 12.6 9.6 17.7 19.5 6.4"></path>
+                  </svg>
+                  <svg *ngSwitchCase="'Selling'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 12.6 9.6 17.7 19.5 6.4"></path>
+                  </svg>
+                  <svg *ngSwitchCase="'Rare'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6.2 4.5h11.6l3.7 5.3L12 20.4 2.5 9.8z"></path>
+                    <path d="M2.5 9.8h19M8.6 4.5 12 20.4 15.4 4.5"></path>
+                  </svg>
+                  <svg *ngSwitchDefault viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8.6"></circle>
+                    <path d="M12 8v8M8 12h8"></path>
+                  </svg>
+                </div>
+                <div class="verdict-copy">
+                  <h1 id="verdict-title">{{ verdictTitle }}</h1>
+                  <p>{{ verdictSummary }}</p>
+                </div>
+              </div>
+              <p *ngIf="!isOnline" class="verdict-freshness">{{ offlineFreshnessLabel }}</p>
+            </article>
+
+            <article class="book-card">
+              <div class="book-cover cover-frame">
+                <img
+                  *ngIf="coverUrl; else triNoCover"
+                  [src]="coverUrl"
+                  [alt]="'Couverture de ' + activeTitle"
+                  (error)="onCoverError()">
+                <ng-template #triNoCover><span class="cover-placeholder">Couverture indisponible</span></ng-template>
+              </div>
+              <div class="book-copy">
+                <p class="book-source">{{ metadata ? 'Notice trouvée · ' + metadata.source : 'Notice bibliographique en arrière-plan' }}</p>
+                <h2 id="book-title">{{ activeTitle }}</h2>
+                <p *ngIf="activeAuthors" class="book-author">{{ activeAuthors }}</p>
+                <p *ngIf="activePublisher || activePublicationYear" class="book-edition">
+                  {{ activePublisher || 'Édition inconnue' }}<span *ngIf="activePublicationYear"> · {{ activePublicationYear }}</span>
+                </p>
+                <p class="book-isbn">ISBN {{ activeIsbn }}</p>
+              </div>
+            </article>
+
+            <div class="book-facts">
+              <div><span>Disponibles</span><strong>{{ availableQuantity }}</strong></div>
+              <div><span>Annoncés</span><strong>{{ announcedQuantity }}</strong></div>
+              <div><span>Déjà vendus</span><strong>{{ salesQuantity }}</strong></div>
+              <div><span>Recherché par</span><strong [class.fact-highlight]="requesterQuantity > 0">{{ requesterQuantity > 0 ? requesterQuantity : '—' }}</strong></div>
+            </div>
+            <p *ngIf="!metadata" class="result-note">Le verdict est disponible immédiatement ; la notice arrivera en arrière-plan.</p>
+          </section>
+        </ng-template>
+      </div>
+
+      <footer *ngIf="!localScan && !metadata" class="action-dock scan-dock">
+        <button type="button" class="dock-link" (click)="openManualInput()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.5" y="6" width="19" height="12" rx="2"></rect>
+            <path d="M6.5 9.6h.01M10 9.6h.01M13.5 9.6h.01M17 9.6h.01M6.5 12.9h.01M10 12.9h.01M13.5 12.9h.01M17 12.9h.01M8.6 16h6.8"></path>
+          </svg>
+          Saisir un code
+        </button>
+        <button type="button" class="dock-primary" (click)="toggleCamera()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.5 8V5.5a2 2 0 0 1 2-2H8M16 3.5h2.5a2 2 0 0 1 2 2V8M20.5 16v2.5a2 2 0 0 1-2 2H16M8 20.5H5.5a2 2 0 0 1-2-2V16"></path>
+            <path d="M7 12h10"></path>
+          </svg>
+          {{ cameraActive ? 'Arrêter' : 'Scanner' }}
+        </button>
+        <label class="dock-photo" for="image-input">Photo</label>
+        <span class="dock-hint">Téléphone uniquement — sur scanette, la gâchette suffit</span>
+      </footer>
+
+      <footer *ngIf="localScan" class="action-dock decision-dock">
+        <p>Scanner le suivant vaut « garder »</p>
+        <div class="decision-buttons" *ngIf="localScan.entry.status === 'Pending'; else savedDecision">
+          <button type="button" class="decision-reject" (click)="rejectCurrentScan()">Écarter</button>
+          <button type="button" class="decision-keep" (click)="keepCurrentScan()">Garder</button>
         </div>
-        <div *ngIf="metadata && metadata.publisher">
-          <dt>Éditeur</dt>
-          <dd>{{ metadata.publisher }}</dd>
+        <ng-template #savedDecision>
+          <span class="saved-decision">Décision conservée · scannez le suivant</span>
+        </ng-template>
+      </footer>
+    </section>
+
+    <section *ngSwitchCase="'manual'" class="app-screen manual-screen" aria-labelledby="manual-title">
+      <header
+        class="mode-header"
+        [class.mode-header-available]="activeMode === 'AvailableNow'"
+        [class.mode-header-next]="activeMode === 'NextFair'">
+        <svg *ngIf="activeMode === 'AvailableNow'" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
+          <path d="M12 6.5v13"></path>
+        </svg>
+        <svg *ngIf="activeMode === 'NextFair'" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
+          <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
+        </svg>
+        <span>{{ activeModeLabel }}</span>
+        <span class="mode-date">{{ activeMode === 'AvailableNow' ? 'maintenant' : nextFairShortLabel }}</span>
+      </header>
+      <div *ngIf="!isOnline" class="offline-strip">
+        <strong>Hors ligne</strong>
+        <span>{{ pendingCount }} scan{{ pendingCount > 1 ? 's' : '' }} en attente</span>
+      </div>
+      <div class="session-bar">
+        <span>{{ displayName }}</span>
+        <span>{{ sessionScannedCount }} trié{{ sessionScannedCount > 1 ? 's' : '' }}</span>
+      </div>
+
+      <div class="manual-alert">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.5"></circle>
+          <path d="M12 7.8v5M12 16.3h.01"></path>
+        </svg>
+        <span>Code-barres illisible. Tapez-le à la main.</span>
+      </div>
+
+      <div class="manual-display">
+        <span class="manual-label">ISBN — 10 ou 13 chiffres</span>
+        <div class="manual-value" aria-live="polite" aria-label="ISBN en cours de saisie">
+          {{ manualIsbn || ' ' }}<span class="manual-caret" aria-hidden="true"></span>
         </div>
-        <div *ngIf="metadata && metadata.publicationYear">
-          <dt>Année</dt>
-          <dd>{{ metadata.publicationYear }}</dd>
+        <span class="manual-count">{{ manualDigitCount }} chiffre{{ manualDigitCount > 1 ? 's' : '' }} sur 13</span>
+        <p *ngIf="manualError" class="manual-error" role="alert">{{ manualError }}</p>
+      </div>
+
+      <div class="manual-keypad" aria-label="Pavé numérique ISBN">
+        <button *ngFor="let key of manualKeys" type="button" class="manual-key" [class.manual-key-command]="key === 'clear' || key === 'backspace'" [attr.aria-label]="key === 'clear' ? 'Vider' : key === 'backspace' ? 'Effacer le dernier chiffre' : key" (click)="appendManualKey(key)">
+          <ng-container [ngSwitch]="key">
+            <span *ngSwitchCase="'clear'">Vider</span>
+            <svg *ngSwitchCase="'backspace'" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5.5h9.5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-6-6.5z"></path>
+              <path d="m13 10 4.5 4.5M17.5 10 13 14.5"></path>
+            </svg>
+            <span *ngSwitchDefault>{{ key }}</span>
+          </ng-container>
+        </button>
+      </div>
+
+      <footer class="action-dock manual-dock">
+        <button type="button" class="dock-primary" (click)="validateManualIsbn()">Valider le code</button>
+        <button type="button" class="dock-link" aria-label="Revenir au scan" (click)="returnToScan()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.5 8V5.5a2 2 0 0 1 2-2H8M16 3.5h2.5a2 2 0 0 1 2 2V8M20.5 16v2.5a2 2 0 0 1-2 2H16M8 20.5H5.5a2 2 0 0 1-2-2V16"></path>
+            <path d="M7 12h10"></path>
+          </svg>
+          Revenir au scan
+        </button>
+      </footer>
+    </section>
+
+    <section *ngSwitchCase="'session-end'" class="app-screen session-end-screen" aria-labelledby="session-end-title">
+      <header class="plain-screen-header session-end-header">
+        <h1 id="session-end-title">Session terminée</h1>
+        <span>{{ sessionDurationLabel }}</span>
+      </header>
+
+      <div class="session-stat-grid">
+        <article><strong>{{ sessionScannedCount }}</strong><span>Scannés</span></article>
+        <article><strong>{{ sessionKeptCount }}</strong><span>Gardés</span></article>
+        <article><strong>{{ sessionRejectedCount }}</strong><span>Écartés</span></article>
+      </div>
+
+      <article class="session-effect-card">
+        <div class="effect-row">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path *ngIf="activeMode === 'AvailableNow'" d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
+            <path *ngIf="activeMode === 'AvailableNow'" d="M12 6.5v13"></path>
+            <ng-container *ngIf="activeMode === 'NextFair'">
+              <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
+              <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
+            </ng-container>
+          </svg>
+          <p>{{ publicEffectLabel }}</p>
         </div>
-        <div>
-          <dt>ISBN-13</dt>
-          <dd>{{ (metadata && metadata.isbn13) || localScan?.entry?.isbn13 }}</dd>
+        <div class="effect-row">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.5" y="5" width="19" height="14" rx="2"></rect>
+            <path d="m3.4 6.6 8.6 6.6 8.6-6.6"></path>
+          </svg>
+          <p>Les personnes concernées seront prévenues après le délai de sécurité.</p>
         </div>
-      </dl>
-      <p *ngIf="!metadata" class="message">La notice n’empêche pas le tri : le verdict est déjà disponible.</p>
-    </div>
-  </section>
+      </article>
+
+      <div class="session-end-note">
+        <p>En cas d’erreur, prévenez un responsable avant l’envoi.</p>
+        <span>Fenêtre de correction — 2 h</span>
+      </div>
+
+      <footer class="session-end-footer">
+        <button type="button" class="outline-pill" (click)="returnHome()">Revenir à l’accueil</button>
+      </footer>
+    </section>
+
+    <section *ngSwitchCase="'cash'" class="app-screen cash-screen" aria-labelledby="cash-title">
+      <header class="mode-header mode-header-cash">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="8.5"></circle>
+          <path d="M15.4 8.9a4.3 4.3 0 0 0-6.7 1.3M8.7 13.9a4.3 4.3 0 0 0 6.7 1.2"></path>
+          <path d="M7.4 10.9h6.2M7.4 13.4h6.2"></path>
+        </svg>
+        <span id="cash-title">Caisse</span>
+        <span class="mode-date">Bourse en cours</span>
+      </header>
+      <div *ngIf="!isOnline" class="offline-strip offline-strip-cash">
+        <strong>Hors ligne</strong>
+        <span>La file locale est conservée</span>
+      </div>
+
+      <div class="cash-items" aria-live="polite">
+        <ng-container *ngFor="let item of cashItems">
+          <article *ngIf="!item.isRare" class="cash-item">
+            <h2>{{ item.title || 'Titre non renseigné' }}</h2>
+            <p>{{ item.publisher || 'Édition inconnue' }}<span *ngIf="item.publicationYear"> · {{ item.publicationYear }}</span></p>
+          </article>
+          <article *ngIf="item.isRare" class="cash-rare-item">
+            <div class="cash-rare-heading">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6.2 4.5h11.6l3.7 5.3L12 20.4 2.5 9.8z"></path>
+                <path d="M2.5 9.8h19M8.6 4.5 12 20.4 15.4 4.5"></path>
+              </svg>
+              <strong>Livre rare</strong>
+            </div>
+            <h2>{{ item.title || 'Titre non renseigné' }}</h2>
+            <p>Voir le prix indiqué sur le livre.</p>
+          </article>
+        </ng-container>
+        <p *ngIf="cashItems.length === 0" class="cash-empty">Scannez les livres de la vente. La gâchette suffit.</p>
+      </div>
+
+      <div class="cash-count"><span>Dans cette vente</span><strong>{{ cashItems.length }} livre{{ cashItems.length > 1 ? 's' : '' }}</strong></div>
+      <p *ngIf="cashMessage" class="cash-message" role="status">{{ cashMessage }}</p>
+
+      <footer class="action-dock cash-dock">
+        <span class="dock-hint">Aucun prix, aucun total — l’encaissement reste manuel</span>
+        <div class="cash-buttons">
+          <button type="button" class="decision-reject" [disabled]="cashItems.length === 0" (click)="undoLastCashItem()">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 9.5h9.5a5.5 5.5 0 1 1 0 11H8"></path>
+              <path d="m8 5-4 4.5 4 4.5"></path>
+            </svg>
+            Annuler dernier
+          </button>
+          <button type="button" class="dock-primary" [disabled]="cashItems.length === 0" (click)="validateCash()">Valider</button>
+        </div>
+        <div class="cash-secondary-actions">
+          <button type="button" class="dock-link" (click)="openManualInput()">Saisir un code</button>
+          <button type="button" class="dock-link" (click)="toggleCamera()">{{ cameraActive ? 'Arrêter la caméra' : 'Scanner avec le téléphone' }}</button>
+          <button type="button" class="dock-link dock-home-link" (click)="returnHome()">Accueil</button>
+        </div>
+      </footer>
+    </section>
+
+    <section *ngSwitchCase="'consultation'" class="app-screen consultation-screen" aria-labelledby="consultation-title">
+      <header class="mode-header mode-header-consultation">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="6.6"></circle>
+          <path d="m15.8 15.8 4.7 4.7"></path>
+        </svg>
+        <span id="consultation-title">Consultation</span>
+        <span class="mode-badge">N’enregistre rien</span>
+      </header>
+
+      <ng-container *ngIf="consultationResult || metadata; else consultationEmpty">
+        <article class="book-card consultation-book-card">
+          <div class="book-cover book-cover-large">
+            <img
+              *ngIf="coverUrl; else consultationNoCover"
+              [src]="coverUrl"
+              [alt]="'Couverture de ' + activeTitle"
+              (error)="onCoverError()">
+            <ng-template #consultationNoCover><span class="cover-placeholder">Couv.</span></ng-template>
+          </div>
+          <div class="book-copy">
+            <p class="book-source">{{ metadata ? 'Notice trouvée · ' + metadata.source : 'Notice en arrière-plan' }}</p>
+            <h2>{{ activeTitle }}</h2>
+            <p *ngIf="activeAuthors" class="book-author">{{ activeAuthors }}</p>
+            <p *ngIf="activePublisher || activePublicationYear" class="book-edition">
+              {{ activePublisher || 'Édition inconnue' }}<span *ngIf="activePublicationYear"> · {{ activePublicationYear }}</span>
+            </p>
+            <p class="book-isbn">ISBN {{ activeIsbn }}</p>
+          </div>
+        </article>
+        <div class="book-facts consultation-facts">
+          <div><span>Disponibles</span><strong>{{ availableQuantity }}</strong></div>
+          <div><span>Annoncés</span><strong>{{ announcedQuantity }}</strong></div>
+          <div><span>Déjà vendus</span><strong>{{ salesQuantity }}</strong></div>
+          <div><span>Recherché par</span><strong [class.fact-highlight]="requesterQuantity > 0">{{ requesterQuantity > 0 ? requesterQuantity : '—' }}</strong></div>
+        </div>
+        <div class="consultation-notice">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"></circle>
+            <path d="M12 7.8v5M12 16.3h.01"></path>
+          </svg>
+          <span>Rien n’a été enregistré. Aucun mouvement, aucune session, aucune alerte.</span>
+        </div>
+      </ng-container>
+
+      <ng-template #consultationEmpty>
+        <div class="consultation-empty">
+          <div class="scan-reticle scan-reticle-light" aria-hidden="true">
+            <span class="reticle-corner reticle-corner-top-left"></span>
+            <span class="reticle-corner reticle-corner-top-right"></span>
+            <span class="reticle-corner reticle-corner-bottom-left"></span>
+            <span class="reticle-corner reticle-corner-bottom-right"></span>
+            <span class="reticle-line"></span>
+          </div>
+          <p>Scannez pour consulter une fiche.</p>
+        </div>
+      </ng-template>
+
+      <footer class="action-dock consultation-dock">
+        <button type="button" class="dock-link" (click)="openManualInput()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.5" y="6" width="19" height="12" rx="2"></rect>
+            <path d="M6.5 9.6h.01M10 9.6h.01M13.5 9.6h.01M17 9.6h.01M6.5 12.9h.01M10 12.9h.01M13.5 12.9h.01M17 12.9h.01M8.6 16h6.8"></path>
+          </svg>
+          Saisir un code
+        </button>
+        <button type="button" class="dock-primary" (click)="toggleCamera()">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.5 8V5.5a2 2 0 0 1 2-2H8M16 3.5h2.5a2 2 0 0 1 2 2V8M20.5 16v2.5a2 2 0 0 1-2 2H16M8 20.5H5.5a2 2 0 0 1-2-2V16"></path>
+            <path d="M7 12h10"></path>
+          </svg>
+          {{ cameraActive ? 'Arrêter' : 'Scanner' }}
+        </button>
+        <button type="button" class="dock-link dock-home-link" (click)="returnHome()">Accueil</button>
+      </footer>
+    </section>
+  </ng-container>
 </main>

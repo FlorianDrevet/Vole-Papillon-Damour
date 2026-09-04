@@ -44,7 +44,10 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
   accepts a valid ISBN-10 or ISBN-13, returns the canonical ISBN-13 and typed title,
   authors, publisher, publication year, cover URL, source, and optional WorkId. The
   Application handler delegates to Infrastructure's BnF SRU client first and Open
-  Library second; no book is persisted at this palier.
+  Library second; no book is persisted at this palier. A valid ISBN with no notice is
+  `404`; a transient failure of both providers is mapped by the API exception middleware
+  to `503 Service Unavailable`, while the resolver keeps the failure visible to the Worker
+  for retry rather than recording a negative cache entry.
 
 No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 

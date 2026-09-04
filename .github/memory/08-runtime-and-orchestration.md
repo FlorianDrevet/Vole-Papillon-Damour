@@ -80,4 +80,9 @@ The API startup wires:
 - The API now runs startup migrations only for `Development`. Production and deployed development use the explicit migration step, preventing concurrent API replicas from migrating the database.
 - `main.bicep` declares the `book-covers` blob container, `Cors:AllowedOrigins`, Application Insights daily caps, and Azure Monitor alerts for missing Worker heartbeat, late announcements, and a late alert queue. The contact group must still be confirmed by Azure after infrastructure deployment.
 - The DEV infra what-if `33822673986` reported 5 creates, 24 modifies, 17 no-change, 9 unsupported and 10 ignored changes, with no deletes; the real infra run `33822751659` succeeded. The Azure Monitor contact group still needs a delivery test.
-- The independent API smoke after runtime rollout returned `200 Healthy` for `/health`, while `/books/9783140464079/metadata` returned `500` with a generic provider error; provider/network diagnostics are still required.
+- The independent API smoke after runtime rollout returned `200 Healthy` for `/health`, while
+  the first `/books/9783140464079/metadata` call returned `500` because both bibliographic
+  providers were temporarily unavailable. The API error middleware now maps that
+  `HttpRequestException` to `503 Service Unavailable`; the resolver still throws so the
+  Worker retries instead of recording a negative-cache miss. The local correction is not
+  yet deployed; a later DEV retest returned `200` when Open Library recovered.
