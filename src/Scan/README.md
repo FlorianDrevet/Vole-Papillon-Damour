@@ -17,7 +17,9 @@ supprimée par une purge du catalogue.
 L'accès à l'application est protégé par Entra : l'écran de connexion est affiché tant
 qu'aucun compte n'est ouvert, et seul un compte portant le rôle `Tri` peut atteindre le
 scan. Une perte de session ou un échec de renouvellement du jeton renvoie également vers
-cet écran. Le service worker Angular met en cache la coquille et les notices
+cet écran. Les environnements déclarent l'autorité CIAM avec le chemin du tenant ; le
+service de connexion fournit aussi explicitement la page de retour de l'application et
+affiche l'échec de démarrage au lieu de l'ignorer. Le service worker Angular met en cache la coquille et les notices
 bibliographiques, sans mélanger le cache navigateur avec IndexedDB.
 
 La caméra utilise `@zxing/browser` avec le décodeur ZXing en mode de recherche renforcé
