@@ -62,12 +62,12 @@
             [style.animation-duration.s]="cardDurationS(i)"
             [style.animation-delay.s]="cardDelayS(i)">
             <span class="flex items-baseline justify-between">
-              <span class="font-serif text-[40px] leading-[.9]" [ngClass]="first ? '' : 'text-ink-2'">{{ event.dateStart | date:'dd' }}</span>
-              <span class="font-mono text-[11px] uppercase tracking-[.14em]" [ngClass]="first ? 'text-orange-2' : 'text-blue'">{{ event.dateStart | date:'MMM' }}</span>
+              <span class="font-serif text-[40px] leading-[.9]" [ngClass]="first ? '' : 'text-ink-2'">{{ event.dateStart | date:'dd':'UTC' }}</span>
+              <span class="font-mono text-[11px] uppercase tracking-[.14em]" [ngClass]="first ? 'text-orange-2' : 'text-blue'">{{ event.dateStart | date:'MMM':'UTC' }}</span>
             </span>
             <span class="h-px" [ngClass]="first ? 'bg-cyan/[.28]' : 'bg-line-2'"></span>
             <strong class="text-base font-semibold" [ngClass]="first ? '' : 'text-ink-2'">{{ event.name }}</strong>
-            <span class="text-[13px] leading-snug" [ngClass]="first ? 'text-mist' : 'text-slate-2'">{{ event.city }}@if (event.hourOpenDoors) { · {{ event.hourOpenDoors | date:'HH:mm' }}}</span>
+            <span class="text-[13px] leading-snug" [ngClass]="first ? 'text-mist' : 'text-slate-2'">{{ event.city }}@if (event.hourOpenDoors) { · {{ event.hourOpenDoors | date:'HH:mm':'UTC' }}}</span>
             <span class="mt-1 font-mono text-[11px] tracking-[.12em]" [ngClass]="first ? 'text-orange-2' : 'text-blue'">DÉTAILS →</span>
           </a>
         }

@@ -11,12 +11,12 @@ describe('VpdEventSections', () => {
   let fixture: ComponentFixture<VpdEventSections>;
   let axiosServiceSpy: jasmine.SpyObj<AxiosService>;
 
-  const createEventResponse = (id: string, eventType: string, dateStart: string) => ({
+  const createEventResponse = (id: string, eventType: string, dateStart: string, hourOpenDoors: string | null = null) => ({
     id,
     eventType,
     dateStart,
     dateEnd: null,
-    hourOpenDoors: null,
+    hourOpenDoors,
     name: `Évènement ${id}`,
     city: 'Verrières'
   });
@@ -36,6 +36,7 @@ describe('VpdEventSections', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
     fixture.detectChanges();
   };
 
@@ -72,6 +73,18 @@ describe('VpdEventSections', () => {
     const event = component.upcomingEvents()[0];
     expect(event.dateStart instanceof Date).toBeTrue();
     expect(event.eventType).toBe(VpdEventEnum.Bingo);
+  });
+
+  it('should render opening times as UTC wall-clock values', async () => {
+    configureRequests([
+      createEventResponse('books-1', 'Books', '2026-10-12T00:00:00.000Z', '2026-10-12T14:00:00.000Z')
+    ]);
+
+    await createComponent();
+
+    expect(component.isLoading()).toBeFalse();
+    expect(component.upcomingEvents().length).toBe(1);
+    expect(fixture.nativeElement.textContent).toContain('14:00');
   });
 
   it('should keep upcomingEvents empty when the request fails', async () => {

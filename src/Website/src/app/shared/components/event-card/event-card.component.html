@@ -2,8 +2,8 @@
   [routerLink]="['/evenement', VpdEvent().id]"
   class="grid grid-cols-1 items-center gap-2 border-b border-line-2 py-5 transition hover:bg-paper-2 sm:grid-cols-[110px_1fr_auto] sm:gap-6 sm:px-3">
   <span class="flex items-baseline gap-2 font-serif text-2xl text-ink-2">
-    {{ VpdEvent().dateStart | date:'dd' }}
-    <span class="font-mono text-xs uppercase tracking-[.1em] text-slate-3">{{ VpdEvent().dateStart | date:'MMM yyyy' }}</span>
+    {{ VpdEvent().dateStart | date:'dd':'UTC' }}
+    <span class="font-mono text-xs uppercase tracking-[.1em] text-slate-3">{{ VpdEvent().dateStart | date:'MMM yyyy':'UTC' }}</span>
   </span>
   <span class="flex flex-col gap-0.5">
     <strong class="text-base font-semibold text-ink-2">{{ VpdEvent().name }}</strong>

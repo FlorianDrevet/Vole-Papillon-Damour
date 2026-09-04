@@ -65,9 +65,11 @@ export class EventDetailComponent implements OnInit {
     const event = this.vpdEvent();
     if (event === null) return null;
 
-    const dateStart = new Date(event.dateStart);
-    const hasTime = dateStart.getUTCHours() !== 0 || dateStart.getUTCMinutes() !== 0;
-    return hasTime ? dateStart : event.hourOpenDoors ?? dateStart;
+    if (event.eventType === VpdEventEnum.Books) {
+      return event.hourOpenDoors ?? new Date(event.dateStart);
+    }
+
+    return new Date(event.dateStart);
   });
 
   constructor(private eventsFacadeService: VpdEventsFacadeService,

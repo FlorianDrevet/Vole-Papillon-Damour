@@ -41,6 +41,12 @@
 
 ## Notable Storage Detail
 
+- The legacy `AssoEvents` date fields are `DateTimeOffset` values passed through the API,
+  domain mapping, and SQL Server `datetimeoffset` storage without a backend timezone
+  conversion. Existing event data uses UTC wall-clock components (`00:00Z` for calendar
+  dates and `14:00Z` for a displayed 14:00 opening); frontend normalization is therefore
+  required when editing or rendering those values. Existing drifted rows need a controlled
+  data repair rather than an automatic schema migration.
 - PostgreSQL packages were removed during the .NET 10 backend upgrade; the active DI path remains SQL Server.
 - The Aspire AppHost provisions local SQL Server and Azurite for development orchestration.
 - The legacy mailing-list subscription flow and actuality email broadcast were removed; the application runtime no longer sends those messages.

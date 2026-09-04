@@ -86,4 +86,17 @@ describe('EventDetailComponent', () => {
     expect(time?.textContent).not.toContain('Fin');
     expect(time?.textContent).not.toContain('À confirmer');
   });
+
+  it('uses the opening time for a books event when dateStart contains an accidental time', () => {
+    fixture.componentInstance.vpdEvent.set({
+      ...event,
+      dateStart: new Date('2026-10-06T06:00:00.000Z')
+    });
+    fixture.detectChanges();
+
+    const time = fixture.nativeElement.querySelector('.event-hero-time');
+
+    expect(time?.textContent).toContain('14:00');
+    expect(time?.textContent).not.toContain('06:00');
+  });
 });
