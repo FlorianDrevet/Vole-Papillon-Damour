@@ -87,6 +87,7 @@ public sealed class BookMovementConfiguration : IEntityTypeConfiguration<BookMov
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(movement => new { movement.Isbn13, movement.OccurredAt });
+        builder.HasIndex(movement => new { movement.Isbn13, movement.Type, movement.OccurredAt });
         builder.HasIndex(movement => new { movement.AssoEventsId, movement.Type });
         builder.HasIndex(movement => movement.ScanSessionId);
         builder.HasIndex(movement => movement.ClientGestureId)

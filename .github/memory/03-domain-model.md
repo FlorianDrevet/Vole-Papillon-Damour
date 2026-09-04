@@ -72,6 +72,17 @@ The first P1-4 application slice is local and tested: `ScanBook` accepts a final
 
 P1-5 is not yet an externally deployed runtime fact: the API contracts and Scan PWA are implemented and validated locally, but the metadata queue, worker sending, physical acceptance checks, Azure tenant access, and migration application remain future work. `QT-02` must still be closed before the worker is changed.
 
+## Books administration — dead-stock query
+
+`GetDeadStockQuery` is the first P1-9 administration read: it returns canonical, currently
+available books whose current quantity is above the requested threshold, whose first positive
+availability movement is older than the requested age, and which have no sale movement. It
+derives the age from the append-only `BookMovements` ledger, excludes redirected fiches, sorts
+by quantity descending, then availability date and ISBN, and logs the query duration. The API
+surface is `GET /books/admin/dead-stock`, protected by the `Administration` policy; default
+filters are six months and more than three copies. The benchmark and the catalog administration
+screen remain to be executed/built after the branch is deployed.
+
 ## Conventions To Preserve
 
 - Keep commands and queries in their feature folders under `Application`.

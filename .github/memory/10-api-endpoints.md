@@ -49,6 +49,11 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
   to `503 Service Unavailable`, while the resolver keeps the failure visible to the Worker
   for retry rather than recording a negative cache entry.
 
+- `GET /books/admin/dead-stock` - administration-only dead-stock candidates, with optional
+  `minAgeMonths` and `minQuantity` query parameters (defaults: 6 and 3). The response contains
+  the canonical ISBN, bibliographic fields, current available quantity, and first positive
+  availability instant; results are ordered by quantity descending.
+
 ## Public catalog endpoints
 
 - `GET /catalog/search` - anonymous typed search over visible canonical books, with title,

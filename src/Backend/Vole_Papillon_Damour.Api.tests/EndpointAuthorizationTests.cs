@@ -90,6 +90,19 @@ public class EndpointAuthorizationTests
         publicCatalogEndpoints.Should().OnlyContain(endpoint => !RequiresAuthorization(endpoint));
     }
 
+    [Fact]
+    public void Dead_stock_read_requires_administration()
+    {
+        var endpoint = RegisteredEndpoints()
+            .Single(endpoint => RouteOf(endpoint) == "/books/admin/dead-stock");
+
+        RequiresAuthorization(endpoint).Should().BeTrue();
+        endpoint.Metadata
+            .GetOrderedMetadata<IAuthorizeData>()
+            .Should()
+            .Contain(data => data.Policy == "Administration");
+    }
+
     private static IReadOnlyList<RouteEndpoint> MutatingEndpoints() =>
         RegisteredEndpoints()
             .Where(endpoint => HttpMethods(endpoint).Intersect(MutatingMethods).Any())

@@ -160,8 +160,15 @@ input:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-top: auto;
   padding: 0 20px;
+}
+
+.home-mode-actions {
+  margin-block: auto;
+}
+
+.session-mode-actions {
+  margin-top: auto;
 }
 
 .home-mode,
