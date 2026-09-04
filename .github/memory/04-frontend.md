@@ -7,12 +7,28 @@ Both web apps are Angular 21 projects with Angular Material and Tailwind in the 
 - `src/BackOffice/` - admin UI, with MSAL Angular (`@azure/msal-angular` 5.3.1,
   `@azure/msal-browser` 5.20.0) and `@dhutaryan/ngx-mat-timepicker`
 - `src/Website/` - public UI for the association website, now built with Angular SSR and hydration support
-- `src/Scan/` - Angular 21 consultation-only feasibility probe for ISBN capture and
-  bibliographic metadata; it has no session, IndexedDB, authentication, or write flow
+- `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, local decisions,
+  catalog consultation, IndexedDB persistence, and volunteer authentication/synchronization
 
 ## Planned Books Scan client decisions
 
-As of 2026-09-03, the existing Scan app is still the S0-2 consultation-only probe; the offline session/outbox flow is not implemented. P1-2 selected the existing Jasmine/Karma/ChromeHeadless toolchain: unit tests cover a typed synchronization state machine with in-memory storage, browser integration tests use real IndexedDB across a service restart, and a fake transport simulates delays, failures, mid-flight disconnects, and duplicate responses. The planned local outbox states are Pending, Kept, Rejected, and CancelledLocal; only final decisions reach the API, while a transmitted cancellation becomes a new inverse gesture.
+As of 2026-09-04, the P1-5 Scan foundation is implemented in `src/Scan` and deployed to
+the DEV ACA: local verdicts, IndexedDB session/catalog/outbox persistence, MSAL `Tri`
+authentication, and sequential gesture replay are present. P1-2 selected the existing
+Jasmine/Karma/ChromeHeadless toolchain: browser integration tests use real IndexedDB and
+a fake transport simulates delays, failures, mid-flight disconnects, and duplicate
+responses. The local outbox states are `Pending`, `Kept`, `Rejected`, and
+`CancelledLocal`; only final decisions reach the API, while a transmitted cancellation
+becomes a new inverse gesture.
+
+The Scanette redesign shown in `docs/bourse-aux-livres/maquettes/scanette/` is now
+implemented locally in the same PWA: home and session-mode selection, distinct verdict
+surfaces, session summary, cash register, consultation, manual ISBN keypad, and offline
+variants. Consultation uses the local catalog without creating an outbox gesture; the
+cash screen currently keeps a local visual list only, because durable sale persistence is
+outside this visual tranche. The new UI has not been deployed yet. Its local validation
+passes with 53 ChromeHeadless tests, the production build, and browser checks at 390 px
+and 1280 px.
 
 ## App Structure
 
@@ -128,9 +144,10 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - As of 2026-09-03, Website `npm ci`, 58 ChromeHeadless tests, the production build, SSR
   smoke checks, and responsive browser checks pass; its existing bundle/CSS/CommonJS
   warnings remain.
-- As of 2026-09-03, Scan passes 24 ChromeHeadless tests and production/development builds;
-  its production bundle retains the expected initial-size warning. CI is configured to build the backend,
-  MAUI, and frontend surfaces but does not run frontend unit tests.
+- As of 2026-09-04, Scan passes 53 ChromeHeadless tests and its production build; the
+  production bundle retains the expected initial-size warning. Its redesigned Scanette
+  surface was also checked in a local browser at 390 px and 1280 px. CI is configured to
+  build the backend, MAUI, and frontend surfaces but does not run frontend unit tests.
 
 ## 2026-09-03 — Website editorial update
 

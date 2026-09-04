@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1-6` à `P1-8` — worker Books, observabilité, infra et pipeline de runtime implémentés localement ; déploiement dev et mesures post-déploiement à valider ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
-| **Prochaine action** | Pousser/faire valider la PR, exécuter le `what-if` puis le déploiement infra dev, appliquer les migrations avant le rollout API/Worker, vérifier les heartbeats ; conserver `P1-9` et les gates physiques `P1-10/P1-11` comme mesures à réaliser avec les données et appareils réels |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-main` |
-| **Dernière mise à jour** | 2026-09-04 |
-| **Branche** | `feat/books-p1-6-worker-v2` — basée sur `main` après merge de la PR #38 |
+| **Lot en cours** | `P1-6` à `P1-8` — code, CI, infrastructure DEV et rollout API/Worker réalisés ; le nouveau visuel Scanette de `P1-5` est maintenant intégré localement, tandis que l'acceptation des heartbeats, alertes et du fournisseur bibliographique reste à vérifier avant les gates physiques ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
+| **Prochaine action** | Déployer séparément le correctif metadata et le nouveau visuel Scanette quand la livraison sera décidée ; observer les nouveaux heartbeats `Sweep`/`Enrich` et mesurer `QT-02` sur deux heures ; enfin réaliser `P1-9` et les gates physiques `P1-10/P1-11` avec les données et appareils réels |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
+| **Dernière mise à jour** | 2026-09-04 — correction metadata et intégration locale du visuel Scanette |
+| **Branche** | `feat/scanette-visual-pr` — PR du rafraîchissement visuel Scanette en cours |
 
 ---
 
@@ -80,7 +80,7 @@ git pull
 
 ### État actualisé — 2026-09-04
 
-`P1-6` à `P1-8` sont implémentés localement sur `feat/books-p1-6-worker-v2`. Le worker
+`P1-6` à `P1-8` sont implémentés localement sur `feat/scanette-visual-pr`. Le worker
 contient désormais `Sweep` (toutes les cinq minutes) et `Enrich` (toutes les heures) :
 fermeture des sessions inactives, rattachement des annonces sans date, release des
 annonces dues, livraison de l'outbox d'alertes, suppression de comptes et enrichissement
@@ -90,8 +90,40 @@ Books annulées sont conservées pour l'audit mais exclues de toutes les opérat
 La fondation runtime ajoute le conteneur `book-covers`, les plafonds App Insights, trois
 alertes Azure Monitor, le CORS par liste d'origines, et le workflow manuel
 `Books runtime - deploy`. L'API ne migre plus au démarrage sauf en `Development` ; le
-workflow applique les migrations avant de créer les révisions API/Worker. L'envoi ACS est
-prêt côté code mais reste désactivé.
+workflow applique les migrations avant de créer les révisions API/Worker. Le `what-if` sur
+`main` (`33822673986`) est vert : 5 créations,
+24 modifications, 17 ressources inchangées, 9 changements non analysables et 10 ignorés,
+sans suppression. Le déploiement infra DEV (`33822751659`) est vert. Le runtime
+(`33822924593`) a construit les images API et Worker depuis `abbb336` sous le tag partagé
+`abbb336`, appliqué les sept migrations EF en attente avant rollout, fermé la règle firewall
+temporaire, puis déployé les deux Container Apps. L'envoi ACS est prêt côté code mais reste
+désactivé.
+
+Les migrations appliquées sont `20260903173750_AddBookExchangeCore`,
+`20260903175445_AddClientGestureIdToBookAnnouncements`,
+`20260903181307_AddSaleReversalLink`, `20260903185500_AddBookWatchlistsAndAlerts`,
+`20260903192839_AddEmailBounceEventLedger`, `20260903211547_AddWatchlistUpdatedAt` et
+`20260903230825_AddCancelledBookFair`. Le smoke test indépendant `GET /health` de l'API
+répond `200 Healthy` après rollout. Le premier smoke test de
+`GET /books/9783140464079/metadata` a répondu `500` avec l'erreur générique du résolveur :
+les logs montrent que les deux fournisseurs ont été considérés indisponibles sur cette
+fenêtre transitoire. Le code local corrige désormais le contrat en renvoyant `503 Service
+Unavailable` pour cette panne, sans supprimer le signal de retry attendu par le Worker.
+Un retest du même endpoint le 2026-09-04 à 09:41 répond `200` grâce au retour d'Open Library ;
+le correctif local n'a pas encore été redéployé. L'enrichissement bibliographique reste à
+valider après ce déploiement. Le log EF du run n'a appliqué que ces sept migrations ; les
+migrations antérieures, dont `MigrateUsersToEntraIdentity`, n'étaient donc plus en attente
+dans la base DEV.
+
+La PWA Scan déployée est la fondation fonctionnelle de `P1-5` (scan ISBN, décision locale,
+IndexedDB, authentification et synchronisation). Le nouveau visuel de
+`docs/bourse-aux-livres/maquettes/scanette/` est maintenant intégré localement dans
+`src/Scan` : accueil, choix du mode, scan/verdicts, hors ligne, saisie manuelle, fin de
+session, caisse et consultation. La consultation lit la copie locale sans créer de geste
+dans l'outbox ; la caisse dispose pour l'instant de sa liste visuelle locale, sans
+persister une vente métier. Aucun déploiement n'a été effectué pour cette tranche : il
+restera à livrer puis à valider avant les essais physiques `P1-10/P1-11`, pas dans le
+catalogue public `P2`.
 
 La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
 « Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
@@ -99,13 +131,17 @@ pas la considérer comme validée tant qu'Azure n'affiche pas l'état vérifié.
 reste donc un délai externe, tout comme l'envoi réel et la réputation.
 
 Validation locale de cette reprise : test ciblé d'isolation des types d'outbox au vert,
-test de rétention des références historiques au vert, puis suite backend complète (247
-tests) et build de solution sans erreur. `QT-02` est maintenant relevée pour l'ancien timer `AccountDeletionSweepFunction` dans le bon
-locataire (28 exécutions, 28 succès, 28 complétions sans trou sur la fenêtre observée) ;
-le heartbeat du nouveau `Sweep` doit encore être observé après déploiement. `P1-9` n'est
-pas chiffré sans dataset de développement et mesure SQL reproductible. `P1-10`/`P1-11`
-restent des gates physiques : appareil Android, téléphone de scan, mode avion, cadence et
-acceptation bénévole ne peuvent pas être déclarés depuis ce poste.
+test de rétention des références historiques au vert, puis suite backend complète (248
+tests) et build de solution sans erreur. `QT-02` est relevée pour l'ancien timer
+`AccountDeletionSweepFunction` dans le bon locataire (28 exécutions, 28 succès, 28
+complétions sans trou sur la fenêtre observée) ; cela ne valide pas encore le nouveau
+`Sweep`. Une tentative de requête KQL post-déploiement est restée sur la requête historique
+du portail, donc aucun comptage fiable des nouveaux heartbeats n'est enregistré ici.
+`P1-9` n'est pas chiffré sans dataset de développement et mesure SQL reproductible.
+`P1-10`/`P1-11` restent des gates physiques : appareil Android, téléphone de scan, mode
+avion, cadence et acceptation bénévole ne peuvent pas être déclarés depuis ce poste.
+La validation locale du nouveau visuel passe par 53 tests ChromeHeadless, les builds Scan
+production et développement, ainsi qu'un contrôle navigateur aux largeurs 390 px et 1280 px.
 
 Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité ; ce
 bloc est la source de vérité pour l'état courant.
@@ -426,6 +462,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-04 | Windows | **Correction du smoke metadata.** Le middleware API mappe désormais l'exception d'indisponibilité des fournisseurs bibliographiques vers `503 Service Unavailable` au lieu de `500`; le résolveur conserve son exception afin que le Worker réessaie plutôt que d'écrire un cache négatif. Test API dédié, 4 tests du résolveur et build API passent. Aucun déploiement applicatif n'a été lancé pour ce correctif ; le endpoint DEV a été retesté séparément en `200` lorsque Open Library était disponible. |
+| 2026-09-04 | Windows | **P1-5 — nouveau visuel Scanette.** Intégration locale des écrans de maquette : accueil et choix de session, tri avec verdicts colorés, bandeau hors ligne, saisie manuelle, fin de session, caisse et consultation sans écriture. Ajout de la consultation catalogue locale sans geste d'outbox et conservation de la décision de mode dans IndexedDB. Validation : 53 tests ChromeHeadless, build production Scan et contrôle responsive navigateur à 390 px/1280 px. Aucun déploiement ; la persistance métier de caisse et les gates physiques restent séparées. |
 | 2026-09-04 | Windows | **P1-6 à P1-8 — worker, qualité runtime et déploiement.** Ajout de `Sweep`/`Enrich`, fermeture des sessions inactives, release/rattachement des annonces, enrichissement bibliographique avec cache négatif et couvertures Blob, livraison d'alertes ACS désactivée par défaut, bourses Books annulables, plafonds/alertes App Insights, CORS par origines et workflow runtime avec migrations avant rollout. Corrections TDD de l'isolation des types dans l'outbox de suppression de comptes et de la rétention des utilisateurs référencés par l'historique Books. Suite backend complète : 247 tests passés ; build de solution sans erreur. La vérification ACS est encore « underway », et les gates physiques/P1-9 restent non déclarables à distance. |
 | 2026-09-03 | Windows | **P1-5 — contrats API, PWA Scan et synchronisation hors ligne.** Ajout des contrats `GET /scan/catalog/delta`, ouverture/rejeu de session, scans et clôture sous autorisation `Tri`, avec projections compactes, suppressions masquées et reprojection lors des changements de listes. Le Scan conserve désormais `catalog`/`outbox`/`session` dans IndexedDB persistant, calcule le verdict local, restaure le dernier geste, protège les appels par MSAL et rejoue la file séquentiellement au retour du réseau ; le service worker ne met en cache que la coquille et les métadonnées publiques. Ajout de la migration locale `20260903211547_AddWatchlistUpdatedAt`, générée avec reprise de `CreatedAt` pour les lignes existantes. Validation finale : 72 tests Domain, 93 Application, 29 Infrastructure, 49 ChromeHeadless, build solution, contrôle EF et builds Scan production/développement. Aucun changement Azure, DNS, secret, déploiement ou migration de production ; `QT-02`, `QT-03` et `QT-08` restent à relever hors dépôt. |
 | 2026-09-03 | Windows | **`QT-02` — relevé tenté après la fenêtre d'observation.** La session Azure ouverte est authentifiée dans le locataire `b23c80b3-9776-4840-8255-fcbf3b3500fd`, alors que l'abonnement et `vpd-law-dev` attendent `91a30855-a777-43a6-8fad-66854b9a4d1b` ; le worker et les journaux répondent `401 Aucun accès`. Aucun changement Azure n'a été effectué ; le worker reste gelé jusqu'à une session du bon locataire. |

@@ -1,4 +1,5 @@
 import {HttpErrorResponse} from '@angular/common/http';
+import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {ChangeDetectorRef} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
@@ -25,7 +26,7 @@ describe('ScannerComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [ScannerComponent],
-      imports: [FormsModule, DesignSystemModule],
+      imports: [CommonModule, FormsModule, DesignSystemModule],
       providers: [
         {provide: BookMetadataService, useValue: metadataService},
         {provide: CameraScannerService, useValue: cameraService},
@@ -178,6 +179,22 @@ describe('ScannerComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.message-error')?.textContent)
       .toContain('Aucun code-barres lisible');
+  });
+
+  it('renders the mode selection surface when the component enters the home screen', () => {
+    component.returnHome();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.home-screen')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Que faites-vous maintenant ?');
+  });
+
+  it('renders the manual ISBN keypad with an accessible return action', () => {
+    component.openManualInput();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.manual-keypad')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Revenir au scan"]')).not.toBeNull();
   });
 
   it('refreshes the rendered result when the live camera detects an ISBN', async () => {

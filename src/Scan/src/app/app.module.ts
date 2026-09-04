@@ -1,4 +1,5 @@
 import {NgModule, provideZonelessChangeDetection} from '@angular/core';
+import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule} from '@angular/forms';
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
@@ -19,6 +20,7 @@ import {environment} from '../environments/environment';
   declarations: [AppComponent, ScannerComponent],
   imports: [
     BrowserModule,
+    CommonModule,
     FormsModule,
     HttpClientModule,
     DesignSystemModule,
