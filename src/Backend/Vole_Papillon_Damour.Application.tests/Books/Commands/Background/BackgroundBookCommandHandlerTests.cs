@@ -202,6 +202,46 @@ public sealed class BackgroundBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task AttachNextFair_WhenHourDatesAreStale_UsesTheNearestCalendarFair()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.NextFair);
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var nearestFair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-10-07T00:00:00+00:00"),
+            DateTimeOffset.Parse("2026-10-12T00:00:00+00:00"),
+            DateTimeOffset.Parse("2026-09-04T14:00:00+00:00"),
+            DateTimeOffset.Parse("2026-09-04T18:00:00+00:00"));
+        var laterFair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2027-03-03T00:00:00+00:00"),
+            DateTimeOffset.Parse("2027-03-08T00:00:00+00:00"),
+            DateTimeOffset.Parse("2026-05-13T14:00:00+00:00"),
+            DateTimeOffset.Parse("2026-05-13T18:00:00+00:00"));
+        var announcement = BookAnnouncement.Create(
+            BookAnnouncementId.CreateUnique(),
+            book.Isbn13,
+            assoEventsId: null,
+            1,
+            ScanBookCommandHandlerTests.ClientScanAt,
+            session.Id);
+        fixture.Context.BookAnnouncements.Add(announcement);
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        var workerNow = new DateTime(2026, 9, 4, 20, 0, 0, DateTimeKind.Utc);
+        clock.UtcNow.Returns(workerNow);
+        var handler = new AttachUndatedAnnouncementsToNextFairCommandHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new AttachUndatedAnnouncementsToNextFairCommand(),
+            CancellationToken.None);
+
+        result.AttachedCount.Should().Be(1);
+        result.TargetFairId.Should().Be(nearestFair.Id);
+        announcement.AssoEventsId.Should().Be(nearestFair.Id);
+        announcement.AssoEventsId.Should().NotBe(laterFair.Id);
+    }
+
+    [Fact]
     public async Task AttachNextFair_WhenAttachedAnnouncementBelongsToCancelledFair_ReassignsItToTheNextFair()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

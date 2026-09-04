@@ -128,6 +128,6 @@ public sealed class ReleaseDueAnnouncementsCommandHandler(
     private static DateTimeOffset GetOpeningInstant(
         Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents assoEvent)
     {
-        return assoEvent.HourOpenDoors ?? assoEvent.DateStart;
+        return BookFairSchedule.GetOpeningInstant(assoEvent);
     }
 }

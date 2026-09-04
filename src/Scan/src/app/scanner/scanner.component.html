@@ -375,6 +375,7 @@
         <p>En cas d’erreur, prévenez un responsable avant l’envoi.</p>
         <span>Fenêtre de correction — 2 h</span>
         <p *ngIf="sessionCloseError" class="session-end-error" role="alert">{{ sessionCloseError }}</p>
+        <p *ngIf="syncError" class="message-error" role="status">{{ syncError }}</p>
       </div>
 
       <footer class="session-end-footer">

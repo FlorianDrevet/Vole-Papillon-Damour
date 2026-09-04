@@ -31,7 +31,7 @@ describe('ScanSyncService', () => {
     api.getCatalogDelta.and.returnValue(of(createDelta()));
     api.openSession.and.returnValue(of(createSessionResponse()));
     api.scanBook.and.returnValue(of(createScanResponse()));
-    api.closeSession.and.returnValue(of(createSessionResponse()));
+    api.closeSession.and.returnValue(of(createClosedSessionResponse()));
 
     TestBed.configureTestingModule({
       providers: [
@@ -166,6 +166,24 @@ describe('ScanSyncService', () => {
     );
   });
 
+  it('closes a requested session after transmitting its decided gestures', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    await workflow.requestClose('Manual');
+
+    const result = await service.syncAll();
+
+    expect(api.closeSession).toHaveBeenCalledOnceWith(
+      'session-1',
+      {closeReason: 'Manual'},
+    );
+    expect(result.closed).toBeTrue();
+    expect(await workflow.getSession()).toBeNull();
+  });
+
   function createDelta(): ScanCatalogDeltaResponse {
     return {
       generatedAt: '2026-09-03T08:00:00.000Z',
@@ -228,6 +246,18 @@ describe('ScanSyncService', () => {
       status: 'InProgress',
       scannedCount: 0,
       keptCount: 0,
+      rejectedCount: 0,
+    };
+  }
+
+  function createClosedSessionResponse(): ScanSessionResponse {
+    return {
+      ...createSessionResponse(),
+      endedAt: '2026-09-03T08:05:00.000Z',
+      closeReason: 'Manual',
+      status: 'Completed',
+      scannedCount: 1,
+      keptCount: 1,
       rejectedCount: 0,
     };
   }

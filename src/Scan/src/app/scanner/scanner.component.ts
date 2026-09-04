@@ -380,6 +380,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.localScan = localResult;
         if (localResult) {
           await this.refreshLocalState();
+          this.trySync();
         }
       } else if (destination === 'cash' || destination === 'consultation') {
         this.consultationResult = localOutcome.value as LocalCatalogResult | null;
@@ -574,12 +575,21 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     try {
       const summary = await scanSync.syncAll();
+      const closeRequested = this.session?.closeRequested === true;
+      if (summary.closed) {
+        this.sessionCloseCompleted = true;
+        this.sessionCloseError = null;
+      }
       if (!summary.catalog) {
         this.syncStatus = 'error';
         this.syncError = 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits Tri ou réseau).';
       } else if (summary.outbox.stoppedOnError) {
         this.syncStatus = 'error';
         this.syncError = 'La file locale reste conservée et sera réessayée automatiquement.';
+      } else if (closeRequested && !summary.closed) {
+        this.syncStatus = 'error';
+        this.syncError = 'La session est prête, mais sa fermeture serveur sera réessayée automatiquement.';
+        this.sessionCloseError = 'La session reste enregistrée localement et sera clôturée dès que la synchronisation aboutira.';
       } else {
         this.syncStatus = 'success';
       }
@@ -619,47 +629,62 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.localScan?.entry.status === 'Pending') {
+      this.syncError = 'Choisissez « Garder » ou « Écarter » pour le dernier livre avant de terminer.';
+      this.screen = 'tri';
+      this.refreshView();
+      return;
+    }
+
     this.sessionEnding = true;
     this.sessionCloseError = null;
 
     try {
-      if (this.localScan?.entry.status === 'Pending') {
-        await this.keepCurrentScan();
-      }
-
-      if (!this.session) {
-        return;
-      }
-
       const completedSession = {...this.session};
       this.completedSession = completedSession;
       this.sessionDurationLabel = this.formatSessionDuration(completedSession);
       this.sessionEnded = true;
+      this.sessionCloseCompleted = false;
       this.stopCamera();
+
+      if (this.scanWorkflow) {
+        try {
+          this.session = await this.scanWorkflow.requestClose('Manual');
+          await this.refreshLocalState();
+        } catch {
+          this.sessionCloseError = 'La demande de fin n’a pas pu être conservée localement.';
+          this.screen = 'tri';
+          return;
+        }
+      }
+
       this.resetLookupState();
       this.screen = 'session-end';
       this.refreshView();
 
-      if (!this.scanWorkflow || !this.scanSync) {
-        this.sessionCloseCompleted = !this.scanWorkflow;
+      if (!this.scanWorkflow) {
+        this.sessionCloseCompleted = true;
+        return;
+      }
+
+      if (!this.scanSync) {
+        this.sessionCloseError = 'Session enregistrée localement ; la synchronisation est indisponible.';
         return;
       }
 
       if (!this.isAuthenticated || !this.isOnline || !this.localModeReady) {
-        this.sessionCloseError = 'Synchronisez la session avant de démarrer un nouveau tri.';
+        this.sessionCloseError = 'Session enregistrée localement ; reconnectez-vous pour publier les livres.';
         return;
       }
 
       await this.syncNow();
-      if (this.pendingCount > 0) {
-        this.sessionCloseError = 'Les scans en attente doivent être synchronisés avant la clôture.';
-        return;
+      if (this.session?.closeRequested && !this.sessionCloseCompleted) {
+        // A sync already in progress may have started before requestClose().
+        await this.syncNow();
       }
-
-      await this.scanSync.closeSession(completedSession);
-      await this.scanWorkflow.clearSession();
-      this.session = null;
-      this.sessionCloseCompleted = true;
+      if (this.session?.closeRequested && !this.sessionCloseCompleted) {
+        this.sessionCloseError = 'La session reste enregistrée localement et sera clôturée dès que la synchronisation aboutira.';
+      }
     } catch {
       this.sessionCloseError = 'La session n’a pas pu être clôturée. Les scans restent conservés localement.';
     } finally {

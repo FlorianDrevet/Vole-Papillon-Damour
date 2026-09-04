@@ -167,6 +167,20 @@ describe('ScanWorkflowService', () => {
     expect(updated.keptCount).toBe(1);
   });
 
+  it('persists a manual close request until the server confirms the session close', async () => {
+    const scan = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:05:00.000Z'),
+    );
+    await service.decide(scan.entry.clientGestureId, true);
+
+    const requested = await service.requestClose('Manual');
+
+    expect(requested.closeRequested).toBeTrue();
+    expect(requested.closeReason).toBe('Manual');
+    expect((await service.getSession())?.closeRequested).toBeTrue();
+  });
+
   it('reads a local catalog result without creating an outbox gesture', async () => {
     await store.saveSettings(createSettings(10, 10));
     await store.putCatalogBooks([createBook({title: 'Livre à consulter', qtyAvailable: 2})]);

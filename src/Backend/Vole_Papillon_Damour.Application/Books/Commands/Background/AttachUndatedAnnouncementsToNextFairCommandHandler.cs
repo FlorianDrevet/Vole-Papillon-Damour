@@ -64,7 +64,7 @@ public sealed class AttachUndatedAnnouncementsToNextFairCommandHandler(
                 !assoEvent.IsCancelled &&
                 assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
                 GetOpeningInstant(assoEvent) > nowOffset)
-            .OrderBy(assoEvent => assoEvent.HourOpenDoors ?? assoEvent.DateStart)
+            .OrderBy(GetOpeningInstant)
             .ThenBy(assoEvent => assoEvent.Id)
             .FirstOrDefault();
 
@@ -100,6 +100,6 @@ public sealed class AttachUndatedAnnouncementsToNextFairCommandHandler(
     private static DateTimeOffset GetOpeningInstant(
         Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents assoEvent)
     {
-        return assoEvent.HourOpenDoors ?? assoEvent.DateStart;
+        return BookFairSchedule.GetOpeningInstant(assoEvent);
     }
 }

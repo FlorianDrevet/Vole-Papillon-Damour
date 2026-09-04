@@ -47,9 +47,8 @@ internal static class BookFairResolver
 
     public static bool IsOpen(AssoEvents assoEvent, DateTime instantUtc)
     {
-        var openAtUtc = (assoEvent.HourOpenDoors ?? assoEvent.DateStart).UtcDateTime;
-        var closeAtUtc = assoEvent.HourCloseDoors?.UtcDateTime
-            ?? assoEvent.DateEnd?.UtcDateTime
+        var openAtUtc = BookFairSchedule.GetOpeningInstant(assoEvent).UtcDateTime;
+        var closeAtUtc = BookFairSchedule.GetClosingInstant(assoEvent)?.UtcDateTime
             ?? NextParisMidnightUtc(assoEvent.DateStart);
 
         return openAtUtc < closeAtUtc &&

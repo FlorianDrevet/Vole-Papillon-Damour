@@ -74,7 +74,7 @@ internal static class PublicCatalogProjector
             return null;
         }
 
-        var opening = fair.HourOpenDoors ?? fair.DateStart;
+        var opening = BookFairSchedule.GetOpeningInstant(fair);
         return opening.UtcDateTime > nowUtc ? opening : null;
     }
 
