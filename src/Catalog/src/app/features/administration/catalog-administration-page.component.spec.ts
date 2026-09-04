@@ -2,6 +2,7 @@ import {HttpErrorResponse, provideHttpClient} from '@angular/common/http';
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
+import {Meta} from '@angular/platform-browser';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
 import {of, throwError} from 'rxjs';
@@ -93,6 +94,15 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Se connecter avec Microsoft');
     expect(fixture.nativeElement.querySelector('[data-testid="admin-login"]')).not.toBeNull();
     expect(api.getDeadStock).not.toHaveBeenCalled();
+  });
+
+  it('marks the administration route as not indexable', () => {
+    const meta = TestBed.inject(Meta);
+    spyOn(meta, 'updateTag').and.callThrough();
+
+    fixture.detectChanges();
+
+    expect(meta.updateTag).toHaveBeenCalledWith({name: 'robots', content: 'noindex, nofollow'});
   });
 
   it('loads and renders the dead-stock list for an authenticated administrator', async () => {

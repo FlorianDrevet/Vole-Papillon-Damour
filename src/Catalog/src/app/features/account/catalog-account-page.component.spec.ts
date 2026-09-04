@@ -1,6 +1,7 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {RouterModule} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
+import {Meta} from '@angular/platform-browser';
+import {RouterModule} from '@angular/router';
 import type {AccountInfo} from '@azure/msal-browser';
 import {of} from 'rxjs';
 
@@ -110,6 +111,15 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Se connecter avec Microsoft');
     expect(fixture.nativeElement.querySelector('[data-testid="member-login"]')).not.toBeNull();
     expect(api.getWatchlist).not.toHaveBeenCalled();
+  });
+
+  it('marks the account route as not indexable', () => {
+    const meta = TestBed.inject(Meta);
+    spyOn(meta, 'updateTag').and.callThrough();
+
+    fixture.detectChanges();
+
+    expect(meta.updateTag).toHaveBeenCalledWith({name: 'robots', content: 'noindex, nofollow'});
   });
 
   it('loads the private watchlist and removes only the selected item', async () => {
