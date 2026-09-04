@@ -85,6 +85,10 @@ param backOfficeCustomDomainCertificateName string
 param catalogCustomDomain string = ''
 @description('Existing managed certificate resource name for the catalog hostname')
 param catalogCustomDomainCertificateName string = ''
+@description('Hostname bound to the Scan Container App; leave empty until DNS is ready')
+param scanCustomDomain string = ''
+@description('Existing managed certificate resource name for the Scan hostname')
+param scanCustomDomainCertificateName string = ''
 
 // -----------------------------------------------------------------------
 // Container images
@@ -218,6 +222,16 @@ var corsEnvVars = [for (origin, index) in corsAllowedOrigins: {
   name: 'Cors__AllowedOrigins__${index}'
   value: origin
 }]
+var managedCertificateNames = concat(
+  [
+    websiteCustomDomainCertificateName
+    websiteWwwCustomDomainCertificateName
+    backOfficeCustomDomainCertificateName
+  ],
+  !empty(catalogCustomDomain) && !empty(catalogCustomDomainCertificateName) ? [catalogCustomDomainCertificateName] : [],
+  !empty(scanCustomDomain) && !empty(scanCustomDomainCertificateName) ? [scanCustomDomainCertificateName] : []
+)
+var scanManagedCertificateIndex = !empty(catalogCustomDomain) && !empty(catalogCustomDomainCertificateName) ? 4 : 3
 
 // Deployed until an application pipeline pushes the first real image.
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
@@ -260,11 +274,7 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     name: BuildResourceName('vpd', 'cae', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-    managedCertificateNames: concat([
-      websiteCustomDomainCertificateName
-      websiteWwwCustomDomainCertificateName
-      backOfficeCustomDomainCertificateName
-    ], empty(catalogCustomDomainCertificateName) ? [] : [catalogCustomDomainCertificateName])
+    managedCertificateNames: managedCertificateNames
   }
 }
 
@@ -950,6 +960,13 @@ module containerAppScanModule './modules/ContainerApp/containerApp.module.bicep'
     containerRuntime: containerAppScanContainerRuntime
     scaling: containerAppScanScaling
     ingress: containerAppScanIngress
+    customDomains: !empty(scanCustomDomain) && !empty(scanCustomDomainCertificateName) ? [
+      {
+        name: scanCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[scanManagedCertificateIndex]
+      }
+    ] : []
     healthProbes: containerAppScanHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: containerRegistryModule.outputs.loginServer

@@ -54,10 +54,11 @@ quitte le serverless à pause automatique pour le palier fixe `S1` (`DT-11`). C'
 paramètre de `main.dev.bicepparam` et le type correspondant dans le module `SqlServer`,
 mais c'est le poste qui change le plus la facture — dans le bon sens. Voir §7.
 
-**Un domaine personnalisé par application publique** (`DT-13`) :
-`livres.volepapillondamour.fr` sur la Container App du catalogue, avec son certificat
-managé — gratuit, renouvelé automatiquement. L'association détient le domaine et en a la
-main, donc les enregistrements DNS de `DT-12` et `DT-13` se posent en une seule fois.
+**Un domaine personnalisé par surface publique** (`DT-13`) :
+`livres.volepapillondamour.fr` sur la Container App du catalogue et
+`scan.volepapillondamour.fr` sur celle du Scan, chacun avec son certificat managé —
+gratuit, renouvelé automatiquement. L'association détient le domaine et en a la main ;
+les CNAME et les TXT `asuid` sont donc posés chez OVH.
 
 Deux Container Apps supplémentaires par rapport aux trois applications historiques :
 

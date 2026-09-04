@@ -49,10 +49,10 @@ The API startup wires:
   current Aspire/Angular startup wiring and must be validated if the hosting package changes.
 - The backend itself still stays free of `Aspire.*` packages; orchestration concerns live in the AppHost only.
 - The API health endpoint is `/health`; local Azure Container Apps probe parameters target it on port `8080` for readiness, liveness, and startup. Website and BackOffice probes remain disabled until their plan specifies health endpoints.
-- The Scan image is built from the `src/` context with nginx on port `8080`; `Scan - deploy` injects the public API URL and Application Insights connection string at build time, then rolls `vpd-scan-ca-dev` onto the image. Its deployed ACA HTTPS FQDN is `https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io` for the iPhone test.
+- The Scan image is built from the `src/` context with nginx on port `8080`; `Scan - deploy` injects the public API URL, Application Insights connection string, and canonical browser origin at build time, then rolls `vpd-scan-ca-dev` onto the image. Its secured public hostname is `https://scan.volepapillondamour.fr`; the deployed ACA HTTPS FQDN remains a technical fallback.
 - The worker is deployed as a native Functions-on-Container-Apps resource (`Microsoft.App/containerApps`, `kind=functionapp`) with a dedicated managed identity, ACR pull, Key Vault secret references, Application Insights, and a `P1-1` measurement target of `minReplicas: 0`/`maxReplicas: 1`. It is intentionally private (no ingress); the timer was previously verified in Azure with a successful `AccountDeletionSweepFunction` invocation, and the zero-replica behavior still needs the two-hour observation.
 - The SQL deployment parameter is now the fixed `S1` Standard tier (20 DTUs, 250 GB, no automatic pause); the Azure resource has not been changed from this workspace.
-- Deployment IaC for Azure Container Apps now lives under `infra/` and targets the API, BackOffice, Website, Scan, and Worker surfaces.
+- Deployment IaC for Azure Container Apps now lives under `infra/` and targets the API, BackOffice, Website, Scan, Catalog, and Worker surfaces, including SNI bindings for the catalog and Scan custom domains when their managed certificate names are supplied.
 - An Infra Flow Sculptor project named `Vole-Papillon-Damour` was created on 2026-05-18 with `dev` and `prod` environments in `FranceCentral`, a shared `rg-vpd-common`, and a separate `VpdApplications` infrastructure config.
 - The Infra Flow Sculptor run created ACR and Log Analytics in the project, but ACA environment and Container App auto-creation failed server-side with a compile exception, so the repository-local Bicep template completes that missing part.
 
@@ -64,7 +64,7 @@ The API startup wires:
 - Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`. The Scan app
   also needs its `src/SharedUi` link and exposes the LAN-oriented development server on
   port `4202` when started through AppHost.
-- ACA Bicep compile: `az bicep build --file .\infra\aca\main.bicep`
+- ACA Bicep compile: `az bicep build --file .\infra\main.bicep`; dev parameters: `az bicep build-params --file .\infra\parameters\main.dev.bicepparam`
 - ACA image build/push helper: `.\infra\aca\build-and-push.ps1 -EnvironmentName <dev|prod> -RegistryName <acr> -ApiUrl <url> -WebsiteUrl <url>`
 - MAUI build: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`
 
@@ -82,10 +82,18 @@ The API startup wires:
   `8080`; `API_URL` and `DEPLOY_HOST` are build arguments.
 - The public catalog Container App is represented in `infra/main.bicep` as
   `vpd-catalog-ca-<environment>`, with its own ACR-pull identity and Application Insights
-  resource. The catalog custom-domain parameters remain empty until DNS and a managed
-  certificate are ready; the infrastructure therefore creates the generated ACA URL first.
+  resource. In the dev parameter file, `livres.volepapillondamour.fr` and its managed
+  certificate are bound through the ACA environment's SNI custom-domain configuration.
 - `.github/workflows/catalog-deploy.yml` is manual-only. It resolves the API and catalog
   FQDNs, builds/pushes `vpd-catalog`, and rolls the Container App without changing DNS.
+
+## Public domain runtime — 2026-09-04
+
+- OVH publishes CNAMEs for `livres` and `scan` to their ACA FQDNs, plus the `asuid.livres`
+  and `asuid.scan` TXT validation records. DNS resolution was checked from Windows.
+- Azure Container Apps reports managed certificates as `Succeeded` and both custom hostnames
+  as `Secured`/`SNI SSL`. The catalog hostname is already live; Scan needs the next image
+  rollout to bake its canonical redirect URI into the bundle.
 
 ## Books runtime update — 2026-09-04
 

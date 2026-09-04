@@ -56,6 +56,8 @@
   Both Scan environment files declare the tenant ID and tenant-scoped CIAM authority;
   `ScanAuthService.login()` sends an explicit root `redirectStartPage` through a deferred
   observable so MSAL redirect-start failures are rendered inline instead of being swallowed.
+  The production environment uses `https://scan.volepapillondamour.fr` for both redirect and
+  post-logout URLs; the deployment workflow and Dockerfile inject the same canonical origin.
 - `MauiCashApp` targets `net10.0-android` and uses MSAL.NET 4.88.0. `MsalAuthService` acquires
   `api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user` silently first and falls back to
   interactive sign-in; `AuthHandler` attaches the resulting bearer token to the Refit client.
@@ -77,6 +79,10 @@
 - `Scan` development config derives its API host from the browser hostname on port `5257`
   for LAN testing; both environments target the tenant-scoped CIAM authority and the
   production environment points to the configured API deployment.
+- `infra/entra/Configure-EntraApps.ps1` merges rather than replaces existing SPA redirect
+  URIs. The dev registration targets to add are `https://livres.volepapillondamour.fr` for
+  `vpd-catalog-dev` and `https://scan.volepapillondamour.fr` for `vpd-scan-dev`; actual Graph
+  execution still requires an authenticated session in the External ID tenant.
 - Scan production bundles use `@zxing/browser` directly instead of the optional native
   `BarcodeDetector` path. The camera scans the full video frame with `TRY_HARDER` and
   supports EAN-13/EAN-8 ISBN barcodes plus QR codes; the scanner also accepts an image

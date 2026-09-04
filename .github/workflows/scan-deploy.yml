@@ -1,7 +1,8 @@
 name: Scan - deploy
 
 # Manual only: the public scanner is released deliberately after its API is
-# available and the infrastructure what-if has been reviewed.
+# available and the infrastructure what-if has been reviewed. The custom host
+# is the canonical browser origin and must stay aligned with Entra.
 on:
   workflow_dispatch:
     inputs:
@@ -23,6 +24,7 @@ env:
   IMAGE_NAME: vpd-scan
   DOCKERFILE: src/Scan/Dockerfile
   BUILD_CONTEXT: src
+  SCAN_PUBLIC_URL: https://scan.volepapillondamour.fr
 
 jobs:
   deploy:
@@ -55,7 +57,7 @@ jobs:
           {
             echo "IMAGE=$LOGIN_SERVER/$IMAGE_NAME:$TAG"
             echo "API_URL=https://$API_FQDN"
-            echo "SCAN_REDIRECT_URI=https://$SCAN_FQDN"
+            echo "SCAN_REDIRECT_URI=$SCAN_PUBLIC_URL"
             echo "APPINSIGHTS_CONNECTION_STRING=$APPINSIGHTS"
           } >> "$GITHUB_ENV"
 
@@ -91,5 +93,6 @@ jobs:
             echo ""
             echo "- Image: \`$IMAGE\`"
             echo "- API baked into the bundle: $API_URL"
-            echo "- URL: https://$FQDN"
+            echo "- Canonical URL: $SCAN_PUBLIC_URL"
+            echo "- Temporary ACA URL: https://$FQDN"
           } >> "$GITHUB_STEP_SUMMARY"

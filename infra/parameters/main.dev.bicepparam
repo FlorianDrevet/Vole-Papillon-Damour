@@ -66,9 +66,8 @@ param containerAppWebsiteHealthProbes = {
   }
 }
 
-// The root and WWW aliases point to the public Website. The BackOffice keeps
-// its own hostname. The catalog hostname is intentionally left unbound until
-// its Container App exists and the DNS/CNAME validation can be performed.
+// The root and WWW aliases point to the public Website. The BackOffice, catalog
+// and Scan applications each keep their own hostname.
 param websiteCustomDomain = 'volepapillondamour.fr'
 param websiteWwwCustomDomain = 'www.volepapillondamour.fr'
 param backOfficeCustomDomain = 'backoffice.volepapillondamour.fr'
@@ -76,8 +75,10 @@ param backOfficeCustomDomain = 'backoffice.volepapillondamour.fr'
 param websiteCustomDomainCertificateName = 'volepapillondamour.fr-vpd-cae--260901180010'
 param websiteWwwCustomDomainCertificateName = 'www.volepapillondamour.fr-vpd-cae--260901180118'
 param backOfficeCustomDomainCertificateName = 'backoffice.volepapillondamou-vpd-cae--260902142245'
-param catalogCustomDomain = ''
-param catalogCustomDomainCertificateName = ''
+param catalogCustomDomain = 'livres.volepapillondamour.fr'
+param catalogCustomDomainCertificateName = 'livres.volepapillondamour.fr-vpd-cae--260904173001'
+param scanCustomDomain = 'scan.volepapillondamour.fr'
+param scanCustomDomainCertificateName = 'scan.volepapillondamour.fr-vpd-cae--260904173447'
 
 param containerAppBackOfficeContainerRuntime = {
   cpuCores: '0.25'
@@ -212,6 +213,7 @@ param corsAllowedOrigins = [
   'https://www.volepapillondamour.fr'
   'https://backoffice.volepapillondamour.fr'
   'https://livres.volepapillondamour.fr'
+  'https://scan.volepapillondamour.fr'
   'https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io'
 ]
 

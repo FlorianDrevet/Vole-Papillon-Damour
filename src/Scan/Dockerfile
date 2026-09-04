@@ -9,11 +9,11 @@ COPY Scan .
 
 ARG API_URL=https://api.example.com
 ARG APPINSIGHTS_CONNECTION_STRING=
-ARG SCAN_REDIRECT_URI=https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io
+ARG SCAN_REDIRECT_URI=https://scan.volepapillondamour.fr
 
 RUN sed -i "s#https://vole-papillon-damour-backend.onrender.com#${API_URL}#g" src/environments/environment.ts \
  && sed -i "s#__APPINSIGHTS_CONNECTION_STRING__#${APPINSIGHTS_CONNECTION_STRING}#g" src/environments/environment.ts \
- && sed -i "s#https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io#${SCAN_REDIRECT_URI}#g" src/environments/environment.ts \
+ && sed -i "s#https://scan.volepapillondamour.fr#${SCAN_REDIRECT_URI}#g" src/environments/environment.ts \
  && npm run build -- --configuration production
 
 FROM nginx:1.27-alpine AS final
