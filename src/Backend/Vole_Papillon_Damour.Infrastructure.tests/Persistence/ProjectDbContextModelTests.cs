@@ -64,6 +64,24 @@ public sealed class ProjectDbContextModelTests
     }
 
     [Fact]
+    public void Model_IndexesBookMovementsForDeadStockQuery()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var movementIndexes = model.FindEntityType(typeof(BookMovement))!.GetIndexes();
+        movementIndexes
+            .Should()
+            .Contain(index => index.Properties.Select(property => property.Name)
+                .SequenceEqual(new[]
+                {
+                    nameof(BookMovement.Isbn13),
+                    nameof(BookMovement.Type),
+                    nameof(BookMovement.OccurredAt)
+                }));
+    }
+
+    [Fact]
     public void Model_ProtectsWatchlistTargetsAndUsesUserIdAsWatchlistKey()
     {
         using var context = CreateContext();
