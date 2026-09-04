@@ -1,7 +1,7 @@
 # Infrastructure Azure - Vole-Papillon-Damour
 
 Déploiement de l'environnement `development` : un Container App Environment
-hébergeant les cinq applications, chacune avec son Application Insights.
+hébergeant les six applications, chacune avec son Application Insights.
 
 ## Ressources déployées
 
@@ -9,22 +9,23 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 
 | Ressource | Nom | Rôle |
 | --- | --- | --- |
-| Container App Environment | `vpd-cae-dev` | Héberge les cinq Container Apps |
+| Container App Environment | `vpd-cae-dev` | Héberge les six Container Apps |
 | Container App | `vpd-api-ca-dev` | API .NET 10, port 8080 |
 | Container App | `vpd-web-ca-dev` | Website Angular SSR, port 8080 |
 | Container App | `vpd-bo-ca-dev` | BackOffice Angular servi par nginx, port 8080 |
 | Container App | `vpd-scan-ca-dev` | App de scan Angular publique, port 8080, HTTPS |
+| Container App | `vpd-catalog-ca-dev` | Catalogue public Angular SSR, port 8080, HTTPS |
 | Container App | `vpd-worker-ca-dev` | Worker Azure Functions .NET isolated, `kind=functionapp` |
-| Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` / `vpd-scan-appi-dev` / `vpd-worker-appi-dev` | Un par application |
-| Log Analytics | `vpd-law-dev` | Workspace commun aux cinq Application Insights |
+| Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` / `vpd-scan-appi-dev` / `vpd-catalog-appi-dev` / `vpd-worker-appi-dev` | Un par application |
+| Log Analytics | `vpd-law-dev` | Workspace commun aux six Application Insights |
 | ACS Email | `vpd-acs-email-dev` / `mail.volepapillondamour.fr` | Service d'envoi, donnees en France |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
 | Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S1` Standard, 20 DTU, 250 Go, sans pause automatique (France Central) |
 | Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images`, `book-covers` |
 | Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
-| Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-worker-id-dev` | Une par application |
+| Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-catalog-id-dev` / `vpd-worker-id-dev` | Une par application |
 
-Chaque Container App tourne sous sa propre identité managée. Les cinq ont
+Chaque Container App tourne sous sa propre identité managée. Les six ont
 `AcrPull` sur le registry ; l'API et le worker ont en plus `Key Vault Secrets User`.
 L'API et le worker ont chacun `Monitoring Metrics Publisher` sur leur Application
 Insights. Le worker est une Azure Function native (`kind=functionapp`). La configuration
@@ -32,7 +33,7 @@ de mesure `P1-1` vise `minReplicas: 0` et `maxReplicas: 1` pour vérifier que le
 réveille sans hôte chaud ; il faut revenir à une réplique minimum si l'observation de deux
 heures échoue.
 
-Les cinq composants Application Insights ont un plafond de 1 Go/jour via leur
+Les six composants Application Insights ont un plafond de 1 Go/jour via leur
 ressource `pricingPlans`. Les alertes worker (heartbeat absent, annonces dues en
 retard, file d'e-mails en retard) sont envoyées au groupe Azure Monitor
 `vpd-alerts-dev`, vers l'adresse de contact du projet. Le premier déploiement
@@ -141,14 +142,14 @@ Azure sans un lancement manuel.
 | `API - deploy` | build + push de l'image API, bascule de `vpd-api-ca-dev`, migrations EF optionnelles |
 | `Website - deploy` | build + push de l'image Website, bascule de `vpd-web-ca-dev` |
 | `BackOffice - deploy` | build + push de l'image BackOffice, bascule de `vpd-bo-ca-dev` |
-| `Scan - deploy` | build + push de l'image Scan avec l'URL API, bascule de `vpd-scan-ca-dev` et publication HTTPS |
+| `Scan - deploy` | build + push de l'image Scan avec l'URL API et l'origine `https://scan.volepapillondamour.fr`, bascule de `vpd-scan-ca-dev` et publication HTTPS |
 | `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev` et contrôle du host |
 | `Books runtime - deploy` | build + push coordonné API + Worker, migration EF optionnelle avant rollout, puis bascule des deux Container Apps |
 
 ### Ordre du premier déploiement
 
 1. `Infra - deploy` en mode `what-if`, pour relire ce qui va être créé.
-2. `Infra - deploy` en mode `deploy`. Les cinq Container Apps démarrent sur
+2. `Infra - deploy` en mode `deploy`. Les six Container Apps démarrent sur
    l'image placeholder `containerapps-helloworld` : c'est normal, elles n'ont
    pas encore d'image applicative.
 3. `Books runtime - deploy` avec `run_migrations` coché : les migrations sont
@@ -214,9 +215,10 @@ az bicep build-params --file infra/parameters/main.dev.bicepparam --outfile out/
 ## Scan public et worker Functions
 
 Le Scan est servi par nginx sur le port `8080` avec ingress externe et TLS géré par
-Azure Container Apps. Son FQDN HTTPS peut être ouvert directement dans Safari sur un
-iPhone ; aucune redirection DNS ni tunnel depuis le poste de développement n'est
-nécessaire. La caméra est activée seulement après autorisation du site par Safari.
+Azure Container Apps. Son domaine canonique est
+`https://scan.volepapillondamour.fr` ; le FQDN ACA reste disponible comme adresse
+technique de secours. La caméra est activée seulement après autorisation du site par
+Safari.
 
 Le worker est une Azure Function native sur Container Apps (`kind=functionapp`). Il
 utilise l'outbox SQL, le stockage Azure pour `AzureWebJobsStorage`, les secrets Key Vault

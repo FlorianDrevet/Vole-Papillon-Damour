@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2` — catalogue public implémenté sur `feat/catalogue-public-p2` : API publique, application Angular SSR distincte, SEO, image Docker, AppHost et infrastructure de déploiement manuel ; les validations manuelles de `P1-9` à `P1-11` restent ouvertes et ont été explicitement reportées par l'utilisateur ([palier 2](docs/bourse-aux-livres/plan/03-paliers-2-et-3.md)) |
-| **Prochaine action** | Relire puis merger la PR du catalogue ; ensuite créer la Container App DEV, poser le CNAME/TXT de `livres.volepapillondamour.fr` et lier le certificat managé avant toute mise en ligne publique. Le référentiel externe, le compte et les alertes restent P3. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
-| **Dernière mise à jour** | 2026-09-04 — implémentation locale du catalogue public P2 après le merge du visuel Scanette |
-| **Branche** | `feat/catalogue-public-p2` — PR catalogue public [#42](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/42) ouverte pour revue |
+| **Lot en cours** | `P2` — catalogue public mergé dans `origin/main` (`26eabe1`) ; cette reprise aligne les domaines publics du catalogue et de la Scanette, l'infrastructure déclarative et les redirections Entra |
+| **Prochaine action** | Terminer l'ajout des URI publiques dans Entra après l'approbation MFA, déployer l'infrastructure puis la Scanette, et exécuter les smoke tests HTTPS. Le référentiel externe, le compte et les alertes restent P3. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalogue-deploy-auth` |
+| **Dernière mise à jour** | 2026-09-04 — DNS OVH et certificats HTTPS managés validés pour le catalogue et la Scanette |
+| **Branche** | `feat/catalogue-deploy-auth` — PR catalogue/domaines [#45](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/45) ouverte |
 
 ---
 
@@ -80,8 +80,7 @@ git pull
 
 ### État actualisé — 2026-09-04
 
-`P2` est implémenté localement sur `feat/catalogue-public-p2`, créée depuis `main` après
-`git pull --ff-only origin main`. L'API expose les lectures anonymes du catalogue :
+`P2` est mergé dans `origin/main` au commit `26eabe1`. L'API expose les lectures anonymes du catalogue :
 recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap XML. La projection exclut
 les fiches masquées ou redirigées, conserve les livres épuisés, et sépare toujours les
 quantités disponibles des annonces futures. La recherche tolère les accents et couvre les
@@ -95,11 +94,22 @@ Le bloc « À la bourse » est implémenté ; le bloc « Pas encore reçu » est
 réservé au futur raccordement du référentiel externe. Le compte, la liste de recherche et
 les alertes restent P3.
 
-La livraison est prête pour l'exécution : port local `4203` dans l'AppHost, Dockerfile SSR,
-CI de build, Container App `vpd-catalog-ca-dev`, identité ACR, sortie FQDN et workflow manuel
-`Catalog - deploy`. Aucun déploiement Azure ni changement DNS n'a été effectué. Le paramètre
-du domaine `livres.volepapillondamour.fr` reste vide jusqu'à la création de la Container App,
-la pose du CNAME/TXT et l'émission du certificat managé.
+La livraison catalogue a été exécutée par `Catalog - deploy` run `33892968888` avec l'image
+`vpdacrdev.azurecr.io/vpd-catalog:26eabe1` et la Container App `vpd-catalog-ca-dev`.
+Le domaine public `livres.volepapillondamour.fr` est maintenant validé par OVH et sécurisé par
+le certificat managé `livres.volepapillondamour.fr-vpd-cae--260904173001`.
+L'API a ensuite été reconstruite et roulée par `API - deploy` run `33903473628` avec l'image
+`vpdacrdev.azurecr.io/vpd-api:dc4ec74` ; `/catalog/search` et `/catalog/sitemap.xml` répondent
+désormais `200` sur l'endpoint ACA, et le sitemap public répond `200`.
+
+La Scanette conserve encore temporairement sa redirection compilée vers le FQDN technique
+Azure ; le dépôt est prêt à passer à `https://scan.volepapillondamour.fr` au prochain run.
+Le CNAME, le TXT `asuid.scan` et le certificat managé
+`scan.volepapillondamour.fr-vpd-cae--260904173447` sont déjà validés et liés en SNI.
+
+Le bloc « Mon compte » du catalogue est volontairement non interactif : le compte, la liste de
+recherche et les alertes sont P3. L'enregistrement de l'application `vpd-catalog-dev` peut
+toutefois recevoir dès maintenant son URI publique.
 
 Validation de cette reprise : `260` tests backend, `5` tests Catalog ChromeHeadless, build
 Angular de production, build AppHost, compilation Bicep, build Docker et smoke SSR du
@@ -338,6 +348,7 @@ dans Azure sans être déductible du dépôt.
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur réel `DoNotReply@mail.volepapillondamour.fr` ; le portail affiche encore « Verification is underway » | `2026-09-04` |
+| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:dc4ec74` déployée par `API - deploy` run `33903473628`; routes publiques `/catalog/*` et `/catalog/sitemap.xml` répondent `200` après activation de la révision | `2026-09-04` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
 
@@ -350,7 +361,8 @@ Domaine détenu et administré par l'association, main pleine et entière.
 | `TXT` propriété + SPF + DKIM sur `mail` | `L0-8` | Oui — `TXT mail = "ms-domain-verification=57bdf09a-9c44-4816-b564-9a700cb19d07"`; `TXT mail = "v=spf1 include:spf.protection.outlook.com -all"`; `CNAME selector1-azurecomm-prod-net._domainkey` → `selector1-azurecomm-prod-net._domainkey.azurecomm.net`; `CNAME selector2-azurecomm-prod-net._domainkey` → `selector2-azurecomm-prod-net._domainkey.azurecomm.net` | `2026-09-02` |
 | `DMARC` | `L0-8` | Oui — `TXT _dmarc.mail = "v=DMARC1;p=none;"` | `2026-09-02` |
 | `TXT` Search Console | `L0-8` | Oui — déjà présent | `2026-09-02` |
-| `CNAME` + `TXT asuid` sur `livres` | **Palier 2** — le `CNAME` a besoin du FQDN de la Container App du catalogue, qui n'existe pas avant | Non | — |
+| `CNAME` + `TXT asuid` sur `livres` | **Palier 2** — `livres` → `vpd-catalog-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io`, TXT `asuid.livres` avec le jeton ACA | Oui — certificat managé `livres.volepapillondamour.fr-vpd-cae--260904173001`, binding SNI `Secured` | `2026-09-04` |
+| `CNAME` + `TXT asuid` sur `scan` | **Palier 2** — `scan` → `vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io`, TXT `asuid.scan` avec le même jeton ACA | Oui — certificat managé `scan.volepapillondamour.fr-vpd-cae--260904173447`, binding SNI `Secured` | `2026-09-04` |
 
 ### Entra
 
@@ -358,6 +370,7 @@ Domaine détenu et administré par l'association, main pleine et entière.
 |---|---|
 | Locataire | Créé : `b23c80b3-9776-4840-8255-fcbf3b3500fd` (`volepapillondamour.onmicrosoft.com`) |
 | Enregistrements d'application | Créés en réel le `2026-09-02` par `Configure-EntraApps.ps1` : `vpd-api-dev` → `ebc68507-2c07-4bab-9448-2d6d489c6112` ; `vpd-catalog-dev` → `9ceb5499-d273-4d7c-b0d0-047eff9f0541` ; `vpd-scan-dev` → `cabcb17b-537f-4d87-956b-60477103e0ec` ; `vpd-backoffice-dev` → `b5e7446e-2e87-4eed-8a6a-d40b3c913c9c` ; `vpd-caisse-dev` → `427c90de-bf59-4b01-af63-dc0799248496` |
+| URI publiques à ajouter | `vpd-catalog-dev` → `https://livres.volepapillondamour.fr` ; `vpd-scan-dev` → `https://scan.volepapillondamour.fr` ; le script fusionne les URI existantes. Exécution réelle en attente de l'approbation MFA dans le portail. |
 | ApiClientId / portée | `ebc68507-2c07-4bab-9448-2d6d489c6112` / `api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user` |
 | Comptes administrateurs recréés | `florian.drevet_magellangroup.eu#EXT#@volepapillondamour.onmicrosoft.com` — rôle `Administration` attribué puis vérifié le `2026-09-02 21:47:41` |
 | Appareils de caisse mis à jour | **Aucun** — voir `L0-10` et `L0-11`, ils ne se mettent pas à jour tout seuls |
@@ -435,6 +448,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-04 | Windows | **Catalogue — activation API.** Le run `API - deploy` `33903473628` a construit et déployé `vpd-api:dc4ec74` sans migration SQL. Après activation de la révision, `/catalog/search` et `/catalog/sitemap.xml` répondent `200`; les smoke tests HTTPS du catalogue (`/`, `/robots.txt`, `/sitemap.xml`) et de la Scanette (`/`) répondent `200`. |
+| 2026-09-04 | Windows | **Catalogue + Scan — domaines publics.** Depuis le worktree `feat/catalogue-deploy-auth`, validation OVH des CNAME/TXT `asuid` vers les deux Container Apps et validation Azure des certificats managés SNI `Secured` pour `livres.volepapillondamour.fr` et `scan.volepapillondamour.fr`. Alignement Bicep, Dockerfile, workflow Scan, documentation et URI de redirection Scan sur les origines canoniques. Validation locale : 4 tests de contrat, 61 tests ChromeHeadless, build production Scan, build Docker et compilations Bicep. L'ajout réel des URI Entra et le rollout Scan attendent l'approbation MFA. |
 | 2026-09-04 | Windows | **Correction du smoke metadata.** Le middleware API mappe désormais l'exception d'indisponibilité des fournisseurs bibliographiques vers `503 Service Unavailable` au lieu de `500`; le résolveur conserve son exception afin que le Worker réessaie plutôt que d'écrire un cache négatif. Test API dédié, 4 tests du résolveur et build API passent. Aucun déploiement applicatif n'a été lancé pour ce correctif ; le endpoint DEV a été retesté séparément en `200` lorsque Open Library était disponible. |
 | 2026-09-04 | Windows | **P1-5 — nouveau visuel Scanette.** Intégration locale des écrans de maquette : accueil et choix de session, tri avec verdicts colorés, bandeau hors ligne, saisie manuelle, fin de session, caisse et consultation sans écriture. Ajout de la consultation catalogue locale sans geste d'outbox et conservation de la décision de mode dans IndexedDB. Validation : 53 tests ChromeHeadless, build production Scan et contrôle responsive navigateur à 390 px/1280 px. Aucun déploiement ; la persistance métier de caisse et les gates physiques restent séparées. |
 | 2026-09-04 | Windows | **P1-6 à P1-8 — worker, qualité runtime et déploiement.** Ajout de `Sweep`/`Enrich`, fermeture des sessions inactives, release/rattachement des annonces, enrichissement bibliographique avec cache négatif et couvertures Blob, livraison d'alertes ACS désactivée par défaut, bourses Books annulables, plafonds/alertes App Insights, CORS par origines et workflow runtime avec migrations avant rollout. Corrections TDD de l'isolation des types dans l'outbox de suppression de comptes et de la rétention des utilisateurs référencés par l'historique Books. Suite backend complète : 247 tests passés ; build de solution sans erreur. La vérification ACS est encore « underway », et les gates physiques/P1-9 restent non déclarables à distance. |

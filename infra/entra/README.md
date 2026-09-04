@@ -60,12 +60,13 @@ administrateur. Voir `QT-07` dans
 
 ```powershell
 # 1. Enregistrements et rôles. Rejouable sans effet de bord.
-# Le Website est servi par le domaine public retenu ; le scan n'existe pas encore,
-# donc son URI locale reste celle par défaut jusqu'à la création de l'application.
+# Les URI existantes sont fusionnées, jamais remplacées : les origines locales et
+# les anciens FQDN temporaires restent donc utilisables après l'ajout des domaines
+# publics.
 ./Configure-EntraApps.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -Environment 'dev' `
-    -CatalogRedirectUri    'https://volepapillondamour.fr' `
-    -ScanRedirectUri       'http://localhost:4300' `
+    -CatalogRedirectUri    'https://livres.volepapillondamour.fr' `
+    -ScanRedirectUri       'https://scan.volepapillondamour.fr' `
     -BackOfficeRedirectUri 'https://backoffice.volepapillondamour.fr' `
     -WhatIf
 
@@ -73,8 +74,8 @@ administrateur. Voir `QT-07` dans
 # sans -WhatIf et conserver le rapport hors du dépôt.
 ./Configure-EntraApps.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -Environment 'dev' `
-    -CatalogRedirectUri    'https://volepapillondamour.fr' `
-    -ScanRedirectUri       'http://localhost:4300' `
+    -CatalogRedirectUri    'https://livres.volepapillondamour.fr' `
+    -ScanRedirectUri       'https://scan.volepapillondamour.fr' `
     -BackOfficeRedirectUri 'https://backoffice.volepapillondamour.fr' `
     -OutputFile ./entra-dev.json `
     -DeletionClientSecretOutputFile "$env:TEMP\vpd-entra-graph-secret-dev.txt"

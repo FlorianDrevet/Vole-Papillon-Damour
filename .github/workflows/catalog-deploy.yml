@@ -1,8 +1,8 @@
 name: Catalog - deploy
 
 # Manual only: release the public catalog after the API and its data have been
-# validated. Binding livres.volepapillondamour.fr remains a separate DNS/cert
-# operation and is not performed by this workflow.
+# validated. The livres.volepapillondamour.fr binding is managed by the Infra
+# workflow after DNS and the managed certificate have been validated.
 on:
   workflow_dispatch:
     inputs:
@@ -89,6 +89,7 @@ jobs:
             echo ""
             echo "- Image: \`$IMAGE\`"
             echo "- API baked into the SSR bundle: $API_URL"
+            echo "- Canonical URL: https://livres.volepapillondamour.fr"
             echo "- Temporary ACA URL: https://$FQDN"
-            echo "- Custom domain: bind livres.volepapillondamour.fr after DNS validation"
+            echo "- Custom domain binding: managed by Infra - deploy"
           } >> "$GITHUB_STEP_SUMMARY"

@@ -50,8 +50,9 @@ npm start -- --port 4300
 ```
 
 Le port `4300` correspond à l'URI SPA locale déclarée par `infra/entra/Configure-EntraApps.ps1`.
-Un compte Entra doté du rôle `Tri` est nécessaire pour passer l'écran de connexion et
-ouvrir l'application.
+En production, l'origine canonique est `https://scan.volepapillondamour.fr` ; le FQDN
+technique ACA reste une adresse de secours. Un compte Entra doté du rôle `Tri` est
+nécessaire pour passer l'écran de connexion et ouvrir l'application.
 
 Le lancement de l'AppHost est recommandé pour démarrer l'API et la sonde ensemble :
 
@@ -67,9 +68,10 @@ produite par le workflow `Scan - deploy`, sans tunnel réseau.
 ## Déployer sur Azure
 
 Le workflow manuel `.github/workflows/scan-deploy.yml` construit l'image avec l'URL
-publique de l'API, la pousse dans `vpdacrdev`, puis met à jour `vpd-scan-ca-dev`. Son
-résumé GitHub fournit l'URL HTTPS à ouvrir dans Safari. L'infrastructure est créée par
-`Infra - deploy` et le worker par `Worker - deploy`.
+publique de l'API et l'origine `https://scan.volepapillondamour.fr`, la pousse dans
+`vpdacrdev`, puis met à jour `vpd-scan-ca-dev`. Son résumé GitHub fournit l'origine
+canonique et le FQDN ACA de secours. L'infrastructure est créée par `Infra - deploy` et
+le worker par `Worker - deploy`.
 
 Ordre du premier déploiement : `Infra - deploy` en `what-if`, `Infra - deploy` en
 `deploy`, `API - deploy` avec migration, puis `Scan - deploy` et `Worker - deploy`.

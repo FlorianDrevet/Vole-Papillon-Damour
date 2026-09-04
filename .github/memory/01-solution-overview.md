@@ -16,9 +16,10 @@
 - `src/Backend/Vole_Papillon_Damour.AppHost/` hosts the Aspire AppHost used for local orchestration of the API and web apps.
 - `src/BackOffice/` is the Angular admin application.
 - `src/Website/` is the Angular public website.
-- `src/Catalog/` is the separate Angular SSR public books catalog, released at the planned
-  `livres.volepapillondamour.fr` hostname once its DNS binding exists.
-- `src/Scan/` is the public consultation-only ISBN metadata probe.
+- `src/Catalog/` is the separate Angular SSR public books catalog, released at
+  `https://livres.volepapillondamour.fr`.
+- `src/Scan/` is the public consultation-only ISBN metadata probe, released at
+  `https://scan.volepapillondamour.fr` with the ACA FQDN as a technical fallback.
 - `src/Backend/Vole_Papillon_Damour.Worker/` hosts the private account-deletion timer worker.
 - `src/MauiCashApp/` is the MAUI client that calls the deployed backend through Refit.
 

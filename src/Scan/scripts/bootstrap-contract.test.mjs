@@ -35,3 +35,16 @@ test('uses a tenant-scoped authority for the CIAM custom domain', () => {
     assert.equal(new URL(authority).pathname.replace(/\/$/, ''), `/${tenantId}`);
   }
 });
+
+test('uses the public scan host for production redirects', () => {
+  const productionEnvironment = environmentSources[0];
+
+  assert.match(
+    productionEnvironment,
+    /redirectUri:\s*'https:\/\/scan\.volepapillondamour\.fr'/,
+  );
+  assert.match(
+    productionEnvironment,
+    /postLogoutRedirectUri:\s*'https:\/\/scan\.volepapillondamour\.fr'/,
+  );
+});

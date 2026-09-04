@@ -32,10 +32,10 @@
     Suffixe d'environnement, repris dans les noms d'application. Defaut : `dev`.
 
 .PARAMETER CatalogRedirectUri
-    Origine du site catalogue public. Ex. https://vpd-web-ca-dev.azurecontainerapps.io
+    Origine du site catalogue public. Ex. https://livres.volepapillondamour.fr
 
 .PARAMETER ScanRedirectUri
-    Origine de la PWA de scan.
+    Origine de la PWA de scan. Ex. https://scan.volepapillondamour.fr
 
 .PARAMETER BackOfficeRedirectUri
     Origine du back-office.
