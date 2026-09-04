@@ -52,7 +52,7 @@ local workflow marks the same ISBN as `Déjà scanné à l’instant` when it re
 five seconds in one session (`RG-04`), and the verdict card is intentionally smaller so
 the catalog facts remain visible. Ending a session synchronizes and closes its remote
 session before clearing the active IndexedDB snapshot; a failed close keeps the local
-gestures rather than silently losing them. Validation for this follow-up passes with 73
+gestures rather than silently losing them. Validation for this follow-up passes with 74
 ChromeHeadless tests, the bootstrap contract, and the production build; no deployment has
 been made.
 
