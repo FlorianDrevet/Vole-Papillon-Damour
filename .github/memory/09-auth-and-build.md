@@ -48,6 +48,11 @@
   interface, role enum, `@auth0/angular-jwt`, and `ngx-cookie-service` were removed in the
   MSAL migration. Authorization remains enforced by the API's Entra role policies.
 - `Website` does not show the same auth guard pattern in its top-level routing and now runs through Angular SSR with client hydration.
+- `Scan` gates the entire PWA through `ScanAuthService.authState$`: only an Entra account
+  with the `Tri` role renders the scanner, while unauthenticated, unauthorized, and token-
+  renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
+  `MsalService.initialize()` and `src/index.html` declares `<app-redirect>` before MSAL
+  roots are bootstrapped, preventing the refresh-time `NG05104`/uninitialized-cache race.
 - `MauiCashApp` targets `net10.0-android` and uses MSAL.NET 4.88.0. `MsalAuthService` acquires
   `api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user` silently first and falls back to
   interactive sign-in; `AuthHandler` attaches the resulting bearer token to the Refit client.

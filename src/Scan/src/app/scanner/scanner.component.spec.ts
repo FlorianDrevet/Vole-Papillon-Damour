@@ -213,6 +213,23 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
   });
 
+  it('starts the live camera when the scan screen opens without a scanner button', async () => {
+    cameraService.start.and.returnValue(Promise.resolve({stop: async () => undefined}));
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    await component.chooseSessionMode('AvailableNow');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(cameraService.start).toHaveBeenCalledOnceWith(
+      jasmine.any(HTMLElement),
+      jasmine.any(Function),
+    );
+    expect(component.cameraActive).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.scan-dock .dock-primary')).toBeNull();
+  });
+
   function createMetadata(title = 'Le Petit Prince'): BookMetadata {
     return {
       isbn13: '9782070363735',
