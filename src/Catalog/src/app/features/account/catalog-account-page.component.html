@@ -1,0 +1,122 @@
+<section class="account-page page-width" aria-labelledby="account-title">
+  @if (!initialized()) {
+    <div class="account-state" role="status">Préparation de votre espace…</div>
+  } @else if (authError()) {
+    <div class="account-state" role="alert">
+      <p class="eyebrow">Connexion indisponible</p>
+      <h1 id="account-title">Mon compte</h1>
+      <p>{{ authError() }}</p>
+      <button type="button" class="account-button secondary" (click)="initialize()">Réessayer</button>
+    </div>
+  } @else if (!isAuthenticated()) {
+    <div class="account-state sign-in-state">
+      <p class="eyebrow">Espace personnel</p>
+      <h1 id="account-title">Mon compte</h1>
+      <p>Retrouvez ici les livres que vous souhaitez surveiller. Le catalogue public reste consultable sans connexion.</p>
+      <button type="button" class="account-button" data-testid="member-login" (click)="login()">
+        Se connecter avec Microsoft
+      </button>
+      <p class="account-hint">La création du compte est proposée par Microsoft au premier ajout d’alerte.</p>
+    </div>
+  } @else {
+    <div class="account-heading">
+      <div>
+        <p class="eyebrow">Espace personnel</p>
+        <h1 id="account-title">Mon compte</h1>
+        <p class="account-identity">{{ accountLabel() }}</p>
+      </div>
+      <button type="button" class="account-button quiet" (click)="logout()">Se déconnecter</button>
+    </div>
+
+    @if (errorMessage()) {
+      <p class="feedback error" role="alert">{{ errorMessage() }}</p>
+    }
+    @if (successMessage()) {
+      <p class="feedback success" role="status">{{ successMessage() }}</p>
+    }
+
+    <section class="watchlist-panel" aria-labelledby="watchlist-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Vos alertes</p>
+          <h2 id="watchlist-title">Livres suivis</h2>
+        </div>
+        @if (watchlist(); as current) {
+          <span class="watchlist-status" [class.suspended]="current.alertStatus !== 'Active'">
+            {{ current.alertStatus === 'Active' ? 'Alertes actives' : 'Alertes suspendues' }}
+          </span>
+        }
+      </div>
+
+      @if (loading()) {
+        <p class="account-state compact" role="status">Chargement de votre liste…</p>
+      } @else if (watchlist(); as current) {
+        @if (current.items.length === 0) {
+          <div class="empty-watchlist">
+            <h3>Aucun titre suivi</h3>
+            <p>Depuis une fiche livre, utilisez « Me prévenir » pour ajouter une œuvre ou une édition à votre liste.</p>
+            <a class="account-button secondary" routerLink="/recherche">Explorer le catalogue</a>
+          </div>
+        } @else {
+          <div class="watchlist-list">
+            @for (item of current.items; track item.id) {
+              <article class="watchlist-item">
+                <div class="watchlist-item-copy">
+                  <p class="watchlist-scope">{{ item.scope === 'Work' ? 'Œuvre' : 'Édition' }}</p>
+                  <h3>{{ item.book?.title || 'Titre pas encore reçu' }}</h3>
+                  @if (item.book?.authors) {
+                    <p>{{ item.book?.authors }}</p>
+                  } @else if (!item.book) {
+                    <p>Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.</p>
+                  }
+                  <small>Ajouté le {{ formatDate(item.addedAt) }}</small>
+                  @if (item.lastAlertAt) {
+                    <small>Dernière alerte : {{ formatDate(item.lastAlertAt) }}</small>
+                  }
+                </div>
+                <div class="watchlist-item-actions">
+                  @if (item.book) {
+                    <a class="text-link" [routerLink]="['/livres', item.book.isbn13]">Voir la fiche</a>
+                  }
+                  <button
+                    type="button"
+                    class="remove-button"
+                    [disabled]="removingItemId() === item.id"
+                    (click)="removeItem(item)">
+                    {{ removingItemId() === item.id ? 'Retrait…' : 'Retirer' }}
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      } @else if (!errorMessage()) {
+        <p class="account-state compact">Votre liste n’a pas pu être préparée.</p>
+      }
+    </section>
+
+    <section class="account-danger" aria-labelledby="delete-account-title">
+      <div>
+        <p class="eyebrow">Données personnelles</p>
+        <h2 id="delete-account-title">Supprimer mon compte</h2>
+        <p>Cette demande supprime votre profil local et vos livres suivis. Elle ne supprime pas votre identité Microsoft.</p>
+      </div>
+      @if (!deletionRequested()) {
+        <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">
+          Supprimer mon compte
+        </button>
+      } @else {
+        <div class="delete-confirmation" role="alertdialog" aria-labelledby="delete-confirmation-title">
+          <h3 id="delete-confirmation-title">Confirmer la suppression ?</h3>
+          <p>Cette action est irréversible pour les données du catalogue.</p>
+          <div class="confirmation-actions">
+            <button type="button" class="account-button quiet" (click)="cancelAccountDeletion()">Annuler</button>
+            <button type="button" class="account-button danger" data-testid="confirm-delete-account" [disabled]="deleting()" (click)="confirmAccountDeletion()">
+              {{ deleting() ? 'Suppression…' : 'Oui, supprimer' }}
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  }
+</section>

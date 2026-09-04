@@ -84,10 +84,45 @@
         <strong>indiqué au comptoir</strong>
       </div>
 
-      <button type="button" class="notify-button" disabled title="Les alertes seront ouvertes au palier 3">
+      @if (item.workId) {
+        <fieldset class="notify-scope">
+          <legend>Portée de l’alerte</legend>
+          <label>
+            <input
+              type="radio"
+              name="notification-scope"
+              value="Work"
+              [checked]="notificationScope() === 'Work'"
+              (change)="notificationScope.set('Work')">
+            Toutes les éditions de cette œuvre
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="notification-scope"
+              value="Edition"
+              [checked]="notificationScope() === 'Edition'"
+              (change)="notificationScope.set('Edition')">
+            Cette édition uniquement
+          </label>
+        </fieldset>
+      }
+
+      <button
+        type="button"
+        class="notify-button"
+        [disabled]="notifyPending()"
+        (click)="notify(item)">
         <span class="bell-icon" aria-hidden="true"></span>
-        Me prévenir quand il y en aura
+        {{ notifyPending() ? 'Ajout en cours…' : 'Me prévenir quand il y en aura' }}
       </button>
+
+      @if (notifyMessage()) {
+        <p class="notify-feedback success" role="status">{{ notifyMessage() }} <a routerLink="/compte">Voir mon compte</a></p>
+      }
+      @if (notifyError()) {
+        <p class="notify-feedback error" role="alert">{{ notifyError() }}</p>
+      }
 
       <div class="freshness-note">
         <span class="info-icon" aria-hidden="true">i</span>

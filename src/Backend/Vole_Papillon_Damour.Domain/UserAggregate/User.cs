@@ -1,3 +1,4 @@
+using Vole_Papillon_Damour.Domain.Common;
 using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
@@ -36,12 +37,47 @@ public sealed class User : AggregateRoot<UserId>
     {
         return new User(UserId.CreateUnique(), email, password, name, salt);
     }
+
+    public static User CreateFromExternalIdentity(
+        UserId userId,
+        string externalId,
+        string email,
+        DateTime firstSeenAt)
+    {
+        ArgumentNullException.ThrowIfNull(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(externalId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+
+        var utcFirstSeenAt = DomainTime.RequireUtc(firstSeenAt, nameof(firstSeenAt));
+        return new User
+        {
+            Id = userId,
+            ExternalId = externalId.Trim(),
+            Email = email.Trim(),
+            CreatedAt = utcFirstSeenAt,
+            LastSeenAt = utcFirstSeenAt
+        };
+    }
     
     public User(){}
 
     public void ChangeEmail(string requestEmail)
     {
         Email = requestEmail;
+    }
+
+    public void SynchronizeExternalIdentity(
+        string externalId,
+        string email,
+        DateTime lastSeenAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(externalId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+
+        ExternalId = externalId.Trim();
+        Email = email.Trim();
+        LastSeenAt = DomainTime.RequireUtc(lastSeenAt, nameof(lastSeenAt));
+        AnonymizedAt = null;
     }
 
     public void Anonymize(DateTime anonymizedAt)

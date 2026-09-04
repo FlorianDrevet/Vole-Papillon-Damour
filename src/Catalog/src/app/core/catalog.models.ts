@@ -77,3 +77,36 @@ export interface CatalogDeadStockResponse {
   minQuantity: number;
   books: CatalogDeadStockBook[];
 }
+
+export type CatalogWatchlistScope = 'Work' | 'Edition';
+
+export interface CatalogWatchlistItemRequest {
+  scope: CatalogWatchlistScope;
+  workId: string | null;
+  isbn13: string | null;
+}
+
+export interface CatalogAddedWatchlistItem {
+  id: string;
+  scope: CatalogWatchlistScope;
+  workId: string | null;
+  isbn13: string | null;
+  addedAt: string;
+}
+
+export interface CatalogWatchlistItem {
+  id: string;
+  scope: CatalogWatchlistScope;
+  workId: string | null;
+  isbn13: string | null;
+  book: CatalogBook | null;
+  addedAt: string;
+  lastAlertAt: string | null;
+}
+
+export interface CatalogWatchlistResponse {
+  generatedAt: string;
+  alertStatus: 'Active' | 'Suspended' | 'Blocked' | string;
+  bounceCount: number;
+  items: CatalogWatchlistItem[];
+}

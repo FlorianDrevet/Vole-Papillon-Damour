@@ -6,7 +6,7 @@ using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Common;
 
-internal static class PublicCatalogProjector
+public static class PublicCatalogProjector
 {
     public static IReadOnlyList<PublicCatalogBookResult> Project(
         IEnumerable<Book> books,

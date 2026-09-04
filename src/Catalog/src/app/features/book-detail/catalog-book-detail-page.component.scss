@@ -189,10 +189,64 @@ h1 {
   border-radius: 999px;
   background: var(--catalog-orange);
   color: white;
-  cursor: not-allowed;
   font-size: 1rem;
   font-weight: 600;
-  opacity: .7;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--catalog-blue);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: .7;
+  }
+}
+
+.notify-scope {
+  display: grid;
+  gap: 10px;
+  margin: 26px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--catalog-line);
+  color: var(--catalog-slate-strong);
+  font-size: .86rem;
+
+  legend {
+    padding: 0 6px;
+    color: var(--catalog-slate);
+    font: .65rem/1.2 var(--catalog-mono);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  label {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    line-height: 1.4;
+    cursor: pointer;
+  }
+
+  input { accent-color: var(--catalog-orange); }
+}
+
+.notify-feedback {
+  margin: 16px 0 0;
+  font-size: .86rem;
+
+  &.success {
+    color: #22613b;
+  }
+
+  &.error {
+    color: #8b332f;
+  }
+
+  a {
+    color: inherit;
+    font-weight: 600;
+  }
 }
 
 .bell-icon {

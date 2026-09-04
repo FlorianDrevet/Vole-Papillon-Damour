@@ -43,5 +43,11 @@ public sealed class WatchlistItemConfiguration : IEntityTypeConfiguration<Watchl
         builder.HasIndex(item => item.UserId);
         builder.HasIndex(item => item.WorkId);
         builder.HasIndex(item => item.Isbn13);
+        builder.HasIndex(item => new { item.UserId, item.WorkId })
+            .IsUnique()
+            .HasFilter("[WorkId] IS NOT NULL");
+        builder.HasIndex(item => new { item.UserId, item.Isbn13 })
+            .IsUnique()
+            .HasFilter("[Isbn13] IS NOT NULL");
     }
 }
