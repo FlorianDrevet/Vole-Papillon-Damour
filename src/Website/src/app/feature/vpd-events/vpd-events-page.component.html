@@ -7,9 +7,9 @@
         <span class="font-mono text-[10px] uppercase tracking-[.16em]" [ngClass]="accentClass">{{ label }}</span>
         <strong class="text-[15px] font-semibold text-ink-2 first-letter:uppercase">
           @if (event.dateEnd) {
-            Du {{ event.dateStart | date:'d MMMM' }} au {{ event.dateEnd | date:'d MMMM yyyy' }}
+            Du {{ event.dateStart | date:'d MMMM':'UTC' }} au {{ event.dateEnd | date:'d MMMM yyyy':'UTC' }}
           } @else {
-            {{ event.dateStart | date:'EEEE d MMMM yyyy' }}
+            {{ event.dateStart | date:'EEEE d MMMM yyyy':'UTC' }}
           }
         </strong>
         <span class="text-[13px] text-slate-3">
@@ -156,8 +156,8 @@
             }
             <span class="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent"></span>
             <span class="absolute bottom-3.5 left-5 flex items-baseline gap-2 text-white">
-              <span class="font-serif text-[34px] leading-none">{{ event.dateStart | date:'dd' }}</span>
-              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-2">{{ event.dateStart | date:'MMM yyyy' }}</span>
+              <span class="font-serif text-[34px] leading-none">{{ event.dateStart | date:'dd':'UTC' }}</span>
+              <span class="font-mono text-[11px] uppercase tracking-[.14em] text-orange-2">{{ event.dateStart | date:'MMM yyyy':'UTC' }}</span>
             </span>
           </span>
 

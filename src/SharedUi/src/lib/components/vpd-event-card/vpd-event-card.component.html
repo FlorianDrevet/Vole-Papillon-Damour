@@ -4,8 +4,8 @@
       <img [src]="event().urlImage" [alt]="event().name" class="h-[150px] w-full object-cover">
     </a>
     <span class="absolute left-3 top-3 flex flex-col items-center rounded-sm bg-white/95 px-2.5 py-1.5 leading-none shadow-[0_10px_20px_-12px_rgba(7,43,69,0.5)]">
-      <span class="font-serif text-lg text-ink-2">{{ event().dateStart | date:'dd' }}</span>
-      <span class="font-mono text-[9px] uppercase tracking-[.1em] text-blue">{{ event().dateStart | date:'MMM' }}</span>
+      <span class="font-serif text-lg text-ink-2">{{ event().dateStart | date:'dd':'UTC' }}</span>
+      <span class="font-mono text-[9px] uppercase tracking-[.1em] text-blue">{{ event().dateStart | date:'MMM':'UTC' }}</span>
     </span>
 
     @if (editable()) {
