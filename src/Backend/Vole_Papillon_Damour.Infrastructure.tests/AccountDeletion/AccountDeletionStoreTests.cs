@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Vole_Papillon_Damour.Domain.UserAggregate;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Outbox;
@@ -56,6 +58,40 @@ public sealed class AccountDeletionStoreTests
             .ClaimedUntil
             .Should()
             .BeNull();
+    }
+
+    [Fact]
+    public async Task EnsurePendingAsync_CreatesAndReusesThePendingMessageOnSqlite()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var userId = Guid.NewGuid();
+        fixture.Context.Users.Add(User.CreateFromExternalIdentity(
+            UserId.Create(userId),
+            "entra-object-id",
+            "member@example.com",
+            Now));
+        await fixture.Context.SaveChangesAsync();
+
+        var store = new AccountDeletionStore(
+            fixture.Context,
+            new NoRetainedSalesMovementsPolicy(fixture.Context));
+
+        var first = await store.EnsurePendingAsync(
+            "entra-object-id",
+            Now,
+            CancellationToken.None);
+        var second = await store.EnsurePendingAsync(
+            "ENTRA-OBJECT-ID",
+            Now.AddMinutes(1),
+            CancellationToken.None);
+
+        second.RequestId.Should().Be(first.RequestId);
+        second.UserId.Should().Be(userId);
+        second.ExternalId.Should().Be("entra-object-id");
+        (await fixture.Context.OutboxMessages.CountAsync(message =>
+                message.Kind == OutboxMessageKind.AccountDeletion))
+            .Should()
+            .Be(1);
     }
 
     private sealed class Fixture : IAsyncDisposable

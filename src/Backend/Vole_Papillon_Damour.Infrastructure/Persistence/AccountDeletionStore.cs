@@ -247,6 +247,25 @@ public sealed class AccountDeletionStore(
         string externalId,
         CancellationToken cancellationToken)
     {
+        if (!dbContext.Database.IsSqlServer())
+        {
+            // JSON_VALUE is SQL Server-specific. Keep the local SQLite/Aspire
+            // path provider-neutral; pending account-deletion rows are small
+            // and the production provider uses the indexed-kind/status query
+            // below with server-side JSON filtering.
+            var pendingMessages = await dbContext.OutboxMessages
+                .Where(message =>
+                    message.Kind == OutboxMessageKind.AccountDeletion &&
+                    message.Status == OutboxMessageStatus.Pending)
+                .ToListAsync(cancellationToken);
+
+            return pendingMessages.SingleOrDefault(message =>
+                string.Equals(
+                    DeserializePayload(message.PayloadJson).ExternalId,
+                    externalId,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+
         return await dbContext.OutboxMessages
             .FromSqlInterpolated($"""
                 SELECT *
