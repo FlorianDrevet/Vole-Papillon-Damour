@@ -45,6 +45,17 @@ surfaces redirect failures inline. Local validation passes with 61 ChromeHeadles
 the three-case bootstrap contract, the production build, and browser checks at 375 px,
 768 px, and 1440 px without page overflow.
 
+The 2026-09-04 Scan follow-up keeps the live camera open on the cash and consultation
+surfaces: it starts on entry and restarts after each decoded book, while the cash list is
+kept below the compact camera panel. Each cash item now has its own removal action. The
+local workflow marks the same ISBN as `Déjà scanné à l’instant` when it reappears within
+five seconds in one session (`RG-04`), and the verdict card is intentionally smaller so
+the catalog facts remain visible. Ending a session synchronizes and closes its remote
+session before clearing the active IndexedDB snapshot; a failed close keeps the local
+gestures rather than silently losing them. Validation for this follow-up passes with 74
+ChromeHeadless tests, the bootstrap contract, and the production build; no deployment has
+been made.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:

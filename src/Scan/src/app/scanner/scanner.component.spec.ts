@@ -13,6 +13,7 @@ import {ScannerComponent} from './scanner.component';
 import {ScanAuthService} from '../auth/scan-auth.service';
 import {ScanSyncService} from '../offline/scan-sync.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {LocalScanResult, ScanSessionSnapshot} from '../offline/scan-offline.model';
 
 describe('ScannerComponent', () => {
   let fixture: ComponentFixture<ScannerComponent>;
@@ -244,6 +245,125 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.querySelector('.scan-dock .dock-primary')).toBeNull();
   });
 
+  it('starts the live camera as soon as the cash screen opens', async () => {
+    cameraService.start.and.returnValue(Promise.resolve({stop: async () => undefined}));
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openCash();
+    await fixture.whenStable();
+
+    expect(cameraService.start).toHaveBeenCalledOnceWith(
+      jasmine.any(HTMLElement),
+      jasmine.any(Function),
+    );
+    expect(component.cameraActive).toBeTrue();
+  });
+
+  it('starts the live camera as soon as consultation opens', async () => {
+    cameraService.start.and.returnValue(Promise.resolve({stop: async () => undefined}));
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openConsultation();
+    await fixture.whenStable();
+
+    expect(cameraService.start).toHaveBeenCalledOnceWith(
+      jasmine.any(HTMLElement),
+      jasmine.any(Function),
+    );
+    expect(component.cameraActive).toBeTrue();
+  });
+
+  it('restarts the live camera after a cash scan so the next book can be read immediately', async () => {
+    const metadata = createMetadata();
+    metadataService.getMetadata.and.returnValue(of(metadata));
+    const detected: Array<(rawValue: string) => void> = [];
+    cameraService.start.and.callFake(async (_container, callback) => {
+      detected.push(callback);
+      return {stop: async () => undefined};
+    });
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openCash();
+    await fixture.whenStable();
+    detected[0]('9782070363735');
+    await fixture.whenStable();
+
+    expect(component.cashItems).toHaveSize(1);
+    expect(cameraService.start).toHaveBeenCalledTimes(2);
+    expect(component.cameraActive).toBeTrue();
+  });
+
+  it('labels a repeated local scan instead of showing the first-copy verdict again', () => {
+    component.localScan = Object.assign(createLocalScanResult(), {isImmediateRepeat: true});
+
+    expect(component.verdictTitle).toBe('Déjà scanné à l’instant');
+    expect(component.verdictSummary).toContain('déjà été scanné');
+  });
+
+  it('removes the selected cash item rather than only the last one', () => {
+    component.cashItems = [
+      createCashItem('first', 'Premier livre'),
+      createCashItem('second', 'Second livre'),
+    ];
+    component.removeCashItem('first');
+
+    expect(component.cashItems.map(item => item.id)).toEqual(['second']);
+  });
+
+  it('opens a new session mode screen after a session has been ended', async () => {
+    component.session = createSession({scannedCount: 2, keptCount: 2});
+
+    await component.endSession();
+    component.returnHome();
+    await component.startSorting();
+
+    expect(component.screen).toBe('session-mode');
+  });
+
+  it('clears the durable session only after its scans are synchronized and closed', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'decide',
+      'getPendingCount',
+      'getSession',
+      'clearSession',
+    ]);
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', [
+      'syncAll',
+      'closeSession',
+    ]);
+    const session = createSession({scannedCount: 1, keptCount: 1});
+    const pendingScan = createLocalScanResult();
+
+    workflow.decide.and.resolveTo({...pendingScan.entry, status: 'Kept', kept: true});
+    workflow.getPendingCount.and.resolveTo(0);
+    workflow.getSession.and.resolveTo(session);
+    workflow.clearSession.and.resolveTo(undefined);
+    sync.syncAll.and.resolveTo({
+      catalog: null,
+      outbox: {sent: 1, remaining: 0, stoppedOnError: false},
+    });
+    sync.closeSession.and.resolveTo(undefined);
+
+    (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;
+    (component as unknown as {scanSync: ScanSyncService}).scanSync = sync;
+    (component as unknown as {localModeReady: boolean}).localModeReady = true;
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+    component.isOnline = true;
+    component.session = session;
+    component.localScan = pendingScan;
+
+    await component.endSession();
+
+    expect(sync.closeSession).toHaveBeenCalledOnceWith(session);
+    expect(workflow.clearSession).toHaveBeenCalledOnceWith();
+    expect(component.session).toBeNull();
+    expect(component.screen).toBe('session-end');
+  });
+
   function createMetadata(title = 'Le Petit Prince'): BookMetadata {
     return {
       isbn13: '9782070363735',
@@ -255,6 +375,70 @@ describe('ScannerComponent', () => {
       source: 'BnF',
       workId: null,
       retrievedAt: '2026-09-03T08:00:00Z',
+    };
+  }
+
+  function createLocalScanResult(): LocalScanResult {
+    return {
+      entry: {
+        clientGestureId: 'gesture-1',
+        scanSessionId: 'session-1',
+        isbn13: '9782070363735',
+        occurredAt: '2026-09-03T08:00:00Z',
+        createdAt: '2026-09-03T08:00:00Z',
+        status: 'Pending',
+        kept: null,
+        catalogApplied: false,
+        verdict: 'FirstCopy',
+        quantityAvailable: 0,
+        quantityAnnounced: 0,
+        salesCount: 0,
+        isRare: false,
+        attemptCount: 0,
+        lastAttemptAt: null,
+        lastError: null,
+      },
+      verdict: {
+        verdict: 'FirstCopy',
+        totalKnownQuantity: 0,
+        salesCount: 0,
+        activeRequesterCount: 0,
+        isRare: false,
+        isKnown: false,
+      },
+      catalogBook: null,
+      isImmediateRepeat: false,
+    };
+  }
+
+  function createCashItem(id: string, title: string) {
+    return {
+      id,
+      isbn13: '9782070363735',
+      title,
+      authors: null,
+      publisher: null,
+      publicationYear: null,
+      isRare: false,
+      quantityAvailable: 0,
+      quantityAnnounced: 0,
+    };
+  }
+
+  function createSession(overrides: Partial<ScanSessionSnapshot> = {}): ScanSessionSnapshot {
+    return {
+      key: 'active-session',
+      scanSessionId: 'session-1',
+      volunteerId: null,
+      mode: 'AvailableNow',
+      targetAssoEventsId: null,
+      startedAt: '2026-09-03T08:00:00Z',
+      lastScanAt: '2026-09-03T08:02:00Z',
+      lastSyncAt: '2026-09-03T08:00:00Z',
+      scannedCount: 0,
+      keptCount: 0,
+      rejectedCount: 0,
+      ...overrides,
     };
   }
 });

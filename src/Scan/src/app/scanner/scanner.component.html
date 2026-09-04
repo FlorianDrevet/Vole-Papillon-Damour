@@ -11,6 +11,8 @@
     #cameraContainer
     class="camera-engine-host"
     [class.camera-engine-host-active]="cameraActive"
+    [class.camera-engine-host-cash]="screen === 'cash'"
+    [class.camera-engine-host-consultation]="screen === 'consultation'"
     aria-label="Aperçu de la caméra pour le code-barres"></div>
 
   <ng-container [ngSwitch]="screen">
@@ -182,7 +184,8 @@
               [class.verdict-card-too-many]="activeVerdictKey === 'TooMany'"
               [class.verdict-card-wanted]="activeVerdictKey === 'Wanted' || activeVerdictKey === 'Selling'"
               [class.verdict-card-rare]="activeVerdictKey === 'Rare'"
-              [class.verdict-card-first]="activeVerdictKey === 'FirstCopy'">
+              [class.verdict-card-first]="activeVerdictKey === 'FirstCopy'"
+              [class.verdict-card-repeat]="isImmediateRepeatScan">
               <div class="verdict-main">
                 <div class="verdict-icon" [ngSwitch]="activeVerdictKey" aria-hidden="true">
                   <svg *ngSwitchCase="'TooMany'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -371,6 +374,7 @@
       <div class="session-end-note">
         <p>En cas d’erreur, prévenez un responsable avant l’envoi.</p>
         <span>Fenêtre de correction — 2 h</span>
+        <p *ngIf="sessionCloseError" class="session-end-error" role="alert">{{ sessionCloseError }}</p>
       </div>
 
       <footer class="session-end-footer">
@@ -378,7 +382,7 @@
       </footer>
     </section>
 
-    <section *ngSwitchCase="'cash'" class="app-screen cash-screen" aria-labelledby="cash-title">
+    <section *ngSwitchCase="'cash'" class="app-screen cash-screen" [class.camera-screen-active]="cameraActive" aria-labelledby="cash-title">
       <header class="mode-header mode-header-cash">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="8.5"></circle>
@@ -396,16 +400,30 @@
       <div class="cash-items" aria-live="polite">
         <ng-container *ngFor="let item of cashItems">
           <article *ngIf="!item.isRare" class="cash-item">
-            <h2>{{ item.title || 'Titre non renseigné' }}</h2>
-            <p>{{ item.publisher || 'Édition inconnue' }}<span *ngIf="item.publicationYear"> · {{ item.publicationYear }}</span></p>
+            <div class="cash-item-copy">
+              <h2>{{ item.title || 'Titre non renseigné' }}</h2>
+              <p>{{ item.publisher || 'Édition inconnue' }}<span *ngIf="item.publicationYear"> · {{ item.publicationYear }}</span></p>
+            </div>
+            <button type="button" class="cash-remove" [attr.aria-label]="'Retirer ' + (item.title || 'ce livre')" (click)="removeCashItem(item.id)">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"></path>
+              </svg>
+            </button>
           </article>
           <article *ngIf="item.isRare" class="cash-rare-item">
-            <div class="cash-rare-heading">
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6.2 4.5h11.6l3.7 5.3L12 20.4 2.5 9.8z"></path>
-                <path d="M2.5 9.8h19M8.6 4.5 12 20.4 15.4 4.5"></path>
-              </svg>
-              <strong>Livre rare</strong>
+            <div class="cash-rare-top">
+              <div class="cash-rare-heading">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6.2 4.5h11.6l3.7 5.3L12 20.4 2.5 9.8z"></path>
+                  <path d="M2.5 9.8h19M8.6 4.5 12 20.4 15.4 4.5"></path>
+                </svg>
+                <strong>Livre rare</strong>
+              </div>
+              <button type="button" class="cash-remove" [attr.aria-label]="'Retirer ' + (item.title || 'ce livre')" (click)="removeCashItem(item.id)">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                  <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"></path>
+                </svg>
+              </button>
             </div>
             <h2>{{ item.title || 'Titre non renseigné' }}</h2>
             <p>Voir le prix indiqué sur le livre.</p>
@@ -416,6 +434,7 @@
 
       <div class="cash-count"><span>Dans cette vente</span><strong>{{ cashItems.length }} livre{{ cashItems.length > 1 ? 's' : '' }}</strong></div>
       <p *ngIf="cashMessage" class="cash-message" role="status">{{ cashMessage }}</p>
+      <p *ngIf="cameraError" class="cash-camera-error" role="alert">{{ cameraError }}</p>
 
       <footer class="action-dock cash-dock">
         <span class="dock-hint">Aucun prix, aucun total — l’encaissement reste manuel</span>
@@ -437,7 +456,7 @@
       </footer>
     </section>
 
-    <section *ngSwitchCase="'consultation'" class="app-screen consultation-screen" aria-labelledby="consultation-title">
+    <section *ngSwitchCase="'consultation'" class="app-screen consultation-screen" [class.camera-screen-active]="cameraActive" aria-labelledby="consultation-title">
       <header class="mode-header mode-header-consultation">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="6.6"></circle>
@@ -494,6 +513,8 @@
           <p>Scannez pour consulter une fiche.</p>
         </div>
       </ng-template>
+
+      <p *ngIf="cameraError" class="consultation-camera-error" role="alert">{{ cameraError }}</p>
 
       <footer class="action-dock consultation-dock">
         <button type="button" class="dock-link" (click)="openManualInput()">

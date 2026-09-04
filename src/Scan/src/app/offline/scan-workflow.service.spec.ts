@@ -56,6 +56,48 @@ describe('ScanWorkflowService', () => {
     expect((await store.getCatalogBook('9782070363735'))?.qtyAvailable).toBe(1);
   });
 
+  it('marks a repeated ISBN in the same session as an immediate repeat', async () => {
+    const first = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    const second = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:04.000Z'),
+    );
+
+    expect((first as LocalScanResultWithRepeat).isImmediateRepeat).toBeFalse();
+    expect((second as LocalScanResultWithRepeat).isImmediateRepeat).toBeTrue();
+  });
+
+  it('does not flag the same ISBN after the immediate repeat window', async () => {
+    await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    const second = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:05.000Z'),
+    );
+
+    expect((second as LocalScanResultWithRepeat).isImmediateRepeat).toBeFalse();
+  });
+
+  it('creates a clean local session after the previous one is cleared', async () => {
+    const previous = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await service.clearSession();
+
+    const next = await service.setSessionMode('AvailableNow');
+
+    expect(next.scanSessionId).not.toBe(previous.entry.scanSessionId);
+    expect(next.scannedCount).toBe(0);
+    expect(next.keptCount).toBe(0);
+    expect(next.rejectedCount).toBe(0);
+  });
+
   it('keeps or rejects the current gesture explicitly without deleting it', async () => {
     const kept = await service.recordScan(
       '9782070363735',
@@ -168,4 +210,8 @@ describe('ScanWorkflowService', () => {
       updatedAt: '2026-09-03T08:00:00.000Z',
     };
   }
+
+  type LocalScanResultWithRepeat = Awaited<ReturnType<ScanWorkflowService['recordScan']>> & {
+    isImmediateRepeat: boolean;
+  };
 });

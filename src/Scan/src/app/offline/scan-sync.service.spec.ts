@@ -9,6 +9,7 @@ import {
   ScanCatalogDeltaResponse,
   ScanBookResponse,
   ScanSessionResponse,
+  ScanSessionSnapshot,
 } from './scan-offline.model';
 import {ScanSyncService} from './scan-sync.service';
 import {ScanVerdictService} from './scan-verdict.service';
@@ -25,10 +26,12 @@ describe('ScanSyncService', () => {
       'getCatalogDelta',
       'openSession',
       'scanBook',
+      'closeSession',
     ]);
     api.getCatalogDelta.and.returnValue(of(createDelta()));
     api.openSession.and.returnValue(of(createSessionResponse()));
     api.scanBook.and.returnValue(of(createScanResponse()));
+    api.closeSession.and.returnValue(of(createSessionResponse()));
 
     TestBed.configureTestingModule({
       providers: [
@@ -133,6 +136,34 @@ describe('ScanSyncService', () => {
     expect(api.openSession).not.toHaveBeenCalled();
     expect(api.scanBook).not.toHaveBeenCalled();
     expect(result.remaining).toBe(1);
+  });
+
+  it('closes the idempotent remote session after the local queue is flushed', async () => {
+    const session: ScanSessionSnapshot = {
+      key: 'active-session',
+      scanSessionId: 'session-1',
+      volunteerId: 'volunteer-1',
+      mode: 'AvailableNow',
+      targetAssoEventsId: null,
+      startedAt: '2026-09-03T08:00:00.000Z',
+      lastScanAt: '2026-09-03T08:00:00.000Z',
+      lastSyncAt: '2026-09-03T08:00:00.000Z',
+      scannedCount: 0,
+      keptCount: 0,
+      rejectedCount: 0,
+    };
+
+    await service.closeSession(session);
+
+    expect(api.openSession).toHaveBeenCalledOnceWith({
+      mode: 'AvailableNow',
+      targetAssoEventsId: null,
+      clientSessionId: 'session-1',
+    });
+    expect(api.closeSession).toHaveBeenCalledOnceWith(
+      'session-1',
+      {closeReason: 'Manual'},
+    );
   });
 
   function createDelta(): ScanCatalogDeltaResponse {

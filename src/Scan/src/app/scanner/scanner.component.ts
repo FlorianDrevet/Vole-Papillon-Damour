@@ -98,6 +98,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   isAuthenticated = false;
   accountName: string | null = null;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error' = 'idle';
+  sessionCloseError: string | null = null;
   screen: ScanScreen = 'tri';
   selectedMode: LocalScanMode = 'AvailableNow';
   manualReturnScreen: ScanDestination = 'tri';
@@ -108,6 +109,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private lastScannerKeyAt = 0;
   private localModeReady = false;
   private syncInProgress = false;
+  private syncPromise: Promise<void> | null = null;
+  private sessionEnding = false;
+  private sessionEnded = false;
+  private sessionCloseCompleted = false;
   private syncTimer: number | null = null;
   private cameraStartToken = 0;
 
@@ -200,6 +205,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
     return this.localScan?.verdict ?? this.consultationResult?.verdict ?? null;
   }
 
+  get isImmediateRepeatScan(): boolean {
+    return this.localScan?.isImmediateRepeat === true;
+  }
+
   get activeTitle(): string {
     return this.metadata?.title
       ?? this.activeBook?.title
@@ -240,6 +249,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   get verdictTitle(): string {
+    if (this.isImmediateRepeatScan) {
+      return 'Déjà scanné à l’instant';
+    }
+
     switch (this.activeVerdictKey) {
       case 'Rare':
         return 'Bac « livres rares »';
@@ -250,7 +263,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
       case 'TooMany':
         return 'Inutile d’en garder';
       default:
-        return 'Premier exemplaire';
+        return this.activeVerdict?.isKnown && this.activeVerdict.totalKnownQuantity > 0
+          ? 'Exemplaire supplémentaire'
+          : 'Premier exemplaire';
     }
   }
 
@@ -258,6 +273,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
     const verdict = this.activeVerdict;
     if (!verdict) {
       return '';
+    }
+
+    if (this.isImmediateRepeatScan) {
+      return 'Ce livre a déjà été scanné à l’instant. Vérifiez le doublon avant de continuer.';
     }
 
     switch (this.activeVerdictKey) {
@@ -271,7 +290,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
         return `Déjà ${verdict.totalKnownQuantity} exemplaire${verdict.totalKnownQuantity > 1 ? 's' : ''} · ${this.availableQuantity} disponibles + ${this.announcedQuantity} annoncés`;
       default:
         return verdict.isKnown
-          ? 'Aucun exemplaire disponible dans la copie locale'
+          ? verdict.totalKnownQuantity > 0
+            ? `Déjà ${verdict.totalKnownQuantity} exemplaire${verdict.totalKnownQuantity > 1 ? 's' : ''} dans la copie locale`
+            : 'Aucun exemplaire disponible dans la copie locale'
           : 'Ce titre n’est pas encore au catalogue';
     }
   }
@@ -397,6 +418,20 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   startSorting(): void {
     this.stopCamera();
+    if (this.sessionEnded) {
+      if (this.scanWorkflow && !this.sessionCloseCompleted) {
+        this.sessionCloseError = 'La session précédente doit être synchronisée avant d’en ouvrir une nouvelle.';
+        this.screen = 'session-end';
+        this.refreshView();
+        return;
+      }
+
+      this.session = null;
+      this.completedSession = null;
+      this.sessionEnded = false;
+      this.sessionCloseCompleted = false;
+    }
+
     if (this.session && this.session.scannedCount > 0) {
       this.screen = 'tri';
     } else {
@@ -431,6 +466,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.resetLookupState();
     this.cashMessage = null;
     this.refreshView();
+    this.startCameraIfNeeded(true);
   }
 
   openConsultation(): void {
@@ -438,6 +474,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.screen = 'consultation';
     this.resetLookupState();
     this.refreshView();
+    this.startCameraIfNeeded(true);
   }
 
   openManualInput(): void {
@@ -471,7 +508,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     const destination = this.manualReturnScreen;
     this.screen = destination;
-    await this.lookup(normalizedIsbn, destination);
+    try {
+      await this.lookup(normalizedIsbn, destination);
+    } finally {
+      this.restartContinuousCamera(destination);
+    }
   }
 
   returnToScan(): void {
@@ -504,19 +545,35 @@ export class ScannerComponent implements OnInit, OnDestroy {
       !this.scanSync ||
       !this.isAuthenticated ||
       !this.isOnline ||
-      !this.localModeReady ||
-      this.syncInProgress
+      !this.localModeReady
     ) {
       return;
     }
 
+    if (this.syncPromise) {
+      await this.syncPromise;
+      return;
+    }
+
+    const syncPromise = this.performSync(this.scanSync);
+    this.syncPromise = syncPromise;
+    try {
+      await syncPromise;
+    } finally {
+      if (this.syncPromise === syncPromise) {
+        this.syncPromise = null;
+      }
+    }
+  }
+
+  private async performSync(scanSync: ScanSyncService): Promise<void> {
     this.syncInProgress = true;
     this.syncStatus = 'syncing';
     this.syncError = null;
     this.refreshView();
 
     try {
-      const summary = await this.scanSync.syncAll();
+      const summary = await scanSync.syncAll();
       if (!summary.catalog) {
         this.syncStatus = 'error';
         this.syncError = 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits Tri ou réseau).';
@@ -557,17 +614,58 @@ export class ScannerComponent implements OnInit, OnDestroy {
     return this.verdictSummary;
   }
 
-  endSession(): void {
-    if (!this.session) {
+  async endSession(): Promise<void> {
+    if (!this.session || this.sessionEnding) {
       return;
     }
 
-    this.completedSession = {...this.session};
-    this.sessionDurationLabel = this.formatSessionDuration(this.session);
-    this.stopCamera();
-    this.resetLookupState();
-    this.screen = 'session-end';
-    this.refreshView();
+    this.sessionEnding = true;
+    this.sessionCloseError = null;
+
+    try {
+      if (this.localScan?.entry.status === 'Pending') {
+        await this.keepCurrentScan();
+      }
+
+      if (!this.session) {
+        return;
+      }
+
+      const completedSession = {...this.session};
+      this.completedSession = completedSession;
+      this.sessionDurationLabel = this.formatSessionDuration(completedSession);
+      this.sessionEnded = true;
+      this.stopCamera();
+      this.resetLookupState();
+      this.screen = 'session-end';
+      this.refreshView();
+
+      if (!this.scanWorkflow || !this.scanSync) {
+        this.sessionCloseCompleted = !this.scanWorkflow;
+        return;
+      }
+
+      if (!this.isAuthenticated || !this.isOnline || !this.localModeReady) {
+        this.sessionCloseError = 'Synchronisez la session avant de démarrer un nouveau tri.';
+        return;
+      }
+
+      await this.syncNow();
+      if (this.pendingCount > 0) {
+        this.sessionCloseError = 'Les scans en attente doivent être synchronisés avant la clôture.';
+        return;
+      }
+
+      await this.scanSync.closeSession(completedSession);
+      await this.scanWorkflow.clearSession();
+      this.session = null;
+      this.sessionCloseCompleted = true;
+    } catch {
+      this.sessionCloseError = 'La session n’a pas pu être clôturée. Les scans restent conservés localement.';
+    } finally {
+      this.sessionEnding = false;
+      this.refreshView();
+    }
   }
 
   returnHome(): void {
@@ -579,13 +677,24 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.refreshView();
   }
 
-  undoLastCashItem(): void {
-    if (this.cashItems.length === 0) {
+  removeCashItem(id: string): void {
+    const remainingItems = this.cashItems.filter(item => item.id !== id);
+    if (remainingItems.length === this.cashItems.length) {
       return;
     }
 
-    this.cashItems = this.cashItems.slice(0, -1);
+    this.cashItems = remainingItems;
+    this.cashMessage = null;
     this.refreshView();
+  }
+
+  undoLastCashItem(): void {
+    const lastItem = this.cashItems.at(-1);
+    if (!lastItem) {
+      return;
+    }
+
+    this.removeCashItem(lastItem.id);
   }
 
   validateCash(): void {
@@ -655,10 +764,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     try {
       const cameraHandle = await this.cameraScanner.start(
         this.cameraContainer.nativeElement,
-        rawValue => {
-          this.stopCamera();
-          void this.lookup(rawValue, this.destinationForScreen());
-        },
+        rawValue => this.handleCameraDetection(rawValue),
       );
       if (startToken !== this.cameraStartToken) {
         await cameraHandle.stop();
@@ -688,16 +794,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const destination = this.destinationForScreen();
     this.stopCamera();
     this.cameraError = null;
     this.refreshView();
 
     try {
       const rawValue = await this.cameraScanner.scanFile(imageFile);
-      await this.lookup(rawValue, this.destinationForScreen());
+      await this.lookup(rawValue, destination);
     } catch {
       this.cameraError = 'Aucun code-barres lisible n’a été trouvé dans cette photo.';
       this.refreshView();
+    } finally {
+      this.restartContinuousCamera(destination);
     }
   }
 
@@ -801,10 +910,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   private startCameraIfNeeded(force = false): void {
     if (
-      this.screen !== 'tri' ||
+      !this.isCameraDestinationActive() ||
       !this.authAvailable ||
       !this.isAuthenticated ||
-      (!force && (this.localScan !== null || this.metadata !== null)) ||
+      (!force && this.screen === 'tri' && (this.localScan !== null || this.metadata !== null)) ||
       this.cameraActive ||
       this.cameraHandle
     ) {
@@ -812,6 +921,25 @@ export class ScannerComponent implements OnInit, OnDestroy {
     }
 
     void this.startCamera();
+  }
+
+  private restartContinuousCamera(destination: ScanDestination): void {
+    if (destination === 'tri' || this.screen !== destination) {
+      return;
+    }
+
+    this.startCameraIfNeeded(true);
+  }
+
+  private handleCameraDetection(rawValue: string): void {
+    const destination = this.destinationForScreen();
+    this.stopCamera();
+    void this.lookup(rawValue, destination)
+      .finally(() => this.restartContinuousCamera(destination));
+  }
+
+  private isCameraDestinationActive(): boolean {
+    return this.screen === 'tri' || this.screen === 'cash' || this.screen === 'consultation';
   }
 
   private refreshView(): void {
