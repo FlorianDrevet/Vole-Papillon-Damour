@@ -9,7 +9,7 @@ on:
         type: string
         default: ''
       run_migrations:
-        description: Apply the EF Core migrations to the database after deploying
+        description: Apply the EF Core migrations to the database before deploying the new image
         type: boolean
         default: false
 
