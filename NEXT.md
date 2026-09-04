@@ -111,6 +111,11 @@ la Scanette répond `200` sur `https://scan.volepapillondamour.fr` avec son bund
 Le smoke test Scan a lancé le redirect Entra depuis le domaine public et a abouti à l'écran
 « compte connecté, rôle Tri absent » avec le compte administrateur courant : le redirect est
 donc fonctionnel, et le refus est celui attendu tant que ce compte n'a pas le rôle `Tri`.
+Depuis, le portail Entra `vpd-api-dev` affiche bien les deux attributions `Administrateur` et
+`Benevole trieur` pour ce compte. Le message persistait donc à cause du contrôle local de Scan,
+qui lisait l'ID token au lieu du jeton d'accès destiné à l'API. Le correctif est validé dans la
+worktree `fix/scan-api-role-token` ; il reste à merger puis à relancer `Scan - deploy` avant de
+retester le domaine public.
 
 Le bloc « Mon compte » du catalogue est volontairement non interactif : le compte, la liste de
 recherche et les alertes sont P3. L'enregistrement de l'application `vpd-catalog-dev` peut
