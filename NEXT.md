@@ -17,7 +17,7 @@
 | **Prochaine action** | Après confirmation du propriétaire de la base, lancer `Books runtime - deploy` avec `run_migrations=true`, puis relever le heartbeat `Sweep`/`Enrich` et poursuivre `P1-9` à `P1-11`. Le référentiel externe, le compte et l'envoi d'alertes restent P3. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-runtime-rollout-state` |
 | **Dernière mise à jour** | 2026-09-04 — déploiements post-merge du catalogue, de la Scanette et de l'infrastructure validés ; URI Entra publiques vérifiées |
-| **Branche** | `chore/record-runtime-rollout-state` — état post-déploiement à livrer |
+| **Branche** | `chore/record-runtime-rollout-state` — PR de suivi [#46](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/46) |
 
 ---
 
