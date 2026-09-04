@@ -1,0 +1,129 @@
+<section class="administration-page" aria-labelledby="administration-title">
+  <div class="administration-shell">
+    <p class="eyebrow">Espace bénévoles</p>
+    <h1 id="administration-title">Accès administration</h1>
+    <p class="intro">
+      Pilotez les files de travail du catalogue avec le même compte Microsoft que les autres outils de l’association.
+    </p>
+
+    @if (!initialized()) {
+      <p class="status-panel" role="status">Préparation de la connexion sécurisée…</p>
+    } @else if (authError()) {
+      <div class="status-panel error-panel" role="alert">
+        {{ authError() }}
+      </div>
+    } @else if (!isAuthenticated()) {
+      <div class="login-panel">
+        <div>
+          <p class="panel-kicker">Zone réservée</p>
+          <h2>Ouvrir les outils de suivi</h2>
+          <p>La consultation publique reste ouverte à tous. La connexion est uniquement nécessaire pour l’administration.</p>
+        </div>
+        <button class="primary-button" data-testid="admin-login" type="button" (click)="login()">
+          <span class="person-icon" aria-hidden="true"></span>
+          Se connecter avec Microsoft
+        </button>
+      </div>
+      @if (errorMessage()) {
+        <div class="status-panel error-panel" role="alert">{{ errorMessage() }}</div>
+      }
+    } @else {
+      <div class="authenticated-bar">
+        <span>Connecté : <strong>{{ accountLabel() }}</strong></span>
+        <button class="text-button" type="button" (click)="logout()">Se déconnecter</button>
+      </div>
+
+      <section class="work-card" aria-labelledby="dead-stock-title">
+        <div class="card-heading">
+          <div>
+            <p class="panel-kicker">File de travail</p>
+            <h2 id="dead-stock-title">Désengorger le local</h2>
+            <p>
+              Repérez les titres disponibles depuis longtemps, jamais vendus, et suffisamment nombreux pour mériter un retrait physique.
+            </p>
+          </div>
+          <span class="card-mark" aria-hidden="true">O2</span>
+        </div>
+
+        <form class="filters" (ngSubmit)="loadDeadStock()" #filtersForm="ngForm" novalidate>
+          <label>
+            <span>Disponible depuis au moins</span>
+            <span class="input-with-suffix">
+              <input
+                type="number"
+                name="minAgeMonths"
+                [(ngModel)]="minAgeMonths"
+                min="1"
+                max="120000"
+                step="1"
+                required>
+              <span>mois</span>
+            </span>
+          </label>
+          <label>
+            <span>Nombre minimum d’exemplaires</span>
+            <input
+              type="number"
+              name="minQuantity"
+              [(ngModel)]="minQuantity"
+              min="0"
+              step="1"
+              required>
+          </label>
+          <button class="primary-button" type="submit" [disabled]="loading() || filtersForm.invalid">
+            {{ loading() ? 'Recherche…' : 'Actualiser la liste' }}
+          </button>
+        </form>
+
+        @if (errorMessage()) {
+          <div class="status-panel error-panel" role="alert">{{ errorMessage() }}</div>
+        }
+
+        @if (loading()) {
+          <p class="status-panel" role="status">Recherche des titres à retirer…</p>
+        } @else if (books().length === 0 && !errorMessage()) {
+          <div class="empty-panel">
+            <span class="empty-mark" aria-hidden="true">✓</span>
+            <h3>Aucun candidat avec ces critères</h3>
+            <p>Le local ne présente pas de titre correspondant à cette recherche, ou la file est déjà vide.</p>
+          </div>
+        } @else if (books().length > 0) {
+          <div class="result-heading">
+            <p><strong>{{ books().length }}</strong> {{ books().length === 1 ? 'titre candidat' : 'titres candidats' }}</p>
+            <button class="secondary-button" type="button" (click)="exportCsv()">Exporter en CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <caption class="visually-hidden">Titres disponibles depuis longtemps et jamais vendus</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Titre</th>
+                  <th scope="col">ISBN</th>
+                  <th scope="col">Genre</th>
+                  <th scope="col">Exemplaires</th>
+                  <th scope="col">Disponible depuis</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (book of books(); track book.isbn13) {
+                  <tr>
+                    <th scope="row">
+                      <span class="book-title">{{ book.title || 'Titre inconnu' }}</span>
+                      @if (book.authors) {
+                        <span class="book-author">{{ book.authors }}</span>
+                      }
+                    </th>
+                    <td data-label="ISBN">{{ book.isbn13 }}</td>
+                    <td data-label="Genre">{{ book.genre || '—' }}</td>
+                    <td class="quantity" data-label="Exemplaires">{{ book.quantityAvailable }}</td>
+                    <td data-label="Disponible depuis">{{ formatDate(book.firstAvailableAt) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  </div>
+</section>

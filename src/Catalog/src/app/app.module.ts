@@ -1,6 +1,6 @@
 import {registerLocaleData} from '@angular/common';
 import {HttpClientModule} from '@angular/common/http';
-import {LOCALE_ID, NgModule, provideZonelessChangeDetection} from '@angular/core';
+import {inject, LOCALE_ID, NgModule, provideAppInitializer, provideZonelessChangeDetection} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {BrowserModule, provideClientHydration, withEventReplay} from '@angular/platform-browser';
 
@@ -14,6 +14,8 @@ import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogSearchPageComponent} from './features/search/catalog-search-page.component';
 import {CatalogWorkPageComponent} from './features/work/catalog-work-page.component';
 import {BookCardComponent} from './shared/book-card/book-card.component';
+import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
+import {CatalogAuthService} from './core/catalog-auth.service';
 
 registerLocaleData(localeFr);
 
@@ -26,6 +28,7 @@ registerLocaleData(localeFr);
     CatalogWorkPageComponent,
     LegalPageComponent,
     BookCardComponent,
+    CatalogAdministrationPageComponent,
   ],
   imports: [
     BrowserModule,
@@ -35,6 +38,7 @@ registerLocaleData(localeFr);
   ],
   providers: [
     {provide: LOCALE_ID, useValue: 'fr-FR'},
+    provideAppInitializer(() => inject(CatalogAuthService).initialize()),
     provideZonelessChangeDetection(),
     provideClientHydration(withEventReplay()),
   ],

@@ -1,0 +1,163 @@
+import {
+  computed,
+  inject,
+  Injectable,
+  InjectionToken,
+  PLATFORM_ID,
+  signal,
+} from '@angular/core';
+import {isPlatformBrowser} from '@angular/common';
+import type {
+  AccountInfo,
+  AuthenticationResult,
+  IPublicClientApplication,
+} from '@azure/msal-browser';
+
+import {catalogLoginRequest, catalogMsalConfig} from './catalog-auth.config';
+
+export type CatalogMsalModule = Pick<
+  typeof import('@azure/msal-browser'),
+  'PublicClientApplication' | 'InteractionRequiredAuthError'
+>;
+
+export type CatalogMsalLoader = () => Promise<CatalogMsalModule>;
+
+export const CATALOG_MSAL_LOADER = new InjectionToken<CatalogMsalLoader>(
+  'CATALOG_MSAL_LOADER',
+  {
+    providedIn: 'root',
+    factory: () => () => import('@azure/msal-browser'),
+  },
+);
+
+const ADMINISTRATION_ROUTE = '/administration';
+
+@Injectable({providedIn: 'root'})
+export class CatalogAuthService {
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly loadMsal = inject(CATALOG_MSAL_LOADER);
+  private readonly _account = signal<AccountInfo | null>(null);
+  private readonly _initialized = signal(false);
+  private readonly _error = signal<string | null>(null);
+
+  private client: IPublicClientApplication | null = null;
+  private msal: CatalogMsalModule | null = null;
+  private initialization: Promise<void> | null = null;
+
+  readonly account = this._account.asReadonly();
+  readonly initialized = this._initialized.asReadonly();
+  readonly isAuthenticated = computed(() => this._account() !== null);
+  readonly error = this._error.asReadonly();
+
+  initialize(): Promise<void> {
+    if (this.initialization) {
+      return this.initialization;
+    }
+
+    if (!isPlatformBrowser(this.platformId)) {
+      this._initialized.set(true);
+      this.initialization = Promise.resolve();
+      return this.initialization;
+    }
+
+    this._initialized.set(false);
+    this._error.set(null);
+    this.initialization = this.initializeBrowser();
+    return this.initialization;
+  }
+
+  async login(startPage: string = ADMINISTRATION_ROUTE): Promise<void> {
+    await this.initialize();
+    const client = this.requireClient();
+
+    await client.loginRedirect({
+      ...catalogLoginRequest,
+      redirectStartPage: new URL(startPage, window.location.origin).href,
+    });
+  }
+
+  async logout(): Promise<void> {
+    await this.initialize();
+    const client = this.requireClient();
+
+    await client.logoutRedirect({
+      account: this._account() ?? undefined,
+    });
+  }
+
+  async getApiAccessToken(): Promise<string> {
+    await this.initialize();
+    const client = this.requireClient();
+    const account = this._account();
+
+    if (!account) {
+      throw new Error('No active Entra account is available.');
+    }
+
+    try {
+      const result = await client.acquireTokenSilent({
+        account,
+        scopes: catalogLoginRequest.scopes,
+      });
+      return result.accessToken;
+    } catch (error: unknown) {
+      if (this.msal && error instanceof this.msal.InteractionRequiredAuthError) {
+        await client.acquireTokenRedirect({
+          ...catalogLoginRequest,
+          account,
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  private async initializeBrowser(): Promise<void> {
+    let succeeded = false;
+
+    try {
+      const msal = await this.loadMsal();
+      this.msal = msal;
+      this.client = new msal.PublicClientApplication(catalogMsalConfig);
+      await this.client.initialize();
+
+      const result: AuthenticationResult | null = await this.client.handleRedirectPromise();
+      if (result?.account) {
+        this.client.setActiveAccount(result.account);
+      }
+
+      this.syncFromCache();
+      succeeded = true;
+    } catch {
+      // A configuration/network failure must not make the public SSR catalogue
+      // unavailable. The administration page exposes this fixed, non-sensitive
+      // message and allows the user to retry after the deployment is corrected.
+      this._error.set('La connexion à l’administration est momentanément indisponible.');
+    } finally {
+      this._initialized.set(true);
+      if (!succeeded) {
+        this.initialization = null;
+      }
+    }
+  }
+
+  private syncFromCache(): void {
+    const client = this.requireClient();
+    const activeAccount = client.getActiveAccount();
+    const active = activeAccount ?? client.getAllAccounts()[0] ?? null;
+
+    if (active && !activeAccount) {
+      client.setActiveAccount(active);
+    }
+
+    this._account.set(active);
+  }
+
+  private requireClient(): IPublicClientApplication {
+    if (!this.client) {
+      throw new Error('The browser authentication client is not available.');
+    }
+
+    return this.client;
+  }
+}

@@ -59,3 +59,21 @@ export interface CatalogWorkResponse {
   authors: string | null;
   editions: CatalogBook[];
 }
+
+export interface CatalogDeadStockBook {
+  isbn13: string;
+  title: string | null;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  genre: string | null;
+  quantityAvailable: number;
+  firstAvailableAt: string;
+}
+
+export interface CatalogDeadStockResponse {
+  generatedAt: string;
+  minAgeMonths: number;
+  minQuantity: number;
+  books: CatalogDeadStockBook[];
+}
