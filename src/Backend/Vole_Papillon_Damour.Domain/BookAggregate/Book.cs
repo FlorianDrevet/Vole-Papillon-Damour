@@ -284,6 +284,20 @@ public sealed class Book : AggregateRoot<Isbn13>
         return changed;
     }
 
+    public bool RecordMetadataProviderFailure(DateTime attemptedAt)
+    {
+        var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
+        if (MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Resolved)
+        {
+            return false;
+        }
+
+        var changed = LastAttemptAt != utcAttemptedAt;
+        LastAttemptAt = utcAttemptedAt;
+        UpdatedAt = utcAttemptedAt;
+        return changed;
+    }
+
     public void RecordRejection(DateTime occurredAt)
     {
         var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
