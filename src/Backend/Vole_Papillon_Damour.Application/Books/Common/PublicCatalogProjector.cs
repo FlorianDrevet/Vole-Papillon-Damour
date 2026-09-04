@@ -2,6 +2,7 @@ using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Common;
 
@@ -14,7 +15,9 @@ internal static class PublicCatalogProjector
         DateTime nowUtc)
     {
         var fairsById = fairs
-            .Where(assoEvent => !assoEvent.IsCancelled)
+            .Where(assoEvent =>
+                !assoEvent.IsCancelled &&
+                assoEvent.EventsType?.Value == EventsType.EventsTypeEnum.Books)
             .ToDictionary(assoEvent => assoEvent.Id.Value);
 
         var availabilityByIsbn = announcements

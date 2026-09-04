@@ -78,6 +78,7 @@ export class CatalogHomePageComponent implements OnInit {
     return new Intl.DateTimeFormat('fr-FR', {
       day: 'numeric',
       month: 'long',
+      timeZone: 'Europe/Paris',
       ...(withYear ? {year: 'numeric'} : {}),
     }).format(new Date(value));
   }
@@ -96,6 +97,7 @@ export class CatalogHomePageComponent implements OnInit {
     return new Intl.DateTimeFormat('fr-FR', {
       hour: 'numeric',
       minute: '2-digit',
+      timeZone: 'Europe/Paris',
     }).format(new Date(value)).replace(':', ' h ');
   }
 

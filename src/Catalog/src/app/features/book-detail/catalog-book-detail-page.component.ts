@@ -69,6 +69,7 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
+      timeZone: 'Europe/Paris',
     }).format(new Date(value));
   }
 

@@ -112,6 +112,28 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task SearchCatalog_WhenAnnouncementBelongsToNonBookEvent_DoesNotExposeIt()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var book = fixture.AddBook("9782070408504", "Le Petit Prince", "Antoine de Saint-Exupéry");
+        var otherEvent = fixture.AddFair(
+            "Événement associatif",
+            fixture.NowOffset.AddDays(3),
+            fixture.NowOffset.AddDays(4),
+            EventsType.EventsTypeEnum.Other);
+        fixture.AddAnnouncement(book, quantity: 2, assoEventsId: otherEvent.Id);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery("petit", null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.QuantityAnnounced.Should().Be(0);
+    }
+
+    [Fact]
     public async Task SearchCatalog_WhenAvailabilityIsAll_KeepsExhaustedBooksVisible()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -380,12 +402,16 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
                 ScanSessionId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"))));
     }
 
-    public AssoEvents AddFair(string name, DateTimeOffset start, DateTimeOffset end)
+    public AssoEvents AddFair(
+        string name,
+        DateTimeOffset start,
+        DateTimeOffset end,
+        EventsType.EventsTypeEnum eventType = EventsType.EventsTypeEnum.Books)
     {
         var fair = AssoEvents.Create(
             name,
             urlImage: null,
-            new EventsType(EventsType.EventsTypeEnum.Books),
+            new EventsType(eventType),
             start,
             end,
             start.AddHours(9),

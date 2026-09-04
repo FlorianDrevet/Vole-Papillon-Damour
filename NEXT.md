@@ -101,7 +101,7 @@ CI de build, Container App `vpd-catalog-ca-dev`, identité ACR, sortie FQDN et w
 du domaine `livres.volepapillondamour.fr` reste vide jusqu'à la création de la Container App,
 la pose du CNAME/TXT et l'émission du certificat managé.
 
-Validation de cette reprise : `259` tests backend, `5` tests Catalog ChromeHeadless, build
+Validation de cette reprise : `260` tests backend, `5` tests Catalog ChromeHeadless, build
 Angular de production, build AppHost, compilation Bicep, build Docker et smoke SSR du
 conteneur (`200` sur l'accueil). Les avertissements de dépendances NuGet et les
 dépréciations npm restent ceux des outils existants. Les tests manuels `P1-9`, `P1-10` et

@@ -41,6 +41,7 @@ export class BookCardComponent {
     return new Intl.DateTimeFormat('fr-FR', {
       day: 'numeric',
       month: 'short',
+      timeZone: 'Europe/Paris',
     }).format(new Date(value)).replace('.', '');
   }
 
