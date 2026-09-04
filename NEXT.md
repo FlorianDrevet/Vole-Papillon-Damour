@@ -81,9 +81,10 @@ git pull
 ### État actualisé — 2026-09-04
 
 `P1-6` à `P1-8` sont implémentés et fusionnés dans `main` par la PR #39 (`abbb336`). Les
-deux runs CI du commit de passation (`33822121399` et `33822129543`) sont verts, avec
+les deux runs CI du code de la PR (`33822121399` et `33822129543`) sont verts, avec
 backend/tests, MAUI Android `net10.0-android`, trois builds Angular et les conteneurs
-Scan/Worker validés. Le worker
+Scan/Worker validés. La CI du commit documentaire de passation `2429cc3` (`33844252453`)
+est également verte. Le worker
 contient désormais `Sweep` (toutes les cinq minutes) et `Enrich` (toutes les heures) :
 fermeture des sessions inactives, rattachement des annonces sans date, release des
 annonces dues, livraison de l'outbox d'alertes, suppression de comptes et enrichissement
