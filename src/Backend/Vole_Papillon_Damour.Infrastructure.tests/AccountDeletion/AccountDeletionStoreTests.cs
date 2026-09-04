@@ -1,6 +1,12 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
+using Vole_Papillon_Damour.Application.Common.Models;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Outbox;
@@ -58,6 +64,171 @@ public sealed class AccountDeletionStoreTests
             .BeNull();
     }
 
+    [Fact]
+    public async Task EnsurePendingAsync_CreatesAndReusesThePendingMessageOnSqlite()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var userId = Guid.NewGuid();
+        fixture.Context.Users.Add(User.CreateFromExternalIdentity(
+            UserId.Create(userId),
+            "entra-object-id",
+            "member@example.com",
+            Now));
+        await fixture.Context.SaveChangesAsync();
+
+        var store = new AccountDeletionStore(
+            fixture.Context,
+            new NoRetainedSalesMovementsPolicy(fixture.Context));
+
+        var first = await store.EnsurePendingAsync(
+            "entra-object-id",
+            Now,
+            CancellationToken.None);
+        var second = await store.EnsurePendingAsync(
+            "ENTRA-OBJECT-ID",
+            Now.AddMinutes(1),
+            CancellationToken.None);
+
+        second.RequestId.Should().Be(first.RequestId);
+        second.UserId.Should().Be(userId);
+        second.ExternalId.Should().Be("entra-object-id");
+        (await fixture.Context.OutboxMessages.CountAsync(message =>
+                message.Kind == OutboxMessageKind.AccountDeletion))
+            .Should()
+            .Be(1);
+    }
+
+    [Fact]
+    public async Task FinalizeAsync_AnonymizesTheUserAndRemovesAllMemberDataWhenMovementsAreRetained()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var userId = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+        var alertId = Guid.NewGuid();
+        Isbn13.TryCreate("9782070612758", out var isbn13).Should().BeTrue();
+
+        fixture.Context.Users.Add(User.CreateFromExternalIdentity(
+            UserId.Create(userId),
+            "entra-object-id",
+            "member@example.com",
+            Now));
+        fixture.Context.Watchlists.Add(Watchlist.Create(UserId.Create(userId), Now));
+        fixture.Context.WatchlistItems.Add(WatchlistItem.CreateWork(
+            Guid.NewGuid(),
+            UserId.Create(userId),
+            "OL1W",
+            Now));
+        fixture.Context.UserAlertHistories.Add(UserAlertHistory.Create(
+            Guid.NewGuid(),
+            UserId.Create(userId),
+            isbn13,
+            Now,
+            alertId));
+        fixture.Context.EmailBounceEvents.Add(EmailBounceEvent.Create(
+            Guid.NewGuid(),
+            "provider-event-1",
+            UserId.Create(userId),
+            Now));
+        fixture.Context.OutboxMessages.AddRange(
+            new OutboxMessage
+            {
+                Id = requestId,
+                Kind = OutboxMessageKind.AccountDeletion,
+                PayloadJson = $"{{\"userId\":\"{userId}\",\"externalId\":\"entra-object-id\"}}",
+                DueAt = Now,
+                Status = OutboxMessageStatus.Pending,
+                CreatedAt = Now
+            },
+            new OutboxMessage
+            {
+                Id = alertId,
+                Kind = OutboxMessageKind.AlertEmail,
+                MemberId = userId,
+                PayloadJson = "{\"items\":[]}",
+                DueAt = Now,
+                Status = OutboxMessageStatus.Pending,
+                CreatedAt = Now
+            });
+        await fixture.Context.SaveChangesAsync();
+
+        var store = new AccountDeletionStore(fixture.Context, new AlwaysRetainPolicy());
+
+        await store.FinalizeAsync(
+            new AccountDeletionWorkItem(requestId, userId, "entra-object-id"),
+            Now.AddMinutes(5),
+            CancellationToken.None);
+
+        var user = await fixture.Context.Users.SingleAsync();
+        user.ExternalId.Should().BeNull();
+        user.Email.Should().BeNull();
+        user.AnonymizedAt.Should().Be(Now.AddMinutes(5));
+        (await fixture.Context.Watchlists.CountAsync()).Should().Be(0);
+        (await fixture.Context.WatchlistItems.CountAsync()).Should().Be(0);
+        (await fixture.Context.UserAlertHistories.CountAsync()).Should().Be(0);
+        (await fixture.Context.EmailBounceEvents.CountAsync()).Should().Be(0);
+        (await fixture.Context.OutboxMessages.CountAsync(message =>
+                message.Kind == OutboxMessageKind.AlertEmail && message.MemberId == userId))
+            .Should()
+            .Be(0);
+        var deletionMessage = await fixture.Context.OutboxMessages.SingleAsync(
+            message => message.Id == requestId);
+        deletionMessage.Status.Should().Be(OutboxMessageStatus.Sent);
+        deletionMessage.PayloadJson.Should().Be("{}");
+    }
+
+    [Fact]
+    public async Task FinalizeAsync_DeletesTheUserAndItsAlertOutboxMessagesWhenNoMovementsAreRetained()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var userId = Guid.NewGuid();
+        var requestId = Guid.NewGuid();
+        var alertId = Guid.NewGuid();
+
+        fixture.Context.Users.Add(User.CreateFromExternalIdentity(
+            UserId.Create(userId),
+            "entra-object-id",
+            "member@example.com",
+            Now));
+        fixture.Context.OutboxMessages.AddRange(
+            new OutboxMessage
+            {
+                Id = requestId,
+                Kind = OutboxMessageKind.AccountDeletion,
+                PayloadJson = $"{{\"userId\":\"{userId}\",\"externalId\":\"entra-object-id\"}}",
+                DueAt = Now,
+                Status = OutboxMessageStatus.Pending,
+                CreatedAt = Now
+            },
+            new OutboxMessage
+            {
+                Id = alertId,
+                Kind = OutboxMessageKind.AlertEmail,
+                MemberId = userId,
+                PayloadJson = "{\"items\":[]}",
+                DueAt = Now,
+                Status = OutboxMessageStatus.Pending,
+                CreatedAt = Now
+            });
+        await fixture.Context.SaveChangesAsync();
+
+        var store = new AccountDeletionStore(
+            fixture.Context,
+            new NoRetainedSalesMovementsPolicy(fixture.Context));
+
+        await store.FinalizeAsync(
+            new AccountDeletionWorkItem(requestId, userId, "entra-object-id"),
+            Now.AddMinutes(5),
+            CancellationToken.None);
+
+        (await fixture.Context.Users.CountAsync()).Should().Be(0);
+        (await fixture.Context.OutboxMessages.CountAsync(message => message.Id == alertId))
+            .Should()
+            .Be(0);
+        (await fixture.Context.OutboxMessages.CountAsync(message => message.Id == requestId))
+            .Should()
+            .Be(1);
+    }
+
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
@@ -89,6 +260,16 @@ public sealed class AccountDeletionStoreTests
         {
             await Context.DisposeAsync();
             await _connection.DisposeAsync();
+        }
+    }
+
+    private sealed class AlwaysRetainPolicy : IUserDeletionRetentionPolicy
+    {
+        public Task<bool> HasRetainedSalesMovementsAsync(
+            Guid userId,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(true);
         }
     }
 

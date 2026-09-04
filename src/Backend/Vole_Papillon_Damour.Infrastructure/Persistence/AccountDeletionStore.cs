@@ -200,6 +200,8 @@ public sealed class AccountDeletionStore(
                     user.Id.Value,
                     cancellationToken);
 
+                await RemoveMemberDataAsync(user.Id, cancellationToken);
+
                 if (hasRetainedMovements)
                 {
                     user.Anonymize(completedAt);
@@ -220,6 +222,44 @@ public sealed class AccountDeletionStore(
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         });
+    }
+
+    private async Task RemoveMemberDataAsync(
+        UserId userId,
+        CancellationToken cancellationToken)
+    {
+        // The retained movement path cannot rely on the database cascade because
+        // the Users row must survive anonymization. Remove the member-only
+        // projection explicitly in both paths so no pending alert can outlive
+        // the identity it targets.
+        var watchlistItems = await dbContext.WatchlistItems
+            .Where(item => item.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.WatchlistItems.RemoveRange(watchlistItems);
+
+        var watchlist = await dbContext.Watchlists
+            .SingleOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
+        if (watchlist is not null)
+        {
+            dbContext.Watchlists.Remove(watchlist);
+        }
+
+        var alertHistory = await dbContext.UserAlertHistories
+            .Where(history => history.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.UserAlertHistories.RemoveRange(alertHistory);
+
+        var bounceEvents = await dbContext.EmailBounceEvents
+            .Where(bounceEvent => bounceEvent.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.EmailBounceEvents.RemoveRange(bounceEvents);
+
+        var alertMessages = await dbContext.OutboxMessages
+            .Where(message =>
+                message.Kind == OutboxMessageKind.AlertEmail &&
+                message.MemberId == userId.Value)
+            .ToListAsync(cancellationToken);
+        dbContext.OutboxMessages.RemoveRange(alertMessages);
     }
 
     public async Task RecordFailureAsync(
@@ -247,6 +287,25 @@ public sealed class AccountDeletionStore(
         string externalId,
         CancellationToken cancellationToken)
     {
+        if (!dbContext.Database.IsSqlServer())
+        {
+            // JSON_VALUE is SQL Server-specific. Keep the local SQLite/Aspire
+            // path provider-neutral; pending account-deletion rows are small
+            // and the production provider uses the indexed-kind/status query
+            // below with server-side JSON filtering.
+            var pendingMessages = await dbContext.OutboxMessages
+                .Where(message =>
+                    message.Kind == OutboxMessageKind.AccountDeletion &&
+                    message.Status == OutboxMessageStatus.Pending)
+                .ToListAsync(cancellationToken);
+
+            return pendingMessages.SingleOrDefault(message =>
+                string.Equals(
+                    DeserializePayload(message.PayloadJson).ExternalId,
+                    externalId,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+
         return await dbContext.OutboxMessages
             .FromSqlInterpolated($"""
                 SELECT *
