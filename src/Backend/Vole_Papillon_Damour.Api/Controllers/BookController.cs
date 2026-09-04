@@ -9,6 +9,7 @@ using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
 using Vole_Papillon_Damour.Application.Books.Queries.GetBookMetadata;
+using Vole_Papillon_Damour.Application.Books.Queries.GetDeadStock;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicNextBookFair;
@@ -153,6 +154,27 @@ public static class BookController
                     })
                 .WithName("GetPublicCatalogSitemap")
                 .AllowAnonymous();
+
+            endpoints.MapGet(
+                    "/books/admin/dead-stock",
+                    async (
+                        int? minAgeMonths,
+                        int? minQuantity,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetDeadStockQuery(
+                                minAgeMonths ?? GetDeadStockQuery.DefaultMinAgeMonths,
+                                minQuantity ?? GetDeadStockQuery.DefaultMinQuantity),
+                            cancellationToken);
+
+                        return result.Match(
+                            deadStock => Results.Ok(ToResponse(deadStock)),
+                            error => error.Result());
+                    })
+                .WithName("GetDeadStockCandidates")
+                .RequireAuthorization("Administration");
 
             endpoints.MapGet(
                     "/books/{isbn13}/metadata",
@@ -389,6 +411,25 @@ public static class BookController
             result.Page,
             result.PageSize,
             result.Genres);
+    }
+
+    private static DeadStockResponse ToResponse(DeadStockResult result)
+    {
+        return new DeadStockResponse(
+            new DateTimeOffset(result.GeneratedAt, TimeSpan.Zero),
+            result.MinAgeMonths,
+            result.MinQuantity,
+            result.Books
+                .Select(book => new DeadStockBookResponse(
+                    book.Isbn13,
+                    book.Title,
+                    book.Authors,
+                    book.Publisher,
+                    book.PublicationYear,
+                    book.Genre,
+                    book.QuantityAvailable,
+                    new DateTimeOffset(book.FirstAvailableAt, TimeSpan.Zero)))
+                .ToArray());
     }
 
     private static PublicCatalogBookResponse ToResponse(PublicCatalogBookResult result)

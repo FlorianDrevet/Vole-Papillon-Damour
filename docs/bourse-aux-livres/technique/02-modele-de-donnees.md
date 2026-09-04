@@ -165,8 +165,9 @@ colonnes `datetime2`. `OccurredAt` représente l'instant client normalisé, `Rec
 la réception serveur ; `ClockSuspect` conserve le signal d'une horloge cliente
 incohérente.
 
-Index : `Isbn13` + `OccurredAt` ; `AssoEventsId` + `Type` (statistiques par bourse) ;
-`ScanSessionId` (reprise en bloc `RG-25`) ; **unique filtré sur `ClientGestureId`**.
+Index : `Isbn13` + `OccurredAt` ; `Isbn13` + `Type` + `OccurredAt` (désengorgement) ;
+`AssoEventsId` + `Type` (statistiques par bourse) ; `ScanSessionId` (reprise en bloc
+`RG-25`) ; **unique filtré sur `ClientGestureId`**.
 
 ### `ScanSessions`
 
