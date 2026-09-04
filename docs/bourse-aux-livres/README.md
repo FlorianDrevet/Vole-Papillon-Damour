@@ -33,8 +33,10 @@ ces documents.
 
 ## Statut
 
-**Spécification stabilisée, architecture écrite, plan d'exécution écrit. Rien
-d'implémenté.** Les décisions structurantes de `08` sont tranchées : `Q-01`, `Q-05`,
+**Spécification stabilisée, architecture et plan d'exécution écrits. Le socle interne
+`P1-3` à `P1-8` est implémenté et déployé en DEV ; le catalogue public et les alertes
+réelles restent volontairement hors périmètre tant que les mesures et gates de `P1-9` à
+`P1-11` ne sont pas validées.** Les décisions structurantes de `08` sont tranchées : `Q-01`, `Q-05`,
 `Q-10` et `Q-11` le sont, `Q-02` est reportée hors v1, `Q-04`, `Q-06` et `Q-09` sont des
 risques assumés.
 

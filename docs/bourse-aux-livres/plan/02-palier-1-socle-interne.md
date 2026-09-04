@@ -16,6 +16,21 @@ d'avance, seul.
 **Prérequis bloquant.** `QT-02` doit être mesurée avant de construire le worker. Un échec
 y est silencieux : les alertes ne partent jamais.
 
+## État d'exécution — 2026-09-04
+
+Le code de `P1-6` à `P1-8` est fusionné dans `main` par la PR #39 et déployé en DEV. La
+CI complète est verte ; le `what-if` puis le déploiement d'infrastructure et le workflow
+runtime ont réussi. Les migrations Books sont appliquées avant le rollout API/Worker et
+`GET /health` répond `200 Healthy`.
+
+Ce résultat ne clôt pas les tests manuels du lot : le nouveau heartbeat `Sweep`/`Enrich`
+doit encore être observé dans `vpd-law-dev`, l'alerte doit être vérifiée, et `QT-02` doit
+être mesurée sur le nouveau Worker. Le smoke metadata
+`GET /books/9783140464079/metadata` renvoie actuellement `500` avec une erreur générique
+de fournisseur ; ce défaut doit être diagnostiqué avant de considérer l'enrichissement
+comme opérationnel. `P1-9` reste une mesure SQL sur dataset, et `P1-10`/`P1-11` restent
+les essais appareil/réseau/comptage décrits ci-dessous.
+
 ---
 
 ## `P1-1` — Mesurer `QT-02`, avant tout le reste

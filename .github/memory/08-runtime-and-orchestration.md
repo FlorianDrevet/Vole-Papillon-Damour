@@ -7,7 +7,7 @@
 - `src/BackOffice/` - Angular admin SPA
 - `src/Website/` - Angular public SPA
 - `src/Scan/` - Angular feasibility-probe SPA, deployable as a public HTTPS Container App
-- `src/Backend/Vole_Papillon_Damour.Worker/` - .NET isolated Azure Functions account-deletion worker
+- `src/Backend/Vole_Papillon_Damour.Worker/` - .NET isolated Azure Functions Books worker and account-deletion processor
 - `src/MauiCashApp/` - .NET MAUI cashier client
 
 ## Entry Points
@@ -40,7 +40,7 @@ The API startup wires:
 - The repository now includes a verified Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/`.
 - The AppHost orchestrates the API on port `5257`, Scan on `4202`, BackOffice on `4200`, Website on `4201`, plus local SQL Server and Azurite.
 - The AppHost passes the Aspire-generated Blob Storage connection to the API and worker. The Functions worker uses the host-storage connection supplied by `AddAzureFunctionsProject`; it must not be overridden with `UseDevelopmentStorage=true`, because Aspire publishes Azurite on dynamic host ports.
-- The Functions worker registers only account-deletion processing plus Infrastructure, with API authentication disabled in that host. This keeps Microsoft Identity Web out of the generic Functions dependency graph and avoids resolving ASP.NET endpoint services that do not exist in the worker host.
+- The Functions worker registers Books background processing, account-deletion processing, and Infrastructure, with API authentication disabled in that host. This keeps Microsoft Identity Web out of the generic Functions dependency graph and avoids resolving ASP.NET endpoint services that do not exist in the worker host.
 - The AppHost SQL Server resource uses `WithDataVolume()`, so it must keep a stable password across launches through the AppHost secret key `Parameters:sql-server-password`; otherwise SQL Server starts but later rejects `sa` logins with `18456` because the persisted master database still expects the older password.
 - The AppHost `AddJavaScriptApp(...).WithRunScript("start")` calls pass the `--` separator
   followed by frontend CLI arguments such as `--host` and `--port`; this is required by the
@@ -49,7 +49,7 @@ The API startup wires:
 - The API health endpoint is `/health`; local Azure Container Apps probe parameters target it on port `8080` for readiness, liveness, and startup. Website and BackOffice probes remain disabled until their plan specifies health endpoints.
 - The Scan image is built from the `src/` context with nginx on port `8080`; `Scan - deploy` injects the public API URL and Application Insights connection string at build time, then rolls `vpd-scan-ca-dev` onto the image. Its deployed ACA HTTPS FQDN is `https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io` for the iPhone test.
 - The worker is deployed as a native Functions-on-Container-Apps resource (`Microsoft.App/containerApps`, `kind=functionapp`) with a dedicated managed identity, ACR pull, Key Vault secret references, Application Insights, and a `P1-1` measurement target of `minReplicas: 0`/`maxReplicas: 1`. It is intentionally private (no ingress); the timer was previously verified in Azure with a successful `AccountDeletionSweepFunction` invocation, and the zero-replica behavior still needs the two-hour observation.
-- The SQL deployment parameter is now the fixed `S1` Standard tier (20 DTUs, 250 GB, no automatic pause); the Azure resource has not been changed from this workspace.
+- The SQL deployment parameter is the fixed `S1` Standard tier (20 DTUs, 250 GB, no automatic pause); the DEV infrastructure deployment was re-applied successfully by run `33822751659`.
 - Deployment IaC for Azure Container Apps now lives under `infra/` and targets the API, BackOffice, Website, Scan, and Worker surfaces.
 - An Infra Flow Sculptor project named `Vole-Papillon-Damour` was created on 2026-05-18 with `dev` and `prod` environments in `FranceCentral`, a shared `rg-vpd-common`, and a separate `VpdApplications` infrastructure config.
 - The Infra Flow Sculptor run created ACR and Log Analytics in the project, but ACA environment and Container App auto-creation failed server-side with a compile exception, so the repository-local Bicep template completes that missing part.
@@ -79,4 +79,5 @@ The API startup wires:
 - `Books runtime - deploy` is a manual GitHub Actions workflow that builds API and Worker images from one commit, optionally opens the SQL firewall and applies all EF migrations, closes the firewall in cleanup, then updates both Container Apps. The workflow deliberately deploys migrations before the application rollout.
 - The API now runs startup migrations only for `Development`. Production and deployed development use the explicit migration step, preventing concurrent API replicas from migrating the database.
 - `main.bicep` declares the `book-covers` blob container, `Cors:AllowedOrigins`, Application Insights daily caps, and Azure Monitor alerts for missing Worker heartbeat, late announcements, and a late alert queue. The contact group must still be confirmed by Azure after infrastructure deployment.
-- The dev Worker is private, running at `minReplicas: 0`/`maxReplicas: 1`, revision `vpd-worker-ca-dev--0000003` before the new runtime deployment. The old account-deletion timer was observed successfully in the correct subscription tenant; the new `Sweep`/`Enrich` heartbeat must be verified after rollout.
+- The DEV infra what-if `33822673986` reported 5 creates, 24 modifies, 17 no-change, 9 unsupported and 10 ignored changes, with no deletes; the real infra run `33822751659` succeeded. The Azure Monitor contact group still needs a delivery test.
+- The independent API smoke after runtime rollout returned `200 Healthy` for `/health`, while `/books/9783140464079/metadata` returned `500` with a generic provider error; provider/network diagnostics are still required.

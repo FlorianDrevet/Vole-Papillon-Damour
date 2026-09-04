@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1-6` à `P1-8` — worker Books, observabilité, infra et pipeline de runtime implémentés localement ; déploiement dev et mesures post-déploiement à valider ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
-| **Prochaine action** | Pousser/faire valider la PR, exécuter le `what-if` puis le déploiement infra dev, appliquer les migrations avant le rollout API/Worker, vérifier les heartbeats ; conserver `P1-9` et les gates physiques `P1-10/P1-11` comme mesures à réaliser avec les données et appareils réels |
+| **Lot en cours** | `P1-6` à `P1-8` — code, CI, infrastructure DEV et rollout API/Worker réalisés ; l'acceptation opérationnelle des heartbeats, alertes et du fournisseur bibliographique reste à vérifier ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
+| **Prochaine action** | Investiguer le `500` de l'endpoint metadata, observer les nouveaux heartbeats `Sweep`/`Enrich` et mesurer `QT-02` sur deux heures ; puis réaliser `P1-9` et les gates physiques `P1-10/P1-11` avec les données et appareils réels |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-main` |
-| **Dernière mise à jour** | 2026-09-04 |
-| **Branche** | `feat/books-p1-6-worker-v2` — basée sur `main` après merge de la PR #38 |
+| **Dernière mise à jour** | 2026-09-04 — après déploiement DEV |
+| **Branche** | `feat/books-p1-6-worker-v2` — code de la PR #39 fusionné dans `main`, commit de passation poussé sur cette branche |
 
 ---
 
@@ -80,7 +80,10 @@ git pull
 
 ### État actualisé — 2026-09-04
 
-`P1-6` à `P1-8` sont implémentés localement sur `feat/books-p1-6-worker-v2`. Le worker
+`P1-6` à `P1-8` sont implémentés et fusionnés dans `main` par la PR #39 (`abbb336`). Les
+deux runs CI du commit de passation (`33822121399` et `33822129543`) sont verts, avec
+backend/tests, MAUI Android `net10.0-android`, trois builds Angular et les conteneurs
+Scan/Worker validés. Le worker
 contient désormais `Sweep` (toutes les cinq minutes) et `Enrich` (toutes les heures) :
 fermeture des sessions inactives, rattachement des annonces sans date, release des
 annonces dues, livraison de l'outbox d'alertes, suppression de comptes et enrichissement
@@ -89,26 +92,49 @@ Books annulées sont conservées pour l'audit mais exclues de toutes les opérat
 
 La fondation runtime ajoute le conteneur `book-covers`, les plafonds App Insights, trois
 alertes Azure Monitor, le CORS par liste d'origines, et le workflow manuel
-`Books runtime - deploy`. L'API ne migre plus au démarrage sauf en `Development` ; le
-workflow applique les migrations avant de créer les révisions API/Worker. L'envoi ACS est
-prêt côté code mais reste désactivé.
+`Books runtime - deploy`. Le `what-if` sur `main` (`33822673986`) est vert : 5 créations,
+24 modifications, 17 ressources inchangées, 9 changements non analysables et 10 ignorés,
+sans suppression. Le déploiement infra DEV (`33822751659`) est vert. Le runtime
+(`33822924593`) a construit les images API et Worker depuis `abbb336` sous le tag partagé
+`abbb336`, appliqué les sept migrations EF en attente avant rollout, fermé la règle firewall
+temporaire, puis déployé les deux Container Apps. L'envoi ACS est prêt côté code mais reste
+désactivé.
+
+Les migrations appliquées sont `20260903173750_AddBookExchangeCore`,
+`20260903175445_AddClientGestureIdToBookAnnouncements`,
+`20260903181307_AddSaleReversalLink`, `20260903185500_AddBookWatchlistsAndAlerts`,
+`20260903192839_AddEmailBounceEventLedger`, `20260903211547_AddWatchlistUpdatedAt` et
+`20260903230825_AddCancelledBookFair`. Le smoke test indépendant `GET /health` de l'API
+répond `200 Healthy` après rollout. En revanche,
+`GET /books/9783140464079/metadata` répond `500` avec l'erreur générique du résolveur :
+la cause (BnF/Open Library, réseau sortant ou configuration) doit être isolée avant de
+considérer l'enrichissement bibliographique comme validé. Le log EF du run n'a appliqué
+que ces sept migrations ; les migrations antérieures, dont `MigrateUsersToEntraIdentity`,
+n'étaient donc plus en attente dans la base DEV.
 
 La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
-« Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
-pas la considérer comme validée tant qu'Azure n'affiche pas l'état vérifié. Le domaine
-reste donc un délai externe, tout comme l'envoi réel et la réputation.
+« Verification is underway » dans le portail ; le tableau affiche toujours `Configure`
+pour le domaine, SPF, DKIM et DKIM2 après correspondance des TXT/CNAME OVH. Ne pas la
+considérer comme validée tant qu'Azure n'affiche pas l'état vérifié. Le domaine reste donc
+un délai externe, tout comme l'envoi réel et la réputation.
 
 Validation locale de cette reprise : test ciblé d'isolation des types d'outbox au vert,
 test de rétention des références historiques au vert, puis suite backend complète (247
-tests) et build de solution sans erreur. `QT-02` est maintenant relevée pour l'ancien timer `AccountDeletionSweepFunction` dans le bon
-locataire (28 exécutions, 28 succès, 28 complétions sans trou sur la fenêtre observée) ;
-le heartbeat du nouveau `Sweep` doit encore être observé après déploiement. `P1-9` n'est
-pas chiffré sans dataset de développement et mesure SQL reproductible. `P1-10`/`P1-11`
-restent des gates physiques : appareil Android, téléphone de scan, mode avion, cadence et
-acceptation bénévole ne peuvent pas être déclarés depuis ce poste.
+tests) et build de solution sans erreur. `QT-02` est relevée pour l'ancien timer
+`AccountDeletionSweepFunction` dans le bon locataire (28 exécutions, 28 succès, 28
+complétions sans trou sur la fenêtre observée) ; cela ne valide pas encore le nouveau
+`Sweep`. Une tentative de requête KQL post-déploiement est restée sur la requête historique
+du portail, donc aucun comptage fiable des nouveaux heartbeats n'est enregistré ici.
+`P1-9` n'est pas chiffré sans dataset de développement et mesure SQL reproductible.
+`P1-10`/`P1-11` restent des gates physiques : appareil Android, téléphone de scan, mode
+avion, cadence et acceptation bénévole ne peuvent pas être déclarés depuis ce poste.
 
 Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité ; ce
 bloc est la source de vérité pour l'état courant.
+
+Les mentions historiques ci-dessous indiquant que la migration 0 n'était pas encore
+appliquée sont antérieures au run `Books runtime - deploy #33822924593` ; elles ne décrivent
+plus l'état de la base DEV.
 
 Le prérequis de l'étape 4 est vérifié par le run GitHub Actions
 `Database - verify point-in-time restore #33690143650` : une copie isolée a été restaurée
