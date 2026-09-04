@@ -27,10 +27,13 @@ describe('ScanAuthService', () => {
     expect(service.displayName).toBe('Bénévole');
     expect(instance.setActiveAccount).toHaveBeenCalledOnceWith(account);
 
-    service.login();
+    service.login().subscribe();
     service.logout();
 
-    expect(msal.loginRedirect).toHaveBeenCalledOnceWith(loginRequest);
+    expect(msal.loginRedirect).toHaveBeenCalledOnceWith({
+      ...loginRequest,
+      redirectStartPage: `${window.location.origin}/`,
+    });
     expect(msal.logoutRedirect).toHaveBeenCalledOnceWith();
   });
 

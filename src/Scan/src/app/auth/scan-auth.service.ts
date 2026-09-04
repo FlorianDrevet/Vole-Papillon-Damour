@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {MsalBroadcastService, MsalService} from '@azure/msal-angular';
 import {AccountInfo, AuthenticationResult, EventType} from '@azure/msal-browser';
-import {BehaviorSubject} from 'rxjs';
+import {BehaviorSubject, defer, Observable} from 'rxjs';
 import {filter} from 'rxjs/operators';
 
 import {loginRequest} from './msal-config';
@@ -87,10 +87,11 @@ export class ScanAuthService {
     return account?.name || account?.username || null;
   }
 
-  login(): void {
-    this.msalService.loginRedirect(loginRequest).subscribe({
-      error: () => this.publishCachedAccount(),
-    });
+  login(startPage = '/'): Observable<void> {
+    return defer(() => this.msalService.loginRedirect({
+      ...loginRequest,
+      redirectStartPage: new URL(startPage, window.location.origin).href,
+    }));
   }
 
   logout(): void {

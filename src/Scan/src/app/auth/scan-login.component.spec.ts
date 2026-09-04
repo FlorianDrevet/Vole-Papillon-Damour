@@ -1,6 +1,6 @@
 import {CommonModule} from '@angular/common';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {BehaviorSubject} from 'rxjs';
+import {BehaviorSubject, of, throwError} from 'rxjs';
 
 import {ScanAuthService, ScanAuthState} from './scan-auth.service';
 import {ScanLoginComponent} from './scan-login.component';
@@ -21,6 +21,8 @@ describe('ScanLoginComponent', () => {
     auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['login', 'logout'], {
       authState$: authState.asObservable(),
     });
+    auth.login.and.returnValue(of(undefined) as never);
+    auth.logout.and.returnValue(of(undefined) as never);
 
     await TestBed.configureTestingModule({
       declarations: [ScanLoginComponent],
@@ -55,5 +57,15 @@ describe('ScanLoginComponent', () => {
     (fixture.nativeElement.querySelector('.login-secondary') as HTMLButtonElement).click();
 
     expect(auth.logout).toHaveBeenCalledOnceWith();
+  });
+
+  it('shows a visible error when the login redirect cannot start', () => {
+    auth.login.and.returnValue(throwError(() => new Error('interaction_in_progress')) as never);
+
+    (fixture.nativeElement.querySelector('.login-primary') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent)
+      .toContain('Impossible de démarrer la connexion');
   });
 });

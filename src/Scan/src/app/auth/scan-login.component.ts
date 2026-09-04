@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, signal} from '@angular/core';
 
 import {ScanAuthService} from './scan-auth.service';
 
@@ -9,6 +9,9 @@ import {ScanAuthService} from './scan-auth.service';
   standalone: false,
 })
 export class ScanLoginComponent {
+  readonly loginError = signal<string | null>(null);
+  readonly loginInProgress = signal(false);
+
   constructor(private readonly scanAuth: ScanAuthService) {}
 
   get authState$() {
@@ -16,10 +19,25 @@ export class ScanLoginComponent {
   }
 
   login(): void {
-    this.scanAuth.login();
+    this.loginError.set(null);
+    this.loginInProgress.set(true);
+
+    try {
+      this.scanAuth.login().subscribe({
+        error: () => this.showLoginError(),
+        complete: () => this.loginInProgress.set(false),
+      });
+    } catch {
+      this.showLoginError();
+    }
   }
 
   logout(): void {
     this.scanAuth.logout();
+  }
+
+  private showLoginError(): void {
+    this.loginInProgress.set(false);
+    this.loginError.set('Impossible de démarrer la connexion. Réessayez.');
   }
 }
