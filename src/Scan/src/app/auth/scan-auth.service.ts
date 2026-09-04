@@ -26,6 +26,7 @@ export class ScanAuthService {
     roles: [],
     requiredRole: SCAN_REQUIRED_ROLE,
   });
+  private authorizationCheck = 0;
 
   readonly account$ = this.accountSubject.asObservable();
   readonly authState$ = this.authStateSubject.asObservable();
@@ -116,27 +117,76 @@ export class ScanAuthService {
   }
 
   private publishAccount(account: AccountInfo | null): void {
-    const roles = account ? readRoles(account) : [];
-    const status: ScanAuthStatus = account === null
-      ? 'unauthenticated'
-      : roles.some(role => role.toLowerCase() === SCAN_REQUIRED_ROLE.toLowerCase())
-        ? 'authorized'
-        : 'unauthorized';
+    const check = ++this.authorizationCheck;
+
+    if (account === null) {
+      this.accountSubject.next(null);
+      this.authStateSubject.next({
+        status: 'unauthenticated',
+        account: null,
+        roles: [],
+        requiredRole: SCAN_REQUIRED_ROLE,
+      });
+      return;
+    }
 
     this.accountSubject.next(account);
     this.authStateSubject.next({
-      status,
+      status: 'checking',
       account,
-      roles,
+      roles: [],
       requiredRole: SCAN_REQUIRED_ROLE,
+    });
+
+    this.msalService.acquireTokenSilent({
+      account,
+      scopes: loginRequest.scopes,
+    }).subscribe({
+      next: result => {
+        if (check !== this.authorizationCheck) {
+          return;
+        }
+
+        const roles = readRoles(result.accessToken);
+        const status: ScanAuthStatus = roles.some(role =>
+          role.toLowerCase() === SCAN_REQUIRED_ROLE.toLowerCase())
+          ? 'authorized'
+          : 'unauthorized';
+
+        this.authStateSubject.next({
+          status,
+          account,
+          roles,
+          requiredRole: SCAN_REQUIRED_ROLE,
+        });
+      },
+      error: () => {
+        if (check === this.authorizationCheck) {
+          this.publishAccount(null);
+        }
+      },
     });
   }
 }
 
-function readRoles(account: AccountInfo): string[] {
-  const claims = account.idTokenClaims as Record<string, unknown> | undefined;
-  const rawRoles = claims?.['roles']
-    ?? claims?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+function readRoles(accessToken: string): string[] {
+  const tokenParts = accessToken.split('.');
+  if (tokenParts.length < 2) {
+    return [];
+  }
+
+  let claims: Record<string, unknown>;
+  try {
+    const base64Payload = tokenParts[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(tokenParts[1].length + (4 - tokenParts[1].length % 4) % 4, '=');
+    claims = JSON.parse(atob(base64Payload)) as Record<string, unknown>;
+  } catch {
+    return [];
+  }
+
+  const rawRoles = claims['roles'];
 
   if (typeof rawRoles === 'string') {
     return [rawRoles];
