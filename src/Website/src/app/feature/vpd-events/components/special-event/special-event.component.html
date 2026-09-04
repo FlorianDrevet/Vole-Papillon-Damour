@@ -47,16 +47,16 @@
         </span>
       } @else if (NextEvent(); as event) {
         <span class="flex w-[58px] shrink-0 flex-col items-center justify-center rounded py-2" [ngClass]="dateChipClass()">
-          <span class="font-serif text-[26px] leading-none">{{ event.dateStart | date:'dd' }}</span>
-          <span class="mt-1 font-mono text-[10px] uppercase tracking-[.12em]">{{ event.dateStart | date:'MMM' }}</span>
+          <span class="font-serif text-[26px] leading-none">{{ event.dateStart | date:'dd':'UTC' }}</span>
+          <span class="mt-1 font-mono text-[10px] uppercase tracking-[.12em]">{{ event.dateStart | date:'MMM':'UTC' }}</span>
         </span>
         <span class="flex flex-col gap-1">
           <span class="font-mono text-[10px] uppercase tracking-[.16em]" [ngClass]="accentTextClass()">Prochaine date</span>
           <strong class="text-[15px] font-semibold text-ink-2 first-letter:uppercase">
             @if (event.dateEnd) {
-              Du {{ event.dateStart | date:'d MMMM' }} au {{ event.dateEnd | date:'d MMMM yyyy' }}
+              Du {{ event.dateStart | date:'d MMMM':'UTC' }} au {{ event.dateEnd | date:'d MMMM yyyy':'UTC' }}
             } @else {
-              {{ event.dateStart | date:'EEEE d MMMM yyyy' }}
+              {{ event.dateStart | date:'EEEE d MMMM yyyy':'UTC' }}
             }
           </strong>
           <span class="text-[13px] text-slate-2">

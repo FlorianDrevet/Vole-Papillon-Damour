@@ -8,7 +8,7 @@ import {VpdEventModel} from "../../../models/vpdEvent.model";
 import {VpdEventsFacadeService} from "../../../facades/vpd-events.facade.service";
 import {ImageUtils} from "../../../utils/image.utils";
 import {VpdEventEnum} from "../../../enums/vpdEvent.enum";
-import {MyDate} from "../../../extensions/MyDate";
+import {fromApiUtcDate, fromApiUtcWallClock, MyDate} from "../../../extensions/MyDate";
 
 @Component({
     selector: 'app-create-update-event-dialog',
@@ -57,11 +57,11 @@ export class CreateUpdateEventDialogComponent implements OnInit {
       this.newEventForm.get('eventType')?.setValue(this.updateEvent()!.eventType);
       this.newEventForm.get('name')?.setValue(this.updateEvent()!.name);
       this.newEventForm.get('description')?.setValue(this.updateEvent()!.description);
-      this.newEventForm.get('dateStart')?.setValue(this.updateEvent()!.dateStart);
-      this.newEventForm.get('hourStart')?.setValue(this.updateEvent()!.dateStart);
-      this.newEventForm.get('dateEnd')?.setValue(this.updateEvent()!.dateEnd);
-      this.newEventForm.get('hourOpenDoors')?.setValue(this.updateEvent()!.hourOpenDoors);
-      this.newEventForm.get('hourCloseDoors')?.setValue(this.updateEvent()!.hourCloseDoors);
+      this.newEventForm.get('dateStart')?.setValue(fromApiUtcDate(this.updateEvent()!.dateStart));
+      this.newEventForm.get('hourStart')?.setValue(fromApiUtcWallClock(this.updateEvent()!.dateStart));
+      this.newEventForm.get('dateEnd')?.setValue(fromApiUtcDate(this.updateEvent()!.dateEnd));
+      this.newEventForm.get('hourOpenDoors')?.setValue(fromApiUtcWallClock(this.updateEvent()!.hourOpenDoors));
+      this.newEventForm.get('hourCloseDoors')?.setValue(fromApiUtcWallClock(this.updateEvent()!.hourCloseDoors));
       this.newEventForm.get('urlRegistration')?.setValue(this.updateEvent()!.urlRegistration);
       this.newEventForm.get('city')?.setValue(this.updateEvent()!.city);
       this.newEventForm.get('road')?.setValue(this.updateEvent()!.road);

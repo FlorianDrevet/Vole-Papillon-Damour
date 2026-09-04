@@ -35,11 +35,11 @@
             <span class="font-mono text-[10px] uppercase tracking-[.16em] text-cyan">Date</span>
             @if (event.dateEnd) {
               <strong class="font-serif text-[19px] font-medium leading-tight text-white">
-                Du {{ event.dateStart | date:'d MMM' }} au {{ event.dateEnd | date:'d MMM yyyy' }}
+                Du {{ event.dateStart | date:'d MMM':'UTC' }} au {{ event.dateEnd | date:'d MMM yyyy':'UTC' }}
               </strong>
             } @else {
               <strong class="font-serif text-[19px] font-medium leading-tight text-white first-letter:uppercase">
-                {{ event.dateStart | date:'EEEE d MMMM yyyy' }}
+                {{ event.dateStart | date:'EEEE d MMMM yyyy':'UTC' }}
               </strong>
             }
           </div>

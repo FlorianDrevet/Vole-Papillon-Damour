@@ -67,6 +67,12 @@ Verified feature roots:
   `npm ci`, without installing Website first.
 - The Website public shell now keeps one shared visual language between the home overlay navigation and internal pages; the first modernization wave lives mainly in `src/styles.scss` plus the `navigation`, `navigation-mobile`, and `home` templates.
 - The BackOffice OCR scan dialog, `bingo-card` shared component, and `/bingo-card` facade were removed in May 2026; no equivalent OCR surface exists in `Website`.
+- Legacy event date/time values are encoded as UTC wall-clock components: the BackOffice
+  `shared/extensions/MyDate.ts` helpers convert API values into local-field `Date` values
+  before Angular Material date/time pickers display them, and `MyDate.toISOUtcString()`
+  converts edited picker values back without a timezone drift. Website event date/time pipes
+  use `UTC`, and the event detail selects `hourOpenDoors` for Books events rather than
+  treating a non-midnight `dateStart` as the opening time.
 
 ## Website Rendering Modes
 
@@ -144,6 +150,9 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - As of 2026-09-03, Website `npm ci`, 58 ChromeHeadless tests, the production build, SSR
   smoke checks, and responsive browser checks pass; its existing bundle/CSS/CommonJS
   warnings remain.
+- As of 2026-09-04, BackOffice passes its 12 ChromeHeadless tests and production build, and
+  Website passes 66 ChromeHeadless tests and its production build after the event date/time
+  correction; the existing bundle/CSS/CommonJS warnings remain.
 - As of 2026-09-04, Scan passes 53 ChromeHeadless tests and its production build; the
   production bundle retains the expected initial-size warning. Its redesigned Scanette
   surface was also checked in a local browser at 390 px and 1280 px. CI is configured to
