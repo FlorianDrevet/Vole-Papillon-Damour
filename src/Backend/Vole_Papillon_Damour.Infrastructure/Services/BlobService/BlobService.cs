@@ -1,4 +1,5 @@
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Options;
@@ -13,6 +14,7 @@ public class BlobService
     private readonly BlobContainerClient _blobContainerActualityImagesClient;
     private readonly BlobContainerClient _blobContainerEventImagesClient;
     private readonly BlobContainerClient _blobContaineProductsImagesClient;
+    private readonly BlobContainerClient _blobContainerBookCoversClient;
 
     public BlobService(
         BlobServiceClient blobServiceClient,
@@ -25,6 +27,8 @@ public class BlobService
             .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerEventImagesClient);
         _blobContaineProductsImagesClient = blobServiceClient
             .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerProductsImagesClient);
+        _blobContainerBookCoversClient = blobServiceClient
+            .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerBookCoversName);
     }
     
     public async Task<Uri> UploadLotoImagesAsync(string fileName, Stream stream)
@@ -45,6 +49,21 @@ public class BlobService
     public async Task<Uri> UploadEventImagesAsync(string fileName, Stream stream)
     {
         return await UploadAsync(fileName, stream, _blobContainerEventImagesClient);
+    }
+
+    public async Task<Uri> UploadBookCoverAsync(
+        string fileName,
+        Stream stream,
+        string contentType)
+    {
+        var blobClient = _blobContainerBookCoversClient.GetBlobClient(fileName);
+        await blobClient.UploadAsync(
+            stream,
+            new BlobUploadOptions
+            {
+                HttpHeaders = new BlobHttpHeaders { ContentType = contentType }
+            });
+        return blobClient.Uri;
     }
     
     private async Task<Uri> UploadAsync(string fileName, Stream stream, BlobContainerClient blobContainerClient)

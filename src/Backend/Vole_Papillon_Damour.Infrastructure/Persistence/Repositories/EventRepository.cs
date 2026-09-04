@@ -34,7 +34,7 @@ public class EventRepository: BaseRepository<AssoEvents, ProjectDbContext>, IEve
         var today = DateTimeOffset.Now.Date; // Obtient la date actuelle sans l'heure
 
         return (await Context.AssoEvents
-                .Where(x => x.DateStart.Date >= today) // Comparaison sans tenir compte de l'heure
+                .Where(x => !x.IsCancelled && x.DateStart.Date >= today) // Comparaison sans tenir compte de l'heure
                 .OrderBy(x => x.DateStart)
                 .ToListAsync())
             .FirstOrDefault(x => x.EventsType.Value == EventsType.EventsTypeEnum.Bingo);
@@ -45,7 +45,7 @@ public class EventRepository: BaseRepository<AssoEvents, ProjectDbContext>, IEve
         var today = DateTimeOffset.Now.Date; // Obtient la date actuelle sans l'heure
         
         return (await Context.AssoEvents
-                .Where(x => x.DateStart >= today || x.DateEnd >= today)
+                .Where(x => !x.IsCancelled && (x.DateStart >= today || x.DateEnd >= today))
                 .OrderBy(x => x.DateStart)
                 .ToListAsync())
             .FirstOrDefault(x => x.EventsType.Value == EventsType.EventsTypeEnum.Books);
@@ -56,7 +56,7 @@ public class EventRepository: BaseRepository<AssoEvents, ProjectDbContext>, IEve
         var today = DateTimeOffset.Now.Date; // Obtient la date actuelle sans l'heure
         
         return (await Context.AssoEvents
-                .Where(x => x.DateStart >= today || x.DateEnd >= today)
+                .Where(x => !x.IsCancelled && (x.DateStart >= today || x.DateEnd >= today))
                 .OrderBy(x => x.DateStart)
                 .ToListAsync())
             .FindAll(x => 
@@ -68,7 +68,7 @@ public class EventRepository: BaseRepository<AssoEvents, ProjectDbContext>, IEve
         var today = DateTimeOffset.Now.Date; // Obtient la date actuelle sans l'heure
         
         return await Context.AssoEvents
-            .Where(x => x.DateStart >= today || x.DateEnd >= today)
+            .Where(x => !x.IsCancelled && (x.DateStart >= today || x.DateEnd >= today))
             .OrderBy(x => x.DateStart)
             .ToListAsync();
     }

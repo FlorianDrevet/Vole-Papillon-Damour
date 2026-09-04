@@ -92,6 +92,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("HourOpenDoors")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<bool>("IsCancelled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

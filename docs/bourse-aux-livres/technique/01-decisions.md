@@ -986,3 +986,27 @@ transmission, fermeture de l'application, perte réseau en pleine transmission,
 reconnexion, doublon de lot et séparation catalog/outbox. Un test navigateur
 end-to-end complet reste hors P1-5 ; le parcours d'acceptation réel est conservé pour
 P1-11.
+
+## DT-22 — Une bourse annulée reste dans l'historique mais sort du runtime livres
+
+**Contexte.** Supprimer physiquement un événement déjà référencé ferait perdre le contexte
+des annonces et des mouvements. Le laisser éligible ferait en revanche rattacher de
+nouvelles annonces ou ventes à une bourse qui n'aura pas lieu.
+
+**Décision.** `AssoEvents` porte un état `IsCancelled`. Une annulation est logique pour
+les événements Books : elle est conservée pour l'audit, exclue des recherches de prochaine
+bourse, des ouvertures et des releases, et détache les annonces encore attachées. Les
+événements non-Books gardent leur suppression historique. Toute commande métier relit
+l'événement et refuse explicitement une bourse Books annulée.
+
+## DT-23 — Les migrations de production sont une étape de déploiement explicite
+
+**Contexte.** Plusieurs réplicas API ne doivent pas démarrer simultanément une migration
+EF Core. Le démarrage automatique est pratique en développement mais dangereux pour un
+rollout contrôlé.
+
+**Décision.** L'API n'exécute les migrations au démarrage que dans l'environnement
+`Development`. Le workflow `Books runtime - deploy` construit les images API et Worker,
+ouvre temporairement le firewall SQL du runner, applique toutes les migrations, ferme la
+règle dans un bloc de nettoyage, puis déploie les révisions. L'envoi ACS reste désactivé
+tant que le domaine et un parcours réel ne sont pas validés.

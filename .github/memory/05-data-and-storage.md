@@ -54,3 +54,11 @@
 - Repository changes can impact multiple feature slices at once.
 - Blob/table naming and storage clients are centralized in Infrastructure.
 - Media upload flows depend on centralized Azure Blob configuration and should be validated carefully.
+
+## Books runtime update — 2026-09-04
+
+- The Books schema now includes cancelled-fair state (`AssoEvents.IsCancelled`) and the migration `20260903230825_AddCancelledBookFair`; cancelled Books fairs remain auditable but are excluded from release, opening, next-fair selection, announcements, sales, and alert delivery. Attached announcements are detached when the fair is cancelled.
+- `AccountDeletionStore` claims only `OutboxMessageKind.AccountDeletion`; its SQL Server claim uses update/read-past locks, while the provider query keeps the SQLite test harness executable. `AlertEmail` rows therefore cannot be deserialized by the account-deletion worker.
+- The Books alert outbox has an exact claim lease token carried through revalidation, cancellation, success, and failure. Sent alerts write `UserAlertHistory` after ACS delivery so a retry cannot deliberately create another alert for the same book/member cooldown window.
+- Bibliographic enrichment is retryable and negative-caches not-found results. Optional cover downloads accept only the explicit HTTPS host allowlist (`covers.openlibrary.org`, `openapi.bnf.fr`), reject redirects and oversized/non-image payloads, and store stable keys under the `book-covers` container.
+- Azure SQL migrations are applied explicitly by deployment workflows. API startup migrations are limited to `Development`; the production/dev rollout workflow runs migrations before the new API/Worker revisions.

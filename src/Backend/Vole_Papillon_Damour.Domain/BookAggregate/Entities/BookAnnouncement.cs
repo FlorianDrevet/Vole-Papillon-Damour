@@ -100,6 +100,17 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
         return true;
     }
 
+    public bool DetachFromFair()
+    {
+        if (Status != BookAnnouncementStatus.Announced || AssoEventsId is null)
+        {
+            return false;
+        }
+
+        AssoEventsId = null;
+        return true;
+    }
+
     private static void EnsureIsbn(Isbn13 isbn13)
     {
         if (string.IsNullOrWhiteSpace(isbn13.Value))

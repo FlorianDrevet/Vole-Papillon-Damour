@@ -172,6 +172,48 @@ public sealed class BookMetadataTests
         book.WorkId.Should().Be("work-42");
     }
 
+    [Fact]
+    public void RecordMetadataNotFound_StoresNegativeCacheAndCountsTheAttempt()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var attemptedAt = FirstSeenAt.AddMinutes(1);
+
+        var changed = book.RecordMetadataNotFound(attemptedAt);
+
+        changed.Should().BeTrue();
+        book.MetadataStatus.Should().Be(BookMetadataStatus.NotFound);
+        book.MetadataSource.Should().BeNull();
+        book.ResolveAttempts.Should().Be(1);
+        book.LastAttemptAt.Should().Be(attemptedAt);
+        book.MetadataFetchedAt.Should().BeNull();
+        book.UpdatedAt.Should().Be(attemptedAt);
+    }
+
+    [Fact]
+    public void RecordMetadataNotFound_DoesNotChangeManualMetadataStatus()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        book.ApplyManualMetadata(
+            new BookMetadataPatch(
+                "Titre corrigé",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.Title]),
+            FirstSeenAt.AddMinutes(1));
+
+        book.RecordMetadataNotFound(FirstSeenAt.AddMinutes(2));
+
+        book.MetadataStatus.Should().Be(BookMetadataStatus.Manual);
+        book.MetadataSource.Should().Be(BookMetadataSource.Manual);
+        book.Title.Should().Be("Titre corrigé");
+        book.ResolveAttempts.Should().Be(1);
+    }
+
     private static Isbn13 CreateIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();

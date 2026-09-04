@@ -19,7 +19,8 @@ public record AssoEventResult(
     bool BingoHasBeenWon,
     List<int> BingoNumeros,
     IReadOnlyList<PartieResult> Parties,
-    int CurrentPartieIndex
+    int CurrentPartieIndex,
+    bool IsCancelled
     );
 
 public record PartieResult(

@@ -99,6 +99,33 @@ public sealed class ScanSessionCommandHandlerTests
     }
 
     [Fact]
+    public async Task Open_WhenNextFairTargetsACancelledFair_RefusesTheTarget()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var cancelledFair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-20T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-21T00:00:00+02:00"),
+            null,
+            null);
+        cancelledFair.Cancel().Should().BeTrue();
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new OpenScanSessionCommandHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new OpenScanSessionCommand(
+                UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002")),
+                ScanMode.NextFair,
+                cancelledFair.Id),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.FairCancelled");
+        (await fixture.Context.ScanSessions.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Close_WhenSessionIsInProgress_StoresTheReasonAndEndTime()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

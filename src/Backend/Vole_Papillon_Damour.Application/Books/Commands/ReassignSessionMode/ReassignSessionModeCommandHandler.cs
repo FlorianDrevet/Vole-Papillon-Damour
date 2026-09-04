@@ -85,6 +85,11 @@ public sealed class ReassignSessionModeCommandHandler(
                 return Errors.Book.FairNotFound(command.TargetAssoEventsId.Value);
             }
 
+            if (targetFair.IsCancelled)
+            {
+                return Errors.Book.FairCancelled(command.TargetAssoEventsId.Value);
+            }
+
             if (targetFair.EventsType?.Value != EventsType.EventsTypeEnum.Books)
             {
                 return Errors.Book.TargetFairMustBeBooks();

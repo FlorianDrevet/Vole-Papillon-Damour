@@ -9,7 +9,7 @@ on:
         type: string
         default: ''
       run_migrations:
-        description: Apply the EF Core migrations to the database after deploying
+        description: Apply the EF Core migrations to the database before deploying the new image
         type: boolean
         default: false
 
@@ -61,15 +61,6 @@ jobs:
           docker build --file "$DOCKERFILE" --tag "$IMAGE" "$BUILD_CONTEXT"
           docker push "$IMAGE"
 
-      - name: Roll the Container App onto the new image
-        run: |
-          set -euo pipefail
-          az containerapp update \
-            --name "$CONTAINER_APP" \
-            --resource-group "$RESOURCE_GROUP" \
-            --image "$IMAGE" \
-            --output none
-
       # Azure SQL only accepts Azure egress by default, so the runner opens a
       # rule for its own address and closes it again whatever happens.
       - name: Open the database to this runner
@@ -90,7 +81,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Apply the EF Core migrations
+      - name: Apply the EF Core migrations before rollout
         if: inputs.run_migrations
         env:
           SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
@@ -102,6 +93,7 @@ jobs:
           SQL_FQDN=$(az sql server show --resource-group "$RESOURCE_GROUP" --name "$SQL_SERVER" \
             --query fullyQualifiedDomainName --output tsv)
           CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$SQL_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+          export PROJECT_DATABASE="$CONNECTION"
           # dotnet ef builds the projects, so they need their NuGet assets.
           dotnet restore src/Backend/Vole_Papillon_Damour.Api/Vole_Papillon_Damour.Api.csproj
           dotnet tool install --global dotnet-ef --version 10.*
@@ -118,6 +110,15 @@ jobs:
             --server "$SQL_SERVER" \
             --name "gh-runner-${{ github.run_id }}" \
             --output none || true
+
+      - name: Roll the Container App onto the new image
+        run: |
+          set -euo pipefail
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$IMAGE" \
+            --output none
 
       - name: Report the deployed revision
         run: |

@@ -83,6 +83,29 @@ public sealed class ScanBookCommandHandler(
             return Errors.Book.ScanSessionClosed(command.ScanSessionId.Value);
         }
 
+        if (session.Mode == ScanMode.NextFair && session.TargetAssoEventsId is { } targetFairId)
+        {
+            // A fair may be cancelled after the session was opened. Recheck the
+            // target on the hot path so a late scan cannot create a stale
+            // announcement. Keep the missing-target behavior for legacy
+            // sessions that intentionally use the undated flow.
+            var targetFair = await dbContext.AssoEvents
+                .SingleOrDefaultAsync(
+                    assoEvent => assoEvent.Id == targetFairId,
+                    cancellationToken);
+            if (targetFair?.IsCancelled == true)
+            {
+                return Errors.Book.FairCancelled(targetFairId.Value);
+            }
+
+            if (targetFair?.EventsType?.Value is not null &&
+                targetFair.EventsType.Value !=
+                Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects.EventsType.EventsTypeEnum.Books)
+            {
+                return Errors.Book.TargetFairMustBeBooks();
+            }
+        }
+
         var book = await dbContext.Books
             .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
 

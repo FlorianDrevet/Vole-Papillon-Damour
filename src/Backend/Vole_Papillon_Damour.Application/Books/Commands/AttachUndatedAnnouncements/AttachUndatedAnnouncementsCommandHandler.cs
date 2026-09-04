@@ -32,6 +32,11 @@ public sealed class AttachUndatedAnnouncementsCommandHandler(IProjectDbContext d
             return Errors.Book.FairNotFound(command.TargetAssoEventsId.Value);
         }
 
+        if (targetFair.IsCancelled)
+        {
+            return Errors.Book.FairCancelled(targetFair.Id.Value);
+        }
+
         if (targetFair.EventsType?.Value != EventsType.EventsTypeEnum.Books)
         {
             return Errors.Book.TargetFairMustBeBooks();

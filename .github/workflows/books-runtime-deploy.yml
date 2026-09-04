@@ -1,0 +1,143 @@
+name: Books runtime - deploy
+
+# Manual only. API and worker are built from one checkout and share one image
+# tag, so a runtime rollout cannot accidentally mix commits between hosts.
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Shared image tag (default - the commit sha)
+        type: string
+        default: ''
+      run_migrations:
+        description: Apply all pending EF Core migrations before rollout
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  REGISTRY_NAME: vpdacrdev
+  API_CONTAINER_APP: vpd-api-ca-dev
+  WORKER_CONTAINER_APP: vpd-worker-ca-dev
+  API_IMAGE_NAME: vpd-api
+  WORKER_IMAGE_NAME: vpd-worker
+  API_DOCKERFILE: src/Backend/Vole_Papillon_Damour.Api/Dockerfile
+  WORKER_DOCKERFILE: src/Backend/Vole_Papillon_Damour.Worker/Dockerfile
+  BUILD_CONTEXT: src/Backend
+  SQL_SERVER: vpd-sql-dev
+  SQL_DATABASE: vole-papillon-damour-db
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve the shared image references
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
+          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
+          {
+            echo "IMAGE_TAG=$TAG"
+            echo "API_IMAGE=$LOGIN_SERVER/$API_IMAGE_NAME:$TAG"
+            echo "WORKER_IMAGE=$LOGIN_SERVER/$WORKER_IMAGE_NAME:$TAG"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and push API and worker from the same commit
+        run: |
+          set -euo pipefail
+          az acr login --name "$REGISTRY_NAME"
+          docker build --file "$API_DOCKERFILE" --tag "$API_IMAGE" "$BUILD_CONTEXT"
+          docker build --file "$WORKER_DOCKERFILE" --tag "$WORKER_IMAGE" "$BUILD_CONTEXT"
+          docker push "$API_IMAGE"
+          docker push "$WORKER_IMAGE"
+
+      # Azure SQL only accepts Azure egress by default, so the runner opens a
+      # rule for its own address and closes it again whatever happens.
+      - name: Open the database to this runner
+        if: inputs.run_migrations
+        run: |
+          set -euo pipefail
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          az sql server firewall-rule create \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-runner-${{ github.run_id }}" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP" \
+            --output none
+
+      - uses: actions/setup-dotnet@v4
+        if: inputs.run_migrations
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Apply the EF Core migrations
+        if: inputs.run_migrations
+        env:
+          SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          SQL_FQDN=$(az sql server show --resource-group "$RESOURCE_GROUP" --name "$SQL_SERVER" \
+            --query fullyQualifiedDomainName --output tsv)
+          CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$SQL_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+          export PROJECT_DATABASE="$CONNECTION"
+          dotnet restore src/Backend/Vole_Papillon_Damour.Api/Vole_Papillon_Damour.Api.csproj
+          dotnet tool install --global dotnet-ef --version 10.*
+          dotnet ef database update \
+            --project src/Backend/Vole_Papillon_Damour.Infrastructure \
+            --startup-project src/Backend/Vole_Papillon_Damour.Api \
+            --connection "$CONNECTION"
+
+      - name: Close the database to this runner
+        if: always() && inputs.run_migrations
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-runner-${{ github.run_id }}" \
+            --output none || true
+
+      - name: Roll API and worker onto the shared tag
+        run: |
+          set -euo pipefail
+          az containerapp update \
+            --name "$API_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$API_IMAGE" \
+            --output none
+          az containerapp update \
+            --name "$WORKER_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$WORKER_IMAGE" \
+            --output none
+
+      - name: Report the shared rollout
+        run: |
+          set -euo pipefail
+          API_STATUS=$(az containerapp show --name "$API_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
+            --query '{state:properties.runningStatus,revision:properties.latestRevisionName,image:properties.template.containers[0].image}' --output json)
+          WORKER_STATUS=$(az containerapp show --name "$WORKER_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
+            --query '{state:properties.runningStatus,revision:properties.latestRevisionName,image:properties.template.containers[0].image}' --output json)
+          {
+            echo "### Books runtime deployed"
+            echo ""
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Shared tag: $IMAGE_TAG"
+            echo "- API: $API_STATUS"
+            echo "- Worker: $WORKER_STATUS"
+          } >> "$GITHUB_STEP_SUMMARY"

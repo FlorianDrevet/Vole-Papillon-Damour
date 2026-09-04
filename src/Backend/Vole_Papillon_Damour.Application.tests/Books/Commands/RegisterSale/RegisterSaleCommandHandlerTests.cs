@@ -122,6 +122,31 @@ public sealed class RegisterSaleCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenOnlyOpenFairIsCancelled_PersistsSaleWithoutGuessingAnAttachment()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var cancelledFair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-03T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-04T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-03T18:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-03T20:00:00+02:00"));
+        cancelledFair.Cancel().Should().BeTrue();
+        await fixture.Context.SaveChangesAsync();
+        var handler = fixture.CreateRegisterSaleHandler();
+
+        var result = await handler.Handle(
+            CreateCommand(book.Isbn13.Value),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.AssoEventsId.Should().BeNull();
+        result.Value.FairMatchStatus.Should().Be(SaleFairMatchStatus.NoOpenFair);
+        (await fixture.Context.BookMovements.SingleAsync()).Note
+            .Should().Be("Sale.NoOpenFair");
+    }
+
+    [Fact]
     public async Task Handle_WhenOpenFairsOverlap_PersistsSaleWithoutGuessingAnAttachment()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

@@ -72,6 +72,18 @@ public sealed class AccountDeletionStore(
             throw new ArgumentOutOfRangeException(nameof(batchSize));
         }
 
+        // The production database is SQL Server and uses update/read-past locks
+        // below. The provider-neutral path keeps the store executable in the
+        // SQLite-backed test harness without weakening the SQL Server claim.
+        if (!dbContext.Database.IsSqlServer())
+        {
+            return await ClaimPendingWithProviderQueryAsync(
+                now,
+                lease,
+                batchSize,
+                cancellationToken);
+        }
+
         var connection = dbContext.Database.GetDbConnection();
         var shouldCloseConnection = connection.State != ConnectionState.Open;
         if (shouldCloseConnection)
@@ -87,7 +99,8 @@ public sealed class AccountDeletionStore(
                 (
                     SELECT TOP (@batchSize) [Id]
                     FROM [OutboxMessages] WITH (UPDLOCK, READPAST, ROWLOCK)
-                    WHERE [Status] = @pendingStatus
+                    WHERE [Kind] = @accountDeletionKind
+                      AND [Status] = @pendingStatus
                       AND [DueAt] <= @now
                       AND ([ClaimedUntil] IS NULL OR [ClaimedUntil] < @now)
                     ORDER BY [DueAt], [Id]
@@ -101,6 +114,7 @@ public sealed class AccountDeletionStore(
                   INNER JOIN candidates ON candidates.[Id] = message.[Id];
                 """;
             AddParameter(command, "@batchSize", batchSize, DbType.Int32);
+            AddParameter(command, "@accountDeletionKind", AccountDeletionKind, DbType.Byte);
             AddParameter(command, "@pendingStatus", PendingStatus, DbType.Byte);
             AddParameter(command, "@now", now, DbType.DateTime2);
             AddParameter(command, "@leaseUntil", now.Add(lease), DbType.DateTime2);
@@ -123,6 +137,39 @@ public sealed class AccountDeletionStore(
                 await connection.CloseAsync();
             }
         }
+    }
+
+    private async Task<IReadOnlyList<AccountDeletionWorkItem>> ClaimPendingWithProviderQueryAsync(
+        DateTime now,
+        TimeSpan lease,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        var messages = await dbContext.OutboxMessages
+            .Where(message =>
+                message.Kind == OutboxMessageKind.AccountDeletion &&
+                message.Status == OutboxMessageStatus.Pending &&
+                message.DueAt <= now &&
+                (message.ClaimedUntil == null || message.ClaimedUntil < now))
+            .OrderBy(message => message.DueAt)
+            .ThenBy(message => message.Id)
+            .Take(batchSize)
+            .ToListAsync(cancellationToken);
+
+        var claimedUntil = now.Add(lease);
+        foreach (var message in messages)
+        {
+            message.ClaimedUntil = claimedUntil;
+            message.Attempts++;
+            message.LastError = null;
+        }
+
+        if (messages.Count > 0)
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return messages.Select(ToWorkItem).ToList();
     }
 
     public async Task FinalizeAsync(

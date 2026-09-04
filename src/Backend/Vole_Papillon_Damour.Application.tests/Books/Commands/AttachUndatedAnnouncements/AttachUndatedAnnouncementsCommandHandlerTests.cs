@@ -95,4 +95,25 @@ public sealed class AttachUndatedAnnouncementsCommandHandlerTests
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("Book.TargetFairMustBeBooks");
     }
+
+    [Fact]
+    public async Task Handle_WhenTargetFairIsCancelled_RefusesAttachment()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var cancelledFair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-20T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-21T00:00:00+02:00"),
+            null,
+            null);
+        cancelledFair.Cancel().Should().BeTrue();
+        await fixture.Context.SaveChangesAsync();
+        var handler = fixture.CreateAttachUndatedAnnouncementsHandler();
+
+        var result = await handler.Handle(
+            new AttachUndatedAnnouncementsCommand(cancelledFair.Id),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.FairCancelled");
+    }
 }
