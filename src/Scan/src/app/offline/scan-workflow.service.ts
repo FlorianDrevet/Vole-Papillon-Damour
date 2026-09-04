@@ -3,6 +3,7 @@ import {Injectable} from '@angular/core';
 import {BookMetadata} from '../scanner/book-metadata.model';
 import {
   LocalScanResult,
+  LocalCatalogResult,
   PersistentStorageStatus,
   ScanCatalogBook,
   ScanOutboxEntry,
@@ -50,6 +51,23 @@ export class ScanWorkflowService {
     const catalogBook = await this.store.getCatalogBook(entry.isbn13);
     const verdict = this.verdictService.calculate(catalogBook, await this.store.getSettings());
     return {entry, verdict, catalogBook};
+  }
+
+  async lookupCatalog(isbn13: string): Promise<LocalCatalogResult> {
+    return await this.enqueue(async () => {
+      const catalogBook = await this.store.getCatalogBook(isbn13);
+      const verdict = this.verdictService.calculate(catalogBook, await this.store.getSettings());
+      return {catalogBook, verdict};
+    });
+  }
+
+  async setSessionMode(mode: 'AvailableNow' | 'NextFair'): Promise<ScanSessionSnapshot> {
+    return await this.enqueue(async () => {
+      const session = await this.ensureSession(new Date());
+      const updated = {...session, mode};
+      await this.store.saveSession(updated);
+      return updated;
+    });
   }
 
   async recordSync(synchronizedAt = new Date()): Promise<void> {
