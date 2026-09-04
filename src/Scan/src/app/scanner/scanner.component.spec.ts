@@ -189,6 +189,20 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Que faites-vous maintenant ?');
   });
 
+  it('centers the home actions between the header and footer', () => {
+    component.returnHome();
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement.querySelector('.home-header') as HTMLElement;
+    const actions = fixture.nativeElement.querySelector('.home-mode-actions') as HTMLElement;
+    const footer = fixture.nativeElement.querySelector('.home-footer') as HTMLElement;
+    const actionsRect = actions.getBoundingClientRect();
+    const availableCenter = (header.getBoundingClientRect().bottom + footer.getBoundingClientRect().top) / 2;
+    const actionsCenter = (actionsRect.top + actionsRect.bottom) / 2;
+
+    expect(actionsCenter).toBeCloseTo(availableCenter, 0);
+  });
+
   it('renders the manual ISBN keypad with an accessible return action', () => {
     component.openManualInput();
     fixture.detectChanges();
