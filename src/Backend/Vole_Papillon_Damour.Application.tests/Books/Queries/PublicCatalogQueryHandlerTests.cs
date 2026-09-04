@@ -134,6 +134,29 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task SearchCatalog_WhenFairHourDateIsStale_UsesTheFairCalendarDateForAvailability()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var book = fixture.AddBook("9782070408504", "Le Petit Prince", "Antoine de Saint-Exupéry");
+        var fair = fixture.AddFair(
+            "Bourse d'octobre",
+            DateTimeOffset.Parse("2026-10-07T00:00:00+00:00"),
+            DateTimeOffset.Parse("2026-10-12T00:00:00+00:00"));
+        fair.HourOpenDoors = DateTimeOffset.Parse("2026-09-04T14:00:00+00:00");
+        fixture.AddAnnouncement(book, quantity: 1, assoEventsId: fair.Id);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery("petit", null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.NextFairAt
+            .Should().Be(DateTimeOffset.Parse("2026-10-07T14:00:00+00:00"));
+    }
+
+    [Fact]
     public async Task SearchCatalog_WhenAvailabilityIsAll_KeepsExhaustedBooksVisible()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -220,6 +243,35 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.OpenAt.Should().Be(fixture.NowOffset.AddDays(10).AddHours(9));
         result.Value.CloseAt.Should().Be(fixture.NowOffset.AddDays(10).AddHours(18));
         result.Value.City.Should().Be("Paris");
+    }
+
+    [Fact]
+    public async Task GetNextBookFair_WhenHourDatesAreStale_UsesTheNearestFairDate()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var octoberFair = fixture.AddFair(
+            "Bourse d'octobre",
+            DateTimeOffset.Parse("2026-10-07T00:00:00+00:00"),
+            DateTimeOffset.Parse("2026-10-12T00:00:00+00:00"));
+        octoberFair.HourOpenDoors = DateTimeOffset.Parse("2026-09-04T14:00:00+00:00");
+        octoberFair.HourCloseDoors = DateTimeOffset.Parse("2026-09-04T18:00:00+00:00");
+
+        var marchFair = fixture.AddFair(
+            "Bourse de mars",
+            DateTimeOffset.Parse("2027-03-03T00:00:00+00:00"),
+            DateTimeOffset.Parse("2027-03-08T00:00:00+00:00"));
+        marchFair.HourOpenDoors = DateTimeOffset.Parse("2026-05-13T14:00:00+00:00");
+        marchFair.HourCloseDoors = DateTimeOffset.Parse("2026-05-13T18:00:00+00:00");
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateNextFairHandler().Handle(
+            new GetPublicNextBookFairQuery(),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Name.Should().Be("Bourse d'octobre");
+        result.Value.OpenAt.Should().Be(DateTimeOffset.Parse("2026-10-07T14:00:00+00:00"));
+        result.Value.CloseAt.Should().Be(DateTimeOffset.Parse("2026-10-12T18:00:00+00:00"));
     }
 
     [Fact]

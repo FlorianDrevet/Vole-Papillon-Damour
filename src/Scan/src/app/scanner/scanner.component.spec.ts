@@ -1,7 +1,7 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {ChangeDetectorRef} from '@angular/core';
+import {ChangeDetectorRef, DestroyRef} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {of, Subject, throwError} from 'rxjs';
 
@@ -11,9 +11,9 @@ import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerService} from './camera-scanner.service';
 import {ScannerComponent} from './scanner.component';
 import {ScanAuthService} from '../auth/scan-auth.service';
+import {LocalScanResult, ScanSessionSnapshot} from '../offline/scan-offline.model';
 import {ScanSyncService} from '../offline/scan-sync.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
-import {LocalScanResult, ScanSessionSnapshot} from '../offline/scan-offline.model';
 
 describe('ScannerComponent', () => {
   let fixture: ComponentFixture<ScannerComponent>;
@@ -323,29 +323,29 @@ describe('ScannerComponent', () => {
     expect(component.screen).toBe('session-mode');
   });
 
-  it('clears the durable session only after its scans are synchronized and closed', async () => {
+  it('clears the durable session only after the sync service confirms close', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
-      'decide',
+      'requestClose',
       'getPendingCount',
       'getSession',
-      'clearSession',
     ]);
-    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', [
-      'syncAll',
-      'closeSession',
-    ]);
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
     const session = createSession({scannedCount: 1, keptCount: 1});
-    const pendingScan = createLocalScanResult();
+    const completedScan = createLocalScanResult();
+    completedScan.entry = {...completedScan.entry, status: 'Kept', kept: true};
+    const requestedSession = {...session, closeRequested: true, closeReason: 'Manual' as const};
 
-    workflow.decide.and.resolveTo({...pendingScan.entry, status: 'Kept', kept: true});
+    workflow.requestClose.and.resolveTo(requestedSession);
     workflow.getPendingCount.and.resolveTo(0);
-    workflow.getSession.and.resolveTo(session);
-    workflow.clearSession.and.resolveTo(undefined);
+    workflow.getSession.and.returnValues(
+      Promise.resolve(requestedSession),
+      Promise.resolve(null),
+    );
     sync.syncAll.and.resolveTo({
-      catalog: null,
+      catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
       outbox: {sent: 1, remaining: 0, stoppedOnError: false},
+      closed: true,
     });
-    sync.closeSession.and.resolveTo(undefined);
 
     (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;
     (component as unknown as {scanSync: ScanSyncService}).scanSync = sync;
@@ -354,14 +354,81 @@ describe('ScannerComponent', () => {
     component.isAuthenticated = true;
     component.isOnline = true;
     component.session = session;
-    component.localScan = pendingScan;
+    component.localScan = completedScan;
 
     await component.endSession();
 
-    expect(sync.closeSession).toHaveBeenCalledOnceWith(session);
-    expect(workflow.clearSession).toHaveBeenCalledOnceWith();
+    expect(workflow.requestClose).toHaveBeenCalledOnceWith('Manual');
+    expect(sync.syncAll).toHaveBeenCalledOnceWith();
     expect(component.session).toBeNull();
     expect(component.screen).toBe('session-end');
+  });
+  it('starts synchronizing after a scan is stored locally', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['recordScan', 'cacheMetadata', 'getPendingCount', 'getSession'],
+    );
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    workflow.recordScan.and.returnValue(Promise.resolve(createLocalScanResult()));
+    workflow.cacheMetadata.and.returnValue(Promise.resolve());
+    workflow.getPendingCount.and.returnValue(Promise.resolve(1));
+    workflow.getSession.and.returnValue(Promise.resolve(createSession()));
+    sync.syncAll.and.returnValue(Promise.resolve({
+      catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
+      outbox: {sent: 0, remaining: 1, stoppedOnError: false},
+      closed: false,
+    }));
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      sync,
+    );
+    localComponent.authAvailable = true;
+    localComponent.isAuthenticated = true;
+    localComponent.isOnline = true;
+    (localComponent as unknown as {localModeReady: boolean}).localModeReady = true;
+
+    await localComponent.lookup('9782070363735', 'tri');
+
+    expect(sync.syncAll).toHaveBeenCalled();
+  });
+
+  it('does not close a session while its last scan is still pending', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['requestClose'],
+    );
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+    );
+    localComponent.session = createSession();
+    localComponent.localScan = createLocalScanResult();
+
+    await localComponent.endSession();
+
+    expect(workflow.requestClose).not.toHaveBeenCalled();
+    expect(localComponent.screen).toBe('tri');
+    expect(localComponent.syncError).toContain('dernier livre');
   });
 
   function createMetadata(title = 'Le Petit Prince'): BookMetadata {

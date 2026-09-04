@@ -10,8 +10,10 @@ puis sépare strictement deux flux :
 Les trois magasins IndexedDB (`catalog`, `outbox`, `session`) conservent la copie de
 travail, les décisions et la session active. Une décision `Kept` ou `Rejected` est
 transmise séquentiellement avec son `ClientGestureId` dès que le réseau et un compte
-bénévole portant le rôle Entra `Tri` sont disponibles. Les gestes `Pending` survivent à
-la fermeture et sont restaurés au prochain lancement ; aucune donnée d'outbox n'est
+bénévole portant le rôle Entra `Tri` sont disponibles. Une session terminée demande aussi
+sa clôture serveur ; cette demande reste dans IndexedDB jusqu'à confirmation, afin que les
+livres soient publiés même après une coupure réseau. Les gestes `Pending` survivent à la
+fermeture et sont restaurés au prochain lancement ; aucune donnée d'outbox n'est
 supprimée par une purge du catalogue.
 
 L'accès à l'application est protégé par Entra : l'écran de connexion est affiché tant

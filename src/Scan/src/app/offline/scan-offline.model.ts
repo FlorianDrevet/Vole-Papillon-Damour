@@ -11,6 +11,8 @@ export type ScanStoreName = typeof scanStoreNames[keyof typeof scanStoreNames];
 
 export type LocalScanMode = 'AvailableNow' | 'NextFair';
 
+export type LocalScanCloseReason = 'Manual' | 'Inactivity' | 'Disconnect' | 'TokenExpired';
+
 export type LocalBookVerdict = 'Wanted' | 'Selling' | 'TooMany' | 'FirstCopy';
 
 export type ScanOutboxStatus = 'Pending' | 'Kept' | 'Rejected' | 'CancelledLocal';
@@ -62,6 +64,8 @@ export interface ScanSessionSnapshot {
   scannedCount: number;
   keptCount: number;
   rejectedCount: number;
+  closeRequested?: boolean;
+  closeReason?: LocalScanCloseReason | null;
 }
 
 export interface ScanOutboxEntry {

@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
@@ -805,6 +806,6 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
 
     private static DateTimeOffset GetOpeningInstant(AssoEvents assoEvent)
     {
-        return assoEvent.HourOpenDoors ?? assoEvent.DateStart;
+        return BookFairSchedule.GetOpeningInstant(assoEvent);
     }
 }

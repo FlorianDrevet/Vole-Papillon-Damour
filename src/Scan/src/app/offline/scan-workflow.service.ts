@@ -7,6 +7,7 @@ import {
   PersistentStorageStatus,
   ScanCatalogBook,
   ScanOutboxEntry,
+  LocalScanCloseReason,
   ScanSessionSnapshot,
 } from './scan-offline.model';
 import {ScanLocalStoreService} from './scan-local-store.service';
@@ -68,10 +69,6 @@ export class ScanWorkflowService {
     };
   }
 
-  async clearSession(): Promise<void> {
-    return await this.enqueue(async () => await this.store.clearSession());
-  }
-
   async lookupCatalog(isbn13: string): Promise<LocalCatalogResult> {
     return await this.enqueue(async () => {
       const catalogBook = await this.store.getCatalogBook(isbn13);
@@ -96,6 +93,25 @@ export class ScanWorkflowService {
         ...session,
         lastSyncAt: synchronizedAt.toISOString(),
       });
+    });
+  }
+
+  async requestClose(closeReason: LocalScanCloseReason): Promise<ScanSessionSnapshot> {
+    return await this.enqueue(async () => {
+      const session = await this.ensureSession(new Date());
+      const updated = {
+        ...session,
+        closeRequested: true,
+        closeReason,
+      };
+      await this.store.saveSession(updated);
+      return updated;
+    });
+  }
+
+  async clearSession(): Promise<void> {
+    return await this.enqueue(async () => {
+      await this.store.clearSession();
     });
   }
 
@@ -132,6 +148,10 @@ export class ScanWorkflowService {
   async recordScan(isbn13: string, occurredAt = new Date()): Promise<LocalScanResult> {
     return await this.enqueue(async () => {
       const session = await this.ensureSession(occurredAt);
+      if (session.closeRequested) {
+        throw new Error('The scan session is waiting for synchronization to close.');
+      }
+
       const existingEntries = await this.store.listOutboxEntries();
       const previousEntry = existingEntries
         .slice()
@@ -249,6 +269,8 @@ export class ScanWorkflowService {
         scannedCount: existing.scannedCount ?? 0,
         keptCount: existing.keptCount ?? 0,
         rejectedCount: existing.rejectedCount ?? 0,
+        closeRequested: existing.closeRequested ?? false,
+        closeReason: existing.closeReason ?? null,
       };
     }
 
@@ -265,6 +287,8 @@ export class ScanWorkflowService {
       scannedCount: 0,
       keptCount: 0,
       rejectedCount: 0,
+      closeRequested: false,
+      closeReason: null,
     };
     await this.store.saveSession(session);
     return session;

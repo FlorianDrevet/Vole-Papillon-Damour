@@ -8,6 +8,7 @@ import {
   ScanCatalogSyncState,
   ScanOutboxEntry,
   ScanSessionSnapshot,
+  ScanSessionResponse,
 } from './scan-offline.model';
 import {ScanWorkflowService} from './scan-workflow.service';
 
@@ -23,6 +24,12 @@ export interface OutboxSyncSummary {
   stoppedOnError: boolean;
 }
 
+export interface SessionSyncSummary {
+  catalog: CatalogSyncSummary | null;
+  outbox: OutboxSyncSummary;
+  closed: boolean;
+}
+
 @Injectable({providedIn: 'root'})
 export class ScanSyncService {
   private operation = Promise.resolve();
@@ -34,113 +41,29 @@ export class ScanSyncService {
   ) {}
 
   async syncCatalog(): Promise<CatalogSyncSummary> {
-    return await this.enqueue(async () => {
-      const state = await this.store.getCatalogSyncState();
-      const session = await this.workflow.getSession();
-      const optimisticEntries = await this.store.listOutboxEntries();
-      const response = await firstValueFrom(this.api.getCatalogDelta(state?.watermark ?? null));
-      const visibleBooks = response.books
-        .filter(book => !book.isHidden)
-        .map(book => toCatalogBook(
-          book,
-          optimisticEntries,
-          session?.mode ?? 'AvailableNow',
-        ));
-      const removedIsbn13s = response.books
-        .filter(book => book.isHidden)
-        .map(book => book.isbn13);
-      const syncState: ScanCatalogSyncState = {
-        key: 'catalog-sync',
-        watermark: response.nextWatermark,
-        updatedAt: response.generatedAt,
-      };
-
-      await this.store.applyCatalogDelta(
-        visibleBooks,
-        response.settings,
-        syncState,
-        removedIsbn13s,
-      );
-      await this.workflow.recordSync(new Date(response.generatedAt));
-
-      return {
-        booksReceived: visibleBooks.length,
-        booksRemoved: removedIsbn13s.length,
-        watermark: response.nextWatermark,
-      };
-    });
+    return await this.enqueue(() => this.syncCatalogInternal());
   }
 
   async flushOutbox(): Promise<OutboxSyncSummary> {
+    const result = await this.enqueue(() => this.flushOutboxInternal());
+    return result.summary;
+  }
+
+  async syncAll(): Promise<SessionSyncSummary> {
     return await this.enqueue(async () => {
-      const entries = await this.store.listTransmittableOutboxEntries();
-      if (entries.length === 0) {
-        return {
-          sent: 0,
-          remaining: await this.store.countPendingOutboxEntries(),
-          stoppedOnError: false,
-        };
-      }
-
-      const session = await this.workflow.getSession();
-      if (!session) {
-        return {
-          sent: 0,
-          remaining: await this.store.countPendingOutboxEntries(),
-          stoppedOnError: true,
-        };
-      }
-
-      let remoteSession;
+      let catalog: CatalogSyncSummary | null = null;
       try {
-        remoteSession = await firstValueFrom(this.api.openSession({
-          mode: session.mode,
-          targetAssoEventsId: session.targetAssoEventsId,
-          clientSessionId: session.scanSessionId,
-        }));
-        await this.workflow.mergeRemoteSession(remoteSession);
+        catalog = await this.syncCatalogInternal();
       } catch {
-        return {
-          sent: 0,
-          remaining: await this.store.countPendingOutboxEntries(),
-          stoppedOnError: true,
-        };
+        // A catalog outage must not prevent already decided gestures from being sent.
       }
 
-      let sent = 0;
-      let stoppedOnError = false;
-      for (const entry of entries) {
-        try {
-          const response = await firstValueFrom(this.api.scanBook(
-            remoteSession.scanSessionId,
-            {
-              isbn: entry.isbn13,
-              kept: entry.kept === true,
-              occurredAt: entry.occurredAt,
-              clientGestureId: entry.clientGestureId,
-            },
-          ));
-          await this.store.markOutboxAttempt(entry.clientGestureId, new Date().toISOString(), null);
-          await this.applyServerProjection(entry, response);
-          await this.store.deleteOutboxEntry(entry.clientGestureId);
-          sent += 1;
-        } catch (error: unknown) {
-          stoppedOnError = true;
-          await this.store.markOutboxAttempt(
-            entry.clientGestureId,
-            new Date().toISOString(),
-            describeError(error),
-          );
-          break;
-        }
-      }
-
-      await this.workflow.recordSync();
-      return {
-        sent,
-        remaining: await this.store.countPendingOutboxEntries(),
-        stoppedOnError,
-      };
+      const transfer = await this.flushOutboxInternal();
+      const closed = await this.closeRequestedSession(
+        transfer.remoteSession,
+        transfer.summary,
+      );
+      return {catalog, outbox: transfer.summary, closed};
     });
   }
 
@@ -157,18 +80,161 @@ export class ScanSyncService {
     });
   }
 
-  async syncAll(): Promise<{
-    catalog: CatalogSyncSummary | null;
-    outbox: OutboxSyncSummary;
+  private async syncCatalogInternal(): Promise<CatalogSyncSummary> {
+    const state = await this.store.getCatalogSyncState();
+    const session = await this.workflow.getSession();
+    const optimisticEntries = await this.store.listOutboxEntries();
+    const response = await firstValueFrom(this.api.getCatalogDelta(state?.watermark ?? null));
+    const visibleBooks = response.books
+      .filter(book => !book.isHidden)
+      .map(book => toCatalogBook(
+        book,
+        optimisticEntries,
+        session?.mode ?? 'AvailableNow',
+      ));
+    const removedIsbn13s = response.books
+      .filter(book => book.isHidden)
+      .map(book => book.isbn13);
+    const syncState: ScanCatalogSyncState = {
+      key: 'catalog-sync',
+      watermark: response.nextWatermark,
+      updatedAt: response.generatedAt,
+    };
+
+    await this.store.applyCatalogDelta(
+      visibleBooks,
+      response.settings,
+      syncState,
+      removedIsbn13s,
+    );
+    await this.workflow.recordSync(new Date(response.generatedAt));
+
+    return {
+      booksReceived: visibleBooks.length,
+      booksRemoved: removedIsbn13s.length,
+      watermark: response.nextWatermark,
+    };
+  }
+
+  private async flushOutboxInternal(): Promise<{
+    summary: OutboxSyncSummary;
+    remoteSession: ScanSessionResponse | null;
   }> {
-    let catalog: CatalogSyncSummary | null = null;
-    try {
-      catalog = await this.syncCatalog();
-    } catch {
-      // A catalog outage must not prevent already decided gestures from being sent.
+    const entries = await this.store.listTransmittableOutboxEntries();
+    if (entries.length === 0) {
+      return {
+        summary: {
+          sent: 0,
+          remaining: await this.store.countPendingOutboxEntries(),
+          stoppedOnError: false,
+        },
+        remoteSession: null,
+      };
     }
 
-    return {catalog, outbox: await this.flushOutbox()};
+    const session = await this.workflow.getSession();
+    if (!session) {
+      return {
+        summary: {
+          sent: 0,
+          remaining: await this.store.countPendingOutboxEntries(),
+          stoppedOnError: true,
+        },
+        remoteSession: null,
+      };
+    }
+
+    let remoteSession: ScanSessionResponse;
+    try {
+      remoteSession = await firstValueFrom(this.api.openSession({
+        mode: session.mode,
+        targetAssoEventsId: session.targetAssoEventsId,
+        clientSessionId: session.scanSessionId,
+      }));
+      await this.workflow.mergeRemoteSession(remoteSession);
+    } catch {
+      return {
+        summary: {
+          sent: 0,
+          remaining: await this.store.countPendingOutboxEntries(),
+          stoppedOnError: true,
+        },
+        remoteSession: null,
+      };
+    }
+
+    let sent = 0;
+    let stoppedOnError = false;
+    for (const entry of entries) {
+      try {
+        const response = await firstValueFrom(this.api.scanBook(
+          remoteSession.scanSessionId,
+          {
+            isbn: entry.isbn13,
+            kept: entry.kept === true,
+            occurredAt: entry.occurredAt,
+            clientGestureId: entry.clientGestureId,
+          },
+        ));
+        await this.store.markOutboxAttempt(entry.clientGestureId, new Date().toISOString(), null);
+        await this.applyServerProjection(entry, response);
+        await this.store.deleteOutboxEntry(entry.clientGestureId);
+        sent += 1;
+      } catch (error: unknown) {
+        stoppedOnError = true;
+        await this.store.markOutboxAttempt(
+          entry.clientGestureId,
+          new Date().toISOString(),
+          describeError(error),
+        );
+        break;
+      }
+    }
+
+    await this.workflow.recordSync();
+    return {
+      summary: {
+        sent,
+        remaining: await this.store.countPendingOutboxEntries(),
+        stoppedOnError,
+      },
+      remoteSession,
+    };
+  }
+
+  private async closeRequestedSession(
+    remoteSession: ScanSessionResponse | null,
+    outbox: OutboxSyncSummary,
+  ): Promise<boolean> {
+    const session = await this.workflow.getSession();
+    if (
+      !session?.closeRequested ||
+      outbox.stoppedOnError ||
+      outbox.remaining > 0
+    ) {
+      return false;
+    }
+
+    try {
+      const openedSession = remoteSession ?? await firstValueFrom(this.api.openSession({
+        mode: session.mode,
+        targetAssoEventsId: session.targetAssoEventsId,
+        clientSessionId: session.scanSessionId,
+      }));
+      if (!remoteSession) {
+        await this.workflow.mergeRemoteSession(openedSession);
+      }
+
+      const closedSession = await firstValueFrom(this.api.closeSession(
+        openedSession.scanSessionId,
+        {closeReason: session.closeReason ?? 'Manual'},
+      ));
+      await this.workflow.mergeRemoteSession(closedSession);
+      await this.workflow.clearSession();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private async applyServerProjection(

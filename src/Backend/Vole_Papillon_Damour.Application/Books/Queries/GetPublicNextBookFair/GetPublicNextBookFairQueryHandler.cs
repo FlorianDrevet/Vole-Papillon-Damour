@@ -36,7 +36,7 @@ public sealed class GetPublicNextBookFairQueryHandler(
             .Where(assoEvent =>
                 assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
                 (assoEvent.DateEnd ?? assoEvent.DateStart) > now)
-            .OrderBy(assoEvent => assoEvent.HourOpenDoors ?? assoEvent.DateStart)
+            .OrderBy(assoEvent => assoEvent.DateStart)
             .ThenBy(assoEvent => assoEvent.Id.Value)
             .FirstOrDefault();
 
@@ -50,8 +50,8 @@ public sealed class GetPublicNextBookFairQueryHandler(
             fair.Name,
             fair.DateStart,
             fair.DateEnd,
-            fair.HourOpenDoors ?? fair.DateStart,
-            fair.HourCloseDoors ?? fair.DateEnd,
+            BookFairSchedule.GetOpeningInstant(fair),
+            BookFairSchedule.GetClosingInstant(fair),
             fair.Adresse?.RoadNumber,
             fair.Adresse?.City ?? string.Empty,
             fair.Adresse?.CityCode ?? 0,
