@@ -80,9 +80,10 @@
   for LAN testing; both environments target the tenant-scoped CIAM authority and the
   production environment points to the configured API deployment.
 - `infra/entra/Configure-EntraApps.ps1` merges rather than replaces existing SPA redirect
-  URIs. The dev registration targets to add are `https://livres.volepapillondamour.fr` for
-  `vpd-catalog-dev` and `https://scan.volepapillondamour.fr` for `vpd-scan-dev`; actual Graph
-  execution still requires an authenticated session in the External ID tenant.
+  URIs. The External ID portal now shows `https://livres.volepapillondamour.fr` on
+  `vpd-catalog-dev` and `https://scan.volepapillondamour.fr` on `vpd-scan-dev`, while retaining
+  the existing local/technical URIs. The canonical Scan login redirect was verified against
+  the public host; the current account is stopped by the intended missing `Tri` role.
 - Scan production bundles use `@zxing/browser` directly instead of the optional native
   `BarcodeDetector` path. The camera scans the full video frame with `TRY_HARDER` and
   supports EAN-13/EAN-8 ISBN barcodes plus QR codes; the scanner also accepts an image

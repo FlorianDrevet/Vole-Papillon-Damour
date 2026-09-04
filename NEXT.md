@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2` — catalogue public mergé dans `origin/main` (`26eabe1`) ; cette reprise aligne les domaines publics du catalogue et de la Scanette, l'infrastructure déclarative et les redirections Entra |
-| **Prochaine action** | Terminer l'ajout des URI publiques dans Entra après l'approbation MFA, déployer l'infrastructure puis la Scanette, et exécuter les smoke tests HTTPS. Le référentiel externe, le compte et les alertes restent P3. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalogue-deploy-auth` |
-| **Dernière mise à jour** | 2026-09-04 — DNS OVH et certificats HTTPS managés validés pour le catalogue et la Scanette |
-| **Branche** | `feat/catalogue-deploy-auth` — PR catalogue/domaines [#45](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/45) ouverte |
+| **Lot en cours** | `P1/P2` — le catalogue public, ses domaines et la Scanette sont déployés ; le socle Worker/API est prêt dans `main`, mais la migration SQL et le rollout runtime explicite restent à faire |
+| **Prochaine action** | Après confirmation du propriétaire de la base, lancer `Books runtime - deploy` avec `run_migrations=true`, puis relever le heartbeat `Sweep`/`Enrich` et poursuivre `P1-9` à `P1-11`. Le référentiel externe, le compte et l'envoi d'alertes restent P3. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-runtime-rollout-state` |
+| **Dernière mise à jour** | 2026-09-04 — déploiements post-merge du catalogue, de la Scanette et de l'infrastructure validés ; URI Entra publiques vérifiées |
+| **Branche** | `chore/record-runtime-rollout-state` — PR de suivi [#46](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/46) |
 
 ---
 
@@ -102,10 +102,15 @@ L'API a ensuite été reconstruite et roulée par `API - deploy` run `3390347362
 `vpdacrdev.azurecr.io/vpd-api:dc4ec74` ; `/catalog/search` et `/catalog/sitemap.xml` répondent
 désormais `200` sur l'endpoint ACA, et le sitemap public répond `200`.
 
-La Scanette conserve encore temporairement sa redirection compilée vers le FQDN technique
-Azure ; le dépôt est prêt à passer à `https://scan.volepapillondamour.fr` au prochain run.
-Le CNAME, le TXT `asuid.scan` et le certificat managé
-`scan.volepapillondamour.fr-vpd-cae--260904173447` sont déjà validés et liés en SNI.
+Les déploiements post-merge sont terminés : `Catalog - deploy` `33906639354`, `Scan - deploy`
+`33906624368` et la relance `Infra - deploy` `33906654599` sont réussis. Le premier run Infra
+avait seulement rencontré une collision de provisioning avec le rollout Scan ; aucune
+ressource n'a été supprimée. Le catalogue répond `200` sur `/`, `/robots.txt` et `/sitemap.xml`;
+la Scanette répond `200` sur `https://scan.volepapillondamour.fr` avec son bundle canonique.
+
+Le smoke test Scan a lancé le redirect Entra depuis le domaine public et a abouti à l'écran
+« compte connecté, rôle Tri absent » avec le compte administrateur courant : le redirect est
+donc fonctionnel, et le refus est celui attendu tant que ce compte n'a pas le rôle `Tri`.
 
 Le bloc « Mon compte » du catalogue est volontairement non interactif : le compte, la liste de
 recherche et les alertes sont P3. L'enregistrement de l'application `vpd-catalog-dev` peut
@@ -117,9 +122,12 @@ conteneur (`200` sur l'accueil). Les avertissements de dépendances NuGet et les
 dépréciations npm restent ceux des outils existants. Les tests manuels `P1-9`, `P1-10` et
 `P1-11` restent volontairement reportés ; ils ne sont pas déclarés validés par ce travail.
 
-La PR du nouveau visuel Scanette est désormais mergée dans `main`. Son déploiement et les
-tests physiques restent distincts du catalogue. Le correctif local du contrat metadata
-`500` → `503` n'est toujours pas redéployé. La vérification ACS
+La PR du nouveau visuel Scanette est désormais mergée et déployée dans `main`. Le runtime
+API/Worker complet n'a pas encore été reconstruit depuis le commit `main` post-merge : le
+workflow `Books runtime - deploy` devra appliquer explicitement les migrations EF avant de
+rouler les deux images sur leur tag partagé. La migration `20260902223842_MigrateUsersToEntraIdentity`
+supprime volontairement les anciens comptes `Users` après le backup vérifié ; cette action
+reste donc en attente d'une confirmation avant exécution. La vérification ACS
 `mail.volepapillondamour.fr` reste externe et l'envoi d'e-mails demeure désactivé.
 La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
 « Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
@@ -323,7 +331,8 @@ d'envoi reste volontairement anticipée, conformément à `L0-9`.
 >
 > | Sujet | Lancé le | Relevable à partir du |
 > |---|---|---|
-> | Heartbeat du nouveau `Sweep` (`P1-6`/`P1-7`) | après le prochain déploiement | après quelques cycles du timer, puis campagne de deux heures si nécessaire |
+> | Heartbeat du nouveau `Sweep` (`P1-6`/`P1-7`) | après `Books runtime - deploy` | après quelques cycles du timer, puis campagne de deux heures si nécessaire |
+> | Migration EF et rollout API/Worker | après confirmation explicite | avant les mesures `P1-9` et la répétition `P1-11` |
 > | `QT-08` — session de 48 h puis ouverture en mode avion (page jetable, `L0-12`) | | |
 > | Propagation DNS des entrées ACS | `2026-09-02` | relevée le `2026-09-04`, valeurs alignées |
 > | Vérification du domaine d'envoi ACS | `2026-09-02` | le portail affiche encore « Verification is underway » |
@@ -342,7 +351,7 @@ dans Azure sans être déductible du dépôt.
 |---|---|---|
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
-| Container Apps | `api`, `website`, `backOffice`, `scan` à `minReplicas: 1`; `worker` à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running` | `2026-09-04` |
+| Container Apps | `api`, `website`, `backOffice`, `scan` à `minReplicas: 1`; `worker` à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running`; domaines publics du catalogue et de la Scanette sécurisés | `2026-09-04` |
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
@@ -370,7 +379,7 @@ Domaine détenu et administré par l'association, main pleine et entière.
 |---|---|
 | Locataire | Créé : `b23c80b3-9776-4840-8255-fcbf3b3500fd` (`volepapillondamour.onmicrosoft.com`) |
 | Enregistrements d'application | Créés en réel le `2026-09-02` par `Configure-EntraApps.ps1` : `vpd-api-dev` → `ebc68507-2c07-4bab-9448-2d6d489c6112` ; `vpd-catalog-dev` → `9ceb5499-d273-4d7c-b0d0-047eff9f0541` ; `vpd-scan-dev` → `cabcb17b-537f-4d87-956b-60477103e0ec` ; `vpd-backoffice-dev` → `b5e7446e-2e87-4eed-8a6a-d40b3c913c9c` ; `vpd-caisse-dev` → `427c90de-bf59-4b01-af63-dc0799248496` |
-| URI publiques à ajouter | `vpd-catalog-dev` → `https://livres.volepapillondamour.fr` ; `vpd-scan-dev` → `https://scan.volepapillondamour.fr` ; le script fusionne les URI existantes. Exécution réelle en attente de l'approbation MFA dans le portail. |
+| URI publiques | Vérifiées dans le portail après authentification MFA : `vpd-catalog-dev` contient `https://livres.volepapillondamour.fr` et `vpd-scan-dev` contient `https://scan.volepapillondamour.fr`, en conservant les URI locales/techniques existantes. |
 | ApiClientId / portée | `ebc68507-2c07-4bab-9448-2d6d489c6112` / `api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user` |
 | Comptes administrateurs recréés | `florian.drevet_magellangroup.eu#EXT#@volepapillondamour.onmicrosoft.com` — rôle `Administration` attribué puis vérifié le `2026-09-02 21:47:41` |
 | Appareils de caisse mis à jour | **Aucun** — voir `L0-10` et `L0-11`, ils ne se mettent pas à jour tout seuls |
@@ -429,6 +438,8 @@ reportées.
 
 | Test | Résultat | Le |
 |---|---|---|
+| Smoke post-merge — domaines publics | Catalogue `/`, `/robots.txt`, `/sitemap.xml` et Scan `/` répondent `200`; certificats ACA managés `Secured`/SNI confirmés | `2026-09-04` |
+| Smoke post-merge — connexion Scan | Le redirect depuis `https://scan.volepapillondamour.fr` revient sur l'application ; le compte courant est refusé uniquement pour absence du rôle `Tri` | `2026-09-04` |
 | Smoke test Aspire — `GET /books/9783140464079/metadata` via `http://localhost:5257` | `200 OK` après redirection HTTPS ; notice « Le petit prince » renvoyée par Open Library | `2026-09-03` |
 | Démarrage Functions worker via Aspire | `AccountDeletionSweepFunction` découverte ; host lock acquis ; aucune erreur DI ni erreur de listener | `2026-09-03` |
 | `QT-02` — observation du timer historique dans `vpd-law-dev` | 28 exécutions, 28 succès, 28 complétions sur la fenêtre UTC observée, sans trou ; le nouveau `Sweep` reste à relever après déploiement | `2026-09-04` |
@@ -448,8 +459,9 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-04 | Windows | **Déploiement post-merge et authentification.** Après le merge de la PR #45 (`9f8ec55`), les workflows `Catalog - deploy` `33906639354`, `Scan - deploy` `33906624368` et `Infra - deploy` `33906654599` sont réussis. Les deux domaines répondent en HTTPS ; les URI publiques des inscriptions `vpd-catalog-dev` et `vpd-scan-dev` sont visibles dans Entra. Le redirect Scan atteint l'écran applicatif et applique correctement le contrôle du rôle `Tri`. Le runtime API/Worker et les migrations SQL restent à lancer explicitement. |
 | 2026-09-04 | Windows | **Catalogue — activation API.** Le run `API - deploy` `33903473628` a construit et déployé `vpd-api:dc4ec74` sans migration SQL. Après activation de la révision, `/catalog/search` et `/catalog/sitemap.xml` répondent `200`; les smoke tests HTTPS du catalogue (`/`, `/robots.txt`, `/sitemap.xml`) et de la Scanette (`/`) répondent `200`. |
-| 2026-09-04 | Windows | **Catalogue + Scan — domaines publics.** Depuis le worktree `feat/catalogue-deploy-auth`, validation OVH des CNAME/TXT `asuid` vers les deux Container Apps et validation Azure des certificats managés SNI `Secured` pour `livres.volepapillondamour.fr` et `scan.volepapillondamour.fr`. Alignement Bicep, Dockerfile, workflow Scan, documentation et URI de redirection Scan sur les origines canoniques. Validation locale : 4 tests de contrat, 61 tests ChromeHeadless, build production Scan, build Docker et compilations Bicep. L'ajout réel des URI Entra et le rollout Scan attendent l'approbation MFA. |
+| 2026-09-04 | Windows | **Catalogue + Scan — domaines publics.** Depuis le worktree `feat/catalogue-deploy-auth`, validation OVH des CNAME/TXT `asuid` vers les deux Container Apps et validation Azure des certificats managés SNI `Secured` pour `livres.volepapillondamour.fr` et `scan.volepapillondamour.fr`. Alignement Bicep, Dockerfile, workflow Scan, documentation et URI de redirection Scan sur les origines canoniques. Validation locale : 4 tests de contrat, 61 tests ChromeHeadless, build production Scan, build Docker et compilations Bicep. Les URI Entra publiques ont ensuite été vérifiées dans le portail et le rollout Scan post-merge est réussi. |
 | 2026-09-04 | Windows | **Correction du smoke metadata.** Le middleware API mappe désormais l'exception d'indisponibilité des fournisseurs bibliographiques vers `503 Service Unavailable` au lieu de `500`; le résolveur conserve son exception afin que le Worker réessaie plutôt que d'écrire un cache négatif. Test API dédié, 4 tests du résolveur et build API passent. Aucun déploiement applicatif n'a été lancé pour ce correctif ; le endpoint DEV a été retesté séparément en `200` lorsque Open Library était disponible. |
 | 2026-09-04 | Windows | **P1-5 — nouveau visuel Scanette.** Intégration locale des écrans de maquette : accueil et choix de session, tri avec verdicts colorés, bandeau hors ligne, saisie manuelle, fin de session, caisse et consultation sans écriture. Ajout de la consultation catalogue locale sans geste d'outbox et conservation de la décision de mode dans IndexedDB. Validation : 53 tests ChromeHeadless, build production Scan et contrôle responsive navigateur à 390 px/1280 px. Aucun déploiement ; la persistance métier de caisse et les gates physiques restent séparées. |
 | 2026-09-04 | Windows | **P1-6 à P1-8 — worker, qualité runtime et déploiement.** Ajout de `Sweep`/`Enrich`, fermeture des sessions inactives, release/rattachement des annonces, enrichissement bibliographique avec cache négatif et couvertures Blob, livraison d'alertes ACS désactivée par défaut, bourses Books annulables, plafonds/alertes App Insights, CORS par origines et workflow runtime avec migrations avant rollout. Corrections TDD de l'isolation des types dans l'outbox de suppression de comptes et de la rétention des utilisateurs référencés par l'historique Books. Suite backend complète : 247 tests passés ; build de solution sans erreur. La vérification ACS est encore « underway », et les gates physiques/P1-9 restent non déclarables à distance. |
