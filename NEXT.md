@@ -111,6 +111,10 @@ La PR du nouveau visuel Scanette est désormais mergée dans `main`. Son déploi
 tests physiques restent distincts du catalogue. Le correctif local du contrat metadata
 `500` → `503` n'est toujours pas redéployé. La vérification ACS
 `mail.volepapillondamour.fr` reste externe et l'envoi d'e-mails demeure désactivé.
+La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
+« Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
+pas la considérer comme validée tant qu'Azure n'affiche pas l'état vérifié. Le domaine
+reste donc un délai externe, tout comme l'envoi réel et la réputation.
 
 Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité ; ce
 bloc est la source de vérité pour l'état courant.

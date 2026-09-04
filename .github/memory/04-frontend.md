@@ -35,9 +35,13 @@ implemented locally in the same PWA: home and session-mode selection, distinct v
 surfaces, session summary, cash register, consultation, manual ISBN keypad, and offline
 variants. Consultation uses the local catalog without creating an outbox gesture; the
 cash screen currently keeps a local visual list only, because durable sale persistence is
-outside this visual tranche. The new UI has not been deployed yet. Its local validation
-passes with 53 ChromeHeadless tests, the production build, and browser checks at 390 px
-and 1280 px.
+outside this visual tranche. The new UI has not been deployed yet. On
+`feat/scanette-auth-camera`, the root auth gate shows a dedicated login surface until an
+Entra account with the `Tri` role is available; token-renewal failures return to that
+surface. The tri scan view starts the ZXing camera automatically, keeps manual/photo
+fallback, and no longer renders the former top toast stack. Local validation passes with
+60 ChromeHeadless tests, the bootstrap contract, the production build, and browser checks
+at 375 px, 768 px, and 1440 px without page overflow.
 
 ## App Structure
 
@@ -68,6 +72,12 @@ Verified feature roots:
   result card first uses the source-provided cover, retries an ISBN-based Open Library cover
   when that image fails, and renders an explicit unavailable-cover placeholder when both
   sources fail.
+- The Scan root is access-gated by `ScanAuthService.authState$`: only the Entra `Tri` app
+  role renders `ScannerComponent`; unauthenticated and unauthorized accounts render
+  `ScanLoginComponent`. `src/index.html` includes `<app-redirect>` and `AppModule` awaits
+  `MsalService.initialize()` before the auth cache is read, which keeps refresh and redirect
+  bootstrapping reliable. The mobile shell uses a centered fixed viewport with no document
+  scroll, and the tri view starts/stops the live camera around each lookup.
 - Validate responsive behavior on desktop and mobile when UI changes.
 - `src/SharedUi/scripts/link-shared-ui.mjs` is the shared npm linker. Both apps invoke it
   from `prebuild` and `prestart` through `node ../SharedUi/scripts/link-shared-ui.mjs`; it

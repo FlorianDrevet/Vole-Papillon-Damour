@@ -109,6 +109,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private localModeReady = false;
   private syncInProgress = false;
   private syncTimer: number | null = null;
+  private cameraStartToken = 0;
 
   constructor(
     private readonly metadataService: BookMetadataService,
@@ -131,7 +132,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.scanAuth.account$
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(account => {
-          this.isAuthenticated = account !== null;
+          this.isAuthenticated = account !== null && this.scanAuth?.isAuthorized === true;
           this.accountName = this.scanAuth?.displayName ?? null;
           this.refreshView();
           this.trySync();
@@ -402,6 +403,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.screen = 'session-mode';
     }
     this.refreshView();
+    this.startCameraIfNeeded();
   }
 
   async chooseSessionMode(mode: LocalScanMode): Promise<void> {
@@ -420,6 +422,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     this.screen = 'tri';
     this.refreshView();
+    this.startCameraIfNeeded();
   }
 
   openCash(): void {
@@ -475,6 +478,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.screen = this.manualReturnScreen;
     this.manualError = null;
     this.refreshView();
+    this.startCameraIfNeeded();
   }
 
   async keepCurrentScan(): Promise<void> {
@@ -624,24 +628,49 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   async toggleCamera(): Promise<void> {
-    if (this.cameraHandle) {
+    if (this.cameraHandle || this.cameraActive) {
       this.stopCamera();
+      return;
+    }
+
+    await this.startCamera();
+  }
+
+  retryCamera(): void {
+    this.cameraError = null;
+    this.refreshView();
+    this.startCameraIfNeeded(true);
+  }
+
+  private async startCamera(): Promise<void> {
+    if (this.cameraHandle || this.cameraActive) {
       return;
     }
 
     this.cameraError = null;
     this.cameraActive = true;
+    const startToken = ++this.cameraStartToken;
     this.refreshView();
 
     try {
-      this.cameraHandle = await this.cameraScanner.start(
+      const cameraHandle = await this.cameraScanner.start(
         this.cameraContainer.nativeElement,
         rawValue => {
           this.stopCamera();
           void this.lookup(rawValue, this.destinationForScreen());
         },
       );
+      if (startToken !== this.cameraStartToken) {
+        await cameraHandle.stop();
+        return;
+      }
+
+      this.cameraHandle = cameraHandle;
     } catch (error: unknown) {
+      if (startToken !== this.cameraStartToken) {
+        return;
+      }
+
       this.cameraActive = false;
       this.cameraError = error instanceof Error
         ? error.message
@@ -725,6 +754,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       }
       this.trySync();
       this.refreshView();
+      this.startCameraIfNeeded();
     } catch {
       this.storageError = 'Le stockage local ne peut pas être initialisé. Aucun geste ne sera considéré comme conservé.';
       this.refreshView();
@@ -743,7 +773,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
       );
       await this.refreshLocalState();
       this.trySync();
+      this.resetLookupState();
       this.refreshView();
+      this.startCameraIfNeeded();
     } catch {
       this.storageError = 'La décision n’a pas pu être conservée localement.';
       this.refreshView();
@@ -761,9 +793,25 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   private stopCamera(): void {
+    this.cameraStartToken += 1;
     this.cameraHandle?.stop();
     this.cameraHandle = null;
     this.cameraActive = false;
+  }
+
+  private startCameraIfNeeded(force = false): void {
+    if (
+      this.screen !== 'tri' ||
+      !this.authAvailable ||
+      !this.isAuthenticated ||
+      (!force && (this.localScan !== null || this.metadata !== null)) ||
+      this.cameraActive ||
+      this.cameraHandle
+    ) {
+      return;
+    }
+
+    void this.startCamera();
   }
 
   private refreshView(): void {
