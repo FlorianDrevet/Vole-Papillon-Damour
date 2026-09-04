@@ -1,11 +1,19 @@
 using System.Security.Claims;
+using System.Globalization;
+using System.Text;
 using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
 using Vole_Papillon_Damour.Application.Books.Queries.GetBookMetadata;
+using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
+using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
+using Vole_Papillon_Damour.Application.Books.Queries.GetPublicNextBookFair;
+using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
+using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -22,6 +30,130 @@ public static class BookController
     {
         return builder.UseEndpoints(endpoints =>
         {
+            endpoints.MapGet(
+                    "/catalog/search",
+                    async (
+                        [FromQuery(Name = "q")] string? search,
+                        string? genre,
+                        string? availability,
+                        bool? rare,
+                        string? sort,
+                        int? page,
+                        int? pageSize,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryParseAvailability(availability, out var availabilityFilter))
+                        {
+                            return Results.BadRequest(new
+                            {
+                                error = "availability must be one of all, available, or next-fair."
+                            });
+                        }
+
+                        if (!TryParseSort(sort, out var sortOrder))
+                        {
+                            return Results.BadRequest(new
+                            {
+                                error = "sort must be one of relevance or recent."
+                            });
+                        }
+
+                        var result = await mediator.Send(
+                            new SearchCatalogQuery(
+                                search,
+                                genre,
+                                availabilityFilter,
+                                rare == true,
+                                sortOrder,
+                                page ?? 1,
+                                pageSize ?? 24),
+                            cancellationToken);
+
+                        return result.Match(
+                            catalog => Results.Ok(ToResponse(catalog)),
+                            error => error.Result());
+                    })
+                .WithName("SearchPublicCatalog")
+                .AllowAnonymous();
+
+            endpoints.MapGet(
+                    "/catalog/books/{isbn13}",
+                    async (
+                        string isbn13,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetPublicBookQuery(isbn13),
+                            cancellationToken);
+
+                        return result.Match(
+                            book => Results.Ok(ToResponse(book)),
+                            error => error.Result());
+                    })
+                .WithName("GetPublicCatalogBook")
+                .AllowAnonymous();
+
+            endpoints.MapGet(
+                    "/catalog/fairs/next",
+                    async (
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetPublicNextBookFairQuery(),
+                            cancellationToken);
+
+                        return result.Match(
+                            fair => Results.Ok(ToResponse(fair)),
+                            error => error.Result());
+                    })
+                .WithName("GetNextPublicBookFair")
+                .AllowAnonymous();
+
+            endpoints.MapGet(
+                    "/catalog/works/{workId}",
+                    async (
+                        string workId,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetPublicWorkQuery(workId),
+                            cancellationToken);
+
+                        return result.Match(
+                            work => Results.Ok(new PublicCatalogWorkResponse(
+                                work.WorkId,
+                                work.Title,
+                                work.Authors,
+                                work.Editions.Select(ToResponse).ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("GetPublicCatalogWork")
+                .AllowAnonymous();
+
+            endpoints.MapGet(
+                    "/catalog/sitemap.xml",
+                    async (
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetPublicCatalogSitemapQuery(),
+                            cancellationToken);
+
+                        return result.Match(
+                            sitemap => Results.Content(
+                                ToSitemapXml(sitemap),
+                                "application/xml",
+                                Encoding.UTF8),
+                            error => error.Result());
+                    })
+                .WithName("GetPublicCatalogSitemap")
+                .AllowAnonymous();
+
             endpoints.MapGet(
                     "/books/{isbn13}/metadata",
                     async (
@@ -246,5 +378,106 @@ public static class BookController
             result.MovementType.ToString(),
             result.AlreadyProcessed,
             result.ClockSuspect);
+    }
+
+    private static PublicCatalogSearchResponse ToResponse(PublicCatalogSearchResult result)
+    {
+        return new PublicCatalogSearchResponse(
+            result.GeneratedAt,
+            result.Books.Select(ToResponse).ToArray(),
+            result.TotalCount,
+            result.Page,
+            result.PageSize,
+            result.Genres);
+    }
+
+    private static PublicCatalogBookResponse ToResponse(PublicCatalogBookResult result)
+    {
+        return new PublicCatalogBookResponse(
+            result.Isbn13,
+            result.Title,
+            result.Authors,
+            result.Publisher,
+            result.PublicationYear,
+            result.PhysicalFormat,
+            result.Language,
+            result.Genre,
+            result.WorkId,
+            result.CoverUrl,
+            result.QuantityAvailable,
+            result.QuantityAnnounced,
+            result.NextFairAt,
+            result.LastAvailableAt,
+            result.FirstSeenAt,
+            result.UpdatedAt,
+            result.IsRare);
+    }
+
+    private static PublicBookFairResponse ToResponse(PublicBookFairResult result)
+    {
+        return new PublicBookFairResponse(
+            result.Id,
+            result.Name,
+            result.DateStart,
+            result.DateEnd,
+            result.OpenAt,
+            result.CloseAt,
+            result.RoadNumber,
+            result.City,
+            result.CityCode,
+            result.Road);
+    }
+
+    private static bool TryParseAvailability(
+        string? value,
+        out PublicCatalogAvailabilityFilter availability)
+    {
+        availability = value?.Trim().ToLowerInvariant() switch
+        {
+            null or "" or "all" => PublicCatalogAvailabilityFilter.All,
+            "available" or "available-now" or "available_now" =>
+                PublicCatalogAvailabilityFilter.AvailableNow,
+            "next" or "next-fair" or "next_fair" =>
+                PublicCatalogAvailabilityFilter.NextBookFair,
+            _ => default
+        };
+
+        return string.IsNullOrWhiteSpace(value) ||
+               value.Trim().ToLowerInvariant() is "all" or "available" or "available-now" or
+                   "available_now" or "next" or "next-fair" or "next_fair";
+    }
+
+    private static bool TryParseSort(string? value, out PublicCatalogSortOrder sort)
+    {
+        sort = value?.Trim().ToLowerInvariant() switch
+        {
+            null or "" or "relevance" => PublicCatalogSortOrder.Relevance,
+            "recent" or "recently-added" or "recently_added" =>
+                PublicCatalogSortOrder.RecentlyAdded,
+            _ => default
+        };
+
+        return string.IsNullOrWhiteSpace(value) ||
+               value.Trim().ToLowerInvariant() is "relevance" or "recent" or "recently-added" or
+                   "recently_added";
+    }
+
+    private static string ToSitemapXml(PublicCatalogSitemapResult sitemap)
+    {
+        var builder = new StringBuilder();
+        builder.Append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+        builder.Append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">");
+
+        foreach (var entry in sitemap.Entries)
+        {
+            builder.Append("<url><loc>https://livres.volepapillondamour.fr");
+            builder.Append(System.Security.SecurityElement.Escape(entry.UrlPath));
+            builder.Append("</loc><lastmod>");
+            builder.Append(entry.LastModified.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            builder.Append("</lastmod></url>");
+        }
+
+        builder.Append("</urlset>");
+        return builder.ToString();
     }
 }

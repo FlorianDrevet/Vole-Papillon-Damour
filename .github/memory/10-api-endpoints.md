@@ -49,6 +49,22 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
   to `503 Service Unavailable`, while the resolver keeps the failure visible to the Worker
   for retry rather than recording a negative cache entry.
 
+## Public catalog endpoints
+
+- `GET /catalog/search` - anonymous typed search over visible canonical books, with title,
+  author, publisher and ISBN matching, accent normalization, genre/availability/rare
+  filters, relevance or recent sorting, and paging. Exhausted books remain in `all`.
+- `GET /catalog/books/{isbn13}` - anonymous canonical book projection with available and
+  announced quantities kept separate, next-fair date, freshness fields and work identifier.
+- `GET /catalog/fairs/next` - anonymous next non-cancelled Books event with schedule and
+  public address.
+- `GET /catalog/works/{workId}` - anonymous work projection containing its visible editions.
+- `GET /catalog/sitemap.xml` - anonymous XML sitemap containing visible canonical book URLs.
+
+The routes are consumed by the separate SSR Angular application in `src/Catalog/`. Its
+`/sitemap.xml` server route proxies the API sitemap so the public host has its own crawler
+entry point. Account/watchlist/alert routes are intentionally not part of P2.
+
 No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 
 ## Current Auth Asymmetries To Recheck Before Editing

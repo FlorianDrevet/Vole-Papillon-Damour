@@ -7,8 +7,17 @@ Both web apps are Angular 21 projects with Angular Material and Tailwind in the 
 - `src/BackOffice/` - admin UI, with MSAL Angular (`@azure/msal-angular` 5.3.1,
   `@azure/msal-browser` 5.20.0) and `@dhutaryan/ngx-mat-timepicker`
 - `src/Website/` - public UI for the association website, now built with Angular SSR and hydration support
+- `src/Catalog/` - separate public books catalog, built with Angular SSR and hydration support
 - `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, local decisions,
   catalog consultation, IndexedDB persistence, and volunteer authentication/synchronization
+
+The public catalog is intentionally separate from the association Website. It uses typed
+`CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
+the next books fair, and the dynamic sitemap. Its public routes are `/`, `/recherche`,
+`/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, and the two legal pages. The UI keeps
+available quantities separate from future announcements, leaves exhausted books visible,
+and does not include audience trackers. The external bibliographic result block, account,
+watchlist, and alerts remain deferred to later slices.
 
 ## Planned Books Scan client decisions
 
@@ -156,6 +165,9 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   `npm test -- --watch=false --browsers=ChromeHeadless`; production and development
   builds are both part of the local validation because the environment file replacement
   is intentionally different between them.
+- In `src/Catalog/`, use `npm ci`, `npm run build`, and
+  `npm test -- --watch=false --browsers=ChromeHeadless`; the SSR smoke server is
+  `npm run serve:ssr:vole_papillon_damour_catalog` after a build.
 - `npm run serve:ssr:vole_papillon_damour_website` in `src/Website/` for SSR smoke validation
 - `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android` for the MAUI client
 - For Website shell changes, prefer `npm run build` plus a local SSR smoke check on `/accueil` and at least one internal route with sub-navigation.
@@ -172,6 +184,10 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   production bundle retains the expected initial-size warning. Its redesigned Scanette
   surface was also checked in a local browser at 390 px and 1280 px. CI is configured to
   build the backend, MAUI, and frontend surfaces but does not run frontend unit tests.
+- As of 2026-09-04, Catalog passes 5 ChromeHeadless tests, the production Angular build,
+  the SSR container build, and an SSR smoke check on the home route. Its image is built
+  from the `src/` context so the `SharedUi` linker remains available; no Azure deployment
+  or custom-domain binding has been performed.
 
 ## 2026-09-03 — Website editorial update
 

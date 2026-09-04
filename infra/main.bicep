@@ -55,6 +55,15 @@ param containerAppScanIngress IngressConfig
 @description('Value for healthProbes of ContainerApp resource scan.')
 param containerAppScanHealthProbes HealthProbeConfig
 
+@description('Value for containerRuntime of ContainerApp resource catalog.')
+param containerAppCatalogContainerRuntime ContainerRuntimeConfig
+@description('Value for scaling of ContainerApp resource catalog.')
+param containerAppCatalogScaling ScalingConfig
+@description('Value for ingress of ContainerApp resource catalog.')
+param containerAppCatalogIngress IngressConfig
+@description('Value for healthProbes of ContainerApp resource catalog.')
+param containerAppCatalogHealthProbes HealthProbeConfig
+
 @description('Value for containerRuntime of the Functions worker Container App.')
 param containerAppWorkerContainerRuntime ContainerRuntimeConfig
 @description('Value for scaling of the Functions worker Container App.')
@@ -72,6 +81,10 @@ param websiteCustomDomainCertificateName string
 param websiteWwwCustomDomainCertificateName string
 @description('Existing managed certificate resource name for the BackOffice hostname')
 param backOfficeCustomDomainCertificateName string
+@description('Hostname bound to the public catalog Container App; leave empty until DNS is ready')
+param catalogCustomDomain string = ''
+@description('Existing managed certificate resource name for the catalog hostname')
+param catalogCustomDomainCertificateName string = ''
 
 // -----------------------------------------------------------------------
 // Container images
@@ -89,6 +102,8 @@ param websiteImage string = ''
 param backOfficeImage string = ''
 @description('Image for the Scan Container App. Empty deploys the placeholder image.')
 param scanImage string = ''
+@description('Image for the public catalog Container App. Empty deploys the placeholder image.')
+param catalogImage string = ''
 @description('Image for the account-deletion Functions Container App. Empty deploys the placeholder image.')
 param workerImage string = ''
 
@@ -245,11 +260,11 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     name: BuildResourceName('vpd', 'cae', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-    managedCertificateNames: [
+    managedCertificateNames: concat([
       websiteCustomDomainCertificateName
       websiteWwwCustomDomainCertificateName
       backOfficeCustomDomainCertificateName
-    ]
+    ], empty(catalogCustomDomainCertificateName) ? [] : [catalogCustomDomainCertificateName])
   }
 }
 
@@ -319,6 +334,17 @@ module applicationInsightsScanModule './modules/ApplicationInsights/applicationI
   params: {
     location: env.location
     name: BuildResourceName('vpd-scan', 'appi', env)
+    tags: tags
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+  }
+}
+
+module applicationInsightsCatalogModule './modules/ApplicationInsights/applicationInsights.module.bicep' = {
+  name: 'applicationInsightsCatalog'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-catalog', 'appi', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
   }
@@ -513,6 +539,16 @@ module userAssignedIdentityScanModule './modules/UserAssignedIdentity/userAssign
   }
 }
 
+module userAssignedIdentityCatalogModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
+  name: 'userAssignedIdentityCatalog'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-catalog', 'id', env)
+    tags: tags
+  }
+}
+
 module userAssignedIdentityWorkerModule './modules/UserAssignedIdentity/userAssignedIdentity.module.bicep' = {
   name: 'userAssignedIdentityWorker'
   scope: applicationResourceGroup
@@ -578,6 +614,21 @@ module containerAppScanAcrRoles './modules/ContainerRegistry/containerregistry.r
   params: {
     name: BuildContainerRegistryName('vpd', 'acr', env)
     principalId: userAssignedIdentityScanModule.outputs.principalId
+    roles: [
+      RbacRoles.containerregistry.AcrPull
+    ]
+  }
+  dependsOn: [
+    containerRegistryModule
+  ]
+}
+
+module containerAppCatalogAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
+  name: 'containerAppCatalogAcrRoles'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildContainerRegistryName('vpd', 'acr', env)
+    principalId: userAssignedIdentityCatalogModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
@@ -919,6 +970,43 @@ module containerAppScanModule './modules/ContainerApp/containerApp.module.bicep'
   ]
 }
 
+module containerAppCatalogModule './modules/ContainerApp/containerApp.module.bicep' = {
+  name: 'containerAppCatalog'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    name: BuildResourceName('vpd-catalog', 'ca', env)
+    tags: tags
+    containerImage: empty(catalogImage) ? placeholderImage : catalogImage
+    containerRuntime: containerAppCatalogContainerRuntime
+    scaling: containerAppCatalogScaling
+    ingress: containerAppCatalogIngress
+    healthProbes: containerAppCatalogHealthProbes
+    customDomains: !empty(catalogCustomDomain) && !empty(catalogCustomDomainCertificateName) ? [
+      {
+        name: catalogCustomDomain
+        bindingType: 'SniEnabled'
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[3]
+      }
+    ] : []
+    containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
+    acrLoginServer: containerRegistryModule.outputs.loginServer
+    userAssignedIdentityId: userAssignedIdentityCatalogModule.outputs.resourceId
+    envVars: [
+      // Catalog pages are public and carry no secrets. This connection string
+      // only enables server-side runtime diagnostics in the same way as the
+      // other frontend Container Apps.
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: applicationInsightsCatalogModule.outputs.connectionString
+      }
+    ]
+  }
+  dependsOn: [
+    containerAppCatalogAcrRoles
+  ]
+}
+
 module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.module.bicep' = {
   name: 'containerAppWorker'
   scope: applicationResourceGroup
@@ -1044,12 +1132,14 @@ output apiContainerAppName string = BuildResourceName('vpd-api', 'ca', env)
 output websiteContainerAppName string = BuildResourceName('vpd-web', 'ca', env)
 output backOfficeContainerAppName string = BuildResourceName('vpd-bo', 'ca', env)
 output scanContainerAppName string = BuildResourceName('vpd-scan', 'ca', env)
+output catalogContainerAppName string = BuildResourceName('vpd-catalog', 'ca', env)
 output workerContainerAppName string = BuildResourceName('vpd-worker', 'ca', env)
 
 output apiUrl string = 'https://${containerAppApiModule.outputs.containerAppFqdn}'
 output websiteUrl string = 'https://${containerAppWebsiteModule.outputs.containerAppFqdn}'
 output backOfficeUrl string = 'https://${containerAppBackOfficeModule.outputs.containerAppFqdn}'
 output scanUrl string = 'https://${containerAppScanModule.outputs.containerAppFqdn}'
+output catalogUrl string = 'https://${containerAppCatalogModule.outputs.containerAppFqdn}'
 
 output sqlServerName string = sqlServerModule.outputs.name
 output sqlServerFqdn string = sqlServerModule.outputs.fullyQualifiedDomainName

@@ -1,0 +1,103 @@
+@if (loading) {
+  <div class="detail-state">La fiche arrive…</div>
+} @else if (notFound) {
+  <section class="detail-state page-width" role="alert">
+    <p class="eyebrow">Fiche introuvable</p>
+    <h1>Ce livre n'est pas dans le catalogue.</h1>
+    <p>Il a peut-être été retiré, ou l'adresse ne correspond plus à sa fiche.</p>
+    <a routerLink="/recherche">Retourner à la recherche</a>
+  </section>
+} @else if (book; as item) {
+  <div class="detail-breadcrumb page-width">
+    <a routerLink="/recherche">Catalogue</a>
+    <span aria-hidden="true">/</span>
+    <span>{{ item.genre || 'Fiche livre' }}</span>
+  </div>
+
+  <section class="book-detail page-width">
+    <div class="detail-cover-column">
+      <div class="detail-cover">
+        @if (item.coverUrl && !coverFailed) {
+          <img
+            [src]="item.coverUrl"
+            [alt]="item.title ? 'Couverture de ' + item.title : 'Couverture du livre'"
+            fetchpriority="high"
+            (error)="onCoverError()">
+        } @else {
+          <span>Couverture</span>
+        }
+      </div>
+    </div>
+
+    <div class="detail-content">
+      @if (item.genre) {
+        <span class="genre-badge">{{ item.genre }}</span>
+      }
+      <h1>{{ item.title || 'Titre à compléter' }}</h1>
+      @if (item.authors) {
+        <p class="detail-authors">{{ item.authors }}</p>
+      }
+      @if (item.publisher || item.publicationYear) {
+        <p class="detail-edition">
+          {{ item.publisher || 'Éditeur non renseigné' }}
+          @if (item.publisher && item.publicationYear) { <span>·</span> }
+          {{ item.publicationYear || '' }}
+        </p>
+      }
+
+      <p class="availability-heading">Disponibilité</p>
+      <div class="availability-lines">
+        @if (item.quantityAvailable > 0) {
+          <div class="availability-line available-line">
+            <span class="status-dot" aria-hidden="true"></span>
+            <strong>{{ formatQuantity(item.quantityAvailable, 'exemplaire disponible', 'exemplaires disponibles') }}</strong>
+            @if (item.lastAvailableAt) {
+              <time [attr.datetime]="item.lastAvailableAt">depuis le {{ formatAvailabilityDate(item.lastAvailableAt) }}</time>
+            }
+          </div>
+        }
+        @if (item.quantityAnnounced > 0) {
+          <div class="availability-line announced-line">
+            <span class="status-dot" aria-hidden="true"></span>
+            <strong>{{ formatQuantity(item.quantityAnnounced, 'autre exemplaire', 'autres exemplaires') }}@if (item.nextFairAt) { à partir du {{ formatAvailabilityDate(item.nextFairAt) }} } @else { prochainement }</strong>
+            @if (item.nextFairAt) {
+              <time [attr.datetime]="item.nextFairAt">date annoncée</time>
+            } @else {
+              <span class="availability-note">date à préciser</span>
+            }
+          </div>
+        }
+        @if (item.quantityAvailable === 0 && item.quantityAnnounced === 0) {
+          <div class="availability-line exhausted-line">
+            <span class="status-dot" aria-hidden="true"></span>
+            <strong>Épuisé pour le moment</strong>
+          </div>
+        }
+      </div>
+
+      @if (item.quantityAvailable > 0 && item.quantityAnnounced > 0) {
+        <p class="separation-note">Ces deux lignes ne s'additionnent pas. Si vous venez aujourd'hui, seule la première vous concerne.</p>
+      }
+
+      <div class="price-line">
+        <span>Prix sur place</span>
+        <strong>indiqué au comptoir</strong>
+      </div>
+
+      <button type="button" class="notify-button" disabled title="Les alertes seront ouvertes au palier 3">
+        <span class="bell-icon" aria-hidden="true"></span>
+        Me prévenir quand il y en aura
+      </button>
+
+      <div class="freshness-note">
+        <span class="info-icon" aria-hidden="true">i</span>
+        <span>Disponibilité indicative, mise à jour à chaque vente. Les livres partent vite, et rien n'est mis de côté.</span>
+      </div>
+
+      <p class="isbn">ISBN {{ item.isbn13 }}</p>
+      @if (item.workId) {
+        <a class="work-link" [routerLink]="['/oeuvre', item.workId]">Voir les autres éditions de cette œuvre →</a>
+      }
+    </div>
+  </section>
+}

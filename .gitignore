@@ -5,6 +5,7 @@ graphify-out/
 .graphify_python
 **/node_modules/
 **/dist/
+**/.angular/
 **/build/
 **/out/
 **/.next/

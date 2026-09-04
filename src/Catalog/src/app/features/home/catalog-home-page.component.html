@@ -1,0 +1,117 @@
+<section class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow light">Catalogue de la bourse aux livres</p>
+    <h1>Est-ce que ce livre est à la bourse&nbsp;?</h1>
+    <p class="hero-intro">Cherchez un titre, un auteur ou le code-barres au dos du livre. Sans compte, et en moins d'une minute.</p>
+
+    <form class="hero-search" (ngSubmit)="submitSearch()">
+      <span class="search-icon" aria-hidden="true"></span>
+      <label class="visually-hidden" for="home-search">Rechercher un titre, un auteur ou un ISBN</label>
+      <input id="home-search" name="search" [(ngModel)]="search" placeholder="un titre, un auteur, ou le code-barres" autocomplete="off">
+      <button type="submit">Rechercher</button>
+    </form>
+  </div>
+</section>
+
+<section id="prochaine-bourse" class="fair-section">
+  <div class="section-heading">
+    <span class="heading-rule" aria-hidden="true"></span>
+    <p class="eyebrow">La prochaine bourse</p>
+    @if (nextFair(); as fair) {
+      <h2>{{ formatFairDateRange(fair) }}.</h2>
+    } @else {
+      <h2>La prochaine date arrive bientôt.</h2>
+    }
+  </div>
+
+  @if (nextFair(); as fair) {
+    <div class="fair-details">
+      <div class="fair-detail">
+        <span class="detail-icon calendar-icon" aria-hidden="true"></span>
+        <div>
+          <span class="detail-label">Dates</span>
+          <time [attr.datetime]="fair.dateStart">{{ formatFairDateRange(fair) }}</time>
+        </div>
+      </div>
+      <div class="fair-detail">
+        <span class="detail-icon clock-icon" aria-hidden="true"></span>
+        <div>
+          <span class="detail-label">Horaires</span>
+          <span>{{ formatTime(fair.openAt) }}@if (fair.closeAt) { à {{ formatTime(fair.closeAt) }} }</span>
+        </div>
+      </div>
+      <div class="fair-detail">
+        <span class="detail-icon pin-icon" aria-hidden="true"></span>
+        <div>
+          <span class="detail-label">Adresse</span>
+          <span>{{ address(fair) || 'Adresse communiquée prochainement' }}</span>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <p class="empty-state">La prochaine bourse sera annoncée ici dès qu'une date sera confirmée.</p>
+  }
+</section>
+
+@if (hasLoadError() && !loading()) {
+  <div class="catalog-notice" role="status">Le catalogue se met à jour. Réessayez la recherche dans un instant.</div>
+}
+
+<section class="selection-section">
+  <div class="selection-header">
+    <div class="section-heading">
+      <span class="heading-rule" aria-hidden="true"></span>
+      <p class="eyebrow">Sur les tables</p>
+      <h2>Arrivés récemment.</h2>
+    </div>
+    <button type="button" class="text-link" (click)="showAll()">Voir les {{ recent().length ? recent().length : '' }} titres <span aria-hidden="true">→</span></button>
+  </div>
+
+  @if (loading()) {
+    <p class="empty-state">Le catalogue arrive…</p>
+  } @else if (recent().length) {
+    <div class="book-grid" aria-label="Livres arrivés récemment">
+      @for (book of recent(); track trackBook($index, book)) {
+        <app-book-card [book]="book"></app-book-card>
+      }
+    </div>
+  } @else {
+    <p class="empty-state">Les nouvelles arrivées seront affichées ici.</p>
+  }
+</section>
+
+<section class="selection-section rare-section">
+  <div class="selection-header">
+    <div class="section-heading">
+      <span class="heading-rule" aria-hidden="true"></span>
+      <p class="eyebrow">Repérés par les bénévoles</p>
+      <h2>Livres rares.</h2>
+    </div>
+    <button type="button" class="text-link" (click)="showRare()">Voir la sélection <span aria-hidden="true">→</span></button>
+  </div>
+
+  @if (!loading() && rare().length) {
+    <div class="book-grid" aria-label="Livres rares">
+      @for (book of rare(); track trackBook($index, book)) {
+        <app-book-card [book]="book"></app-book-card>
+      }
+    </div>
+  } @else if (!loading()) {
+    <p class="empty-state">Les livres rares seront signalés par les bénévoles au fil des tris.</p>
+  }
+</section>
+
+<section class="genres-section">
+  <div class="section-heading">
+    <span class="heading-rule" aria-hidden="true"></span>
+    <p class="eyebrow">Pour commencer quelque part</p>
+    <h2>Parcourir par genre.</h2>
+  </div>
+  <div class="genre-list">
+    @for (genre of genres().slice(0, 8); track genre) {
+      <a [routerLink]="['/catalogue']" [queryParams]="{genre: genre}">{{ genre }}</a>
+    } @empty {
+      <a routerLink="/catalogue">Voir tout le catalogue</a>
+    }
+  </div>
+</section>

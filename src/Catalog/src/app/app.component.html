@@ -1,0 +1,45 @@
+<header class="site-header">
+  <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Bourse aux livres, accueil">
+    <span class="brand-mark" aria-hidden="true">VPD</span>
+    <span class="brand-copy">
+      <span class="brand-name">Vole Papillon d'Amour</span>
+      <span class="brand-subtitle">Bourse aux livres · catalogue</span>
+    </span>
+  </a>
+
+  <button
+    class="menu-toggle"
+    type="button"
+    [attr.aria-expanded]="menuOpen"
+    aria-controls="main-navigation"
+    aria-label="Ouvrir le menu"
+    (click)="menuOpen = !menuOpen">
+    <span></span><span></span><span></span>
+  </button>
+
+  <nav id="main-navigation" class="main-navigation" [class.open]="menuOpen" aria-label="Navigation principale">
+    <a routerLink="/recherche" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMenu()">Rechercher</a>
+    <a routerLink="/catalogue" routerLinkActive="active" (click)="closeMenu()">Catalogue par genre</a>
+    <a routerLink="/" fragment="prochaine-bourse" (click)="closeMenu()">La prochaine bourse</a>
+    <span class="account-teaser" title="L'espace membre arrive avec les alertes">
+      <span class="person-icon" aria-hidden="true"></span>
+      Mon compte
+    </span>
+  </nav>
+</header>
+
+<main>
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-rule" aria-hidden="true"></div>
+  <div class="footer-content">
+    <span class="footer-note">Aucune donnée n'est nécessaire pour consulter le catalogue</span>
+    <nav aria-label="Liens de pied de page">
+      <a href="https://volepapillondamour.fr">Le site de l'association</a>
+      <a routerLink="/mentions-legales">Mentions légales</a>
+      <a routerLink="/confidentialite">Confidentialité</a>
+    </nav>
+  </div>
+</footer>

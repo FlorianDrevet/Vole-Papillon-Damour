@@ -5,6 +5,7 @@
 - `src/Backend/` - main backend solution and class libraries
 - `src/BackOffice/` - Angular 21 admin UI
 - `src/Website/` - Angular 21 public website
+- `src/Catalog/` - Angular 21 SSR public books catalog
 - `src/Scan/` - Angular 21 consultation-only ISBN metadata probe
 - `src/Backend/Vole_Papillon_Damour.Worker/` - .NET 10 isolated account-deletion worker
 - `src/MauiCashApp/` - .NET MAUI 10 Android client app
@@ -29,7 +30,8 @@
 ## Frontend And Client Split
 
 - `BackOffice` is the admin surface and carries auth-related client dependencies.
-- `Website` is the public-facing web surface.
+- `Website` is the public-facing association/editorial surface.
+- `Catalog` is the public books/catalogue surface, with its own SSR shell and typed API client.
 - `MauiCashApp` is a separate client runtime and should not leak web-only assumptions.
 
 ## Structural Notes

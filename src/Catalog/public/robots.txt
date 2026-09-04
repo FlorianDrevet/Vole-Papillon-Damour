@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://livres.volepapillondamour.fr/sitemap.xml
