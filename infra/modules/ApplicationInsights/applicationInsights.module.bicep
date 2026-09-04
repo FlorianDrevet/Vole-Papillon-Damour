@@ -32,6 +32,10 @@ param disableLocalAuth bool = false
 @description('Ingestion mode for telemetry data')
 param ingestionMode IngestionMode = 'LogAnalytics'
 
+@description('Daily data volume cap in GB for this Application Insights component')
+@minValue(1)
+param dailyCapGb int = 1
+
 @description('Resource tags')
 param tags object = {}
 
@@ -48,6 +52,18 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
     DisableIpMasking: disableIpMasking
     DisableLocalAuth: disableLocalAuth
     IngestionMode: ingestionMode
+  }
+}
+
+// Workspace-based Application Insights does not expose the daily component cap
+// on the parent resource. Keep it explicit as the pricingPlans child resource.
+resource pricingPlan 'Microsoft.Insights/components/pricingPlans@2017-10-01' = {
+  parent: applicationInsights
+  name: 'current'
+  properties: {
+    cap: dailyCapGb
+    planType: 'Basic'
+    stopSendNotificationWhenHitCap: false
   }
 }
 

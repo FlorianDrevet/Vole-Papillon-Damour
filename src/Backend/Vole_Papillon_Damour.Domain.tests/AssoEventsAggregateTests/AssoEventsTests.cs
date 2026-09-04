@@ -65,6 +65,16 @@ public class AssoEventsTests
         result.Should().BeFalse();
     }
 
+    [Fact]
+    public void Cancel_MarksEventAsCancelledAndIsIdempotent()
+    {
+        var assoEvent = CreateEvent();
+
+        assoEvent.Cancel().Should().BeTrue();
+        assoEvent.IsCancelled.Should().BeTrue();
+        assoEvent.Cancel().Should().BeFalse();
+    }
+
     private static AssoEvents CreateEvent(params Partie[] parties)
     {
         return AssoEvents.Create(

@@ -123,6 +123,31 @@ public sealed class ScanBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenTargetFairWasCancelled_RefusesTheScanWithoutPersistingIt()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var fair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-04T18:00:00+00:00"),
+            DateTimeOffset.Parse("2026-09-05T18:00:00+00:00"),
+            null,
+            null);
+        fair.Cancel();
+        await fixture.Context.SaveChangesAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
+        var handler = fixture.CreateHandler();
+
+        var result = await handler.Handle(
+            CreateCommand(session, "9782070363735", kept: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.FairCancelled");
+        (await fixture.Context.Books.CountAsync()).Should().Be(0);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(0);
+        (await fixture.Context.BookAnnouncements.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task Handle_WhenScanIsRejected_CreatesRejectionMovementWithoutAddingStock()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -385,10 +410,10 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         return new HideBookCommandHandler(Context, clock);
     }
 
-    public CloseScanSessionCommandHandler CreateCloseScanSessionHandler()
+    public CloseScanSessionCommandHandler CreateCloseScanSessionHandler(DateTime? endedAt = null)
     {
         var clock = Substitute.For<IDateTimeProvider>();
-        clock.UtcNow.Returns(_receivedAt);
+        clock.UtcNow.Returns(endedAt ?? _receivedAt);
         return new CloseScanSessionCommandHandler(Context, clock, AlertOutbox);
     }
 

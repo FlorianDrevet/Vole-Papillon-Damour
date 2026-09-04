@@ -138,6 +138,8 @@ param blobContainerActualityImages string
 param blobContainerEventImages string
 @description('Blob container holding the product images (BlobSettings__BlobContainerProductsImagesClient)')
 param blobContainerProductImages string
+@description('Blob container holding book cover images (BlobSettings__BlobContainerBookCoversName)')
+param blobContainerBookCovers string
 
 // -----------------------------------------------------------------------
 // ACS Email
@@ -151,6 +153,12 @@ param communicationEmailDataLocation string
 
 @description('Customer-managed domain used for sending email')
 param communicationEmailSendingDomain string
+
+@description('Email address receiving operational Azure Monitor alerts')
+param monitoringAlertEmail string
+
+@description('Browser origins allowed to call the API')
+param corsAllowedOrigins string[]
 
 // -----------------------------------------------------------------------
 // API application settings
@@ -191,6 +199,10 @@ param jwtExpiryMinutes int
 
 var env = environments[environmentName]
 var tags = env.tags
+var corsEnvVars = [for (origin, index) in corsAllowedOrigins: {
+  name: 'Cors__AllowedOrigins__${index}'
+  value: origin
+}]
 
 // Deployed until an application pipeline pushes the first real image.
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
@@ -324,6 +336,71 @@ module applicationInsightsWorkerModule './modules/ApplicationInsights/applicatio
 }
 
 // -----------------------------------------------------------------------
+// Observability rules
+// -----------------------------------------------------------------------
+
+module monitoringActionGroup './modules/Monitor/actionGroup.module.bicep' = {
+  name: 'monitoringActionGroup'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd', 'alerts', env)
+    emailAddress: monitoringAlertEmail
+    tags: tags
+  }
+}
+
+module workerHeartbeatAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'workerHeartbeatAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-worker-heartbeat', 'alert', env)
+    displayName: 'VPD worker heartbeat missing'
+    ruleDescription: 'The worker has not completed a sweep in the last 15 minutes.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where Message startswith "Worker sweep completed"'
+    operator: 'LessThan'
+    threshold: 1
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 1
+    tags: tags
+  }
+}
+
+module lateAnnouncementAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'lateAnnouncementAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-book-announcements-late', 'alert', env)
+    displayName: 'Book announcements are late'
+    ruleDescription: 'Due book announcements remain unreleased after a worker sweep.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where Message startswith "Book announcements are late"'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 2
+    tags: tags
+  }
+}
+
+module lateAlertQueueAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'lateAlertQueueAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-book-alert-queue-late', 'alert', env)
+    displayName: 'Book alert queue is late'
+    ruleDescription: 'The oldest due book alert has been waiting for at least 30 minutes.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where Message startswith "Book alert queue is late"'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 2
+    tags: tags
+  }
+}
+
+// -----------------------------------------------------------------------
 // Data
 // -----------------------------------------------------------------------
 
@@ -364,6 +441,10 @@ module storageAccountModule './modules/StorageAccount/storageAccount.module.bice
       }
       {
         name: blobContainerProductImages
+        publicAccess: 'Blob'
+      }
+      {
+        name: blobContainerBookCovers
         publicAccess: 'Blob'
       }
     ]
@@ -619,7 +700,7 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         keyVaultUrl: appSecretsModule.outputs.secretUris['entra-graph-client-secret']
       }
     ]
-    envVars: [
+    envVars: concat([
       {
         name: 'ASPNETCORE_ENVIRONMENT'
         value: 'Production'
@@ -700,6 +781,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         value: blobContainerProductImages
       }
       {
+        name: 'BlobSettings__BlobContainerBookCoversName'
+        value: blobContainerBookCovers
+      }
+      {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: applicationInsightsApiModule.outputs.connectionString
       }
@@ -707,7 +792,7 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         name: 'AZURE_CLIENT_ID'
         value: userAssignedIdentityApiModule.outputs.clientId
       }
-    ]
+    ], corsEnvVars)
   }
   dependsOn: [
     containerAppApiAcrRoles
@@ -897,6 +982,26 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'ConnectionStrings__AzureBlobStorageConnectionString'
         secretRef: 'storage-connectionstring'
+      }
+      {
+        name: 'BlobSettings__ContainerName'
+        value: blobContainerLotoImages
+      }
+      {
+        name: 'BlobSettings__ContainerActualityImagesName'
+        value: blobContainerActualityImages
+      }
+      {
+        name: 'BlobSettings__BlobContainerEventImagesClient'
+        value: blobContainerEventImages
+      }
+      {
+        name: 'BlobSettings__BlobContainerProductsImagesClient'
+        value: blobContainerProductImages
+      }
+      {
+        name: 'BlobSettings__BlobContainerBookCoversName'
+        value: blobContainerBookCovers
       }
       {
         name: 'EntraGraph__TenantId'

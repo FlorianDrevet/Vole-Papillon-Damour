@@ -7,29 +7,32 @@ Key Vault, SQL Server, Storage Account, Application Insights, Log Analytics, ide
 managées et attributions de rôles. Le tout piloté par `main.bicep` et des modules par
 ressource.
 
-**Aucune Function, aucun Service Bus, aucune file, aucun locataire d'identité** à ce
-jour. L'authentification est maison : clé de signature symétrique en Key Vault, mots de
-passe en base.
+Le worker est maintenant une Azure Function .NET isolated sur Container Apps
+(`kind=functionapp`) : il exécute le balayage toutes les cinq minutes et l'enrichissement
+bibliographique toutes les heures. Les files métier sont persistées dans SQL
+(`OutboxMessages`), sans Service Bus. Le locataire Entra External ID et ACS Email existent
+côté développement ; le parcours d'envoi reste désactivé tant que le domaine n'est pas
+vérifié et testé.
 
-**La base est un `GP_S_Gen5_1` serverless, avec pause automatique après soixante
-minutes**, en France Centrale — la seule région où l'abonnement est autorisé à
-provisionner de l'Azure SQL. Ce détail n'était relevé que dans `infra/README.md` et
-change plus la facture du module livres que tout le reste de ce chapitre : voir `DT-11`
-et §7.
+**La base cible est un `S1` Standard (20 DTU, 250 Go), sans pause automatique**, en
+France Centrale — la seule région où l'abonnement est autorisé à provisionner de l'Azure
+SQL. Le changement est piloté par `main.dev.bicepparam` et `DT-11`.
 
 Les applications étaient paramétrées avec `minReplicas: 0` et `maxReplicas: 2`. C'est ce
 réglage qui a d'abord imposé un worker séparé (`DT-04`).
 
 **Ce n'est plus le cas.** Le commit `36b0e50` — *update minimum replicas for container
-apps to ensure availability* — fait passer **les trois applications existantes** à
+apps to ensure availability* — fait passer **les quatre applications HTTP** à
 `minReplicas: 1` dans `infra/parameters/main.dev.bicepparam` : `api`, `website` et
-`backOffice`. Ce n'est donc pas un changement à prévoir, c'est un état de fait.
+`backOffice`, ainsi que `scan`. Ce n'est donc pas un changement à prévoir, c'est un état
+de fait.
 
 | Application | `minReplicas` | `maxReplicas` | Gabarit |
 |---|---|---|---|
 | `api` | **1** | 2 | 0,5 vCPU, 1 Gio |
 | `website` | **1** | 2 | 0,5 vCPU, 1 Gio |
 | `backOffice` | **1** | 2 | 0,25 vCPU, 0,5 Gio |
+| `scan` | **1** | 2 | 0,25 vCPU, 0,5 Gio |
 
 Le worker reste néanmoins séparé — isolation de la charge de fond, déclencheurs
 planifiés déclaratifs, cycles de vie distincts. Le réexamen est en
@@ -56,13 +59,12 @@ mais c'est le poste qui change le plus la facture — dans le bon sens. Voir §7
 managé — gratuit, renouvelé automatiquement. L'association détient le domaine et en a la
 main, donc les enregistrements DNS de `DT-12` et `DT-13` se posent en une seule fois.
 
-Trois Container Apps de plus :
+Deux Container Apps supplémentaires par rapport aux trois applications historiques :
 
 | Application | Nature | Ingress | Réplicas |
 |---|---|---|---|
 | `scan` | PWA Angular | Externe | **1 → 2** |
-| `catalog` | Angular SSR + administration | Externe | **1 → 2** |
-| `worker` | `kind=functionapp` | Interne (requis pour la mise à l'échelle) | 0 → 1, **sous réserve de `QT-02`** |
+| `worker` | `kind=functionapp` | Aucun ingress public | **0 → 1** |
 
 Le module `ContainerApp` existant se réutilise tel quel. Pour le worker, le delta est
 `kind: functionapp` sur `Microsoft.App/containerApps`.
@@ -70,14 +72,13 @@ Le module `ContainerApp` existant se réutilise tel quel. Pour le worker, le del
 L'API ne demande **aucun changement de paramétrage** : `containerAppApiScaling` est déjà
 à `minReplicas: 1` depuis `36b0e50`.
 
-**`scan` et `catalog` suivent la même convention**, à `minReplicas: 1`. C'est cohérent
-avec `36b0e50` : tout ce qui sert des requêtes tourne en permanence. `catalog` rend du SSR
-indexable, où un démarrage à froid se paie en référencement autant qu'en confort ; `scan`
-est utilisée par salves, et une attente en début de session de tri se remarquerait
+**`scan` suit la même convention**, à `minReplicas: 1`. C'est cohérent avec `36b0e50` :
+la sonde est utilisée par salves et une attente en début de session de tri se remarquerait
 immédiatement — c'est précisément ce que `ENF-01` protège.
 
 **Seul le worker reste à zéro**, parce que rien ne l'appelle : il se réveille sur
-minuteur. C'est ce qui fait de `QT-02` une question qui n'a pas disparu.
+minuteur. Le timer historique a été vérifié dans le bon locataire ; le nouveau heartbeat
+`Sweep` devra être relevé après son déploiement.
 
 **Ne pas confondre les deux voies** : celle par `Microsoft.Web/sites` avec
 `managedEnvironmentId` est marquée *legacy* dans la documentation. C'est `Microsoft.App`
@@ -126,9 +127,9 @@ les images existantes — pas de substitution au démarrage.
 
 ## 5. Intégration continue
 
-**Point à traiter, et il n'est pas optionnel.** La mémoire projet note qu'aucun fichier
-de CI n'existe. Or Functions sur Container Apps **ne supporte pas le déploiement continu
-intégré** : il faut GitHub Actions ou Azure Pipelines.
+Le dépôt contient maintenant des workflows GitHub Actions manuels. Functions sur
+Container Apps **ne supporte pas le déploiement continu intégré** : le workflow
+`Books runtime - deploy` coordonne donc l'image API, l'image Worker et la migration.
 
 Le minimum utile, par ordre de valeur :
 
@@ -158,32 +159,25 @@ d'où ses `minReplicas: 1`.
 |---|---|
 | **SQL Server** | **~30 $/mois fixe** en `S1` (`DT-11`) — voir ci-dessous, c'est le poste qui a changé |
 | Container Apps — les trois applications existantes à `minReplicas: 1` | **Déjà engagé, hors module livres.** Voir ci-dessous |
-| Container Apps — `scan` et `catalog` | **Deux réplicas permanents de plus**, au même tarif que les trois existants |
+| Container Apps — `scan` | **Un réplica permanent de plus**, au même tarif que les trois historiques |
 | Container Apps — `worker` | ~21 600 vCPU-s/mois, soit moins d'un euro — sauf si `QT-02` impose `minReplicas: 1` |
 | Entra External ID | Utilisateur actif mensuel, bénévoles compris. **Les 50 000 premiers sont gratuits** (`QT-04`) : sans objet à notre échelle |
 | Envoi d'e-mails — ACS (`DT-12`) | 0,00025 $ par message. À quelques dizaines par semaine : **quelques centimes** |
 | Domaine et certificat (`DT-13`) | **0 €** — certificat managé gratuit sur Container Apps |
 | Storage | Couvertures, quelques Go. Négligeable |
 | BnF, Open Library | **0 €** |
-| Log Analytics | Ingestion en hausse avec trois applications de plus, et sans échantillonnage (`11` §5). **Plafond journalier obligatoire** sur chaque Application Insights — voir ci-dessous |
+| Log Analytics | Ingestion en hausse avec deux applications de plus, et sans échantillonnage (`11` §5). **Plafond journalier obligatoire** sur chaque Application Insights — voir ci-dessous |
 
 ### La base de données, et pourquoi elle a changé de nature
 
 Le dossier a longtemps traité la base comme un poste inchangé — « le module livres ajoute
 moins de 100 Mo ». C'était vrai sur le volume et faux sur la facture.
 
-La base est un `GP_S_Gen5_1` **serverless avec pause automatique à 60 minutes**, facturé
-**0,26 $ de l'heure dès qu'elle est éveillée**. Le balayage de `06` §3 toutes les cinq
-minutes l'aurait tenue éveillée en permanence : **~190 $ par mois**, soit deux ordres de
-grandeur au-dessus de ce que ce chapitre annonçait pour le worker. Et la laisser dormir
-n'était pas la sortie : la reprise se serait payée sur le premier scan d'une session,
-c'est-à-dire sur `ENF-01`.
-
-`DT-11` tranche : palier fixe **`S1`, ~30 $ par mois**, sans pause et sans démarrage à
-froid. Le point qui rend la décision facile est qu'elle est vraisemblablement **en
-baisse** par rapport à la facture serverless actuelle, dès lors que le site public reçoit
-des visites étalées dans la journée. Ce n'est donc pas une dépense imputable à la bourse
-aux livres.
+Le choix serverless avec pause automatique a été écarté : un balayage toutes les cinq
+minutes aurait maintenu la base éveillée et transformé la pause en coût et latence. `DT-11`
+tranche donc pour le palier fixe **`S1`, environ 30 $ par mois**, sans pause et sans
+démarrage à froid. Le paramètre est maintenant celui de `main.dev.bicepparam` ; le
+portail a confirmé `Standard S1` après le déploiement d'infrastructure du développement.
 
 `QT-09` mesure au palier 1 si `S1` tient sur son stockage à disque dur ; `S2` (~74 $) est
 à un paramètre de distance.
@@ -204,17 +198,18 @@ active, un réessai en cascade. Ça monte vite, et en silence.
 | Rétention à la durée incluse | Au-delà, le diagnostic passe par les données métier, conservées par ailleurs (`ENF-22`) |
 | Journalisation SQL désactivée en production | Premier poste d'ingestion inutile, et il contient des valeurs de paramètres |
 
-Trois applications de plus signifient aussi **trois Application Insights et trois identités
+Deux applications de plus signifient aussi **deux Application Insights et deux identités
 managées de plus** à déclarer — `main.bicep` n'ayant aucune boucle, c'est du Bicep explicite
 (voir `revue.md` `R-22`). Le Log Analytics, lui, **reste unique** : c'est ce qui permet de
 suivre une trace du scan jusqu'au worker (`11` §2).
 
-### Cinq réplicas permanents
+### Quatre réplicas HTTP permanents
 
 Un réplica de 0,5 vCPU allumé en continu consomme de l'ordre de **1,3 million de
 vCPU-secondes par mois**, contre 180 000 offertes. Le quota gratuit est donc **dépassé
 par une seule application**, et `36b0e50` en allume trois. Le module livres en ajoute
-deux : **cinq réplicas permanents** à terme.
+`scan` : **quatre réplicas HTTP permanents** à terme, plus le worker planifié à zéro
+réplica.
 
 Deux éléments atténuent la facture sans l'annuler : Container Apps facture un réplica
 inactif à un **tarif de veille** nettement inférieur au tarif actif, et les gabarits
@@ -222,8 +217,8 @@ pourraient être réduits puisque la charge servie est modeste.
 
 **À chiffrer sur le calculateur Azure**, et c'est désormais le poste dominant de
 l'infrastructure. Trois de ces réplicas sont **antérieurs et étrangers au module
-livres** : ils ont été engagés pour la disponibilité du site associatif. Les deux autres
-lui sont imputables, et le quota gratuit ne les couvre plus.
+livres** : ils ont été engagés pour la disponibilité du site associatif. `scan` lui est
+imputable, et le quota gratuit ne le couvre plus.
 
 C'est le seul endroit du dossier où une décision de confort — pas de démarrage à froid —
 se paie en euros récurrents. Si la facture devait être réduite, c'est `scan` qu'il

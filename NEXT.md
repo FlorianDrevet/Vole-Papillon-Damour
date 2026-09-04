@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1-5` — contrats API, PWA Scan, IndexedDB, verdict local, authentification Entra et synchronisation delta/outbox livrés localement ; `QT-02` reste bloquée par le mauvais locataire Azure ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
-| **Prochaine action** | Relever `QT-03`/`QT-08` sur appareil réel et `QT-02` avec une session Azure du locataire de l'abonnement ; ensuite seulement attaquer `P1-6` worker et la migration de base |
+| **Lot en cours** | `P1-6` à `P1-8` — worker Books, observabilité, infra et pipeline de runtime implémentés localement ; déploiement dev et mesures post-déploiement à valider ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
+| **Prochaine action** | Pousser/faire valider la PR, exécuter le `what-if` puis le déploiement infra dev, appliquer les migrations avant le rollout API/Worker, vérifier les heartbeats ; conserver `P1-9` et les gates physiques `P1-10/P1-11` comme mesures à réaliser avec les données et appareils réels |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-main` |
-| **Dernière mise à jour** | 2026-09-03 |
-| **Branche** | `fix/scan-async-refresh` — synchronisée avec `main` avant la PR P1-5 |
+| **Dernière mise à jour** | 2026-09-04 |
+| **Branche** | `feat/books-p1-6-worker-v2` — basée sur `main` après merge de la PR #38 |
 
 ---
 
@@ -78,6 +78,38 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-04
+
+`P1-6` à `P1-8` sont implémentés localement sur `feat/books-p1-6-worker-v2`. Le worker
+contient désormais `Sweep` (toutes les cinq minutes) et `Enrich` (toutes les heures) :
+fermeture des sessions inactives, rattachement des annonces sans date, release des
+annonces dues, livraison de l'outbox d'alertes, suppression de comptes et enrichissement
+bibliographique avec retry/négatif-cache et couvertures Blob optionnelles. Les bourses
+Books annulées sont conservées pour l'audit mais exclues de toutes les opérations futures.
+
+La fondation runtime ajoute le conteneur `book-covers`, les plafonds App Insights, trois
+alertes Azure Monitor, le CORS par liste d'origines, et le workflow manuel
+`Books runtime - deploy`. L'API ne migre plus au démarrage sauf en `Development` ; le
+workflow applique les migrations avant de créer les révisions API/Worker. L'envoi ACS est
+prêt côté code mais reste désactivé.
+
+La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
+« Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
+pas la considérer comme validée tant qu'Azure n'affiche pas l'état vérifié. Le domaine
+reste donc un délai externe, tout comme l'envoi réel et la réputation.
+
+Validation locale de cette reprise : test ciblé d'isolation des types d'outbox au vert,
+test de rétention des références historiques au vert, puis suite backend complète (247
+tests) et build de solution sans erreur. `QT-02` est maintenant relevée pour l'ancien timer `AccountDeletionSweepFunction` dans le bon
+locataire (28 exécutions, 28 succès, 28 complétions sans trou sur la fenêtre observée) ;
+le heartbeat du nouveau `Sweep` doit encore être observé après déploiement. `P1-9` n'est
+pas chiffré sans dataset de développement et mesure SQL reproductible. `P1-10`/`P1-11`
+restent des gates physiques : appareil Android, téléphone de scan, mode avion, cadence et
+acceptation bénévole ne peuvent pas être déclarés depuis ce poste.
+
+Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité ; ce
+bloc est la source de vérité pour l'état courant.
+
 Le prérequis de l'étape 4 est vérifié par le run GitHub Actions
 `Database - verify point-in-time restore #33690143650` : une copie isolée a été restaurée
 depuis la chaîne de sauvegardes Azure SQL au niveau S1, puis l'outil `DbSnapshot` a lu les
@@ -109,7 +141,7 @@ Search Console n'ont pas été modifiés. OVH annonce une propagation pouvant du
 `L0-9` est réalisé côté ressources : le locataire Entra External ID et la ressource ACS
 Email sont créés. ACS est déployé par le run GitHub Actions `Infra - deploy #10` ; la
 vérification du domaine d'envoi reste à relever après propagation DNS. Le choix retenu est
-`vpd-acs-email-dev`, données en France, expéditeur `noreply@mail.volepapillondamour.fr` et
+`vpd-acs-email-dev`, données en France, expéditeur `DoNotReply@mail.volepapillondamour.fr` et
 DMARC `p=none`. Aucun e-mail applicatif n'est envoyé avant `P3`.
 
 `L0-10` est en cours avec l'option A : `MauiCashApp` cible désormais uniquement
@@ -264,17 +296,18 @@ bloquée par l'absence du SDK Android natif (`XA5300`).
 
 ## En attente d'un délai externe
 
-La propagation DNS et la vérification du domaine ACS sont en attente. La réputation du
-domaine d'envoi reste volontairement anticipée, conformément à `L0-9`.
+La propagation DNS OVH est relevée et correspond aux valeurs demandées par ACS. La
+vérification du domaine ACS est encore en cours dans le portail ; la réputation du domaine
+d'envoi reste volontairement anticipée, conformément à `L0-9`.
 
 > Ce qui va ici : ce qui avance sans vous et qu'il faut penser à relever.
 >
 > | Sujet | Lancé le | Relevable à partir du |
 > |---|---|---|
-> | `QT-02` — timer worker à zéro réplica (`P1-1`) | `2026-09-03 18:50` Europe/Paris | `2026-09-03 20:50` Europe/Paris |
+> | Heartbeat du nouveau `Sweep` (`P1-6`/`P1-7`) | après le prochain déploiement | après quelques cycles du timer, puis campagne de deux heures si nécessaire |
 > | `QT-08` — session de 48 h puis ouverture en mode avion (page jetable, `L0-12`) | | |
-> | Propagation DNS des entrées ACS | `2026-09-02` | après le délai OVH annoncé (maximum 24 h) |
-> | Vérification du domaine d'envoi ACS | `2026-09-02` | après propagation DNS, lors du relevé dans Azure |
+> | Propagation DNS des entrées ACS | `2026-09-02` | relevée le `2026-09-04`, valeurs alignées |
+> | Vérification du domaine d'envoi ACS | `2026-09-02` | le portail affiche encore « Verification is underway » |
 > | Réputation du domaine d'envoi | *(des semaines — lancer tôt)* | |
 
 ---
@@ -290,14 +323,14 @@ dans Azure sans être déductible du dépôt.
 |---|---|---|
 | Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
-| Container Apps | `api`, `website`, `backOffice` à `minReplicas: 1` | `36b0e50` |
+| Container Apps | `api`, `website`, `backOffice`, `scan` à `minReplicas: 1`; `worker` à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running` | `2026-09-04` |
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
-| Application Graph de suppression | **Pas encore créée** ; `Configure-EntraApps.ps1` est prêt à créer `vpd-account-deletion-dev` et à accorder `User.ReadWrite.All` | — |
-| Secret Graph dans Key Vault | **Pas encore renseigné** ; dépend de l'exécution du script et des secrets GitHub `ENTRA_GRAPH_CLIENT_ID` / `ENTRA_GRAPH_CLIENT_SECRET` | — |
-| ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur retenu `noreply@mail.volepapillondamour.fr` ; vérification du domaine en attente de propagation | `2026-09-02` |
-| Plafonds journaliers App Insights | **Non posés** | — |
-| Règles d'alerte | **Aucune** | — |
+| Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
+| Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
+| ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur réel `DoNotReply@mail.volepapillondamour.fr` ; le portail affiche encore « Verification is underway » | `2026-09-04` |
+| Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
+| Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
 
 ### DNS — `volepapillondamour.fr`
 
@@ -341,8 +374,8 @@ reportées.
 
 | Secret | État |
 |---|---|
-| `ENTRA_GRAPH_CLIENT_ID` | À ajouter après l'exécution de `Configure-EntraApps.ps1` |
-| `ENTRA_GRAPH_CLIENT_SECRET` | À ajouter avec le contenu du fichier hors dépôt produit par le script |
+| `ENTRA_GRAPH_CLIENT_ID` | Présent dans l'environnement `development` |
+| `ENTRA_GRAPH_CLIENT_SECRET` | Présent dans l'environnement `development` ; valeur jamais écrite dans le dépôt |
 
 ---
 
@@ -351,13 +384,14 @@ reportées.
 | # | Sujet | Résultat | Le |
 |---|---|---|---|
 | `QT-01` | Couverture des sources bibliographiques | — | — |
-| `QT-02` | Déclencheur planifié à zéro réplica | Non relevable depuis la session disponible — le worker et `vpd-law-dev` renvoient `401 Aucun accès` ; le jeton du locataire `b23c80b3-9776-4840-8255-fcbf3b3500fd` doit être remplacé par une session du locataire d'abonnement `91a30855-a777-43a6-8fad-66854b9a4d1b` | 2026-09-03 18:50 |
+| `QT-02` | Déclencheur planifié à zéro réplica | **Passé pour le timer historique `AccountDeletionSweepFunction`** : 28 `Executing`, 28 `Succeeded`, 28 messages de fin, sans trou sur la fenêtre UTC `2026-09-03 16:45`–`19:05` dans `vpd-law-dev` ; le nouveau heartbeat `Sweep` reste à observer après rollout | 2026-09-04 |
 | `QT-03` | Lecture du code-barres au navigateur | Campagne `S0-4` déclarée réussie sur 300 livres ; sous-mesures détaillées non consignées | 2026-09-03 |
 | `QT-04` | Dimensionnement Entra | Coût tranché : gratuit à notre échelle | doc |
 | `QT-07` | Connexion seule, sans inscription | — | — |
 | `QT-08` *(partie jeton, `L0-12`)* | Durée de vie des jetons hors ligne | — | — |
 | `QT-08` *(partie geste, `P1-5`)* | Scan possible hors ligne après 48 h | — | — |
 | `QT-09` | Tenue de `S1` sur disque dur | — | — |
+| `P1-9` | Mesures SQL et traitement sur dataset de développement | Non chiffré : aucun benchmark reproductible n'a été exécuté dans cette reprise ; ne pas inventer de cadence ou de volume | 2026-09-04 |
 
 **Chiffres cibles du palier 0** *(à écrire en `S0-1`, avant la campagne — pas après)* :
 
@@ -375,6 +409,7 @@ reportées.
 |---|---|---|
 | Smoke test Aspire — `GET /books/9783140464079/metadata` via `http://localhost:5257` | `200 OK` après redirection HTTPS ; notice « Le petit prince » renvoyée par Open Library | `2026-09-03` |
 | Démarrage Functions worker via Aspire | `AccountDeletionSweepFunction` découverte ; host lock acquis ; aucune erreur DI ni erreur de listener | `2026-09-03` |
+| `QT-02` — observation du timer historique dans `vpd-law-dev` | 28 exécutions, 28 succès, 28 complétions sur la fenêtre UTC observée, sans trou ; le nouveau `Sweep` reste à relever après déploiement | `2026-09-04` |
 | POC Scan — détection caméra live sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 | POC Scan — détection à partir d'une photo sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 | Scan public — fiche BnF `9782070612758` après `Scan - deploy` `33778535757` | `200 OK`, couverture chargée dans Chrome (`103 × 150`) | `2026-09-03` |
@@ -391,6 +426,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-04 | Windows | **P1-6 à P1-8 — worker, qualité runtime et déploiement.** Ajout de `Sweep`/`Enrich`, fermeture des sessions inactives, release/rattachement des annonces, enrichissement bibliographique avec cache négatif et couvertures Blob, livraison d'alertes ACS désactivée par défaut, bourses Books annulables, plafonds/alertes App Insights, CORS par origines et workflow runtime avec migrations avant rollout. Corrections TDD de l'isolation des types dans l'outbox de suppression de comptes et de la rétention des utilisateurs référencés par l'historique Books. Suite backend complète : 247 tests passés ; build de solution sans erreur. La vérification ACS est encore « underway », et les gates physiques/P1-9 restent non déclarables à distance. |
 | 2026-09-03 | Windows | **P1-5 — contrats API, PWA Scan et synchronisation hors ligne.** Ajout des contrats `GET /scan/catalog/delta`, ouverture/rejeu de session, scans et clôture sous autorisation `Tri`, avec projections compactes, suppressions masquées et reprojection lors des changements de listes. Le Scan conserve désormais `catalog`/`outbox`/`session` dans IndexedDB persistant, calcule le verdict local, restaure le dernier geste, protège les appels par MSAL et rejoue la file séquentiellement au retour du réseau ; le service worker ne met en cache que la coquille et les métadonnées publiques. Ajout de la migration locale `20260903211547_AddWatchlistUpdatedAt`, générée avec reprise de `CreatedAt` pour les lignes existantes. Validation finale : 72 tests Domain, 93 Application, 29 Infrastructure, 49 ChromeHeadless, build solution, contrôle EF et builds Scan production/développement. Aucun changement Azure, DNS, secret, déploiement ou migration de production ; `QT-02`, `QT-03` et `QT-08` restent à relever hors dépôt. |
 | 2026-09-03 | Windows | **`QT-02` — relevé tenté après la fenêtre d'observation.** La session Azure ouverte est authentifiée dans le locataire `b23c80b3-9776-4840-8255-fcbf3b3500fd`, alors que l'abonnement et `vpd-law-dev` attendent `91a30855-a777-43a6-8fad-66854b9a4d1b` ; le worker et les journaux répondent `401 Aucun accès`. Aucun changement Azure n'a été effectué ; le worker reste gelé jusqu'à une session du bon locataire. |
 | 2026-09-03 | Windows | **P1-4 — transport ACS/Event Grid et handshake (`RG-31`).** Ajout de `POST /integrations/acs/email-delivery-reports`, protégé par le secret partagé `X-Vpd-EventGrid-Secret`. L'endpoint désérialise les contrats Event Grid typés, renvoie `validationResponse` pour `SubscriptionValidationEvent`, transmet les rapports ACS non réussis au handler de rebond et acquitte les statuts livrés/étendus, les destinataires inconnus et les membres sans watchlist. Validation : 72 tests Domain, 88 Application, 29 Infrastructure, suite `.slnx` et build ; aucune configuration Azure ni migration n'a été appliquée. |

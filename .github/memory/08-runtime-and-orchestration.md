@@ -72,3 +72,11 @@ The API startup wires:
 - SSE, WebSockets, and rate limiting live in the API startup path and can affect website live views and login behavior.
 - The permissive CORS policy means frontend/runtime changes should be reviewed with deployment assumptions in mind.
 - Frontend Docker validation now depends on using the `src/` folder as build context so `src/SharedUi/` stays available to both Angular applications during compilation.
+
+## Books runtime update — 2026-09-04
+
+- The Worker now exposes `Sweep` every five minutes and `Enrich` hourly. A sweep closes idle scan sessions, attaches undated announcements to the next active Books fair, releases due announcements, delivers due alert outbox messages, and runs account deletion; enrichment resolves pending/not-found bibliographic records with retry and optional cover storage.
+- `Books runtime - deploy` is a manual GitHub Actions workflow that builds API and Worker images from one commit, optionally opens the SQL firewall and applies all EF migrations, closes the firewall in cleanup, then updates both Container Apps. The workflow deliberately deploys migrations before the application rollout.
+- The API now runs startup migrations only for `Development`. Production and deployed development use the explicit migration step, preventing concurrent API replicas from migrating the database.
+- `main.bicep` declares the `book-covers` blob container, `Cors:AllowedOrigins`, Application Insights daily caps, and Azure Monitor alerts for missing Worker heartbeat, late announcements, and a late alert queue. The contact group must still be confirmed by Azure after infrastructure deployment.
+- The dev Worker is private, running at `minReplicas: 0`/`maxReplicas: 1`, revision `vpd-worker-ca-dev--0000003` before the new runtime deployment. The old account-deletion timer was observed successfully in the correct subscription tenant; the new `Sweep`/`Enrich` heartbeat must be verified after rollout.

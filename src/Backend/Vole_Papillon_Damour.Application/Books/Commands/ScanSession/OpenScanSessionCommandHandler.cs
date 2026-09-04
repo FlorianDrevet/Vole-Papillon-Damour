@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using ScanSessionAggregate = Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession;
 
@@ -63,6 +64,28 @@ public sealed class OpenScanSessionCommandHandler(
 
                 await transaction.CommitAsync(cancellationToken);
                 return ScanSessionResult.From(existingClientSession);
+            }
+        }
+
+        if (command.TargetAssoEventsId is { } targetFairId)
+        {
+            var targetFair = await dbContext.AssoEvents
+                .SingleOrDefaultAsync(
+                    assoEvent => assoEvent.Id == targetFairId,
+                    cancellationToken);
+            if (targetFair is null)
+            {
+                return Errors.Book.FairNotFound(targetFairId.Value);
+            }
+
+            if (targetFair.IsCancelled)
+            {
+                return Errors.Book.FairCancelled(targetFairId.Value);
+            }
+
+            if (targetFair.EventsType?.Value != EventsType.EventsTypeEnum.Books)
+            {
+                return Errors.Book.TargetFairMustBeBooks();
             }
         }
 

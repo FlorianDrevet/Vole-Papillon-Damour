@@ -119,3 +119,10 @@
 - `dotnet test .\src\MauiCashApp.Tests\ShopAppVpd.Tests.csproj` covers the platform-independent
   authorization handler. The MAUI Android build remains environment-dependent and currently
   fails locally with `XA5300` when no Android SDK is configured.
+
+## Books runtime update — 2026-09-04
+
+- The API startup migration policy is explicit: `DatabaseMigrationPolicy.ShouldRunOnStartup` returns true only for `Development`; deployed migration is performed before rollout by `Books runtime - deploy`.
+- The new workflow builds the API and Worker from the same checkout and image tag, can apply EF migrations through a temporary SQL firewall rule, and always attempts to remove that rule before finishing.
+- The Worker is intentionally configured without API authentication registration. It uses the Application/Infrastructure layers for `Sweep` and `Enrich`, with ACS email delivery disabled by default until domain verification and a real delivery test are complete.
+- The backend solution validation after the runtime slice includes the account-deletion outbox kind-isolation regression: an `AlertEmail` row is not claimable by `AccountDeletionStore`.

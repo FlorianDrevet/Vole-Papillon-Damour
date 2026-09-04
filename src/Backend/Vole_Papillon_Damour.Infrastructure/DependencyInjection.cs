@@ -62,9 +62,12 @@ public static class DependencyInjection
         
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddSingleton<ISSEClientManager, SSEClientManager>();
-        services.AddSingleton<IUserDeletionRetentionPolicy, NoRetainedSalesMovementsPolicy>();
+        services.AddScoped<IUserDeletionRetentionPolicy, NoRetainedSalesMovementsPolicy>();
         services.AddScoped<IAccountDeletionStore, AccountDeletionStore>();
         services.AddScoped<IBookAlertOutbox, BookAlertOutbox>();
+        services.Configure<BookAlertEmailOptions>(
+            builderConfiguration.GetSection(BookAlertEmailOptions.SectionName));
+        services.AddSingleton<IBookAlertEmailSender, BookAlertEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<IEntraUserDirectory, EntraGraphUserDirectory>();
         services.Configure<BibliographicOptions>(
@@ -119,6 +122,13 @@ public static class DependencyInjection
 
         services.AddSingleton(Options.Create(blobSettings));
         services.AddSingleton<IBlobService, BlobService>();
+        services.Configure<BookCoverOptions>(
+            builderConfiguration.GetSection(BookCoverOptions.SectionName));
+        services.AddHttpClient<IBookCoverStorage, BookCoverStorage>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false
+            });
         return services;
     }
 

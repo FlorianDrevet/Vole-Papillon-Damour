@@ -110,6 +110,10 @@ public static partial class Errors
             code: "Book.TargetFairMustBeBooks",
             description: "The target event must be a books fair.");
 
+        public static Error FairCancelled(object fairId) => Error.Conflict(
+            code: "Book.FairCancelled",
+            description: $"The book fair is cancelled: {fairId}.");
+
         public static Error ScanSessionAlreadyReassigned(object scanSessionId) => Error.Conflict(
             code: "Book.ScanSessionAlreadyReassigned",
             description: $"Scan session has already been reassigned: {scanSessionId}.");

@@ -40,6 +40,9 @@ public class AssoEventConfiguration : IEntityTypeConfiguration<AssoEvents>
                 value => new EventsType((EventsType.EventsTypeEnum)value)
             );
 
+        builder.Property(events => events.IsCancelled)
+            .HasDefaultValue(false);
+
         // Value Object
         builder.ComplexProperty(pdt => pdt.Adresse);
     }

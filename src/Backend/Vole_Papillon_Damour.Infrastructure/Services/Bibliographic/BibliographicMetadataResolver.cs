@@ -16,24 +16,37 @@ public sealed class BibliographicMetadataResolver(
         Isbn13 isbn13,
         CancellationToken cancellationToken)
     {
-        var bnfMetadata = await TryFindAsync(
+        var bnfResult = await TryFindAsync(
             bnfClient,
             "BnF",
             isbn13,
             cancellationToken);
-        if (bnfMetadata is not null)
+        if (bnfResult.Metadata is not null)
         {
-            return bnfMetadata;
+            return bnfResult.Metadata;
         }
 
-        return await TryFindAsync(
+        var openLibraryResult = await TryFindAsync(
             openLibraryClient,
             "OpenLibrary",
             isbn13,
             cancellationToken);
+
+        if (openLibraryResult.Metadata is not null)
+        {
+            return openLibraryResult.Metadata;
+        }
+
+        if (bnfResult.Failed || openLibraryResult.Failed)
+        {
+            throw new HttpRequestException(
+                $"All bibliographic providers that were contacted failed for ISBN {isbn13.Value}.");
+        }
+
+        return null;
     }
 
-    private async Task<BookMetadataResult?> TryFindAsync(
+    private async Task<ProviderResult> TryFindAsync(
         object client,
         string source,
         Isbn13 isbn13,
@@ -41,32 +54,34 @@ public sealed class BibliographicMetadataResolver(
     {
         try
         {
-            return client switch
+            return new ProviderResult(client switch
             {
                 IBnfSruClient bnf => await bnf.FindAsync(isbn13, cancellationToken),
                 IOpenLibraryClient openLibrary => await openLibrary.FindAsync(isbn13, cancellationToken),
                 _ => null
-            };
+            }, Failed: false);
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             logger.LogWarning("{Source} metadata lookup timed out for ISBN {Isbn13}.", source, isbn13.Value);
-            return null;
+            return new ProviderResult(null, Failed: true);
         }
         catch (HttpRequestException exception)
         {
             logger.LogWarning(exception, "{Source} metadata lookup failed for ISBN {Isbn13}.", source, isbn13.Value);
-            return null;
+            return new ProviderResult(null, Failed: true);
         }
         catch (JsonException exception)
         {
             logger.LogWarning(exception, "{Source} returned invalid metadata for ISBN {Isbn13}.", source, isbn13.Value);
-            return null;
+            return new ProviderResult(null, Failed: true);
         }
         catch (XmlException exception)
         {
             logger.LogWarning(exception, "{Source} returned invalid metadata for ISBN {Isbn13}.", source, isbn13.Value);
-            return null;
+            return new ProviderResult(null, Failed: true);
         }
     }
+
+    private sealed record ProviderResult(BookMetadataResult? Metadata, bool Failed);
 }

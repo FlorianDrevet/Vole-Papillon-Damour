@@ -19,6 +19,7 @@ internal static class BookFairResolver
     {
         var openBookFairs = events
             .Where(assoEvent =>
+                !assoEvent.IsCancelled &&
                 assoEvent.EventsType?.Value == EventsType.EventsTypeEnum.Books &&
                 IsOpen(assoEvent, instantUtc))
             .ToList();

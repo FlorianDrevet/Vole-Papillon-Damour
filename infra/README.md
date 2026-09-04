@@ -16,11 +16,11 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | Container App | `vpd-scan-ca-dev` | App de scan Angular publique, port 8080, HTTPS |
 | Container App | `vpd-worker-ca-dev` | Worker Azure Functions .NET isolated, `kind=functionapp` |
 | Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` / `vpd-scan-appi-dev` / `vpd-worker-appi-dev` | Un par application |
-| Log Analytics | `vpd-law-dev` | Workspace commun aux trois Application Insights |
+| Log Analytics | `vpd-law-dev` | Workspace commun aux cinq Application Insights |
 | ACS Email | `vpd-acs-email-dev` / `mail.volepapillondamour.fr` | Service d'envoi, donnees en France |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
-| Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | Serverless `GP_S_Gen5_1`, pause auto après 60 min |
-| Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images` |
+| Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S1` Standard, 20 DTU, 250 Go, sans pause automatique (France Central) |
+| Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images`, `book-covers` |
 | Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
 | Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-worker-id-dev` | Une par application |
 
@@ -32,13 +32,21 @@ de mesure `P1-1` vise `minReplicas: 0` et `maxReplicas: 1` pour vérifier que le
 réveille sans hôte chaud ; il faut revenir à une réplique minimum si l'observation de deux
 heures échoue.
 
+Les cinq composants Application Insights ont un plafond de 1 Go/jour via leur
+ressource `pricingPlans`. Les alertes worker (heartbeat absent, annonces dues en
+retard, file d'e-mails en retard) sont envoyées au groupe Azure Monitor
+`vpd-alerts-dev`, vers l'adresse de contact du projet. Le premier déploiement
+nécessite la confirmation du destinataire envoyée par Azure.
+
 Les conteneurs blob sont en accès `Blob` (lecture anonyme) : `BlobService`
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles
 sans SAS.
 
-Le scaling est à `minReplicas: 1` pour les trois applications depuis `36b0e50` :
-aucune ne paie de démarrage à froid, et aucune ne tient plus dans le quota gratuit
-des Container Apps. Le réglage est dans `parameters/main.dev.bicepparam`.
+Le scaling est à `minReplicas: 1` pour l'API, le Website, le BackOffice et le Scan ; le
+worker reste à `minReplicas: 0`, `maxReplicas: 1` pendant la mesure `P1-1`. Les quatre
+applications HTTP évitent ainsi un démarrage à froid, tandis que le worker est observé
+comme hôte planifié sans réplique chaude. Le réglage est dans
+`parameters/main.dev.bicepparam`.
 
 ## Configuration Azure à faire une seule fois
 
@@ -80,7 +88,7 @@ az role assignment create --assignee-object-id "$PRINCIPAL_ID"   --assignee-prin
 
 ### 3. Déclarer la federated credential
 
-Les quatre workflows tournent dans l'environnement GitHub `development`, donc
+Les workflows applicatifs et d'infrastructure tournent dans l'environnement GitHub `development`, donc
 le `subject` doit viser l'environnement, pas une branche :
 
 ```bash
@@ -124,7 +132,7 @@ az sql server create -n vpd-sql-probe-$RANDOM -g rg-vpd-identity-dev   -l <regio
 
 ## Pipelines
 
-Les quatre pipelines sont en `workflow_dispatch` uniquement : rien ne part sur
+Les pipelines sont en `workflow_dispatch` uniquement : rien ne part sur
 Azure sans un lancement manuel.
 
 | Workflow | Ce qu'il fait |
@@ -135,15 +143,16 @@ Azure sans un lancement manuel.
 | `BackOffice - deploy` | build + push de l'image BackOffice, bascule de `vpd-bo-ca-dev` |
 | `Scan - deploy` | build + push de l'image Scan avec l'URL API, bascule de `vpd-scan-ca-dev` et publication HTTPS |
 | `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev` et contrôle du host |
+| `Books runtime - deploy` | build + push coordonné API + Worker, migration EF optionnelle avant rollout, puis bascule des deux Container Apps |
 
 ### Ordre du premier déploiement
 
 1. `Infra - deploy` en mode `what-if`, pour relire ce qui va être créé.
-2. `Infra - deploy` en mode `deploy`. Les trois Container Apps démarrent sur
+2. `Infra - deploy` en mode `deploy`. Les cinq Container Apps démarrent sur
    l'image placeholder `containerapps-helloworld` : c'est normal, elles n'ont
    pas encore d'image applicative.
-3. `API - deploy` avec `run_migrations` coché - le schéma de la base est vide
-   au premier passage.
+3. `Books runtime - deploy` avec `run_migrations` coché : les migrations sont
+   appliquées avant le rollout de l'API et du Worker.
 4. `Scan - deploy`, puis `Worker - deploy`.
 5. `Website - deploy`, puis `BackOffice - deploy` si leurs images doivent aussi être
    reconstruites sur cette branche.
@@ -173,6 +182,9 @@ une application au placeholder.
 `dotnet ef database update`, puis referme la règle même en cas d'échec. Le
 reste du temps, la base n'accepte que le trafic Azure - c'est par cette règle
 que les Container Apps la joignent, leurs IP de sortie n'étant pas fixes.
+En production, l'API ne lance pas les migrations au démarrage ; seul l'environnement
+`Development` conserve cette commodité locale. Le workflow runtime applique donc le
+schéma avant de créer la nouvelle révision.
 
 ## Points à traiter côté application
 
@@ -180,9 +192,9 @@ que les Container Apps la joignent, leurs IP de sortie n'étant pas fixes.
   `src/Backend/Vole_Papillon_Damour.Api/appsettings.json`. Elle en a été
   retirée, mais **elle reste dans l'historique git** : la clé correspondante
   est à révoquer côté Azure.
-- L'API autorise toutes les origines (`AllowAnyOrigin`). Aucune configuration
-  CORS n'est donc nécessaire pour que les fronts l'appellent, mais c'est à
-  resserrer avant une mise en production.
+- L'API lit `Cors:AllowedOrigins` et utilise les FQDN publics dev déclarés dans
+  `main.dev.bicepparam`. Une liste vide conserve `AllowAnyOrigin` uniquement pour le
+  développement local ; ne pas déployer cette valeur en production.
 - Le Website et le BackOffice envoient leur télémétrie navigateur via
   `@microsoft/applicationinsights-web`, initialisé dans `main.ts`. La
   connection string est figée dans le bundle au build de l'image, comme

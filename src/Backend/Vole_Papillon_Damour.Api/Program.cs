@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Vole_Papillon_Damour.Api;
+using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Common.Mapping;
 using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Controllers;
@@ -20,9 +21,18 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
-        policy.AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowAnyOrigin();
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? [];
+        policy.AllowAnyHeader().AllowAnyMethod();
+        if (allowedOrigins.Length == 0)
+        {
+            policy.AllowAnyOrigin();
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins);
+        }
     });
 });
 
@@ -51,7 +61,10 @@ if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
 builder.Services
     .AddPresentation()
     .AddApplication()
-    .AddInfrastructure(builder.Configuration)
+    .AddInfrastructure(
+        builder.Configuration,
+        runMigrations: DatabaseMigrationPolicy.ShouldRunOnStartup(
+            builder.Environment.EnvironmentName))
     .AddRateLimiting();
 
 builder.Services.Configure<EmailBounceWebhookOptions>(

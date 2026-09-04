@@ -174,6 +174,13 @@ param storageAccountSku = 'Standard_LRS'
 param communicationEmailServiceName = 'vpd-acs-email-dev'
 param communicationEmailDataLocation = 'France'
 param communicationEmailSendingDomain = 'mail.volepapillondamour.fr'
+param monitoringAlertEmail = 'volepapillondamour@sfr.fr'
+param corsAllowedOrigins = [
+  'https://volepapillondamour.fr'
+  'https://www.volepapillondamour.fr'
+  'https://backoffice.volepapillondamour.fr'
+  'https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io'
+]
 
 param entraAuthority = readEnvironmentVariable('ENTRA_AUTHORITY', 'https://volepapillondamour.ciamlogin.com/')
 param entraTenantId = readEnvironmentVariable('ENTRA_TENANT_ID', 'b23c80b3-9776-4840-8255-fcbf3b3500fd')
@@ -188,6 +195,7 @@ param blobContainerLotoImages = 'loto-images'
 param blobContainerActualityImages = 'actuality-images'
 param blobContainerEventImages = 'event-images'
 param blobContainerProductImages = 'product-images'
+param blobContainerBookCovers = 'book-covers'
 
 param jwtIssuer = 'Vole_Papillon_Damour'
 param jwtAudience = 'Vole_Papillon_Damour'

@@ -254,6 +254,36 @@ public sealed class Book : AggregateRoot<Isbn13>
         return changed;
     }
 
+    public bool RecordMetadataNotFound(DateTime attemptedAt)
+    {
+        var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
+        var changed = false;
+
+        if (ResolveAttempts < int.MaxValue)
+        {
+            ResolveAttempts++;
+            changed = true;
+        }
+
+        changed |= LastAttemptAt != utcAttemptedAt;
+        LastAttemptAt = utcAttemptedAt;
+
+        if (MetadataStatus != BookMetadataStatus.Manual)
+        {
+            changed |= MetadataStatus != BookMetadataStatus.NotFound ||
+                       MetadataSource is not null ||
+                       MetadataFetchedAt is not null ||
+                       RawPayload is not null;
+            MetadataStatus = BookMetadataStatus.NotFound;
+            MetadataSource = null;
+            MetadataFetchedAt = null;
+            RawPayload = null;
+        }
+
+        UpdatedAt = utcAttemptedAt;
+        return changed;
+    }
+
     public void RecordRejection(DateTime occurredAt)
     {
         var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));

@@ -68,6 +68,26 @@ public sealed class BibliographicMetadataResolverTests
         result.Should().Be(openLibraryMetadata);
     }
 
+    [Fact]
+    public async Task ResolveAsync_WhenAllProvidersAreUnavailable_ThrowsInsteadOfReturningNotFound()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var bnf = Substitute.For<IBnfSruClient>();
+        var openLibrary = Substitute.For<IOpenLibraryClient>();
+        bnf.FindAsync(isbn13, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<BookMetadataResult?>(new HttpRequestException("bnf down")));
+        openLibrary.FindAsync(isbn13, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<BookMetadataResult?>(new HttpRequestException("open library down")));
+        var resolver = new BibliographicMetadataResolver(
+            bnf,
+            openLibrary,
+            NullLogger<BibliographicMetadataResolver>.Instance);
+
+        var action = () => resolver.ResolveAsync(isbn13, CancellationToken.None);
+
+        await action.Should().ThrowAsync<HttpRequestException>();
+    }
+
     private static BookMetadataResult CreateMetadata(string source) => new(
         "9782070363735",
         "Le Petit Prince",

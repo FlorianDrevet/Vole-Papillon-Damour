@@ -19,6 +19,7 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
     public Adresse Adresse { get; set; } = null!;
     public string Description { get; set; } = null!;
     public bool BingoHasBeenWon { get; set; } = false;
+    public bool IsCancelled { get; private set; }
     
     public int CurrentPartieIndex { get; set; } = 0;
     
@@ -83,6 +84,17 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
 
     public AssoEvents()
     {
+    }
+
+    public bool Cancel()
+    {
+        if (IsCancelled)
+        {
+            return false;
+        }
+
+        IsCancelled = true;
+        return true;
     }
     
     public void Update(string name,

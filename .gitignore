@@ -1,4 +1,5 @@
 graphify-out/
+.tmp-bicep/
 .graphify_*.json
 .graphify_*.md
 .graphify_python
