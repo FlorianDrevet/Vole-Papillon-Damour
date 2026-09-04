@@ -17,7 +17,9 @@ La tranche locale est implémentée dans `src/Scan` :
   `ClientSessionId`, transmet les gestes finaux séquentiellement et conserve le premier
   échec avec son compteur de tentative ;
 - `ScanAuthService` et `MsalInterceptor` permettent la connexion Entra et portent la
-  portée API sur les routes protégées ; le mode local fonctionne avant connexion ;
+  portée API sur les routes protégées ; la carte MSAL utilise un wildcard sur `/scan/*`
+  car le strict matching de MSAL Angular v5 ne couvre pas les sous-routes avec `/scan`
+  seul ; le mode local fonctionne avant connexion ;
 - Angular Service Worker met en cache la coquille et les métadonnées bibliographiques,
   tandis que le manifeste PWA et l'icône sont servis par nginx.
 

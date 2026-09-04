@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2` — le catalogue public, ses domaines et la Scanette sont déployés ; API et Worker ont été roulés avec le schéma SQL à jour. Le correctif Scanette attend sa PR et son retest iPhone avant déploiement ; le heartbeat et `P1-9` à `P1-11` restent à relever. |
-| **Prochaine action** | Faire relire la PR #52, effectuer le retest authentifié sur iPhone, puis relever les signaux `Sweep`/`Enrich` et préparer `P1-9` à `P1-11`. Le référentiel externe, le compte et l'envoi d'alertes restent P3. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-workflow` |
-| **Dernière mise à jour** | 2026-09-04 — retours de test Scanette intégrés dans un worktree dédié, validation finale passée et PR #52 ouverte ; runtime Books déployé avec migrations EF et smoke tests publics validés |
-| **Branche** | `fix/scan-continuous-workflow` — [PR #52](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/52) |
+| **Lot en cours** | `P1/P2` — le catalogue public, ses domaines et la Scanette sont déployés ; API et Worker ont été roulés avec le schéma SQL à jour. Le correctif d'authentification Scanette attend sa PR et son déploiement ; le heartbeat et `P1-9` à `P1-11` restent à relever. |
+| **Prochaine action** | Faire relire et merger le correctif d'authentification Scanette, relancer `Scan - deploy`, puis retester la session `Tri` sur le domaine public avant de relever les signaux `Sweep`/`Enrich` et préparer `P1-9` à `P1-11`. Le référentiel externe, le compte et l'envoi d'alertes restent P3. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-api-auth` |
+| **Dernière mise à jour** | 2026-09-04 — le `401` Scan a été reproduit par une régression ChromeHeadless et corrigé dans un worktree dédié ; le déploiement et le retest public restent à faire |
+| **Branche** | `fix/scan-api-auth-header` — PR à ouvrir |
 
 ---
 
@@ -109,13 +109,14 @@ ressource n'a été supprimée. Le catalogue répond `200` sur `/`, `/robots.txt
 la Scanette répond `200` sur `https://scan.volepapillondamour.fr` avec son bundle canonique.
 
 Le smoke test Scan a lancé le redirect Entra depuis le domaine public et a abouti à l'écran
-« compte connecté, rôle Tri absent » avec le compte administrateur courant : le redirect est
-donc fonctionnel, et le refus est celui attendu tant que ce compte n'a pas le rôle `Tri`.
-Depuis, le portail Entra `vpd-api-dev` affiche bien les deux attributions `Administrateur` et
-`Benevole trieur` pour ce compte. Le message persistait donc à cause du contrôle local de Scan,
-qui lisait l'ID token au lieu du jeton d'accès destiné à l'API. Le correctif est validé dans la
-worktree `fix/scan-api-role-token` ; il reste à merger puis à relancer `Scan - deploy` avant de
-retester le domaine public.
+« compte connecté, rôle Tri absent » avec le compte administrateur courant. Le portail Entra
+`vpd-api-dev` affiche bien les attributions `Administrateur` et `Benevole trieur` pour ce compte ;
+le contrôle local lit désormais les rôles du jeton d'accès API. La capture réseau du 2026-09-04
+a toutefois montré que les appels `/scan/catalog/delta` et `/scan/sessions` partaient sans
+`Authorization: Bearer`, car la carte `MsalInterceptor` déclarait `/scan` sans wildcard alors
+que MSAL Angular 5 applique un strict matching. Le correctif est validé dans le worktree
+`fix/scan-api-auth-header` par 79 tests ChromeHeadless ; il reste à ouvrir/merger la PR, relancer
+`Scan - deploy`, puis retester le domaine public.
 
 Le bloc « Mon compte » du catalogue est volontairement non interactif : le compte, la liste de
 recherche et les alertes sont P3. L'enregistrement de l'application `vpd-catalog-dev` peut

@@ -46,6 +46,8 @@ export const msalGuardConfig: MsalGuardConfiguration = {
 export const msalInterceptorConfig: MsalInterceptorConfiguration = {
   interactionType: InteractionType.Redirect,
   protectedResourceMap: new Map([
-    [`${environment.apiUrl}/scan`, [environment.entra.apiScope]],
+    // MSAL Angular v5 uses strict path matching by default, so nested Scan
+    // endpoints need an explicit wildcard to receive the API access token.
+    [`${environment.apiUrl}/scan/*`, [environment.entra.apiScope]],
   ]),
 };
