@@ -16,12 +16,12 @@ describe('AppComponent', () => {
     fixture.detectChanges();
   });
 
-  it('links the catalogue shell to the real administration entry point', () => {
-    const adminLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement | null;
+  it('links the catalogue shell to the member account entry point', () => {
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement | null;
 
-    expect(adminLink).not.toBeNull();
-    expect(adminLink?.textContent).toContain('Administration');
-    expect(adminLink?.getAttribute('href')).toBe('/administration');
+    expect(accountLink).not.toBeNull();
+    expect(accountLink?.textContent).toContain('Mon compte');
+    expect(accountLink?.getAttribute('href')).toBe('/compte');
   });
 
   it('keeps the mobile menu button label synchronized with its state', () => {

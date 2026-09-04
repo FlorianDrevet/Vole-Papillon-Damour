@@ -15,6 +15,7 @@ public static class DependencyInjection
     {
         services.AddAccountDeletionProcessing();
         services.AddScoped<BookAlertDeliveryService>();
+        services.AddScoped<MemberIdentityService>();
         // The background inactivity sweep delegates to the same close-session
         // handler as the HTTP path. Registering the concrete handler keeps the
         // shared domain transaction and makes design-time EF tooling able to

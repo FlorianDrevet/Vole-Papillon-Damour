@@ -103,6 +103,28 @@ public class EndpointAuthorizationTests
             .Contain(data => data.Policy == "Administration");
     }
 
+    [Fact]
+    public void Member_watchlist_endpoints_require_an_authenticated_member()
+    {
+        var expectedRoutes = new[]
+        {
+            "/catalog/me/watchlist",
+            "/catalog/me/watchlist/{itemId:guid}",
+        };
+
+        var memberEndpoints = RegisteredEndpoints()
+            .Where(endpoint => expectedRoutes.Contains(RouteOf(endpoint)))
+            .ToList();
+
+        memberEndpoints.Should().HaveCount(3);
+        memberEndpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
+        memberEndpoints
+            .Where(endpoint => RouteOf(endpoint) == "/catalog/me/watchlist")
+            .SelectMany(endpoint => HttpMethods(endpoint))
+            .Should()
+            .BeEquivalentTo("GET", "POST");
+    }
+
     private static IReadOnlyList<RouteEndpoint> MutatingEndpoints() =>
         RegisteredEndpoints()
             .Where(endpoint => HttpMethods(endpoint).Intersect(MutatingMethods).Any())

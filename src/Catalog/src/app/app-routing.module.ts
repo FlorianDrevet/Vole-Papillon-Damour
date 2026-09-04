@@ -7,6 +7,7 @@ import {CatalogSearchPageComponent} from './features/search/catalog-search-page.
 import {CatalogWorkPageComponent} from './features/work/catalog-work-page.component';
 import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
+import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 
 const routes: Routes = [
   {path: '', component: CatalogHomePageComponent},
@@ -15,6 +16,7 @@ const routes: Routes = [
   {path: 'livres/:slug', component: CatalogBookDetailPageComponent},
   {path: 'oeuvre/:workId', component: CatalogWorkPageComponent},
   {path: 'administration', component: CatalogAdministrationPageComponent},
+  {path: 'compte', component: CatalogAccountPageComponent},
   {
     path: 'mentions-legales',
     component: LegalPageComponent,

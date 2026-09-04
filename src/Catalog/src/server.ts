@@ -18,6 +18,14 @@ app.use((req, _res, next) => {
   next();
 });
 
+app.use((req, res, next) => {
+  const routePath = req.path.replace(/\/+$/, '') || '/';
+  if (routePath === '/administration' || routePath === '/compte') {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  }
+  next();
+});
+
 app.get('/sitemap.xml', async (_req, res, next) => {
   try {
     const response = await fetch(`${environment.apiUrl}/catalog/sitemap.xml`);

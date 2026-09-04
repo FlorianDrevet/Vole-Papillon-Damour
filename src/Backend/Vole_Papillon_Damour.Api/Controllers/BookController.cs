@@ -15,6 +15,10 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicNextBookFair;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
+using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
+using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
+using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatchlistItem;
+using Vole_Papillon_Damour.Application.WatchlistFeature.Queries.GetMyWatchlist;
 using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -22,6 +26,7 @@ using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
 
@@ -154,6 +159,91 @@ public static class BookController
                     })
                 .WithName("GetPublicCatalogSitemap")
                 .AllowAnonymous();
+
+            endpoints.MapGet(
+                    "/catalog/me/watchlist",
+                    async (
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetMyWatchlistQuery(externalId, email),
+                            cancellationToken);
+
+                        return result.Match(
+                            watchlist => Results.Ok(ToResponse(watchlist)),
+                            error => error.Result());
+                    })
+                .WithName("GetMyCatalogWatchlist")
+                .RequireAuthorization();
+
+            endpoints.MapPost(
+                    "/catalog/me/watchlist",
+                    async (
+                        AddWatchlistItemRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        if (!Enum.TryParse<WatchlistItemScope>(
+                                request.Scope,
+                                ignoreCase: true,
+                                out var scope) ||
+                            !Enum.IsDefined(scope))
+                        {
+                            return DomainErrors.Watchlist.InvalidScope().Result();
+                        }
+
+                        var result = await mediator.Send(
+                            new AddWatchlistItemCommand(
+                                externalId,
+                                email,
+                                scope,
+                                request.WorkId,
+                                request.Isbn13),
+                            cancellationToken);
+
+                        return result.Match(
+                            item => Results.Ok(ToResponse(item)),
+                            error => error.Result());
+                    })
+                .WithName("AddCatalogWatchlistItem")
+                .RequireAuthorization();
+
+            endpoints.MapDelete(
+                    "/catalog/me/watchlist/{itemId:guid}",
+                    async (
+                        Guid itemId,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RemoveWatchlistItemCommand(externalId, email, itemId),
+                            cancellationToken);
+
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("RemoveCatalogWatchlistItem")
+                .RequireAuthorization();
 
             endpoints.MapGet(
                     "/books/admin/dead-stock",
@@ -329,6 +419,41 @@ public static class BookController
         return false;
     }
 
+    private static bool TryGetMemberIdentity(
+        ClaimsPrincipal principal,
+        out Guid externalId,
+        out string email)
+    {
+        var externalIdValue = principal.FindFirst("oid")?.Value
+            ?? principal.FindFirst(
+                "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+        var emailValue = new[]
+            {
+                ClaimTypes.Email,
+                "email",
+                "emails",
+                "preferred_username",
+                ClaimTypes.Upn,
+                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+            }
+            .Select(principal.FindFirst)
+            .Select(claim => claim?.Value)
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+
+        if (Guid.TryParse(externalIdValue, out externalId) &&
+            externalId != Guid.Empty &&
+            !string.IsNullOrWhiteSpace(emailValue) &&
+            emailValue.Trim().Length <= 320)
+        {
+            email = emailValue.Trim();
+            return true;
+        }
+
+        externalId = Guid.Empty;
+        email = string.Empty;
+        return false;
+    }
+
     private static AssoEventsId? ToAssoEventsId(Guid? value)
     {
         if (value is null || value == Guid.Empty)
@@ -429,6 +554,33 @@ public static class BookController
                     book.Genre,
                     book.QuantityAvailable,
                     new DateTimeOffset(book.FirstAvailableAt, TimeSpan.Zero)))
+            .ToArray());
+    }
+
+    private static AddedWatchlistItemResponse ToResponse(AddedWatchlistItemResult result)
+    {
+        return new AddedWatchlistItemResponse(
+            result.Id,
+            result.Scope.ToString(),
+            result.WorkId,
+            result.Isbn13,
+            result.AddedAt);
+    }
+
+    private static WatchlistResponse ToResponse(MyWatchlistResult result)
+    {
+        return new WatchlistResponse(
+            result.GeneratedAt,
+            result.AlertStatus.ToString(),
+            result.BounceCount,
+            result.Items.Select(item => new WatchlistItemResponse(
+                    item.Id,
+                    item.Scope.ToString(),
+                    item.WorkId,
+                    item.Isbn13,
+                    item.Book is null ? null : ToResponse(item.Book),
+                    item.AddedAt,
+                    item.LastAlertAt))
                 .ToArray());
     }
 

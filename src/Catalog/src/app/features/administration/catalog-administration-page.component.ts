@@ -1,5 +1,6 @@
-import {ChangeDetectionStrategy, Component, computed, OnInit, Signal, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, computed, OnDestroy, OnInit, Signal, signal} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
+import {Meta} from '@angular/platform-browser';
 import type {AccountInfo} from '@azure/msal-browser';
 import {firstValueFrom} from 'rxjs';
 
@@ -19,7 +20,7 @@ const MAX_MIN_AGE_MONTHS = 120_000;
   styleUrls: ['./catalog-administration-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogAdministrationPageComponent implements OnInit {
+export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly account: Signal<AccountInfo | null>;
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
@@ -36,6 +37,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   constructor(
     private readonly auth: CatalogAuthService,
     private readonly api: CatalogAdminApiService,
+    private readonly meta: Meta,
   ) {
     this.account = this.auth.account;
     this.initialized = this.auth.initialized;
@@ -45,7 +47,12 @@ export class CatalogAdministrationPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
     void this.initialize();
+  }
+
+  ngOnDestroy(): void {
+    this.meta.updateTag({name: 'robots', content: 'index, follow'});
   }
 
   async initialize(): Promise<void> {

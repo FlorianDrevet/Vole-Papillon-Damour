@@ -16,6 +16,7 @@ import {CatalogWorkPageComponent} from './features/work/catalog-work-page.compon
 import {BookCardComponent} from './shared/book-card/book-card.component';
 import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
 import {CatalogAuthService} from './core/catalog-auth.service';
+import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 
 registerLocaleData(localeFr);
 
@@ -29,6 +30,7 @@ registerLocaleData(localeFr);
     LegalPageComponent,
     BookCardComponent,
     CatalogAdministrationPageComponent,
+    CatalogAccountPageComponent,
   ],
   imports: [
     BrowserModule,
