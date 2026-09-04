@@ -17,13 +17,16 @@
       <p *ngIf="authState.status === 'unauthorized'" class="login-message login-message-error" role="alert">
         Ce compte est connecté, mais il ne possède pas le rôle {{ authState.requiredRole }} requis pour cette application.
       </p>
+      <p *ngIf="loginError()" class="login-message login-message-error" role="alert">
+        {{ loginError() }}
+      </p>
 
       <button
         type="button"
         class="login-primary"
-        [disabled]="authState.status === 'checking'"
+        [disabled]="authState.status === 'checking' || loginInProgress()"
         (click)="login()">
-        Se connecter
+        {{ loginInProgress() ? 'Connexion…' : 'Se connecter' }}
       </button>
       <button
         *ngIf="authState.status === 'unauthorized'"

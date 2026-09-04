@@ -30,9 +30,11 @@ outside this visual tranche. The new UI has not been deployed yet. On
 `feat/scanette-auth-camera`, the root auth gate shows a dedicated login surface until an
 Entra account with the `Tri` role is available; token-renewal failures return to that
 surface. The tri scan view starts the ZXing camera automatically, keeps manual/photo
-fallback, and no longer renders the former top toast stack. Local validation passes with
-60 ChromeHeadless tests, the bootstrap contract, the production build, and browser checks
-at 375 px, 768 px, and 1440 px without page overflow.
+fallback, and no longer renders the former top toast stack. Both Scan environments now use
+the tenant-scoped CIAM authority; the login request carries an explicit root return page and
+surfaces redirect failures inline. Local validation passes with 61 ChromeHeadless tests,
+the three-case bootstrap contract, the production build, and browser checks at 375 px,
+768 px, and 1440 px without page overflow.
 
 ## App Structure
 
@@ -67,8 +69,11 @@ Verified feature roots:
   role renders `ScannerComponent`; unauthenticated and unauthorized accounts render
   `ScanLoginComponent`. `src/index.html` includes `<app-redirect>` and `AppModule` awaits
   `MsalService.initialize()` before the auth cache is read, which keeps refresh and redirect
-  bootstrapping reliable. The mobile shell uses a centered fixed viewport with no document
-  scroll, and the tri view starts/stops the live camera around each lookup.
+  bootstrapping reliable. The environment authority includes the tenant path, and
+  `ScanAuthService.login()` uses `redirectStartPage` plus a deferred observable so synchronous
+  MSAL startup failures reach the login component. The mobile shell uses a centered fixed
+  viewport with no document scroll, and the tri view starts/stops the live camera around each
+  lookup.
 - Validate responsive behavior on desktop and mobile when UI changes.
 - `src/SharedUi/scripts/link-shared-ui.mjs` is the shared npm linker. Both apps invoke it
   from `prebuild` and `prestart` through `node ../SharedUi/scripts/link-shared-ui.mjs`; it
