@@ -53,6 +53,9 @@
   renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
   `MsalService.initialize()` and `src/index.html` declares `<app-redirect>` before MSAL
   roots are bootstrapped, preventing the refresh-time `NG05104`/uninitialized-cache race.
+  `msalInterceptorConfig` protects `${environment.apiUrl}/scan/*`; the wildcard is required
+  because MSAL Angular 5.3.1 uses strict path matching by default, and `/scan` alone does not
+  match nested endpoints such as `/scan/catalog/delta` or `/scan/sessions`.
   The role gate acquires the API-scoped access token silently and reads its `roles` claim;
   `AccountInfo.idTokenClaims` is not sufficient for app roles defined on the API resource
   in this two-registration SPA/API flow. The API remains the authoritative authorization
