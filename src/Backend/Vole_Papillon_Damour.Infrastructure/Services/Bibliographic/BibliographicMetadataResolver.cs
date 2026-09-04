@@ -23,7 +23,24 @@ public sealed class BibliographicMetadataResolver(
             cancellationToken);
         if (bnfResult.Metadata is not null)
         {
-            return bnfResult.Metadata;
+            if (!string.IsNullOrWhiteSpace(bnfResult.Metadata.WorkId))
+            {
+                return bnfResult.Metadata;
+            }
+
+            // BnF is the authoritative source for the French bibliographic
+            // notice, but it does not expose the work identifier used to group
+            // editions in the public catalogue. Enrich that single field from
+            // Open Library while keeping every BnF value authoritative.
+            var openLibraryWorkResult = await TryFindAsync(
+                openLibraryClient,
+                "OpenLibrary",
+                isbn13,
+                cancellationToken);
+            var workId = openLibraryWorkResult.Metadata?.WorkId;
+            return string.IsNullOrWhiteSpace(workId)
+                ? bnfResult.Metadata
+                : bnfResult.Metadata with { WorkId = workId };
         }
 
         var openLibraryResult = await TryFindAsync(
