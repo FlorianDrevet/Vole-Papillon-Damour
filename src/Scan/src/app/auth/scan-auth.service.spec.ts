@@ -16,7 +16,7 @@ describe('ScanAuthService', () => {
     const account = createAccount('benevole@example.org', 'Bénévole', ['Tri']);
     const accounts = [account];
     const instance = createMsalInstance(accounts);
-    const msal = createMsalService(instance);
+    const msal = createMsalService(instance, createAccessToken(['Tri']));
     const broadcast = createBroadcastService();
 
     const service = new ScanAuthService(msal, broadcast.service);
@@ -42,7 +42,7 @@ describe('ScanAuthService', () => {
     const loggedInAccount = createAccount('tri@example.org', 'Tri', ['Tri']);
     const accounts = [initialAccount];
     const instance = createMsalInstance(accounts);
-    const msal = createMsalService(instance);
+    const msal = createMsalService(instance, createAccessToken(['Tri']));
     const broadcast = createBroadcastService();
     const service = new ScanAuthService(msal, broadcast.service);
 
@@ -67,7 +67,7 @@ describe('ScanAuthService', () => {
     const account = createAccount('caisse@example.org', 'Caisse', ['Caisse']);
     const instance = createMsalInstance([account]);
     const service = new ScanAuthService(
-      createMsalService(instance),
+      createMsalService(instance, createAccessToken(['Caisse'])),
       createBroadcastService().service,
     );
 
@@ -77,11 +77,32 @@ describe('ScanAuthService', () => {
     expect(service.roles).toEqual(['Caisse']);
   });
 
+  it('uses API access-token roles instead of cached ID-token roles', () => {
+    const account = createAccount('administrator@example.org', 'Administrateur', ['Administration']);
+    const instance = createMsalInstance([account]);
+    const msal = createMsalService(instance, createAccessToken(['Administration', 'Tri']));
+
+    const service = new ScanAuthService(
+      msal,
+      createBroadcastService().service,
+    );
+
+    expect(msal.acquireTokenSilent).toHaveBeenCalledWith({
+      account,
+      scopes: loginRequest.scopes,
+    });
+    expect(service.isAuthorized).toBeTrue();
+    expect(service.roles).toEqual(['Administration', 'Tri']);
+  });
+
   it('returns to the login state when silent token renewal fails', () => {
     const account = createAccount('tri@example.org', 'Tri', ['Tri']);
     const instance = createMsalInstance([account]);
     const broadcast = createBroadcastService();
-    const service = new ScanAuthService(createMsalService(instance), broadcast.service);
+    const service = new ScanAuthService(
+      createMsalService(instance, createAccessToken(['Tri'])),
+      broadcast.service,
+    );
 
     broadcast.subject.next({eventType: EventType.ACQUIRE_TOKEN_FAILURE} as EventMessage);
 
@@ -101,17 +122,30 @@ describe('ScanAuthService', () => {
     };
   }
 
-  function createMsalService(instance: PublicClientApplication): jasmine.SpyObj<MsalService> & {
+  function createMsalService(
+    instance: PublicClientApplication,
+    accessToken: string,
+  ): jasmine.SpyObj<MsalService> & {
     instance: PublicClientApplication;
   } {
     const service = jasmine.createSpyObj<MsalService>(
       'MsalService',
-      ['loginRedirect', 'logoutRedirect'],
+      ['loginRedirect', 'logoutRedirect', 'acquireTokenSilent'],
       {instance},
     ) as jasmine.SpyObj<MsalService> & {instance: PublicClientApplication};
     service.loginRedirect.and.returnValue(of(undefined));
     service.logoutRedirect.and.returnValue(of(undefined));
+    service.acquireTokenSilent.and.returnValue(of({accessToken} as AuthenticationResult));
     return service;
+  }
+
+  function createAccessToken(roles: string[]): string {
+    const encode = (value: object) =>
+      btoa(JSON.stringify(value))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+    return `${encode({alg: 'none', typ: 'JWT'})}.${encode({roles})}.signature`;
   }
 
   function createMsalInstance(accounts: AccountInfo[]): PublicClientApplication & {
