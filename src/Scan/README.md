@@ -14,16 +14,26 @@ bénévole portant le rôle Entra `Tri` sont disponibles. Les gestes `Pending` s
 la fermeture et sont restaurés au prochain lancement ; aucune donnée d'outbox n'est
 supprimée par une purge du catalogue.
 
-La connexion Entra est optionnelle pour le mode local : le bouton de connexion active
-la synchronisation du catalogue delta et la vidange de la file. Le service worker
-Angular met en cache la coquille et les notices bibliographiques, sans mélanger le
-cache navigateur avec IndexedDB.
+L'accès à l'application est protégé par Entra : l'écran de connexion est affiché tant
+qu'aucun compte n'est ouvert, et seul un compte portant le rôle `Tri` peut atteindre le
+scan. Une perte de session ou un échec de renouvellement du jeton renvoie également vers
+cet écran. Les environnements déclarent l'autorité CIAM avec le chemin du tenant ; le
+service de connexion fournit aussi explicitement la page de retour de l'application et
+affiche l'échec de démarrage au lieu de l'ignorer. Le service worker Angular met en cache la coquille et les notices
+bibliographiques, sans mélanger le cache navigateur avec IndexedDB.
 
 La caméra utilise `@zxing/browser` avec le décodeur ZXing en mode de recherche renforcé
-(`TRY_HARDER`) pour les codes 1D. Elle accepte les EAN-13/EAN-8 des livres, ainsi que les
-QR codes dont le contenu est un ISBN, et fonctionne dans Safari iOS lorsqu'elle est
-ouverte sur une URL HTTPS. Une photo peut aussi être sélectionnée depuis l'iPhone si la
-caméra continue n'est pas disponible.
+(`TRY_HARDER`) pour les codes 1D. Sur l'écran de tri, elle démarre automatiquement à
+l'arrivée dans la vue de scan ; le bouton d'activation n'est donc plus nécessaire. Elle
+accepte les EAN-13/EAN-8 des livres, ainsi que les QR codes dont le contenu est un ISBN,
+et fonctionne dans Safari iOS lorsqu'elle est ouverte sur une URL HTTPS. Une photo peut
+aussi être sélectionnée depuis l'iPhone si la caméra continue n'est pas disponible.
+
+La réponse à la demande d'autorisation de caméra est conservée par le navigateur, pas
+par l'application. Pour éviter une nouvelle demande à chaque visite, utiliser toujours
+la même origine HTTPS (même protocole, hôte et port), hors navigation privée, et vérifier
+le réglage Caméra du site dans Safari ou le navigateur utilisé. Le cache MSAL en
+`localStorage` conserve la session Entra, mais ne peut pas mémoriser cette permission.
 
 Pour une photo, le décodeur essaie également des recadrages, une réduction de taille et
 un seuillage noir/blanc afin de mieux tolérer les prises de vue difficiles. Une photo d'un
@@ -40,8 +50,8 @@ npm start -- --port 4300
 ```
 
 Le port `4300` correspond à l'URI SPA locale déclarée par `infra/entra/Configure-EntraApps.ps1`.
-Sans connexion Entra, la saisie et le tri local restent utilisables ; la synchronisation
-protégée attend un compte doté de `Tri`.
+Un compte Entra doté du rôle `Tri` est nécessaire pour passer l'écran de connexion et
+ouvrir l'application.
 
 Le lancement de l'AppHost est recommandé pour démarrer l'API et la sonde ensemble :
 

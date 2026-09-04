@@ -6,6 +6,7 @@ export interface ScanEnvironment {
 }
 
 export interface ScanEntraEnvironment {
+  tenantId: string;
   clientId: string;
   authority: string;
   redirectUri: string;

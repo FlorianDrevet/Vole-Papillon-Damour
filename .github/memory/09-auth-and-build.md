@@ -48,6 +48,14 @@
   interface, role enum, `@auth0/angular-jwt`, and `ngx-cookie-service` were removed in the
   MSAL migration. Authorization remains enforced by the API's Entra role policies.
 - `Website` does not show the same auth guard pattern in its top-level routing and now runs through Angular SSR with client hydration.
+- `Scan` gates the entire PWA through `ScanAuthService.authState$`: only an Entra account
+  with the `Tri` role renders the scanner, while unauthenticated, unauthorized, and token-
+  renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
+  `MsalService.initialize()` and `src/index.html` declares `<app-redirect>` before MSAL
+  roots are bootstrapped, preventing the refresh-time `NG05104`/uninitialized-cache race.
+  Both Scan environment files declare the tenant ID and tenant-scoped CIAM authority;
+  `ScanAuthService.login()` sends an explicit root `redirectStartPage` through a deferred
+  observable so MSAL redirect-start failures are rendered inline instead of being swallowed.
 - `MauiCashApp` targets `net10.0-android` and uses MSAL.NET 4.88.0. `MsalAuthService` acquires
   `api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user` silently first and falls back to
   interactive sign-in; `AuthHandler` attaches the resulting bearer token to the Refit client.
@@ -67,7 +75,8 @@
   and the public Entra settings (`tenantId`, client ID, authority, redirect URIs, and API scope).
 - `Website` environment config includes `api_url`.
 - `Scan` development config derives its API host from the browser hostname on port `5257`
-  for LAN testing; the production environment points to the configured API deployment.
+  for LAN testing; both environments target the tenant-scoped CIAM authority and the
+  production environment points to the configured API deployment.
 - Scan production bundles use `@zxing/browser` directly instead of the optional native
   `BarcodeDetector` path. The camera scans the full video frame with `TRY_HARDER` and
   supports EAN-13/EAN-8 ISBN barcodes plus QR codes; the scanner also accepts an image

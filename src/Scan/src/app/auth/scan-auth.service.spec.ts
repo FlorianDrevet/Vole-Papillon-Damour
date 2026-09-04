@@ -9,11 +9,11 @@ import {
 import {of, Subject} from 'rxjs';
 
 import {loginRequest} from './msal-config';
-import {ScanAuthService} from './scan-auth.service';
+import {ScanAuthService, ScanAuthState} from './scan-auth.service';
 
 describe('ScanAuthService', () => {
   it('publishes the cached account and uses the scan API scope for login', () => {
-    const account = createAccount('benevole@example.org', 'Bénévole');
+    const account = createAccount('benevole@example.org', 'Bénévole', ['Tri']);
     const accounts = [account];
     const instance = createMsalInstance(accounts);
     const msal = createMsalService(instance);
@@ -22,19 +22,24 @@ describe('ScanAuthService', () => {
     const service = new ScanAuthService(msal, broadcast.service);
 
     expect(service.isAuthenticated).toBeTrue();
+    expect(service.isAuthorized).toBeTrue();
+    expect(service.authState.status).toBe('authorized');
     expect(service.displayName).toBe('Bénévole');
     expect(instance.setActiveAccount).toHaveBeenCalledOnceWith(account);
 
-    service.login();
+    service.login().subscribe();
     service.logout();
 
-    expect(msal.loginRedirect).toHaveBeenCalledOnceWith(loginRequest);
+    expect(msal.loginRedirect).toHaveBeenCalledOnceWith({
+      ...loginRequest,
+      redirectStartPage: `${window.location.origin}/`,
+    });
     expect(msal.logoutRedirect).toHaveBeenCalledOnceWith();
   });
 
   it('updates the account when MSAL broadcasts login and logout', () => {
-    const initialAccount = createAccount('initial@example.org', 'Initial');
-    const loggedInAccount = createAccount('tri@example.org', 'Tri');
+    const initialAccount = createAccount('initial@example.org', 'Initial', ['Tri']);
+    const loggedInAccount = createAccount('tri@example.org', 'Tri', ['Tri']);
     const accounts = [initialAccount];
     const instance = createMsalInstance(accounts);
     const msal = createMsalService(instance);
@@ -56,6 +61,33 @@ describe('ScanAuthService', () => {
 
     expect(service.isAuthenticated).toBeFalse();
     expect(service.displayName).toBeNull();
+  });
+
+  it('denies access to an authenticated account without the Tri role', () => {
+    const account = createAccount('caisse@example.org', 'Caisse', ['Caisse']);
+    const instance = createMsalInstance([account]);
+    const service = new ScanAuthService(
+      createMsalService(instance),
+      createBroadcastService().service,
+    );
+
+    expect(service.isAuthenticated).toBeTrue();
+    expect(service.isAuthorized).toBeFalse();
+    expect(service.authState.status).toBe('unauthorized');
+    expect(service.roles).toEqual(['Caisse']);
+  });
+
+  it('returns to the login state when silent token renewal fails', () => {
+    const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+    const instance = createMsalInstance([account]);
+    const broadcast = createBroadcastService();
+    const service = new ScanAuthService(createMsalService(instance), broadcast.service);
+
+    broadcast.subject.next({eventType: EventType.ACQUIRE_TOKEN_FAILURE} as EventMessage);
+
+    expect(service.isAuthenticated).toBeFalse();
+    expect(service.isAuthorized).toBeFalse();
+    expect(service.authState.status).toBe('unauthenticated');
   });
 
   function createBroadcastService(): {
@@ -99,7 +131,7 @@ describe('ScanAuthService', () => {
     };
   }
 
-  function createAccount(username: string, name: string): AccountInfo {
+  function createAccount(username: string, name: string, roles: string[] = []): AccountInfo {
     return {
       homeAccountId: `${username}-home`,
       environment: 'volepapillondamour.ciamlogin.com',
@@ -107,6 +139,7 @@ describe('ScanAuthService', () => {
       username,
       localAccountId: `${username}-local`,
       name,
+      idTokenClaims: {roles},
     };
   }
 });

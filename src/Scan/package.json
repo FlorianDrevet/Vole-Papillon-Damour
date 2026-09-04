@@ -11,6 +11,7 @@
     "start": "ng serve --configuration=development",
     "prebuild": "npm run link:shared-ui",
     "build": "ng build",
+    "test:bootstrap": "node --test scripts/bootstrap-contract.test.mjs",
     "pretest": "npm run link:shared-ui",
     "prewatch": "npm run link:shared-ui",
     "watch": "ng build --watch --configuration development",

@@ -48,6 +48,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 | `xunit-unit-testing` | xUnit, FluentAssertions, NSubstitute, AutoFixture conventions | `.github/skills/xunit-unit-testing/SKILL.md` |
 | `angular-patterns` | Angular application patterns | `.github/skills/angular-patterns/SKILL.md` |
 | `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |
+| `delivery-workflow` | Mandatory worktree, branch, validation and PR delivery workflow | `.github/skills/delivery-workflow/SKILL.md` |
 
 ## MCP Resources
 
@@ -60,6 +61,16 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 - Write tests before executable production changes.
 - Update thematic memory after non-trivial work.
 - Validate the touched application surface locally because no CI pipeline file is currently present.
+
+## Mandatory delivery workflow
+
+For every request that changes this repository (code, tests, documentation, configuration or generated project files), follow [`.github/skills/delivery-workflow/SKILL.md`](.github/skills/delivery-workflow/SKILL.md) without exception:
+
+- Start in a dedicated new worktree created from the freshly fetched `origin/main`, on a new task branch. Do not implement repository changes directly on `main`, in the primary checkout, or in another task's worktree.
+- Keep the task branch isolated, validate the touched surface, and synchronize it with the latest `origin/main` before pushing.
+- Push the branch and open a GitHub pull request targeting `main` with a complete, accurate description of the change, validation, limitations and manual checks still required.
+- A repository-changing task is not complete until the PR exists and its GitHub link has been returned to the user for validation. Never merge it unless the user explicitly asks for that separately.
+- If the required clean base, remote, credentials or GitHub access is unavailable, report the blocker instead of silently changing the workflow.
 
 ## Never Do
 

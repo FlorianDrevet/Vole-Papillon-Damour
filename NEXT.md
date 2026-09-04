@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P1-6` à `P1-8` — code, CI, infrastructure DEV et rollout API/Worker réalisés ; le nouveau visuel Scanette de `P1-5` est maintenant intégré localement, tandis que l'acceptation des heartbeats, alertes et du fournisseur bibliographique reste à vérifier avant les gates physiques ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
 | **Prochaine action** | Déployer séparément le correctif metadata et le nouveau visuel Scanette quand la livraison sera décidée ; observer les nouveaux heartbeats `Sweep`/`Enrich` et mesurer `QT-02` sur deux heures ; enfin réaliser `P1-9` et les gates physiques `P1-10/P1-11` avec les données et appareils réels |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
-| **Dernière mise à jour** | 2026-09-04 — correction metadata et intégration locale du visuel Scanette |
-| **Branche** | `feat/scanette-visual-pr` — PR du rafraîchissement visuel Scanette en cours |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-scan-login-fix` |
+| **Dernière mise à jour** | 2026-09-04 — correctif de redirection de connexion Scan |
+| **Branche** | `fix/scan-login-redirect` — worktree depuis `origin/main`, changements locaux non déployés |
 
 ---
 
@@ -140,8 +140,12 @@ du portail, donc aucun comptage fiable des nouveaux heartbeats n'est enregistré
 `P1-9` n'est pas chiffré sans dataset de développement et mesure SQL reproductible.
 `P1-10`/`P1-11` restent des gates physiques : appareil Android, téléphone de scan, mode
 avion, cadence et acceptation bénévole ne peuvent pas être déclarés depuis ce poste.
-La validation locale du nouveau visuel passe par 53 tests ChromeHeadless, les builds Scan
-production et développement, ainsi qu'un contrôle navigateur aux largeurs 390 px et 1280 px.
+La validation locale de cette reprise passe par 61 tests ChromeHeadless, le contrat de
+bootstrap MSAL (dont l'autorité tenant-scoped), le build Scan de production et un contrôle
+navigateur aux largeurs 375 px, 768 px et 1440 px. Le contrôle confirme que l'écran de
+connexion reste centré sans défilement et que le clic de connexion quitte le shell local
+pour le flux Entra ; le parcours caméra réel avec un compte Entra `Tri` et un iPhone reste
+à valider sur l'appareil et l'origine HTTPS de déploiement.
 
 Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité ; ce
 bloc est la source de vérité pour l'état courant.
