@@ -104,9 +104,11 @@ The API startup wires:
 - Public smoke checks return `200` for the catalog root, robots, sitemap, and Scan root. A
   Scan login from the canonical host returns to the application and enforces the `Tri` role;
   the current test account is intentionally denied because it lacks that role.
-- The full API/Worker runtime is not yet rolled from the post-merge checkout. The next
-  operational step is `Books runtime - deploy` with the explicit EF migration gate; migration
-  `20260902223842_MigrateUsersToEntraIdentity` intentionally removes legacy `Users` rows.
+- The full API/Worker runtime was rolled by `Books runtime - deploy` `33908408641` from
+  `main` commit `585a0ac`, with the explicit EF migration gate enabled. The migration
+  `20260902223842_MigrateUsersToEntraIdentity` intentionally removes legacy `Users` rows and
+  was applied after the previously verified backup; the temporary SQL firewall rule was
+  removed before the workflow completed.
 
 ## Books runtime update — 2026-09-04
 
@@ -114,6 +116,6 @@ The API startup wires:
 - `Books runtime - deploy` is a manual GitHub Actions workflow that builds API and Worker images from one commit, optionally opens the SQL firewall and applies all EF migrations, closes the firewall in cleanup, then updates both Container Apps. The workflow deliberately deploys migrations before the application rollout.
 - The API now runs startup migrations only for `Development`. Production and deployed development use the explicit migration step, preventing concurrent API replicas from migrating the database.
 - `main.bicep` declares the `book-covers` blob container, `Cors:AllowedOrigins`, Application Insights daily caps, and Azure Monitor alerts for missing Worker heartbeat, late announcements, and a late alert queue. The contact group must still be confirmed by Azure after infrastructure deployment.
-- The dev Worker is private, running at `minReplicas: 0`/`maxReplicas: 1`; the old account-deletion timer was observed successfully in the correct subscription tenant, while the new `Sweep`/`Enrich` heartbeat must be verified after the next runtime rollout.
+- The dev Worker is private, running at `minReplicas: 0`/`maxReplicas: 1`; the old account-deletion timer was observed successfully in the correct subscription tenant. The new `Sweep`/`Enrich` heartbeat must now be verified after a few timer cycles from runtime run `33908408641`.
 - The DEV infra what-if `33822673986` reported 5 creates, 24 modifies, 17 no-change, 9 unsupported and 10 ignored changes, with no deletes; the real infra run `33822751659` succeeded. The Azure Monitor contact group still needs a delivery test.
-- The independent API smoke after runtime rollout returned `200 Healthy` for `/health`, while the first `/books/9783140464079/metadata` call returned `500` because both bibliographic providers were temporarily unavailable. The API error middleware now maps that `HttpRequestException` to `503 Service Unavailable`; the resolver still throws so the Worker retries instead of recording a negative-cache miss. The local correction is not yet deployed; a later DEV retest returned `200` when Open Library recovered.
+- The independent API smoke after runtime rollout returned `200 Healthy` for `/health`, `200` for catalog search and the catalog sitemap, and `200` for the public catalog/Scan roots. The first historical `/books/9783140464079/metadata` call returned `500` because both bibliographic providers were temporarily unavailable; the API error middleware correction is included in the shared `585a0ac` runtime tag and maps that `HttpRequestException` to `503 Service Unavailable`, while the resolver still throws so the Worker retries instead of recording a negative-cache miss.

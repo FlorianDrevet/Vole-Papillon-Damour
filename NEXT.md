@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2` — le catalogue public, ses domaines et la Scanette sont déployés ; le socle Worker/API est prêt dans `main`, mais la migration SQL et le rollout runtime explicite restent à faire |
-| **Prochaine action** | Après confirmation du propriétaire de la base, lancer `Books runtime - deploy` avec `run_migrations=true`, puis relever le heartbeat `Sweep`/`Enrich` et poursuivre `P1-9` à `P1-11`. Le référentiel externe, le compte et l'envoi d'alertes restent P3. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-runtime-rollout-state` |
-| **Dernière mise à jour** | 2026-09-04 — déploiements post-merge du catalogue, de la Scanette et de l'infrastructure validés ; URI Entra publiques vérifiées |
-| **Branche** | `chore/record-runtime-rollout-state` — PR de suivi [#46](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/46) |
+| **Lot en cours** | `P1/P2` — le catalogue public, ses domaines et la Scanette sont déployés ; API et Worker ont été roulés avec le schéma SQL à jour ; il reste à relever le heartbeat puis à exécuter `P1-9` à `P1-11` |
+| **Prochaine action** | Relever quelques cycles des signaux `Sweep`/`Enrich` du Worker privé, puis lancer le benchmark SQL `P1-9` et préparer les validations physiques `P1-10`/`P1-11`. Le référentiel externe, le compte et l'envoi d'alertes restent P3. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-books-runtime-deploy-state` |
+| **Dernière mise à jour** | 2026-09-04 — runtime Books déployé avec migrations EF, firewall SQL refermé et smoke tests publics validés |
+| **Branche** | `chore/record-books-runtime-deploy-state` — PR de suivi à ouvrir |
 
 ---
 
@@ -127,20 +127,21 @@ conteneur (`200` sur l'accueil). Les avertissements de dépendances NuGet et les
 dépréciations npm restent ceux des outils existants. Les tests manuels `P1-9`, `P1-10` et
 `P1-11` restent volontairement reportés ; ils ne sont pas déclarés validés par ce travail.
 
-La PR du nouveau visuel Scanette est désormais mergée et déployée dans `main`. Le runtime
-API/Worker complet n'a pas encore été reconstruit depuis le commit `main` post-merge : le
-workflow `Books runtime - deploy` devra appliquer explicitement les migrations EF avant de
-rouler les deux images sur leur tag partagé. La migration `20260902223842_MigrateUsersToEntraIdentity`
-supprime volontairement les anciens comptes `Users` après le backup vérifié ; cette action
-reste donc en attente d'une confirmation avant exécution. La vérification ACS
+La PR du nouveau visuel Scanette est désormais mergée et déployée dans `main`. Le workflow
+`Books runtime - deploy` `33908408641`, lancé sur le commit `585a0ac` avec
+`run_migrations=true`, a construit API et Worker avec le tag partagé `585a0ac`, appliqué les
+migrations EF (dont `20260902223842_MigrateUsersToEntraIdentity`), refermé la règle firewall
+SQL temporaire et roulé les deux Container Apps. Les smoke tests API (`/health`, recherche et
+sitemap catalogue) et publics répondent `200`. La vérification ACS
 `mail.volepapillondamour.fr` reste externe et l'envoi d'e-mails demeure désactivé.
 La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
 « Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
 pas la considérer comme validée tant qu'Azure n'affiche pas l'état vérifié. Le domaine
 reste donc un délai externe, tout comme l'envoi réel et la réputation.
 
-Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité ; ce
-bloc est la source de vérité pour l'état courant.
+Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité des
+états précédents ; l'état courant est décrit dans les paragraphes ci-dessus et les tableaux
+opérationnels ci-dessous.
 
 Le prérequis de l'étape 4 est vérifié par le run GitHub Actions
 `Database - verify point-in-time restore #33690143650` : une copie isolée a été restaurée
@@ -156,7 +157,8 @@ La migration 0 est préparée dans `20260902223842_MigrateUsersToEntraIdentity` 
 `Password`, `Salt` et `Role`, ajoute `ExternalId`, `CreatedAt`, `LastSeenAt` et
 `AnonymizedAt`, rend le nom nullable et crée l'index unique filtré attendu. Elle est
 explicitement non réversible car les identifiants legacy sont supprimés. La migration n'a
-pas encore été appliquée à la base.
+été appliquée à la base de développement par `Books runtime - deploy` `33908408641` après
+le backup vérifié.
 
 `L0-7` est terminé. `infra/parameters/main.dev.bicepparam` cible désormais Azure SQL `S1`
 (`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
@@ -199,7 +201,8 @@ attribution vérifiée par `Get-VpdUserRoles.ps1`. Le rapport est conservé hors
 Actions `Infra - deploy #20` a injecté `AzureAd__ClientId` et `AzureAd__Audience`, puis
 `API - deploy #7` a construit et déployé l’image `vpd-api:cfd43cb` sans migration de base ;
 `GET /health` répond 200. Les déploiements Azure de cette branche passent par GitHub OIDC.
-La migration de base 0 est fusionnée dans `main` mais n'est pas encore appliquée. Le
+La migration de base 0 est fusionnée dans `main` et a été appliquée à la base de développement
+par `Books runtime - deploy` `33908408641`. Le
 BackOffice est maintenant migré sur `main` après le merge de la PR #20 : les anciens
 formulaires username/mot de passe, le cookie JWT, `@auth0/angular-jwt` et
 `ngx-cookie-service` sont retirés ; les identifiants publics MSAL sont configurés dans les
@@ -246,8 +249,8 @@ d'effacement durable dans `OutboxMessages`, appelle Microsoft Graph avec l'appli
 traité comme « déjà supprimé » ; une panne avant la finalisation laisse la demande rejouable.
 Le worker Functions partage `Application` et `Infrastructure`, réclame au plus 50 messages
 avec un bail de cinq minutes et ouvre une portée DI par déclenchement. La migration
-`20260903002636_AddAccountDeletionOutbox` est générée mais n'est pas encore appliquée à la
-base. Le worker est intégré à l'AppHost pour le développement local et dispose désormais
+`20260903002636_AddAccountDeletionOutbox` a été appliquée avec les autres migrations par
+`Books runtime - deploy` `33908408641`. Le worker est intégré à l'AppHost pour le développement local et dispose désormais
 d'un module Bicep ACA natif (`kind=functionapp`), d'une identité managée dédiée, de secrets
 Key Vault et d'un pipeline `Worker - deploy`. Il reste fixé à une réplique minimum et
 maximum jusqu'à la mesure du timer.
@@ -336,8 +339,8 @@ d'envoi reste volontairement anticipée, conformément à `L0-9`.
 >
 > | Sujet | Lancé le | Relevable à partir du |
 > |---|---|---|
-> | Heartbeat du nouveau `Sweep` (`P1-6`/`P1-7`) | après `Books runtime - deploy` | après quelques cycles du timer, puis campagne de deux heures si nécessaire |
-> | Migration EF et rollout API/Worker | après confirmation explicite | avant les mesures `P1-9` et la répétition `P1-11` |
+> | Heartbeat du nouveau `Sweep`/`Enrich` (`P1-6`/`P1-7`) | `2026-09-04`, après le run `33908408641` | après quelques cycles du timer, puis campagne de deux heures si nécessaire |
+> | Migration EF et rollout API/Worker | `2026-09-04`, run `33908408641` réussi | terminé ; smoke API/public validé, heartbeat encore à relever |
 > | `QT-08` — session de 48 h puis ouverture en mode avion (page jetable, `L0-12`) | | |
 > | Propagation DNS des entrées ACS | `2026-09-02` | relevée le `2026-09-04`, valeurs alignées |
 > | Vérification du domaine d'envoi ACS | `2026-09-02` | le portail affiche encore « Verification is underway » |
@@ -362,7 +365,8 @@ dans Azure sans être déductible du dépôt.
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur réel `DoNotReply@mail.volepapillondamour.fr` ; le portail affiche encore « Verification is underway » | `2026-09-04` |
-| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:dc4ec74` déployée par `API - deploy` run `33903473628`; routes publiques `/catalog/*` et `/catalog/sitemap.xml` répondent `200` après activation de la révision | `2026-09-04` |
+| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:585a0ac` déployée avec le Worker par `Books runtime - deploy` run `33908408641`; `/health`, `/catalog/search` et `/catalog/sitemap.xml` répondent `200` | `2026-09-04` |
+| Runtime Books | API `vpd-api:585a0ac` et Worker `vpd-worker:585a0ac` construits depuis le même commit ; migrations EF appliquées, firewall SQL temporaire supprimé, rollout et rapport d'état réussis | `2026-09-04` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
 
@@ -445,6 +449,8 @@ reportées.
 |---|---|---|
 | Smoke post-merge — domaines publics | Catalogue `/`, `/robots.txt`, `/sitemap.xml` et Scan `/` répondent `200`; certificats ACA managés `Secured`/SNI confirmés | `2026-09-04` |
 | Smoke post-merge — connexion Scan | Le redirect depuis `https://scan.volepapillondamour.fr` revient sur l'application ; le compte courant est refusé uniquement pour absence du rôle `Tri` | `2026-09-04` |
+| `Books runtime - deploy` `33908408641` | Build/push API + Worker sur le tag partagé `585a0ac`, migrations EF réussies, fermeture du firewall SQL et rollout des deux Container Apps réussis | `2026-09-04` |
+| Smoke runtime API après `Books runtime - deploy` | `/health`, `/catalog/search?q=test` et `/catalog/sitemap.xml` répondent `200`; les domaines publics catalogue et Scan répondent également `200` | `2026-09-04` |
 | Smoke test Aspire — `GET /books/9783140464079/metadata` via `http://localhost:5257` | `200 OK` après redirection HTTPS ; notice « Le petit prince » renvoyée par Open Library | `2026-09-03` |
 | Démarrage Functions worker via Aspire | `AccountDeletionSweepFunction` découverte ; host lock acquis ; aucune erreur DI ni erreur de listener | `2026-09-03` |
 | `QT-02` — observation du timer historique dans `vpd-law-dev` | 28 exécutions, 28 succès, 28 complétions sur la fenêtre UTC observée, sans trou ; le nouveau `Sweep` reste à relever après déploiement | `2026-09-04` |
@@ -464,6 +470,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-04 | Windows | **Runtime Books post-merge.** Le workflow `Books runtime - deploy` `33908408641` a été lancé depuis `main` (`585a0ac`) avec `run_migrations=true` : API et Worker partagent le tag `585a0ac`, toutes les migrations EF en attente ont été appliquées à Azure SQL, la règle firewall temporaire a été supprimée et le rollout a réussi. `/health`, les routes catalogue API et les domaines publics répondent `200`. Le prochain relevé est le heartbeat `Sweep`/`Enrich`; `P1-9` à `P1-11` restent à exécuter. |
 | 2026-09-04 | Windows | **Déploiement post-merge et authentification.** Après le merge de la PR #45 (`9f8ec55`), les workflows `Catalog - deploy` `33906639354`, `Scan - deploy` `33906624368` et `Infra - deploy` `33906654599` sont réussis. Les deux domaines répondent en HTTPS ; les URI publiques des inscriptions `vpd-catalog-dev` et `vpd-scan-dev` sont visibles dans Entra. Le redirect Scan atteint l'écran applicatif et applique correctement le contrôle du rôle `Tri`. Le runtime API/Worker et les migrations SQL restent à lancer explicitement. |
 | 2026-09-04 | Windows | **Correctif Website — horaires des trois prochains événements.** Depuis `origin/main`, le worktree `Vole-Papillon-Damour-fix-home-event-hours` corrige la carte d'accueil pour reprendre la même règle que la fiche : `hourOpenDoors` pour les bourses aux livres, `dateStart` pour le loto et les autres événements. Le test de non-régression couvre les trois types ; 67 tests ChromeHeadless, le build Website et `graphify update .` passent. Contrôles navigateur lecture seule à 390 px et 1280 px ; aucun déploiement ni changement API. PR #47 ouverte depuis la branche `fix/home-event-hours`. |
 | 2026-09-04 | Windows | **Catalogue — activation API.** Le run `API - deploy` `33903473628` a construit et déployé `vpd-api:dc4ec74` sans migration SQL. Après activation de la révision, `/catalog/search` et `/catalog/sitemap.xml` répondent `200`; les smoke tests HTTPS du catalogue (`/`, `/robots.txt`, `/sitemap.xml`) et de la Scanette (`/`) répondent `200`. |
