@@ -16,12 +16,15 @@ The public catalog is intentionally separate from the association Website. It us
 the next books fair, and the dynamic sitemap. Its public routes are `/`, `/recherche`,
 `/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, and the two legal pages. The UI keeps
 available quantities separate from future announcements, leaves exhausted books visible,
-and does not include audience trackers. The external bibliographic result block, account,
-watchlist, and alerts remain deferred to later slices.
+and does not include audience trackers. The `/compte` member route uses a dynamic,
+SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
+calls, and exposes the durable account-deletion request. The `/administration` route keeps
+the dead-stock read behind the administration role. The external bibliographic result block
+and live ACS email delivery remain deferred.
 
 ## Planned Books Scan client decisions
 
-As of 2026-09-04, the P1-5 Scan foundation is implemented in `src/Scan` and deployed to
+As of 2026-09-05, the P1-5 Scan foundation is implemented in `src/Scan` and deployed to
 the DEV ACA: local verdicts, IndexedDB session/catalog/outbox persistence, MSAL `Tri`
 authentication, and sequential gesture replay are present. P1-2 selected the existing
 Jasmine/Karma/ChromeHeadless toolchain: browser integration tests use real IndexedDB and
@@ -30,20 +33,21 @@ responses. The local outbox states are `Pending`, `Kept`, `Rejected`, and
 `CancelledLocal`; only final decisions reach the API, while a transmitted cancellation
 becomes a new inverse gesture.
 
-The Scanette redesign shown in `docs/bourse-aux-livres/maquettes/scanette/` is now
-implemented locally in the same PWA: home and session-mode selection, distinct verdict
-surfaces, session summary, cash register, consultation, manual ISBN keypad, and offline
-variants. Consultation uses the local catalog without creating an outbox gesture; the
-cash screen currently keeps a local visual list only, because durable sale persistence is
-outside this visual tranche. The new UI has not been deployed yet. On
-`feat/scanette-auth-camera`, the root auth gate shows a dedicated login surface until an
-Entra account with the `Tri` role is available; token-renewal failures return to that
-surface. The tri scan view starts the ZXing camera automatically, keeps manual/photo
-fallback, and no longer renders the former top toast stack. Both Scan environments now use
-the tenant-scoped CIAM authority; the login request carries an explicit root return page and
-surfaces redirect failures inline. Local validation passes with 61 ChromeHeadless tests,
-the three-case bootstrap contract, the production build, and browser checks at 375 px,
-768 px, and 1440 px without page overflow.
+The Scanette redesign shown in `docs/bourse-aux-livres/maquettes/scanette/` is implemented
+and deployed in the same PWA: home and session-mode selection, distinct verdict surfaces,
+session summary, cash register, consultation, manual ISBN keypad, and offline variants.
+Consultation uses the local catalog without creating an outbox gesture; the cash screen
+currently keeps a local visual list only, because durable sale persistence is outside this
+visual tranche. The root auth gate shows a dedicated login surface until an Entra account
+with the `Tri` role is available; token-renewal failures return to that surface. The tri
+scan view starts the ZXing camera automatically, keeps manual/photo fallback, and no longer
+renders the former top toast stack. Both Scan environments use the tenant-scoped CIAM
+authority; the login request carries an explicit root return page and surfaces redirect
+failures inline. The MSAL interceptor protects `/scan/*` with the API bearer token; the
+wildcard is required for nested delta/session endpoints. CI validation covers 79
+ChromeHeadless tests, four bootstrap tests, the production build, and deployment workflow
+`33924618301`; the public HTTP smoke is green, while the interactive Tri retest still
+requires a signed-in browser/device.
 
 The 2026-09-04 Scan follow-up keeps the live camera open on the cash and consultation
 surfaces: it starts on entry and restarts after each decoded book, while the cash list is
@@ -53,8 +57,9 @@ five seconds in one session (`RG-04`), and the verdict card is intentionally sma
 the catalog facts remain visible. Ending a session synchronizes and closes its remote
 session before clearing the active IndexedDB snapshot; a failed close keeps the local
 gestures rather than silently losing them. Validation for this follow-up passes with 74
-ChromeHeadless tests, the bootstrap contract, and the production build; no deployment has
-been made.
+ChromeHeadless tests, the bootstrap contract, and the production build; it is included in
+the deployed Scan image. The subsequent nested-endpoint authentication regression is
+covered by the 79-test CI run described above.
 
 ## App Structure
 
@@ -194,14 +199,16 @@ The MAUI cash surface intentionally continues to use the full `/product` project
 - As of 2026-09-04, the Website home "Prochains rendez-vous" cards use the same event-time
   rule as the detail page: Books events use `hourOpenDoors`, while Bingo and Other events
   use `dateStart`; a regression test covers all three event types.
-- As of 2026-09-04, Scan passes 53 ChromeHeadless tests and its production build; the
-  production bundle retains the expected initial-size warning. Its redesigned Scanette
-  surface was also checked in a local browser at 390 px and 1280 px. CI is configured to
-  build the backend, MAUI, and frontend surfaces but does not run frontend unit tests.
-- As of 2026-09-04, Catalog passes 5 ChromeHeadless tests, the production Angular build,
-  the SSR container build, and an SSR smoke check on the home route. Its image is built
-  from the `src/` context so the `SharedUi` linker remains available; no Azure deployment
-  or custom-domain binding has been performed.
+- As of 2026-09-05, Scan's merged auth follow-up passes 79 ChromeHeadless tests, four
+  bootstrap tests, and the production build; the production bundle retains the expected
+  initial-size warning. The redesigned Scanette and the nested-endpoint bearer fix are
+  deployed by `Scan - deploy` `33924618301`. CI still builds the backend, MAUI, and frontend
+  surfaces but does not run frontend unit tests; the PR ran them explicitly.
+- As of 2026-09-05, Catalog passes 29 ChromeHeadless tests, the production Angular build,
+  the SSR container build, and public smoke checks. The image is built from the `src/`
+  context so the `SharedUi` linker remains available. The public domain is
+  `https://livres.volepapillondamour.fr`; `/compte` and `/administration` are client-only
+  protected routes with an HTTP `X-Robots-Tag: noindex, nofollow` header.
 
 ## 2026-09-03 — Website editorial update
 

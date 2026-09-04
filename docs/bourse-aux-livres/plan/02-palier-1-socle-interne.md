@@ -214,6 +214,16 @@ retenir.
 🧪 Déployer, puis vérifier que la révision précédente est bien remplacée et que l'ancienne
 ne reçoit plus de trafic.
 
+## État d'exécution — 2026-09-05
+
+Le code des étapes `P1-6` à `P1-8` est implémenté et déployé : le Worker expose `Sweep` et
+`Enrich`, l'instrumentation et les alertes App Insights sont déclarées, et les pipelines
+construisent API et Worker depuis un tag partagé. La reprise de l'enrichissement ajoute un
+cooldown d'une heure sur les pannes transitoires et un ordre équitable des candidats ; elle
+est couverte par les tests backend et déployée par `Books runtime - deploy` `33926622823`.
+Les étapes `P1-9`, `P1-10` et `P1-11` restent des campagnes manuelles, non remplaçables par un
+smoke HTTP.
+
 ## `P1-9` — Mesurer `QT-09`
 
 🧪 Sur un catalogue de quelques milliers de fiches, relever trois temps : la recherche

@@ -10,6 +10,16 @@ palier 1 vont confirmer ou casser. On les détaille quand le palier 1 tient.
 
 Ce qui suit sert à **ne pas oublier ce qui est déjà su**, et à repérer ce qui a un délai.
 
+## État d'exécution — 2026-09-05
+
+Le palier 2 est livré sur `main` et en production DEV : catalogue SSR, domaines publics,
+recherche, pages d'œuvre, sitemap, robots et absence de traceurs. Le palier 3 a été engagé
+au-delà de la présente esquisse : connexion Entra du catalogue, watchlists édition/œuvre,
+suppression de compte, file d'alertes, rebonds et lecture d'administration du stock mort sont
+implémentés et testés. La messagerie ACS reste volontairement inactive tant que le domaine
+d'envoi n'est pas vérifié ; le cycle d'alerte complet et les validations manuelles restent les
+prochaines preuves à produire.
+
 ---
 
 ## Palier 2 — La vitrine
@@ -39,6 +49,10 @@ L'ordre réel est donc : créer la Container App, puis poser `CNAME` + `TXT asui
 le domaine, puis attendre le certificat. À faire **dès que l'application existe**, même
 vide, pour que la propagation et le certificat ne soient pas sur le chemin critique de la
 mise en ligne. La propriété Search Console, elle, est posée depuis `L0-8`.
+
+Cette séquence a été exécutée pour `livres.volepapillondamour.fr` : le CNAME OVH, le TXT
+`asuid`, la liaison ACA et le certificat managé SNI sont vérifiés ; elle ne constitue donc
+plus un blocage du palier 2.
 
 **Les genres viennent des sources, et rien n'indique où est le livre.** `Q-07` est
 tranchée : le filtre par genre s'appuie sur ce que renvoient les sources bibliographiques,
