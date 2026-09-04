@@ -407,6 +407,7 @@ public sealed class BackgroundBookCommandHandlerTests
         persisted.MetadataStatus.Should().Be(BookMetadataStatus.Pending);
         persisted.Title.Should().BeNull();
         persisted.ResolveAttempts.Should().Be(0);
+        persisted.LastAttemptAt.Should().Be(WorkerNow);
     }
 
     [Fact]
@@ -430,6 +431,63 @@ public sealed class BackgroundBookCommandHandlerTests
         var persisted = await fixture.Context.Books.SingleAsync();
         persisted.MetadataStatus.Should().Be(BookMetadataStatus.Pending);
         persisted.ResolveAttempts.Should().Be(0);
+        persisted.LastAttemptAt.Should().Be(WorkerNow);
+
+        var replay = await handler.Handle(
+            new EnrichPendingBooksCommand(),
+            CancellationToken.None);
+
+        replay.ProcessedCount.Should().Be(0);
+        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task EnrichPending_WhenFirstCandidateFails_DoesNotStarveTheNextPendingBook()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var failedBook = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var nextBook = await fixture.AddBookAsync("9783140464079", quantityAvailable: 0);
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(failedBook.Isbn13, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<BookMetadataResult?>(
+                new HttpRequestException("providers unavailable")));
+        resolver.ResolveAsync(nextBook.Isbn13, Arg.Any<CancellationToken>()).Returns(
+            new BookMetadataResult(
+                nextBook.Isbn13.Value,
+                "Le Petit Prince",
+                "Antoine de Saint-Exupéry",
+                "Gallimard",
+                1946,
+                null,
+                "OpenLibrary",
+                "OL42W",
+                new DateTimeOffset(2026, 9, 3, 20, 0, 0, TimeSpan.Zero)));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var first = await handler.Handle(
+            new EnrichPendingBooksCommand(BatchSize: 1),
+            CancellationToken.None);
+        var second = await handler.Handle(
+            new EnrichPendingBooksCommand(BatchSize: 1),
+            CancellationToken.None);
+
+        first.FailedCount.Should().Be(1);
+        second.ResolvedCount.Should().Be(1);
+        var persistedFailedBook = await fixture.Context.Books
+            .SingleAsync(book => book.Id == failedBook.Id);
+        persistedFailedBook.MetadataStatus.Should().Be(BookMetadataStatus.Pending);
+        persistedFailedBook.LastAttemptAt.Should().Be(WorkerNow);
+        var persistedNextBook = await fixture.Context.Books
+            .SingleAsync(book => book.Id == nextBook.Id);
+        persistedNextBook.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
+        await resolver.Received(1).ResolveAsync(
+            failedBook.Isbn13,
+            Arg.Any<CancellationToken>());
+        await resolver.Received(1).ResolveAsync(
+            nextBook.Isbn13,
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

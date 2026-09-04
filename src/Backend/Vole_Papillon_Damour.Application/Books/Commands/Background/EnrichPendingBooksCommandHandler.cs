@@ -14,6 +14,7 @@ public sealed class EnrichPendingBooksCommandHandler(
     IBookCoverStorage? coverStorage = null)
     : IRequestHandler<EnrichPendingBooksCommand, EnrichPendingBooksResult>
 {
+    private static readonly TimeSpan ProviderFailureRetryAfter = TimeSpan.FromHours(1);
     private static readonly TimeSpan NotFoundRetryAfterFirstAttempt = TimeSpan.FromDays(7);
     private static readonly TimeSpan NotFoundRetryAfterSecondAttempt = TimeSpan.FromDays(30);
 
@@ -35,7 +36,9 @@ public sealed class EnrichPendingBooksCommandHandler(
         var candidates = await dbContext.Books
             .AsNoTracking()
             .Where(book =>
-                book.MetadataStatus == BookMetadataStatus.Pending ||
+                (book.MetadataStatus == BookMetadataStatus.Pending &&
+                 (book.LastAttemptAt == null ||
+                  book.LastAttemptAt <= now.Subtract(ProviderFailureRetryAfter))) ||
                 (book.MetadataStatus == BookMetadataStatus.NotFound &&
                  ((book.ResolveAttempts == 1 &&
                    book.LastAttemptAt <= now.Subtract(NotFoundRetryAfterFirstAttempt)) ||
@@ -64,6 +67,7 @@ public sealed class EnrichPendingBooksCommandHandler(
             catch
             {
                 failedCount++;
+                await RecordProviderFailureAsync(isbn13, now, cancellationToken);
                 continue;
             }
 
@@ -86,6 +90,8 @@ public sealed class EnrichPendingBooksCommandHandler(
                     !string.Equals(metadata.Isbn13, isbn13.Value, StringComparison.Ordinal))
                 {
                     failedCount++;
+                    book.RecordMetadataProviderFailure(now);
+                    await dbContext.SaveChangesAsync(cancellationToken);
                     continue;
                 }
 
@@ -107,6 +113,7 @@ public sealed class EnrichPendingBooksCommandHandler(
                     catch
                     {
                         failedCount++;
+                        await RecordProviderFailureAsync(isbn13, now, cancellationToken);
                         continue;
                     }
 
@@ -125,14 +132,27 @@ public sealed class EnrichPendingBooksCommandHandler(
                 if (patch.Fields.Count == 0)
                 {
                     failedCount++;
+                    book.RecordMetadataProviderFailure(now);
+                    await dbContext.SaveChangesAsync(cancellationToken);
                     continue;
                 }
 
-                book.ApplyAutomaticMetadata(
-                    patch,
-                    source,
-                    metadata.RetrievedAt.UtcDateTime,
-                    rawPayload: null);
+                try
+                {
+                    book.ApplyAutomaticMetadata(
+                        patch,
+                        source,
+                        metadata.RetrievedAt.UtcDateTime,
+                        rawPayload: null);
+                }
+                catch (ArgumentException)
+                {
+                    failedCount++;
+                    book.RecordMetadataProviderFailure(now);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    continue;
+                }
+
                 resolvedCount++;
             }
 
@@ -144,6 +164,25 @@ public sealed class EnrichPendingBooksCommandHandler(
             resolvedCount,
             notFoundCount,
             failedCount);
+    }
+
+    private async Task RecordProviderFailureAsync(
+        Isbn13 isbn13,
+        DateTime attemptedAt,
+        CancellationToken cancellationToken)
+    {
+        var book = await dbContext.Books
+            .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
+        if (book is null ||
+            book.MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Resolved)
+        {
+            return;
+        }
+
+        if (book.RecordMetadataProviderFailure(attemptedAt))
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private static BookMetadataPatch CreatePatch(BookMetadataResult metadata)

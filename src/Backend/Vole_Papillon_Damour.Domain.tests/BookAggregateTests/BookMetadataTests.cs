@@ -214,6 +214,22 @@ public sealed class BookMetadataTests
         book.ResolveAttempts.Should().Be(1);
     }
 
+    [Fact]
+    public void RecordMetadataProviderFailure_RecordsCooldownWithoutConsumingNotFoundRetryBudget()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        book.RecordMetadataNotFound(FirstSeenAt.AddDays(-7));
+        var failedAt = FirstSeenAt;
+
+        var changed = book.RecordMetadataProviderFailure(failedAt);
+
+        changed.Should().BeTrue();
+        book.MetadataStatus.Should().Be(BookMetadataStatus.NotFound);
+        book.ResolveAttempts.Should().Be(1);
+        book.LastAttemptAt.Should().Be(failedAt);
+        book.UpdatedAt.Should().Be(failedAt);
+    }
+
     private static Isbn13 CreateIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
