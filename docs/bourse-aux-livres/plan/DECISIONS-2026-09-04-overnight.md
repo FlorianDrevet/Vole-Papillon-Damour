@@ -19,6 +19,13 @@ aucun secret, jeton ni mot de passe.
   horodatées, mises en cooldown une heure et ordonnées pour que les livres jamais tentés ne
   soient pas bloqués par une ligne fournisseur défaillante. `Books runtime - deploy`
   `33926622823` est réussi sans migration.
+- La PR #61 est fusionnée (`dcc0c23`) : le lookup des suppressions en attente reste
+  provider-neutral dans SQLite/Aspire, et la finalisation retire les données strictement
+  membres (watchlist, items, historique d'alertes, rebonds et outbox `AlertEmail`) avant la
+  suppression ou l'anonymisation locale. Les mouvements et sessions historiques sont
+  conservés selon la décision de rétention. Les deux contrôles CI `33929259723` et
+  `33929261525` sont verts ; `Books runtime - deploy` `33929828651` a roulé API et Worker
+  avec le tag partagé `dcc0c23`, sans migration.
 - Le smoke externe du 2026-09-05 confirme 200 pour le catalogue, la Scanette et l'API, 401
   pour la watchlist sans jeton, les en-têtes `noindex` du compte et de l'administration, et
   une metadata ISBN BnF avec `WorkId=OL10263W`.
@@ -50,8 +57,28 @@ qu'une première panne ne retarde pas le livre suivant.
   lorsqu'aucune migration n'est présente.
 - API et Worker sont toujours construits depuis le même commit et partagent le même tag ;
   cette contrainte est conservée pour éviter un décalage de modèle entre les deux hôtes.
+- Le déploiement final `33929828651` utilise `vpd-api:dcc0c23` et `vpd-worker:dcc0c23`,
+  avec `run_migrations=false` parce que les migrations étaient déjà appliquées par
+  `33922677695`. Le job confirme le rollout des deux Container Apps.
 - Aucun changement DNS n'a été réécrit après vérification : CNAME, TXT `asuid` et certificats
   managés SNI des domaines `livres` et `scan` sont déjà corrects.
+
+### Revue — suppression et anonymisation de compte
+
+La revue de la PR #61 a fait apparaître un défaut plus important que le seul échec SQLite :
+`FinalizeAsync` anonymisait ou supprimait `User`, mais pouvait laisser les projections
+strictement membre rattachées à son identifiant interne. Cela contredisait les décisions
+`01-decisions.md` et `02-modele-de-donnees.md`. Le correctif charge et supprime, dans la même
+transaction, les `WatchlistItems`, `Watchlist`, `UserAlertHistory`, `EmailBounceEvents` et
+les messages d'outbox `AlertEmail` du membre. Les `BookMovements`, `ScanSessions` et autres
+éléments d'audit nécessaires restent intacts quand des mouvements sont retenus ; sans
+mouvement, l'utilisateur est supprimé.
+
+Deux tests d'infrastructure couvrent maintenant les branches « mouvements retenus » et
+« aucun mouvement », en plus de la régression SQLite. La suite locale compte 291 tests
+backend. Cette décision est volontairement limitée au membre local : l'appel Graph reste
+effectué avant la finalisation locale et les demandes échouées restent rejouables par
+l'outbox.
 
 ### Entra et connexion
 
@@ -87,10 +114,16 @@ réception/boîte indésirable.
    `NU1903`, dépréciation `WithOpenApi`, avertissements nullable/legacy, dépréciation Node 20
    dans les actions GitHub et avertissement de taille de bundle Angular. Ils ne sont pas
    introduits par cette reprise.
+4. L'envoi ACS est désactivé, donc aucune course alerte/suppression n'a été observée en
+   production. Comme le sweep traite encore la livraison des alertes avant la file de
+   suppression, il faudra, avant d'activer ACS, décider si les suppressions en attente
+   doivent être prioritaires ou si les listes doivent être neutralisées dès la demande.
+   Le correctif de nettoyage rend la finalisation sûre, mais ne remplace pas cette décision
+   de séquencement.
 
 ## Checklist recommandée demain matin
 
-1. Vérifier que le CI `main` du commit `dfd8e69` est terminé avec succès.
+1. Le CI `main` du commit `dcc0c23` (`33929807788`) est terminé avec succès.
 2. Depuis le navigateur, tester `/compte` avec le compte Entra, ajouter une œuvre depuis une
    fiche, constater sa présence dans la watchlist puis tester le retrait. Vérifier séparément
    la demande de suppression avec un compte de test.

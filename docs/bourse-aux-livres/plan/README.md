@@ -31,8 +31,10 @@ s'y réfère par leurs identifiants (`RG-nn`, `ENF-nn`, `DT-nn`, `QT-nn`, `R-nn`
 **État d'exécution au 2026-09-05.** Le palier 2 est implémenté et déployé. Le palier 3 a
 déjà dépassé le stade grossier côté code : compte public, watchlist édition/œuvre, demande
 de suppression, file d'alertes, rebonds et administration du stock mort sont présents dans
-`main`. Restent volontairement les validations opératoires et externes : vérification ACS,
-envoi réel de bout en bout, relevé des heartbeats et campagnes `P1-9` à `P1-11`.
+`main`. La PR #61 a aussi aligné la suppression/anonymisation avec le modèle de confidentialité
+et rendu le lookup de la file compatible avec SQLite/Aspire ; la suite backend compte 291 tests.
+Restent volontairement les validations opératoires et externes : vérification ACS, envoi réel
+de bout en bout, relevé des heartbeats et campagnes `P1-9` à `P1-11`.
 
 **Pourquoi le dernier est grossier.** Le principe directeur n°4 de l'architecture — « ce
 qui n'est pas mesuré n'est pas décidé » — s'applique au plan lui-même. Détailler le palier
