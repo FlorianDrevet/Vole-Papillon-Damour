@@ -87,6 +87,25 @@ describe('VpdEventSections', () => {
     expect(fixture.nativeElement.textContent).toContain('14:00');
   });
 
+  it('should render the event time consistently with the detail page for each event type', async () => {
+    configureRequests([
+      createEventResponse('bingo-1', 'Bingo', '2026-10-12T18:00:00.000Z', '2026-10-12T17:30:00.000Z'),
+      createEventResponse('books-1', 'Books', '2026-10-13T00:00:00.000Z', '2026-10-13T14:00:00.000Z'),
+      createEventResponse('other-1', 'Other', '2026-10-14T19:00:00.000Z')
+    ]);
+
+    await createComponent();
+
+    const eventCards = (Array.from(fixture.nativeElement.querySelectorAll('a')) as HTMLAnchorElement[])
+      .filter(card => card.textContent?.includes('Évènement'));
+
+    expect(eventCards.length).toBe(3);
+    expect(eventCards[0].textContent).toContain('18:00');
+    expect(eventCards[0].textContent).not.toContain('17:30');
+    expect(eventCards[1].textContent).toContain('14:00');
+    expect(eventCards[2].textContent).toContain('19:00');
+  });
+
   it('should keep upcomingEvents empty when the request fails', async () => {
     axiosServiceSpy.request.and.returnValue(Promise.reject(new Error('Request failed')));
 
