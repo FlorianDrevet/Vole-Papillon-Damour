@@ -58,7 +58,7 @@
 
 .EXAMPLE
     ./Configure-EntraApps.ps1 -TenantId 'vpd.onmicrosoft.com' `
-        -CatalogRedirectUri 'http://localhost:4200' `
+        -CatalogRedirectUri 'http://localhost:4203' `
         -ScanRedirectUri 'http://localhost:4300' `
         -BackOfficeRedirectUri 'http://localhost:4400'
 
@@ -77,7 +77,7 @@ param(
 
     [string] $Environment = 'dev',
 
-    [string] $CatalogRedirectUri = 'http://localhost:4200',
+    [string] $CatalogRedirectUri = 'http://localhost:4203',
     [string] $ScanRedirectUri = 'http://localhost:4300',
     [string] $BackOfficeRedirectUri = 'http://localhost:4400',
 

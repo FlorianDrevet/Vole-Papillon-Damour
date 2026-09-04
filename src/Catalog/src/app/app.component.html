@@ -12,7 +12,7 @@
     type="button"
     [attr.aria-expanded]="menuOpen"
     aria-controls="main-navigation"
-    aria-label="Ouvrir le menu"
+    [attr.aria-label]="menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'"
     (click)="menuOpen = !menuOpen">
     <span></span><span></span><span></span>
   </button>
@@ -21,10 +21,16 @@
     <a routerLink="/recherche" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMenu()">Rechercher</a>
     <a routerLink="/catalogue" routerLinkActive="active" (click)="closeMenu()">Catalogue par genre</a>
     <a routerLink="/" fragment="prochaine-bourse" (click)="closeMenu()">La prochaine bourse</a>
-    <span class="account-teaser" title="L'espace membre arrive avec les alertes">
+    <a
+      class="account-teaser"
+      routerLink="/administration"
+      routerLinkActive="active"
+      title="Espace réservé aux administrateurs"
+      aria-label="Accès à l'administration"
+      (click)="closeMenu()">
       <span class="person-icon" aria-hidden="true"></span>
-      Mon compte
-    </span>
+      Administration
+    </a>
   </nav>
 </header>
 
@@ -35,7 +41,7 @@
 <footer class="site-footer">
   <div class="footer-rule" aria-hidden="true"></div>
   <div class="footer-content">
-    <span class="footer-note">Aucune donnée n'est nécessaire pour consulter le catalogue</span>
+    <span class="footer-note">Le catalogue public reste accessible sans connexion</span>
     <nav aria-label="Liens de pied de page">
       <a href="https://volepapillondamour.fr">Le site de l'association</a>
       <a routerLink="/mentions-legales">Mentions légales</a>
