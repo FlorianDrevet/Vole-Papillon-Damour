@@ -402,6 +402,23 @@ module workerHeartbeatAlert './modules/Monitor/scheduledQueryRule.module.bicep' 
   }
 }
 
+module workerEnrichmentHeartbeatAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'workerEnrichmentHeartbeatAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-worker-enrichment-heartbeat', 'alert', env)
+    displayName: 'VPD worker enrichment heartbeat missing'
+    ruleDescription: 'The worker has not completed an enrichment run in the last 65 minutes.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where Message startswith "Worker enrichment completed"'
+    operator: 'LessThan'
+    threshold: 1
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 2
+    tags: tags
+  }
+}
+
 module lateAnnouncementAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
   name: 'lateAnnouncementAlert'
   scope: applicationResourceGroup
