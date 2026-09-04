@@ -17,7 +17,7 @@
 | **Prochaine action** | Relire puis merger la PR du catalogue ; ensuite créer la Container App DEV, poser le CNAME/TXT de `livres.volepapillondamour.fr` et lier le certificat managé avant toute mise en ligne publique. Le référentiel externe, le compte et les alertes restent P3. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-04 — implémentation locale du catalogue public P2 après le merge du visuel Scanette |
-| **Branche** | `feat/catalogue-public-p2` — PR du catalogue public à ouvrir |
+| **Branche** | `feat/catalogue-public-p2` — PR catalogue public [#42](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/42) ouverte pour revue |
 
 ---
 
