@@ -98,6 +98,9 @@ La livraison catalogue a été exécutée par `Catalog - deploy` run `3389296888
 `vpdacrdev.azurecr.io/vpd-catalog:26eabe1` et la Container App `vpd-catalog-ca-dev`.
 Le domaine public `livres.volepapillondamour.fr` est maintenant validé par OVH et sécurisé par
 le certificat managé `livres.volepapillondamour.fr-vpd-cae--260904173001`.
+L'API a ensuite été reconstruite et roulée par `API - deploy` run `33903473628` avec l'image
+`vpdacrdev.azurecr.io/vpd-api:dc4ec74` ; `/catalog/search` et `/catalog/sitemap.xml` répondent
+désormais `200` sur l'endpoint ACA, et le sitemap public répond `200`.
 
 La Scanette conserve encore temporairement sa redirection compilée vers le FQDN technique
 Azure ; le dépôt est prêt à passer à `https://scan.volepapillondamour.fr` au prochain run.
@@ -345,6 +348,7 @@ dans Azure sans être déductible du dépôt.
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur réel `DoNotReply@mail.volepapillondamour.fr` ; le portail affiche encore « Verification is underway » | `2026-09-04` |
+| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:dc4ec74` déployée par `API - deploy` run `33903473628`; routes publiques `/catalog/*` et `/catalog/sitemap.xml` répondent `200` après activation de la révision | `2026-09-04` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
 
@@ -444,6 +448,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-04 | Windows | **Catalogue — activation API.** Le run `API - deploy` `33903473628` a construit et déployé `vpd-api:dc4ec74` sans migration SQL. Après activation de la révision, `/catalog/search` et `/catalog/sitemap.xml` répondent `200`; les smoke tests HTTPS du catalogue (`/`, `/robots.txt`, `/sitemap.xml`) et de la Scanette (`/`) répondent `200`. |
 | 2026-09-04 | Windows | **Catalogue + Scan — domaines publics.** Depuis le worktree `feat/catalogue-deploy-auth`, validation OVH des CNAME/TXT `asuid` vers les deux Container Apps et validation Azure des certificats managés SNI `Secured` pour `livres.volepapillondamour.fr` et `scan.volepapillondamour.fr`. Alignement Bicep, Dockerfile, workflow Scan, documentation et URI de redirection Scan sur les origines canoniques. Validation locale : 4 tests de contrat, 61 tests ChromeHeadless, build production Scan, build Docker et compilations Bicep. L'ajout réel des URI Entra et le rollout Scan attendent l'approbation MFA. |
 | 2026-09-04 | Windows | **Correction du smoke metadata.** Le middleware API mappe désormais l'exception d'indisponibilité des fournisseurs bibliographiques vers `503 Service Unavailable` au lieu de `500`; le résolveur conserve son exception afin que le Worker réessaie plutôt que d'écrire un cache négatif. Test API dédié, 4 tests du résolveur et build API passent. Aucun déploiement applicatif n'a été lancé pour ce correctif ; le endpoint DEV a été retesté séparément en `200` lorsque Open Library était disponible. |
 | 2026-09-04 | Windows | **P1-5 — nouveau visuel Scanette.** Intégration locale des écrans de maquette : accueil et choix de session, tri avec verdicts colorés, bandeau hors ligne, saisie manuelle, fin de session, caisse et consultation sans écriture. Ajout de la consultation catalogue locale sans geste d'outbox et conservation de la décision de mode dans IndexedDB. Validation : 53 tests ChromeHeadless, build production Scan et contrôle responsive navigateur à 390 px/1280 px. Aucun déploiement ; la persistance métier de caisse et les gates physiques restent séparées. |
