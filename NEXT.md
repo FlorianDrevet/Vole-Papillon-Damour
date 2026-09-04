@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2` — le catalogue public, ses domaines et la Scanette sont déployés ; API et Worker ont été roulés avec le schéma SQL à jour. Le correctif d'authentification Scanette attend sa PR et son déploiement ; le heartbeat et `P1-9` à `P1-11` restent à relever. |
-| **Prochaine action** | Faire relire et merger le correctif d'authentification Scanette, relancer `Scan - deploy`, puis retester la session `Tri` sur le domaine public avant de relever les signaux `Sweep`/`Enrich` et préparer `P1-9` à `P1-11`. Le référentiel externe, le compte et l'envoi d'alertes restent P3. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-api-auth` |
-| **Dernière mise à jour** | 2026-09-04 — le `401` Scan a été reproduit par une régression ChromeHeadless et corrigé dans un worktree dédié ; le déploiement et le retest public restent à faire |
-| **Branche** | `fix/scan-api-auth-header` — PR à ouvrir |
+| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
+| **Prochaine action** | Relever les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. Garder le repli titre+auteur conditionné à la mesure `QT-01`. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-overnight-docs` |
+| **Dernière mise à jour** | 2026-09-05 — PR #57, #58 et #59 fusionnées ; Scan et runtime Books redéployés ; smoke public et test de connexion catalogue validés |
+| **Branche** | `docs/overnight-plan-update` — mise à jour documentaire en cours |
 
 ---
 
@@ -78,67 +78,57 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-04
+### État actualisé — 2026-09-05
 
-`P2` est mergé dans `origin/main` au commit `26eabe1`. L'API expose les lectures anonymes du catalogue :
-recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap XML. La projection exclut
-les fiches masquées ou redirigées, conserve les livres épuisés, et sépare toujours les
-quantités disponibles des annonces futures. La recherche tolère les accents et couvre les
-filtres genre, disponibilité, rareté et arrivée récente.
+`P2` est livré dans `origin/main` au commit `dfd8e69`. L'API expose les lectures anonymes du
+catalogue — recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap XML — et les
+routes membres protégées pour le compte, la liste de recherche et la suppression de compte.
+La projection exclut les fiches masquées ou redirigées, conserve les livres épuisés, et sépare
+les quantités disponibles des annonces futures.
 
 `src/Catalog` est une application Angular SSR distincte du Website, du BackOffice et de la
 Scanette. Elle contient l'accueil, la recherche, le catalogue par genre, les fiches livres,
-les œuvres, les mentions légales et la confidentialité, avec les maquettes du catalogue,
-un rendu serveur indexable, canoniques, `schema.org/Book`, `robots.txt` et aucun traceur.
-Le bloc « À la bourse » est implémenté ; le bloc « Pas encore reçu » est explicitement
-réservé au futur raccordement du référentiel externe. Le compte, la liste de recherche et
-les alertes restent P3.
+les œuvres, les pages légales, un espace membre `/compte` avec connexion Microsoft, lecture et
+retrait de watchlist, et demande de suppression de compte. Le rendu public reste sans traceur,
+avec canoniques, `schema.org/Book`, `robots.txt` et sitemap dynamique. Le bloc « Pas encore
+reçu » reste réservé au futur raccordement du référentiel externe ; l'envoi réel des alertes
+reste désactivé tant que le domaine ACS n'est pas vérifié.
 
-La livraison catalogue a été exécutée par `Catalog - deploy` run `33892968888` avec l'image
-`vpdacrdev.azurecr.io/vpd-catalog:26eabe1` et la Container App `vpd-catalog-ca-dev`.
-Le domaine public `livres.volepapillondamour.fr` est maintenant validé par OVH et sécurisé par
-le certificat managé `livres.volepapillondamour.fr-vpd-cae--260904173001`.
-L'API a ensuite été reconstruite et roulée par `API - deploy` run `33903473628` avec l'image
-`vpdacrdev.azurecr.io/vpd-api:dc4ec74` ; `/catalog/search` et `/catalog/sitemap.xml` répondent
-désormais `200` sur l'endpoint ACA, et le sitemap public répond `200`.
+La PR #56 a livré la watchlist et l'espace compte. La revue post-merge a ensuite identifié un
+défaut de regroupement : la BnF fournit souvent une notice sans `WorkId`, ce qui rendait les
+listes « œuvre » presque toujours vides. La PR #58 enrichit uniquement ce champ depuis Open
+Library quand nécessaire, conserve tous les champs BnF comme autorité, et garde la notice BnF
+si Open Library est indisponible. Elle est fusionnée au commit `6a5a736`.
 
-Les déploiements post-merge sont terminés : `Catalog - deploy` `33906639354`, `Scan - deploy`
-`33906624368` et la relance `Infra - deploy` `33906654599` sont réussis. Le premier run Infra
-avait seulement rencontré une collision de provisioning avec le rollout Scan ; aucune
-ressource n'a été supprimée. Le catalogue répond `200` sur `/`, `/robots.txt` et `/sitemap.xml`;
-la Scanette répond `200` sur `https://scan.volepapillondamour.fr` avec son bundle canonique.
+Le workflow `Books runtime - deploy` `33924236821` a construit et roulé API et Worker avec le
+tag partagé `6a5a736` sans nouvelle migration — les migrations SQL étaient déjà appliquées par
+`33922677695`. Le workflow `Scan - deploy` `33924618301`, lancé après la PR #57, a déployé le
+wildcard MSAL `/scan/*` qui ajoute le bearer token aux routes imbriquées `/scan/catalog/delta`
+et `/scan/sessions`. Les deux workflows ont réussi.
 
-Le smoke test Scan a lancé le redirect Entra depuis le domaine public et a abouti à l'écran
-« compte connecté, rôle Tri absent » avec le compte administrateur courant. Le portail Entra
-`vpd-api-dev` affiche bien les attributions `Administrateur` et `Benevole trieur` pour ce compte ;
-le contrôle local lit désormais les rôles du jeton d'accès API. La capture réseau du 2026-09-04
-a toutefois montré que les appels `/scan/catalog/delta` et `/scan/sessions` partaient sans
-`Authorization: Bearer`, car la carte `MsalInterceptor` déclarait `/scan` sans wildcard alors
-que MSAL Angular 5 applique un strict matching. Le correctif est validé dans le worktree
-`fix/scan-api-auth-header` par 79 tests ChromeHeadless ; il reste à ouvrir/merger la PR, relancer
-`Scan - deploy`, puis retester le domaine public.
+La PR #59 (`dfd8e69`) corrige l'équité de reprise du Worker : une panne fournisseur horodate
+`LastAttemptAt` sans consommer le budget des réponses `NotFound`, les livres `Pending` échoués
+attendent une heure avant reprise, et les lignes jamais tentées restent prioritaires. Le
+workflow `Books runtime - deploy` `33926622823` a roulé API et Worker avec ce tag partagé,
+sans migration ; les étapes SQL/firewall ont bien été ignorées.
 
-Le bloc « Mon compte » du catalogue est volontairement non interactif : le compte, la liste de
-recherche et les alertes sont P3. L'enregistrement de l'application `vpd-catalog-dev` peut
-toutefois recevoir dès maintenant son URI publique.
+Smoke du 2026-09-05 : catalogue, Scanette et API répondent `200`; `/catalog/me/watchlist` sans
+jeton répond `401`; `/compte` et `/administration` portent `X-Robots-Tag: noindex, nofollow`;
+`GET /books/9782070612758/metadata` répond une notice BnF avec `WorkId=OL10263W`. Les CNAME,
+TXT `asuid` et certificats SNI managés de `livres.volepapillondamour.fr` et
+`scan.volepapillondamour.fr` restent valides. Les URI publiques Entra du catalogue et de la
+Scanette sont présentes ; l'URI localhost du catalogue n'a pas été ajoutée car elle ne sert
+pas le déploiement public et sa sauvegarde nécessite une confirmation interactive dans Entra.
+Le redirect Entra du catalogue a aussi été vérifié depuis `/compte` dans un profil Chrome déjà
+authentifié : le bouton « Se connecter avec Microsoft » revient sur `/compte` avec le compte
+actif et une watchlist vide. Aucun identifiant, consentement ou donnée de test n'a été saisi.
 
-Validation de cette reprise : `260` tests backend, `5` tests Catalog ChromeHeadless, build
-Angular de production, build AppHost, compilation Bicep, build Docker et smoke SSR du
-conteneur (`200` sur l'accueil). Les avertissements de dépendances NuGet et les
-dépréciations npm restent ceux des outils existants. Les tests manuels `P1-9`, `P1-10` et
-`P1-11` restent volontairement reportés ; ils ne sont pas déclarés validés par ce travail.
-
-La PR du nouveau visuel Scanette est désormais mergée et déployée dans `main`. Le workflow
-`Books runtime - deploy` `33908408641`, lancé sur le commit `585a0ac` avec
-`run_migrations=true`, a construit API et Worker avec le tag partagé `585a0ac`, appliqué les
-migrations EF (dont `20260902223842_MigrateUsersToEntraIdentity`), refermé la règle firewall
-SQL temporaire et roulé les deux Container Apps. Les smoke tests API (`/health`, recherche et
-sitemap catalogue) et publics répondent `200`. La vérification ACS
-`mail.volepapillondamour.fr` reste externe et l'envoi d'e-mails demeure désactivé.
-La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
-« Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
-pas la considérer comme validée tant qu'Azure n'affiche pas l'état vérifié. Le domaine
-reste donc un délai externe, tout comme l'envoi réel et la réputation.
+Validation : `288` tests backend locaux pour la PR #59, CI #57/#58/#59 au vert, 79 tests
+ChromeHeadless Scan et 4 tests de bootstrap sur la PR #57, builds front et conteneurs réussis,
+`graphify update` exécuté. Les avertissements NuGet/npm et dépréciations GitHub Actions restent
+ceux du dépôt. Les relevés manuels `QT-02` du nouveau `Sweep`/`Enrich`, `P1-9`, `P1-10` et
+`P1-11`, la vérification ACS et le cycle d'e-mail de bout en bout restent à faire ; ils ne
+sont pas déclarés validés à distance.
 
 Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité des
 états précédents ; l'état courant est décrit dans les paragraphes ci-dessus et les tableaux
@@ -340,8 +330,8 @@ d'envoi reste volontairement anticipée, conformément à `L0-9`.
 >
 > | Sujet | Lancé le | Relevable à partir du |
 > |---|---|---|
-> | Heartbeat du nouveau `Sweep`/`Enrich` (`P1-6`/`P1-7`) | `2026-09-04`, après le run `33908408641` | après quelques cycles du timer, puis campagne de deux heures si nécessaire |
-> | Migration EF et rollout API/Worker | `2026-09-04`, run `33908408641` réussi | terminé ; smoke API/public validé, heartbeat encore à relever |
+> | Heartbeat du nouveau `Sweep`/`Enrich` (`P1-6`/`P1-7`) | `2026-09-05`, après le run `33926622823` | après quelques cycles du timer, puis campagne de deux heures si nécessaire |
+> | Migration EF et rollout API/Worker | `2026-09-04`, run `33922677695` réussi ; rollouts `33924236821` et `33926622823` | terminé ; smoke API/public validé, heartbeat encore à relever |
 > | `QT-08` — session de 48 h puis ouverture en mode avion (page jetable, `L0-12`) | | |
 > | Propagation DNS des entrées ACS | `2026-09-02` | relevée le `2026-09-04`, valeurs alignées |
 > | Vérification du domaine d'envoi ACS | `2026-09-02` | le portail affiche encore « Verification is underway » |
@@ -366,8 +356,8 @@ dans Azure sans être déductible du dépôt.
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur réel `DoNotReply@mail.volepapillondamour.fr` ; le portail affiche encore « Verification is underway » | `2026-09-04` |
-| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:585a0ac` déployée avec le Worker par `Books runtime - deploy` run `33908408641`; `/health`, `/catalog/search` et `/catalog/sitemap.xml` répondent `200` | `2026-09-04` |
-| Runtime Books | API `vpd-api:585a0ac` et Worker `vpd-worker:585a0ac` construits depuis le même commit ; migrations EF appliquées, firewall SQL temporaire supprimé, rollout et rapport d'état réussis | `2026-09-04` |
+| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:dfd8e69` déployée avec le Worker par `Books runtime - deploy` run `33926622823`; `/health`, `/catalog/search`, `/catalog/sitemap.xml` et metadata BnF/Open Library répondent `200` | `2026-09-05` |
+| Runtime Books | API `vpd-api:dfd8e69` et Worker `vpd-worker:dfd8e69` construits depuis le même commit ; migrations EF déjà appliquées, étapes SQL/firewall ignorées, rollout réussi | `2026-09-05` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
 
@@ -448,10 +438,12 @@ reportées.
 
 | Test | Résultat | Le |
 |---|---|---|
-| Smoke post-merge — domaines publics | Catalogue `/`, `/robots.txt`, `/sitemap.xml` et Scan `/` répondent `200`; certificats ACA managés `Secured`/SNI confirmés | `2026-09-04` |
-| Smoke post-merge — connexion Scan | Le redirect depuis `https://scan.volepapillondamour.fr` revient sur l'application ; le compte courant est refusé uniquement pour absence du rôle `Tri` | `2026-09-04` |
-| `Books runtime - deploy` `33908408641` | Build/push API + Worker sur le tag partagé `585a0ac`, migrations EF réussies, fermeture du firewall SQL et rollout des deux Container Apps réussis | `2026-09-04` |
-| Smoke runtime API après `Books runtime - deploy` | `/health`, `/catalog/search?q=test` et `/catalog/sitemap.xml` répondent `200`; les domaines publics catalogue et Scan répondent également `200` | `2026-09-04` |
+| Smoke post-merge — domaines publics | Catalogue `/`, `/robots.txt`, `/sitemap.xml` et Scan `/` répondent `200`; certificats ACA managés `Secured`/SNI confirmés | `2026-09-05` |
+| Smoke post-merge — sécurité API/catalogue | `/catalog/me/watchlist` sans jeton répond `401`; `/compte` et `/administration` portent `X-Robots-Tag: noindex, nofollow` | `2026-09-05` |
+| `Books runtime - deploy` `33924236821` | Build/push API + Worker sur le tag partagé `6a5a736`, migrations non requises, rollout des deux Container Apps réussi | `2026-09-05` |
+| `Books runtime - deploy` `33926622823` | Build/push API + Worker sur le tag partagé `dfd8e69`, backoff/fairness Worker, migrations non requises et étapes SQL/firewall ignorées, rollout des deux Container Apps réussi | `2026-09-05` |
+| `Scan - deploy` `33924618301` | Image Scan reconstruite depuis `64c347e`, wildcard MSAL déployé, rollout réussi | `2026-09-05` |
+| Smoke runtime API après les rollouts | `/health`, `/catalog/fairs/next`, metadata ISBN BnF/Open Library répondent `200`; les domaines publics catalogue et Scan répondent également `200` | `2026-09-05` |
 | Smoke test Aspire — `GET /books/9783140464079/metadata` via `http://localhost:5257` | `200 OK` après redirection HTTPS ; notice « Le petit prince » renvoyée par Open Library | `2026-09-03` |
 | Démarrage Functions worker via Aspire | `AccountDeletionSweepFunction` découverte ; host lock acquis ; aucune erreur DI ni erreur de listener | `2026-09-03` |
 | `QT-02` — observation du timer historique dans `vpd-law-dev` | 28 exécutions, 28 succès, 28 complétions sur la fenêtre UTC observée, sans trou ; le nouveau `Sweep` reste à relever après déploiement | `2026-09-04` |

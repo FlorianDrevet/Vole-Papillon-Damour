@@ -28,6 +28,12 @@ s'y réfère par leurs identifiants (`RG-nn`, `ENF-nn`, `DT-nn`, `QT-nn`, `R-nn`
 | [`02`](02-palier-1-socle-interne.md) | **Palier 1** — le socle interne : tri, quantités, bascule, caisse | `P1-1` à `P1-11` | Moyen |
 | [`03`](03-paliers-2-et-3.md) | **Paliers 2 et 3** — vitrine publique, puis alertes | — | **Grossier, volontairement** |
 
+**État d'exécution au 2026-09-05.** Le palier 2 est implémenté et déployé. Le palier 3 a
+déjà dépassé le stade grossier côté code : compte public, watchlist édition/œuvre, demande
+de suppression, file d'alertes, rebonds et administration du stock mort sont présents dans
+`main`. Restent volontairement les validations opératoires et externes : vérification ACS,
+envoi réel de bout en bout, relevé des heartbeats et campagnes `P1-9` à `P1-11`.
+
 **Pourquoi le dernier est grossier.** Le principe directeur n°4 de l'architecture — « ce
 qui n'est pas mesuré n'est pas décidé » — s'applique au plan lui-même. Détailler le palier
 3 avant que le palier 0 ait mesuré `QT-01` et `QT-03`, c'est écrire des étapes qu'on
