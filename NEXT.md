@@ -17,7 +17,7 @@
 | **Prochaine action** | Terminer l'ajout des URI publiques dans Entra après l'approbation MFA, déployer l'infrastructure puis la Scanette, et exécuter les smoke tests HTTPS. Le référentiel externe, le compte et les alertes restent P3. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalogue-deploy-auth` |
 | **Dernière mise à jour** | 2026-09-04 — DNS OVH et certificats HTTPS managés validés pour le catalogue et la Scanette |
-| **Branche** | `feat/catalogue-deploy-auth` — PR à ouvrir après validation |
+| **Branche** | `feat/catalogue-deploy-auth` — PR catalogue/domaines [#45](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/45) ouverte |
 
 ---
 
