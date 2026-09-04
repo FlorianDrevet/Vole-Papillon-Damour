@@ -178,8 +178,11 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   smoke checks, and responsive browser checks pass; its existing bundle/CSS/CommonJS
   warnings remain.
 - As of 2026-09-04, BackOffice passes its 12 ChromeHeadless tests and production build, and
-  Website passes 66 ChromeHeadless tests and its production build after the event date/time
+  Website passes 67 ChromeHeadless tests and its production build after the event date/time
   correction; the existing bundle/CSS/CommonJS warnings remain.
+- As of 2026-09-04, the Website home "Prochains rendez-vous" cards use the same event-time
+  rule as the detail page: Books events use `hourOpenDoors`, while Bingo and Other events
+  use `dateStart`; a regression test covers all three event types.
 - As of 2026-09-04, Scan passes 53 ChromeHeadless tests and its production build; the
   production bundle retains the expected initial-size warning. Its redesigned Scanette
   surface was also checked in a local browser at 390 px and 1280 px. CI is configured to

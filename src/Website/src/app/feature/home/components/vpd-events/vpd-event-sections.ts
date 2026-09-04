@@ -52,6 +52,19 @@ export class VpdEventSections implements OnInit {
     return -(index * 0.7);
   }
 
+  /**
+   * Reprend la même règle que la fiche événement : une bourse porte sa vraie heure
+   * d'ouverture dans `hourOpenDoors`, tandis que les autres événements portent leur
+   * heure de début dans `dateStart`.
+   */
+  protected eventTime(event: VpdEventModel): Date {
+    if (event.eventType === VpdEventEnum.Books) {
+      return event.hourOpenDoors ?? new Date(event.dateStart);
+    }
+
+    return new Date(event.dateStart);
+  }
+
   ngOnInit(): void {
     // `/asso-events` ne renvoie que les évènements à venir, déjà triés par date de début.
     this.axiosService.request(MethodEnum.GET, '/asso-events', {})
