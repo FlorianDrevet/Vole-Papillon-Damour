@@ -7,6 +7,7 @@ import {
   ScanCatalogBook,
   ScanCatalogSyncState,
   ScanOutboxEntry,
+  ScanSessionSnapshot,
 } from './scan-offline.model';
 import {ScanWorkflowService} from './scan-workflow.service';
 
@@ -140,6 +141,19 @@ export class ScanSyncService {
         remaining: await this.store.countPendingOutboxEntries(),
         stoppedOnError,
       };
+    });
+  }
+
+  async closeSession(session: ScanSessionSnapshot): Promise<void> {
+    return await this.enqueue(async () => {
+      const remoteSession = await firstValueFrom(this.api.openSession({
+        mode: session.mode,
+        targetAssoEventsId: session.targetAssoEventsId,
+        clientSessionId: session.scanSessionId,
+      }));
+      await firstValueFrom(this.api.closeSession(remoteSession.scanSessionId, {
+        closeReason: 'Manual',
+      }));
     });
   }
 

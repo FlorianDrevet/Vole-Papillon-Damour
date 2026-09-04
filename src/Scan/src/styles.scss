@@ -732,15 +732,15 @@ input:focus-visible {
 .verdict-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   flex: none;
-  padding: 28px 22px 30px;
+  padding: 18px 20px 17px;
   color: #fff;
 }
 
 .verdict-main {
   display: flex;
-  gap: 14px;
+  gap: 11px;
 }
 
 .verdict-card-too-many {
@@ -759,16 +759,20 @@ input:focus-visible {
   background: var(--scan-ink);
 }
 
+.verdict-card-repeat {
+  background: #17435e;
+}
+
 .verdict-icon {
-  width: 32px;
-  height: 32px;
+  width: 27px;
+  height: 27px;
   flex: none;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .verdict-icon svg {
-  width: 32px;
-  height: 32px;
+  width: 27px;
+  height: 27px;
 }
 
 .verdict-copy {
@@ -782,7 +786,7 @@ input:focus-visible {
 
 .verdict-copy h1 {
   color: #fff;
-  font-size: 29px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: .01em;
   line-height: 1.05;
@@ -790,16 +794,16 @@ input:focus-visible {
 }
 
 .verdict-copy p {
-  margin-top: 10px;
+  margin-top: 6px;
   color: rgb(255 255 255 / 90%);
-  font-size: 15.5px;
+  font-size: 13.5px;
   line-height: 1.35;
 }
 
 .verdict-freshness {
   margin: 0;
   border-top: 1px solid rgb(255 255 255 / 30%);
-  padding-top: 14px;
+  padding-top: 10px;
   color: rgb(255 255 255 / 92%);
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10.5px;
@@ -1258,6 +1262,12 @@ input:focus-visible {
   font-weight: 500;
 }
 
+.session-end-error {
+  color: #ffb4b7 !important;
+  font-size: 13px !important;
+  font-weight: 600;
+}
+
 .session-end-footer {
   display: flex;
   margin-top: auto;
@@ -1288,19 +1298,26 @@ input:focus-visible {
 
 .cash-items {
   display: flex;
+  min-height: 0;
   flex-direction: column;
-  flex: none;
+  flex: 1 1 auto;
+  overflow-y: auto;
   background: #fff;
 }
 
 .cash-item {
   display: flex;
   min-height: 76px;
-  flex-direction: column;
+  align-items: center;
+  gap: 12px;
   justify-content: center;
-  gap: 3px;
   padding: 0 22px;
   border-bottom: 1px solid #e2eef7;
+}
+
+.cash-item-copy {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .cash-item h2,
@@ -1337,11 +1354,43 @@ input:focus-visible {
   box-shadow: 0 26px 44px -30px rgb(7 43 69 / 60%);
 }
 
+.cash-rare-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .cash-rare-heading {
   display: flex;
   align-items: center;
   gap: 12px;
   color: #fff;
+}
+
+.cash-remove {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border: 1px solid var(--scan-line);
+  border-radius: 999px;
+  color: var(--scan-slate);
+  background: var(--scan-paper);
+  cursor: pointer;
+}
+
+.cash-remove svg {
+  width: 17px;
+  height: 17px;
+}
+
+.cash-rare-item .cash-remove {
+  border-color: rgb(255 255 255 / 50%);
+  color: #fff;
+  background: rgb(255 255 255 / 12%);
 }
 
 .cash-rare-heading svg {
@@ -1461,6 +1510,28 @@ input:focus-visible {
   padding: 24px 22px;
 }
 
+.cash-camera-error,
+.consultation-camera-error {
+  flex: none;
+  margin: 10px 20px 0;
+  color: var(--scan-red);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.cash-screen.camera-screen-active .cash-items {
+  padding-top: calc(min(30dvh, 220px) + 24px);
+}
+
+.consultation-screen.camera-screen-active .consultation-empty {
+  padding-top: calc(min(30dvh, 220px) + 24px);
+}
+
+.consultation-screen.camera-screen-active .consultation-book-card {
+  margin-top: calc(min(30dvh, 220px) + 24px);
+}
+
 .consultation-book-card .book-copy h2 {
   font-size: 25px;
   line-height: 1.12;
@@ -1540,6 +1611,12 @@ input:focus-visible {
   border-radius: 8px;
   background: #041d30;
   box-shadow: 0 24px 60px rgb(7 43 69 / 32%);
+}
+
+.camera-engine-host-active.camera-engine-host-cash,
+.camera-engine-host-active.camera-engine-host-consultation {
+  top: 60px;
+  height: min(30dvh, 220px);
 }
 
 .camera-engine-host-active::after {

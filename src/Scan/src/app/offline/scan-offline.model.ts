@@ -96,6 +96,7 @@ export interface LocalScanResult {
   entry: ScanOutboxEntry;
   verdict: LocalVerdict;
   catalogBook: ScanCatalogBook | null;
+  isImmediateRepeat: boolean;
 }
 
 export interface LocalCatalogResult {

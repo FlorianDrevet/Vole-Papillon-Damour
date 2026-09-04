@@ -43,14 +43,33 @@ export class ScanWorkflowService {
   }
 
   async getLatestPendingResult(): Promise<LocalScanResult | null> {
-    const entry = await this.getLatestPendingEntry();
+    const entries = await this.store.listOutboxEntries();
+    const entry = entries.filter(candidate => candidate.status === 'Pending').at(-1) ?? null;
     if (!entry) {
       return null;
     }
 
     const catalogBook = await this.store.getCatalogBook(entry.isbn13);
     const verdict = this.verdictService.calculate(catalogBook, await this.store.getSettings());
-    return {entry, verdict, catalogBook};
+    const entryIndex = entries.findIndex(candidate => candidate.clientGestureId === entry.clientGestureId);
+    const previousEntry = entries
+      .slice(0, entryIndex)
+      .reverse()
+      .find(candidate => candidate.scanSessionId === entry.scanSessionId && candidate.status !== 'CancelledLocal');
+    return {
+      entry,
+      verdict,
+      catalogBook,
+      isImmediateRepeat: isImmediateRepeat(
+        previousEntry,
+        entry.isbn13,
+        entry.occurredAt,
+      ),
+    };
+  }
+
+  async clearSession(): Promise<void> {
+    return await this.enqueue(async () => await this.store.clearSession());
   }
 
   async lookupCatalog(isbn13: string): Promise<LocalCatalogResult> {
@@ -113,7 +132,12 @@ export class ScanWorkflowService {
   async recordScan(isbn13: string, occurredAt = new Date()): Promise<LocalScanResult> {
     return await this.enqueue(async () => {
       const session = await this.ensureSession(occurredAt);
-      const previousPendingEntries = (await this.store.listOutboxEntries())
+      const existingEntries = await this.store.listOutboxEntries();
+      const previousEntry = existingEntries
+        .slice()
+        .reverse()
+        .find(entry => entry.scanSessionId === session.scanSessionId && entry.status !== 'CancelledLocal');
+      const previousPendingEntries = existingEntries
         .filter(entry => entry.status === 'Pending');
 
       let keptCount = session.keptCount;
@@ -158,7 +182,12 @@ export class ScanWorkflowService {
         scannedCount: session.scannedCount + 1,
       });
 
-      return {entry, verdict, catalogBook};
+      return {
+        entry,
+        verdict,
+        catalogBook,
+        isImmediateRepeat: isImmediateRepeat(previousEntry, isbn13, timestamp),
+      };
     });
   }
 
@@ -247,6 +276,25 @@ export class ScanWorkflowService {
     return await next;
   }
 }
+
+function isImmediateRepeat(
+  previousEntry: ScanOutboxEntry | undefined,
+  isbn13: string,
+  occurredAt: string,
+): boolean {
+  if (!previousEntry || previousEntry.isbn13 !== isbn13) {
+    return false;
+  }
+
+  const previousTimestamp = Date.parse(previousEntry.occurredAt);
+  const currentTimestamp = Date.parse(occurredAt);
+  return Number.isFinite(previousTimestamp) &&
+    Number.isFinite(currentTimestamp) &&
+    currentTimestamp >= previousTimestamp &&
+    currentTimestamp - previousTimestamp < IMMEDIATE_REPEAT_WINDOW_MS;
+}
+
+const IMMEDIATE_REPEAT_WINDOW_MS = 5_000;
 
 function createClientId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
