@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2` — catalogue public implémenté sur `feat/catalogue-public-p2` : API publique, application Angular SSR distincte, SEO, image Docker, AppHost et infrastructure de déploiement manuel ; les validations manuelles de `P1-9` à `P1-11` restent ouvertes et ont été explicitement reportées par l'utilisateur ([palier 2](docs/bourse-aux-livres/plan/03-paliers-2-et-3.md)) |
-| **Prochaine action** | Relire puis merger la PR du catalogue ; ensuite créer la Container App DEV, poser le CNAME/TXT de `livres.volepapillondamour.fr` et lier le certificat managé avant toute mise en ligne publique. Le référentiel externe, le compte et les alertes restent P3. |
+| **Lot en cours** | `P2` — catalogue public fusionné dans `main` et déployé en DEV ; les validations manuelles de `P1-9` à `P1-11` restent ouvertes et ont été explicitement reportées par l'utilisateur ([palier 2](docs/bourse-aux-livres/plan/03-paliers-2-et-3.md)) |
+| **Prochaine action** | Poser chez OVH le CNAME de `livres.volepapillondamour.fr` vers le FQDN ACA et le TXT `asuid.livres` avec la valeur fournie par Azure ; puis lier le domaine et le certificat managé, vérifier le domaine final et demander l'indexation de quelques fiches. Le référentiel externe, le compte et les alertes restent P3. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
-| **Dernière mise à jour** | 2026-09-04 — implémentation locale du catalogue public P2 après le merge du visuel Scanette |
-| **Branche** | `feat/catalogue-public-p2` — PR catalogue public [#42](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/42) ouverte pour revue |
+| **Dernière mise à jour** | 2026-09-04 — déploiement DEV du catalogue public après fusion de la PR [#42](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/42) |
+| **Branche** | `chore/catalogue-p2-deploy` — déploiement `Catalog - deploy` réussi sur `26eabe1` |
 
 ---
 
@@ -80,8 +80,11 @@ git pull
 
 ### État actualisé — 2026-09-04
 
-`P2` est implémenté localement sur `feat/catalogue-public-p2`, créée depuis `main` après
-`git pull --ff-only origin main`. L'API expose les lectures anonymes du catalogue :
+`P2` est fusionné dans `main` par la PR #42, puis déployé en DEV par le run GitHub Actions
+`Catalog - deploy` `33892968888` depuis `26eabe1`. La Container App
+`vpd-catalog-ca-dev` est `Running` sur la révision `vpd-catalog-ca-dev--0000001` et sert
+`vpdacrdev.azurecr.io/vpd-catalog:26eabe1`. Son FQDN temporaire répond `200` en SSR ; le
+`robots.txt` est également servi correctement. L'API expose les lectures anonymes du catalogue :
 recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap XML. La projection exclut
 les fiches masquées ou redirigées, conserve les livres épuisés, et sépare toujours les
 quantités disponibles des annonces futures. La recherche tolère les accents et couvre les
@@ -95,11 +98,13 @@ Le bloc « À la bourse » est implémenté ; le bloc « Pas encore reçu » est
 réservé au futur raccordement du référentiel externe. Le compte, la liste de recherche et
 les alertes restent P3.
 
-La livraison est prête pour l'exécution : port local `4203` dans l'AppHost, Dockerfile SSR,
-CI de build, Container App `vpd-catalog-ca-dev`, identité ACR, sortie FQDN et workflow manuel
-`Catalog - deploy`. Aucun déploiement Azure ni changement DNS n'a été effectué. Le paramètre
-du domaine `livres.volepapillondamour.fr` reste vide jusqu'à la création de la Container App,
-la pose du CNAME/TXT et l'émission du certificat managé.
+La livraison est donc prête côté code et runtime : port local `4203` dans l'AppHost, Dockerfile
+SSR, CI de build, identité ACR, sortie FQDN et workflow manuel `Catalog - deploy`. Aucun domaine
+personnalisé n'est encore lié. Azure fournit le CNAME vers
+`vpd-catalog-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io` et le TXT
+`asuid.livres` avec la valeur `53F00027ABFC9D094B601EEFCC4B4AD567459443ACAE2EE2DDA9249D983F08A2` ;
+la pose de ces deux enregistrements chez OVH est le prochain prérequis avant l'émission du
+certificat managé.
 
 Validation de cette reprise : `260` tests backend, `5` tests Catalog ChromeHeadless, build
 Angular de production, build AppHost, compilation Bicep, build Docker et smoke SSR du
