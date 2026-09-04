@@ -30,6 +30,48 @@ public sealed class BibliographicMetadataResolverTests
     }
 
     [Fact]
+    public async Task ResolveAsync_WhenBnfFindsMetadataWithoutWorkId_UsesOpenLibraryForWorkId()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var bnfMetadata = CreateMetadata("BnF") with { WorkId = null };
+        var openLibraryMetadata = CreateMetadata("OpenLibrary") with { WorkId = "OL42W" };
+        var bnf = Substitute.For<IBnfSruClient>();
+        var openLibrary = Substitute.For<IOpenLibraryClient>();
+        bnf.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(bnfMetadata);
+        openLibrary.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(openLibraryMetadata);
+        var resolver = new BibliographicMetadataResolver(
+            bnf,
+            openLibrary,
+            NullLogger<BibliographicMetadataResolver>.Instance);
+
+        var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
+
+        result.Should().Be(bnfMetadata with { WorkId = "OL42W" });
+        await openLibrary.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ResolveAsync_WhenOpenLibraryCannotEnrichBnfMetadata_KeepsBnfMetadata()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var bnfMetadata = CreateMetadata("BnF") with { WorkId = null };
+        var bnf = Substitute.For<IBnfSruClient>();
+        var openLibrary = Substitute.For<IOpenLibraryClient>();
+        bnf.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(bnfMetadata);
+        openLibrary.FindAsync(isbn13, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<BookMetadataResult?>(new HttpRequestException("open library down")));
+        var resolver = new BibliographicMetadataResolver(
+            bnf,
+            openLibrary,
+            NullLogger<BibliographicMetadataResolver>.Instance);
+
+        var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
+
+        result.Should().Be(bnfMetadata);
+        await openLibrary.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ResolveAsync_WhenBnfDoesNotFindMetadata_UsesOpenLibrary()
     {
         Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
