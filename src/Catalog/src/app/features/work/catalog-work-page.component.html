@@ -1,0 +1,32 @@
+@if (loading) {
+  <div class="work-state">L'œuvre arrive…</div>
+} @else if (notFound) {
+  <section class="work-state page-width" role="alert">
+    <p class="eyebrow">Œuvre introuvable</p>
+    <h1>Cette œuvre n'est pas encore référencée.</h1>
+    <a routerLink="/recherche">Retourner à la recherche</a>
+  </section>
+} @else if (work; as item) {
+  <section class="work-header page-width">
+    <a class="back-link" routerLink="/catalogue">← Parcourir le catalogue</a>
+    <p class="eyebrow">Une œuvre, plusieurs éditions</p>
+    <h1>{{ item.title || 'Œuvre sans titre' }}</h1>
+    @if (item.authors) {
+      <p>{{ item.authors }}</p>
+    }
+    <span class="edition-count">{{ item.editions.length }} {{ item.editions.length === 1 ? 'édition recensée' : 'éditions recensées' }}</span>
+  </section>
+
+  <section class="work-editions page-width">
+    <div class="section-heading">
+      <span class="heading-rule" aria-hidden="true"></span>
+      <p class="eyebrow">Les éditions à la bourse</p>
+      <h2>Choisir une édition.</h2>
+    </div>
+    <div class="book-grid">
+      @for (book of item.editions; track trackBook($index, book.isbn13)) {
+        <app-book-card [book]="book"></app-book-card>
+      }
+    </div>
+  </section>
+}

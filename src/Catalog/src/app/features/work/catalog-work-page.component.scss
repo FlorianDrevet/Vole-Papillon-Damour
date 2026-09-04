@@ -1,0 +1,140 @@
+.page-width {
+  width: min(1280px, calc(100% - 160px));
+  margin: 0 auto;
+}
+
+.work-header {
+  padding-top: 42px;
+  padding-bottom: 54px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 48px;
+  color: var(--catalog-blue);
+  font-size: .88rem;
+  text-decoration: none;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--catalog-orange-dark);
+  font: 500 .67rem/1.2 var(--catalog-mono);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  color: var(--catalog-ink);
+  font-family: var(--catalog-display);
+  font-weight: 500;
+}
+
+h1 {
+  max-width: 850px;
+  margin: 16px 0 0;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  line-height: 1.02;
+}
+
+.work-header p:not(.eyebrow) {
+  margin: 14px 0 0;
+  color: var(--catalog-ink-soft);
+  font-size: 1.18rem;
+}
+
+.edition-count {
+  display: inline-block;
+  margin-top: 22px;
+  color: var(--catalog-slate);
+  font: .66rem/1.2 var(--catalog-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.work-editions {
+  padding-bottom: 90px;
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.heading-rule {
+  width: 56px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--catalog-blue-bright), #7fd8f5 50%, var(--catalog-orange));
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.15rem);
+  line-height: 1.1;
+}
+
+.book-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.work-state {
+  padding-top: 76px;
+  padding-bottom: 110px;
+  color: var(--catalog-slate-strong);
+  text-align: center;
+
+  &.page-width {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  h1 {
+    max-width: 700px;
+    font-size: clamp(2.3rem, 5vw, 3.5rem);
+  }
+
+  a {
+    margin-top: 16px;
+    color: var(--catalog-blue);
+  }
+}
+
+@media (max-width: 1050px) {
+  .page-width {
+    width: min(100% - 80px, 900px);
+  }
+
+  .book-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .page-width {
+    width: calc(100% - 40px);
+  }
+
+  .work-header {
+    padding-top: 28px;
+    padding-bottom: 42px;
+  }
+
+  .back-link {
+    margin-bottom: 36px;
+  }
+
+  .work-editions {
+    padding-bottom: 56px;
+  }
+
+  .book-grid {
+    grid-template-columns: 1fr;
+  }
+}

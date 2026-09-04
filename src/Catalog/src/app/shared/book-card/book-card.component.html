@@ -1,0 +1,38 @@
+<a class="book-card" [routerLink]="bookPath()" [attr.aria-label]="book.title || 'Voir la fiche du livre'">
+  <div class="cover-frame">
+    @if (book.coverUrl && !coverFailed) {
+      <img
+        [src]="book.coverUrl"
+        [alt]="book.title ? 'Couverture de ' + book.title : 'Couverture du livre'"
+        loading="lazy"
+        (error)="onCoverError()">
+    } @else {
+      <span>Couverture</span>
+    }
+  </div>
+
+  <div class="book-card-content">
+    @if (book.isRare) {
+      <span class="rare-badge">Livre rare</span>
+    }
+    <h3>{{ book.title || 'Titre à compléter' }}</h3>
+    <p class="authors">{{ book.authors || 'Auteur non renseigné' }}</p>
+    @if (book.publisher || book.publicationYear) {
+      <p class="edition">
+        {{ book.publisher || 'Éditeur non renseigné' }}
+        @if (book.publisher && book.publicationYear) { <span>·</span> }
+        {{ book.publicationYear || '' }}
+      </p>
+    }
+
+    <div class="availability-list">
+      <p class="availability" [class.available]="book.quantityAvailable > 0" [class.announced-only]="book.quantityAvailable === 0 && book.quantityAnnounced > 0" [class.exhausted]="book.quantityAvailable === 0 && book.quantityAnnounced === 0">
+        <span class="status-dot" aria-hidden="true"></span>
+        {{ availabilityLabel() }}
+      </p>
+      @if (book.quantityAnnounced > 0) {
+        <p class="announced">{{ announcedLabel() }}</p>
+      }
+    </div>
+  </div>
+</a>

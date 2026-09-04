@@ -1,0 +1,92 @@
+@font-face {
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-latin-normal.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400 700;
+}
+
+@font-face {
+  font-family: 'Libre Franklin';
+  src: url('/fonts/libre-franklin-latin.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400 700;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm-plex-mono-latin-400.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/ibm-plex-mono-latin-500.woff2') format('woff2');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500 700;
+}
+
+:root {
+  --catalog-background: #f7fbfe;
+  --catalog-white: #fff;
+  --catalog-ink: #072b45;
+  --catalog-ink-soft: #33536e;
+  --catalog-slate: #6d8ba2;
+  --catalog-slate-strong: #4e6c84;
+  --catalog-blue: #0c6ea6;
+  --catalog-blue-bright: #1497d6;
+  --catalog-blue-soft: #9dc2da;
+  --catalog-blue-pale: #dcecf7;
+  --catalog-line: #d9e9f4;
+  --catalog-line-strong: #b9d4e5;
+  --catalog-orange: #f0801c;
+  --catalog-orange-dark: #dc6412;
+  --catalog-green: #18703a;
+  --catalog-purple: #5f3a86;
+  --catalog-display: 'Newsreader', Georgia, serif;
+  --catalog-body: 'Libre Franklin', Arial, sans-serif;
+  --catalog-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  --catalog-gradient: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--catalog-background);
+}
+
+body {
+  color: var(--catalog-ink);
+  font-family: var(--catalog-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+a,
+select,
+input {
+  &:focus-visible {
+    outline: 3px solid rgba(20, 151, 214, .35);
+    outline-offset: 3px;
+  }
+}
+
+::selection {
+  background: #bfeafa;
+  color: var(--catalog-ink);
+}

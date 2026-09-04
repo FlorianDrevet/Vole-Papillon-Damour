@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1-6` à `P1-8` — code, CI, infrastructure DEV et rollout API/Worker réalisés ; le nouveau visuel Scanette de `P1-5` est maintenant intégré localement, tandis que l'acceptation des heartbeats, alertes et du fournisseur bibliographique reste à vérifier avant les gates physiques ([palier 1](docs/bourse-aux-livres/plan/02-palier-1-socle-interne.md)) |
-| **Prochaine action** | Déployer séparément le correctif metadata et le nouveau visuel Scanette quand la livraison sera décidée ; observer les nouveaux heartbeats `Sweep`/`Enrich` et mesurer `QT-02` sur deux heures ; enfin réaliser `P1-9` et les gates physiques `P1-10/P1-11` avec les données et appareils réels |
+| **Lot en cours** | `P2` — catalogue public implémenté sur `feat/catalogue-public-p2` : API publique, application Angular SSR distincte, SEO, image Docker, AppHost et infrastructure de déploiement manuel ; les validations manuelles de `P1-9` à `P1-11` restent ouvertes et ont été explicitement reportées par l'utilisateur ([palier 2](docs/bourse-aux-livres/plan/03-paliers-2-et-3.md)) |
+| **Prochaine action** | Relire puis merger la PR du catalogue ; ensuite créer la Container App DEV, poser le CNAME/TXT de `livres.volepapillondamour.fr` et lier le certificat managé avant toute mise en ligne publique. Le référentiel externe, le compte et les alertes restent P3. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour` |
-| **Dernière mise à jour** | 2026-09-04 — correction metadata et intégration locale du visuel Scanette |
-| **Branche** | `feat/scanette-visual-pr` — PR du rafraîchissement visuel Scanette en cours |
+| **Dernière mise à jour** | 2026-09-04 — implémentation locale du catalogue public P2 après le merge du visuel Scanette |
+| **Branche** | `feat/catalogue-public-p2` — PR du catalogue public à ouvrir |
 
 ---
 
@@ -80,68 +80,37 @@ git pull
 
 ### État actualisé — 2026-09-04
 
-`P1-6` à `P1-8` sont implémentés localement sur `feat/scanette-visual-pr`. Le worker
-contient désormais `Sweep` (toutes les cinq minutes) et `Enrich` (toutes les heures) :
-fermeture des sessions inactives, rattachement des annonces sans date, release des
-annonces dues, livraison de l'outbox d'alertes, suppression de comptes et enrichissement
-bibliographique avec retry/négatif-cache et couvertures Blob optionnelles. Les bourses
-Books annulées sont conservées pour l'audit mais exclues de toutes les opérations futures.
+`P2` est implémenté localement sur `feat/catalogue-public-p2`, créée depuis `main` après
+`git pull --ff-only origin main`. L'API expose les lectures anonymes du catalogue :
+recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap XML. La projection exclut
+les fiches masquées ou redirigées, conserve les livres épuisés, et sépare toujours les
+quantités disponibles des annonces futures. La recherche tolère les accents et couvre les
+filtres genre, disponibilité, rareté et arrivée récente.
 
-La fondation runtime ajoute le conteneur `book-covers`, les plafonds App Insights, trois
-alertes Azure Monitor, le CORS par liste d'origines, et le workflow manuel
-`Books runtime - deploy`. L'API ne migre plus au démarrage sauf en `Development` ; le
-workflow applique les migrations avant de créer les révisions API/Worker. Le `what-if` sur
-`main` (`33822673986`) est vert : 5 créations,
-24 modifications, 17 ressources inchangées, 9 changements non analysables et 10 ignorés,
-sans suppression. Le déploiement infra DEV (`33822751659`) est vert. Le runtime
-(`33822924593`) a construit les images API et Worker depuis `abbb336` sous le tag partagé
-`abbb336`, appliqué les sept migrations EF en attente avant rollout, fermé la règle firewall
-temporaire, puis déployé les deux Container Apps. L'envoi ACS est prêt côté code mais reste
-désactivé.
+`src/Catalog` est une application Angular SSR distincte du Website, du BackOffice et de la
+Scanette. Elle contient l'accueil, la recherche, le catalogue par genre, les fiches livres,
+les œuvres, les mentions légales et la confidentialité, avec les maquettes du catalogue,
+un rendu serveur indexable, canoniques, `schema.org/Book`, `robots.txt` et aucun traceur.
+Le bloc « À la bourse » est implémenté ; le bloc « Pas encore reçu » est explicitement
+réservé au futur raccordement du référentiel externe. Le compte, la liste de recherche et
+les alertes restent P3.
 
-Les migrations appliquées sont `20260903173750_AddBookExchangeCore`,
-`20260903175445_AddClientGestureIdToBookAnnouncements`,
-`20260903181307_AddSaleReversalLink`, `20260903185500_AddBookWatchlistsAndAlerts`,
-`20260903192839_AddEmailBounceEventLedger`, `20260903211547_AddWatchlistUpdatedAt` et
-`20260903230825_AddCancelledBookFair`. Le smoke test indépendant `GET /health` de l'API
-répond `200 Healthy` après rollout. Le premier smoke test de
-`GET /books/9783140464079/metadata` a répondu `500` avec l'erreur générique du résolveur :
-les logs montrent que les deux fournisseurs ont été considérés indisponibles sur cette
-fenêtre transitoire. Le code local corrige désormais le contrat en renvoyant `503 Service
-Unavailable` pour cette panne, sans supprimer le signal de retry attendu par le Worker.
-Un retest du même endpoint le 2026-09-04 à 09:41 répond `200` grâce au retour d'Open Library ;
-le correctif local n'a pas encore été redéployé. L'enrichissement bibliographique reste à
-valider après ce déploiement. Le log EF du run n'a appliqué que ces sept migrations ; les
-migrations antérieures, dont `MigrateUsersToEntraIdentity`, n'étaient donc plus en attente
-dans la base DEV.
+La livraison est prête pour l'exécution : port local `4203` dans l'AppHost, Dockerfile SSR,
+CI de build, Container App `vpd-catalog-ca-dev`, identité ACR, sortie FQDN et workflow manuel
+`Catalog - deploy`. Aucun déploiement Azure ni changement DNS n'a été effectué. Le paramètre
+du domaine `livres.volepapillondamour.fr` reste vide jusqu'à la création de la Container App,
+la pose du CNAME/TXT et l'émission du certificat managé.
 
-La PWA Scan déployée est la fondation fonctionnelle de `P1-5` (scan ISBN, décision locale,
-IndexedDB, authentification et synchronisation). Le nouveau visuel de
-`docs/bourse-aux-livres/maquettes/scanette/` est maintenant intégré localement dans
-`src/Scan` : accueil, choix du mode, scan/verdicts, hors ligne, saisie manuelle, fin de
-session, caisse et consultation. La consultation lit la copie locale sans créer de geste
-dans l'outbox ; la caisse dispose pour l'instant de sa liste visuelle locale, sans
-persister une vente métier. Aucun déploiement n'a été effectué pour cette tranche : il
-restera à livrer puis à valider avant les essais physiques `P1-10/P1-11`, pas dans le
-catalogue public `P2`.
+Validation de cette reprise : `259` tests backend, `5` tests Catalog ChromeHeadless, build
+Angular de production, build AppHost, compilation Bicep, build Docker et smoke SSR du
+conteneur (`200` sur l'accueil). Les avertissements de dépendances NuGet et les
+dépréciations npm restent ceux des outils existants. Les tests manuels `P1-9`, `P1-10` et
+`P1-11` restent volontairement reportés ; ils ne sont pas déclarés validés par ce travail.
 
-La vérification du domaine ACS `mail.volepapillondamour.fr` est encore affichée
-« Verification is underway » dans le portail après correspondance des TXT/CNAME OVH : ne
-pas la considérer comme validée tant qu'Azure n'affiche pas l'état vérifié. Le domaine
-reste donc un délai externe, tout comme l'envoi réel et la réputation.
-
-Validation locale de cette reprise : test ciblé d'isolation des types d'outbox au vert,
-test de rétention des références historiques au vert, puis suite backend complète (248
-tests) et build de solution sans erreur. `QT-02` est relevée pour l'ancien timer
-`AccountDeletionSweepFunction` dans le bon locataire (28 exécutions, 28 succès, 28
-complétions sans trou sur la fenêtre observée) ; cela ne valide pas encore le nouveau
-`Sweep`. Une tentative de requête KQL post-déploiement est restée sur la requête historique
-du portail, donc aucun comptage fiable des nouveaux heartbeats n'est enregistré ici.
-`P1-9` n'est pas chiffré sans dataset de développement et mesure SQL reproductible.
-`P1-10`/`P1-11` restent des gates physiques : appareil Android, téléphone de scan, mode
-avion, cadence et acceptation bénévole ne peuvent pas être déclarés depuis ce poste.
-La validation locale du nouveau visuel passe par 53 tests ChromeHeadless, les builds Scan
-production et développement, ainsi qu'un contrôle navigateur aux largeurs 390 px et 1280 px.
+La PR du nouveau visuel Scanette est désormais mergée dans `main`. Son déploiement et les
+tests physiques restent distincts du catalogue. Le correctif local du contrat metadata
+`500` → `503` n'est toujours pas redéployé. La vérification ACS
+`mail.volepapillondamour.fr` reste externe et l'envoi d'e-mails demeure désactivé.
 
 Le récit historique du lot 0 et de P1-5 ci-dessous est conservé pour la traçabilité ; ce
 bloc est la source de vérité pour l'état courant.

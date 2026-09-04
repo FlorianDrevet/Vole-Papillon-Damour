@@ -67,7 +67,8 @@ param containerAppWebsiteHealthProbes = {
 }
 
 // The root and WWW aliases point to the public Website. The BackOffice keeps
-// its own hostname; all three hostnames are validated by the TXT records at OVH.
+// its own hostname. The catalog hostname is intentionally left unbound until
+// its Container App exists and the DNS/CNAME validation can be performed.
 param websiteCustomDomain = 'volepapillondamour.fr'
 param websiteWwwCustomDomain = 'www.volepapillondamour.fr'
 param backOfficeCustomDomain = 'backoffice.volepapillondamour.fr'
@@ -75,6 +76,8 @@ param backOfficeCustomDomain = 'backoffice.volepapillondamour.fr'
 param websiteCustomDomainCertificateName = 'volepapillondamour.fr-vpd-cae--260901180010'
 param websiteWwwCustomDomainCertificateName = 'www.volepapillondamour.fr-vpd-cae--260901180118'
 param backOfficeCustomDomainCertificateName = 'backoffice.volepapillondamou-vpd-cae--260902142245'
+param catalogCustomDomain = ''
+param catalogCustomDomainCertificateName = ''
 
 param containerAppBackOfficeContainerRuntime = {
   cpuCores: '0.25'
@@ -134,6 +137,35 @@ param containerAppScanHealthProbes = {
   }
 }
 
+param containerAppCatalogContainerRuntime = {
+  cpuCores: '0.5'
+  memoryGi: '1.0Gi'
+}
+param containerAppCatalogScaling = {
+  minReplicas: 1
+  maxReplicas: 2
+}
+param containerAppCatalogIngress = {
+  enabled: true
+  targetPort: 8080
+  external: true
+  transportMethod: 'auto'
+}
+param containerAppCatalogHealthProbes = {
+  readiness: {
+    path: ''
+    port: 0
+  }
+  liveness: {
+    path: ''
+    port: 0
+  }
+  startup: {
+    path: ''
+    port: 0
+  }
+}
+
 param containerAppWorkerContainerRuntime = {
   cpuCores: '0.5'
   memoryGi: '1.0Gi'
@@ -179,6 +211,7 @@ param corsAllowedOrigins = [
   'https://volepapillondamour.fr'
   'https://www.volepapillondamour.fr'
   'https://backoffice.volepapillondamour.fr'
+  'https://livres.volepapillondamour.fr'
   'https://vpd-scan-ca-dev.mangoground-a76d7dbc.westeurope.azurecontainerapps.io'
 ]
 
@@ -215,4 +248,5 @@ param apiImage = readEnvironmentVariable('API_IMAGE', '')
 param websiteImage = readEnvironmentVariable('WEBSITE_IMAGE', '')
 param backOfficeImage = readEnvironmentVariable('BACKOFFICE_IMAGE', '')
 param scanImage = readEnvironmentVariable('SCAN_IMAGE', '')
+param catalogImage = readEnvironmentVariable('CATALOG_IMAGE', '')
 param workerImage = readEnvironmentVariable('WORKER_IMAGE', '')

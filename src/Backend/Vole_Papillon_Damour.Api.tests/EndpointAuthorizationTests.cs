@@ -70,6 +70,26 @@ public class EndpointAuthorizationTests
         deletions.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
     }
 
+    [Fact]
+    public void Public_catalog_reads_are_anonymous()
+    {
+        var expectedRoutes = new[]
+        {
+            "/catalog/search",
+            "/catalog/books/{isbn13}",
+            "/catalog/fairs/next",
+            "/catalog/works/{workId}",
+            "/catalog/sitemap.xml",
+        };
+
+        var publicCatalogEndpoints = RegisteredEndpoints()
+            .Where(endpoint => expectedRoutes.Contains(RouteOf(endpoint)))
+            .ToList();
+
+        publicCatalogEndpoints.Should().HaveSameCount(expectedRoutes);
+        publicCatalogEndpoints.Should().OnlyContain(endpoint => !RequiresAuthorization(endpoint));
+    }
+
     private static IReadOnlyList<RouteEndpoint> MutatingEndpoints() =>
         RegisteredEndpoints()
             .Where(endpoint => HttpMethods(endpoint).Intersect(MutatingMethods).Any())

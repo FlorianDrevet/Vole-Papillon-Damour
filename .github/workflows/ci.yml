@@ -52,6 +52,7 @@ jobs:
           cache-dependency-path: |
             src/BackOffice/package-lock.json
             src/Scan/package-lock.json
+            src/Catalog/package-lock.json
             src/Website/package-lock.json
 
       - name: Install BackOffice dependencies
@@ -70,6 +71,14 @@ jobs:
         working-directory: src/Website
         run: npm run build
 
+      - name: Install Catalog dependencies
+        working-directory: src/Catalog
+        run: npm ci --no-audit --no-fund
+
+      - name: Build Catalog
+        working-directory: src/Catalog
+        run: npm run build
+
       - name: Install Scan dependencies
         working-directory: src/Scan
         run: npm ci --no-audit --no-fund
@@ -83,3 +92,6 @@ jobs:
 
       - name: Build Worker container
         run: docker build --file src/Backend/Vole_Papillon_Damour.Worker/Dockerfile --tag vpd-worker-ci:latest src/Backend
+
+      - name: Build Catalog container
+        run: docker build --file src/Catalog/Dockerfile --build-arg API_URL=https://api.example.com --tag vpd-catalog-ci:latest src

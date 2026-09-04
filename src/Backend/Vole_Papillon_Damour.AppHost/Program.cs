@@ -9,6 +9,7 @@ const string BlobContainerEventImagesEnvironmentName = "BlobSettings__BlobContai
 const string BlobContainerLotoImagesEnvironmentName = "BlobSettings__ContainerName";
 const string BlobContainerProductsImagesEnvironmentName = "BlobSettings__BlobContainerProductsImagesClient";
 const string BackOfficeResourceName = "backoffice";
+const string CatalogResourceName = "catalog";
 const string DefaultHttpEndpointName = "http";
 const string ProjectDatabaseName = "ProjectDatabase";
 const string ScanResourceName = "scan";
@@ -17,6 +18,7 @@ const string SqlServerPasswordParameterName = "sql-server-password";
 const string StorageName = "storage";
 const string WebsiteResourceName = "website";
 const int BackOfficePort = 4200;
+const int CatalogPort = 4203;
 const int ScanPort = 4202;
 const int WebsitePort = 4201;
 
@@ -76,6 +78,12 @@ builder.AddJavaScriptApp(WebsiteResourceName, GetFrontendDirectory("Website"))
     .WithRunScript("start")
     .WithArgs("--", "--host", "0.0.0.0", "--port", WebsitePort.ToString())
     .WithHttpEndpoint(targetPort: WebsitePort, port: WebsitePort, name: DefaultHttpEndpointName, isProxied: false)
+    .WaitFor(api);
+
+builder.AddJavaScriptApp(CatalogResourceName, GetFrontendDirectory("Catalog"))
+    .WithRunScript("start")
+    .WithArgs("--", "--host", "0.0.0.0", "--port", CatalogPort.ToString())
+    .WithHttpEndpoint(targetPort: CatalogPort, port: CatalogPort, name: DefaultHttpEndpointName, isProxied: false)
     .WaitFor(api);
 
 await builder.Build().RunAsync();

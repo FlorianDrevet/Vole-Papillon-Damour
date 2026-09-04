@@ -43,6 +43,16 @@ Verified Tailwind theme tokens include:
 - For public-shell refinements, prefer evolving the semantic tokens and shared shell primitives in `src/styles.scss` before adding one-off component-level styling.
 - On the Website public shell, prefer solid editorial panels, restrained shadows, and association-specific copy over heavy glassmorphism, floating glows, or generic startup-style hero effects.
 
+## Public Catalog Visual Language
+
+`src/Catalog/` has a dedicated catalog shell matching
+`docs/bourse-aux-livres/maquettes/catalogue/`: pale blue surfaces, deep navy ink,
+blue/orange availability accents, Newsreader display text, Libre Franklin body text, and
+IBM Plex Mono metadata labels. It intentionally does not copy the Website's analytics or
+association-content shell. The shared `BookCardComponent` is the visual primitive for
+recent, rare, search, work, and detail entry points; available quantities and future
+announcements are rendered as separate lines.
+
 ## Shared Design System Library (`@vpd/ui`)
 
 - Location: [src/SharedUi/](src/SharedUi/) (raw TS source, not an Angular library project). Consumed via TypeScript path mapping `@vpd/ui` declared in each app's `tsconfig.json`.

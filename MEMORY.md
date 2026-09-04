@@ -6,12 +6,12 @@
 
 - Open-source repository for the association application
 - Backend: ASP.NET Core Web API on .NET 10 under `src/Backend/`
-- Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, SQL Server, and Azurite
+- Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, Catalog, SQL Server, and Azurite
 - Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
-- Web frontends: Angular 21 applications in `src/BackOffice/`, `src/Website/`, and the consultation-only `src/Scan/` probe; Angular SSR is enabled on `Website`
+- Web frontends: Angular 21 applications in `src/BackOffice/`, `src/Website/`, the public SSR catalog in `src/Catalog/`, and the consultation-only `src/Scan/` probe
 - Native and background clients: .NET MAUI Android cash app in `src/MauiCashApp/` and the .NET isolated account-deletion Worker under `src/Backend/`
 - Tests: xUnit domain tests exist under `src/Backend/Vole_Papillon_Damour.Domain.tests/`
-- CI/CD: `.github/workflows/ci.yml` is configured for backend, MAUI, and frontend builds; frontend unit tests remain a local validation step
+- CI/CD: `.github/workflows/ci.yml` is configured for backend, MAUI, and frontend builds; frontend unit tests remain a local validation step. Catalog release is manual through `.github/workflows/catalog-deploy.yml`.
 
 ## Thematic Memory
 
@@ -38,7 +38,7 @@
 3. The API layer uses endpoint-mapping extension classes under `Api/Controllers/`, not MVC `ControllerBase` classes.
 4. Apply TDD for executable code; record temporary exceptions in `.github/test-debt.md`.
 5. Keep backend changes inside the existing boundaries: API wiring in `Api`, MediatR handlers and validators in `Application`, persistence and adapters in `Infrastructure`, invariants in `Domain`, DTOs in `Contracts`.
-6. Preserve the current frontend split: `BackOffice` for admin surfaces, `Website` for public web surfaces, `MauiCashApp` for the cashier client.
+6. Preserve the current frontend split: `BackOffice` for admin surfaces, `Website` for association content, `Catalog` for the public books catalog, and `MauiCashApp` for the cashier client.
 7. Do not assume every mutating HTTP route is admin-protected; check `10-api-endpoints.md` before touching auth-sensitive behavior.
 
 ## Commands To Remember
@@ -47,6 +47,7 @@
 - Backend AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
 - Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`
 - Website SSR: `npm run serve:ssr:vole_papillon_damour_website` from `src/Website/`
+- Catalog SSR: `npm run build` then `npm run serve:ssr:vole_papillon_damour_catalog` from `src/Catalog/`
 - MAUI app: `dotnet build .\src\MauiCashApp\ShopAppVpd.slnx`
 
 ## Memory Rules

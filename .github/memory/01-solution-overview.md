@@ -5,7 +5,7 @@
 `Vole-Papillon-Damour` is the application repository itself, not a bootstrap template. It ships several delivery and runtime surfaces around one shared business domain:
 
 - an ASP.NET Core backend API
-- two Angular 21 web applications (`BackOffice` and `Website`)
+- three Angular 21 web applications (`BackOffice`, `Website`, and the public books `Catalog`)
 - one Angular 21 consultation-only ISBN probe (`Scan`)
 - one .NET isolated account-deletion Worker
 - one .NET MAUI cashier client (`MauiCashApp`)
@@ -16,6 +16,8 @@
 - `src/Backend/Vole_Papillon_Damour.AppHost/` hosts the Aspire AppHost used for local orchestration of the API and web apps.
 - `src/BackOffice/` is the Angular admin application.
 - `src/Website/` is the Angular public website.
+- `src/Catalog/` is the separate Angular SSR public books catalog, released at the planned
+  `livres.volepapillondamour.fr` hostname once its DNS binding exists.
 - `src/Scan/` is the public consultation-only ISBN metadata probe.
 - `src/Backend/Vole_Papillon_Damour.Worker/` hosts the private account-deletion timer worker.
 - `src/MauiCashApp/` is the MAUI client that calls the deployed backend through Refit.

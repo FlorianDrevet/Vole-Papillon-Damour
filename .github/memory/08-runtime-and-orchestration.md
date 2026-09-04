@@ -6,6 +6,7 @@
 - `src/Backend/Vole_Papillon_Damour.AppHost/` - .NET Aspire AppHost for local orchestration
 - `src/BackOffice/` - Angular admin SPA
 - `src/Website/` - Angular public SPA
+- `src/Catalog/` - Angular SSR public books catalog
 - `src/Scan/` - Angular feasibility-probe SPA, deployable as a public HTTPS Container App
 - `src/Backend/Vole_Papillon_Damour.Worker/` - .NET isolated Azure Functions account-deletion worker
 - `src/MauiCashApp/` - .NET MAUI cashier client
@@ -16,6 +17,7 @@
 - Aspire AppHost entry point: `src/Backend/Vole_Papillon_Damour.AppHost/Program.cs`
 - BackOffice entry path: `src/BackOffice/src/main.ts` -> `app.module.ts`
 - Website entry path: `src/Website/src/main.ts` -> `app.module.ts`
+- Catalog entry path: `src/Catalog/src/main.ts` -> `app.module.ts`; SSR entry is `src/Catalog/src/server.ts`
 - Scan entry path: `src/Scan/src/main.ts` -> `app.module.ts`
 - MAUI entry point: `src/MauiCashApp/MauiProgram.cs` and `App.xaml`
 
@@ -38,7 +40,7 @@ The API startup wires:
 - The MAUI client loads its backend base URL from embedded configuration and does not share Angular environment files.
 - `MauiCashApp` targets only `net10.0-android`; its current local distribution remains the direct app build, without a durable signing keystore.
 - The repository now includes a verified Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/`.
-- The AppHost orchestrates the API on port `5257`, Scan on `4202`, BackOffice on `4200`, Website on `4201`, plus local SQL Server and Azurite.
+- The AppHost orchestrates the API on port `5257`, Scan on `4202`, BackOffice on `4200`, Website on `4201`, Catalog on `4203`, plus local SQL Server and Azurite.
 - The AppHost passes the Aspire-generated Blob Storage connection to the API and worker. The Functions worker uses the host-storage connection supplied by `AddAzureFunctionsProject`; it must not be overridden with `UseDevelopmentStorage=true`, because Aspire publishes Azurite on dynamic host ports.
 - The Functions worker registers only account-deletion processing plus Infrastructure, with API authentication disabled in that host. This keeps Microsoft Identity Web out of the generic Functions dependency graph and avoids resolving ASP.NET endpoint services that do not exist in the worker host.
 - The AppHost SQL Server resource uses `WithDataVolume()`, so it must keep a stable password across launches through the AppHost secret key `Parameters:sql-server-password`; otherwise SQL Server starts but later rejects `sa` logins with `18456` because the persisted master database still expects the older password.
@@ -71,7 +73,19 @@ The API startup wires:
 - Cross-surface changes require validating the API plus at least one client.
 - SSE, WebSockets, and rate limiting live in the API startup path and can affect website live views and login behavior.
 - The permissive CORS policy means frontend/runtime changes should be reviewed with deployment assumptions in mind.
-- Frontend Docker validation now depends on using the `src/` folder as build context so `src/SharedUi/` stays available to both Angular applications during compilation.
+- Frontend Docker validation now depends on using the `src/` folder as build context so `src/SharedUi/` stays available to all Angular applications during compilation.
+
+## Public catalog runtime — 2026-09-04
+
+- `src/Catalog/` is a distinct Angular SSR application. Its Docker image is built from
+  the `src/` context and serves the compiled browser/server bundles with Node on port
+  `8080`; `API_URL` and `DEPLOY_HOST` are build arguments.
+- The public catalog Container App is represented in `infra/main.bicep` as
+  `vpd-catalog-ca-<environment>`, with its own ACR-pull identity and Application Insights
+  resource. The catalog custom-domain parameters remain empty until DNS and a managed
+  certificate are ready; the infrastructure therefore creates the generated ACA URL first.
+- `.github/workflows/catalog-deploy.yml` is manual-only. It resolves the API and catalog
+  FQDNs, builds/pushes `vpd-catalog`, and rolls the Container App without changing DNS.
 
 ## Books runtime update — 2026-09-04
 
