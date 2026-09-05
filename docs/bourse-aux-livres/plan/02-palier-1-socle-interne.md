@@ -220,7 +220,10 @@ Le code des étapes `P1-6` à `P1-8` est implémenté et déployé : le Worker e
 `Enrich`, l'instrumentation et les alertes App Insights sont déclarées, et les pipelines
 construisent API et Worker depuis un tag partagé. La reprise de l'enrichissement ajoute un
 cooldown d'une heure sur les pannes transitoires et un ordre équitable des candidats ; elle
-est couverte par les tests backend et déployée par `Books runtime - deploy` `33926622823`.
+est couverte par les tests backend. La PR #61 ajoute le lookup provider-neutral de la file de
+suppression et le nettoyage transactionnel des projections membre avant suppression ou
+anonymisation. L'ensemble est déployé par `Books runtime - deploy` `33929828651`, avec le tag
+partagé `dcc0c23` et sans nouvelle migration.
 Les étapes `P1-9`, `P1-10` et `P1-11` restent des campagnes manuelles, non remplaçables par un
 smoke HTTP.
 

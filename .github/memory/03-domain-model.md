@@ -72,6 +72,14 @@ The first P1-4 application slice is local and tested: `ScanBook` accepts a final
 
 P1-5 is now externally deployed for the API/Worker/Scan path: the API contracts and Scan PWA are rolled out, and the metadata queue has retry/backoff fairness through `LastAttemptAt`; the Worker still needs the measured heartbeat and the physical acceptance checks remain future work. `QT-02` must still be closed for the new `Sweep`/`Enrich` cadence, while ACS delivery remains disabled pending domain verification.
 
+The account-deletion finalization now matches the privacy model: the pending-message lookup
+uses a provider-neutral SQLite/Aspire path, and member-only projections (`WatchlistItems`,
+`Watchlist`, `UserAlertHistory`, `EmailBounceEvents`) plus `AlertEmail` outbox rows are removed
+in the same transaction before a user is anonymized or deleted. Book movements and scan
+sessions remain available for audit when retention is required. Infrastructure regressions
+cover both the retained-movements and no-retained-movements branches; the backend suite has
+291 tests after PR #61.
+
 ## Books administration — dead-stock query
 
 `GetDeadStockQuery` is the first P1-9 administration read: it returns canonical, currently

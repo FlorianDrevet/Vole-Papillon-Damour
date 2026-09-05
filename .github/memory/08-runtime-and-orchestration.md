@@ -120,3 +120,18 @@ The API startup wires:
 - The DEV infra what-if `33822673986` reported 5 creates, 24 modifies, 17 no-change, 9 unsupported and 10 ignored changes, with no deletes; the real infra run `33822751659` succeeded. The Azure Monitor contact group still needs a delivery test.
 - The independent API smoke after runtime rollout returned `200 Healthy` for `/health`, `200` for catalog search and the catalog sitemap, and `200` for the public catalog/Scan roots. The first historical `/books/9783140464079/metadata` call returned `500` because both bibliographic providers were temporarily unavailable; the API error middleware correction is included in the shared `585a0ac` runtime tag and maps that `HttpRequestException` to `503 Service Unavailable`, while the resolver still throws so the Worker retries instead of recording a negative-cache miss.
 - PR #59 adds the domain `RecordMetadataProviderFailure` transition and a one-hour `Pending` retry cooldown. `EnrichPendingBooksCommandHandler` now records provider, cover, invalid-source, and invalid-payload failures, orders never-attempted rows before cooled-down rows, and preserves the `ResolveAttempts` budget reserved for negative-cache misses. Full backend validation passes with 288 tests; runtime `33926622823` deploys the API and Worker from shared tag `dfd8e69` without migrations, and public API/catalog/Scan smoke is green.
+
+## Books runtime update — PR #61 — 2026-09-05
+
+- PR #61 (`dcc0c23`) fixes the provider-specific pending account-deletion lookup for the
+  SQLite/Aspire test provider and removes member-only watchlist, alert-history, bounce and
+  `AlertEmail` outbox data during local account finalization. The backend suite passes with
+  291 tests, including retained-history and delete-without-history regressions.
+- `Books runtime - deploy` `33929828651` built and rolled `vpd-api:dcc0c23` and
+  `vpd-worker:dcc0c23` from the same commit, with `run_migrations=false`; the job completed
+  successfully and its migration/firewall steps were skipped because schema migrations were
+  already applied by `33922677695`.
+- Post-rollout read-only smoke returned `200` for API health, next fair, metadata, public
+  catalog and Scan; anonymous watchlist access returned `401`, private catalog pages carried
+  `X-Robots-Tag: noindex, nofollow`, and DNS CNAME/TXT validation records still resolved.
+  `Sweep`/`Enrich` heartbeat observation, ACS verification and physical acceptance remain open.

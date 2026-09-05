@@ -16,9 +16,12 @@ Le palier 2 est livré sur `main` et en production DEV : catalogue SSR, domaines
 recherche, pages d'œuvre, sitemap, robots et absence de traceurs. Le palier 3 a été engagé
 au-delà de la présente esquisse : connexion Entra du catalogue, watchlists édition/œuvre,
 suppression de compte, file d'alertes, rebonds et lecture d'administration du stock mort sont
-implémentés et testés. La messagerie ACS reste volontairement inactive tant que le domaine
-d'envoi n'est pas vérifié ; le cycle d'alerte complet et les validations manuelles restent les
-prochaines preuves à produire.
+implémentés et testés. La PR #61 ajoute la séparation provider-neutral du lookup de suppression
+et le nettoyage transactionnel des projections strictement membre avant suppression ou
+anonymisation, sans effacer le ledger historique requis. Le runtime API/Worker est déployé
+avec le tag `dcc0c23` par `Books runtime - deploy` `33929828651`. La messagerie ACS reste
+volontairement inactive tant que le domaine d'envoi n'est pas vérifié ; le cycle d'alerte
+complet, les heartbeats et les validations manuelles restent les prochaines preuves à produire.
 
 ---
 
@@ -126,12 +129,12 @@ chauffé pendant des mois.
 
 ### Les points durs
 
-**`R-06` — la suppression du compte dans le locataire — est déjà en place.** Le mécanisme
-Graph, son enregistrement d'application et son secret ont été posés en `L0-11`, et éprouvés
-sur un compte d'essai : c'était le moment où il n'y avait encore personne à supprimer. Ce
-palier n'a donc qu'à **brancher le reste de la cascade** — liste de recherche, historique
-d'alertes, journaux — et à refaire le test de bout en bout, cette fois sur un compte qui a
-réellement vécu.
+**`R-06` — la suppression du compte dans le locataire — est en place côté code.** Le mécanisme
+Graph, son enregistrement d'application et son secret ont été posés en `L0-11`. La PR #61
+branche maintenant la cascade locale : liste de recherche, historique d'alertes, rebonds et
+outbox d'alertes sont nettoyés avant suppression ou anonymisation, sans perdre les mouvements
+retenus pour l'audit. Il reste à refaire le test de bout en bout sur un compte qui a réellement
+vécu, puis à vérifier les deux côtés (locataire et base locale).
 
 **Le repli de `RG-46`.** Si `QT-01` a montré une couverture insuffisante en `WorkId`, le
 rapprochement par titre + auteur normalisés devient obligatoire. Il produit des faux
