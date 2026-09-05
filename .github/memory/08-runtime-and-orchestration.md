@@ -135,3 +135,18 @@ The API startup wires:
   catalog and Scan; anonymous watchlist access returned `401`, private catalog pages carried
   `X-Robots-Tag: noindex, nofollow`, and DNS CNAME/TXT validation records still resolved.
   `Sweep`/`Enrich` heartbeat observation, ACS verification and physical acceptance remain open.
+
+## Catalog SEO correction and rollout — PR #63 — 2026-09-05
+
+- The Catalog SSR shell now defaults to `noindex, nofollow` and `AppComponent` updates the
+  robots meta tag on initial load and every navigation: public routes use `index, follow`,
+  while `/compte` and `/administration` remain `noindex, nofollow`.
+- The route-level regression suite covers private routes, query strings, trailing slashes,
+  and public routes. Catalog validation passed with 34 ChromeHeadless tests, a production
+  build, and local SSR smoke checks.
+- PR #63 (`3a6e887`) passed CI checks `33931556397` and `33931558967`. `Catalog - deploy`
+  `33932087193` rolled `vpdacrdev.azurecr.io/vpd-catalog:3a6e887` successfully.
+- Live read-only smoke confirms `index, follow` on `/`, both HTML and
+  `X-Robots-Tag: noindex, nofollow` on `/compte` and `/administration`, and `200` for
+  `/robots.txt` and `/sitemap.xml`. DNS and Entra public redirect configuration were
+  unchanged.

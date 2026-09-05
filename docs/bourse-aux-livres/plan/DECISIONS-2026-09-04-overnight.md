@@ -29,6 +29,10 @@ aucun secret, jeton ni mot de passe.
 - Le smoke externe du 2026-09-05 confirme 200 pour le catalogue, la Scanette et l'API, 401
   pour la watchlist sans jeton, les en-têtes `noindex` du compte et de l'administration, et
   une metadata ISBN BnF avec `WorkId=OL10263W`.
+- La PR #63 est fusionnée (`3a6e887`) : la meta robots statique du catalogue est privée par
+  défaut et `AppComponent` recalcule `index, follow` ou `noindex, nofollow` selon la route.
+  `Catalog - deploy` `33932087193` a roulé `vpd-catalog:3a6e887`; le smoke HTTPS confirme
+  les deux signaux privés et le signal public, ainsi que `robots.txt` et `sitemap.xml` en 200.
 
 ## Décisions prises
 
@@ -106,10 +110,10 @@ réception/boîte indésirable.
 1. Les mesures `QT-02` du nouveau `Sweep`/`Enrich`, `P1-9` sur quelques milliers puis
    15 000 fiches, `P1-10` hors ligne et `P1-11` sur l'échantillon physique ne sont pas
    fabriquées à partir de smoke tests HTTP ; elles restent à faire avec leurs protocoles.
-2. Le HTML statique initial de `/compte` et `/administration` contient encore la meta
-   générique `robots=index, follow`, alors que l'en-tête HTTP est correctement
-   `X-Robots-Tag: noindex, nofollow` et fait foi. Recommandation : corriger la meta statique
-   dans une PR frontend séparée si l'on veut que les deux signaux soient cohérents.
+2. Le défaut SEO relevé en revue est résolu par la PR #63 : le HTML statique commence en
+   `noindex, nofollow`, puis la directive est recalculée par route. Le smoke live confirme
+   `index, follow` sur `/` et `noindex, nofollow` dans le HTML et l'en-tête sur `/compte` et
+   `/administration`.
 3. Les avertissements existants restent visibles : vulnérabilités NuGet signalées par
    `NU1903`, dépréciation `WithOpenApi`, avertissements nullable/legacy, dépréciation Node 20
    dans les actions GitHub et avertissement de taille de bundle Angular. Ils ne sont pas
@@ -123,7 +127,9 @@ réception/boîte indésirable.
 
 ## Checklist recommandée demain matin
 
-1. Le CI `main` du commit `dcc0c23` (`33929807788`) est terminé avec succès.
+1. Les deux contrôles CI de la PR #63 (`33931556397`, `33931558967`) et le déploiement
+   Catalogue `33932087193` sont terminés avec succès ; vérifier le prochain CI `main` si
+   GitHub en programme un après la fusion documentaire.
 2. Depuis le navigateur, tester `/compte` avec le compte Entra, ajouter une œuvre depuis une
    fiche, constater sa présence dans la watchlist puis tester le retrait. Vérifier séparément
    la demande de suppression avec un compte de test.
