@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
 | **Prochaine action** | Relever les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. Garder le repli titre+auteur conditionné à la mesure `QT-01`. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-overnight-post61` |
-| **Dernière mise à jour** | 2026-09-05 — PR #61 fusionnée ; runtime Books redéployé ; smoke public, DNS et connexion catalogue validés |
-| **Branche** | `docs/overnight-final-state` — mise à jour documentaire en cours |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-overnight-final-docs` |
+| **Dernière mise à jour** | 2026-09-05 — PR #63 fusionnée ; correctif SEO privé du catalogue déployé ; smoke public, DNS et connexion catalogue validés |
+| **Branche** | `docs/overnight-seo-deploy` — mise à jour documentaire en cours |
 
 ---
 
@@ -80,7 +80,7 @@ git pull
 
 ### État actualisé — 2026-09-05
 
-`P2` est livré dans `origin/main` au commit `dcc0c23`. L'API expose les lectures anonymes du
+`P2` est livré dans `origin/main` au commit `3a6e887`. L'API expose les lectures anonymes du
 catalogue — recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap XML — et les
 routes membres protégées pour le compte, la liste de recherche et la suppression de compte.
 La projection exclut les fiches masquées ou redirigées, conserve les livres épuisés, et sépare
@@ -135,9 +135,18 @@ Le redirect Entra du catalogue a aussi été vérifié depuis `/compte` dans un 
 authentifié : le bouton « Se connecter avec Microsoft » revient sur `/compte` avec le compte
 actif et une watchlist vide. Aucun identifiant, consentement ou donnée de test n'a été saisi.
 
-Validation : `291` tests backend locaux pour la PR #61, CI #57/#58/#59/#61 au vert, 79 tests
+La PR #63 (`3a6e887`) a corrigé la cohérence SEO des routes privées du catalogue : la meta
+HTML statique par défaut est `noindex, nofollow`, puis l'application recalcule la directive
+sur chaque navigation (`index, follow` pour les routes publiques, `noindex, nofollow` pour
+`/compte` et `/administration`). Le workflow `Catalog - deploy` `33932087193` a roulé
+`vpdacrdev.azurecr.io/vpd-catalog:3a6e887`. Le smoke post-déploiement vérifie les deux
+signaux `noindex` sur les routes privées, `index, follow` sur `/`, ainsi que `robots.txt`
+et `sitemap.xml` en `200`.
+
+Validation : `291` tests backend locaux pour la PR #61, CI #57/#58/#59/#61/#63 au vert, 79 tests
 ChromeHeadless Scan et 4 tests de bootstrap sur la PR #57, builds front et conteneurs réussis,
-`graphify update` exécuté. Les avertissements NuGet/npm et dépréciations GitHub Actions restent
+34 tests ChromeHeadless Catalog, build Catalog et smoke SSR local réussis, `graphify update`
+exécuté. Les avertissements NuGet/npm et dépréciations GitHub Actions restent
 ceux du dépôt. Les relevés manuels `QT-02` du nouveau `Sweep`/`Enrich`, `P1-9`, `P1-10` et
 `P1-11`, la vérification ACS et le cycle d'e-mail de bout en bout restent à faire ; ils ne
 sont pas déclarés validés à distance.
@@ -369,6 +378,7 @@ dans Azure sans être déductible du dépôt.
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | Créé : `vpd-acs-email-dev` dans `rg-vpd-dev`, région ARM `global`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur réel `DoNotReply@mail.volepapillondamour.fr` ; le portail affiche encore « Verification is underway » | `2026-09-04` |
 | API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:dcc0c23` déployée avec le Worker par `Books runtime - deploy` run `33929828651`; `/health`, `/catalog/search`, `/catalog/sitemap.xml` et metadata BnF/Open Library répondent `200` | `2026-09-05` |
+| Catalogue public | Image `vpdacrdev.azurecr.io/vpd-catalog:3a6e887` déployée par `Catalog - deploy` run `33932087193`; `/`, `/robots.txt`, `/sitemap.xml` répondent `200`, les routes privées sont `noindex` côté HTML et en-tête | `2026-09-05` |
 | Runtime Books | API `vpd-api:dcc0c23` et Worker `vpd-worker:dcc0c23` construits depuis le même commit ; migrations EF déjà appliquées, étapes SQL/firewall ignorées, rollout réussi | `2026-09-05` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
@@ -451,6 +461,7 @@ reportées.
 | Test | Résultat | Le |
 |---|---|---|
 | Smoke post-merge — domaines publics | Catalogue `/`, `/robots.txt`, `/sitemap.xml` et Scan `/` répondent `200`; certificats ACA managés `Secured`/SNI confirmés | `2026-09-05` |
+| Smoke SEO post-déploiement — catalogue | `/` contient `index, follow`; `/compte` et `/administration` contiennent et renvoient `noindex, nofollow`; `robots.txt` et `sitemap.xml` répondent `200` | `2026-09-05` |
 | Smoke post-merge — sécurité API/catalogue | `/catalog/me/watchlist` sans jeton répond `401`; `/compte` et `/administration` portent `X-Robots-Tag: noindex, nofollow` | `2026-09-05` |
 | `Books runtime - deploy` `33924236821` | Build/push API + Worker sur le tag partagé `6a5a736`, migrations non requises, rollout des deux Container Apps réussi | `2026-09-05` |
 | `Books runtime - deploy` `33929828651` | Build/push API + Worker sur le tag partagé `dcc0c23`, correctif suppression de compte, migrations non requises et étapes SQL/firewall ignorées, rollout des deux Container Apps réussi | `2026-09-05` |
@@ -475,6 +486,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-05 | Windows | **PR #63 — cohérence SEO et dernier déploiement catalogue.** La revue a détecté que le HTML statique générique rendait les routes privées `/compte` et `/administration` indexables malgré leur en-tête `X-Robots-Tag`. Le correctif pose `noindex, nofollow` par défaut et recalcule la directive sur chaque navigation publique/privée. Validation : 34 tests ChromeHeadless Catalog, build Catalog, smoke SSR local, CI PR #63 (`33931556397`, `33931558967`) et `graphify update .`. PR [#63](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/63) fusionnée en `3a6e887`; `Catalog - deploy` `33932087193` a roulé `vpd-catalog:3a6e887`. Le smoke HTTPS confirme `index, follow` sur `/`, `noindex, nofollow` sur les deux routes privées, et `200` sur robots/sitemap. Aucun changement DNS ou Entra n'était nécessaire. |
 | 2026-09-05 | Windows | **PR #61 — revue et déploiement final.** Après reproduction TDD, le lookup de suppression de compte n'utilise plus `JSON_VALUE` dans le chemin SQLite/Aspire. La revue a aussi corrigé la cascade de confidentialité : watchlists, items, historique d'alertes, rebonds et outbox `AlertEmail` sont retirés avant anonymisation ou suppression, tandis que les mouvements et sessions historiques sont conservés. Validation : 291 tests backend, `git diff --check`, tests ciblés et `graphify update .`; les CI `33929259723` et `33929261525` sont vertes. PR [#61](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/61) fusionnée en `dcc0c23`. `Books runtime - deploy` `33929828651` a roulé API/Worker avec ce tag partagé, sans migration ; smoke API/catalogue/Scan, DNS et certificats sont verts. Les heartbeats `Sweep`/`Enrich`, ACS et les campagnes physiques restent à mesurer. |
 | 2026-09-04 | Windows | **Runtime Books post-merge.** Le workflow `Books runtime - deploy` `33908408641` a été lancé depuis `main` (`585a0ac`) avec `run_migrations=true` : API et Worker partagent le tag `585a0ac`, toutes les migrations EF en attente ont été appliquées à Azure SQL, la règle firewall temporaire a été supprimée et le rollout a réussi. `/health`, les routes catalogue API et les domaines publics répondent `200`. Le prochain relevé est le heartbeat `Sweep`/`Enrich`; `P1-9` à `P1-11` restent à exécuter. |
 | 2026-09-04 | Windows | **Scanette — retours de test terrain.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-scan-workflow`, la consultation et la caisse démarrent automatiquement la caméra et la relancent après chaque lecture ; la caisse affiche ses livres sous le cadre et permet de retirer n’importe quelle ligne. `RG-04` signale un ISBN répété en moins de cinq secondes, le verdict est compacté, et la fin de session synchronise/clôt la session distante avant d’effacer le snapshot local afin qu’un nouveau tri ne reprenne pas l’ancien. Validation : 74 tests ChromeHeadless, contrat bootstrap, build production Scan et `graphify update .` ; aucun déploiement. Le contrôle visuel des écrans authentifiés et le retest iPhone restent à faire. PR [#52](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/52) ouverte. |

@@ -12,14 +12,17 @@ Ce qui suit sert à **ne pas oublier ce qui est déjà su**, et à repérer ce q
 
 ## État d'exécution — 2026-09-05
 
-Le palier 2 est livré sur `main` et en production DEV : catalogue SSR, domaines publics,
+Le palier 2 est livré sur `main` (`3a6e887`) et en production DEV : catalogue SSR, domaines publics,
 recherche, pages d'œuvre, sitemap, robots et absence de traceurs. Le palier 3 a été engagé
 au-delà de la présente esquisse : connexion Entra du catalogue, watchlists édition/œuvre,
 suppression de compte, file d'alertes, rebonds et lecture d'administration du stock mort sont
 implémentés et testés. La PR #61 ajoute la séparation provider-neutral du lookup de suppression
 et le nettoyage transactionnel des projections strictement membre avant suppression ou
 anonymisation, sans effacer le ledger historique requis. Le runtime API/Worker est déployé
-avec le tag `dcc0c23` par `Books runtime - deploy` `33929828651`. La messagerie ACS reste
+avec le tag `dcc0c23` par `Books runtime - deploy` `33929828651`. La PR #63 a corrigé la
+meta robots statique des routes privées et le recalcul de la directive sur navigation ; le
+catalogue a été redéployé avec `vpd-catalog:3a6e887` par `Catalog - deploy` `33932087193`,
+avec smoke public/privé cohérent. La messagerie ACS reste
 volontairement inactive tant que le domaine d'envoi n'est pas vérifié ; le cycle d'alerte
 complet, les heartbeats et les validations manuelles restent les prochaines preuves à produire.
 
