@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
 | **Prochaine action** | Relever les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. Garder le repli titre+auteur conditionné à la mesure `QT-01`. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-overnight-final-review` |
-| **Dernière mise à jour** | 2026-09-05 — PR #64 fusionnée ; CI `main` vert ; revue finale et gates restantes consignées |
-| **Branche** | `docs/overnight-final-review` — revue finale en cours |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-overnight-close` |
+| **Dernière mise à jour** | 2026-09-05 — PR #65 fusionnée ; CI final `main` vert ; état de reprise clôturé |
+| **Branche** | `docs/overnight-close` — dernière mise à jour de reprise |
 
 ---
 
@@ -80,7 +80,7 @@ git pull
 
 ### État actualisé — 2026-09-05
 
-`P2` est livré dans `origin/main` au commit `d097792` (le code catalogue a été déployé au
+`P2` est livré dans `origin/main` au commit `f3fd148` (le code catalogue a été déployé au
 tag `3a6e887`). L'API expose les lectures anonymes du
 catalogue — recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap XML — et les
 routes membres protégées pour le compte, la liste de recherche et la suppression de compte.
@@ -147,7 +147,7 @@ et `sitemap.xml` en `200`.
 Validation : `291` tests backend locaux pour la PR #61, CI #57/#58/#59/#61/#63 au vert, 79 tests
 ChromeHeadless Scan et 4 tests de bootstrap sur la PR #57, builds front et conteneurs réussis,
 34 tests ChromeHeadless Catalog, build Catalog et smoke SSR local réussis, `graphify update`
-exécuté. Le CI `main` `33933202774` a ensuite validé backend, tests, MAUI Android, les quatre
+exécuté. Le CI `main` final `33934370102` a ensuite validé backend, tests, MAUI Android, les quatre
 builds Angular et les trois images de conteneur. Les avertissements NuGet/npm et
 dépréciations GitHub Actions restent
 ceux du dépôt. Les relevés manuels `QT-02` du nouveau `Sweep`/`Enrich`, `P1-9`, `P1-10` et
@@ -489,6 +489,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-05 | Windows | **Clôture de la reprise nocturne.** PR #65 fusionnée en `f3fd148`; le CI `main` `33934370102` est vert après validation du backend, de MAUI Android, des quatre fronts et des trois images de conteneur. Le dépôt est propre et aucune PR n'est ouverte. La revue finale, les décisions et les gates encore ouvertes sont consignées ci-dessus et dans `docs/bourse-aux-livres/plan/DECISIONS-2026-09-04-overnight.md`. |
 | 2026-09-05 | Windows | **Revue finale et traçabilité.** Relecture des changements PR #61 et #63 : la suppression locale est transactionnelle et nettoie les projections strictement membre avant anonymisation/suppression ; le chemin SQLite évite `JSON_VALUE` et le chemin SQL Server optimisé est conservé. Le correctif robots couvre les deux routes privées présentes dans le routage, met à jour le HTML SSR et la meta client, et le smoke live est cohérent. Aucun défaut bloquant supplémentaire trouvé. Point de maintenance : si une sous-route privée est ajoutée, étendre le helper robots, le middleware SSR et les tests. PR #64 est fusionnée en `d097792`; CI `main` `33933202774` vert. Les gates ACS, heartbeats, benchmarks et tests physiques restent ouvertes. |
 | 2026-09-05 | Windows | **PR #63 — cohérence SEO et dernier déploiement catalogue.** La revue a détecté que le HTML statique générique rendait les routes privées `/compte` et `/administration` indexables malgré leur en-tête `X-Robots-Tag`. Le correctif pose `noindex, nofollow` par défaut et recalcule la directive sur chaque navigation publique/privée. Validation : 34 tests ChromeHeadless Catalog, build Catalog, smoke SSR local, CI PR #63 (`33931556397`, `33931558967`) et `graphify update .`. PR [#63](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/63) fusionnée en `3a6e887`; `Catalog - deploy` `33932087193` a roulé `vpd-catalog:3a6e887`. Le smoke HTTPS confirme `index, follow` sur `/`, `noindex, nofollow` sur les deux routes privées, et `200` sur robots/sitemap. Aucun changement DNS ou Entra n'était nécessaire. |
 | 2026-09-05 | Windows | **PR #61 — revue et déploiement final.** Après reproduction TDD, le lookup de suppression de compte n'utilise plus `JSON_VALUE` dans le chemin SQLite/Aspire. La revue a aussi corrigé la cascade de confidentialité : watchlists, items, historique d'alertes, rebonds et outbox `AlertEmail` sont retirés avant anonymisation ou suppression, tandis que les mouvements et sessions historiques sont conservés. Validation : 291 tests backend, `git diff --check`, tests ciblés et `graphify update .`; les CI `33929259723` et `33929261525` sont vertes. PR [#61](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/61) fusionnée en `dcc0c23`. `Books runtime - deploy` `33929828651` a roulé API/Worker avec ce tag partagé, sans migration ; smoke API/catalogue/Scan, DNS et certificats sont verts. Les heartbeats `Sweep`/`Enrich`, ACS et les campagnes physiques restent à mesurer. |

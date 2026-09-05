@@ -116,8 +116,9 @@ réception/boîte indésirable.
   exactes `/compte` et `/administration`. Le helper client, le SSR et les tests appliquent
   la même politique ; le smoke live vérifie les deux signaux. Si une sous-route privée est
   ajoutée, il faudra étendre le helper, le middleware SSR et les tests.
-- Aucun défaut bloquant supplémentaire n'a été trouvé. Le CI `main` `33933202774` est vert
-  après la fusion documentaire de la PR #64 (`d097792`).
+- Aucun défaut bloquant supplémentaire n'a été trouvé. Les CI `main` `33933202774` et
+  `33934370102` sont verts après les fusions documentaires des PR #64 (`d097792`) et #65
+  (`f3fd148`).
 - Les avertissements connus restent à traiter séparément : Node 20 dans les actions,
   dépendances NuGet/npm signalées, avertissement Android 16/SQLite et avertissements
   nullable/legacy.
@@ -153,7 +154,8 @@ reste désactivé.
 ## Checklist recommandée demain matin
 
 1. ✅ Les contrôles CI de la PR #63 (`33931556397`, `33931558967`), le déploiement Catalogue
-   `33932087193` et le CI `main` après la PR #64 (`33933202774`) sont terminés avec succès.
+   `33932087193` et les CI `main` après les PR #64 et #65 (`33933202774`, `33934370102`)
+   sont terminés avec succès.
 2. Depuis le navigateur, tester `/compte` avec le compte Entra, ajouter une œuvre depuis une
    fiche, constater sa présence dans la watchlist puis tester le retrait. Vérifier séparément
    la demande de suppression avec un compte de test.
