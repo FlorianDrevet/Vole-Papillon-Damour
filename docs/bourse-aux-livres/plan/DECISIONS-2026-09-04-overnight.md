@@ -105,6 +105,31 @@ affiche encore `Verification is underway` pour `mail.volepapillondamour.fr`. Ne 
 l'expéditeur ni déclarer le test d'e-mail réussi avant l'état `Verified` et un cycle complet
 réception/boîte indésirable.
 
+## Revue finale — 2026-09-05
+
+- La relecture de la PR #61 confirme que la finalisation locale est transactionnelle : les
+  projections strictement membre sont supprimées avant l'anonymisation ou la suppression,
+  tandis que les mouvements et sessions historiques retenus restent conservés. Le chemin
+  SQLite est provider-neutral ; la requête SQL Server optimisée est conservée. Les tests
+  d'infrastructure couvrent les deux branches de rétention.
+- La relecture de la PR #63 confirme que le routage actuel ne comporte que les routes privées
+  exactes `/compte` et `/administration`. Le helper client, le SSR et les tests appliquent
+  la même politique ; le smoke live vérifie les deux signaux. Si une sous-route privée est
+  ajoutée, il faudra étendre le helper, le middleware SSR et les tests.
+- Aucun défaut bloquant supplémentaire n'a été trouvé. Le CI `main` `33933202774` est vert
+  après la fusion documentaire de la PR #64 (`d097792`).
+- Les avertissements connus restent à traiter séparément : Node 20 dans les actions,
+  dépendances NuGet/npm signalées, avertissement Android 16/SQLite et avertissements
+  nullable/legacy.
+
+## Relecture opérationnelle
+
+La revue ne transforme pas les smoke tests en preuves de capacité : restent volontairement
+ouverts le heartbeat `Sweep`/`Enrich`, la mesure `P1-9`, les tests hors ligne `P1-10`/`QT-08`,
+la répétition physique `P1-11`, le parcours `Tri` réel sur la Scanette et le cycle ACS de
+bout en bout. Le domaine d'envoi ACS est toujours `Verification is underway`; l'expéditeur
+reste désactivé.
+
 ## Revue et points ouverts
 
 1. Les mesures `QT-02` du nouveau `Sweep`/`Enrich`, `P1-9` sur quelques milliers puis
@@ -127,9 +152,8 @@ réception/boîte indésirable.
 
 ## Checklist recommandée demain matin
 
-1. Les deux contrôles CI de la PR #63 (`33931556397`, `33931558967`) et le déploiement
-   Catalogue `33932087193` sont terminés avec succès ; vérifier le prochain CI `main` si
-   GitHub en programme un après la fusion documentaire.
+1. ✅ Les contrôles CI de la PR #63 (`33931556397`, `33931558967`), le déploiement Catalogue
+   `33932087193` et le CI `main` après la PR #64 (`33933202774`) sont terminés avec succès.
 2. Depuis le navigateur, tester `/compte` avec le compte Entra, ajouter une œuvre depuis une
    fiche, constater sa présence dans la watchlist puis tester le retrait. Vérifier séparément
    la demande de suppression avec un compte de test.
