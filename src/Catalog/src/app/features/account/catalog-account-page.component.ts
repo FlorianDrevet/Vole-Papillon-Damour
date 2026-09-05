@@ -1,4 +1,11 @@
-import {ChangeDetectionStrategy, Component, OnDestroy, OnInit, Signal, computed, signal} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  Signal,
+  computed,
+  signal,
+} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Meta} from '@angular/platform-browser';
 import type {AccountInfo} from '@azure/msal-browser';
@@ -15,7 +22,7 @@ import {CatalogWatchlistItem, CatalogWatchlistResponse} from '../../core/catalog
   styleUrls: ['./catalog-account-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogAccountPageComponent implements OnInit, OnDestroy {
+export class CatalogAccountPageComponent implements OnInit {
   readonly account: Signal<AccountInfo | null>;
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
@@ -44,10 +51,6 @@ export class CatalogAccountPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
     void this.initialize();
-  }
-
-  ngOnDestroy(): void {
-    this.meta.updateTag({name: 'robots', content: 'index, follow'});
   }
 
   async initialize(): Promise<void> {

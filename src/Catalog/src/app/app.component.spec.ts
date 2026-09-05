@@ -1,4 +1,5 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {Meta} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 
 import {AppComponent} from './app.component';
@@ -34,5 +35,16 @@ describe('AppComponent', () => {
 
     expect(menuButton.getAttribute('aria-expanded')).toBe('true');
     expect(menuButton.getAttribute('aria-label')).toBe('Fermer le menu');
+  });
+
+  it('marks the public catalog as indexable on shell bootstrap', () => {
+    const meta = TestBed.inject(Meta);
+    spyOn(meta, 'updateTag').and.callThrough();
+    const freshFixture = TestBed.createComponent(AppComponent);
+
+    freshFixture.detectChanges();
+
+    expect(meta.updateTag).toHaveBeenCalledWith({name: 'robots', content: 'index, follow'});
+    freshFixture.destroy();
   });
 });
