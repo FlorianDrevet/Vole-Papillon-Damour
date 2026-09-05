@@ -113,6 +113,9 @@ The API startup wires:
 ## Books runtime update — 2026-09-05
 
 - The Worker now exposes `Sweep` every five minutes and `Enrich` hourly. A sweep closes idle scan sessions, attaches undated announcements to the next active Books fair, releases due announcements, delivers due alert outbox messages, and runs account deletion; enrichment resolves pending/not-found bibliographic records with retry and optional cover storage.
+- The API now enqueues a newly committed canonical ISBN when its book remains `Pending`.
+  A deduplicated in-process service resolves that ISBN asynchronously with a fresh scope,
+  while the hourly Worker remains the restart/provider-failure fallback.
 - `Books runtime - deploy` is a manual GitHub Actions workflow that builds API and Worker images from one commit, optionally opens the SQL firewall and applies all EF migrations, closes the firewall in cleanup, then updates both Container Apps. The workflow deliberately deploys migrations before the application rollout.
 - The API now runs startup migrations only for `Development`. Production and deployed development use the explicit migration step, preventing concurrent API replicas from migrating the database.
 - `main.bicep` declares the `book-covers` blob container, `Cors:AllowedOrigins`, Application Insights daily caps, and Azure Monitor alerts for missing Worker heartbeat, late announcements, and a late alert queue. The contact group must still be confirmed by Azure after infrastructure deployment.

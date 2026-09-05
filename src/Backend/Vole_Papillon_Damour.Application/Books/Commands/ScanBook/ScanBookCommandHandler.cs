@@ -18,7 +18,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 
 public sealed class ScanBookCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IBookMetadataEnrichmentQueue? metadataEnrichmentQueue = null)
     : IRequestHandler<ScanBookCommand, ErrorOr<ScanBookResult>>
 {
     private static readonly TimeSpan MaximumFutureSkew = TimeSpan.Zero;
@@ -184,6 +185,11 @@ public sealed class ScanBookCommandHandler(
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        if (book.MetadataStatus == BookMetadataStatus.Pending)
+        {
+            metadataEnrichmentQueue?.Enqueue(book.Id);
+        }
 
         var finalQuantityAnnounced = quantityAnnounced + (announcement is null ? 0 : 1);
         return new ScanBookResult(

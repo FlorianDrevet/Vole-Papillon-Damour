@@ -70,6 +70,27 @@ public sealed class ScanBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenScanCreatesPendingBook_QueuesMetadataEnrichmentAfterCommit()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var queue = Substitute.For<IBookMetadataEnrichmentQueue>();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ReceivedAt);
+        var handler = new ScanBookCommandHandler(fixture.Context, clock, queue);
+
+        var result = await handler.Handle(
+            CreateCommand(session, "979-1-0363-7742-6", kept: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var isbn13 = ParseIsbn("9791036377426");
+        (await fixture.Context.Books.SingleAsync(book => book.Id == isbn13))
+            .MetadataStatus.Should().Be(BookMetadataStatus.Pending);
+        queue.Received(1).Enqueue(isbn13);
+    }
+
+    [Fact]
     public async Task Handle_WhenScannedIsbnIsRedirected_WritesTheCanonicalBook()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

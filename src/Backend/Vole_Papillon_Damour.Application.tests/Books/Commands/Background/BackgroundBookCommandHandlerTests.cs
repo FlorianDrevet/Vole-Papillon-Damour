@@ -322,6 +322,45 @@ public sealed class BackgroundBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task EnrichPending_WhenAnIsbnIsRequested_ProcessesOnlyThatBook()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var requestedBook = await fixture.AddBookAsync("9791036377426", quantityAvailable: 0);
+        var otherBook = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(requestedBook.Isbn13, Arg.Any<CancellationToken>()).Returns(
+            new BookMetadataResult(
+                requestedBook.Isbn13.Value,
+                "Petit Ours brun se promène en forêt",
+                "Aubinais, Marie, Bour, Danièle",
+                "Bayard jeunesse",
+                2025,
+                null,
+                "BnF",
+                null,
+                new DateTimeOffset(2026, 9, 5, 6, 0, 0, TimeSpan.Zero)));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WorkerNow);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
+
+        var result = await handler.Handle(
+            new EnrichPendingBooksCommand(Isbn13: requestedBook.Isbn13),
+            CancellationToken.None);
+
+        result.ResolvedCount.Should().Be(1);
+        (await fixture.Context.Books.SingleAsync(book => book.Id == requestedBook.Id))
+            .MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
+        (await fixture.Context.Books.SingleAsync(book => book.Id == otherBook.Id))
+            .MetadataStatus.Should().Be(BookMetadataStatus.Pending);
+        await resolver.Received(1).ResolveAsync(
+            requestedBook.Isbn13,
+            Arg.Any<CancellationToken>());
+        await resolver.DidNotReceive().ResolveAsync(
+            otherBook.Isbn13,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task EnrichPending_WhenCoverIsAvailable_StoresTheBlobReferenceWithTheMetadata()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

@@ -125,6 +125,16 @@ Le workflow `Books runtime - deploy` `33929828651` a ensuite construit et roulé
 API/Worker `vpd-api:dcc0c23` et `vpd-worker:dcc0c23` depuis le même commit, avec
 `run_migrations=false`. Le déploiement est réussi et les smoke tests post-rollout sont verts.
 
+Le diagnostic du 2026-09-05 a reproduit le symptôme signalé sur le catalogue public :
+les réponses HTTP arrivaient bien, mais les pages Angular zoneless de recherche, fiche livre
+et fiche œuvre ne planifiaient pas de nouvelle détection après leurs subscriptions RxJS.
+La correction locale appelle `ChangeDetectorRef.markForCheck()` et couvre ces trois parcours
+par des tests asynchrones. Le même flux a révélé que `ScanBook` créait une fiche `Pending`
+sans déclencher le point 6 prévu par `03-backend.md` ; l'API place désormais l'ISBN canonique
+dans une file dédupliquée traitée hors réponse, avec le Worker horaire comme rattrapage. La
+branche `fix/catalogue-loading` passe 37 tests ChromeHeadless, 296 tests backend et les builds
+API/Worker/Catalog ; aucun déploiement de cette correction n'a encore été lancé.
+
 Smoke du 2026-09-05 : catalogue, Scanette et API répondent `200`; `/catalog/me/watchlist` sans
 jeton répond `401`; `/compte` et `/administration` portent `X-Robots-Tag: noindex, nofollow`;
 `GET /books/9782070612758/metadata` répond une notice BnF avec `WorkId=OL10263W`. Les CNAME,
@@ -489,6 +499,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-05 | Windows | **Correctif catalogue/metadata — branche `fix/catalogue-loading`.** Reproduction TDD du chargement infini sur recherche, fiche livre et fiche œuvre en mode zoneless, puis correction SSR/client par `markForCheck()`. Après le commit d'un scan, l'API déclenche aussi l'enrichissement bibliographique ciblé dans un service de fond dédupliqué ; le Worker horaire reste le rattrapage. Validation : 37 tests ChromeHeadless Catalog, 296 tests backend, builds API/Worker/Catalog et `git diff --check`. Aucun déploiement ni fusion ; le smoke live a confirmé que le Worker existant a enrichi l'ISBN `9791036377426` à 09:00 Europe/Paris. |
 | 2026-09-05 | Windows | **Clôture de la reprise nocturne.** PR #65 fusionnée en `f3fd148`; le CI `main` `33934370102` est vert après validation du backend, de MAUI Android, des quatre fronts et des trois images de conteneur. Le dépôt est propre et aucune PR n'est ouverte. La revue finale, les décisions et les gates encore ouvertes sont consignées ci-dessus et dans `docs/bourse-aux-livres/plan/DECISIONS-2026-09-04-overnight.md`. |
 | 2026-09-05 | Windows | **Revue finale et traçabilité.** Relecture des changements PR #61 et #63 : la suppression locale est transactionnelle et nettoie les projections strictement membre avant anonymisation/suppression ; le chemin SQLite évite `JSON_VALUE` et le chemin SQL Server optimisé est conservé. Le correctif robots couvre les deux routes privées présentes dans le routage, met à jour le HTML SSR et la meta client, et le smoke live est cohérent. Aucun défaut bloquant supplémentaire trouvé. Point de maintenance : si une sous-route privée est ajoutée, étendre le helper robots, le middleware SSR et les tests. PR #64 est fusionnée en `d097792`; CI `main` `33933202774` vert. Les gates ACS, heartbeats, benchmarks et tests physiques restent ouvertes. |
 | 2026-09-05 | Windows | **PR #63 — cohérence SEO et dernier déploiement catalogue.** La revue a détecté que le HTML statique générique rendait les routes privées `/compte` et `/administration` indexables malgré leur en-tête `X-Robots-Tag`. Le correctif pose `noindex, nofollow` par défaut et recalcule la directive sur chaque navigation publique/privée. Validation : 34 tests ChromeHeadless Catalog, build Catalog, smoke SSR local, CI PR #63 (`33931556397`, `33931558967`) et `graphify update .`. PR [#63](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/63) fusionnée en `3a6e887`; `Catalog - deploy` `33932087193` a roulé `vpd-catalog:3a6e887`. Le smoke HTTPS confirme `index, follow` sur `/`, `noindex, nofollow` sur les deux routes privées, et `200` sur robots/sitemap. Aucun changement DNS ou Entra n'était nécessaire. |

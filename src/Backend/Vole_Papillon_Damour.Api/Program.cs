@@ -65,6 +65,7 @@ builder.Services
         builder.Configuration,
         runMigrations: DatabaseMigrationPolicy.ShouldRunOnStartup(
             builder.Environment.EnvironmentName))
+    .AddBookMetadataEnrichmentProcessing()
     .AddRateLimiting();
 
 builder.Services.Configure<EmailBounceWebhookOptions>(

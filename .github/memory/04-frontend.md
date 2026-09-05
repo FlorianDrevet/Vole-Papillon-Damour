@@ -80,6 +80,10 @@ Verified feature roots:
 - Reuse the HTTP/data access pattern already present in the targeted app instead of introducing a second style in the same slice.
 - Keep shared models typed and aligned with backend contracts.
 - Both apps currently keep zoneless change detection via `provideZonelessChangeDetection()`.
+- The public Catalog search, book-detail, and work pages use manual RxJS subscriptions;
+  each asynchronous HTTP completion explicitly calls `ChangeDetectorRef.markForCheck()`
+  so zoneless SSR and browser hydration leave their loading state. Their regressions are
+  covered by asynchronous ChromeHeadless component tests.
 - The Scan app follows the same zoneless Angular setup and reuses `@vpd/ui` through the
   `SharedUi` TypeScript path alias. Its typed `BookMetadataService` calls the backend
   metadata endpoint; `CameraScannerService` uses `@zxing/browser` with `TRY_HARDER` for
@@ -204,7 +208,7 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   initial-size warning. The redesigned Scanette and the nested-endpoint bearer fix are
   deployed by `Scan - deploy` `33924618301`. CI still builds the backend, MAUI, and frontend
   surfaces but does not run frontend unit tests; the PR ran them explicitly.
-- As of 2026-09-05, Catalog passes 29 ChromeHeadless tests, the production Angular build,
+- As of 2026-09-05, Catalog passes 37 ChromeHeadless tests, the production Angular build,
   the SSR container build, and public smoke checks. The image is built from the `src/`
   context so the `SharedUi` linker remains available. The public domain is
   `https://livres.volepapillondamour.fr`; `/compte` and `/administration` are client-only

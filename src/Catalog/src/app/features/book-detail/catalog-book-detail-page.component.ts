@@ -1,5 +1,13 @@
 import {DOCUMENT} from '@angular/common';
-import {ChangeDetectionStrategy, Component, Inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Meta, Title} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
@@ -38,6 +46,7 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     private readonly meta: Meta,
     private readonly auth: CatalogAuthService,
     private readonly memberApi: CatalogMemberApiService,
+    private readonly changeDetector: ChangeDetectorRef,
     @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 
@@ -62,6 +71,7 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
           this.notificationScope.set(book.workId ? 'Work' : 'Edition');
           this.setSeo(book);
         }
+        this.changeDetector.markForCheck();
       });
   }
 
