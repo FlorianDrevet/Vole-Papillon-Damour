@@ -70,6 +70,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
           ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
+          GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
         run: |
           az deployment sub what-if \
             --name "vpd-infra-${{ github.run_number }}" \
@@ -85,6 +86,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
           ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
+          GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
         run: |
           set -euo pipefail
           az deployment sub create \
