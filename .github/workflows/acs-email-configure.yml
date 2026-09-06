@@ -1,0 +1,351 @@
+name: ACS Email - configure
+
+# Manual or PR-triggered. This workflow is deliberately separate from the image rollout:
+# it owns the Azure-only wiring that cannot be expressed safely by the image
+# pipelines (the Event Grid webhook secret and the ACS sender verification gate).
+on:
+  workflow_dispatch:
+    inputs:
+      verify_only:
+        description: Check the ACS DNS verification state without changing runtime configuration
+        required: true
+        type: boolean
+        default: false
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - .github/workflows/acs-email-configure.yml
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  ACS_EMAIL_SERVICE: vpd-acs-email-dev
+  ACS_EMAIL_DOMAIN: mail.volepapillondamour.fr
+  API_CONTAINER_APP: vpd-api-ca-dev
+  WORKER_CONTAINER_APP: vpd-worker-ca-dev
+  API_IDENTITY: vpd-api-id-dev
+  WORKER_IDENTITY: vpd-worker-id-dev
+  DEPLOY_IDENTITY_RESOURCE_GROUP: rg-vpd-identity-dev
+  DEPLOY_IDENTITY: vpd-github-deploy-id
+  KEY_VAULT: vpd-kv-dev
+  COMMUNICATION_SERVICE: vpd-acs-comm-dev
+  WEBHOOK_SECRET_NAME: email-bounce-webhook-secret
+  EVENT_SUBSCRIPTION_NAME: vpd-acs-email-delivery-reports-dev
+  WEBHOOK_HEADER_NAME: X-Vpd-EventGrid-Secret
+  EMAIL_ENDPOINT: https://vpd-acs-comm-dev.communication.azure.com
+  EMAIL_FROM: DoNotReply@mail.volepapillondamour.fr
+  UNSUBSCRIBE_URL: https://livres.volepapillondamour.fr/compte
+
+jobs:
+  configure:
+    name: Configure development ACS email delivery
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Azure CLI
+        run: |
+          az config set extension.use_dynamic_install=yes_without_prompt
+          az provider register --namespace Microsoft.EventGrid --wait
+
+      - name: Check ACS sender verification
+        id: acs
+        run: |
+          set -euo pipefail
+
+          EMAIL_SERVICE_ID=$(az resource show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$ACS_EMAIL_SERVICE" \
+            --resource-type Microsoft.Communication/emailServices \
+            --query id --output tsv)
+          DOMAIN_ID="$EMAIL_SERVICE_ID/domains/$ACS_EMAIL_DOMAIN"
+          DOMAIN_JSON=$(az rest \
+            --method get \
+            --url "https://management.azure.com${DOMAIN_ID}?api-version=2026-03-18")
+
+          read_statuses() {
+            domain_status=$(jq -r '.properties.verificationStates.Domain.status // "Unknown"' <<<"$DOMAIN_JSON")
+            spf_status=$(jq -r '.properties.verificationStates.SPF.status // "Unknown"' <<<"$DOMAIN_JSON")
+            dkim_status=$(jq -r '.properties.verificationStates.DKIM.status // "Unknown"' <<<"$DOMAIN_JSON")
+            dkim2_status=$(jq -r '.properties.verificationStates.DKIM2.status // "Unknown"' <<<"$DOMAIN_JSON")
+            dmarc_status=$(jq -r '.properties.verificationStates.DMARC.status // "Unknown"' <<<"$DOMAIN_JSON")
+          }
+
+          read_statuses
+
+          {
+            echo "ACS email resource: $EMAIL_SERVICE_ID"
+            echo "Domain resource: $DOMAIN_ID"
+            echo "Domain ownership: $domain_status"
+            echo "SPF: $spf_status"
+            echo "DKIM: $dkim_status"
+            echo "DKIM2: $dkim2_status"
+            echo "DMARC: $dmarc_status"
+          }
+
+          {
+            echo "### ACS sender verification"
+            echo ""
+            echo "| Check | Status |"
+            echo "| --- | --- |"
+            echo "| Domain ownership | $domain_status |"
+            echo "| SPF | $spf_status |"
+            echo "| DKIM | $dkim_status |"
+            echo "| DKIM2 | $dkim2_status |"
+            echo "| DMARC | $dmarc_status |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          initiate_verification() {
+            local verification_type="$1"
+            local status="$2"
+            if [ "$status" = "NotStarted" ] || [ "$status" = "VerificationFailed" ]; then
+              az communication email domain initiate-verification \
+                --domain-name "$ACS_EMAIL_DOMAIN" \
+                --email-service-name "$ACS_EMAIL_SERVICE" \
+                --resource-group "$RESOURCE_GROUP" \
+                --verification-type "$verification_type" \
+                --output none
+            fi
+          }
+
+          initiate_verification Domain "$domain_status"
+          initiate_verification SPF "$spf_status"
+          initiate_verification DKIM "$dkim_status"
+          initiate_verification DKIM2 "$dkim2_status"
+
+          for attempt in $(seq 1 12); do
+            DOMAIN_JSON=$(az rest \
+              --method get \
+              --url "https://management.azure.com${DOMAIN_ID}?api-version=2026-03-18")
+            read_statuses
+            if [ "$domain_status" = "Verified" ] && \
+               [ "$spf_status" = "Verified" ] && \
+               [ "$dkim_status" = "Verified" ] && \
+               [ "$dkim2_status" = "Verified" ]; then
+              break
+            fi
+            if [ "$attempt" -eq 12 ]; then
+              echo "ACS sender verification is incomplete; email sending remains disabled."
+              exit 1
+            fi
+            sleep 15
+          done
+
+          echo "Final ACS verification states: Domain=$domain_status SPF=$spf_status DKIM=$dkim_status DKIM2=$dkim2_status DMARC=$dmarc_status"
+
+          if az communication show \
+              --name "$COMMUNICATION_SERVICE" \
+              --resource-group "$RESOURCE_GROUP" \
+              --only-show-errors >/dev/null 2>&1; then
+            az communication update \
+              --name "$COMMUNICATION_SERVICE" \
+              --resource-group "$RESOURCE_GROUP" \
+              --linked-domains "$DOMAIN_ID" \
+              --output none
+          else
+            az communication create \
+              --name "$COMMUNICATION_SERVICE" \
+              --resource-group "$RESOURCE_GROUP" \
+              --location Global \
+              --data-location France \
+              --linked-domains "$DOMAIN_ID" \
+              --output none
+          fi
+          ACS_ID=$(az communication show \
+            --name "$COMMUNICATION_SERVICE" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query id --output tsv)
+
+          API_FQDN=$(az containerapp show \
+            --name "$API_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn --output tsv)
+          API_ID=$(az identity show \
+            --name "$API_IDENTITY" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query id --output tsv)
+          API_PRINCIPAL_ID=$(az identity show \
+            --name "$API_IDENTITY" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query principalId --output tsv)
+          WORKER_ID=$(az identity show \
+            --name "$WORKER_IDENTITY" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query id --output tsv)
+          WORKER_PRINCIPAL_ID=$(az identity show \
+            --name "$WORKER_IDENTITY" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query principalId --output tsv)
+          ACS_ROLE="Communication and Email Service Owner"
+
+          {
+            echo "ACS_ID=$ACS_ID"
+            echo "API_ENDPOINT=https://$API_FQDN/integrations/acs/email-delivery-reports"
+            echo "API_ID=$API_ID"
+            echo "API_PRINCIPAL_ID=$API_PRINCIPAL_ID"
+            echo "WORKER_ID=$WORKER_ID"
+            echo "WORKER_PRINCIPAL_ID=$WORKER_PRINCIPAL_ID"
+            echo "ACS_ROLE=$ACS_ROLE"
+          } >> "$GITHUB_ENV"
+
+      - name: Stop after verification when requested
+        if: inputs.verify_only
+        run: echo "Verification-only run completed."
+
+      - name: Grant the worker permission to send through ACS
+        if: ${{ !inputs.verify_only }}
+        run: |
+          set -euo pipefail
+          existing_assignment=$(az role assignment list \
+            --assignee-object-id "$WORKER_PRINCIPAL_ID" \
+            --scope "$ACS_ID" \
+            --role "$ACS_ROLE" \
+            --query '[0].id' --output tsv)
+          if [ -z "$existing_assignment" ]; then
+            az role assignment create \
+              --assignee-object-id "$WORKER_PRINCIPAL_ID" \
+              --assignee-principal-type ServicePrincipal \
+              --role "$ACS_ROLE" \
+              --scope "$ACS_ID" \
+              --output none
+          else
+            echo "ACS role assignment already exists."
+          fi
+
+      - name: Store the Event Grid secret in Key Vault
+        if: ${{ !inputs.verify_only }}
+        env:
+          ACS_EMAIL_WEBHOOK_SECRET: ${{ secrets.ACS_EMAIL_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ACS_EMAIL_WEBHOOK_SECRET:-}" ]; then
+            echo "The development secret ACS_EMAIL_WEBHOOK_SECRET is not configured." >&2
+            exit 1
+          fi
+          DEPLOY_PRINCIPAL_ID=$(az identity show \
+            --name "$DEPLOY_IDENTITY" \
+            --resource-group "$DEPLOY_IDENTITY_RESOURCE_GROUP" \
+            --query principalId --output tsv)
+          KEY_VAULT_ID=$(az keyvault show \
+            --name "$KEY_VAULT" \
+            --query id --output tsv)
+          existing_assignment=$(az role assignment list \
+            --assignee-object-id "$DEPLOY_PRINCIPAL_ID" \
+            --scope "$KEY_VAULT_ID" \
+            --role "Key Vault Secrets Officer" \
+            --query '[0].id' --output tsv)
+          if [ -z "$existing_assignment" ]; then
+            az role assignment create \
+              --assignee-object-id "$DEPLOY_PRINCIPAL_ID" \
+              --assignee-principal-type ServicePrincipal \
+              --role "Key Vault Secrets Officer" \
+              --scope "$KEY_VAULT_ID" \
+              --output none
+            sleep 20
+          fi
+          az keyvault secret set \
+            --vault-name "$KEY_VAULT" \
+            --name "$WEBHOOK_SECRET_NAME" \
+            --value "$ACS_EMAIL_WEBHOOK_SECRET" \
+            --output none
+
+      - name: Configure API webhook secret reference
+        if: ${{ !inputs.verify_only }}
+        run: |
+          set -euo pipefail
+          SECRET_URI="https://${KEY_VAULT}.vault.azure.net/secrets/${WEBHOOK_SECRET_NAME}"
+          az containerapp secret set \
+            --name "$API_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --secrets "$WEBHOOK_SECRET_NAME=keyvaultref:${SECRET_URI},identityref:${API_ID}" \
+            --output none
+          az containerapp update \
+            --name "$API_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --set-env-vars "EmailBounceWebhook__SharedSecret=secretref:${WEBHOOK_SECRET_NAME}" \
+            --output none
+
+      - name: Enable worker ACS email delivery
+        if: ${{ !inputs.verify_only }}
+        run: |
+          set -euo pipefail
+          az containerapp update \
+            --name "$WORKER_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --set-env-vars \
+              "BookAlerts__Email__Enabled=true" \
+              "BookAlerts__Email__Endpoint=$EMAIL_ENDPOINT" \
+              "BookAlerts__Email__MailFrom=$EMAIL_FROM" \
+              "BookAlerts__Email__ManagedIdentityClientId=$(az identity show --name \"$WORKER_IDENTITY\" --resource-group \"$RESOURCE_GROUP\" --query clientId --output tsv)" \
+              "BookAlerts__Email__AssociationName=Vole Papillon d'Amour" \
+              "BookAlerts__Email__UnsubscribeUrl=$UNSUBSCRIBE_URL" \
+            --output none
+
+      - name: Create or update the ACS Event Grid subscription
+        if: ${{ !inputs.verify_only }}
+        env:
+          ACS_EMAIL_WEBHOOK_SECRET: ${{ secrets.ACS_EMAIL_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          if az eventgrid event-subscription show \
+              --name "$EVENT_SUBSCRIPTION_NAME" \
+              --source-resource-id "$ACS_ID" \
+              --only-show-errors >/dev/null 2>&1; then
+            az eventgrid event-subscription update \
+              --name "$EVENT_SUBSCRIPTION_NAME" \
+              --source-resource-id "$ACS_ID" \
+              --endpoint "$API_ENDPOINT" \
+              --endpoint-type webhook \
+              --included-event-types Microsoft.Communication.EmailDeliveryReportReceived \
+              --delivery-attribute-mapping "$WEBHOOK_HEADER_NAME" static "$ACS_EMAIL_WEBHOOK_SECRET" true \
+              --output none
+          else
+            az eventgrid event-subscription create \
+              --name "$EVENT_SUBSCRIPTION_NAME" \
+              --source-resource-id "$ACS_ID" \
+              --endpoint "$API_ENDPOINT" \
+              --endpoint-type webhook \
+              --included-event-types Microsoft.Communication.EmailDeliveryReportReceived \
+              --delivery-attribute-mapping "$WEBHOOK_HEADER_NAME" static "$ACS_EMAIL_WEBHOOK_SECRET" true \
+              --output none
+          fi
+
+      - name: Report ACS email configuration
+        if: ${{ !inputs.verify_only }}
+        run: |
+          set -euo pipefail
+          API_STATUS=$(az containerapp show \
+            --name "$API_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query '{state:properties.runningStatus,revision:properties.latestRevisionName}' \
+            --output json)
+          WORKER_STATUS=$(az containerapp show \
+            --name "$WORKER_CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query '{state:properties.runningStatus,revision:properties.latestRevisionName}' \
+            --output json)
+          EVENT_STATUS=$(az eventgrid event-subscription show \
+            --name "$EVENT_SUBSCRIPTION_NAME" \
+            --source-resource-id "$ACS_ID" \
+            --query '{provisioningState:properties.provisioningState,endpoint:properties.destination.properties.endpointUrl,eventTypes:properties.filter.includedEventTypes}' \
+            --output json)
+          {
+            echo "### ACS email delivery configured"
+            echo ""
+            echo "- Sender domain: $ACS_EMAIL_DOMAIN (verified)"
+            echo "- API webhook: $API_ENDPOINT"
+            echo "- API: $API_STATUS"
+            echo "- Worker: $WORKER_STATUS"
+            echo "- Event Grid: $EVENT_STATUS"
+            echo "- Worker test email: not sent by this workflow"
+          } >> "$GITHUB_STEP_SUMMARY"
