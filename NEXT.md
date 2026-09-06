@@ -168,6 +168,19 @@ Le workflow `Books runtime - deploy` `33929828651` a ensuite construit et roulé
 API/Worker `vpd-api:dcc0c23` et `vpd-worker:dcc0c23` depuis le même commit, avec
 `run_migrations=false`. Le déploiement est réussi et les smoke tests post-rollout sont verts.
 
+Le diagnostic du 2026-09-05 a reproduit le symptôme signalé sur le catalogue public :
+les réponses HTTP arrivaient bien, mais les pages Angular zoneless de recherche, fiche livre
+et fiche œuvre ne planifiaient pas de nouvelle détection après leurs subscriptions RxJS.
+La correction locale appelle `ChangeDetectorRef.markForCheck()` et couvre ces trois parcours
+par des tests asynchrones. Le même flux a révélé que `ScanBook` créait une fiche `Pending`
+sans déclencher le point 6 prévu par `03-backend.md` ; l'API place désormais l'ISBN canonique
+dans une file dédupliquée traitée hors réponse, avec le Worker horaire comme rattrapage.
+Le worktree de résolution `fix/pr-67-conflicts` passe 58 tests ChromeHeadless Catalog,
+319 tests backend et les builds API/Worker/Catalog. Le chemin Blob des couvertures prévu par
+la PR a été écarté : `main` utilise désormais les URL HTTPS directes de la migration
+`20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl`. Aucun déploiement de cette correction
+n'a encore été lancé.
+
 Smoke du 2026-09-05 : catalogue, Scanette et API répondent `200`; `/catalog/me/watchlist` sans
 jeton répond `401`; `/compte` et `/administration` portent `X-Robots-Tag: noindex, nofollow`;
 `GET /books/9782070612758/metadata` répond une notice BnF avec `WorkId=OL10263W`. Les CNAME,
@@ -558,6 +571,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-06 | Windows | **PR #67 — résolution des conflits et revue de pertinence.** Les correctifs de détection zoneless sur recherche, fiche livre et fiche œuvre sont conservés, ainsi que l'enrichissement bibliographique ciblé après commit d'un scan avec le Worker horaire comme repli. Le chemin Blob des couvertures, devenu obsolète après `ReplaceBookCoverBlobWithDirectCoverUrl`, est retiré de la résolution. Validation : 58 tests ChromeHeadless Catalog, 319 tests backend, builds API/Worker/Catalog et `graphify update .` passés ; aucun déploiement effectué. |
 | 2026-09-06 | Windows | **P1-10 — persistance métier de la caisse.** Correction du trou identifié dans la PWA Scan : `VALIDER` ne se contente plus d'effacer l'écran. Les ventes sont conservées dans un magasin IndexedDB dédié, décrémentent immédiatement la projection locale, puis sont rejouées vers `POST /scan/sales` avec `ClientGestureId` idempotent ; la réponse réconcilie `qtyAvailable` et `salesCount`. Le rôle `Caisse` est accepté par le front, le delta catalogue est partagé entre `Tri` et `Caisse`, et l'accès UI est filtré par rôle. Validation locale : 85 tests ChromeHeadless Scan, build production Scan et 292 tests backend ; aucun déploiement ni test manuel de coupure réseau à distance. Branche `fix/scan-cash-sales`, PR à ouvrir. |
 | 2026-09-05 | Windows | **Clôture de la reprise nocturne.** PR #65 fusionnée en `f3fd148`; le CI `main` `33934370102` est vert après validation du backend, de MAUI Android, des quatre fronts et des trois images de conteneur. Le dépôt est propre et aucune PR n'est ouverte. La revue finale, les décisions et les gates encore ouvertes sont consignées ci-dessus et dans `docs/bourse-aux-livres/plan/DECISIONS-2026-09-04-overnight.md`. |
 | 2026-09-05 | Windows | **Revue finale et traçabilité.** Relecture des changements PR #61 et #63 : la suppression locale est transactionnelle et nettoie les projections strictement membre avant anonymisation/suppression ; le chemin SQLite évite `JSON_VALUE` et le chemin SQL Server optimisé est conservé. Le correctif robots couvre les deux routes privées présentes dans le routage, met à jour le HTML SSR et la meta client, et le smoke live est cohérent. Aucun défaut bloquant supplémentaire trouvé. Point de maintenance : si une sous-route privée est ajoutée, étendre le helper robots, le middleware SSR et les tests. PR #64 est fusionnée en `d097792`; CI `main` `33933202774` vert. Les gates ACS, heartbeats, benchmarks et tests physiques restent ouvertes. |

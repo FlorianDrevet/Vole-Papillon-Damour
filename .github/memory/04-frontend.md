@@ -93,6 +93,10 @@ Verified feature roots:
 - Reuse the HTTP/data access pattern already present in the targeted app instead of introducing a second style in the same slice.
 - Keep shared models typed and aligned with backend contracts.
 - Both apps currently keep zoneless change detection via `provideZonelessChangeDetection()`.
+- The public Catalog search, book-detail, and work pages use manual RxJS subscriptions;
+  each asynchronous HTTP completion explicitly calls `ChangeDetectorRef.markForCheck()`
+  so zoneless SSR and browser hydration leave their loading state. Their regressions are
+  covered by asynchronous ChromeHeadless component tests.
 - The Scan app follows the same zoneless Angular setup and reuses `@vpd/ui` through the
   `SharedUi` TypeScript path alias. Its typed `BookMetadataService` calls the backend
   metadata endpoint; `CameraScannerService` uses `@zxing/browser` with `TRY_HARDER` for

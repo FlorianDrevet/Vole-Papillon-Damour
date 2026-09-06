@@ -64,6 +64,12 @@ Le chemin le plus chaud du système (`ENF-01`, `ENF-03`).
 Le point 6 est ce qui fait tenir `ENF-02`. Un appel externe ne doit jamais retarder la
 réponse ni faire échouer l'écriture.
 
+Dans l'API, ce déclenchement passe par une file mémoire dédupliquée : après le commit du
+scan, l'ISBN canonique est ajouté sans attendre le fournisseur. Un service de fond crée
+alors son propre scope et réutilise `EnrichPendingBooksCommand` ciblé sur cet ISBN. Le
+`Worker` conserve le passage horaire comme rattrapage si l'API redémarre ou si un
+fournisseur est indisponible.
+
 Le serveur ne reçoit pas une intention locale `Pending` : l'application de scan résout
 chaque intention en `Kept` ou `Rejected` avant l'envoi. Une annulation après réception
 passe par le même contrat idempotent avec un nouvel identifiant et produit le mouvement

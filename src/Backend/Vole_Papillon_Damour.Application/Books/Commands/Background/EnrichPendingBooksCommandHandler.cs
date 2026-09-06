@@ -33,7 +33,7 @@ public sealed class EnrichPendingBooksCommandHandler(
             throw new InvalidOperationException("The worker clock must be expressed in UTC.");
         }
 
-        var candidates = await dbContext.Books
+        var candidateQuery = dbContext.Books
             .AsNoTracking()
             .Where(book =>
                 (book.MetadataStatus == BookMetadataStatus.Pending &&
@@ -47,7 +47,14 @@ public sealed class EnrichPendingBooksCommandHandler(
                 (book.MetadataStatus == BookMetadataStatus.Resolved &&
                  book.CoverUrl == null &&
                  (book.CoverCheckedAt == null ||
-                  book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))))
+                  book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))));
+
+        if (command.Isbn13 is { } requestedIsbn13)
+        {
+            candidateQuery = candidateQuery.Where(book => book.Id == requestedIsbn13);
+        }
+
+        var candidates = await candidateQuery
             .OrderBy(book => book.LastAttemptAt)
             .ThenBy(book => book.Id)
             .Take(command.BatchSize)

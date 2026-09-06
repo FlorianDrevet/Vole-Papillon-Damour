@@ -95,6 +95,14 @@ public static class DependencyInjection
         
         return services;
     }
+
+    public static IServiceCollection AddBookMetadataEnrichmentProcessing(
+        this IServiceCollection services)
+    {
+        services.AddSingleton<IBookMetadataEnrichmentQueue, BookMetadataEnrichmentQueue>();
+        services.AddHostedService<BookMetadataEnrichmentBackgroundService>();
+        return services;
+    }
     
     private static IServiceCollection AddRepositories(
         this IServiceCollection services)

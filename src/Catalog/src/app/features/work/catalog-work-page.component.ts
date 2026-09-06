@@ -1,5 +1,12 @@
 import {DOCUMENT} from '@angular/common';
-import {ChangeDetectionStrategy, Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import {Meta, Title} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
 import {Subject, catchError, of, switchMap, takeUntil} from 'rxjs';
@@ -27,6 +34,7 @@ export class CatalogWorkPageComponent implements OnInit, OnDestroy {
     private readonly api: CatalogApiService,
     private readonly title: Title,
     private readonly meta: Meta,
+    private readonly changeDetector: ChangeDetectorRef,
     @Inject(DOCUMENT) private readonly document: Document,
   ) {}
 
@@ -48,6 +56,7 @@ export class CatalogWorkPageComponent implements OnInit, OnDestroy {
         if (work) {
           this.setSeo(work);
         }
+        this.changeDetector.markForCheck();
       });
   }
 

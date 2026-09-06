@@ -1,9 +1,10 @@
 import {ActivatedRoute, convertToParamMap} from '@angular/router';
+import {provideZonelessChangeDetection} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterModule} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
-import {of} from 'rxjs';
+import {of, Subject} from 'rxjs';
 import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
@@ -89,6 +90,7 @@ describe('CatalogBookDetailPageComponent', () => {
       declarations: [CatalogBookDetailPageComponent],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
+        provideZonelessChangeDetection(),
         {provide: CatalogApiService, useValue: api},
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: memberApi},
@@ -100,6 +102,20 @@ describe('CatalogBookDetailPageComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(CatalogBookDetailPageComponent);
+  });
+
+  it('renders an asynchronous book response in zoneless mode', async () => {
+    const bookResponse$ = new Subject<CatalogBook>();
+    api.getBook.and.returnValue(bookResponse$.asObservable());
+
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('La fiche arrive…');
+
+    bookResponse$.next(book);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Livre à surveiller');
+    expect(fixture.nativeElement.textContent).not.toContain('La fiche arrive…');
   });
 
   it('lets an authenticated member follow the work from its book page', async () => {

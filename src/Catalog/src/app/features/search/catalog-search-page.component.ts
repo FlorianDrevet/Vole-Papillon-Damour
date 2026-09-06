@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnDestroy, OnInit} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
@@ -47,6 +47,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     private readonly api: CatalogApiService,
     private readonly auth: CatalogAuthService,
     private readonly memberApi: CatalogMemberApiService,
+    private readonly changeDetector: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -183,6 +184,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       .subscribe(response => {
         this.response = response;
         this.loading = false;
+        this.changeDetector.markForCheck();
       });
 
     const referenceQuery = this.query.trim();
@@ -206,6 +208,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       .subscribe(response => {
         this.externalResponse = response;
         this.externalLoading = false;
+        this.changeDetector.markForCheck();
       });
   }
 

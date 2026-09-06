@@ -1,14 +1,15 @@
+import {provideZonelessChangeDetection, signal, WritableSignal} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, ParamMap, RouterModule, convertToParamMap} from '@angular/router';
 import {FormsModule} from '@angular/forms';
-import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
-import {BehaviorSubject, of} from 'rxjs';
+import {BehaviorSubject, Subject, of} from 'rxjs';
 import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogSearchResponse} from '../../core/catalog.models';
 import {CatalogSearchPageComponent} from './catalog-search-page.component';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
 
@@ -24,9 +25,38 @@ describe('CatalogSearchPageComponent', () => {
     getApiAccessToken: jasmine.Spy;
   };
   let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
+  let response$: Subject<CatalogSearchResponse>;
   const routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
 
+  const response: CatalogSearchResponse = {
+    generatedAt: '2026-09-05T06:00:00Z',
+    books: [{
+      isbn13: '9791036377426',
+      title: 'Petit Ours brun se promène en forêt',
+      authors: 'Aubinais, Marie, Bour, Danièle',
+      publisher: 'Bayard jeunesse',
+      publicationYear: 2025,
+      physicalFormat: null,
+      language: 'fr',
+      genre: 'Jeunesse',
+      workId: null,
+      coverUrl: null,
+      quantityAvailable: 3,
+      quantityAnnounced: 0,
+      nextFairAt: null,
+      lastAvailableAt: '2026-09-05T06:00:00Z',
+      firstSeenAt: '2026-09-05T06:00:00Z',
+      updatedAt: '2026-09-05T06:00:00Z',
+      isRare: false,
+    }],
+    totalCount: 1,
+    page: 1,
+    pageSize: 24,
+    genres: ['Jeunesse'],
+  };
+
   beforeEach(async () => {
+    response$ = new Subject<CatalogSearchResponse>();
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'searchReferences']);
     api.search.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 24, genres: []}));
     api.searchReferences.and.returnValue(of({
@@ -60,6 +90,7 @@ describe('CatalogSearchPageComponent', () => {
       declarations: [CatalogSearchPageComponent, BookCardComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
+        provideZonelessChangeDetection(),
         {provide: CatalogApiService, useValue: api},
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: memberApi},
@@ -77,5 +108,18 @@ describe('CatalogSearchPageComponent', () => {
     expect(api.searchReferences).toHaveBeenCalledWith('saint-exupéry', 1, 20);
     expect(fixture.nativeElement.textContent).toContain('Référentiel externe');
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
+  });
+
+  it('renders an asynchronous catalog response in zoneless mode', async () => {
+    api.search.and.returnValue(response$.asObservable());
+
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Le catalogue arrive…');
+
+    response$.next(response);
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Petit Ours brun se promène en forêt');
+    expect(fixture.nativeElement.textContent).not.toContain('Le catalogue arrive…');
   });
 });
