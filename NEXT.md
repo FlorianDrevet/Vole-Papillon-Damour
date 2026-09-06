@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — la refonte visuelle V2 de `origin/main`, le socle API/CQRS et les parcours Catalog membre/admin sont implémentés dans le worktree `feat/catalog-p2-p3`. La branche doit encore être livrée par PR. |
-| **Prochaine action** | Ouvrir et faire valider la PR, puis appliquer la migration sur l'environnement cible. Relever ensuite les heartbeats/mesures et vérifier ACS avec un cycle d'alerte réel. |
+| **Lot en cours** | `P2/P3` — la refonte visuelle V2 de `origin/main`, le socle API/CQRS et les parcours Catalog membre/admin sont implémentés dans le worktree `feat/catalog-p2-p3`. PR [#72](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/72) ouverte vers `main`. |
+| **Prochaine action** | Faire valider la PR #72, puis appliquer la migration sur l'environnement cible. Relever ensuite les heartbeats/mesures et vérifier ACS avec un cycle d'alerte réel. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-p2-p3` |
 | **Dernière mise à jour** | 2026-09-06 — parcours Catalog P2/P3 intégrés, tests et smoke locaux passés |
 | **Branche** | `feat/catalog-p2-p3` — worktree dédié, PR à ouvrir après validation |
