@@ -9,7 +9,7 @@ import {DesignSystemModule} from '@vpd/ui';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
-import {CatalogSearchResponse} from '../../core/catalog.models';
+import {CatalogAddedWatchlistItem, CatalogSearchResponse} from '../../core/catalog.models';
 import {CatalogSearchPageComponent} from './catalog-search-page.component';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
 
@@ -121,5 +121,43 @@ describe('CatalogSearchPageComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Petit Ours brun se promène en forêt');
     expect(fixture.nativeElement.textContent).not.toContain('Le catalogue arrive…');
+  });
+
+  it('refreshes the follow button after the asynchronous add completes in zoneless mode', async () => {
+    const addResponse$ = new Subject<CatalogAddedWatchlistItem>();
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(addResponse$.asObservable());
+
+    fixture.detectChanges();
+
+    const followPromise = fixture.componentInstance.followReference({
+      isbn13: '9782070612758',
+      workId: 'OL42W',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+      coverUrl: null,
+      source: 'OpenLibrary',
+    });
+    await Promise.resolve();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Ajout…');
+
+    addResponse$.next({
+      id: 'watchlist-item',
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      addedAt: '2026-09-05T06:00:00Z',
+    });
+    addResponse$.complete();
+    await followPromise;
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de suivi.');
+    expect(fixture.nativeElement.textContent).toContain('Suivre ce titre');
+    expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
   });
 });

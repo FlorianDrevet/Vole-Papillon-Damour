@@ -140,6 +140,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         : 'Le titre n’a pas pu être ajouté. Réessayez dans un instant.';
     } finally {
       this.referenceFollowPending = null;
+      this.changeDetector.markForCheck();
     }
   }
 
