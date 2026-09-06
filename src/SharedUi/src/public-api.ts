@@ -19,6 +19,7 @@ export * from './lib/components/vpd-actuality-card/vpd-actuality-card.component'
 export * from './lib/components/vpd-event-card/vpd-event-card.component';
 export * from './lib/components/vpd-product-card/vpd-product-card.component';
 export * from './lib/components/vpd-product-list/vpd-product-list.component';
+export * from './lib/components/vpd-book-cover-placeholder/vpd-book-cover-placeholder.component';
 
 export * from './lib/pipes/vpd-price.pipe';
 export * from './lib/pipes/vpd-capitalize.pipe';

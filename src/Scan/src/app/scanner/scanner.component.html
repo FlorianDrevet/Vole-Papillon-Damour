@@ -222,7 +222,7 @@
                   [src]="coverUrl"
                   [alt]="'Couverture de ' + activeTitle"
                   (error)="onCoverError()">
-                <ng-template #triNoCover><span class="cover-placeholder">Couverture indisponible</span></ng-template>
+                <ng-template #triNoCover><vpd-book-cover-placeholder></vpd-book-cover-placeholder></ng-template>
               </div>
               <div class="book-copy">
                 <p class="book-source">{{ metadata ? 'Notice trouvée · ' + metadata.source : 'Notice bibliographique en arrière-plan' }}</p>
@@ -475,7 +475,7 @@
               [src]="coverUrl"
               [alt]="'Couverture de ' + activeTitle"
               (error)="onCoverError()">
-            <ng-template #consultationNoCover><span class="cover-placeholder">Couv.</span></ng-template>
+            <ng-template #consultationNoCover><vpd-book-cover-placeholder></vpd-book-cover-placeholder></ng-template>
           </div>
           <div class="book-copy">
             <p class="book-source">{{ metadata ? 'Notice trouvée · ' + metadata.source : 'Notice en arrière-plan' }}</p>

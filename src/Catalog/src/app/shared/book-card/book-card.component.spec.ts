@@ -1,5 +1,6 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterModule} from '@angular/router';
+import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogBook} from '../../core/catalog.models';
 import {BookCardComponent} from './book-card.component';
@@ -10,7 +11,7 @@ describe('BookCardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [BookCardComponent],
-      imports: [RouterModule.forRoot([])],
+      imports: [RouterModule.forRoot([]), DesignSystemModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BookCardComponent);
@@ -96,5 +97,59 @@ describe('BookCardComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Annoncé prochainement');
     expect(text).toContain('2 à partir du');
+  });
+
+  it('renders the generic book cover when no cover URL is available', () => {
+    fixture.componentInstance.book = {
+      isbn13: '9782070363735',
+      title: 'Un livre sans image',
+      authors: null,
+      publisher: null,
+      publicationYear: null,
+      physicalFormat: null,
+      language: null,
+      genre: null,
+      workId: null,
+      coverUrl: null,
+      quantityAvailable: 0,
+      quantityAnnounced: 0,
+      nextFairAt: null,
+      lastAvailableAt: null,
+      firstSeenAt: '2026-09-03T10:00:00Z',
+      updatedAt: '2026-09-04T10:00:00Z',
+      isRare: false,
+    };
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.cover-frame span')).toBeNull();
+  });
+
+  it('switches to the generic book cover when the external image fails', () => {
+    fixture.componentInstance.book = {
+      isbn13: '9782070363735',
+      title: 'Un livre avec une image indisponible',
+      authors: null,
+      publisher: null,
+      publicationYear: null,
+      physicalFormat: null,
+      language: null,
+      genre: null,
+      workId: null,
+      coverUrl: 'https://covers.example.test/book.jpg',
+      quantityAvailable: 0,
+      quantityAnnounced: 0,
+      nextFairAt: null,
+      lastAvailableAt: null,
+      firstSeenAt: '2026-09-03T10:00:00Z',
+      updatedAt: '2026-09-04T10:00:00Z',
+      isRare: false,
+    };
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.cover-frame img') as HTMLImageElement)
+      .dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
   });
 });

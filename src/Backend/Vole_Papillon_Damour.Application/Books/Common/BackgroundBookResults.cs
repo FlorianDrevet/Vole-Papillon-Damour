@@ -18,4 +18,5 @@ public sealed record EnrichPendingBooksResult(
     int ProcessedCount,
     int ResolvedCount,
     int NotFoundCount,
-    int FailedCount);
+    int FailedCount,
+    int CoverUpdatedCount = 0);

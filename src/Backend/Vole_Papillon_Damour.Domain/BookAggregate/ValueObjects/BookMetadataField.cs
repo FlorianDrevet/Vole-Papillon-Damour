@@ -9,6 +9,6 @@ public enum BookMetadataField : byte
     PhysicalFormat,
     Language,
     Genre,
-    CoverBlobRef,
+    CoverUrl,
     WorkId
 }

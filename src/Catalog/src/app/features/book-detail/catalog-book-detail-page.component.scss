@@ -50,29 +50,6 @@
   mix-blend-mode: multiply;
 }
 
-.cover-placeholder {
-  display: flex;
-  align-items: center;
-  color: var(--catalog-slate-3);
-  font: .6rem/1.4 var(--catalog-mono);
-  letter-spacing: .08em;
-  text-align: center;
-  text-transform: uppercase;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.cover-placeholder > span {
-  display: grid;
-  width: 62px;
-  height: 62px;
-  place-items: center;
-  border: 1px solid var(--catalog-mist);
-  border-radius: 50%;
-  color: var(--catalog-blue);
-  font: 500 .65rem/1 var(--catalog-mono);
-}
-
 .cover-caption {
   margin: 13px 0 0;
   color: var(--catalog-slate-3);

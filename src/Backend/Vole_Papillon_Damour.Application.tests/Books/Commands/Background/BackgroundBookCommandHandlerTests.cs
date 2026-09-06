@@ -322,7 +322,7 @@ public sealed class BackgroundBookCommandHandlerTests
     }
 
     [Fact]
-    public async Task EnrichPending_WhenCoverIsAvailable_StoresTheBlobReferenceWithTheMetadata()
+    public async Task EnrichPending_WhenCoverIsAvailable_PersistsTheDirectCoverUrlWithTheMetadata()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
@@ -337,21 +337,11 @@ public sealed class BackgroundBookCommandHandlerTests
                 new Uri("https://covers.openlibrary.org/b/id/42-L.jpg"),
                 "OpenLibrary",
                 null,
-                new DateTimeOffset(2026, 9, 3, 20, 0, 0, TimeSpan.Zero)));
-        var coverStorage = Substitute.For<IBookCoverStorage>();
-        var coverReference = new Uri("https://storage.example.test/book-covers/42.jpg");
-        coverStorage.TryStoreAsync(
-                book.Isbn13,
-                Arg.Any<Uri>(),
-                Arg.Any<CancellationToken>())
-            .Returns(coverReference);
+                new DateTimeOffset(2026, 9, 3, 20, 0, 0, TimeSpan.Zero),
+                "OpenLibrary"));
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(WorkerNow);
-        var handler = new EnrichPendingBooksCommandHandler(
-            fixture.Context,
-            resolver,
-            clock,
-            coverStorage);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
 
         var result = await handler.Handle(
             new EnrichPendingBooksCommand(),
@@ -360,54 +350,59 @@ public sealed class BackgroundBookCommandHandlerTests
         result.ResolvedCount.Should().Be(1);
         var persisted = await fixture.Context.Books.SingleAsync();
         persisted.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
-        persisted.CoverBlobRef.Should().Be(coverReference.ToString());
-        await coverStorage.Received(1).TryStoreAsync(
-            book.Isbn13,
-            Arg.Any<Uri>(),
-            Arg.Any<CancellationToken>());
+        persisted.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/42-L.jpg");
+        persisted.CoverSource.Should().Be(BookCoverSource.OpenLibrary);
+        persisted.CoverCheckedAt.Should().Be(WorkerNow);
     }
 
     [Fact]
-    public async Task EnrichPending_WhenCoverProviderFails_LeavesBibliographicMetadataPendingForReplay()
+    public async Task EnrichPending_WhenAResolvedBookHasNoCover_BackfillsTheDirectCoverUrl()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.Title]),
+            BookMetadataSource.Bnf,
+            WorkerNow.AddDays(-31),
+            rawPayload: null);
+        await fixture.Context.SaveChangesAsync();
         var resolver = Substitute.For<IBibliographicMetadataResolver>();
         resolver.ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>()).Returns(
             new BookMetadataResult(
                 book.Isbn13.Value,
-                "Le Petit Prince",
-                "Antoine de Saint-Exupéry",
-                "Gallimard",
-                1946,
+                null,
+                null,
+                null,
+                null,
                 new Uri("https://covers.openlibrary.org/b/id/42-L.jpg"),
-                "BnF",
-                "OL42W",
-                new DateTimeOffset(2026, 9, 3, 20, 0, 0, TimeSpan.Zero)));
-        var coverStorage = Substitute.For<IBookCoverStorage>();
-        coverStorage.TryStoreAsync(
-                book.Isbn13,
-                Arg.Any<Uri>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Task.FromException<Uri?>(new HttpRequestException("cover provider unavailable")));
+                "OpenLibrary",
+                null,
+                new DateTimeOffset(2026, 9, 3, 20, 0, 0, TimeSpan.Zero),
+                "OpenLibrary"));
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(WorkerNow);
-        var handler = new EnrichPendingBooksCommandHandler(
-            fixture.Context,
-            resolver,
-            clock,
-            coverStorage);
+        var handler = new EnrichPendingBooksCommandHandler(fixture.Context, resolver, clock);
 
         var result = await handler.Handle(
             new EnrichPendingBooksCommand(),
             CancellationToken.None);
 
-        result.FailedCount.Should().Be(1);
+        result.CoverUpdatedCount.Should().Be(1);
+        result.ResolvedCount.Should().Be(0);
         var persisted = await fixture.Context.Books.SingleAsync();
-        persisted.MetadataStatus.Should().Be(BookMetadataStatus.Pending);
-        persisted.Title.Should().BeNull();
-        persisted.ResolveAttempts.Should().Be(0);
-        persisted.LastAttemptAt.Should().Be(WorkerNow);
+        persisted.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
+        persisted.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/42-L.jpg");
+        persisted.CoverSource.Should().Be(BookCoverSource.OpenLibrary);
+        await resolver.Received(1).ResolveAsync(book.Isbn13, Arg.Any<CancellationToken>());
     }
 
     [Fact]

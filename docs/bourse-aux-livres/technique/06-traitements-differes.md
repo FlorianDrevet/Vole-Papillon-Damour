@@ -118,7 +118,7 @@ modifiée sans mouvement tracé.
 | Rattacher les annonces sans date à une bourse créée | `RG-24` | ~5 min |
 | Réaffecter les annonces d'une bourse déplacée ou annulée | `RG-38` | ~5 min |
 | Rattraper les fiches `Pending` et `NotFound` | `RG-03`, `DT-05` | horaire, débit limité |
-| Récupérer les couvertures | `DT-05` | horaire, débit limité |
+| Vérifier et compléter les URLs de couverture | `DT-24` | horaire, débit limité |
 | Enrichir le `WorkId` via Open Library | `RG-46` | horaire, débit limité |
 | Supprimer les comptes inactifs depuis 3 ans | `ENF-13` | quotidien |
 
@@ -128,7 +128,7 @@ et espacé. Neuf déploiements distincts contreviendraient à `ENF-24`.
 | Nom | Cadence | Contenu |
 |---|---|---|
 | `sweep` | toutes les 5 min | Les cinq premières lignes ci-dessus |
-| `enrich` | horaire | Rattrapage, couvertures, `WorkId`, purge quotidienne |
+| `enrich` | horaire | Rattrapage, URLs de couverture, `WorkId`, purge quotidienne |
 
 **C'est dans `enrich`, et nulle part ailleurs, que l'étalement des appels externes
 s'applique** : N fiches par exécution, une requête à la fois. Personne n'attend de

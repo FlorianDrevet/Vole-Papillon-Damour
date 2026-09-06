@@ -83,24 +83,25 @@ instruit au réexamen de `DT-04`, et l'alternative écartée en `DT-09`.
                          │
         ┌────────────────┼────────────────┐
         ▼                ▼                ▼
-   ┌─────────┐    ┌────────────┐   ┌──────────────┐
-   │   SQL   │    │   Blob     │   │Entra Ext. ID │
-   │ Server  │    │couvertures │   │ tous publics │
-   └────▲────┘    └─────▲──────┘   └──────────────┘
-        │               │
-        │ outbox +      │
-        │ fiches        │
-   ┌────┴───────────────┴────┐
-   │   Worker différé        │───────►  BnF SRU
-   │  kind=functionapp       │───────►  Open Library
-   │  alertes, bascule,      │───────►  Envoi d'e-mails
-   │  rattrapage             │
-   │  minReplicas: 0 (QT-02) │
-   └─────────────────────────┘
+   ┌─────────┐     ┌──────────────┐   ┌──────────────┐
+   │   SQL   │     │Entra Ext. ID │   │  Sources     │
+   │ Server  │     │ tous publics │   │ BnF / OL / GB│
+   └────▲────┘     └──────────────┘   └──────▲───────┘
+        │                                    │
+        │ outbox + fiches                    │ URLs vérifiées
+   ┌────┴───────────────────────┐            │
+   │   Worker différé           │────────────┘
+   │  kind=functionapp          │───────►  Envoi d'e-mails
+   │  alertes, bascule,         │
+   │  rattrapage                │
+   │  minReplicas: 0 (QT-02)    │
+   └────────────────────────────┘
 ```
 
-Le worker ne parle qu'à SQL, au stockage et aux services externes. **Il ne passe pas
-par l'API.** Concrètement : c'est un second projet exécutable de la même solution, qui
+Le worker ne parle qu'à SQL et aux services externes. **Il ne passe pas par l'API.**
+Les couvertures de livres ne transitent plus par le stockage Blob : seules les URLs
+HTTPS validées des sources sont conservées dans SQL et renvoyées au client. Concrètement,
+c'est un second projet exécutable de la même solution, qui
 **référence les mêmes bibliothèques** `Application`, `Domain` et `Infrastructure` et
 appelle les mêmes handlers MediatR en direct. Rien n'est dupliqué ; deux processus, un
 seul code. Le détail, les alternatives écartées et les trois contraintes que cela

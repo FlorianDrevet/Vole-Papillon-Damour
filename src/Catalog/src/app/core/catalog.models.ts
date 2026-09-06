@@ -12,6 +12,7 @@ export interface CatalogBook {
   genre: string | null;
   workId: string | null;
   coverUrl: string | null;
+  coverSource?: string | null;
   quantityAvailable: number;
   quantityAnnounced: number;
   nextFairAt: string | null;

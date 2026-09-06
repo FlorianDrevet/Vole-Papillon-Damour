@@ -54,30 +54,6 @@
   mix-blend-mode: multiply;
 }
 
-.cover-placeholder {
-  display: flex;
-  align-items: center;
-  color: var(--catalog-slate-3);
-  font: .59rem/1.4 var(--catalog-mono);
-  letter-spacing: .08em;
-  text-align: center;
-  text-transform: uppercase;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.cover-placeholder > span {
-  display: grid;
-  width: 54px;
-  height: 54px;
-  place-items: center;
-  border: 1px solid var(--catalog-mist);
-  border-radius: 50%;
-  color: var(--catalog-blue);
-  font: 500 .62rem/1 var(--catalog-mono);
-  letter-spacing: .1em;
-}
-
 .book-card-content {
   display: flex;
   min-height: 194px;

@@ -19,6 +19,7 @@ import {CatalogAuthService} from './core/catalog-auth.service';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
+import {DesignSystemModule} from '@vpd/ui';
 
 registerLocaleData(localeFr);
 
@@ -41,6 +42,7 @@ registerLocaleData(localeFr);
     HttpClientModule,
     FormsModule,
     AppRoutingModule,
+    DesignSystemModule,
   ],
   providers: [
     {provide: LOCALE_ID, useValue: 'fr-FR'},

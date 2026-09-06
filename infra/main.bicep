@@ -157,9 +157,6 @@ param blobContainerActualityImages string
 param blobContainerEventImages string
 @description('Blob container holding the product images (BlobSettings__BlobContainerProductsImagesClient)')
 param blobContainerProductImages string
-@description('Blob container holding book cover images (BlobSettings__BlobContainerBookCoversName)')
-param blobContainerBookCovers string
-
 // -----------------------------------------------------------------------
 // ACS Email
 // -----------------------------------------------------------------------
@@ -211,6 +208,10 @@ param jwtAudience string
 
 @description('Lifetime of the API JWT tokens, in minutes')
 param jwtExpiryMinutes int
+
+@description('Optional API key for the Google Books volumes API')
+@secure()
+param googleBooksApiKey string = ''
 
 // -----------------------------------------------------------------------
 // Computed
@@ -496,10 +497,6 @@ module storageAccountModule './modules/StorageAccount/storageAccount.module.bice
         name: blobContainerProductImages
         publicAccess: 'Blob'
       }
-      {
-        name: blobContainerBookCovers
-        publicAccess: 'Blob'
-      }
     ]
   }
 }
@@ -516,6 +513,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
     sqlAdministratorLoginPassword: sqlAdministratorLoginPassword
     jwtSecret: jwtSecret
     entraGraphClientSecret: entraGraphClientSecret
+    googleBooksApiKey: googleBooksApiKey
   }
   dependsOn: [
     keyVaultModule
@@ -760,7 +758,7 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: containerRegistryModule.outputs.loginServer
     userAssignedIdentityId: userAssignedIdentityApiModule.outputs.resourceId
-    keyVaultSecrets: [
+    keyVaultSecrets: concat([
       {
         name: 'sql-connectionstring'
         keyVaultUrl: appSecretsModule.outputs.secretUris['sql-connectionstring']
@@ -777,7 +775,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         name: 'entra-graph-client-secret'
         keyVaultUrl: appSecretsModule.outputs.secretUris['entra-graph-client-secret']
       }
-    ]
+    ], empty(googleBooksApiKey) ? [] : [{
+      name: 'google-books-api-key'
+      keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
+    }])
     envVars: concat([
       {
         name: 'ASPNETCORE_ENVIRONMENT'
@@ -859,16 +860,19 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         value: blobContainerProductImages
       }
       {
-        name: 'BlobSettings__BlobContainerBookCoversName'
-        value: blobContainerBookCovers
-      }
-      {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: applicationInsightsApiModule.outputs.connectionString
       }
       {
         name: 'AZURE_CLIENT_ID'
         value: userAssignedIdentityApiModule.outputs.clientId
+      }
+    ], empty(googleBooksApiKey) ? [] : [
+      // The Google Books key is optional. Do not create a dangling Container App
+      // secret reference when the deployment intentionally uses quota-less mode.
+      {
+        name: 'Bibliographic__GoogleBooksApiKey'
+        secretRef: 'google-books-api-key'
       }
     ], corsEnvVars)
   }
@@ -1054,7 +1058,7 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
     acrLoginServer: containerRegistryModule.outputs.loginServer
     userAssignedIdentityId: userAssignedIdentityWorkerModule.outputs.resourceId
-    keyVaultSecrets: [
+    keyVaultSecrets: concat([
       {
         name: 'sql-connectionstring'
         keyVaultUrl: appSecretsModule.outputs.secretUris['sql-connectionstring']
@@ -1067,8 +1071,11 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         name: 'entra-graph-client-secret'
         keyVaultUrl: appSecretsModule.outputs.secretUris['entra-graph-client-secret']
       }
-    ]
-    envVars: [
+    ], empty(googleBooksApiKey) ? [] : [{
+      name: 'google-books-api-key'
+      keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
+    }])
+    envVars: concat([
       {
         name: 'ASPNETCORE_ENVIRONMENT'
         value: 'Production'
@@ -1122,10 +1129,6 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         value: blobContainerProductImages
       }
       {
-        name: 'BlobSettings__BlobContainerBookCoversName'
-        value: blobContainerBookCovers
-      }
-      {
         name: 'EntraGraph__TenantId'
         value: entraTenantId
       }
@@ -1145,7 +1148,14 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         name: 'AZURE_CLIENT_ID'
         value: userAssignedIdentityWorkerModule.outputs.clientId
       }
-    ]
+    ], empty(googleBooksApiKey) ? [] : [
+      // The Google Books key is optional. Do not create a dangling Container App
+      // secret reference when the deployment intentionally uses quota-less mode.
+      {
+        name: 'Bibliographic__GoogleBooksApiKey'
+        secretRef: 'google-books-api-key'
+      }
+    ])
   }
   dependsOn: [
     containerAppWorkerAcrRoles

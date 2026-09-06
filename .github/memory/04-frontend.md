@@ -88,8 +88,9 @@ Verified feature roots:
   explicitly marks the view after asynchronous camera/photo/API callbacks; photo decoding
   also retries cropped, resized, and thresholded canvas variants for difficult images. The
   result card first uses the source-provided cover, retries an ISBN-based Open Library cover
-  when that image fails, and renders an explicit unavailable-cover placeholder when both
-  sources fail.
+  when that image fails, and renders the shared `VpdBookCoverPlaceholderComponent` when both
+  sources fail. As of 2026-09-06, the API/Worker resolves direct BnF/Open Library/Google Books
+  URLs before the result reaches Scan; the browser-side Open Library retry remains defensive.
 - The Scan root is access-gated by `ScanAuthService.authState$`: only the Entra `Tri` app
   role renders `ScannerComponent`; unauthenticated and unauthorized accounts render
   `ScanLoginComponent`. `src/index.html` includes `<app-redirect>` and `AppModule` awaits

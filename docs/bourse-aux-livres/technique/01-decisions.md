@@ -27,6 +27,7 @@ comprendre plus tard pourquoi un choix a été fait avec l'information de l'épo
 | DT-19 | Fusion des fiches par redirection ISBN, sans réécriture du ledger | Prise |
 | DT-20 | Bourse ouverte = intervalle explicite d'un AssoEvents Books, sans chevauchement | Prise |
 | DT-21 | Tests Scan en Jasmine/Karma ChromeHeadless, synchronisation isolée et réseau simulé | Prise |
+| DT-24 | Couvertures par URL HTTPS vérifiée : BnF, Open Library, puis Google Books | Prise |
 
 ---
 
@@ -81,8 +82,12 @@ Open Library complète deux manques de la BnF : le **modèle Œuvre/Édition**, 
 catalogue et les notices ?
 
 **Décision.** Données maîtres, notices et outbox dans le **SQL Server existant**.
-Notices brutes dans une colonne JSON. Couvertures dans le **blob** existant. Copie
-embarquée sur l'appareil en **IndexedDB**. Aucune ressource de données nouvelle.
+Notices brutes dans une colonne JSON. Copie embarquée sur l'appareil en **IndexedDB**.
+Aucune ressource de données nouvelle.
+
+> **Évolution post-implémentation.** Le stockage Blob des couvertures a été remplacé par
+> des URLs HTTPS vérifiées dans `DT-24`. Les autres médias de l'application continuent
+> d'utiliser le compte Blob existant.
 
 **Motivation.**
 
@@ -248,8 +253,9 @@ pas. Donc pas de durée de vie, pas d'invalidation, pas de logique de péremptio
   dans la même seconde ; sans déduplication, c'est cinq fois le pipeline.
 - **Les corrections manuelles sont protégées** (`RG-05`) : le rattrapage ne doit jamais
   écraser un champ marqué comme corrigé.
-- **Les couvertures sont copiées** chez nous, pas pointées chez la source — la Licence
-  Ouverte l'autorise, et cela évite de dépendre de leur disponibilité.
+- **Les couvertures suivent `DT-24`** : l'URL HTTPS vérifiée et sa source sont conservées
+  dans la fiche, sans copie Blob ; les images absentes ont un repli fournisseur et un
+  placeholder d'interface.
 
 ---
 
@@ -1010,3 +1016,31 @@ rollout contrôlé.
 ouvre temporairement le firewall SQL du runner, applique toutes les migrations, ferme la
 règle dans un bloc de nettoyage, puis déploie les révisions. L'envoi ACS reste désactivé
 tant que le domaine et un parcours réel ne sont pas validés.
+
+## DT-24 — Les couvertures sont des URLs vérifiées, avec trois replis
+
+**Contexte.** La première implémentation téléchargeait chaque couverture dans le
+stockage Blob. Ce coût est disproportionné pour des images reconstructibles, et une
+URL BnF enregistrée sans vérification pouvait renvoyer `HTTP 500` au navigateur.
+
+**Décision.** Le champ `Books.CoverUrl` conserve directement une URL HTTPS de la source,
+avec `CoverSource` et `CoverCheckedAt`. Avant de la persister, l'Infrastructure vérifie
+que l'URL répond en succès avec un contenu `image/*`. Une erreur BnF — notamment le
+`HTTP 500` « id to load is required for loading » — est donc traitée comme une
+couverture absente, et le résolveur essaie successivement Open Library puis Google Books.
+
+Google Books est interrogé par ISBN exact : une édition voisine ne peut pas fournir sa
+couverture. La clé API est facultative en local et peut être injectée par Key Vault en
+déploiement. Si les trois sources n'ont pas d'image exploitable, l'application affiche
+un visuel générique partagé dans `SharedUi`.
+
+**Migration.** La migration renomme la colonne historique sans perte de schéma, élargit
+sa taille pour les URLs externes, ajoute les deux attributs de suivi, puis vide les
+anciennes références Blob afin que le worker les reconstruise avec le nouveau pipeline.
+Le conteneur `book-covers` et le service d'upload dédié ne font plus partie de
+l'infrastructure.
+
+**Conséquence.** Le catalogue ne dépend plus de notre stockage pour servir une image,
+mais dépend de la disponibilité ultérieure des sources. Le contrôle périodique des
+fiches sans couverture (30 jours) et le placeholder générique absorbent cette
+fragilité ; le budget d'images Blob disparaît.

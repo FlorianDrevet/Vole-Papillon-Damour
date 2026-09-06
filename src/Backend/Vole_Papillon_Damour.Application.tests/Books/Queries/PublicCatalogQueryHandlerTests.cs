@@ -431,7 +431,7 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
                     BookMetadataField.PublicationYear,
                     BookMetadataField.Language,
                     BookMetadataField.Genre,
-                    BookMetadataField.CoverBlobRef,
+                    BookMetadataField.CoverUrl,
                     BookMetadataField.WorkId
                 ],
                 workId),

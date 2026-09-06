@@ -165,8 +165,7 @@ describe('ScannerComponent', () => {
     fallbackImage.dispatchEvent(new Event('error'));
     await fixture.whenStable();
 
-    expect(fixture.nativeElement.querySelector('.cover-placeholder')?.textContent)
-      .toContain('Couverture indisponible');
+    expect(fixture.nativeElement.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
   });
 
   it('refreshes the rendered error when a camera photo cannot be decoded', async () => {

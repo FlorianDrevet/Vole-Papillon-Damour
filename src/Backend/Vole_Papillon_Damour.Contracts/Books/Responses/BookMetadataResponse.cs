@@ -9,4 +9,5 @@ public sealed record BookMetadataResponse(
     Uri? CoverUrl,
     string Source,
     string? WorkId,
-    DateTimeOffset RetrievedAt);
+    DateTimeOffset RetrievedAt,
+    string? CoverSource = null);

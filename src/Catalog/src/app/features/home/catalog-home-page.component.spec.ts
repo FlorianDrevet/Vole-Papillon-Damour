@@ -6,6 +6,7 @@ import {of} from 'rxjs';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+import {DesignSystemModule} from '@vpd/ui';
 import {CatalogHomePageComponent} from './catalog-home-page.component';
 
 describe('CatalogHomePageComponent', () => {
@@ -61,7 +62,7 @@ describe('CatalogHomePageComponent', () => {
     api.getNextFair.and.returnValue(of(fair));
     await TestBed.configureTestingModule({
       declarations: [CatalogHomePageComponent, BookCardComponent],
-      imports: [FormsModule, RouterModule.forRoot([])],
+      imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogApiService, useValue: api},
       ],
