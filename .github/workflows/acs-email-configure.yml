@@ -103,7 +103,7 @@ jobs:
           initiate_verification() {
             local verification_type="$1"
             local status="$2"
-            if [ "$status" != "Verified" ]; then
+            if [ "$status" = "NotStarted" ] || [ "$status" = "VerificationFailed" ]; then
               az communication email domain initiate-verification \
                 --domain-name "$ACS_EMAIL_DOMAIN" \
                 --email-service-name "$ACS_EMAIL_SERVICE" \
@@ -117,7 +117,6 @@ jobs:
           initiate_verification SPF "$spf_status"
           initiate_verification DKIM "$dkim_status"
           initiate_verification DKIM2 "$dkim2_status"
-          initiate_verification DMARC "$dmarc_status"
 
           for attempt in $(seq 1 12); do
             DOMAIN_JSON=$(az rest \
