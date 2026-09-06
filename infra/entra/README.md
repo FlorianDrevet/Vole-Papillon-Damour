@@ -7,9 +7,11 @@ reproductible sur un second environnement.
 Trois scripts, et une seule chose qui reste manuelle.
 
 `Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
-application n'est pas un client interactif : elle recoit la permission applicative
-Microsoft Graph `User.ReadWrite.All`, utilisee par l'API et le worker pour supprimer un
-objet utilisateur apres une demande d'effacement. Son secret est cree une seule fois,
+application n'est pas un client interactif : elle recoit les permissions applicatives
+Microsoft Graph `User.ReadWrite.All`, `Application.Read.All` et
+`AppRoleAssignment.ReadWrite.All`. L'API l'utilise pour creer les comptes internes,
+lister les roles et gerer les attributions ; l'API et le worker l'utilisent aussi pour
+supprimer un objet utilisateur apres une demande d'effacement. Son secret est cree une seule fois,
 ecrit dans un fichier explicitement choisi **hors du depot**, puis transmis au secret
 GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette valeur.
 

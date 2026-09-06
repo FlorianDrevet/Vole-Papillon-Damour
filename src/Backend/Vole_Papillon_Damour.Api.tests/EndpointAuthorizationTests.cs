@@ -160,6 +160,21 @@ public class EndpointAuthorizationTests
             .Contain(data => data.Policy == "Administration");
     }
 
+    [Fact]
+    public void Account_administration_endpoints_require_administration_policy()
+    {
+        var accountEndpoints = RegisteredEndpoints()
+            .Where(endpoint => RouteOf(endpoint).StartsWith("/accounts/admin", StringComparison.Ordinal))
+            .ToList();
+
+        accountEndpoints.Should().HaveCount(3);
+        accountEndpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
+        accountEndpoints
+            .SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
+            .Should()
+            .OnlyContain(data => data.Policy == "Administration");
+    }
+
     private static IReadOnlyList<RouteEndpoint> MutatingEndpoints() =>
         RegisteredEndpoints()
             .Where(endpoint => HttpMethods(endpoint).Intersect(MutatingMethods).Any())
@@ -188,6 +203,7 @@ public class EndpointAuthorizationTests
 
         application.UseAuthenticationController();
         application.UseAccountController();
+        application.UseAccountAdministrationController();
         application.UseBookController();
         application.UseBibliographicReferenceController();
         application.UseBookAdministrationController();
