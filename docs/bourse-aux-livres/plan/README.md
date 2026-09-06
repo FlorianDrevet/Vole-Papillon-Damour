@@ -29,16 +29,17 @@ s'y réfère par leurs identifiants (`RG-nn`, `ENF-nn`, `DT-nn`, `QT-nn`, `R-nn`
 | [`03`](03-paliers-2-et-3.md) | **Paliers 2 et 3** — vitrine publique, puis alertes | — | **Grossier, volontairement** |
 
 **État d'exécution au 2026-09-06.** Le palier 2 est implémenté et déployé. Cette tranche
-complète le palier 3 côté backend/API/CQRS : corrections et administration du catalogue,
-sessions de rattrapage, statistiques, membres, paramètres, recherche bibliographique et
-préférence d'alertes membre. Le BackOffice expose `/administration`; `src/Catalog` n'est
-volontairement pas modifié pendant sa refonte parallèle. La reprise front détaillée est dans
-[`../06-reprise-front-catalogue-p2-p3.md`](../06-reprise-front-catalogue-p2-p3.md).
+complète le palier 3 côté backend/API/CQRS et interfaces : corrections et administration
+du catalogue, sessions de rattrapage, statistiques, membres, paramètres, recherche
+bibliographique, préférence d'alertes membre et raccordement de la maquette V2 dans
+`src/Catalog`. Le BackOffice et le Catalog exposent `/administration`; la reprise détaillée
+reste dans [`../06-reprise-front-catalogue-p2-p3.md`](../06-reprise-front-catalogue-p2-p3.md).
 
 Restent les validations opératoires et externes : application de la migration,
 vérification ACS, envoi réel de bout en bout, relevé des heartbeats et campagnes `P1-9` à
-`P1-11`. Les évolutions reportées restent l'estimation de valeur, la remise à plat en masse,
-les notifications push et les livres sans ISBN.
+`P1-11`. L'attribution des rôles reste gérée par Entra et les cartons physiques ne sont
+pas modélisés. Les évolutions reportées restent l'estimation de valeur, la remise à plat
+en masse, les notifications push et les livres sans ISBN.
 
 **Pourquoi le dernier est grossier.** Le principe directeur n°4 de l'architecture — « ce
 qui n'est pas mesuré n'est pas décidé » — s'applique au plan lui-même. Détailler le palier

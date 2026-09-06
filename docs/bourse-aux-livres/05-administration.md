@@ -1,10 +1,10 @@
 # 05 — Administration
 
-Espace réservé aux administrateurs. La décision historique prévoyait une surface dans le
-site public du catalogue, mais la tranche P2/P3 est livrée avec l'interface dans le
-`BackOffice` existant, à l'adresse `/administration`, afin de ne pas modifier `src/Catalog`
-pendant sa refonte parallèle. Le backend reste découplé de cette présentation ; la surface
-HTTP et la fiche de reprise sont documentées dans
+Espace réservé aux administrateurs. La surface est disponible dans le `BackOffice` existant
+et dans `src/Catalog`, à l'adresse `/administration`, avec le même contrat HTTP. Le Catalog
+reprend la convention visuelle V2 et charge les espaces de travail à la demande ; le
+backend reste découplé de ces présentations. La surface HTTP et les règles de reprise sont
+documentées dans
 [`06-reprise-front-catalogue-p2-p3.md`](06-reprise-front-catalogue-p2-p3.md).
 
 ## 1. Tableau de bord

@@ -18,6 +18,6 @@ public sealed record AddBookCommand(
     string? PhysicalFormat = null,
     string? Language = null,
     string? Genre = null,
-    string? CoverBlobRef = null,
+    string? CoverUrl = null,
     string? WorkId = null,
     IReadOnlyCollection<BookMetadataField>? Fields = null) : IRequest<ErrorOr<AdminBookOperationResult>>;

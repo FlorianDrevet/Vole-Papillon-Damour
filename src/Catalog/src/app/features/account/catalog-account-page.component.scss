@@ -10,7 +10,8 @@
 .account-heading,
 .panel-heading,
 .watchlist-item,
-.account-danger {
+.account-danger,
+.alert-settings-panel {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -345,6 +346,43 @@ h3 {
   border-top: 1px solid var(--catalog-line-strong);
 }
 
+.alert-settings-panel {
+  align-items: center;
+  margin-top: 32px;
+  padding: 24px 0;
+  border-top: 1px solid var(--catalog-line);
+  border-bottom: 1px solid var(--catalog-line);
+}
+
+.alert-settings-panel h2 {
+  margin-bottom: 10px;
+  font-size: 1.65rem;
+}
+
+.alert-settings-panel p:not(.eyebrow):not(.alert-blocked) {
+  max-width: 680px;
+  margin-bottom: 0;
+  color: var(--catalog-slate-2);
+  font-size: .82rem;
+  line-height: 1.6;
+}
+
+.alert-settings-actions {
+  flex-shrink: 0;
+}
+
+.alert-bounce,
+.alert-blocked {
+  display: block;
+  margin-top: 10px;
+  color: var(--catalog-slate-3);
+  font-size: .72rem;
+}
+
+.alert-blocked {
+  color: #8c321d;
+}
+
 .account-danger h2 {
   margin-bottom: 10px;
   font-size: 1.65rem;
@@ -395,7 +433,8 @@ h3 {
 
   .account-heading,
   .watchlist-item,
-  .account-danger {
+  .account-danger,
+  .alert-settings-panel {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -424,5 +463,9 @@ h3 {
   .account-danger .delete-confirmation {
     align-self: stretch;
     min-width: 0;
+  }
+
+  .alert-settings-actions {
+    align-self: flex-start;
   }
 }

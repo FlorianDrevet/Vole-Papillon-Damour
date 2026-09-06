@@ -1,9 +1,9 @@
-# Reprise du front catalogue — P2/P3
+# Intégration du front catalogue — P2/P3
 
-> Document de passage pour la session qui refondra `src/Catalog`. Cette branche ne
-> modifie volontairement aucun fichier de `src/Catalog` : le contrat backend et le
-> parcours d'administration sont livrés séparément afin de ne pas entrer en conflit
-> avec la refonte en cours.
+> Cette fiche a servi de contrat de reprise après la refonte visuelle V2. Elle est
+> maintenant une fiche d'exploitation : les parcours décrits ci-dessous sont raccordés
+> dans `src/Catalog` sur la branche `feat/catalog-p2-p3`, à l'exception des capacités
+> explicitement absentes de l'API.
 
 ## État livré
 
@@ -13,7 +13,9 @@
   suspension volontaire des alertes et administration complète du stock, des
   sessions, des alertes, des membres et des paramètres.
 - `src/BackOffice` expose maintenant `/administration` pour les actions
-  d'administration. Ce n'est pas une route publique du catalogue.
+  d'administration et `src/Catalog` expose la même surface dans `/administration` pour
+  la maquette V2. Les deux clients utilisent les mêmes contrats HTTP ; ce n'est pas une
+  route publique indexable.
 - Les instants JSON sont en UTC (`DateTimeOffset`). Les jours de ventes sont des
   `DateOnly` au format ISO `YYYY-MM-DD`.
 - Le backend ne connaît ni prix par livre ni emplacement dans le local. Le front ne
@@ -34,6 +36,11 @@ administrateur requis » sans boucler vers la connexion.
 Les données membres et d'administration ne doivent jamais être rendues en SSR :
 attendre le navigateur et le jeton, puis charger les données. Les pages `/compte` et
 les éventuelles pages privées restent `noindex, nofollow`.
+
+Le catalogue implémenté centralise ces règles dans `CatalogAuthService`,
+`CatalogApiService`, `CatalogMemberApiService` et `CatalogAdminApiService`. Aucun jeton
+ne transite par `localStorage`, le HTML SSR ou une query string ; les opérations privées
+ne démarrent qu'après l'initialisation MSAL côté navigateur.
 
 ## Routes publiques à raccorder
 
@@ -77,6 +84,10 @@ Toutes les routes ci-dessous utilisent le compte Entra courant.
 | `PATCH /catalog/me/alerts` | `{ enabled: boolean }` | `{ alertStatus, bounceCount, changed }` |
 | `DELETE /catalog/me` | — | demande de suppression ; prévoir un état « en cours » si l'API renvoie une suppression asynchrone |
 
+La route publique `/desinscription` demande une session Entra dans le navigateur, puis
+confirme la suspension avec `PATCH /catalog/me/alerts` et `{ enabled: false }`. Elle reste
+`noindex, nofollow` et ne place jamais de bearer dans l'URL.
+
 ### Parcours watchlist
 
 1. Depuis une fiche ou un résultat, proposer d'abord « Suivre cette œuvre » quand
@@ -107,11 +118,13 @@ Le statut ne garantit pas qu'un e-mail soit parti : les alertes sont regroupées
 membre et par session, puis retardées selon `AlertDelayMinutes`. Le front doit
 présenter ce délai comme une règle de disponibilité, pas comme une réservation.
 
-## Contrat d'administration consommé par le BackOffice
+## Contrat d'administration consommé par le BackOffice et le Catalog
 
-Le BackOffice livré utilise `/administration`. La refonte du catalogue n'a pas à
-réimplémenter cette surface, mais ces routes servent de référence si une partie est
-un jour déplacée dans un portail privé.
+Le BackOffice et `src/Catalog` utilisent désormais `/administration`. Le client Catalog
+fournit une navigation par espaces de travail : tableau de bord, sessions, désengorgement,
+catalogue/métadonnées, bilan des bourses, files d'alertes, membres et paramètres. Chaque
+écran charge les données à la demande, conserve les confirmations pour les corrections
+destructives et affiche les états `401`/`403` sans simuler une autorisation.
 
 ### Vue, fiches et stock
 
@@ -184,32 +197,53 @@ rappelée.
 
 ## Checklist d'intégration dans la refonte Catalog
 
-- [ ] Générer les modèles TypeScript à partir des contrats camelCase ou les maintenir
+- [x] Générer les modèles TypeScript à partir des contrats camelCase ou les maintenir
   dans un seul fichier partagé ; ne pas recopier des formes divergentes dans chaque
   page.
-- [ ] Centraliser le client API et l'acquisition MSAL ; ne pas mettre de jeton dans
+- [x] Centraliser le client API et l'acquisition MSAL ; ne pas mettre de jeton dans
   `localStorage`, le HTML SSR ou une query string.
-- [ ] Prévoir les états `loading`, vide, erreur réseau, `401`, `403`, `404`, `409` et
+- [x] Prévoir les états `loading`, vide, erreur réseau, `401`, `403`, `404`, `409` et
   `503` sur chaque écran.
-- [ ] Tester séparément recherche locale et recherche externe, ainsi que les trois
+- [x] Tester séparément recherche locale et recherche externe, ainsi que les trois
   états de disponibilité et les watchlists œuvre/édition.
-- [ ] Tester le retour Entra vers `/compte`, le rafraîchissement de session et la
+- [x] Tester le retour Entra vers `/compte`, le rafraîchissement de session et la
   suppression de compte sans afficher de données privées en SSR.
-- [ ] Ajouter la route de désinscription e-mail et la raccorder à `PATCH
+- [x] Ajouter la route de désinscription e-mail et la raccorder à `PATCH
   /catalog/me/alerts` après authentification.
-- [ ] Garder les pages publiques indexables avec canoniques, `schema.org/Book`,
+- [x] Garder les pages publiques indexables avec canoniques, `schema.org/Book`,
   `robots.txt` et sitemap ; garder `/compte` privé avec `noindex, nofollow`.
-- [ ] Vérifier mobile (watchlist lisible et actions accessibles au pouce) et desktop
+- [x] Vérifier mobile (watchlist lisible et actions accessibles au pouce) et desktop
   (résultats, fiche et contrôles sans débordement), clavier, focus visible et labels.
-- [ ] Ne pas ajouter de traceur au catalogue public ; toute mesure éventuelle reste
+- [x] Ne pas ajouter de traceur au catalogue public ; toute mesure éventuelle reste
   cantonnée à une zone privée et doit respecter la décision `ENF-14`.
-- [ ] Exécuter les tests Catalog ChromeHeadless, le build SSR et un smoke des routes
+- [x] Exécuter les tests Catalog ChromeHeadless, le build SSR et un smoke des routes
   publiques et privées après la refonte.
+
+Validation effectuée sur cette branche : `55` tests Catalog ChromeHeadless, `15` tests
+BackOffice, compilation et tests backend (`82` Domain, `154` Application, `66`
+Infrastructure, `12` API), build SSR de production et contrôle manuel desktop/mobile à
+390 px. Le smoke SSR retourne `200` sur les routes publiques et privées ; `/compte`,
+`/administration` et `/desinscription` retournent `X-Robots-Tag: noindex, nofollow`.
+
+Pour reprendre la validation locale :
+
+```powershell
+cd src/Catalog
+npm ci
+npm test -- --watch=false --browsers=ChromeHeadless
+npm run build
+```
+
+Le smoke fonctionnel demande une API joignable et un compte Entra de test. En local,
+une API indisponible doit laisser apparaître le repli réseau ; elle ne doit pas être
+remplacée par des données inventées.
 
 ## Hors périmètre volontairement
 
 L'estimation de valeur marchande, la remise à plat d'inventaire en masse, les
-notifications push, le support des livres sans ISBN et l'envoi ACS réel ne sont pas
-inventés dans cette tranche. Le déploiement de la migration `AddBookFairRevenue`, la
-vérification du domaine ACS et le cycle e-mail de bout en bout restent des contrôles
-opératoires à faire sur l'environnement cible.
+notifications push, le support des livres sans ISBN, la gestion des rôles Entra et le
+suivi de cartons physiques ne sont pas inventés dans cette tranche. Les rôles
+`Tri`/`Caisse`/`Administration` restent attribués dans Entra ; le module ne possède pas
+de modèle de carton ni de capacité de table. Le déploiement de la migration
+`AddBookFairRevenue`, la vérification du domaine ACS et le cycle e-mail de bout en bout
+restent des contrôles opératoires à faire sur l'environnement cible.

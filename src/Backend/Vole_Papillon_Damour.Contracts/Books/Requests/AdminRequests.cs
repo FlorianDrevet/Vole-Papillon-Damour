@@ -11,7 +11,7 @@ public sealed record AddAdminBookRequest(
     string? PhysicalFormat = null,
     string? Language = null,
     string? Genre = null,
-    string? CoverBlobRef = null,
+    string? CoverUrl = null,
     string? WorkId = null,
     IReadOnlyCollection<string>? Fields = null);
 
@@ -23,7 +23,7 @@ public sealed record UpdateAdminBookMetadataRequest(
     string? PhysicalFormat,
     string? Language,
     string? Genre,
-    string? CoverBlobRef,
+    string? CoverUrl,
     string? WorkId,
     IReadOnlyCollection<string> Fields);
 

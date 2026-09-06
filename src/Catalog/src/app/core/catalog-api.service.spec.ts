@@ -70,4 +70,33 @@ describe('CatalogApiService', () => {
       genres: [],
     } satisfies CatalogSearchResponse);
   });
+
+  it('keeps external bibliographic references separate from the local catalogue', () => {
+    service.searchReferences('saint-exupéry', 2, 20).subscribe(result => {
+      expect(result.query).toBe('saint-exupéry');
+      expect(result.items[0].source).toBe('OpenLibrary');
+    });
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/catalog/reference/search`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('q')).toBe('saint-exupéry');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(request.request.params.get('pageSize')).toBe('20');
+    request.flush({
+      generatedAt: '2026-09-04T12:00:00Z',
+      query: 'saint-exupéry',
+      items: [{
+        isbn13: '9782070612758',
+        workId: 'OL42W',
+        title: 'Le Petit Prince',
+        authors: 'Antoine de Saint-Exupéry',
+        publisher: 'Gallimard',
+        publicationYear: 1999,
+        coverUrl: 'https://covers.openlibrary.org/isbn/9782070612758-M.jpg',
+        source: 'OpenLibrary',
+      }],
+      page: 2,
+      pageSize: 20,
+    });
+  });
 });

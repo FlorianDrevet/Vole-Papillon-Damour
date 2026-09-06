@@ -125,7 +125,7 @@ public static class BookAdministrationController
                                 request.PhysicalFormat,
                                 request.Language,
                                 request.Genre,
-                                request.CoverBlobRef,
+                                request.CoverUrl,
                                 request.WorkId,
                                 fields),
                             cancellationToken);
@@ -163,7 +163,7 @@ public static class BookAdministrationController
                                 request.PhysicalFormat,
                                 request.Language,
                                 request.Genre,
-                                request.CoverBlobRef,
+                                request.CoverUrl,
                                 fields,
                                 userId,
                                 request.WorkId),
@@ -914,7 +914,7 @@ public static class BookAdministrationController
         if (request.PhysicalFormat is not null) fields.Add(nameof(BookMetadataField.PhysicalFormat));
         if (request.Language is not null) fields.Add(nameof(BookMetadataField.Language));
         if (request.Genre is not null) fields.Add(nameof(BookMetadataField.Genre));
-        if (request.CoverBlobRef is not null) fields.Add(nameof(BookMetadataField.CoverBlobRef));
+        if (request.CoverUrl is not null) fields.Add(nameof(BookMetadataField.CoverUrl));
         if (request.WorkId is not null) fields.Add(nameof(BookMetadataField.WorkId));
         return fields;
     }

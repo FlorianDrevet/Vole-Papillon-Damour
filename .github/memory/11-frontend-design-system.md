@@ -77,10 +77,13 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   views share the same spacing, cards, pills, border language, restrained motion, and
   responsive collapse. Availability and future announcements remain truthful and separate;
   no price, stock, role, or external-reference data may be invented in the UI.
-- The current Catalog API exposes the dead-stock administration read only. V2 admin
-  navigation may show future work areas as explicitly unconnected, but account/role,
-  scan-session, report, and settings screens must not be presented as functional until
-  their typed API contracts exist.
+- The Catalog client now consumes the typed P2/P3 administration API for overview,
+  catalogue metadata/stock, dead stock, scan sessions, fairs/revenue, alert queues,
+  members and settings. It also consumes the external bibliographic search separately
+  from local catalogue results and lets authenticated members follow editions/works and
+  suspend alerts. Keep the navigation/data contracts truthful: role assignment remains
+  Entra-owned and physical cartons/capacity are not API concepts, so those controls stay
+  explanatory rather than fake.
 
 ## Shared Design System Library (`@vpd/ui`)
 

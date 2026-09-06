@@ -13,10 +13,10 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — la refonte visuelle V2 du catalogue est dans `origin/main` ; le socle API/CQRS, les contrats, les corrections d'inventaire, les alertes et l'administration BackOffice sont implémentés dans cette branche. L'intégration fonctionnelle finale de `src/Catalog` est en cours. |
-| **Prochaine action** | Terminer les parcours compte/watchlist, détail et administration du catalogue dans la refonte V2, appliquer les migrations puis valider les applications. Relever ensuite les heartbeats/mesures et vérifier ACS avec un cycle d'alerte réel. |
+| **Lot en cours** | `P2/P3` — la refonte visuelle V2 de `origin/main`, le socle API/CQRS et les parcours Catalog membre/admin sont implémentés dans le worktree `feat/catalog-p2-p3`. La branche doit encore être livrée par PR. |
+| **Prochaine action** | Ouvrir et faire valider la PR, puis appliquer la migration sur l'environnement cible. Relever ensuite les heartbeats/mesures et vérifier ACS avec un cycle d'alerte réel. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-p2-p3` |
-| **Dernière mise à jour** | 2026-09-06 — refonte V2 resynchronisée depuis `origin/main`, intégration Catalog P2/P3 en cours |
+| **Dernière mise à jour** | 2026-09-06 — parcours Catalog P2/P3 intégrés, tests et smoke locaux passés |
 | **Branche** | `feat/catalog-p2-p3` — worktree dédié, PR à ouvrir après validation |
 
 ---
@@ -86,18 +86,23 @@ et compteur API, filtres de recherche en colonne, cartes, fiches, œuvres, compt
 et cadre administration responsive. Le lien agenda `.ics` de la prochaine bourse est généré
 localement à partir des données de l'API.
 
-Les contrats fonctionnels existants sont conservés et les quantités disponibles/annoncées
-restent distinctes. L'API actuelle ne fournit toujours que la lecture administration du
-dead-stock côté Catalog : sessions de scan, comptes & rôles, rapports et réglages restent
-visuellement signalés comme « API à connecter », sans données simulées. La convention détaillée
-est dans [`V2-CONVENTION.md`](docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md) et
-la règle pour les futurs développements dans `.github/memory/11-frontend-design-system.md`.
+Les parcours P2/P3 sont maintenant raccordés : recherche locale séparée du référentiel
+externe, suivi œuvre/édition, watchlist, préférence d'alertes, désinscription authentifiée,
+et espaces administration pour tableau de bord, catalogue, sessions, désengorgement,
+bourses, alertes, membres et paramètres. Les rôles applicatifs restent attribués dans
+Entra ; les cartons physiques ne sont pas modélisés et aucune donnée n'est simulée lorsque
+l'API est indisponible. La convention visuelle est dans
+[`V2-CONVENTION.md`](docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md) et les
+contrats de reprise dans
+[`06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
 
-Validation locale : `npm test -- --watch=false --browsers=ChromeHeadless` (42 tests),
-`npm run build` (SSR + navigateur), smoke SSR des routes `/`, `/recherche`, `/catalogue`,
-`/mentions-legales`, `/confidentialite`, `/compte` et `/administration` en 200. Les données
-du backend public distant répondaient `503` pendant le contrôle, donc l'aperçu local affiche
-correctement ses états de repli sans déclarer le catalogue distant sain.
+Validation locale : `src/Catalog` — `55` tests ChromeHeadless et `npm run build` SSR +
+navigateur ; `src/BackOffice` — `15` tests ChromeHeadless et bootstrap validé ; backend —
+`82` Domain, `154` Application, `66` Infrastructure, `12` API et compilation de la solution.
+Le smoke SSR retourne `200` pour les routes publiques et privées ; `/compte`,
+`/administration` et `/desinscription` exposent `noindex, nofollow`. Les données du backend
+public distant répondaient `503` pendant le contrôle, donc l'aperçu local affiche ses états
+de repli sans déclarer le catalogue distant sain.
 
 La tranche P2/P3 de cette branche complète le backend du module livres : contrats HTTP
 administration, CQRS pour les fiches, quantités, retraits, annonces, fusions, recettes,
@@ -107,15 +112,14 @@ facultative d'une bourse via `20260906101759_AddBookFairRevenue`. Le membre peut
 suspendre ou réactiver ses alertes via `PATCH /catalog/me/alerts`, sans pouvoir contourner
 un blocage administratif.
 
-Le BackOffice expose désormais `/administration` avec vue d'ensemble, fiches/stock,
-bourses/statistiques, sessions de rattrapage, alertes, membres et paramètres. Aucun fichier
-de `src/Catalog` n'a été modifié : la liste exacte des écrans, modèles, routes, états,
-tests et contraintes SSR à reprendre après la refonte est dans
+Le BackOffice et le Catalog exposent désormais `/administration` avec vue d'ensemble,
+fiches/stock, bourses/statistiques, sessions de rattrapage, alertes, membres et paramètres.
+La liste des contrats, états, limites et contrôles opératoires est maintenue dans
 [`docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
 
 La migration doit encore être appliquée sur la base cible ; l'envoi ACS reste désactivé tant
-que le domaine n'est pas vérifié. La validation locale couvre le backend et le build/test du
-Catalog et du BackOffice sera rejouée après l'intégration des nouveaux parcours.
+que le domaine n'est pas vérifié. Le smoke local ne remplace pas un test Entra réel ni le
+cycle e-mail de bout en bout.
 
 ### État actualisé — 2026-09-05
 

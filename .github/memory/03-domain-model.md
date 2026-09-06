@@ -114,10 +114,11 @@ The optional `AssoEvents.BookRevenue` field is persisted as nullable `decimal(12
 preferences are persisted through `PATCH /catalog/me/alerts`; a member can suspend or
 reactivate their own alerts but cannot override an administrative `Blocked` state.
 
-The current administrator presentation is the existing Angular BackOffice route
-`/administration`, with responsive tabs for overview, books/stock, fairs/statistics,
-sessions, alerts, members, and settings. The separate `src/Catalog` front is deliberately
-not changed; its handoff contract is `docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`.
+The current administrator presentations are the Angular BackOffice route and the V2
+`src/Catalog` route `/administration`, both with responsive workspaces for overview,
+books/stock, fairs/statistics, sessions, alerts, members, and settings. The Catalog also
+owns the public member/watchlist flows; role assignment remains an Entra concern and
+physical cartons are not represented by the domain.
 
 ## Conventions To Preserve
 

@@ -76,7 +76,7 @@ public sealed class AddBookCommandHandler(
                         command.PhysicalFormat,
                         command.Language,
                         command.Genre,
-                        command.CoverBlobRef,
+                        command.CoverUrl,
                         fields,
                         command.WorkId),
                     addedAt);

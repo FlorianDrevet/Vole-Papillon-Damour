@@ -61,7 +61,7 @@ internal static class AdminQueryProjection
             book.IsRare,
             book.IsHiddenFromCatalog,
             book.RedirectedToIsbn13?.Value,
-            book.CoverBlobRef,
+            book.CoverUrl,
             new DateTimeOffset(book.FirstSeenAt, TimeSpan.Zero),
             book.LastAvailableAt is { } lastAvailableAt
                 ? new DateTimeOffset(lastAvailableAt, TimeSpan.Zero)

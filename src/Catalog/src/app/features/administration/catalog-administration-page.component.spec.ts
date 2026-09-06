@@ -9,7 +9,16 @@ import {of, throwError} from 'rxjs';
 
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
-import {CatalogDeadStockResponse} from '../../core/catalog.models';
+import {
+  CatalogAdminAlertPage,
+  CatalogAdminBookPage,
+  CatalogAdminFairPage,
+  CatalogAdminMemberPage,
+  CatalogAdminOverview,
+  CatalogAdminScanSessionPage,
+  CatalogAdminSettings,
+  CatalogDeadStockResponse,
+} from '../../core/catalog.models';
 import {CatalogAdministrationPageComponent} from './catalog-administration-page.component';
 import {toDeadStockCsv} from './dead-stock-export';
 
@@ -68,7 +77,35 @@ describe('CatalogAdministrationPageComponent', () => {
     auth.logout.and.resolveTo();
     auth.getApiAccessToken.and.resolveTo('access-token');
 
-    api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', ['getDeadStock']);
+    api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
+      'getOverview', 'getBooks', 'getBook', 'addBook', 'updateMetadata', 'correctQuantity',
+      'withdraw', 'correctAnnouncement', 'setRare', 'setVisibility', 'merge', 'deleteBook',
+      'getFairs', 'getFairStats', 'setFairRevenue', 'getSessions', 'getSession',
+      'removeMovement', 'reassignSession', 'cancelSession', 'cancelSessionAlerts',
+      'forceSessionAlerts', 'getAlerts', 'cancelAlert', 'forceAlert', 'getMembers',
+      'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
+      'getDeadStock',
+    ]);
+    api.getOverview.and.returnValue(of({
+      generatedAt: '',
+      currentPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      stock: {availableQuantity: 0, availableTitles: 0, announcedQuantity: 0, announcedTitles: 0},
+      lastFair: null,
+      deadStockCount: 0,
+      rareQueueCount: 0,
+      metadataMissingCount: 0,
+      undatedAnnouncementCount: 0,
+      inventoryDriftTitleCount: 0,
+      inventoryDriftQuantity: 0,
+      pendingAlerts: {pendingCount: 0, oldestDueAt: null, nextDueAt: null},
+    } as CatalogAdminOverview));
+    api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
+    api.getFairs.and.returnValue(of({generatedAt: '', fairs: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminFairPage));
+    api.getSessions.and.returnValue(of({generatedAt: '', sessions: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminScanSessionPage));
+    api.getAlerts.and.returnValue(of({generatedAt: '', alerts: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminAlertPage));
+    api.getMembers.and.returnValue(of({generatedAt: '', members: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminMemberPage));
+    api.getSettings.and.returnValue(of({} as CatalogAdminSettings));
     api.getDeadStock.and.returnValue(of(response));
 
     await TestBed.configureTestingModule({
@@ -110,12 +147,36 @@ describe('CatalogAdministrationPageComponent', () => {
     auth.isAuthenticated.set(true);
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('dead-stock');
     fixture.detectChanges();
 
     expect(api.getDeadStock).toHaveBeenCalledWith('access-token', 6, 3);
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).toContain('7');
     expect(fixture.nativeElement.querySelector('table')).not.toBeNull();
+  });
+
+  it('loads the dashboard first and can switch to each connected workspace', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+
+    expect(api.getOverview).toHaveBeenCalledWith('access-token');
+
+    await fixture.componentInstance.selectSection('catalogue');
+    await fixture.componentInstance.selectSection('sessions');
+    await fixture.componentInstance.selectSection('fairs');
+    await fixture.componentInstance.selectSection('alerts');
+    await fixture.componentInstance.selectSection('members');
+    await fixture.componentInstance.selectSection('settings');
+
+    expect(api.getBooks).toHaveBeenCalled();
+    expect(api.getSessions).toHaveBeenCalled();
+    expect(api.getFairs).toHaveBeenCalled();
+    expect(api.getAlerts).toHaveBeenCalled();
+    expect(api.getMembers).toHaveBeenCalled();
+    expect(api.getSettings).toHaveBeenCalled();
   });
 
   it('explains when the signed-in account lacks the administration role', async () => {
