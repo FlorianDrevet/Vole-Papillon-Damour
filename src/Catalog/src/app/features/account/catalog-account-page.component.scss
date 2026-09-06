@@ -81,44 +81,234 @@ h3 {
   border: 0;
 }
 
-.account-gate {
+.account-auth-hero {
   display: grid;
-  grid-template-columns: 120px minmax(0, 620px);
-  justify-content: center;
-  align-items: start;
-  gap: 42px;
-  padding: 24px 0 32px;
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, .88fr);
+  column-gap: clamp(42px, 7vw, 110px);
+  row-gap: 40px;
+  padding-top: 24px;
 }
 
-.account-gate-mark {
-  display: grid;
-  width: 120px;
-  height: 120px;
-  place-items: center;
-  border: 1px solid var(--catalog-mist);
-  border-radius: 50%;
-  background: var(--catalog-paper-2);
-  color: var(--catalog-blue);
-  font: 500 .85rem/1 var(--catalog-mono);
-  letter-spacing: .1em;
+.account-auth-copy {
+  min-width: 0;
+  padding-top: clamp(8px, 2vw, 34px);
 }
 
-.account-gate-copy p:not(.eyebrow):not(.account-hint) {
-  max-width: 570px;
+.account-auth-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.account-auth-kicker .eyebrow {
+  margin-bottom: 0;
+}
+
+.account-auth-kicker-line {
+  display: block;
+  width: 42px;
+  height: 2px;
+  background: var(--catalog-orange);
+}
+
+.account-auth-copy h1 {
+  max-width: 660px;
+  margin-bottom: 22px;
+}
+
+.account-auth-lead {
+  max-width: 600px;
+  margin-bottom: clamp(32px, 5vw, 52px);
   color: var(--catalog-slate-2);
-  font-size: .98rem;
+  font-size: 1.04rem;
+  line-height: 1.7;
+}
+
+.account-benefits {
+  max-width: 650px;
+  border-top: 1px solid var(--catalog-line);
+}
+
+.account-benefit {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 16px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--catalog-line);
+}
+
+.account-benefit-index {
+  padding-top: 4px;
+  color: var(--catalog-blue);
+  font: 500 .62rem/1 var(--catalog-mono);
+  letter-spacing: .08em;
+}
+
+.account-benefit h2 {
+  margin-bottom: 5px;
+  color: var(--catalog-ink);
+  font-size: 1.22rem;
+}
+
+.account-benefit p {
+  max-width: 500px;
+  margin-bottom: 0;
+  color: var(--catalog-slate-2);
+  font-size: .81rem;
+  line-height: 1.55;
+}
+
+.account-access-card {
+  position: relative;
+  align-self: start;
+  overflow: hidden;
+  padding: clamp(28px, 4vw, 45px);
+  border: 1px solid var(--catalog-ink-2);
+  background: var(--catalog-ink-2);
+  box-shadow: 0 24px 45px -30px rgba(7, 43, 69, .8);
+  color: var(--catalog-paper);
+}
+
+.account-access-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--catalog-brand-gradient);
+  content: '';
+}
+
+.account-access-card::after {
+  position: absolute;
+  top: -128px;
+  right: -94px;
+  width: 260px;
+  height: 260px;
+  border: 1px solid rgba(127, 216, 245, .22);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+.account-access-brand,
+.account-access-card h2,
+.account-access-card > p,
+.account-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.account-access-brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 35px;
+}
+
+.account-access-brand .eyebrow {
+  margin-bottom: 0;
+  color: var(--catalog-orange-2);
+}
+
+.account-access-mark {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--catalog-paper);
+}
+
+.account-access-mark img {
+  display: block;
+  object-fit: contain;
+}
+
+.account-access-card h2 {
+  margin-bottom: 16px;
+  color: var(--catalog-paper);
+  font-size: clamp(2rem, 3vw, 2.8rem);
+}
+
+.account-access-card > p:not(.account-hint) {
+  margin-bottom: 0;
+  color: var(--catalog-mist-2);
+  font-size: .86rem;
   line-height: 1.65;
 }
 
-.account-gate-copy .account-button {
-  margin-top: 13px;
+.account-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 29px;
+}
+
+.account-access-card .account-button {
+  width: 100%;
+  justify-content: space-between;
+  border-color: var(--catalog-orange);
+  background: var(--catalog-orange);
+  color: var(--catalog-ink);
+}
+
+.account-access-card .account-button:hover,
+.account-access-card .account-button:focus-visible {
+  border-color: var(--catalog-orange-2);
+  background: var(--catalog-orange-2);
+  color: var(--catalog-ink);
+}
+
+.account-access-card .account-button.secondary {
+  border-color: rgba(247, 251, 254, .48);
+  background: transparent;
+  color: var(--catalog-paper);
+}
+
+.account-access-card .account-button.secondary:hover,
+.account-access-card .account-button.secondary:focus-visible {
+  border-color: var(--catalog-cyan);
+  background: rgba(127, 216, 245, .12);
+  color: var(--catalog-paper);
 }
 
 .account-hint {
-  margin: 18px 0 0;
-  color: var(--catalog-slate-3);
-  font-size: .76rem;
-  line-height: 1.5;
+  margin: 20px 0 0;
+  color: var(--catalog-mist);
+  font-size: .72rem;
+  line-height: 1.55;
+}
+
+.account-reassurance {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--catalog-line);
+  border-bottom: 1px solid var(--catalog-line);
+}
+
+.account-reassurance-item {
+  padding: 22px 24px 23px 0;
+}
+
+.account-reassurance-item + .account-reassurance-item {
+  padding-left: 24px;
+  border-left: 1px solid var(--catalog-line);
+}
+
+.account-reassurance-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--catalog-orange-3);
+  font: 500 .6rem/1.2 var(--catalog-mono);
+  letter-spacing: .16em;
+}
+
+.account-reassurance-item p {
+  max-width: 460px;
+  margin-bottom: 0;
+  color: var(--catalog-slate-2);
+  font-size: .78rem;
+  line-height: 1.55;
 }
 
 .account-button,
@@ -446,17 +636,59 @@ h3 {
   gap: 9px;
 }
 
-@media (max-width: 700px) {
-  .account-gate {
-    display: block;
+@media (max-width: 860px) {
+  .account-auth-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-auth-copy {
     padding-top: 8px;
   }
 
-  .account-gate-mark {
-    width: 76px;
-    height: 76px;
-    margin-bottom: 30px;
-    font-size: .66rem;
+  .account-access-card {
+    max-width: 620px;
+  }
+}
+
+@media (max-width: 700px) {
+  .account-auth-hero {
+    padding-top: 8px;
+  }
+
+  .account-auth-copy {
+    padding-top: 0;
+  }
+
+  .account-auth-copy h1 {
+    font-size: clamp(2.9rem, 14vw, 4.35rem);
+  }
+
+  .account-auth-lead {
+    font-size: .94rem;
+  }
+
+  .account-benefit {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .account-access-card {
+    padding: 28px 22px;
+  }
+
+  .account-reassurance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-reassurance-item {
+    padding-right: 0;
+  }
+
+  .account-reassurance-item + .account-reassurance-item {
+    padding-top: 19px;
+    padding-left: 0;
+    border-top: 1px solid var(--catalog-line);
+    border-left: 0;
   }
 
   .account-heading,

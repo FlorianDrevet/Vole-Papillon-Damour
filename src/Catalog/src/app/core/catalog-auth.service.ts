@@ -11,9 +11,14 @@ import type {
   AccountInfo,
   AuthenticationResult,
   IPublicClientApplication,
+  RedirectRequest,
 } from '@azure/msal-browser';
 
-import {catalogLoginRequest, catalogMsalConfig} from './catalog-auth.config';
+import {
+  catalogLoginRequest,
+  catalogMsalConfig,
+  catalogRegistrationRequest,
+} from './catalog-auth.config';
 
 export type CatalogMsalModule = Pick<
   typeof import('@azure/msal-browser'),
@@ -81,11 +86,19 @@ export class CatalogAuthService {
   }
 
   async login(startPage: string = ADMINISTRATION_ROUTE): Promise<void> {
+    await this.startInteractiveLogin(catalogLoginRequest, startPage);
+  }
+
+  async register(startPage: string = '/compte'): Promise<void> {
+    await this.startInteractiveLogin(catalogRegistrationRequest, startPage);
+  }
+
+  private async startInteractiveLogin(request: RedirectRequest, startPage: string): Promise<void> {
     await this.initialize();
     const client = this.requireClient();
 
     await client.loginRedirect({
-      ...catalogLoginRequest,
+      ...request,
       redirectStartPage: new URL(startPage, window.location.origin).href,
     });
   }

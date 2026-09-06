@@ -2,6 +2,8 @@ import type {Configuration, RedirectRequest} from '@azure/msal-browser';
 
 import {environment} from '../../environments/environment';
 
+const CATALOG_REGISTRATION_PROMPT = 'create' as const;
+
 export const catalogMsalConfig: Configuration = {
   auth: {
     clientId: environment.entra.clientId,
@@ -23,4 +25,9 @@ export const catalogMsalConfig: Configuration = {
 
 export const catalogLoginRequest: RedirectRequest = {
   scopes: [environment.entra.apiScope],
+};
+
+export const catalogRegistrationRequest: RedirectRequest = {
+  ...catalogLoginRequest,
+  prompt: CATALOG_REGISTRATION_PROMPT,
 };

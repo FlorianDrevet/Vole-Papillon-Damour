@@ -82,6 +82,16 @@ describe('CatalogAuthService', () => {
     });
   });
 
+  it('starts account registration with the create prompt and returns to the account page', async () => {
+    await service.register('/compte');
+
+    expect(client.loginRedirect).toHaveBeenCalledWith({
+      scopes: [environment.entra.apiScope],
+      prompt: 'create',
+      redirectStartPage: new URL('/compte', window.location.origin).href,
+    });
+  });
+
   it('acquires an API token for the active account', async () => {
     const token = await service.getApiAccessToken();
 
