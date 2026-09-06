@@ -147,5 +147,5 @@
 
 - The API startup migration policy is explicit: `DatabaseMigrationPolicy.ShouldRunOnStartup` returns true only for `Development`; deployed migration is performed before rollout by `Books runtime - deploy`.
 - The new workflow builds the API and Worker from the same checkout and image tag, can apply EF migrations through a temporary SQL firewall rule, and always attempts to remove that rule before finishing.
-- The Worker is intentionally configured without API authentication registration. It uses the Application/Infrastructure layers for `Sweep` and `Enrich`, with ACS email delivery disabled by default until domain verification and a real delivery test are complete.
+- The Worker is intentionally configured without API authentication registration. It uses the Application/Infrastructure layers for `Sweep` and `Enrich`; DEV now enables ACS email delivery through its managed identity after domain verification, while a real delivery test remains an operational check.
 - The backend solution validation after the runtime slice includes the account-deletion outbox kind-isolation regression: an `AlertEmail` row is not claimable by `AccountDeletionStore`.
