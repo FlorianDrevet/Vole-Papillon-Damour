@@ -1,0 +1,148 @@
+<header class="catalog-header">
+  <div class="desktop-header">
+    <div class="header-inner page-width">
+      <a class="brand" routerLink="/" (click)="closeMenus()" aria-label="Vole Papillon d'Amour, accueil du catalogue">
+        <img class="brand-logo" src="images/papillon_without_back.png" alt="Vole Papillon d'Amour" width="42" height="42">
+        <span class="brand-copy">
+          <span class="brand-name">Vole Papillon d'Amour</span>
+          <span class="brand-subtitle">Bourse aux livres · {{ isAdministration() ? 'administration' : 'catalogue' }}</span>
+        </span>
+      </a>
+
+      <nav class="main-navigation" aria-label="Navigation principale">
+        @for (item of navItems; track item.url) {
+          @if (item.children) {
+            <div class="nav-dropdown" (mouseenter)="releaseGenreMenu()" (focusin)="releaseGenreMenu()">
+              <a
+                [routerLink]="item.url"
+                class="nav-link dropdown-trigger"
+                [class.active]="isActive(item)"
+                aria-haspopup="true"
+                (click)="suppressGenreMenu()">
+                {{ item.label }}
+                <svg class="chevron" viewBox="0 0 10 6" width="9" height="6" aria-hidden="true">
+                  <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <div class="dropdown-anchor" [hidden]="isGenreMenuSuppressed()">
+                <div class="dropdown-panel" [attr.aria-label]="item.label">
+                  <span class="dropdown-rule" aria-hidden="true"></span>
+                  <ul>
+                    @for (child of item.children; track child.label) {
+                      <li>
+                        <a
+                          [routerLink]="child.url"
+                          [queryParams]="child.queryParams"
+                          (click)="closeMenus()"
+                          [class.active]="isChildActive(child)">
+                          <span>{{ child.label }}</span>
+                          @if (child.hint) { <small>{{ child.hint }}</small> }
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <a
+              [routerLink]="item.url"
+              [fragment]="item.url === '/' ? 'prochaine-bourse' : undefined"
+              (click)="closeMenus()"
+              class="nav-link"
+              [class.active]="isActive(item)">{{ item.label }}</a>
+          }
+        }
+
+        <a class="association-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">
+          Le site de l’association <span aria-hidden="true">↗</span>
+        </a>
+
+        <div class="account-menu" [class.open]="accountMenuOpen()">
+          <a
+            class="account-teaser"
+            [routerLink]="isAdministration() ? '/administration' : '/compte'"
+            [attr.aria-expanded]="accountMenuOpen()"
+            aria-haspopup="true"
+            [title]="isAdministration() ? 'Compte bénévole' : 'Votre espace personnel'"
+            (click)="toggleAccountMenu($event)">
+            <span class="person-icon" aria-hidden="true">{{ isAdministration() ? accountInitials() : '' }}</span>
+            <span>{{ accountTriggerLabel() }}</span>
+          </a>
+          @if (accountMenuOpen()) {
+            <div class="account-popover" role="dialog" aria-label="Menu du compte">
+              <span class="dropdown-rule" aria-hidden="true"></span>
+              <p class="popover-kicker">{{ isAdministration() ? 'Espace bénévoles' : 'Espace personnel' }}</p>
+              @if (isAuthenticated() && account()) {
+                <strong>{{ accountName() }}</strong>
+                <small>{{ account()?.username }}</small>
+                <a routerLink="/compte" (click)="closeMenus()">Ma liste de suivi</a>
+                @if (isAdministration()) {
+                  <a routerLink="/administration" (click)="closeMenus()">Ouvrir l'administration</a>
+                }
+                <button type="button" class="popover-logout" (click)="logout()">Se déconnecter</button>
+              } @else {
+                <strong>Suivez un livre, sans réservation</strong>
+                <small>Le catalogue reste librement consultable.</small>
+                <a routerLink="/compte" (click)="closeMenus()">Se connecter ou créer un compte</a>
+              }
+            </div>
+          }
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <div class="mobile-header">
+    <div class="mobile-header-row">
+      <a class="brand" routerLink="/" (click)="closeMenus()" aria-label="Retour à l'accueil du catalogue">
+        <img class="brand-logo" src="images/papillon_without_back.png" alt="" width="34" height="34">
+        <span class="brand-copy">
+          <span class="brand-name">Vole Papillon d'Amour</span>
+          <span class="brand-subtitle">Bourse aux livres · {{ isAdministration() ? 'administration' : 'catalogue' }}</span>
+        </span>
+      </a>
+      <span class="mobile-actions">
+        <a class="mobile-help" href="https://volepapillondamour.fr/association/comment-aider" target="_blank" rel="noopener noreferrer">Nous aider</a>
+        <button
+          type="button"
+          class="menu-toggle"
+          [attr.aria-expanded]="menuOpen()"
+          [attr.aria-label]="menuOpen() ? 'Fermer le menu' : 'Ouvrir le menu'"
+          (click)="toggleMobileMenu()">
+          <span></span><span></span><span></span>
+        </button>
+      </span>
+    </div>
+    <div class="mobile-crumb"><span aria-hidden="true"></span>{{ isAdministration() ? 'Administration' : 'Catalogue' }}</div>
+  </div>
+
+  @if (menuOpen()) {
+    <div class="mobile-drawer">
+      <button type="button" class="mobile-close" (click)="closeMobileMenu()" aria-label="Fermer le menu">×</button>
+      <nav aria-label="Navigation mobile">
+        @for (item of navItems; track item.url; let i = $index) {
+          <div class="mobile-nav-item">
+            <a [routerLink]="item.url" [fragment]="item.url === '/' ? 'prochaine-bourse' : undefined" (click)="closeMobileMenu()" [class.active]="isActive(item)">
+              <span class="mobile-index">{{ (i + 1).toString().padStart(2, '0') }}</span>
+              <span>{{ item.label }}</span>
+            </a>
+            @if (item.children) {
+              <ul>
+                @for (child of item.children; track child.label) {
+                  <li><a [routerLink]="child.url" [queryParams]="child.queryParams" (click)="closeMobileMenu()" [class.active]="isChildActive(child)">{{ child.label }}</a></li>
+                }
+              </ul>
+            }
+          </div>
+        }
+        <a class="mobile-account-link" routerLink="/compte" (click)="closeMobileMenu()">Mon compte</a>
+        <a class="mobile-site-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">Le site de l’association ↗</a>
+      </nav>
+      <div class="mobile-socials">
+        <a href="https://www.facebook.com/melvin.drevet.1" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><img src="images/facebook.svg" alt="" width="16" height="16"></a>
+        <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><img src="images/instagram.svg" alt="" width="16" height="16"></a>
+      </div>
+    </div>
+  }
+</header>

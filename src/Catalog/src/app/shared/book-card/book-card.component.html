@@ -7,14 +7,15 @@
         loading="lazy"
         (error)="onCoverError()">
     } @else {
-      <span>Couverture</span>
+      <span class="cover-placeholder"><span aria-hidden="true">VPD</span>Couverture à renseigner</span>
     }
   </div>
 
   <div class="book-card-content">
-    @if (book.isRare) {
-      <span class="rare-badge">Livre rare</span>
-    }
+    <div class="book-card-meta">
+      <span>{{ book.genre || 'Catalogue' }}</span>
+      @if (book.isRare) { <span class="rare-badge">Rare</span> }
+    </div>
     <h3>{{ book.title || 'Titre à compléter' }}</h3>
     <p class="authors">{{ book.authors || 'Auteur non renseigné' }}</p>
     @if (book.publisher || book.publicationYear) {
@@ -31,7 +32,7 @@
         {{ availabilityLabel() }}
       </p>
       @if (book.quantityAnnounced > 0) {
-        <p class="announced">{{ announcedLabel() }}</p>
+        <p class="announced"><span aria-hidden="true">↳</span>{{ announcedLabel() }}</p>
       }
     </div>
   </div>

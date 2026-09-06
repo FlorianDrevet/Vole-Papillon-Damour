@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
 | **Prochaine action** | Relever les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. Garder le repli titre+auteur conditionné à la mesure `QT-01`. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-overnight-close` |
-| **Dernière mise à jour** | 2026-09-05 — PR #65 fusionnée ; CI final `main` vert ; état de reprise clôturé |
-| **Branche** | `docs/overnight-close` — dernière mise à jour de reprise |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-maquette` |
+| **Dernière mise à jour** | 2026-09-06 — migration visuelle Catalogue V2 validée localement ; PR à ouvrir |
+| **Branche** | `feat/catalog-maquette` — migration V2 isolée dans son worktree |
 
 ---
 
@@ -77,6 +77,27 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-06
+
+Le catalogue Angular `src/Catalog` a été migré vers la convention visuelle V2 validée : shell
+avec logo réel et dropdowns, footer association en quatre colonnes, hero éditorial avec genre
+et compteur API, filtres de recherche en colonne, cartes, fiches, œuvres, compte, pages légales
+et cadre administration responsive. Le lien agenda `.ics` de la prochaine bourse est généré
+localement à partir des données de l'API.
+
+Les contrats fonctionnels existants sont conservés et les quantités disponibles/annoncées
+restent distinctes. L'API actuelle ne fournit toujours que la lecture administration du
+dead-stock côté Catalog : sessions de scan, comptes & rôles, rapports et réglages restent
+visuellement signalés comme « API à connecter », sans données simulées. La convention détaillée
+est dans [`V2-CONVENTION.md`](docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md) et
+la règle pour les futurs développements dans `.github/memory/11-frontend-design-system.md`.
+
+Validation locale : `npm test -- --watch=false --browsers=ChromeHeadless` (42 tests),
+`npm run build` (SSR + navigateur), smoke SSR des routes `/`, `/recherche`, `/catalogue`,
+`/mentions-legales`, `/confidentialite`, `/compte` et `/administration` en 200. Les données
+du backend public distant répondaient `503` pendant le contrôle, donc l'aperçu local affiche
+correctement ses états de repli sans déclarer le catalogue distant sain.
 
 ### État actualisé — 2026-09-05
 

@@ -24,15 +24,20 @@
             fetchpriority="high"
             (error)="onCoverError()">
         } @else {
-          <span>Couverture</span>
+          <span class="cover-placeholder"><span aria-hidden="true">VPD</span>Couverture à renseigner</span>
         }
       </div>
+      <p class="cover-caption">Image de couverture indicative · l’édition est identifiée par son ISBN.</p>
+      @if (item.workId) {
+        <a class="work-link cover-work-link" [routerLink]="['/oeuvre', item.workId]">Voir toutes les éditions →</a>
+      }
     </div>
 
     <div class="detail-content">
-      @if (item.genre) {
-        <span class="genre-badge">{{ item.genre }}</span>
-      }
+      <div class="detail-kicker">
+        <span class="detail-rule" aria-hidden="true"></span>
+        <span>{{ item.genre || 'Catalogue de la bourse' }}</span>
+      </div>
       <h1>{{ item.title || 'Titre à compléter' }}</h1>
       @if (item.authors) {
         <p class="detail-authors">{{ item.authors }}</p>
@@ -45,32 +50,41 @@
         </p>
       }
 
-      <p class="availability-heading">Disponibilité</p>
+      <p class="availability-heading">Disponibilité à la bourse</p>
       <div class="availability-lines">
         @if (item.quantityAvailable > 0) {
           <div class="availability-line available-line">
             <span class="status-dot" aria-hidden="true"></span>
-            <strong>{{ formatQuantity(item.quantityAvailable, 'exemplaire disponible', 'exemplaires disponibles') }}</strong>
-            @if (item.lastAvailableAt) {
-              <time [attr.datetime]="item.lastAvailableAt">depuis le {{ formatAvailabilityDate(item.lastAvailableAt) }}</time>
-            }
+            <div>
+              <strong>{{ formatQuantity(item.quantityAvailable, 'exemplaire disponible', 'exemplaires disponibles') }}</strong>
+              @if (item.lastAvailableAt) {
+                <time [attr.datetime]="item.lastAvailableAt">Depuis le {{ formatAvailabilityDate(item.lastAvailableAt) }}</time>
+              }
+            </div>
+            <span class="availability-state">Maintenant</span>
           </div>
         }
         @if (item.quantityAnnounced > 0) {
           <div class="availability-line announced-line">
             <span class="status-dot" aria-hidden="true"></span>
-            <strong>{{ formatQuantity(item.quantityAnnounced, 'autre exemplaire', 'autres exemplaires') }}@if (item.nextFairAt) { à partir du {{ formatAvailabilityDate(item.nextFairAt) }} } @else { prochainement }</strong>
-            @if (item.nextFairAt) {
-              <time [attr.datetime]="item.nextFairAt">date annoncée</time>
-            } @else {
-              <span class="availability-note">date à préciser</span>
-            }
+            <div>
+              <strong>{{ formatQuantity(item.quantityAnnounced, 'autre exemplaire', 'autres exemplaires') }}</strong>
+              @if (item.nextFairAt) {
+                <time [attr.datetime]="item.nextFairAt">À partir du {{ formatAvailabilityDate(item.nextFairAt) }}</time>
+              } @else {
+                <span class="availability-note">Date à préciser</span>
+              }
+            </div>
+            <span class="availability-state">À venir</span>
           </div>
         }
         @if (item.quantityAvailable === 0 && item.quantityAnnounced === 0) {
           <div class="availability-line exhausted-line">
             <span class="status-dot" aria-hidden="true"></span>
-            <strong>Épuisé pour le moment</strong>
+            <div>
+              <strong>Épuisé pour le moment</strong>
+              <span class="availability-note">Le titre reste visible au catalogue</span>
+            </div>
           </div>
         }
       </div>
@@ -81,8 +95,19 @@
 
       <div class="price-line">
         <span>Prix sur place</span>
-        <strong>indiqué au comptoir</strong>
+        <strong>communiqué au comptoir</strong>
       </div>
+
+      @if (item.physicalFormat || item.language) {
+        <dl class="detail-facts">
+          @if (item.physicalFormat) {
+            <div><dt>Format</dt><dd>{{ item.physicalFormat }}</dd></div>
+          }
+          @if (item.language) {
+            <div><dt>Langue</dt><dd>{{ item.language }}</dd></div>
+          }
+        </dl>
+      }
 
       @if (item.workId) {
         <fieldset class="notify-scope">
