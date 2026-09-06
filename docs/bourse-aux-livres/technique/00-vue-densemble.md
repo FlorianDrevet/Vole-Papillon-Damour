@@ -33,7 +33,7 @@ sources bibliographiques, et le comportement du déclencheur planifié à zéro 
 | `Application` / `Domain` / `Infrastructure` / `Contracts` | Découpage CQRS en tranches par fonctionnalité | **Oui**, nouvelles tranches |
 | `ProjectDbContext` | EF Core, `ApplyConfigurationsFromAssembly` | **Oui**, nouveaux `DbSet` |
 | `Website` | Angular 18 avec SSR | Non — le catalogue est une application distincte (décision fonctionnelle `01` §6) |
-| `BackOffice` | Angular 18, auth admin | Non — l'administration du catalogue vit dans la nouvelle application |
+| `BackOffice` | Angular 18, auth admin | **Oui**, administration catalogue partagée avec la nouvelle application |
 | `SharedUi` (`@vpd/ui`) | Composants Angular partagés | **Oui**, par les deux nouvelles applications |
 | `MauiCashApp` | Caisse buvette | Non — les livres ont leur propre mode caisse |
 | `AssoEvents` type `Books` | Agrégat événement | **Oui**, sa date pilote la bascule (`RG-23`, `RG-36`) |

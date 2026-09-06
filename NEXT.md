@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Une évolution locale remplace le stockage Blob des couvertures par des URLs directes BnF/Open Library/Google Books ; elle attend sa PR et son déploiement. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
-| **Prochaine action** | Valider puis fusionner la branche de couvertures, appliquer la migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` avec le déploiement API/Worker, puis vérifier les couvertures BnF/Open Library/Google Books et le placeholder catalogue/Scan. Relever aussi les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-cover-url` |
-| **Dernière mise à jour** | 2026-09-06 — implémentation locale des URLs de couvertures dans un worktree dédié ; PR à ouvrir |
-| **Branche** | `feat/book-cover-direct-urls` — worktree dédié, non fusionné |
+| **Lot en cours** | `P2/P3` — la refonte visuelle V2 de `origin/main`, le socle API/CQRS et les parcours Catalog membre/admin sont implémentés dans le worktree `feat/catalog-p2-p3`. PR [#72](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/72) ouverte vers `main`. |
+| **Prochaine action** | Faire valider la PR #72, puis appliquer la migration sur l'environnement cible. Relever ensuite les heartbeats/mesures et vérifier ACS avec un cycle d'alerte réel. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-p2-p3` |
+| **Dernière mise à jour** | 2026-09-06 — parcours Catalog P2/P3 intégrés, tests et smoke locaux passés |
+| **Branche** | `feat/catalog-p2-p3` — worktree dédié, PR à ouvrir après validation |
 
 ---
 
@@ -86,18 +86,40 @@ et compteur API, filtres de recherche en colonne, cartes, fiches, œuvres, compt
 et cadre administration responsive. Le lien agenda `.ics` de la prochaine bourse est généré
 localement à partir des données de l'API.
 
-Les contrats fonctionnels existants sont conservés et les quantités disponibles/annoncées
-restent distinctes. L'API actuelle ne fournit toujours que la lecture administration du
-dead-stock côté Catalog : sessions de scan, comptes & rôles, rapports et réglages restent
-visuellement signalés comme « API à connecter », sans données simulées. La convention détaillée
-est dans [`V2-CONVENTION.md`](docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md) et
-la règle pour les futurs développements dans `.github/memory/11-frontend-design-system.md`.
+Les parcours P2/P3 sont maintenant raccordés : recherche locale séparée du référentiel
+externe, suivi œuvre/édition, watchlist, préférence d'alertes, désinscription authentifiée,
+et espaces administration pour tableau de bord, catalogue, sessions, désengorgement,
+bourses, alertes, membres et paramètres. Les rôles applicatifs restent attribués dans
+Entra ; les cartons physiques ne sont pas modélisés et aucune donnée n'est simulée lorsque
+l'API est indisponible. La convention visuelle est dans
+[`V2-CONVENTION.md`](docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md) et les
+contrats de reprise dans
+[`06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
 
-Validation locale : `npm test -- --watch=false --browsers=ChromeHeadless` (42 tests),
-`npm run build` (SSR + navigateur), smoke SSR des routes `/`, `/recherche`, `/catalogue`,
-`/mentions-legales`, `/confidentialite`, `/compte` et `/administration` en 200. Les données
-du backend public distant répondaient `503` pendant le contrôle, donc l'aperçu local affiche
-correctement ses états de repli sans déclarer le catalogue distant sain.
+Validation locale : `src/Catalog` — `55` tests ChromeHeadless et `npm run build` SSR +
+navigateur ; `src/BackOffice` — `15` tests ChromeHeadless et bootstrap validé ; backend —
+`82` Domain, `154` Application, `66` Infrastructure, `12` API et compilation de la solution.
+Le smoke SSR retourne `200` pour les routes publiques et privées ; `/compte`,
+`/administration` et `/desinscription` exposent `noindex, nofollow`. Les données du backend
+public distant répondaient `503` pendant le contrôle, donc l'aperçu local affiche ses états
+de repli sans déclarer le catalogue distant sain.
+
+La tranche P2/P3 de cette branche complète le backend du module livres : contrats HTTP
+administration, CQRS pour les fiches, quantités, retraits, annonces, fusions, recettes,
+sessions, alertes, membres et paramètres ; recherche bibliographique externe Open Library ;
+correction/retrait idempotent des mouvements de session ; et persistance de la recette
+facultative d'une bourse via `20260906101759_AddBookFairRevenue`. Le membre peut également
+suspendre ou réactiver ses alertes via `PATCH /catalog/me/alerts`, sans pouvoir contourner
+un blocage administratif.
+
+Le BackOffice et le Catalog exposent désormais `/administration` avec vue d'ensemble,
+fiches/stock, bourses/statistiques, sessions de rattrapage, alertes, membres et paramètres.
+La liste des contrats, états, limites et contrôles opératoires est maintenue dans
+[`docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
+
+La migration doit encore être appliquée sur la base cible ; l'envoi ACS reste désactivé tant
+que le domaine n'est pas vérifié. Le smoke local ne remplace pas un test Entra réel ni le
+cycle e-mail de bout en bout.
 
 ### État actualisé — 2026-09-05
 

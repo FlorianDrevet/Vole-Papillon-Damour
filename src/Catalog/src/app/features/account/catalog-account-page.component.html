@@ -101,6 +101,33 @@
       }
     </section>
 
+    @if (watchlist(); as current) {
+      <section class="alert-settings-panel" aria-labelledby="alert-settings-title">
+        <div>
+          <p class="eyebrow">Préférences</p>
+          <h2 id="alert-settings-title">Mes alertes e-mail.</h2>
+          <p>Un message groupé peut vous prévenir lorsqu’un titre suivi arrive sur les tables. Il n’y a jamais de réservation.</p>
+          @if (current.bounceCount > 0) {
+            <small class="alert-bounce">{{ current.bounceCount }} échec{{ current.bounceCount > 1 ? 's' : '' }} de remise enregistré{{ current.bounceCount > 1 ? 's' : '' }}.</small>
+          }
+          @if (current.alertStatus === 'Blocked') {
+            <p class="alert-blocked" role="status">Les alertes ont été bloquées par l’association. Contactez-nous si vous pensez qu’il s’agit d’une erreur.</p>
+          }
+        </div>
+        <div class="alert-settings-actions">
+          @if (current.alertStatus === 'Active') {
+            <button type="button" class="account-button quiet" [disabled]="alertPending()" (click)="setAlertsEnabled(false)">
+              {{ alertPending() ? 'Mise à jour…' : 'Suspendre les alertes' }}
+            </button>
+          } @else if (current.alertStatus !== 'Blocked') {
+            <button type="button" class="account-button secondary" [disabled]="alertPending()" (click)="setAlertsEnabled(true)">
+              {{ alertPending() ? 'Mise à jour…' : 'Recevoir les alertes' }}
+            </button>
+          }
+        </div>
+      </section>
+    }
+
     <section class="account-danger" aria-labelledby="delete-account-title">
       <div>
         <p class="eyebrow">Données personnelles</p>

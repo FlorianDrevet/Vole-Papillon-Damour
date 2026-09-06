@@ -1,9 +1,11 @@
 # 05 — Administration
 
-Espace réservé aux administrateurs, situé **dans le site public du catalogue** et non
-dans le `BackOffice` existant (décision arrêtée, `01` §6). Conséquence assumée : les
-administrateurs auront deux outils, et l'authentification administrateur est à mettre
-en place dans la nouvelle application.
+Espace réservé aux administrateurs. La surface est disponible dans le `BackOffice` existant
+et dans `src/Catalog`, à l'adresse `/administration`, avec le même contrat HTTP. Le Catalog
+reprend la convention visuelle V2 et charge les espaces de travail à la demande ; le
+backend reste découplé de ces présentations. La surface HTTP et les règles de reprise sont
+documentées dans
+[`06-reprise-front-catalogue-p2-p3.md`](06-reprise-front-catalogue-p2-p3.md).
 
 ## 1. Tableau de bord
 

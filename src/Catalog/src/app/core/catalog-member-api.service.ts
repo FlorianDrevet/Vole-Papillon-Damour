@@ -5,6 +5,7 @@ import {Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {
   CatalogAddedWatchlistItem,
+  CatalogAlertPreferencesResponse,
   CatalogWatchlistItemRequest,
   CatalogWatchlistResponse,
 } from './catalog.models';
@@ -36,6 +37,17 @@ export class CatalogMemberApiService {
   removeWatchlistItem(accessToken: string, itemId: string): Observable<void> {
     return this.http.delete<void>(
       `${this.apiUrl}/catalog/me/watchlist/${encodeURIComponent(itemId)}`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  setAlertStatus(
+    accessToken: string,
+    enabled: boolean,
+  ): Observable<CatalogAlertPreferencesResponse> {
+    return this.http.patch<CatalogAlertPreferencesResponse>(
+      `${this.apiUrl}/catalog/me/alerts`,
+      {enabled},
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

@@ -30,6 +30,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlist = signal<CatalogWatchlistResponse | null>(null);
   readonly loading = signal(false);
   readonly removingItemId = signal<string | null>(null);
+  readonly alertPending = signal(false);
   readonly deleting = signal(false);
   readonly deletionRequested = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -122,6 +123,38 @@ export class CatalogAccountPageComponent implements OnInit {
       this.errorMessage.set(this.describeError(error));
     } finally {
       this.removingItemId.set(null);
+    }
+  }
+
+  async setAlertsEnabled(enabled: boolean): Promise<void> {
+    if (!this.auth.isAuthenticated() || this.alertPending()) {
+      return;
+    }
+
+    this.alertPending.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    try {
+      const token = await this.auth.getApiAccessToken();
+      const response = await firstValueFrom(this.api.setAlertStatus(token, enabled));
+      const current = this.watchlist();
+      if (current) {
+        this.watchlist.set({
+          ...current,
+          alertStatus: response.alertStatus,
+          bounceCount: response.bounceCount,
+        });
+      }
+      this.successMessage.set(enabled ? 'Les alertes e-mail sont réactivées.' : 'Les alertes e-mail sont suspendues.');
+    } catch (error: unknown) {
+      if (error instanceof HttpErrorResponse && error.status === 409) {
+        this.errorMessage.set('Les alertes sont bloquées par l’association et ne peuvent pas être réactivées ici.');
+      } else {
+        this.errorMessage.set(this.describeError(error));
+      }
+    } finally {
+      this.alertPending.set(false);
     }
   }
 

@@ -49,5 +49,9 @@ public static partial class Errors
         public static Error InvalidBounceTimestamp() => Error.Validation(
             code: "Watchlist.InvalidBounceTimestamp",
             description: "The bounce record timestamp must be expressed in UTC.");
+
+        public static Error AlertsBlocked() => Error.Conflict(
+            code: "Watchlist.AlertsBlocked",
+            description: "Alert delivery has been blocked by the association and cannot be re-enabled by the member.");
     }
 }

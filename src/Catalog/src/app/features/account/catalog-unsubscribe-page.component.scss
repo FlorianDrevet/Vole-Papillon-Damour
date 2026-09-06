@@ -1,0 +1,78 @@
+:host {
+  display: block;
+}
+
+.unsubscribe-page {
+  display: grid;
+  min-height: 540px;
+  padding-top: clamp(54px, 9vw, 110px);
+  padding-bottom: clamp(70px, 10vw, 126px);
+  place-items: start center;
+}
+
+.unsubscribe-card,
+.unsubscribe-state {
+  width: min(100%, 660px);
+  padding: clamp(26px, 5vw, 52px);
+  border: 1px solid var(--catalog-line);
+  background: var(--catalog-white);
+  box-shadow: 0 24px 50px -42px rgba(7, 43, 69, .7);
+}
+
+.unsubscribe-state {
+  color: var(--catalog-slate-2);
+}
+
+.unsubscribe-card h1 {
+  margin: 16px 0 15px;
+  color: var(--catalog-ink);
+  font: 500 clamp(2.8rem, 7vw, 5rem)/.95 var(--catalog-display);
+  letter-spacing: -.05em;
+}
+
+.unsubscribe-card p:not(.eyebrow) {
+  max-width: 540px;
+  color: var(--catalog-slate-2);
+  font-size: .9rem;
+  line-height: 1.65;
+}
+
+.unsubscribe-button {
+  display: inline-flex;
+  min-height: 43px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  padding: 0 17px;
+  border: 1px solid var(--catalog-blue);
+  border-radius: 3px;
+  background: var(--catalog-blue);
+  color: white;
+  cursor: pointer;
+  font: 500 .7rem/1 var(--catalog-mono);
+  text-decoration: none;
+}
+
+.unsubscribe-button:hover,
+.unsubscribe-button:focus-visible {
+  border-color: var(--catalog-ink);
+  background: var(--catalog-ink);
+}
+
+.unsubscribe-button.secondary {
+  background: transparent;
+  color: var(--catalog-blue);
+}
+
+.unsubscribe-button:disabled {
+  cursor: wait;
+  opacity: .55;
+}
+
+.success-card {
+  border-top: 3px solid var(--catalog-green);
+}
+
+.error-card {
+  border-top: 3px solid var(--catalog-orange);
+}

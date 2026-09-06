@@ -84,10 +84,11 @@ describe('CatalogAccountPageComponent', () => {
 
     api = jasmine.createSpyObj<CatalogMemberApiService>(
       'CatalogMemberApiService',
-      ['getWatchlist', 'addWatchlistItem', 'removeWatchlistItem', 'deleteAccount'],
+      ['getWatchlist', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
     );
     api.getWatchlist.and.returnValue(of(watchlist));
     api.removeWatchlistItem.and.returnValue(of(void 0));
+    api.setAlertStatus.and.returnValue(of({alertStatus: 'Suspended', bounceCount: 0, changed: true}));
     api.deleteAccount.and.returnValue(of(void 0));
 
     await TestBed.configureTestingModule({
@@ -157,5 +158,19 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(api.deleteAccount).toHaveBeenCalledWith('member-token');
     expect(auth.logout).toHaveBeenCalled();
+  });
+
+  it('can suspend and reactivate member alerts without changing the watchlist', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+
+    await fixture.componentInstance.setAlertsEnabled(false);
+    fixture.detectChanges();
+
+    expect(api.setAlertStatus).toHaveBeenCalledWith('member-token', false);
+    expect(fixture.componentInstance.watchlist()?.alertStatus).toBe('Suspended');
+    expect(fixture.nativeElement.textContent).toContain('Alertes suspendues');
   });
 });

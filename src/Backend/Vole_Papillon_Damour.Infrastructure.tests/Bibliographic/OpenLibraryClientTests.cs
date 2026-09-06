@@ -98,6 +98,37 @@ public sealed class OpenLibraryClientTests
         result.Should().BeNull();
     }
 
+    [Fact]
+    public async Task SearchAsync_MapsAndDeduplicatesReferenceResults()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(request =>
+        {
+            capturedRequest = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(ReferenceSearchResponse)
+            };
+        }));
+        var client = new OpenLibraryClient(
+            httpClient,
+            Options.Create(new BibliographicOptions
+            {
+                OpenLibrarySearchEndpoint = "https://openlibrary.example.test/search.json"
+            }));
+
+        var result = await client.SearchAsync("Petit Prince", 2, 10, CancellationToken.None);
+
+        result.Should().ContainSingle();
+        result[0].Isbn13.Should().Be("9782070363735");
+        result[0].WorkId.Should().Be("OL123W");
+        result[0].Authors.Should().Be("Antoine de Saint-Exupéry");
+        result[0].CoverUrl.Should().NotBeNull();
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.RequestUri!.Query.Should().Contain("page=2");
+        capturedRequest.RequestUri.Query.Should().Contain("limit=10");
+    }
+
     private const string RecordedResponse = """
         {
           "numFound": 1,
@@ -109,6 +140,29 @@ public sealed class OpenLibraryClientTests
               "first_publish_year": 1946,
               "cover_i": 12345,
               "key": "/works/OL123W"
+            }
+          ]
+        }
+        """;
+
+    private const string ReferenceSearchResponse = """
+        {
+          "numFound": 2,
+          "docs": [
+            {
+              "title": "Le Petit Prince",
+              "author_name": ["Antoine de Saint-Exupéry"],
+              "publisher": ["Gallimard"],
+              "first_publish_year": 1946,
+              "cover_i": 12345,
+              "key": "/works/OL123W",
+              "isbn": ["2070363735", "9782070363735"]
+            },
+            {
+              "title": "Le Petit Prince",
+              "author_name": ["Antoine de Saint-Exupéry"],
+              "key": "/works/OL123W",
+              "isbn": ["9782070363735"]
             }
           ]
         }

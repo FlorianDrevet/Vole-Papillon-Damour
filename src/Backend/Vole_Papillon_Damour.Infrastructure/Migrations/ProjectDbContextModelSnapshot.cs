@@ -70,6 +70,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("BookRevenue")
+                        .HasColumnType("decimal(12,2)");
+
                     b.Property<int>("CurrentPartieIndex")
                         .HasColumnType("int");
 

@@ -68,7 +68,40 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
 
 The routes are consumed by the separate SSR Angular application in `src/Catalog/`. Its
 `/sitemap.xml` server route proxies the API sitemap so the public host has its own crawler
-entry point. Account/watchlist/alert routes are intentionally not part of P2.
+entry point. Account/watchlist/alert routes are part of the P3 member slice and must remain
+client-only/private.
+
+## Books P2/P3 member and administration endpoints
+
+- `GET /catalog/reference/search` - anonymous external bibliographic search with `q`, `page`,
+  and `pageSize`; the Open Library adapter normalizes/deduplicates ISBN-10/ISBN-13 results.
+- `GET/POST /catalog/me/watchlist` and `DELETE /catalog/me/watchlist/{itemId}` - Entra member
+  watchlist reads and edition/work mutations; the API derives the local member from the `oid`
+  claim and email, never from a client-provided user id.
+- `PATCH /catalog/me/alerts` - Entra member preference `{ enabled: boolean }`; returns
+  `alertStatus`, `bounceCount`, and `changed`. A member cannot reactivate a `Blocked` list.
+- `GET /books/admin/overview` - Administration-policy KPIs for stock, scan/sale periods,
+  last fair, dead stock, rare/metadata/undated queues, inventory drift, and pending alerts.
+- `GET/POST/PATCH/DELETE /books/admin/books...` - Administration-policy book list/detail,
+  manual add, metadata/quantity corrections, withdrawals, rare/visibility flags, merges and
+  guarded deletion; announcement quantity correction is under
+  `PATCH /books/admin/announcements/{announcementId}/quantity`.
+- `GET /books/admin/fairs`, `GET /books/admin/fairs/{fairId}/stats`, and
+  `PUT /books/admin/fairs/{fairId}/revenue` - fair list, sales analysis and optional nullable
+  revenue entry.
+- `GET /books/admin/sessions` and `/books/admin/sessions/{scanSessionId}` - paged session
+  monitoring; movement removal, session reassign/cancel, and alert cancel/force are POST
+  actions under the same resource.
+- `GET /books/admin/alerts`, plus per-message `POST .../{messageId}/cancel|force` - outbox
+  diagnosis and pending-message control.
+- `GET /books/admin/members` and detail, block/unblock, and deletion routes - member support
+  and compliance operations.
+- `GET/PUT /books/admin/settings` - typed association thresholds and alert/session timing.
+
+All `/books/admin/*` routes require the `Administration` policy (`Administration` or `Admin`
+app role). All admin mutation responses expose an explicit `changed` flag where an operation
+is idempotent. Details and exact request/response fields are in
+`docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`.
 
 No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 

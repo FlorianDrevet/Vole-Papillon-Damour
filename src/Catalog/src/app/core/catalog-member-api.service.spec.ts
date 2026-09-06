@@ -69,6 +69,17 @@ describe('CatalogMemberApiService', () => {
     request.flush(null);
   });
 
+  it('updates the member alert status through the protected endpoint', () => {
+    service.setAlertStatus('member-token', false).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/alerts`);
+
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({enabled: false});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({alertStatus: 'Suspended', bounceCount: 0, changed: true});
+  });
+
   it('rejects an empty token before creating an HTTP request', () => {
     expect(() => service.getWatchlist('  ')).toThrowError('A member access token is required.');
     http.expectNone(() => true);

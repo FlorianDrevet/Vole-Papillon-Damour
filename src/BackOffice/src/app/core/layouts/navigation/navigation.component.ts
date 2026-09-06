@@ -37,6 +37,11 @@ export class NavigationComponent {
       title: "La Caisse",
       subNav: []
     },
+    {
+      url: "/administration",
+      title: "Catalogue",
+      subNav: []
+    },
   ];
 
   constructor() {
