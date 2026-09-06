@@ -181,9 +181,11 @@ aucune URL ne fonctionne. La migration `20260906101426_ReplaceBookCoverBlobWithD
 renomme la colonne, augmente sa longueur à 2048, ajoute les métadonnées de contrôle et
 efface les anciennes références de blob afin que le Worker puisse les reconstituer. Cette
 branche n'a pas encore été déployée sur Azure ; l'application de la migration et les smoke
-tests de fournisseurs restent à faire après la PR.
+tests de fournisseurs restent à faire après la PR. Le retrait de `book-covers` de Bicep
+ne supprime pas un conteneur Azure existant en déploiement incrémental : après le smoke
+test, vérifier l'absence de consommateurs puis supprimer explicitement ce conteneur.
 
-Validation locale de cette branche : suite backend complète `297` tests, Catalog `37`
+Validation locale de cette branche : suite backend complète `297` tests, Catalog `45`
 tests ChromeHeadless et build SSR/production, Scan `86` tests ChromeHeadless, `4` tests de
 bootstrap et build de production, compilation Bicep du template et des paramètres, script EF
 de migration valide, et `graphify update .` exécuté. Les avertissements déjà présents du

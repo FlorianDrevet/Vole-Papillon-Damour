@@ -43,6 +43,9 @@ Les conteneurs blob restants sont en accès `Blob` (lecture anonyme) : `BlobServ
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles
 sans SAS. Les couvertures de livres ne font plus partie de ce stockage : elles
 utilisent directement les URLs HTTPS vérifiées de BnF, Open Library ou Google Books.
+Le retrait de `book-covers` du template Bicep ne supprime pas un conteneur déjà
+provisionné en mode incrémental : après application de la migration et smoke test,
+vérifier qu'aucun ancien consommateur ne le lit puis le supprimer explicitement.
 
 Le scaling est à `minReplicas: 1` pour l'API, le Website, le BackOffice et le Scan ; le
 worker reste à `minReplicas: 0`, `maxReplicas: 1` pendant la mesure `P1-1`. Les quatre
