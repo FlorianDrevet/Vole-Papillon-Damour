@@ -53,7 +53,9 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Configure Azure CLI
-        run: az config set extension.use_dynamic_install=yes_without_prompt
+        run: |
+          az config set extension.use_dynamic_install=yes_without_prompt
+          az provider register --namespace Microsoft.EventGrid --wait
 
       - name: Check ACS sender verification
         id: acs
