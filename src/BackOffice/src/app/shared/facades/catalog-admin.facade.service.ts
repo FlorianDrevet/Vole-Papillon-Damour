@@ -5,6 +5,11 @@ import {AxiosService} from '../services/axios.service';
 import {
   AdminAlertOperation,
   AdminAlertPage,
+  AdminAccount,
+  AdminAccountFilters,
+  AdminAccountPage,
+  AdminAccountRole,
+  CreateAdminAccountRequest,
   AdminBook,
   AdminBookFilters,
   AdminBookOperation,
@@ -29,6 +34,22 @@ export class CatalogAdminFacadeService {
 
   getOverview(from?: string, to?: string): Promise<CatalogAdminOverview> {
     return this.get('/books/admin/overview', {from, to});
+  }
+
+  getAccounts(filters: AdminAccountFilters = {}): Promise<AdminAccountPage> {
+    return this.get('/accounts/admin', filters);
+  }
+
+  createAccount(request: CreateAdminAccountRequest): Promise<AdminAccount> {
+    return this.request(MethodEnum.POST, '/accounts/admin', request);
+  }
+
+  updateAccountRoles(externalId: string, roles: AdminAccountRole[]): Promise<AdminAccount> {
+    return this.request(
+      MethodEnum.PUT,
+      `/accounts/admin/${encodeURIComponent(externalId)}/roles`,
+      {roles},
+    );
   }
 
   getBooks(filters: AdminBookFilters = {}): Promise<AdminBookPage> {

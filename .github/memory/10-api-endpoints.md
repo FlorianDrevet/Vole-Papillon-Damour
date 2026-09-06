@@ -98,6 +98,22 @@ client-only/private.
   and compliance operations.
 - `GET/PUT /books/admin/settings` - typed association thresholds and alert/session timing.
 
+## Account administration endpoints
+
+- `GET /accounts/admin` - Administration-policy paged Entra account list with optional
+  `search`, `page`, and `pageSize` filters. The response includes the current `Tri`,
+  `Caisse`, and `Administration` app-role assignments.
+- `POST /accounts/admin` - Administration-policy account creation with `email`,
+  `displayName`, `temporaryPassword`, and at least one selected role. The app-only Graph
+  directory creates the External ID local identity and assigns the requested API roles.
+- `PUT /accounts/admin/{externalId}/roles` - Administration-policy replacement of the
+  selected API roles. An administrator cannot remove their own `Administration` role.
+
+The Graph runtime configuration uses `EntraGraph__TenantDomain` and
+`EntraGraph__ApiClientId` alongside the existing app-only client credentials. The
+provisioning script must grant `User.ReadWrite.All`, `Application.Read.All`, and
+`AppRoleAssignment.ReadWrite.All` to that app-only registration.
+
 All `/books/admin/*` routes require the `Administration` policy (`Administration` or `Admin`
 app role). All admin mutation responses expose an explicit `changed` flag where an operation
 is idempotent. Details and exact request/response fields are in

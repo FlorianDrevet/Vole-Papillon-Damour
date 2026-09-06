@@ -30,6 +30,42 @@ describe('CatalogAdminFacadeService', () => {
     );
   });
 
+  it('loads accounts with the administration filters', async () => {
+    await service.getAccounts({search: 'marie', page: 2, pageSize: 25});
+
+    expect(axiosService.request$).toHaveBeenCalledWith(
+      MethodEnum.GET,
+      '/accounts/admin',
+      {search: 'marie', page: 2, pageSize: 25},
+    );
+  });
+
+  it('creates an account and updates its roles through the admin routes', async () => {
+    await service.createAccount({
+      email: 'marie@example.test',
+      displayName: 'Marie Tri',
+      temporaryPassword: 'Temporaire1!',
+      roles: ['Tri'],
+    });
+    await service.updateAccountRoles('account/1', ['Administration', 'Caisse']);
+
+    expect(axiosService.request$).toHaveBeenCalledWith(
+      MethodEnum.POST,
+      '/accounts/admin',
+      {
+        email: 'marie@example.test',
+        displayName: 'Marie Tri',
+        temporaryPassword: 'Temporaire1!',
+        roles: ['Tri'],
+      },
+    );
+    expect(axiosService.request$).toHaveBeenCalledWith(
+      MethodEnum.PUT,
+      '/accounts/admin/account%2F1/roles',
+      {roles: ['Administration', 'Caisse']},
+    );
+  });
+
   it('uses PATCH for quantity correction and keeps the ISBN in the route', async () => {
     await service.correctQuantity('9782070612758', {quantityAvailable: 4, note: 'Inventaire'});
 

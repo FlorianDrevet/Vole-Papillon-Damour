@@ -12,7 +12,8 @@
     @for (tab of [
       {id: 'overview', label: 'Vue d’ensemble'}, {id: 'books', label: 'Fiches et stock'},
       {id: 'fairs', label: 'Bourses'}, {id: 'sessions', label: 'Sessions de tri'},
-      {id: 'alerts', label: 'Alertes'}, {id: 'members', label: 'Membres'}, {id: 'settings', label: 'Paramètres'}
+      {id: 'alerts', label: 'Alertes'}, {id: 'members', label: 'Membres'},
+      {id: 'accounts', label: 'Comptes et rôles'}, {id: 'settings', label: 'Paramètres'}
     ]; track tab.id) {
       <button type="button" role="tab" [attr.aria-selected]="activeTab() === tab.id"
         (click)="selectTab($any(tab.id))"
@@ -104,6 +105,77 @@
   @if (activeTab() === 'alerts') {<section class="admin-panel"><div class="flex flex-wrap items-end gap-3"><label class="admin-field"><span>Statut</span><select [(ngModel)]="alertStatus"><option value="">Tous</option><option value="Pending">En attente</option><option value="Sent">Envoyées</option><option value="Cancelled">Annulées</option><option value="Failed">En échec</option></select></label><app-pill-button (click)="loadAlerts()" type="button" [small]="true">Filtrer</app-pill-button></div><div class="mt-5 overflow-x-auto"><table class="admin-table"><thead><tr><th>Message</th><th>Membre</th><th>État</th><th>Échéance</th><th>Tentatives</th><th></th></tr></thead><tbody>@for (alert of alerts(); track alert.id) {<tr><td class="font-mono text-xs">{{ alert.id }}</td><td class="font-mono text-xs">{{ alert.memberId || '—' }}</td><td>{{ alert.status }} · {{ alert.itemCount }} livre(s)</td><td>{{ formatDate(alert.dueAt) }}</td><td>{{ alert.attempts }}</td><td class="flex gap-2"><button type="button" class="admin-link" (click)="forceAlert(alert.id)">Forcer</button><button type="button" class="admin-danger" (click)="cancelAlert(alert.id)">Annuler</button></td></tr>} @empty {<tr><td colspan="6" class="py-10 text-center text-slate-2">Aucune alerte.</td></tr>}</tbody></table></div></section>}
 
   @if (activeTab() === 'members') {<section class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"><div class="admin-panel"><div class="flex flex-wrap items-end gap-3"><label class="admin-field flex-1"><span>Recherche</span><input [(ngModel)]="memberSearch" placeholder="E-mail ou nom"></label><label class="admin-field"><span>Alertes</span><select [(ngModel)]="memberAlertStatus"><option value="">Tous</option><option value="Active">Actives</option><option value="Suspended">Suspendues</option><option value="Blocked">Bloquées</option></select></label><app-pill-button (click)="loadMembers()" type="button" [small]="true">Filtrer</app-pill-button></div><div class="mt-4 flex flex-col divide-y divide-line">@for (member of members(); track member.id) {<button type="button" class="admin-row text-left" (click)="selectMember(member.id)" [class.bg-paper-2]="selectedMember()?.member?.id === member.id"><span><strong>{{ member.displayName || member.email || 'Membre anonymisé' }}</strong><small>{{ member.email || 'Sans adresse' }} · {{ member.alertStatus }}</small></span><span>{{ member.watchlistItemCount }} recherche(s)</span></button>} @empty {<p class="py-8 text-sm text-slate-2">Aucun membre.</p>}</div></div>@if (selectedMember(); as detail) {<div class="admin-panel flex flex-col gap-5"><div class="flex flex-wrap items-start justify-between gap-3"><div><span class="admin-label">Membre {{ detail.member.id }}</span><h2>{{ detail.member.displayName || detail.member.email || 'Membre anonymisé' }}</h2><p class="text-sm text-slate-2">{{ detail.member.email || 'Adresse supprimée' }} · {{ detail.member.alertStatus }} · {{ detail.member.bounceCount }} rebond(s)</p></div><div class="flex gap-2"><app-pill-button (click)="toggleMemberBlock()" type="button" variant="secondary" [small]="true">{{ detail.member.alertStatus === 'Blocked' ? 'Débloquer' : 'Bloquer alertes' }}</app-pill-button><button type="button" class="admin-danger" (click)="deleteMember()">Supprimer</button></div></div><div><h3>Liste de recherche</h3><ul class="admin-list">@for (item of detail.watchlist; track item.id) {<li><span>{{ item.title || item.workId || item.isbn13 || 'Cible inconnue' }}<small>{{ item.scope }} · {{ item.quantityAvailable }} disponible(s) · {{ item.quantityAnnounced }} annoncé(s)</small></span><strong>{{ item.lastAlertAt ? formatDate(item.lastAlertAt) : 'Jamais alerté' }}</strong></li>} @empty {<li>Aucun titre suivi.</li>}</ul></div><div><h3>Historique alertes</h3><ul class="admin-list">@for (alert of detail.alerts; track alert.id) {<li><span>{{ alert.title || alert.isbn13 }}</span><strong>{{ formatDate(alert.sentAt) }}</strong></li>} @empty {<li>Aucune alerte envoyée.</li>}</ul></div></div>} @else {<app-state-panel icon="check" title="Sélectionnez un membre" description="Vous verrez sa liste, son historique et les actions de conformité."></app-state-panel>}</section>}
+
+  @if (activeTab() === 'accounts') {
+    <section class="flex flex-col gap-5">
+      <div class="admin-panel flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2>Comptes et rôles</h2>
+          <p class="mt-2 max-w-[70ch]">Créez les comptes utilisés pour le tri et la caisse, puis attribuez leurs rôles d’accès à l’application.</p>
+        </div>
+        <app-pill-button (click)="showCreateAccount.set(!showCreateAccount())" type="button" [small]="true">{{ showCreateAccount() ? 'Fermer' : 'Créer un compte' }}</app-pill-button>
+      </div>
+
+      @if (showCreateAccount()) {
+        <form class="admin-panel grid gap-4 sm:grid-cols-2 lg:grid-cols-4" [formGroup]="createAccountForm" (ngSubmit)="createAccount()">
+          <div class="sm:col-span-2 lg:col-span-4"><h2>Nouveau compte</h2><p class="mt-2 text-sm text-slate-2">Le mot de passe temporaire sera demandé à la première connexion.</p></div>
+          <label class="admin-field"><span>Adresse e-mail *</span><input formControlName="email" type="email" autocomplete="email"></label>
+          <label class="admin-field"><span>Nom affiché *</span><input formControlName="displayName" autocomplete="name"></label>
+          <label class="admin-field sm:col-span-2"><span>Mot de passe temporaire *</span><input formControlName="temporaryPassword" type="password" autocomplete="new-password" minlength="8"></label>
+          <fieldset class="sm:col-span-2 lg:col-span-4" [attr.aria-describedby]="createAccountForm.controls.roles.invalid && createAccountForm.controls.roles.touched ? 'create-account-role-error' : null">
+            <legend class="mb-2 text-sm font-semibold text-ink-2">Rôles *</legend>
+            <div class="flex flex-wrap gap-3">
+              @for (role of accountRoleOptions; track role.value) {
+                <label class="flex cursor-pointer items-center gap-2 rounded-sm border border-line bg-white px-3 py-2 text-sm text-slate-2">
+                  <input type="checkbox" [checked]="hasCreateRole(role.value)" (change)="toggleCreateRole(role.value)">
+                  <span>{{ role.label }}</span>
+                </label>
+              }
+            </div>
+            @if (createAccountForm.controls.roles.invalid && createAccountForm.controls.roles.touched) { <p id="create-account-role-error" class="mt-2 text-sm text-danger">Sélectionnez au moins un rôle.</p> }
+          </fieldset>
+          <div class="sm:col-span-2 lg:col-span-4"><app-pill-button type="submit" [disabled]="isSaving()">Créer le compte</app-pill-button></div>
+        </form>
+      }
+
+      <div class="admin-panel flex flex-wrap items-end gap-3">
+        <label class="admin-field min-w-0 flex-1"><span>Rechercher un compte</span><input [(ngModel)]="accountSearch" placeholder="E-mail, nom ou identifiant" (keyup.enter)="loadAccounts()"></label>
+        <app-pill-button (click)="loadAccounts()" type="button" [small]="true">Rechercher</app-pill-button>
+      </div>
+
+      <div class="overflow-x-auto rounded-sm border border-line bg-white">
+        <table class="admin-table"><thead><tr><th>Compte</th><th>État</th><th>Rôles</th><th>Action</th></tr></thead>
+          <tbody>
+            @for (account of accounts(); track account.externalId) {
+              <tr>
+                <td><strong class="text-ink-2">{{ account.displayName || 'Nom non renseigné' }}</strong><span class="block text-xs text-slate-2">{{ account.email || account.externalId }}</span></td>
+                <td>{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</td>
+                <td>
+                  @if (editingAccountId() === account.externalId) {
+                    <div class="flex flex-wrap gap-2">
+                      @for (role of accountRoleOptions; track role.value) {
+                        <label class="flex cursor-pointer items-center gap-1.5 text-xs text-slate-2"><input type="checkbox" [checked]="hasEditingRole(role.value)" (change)="toggleEditingRole(role.value)"><span>{{ role.label }}</span></label>
+                      }
+                    </div>
+                  } @else {
+                    <div class="flex flex-wrap gap-1.5">@for (role of account.roles; track role) { <span class="rounded-full bg-paper-2 px-2 py-1 text-xs font-semibold text-blue">{{ roleLabel(role) }}</span> } @empty { <span class="text-xs text-slate-3">Aucun rôle</span> }</div>
+                  }
+                </td>
+                <td>
+                  @if (editingAccountId() === account.externalId) {
+                    <div class="flex flex-wrap gap-2"><button type="button" class="admin-link" [disabled]="isSaving()" (click)="saveAccountRoles(account)">Enregistrer</button><button type="button" class="admin-link" (click)="cancelAccountRoleEdit()">Annuler</button></div>
+                  } @else {
+                    <button type="button" class="admin-link" (click)="startAccountRoleEdit(account)">Modifier les rôles</button>
+                  }
+                </td>
+              </tr>
+            } @empty { <tr><td colspan="4" class="py-10 text-center text-slate-2">Aucun compte trouvé.</td></tr> }
+          </tbody>
+        </table>
+      </div>
+      <div class="flex justify-end gap-3"><button type="button" class="admin-link" [disabled]="accountPage() <= 1" (click)="loadAccounts(accountPage() - 1)">← Précédente</button><span class="text-sm text-slate-2">Page {{ accountPage() }}</span><button type="button" class="admin-link" [disabled]="isLastAccountPage()" (click)="loadAccounts(accountPage() + 1)">Suivante →</button></div>
+    </section>
+  }
 
   @if (activeTab() === 'settings') {<form class="admin-panel grid gap-4 sm:grid-cols-2 lg:grid-cols-4" [formGroup]="settingsForm" (ngSubmit)="saveSettings()"><div class="sm:col-span-2 lg:col-span-4"><h2>Paramètres métier</h2><p class="text-sm text-slate-2">Ces seuils pilotent le scan, le stock dormant et la file d’alertes.</p></div><label class="admin-field"><span>Seuil doublon</span><input formControlName="duplicateThreshold" type="number" min="0"></label><label class="admin-field"><span>Seuil demande/ventes</span><input formControlName="demandSalesThreshold" type="number" min="0"></label><label class="admin-field"><span>Âge stock dormant (jours)</span><input formControlName="deadStockMinAgeDays" type="number" min="0"></label><label class="admin-field"><span>Quantité stock dormant</span><input formControlName="deadStockMinQuantity" type="number" min="0"></label><label class="admin-field"><span>Maximum watchlist</span><input formControlName="watchlistMaxItems" type="number" min="1"></label><label class="admin-field"><span>Cooldown alerte (jours)</span><input formControlName="alertCooldownDays" type="number" min="0"></label><label class="admin-field"><span>Inactivité session (minutes)</span><input formControlName="sessionIdleTimeoutMinutes" type="number" min="1"></label><label class="admin-field"><span>Délai alerte (minutes)</span><input formControlName="alertDelayMinutes" type="number" min="0"></label><div class="sm:col-span-2 lg:col-span-4"><app-pill-button type="submit" [disabled]="isSaving()">Enregistrer les paramètres</app-pill-button></div></form>}
 </div>
