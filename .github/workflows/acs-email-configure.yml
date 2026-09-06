@@ -1,6 +1,6 @@
 name: ACS Email - configure
 
-# Manual only. This workflow is deliberately separate from the image rollout:
+# Manual or PR-triggered. This workflow is deliberately separate from the image rollout:
 # it owns the Azure-only wiring that cannot be expressed safely by the image
 # pipelines (the Event Grid webhook secret and the ACS sender verification gate).
 on:
@@ -31,10 +31,11 @@ env:
   DEPLOY_IDENTITY_RESOURCE_GROUP: rg-vpd-identity-dev
   DEPLOY_IDENTITY: vpd-github-deploy-id
   KEY_VAULT: vpd-kv-dev
+  COMMUNICATION_SERVICE: vpd-acs-comm-dev
   WEBHOOK_SECRET_NAME: email-bounce-webhook-secret
   EVENT_SUBSCRIPTION_NAME: vpd-acs-email-delivery-reports-dev
   WEBHOOK_HEADER_NAME: X-Vpd-EventGrid-Secret
-  EMAIL_ENDPOINT: https://vpd-acs-email-dev.communication.azure.com
+  EMAIL_ENDPOINT: https://vpd-acs-comm-dev.communication.azure.com
   EMAIL_FROM: DoNotReply@mail.volepapillondamour.fr
   UNSUBSCRIBE_URL: https://livres.volepapillondamour.fr/compte
 
@@ -62,12 +63,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          ACS_ID=$(az resource show \
+          EMAIL_SERVICE_ID=$(az resource show \
             --resource-group "$RESOURCE_GROUP" \
             --name "$ACS_EMAIL_SERVICE" \
             --resource-type Microsoft.Communication/emailServices \
             --query id --output tsv)
-          DOMAIN_ID="$ACS_ID/domains/$ACS_EMAIL_DOMAIN"
+          DOMAIN_ID="$EMAIL_SERVICE_ID/domains/$ACS_EMAIL_DOMAIN"
           DOMAIN_JSON=$(az rest \
             --method get \
             --url "https://management.azure.com${DOMAIN_ID}?api-version=2026-03-18")
@@ -141,6 +142,29 @@ jobs:
           done
 
           echo "Final ACS verification states: Domain=$domain_status SPF=$spf_status DKIM=$dkim_status DKIM2=$dkim2_status DMARC=$dmarc_status"
+
+          if az communication show \
+              --name "$COMMUNICATION_SERVICE" \
+              --resource-group "$RESOURCE_GROUP" \
+              --only-show-errors >/dev/null 2>&1; then
+            az communication update \
+              --name "$COMMUNICATION_SERVICE" \
+              --resource-group "$RESOURCE_GROUP" \
+              --linked-domains "$DOMAIN_ID" \
+              --output none
+          else
+            az communication create \
+              --name "$COMMUNICATION_SERVICE" \
+              --resource-group "$RESOURCE_GROUP" \
+              --location Global \
+              --data-location France \
+              --linked-domains "$DOMAIN_ID" \
+              --output none
+          fi
+          ACS_ID=$(az communication show \
+            --name "$COMMUNICATION_SERVICE" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query id --output tsv)
 
           API_FQDN=$(az containerapp show \
             --name "$API_CONTAINER_APP" \
