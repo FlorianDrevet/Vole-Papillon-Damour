@@ -13,7 +13,7 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`ead9e79`) et déployés sur l'environnement dev. |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`c490097`) et déployés sur l'environnement dev. |
 | **Prochaine action** | Relever les heartbeats/mesures, réaliser un envoi e-mail de test avec un destinataire validé, puis exécuter les contrôles physiques restants. Le workflow reproductible ACS est dans la PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74), encore ouverte. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-acs-email` |
 | **Dernière mise à jour** | 2026-09-06 — déploiement post-merge et activation ACS/e-mails dev |
@@ -118,7 +118,8 @@ La liste des contrats, états, limites et contrôles opératoires est maintenue 
 [`docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
 
 La migration a été appliquée à la base dev par `Books runtime - deploy` `34032046904` et les
-applications ont été roulées depuis `ead9e79`. Le domaine d'envoi ACS est maintenant vérifié
+applications ont ensuite été roulées depuis le `main` courant (`c490097`) par les runs
+`34048120747` (Books API/Worker) et `34048120650` (Catalog). Le domaine d'envoi ACS est vérifié
 et la chaîne Worker → ACS → Event Grid → API est configurée. Le smoke public ne remplace pas
 encore un envoi e-mail réel vers une boîte de test.
 
@@ -132,6 +133,10 @@ catalogue — recherche, fiche ISBN, prochaine bourse, page d'œuvre et sitemap 
 routes membres protégées pour le compte, la liste de recherche et la suppression de compte.
 La projection exclut les fiches masquées ou redirigées, conserve les livres épuisés, et sépare
 les quantités disponibles des annonces futures.
+
+La PR #67 a ensuite été fusionnée dans `origin/main` au commit `c490097` ; elle a été publiée
+par `Books runtime - deploy` `34048120747` et `Catalog - deploy` `34048120650`. Les deux
+workflows sont verts et le smoke post-rollout catalogue/API répond `200`.
 
 `src/Catalog` est une application Angular SSR distincte du Website, du BackOffice et de la
 Scanette. Elle contient l'accueil, la recherche, le catalogue par genre, les fiches livres,
@@ -487,9 +492,9 @@ dans Azure sans être déductible du dépôt.
 | ACS Communication Service | `vpd-acs-comm-dev`, lié au domaine Email vérifié, endpoint `https://vpd-acs-comm-dev.communication.azure.com` | `2026-09-06` |
 | ACS runtime | Worker `vpd-worker-id-dev` autorisé par `Communication and Email Service Owner`; secret webhook dans `vpd-kv-dev`, référence Key Vault active sur l'API, envoi Worker activé | `2026-09-06` |
 | Event Grid ACS | `vpd-acs-email-delivery-reports-dev`, événement `Microsoft.Communication.EmailDeliveryReportReceived`, webhook API `/integrations/acs/email-delivery-reports` et header partagé configurés | `2026-09-06` |
-| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:ead9e79` déployée avec le Worker par `Books runtime - deploy` run `34032046904`; `/health`, `/catalog/search`, `/catalog/sitemap.xml` et metadata BnF/Open Library répondent `200` | `2026-09-06` |
-| Catalogue public | Image `vpdacrdev.azurecr.io/vpd-catalog:ead9e79` déployée par `Catalog - deploy` run `34032230663`; `/`, `/robots.txt`, `/sitemap.xml` répondent `200`, les routes privées sont `noindex` côté HTML et en-tête | `2026-09-06` |
-| Runtime Books | API `vpd-api:ead9e79` et Worker `vpd-worker:ead9e79` construits depuis le même commit ; migrations EF appliquées, rollout réussi | `2026-09-06` |
+| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:c490097` déployée avec le Worker par `Books runtime - deploy` run `34048120747`; `/health`, `/catalog/search`, `/catalog/sitemap.xml` et metadata BnF/Open Library répondent `200` | `2026-09-06` |
+| Catalogue public | Image `vpdacrdev.azurecr.io/vpd-catalog:c490097` déployée par `Catalog - deploy` run `34048120650`; `/`, `/robots.txt`, `/sitemap.xml` répondent `200`, les routes privées sont `noindex` côté HTML et en-tête | `2026-09-06` |
+| Runtime Books | API `vpd-api:c490097` et Worker `vpd-worker:c490097` construits depuis le même commit ; migrations EF déjà appliquées, rollout réussi | `2026-09-06` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
 
@@ -598,6 +603,7 @@ Une ligne par session de travail. Le plus récent en haut.
 |---|---|---|
 | 2026-09-06 | Windows | **PR #67 — résolution des conflits et revue de pertinence.** Les correctifs de détection zoneless sur recherche, fiche livre et fiche œuvre sont conservés, ainsi que l'enrichissement bibliographique ciblé après commit d'un scan avec le Worker horaire comme repli. Le chemin Blob des couvertures, devenu obsolète après `ReplaceBookCoverBlobWithDirectCoverUrl`, est retiré de la résolution. Validation : 58 tests ChromeHeadless Catalog, 319 tests backend, builds API/Worker/Catalog et `graphify update .` passés ; aucun déploiement effectué. |
 | 2026-09-06 | Windows | **Déploiement post-merge et ACS/e-mails.** Après le merge de la PR #72 (`ead9e79`), les runs `Infra - deploy` `34031915751`, `Books runtime - deploy` `34032046904`, `Website - deploy` `34032231011`, `BackOffice - deploy` `34032230503`, `Catalog - deploy` `34032230663` et `Scan - deploy` `34032231264` sont verts. Le workflow `ACS Email - configure` `34046166674` a vérifié propriété/SPF/DKIM/DKIM2, créé `vpd-acs-comm-dev`, autorisé l'identité Worker, posé le secret webhook dans Key Vault, activé l'envoi Worker et créé l'abonnement Event Grid. PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74) conserve cette configuration reproductible et reste ouverte ; aucun e-mail de test n'a été envoyé. |
+| 2026-09-06 | Windows | **Publication du `main` courant après PR #67.** `c490097` a été déployé sur l'API et le Worker par `Books runtime - deploy` `34048120747`, et sur le Catalog par `Catalog - deploy` `34048120650`. Migrations non rejouées car déjà appliquées ; smoke public post-rollout : catalogue, robots, sitemap, API `/health` et recherche en `200`. |
 | 2026-09-06 | Windows | **P1-10 — persistance métier de la caisse.** Correction du trou identifié dans la PWA Scan : `VALIDER` ne se contente plus d'effacer l'écran. Les ventes sont conservées dans un magasin IndexedDB dédié, décrémentent immédiatement la projection locale, puis sont rejouées vers `POST /scan/sales` avec `ClientGestureId` idempotent ; la réponse réconcilie `qtyAvailable` et `salesCount`. Le rôle `Caisse` est accepté par le front, le delta catalogue est partagé entre `Tri` et `Caisse`, et l'accès UI est filtré par rôle. Validation locale : 85 tests ChromeHeadless Scan, build production Scan et 292 tests backend ; aucun déploiement ni test manuel de coupure réseau à distance. Branche `fix/scan-cash-sales`, PR à ouvrir. |
 | 2026-09-05 | Windows | **Clôture de la reprise nocturne.** PR #65 fusionnée en `f3fd148`; le CI `main` `33934370102` est vert après validation du backend, de MAUI Android, des quatre fronts et des trois images de conteneur. Le dépôt est propre et aucune PR n'est ouverte. La revue finale, les décisions et les gates encore ouvertes sont consignées ci-dessus et dans `docs/bourse-aux-livres/plan/DECISIONS-2026-09-04-overnight.md`. |
 | 2026-09-05 | Windows | **Revue finale et traçabilité.** Relecture des changements PR #61 et #63 : la suppression locale est transactionnelle et nettoie les projections strictement membre avant anonymisation/suppression ; le chemin SQLite évite `JSON_VALUE` et le chemin SQL Server optimisé est conservé. Le correctif robots couvre les deux routes privées présentes dans le routage, met à jour le HTML SSR et la meta client, et le smoke live est cohérent. Aucun défaut bloquant supplémentaire trouvé. Point de maintenance : si une sous-route privée est ajoutée, étendre le helper robots, le middleware SSR et les tests. PR #64 est fusionnée en `d097792`; CI `main` `33933202774` vert. Les gates ACS, heartbeats, benchmarks et tests physiques restent ouvertes. |
