@@ -2,6 +2,9 @@ import {Component, OnInit, inject, signal} from '@angular/core';
 import {FormBuilder, Validators} from '@angular/forms';
 
 import {
+  AdminAccount,
+  AdminAccountFilters,
+  AdminAccountRole,
   AdminBook,
   AdminBookFilters,
   AdminFair,
@@ -12,7 +15,7 @@ import {
 } from '../../shared/models/catalog-admin.model';
 import {CatalogAdminFacadeService} from '../../shared/facades/catalog-admin.facade.service';
 
-type AdminTab = 'overview' | 'books' | 'fairs' | 'sessions' | 'alerts' | 'members' | 'settings';
+type AdminTab = 'overview' | 'books' | 'fairs' | 'sessions' | 'alerts' | 'members' | 'accounts' | 'settings';
 
 @Component({
   selector: 'app-catalog-administration',
@@ -45,6 +48,11 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly members = signal<any[]>([]);
   protected readonly selectedMember = signal<AdminMemberDetail | null>(null);
   protected readonly memberTotal = signal(0);
+  protected readonly accounts = signal<AdminAccount[]>([]);
+  protected readonly accountTotal = signal(0);
+  protected readonly accountPage = signal(1);
+  protected readonly editingAccountId = signal<string | null>(null);
+  protected readonly editingRoles = signal<AdminAccountRole[]>([]);
   protected readonly settings = signal<any | null>(null);
 
   protected bookSearch = '';
@@ -56,11 +64,19 @@ export class CatalogAdministrationComponent implements OnInit {
   protected memberSearch = '';
   protected memberAlertStatus = '';
   protected alertStatus = '';
+  protected accountSearch = '';
   protected showAddBook = signal(false);
+  protected showCreateAccount = signal(false);
   protected announcementToCorrect = signal<string | null>(null);
   protected revenueInput = '';
   protected reassignMode = 'AvailableNow';
   protected reassignFairId = '';
+
+  protected readonly accountRoleOptions: {value: AdminAccountRole; label: string}[] = [
+    {value: 'Tri', label: 'Tri'},
+    {value: 'Caisse', label: 'Caisse'},
+    {value: 'Administration', label: 'Administrateur'},
+  ];
 
   protected readonly addBookForm = this.formBuilder.nonNullable.group({
     isbn13: ['', [Validators.required, Validators.pattern(/^\d{13}$/)]],
@@ -119,6 +135,13 @@ export class CatalogAdministrationComponent implements OnInit {
     alertDelayMinutes: [120, [Validators.required, Validators.min(0)]],
   });
 
+  protected readonly createAccountForm = this.formBuilder.nonNullable.group({
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
+    displayName: ['', [Validators.required, Validators.maxLength(200)]],
+    temporaryPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(256)]],
+    roles: this.formBuilder.nonNullable.control<AdminAccountRole[]>([], Validators.required),
+  });
+
   ngOnInit(): void {
     this.loadOverview();
   }
@@ -133,6 +156,7 @@ export class CatalogAdministrationComponent implements OnInit {
       case 'sessions': this.loadSessions(); break;
       case 'alerts': this.loadAlerts(); break;
       case 'members': this.loadMembers(); break;
+      case 'accounts': this.loadAccounts(); break;
       case 'settings': this.loadSettings(); break;
     }
   }
@@ -358,6 +382,86 @@ export class CatalogAdministrationComponent implements OnInit {
     });
   }
 
+  protected loadAccounts(page = 1): void {
+    const filters: AdminAccountFilters = {
+      search: this.accountSearch.trim() || undefined,
+      page,
+      pageSize: 25,
+    };
+    this.load(() => this.facade.getAccounts(filters), value => {
+      this.accounts.set(value.accounts);
+      this.accountTotal.set(value.totalCount);
+      this.accountPage.set(value.page);
+    });
+  }
+
+  protected createAccount(): void {
+    if (this.createAccountForm.invalid) {
+      this.createAccountForm.markAllAsTouched();
+      return;
+    }
+
+    this.save(
+      () => this.facade.createAccount(this.createAccountForm.getRawValue()),
+      'Le compte a été créé.',
+      () => {
+        this.createAccountForm.reset({email: '', displayName: '', temporaryPassword: '', roles: []});
+        this.showCreateAccount.set(false);
+        this.loadAccounts();
+      },
+    );
+  }
+
+  protected toggleCreateRole(role: AdminAccountRole): void {
+    const roles = this.createAccountForm.controls.roles.value;
+    this.createAccountForm.controls.roles.setValue(
+      roles.includes(role) ? roles.filter(item => item !== role) : [...roles, role],
+    );
+    this.createAccountForm.controls.roles.markAsTouched();
+  }
+
+  protected hasCreateRole(role: AdminAccountRole): boolean {
+    return this.createAccountForm.controls.roles.value.includes(role);
+  }
+
+  protected startAccountRoleEdit(account: AdminAccount): void {
+    this.editingAccountId.set(account.externalId);
+    this.editingRoles.set([...account.roles]);
+  }
+
+  protected cancelAccountRoleEdit(): void {
+    this.editingAccountId.set(null);
+    this.editingRoles.set([]);
+  }
+
+  protected toggleEditingRole(role: AdminAccountRole): void {
+    const roles = this.editingRoles();
+    this.editingRoles.set(roles.includes(role) ? roles.filter(item => item !== role) : [...roles, role]);
+  }
+
+  protected hasEditingRole(role: AdminAccountRole): boolean {
+    return this.editingRoles().includes(role);
+  }
+
+  protected saveAccountRoles(account: AdminAccount): void {
+    this.save(
+      () => this.facade.updateAccountRoles(account.externalId, this.editingRoles()),
+      'Les rôles du compte ont été mis à jour.',
+      () => {
+        this.cancelAccountRoleEdit();
+        this.loadAccounts(this.accountPage());
+      },
+    );
+  }
+
+  protected roleLabel(role: AdminAccountRole): string {
+    return this.accountRoleOptions.find(option => option.value === role)?.label ?? role;
+  }
+
+  protected isLastAccountPage(): boolean {
+    return this.accountPage() * 25 >= this.accountTotal();
+  }
+
   protected loadSettings(): void {
     this.load(() => this.facade.getSettings(), value => {
       this.settings.set(value);
@@ -397,8 +501,8 @@ export class CatalogAdministrationComponent implements OnInit {
     this.clearMessages();
     request()
       .then(() => {
-        this.successMessage.set(message);
         after();
+        this.successMessage.set(message);
       })
       .catch(error => this.errorMessage.set(this.readError(error)))
       .finally(() => this.isSaving.set(false));

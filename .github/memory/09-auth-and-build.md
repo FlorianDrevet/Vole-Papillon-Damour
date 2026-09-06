@@ -22,6 +22,14 @@
 - `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
 - `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
 
+- Account administration keeps Entra app roles as the source of truth. The BackOffice
+  uses the Administration-protected `/accounts/admin` endpoints; the API Graph adapter
+  creates External ID local identities with `passwordPolicies=DisablePasswordExpiration`
+  and synchronizes `Tri`, `Caisse`, and `Administration` assignments. The app-only Graph
+  registration needs `User.ReadWrite.All`, `Application.Read.All`, and
+  `AppRoleAssignment.ReadWrite.All`; the API receives its tenant domain and API client ID
+  through `EntraGraph__TenantDomain` and `EntraGraph__ApiClientId`.
+
 ## Frontend And Client Auth Touchpoints
 
 - `BackOffice` uses `@azure/msal-angular` 5.3.1 with `@azure/msal-browser` 5.20.0,

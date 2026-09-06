@@ -69,7 +69,9 @@ public static class DependencyInjection
             builderConfiguration.GetSection(BookAlertEmailOptions.SectionName));
         services.AddSingleton<IBookAlertEmailSender, BookAlertEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
-        services.AddHttpClient<IEntraUserDirectory, EntraGraphUserDirectory>();
+        services.AddHttpClient<EntraGraphUserDirectory>();
+        services.AddScoped<IEntraUserDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
+        services.AddScoped<IEntraAccountDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
         services.Configure<BibliographicOptions>(
             builderConfiguration.GetSection(BibliographicOptions.SectionName));
         services.AddHttpClient<IBnfSruClient, BnfSruClient>((serviceProvider, client) =>

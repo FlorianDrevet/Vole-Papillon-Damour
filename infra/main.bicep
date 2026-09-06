@@ -186,6 +186,9 @@ param entraAuthority string
 @description('Tenant ID of the Microsoft Entra External ID tenant')
 param entraTenantId string
 
+@description('Initial domain of the Microsoft Entra External ID tenant, used for local account identities')
+param entraTenantDomain string
+
 @description('Application (client) ID of the protected API registration')
 param entraApiClientId string
 
@@ -836,6 +839,14 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         value: entraTenantId
       }
       {
+        name: 'EntraGraph__TenantDomain'
+        value: entraTenantDomain
+      }
+      {
+        name: 'EntraGraph__ApiClientId'
+        value: entraApiClientId
+      }
+      {
         name: 'EntraGraph__ClientId'
         value: entraGraphClientId
       }
@@ -1131,6 +1142,14 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'EntraGraph__TenantId'
         value: entraTenantId
+      }
+      {
+        name: 'EntraGraph__TenantDomain'
+        value: entraTenantDomain
+      }
+      {
+        name: 'EntraGraph__ApiClientId'
+        value: entraApiClientId
       }
       {
         name: 'EntraGraph__ClientId'

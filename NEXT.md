@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
 | **Prochaine action** | Relever les heartbeats/mesures, réaliser un envoi e-mail de test avec un destinataire validé, puis exécuter les contrôles physiques restants. Le workflow reproductible ACS est fusionné dans `main` via la PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74). |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-deployment-docs` |
-| **Dernière mise à jour** | 2026-09-06 — déploiement final du `main` et activation ACS/e-mails dev |
-| **Branche** | `docs/record-final-deployment-5601c2e` — mise à jour de traçabilité |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-roles` |
+| **Dernière mise à jour** | 2026-09-06 — comptes et rôles administrables depuis le BackOffice, en attente de PR et déploiement |
+| **Branche** | `feat/backoffice-account-roles` — worktree dédié depuis `origin/main` (`dba7127`) |
 
 ---
 
@@ -77,6 +77,28 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-06 — gestion des comptes et rôles BackOffice
+
+Le worktree `feat/backoffice-account-roles` ajoute l’onglet **Comptes et rôles** au
+BackOffice : recherche paginée des comptes Entra, création avec mot de passe temporaire,
+sélection des rôles `Tri`, `Caisse` et `Administration` (libellé « Administrateur »), et
+modification des rôles compte par compte. L’API expose `GET/POST /accounts/admin` et
+`PUT /accounts/admin/{externalId}/roles`, protégés par la policy `Administration`, avec
+handlers CQRS et garde-fou empêchant un administrateur de retirer son propre rôle.
+
+L’adaptateur Graph utilise l’application app-only existante pour créer les identités
+locales du tenant External ID, lire les attributions et synchroniser les app roles. Le
+script Entra demande désormais `User.ReadWrite.All`, `Application.Read.All` et
+`AppRoleAssignment.ReadWrite.All`; Bicep transmet le domaine du tenant et l’AppClientId
+de l’API. Aucun consentement Entra, secret, déploiement Azure ou compte réel n’a été
+modifié dans cette session : ces contrôles restent à faire après la PR.
+
+Validation locale : tests ciblés Application (5), Infrastructure (1), API (13),
+BackOffice (17 ChromeHeadless + bootstrap), build BackOffice, build API et compilation
+Bicep. Les avertissements de vulnérabilités NuGet/npm et de budgets Angular restent
+signalés par les outils ; `rtk` n’est pas installé, les commandes Git natives ont été
+utilisées pour le workflow.
 
 ### État actualisé — 2026-09-06 (déploiement final)
 
@@ -514,6 +536,7 @@ dans Azure sans être déductible du dépôt.
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
+| Application Graph — gestion des comptes | Le code exige désormais les permissions `User.ReadWrite.All`, `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ; la mise à jour du consentement et le rollout restent à faire | `2026-09-06` |
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | `vpd-acs-email-dev` dans `rg-vpd-dev`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur `DoNotReply@mail.volepapillondamour.fr` ; propriété, SPF, DKIM et DKIM2 vérifiés, DMARC ACS `NotStarted` | `2026-09-06` |
 | ACS Communication Service | `vpd-acs-comm-dev`, lié au domaine Email vérifié, endpoint `https://vpd-acs-comm-dev.communication.azure.com` | `2026-09-06` |
@@ -628,6 +651,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-06 | Windows | **BackOffice — comptes et rôles.** Depuis `origin/main` (`dba7127`) dans le worktree `feat/backoffice-account-roles`, ajout de l’onglet « Comptes et rôles » avec recherche, création de comptes Entra, rôles `Tri`/`Caisse`/`Administration` et garde-fou d’auto-révocation. Ajout des handlers CQRS, contrats/API, adaptateur Graph, permissions Entra/Bicep et régressions. Validation : 5 tests Application, 1 Infrastructure, 13 API, 17 BackOffice ChromeHeadless + bootstrap, builds BackOffice/API et compilation Bicep. Aucun consentement, secret, compte réel ou déploiement n’a été modifié ; PR à ouvrir. |
 | 2026-09-06 | Windows | **Correctif de la liste de recherche du Catalog.** Le parcours « Suivre ce titre » pouvait rester visuellement sur « Ajout… » après la réponse API, car l’état plain-property du composant n’était pas replanifié par Angular zoneless. Ajout de `ChangeDetectorRef.markForCheck()` en fin de parcours et d’une régression ChromeHeadless avec observable différé. Validation : 59 tests Catalog et build production ; aucun déploiement effectué, PR à ouvrir. |
 | 2026-09-06 | Windows | **Correctif Catalog compte/admin — en attente de déploiement.** Depuis `origin/main` dans `fix/catalog-account-admin`, le jeton d'accès API est maintenant la source du rôle `Administration`/`Admin`, `/compte` expose l'espace administration, les menus desktop/mobile le rendent atteignable, et le renouvellement MSAL interactif revient à l'URL privée sans afficher l'erreur générique. Validation locale : 65 tests ChromeHeadless Catalog, build production SSR et smoke SSR `/`, `/compte`, `/administration` en `200`. Le contrôle visuel mobile authentifié et le retest live après `Catalog - deploy` restent à faire ; aucun déploiement n'a été lancé. |
 | 2026-09-06 | Windows | **Refonte Catalog `/compte` déconnecté — en attente de PR et déploiement.** Depuis une worktree dédiée basée sur `origin/main`, l'écran membre présente désormais le langage V2 du catalogue, trois bénéfices concrets, les actions séparées « Se connecter »/« Créer un compte » et un prompt d'inscription qui revient sur `/compte`, sans libellé Microsoft dans l'interface. Validation locale : 70 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .`, smoke `200` avec `X-Robots-Tag: noindex, nofollow` et contrôle visuel desktop ; aucun déploiement n'a été lancé. |
