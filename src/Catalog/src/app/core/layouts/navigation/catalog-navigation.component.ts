@@ -39,8 +39,7 @@ export class CatalogNavigationComponent {
       return 'Mon compte';
     }
 
-    const account = this.account();
-    return account ? this.initials(account) : 'Administration';
+    return 'Administration';
   });
   readonly accountName = computed(() => this.displayAccount(this.account()));
   readonly accountInitials = computed(() => {

@@ -51,22 +51,28 @@ describe('CatalogNavigationComponent', () => {
     expect(fixture.nativeElement.querySelector('.account-popover')).not.toBeNull();
   });
 
-  it('shows the administration workspace to an authenticated administrator', () => {
+  it('shows the administration workspace with a clear connected label', () => {
     auth.account.set({
       homeAccountId: 'home-account-id',
       environment: 'volepapillondamour.ciamlogin.com',
       tenantId: 'tenant-id',
       username: 'administrator@example.test',
       localAccountId: 'local-account-id',
-      name: 'Administrator',
+      name: 'Florian DREVET',
     });
     auth.isAuthenticated.set(true);
     auth.isAdministrator.set(true);
 
+    fixture.componentInstance.url.set('/administration');
     fixture.detectChanges();
-    (fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement).click();
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
+    const accountIcon = fixture.nativeElement.querySelector('.person-icon') as HTMLElement;
+    accountLink.click();
     fixture.detectChanges();
 
+    expect(accountIcon.textContent?.trim()).toBe('FD');
+    expect(accountLink.textContent).toContain('Administration');
+    expect(accountLink.textContent).not.toContain('FDFD');
     expect(fixture.nativeElement.textContent).toContain("Ouvrir l'administration");
   });
 });

@@ -137,12 +137,13 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(api.getWatchlist).toHaveBeenCalledWith('member-token');
     expect(fixture.nativeElement.textContent).toContain('Le livre suivi');
+    expect(fixture.nativeElement.textContent).toContain('Ma liste de recherche.');
 
     await fixture.componentInstance.removeItem(watchlist.items[0]);
     fixture.detectChanges();
 
     expect(api.removeWatchlistItem).toHaveBeenCalledWith('member-token', 'item-1');
-    expect(fixture.nativeElement.textContent).toContain('Aucun titre suivi');
+    expect(fixture.nativeElement.textContent).toContain('Aucun titre dans votre liste de recherche');
   });
 
   it('exposes the administration workspace to an administrator', async () => {

@@ -5,7 +5,7 @@
     <div class="unsubscribe-card success-card" role="status">
       <p class="eyebrow">Préférences enregistrées</p>
       <h1 id="unsubscribe-title">Vous êtes désabonné.</h1>
-      <p>Vous ne recevrez plus les alertes e-mail de la bourse. Votre liste de suivi reste disponible dans votre compte et peut être réactivée quand vous le souhaitez.</p>
+      <p>Vous ne recevrez plus les alertes e-mail de la bourse. Votre liste de recherche reste disponible dans votre compte et peut être réactivée quand vous le souhaitez.</p>
       <a class="unsubscribe-button" routerLink="/compte">Retourner à mon compte <span aria-hidden="true">→</span></a>
     </div>
   } @else if (authError() || errorMessage()) {
@@ -25,7 +25,7 @@
     <div class="unsubscribe-card">
       <p class="eyebrow">Désinscription</p>
       <h1 id="unsubscribe-title">Ne plus recevoir nos alertes.</h1>
-      <p>Confirmez pour suspendre les e-mails de disponibilité. Votre liste de suivi ne sera pas supprimée et les livres restent consultables librement.</p>
+      <p>Confirmez pour suspendre les e-mails de disponibilité. Votre liste de recherche ne sera pas supprimée et les livres restent consultables librement.</p>
       <button type="button" class="unsubscribe-button" [disabled]="pending()" (click)="confirmUnsubscribe()">
         {{ pending() ? 'Enregistrement…' : 'Confirmer le désabonnement' }}
       </button>

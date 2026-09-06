@@ -137,6 +137,26 @@ describe('CatalogBookDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('ajouté à votre liste');
   });
 
+  it('does not offer a notification for a book that is currently available', async () => {
+    api.getBook.and.returnValue(of({...book, quantityAvailable: 3}));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.notify-button')).toBeNull();
+  });
+
+  it('does not show on-site price wording on a book detail', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.price-line')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Prix sur place');
+    expect(fixture.nativeElement.textContent).not.toContain('communiqué au comptoir');
+  });
+
   it('starts member login instead of sending an anonymous protected request', async () => {
     auth.isAuthenticated.set(false);
     auth.account.set(null);

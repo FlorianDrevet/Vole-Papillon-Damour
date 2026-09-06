@@ -133,10 +133,10 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         ? {scope: 'Work' as const, workId: item.workId, isbn13: null}
         : {scope: 'Edition' as const, workId: null, isbn13: item.isbn13};
       await firstValueFrom(this.memberApi.addWatchlistItem(token, request));
-      this.referenceFollowMessage = 'Le titre a été ajouté à votre liste de suivi.';
+      this.referenceFollowMessage = 'Le titre a été ajouté à votre liste de recherche.';
     } catch (error: unknown) {
       this.referenceFollowError = error instanceof HttpErrorResponse && error.status === 409
-        ? 'Ce titre est déjà présent dans votre liste, ou votre liste est pleine.'
+        ? 'Ce titre est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
         : 'Le titre n’a pas pu être ajouté. Réessayez dans un instant.';
     } finally {
       this.referenceFollowPending = null;
@@ -162,9 +162,9 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   resultSummary(): string {
     const total = this.response?.totalCount || 0;
     if (total === 0) {
-      return 'Aucun titre trouvé';
+      return 'Aucun titre trouvé dans la bourse aux livres';
     }
-    return `${total} ${total === 1 ? 'titre trouvé' : 'titres trouvés'}`;
+    return `${total} ${total === 1 ? 'titre trouvé' : 'titres trouvés'} dans la bourse aux livres`;
   }
 
   trackBook(_index: number, isbn13: string): string {

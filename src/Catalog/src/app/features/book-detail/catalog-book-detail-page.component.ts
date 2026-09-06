@@ -129,7 +129,7 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     try {
       const token = await this.auth.getApiAccessToken();
       await firstValueFrom(this.memberApi.addWatchlistItem(token, request));
-      this.notifyMessage.set('Le titre a été ajouté à votre liste.');
+      this.notifyMessage.set('Le titre a été ajouté à votre liste de recherche.');
     } catch (error: unknown) {
       this.notifyError.set(this.describeNotificationError(error));
     } finally {
