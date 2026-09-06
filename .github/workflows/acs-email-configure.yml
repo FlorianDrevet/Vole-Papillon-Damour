@@ -68,11 +68,15 @@ jobs:
             --method get \
             --url "https://management.azure.com${DOMAIN_ID}?api-version=2026-03-18")
 
-          domain_status=$(jq -r '.properties.verificationStates.Domain.status // "Unknown"' <<<"$DOMAIN_JSON")
-          spf_status=$(jq -r '.properties.verificationStates.SPF.status // "Unknown"' <<<"$DOMAIN_JSON")
-          dkim_status=$(jq -r '.properties.verificationStates.DKIM.status // "Unknown"' <<<"$DOMAIN_JSON")
-          dkim2_status=$(jq -r '.properties.verificationStates.DKIM2.status // "Unknown"' <<<"$DOMAIN_JSON")
-          dmarc_status=$(jq -r '.properties.verificationStates.DMARC.status // "Unknown"' <<<"$DOMAIN_JSON")
+          read_statuses() {
+            domain_status=$(jq -r '.properties.verificationStates.Domain.status // "Unknown"' <<<"$DOMAIN_JSON")
+            spf_status=$(jq -r '.properties.verificationStates.SPF.status // "Unknown"' <<<"$DOMAIN_JSON")
+            dkim_status=$(jq -r '.properties.verificationStates.DKIM.status // "Unknown"' <<<"$DOMAIN_JSON")
+            dkim2_status=$(jq -r '.properties.verificationStates.DKIM2.status // "Unknown"' <<<"$DOMAIN_JSON")
+            dmarc_status=$(jq -r '.properties.verificationStates.DMARC.status // "Unknown"' <<<"$DOMAIN_JSON")
+          }
+
+          read_statuses
 
           {
             echo "ACS resource: $ACS_ID"
@@ -89,19 +93,51 @@ jobs:
             echo ""
             echo "| Check | Status |"
             echo "| --- | --- |"
-            echo "| Domain ownership | `$domain_status` |"
-            echo "| SPF | `$spf_status` |"
-            echo "| DKIM | `$dkim_status` |"
-            echo "| DKIM2 | `$dkim2_status` |"
-            echo "| DMARC | `$dmarc_status` |"
+            echo "| Domain ownership | $domain_status |"
+            echo "| SPF | $spf_status |"
+            echo "| DKIM | $dkim_status |"
+            echo "| DKIM2 | $dkim2_status |"
+            echo "| DMARC | $dmarc_status |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          for status in "$domain_status" "$spf_status" "$dkim_status" "$dkim2_status"; do
+          initiate_verification() {
+            local verification_type="$1"
+            local status="$2"
             if [ "$status" != "Verified" ]; then
+              az communication email domain initiate-verification \
+                --domain-name "$ACS_EMAIL_DOMAIN" \
+                --email-service-name "$ACS_EMAIL_SERVICE" \
+                --resource-group "$RESOURCE_GROUP" \
+                --verification-type "$verification_type" \
+                --output none
+            fi
+          }
+
+          initiate_verification Domain "$domain_status"
+          initiate_verification SPF "$spf_status"
+          initiate_verification DKIM "$dkim_status"
+          initiate_verification DKIM2 "$dkim2_status"
+          initiate_verification DMARC "$dmarc_status"
+
+          for attempt in $(seq 1 12); do
+            DOMAIN_JSON=$(az rest \
+              --method get \
+              --url "https://management.azure.com${DOMAIN_ID}?api-version=2026-03-18")
+            read_statuses
+            if [ "$domain_status" = "Verified" ] && \
+               [ "$spf_status" = "Verified" ] && \
+               [ "$dkim_status" = "Verified" ] && \
+               [ "$dkim2_status" = "Verified" ]; then
+              break
+            fi
+            if [ "$attempt" -eq 12 ]; then
               echo "ACS sender verification is incomplete; email sending remains disabled."
               exit 1
             fi
+            sleep 15
           done
+
+          echo "Final ACS verification states: Domain=$domain_status SPF=$spf_status DKIM=$dkim_status DKIM2=$dkim2_status DMARC=$dmarc_status"
 
           API_FQDN=$(az containerapp show \
             --name "$API_CONTAINER_APP" \
@@ -258,10 +294,10 @@ jobs:
           {
             echo "### ACS email delivery configured"
             echo ""
-            echo "- Sender domain: `$ACS_EMAIL_DOMAIN` (verified)"
-            echo "- API webhook: `$API_ENDPOINT`"
-            echo "- API: `$API_STATUS`"
-            echo "- Worker: `$WORKER_STATUS`"
-            echo "- Event Grid: `$EVENT_STATUS`"
+            echo "- Sender domain: $ACS_EMAIL_DOMAIN (verified)"
+            echo "- API webhook: $API_ENDPOINT"
+            echo "- API: $API_STATUS"
+            echo "- Worker: $WORKER_STATUS"
+            echo "- Event Grid: $EVENT_STATUS"
             echo "- Worker test email: not sent by this workflow"
           } >> "$GITHUB_STEP_SUMMARY"
