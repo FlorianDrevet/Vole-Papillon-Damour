@@ -116,7 +116,14 @@ l'API est indisponible. La convention visuelle est dans
 contrats de reprise dans
 [`06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
 
-Validation locale : `src/Catalog` — `55` tests ChromeHeadless et `npm run build` SSR +
+Le correctif en cours sur `fix/catalog-account-admin` traite le parcours observé après
+connexion : le Catalog lit le rôle `Administration` du jeton d'accès API, rend l'espace
+administration atteignable depuis `/compte` et conserve l'URL privée lors d'un renouvellement
+MSAL interactif au lieu d'afficher une erreur générique. La protection effective reste côté
+API. Aucun déploiement de ce correctif n'a encore été effectué ; le retest du compte admin
+sur le domaine public reste à faire après merge et `Catalog - deploy`.
+
+Validation locale : `src/Catalog` — `65` tests ChromeHeadless et `npm run build` SSR +
 navigateur ; `src/BackOffice` — `15` tests ChromeHeadless et bootstrap validé ; backend —
 `82` Domain, `154` Application, `66` Infrastructure, `12` API et compilation de la solution.
 Le smoke SSR retourne `200` pour les routes publiques et privées ; `/compte`,
@@ -622,6 +629,7 @@ Une ligne par session de travail. Le plus récent en haut.
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
 | 2026-09-06 | Windows | **Correctif de la liste de recherche du Catalog.** Le parcours « Suivre ce titre » pouvait rester visuellement sur « Ajout… » après la réponse API, car l’état plain-property du composant n’était pas replanifié par Angular zoneless. Ajout de `ChangeDetectorRef.markForCheck()` en fin de parcours et d’une régression ChromeHeadless avec observable différé. Validation : 59 tests Catalog et build production ; aucun déploiement effectué, PR à ouvrir. |
+| 2026-09-06 | Windows | **Correctif Catalog compte/admin — en attente de déploiement.** Depuis `origin/main` dans `fix/catalog-account-admin`, le jeton d'accès API est maintenant la source du rôle `Administration`/`Admin`, `/compte` expose l'espace administration, les menus desktop/mobile le rendent atteignable, et le renouvellement MSAL interactif revient à l'URL privée sans afficher l'erreur générique. Validation locale : 65 tests ChromeHeadless Catalog, build production SSR et smoke SSR `/`, `/compte`, `/administration` en `200`. Le contrôle visuel mobile authentifié et le retest live après `Catalog - deploy` restent à faire ; aucun déploiement n'a été lancé. |
 | 2026-09-06 | Windows | **Déploiement final du `main` et activation ACS/e-mails.** Le commit `5601c2e` a été déployé par `Infra - deploy` `34050062897`, `Books runtime - deploy` `34050215862`, `Website - deploy` `34050215968`, `BackOffice - deploy` `34050216166`, `Scan - deploy` `34050216134` et `Catalog - deploy` `34050216526`. Le workflow ACS `34050574089` est vert avec domaine, SPF, DKIM et DKIM2 vérifiés ; l'envoi Worker, Key Vault et Event Grid sont actifs. Le smoke public final est vert sur catalogue, API, Website, BackOffice, Scanette et Catalog interne. `DMARC` reste `NotStarted` et un envoi réel vers une boîte autorisée reste à effectuer. |
 | 2026-09-06 | Windows | **PR #67 — résolution des conflits et revue de pertinence.** Les correctifs de détection zoneless sur recherche, fiche livre et fiche œuvre sont conservés, ainsi que l'enrichissement bibliographique ciblé après commit d'un scan avec le Worker horaire comme repli. Le chemin Blob des couvertures, devenu obsolète après `ReplaceBookCoverBlobWithDirectCoverUrl`, est retiré de la résolution. Validation : 58 tests ChromeHeadless Catalog, 319 tests backend, builds API/Worker/Catalog et `graphify update .` passés ; aucun déploiement effectué. |
 | 2026-09-06 | Windows | **Déploiement post-merge et ACS/e-mails.** Après le merge de la PR #72 (`ead9e79`), les runs `Infra - deploy` `34031915751`, `Books runtime - deploy` `34032046904`, `Website - deploy` `34032231011`, `BackOffice - deploy` `34032230503`, `Catalog - deploy` `34032230663` et `Scan - deploy` `34032231264` sont verts. Le workflow `ACS Email - configure` `34046166674` a vérifié propriété/SPF/DKIM/DKIM2, créé `vpd-acs-comm-dev`, autorisé l'identité Worker, posé le secret webhook dans Key Vault, activé l'envoi Worker et créé l'abonnement Event Grid. PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74) conserve cette configuration reproductible et reste ouverte ; aucun e-mail de test n'a été envoyé. |

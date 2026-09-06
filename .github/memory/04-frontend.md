@@ -35,6 +35,14 @@ Catalog client keeps private data client-rendered and marks `/compte`, `/adminis
 and `/desinscription` `noindex, nofollow`. It deliberately does not add role-editing or
 physical-carton controls because those contracts do not exist.
 
+The Catalog auth service reads the `roles` claim from the API access token after silent
+acquisition, exposes an `isAdministrator` signal for navigation affordances, and accepts
+the API's `Administration`/legacy `Admin` role names. If silent acquisition requires an
+interaction, it starts an MSAL redirect back to the current private route and the account
+and administration pages render a renewal message instead of their generic API failure.
+The backend remains the authorization boundary; a client-side admin link never grants
+access by itself.
+
 ## Planned Books Scan client decisions
 
 As of 2026-09-05, the P1-5 Scan foundation is implemented in `src/Scan` and deployed to
@@ -226,7 +234,7 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   initial-size warning. The redesigned Scanette and the nested-endpoint bearer fix are
   deployed by `Scan - deploy` `33924618301`. CI still builds the backend, MAUI, and frontend
   surfaces but does not run frontend unit tests; the PR ran them explicitly.
-- As of 2026-09-06, Catalog passes 55 ChromeHeadless tests, the production Angular build,
+- As of 2026-09-06, Catalog passes 65 ChromeHeadless tests, the production Angular build,
   and a local SSR smoke of public/private routes after the P2/P3 member and administration
   integration. BackOffice passes 15 ChromeHeadless tests and its bootstrap contract. The
   mobile check covers 390px for the account and administration surfaces; the private routes

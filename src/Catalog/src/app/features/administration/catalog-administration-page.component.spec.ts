@@ -7,7 +7,10 @@ import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
 import {of, throwError} from 'rxjs';
 
-import {CatalogAuthService} from '../../core/catalog-auth.service';
+import {
+  CatalogAuthenticationRedirectStartedError,
+  CatalogAuthService,
+} from '../../core/catalog-auth.service';
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
 import {
   CatalogAdminAlertPage,
@@ -188,6 +191,18 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('ne possède pas les droits d’administration');
+  });
+
+  it('explains when the token must be renewed interactively', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.rejectWith(new CatalogAuthenticationRedirectStartedError());
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Redirection vers Microsoft');
+    expect(fixture.nativeElement.textContent).not.toContain('L’opération n’a pas pu être effectuée');
   });
 
   it('exports a valid CSV with escaped book fields', () => {

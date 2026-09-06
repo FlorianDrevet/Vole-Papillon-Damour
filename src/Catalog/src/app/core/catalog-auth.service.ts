@@ -31,6 +31,14 @@ export const CATALOG_MSAL_LOADER = new InjectionToken<CatalogMsalLoader>(
 );
 
 const ADMINISTRATION_ROUTE = '/administration';
+const ADMINISTRATION_ROLES = new Set(['administration', 'admin']);
+
+export class CatalogAuthenticationRedirectStartedError extends Error {
+  constructor() {
+    super('An interactive authentication redirect has been started.');
+    this.name = 'CatalogAuthenticationRedirectStartedError';
+  }
+}
 
 @Injectable({providedIn: 'root'})
 export class CatalogAuthService {
@@ -39,6 +47,7 @@ export class CatalogAuthService {
   private readonly _account = signal<AccountInfo | null>(null);
   private readonly _initialized = signal(false);
   private readonly _error = signal<string | null>(null);
+  private readonly _roles = signal<readonly string[]>([]);
 
   private client: IPublicClientApplication | null = null;
   private msal: CatalogMsalModule | null = null;
@@ -47,6 +56,11 @@ export class CatalogAuthService {
   readonly account = this._account.asReadonly();
   readonly initialized = this._initialized.asReadonly();
   readonly isAuthenticated = computed(() => this._account() !== null);
+  readonly roles = this._roles.asReadonly();
+  // This signal controls navigation affordances only; API policies remain authoritative.
+  readonly isAdministrator = computed(() =>
+    this._roles().some(role => ADMINISTRATION_ROLES.has(role.trim().toLowerCase())),
+  );
   readonly error = this._error.asReadonly();
 
   initialize(): Promise<void> {
@@ -99,13 +113,16 @@ export class CatalogAuthService {
         account,
         scopes: catalogLoginRequest.scopes,
       });
+      this._roles.set(readRoles(result.accessToken));
       return result.accessToken;
     } catch (error: unknown) {
       if (this.msal && error instanceof this.msal.InteractionRequiredAuthError) {
         await client.acquireTokenRedirect({
           ...catalogLoginRequest,
           account,
+          redirectStartPage: window.location.href,
         });
+        throw new CatalogAuthenticationRedirectStartedError();
       }
 
       throw error;
@@ -127,6 +144,9 @@ export class CatalogAuthService {
       }
 
       this.syncFromCache();
+      if (result?.accessToken) {
+        this._roles.set(readRoles(result.accessToken));
+      }
       succeeded = true;
     } catch {
       // A configuration/network failure must not make the public SSR catalogue
@@ -151,6 +171,7 @@ export class CatalogAuthService {
     }
 
     this._account.set(active);
+    this._roles.set([]);
   }
 
   private requireClient(): IPublicClientApplication {
@@ -160,4 +181,31 @@ export class CatalogAuthService {
 
     return this.client;
   }
+}
+
+function readRoles(accessToken: string): string[] {
+  const tokenParts = accessToken.split('.');
+  if (tokenParts.length < 2 || typeof globalThis.atob !== 'function') {
+    return [];
+  }
+
+  let claims: Record<string, unknown>;
+  try {
+    const encodedPayload = tokenParts[1]
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(tokenParts[1].length + (4 - tokenParts[1].length % 4) % 4, '=');
+    claims = JSON.parse(globalThis.atob(encodedPayload)) as Record<string, unknown>;
+  } catch {
+    return [];
+  }
+
+  const rawRoles = claims['roles'];
+  if (typeof rawRoles === 'string') {
+    return [rawRoles];
+  }
+
+  return Array.isArray(rawRoles)
+    ? rawRoles.filter((role): role is string => typeof role === 'string')
+    : [];
 }

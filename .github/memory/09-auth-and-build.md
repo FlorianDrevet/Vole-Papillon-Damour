@@ -48,6 +48,12 @@
   interface, role enum, `@auth0/angular-jwt`, and `ngx-cookie-service` were removed in the
   MSAL migration. Authorization remains enforced by the API's Entra role policies.
 - `Website` does not show the same auth guard pattern in its top-level routing and now runs through Angular SSR with client hydration.
+- `Catalog` uses a dynamic SSR-safe MSAL Browser loader. Its member/admin pages acquire the
+  API scope silently and read `roles` from that API access token (not from the cached ID
+  token); `Administration` and the compatibility `Admin` role expose the administration
+  navigation affordance, while API policies still enforce every admin request. When silent
+  acquisition needs user interaction, `acquireTokenRedirect` keeps the current private URL
+  as `redirectStartPage` and the pages render a specific renewal state.
 - `Scan` gates the entire PWA through `ScanAuthService.authState$`: only an Entra account
   with the `Tri` role renders the scanner, while unauthenticated, unauthorized, and token-
   renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
