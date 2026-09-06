@@ -11,6 +11,10 @@ on:
         required: true
         type: boolean
         default: false
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - .github/workflows/acs-email-configure.yml
 
 permissions:
   id-token: write
