@@ -105,6 +105,7 @@ app.MapHealthChecks("/health");
 app.UseAcsEmailEventGridController();
 app.UseAuthenticationController();
 app.UseAccountController();
+app.UseAccountAdministrationController();
 app.UseBookController();
 app.UseBibliographicReferenceController();
 app.UseBookAdministrationController();

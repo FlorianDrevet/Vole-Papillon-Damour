@@ -21,7 +21,10 @@ SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-prote
 calls, exposes alert suspension/reactivation and the durable account-deletion request.
 `/desinscription` is a client-only authenticated opt-out route. The `/administration`
 route now consumes the typed admin APIs for overview, catalogue, sessions, dead stock,
-fairs, alerts, members and settings; `Administration` role assignment remains Entra-owned.
+fairs, alerts, members and settings; the BackOffice administration screen also exposes a
+typed **Comptes et rôles** tab for creating Entra accounts and assigning `Tri`, `Caisse`
+or `Administration` roles. The API remains the authorization boundary and the current
+administrator cannot remove their own `Administration` role.
 The external bibliographic result block is kept separate from local results, while live
 ACS email delivery remains deferred until the sending domain is verified.
 
@@ -92,7 +95,7 @@ Both Angular apps follow the same high-level split:
 
 Verified feature roots:
 
-- `BackOffice`: `actualities`, `actuality-detail`, `caisse`, `dashboard-vpd`, `event-detail`, `vpd-events`
+- `BackOffice`: `actualities`, `actuality-detail`, `caisse`, `catalog-administration`, `dashboard-vpd`, `event-detail`, `vpd-events`
 - `Website`: `actuality-detail`, `actuality-page`, `association`, `contact`, `event-detail`, `home`, `legal`, `maxence`, `tableau`, `vpd-all-events`, `vpd-events`
 
 ## Frontend Conventions

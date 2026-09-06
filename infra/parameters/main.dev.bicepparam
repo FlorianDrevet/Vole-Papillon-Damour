@@ -219,6 +219,7 @@ param corsAllowedOrigins = [
 
 param entraAuthority = readEnvironmentVariable('ENTRA_AUTHORITY', 'https://volepapillondamour.ciamlogin.com/')
 param entraTenantId = readEnvironmentVariable('ENTRA_TENANT_ID', 'b23c80b3-9776-4840-8255-fcbf3b3500fd')
+param entraTenantDomain = readEnvironmentVariable('ENTRA_TENANT_DOMAIN', 'volepapillondamour.onmicrosoft.com')
 // The API application ID is public configuration, recorded after L0-11 steps 1-2.
 // Keep the environment-variable override for another deployment environment.
 param entraApiClientId = readEnvironmentVariable('ENTRA_API_CLIENT_ID', 'ebc68507-2c07-4bab-9448-2d6d489c6112')

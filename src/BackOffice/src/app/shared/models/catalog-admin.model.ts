@@ -276,6 +276,38 @@ export interface AdminSettings {
   updatedBy: string;
 }
 
+export type AdminAccountRole = 'Tri' | 'Caisse' | 'Administration';
+
+export interface AdminAccount {
+  externalId: string;
+  email: string | null;
+  displayName: string | null;
+  accountEnabled: boolean;
+  createdAt: string | null;
+  roles: AdminAccountRole[];
+}
+
+export interface AdminAccountPage {
+  generatedAt: string;
+  accounts: AdminAccount[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface AdminAccountFilters {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CreateAdminAccountRequest {
+  email: string;
+  displayName: string;
+  temporaryPassword: string;
+  roles: AdminAccountRole[];
+}
+
 export interface AdminBookFilters {
   search?: string;
   metadataStatus?: string;
