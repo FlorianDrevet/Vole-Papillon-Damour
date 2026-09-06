@@ -51,14 +51,15 @@ public static class PublicCatalogProjector
                     book.Language,
                     book.Genre,
                     book.WorkId,
-                    book.CoverBlobRef,
+                    book.CoverUrl,
                     book.QuantityAvailable,
                     availability?.Quantity ?? 0,
                     availability?.NextFairAt,
                     ToOffset(book.LastAvailableAt),
                     new DateTimeOffset(book.FirstSeenAt, TimeSpan.Zero),
                     new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero),
-                    book.IsRare);
+                    book.IsRare,
+                    book.CoverSource?.ToString());
             })
             .ToArray();
     }

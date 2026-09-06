@@ -53,10 +53,12 @@ RejectionCount        int           NOT NULL DEFAULT 0
 
 IsRare                bit           NOT NULL DEFAULT 0   -- marquage manuel, RG-50
 IsHiddenFromCatalog   bit           NOT NULL DEFAULT 0
-CoverBlobRef          nvarchar(200) NULL
+CoverUrl              nvarchar(2048) NULL  -- URL HTTPS vérifiée de l'image
+CoverSource           tinyint       NULL  -- Bnf|OpenLibrary|GoogleBooks|Manual
+CoverCheckedAt        datetime2     NULL  -- dernier contrôle de couverture
 
 MetadataStatus        tinyint       NOT NULL  -- Pending|Resolved|NotFound|Manual
-MetadataSource        tinyint       NULL      -- Bnf|OpenLibrary|Manual
+MetadataSource        tinyint       NULL      -- Bnf|OpenLibrary|GoogleBooks|Manual
 MetadataFetchedAt     datetime2     NULL      -- exigé par la Licence Ouverte
 ResolveAttempts       int           NOT NULL DEFAULT 0
 LastAttemptAt         datetime2     NULL
@@ -457,5 +459,7 @@ par palier fonctionnel plutôt qu'une seule massive :
 | `AssociationSettings` | **1** | Une ligne, par construction |
 | **Total hors images** | **< 100 Mo** | Justifie `DT-02` |
 
-Les couvertures, en blob, sont le seul poste volumineux — quelques gigaoctets — et ne
-touchent pas la base.
+Les couvertures ne sont plus stockées dans la base ni dans un conteneur Blob dédié :
+seule leur URL (au plus 2 048 caractères) et son origine sont persistées. Une image
+indisponible est reconstruite par le worker depuis les sources ou remplacée par le
+placeholder partagé côté interface.

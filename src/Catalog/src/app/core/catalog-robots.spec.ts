@@ -5,6 +5,7 @@ describe('catalogRobotsForUrl', () => {
     expect(catalogRobotsForUrl('/compte')).toBe('noindex, nofollow');
     expect(catalogRobotsForUrl('/compte?returnUrl=%2F')).toBe('noindex, nofollow');
     expect(catalogRobotsForUrl('/administration/')).toBe('noindex, nofollow');
+    expect(catalogRobotsForUrl('/desinscription')).toBe('noindex, nofollow');
   });
 
   it('keeps public routes indexable', () => {

@@ -1,18 +1,32 @@
-import {provideZonelessChangeDetection} from '@angular/core';
+import {provideZonelessChangeDetection, signal, WritableSignal} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ActivatedRoute, ParamMap, RouterModule, convertToParamMap} from '@angular/router';
 import {FormsModule} from '@angular/forms';
-import {ActivatedRoute, convertToParamMap, RouterModule} from '@angular/router';
-import {Subject, of} from 'rxjs';
+import type {AccountInfo} from '@azure/msal-browser';
+import {BehaviorSubject, Subject, of} from 'rxjs';
+import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
+import {CatalogAuthService} from '../../core/catalog-auth.service';
+import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogSearchResponse} from '../../core/catalog.models';
-import {BookCardComponent} from '../../shared/book-card/book-card.component';
 import {CatalogSearchPageComponent} from './catalog-search-page.component';
+import {BookCardComponent} from '../../shared/book-card/book-card.component';
 
 describe('CatalogSearchPageComponent', () => {
   let fixture: ComponentFixture<CatalogSearchPageComponent>;
   let api: jasmine.SpyObj<CatalogApiService>;
+  let auth: {
+    account: WritableSignal<AccountInfo | null>;
+    initialized: WritableSignal<boolean>;
+    isAuthenticated: WritableSignal<boolean>;
+    error: WritableSignal<string | null>;
+    login: jasmine.Spy;
+    getApiAccessToken: jasmine.Spy;
+  };
+  let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
   let response$: Subject<CatalogSearchResponse>;
+  const routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
 
   const response: CatalogSearchResponse = {
     generatedAt: '2026-09-05T06:00:00Z',
@@ -43,33 +57,64 @@ describe('CatalogSearchPageComponent', () => {
 
   beforeEach(async () => {
     response$ = new Subject<CatalogSearchResponse>();
-    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search']);
-    api.search.and.returnValue(response$.asObservable());
+    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'searchReferences']);
+    api.search.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 24, genres: []}));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [{
+        isbn13: '9782070612758',
+        workId: 'OL42W',
+        title: 'Le Petit Prince',
+        authors: 'Antoine de Saint-Exupéry',
+        publisher: 'Gallimard',
+        publicationYear: 1999,
+        coverUrl: null,
+        source: 'OpenLibrary',
+      }],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    auth = {
+      account: signal<AccountInfo | null>(null),
+      initialized: signal(true),
+      isAuthenticated: signal(false),
+      error: signal<string | null>(null),
+      login: jasmine.createSpy('login'),
+      getApiAccessToken: jasmine.createSpy('getApiAccessToken'),
+    };
+    memberApi = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['addWatchlistItem']);
 
     await TestBed.configureTestingModule({
       declarations: [CatalogSearchPageComponent, BookCardComponent],
-      imports: [FormsModule, RouterModule.forRoot([])],
+      imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
         {provide: CatalogApiService, useValue: api},
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: {
-              data: {browse: false},
-              queryParamMap: convertToParamMap({}),
-            },
-            queryParamMap: of(convertToParamMap({})),
-          },
-        },
+        {provide: CatalogAuthService, useValue: auth},
+        {provide: CatalogMemberApiService, useValue: memberApi},
+        {provide: ActivatedRoute, useValue: {snapshot: {data: {}, queryParamMap: routeParams.value}, queryParamMap: routeParams}},
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CatalogSearchPageComponent);
   });
 
-  it('renders an asynchronous catalog response in zoneless mode', async () => {
+  it('loads external references separately for a real search query', () => {
     fixture.detectChanges();
+
+    expect(api.search).toHaveBeenCalled();
+    expect(api.searchReferences).toHaveBeenCalledWith('saint-exupéry', 1, 20);
+    expect(fixture.nativeElement.textContent).toContain('Référentiel externe');
+    expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
+  });
+
+  it('renders an asynchronous catalog response in zoneless mode', async () => {
+    api.search.and.returnValue(response$.asObservable());
+
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Le catalogue arrive…');
 
     response$.next(response);
     await fixture.whenStable();

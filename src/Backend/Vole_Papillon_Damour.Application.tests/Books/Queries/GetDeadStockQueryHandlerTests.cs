@@ -187,7 +187,7 @@ internal sealed class DeadStockFixture : IAsyncDisposable
                 PhysicalFormat: null,
                 Language: null,
                 Genre: null,
-                CoverBlobRef: null,
+                CoverUrl: null,
                 Fields: [BookMetadataField.Title]),
             firstAvailableAt);
         for (var index = 0; index < quantityAvailable; index++)

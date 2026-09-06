@@ -10,6 +10,7 @@ namespace Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 public sealed class BibliographicMetadataResolver(
     IBnfSruClient bnfClient,
     IOpenLibraryClient openLibraryClient,
+    IGoogleBooksClient googleBooksClient,
     ILogger<BibliographicMetadataResolver> logger) : IBibliographicMetadataResolver
 {
     public async Task<BookMetadataResult?> ResolveAsync(
@@ -23,38 +24,68 @@ public sealed class BibliographicMetadataResolver(
             cancellationToken);
         if (bnfResult.Metadata is not null)
         {
-            if (!string.IsNullOrWhiteSpace(bnfResult.Metadata.WorkId))
+            var openLibraryResult = ProviderResult.Empty;
+            if (bnfResult.Metadata.CoverUrl is null ||
+                string.IsNullOrWhiteSpace(bnfResult.Metadata.WorkId))
             {
-                return bnfResult.Metadata;
+                openLibraryResult = await TryFindAsync(
+                    openLibraryClient,
+                    "OpenLibrary",
+                    isbn13,
+                    cancellationToken);
             }
 
-            // BnF is the authoritative source for the French bibliographic
-            // notice, but it does not expose the work identifier used to group
-            // editions in the public catalogue. Enrich that single field from
-            // Open Library while keeping every BnF value authoritative.
-            var openLibraryWorkResult = await TryFindAsync(
-                openLibraryClient,
-                "OpenLibrary",
+            var merged = Merge(bnfResult.Metadata, openLibraryResult.Metadata);
+            if (merged.CoverUrl is not null)
+            {
+                return merged;
+            }
+
+            var googleBooksResult = await TryFindAsync(
+                googleBooksClient,
+                "GoogleBooks",
                 isbn13,
                 cancellationToken);
-            var workId = openLibraryWorkResult.Metadata?.WorkId;
-            return string.IsNullOrWhiteSpace(workId)
-                ? bnfResult.Metadata
-                : bnfResult.Metadata with { WorkId = workId };
+            return googleBooksResult.Metadata is null
+                ? merged
+                : Merge(merged, googleBooksResult.Metadata);
         }
 
-        var openLibraryResult = await TryFindAsync(
+        var openLibraryFallbackResult = await TryFindAsync(
             openLibraryClient,
             "OpenLibrary",
             isbn13,
             cancellationToken);
-
-        if (openLibraryResult.Metadata is not null)
+        if (openLibraryFallbackResult.Metadata is not null)
         {
-            return openLibraryResult.Metadata;
+            if (openLibraryFallbackResult.Metadata.CoverUrl is not null)
+            {
+                return openLibraryFallbackResult.Metadata;
+            }
+
+            var googleBooksFallbackResult = await TryFindAsync(
+                googleBooksClient,
+                "GoogleBooks",
+                isbn13,
+                cancellationToken);
+            return googleBooksFallbackResult.Metadata is null
+                ? openLibraryFallbackResult.Metadata
+                : Merge(openLibraryFallbackResult.Metadata, googleBooksFallbackResult.Metadata);
         }
 
-        if (bnfResult.Failed || openLibraryResult.Failed)
+        var googleBooksOnlyResult = await TryFindAsync(
+            googleBooksClient,
+            "GoogleBooks",
+            isbn13,
+            cancellationToken);
+        if (googleBooksOnlyResult.Metadata is not null)
+        {
+            return googleBooksOnlyResult.Metadata;
+        }
+
+        if (bnfResult.Failed ||
+            openLibraryFallbackResult.Failed ||
+            googleBooksOnlyResult.Failed)
         {
             throw new HttpRequestException(
                 $"All bibliographic providers that were contacted failed for ISBN {isbn13.Value}.");
@@ -75,6 +106,7 @@ public sealed class BibliographicMetadataResolver(
             {
                 IBnfSruClient bnf => await bnf.FindAsync(isbn13, cancellationToken),
                 IOpenLibraryClient openLibrary => await openLibrary.FindAsync(isbn13, cancellationToken),
+                IGoogleBooksClient googleBooks => await googleBooks.FindAsync(isbn13, cancellationToken),
                 _ => null
             }, Failed: false);
         }
@@ -100,5 +132,32 @@ public sealed class BibliographicMetadataResolver(
         }
     }
 
-    private sealed record ProviderResult(BookMetadataResult? Metadata, bool Failed);
+    private static BookMetadataResult Merge(
+        BookMetadataResult primary,
+        BookMetadataResult? enrichment)
+    {
+        if (enrichment is null)
+        {
+            return primary;
+        }
+
+        var coverUrl = primary.CoverUrl ?? enrichment.CoverUrl;
+        var coverSource = primary.CoverUrl is not null
+            ? primary.CoverSource
+            : enrichment.CoverUrl is not null
+                ? enrichment.CoverSource ?? enrichment.Source
+                : primary.CoverSource;
+
+        return primary with
+        {
+            WorkId = primary.WorkId ?? enrichment.WorkId,
+            CoverUrl = coverUrl,
+            CoverSource = coverSource,
+        };
+    }
+
+    private sealed record ProviderResult(BookMetadataResult? Metadata, bool Failed)
+    {
+        public static ProviderResult Empty { get; } = new(null, Failed: false);
+    }
 }

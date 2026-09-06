@@ -1,6 +1,6 @@
 <section class="search-intro">
   <div class="page-width">
-    <p class="eyebrow">{{ browseMode ? 'Le catalogue complet' : 'Recherche' }}</p>
+    <p class="eyebrow"><span class="heading-rule" aria-hidden="true"></span>{{ browseMode ? 'Le catalogue complet' : 'Recherche' }}</p>
     <h1>{{ browseMode ? 'Parcourir les livres.' : 'Trouvez votre prochain livre.' }}</h1>
     @if (browseMode) {
       <p class="intro-copy">Les livres épuisés restent visibles. Un genre est un repère bibliographique, pas une indication de rayon.</p>
@@ -12,99 +12,165 @@
       <span class="search-icon" aria-hidden="true"></span>
       <label class="visually-hidden" for="catalog-search">Votre recherche</label>
       <input id="catalog-search" name="query" [(ngModel)]="query" placeholder="un titre, un auteur, ou le code-barres" autocomplete="off">
-      <button type="submit">Rechercher</button>
+      <button type="submit">Rechercher <span aria-hidden="true">↗</span></button>
     </form>
   </div>
 </section>
 
-<section class="results-section page-width">
-  <div class="filters-header">
-    <div>
-      <p class="eyebrow blue">{{ browseMode ? 'Navigation' : 'Résultats' }}</p>
-      <h2>{{ resultSummary() }}</h2>
-    </div>
-    @if (query || genre || rareOnly || availability !== 'all') {
-      <button type="button" class="clear-link" (click)="clearFilters()">Réinitialiser</button>
-    }
-  </div>
-
-  <div class="filters" aria-label="Filtres du catalogue">
-    <label>
-      <span>Genre</span>
-      <select name="genre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
-        <option value="">Tous les genres</option>
-        @for (availableGenre of response?.genres || []; track availableGenre) {
-          <option [value]="availableGenre">{{ availableGenre }}</option>
-        }
-      </select>
-    </label>
-    <label>
-      <span>Disponibilité</span>
-      <select name="availability" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
-        <option value="all">Tout le catalogue</option>
-        <option value="available">Disponible maintenant</option>
-        <option value="next">À la prochaine bourse</option>
-      </select>
-    </label>
-    <label>
-      <span>Tri</span>
-      <select name="sort" [(ngModel)]="sort" (ngModelChange)="applyFilters()">
-        <option value="relevance">Pertinence</option>
-        <option value="recent">Arrivée récente</option>
-      </select>
-    </label>
-    <label class="check-label">
-      <input type="checkbox" name="rare" [(ngModel)]="rareOnly" (ngModelChange)="applyFilters()">
-      <span>Livres rares uniquement</span>
-    </label>
-  </div>
-
-  @if (loading) {
-    <p class="state-message">Le catalogue arrive…</p>
-  } @else if (error) {
-    <p class="state-message error-message" role="alert">Le catalogue est momentanément indisponible. Réessayez dans un instant.</p>
-  } @else {
-    <section class="catalog-block">
-      <div class="block-heading">
-        <div>
-          <span class="block-rule available-rule" aria-hidden="true"></span>
-          <p class="eyebrow">Premier périmètre</p>
-          <h2>À la bourse</h2>
-        </div>
-        <p class="block-help">Disponibilités enregistrées par l'association</p>
+<section class="results-section">
+  <div class="page-width">
+    <div class="results-toolbar">
+      <div>
+        <p class="eyebrow blue">{{ browseMode ? 'Navigation' : 'Résultats' }}</p>
+        <h2>{{ resultSummary() }}</h2>
       </div>
-
-      @if (response?.books?.length) {
-        <div class="book-grid">
-          @for (book of response?.books || []; track trackBook($index, book.isbn13)) {
-            <app-book-card [book]="book"></app-book-card>
-          }
-        </div>
-      } @else {
-        <p class="state-message">Aucun livre ne correspond à ces critères. Les titres épuisés restent dans le catalogue : élargissez la recherche pour les retrouver.</p>
+      @if (query || genre || rareOnly || availability !== 'all') {
+        <button type="button" class="clear-link" (click)="clearFilters()">Réinitialiser les filtres</button>
       }
-    </section>
+    </div>
 
-    <section class="external-block" aria-labelledby="external-heading">
-      <div class="block-heading">
-        <div>
-          <span class="block-rule external-rule" aria-hidden="true"></span>
-          <p class="eyebrow">Second périmètre</p>
-          <h2 id="external-heading">Pas encore reçu</h2>
+    <div class="search-layout">
+      <aside class="filters-panel" aria-label="Filtres du catalogue">
+        <p class="panel-kicker">Affiner la sélection</p>
+        <label>
+          <span>Genre</span>
+          <select name="genre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
+            <option value="">Tous les genres</option>
+            @for (availableGenre of response?.genres || []; track availableGenre) {
+              <option [value]="availableGenre">{{ availableGenre }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>Disponibilité</span>
+          <select name="availability" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
+            <option value="all">Tout le catalogue</option>
+            <option value="available">Disponible maintenant</option>
+            <option value="next">À la prochaine bourse</option>
+          </select>
+        </label>
+        <label>
+          <span>Tri</span>
+          <select name="sort" [(ngModel)]="sort" (ngModelChange)="applyFilters()">
+            <option value="relevance">Pertinence</option>
+            <option value="recent">Arrivée récente</option>
+          </select>
+        </label>
+        <label class="check-label">
+          <input type="checkbox" name="rare" [(ngModel)]="rareOnly" (ngModelChange)="applyFilters()">
+          <span>Livres rares uniquement</span>
+        </label>
+        <div class="filter-note">
+          <span aria-hidden="true">i</span>
+          <p>Les disponibilités sont indicatives : elles peuvent évoluer entre deux mises à jour.</p>
         </div>
-        <span class="coming-soon">Référentiel externe · bientôt</span>
-      </div>
-      <p>Les résultats bibliographiques que l'association n'a pas encore reçus seront proposés ici séparément. Ils ne sont jamais comptés comme disponibles à la bourse.</p>
-    </section>
+      </aside>
 
-    @if (response && response.totalCount > response.pageSize) {
-      <nav class="pagination" aria-label="Pages du catalogue">
-        <button type="button" [disabled]="response.page === 1" (click)="goToPage(response.page - 1)">← Précédente</button>
-        @for (page of pageNumbers(); track page) {
-          <button type="button" [class.current]="page === response.page" [attr.aria-current]="page === response.page ? 'page' : null" (click)="goToPage(page)">{{ page }}</button>
+      <div class="results-column">
+        @if (loading) {
+          <p class="state-message">Le catalogue arrive…</p>
+        } @else if (error) {
+          <p class="state-message error-message" role="alert">Le catalogue est momentanément indisponible. Réessayez dans un instant.</p>
+        } @else {
+          <section class="catalog-block">
+            <div class="block-heading">
+              <div>
+                <span class="block-rule available-rule" aria-hidden="true"></span>
+                <p class="eyebrow">Premier périmètre</p>
+                <h2>À la bourse</h2>
+              </div>
+              <p class="block-help">Disponibilités enregistrées par l'association</p>
+            </div>
+
+            @if (response?.books?.length) {
+              <div class="book-grid">
+                @for (book of response?.books || []; track trackBook($index, book.isbn13)) {
+                  <app-book-card [book]="book"></app-book-card>
+                }
+              </div>
+            } @else {
+              <p class="state-message">Aucun livre ne correspond à ces critères. Les titres épuisés restent dans le catalogue : élargissez la recherche pour les retrouver.</p>
+            }
+          </section>
+
+          <section class="external-block" aria-labelledby="external-heading">
+            <div class="block-heading">
+              <div>
+                <span class="block-rule external-rule" aria-hidden="true"></span>
+                <p class="eyebrow">Second périmètre</p>
+                <h2 id="external-heading">Pas encore reçu</h2>
+              </div>
+              <span class="coming-soon">Référentiel externe · Open Library</span>
+            </div>
+            @if (!query.trim() || query.trim().length < 2) {
+              <p>Ajoutez au moins deux caractères pour retrouver une référence qui n’est pas encore sur les tables. Ces résultats ne sont jamais comptés comme disponibles à la bourse.</p>
+            } @else if (externalLoading) {
+              <p class="state-message">Recherche dans le référentiel externe…</p>
+            } @else if (externalError) {
+              <p class="state-message error-message" role="alert">Le référentiel externe est momentanément indisponible. La recherche locale reste utilisable.</p>
+            } @else if (externalResponse?.items?.length) {
+              <p class="external-intro">Ces références ne sont pas encore reçues par l’association. Suivez une œuvre ou une édition pour être prévenu lorsqu’elle rejoindra le catalogue.</p>
+              <div class="reference-grid">
+                @for (reference of externalResponse?.items || []; track reference.workId || reference.isbn13 || reference.title) {
+                  <article class="reference-card">
+                    <div class="reference-cover">
+                      @if (reference.coverUrl) {
+                        <img [src]="reference.coverUrl" [alt]="reference.title ? 'Couverture de ' + reference.title : 'Couverture indicative'" loading="lazy">
+                      } @else {
+                        <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
+                      }
+                    </div>
+                    <div class="reference-copy">
+                      <p class="reference-source">{{ reference.source }}</p>
+                      <h3>{{ reference.title || 'Titre à compléter' }}</h3>
+                      @if (reference.authors) { <p>{{ reference.authors }}</p> }
+                      <small>
+                        {{ reference.publisher || 'Éditeur non renseigné' }}
+                        @if (reference.publicationYear) { · {{ reference.publicationYear }} }
+                      </small>
+                      @if (reference.isbn13) { <small>ISBN {{ reference.isbn13 }}</small> }
+                      @if (reference.workId || reference.isbn13) {
+                        <button
+                          type="button"
+                          class="reference-follow"
+                          [disabled]="referenceFollowPending === (reference.workId || reference.isbn13)"
+                          (click)="followReference(reference)">
+                          {{ referenceFollowPending === (reference.workId || reference.isbn13) ? 'Ajout…' : 'Suivre ce titre' }}
+                        </button>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+              @if (referenceFollowMessage) {
+                <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir mon compte</a></p>
+              }
+              @if (referenceFollowError) {
+                <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
+              }
+              @if ((externalResponse?.items?.length || 0) === (externalResponse?.pageSize || 0)) {
+                <nav class="pagination external-pagination" aria-label="Pages du référentiel externe">
+                  <button type="button" [disabled]="externalResponse?.page === 1" (click)="goToExternalPage((externalResponse?.page || 1) - 1)">← Précédente</button>
+                  <span>Page {{ externalResponse?.page }}</span>
+                  <button type="button" (click)="goToExternalPage((externalResponse?.page || 1) + 1)">Suivante →</button>
+                </nav>
+              }
+            } @else {
+              <p>Aucune référence externe ne correspond à cette recherche.</p>
+            }
+          </section>
+
+          @if (response && response.totalCount > response.pageSize) {
+            <nav class="pagination" aria-label="Pages du catalogue">
+              <button type="button" [disabled]="response.page === 1" (click)="goToPage(response.page - 1)">← Précédente</button>
+              @for (page of pageNumbers(); track page) {
+                <button type="button" [class.current]="page === response.page" [attr.aria-current]="page === response.page ? 'page' : null" (click)="goToPage(page)">{{ page }}</button>
+              }
+              <button type="button" [disabled]="response.page >= totalPages()" (click)="goToPage(response.page + 1)">Suivante →</button>
+            </nav>
+          }
         }
-        <button type="button" [disabled]="response.page >= totalPages()" (click)="goToPage(response.page + 1)">Suivante →</button>
-      </nav>
-    }
-  }
+      </div>
+    </div>
+  </div>
 </section>

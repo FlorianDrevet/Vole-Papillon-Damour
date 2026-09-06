@@ -1,9 +1,10 @@
 export const scanDatabaseName = 'vpd-scan';
-export const scanDatabaseVersion = 1;
+export const scanDatabaseVersion = 2;
 
 export const scanStoreNames = {
   catalog: 'catalog',
   outbox: 'outbox',
+  sales: 'sales',
   session: 'session',
 } as const;
 
@@ -87,6 +88,17 @@ export interface ScanOutboxEntry {
   lastError: string | null;
 }
 
+export interface ScanSaleOutboxEntry {
+  clientGestureId: string;
+  isbn13: string;
+  quantity: number;
+  occurredAt: string;
+  createdAt: string;
+  attemptCount: number;
+  lastAttemptAt: string | null;
+  lastError: string | null;
+}
+
 export interface LocalVerdict {
   verdict: LocalBookVerdict;
   totalKnownQuantity: number;
@@ -147,4 +159,19 @@ export interface ScanBookResponse {
   movementType: string;
   alreadyProcessed: boolean;
   clockSuspect: boolean;
+}
+
+export interface ScanSaleResponse {
+  isbn13: string;
+  saleMovementId: string;
+  quantity: number;
+  qtyAvailable: number;
+  salesCount: number;
+  assoEventsId: string | null;
+  fairMatchStatus: string;
+  hadNoAvailableStock: boolean;
+  hadUnreleasedAnnouncement: boolean;
+  isRare: boolean;
+  clockSuspect: boolean;
+  alreadyProcessed: boolean;
 }

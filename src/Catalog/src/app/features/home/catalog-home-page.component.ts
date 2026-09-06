@@ -4,6 +4,7 @@ import {catchError, forkJoin, of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
+import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
 
 const EMPTY_SEARCH: CatalogSearchResponse = {
   generatedAt: '',
@@ -23,9 +24,11 @@ const EMPTY_SEARCH: CatalogSearchResponse = {
 })
 export class CatalogHomePageComponent implements OnInit {
   search = '';
+  heroGenre = '';
   loading = signal(true);
   hasLoadError = signal(false);
   recent = signal<CatalogBook[]>([]);
+  recentTotal = signal(0);
   rare = signal<CatalogBook[]>([]);
   genres = signal<string[]>([]);
   nextFair = signal<CatalogFair | null>(null);
@@ -48,6 +51,7 @@ export class CatalogHomePageComponent implements OnInit {
       fair: this.api.getNextFair().pipe(catchError(() => of(null))),
     }).subscribe(({recent, rare, fair}) => {
       this.recent.set(recent.books);
+      this.recentTotal.set(recent.totalCount);
       this.rare.set(rare.books);
       this.genres.set(recent.genres);
       this.nextFair.set(fair);
@@ -57,8 +61,12 @@ export class CatalogHomePageComponent implements OnInit {
 
   submitSearch(): void {
     const query = this.search.trim();
+    const genre = this.heroGenre.trim();
     void this.router.navigate(['/recherche'], {
-      queryParams: query ? {q: query} : {},
+      queryParams: {
+        ...(query ? {q: query} : {}),
+        ...(genre ? {genre} : {}),
+      },
     });
   }
 
@@ -104,5 +112,13 @@ export class CatalogHomePageComponent implements OnInit {
   address(fair: CatalogFair): string {
     const street = [fair.roadNumber, fair.road].filter(Boolean).join(' ');
     return [street, fair.city].filter(Boolean).join(', ');
+  }
+
+  calendarLink(fair: CatalogFair): string {
+    return calendarDataUri({...fair, location: this.address(fair)});
+  }
+
+  calendarFileName(fair: CatalogFair): string {
+    return calendarFilename(fair.name);
   }
 }

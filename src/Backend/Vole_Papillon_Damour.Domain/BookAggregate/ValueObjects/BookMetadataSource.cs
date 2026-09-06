@@ -4,5 +4,6 @@ public enum BookMetadataSource : byte
 {
     Bnf,
     OpenLibrary,
-    Manual
+    Manual,
+    GoogleBooks
 }

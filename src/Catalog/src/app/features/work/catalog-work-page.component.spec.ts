@@ -3,6 +3,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, convertToParamMap, RouterModule} from '@angular/router';
 import {Meta, Title} from '@angular/platform-browser';
 import {Subject, of} from 'rxjs';
+import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogBook, CatalogWorkResponse} from '../../core/catalog.models';
@@ -48,7 +49,7 @@ describe('CatalogWorkPageComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [CatalogWorkPageComponent, BookCardComponent],
-      imports: [RouterModule.forRoot([])],
+      imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
         {provide: CatalogApiService, useValue: api},

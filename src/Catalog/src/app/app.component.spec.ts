@@ -1,16 +1,27 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {signal} from '@angular/core';
 import {Meta} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 
 import {AppComponent} from './app.component';
+import {CatalogAuthService} from './core/catalog-auth.service';
+import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
+import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [AppComponent],
+      declarations: [AppComponent, CatalogNavigationComponent, CatalogFooterComponent],
       imports: [RouterModule.forRoot([])],
+      providers: [{
+        provide: CatalogAuthService,
+        useValue: {
+          account: signal(null),
+          isAuthenticated: signal(false),
+        },
+      }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);

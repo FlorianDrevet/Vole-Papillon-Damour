@@ -13,8 +13,6 @@ import {catalogRobotsForUrl} from './core/catalog-robots';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit, OnDestroy {
-  menuOpen = false;
-
   private readonly destroyed = new Subject<void>();
 
   constructor(
@@ -35,10 +33,6 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroyed.next();
     this.destroyed.complete();
-  }
-
-  closeMenu(): void {
-    this.menuOpen = false;
   }
 
   private updateRobotsMetadata(url: string): void {

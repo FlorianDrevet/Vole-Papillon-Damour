@@ -8,6 +8,7 @@ import {CatalogWorkPageComponent} from './features/work/catalog-work-page.compon
 import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
+import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 
 const routes: Routes = [
   {path: '', component: CatalogHomePageComponent},
@@ -17,6 +18,7 @@ const routes: Routes = [
   {path: 'oeuvre/:workId', component: CatalogWorkPageComponent},
   {path: 'administration', component: CatalogAdministrationPageComponent},
   {path: 'compte', component: CatalogAccountPageComponent},
+  {path: 'desinscription', component: CatalogUnsubscribePageComponent},
   {
     path: 'mentions-legales',
     component: LegalPageComponent,

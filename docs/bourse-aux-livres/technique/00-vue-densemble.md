@@ -33,7 +33,7 @@ sources bibliographiques, et le comportement du déclencheur planifié à zéro 
 | `Application` / `Domain` / `Infrastructure` / `Contracts` | Découpage CQRS en tranches par fonctionnalité | **Oui**, nouvelles tranches |
 | `ProjectDbContext` | EF Core, `ApplyConfigurationsFromAssembly` | **Oui**, nouveaux `DbSet` |
 | `Website` | Angular 18 avec SSR | Non — le catalogue est une application distincte (décision fonctionnelle `01` §6) |
-| `BackOffice` | Angular 18, auth admin | Non — l'administration du catalogue vit dans la nouvelle application |
+| `BackOffice` | Angular 18, auth admin | **Oui**, administration catalogue partagée avec la nouvelle application |
 | `SharedUi` (`@vpd/ui`) | Composants Angular partagés | **Oui**, par les deux nouvelles applications |
 | `MauiCashApp` | Caisse buvette | Non — les livres ont leur propre mode caisse |
 | `AssoEvents` type `Books` | Agrégat événement | **Oui**, sa date pilote la bascule (`RG-23`, `RG-36`) |
@@ -83,24 +83,25 @@ instruit au réexamen de `DT-04`, et l'alternative écartée en `DT-09`.
                          │
         ┌────────────────┼────────────────┐
         ▼                ▼                ▼
-   ┌─────────┐    ┌────────────┐   ┌──────────────┐
-   │   SQL   │    │   Blob     │   │Entra Ext. ID │
-   │ Server  │    │couvertures │   │ tous publics │
-   └────▲────┘    └─────▲──────┘   └──────────────┘
-        │               │
-        │ outbox +      │
-        │ fiches        │
-   ┌────┴───────────────┴────┐
-   │   Worker différé        │───────►  BnF SRU
-   │  kind=functionapp       │───────►  Open Library
-   │  alertes, bascule,      │───────►  Envoi d'e-mails
-   │  rattrapage             │
-   │  minReplicas: 0 (QT-02) │
-   └─────────────────────────┘
+   ┌─────────┐     ┌──────────────┐   ┌──────────────┐
+   │   SQL   │     │Entra Ext. ID │   │  Sources     │
+   │ Server  │     │ tous publics │   │ BnF / OL / GB│
+   └────▲────┘     └──────────────┘   └──────▲───────┘
+        │                                    │
+        │ outbox + fiches                    │ URLs vérifiées
+   ┌────┴───────────────────────┐            │
+   │   Worker différé           │────────────┘
+   │  kind=functionapp          │───────►  Envoi d'e-mails
+   │  alertes, bascule,         │
+   │  rattrapage                │
+   │  minReplicas: 0 (QT-02)    │
+   └────────────────────────────┘
 ```
 
-Le worker ne parle qu'à SQL, au stockage et aux services externes. **Il ne passe pas
-par l'API.** Concrètement : c'est un second projet exécutable de la même solution, qui
+Le worker ne parle qu'à SQL et aux services externes. **Il ne passe pas par l'API.**
+Les couvertures de livres ne transitent plus par le stockage Blob : seules les URLs
+HTTPS validées des sources sont conservées dans SQL et renvoyées au client. Concrètement,
+c'est un second projet exécutable de la même solution, qui
 **référence les mêmes bibliothèques** `Application`, `Domain` et `Infrastructure` et
 appelle les mêmes handlers MediatR en direct. Rien n'est dupliqué ; deux processus, un
 seul code. Le détail, les alternatives écartées et les trois contraintes que cela

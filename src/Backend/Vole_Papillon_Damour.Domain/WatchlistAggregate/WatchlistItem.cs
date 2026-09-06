@@ -83,4 +83,17 @@ public sealed class WatchlistItem : Entity<Guid>
     public WatchlistItem()
     {
     }
+
+    public bool RedirectEdition(Isbn13 canonicalIsbn13)
+    {
+        if (Scope != WatchlistItemScope.Edition)
+        {
+            return false;
+        }
+
+        var changed = Isbn13 != canonicalIsbn13 || WorkId is not null;
+        Isbn13 = canonicalIsbn13;
+        WorkId = null;
+        return changed;
+    }
 }

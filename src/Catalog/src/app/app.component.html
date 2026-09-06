@@ -1,51 +1,7 @@
-<header class="site-header">
-  <a class="brand" routerLink="/" (click)="closeMenu()" aria-label="Bourse aux livres, accueil">
-    <span class="brand-mark" aria-hidden="true">VPD</span>
-    <span class="brand-copy">
-      <span class="brand-name">Vole Papillon d'Amour</span>
-      <span class="brand-subtitle">Bourse aux livres · catalogue</span>
-    </span>
-  </a>
-
-  <button
-    class="menu-toggle"
-    type="button"
-    [attr.aria-expanded]="menuOpen"
-    aria-controls="main-navigation"
-    [attr.aria-label]="menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'"
-    (click)="menuOpen = !menuOpen">
-    <span></span><span></span><span></span>
-  </button>
-
-  <nav id="main-navigation" class="main-navigation" [class.open]="menuOpen" aria-label="Navigation principale">
-    <a routerLink="/recherche" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMenu()">Rechercher</a>
-    <a routerLink="/catalogue" routerLinkActive="active" (click)="closeMenu()">Catalogue par genre</a>
-    <a routerLink="/" fragment="prochaine-bourse" (click)="closeMenu()">La prochaine bourse</a>
-    <a
-      class="account-teaser"
-      routerLink="/compte"
-      routerLinkActive="active"
-      title="Votre espace personnel"
-      aria-label="Accéder à mon compte"
-      (click)="closeMenu()">
-      <span class="person-icon" aria-hidden="true"></span>
-      Mon compte
-    </a>
-  </nav>
-</header>
+<app-catalog-navigation></app-catalog-navigation>
 
 <main>
   <router-outlet></router-outlet>
 </main>
 
-<footer class="site-footer">
-  <div class="footer-rule" aria-hidden="true"></div>
-  <div class="footer-content">
-    <span class="footer-note">Le catalogue public reste accessible sans connexion</span>
-    <nav aria-label="Liens de pied de page">
-      <a href="https://volepapillondamour.fr">Le site de l'association</a>
-      <a routerLink="/mentions-legales">Mentions légales</a>
-      <a routerLink="/confidentialite">Confidentialité</a>
-    </nav>
-  </div>
-</footer>
+<app-catalog-footer></app-catalog-footer>

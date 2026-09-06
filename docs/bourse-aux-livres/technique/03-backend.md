@@ -128,24 +128,29 @@ rôle applicatif exigé.
 par lui que remonte la file de sortie d'un appareil resté hors ligne (`ENF-05`). Chaque
 geste porte un identifiant produit par le client, de sorte qu'un rejeu ne duplique rien.
 
-### Contrats P1-5 effectivement exposés
+### Contrats Scan effectivement exposés
 
 La première tranche de transport utilisée par la PWA est maintenant disponible dans
 `Vole_Papillon_Damour.Contracts` et branchée dans `BookController` :
 
 | Verbe | Route | Contrat | Autorisation |
 |---|---|---|---|
-| `GET` | `/scan/catalog/delta?since=` | `ScanCatalogDeltaResponse` | `Tri` |
+| `GET` | `/scan/catalog/delta?since=` | `ScanCatalogDeltaResponse` | `Tri` ou `Caisse` |
 | `POST` | `/scan/sessions` | `OpenScanSessionRequest` → `ScanSessionResponse` | `Tri` |
 | `POST` | `/scan/sessions/{id}/scans` | `ScanBookRequest` → `ScanBookResponse` | `Tri` |
 | `POST` | `/scan/sessions/{id}/close` | `CloseScanSessionRequest` → `ScanSessionResponse` | `Tri` |
+| `POST` | `/scan/sales` | `RegisterSaleRequest` → `RegisterSaleResponse` | `Caisse` |
 
 Le delta renvoie une projection compacte, les paramètres d'association, les entrées
 masquées à supprimer et un filigrane UTC. Les modifications de livres, de listes de
 recherche et d'état d'une liste peuvent donc réactualiser `isWanted` sans envoyer
 l'identité des demandeurs. `ClientSessionId` rend l'ouverture rejouable après une coupure ;
-`ClientGestureId` garde la même garantie sur chaque scan. L'API publique de métadonnées
-reste anonyme et séparée de ces routes protégées.
+`ClientGestureId` garde la même garantie sur chaque scan et chaque vente. Une vente ne crée
+pas de session de tri : elle est envoyée seule avec sa quantité, son instant client et son
+identifiant idempotent ; la réponse fournit la projection serveur réconciliée (`qtyAvailable`
+et `salesCount`). L'API publique de métadonnées reste anonyme et séparée de ces routes
+protégées. L'annulation `DELETE /scan/sales/{id}` reste une tranche ultérieure (`RG-49`) et
+n'est pas encore exposée par le contrôleur.
 
 ### Public — `/catalog/*`
 

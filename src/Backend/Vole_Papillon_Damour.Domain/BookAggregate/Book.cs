@@ -25,7 +25,9 @@ public sealed class Book : AggregateRoot<Isbn13>
 
     public bool IsRare { get; private set; }
     public bool IsHiddenFromCatalog { get; private set; }
-    public string? CoverBlobRef { get; private set; }
+    public string? CoverUrl { get; private set; }
+    public BookCoverSource? CoverSource { get; private set; }
+    public DateTime? CoverCheckedAt { get; private set; }
 
     public BookMetadataStatus MetadataStatus { get; private set; }
     public BookMetadataSource? MetadataSource { get; private set; }
@@ -77,11 +79,16 @@ public sealed class Book : AggregateRoot<Isbn13>
         IsHiddenFromCatalog = true;
     }
 
-    public void RecordAvailableEntry(DateTime occurredAt)
+    public void RecordAvailableEntry(DateTime occurredAt, int quantity = 1)
     {
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Available entry quantity must be positive.");
+        }
+
         var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
 
-        QuantityAvailable++;
+        QuantityAvailable += quantity;
         LastAvailableAt = utcOccurredAt;
         UpdatedAt = utcOccurredAt;
     }
@@ -182,6 +189,14 @@ public sealed class Book : AggregateRoot<Isbn13>
             }
 
             changed |= ApplyField(patch, field);
+
+            if (field == BookMetadataField.CoverUrl)
+            {
+                changed |= CoverSource != BookCoverSource.Manual;
+                CoverSource = BookCoverSource.Manual;
+                changed |= CoverCheckedAt != utcUpdatedAt;
+                CoverCheckedAt = utcUpdatedAt;
+            }
         }
 
         MetadataStatus = BookMetadataStatus.Manual;
@@ -197,10 +212,12 @@ public sealed class Book : AggregateRoot<Isbn13>
         BookMetadataPatch patch,
         BookMetadataSource source,
         DateTime fetchedAt,
-        string? rawPayload)
+        string? rawPayload,
+        BookCoverSource? coverSource = null,
+        DateTime? coverCheckedAt = null)
     {
         ArgumentNullException.ThrowIfNull(patch);
-        if (source is not (BookMetadataSource.Bnf or BookMetadataSource.OpenLibrary))
+        if (source is not (BookMetadataSource.Bnf or BookMetadataSource.OpenLibrary or BookMetadataSource.GoogleBooks))
         {
             throw new ArgumentException(
                 "Automatic metadata must use a bibliographic source.",
@@ -219,6 +236,15 @@ public sealed class Book : AggregateRoot<Isbn13>
 
         ValidatePatch(patch, fields);
 
+        if (fields.Contains(BookMetadataField.CoverUrl) &&
+            patch.CoverUrl is not null &&
+            coverSource is null)
+        {
+            throw new ArgumentException(
+                "An automatic cover URL must identify its provider.",
+                nameof(coverSource));
+        }
+
         var manuallyEditedFields = ReadManuallyEditedFields();
         var changed = false;
         foreach (var field in fields)
@@ -226,7 +252,26 @@ public sealed class Book : AggregateRoot<Isbn13>
             if (!manuallyEditedFields.Contains(field))
             {
                 changed |= ApplyField(patch, field);
+
+                if (field == BookMetadataField.CoverUrl)
+                {
+                    changed |= CoverSource != coverSource;
+                    CoverSource = coverSource;
+                }
             }
+        }
+
+        var coverCheckInstant = coverCheckedAt ??
+                                 (fields.Contains(BookMetadataField.CoverUrl)
+                                     ? utcFetchedAt
+                                     : null);
+        if (coverCheckInstant is { } checkedAt)
+        {
+            var utcCheckedAt = DomainTime.RequireUtc(
+                checkedAt,
+                nameof(coverCheckedAt));
+            changed |= CoverCheckedAt != utcCheckedAt;
+            CoverCheckedAt = utcCheckedAt;
         }
 
         if (ResolveAttempts < int.MaxValue)
@@ -252,6 +297,20 @@ public sealed class Book : AggregateRoot<Isbn13>
         MetadataSource = nextSource;
         UpdatedAt = utcFetchedAt;
         return changed;
+    }
+
+    public bool RecordCoverCheck(DateTime checkedAt)
+    {
+        var utcCheckedAt = DomainTime.RequireUtc(checkedAt, nameof(checkedAt));
+        var changed = CoverCheckedAt != utcCheckedAt;
+        CoverCheckedAt = utcCheckedAt;
+        UpdatedAt = utcCheckedAt;
+        return changed;
+    }
+
+    public bool IsMetadataFieldManuallyEdited(BookMetadataField field)
+    {
+        return ReadManuallyEditedFields().Contains(field);
     }
 
     public bool RecordMetadataNotFound(DateTime attemptedAt)
@@ -352,8 +411,8 @@ public sealed class Book : AggregateRoot<Isbn13>
                 case BookMetadataField.Genre:
                     ValidateLength(patch.Genre, 100, nameof(patch.Genre));
                     break;
-                case BookMetadataField.CoverBlobRef:
-                    ValidateLength(patch.CoverBlobRef, 200, nameof(patch.CoverBlobRef));
+                case BookMetadataField.CoverUrl:
+                    ValidateCoverUrl(patch.CoverUrl);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(
@@ -394,8 +453,8 @@ public sealed class Book : AggregateRoot<Isbn13>
                 return SetValue(Language, patch.Language, value => Language = value);
             case BookMetadataField.Genre:
                 return SetValue(Genre, patch.Genre, value => Genre = value);
-            case BookMetadataField.CoverBlobRef:
-                return SetValue(CoverBlobRef, patch.CoverBlobRef, value => CoverBlobRef = value);
+            case BookMetadataField.CoverUrl:
+                return SetValue(CoverUrl, patch.CoverUrl, value => CoverUrl = value);
             default:
                 throw new ArgumentOutOfRangeException(nameof(field), field, "The metadata field is not supported.");
         }
@@ -417,8 +476,12 @@ public sealed class Book : AggregateRoot<Isbn13>
 
         try
         {
+            var normalizedFields = ManuallyEditedFields.Replace(
+                "\"CoverBlobRef\"",
+                "\"CoverUrl\"",
+                StringComparison.Ordinal);
             return JsonSerializer.Deserialize<List<BookMetadataField>>(
-                       ManuallyEditedFields,
+                       normalizedFields,
                        MetadataJsonOptions)
                    ?.Distinct()
                    .ToList()
@@ -434,4 +497,21 @@ public sealed class Book : AggregateRoot<Isbn13>
     {
         Converters = { new JsonStringEnumConverter() }
     };
+
+    private static void ValidateCoverUrl(string? value)
+    {
+        ValidateLength(value, 2048, nameof(BookMetadataPatch.CoverUrl));
+        if (value is null)
+        {
+            return;
+        }
+
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
+            !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "The cover URL must be an absolute HTTPS URL.",
+                nameof(BookMetadataPatch.CoverUrl));
+        }
+    }
 }

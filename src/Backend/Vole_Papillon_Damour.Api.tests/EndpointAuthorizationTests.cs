@@ -80,6 +80,7 @@ public class EndpointAuthorizationTests
             "/catalog/fairs/next",
             "/catalog/works/{workId}",
             "/catalog/sitemap.xml",
+            "/catalog/reference/search",
         };
 
         var publicCatalogEndpoints = RegisteredEndpoints()
@@ -104,25 +105,59 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
+    public void Cash_sales_require_the_caisse_policy()
+    {
+        var endpoint = RegisteredEndpoints()
+            .Single(endpoint => RouteOf(endpoint) == "/scan/sales" &&
+                                HttpMethods(endpoint).Contains("POST"));
+
+        endpoint.Metadata
+            .GetOrderedMetadata<IAuthorizeData>()
+            .Should()
+            .Contain(data => data.Policy == "Caisse");
+    }
+
+    [Fact]
     public void Member_watchlist_endpoints_require_an_authenticated_member()
     {
         var expectedRoutes = new[]
         {
             "/catalog/me/watchlist",
             "/catalog/me/watchlist/{itemId:guid}",
+            "/catalog/me/alerts",
         };
 
         var memberEndpoints = RegisteredEndpoints()
             .Where(endpoint => expectedRoutes.Contains(RouteOf(endpoint)))
             .ToList();
 
-        memberEndpoints.Should().HaveCount(3);
+        memberEndpoints.Should().HaveCount(4);
         memberEndpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
         memberEndpoints
             .Where(endpoint => RouteOf(endpoint) == "/catalog/me/watchlist")
             .SelectMany(endpoint => HttpMethods(endpoint))
             .Should()
             .BeEquivalentTo("GET", "POST");
+        memberEndpoints
+            .Where(endpoint => RouteOf(endpoint) == "/catalog/me/alerts")
+            .SelectMany(endpoint => HttpMethods(endpoint))
+            .Should()
+            .BeEquivalentTo("PATCH");
+    }
+
+    [Fact]
+    public void Administration_catalog_endpoints_require_administration_policy()
+    {
+        var administrationEndpoints = RegisteredEndpoints()
+            .Where(endpoint => RouteOf(endpoint).StartsWith("/books/admin", StringComparison.Ordinal))
+            .ToList();
+
+        administrationEndpoints.Should().NotBeEmpty();
+        administrationEndpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
+        administrationEndpoints
+            .SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
+            .Should()
+            .Contain(data => data.Policy == "Administration");
     }
 
     private static IReadOnlyList<RouteEndpoint> MutatingEndpoints() =>
@@ -154,6 +189,8 @@ public class EndpointAuthorizationTests
         application.UseAuthenticationController();
         application.UseAccountController();
         application.UseBookController();
+        application.UseBibliographicReferenceController();
+        application.UseBookAdministrationController();
         application.UseActualityController();
         application.UseProductController();
         application.UseOrdersController();

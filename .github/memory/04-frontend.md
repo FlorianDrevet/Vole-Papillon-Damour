@@ -18,9 +18,22 @@ the next books fair, and the dynamic sitemap. Its public routes are `/`, `/reche
 available quantities separate from future announcements, leaves exhausted books visible,
 and does not include audience trackers. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
-calls, and exposes the durable account-deletion request. The `/administration` route keeps
-the dead-stock read behind the administration role. The external bibliographic result block
-and live ACS email delivery remain deferred.
+calls, exposes alert suspension/reactivation and the durable account-deletion request.
+`/desinscription` is a client-only authenticated opt-out route. The `/administration`
+route now consumes the typed admin APIs for overview, catalogue, sessions, dead stock,
+fairs, alerts, members and settings; `Administration` role assignment remains Entra-owned.
+The external bibliographic result block is kept separate from local results, while live
+ACS email delivery remains deferred until the sending domain is verified.
+
+As of 2026-09-06, the Catalog P2/P3 integration is implemented in the V2 visual shell:
+the search page calls local and external reference endpoints independently; reference
+items can be followed as an edition or work after Entra login; the account page manages
+watchlist items and alert preference; `/desinscription` confirms an authenticated alert
+opt-out; and `/administration` exposes every currently available admin workspace with
+typed filters, details, corrections, confirmations and truthful empty/error states. The
+Catalog client keeps private data client-rendered and marks `/compte`, `/administration`
+and `/desinscription` `noindex, nofollow`. It deliberately does not add role-editing or
+physical-carton controls because those contracts do not exist.
 
 ## Planned Books Scan client decisions
 
@@ -92,8 +105,9 @@ Verified feature roots:
   explicitly marks the view after asynchronous camera/photo/API callbacks; photo decoding
   also retries cropped, resized, and thresholded canvas variants for difficult images. The
   result card first uses the source-provided cover, retries an ISBN-based Open Library cover
-  when that image fails, and renders an explicit unavailable-cover placeholder when both
-  sources fail.
+  when that image fails, and renders the shared `VpdBookCoverPlaceholderComponent` when both
+  sources fail. As of 2026-09-06, the API/Worker resolves direct BnF/Open Library/Google Books
+  URLs before the result reaches Scan; the browser-side Open Library retry remains defensive.
 - The Scan root is access-gated by `ScanAuthService.authState$`: only the Entra `Tri` app
   role renders `ScannerComponent`; unauthenticated and unauthorized accounts render
   `ScanLoginComponent`. `src/index.html` includes `<app-redirect>` and `AppModule` awaits
@@ -208,7 +222,13 @@ The MAUI cash surface intentionally continues to use the full `/product` project
   initial-size warning. The redesigned Scanette and the nested-endpoint bearer fix are
   deployed by `Scan - deploy` `33924618301`. CI still builds the backend, MAUI, and frontend
   surfaces but does not run frontend unit tests; the PR ran them explicitly.
-- As of 2026-09-05, Catalog passes 37 ChromeHeadless tests, the production Angular build,
+- As of 2026-09-06, Catalog passes 55 ChromeHeadless tests, the production Angular build,
+  and a local SSR smoke of public/private routes after the P2/P3 member and administration
+  integration. BackOffice passes 15 ChromeHeadless tests and its bootstrap contract. The
+  mobile check covers 390px for the account and administration surfaces; the private routes
+  keep the HTTP `noindex, nofollow` header. The API was unavailable during the smoke, so
+  empty/error fallback states were verified without inventing catalogue data.
+- As of 2026-09-05, Catalog passes 29 ChromeHeadless tests, the production Angular build,
   the SSR container build, and public smoke checks. The image is built from the `src/`
   context so the `SharedUi` linker remains available. The public domain is
   `https://livres.volepapillondamour.fr`; `/compte` and `/administration` are client-only

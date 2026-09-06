@@ -53,6 +53,38 @@ association-content shell. The shared `BookCardComponent` is the visual primitiv
 recent, rare, search, work, and detail entry points; available quantities and future
 announcements are rendered as separate lines.
 
+### Catalogue V2 — convention canonique
+
+The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md).
+
+- The current reference is the V2 catalogue mockup reviewed in September 2026. Future
+  Catalog work should extend this visual language by default, including the public pages,
+  account surface, and administration shell.
+- The shell uses the real `papillon_without_back.png` mark, a 1280px maximum content width,
+  24px mobile / 44px desktop gutters, the Website-like 302px dropdown panel, a thin
+  cyan-blue-orange brand rule, and a four-column association footer. Navigation dropdowns
+  must be keyboard/focus usable and hidden when neither hovered nor focused.
+- Typography stays `Newsreader` for editorial headings, `Libre Franklin` for body and
+  controls, and `IBM Plex Mono` for labels, metadata, dates, and technical identifiers.
+  The canonical Catalog palette is paper `#f7fbfe`, paper-soft `#e9f4fb`, ink `#041d30` /
+  `#072b45`, slate `#33536e` / `#4e6c84` / `#6d8ba2`, blue `#0c6ea6` / `#1497d6`, cyan
+  `#7fd8f5`, orange `#f0801c` / `#f9a93c` / `#dc6412`, and pale lines `#d9e9f4` /
+  `#e2eef7`.
+- The home hero is an editorial question with a restrained blueprint/orbit treatment,
+  not a generic glossy gradient. Its search owns the genre selector and the API-backed
+  title count; the next-fair block may expose a generated `.ics` link.
+- Public catalogue, search, work, detail, account, legal, and existing administration
+  views share the same spacing, cards, pills, border language, restrained motion, and
+  responsive collapse. Availability and future announcements remain truthful and separate;
+  no price, stock, role, or external-reference data may be invented in the UI.
+- The Catalog client now consumes the typed P2/P3 administration API for overview,
+  catalogue metadata/stock, dead stock, scan sessions, fairs/revenue, alert queues,
+  members and settings. It also consumes the external bibliographic search separately
+  from local catalogue results and lets authenticated members follow editions/works and
+  suspend alerts. Keep the navigation/data contracts truthful: role assignment remains
+  Entra-owned and physical cartons/capacity are not API concepts, so those controls stay
+  explanatory rather than fake.
+
 ## Shared Design System Library (`@vpd/ui`)
 
 - Location: [src/SharedUi/](src/SharedUi/) (raw TS source, not an Angular library project). Consumed via TypeScript path mapping `@vpd/ui` declared in each app's `tsconfig.json`.

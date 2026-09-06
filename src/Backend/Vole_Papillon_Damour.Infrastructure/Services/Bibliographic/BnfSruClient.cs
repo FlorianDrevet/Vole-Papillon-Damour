@@ -55,6 +55,12 @@ public sealed class BnfSruClient(
         var publicationYear = ParseYear(
             FirstSubfield(dataFields, ["210", "214"], "d")
             ?? FirstElementValue(recordData, "date"));
+        var coverUri = CreateCoverUri(isbn13);
+        if (coverUri is not null &&
+            !await CoverImageValidator.IsValidAsync(httpClient, coverUri, cancellationToken))
+        {
+            coverUri = null;
+        }
 
         return new BookMetadataResult(
             isbn13.Value,
@@ -62,10 +68,11 @@ public sealed class BnfSruClient(
             Clean(authors),
             Clean(publisher),
             publicationYear,
-            CreateCoverUri(isbn13),
+            coverUri,
             "BnF",
             null,
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow,
+            coverUri is null ? null : "BnF");
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)

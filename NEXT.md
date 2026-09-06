@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
-| **Prochaine action** | Relever les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. Garder le repli titre+auteur conditionné à la mesure `QT-01`. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-overnight-close` |
-| **Dernière mise à jour** | 2026-09-05 — PR #65 fusionnée ; CI final `main` vert ; état de reprise clôturé |
-| **Branche** | `docs/overnight-close` — dernière mise à jour de reprise |
+| **Lot en cours** | `P2/P3` — la refonte visuelle V2 de `origin/main`, le socle API/CQRS et les parcours Catalog membre/admin sont implémentés dans le worktree `feat/catalog-p2-p3`. PR [#72](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/72) ouverte vers `main`. |
+| **Prochaine action** | Faire valider la PR #72, puis appliquer la migration sur l'environnement cible. Relever ensuite les heartbeats/mesures et vérifier ACS avec un cycle d'alerte réel. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-p2-p3` |
+| **Dernière mise à jour** | 2026-09-06 — parcours Catalog P2/P3 intégrés, tests et smoke locaux passés |
+| **Branche** | `feat/catalog-p2-p3` — worktree dédié, PR à ouvrir après validation |
 
 ---
 
@@ -78,6 +78,49 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-06
+
+Le catalogue Angular `src/Catalog` a été migré vers la convention visuelle V2 validée : shell
+avec logo réel et dropdowns, footer association en quatre colonnes, hero éditorial avec genre
+et compteur API, filtres de recherche en colonne, cartes, fiches, œuvres, compte, pages légales
+et cadre administration responsive. Le lien agenda `.ics` de la prochaine bourse est généré
+localement à partir des données de l'API.
+
+Les parcours P2/P3 sont maintenant raccordés : recherche locale séparée du référentiel
+externe, suivi œuvre/édition, watchlist, préférence d'alertes, désinscription authentifiée,
+et espaces administration pour tableau de bord, catalogue, sessions, désengorgement,
+bourses, alertes, membres et paramètres. Les rôles applicatifs restent attribués dans
+Entra ; les cartons physiques ne sont pas modélisés et aucune donnée n'est simulée lorsque
+l'API est indisponible. La convention visuelle est dans
+[`V2-CONVENTION.md`](docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md) et les
+contrats de reprise dans
+[`06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
+
+Validation locale : `src/Catalog` — `55` tests ChromeHeadless et `npm run build` SSR +
+navigateur ; `src/BackOffice` — `15` tests ChromeHeadless et bootstrap validé ; backend —
+`82` Domain, `154` Application, `66` Infrastructure, `12` API et compilation de la solution.
+Le smoke SSR retourne `200` pour les routes publiques et privées ; `/compte`,
+`/administration` et `/desinscription` exposent `noindex, nofollow`. Les données du backend
+public distant répondaient `503` pendant le contrôle, donc l'aperçu local affiche ses états
+de repli sans déclarer le catalogue distant sain.
+
+La tranche P2/P3 de cette branche complète le backend du module livres : contrats HTTP
+administration, CQRS pour les fiches, quantités, retraits, annonces, fusions, recettes,
+sessions, alertes, membres et paramètres ; recherche bibliographique externe Open Library ;
+correction/retrait idempotent des mouvements de session ; et persistance de la recette
+facultative d'une bourse via `20260906101759_AddBookFairRevenue`. Le membre peut également
+suspendre ou réactiver ses alertes via `PATCH /catalog/me/alerts`, sans pouvoir contourner
+un blocage administratif.
+
+Le BackOffice et le Catalog exposent désormais `/administration` avec vue d'ensemble,
+fiches/stock, bourses/statistiques, sessions de rattrapage, alertes, membres et paramètres.
+La liste des contrats, états, limites et contrôles opératoires est maintenue dans
+[`docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
+
+La migration doit encore être appliquée sur la base cible ; l'envoi ACS reste désactivé tant
+que le domaine n'est pas vérifié. Le smoke local ne remplace pas un test Entra réel ni le
+cycle e-mail de bout en bout.
+
 ### État actualisé — 2026-09-05
 
 `P2` est livré dans `origin/main` au commit `f3fd148` (le code catalogue a été déployé au
@@ -131,9 +174,12 @@ et fiche œuvre ne planifiaient pas de nouvelle détection après leurs subscrip
 La correction locale appelle `ChangeDetectorRef.markForCheck()` et couvre ces trois parcours
 par des tests asynchrones. Le même flux a révélé que `ScanBook` créait une fiche `Pending`
 sans déclencher le point 6 prévu par `03-backend.md` ; l'API place désormais l'ISBN canonique
-dans une file dédupliquée traitée hors réponse, avec le Worker horaire comme rattrapage. La
-branche `fix/catalogue-loading` passe 37 tests ChromeHeadless, 296 tests backend et les builds
-API/Worker/Catalog ; aucun déploiement de cette correction n'a encore été lancé.
+dans une file dédupliquée traitée hors réponse, avec le Worker horaire comme rattrapage.
+Le worktree de résolution `fix/pr-67-conflicts` passe 58 tests ChromeHeadless Catalog,
+319 tests backend et les builds API/Worker/Catalog. Le chemin Blob des couvertures prévu par
+la PR a été écarté : `main` utilise désormais les URL HTTPS directes de la migration
+`20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl`. Aucun déploiement de cette correction
+n'a encore été lancé.
 
 Smoke du 2026-09-05 : catalogue, Scanette et API répondent `200`; `/catalog/me/watchlist` sans
 jeton répond `401`; `/compte` et `/administration` portent `X-Robots-Tag: noindex, nofollow`;
@@ -153,6 +199,32 @@ sur chaque navigation (`index, follow` pour les routes publiques, `noindex, nofo
 `vpdacrdev.azurecr.io/vpd-catalog:3a6e887`. Le smoke post-déploiement vérifie les deux
 signaux `noindex` sur les routes privées, `index, follow` sur `/`, ainsi que `robots.txt`
 et `sitemap.xml` en `200`.
+
+### État actualisé — 2026-09-06 (worktree couvertures)
+
+La branche `feat/book-cover-direct-urls`, dans le worktree
+`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-cover-url`, remplace la couverture
+Blob par `Books.CoverUrl`, avec `CoverSource` et `CoverCheckedAt`. Le Worker ne télécharge
+plus ni ne stocke de blob : il vérifie l'URL et réessaie les couvertures absentes après 30
+jours. La résolution essaie BnF puis Open Library puis Google Books ; la BnF est considérée
+comme indisponible lorsqu'elle renvoie son HTTP 500 historique, et Google Books n'est retenu
+que pour une édition dont l'ISBN-13 correspond exactement. La clé Google est facultative et
+vient de Key Vault lorsqu'elle est configurée.
+
+Le catalogue et la Scanette partagent maintenant un placeholder éditorial sans rayures quand
+aucune URL ne fonctionne. La migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl`
+renomme la colonne, augmente sa longueur à 2048, ajoute les métadonnées de contrôle et
+efface les anciennes références de blob afin que le Worker puisse les reconstituer. Cette
+branche n'a pas encore été déployée sur Azure ; l'application de la migration et les smoke
+tests de fournisseurs restent à faire après la PR. Le retrait de `book-covers` de Bicep
+ne supprime pas un conteneur Azure existant en déploiement incrémental : après le smoke
+test, vérifier l'absence de consommateurs puis supprimer explicitement ce conteneur.
+
+Validation locale de cette branche : suite backend complète `297` tests, Catalog `45`
+tests ChromeHeadless et build SSR/production, Scan `86` tests ChromeHeadless, `4` tests de
+bootstrap et build de production, compilation Bicep du template et des paramètres, script EF
+de migration valide, et `graphify update .` exécuté. Les avertissements déjà présents du
+dépôt (vulnérabilités NuGet/npm et dépréciations) restent à traiter séparément.
 
 Validation : `291` tests backend locaux pour la PR #61, CI #57/#58/#59/#61/#63 au vert, 79 tests
 ChromeHeadless Scan et 4 tests de bootstrap sur la PR #57, builds front et conteneurs réussis,
@@ -499,7 +571,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-05 | Windows | **Correctif catalogue/metadata — branche `fix/catalogue-loading`.** Reproduction TDD du chargement infini sur recherche, fiche livre et fiche œuvre en mode zoneless, puis correction SSR/client par `markForCheck()`. Après le commit d'un scan, l'API déclenche aussi l'enrichissement bibliographique ciblé dans un service de fond dédupliqué ; le Worker horaire reste le rattrapage. Validation : 37 tests ChromeHeadless Catalog, 296 tests backend, builds API/Worker/Catalog et `git diff --check`. Aucun déploiement ni fusion ; le smoke live a confirmé que le Worker existant a enrichi l'ISBN `9791036377426` à 09:00 Europe/Paris. |
+| 2026-09-06 | Windows | **PR #67 — résolution des conflits et revue de pertinence.** Les correctifs de détection zoneless sur recherche, fiche livre et fiche œuvre sont conservés, ainsi que l'enrichissement bibliographique ciblé après commit d'un scan avec le Worker horaire comme repli. Le chemin Blob des couvertures, devenu obsolète après `ReplaceBookCoverBlobWithDirectCoverUrl`, est retiré de la résolution. Validation : 58 tests ChromeHeadless Catalog, 319 tests backend, builds API/Worker/Catalog et `graphify update .` passés ; aucun déploiement effectué. |
+| 2026-09-06 | Windows | **P1-10 — persistance métier de la caisse.** Correction du trou identifié dans la PWA Scan : `VALIDER` ne se contente plus d'effacer l'écran. Les ventes sont conservées dans un magasin IndexedDB dédié, décrémentent immédiatement la projection locale, puis sont rejouées vers `POST /scan/sales` avec `ClientGestureId` idempotent ; la réponse réconcilie `qtyAvailable` et `salesCount`. Le rôle `Caisse` est accepté par le front, le delta catalogue est partagé entre `Tri` et `Caisse`, et l'accès UI est filtré par rôle. Validation locale : 85 tests ChromeHeadless Scan, build production Scan et 292 tests backend ; aucun déploiement ni test manuel de coupure réseau à distance. Branche `fix/scan-cash-sales`, PR à ouvrir. |
 | 2026-09-05 | Windows | **Clôture de la reprise nocturne.** PR #65 fusionnée en `f3fd148`; le CI `main` `33934370102` est vert après validation du backend, de MAUI Android, des quatre fronts et des trois images de conteneur. Le dépôt est propre et aucune PR n'est ouverte. La revue finale, les décisions et les gates encore ouvertes sont consignées ci-dessus et dans `docs/bourse-aux-livres/plan/DECISIONS-2026-09-04-overnight.md`. |
 | 2026-09-05 | Windows | **Revue finale et traçabilité.** Relecture des changements PR #61 et #63 : la suppression locale est transactionnelle et nettoie les projections strictement membre avant anonymisation/suppression ; le chemin SQLite évite `JSON_VALUE` et le chemin SQL Server optimisé est conservé. Le correctif robots couvre les deux routes privées présentes dans le routage, met à jour le HTML SSR et la meta client, et le smoke live est cohérent. Aucun défaut bloquant supplémentaire trouvé. Point de maintenance : si une sous-route privée est ajoutée, étendre le helper robots, le middleware SSR et les tests. PR #64 est fusionnée en `d097792`; CI `main` `33933202774` vert. Les gates ACS, heartbeats, benchmarks et tests physiques restent ouvertes. |
 | 2026-09-05 | Windows | **PR #63 — cohérence SEO et dernier déploiement catalogue.** La revue a détecté que le HTML statique générique rendait les routes privées `/compte` et `/administration` indexables malgré leur en-tête `X-Robots-Tag`. Le correctif pose `noindex, nofollow` par défaut et recalcule la directive sur chaque navigation publique/privée. Validation : 34 tests ChromeHeadless Catalog, build Catalog, smoke SSR local, CI PR #63 (`33931556397`, `33931558967`) et `graphify update .`. PR [#63](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/63) fusionnée en `3a6e887`; `Catalog - deploy` `33932087193` a roulé `vpd-catalog:3a6e887`. Le smoke HTTPS confirme `index, follow` sur `/`, `noindex, nofollow` sur les deux routes privées, et `200` sur robots/sitemap. Aucun changement DNS ou Entra n'était nécessaire. |

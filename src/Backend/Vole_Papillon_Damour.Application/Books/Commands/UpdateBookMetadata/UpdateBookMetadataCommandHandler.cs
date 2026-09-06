@@ -70,7 +70,7 @@ public sealed class UpdateBookMetadataCommandHandler(
                 command.PhysicalFormat,
                 command.Language,
                 command.Genre,
-                command.CoverBlobRef,
+                command.CoverUrl,
                 fields,
                 command.WorkId),
             updatedAt);
@@ -103,7 +103,7 @@ public sealed class UpdateBookMetadataCommandHandler(
                 BookMetadataField.PhysicalFormat => IsWithinLength(command.PhysicalFormat, 50),
                 BookMetadataField.Language => IsWithinLength(command.Language, 10),
                 BookMetadataField.Genre => IsWithinLength(command.Genre, 100),
-                BookMetadataField.CoverBlobRef => IsWithinLength(command.CoverBlobRef, 200),
+                BookMetadataField.CoverUrl => IsValidCoverUrl(command.CoverUrl),
                 _ => false
             };
 
@@ -119,5 +119,13 @@ public sealed class UpdateBookMetadataCommandHandler(
     private static bool IsWithinLength(string? value, int maxLength)
     {
         return value is null || value.Length <= maxLength;
+    }
+
+    private static bool IsValidCoverUrl(string? value)
+    {
+        return IsWithinLength(value, 2048) &&
+               (value is null ||
+                (Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+                 string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)));
     }
 }

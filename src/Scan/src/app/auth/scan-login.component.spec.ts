@@ -16,7 +16,7 @@ describe('ScanLoginComponent', () => {
       status: 'unauthenticated',
       account: null,
       roles: [],
-      requiredRole: 'Tri',
+      requiredRole: 'Tri ou Caisse',
     });
     auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['login', 'logout'], {
       authState$: authState.asObservable(),
@@ -49,11 +49,11 @@ describe('ScanLoginComponent', () => {
       status: 'unauthorized',
       account: null,
       roles: ['Caisse'],
-      requiredRole: 'Tri',
+      requiredRole: 'Tri ou Caisse',
     });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('rôle Tri');
+    expect(fixture.nativeElement.textContent).toContain('Tri ou Caisse');
     (fixture.nativeElement.querySelector('.login-secondary') as HTMLButtonElement).click();
 
     expect(auth.logout).toHaveBeenCalledOnceWith();

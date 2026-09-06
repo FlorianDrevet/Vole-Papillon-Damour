@@ -87,6 +87,26 @@ public sealed class BookAnnouncement : Entity<BookAnnouncementId>
         return true;
     }
 
+    public int ApplyQuantityCorrection(int quantity)
+    {
+        if (Status != BookAnnouncementStatus.Announced)
+        {
+            throw new InvalidOperationException(
+                "Only an active announcement can have its quantity corrected.");
+        }
+
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(quantity),
+                "An announcement quantity must be positive.");
+        }
+
+        var delta = quantity - Quantity;
+        Quantity = quantity;
+        return delta;
+    }
+
     public bool AttachTo(AssoEventsId assoEventsId)
     {
         ArgumentNullException.ThrowIfNull(assoEventsId);

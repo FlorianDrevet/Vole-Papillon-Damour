@@ -7,21 +7,26 @@ puis sépare strictement deux flux :
 - le verdict, calculé immédiatement depuis la copie locale du catalogue ;
 - la notice bibliographique, récupérée en tâche de fond par `GET /books/{isbn13}/metadata`.
 
-Les trois magasins IndexedDB (`catalog`, `outbox`, `session`) conservent la copie de
-travail, les décisions et la session active. Une décision `Kept` ou `Rejected` est
-transmise séquentiellement avec son `ClientGestureId` dès que le réseau et un compte
-bénévole portant le rôle Entra `Tri` sont disponibles. Une session terminée demande aussi
-sa clôture serveur ; cette demande reste dans IndexedDB jusqu'à confirmation, afin que les
-livres soient publiés même après une coupure réseau. Les gestes `Pending` survivent à la
-fermeture et sont restaurés au prochain lancement ; aucune donnée d'outbox n'est
-supprimée par une purge du catalogue.
+Les quatre magasins IndexedDB (`catalog`, `outbox`, `sales`, `session`) conservent la copie
+de travail, les décisions, les ventes locales et la session active. Une décision `Kept` ou
+`Rejected` est transmise séquentiellement avec son `ClientGestureId` dès que le réseau et
+un bénévole portant le rôle Entra `Tri` sont disponibles. Une validation de caisse crée
+également une vente durable avec son propre `ClientGestureId`, décrémente immédiatement la
+projection locale et la rejoue vers `POST /scan/sales` dès que le réseau et le rôle `Caisse`
+sont disponibles. Une session terminée demande aussi sa clôture serveur ; cette demande
+reste dans IndexedDB jusqu'à confirmation, afin que les livres soient publiés même après
+une coupure réseau. Les gestes et ventes non transmis survivent à la fermeture et sont
+restaurés au prochain lancement ; aucune donnée d'outbox n'est supprimée par une purge du
+catalogue.
 
 L'accès à l'application est protégé par Entra : l'écran de connexion est affiché tant
-qu'aucun compte n'est ouvert, et seul un compte portant le rôle `Tri` peut atteindre le
-scan. Une perte de session ou un échec de renouvellement du jeton renvoie également vers
-cet écran. Les environnements déclarent l'autorité CIAM avec le chemin du tenant ; le
-service de connexion fournit aussi explicitement la page de retour de l'application et
-affiche l'échec de démarrage au lieu de l'ignorer. Le service worker Angular met en cache la coquille et les notices
+qu'aucun compte n'est ouvert, et un compte portant le rôle `Tri` ou `Caisse` peut atteindre
+le scan. Les actions d'accueil restent filtrées : `Tri` ouvre le tri, `Caisse` ouvre la
+vente, et les deux rôles peuvent consulter le catalogue. Une perte de session ou un échec
+de renouvellement du jeton renvoie également vers cet écran. Les environnements déclarent
+l'autorité CIAM avec le chemin du tenant ; le service de connexion fournit aussi
+explicitement la page de retour de l'application et affiche l'échec de démarrage au lieu de
+l'ignorer. Le service worker Angular met en cache la coquille et les notices
 bibliographiques, sans mélanger le cache navigateur avec IndexedDB.
 
 La caméra utilise `@zxing/browser` avec le décodeur ZXing en mode de recherche renforcé
@@ -61,8 +66,8 @@ npm start -- --port 4300
 
 Le port `4300` correspond à l'URI SPA locale déclarée par `infra/entra/Configure-EntraApps.ps1`.
 En production, l'origine canonique est `https://scan.volepapillondamour.fr` ; le FQDN
-technique ACA reste une adresse de secours. Un compte Entra doté du rôle `Tri` est
-nécessaire pour passer l'écran de connexion et ouvrir l'application.
+technique ACA reste une adresse de secours. Un compte Entra doté du rôle `Tri` ou `Caisse`
+est nécessaire pour passer l'écran de connexion et ouvrir l'application.
 
 Le lancement de l'AppHost est recommandé pour démarrer l'API et la sonde ensemble :
 

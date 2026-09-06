@@ -23,9 +23,10 @@ public sealed class BookEnrichmentFunction(
 
         logger.LogInformation(
             "Worker enrichment completed. Processed: {Processed}, Resolved: {Resolved}, " +
-            "NotFound: {NotFound}, Failed: {Failed}",
+            "CoversUpdated: {CoversUpdated}, NotFound: {NotFound}, Failed: {Failed}",
             result.ProcessedCount,
             result.ResolvedCount,
+            result.CoverUpdatedCount,
             result.NotFoundCount,
             result.FailedCount);
     }

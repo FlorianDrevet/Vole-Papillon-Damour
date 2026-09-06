@@ -5,6 +5,7 @@ import {Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
 import {
   CatalogBook,
+  CatalogReferenceSearchResponse,
   CatalogFair,
   CatalogSearchParams,
   CatalogSearchResponse,
@@ -59,6 +60,22 @@ export class CatalogApiService {
   getWork(workId: string): Observable<CatalogWorkResponse> {
     return this.http.get<CatalogWorkResponse>(
       `${this.apiUrl}/catalog/works/${encodeURIComponent(workId)}`,
+    );
+  }
+
+  searchReferences(
+    query: string,
+    page = 1,
+    pageSize = 20,
+  ): Observable<CatalogReferenceSearchResponse> {
+    const httpParams = new HttpParams()
+      .set('q', query.trim())
+      .set('page', page)
+      .set('pageSize', pageSize);
+
+    return this.http.get<CatalogReferenceSearchResponse>(
+      `${this.apiUrl}/catalog/reference/search`,
+      {params: httpParams},
     );
   }
 }

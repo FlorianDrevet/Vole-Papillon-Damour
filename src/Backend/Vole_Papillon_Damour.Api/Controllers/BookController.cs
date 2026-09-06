@@ -4,6 +4,7 @@ using System.Text;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Books.Common;
@@ -19,6 +20,7 @@ using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Queries.GetMyWatchlist;
+using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.SetMyAlertStatus;
 using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -245,6 +247,33 @@ public static class BookController
                 .WithName("RemoveCatalogWatchlistItem")
                 .RequireAuthorization();
 
+            endpoints.MapPatch(
+                    "/catalog/me/alerts",
+                    async (
+                        SetMyAlertStatusRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SetMyAlertStatusCommand(externalId, email, request.Enabled),
+                            cancellationToken);
+
+                        return result.Match(
+                            preferences => Results.Ok(new MyAlertPreferencesResponse(
+                                preferences.AlertStatus.ToString(),
+                                preferences.BounceCount,
+                                preferences.Changed)),
+                            error => error.Result());
+                    })
+                .WithName("SetMyCatalogAlertStatus")
+                .RequireAuthorization();
+
             endpoints.MapGet(
                     "/books/admin/dead-stock",
                     async (
@@ -292,7 +321,8 @@ public static class BookController
                                 metadata.CoverUrl,
                                 metadata.Source,
                                 metadata.WorkId,
-                                metadata.RetrievedAt)),
+                                metadata.RetrievedAt,
+                                metadata.CoverSource)),
                             error => error.Result());
                     })
                 .WithName("GetBookMetadata")
@@ -314,7 +344,36 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetScanCatalogDelta")
-                .RequireAuthorization("Tri");
+                .RequireAuthorization("ScanVolunteer");
+
+            endpoints.MapPost(
+                    "/scan/sales",
+                    async (
+                        RegisterSaleRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RegisterSaleCommand(
+                                request.Isbn,
+                                request.Quantity,
+                                request.OccurredAt,
+                                volunteerId,
+                                request.ClientGestureId),
+                            cancellationToken);
+
+                        return result.Match(
+                            sale => Results.Ok(ToResponse(sale)),
+                            error => error.Result());
+                    })
+                .WithName("RegisterBookSale")
+                .RequireAuthorization("Caisse");
 
             endpoints.MapPost(
                     "/scan/sessions",
@@ -527,6 +586,23 @@ public static class BookController
             result.ClockSuspect);
     }
 
+    private static RegisterSaleResponse ToResponse(RegisterSaleResult result)
+    {
+        return new RegisterSaleResponse(
+            result.Isbn13,
+            result.SaleMovementId.Value,
+            result.Quantity,
+            result.QuantityAvailable,
+            result.SalesCount,
+            result.AssoEventsId?.Value,
+            result.FairMatchStatus.ToString(),
+            result.HadNoAvailableStock,
+            result.HadUnreleasedAnnouncement,
+            result.IsRare,
+            result.ClockSuspect,
+            result.AlreadyProcessed);
+    }
+
     private static PublicCatalogSearchResponse ToResponse(PublicCatalogSearchResult result)
     {
         return new PublicCatalogSearchResponse(
@@ -603,7 +679,8 @@ public static class BookController
             result.LastAvailableAt,
             result.FirstSeenAt,
             result.UpdatedAt,
-            result.IsRare);
+            result.IsRare,
+            result.CoverSource);
     }
 
     private static PublicBookFairResponse ToResponse(PublicBookFairResult result)

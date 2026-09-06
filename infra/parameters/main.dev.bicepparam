@@ -230,7 +230,6 @@ param blobContainerLotoImages = 'loto-images'
 param blobContainerActualityImages = 'actuality-images'
 param blobContainerEventImages = 'event-images'
 param blobContainerProductImages = 'product-images'
-param blobContainerBookCovers = 'book-covers'
 
 param jwtIssuer = 'Vole_Papillon_Damour'
 param jwtAudience = 'Vole_Papillon_Damour'
@@ -245,6 +244,7 @@ param jwtExpiryMinutes = 1000
 param sqlAdministratorLogin = readEnvironmentVariable('SQL_ADMIN_LOGIN', 'vpdadmin')
 param sqlAdministratorLoginPassword = readEnvironmentVariable('SQL_ADMIN_PASSWORD', '')
 param jwtSecret = readEnvironmentVariable('JWT_SECRET', '')
+param googleBooksApiKey = readEnvironmentVariable('GOOGLE_BOOKS_API_KEY', '')
 
 param apiImage = readEnvironmentVariable('API_IMAGE', '')
 param websiteImage = readEnvironmentVariable('WEBSITE_IMAGE', '')

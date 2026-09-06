@@ -10,6 +10,23 @@ palier 1 vont confirmer ou casser. On les détaille quand le palier 1 tient.
 
 Ce qui suit sert à **ne pas oublier ce qui est déjà su**, et à repérer ce qui a un délai.
 
+## État d'exécution — 2026-09-06
+
+La tranche complète le palier 3 côté backend/API/CQRS et interfaces : contrats de
+lecture/écriture, gestion des fiches et quantités, recettes facultatives, fusions par
+redirection, corrections et annulations de sessions, file d'alertes administrable,
+membres, paramètres, recherche bibliographique externe et préférence d'alertes membre.
+Le BackOffice et `src/Catalog` exposent désormais `/administration`; le Catalog raccorde
+également la recherche externe, le suivi œuvre/édition, le compte, la désinscription et
+les états privés SSR de la maquette V2.
+
+La fiche [`../06-reprise-front-catalogue-p2-p3.md`](../06-reprise-front-catalogue-p2-p3.md)
+reste la référence d'exploitation : routes, contrats camelCase, états, flux
+watchlist/désinscription, contraintes SSR/SEO, responsive et validation. Les capacités
+non exposées par l'API (attribution des rôles Entra et suivi de cartons physiques),
+l'application de la migration, la vérification ACS et le cycle d'e-mail réel restent
+explicitement hors du périmètre code.
+
 ## État d'exécution — 2026-09-05
 
 Le palier 2 est livré sur `main` (`3a6e887`) et en production DEV : catalogue SSR, domaines publics,

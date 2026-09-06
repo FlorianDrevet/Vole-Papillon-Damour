@@ -8,6 +8,7 @@ import {
   ScanCatalogSyncState,
   ScanOutboxEntry,
   ScanOutboxStatus,
+  ScanSaleOutboxEntry,
   ScanSessionSnapshot,
   ScanStoreName,
   scanDatabaseName,
@@ -179,6 +180,28 @@ export class ScanLocalStoreService {
     );
   }
 
+  async addSaleOutboxEntries(
+    entries: readonly ScanSaleOutboxEntry[],
+    books: readonly ScanCatalogBook[],
+  ): Promise<void> {
+    if (entries.length === 0) {
+      return;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.sales, scanStoreNames.catalog],
+      'readwrite',
+      stores => {
+        for (const entry of entries) {
+          stores[scanStoreNames.sales].add(entry);
+        }
+        for (const book of books) {
+          stores[scanStoreNames.catalog].put(book);
+        }
+      },
+    );
+  }
+
   async getOutboxEntry(clientGestureId: string): Promise<ScanOutboxEntry | null> {
     return await this.runRequest<ScanOutboxEntry | undefined>(
       scanStoreNames.outbox,
@@ -199,14 +222,29 @@ export class ScanLocalStoreService {
       left.clientGestureId.localeCompare(right.clientGestureId));
   }
 
+  async listSaleOutboxEntries(): Promise<ScanSaleOutboxEntry[]> {
+    const entries = await this.runRequest<ScanSaleOutboxEntry[]>(
+      scanStoreNames.sales,
+      'readonly',
+      store => store.getAll(),
+    ) ?? [];
+
+    return entries.sort((left, right) =>
+      left.createdAt.localeCompare(right.createdAt) ||
+      left.clientGestureId.localeCompare(right.clientGestureId));
+  }
+
   async listTransmittableOutboxEntries(): Promise<ScanOutboxEntry[]> {
     const entries = await this.listOutboxEntries();
     return entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected');
   }
 
   async countPendingOutboxEntries(): Promise<number> {
-    const entries = await this.listOutboxEntries();
-    return entries.filter(entry => entry.status !== 'CancelledLocal').length;
+    const [entries, sales] = await Promise.all([
+      this.listOutboxEntries(),
+      this.listSaleOutboxEntries(),
+    ]);
+    return entries.filter(entry => entry.status !== 'CancelledLocal').length + sales.length;
   }
 
   async updateOutboxStatus(
@@ -360,9 +398,45 @@ export class ScanLocalStoreService {
     return updated;
   }
 
+  async markSaleAttempt(
+    clientGestureId: string,
+    attemptedAt: string,
+    errorMessage: string | null,
+  ): Promise<ScanSaleOutboxEntry> {
+    const entry = await this.getSaleOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown sale gesture: ${clientGestureId}`);
+    }
+
+    const updated: ScanSaleOutboxEntry = {
+      ...entry,
+      attemptCount: entry.attemptCount + 1,
+      lastAttemptAt: attemptedAt,
+      lastError: errorMessage,
+    };
+    await this.putSaleOutboxEntry(updated);
+    return updated;
+  }
+
+  async getSaleOutboxEntry(clientGestureId: string): Promise<ScanSaleOutboxEntry | null> {
+    return await this.runRequest<ScanSaleOutboxEntry | undefined>(
+      scanStoreNames.sales,
+      'readonly',
+      store => store.get(clientGestureId),
+    ) ?? null;
+  }
+
   async deleteOutboxEntry(clientGestureId: string): Promise<void> {
     await this.runRequest(
       scanStoreNames.outbox,
+      'readwrite',
+      store => store.delete(clientGestureId),
+    );
+  }
+
+  async deleteSaleOutboxEntry(clientGestureId: string): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.sales,
       'readwrite',
       store => store.delete(clientGestureId),
     );
@@ -384,6 +458,14 @@ export class ScanLocalStoreService {
     );
   }
 
+  private async putSaleOutboxEntry(entry: ScanSaleOutboxEntry): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.sales,
+      'readwrite',
+      store => store.put(entry),
+    );
+  }
+
   private openDatabase(): Promise<IDBDatabase> {
     if (typeof indexedDB === 'undefined') {
       return Promise.reject(new Error('IndexedDB is not available in this browser.'));
@@ -399,6 +481,9 @@ export class ScanLocalStoreService {
         }
         if (!database.objectStoreNames.contains(scanStoreNames.outbox)) {
           database.createObjectStore(scanStoreNames.outbox, {keyPath: 'clientGestureId'});
+        }
+        if (!database.objectStoreNames.contains(scanStoreNames.sales)) {
+          database.createObjectStore(scanStoreNames.sales, {keyPath: 'clientGestureId'});
         }
         if (!database.objectStoreNames.contains(scanStoreNames.session)) {
           database.createObjectStore(scanStoreNames.session, {keyPath: 'key'});

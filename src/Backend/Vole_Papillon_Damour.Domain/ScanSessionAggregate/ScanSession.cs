@@ -115,4 +115,19 @@ public sealed class ScanSession : AggregateRoot<ScanSessionId>
         Status = ScanSessionStatus.Resumed;
         return true;
     }
+
+    /// <summary>
+    /// Keeps the session and its original scans for audit while marking that an
+    /// administrator has replayed or cancelled its effects.
+    /// </summary>
+    public bool MarkResumedAfterCorrection()
+    {
+        if (Status == ScanSessionStatus.Resumed)
+        {
+            return false;
+        }
+
+        Status = ScanSessionStatus.Resumed;
+        return true;
+    }
 }

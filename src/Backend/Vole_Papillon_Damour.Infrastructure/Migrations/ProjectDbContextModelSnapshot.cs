@@ -70,6 +70,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("BookRevenue")
+                        .HasColumnType("decimal(12,2)");
+
                     b.Property<int>("CurrentPartieIndex")
                         .HasColumnType("int");
 
@@ -203,9 +206,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)")
                         .UseCollation("Latin1_General_100_CI_AI");
 
-                    b.Property<string>("CoverBlobRef")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<DateTime?>("CoverCheckedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte?>("CoverSource")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("CoverUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
 
                     b.Property<DateTime>("FirstSeenAt")
                         .HasColumnType("datetime2");

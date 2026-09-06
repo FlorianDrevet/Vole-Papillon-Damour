@@ -5,6 +5,7 @@ import {RouterModule} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
 import {of, Subject} from 'rxjs';
+import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
@@ -87,7 +88,7 @@ describe('CatalogBookDetailPageComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [CatalogBookDetailPageComponent],
-      imports: [RouterModule.forRoot([])],
+      imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
         {provide: CatalogApiService, useValue: api},
@@ -149,5 +150,14 @@ describe('CatalogBookDetailPageComponent', () => {
 
     expect(auth.login).toHaveBeenCalledWith('/livres/livre-a-surveiller-une-autrice-9782070363735');
     expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
+  });
+
+  it('renders the generic book cover when the detail has no image', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.detail-cover span')).toBeNull();
   });
 });

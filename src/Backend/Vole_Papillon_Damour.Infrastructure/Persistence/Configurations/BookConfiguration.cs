@@ -42,7 +42,12 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.PhysicalFormat).HasMaxLength(50);
         builder.Property(book => book.Language).HasMaxLength(10);
         builder.Property(book => book.Genre).HasMaxLength(100);
-        builder.Property(book => book.CoverBlobRef).HasMaxLength(200);
+        builder.Property(book => book.CoverUrl).HasMaxLength(2048);
+        builder.Property(book => book.CoverSource)
+            .HasConversion<byte>();
+        builder.Property(book => book.CoverCheckedAt)
+            .HasColumnType("datetime2")
+            .HasConversion(BookPersistenceConversions.NullableUtcDateTimeConverter);
 
         builder.Property(book => book.QuantityAvailable)
             .HasDefaultValue(0)

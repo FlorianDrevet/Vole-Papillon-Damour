@@ -21,7 +21,7 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | ACS Email | `vpd-acs-email-dev` / `mail.volepapillondamour.fr` | Service d'envoi, donnees en France |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
 | Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S1` Standard, 20 DTU, 250 Go, sans pause automatique (France Central) |
-| Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images`, `book-covers` |
+| Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images` |
 | Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
 | Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-catalog-id-dev` / `vpd-worker-id-dev` | Une par application |
 
@@ -39,9 +39,13 @@ retard, file d'e-mails en retard) sont envoyées au groupe Azure Monitor
 `vpd-alerts-dev`, vers l'adresse de contact du projet. Le premier déploiement
 nécessite la confirmation du destinataire envoyée par Azure.
 
-Les conteneurs blob sont en accès `Blob` (lecture anonyme) : `BlobService`
+Les conteneurs blob restants sont en accès `Blob` (lecture anonyme) : `BlobService`
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles
-sans SAS.
+sans SAS. Les couvertures de livres ne font plus partie de ce stockage : elles
+utilisent directement les URLs HTTPS vérifiées de BnF, Open Library ou Google Books.
+Le retrait de `book-covers` du template Bicep ne supprime pas un conteneur déjà
+provisionné en mode incrémental : après application de la migration et smoke test,
+vérifier qu'aucun ancien consommateur ne le lit puis le supprimer explicitement.
 
 Le scaling est à `minReplicas: 1` pour l'API, le Website, le BackOffice et le Scan ; le
 worker reste à `minReplicas: 0`, `maxReplicas: 1` pendant la mesure `P1-1`. Les quatre
