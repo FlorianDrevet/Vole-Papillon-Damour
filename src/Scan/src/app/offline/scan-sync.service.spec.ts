@@ -8,6 +8,7 @@ import {
   ScanCatalogBook,
   ScanCatalogDeltaResponse,
   ScanBookResponse,
+  ScanSaleResponse,
   ScanSessionResponse,
   ScanSessionSnapshot,
 } from './scan-offline.model';
@@ -26,11 +27,13 @@ describe('ScanSyncService', () => {
       'getCatalogDelta',
       'openSession',
       'scanBook',
+      'registerSale',
       'closeSession',
     ]);
     api.getCatalogDelta.and.returnValue(of(createDelta()));
     api.openSession.and.returnValue(of(createSessionResponse()));
     api.scanBook.and.returnValue(of(createScanResponse()));
+    api.registerSale.and.returnValue(of(createSaleResponse()));
     api.closeSession.and.returnValue(of(createClosedSessionResponse()));
 
     TestBed.configureTestingModule({
@@ -49,6 +52,9 @@ describe('ScanSyncService', () => {
     await store.clearSession();
     for (const entry of await store.listOutboxEntries()) {
       await store.deleteOutboxEntry(entry.clientGestureId);
+    }
+    for (const entry of await store.listSaleOutboxEntries()) {
+      await store.deleteSaleOutboxEntry(entry.clientGestureId);
     }
   });
 
@@ -106,6 +112,53 @@ describe('ScanSyncService', () => {
     expect(result.sent).toBe(2);
     expect(result.remaining).toBe(0);
     expect(await store.listOutboxEntries()).toEqual([]);
+  });
+
+  it('sends cash sales without opening a scan session and reconciles the local stock', async () => {
+    await store.putCatalogBooks([createBook('9782070363735')]);
+    await workflow.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+
+    expect((await store.getCatalogBook('9782070363735'))?.qtyAvailable).toBe(0);
+    expect((await store.getCatalogBook('9782070363735'))?.salesCount).toBe(1);
+
+    const result = await service.flushOutbox();
+
+    expect(api.openSession).not.toHaveBeenCalled();
+    expect(api.registerSale).toHaveBeenCalledOnceWith(jasmine.objectContaining({
+      isbn: '9782070363735',
+      quantity: 1,
+    }));
+    expect(result.sent).toBe(1);
+    expect(result.remaining).toBe(0);
+    expect(await store.listSaleOutboxEntries()).toEqual([]);
+    expect((await store.getCatalogBook('9782070363735'))?.qtyAvailable).toBe(0);
+    expect((await store.getCatalogBook('9782070363735'))?.salesCount).toBe(1);
+  });
+
+  it('keeps a cash sale durable after a network failure', async () => {
+    await store.putCatalogBooks([createBook('9782070363735')]);
+    await workflow.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    api.registerSale.and.returnValue(throwError(() => new Error('network down')));
+
+    const result = await service.flushOutbox();
+    const durableSale = (await store.listSaleOutboxEntries())[0];
+
+    expect(result.sent).toBe(0);
+    expect(result.remaining).toBe(1);
+    expect(durableSale.attemptCount).toBe(1);
+    expect(durableSale.lastError).toBe('network down');
+  });
+
+  it('does not create a tri session when a caisse-only catalog sync runs', async () => {
+    await service.syncCatalog();
+
+    expect(await workflow.getSession()).toBeNull();
   });
 
   it('stops at the first network failure and leaves the failed gesture durable', async () => {
@@ -272,6 +325,23 @@ describe('ScanSyncService', () => {
       movementType: 'DirectEntry',
       alreadyProcessed: false,
       clockSuspect: false,
+    };
+  }
+
+  function createSaleResponse(): ScanSaleResponse {
+    return {
+      isbn13: '9782070363735',
+      saleMovementId: 'movement-1',
+      quantity: 1,
+      qtyAvailable: 0,
+      salesCount: 1,
+      assoEventsId: null,
+      fairMatchStatus: 'NoOpenFair',
+      hadNoAvailableStock: false,
+      hadUnreleasedAnnouncement: false,
+      isRare: false,
+      clockSuspect: false,
+      alreadyProcessed: false,
     };
   }
 });

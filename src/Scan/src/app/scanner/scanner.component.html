@@ -24,7 +24,7 @@
       </header>
 
       <div class="home-mode-actions">
-        <button type="button" class="home-mode home-mode-tri" (click)="startSorting()">
+        <button *ngIf="canSort" type="button" class="home-mode home-mode-tri" (click)="startSorting()">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
             <path d="M12 6.5v13"></path>
@@ -32,7 +32,7 @@
           <span>Trier des livres</span>
         </button>
 
-        <button type="button" class="home-mode home-mode-cash" (click)="openCash()">
+        <button *ngIf="canSell" type="button" class="home-mode home-mode-cash" (click)="openCash()">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="8.5"></circle>
             <path d="M15.4 8.9a4.3 4.3 0 0 0-6.7 1.3M8.7 13.9a4.3 4.3 0 0 0 6.7 1.2"></path>

@@ -4,6 +4,7 @@ import {
   ScanCatalogBook,
   ScanOutboxEntry,
   ScanOutboxStatus,
+  ScanSaleOutboxEntry,
 } from './scan-offline.model';
 import {ScanLocalStoreService} from './scan-local-store.service';
 
@@ -18,6 +19,9 @@ describe('ScanLocalStoreService', () => {
 
     for (const entry of await service.listOutboxEntries()) {
       await service.deleteOutboxEntry(entry.clientGestureId);
+    }
+    for (const entry of await service.listSaleOutboxEntries()) {
+      await service.deleteSaleOutboxEntry(entry.clientGestureId);
     }
   });
 
@@ -93,6 +97,19 @@ describe('ScanLocalStoreService', () => {
     expect(updated?.clientGestureId).toBe(entry.clientGestureId);
   });
 
+  it('stores a cash sale and its optimistic catalog projection atomically', async () => {
+    const entry = createSaleOutboxEntry();
+    const book = {...createCatalogBook(), qtyAvailable: 1, salesCount: 4};
+
+    await service.addSaleOutboxEntries([entry], [{...book, qtyAvailable: 0, salesCount: 5}]);
+
+    expect(await service.getSaleOutboxEntry(entry.clientGestureId)).toEqual(entry);
+    expect(await service.getCatalogBook(book.isbn13)).toEqual(
+      jasmine.objectContaining({qtyAvailable: 0, salesCount: 5}),
+    );
+    expect(await service.countPendingOutboxEntries()).toBe(1);
+  });
+
   it('reports whether persistent storage is available without touching data stores', async () => {
     const status = await service.requestPersistentStorage();
 
@@ -134,6 +151,19 @@ describe('ScanLocalStoreService', () => {
       quantityAnnounced: 0,
       salesCount: 0,
       isRare: false,
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+    };
+  }
+
+  function createSaleOutboxEntry(): ScanSaleOutboxEntry {
+    return {
+      clientGestureId: 'sale-1',
+      isbn13: '9782070363735',
+      quantity: 1,
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:00.000Z',
       attemptCount: 0,
       lastAttemptAt: null,
       lastError: null,

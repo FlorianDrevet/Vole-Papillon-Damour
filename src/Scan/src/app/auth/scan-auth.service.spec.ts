@@ -23,6 +23,8 @@ describe('ScanAuthService', () => {
 
     expect(service.isAuthenticated).toBeTrue();
     expect(service.isAuthorized).toBeTrue();
+    expect(service.canSort).toBeTrue();
+    expect(service.canSell).toBeFalse();
     expect(service.authState.status).toBe('authorized');
     expect(service.displayName).toBe('Bénévole');
     expect(instance.setActiveAccount).toHaveBeenCalledOnceWith(account);
@@ -63,7 +65,7 @@ describe('ScanAuthService', () => {
     expect(service.displayName).toBeNull();
   });
 
-  it('denies access to an authenticated account without the Tri role', () => {
+  it('authorizes a caisse account for sales without granting sorting access', () => {
     const account = createAccount('caisse@example.org', 'Caisse', ['Caisse']);
     const instance = createMsalInstance([account]);
     const service = new ScanAuthService(
@@ -72,8 +74,10 @@ describe('ScanAuthService', () => {
     );
 
     expect(service.isAuthenticated).toBeTrue();
-    expect(service.isAuthorized).toBeFalse();
-    expect(service.authState.status).toBe('unauthorized');
+    expect(service.isAuthorized).toBeTrue();
+    expect(service.canSort).toBeFalse();
+    expect(service.canSell).toBeTrue();
+    expect(service.authState.status).toBe('authorized');
     expect(service.roles).toEqual(['Caisse']);
   });
 
@@ -92,6 +96,7 @@ describe('ScanAuthService', () => {
       scopes: loginRequest.scopes,
     });
     expect(service.isAuthorized).toBeTrue();
+    expect(service.canSort).toBeTrue();
     expect(service.roles).toEqual(['Administration', 'Tri']);
   });
 

@@ -7,6 +7,7 @@ import {
   PersistentStorageStatus,
   ScanCatalogBook,
   ScanOutboxEntry,
+  ScanSaleOutboxEntry,
   LocalScanCloseReason,
   ScanSessionSnapshot,
 } from './scan-offline.model';
@@ -77,6 +78,47 @@ export class ScanWorkflowService {
     });
   }
 
+  async recordCashSales(
+    isbns13: readonly string[],
+    occurredAt = new Date(),
+  ): Promise<ScanSaleOutboxEntry[]> {
+    return await this.enqueue(async () => {
+      if (isbns13.length === 0) {
+        return [];
+      }
+
+      const timestamp = occurredAt.toISOString();
+      const booksByIsbn = new Map<string, ScanCatalogBook>();
+      const entries: ScanSaleOutboxEntry[] = [];
+
+      for (const isbn13 of isbns13) {
+        const current = booksByIsbn.get(isbn13) ??
+          await this.store.getCatalogBook(isbn13) ??
+          createEmptyCatalogBook(isbn13, timestamp);
+        const updated = {
+          ...current,
+          qtyAvailable: Math.max(0, current.qtyAvailable - 1),
+          salesCount: current.salesCount + 1,
+          updatedAt: timestamp,
+        };
+        booksByIsbn.set(isbn13, updated);
+        entries.push({
+          clientGestureId: createClientId(),
+          isbn13,
+          quantity: 1,
+          occurredAt: timestamp,
+          createdAt: new Date().toISOString(),
+          attemptCount: 0,
+          lastAttemptAt: null,
+          lastError: null,
+        });
+      }
+
+      await this.store.addSaleOutboxEntries(entries, [...booksByIsbn.values()]);
+      return entries;
+    });
+  }
+
   async setSessionMode(mode: 'AvailableNow' | 'NextFair'): Promise<ScanSessionSnapshot> {
     return await this.enqueue(async () => {
       const session = await this.ensureSession(new Date());
@@ -88,7 +130,11 @@ export class ScanWorkflowService {
 
   async recordSync(synchronizedAt = new Date()): Promise<void> {
     return await this.enqueue(async () => {
-      const session = await this.ensureSession(synchronizedAt);
+      const session = await this.store.getSession();
+      if (!session) {
+        return;
+      }
+
       await this.store.saveSession({
         ...session,
         lastSyncAt: synchronizedAt.toISOString(),
@@ -326,4 +372,19 @@ function createClientId(): string {
   }
 
   return `scan-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function createEmptyCatalogBook(isbn13: string, updatedAt: string): ScanCatalogBook {
+  return {
+    isbn13,
+    title: null,
+    authors: null,
+    workId: null,
+    qtyAvailable: 0,
+    qtyAnnounced: 0,
+    salesCount: 0,
+    isWanted: false,
+    isRare: false,
+    updatedAt,
+  };
 }

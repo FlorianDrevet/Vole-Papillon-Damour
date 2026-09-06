@@ -6,6 +6,7 @@ import {environment} from '../../environments/environment';
 import {
   ScanBookResponse,
   ScanCatalogDeltaResponse,
+  ScanSaleResponse,
   ScanSessionResponse,
 } from './scan-offline.model';
 
@@ -17,6 +18,13 @@ export interface OpenScanSessionRequest {
 export interface ScanBookRequest {
   isbn: string;
   kept: boolean;
+  occurredAt: string;
+  clientGestureId: string;
+}
+
+export interface RegisterSaleRequest {
+  isbn: string;
+  quantity: number;
   occurredAt: string;
   clientGestureId: string;
 }
@@ -53,6 +61,13 @@ export class ScanApiService {
   scanBook(sessionId: string, request: ScanBookRequest): Observable<ScanBookResponse> {
     return this.http.post<ScanBookResponse>(
       `${this.baseUrl}/scan/sessions/${encodeURIComponent(sessionId)}/scans`,
+      request,
+    );
+  }
+
+  registerSale(request: RegisterSaleRequest): Observable<ScanSaleResponse> {
+    return this.http.post<ScanSaleResponse>(
+      `${this.baseUrl}/scan/sales`,
       request,
     );
   }

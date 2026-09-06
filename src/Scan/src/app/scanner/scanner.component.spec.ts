@@ -313,6 +313,48 @@ describe('ScannerComponent', () => {
     expect(component.cashItems.map(item => item.id)).toEqual(['second']);
   });
 
+  it('persists the cash batch before clearing the visible list', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['recordCashSales', 'getPendingCount', 'getSession'],
+    );
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    workflow.recordCashSales.and.resolveTo([]);
+    workflow.getPendingCount.and.resolveTo(1);
+    workflow.getSession.and.resolveTo(null);
+    sync.syncAll.and.resolveTo({
+      catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
+      outbox: {sent: 0, remaining: 1, stoppedOnError: false},
+      closed: false,
+    });
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      sync,
+    );
+    localComponent.authAvailable = true;
+    localComponent.isAuthenticated = true;
+    localComponent.isOnline = true;
+    (localComponent as unknown as {localModeReady: boolean}).localModeReady = true;
+    localComponent.cashItems = [createCashItem('sale-1', 'Livre vendu')];
+
+    await localComponent.validateCash();
+
+    expect(workflow.recordCashSales).toHaveBeenCalledOnceWith(['9782070363735']);
+    expect(localComponent.cashItems).toEqual([]);
+    expect(localComponent.cashMessage).toContain('enregistré localement');
+    expect(sync.syncAll).toHaveBeenCalledOnceWith();
+  });
+
   it('opens a new session mode screen after a session has been ended', async () => {
     component.session = createSession({scannedCount: 2, keptCount: 2});
 

@@ -115,8 +115,9 @@ cas d'échéance.
 
 ## `P1-5` — L'application de scan
 
-🔧 La PWA de `T-04`, cette fois complète : IndexedDB à trois magasins, file de sortie
-durable, verdict calculé localement, synchronisation delta, service worker.
+🔧 La PWA de `T-04`, cette fois complète : IndexedDB à quatre magasins (`catalog`,
+`outbox`, `sales`, `session`), file de sortie durable, verdict calculé localement,
+synchronisation delta, service worker.
 
 Les points qui font ou défont l'outil :
 
@@ -237,10 +238,13 @@ transaction. Refaire à quinze mille fiches.
 
 ## `P1-10` — Le hors-ligne de la caisse, faute de repli
 
-🔧 **Il n'y a aucun repli d'exploitation, et c'est décidé** (`ENF-21`, réécrit). Si la
-caisse ne marche pas, on vend quand même et on n'enregistre rien : pas de feuille de
-papier, pas d'écran de ressaisie, pas de rattrapage. L'écart part avec le reste à la
-prochaine remise à plat (`RG-34`).
+✅ **La persistance locale et la reprise réseau sont implémentées.** Le bouton `VALIDER`
+crée une entrée durable dans le magasin IndexedDB `sales`, décrémente immédiatement la
+projection locale, puis la synchronisation appelle `POST /scan/sales` avec un
+`ClientGestureId` idempotent. La réponse serveur réconcilie le stock et le compteur de
+ventes. Il n'y a toujours **aucun repli d'exploitation** (`ENF-21`, réécrit) : si
+l'application ne fonctionne pas, on vend quand même et on n'enregistre rien — pas de feuille
+de papier, pas d'écran de ressaisie, pas de rattrapage.
 
 **Ce que cette décision déplace.** Elle ne supprime pas le risque, elle le concentre sur un
 seul point : `ENF-05`, le fonctionnement hors ligne de la caisse, devient la **seule**

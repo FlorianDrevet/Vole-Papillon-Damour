@@ -4,6 +4,7 @@ using System.Text;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Books.Common;
@@ -314,7 +315,36 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetScanCatalogDelta")
-                .RequireAuthorization("Tri");
+                .RequireAuthorization("ScanVolunteer");
+
+            endpoints.MapPost(
+                    "/scan/sales",
+                    async (
+                        RegisterSaleRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RegisterSaleCommand(
+                                request.Isbn,
+                                request.Quantity,
+                                request.OccurredAt,
+                                volunteerId,
+                                request.ClientGestureId),
+                            cancellationToken);
+
+                        return result.Match(
+                            sale => Results.Ok(ToResponse(sale)),
+                            error => error.Result());
+                    })
+                .WithName("RegisterBookSale")
+                .RequireAuthorization("Caisse");
 
             endpoints.MapPost(
                     "/scan/sessions",
@@ -525,6 +555,23 @@ public static class BookController
             result.MovementType.ToString(),
             result.AlreadyProcessed,
             result.ClockSuspect);
+    }
+
+    private static RegisterSaleResponse ToResponse(RegisterSaleResult result)
+    {
+        return new RegisterSaleResponse(
+            result.Isbn13,
+            result.SaleMovementId.Value,
+            result.Quantity,
+            result.QuantityAvailable,
+            result.SalesCount,
+            result.AssoEventsId?.Value,
+            result.FairMatchStatus.ToString(),
+            result.HadNoAvailableStock,
+            result.HadUnreleasedAnnouncement,
+            result.IsRare,
+            result.ClockSuspect,
+            result.AlreadyProcessed);
     }
 
     private static PublicCatalogSearchResponse ToResponse(PublicCatalogSearchResult result)
