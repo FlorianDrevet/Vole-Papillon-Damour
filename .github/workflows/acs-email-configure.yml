@@ -84,7 +84,7 @@ jobs:
           read_statuses
 
           {
-            echo "ACS resource: $ACS_ID"
+            echo "ACS email resource: $EMAIL_SERVICE_ID"
             echo "Domain resource: $DOMAIN_ID"
             echo "Domain ownership: $domain_status"
             echo "SPF: $spf_status"
