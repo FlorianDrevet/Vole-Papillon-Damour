@@ -105,6 +105,10 @@ Verified feature roots:
   each asynchronous HTTP completion explicitly calls `ChangeDetectorRef.markForCheck()`
   so zoneless SSR and browser hydration leave their loading state. Their regressions are
   covered by asynchronous ChromeHeadless component tests.
+- The Catalog search page also keeps external-reference follow state in plain properties;
+  its awaited watchlist add must call `markForCheck()` in `finally` so the success/error
+  feedback and the button leave the pending state after the HTTP response. The regression
+  is covered by `catalog-search-page.component.spec.ts` with a deferred observable.
 - The Scan app follows the same zoneless Angular setup and reuses `@vpd/ui` through the
   `SharedUi` TypeScript path alias. Its typed `BookMetadataService` calls the backend
   metadata endpoint; `CameraScannerService` uses `@zxing/browser` with `TRY_HARDER` for
