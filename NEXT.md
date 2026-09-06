@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`c490097`) et déployés sur l'environnement dev. |
-| **Prochaine action** | Relever les heartbeats/mesures, réaliser un envoi e-mail de test avec un destinataire validé, puis exécuter les contrôles physiques restants. Le workflow reproductible ACS est dans la PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74), encore ouverte. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-acs-email` |
-| **Dernière mise à jour** | 2026-09-06 — déploiement post-merge et activation ACS/e-mails dev |
-| **Branche** | `chore/acs-email-runtime-config` — PR #74 ouverte pour conserver l'automatisation de configuration |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
+| **Prochaine action** | Relever les heartbeats/mesures, réaliser un envoi e-mail de test avec un destinataire validé, puis exécuter les contrôles physiques restants. Le workflow reproductible ACS est fusionné dans `main` via la PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74). |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-deployment-docs` |
+| **Dernière mise à jour** | 2026-09-06 — déploiement final du `main` et activation ACS/e-mails dev |
+| **Branche** | `docs/record-final-deployment-5601c2e` — mise à jour de traçabilité |
 
 ---
 
@@ -77,6 +77,26 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-06 (déploiement final)
+
+Le `main` courant est le commit `5601c2e` (fusion de la PR #73) et a été déployé sur
+l'infrastructure dev par `Infra - deploy` `34050062897`. Les images runtime portent toutes
+ce même tag : `Books runtime - deploy` `34050215862`, `Website - deploy` `34050215968`,
+`BackOffice - deploy` `34050216166`, `Scan - deploy` `34050216134` et `Catalog - deploy`
+`34050216526`. Les deux CI de merge `34049614770` et `34049623771` sont vertes ; les
+migrations EF n'ont pas été rejouées car la base dev était déjà à jour.
+
+Le workflow ACS final `34050574089` est vert après le rollout : propriété du domaine,
+SPF, DKIM et DKIM2 sont vérifiés ; Communication Service, permission de l'identité Worker,
+référence Key Vault, envoi Worker et Event Grid sont actifs. `DMARC` reste `NotStarted`
+côté ACS. Aucun message réel n'a été envoyé automatiquement.
+
+Le smoke final renvoie `200` sur le catalogue public
+(`https://livres.volepapillondamour.fr/`, `robots.txt`, `sitemap.xml`), l'API (`/health`,
+`/catalog/search`), le Website, le BackOffice, la Scanette et le Catalog interne. La
+prochaine validation opérationnelle est l'envoi d'un message réel vers une boîte autorisée,
+suivi d'une vérification de livraison ou de rebond.
 
 ### État actualisé — 2026-09-06
 
@@ -210,7 +230,7 @@ et `sitemap.xml` en `200`.
 
 ### ACS / e-mails — état externe 2026-09-06
 
-Le workflow `ACS Email - configure` `34046166674` a terminé avec succès. Pour
+Le workflow `ACS Email - configure` `34050574089` a terminé avec succès. Pour
 `mail.volepapillondamour.fr`, ACS affiche `Domain=Verified`, `SPF=Verified`, `DKIM=Verified`
 et `DKIM2=Verified`. `DMARC` reste `NotStarted` côté ACS ; l'enregistrement OVH existant
 est `v=DMARC1;p=none;` et ne bloque pas l'envoi dev.
@@ -492,9 +512,9 @@ dans Azure sans être déductible du dépôt.
 | ACS Communication Service | `vpd-acs-comm-dev`, lié au domaine Email vérifié, endpoint `https://vpd-acs-comm-dev.communication.azure.com` | `2026-09-06` |
 | ACS runtime | Worker `vpd-worker-id-dev` autorisé par `Communication and Email Service Owner`; secret webhook dans `vpd-kv-dev`, référence Key Vault active sur l'API, envoi Worker activé | `2026-09-06` |
 | Event Grid ACS | `vpd-acs-email-delivery-reports-dev`, événement `Microsoft.Communication.EmailDeliveryReportReceived`, webhook API `/integrations/acs/email-delivery-reports` et header partagé configurés | `2026-09-06` |
-| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:c490097` déployée avec le Worker par `Books runtime - deploy` run `34048120747`; `/health`, `/catalog/search`, `/catalog/sitemap.xml` et metadata BnF/Open Library répondent `200` | `2026-09-06` |
-| Catalogue public | Image `vpdacrdev.azurecr.io/vpd-catalog:c490097` déployée par `Catalog - deploy` run `34048120650`; `/`, `/robots.txt`, `/sitemap.xml` répondent `200`, les routes privées sont `noindex` côté HTML et en-tête | `2026-09-06` |
-| Runtime Books | API `vpd-api:c490097` et Worker `vpd-worker:c490097` construits depuis le même commit ; migrations EF déjà appliquées, rollout réussi | `2026-09-06` |
+| API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:5601c2e` déployée avec le Worker par `Books runtime - deploy` run `34050215862`; `/health`, `/catalog/search`, `/catalog/sitemap.xml` et metadata BnF/Open Library répondent `200` | `2026-09-06` |
+| Catalogue public | Image `vpdacrdev.azurecr.io/vpd-catalog:5601c2e` déployée par `Catalog - deploy` run `34050216526`; `/`, `/robots.txt`, `/sitemap.xml` répondent `200`, les routes privées sont `noindex` côté HTML et en-tête | `2026-09-06` |
+| Runtime Books | API `vpd-api:5601c2e` et Worker `vpd-worker:5601c2e` construits depuis le même commit ; migrations EF déjà appliquées, rollout réussi | `2026-09-06` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
 
@@ -601,6 +621,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-06 | Windows | **Déploiement final du `main` et activation ACS/e-mails.** Le commit `5601c2e` a été déployé par `Infra - deploy` `34050062897`, `Books runtime - deploy` `34050215862`, `Website - deploy` `34050215968`, `BackOffice - deploy` `34050216166`, `Scan - deploy` `34050216134` et `Catalog - deploy` `34050216526`. Le workflow ACS `34050574089` est vert avec domaine, SPF, DKIM et DKIM2 vérifiés ; l'envoi Worker, Key Vault et Event Grid sont actifs. Le smoke public final est vert sur catalogue, API, Website, BackOffice, Scanette et Catalog interne. `DMARC` reste `NotStarted` et un envoi réel vers une boîte autorisée reste à effectuer. |
 | 2026-09-06 | Windows | **PR #67 — résolution des conflits et revue de pertinence.** Les correctifs de détection zoneless sur recherche, fiche livre et fiche œuvre sont conservés, ainsi que l'enrichissement bibliographique ciblé après commit d'un scan avec le Worker horaire comme repli. Le chemin Blob des couvertures, devenu obsolète après `ReplaceBookCoverBlobWithDirectCoverUrl`, est retiré de la résolution. Validation : 58 tests ChromeHeadless Catalog, 319 tests backend, builds API/Worker/Catalog et `graphify update .` passés ; aucun déploiement effectué. |
 | 2026-09-06 | Windows | **Déploiement post-merge et ACS/e-mails.** Après le merge de la PR #72 (`ead9e79`), les runs `Infra - deploy` `34031915751`, `Books runtime - deploy` `34032046904`, `Website - deploy` `34032231011`, `BackOffice - deploy` `34032230503`, `Catalog - deploy` `34032230663` et `Scan - deploy` `34032231264` sont verts. Le workflow `ACS Email - configure` `34046166674` a vérifié propriété/SPF/DKIM/DKIM2, créé `vpd-acs-comm-dev`, autorisé l'identité Worker, posé le secret webhook dans Key Vault, activé l'envoi Worker et créé l'abonnement Event Grid. PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74) conserve cette configuration reproductible et reste ouverte ; aucun e-mail de test n'a été envoyé. |
 | 2026-09-06 | Windows | **Publication du `main` courant après PR #67.** `c490097` a été déployé sur l'API et le Worker par `Books runtime - deploy` `34048120747`, et sur le Catalog par `Catalog - deploy` `34048120650`. Migrations non rejouées car déjà appliquées ; smoke public post-rollout : catalogue, robots, sitemap, API `/health` et recherche en `200`. |
