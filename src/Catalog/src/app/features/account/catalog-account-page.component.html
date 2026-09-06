@@ -31,6 +31,19 @@
       <button type="button" class="account-button quiet" (click)="logout()">Se déconnecter</button>
     </div>
 
+    @if (isAdministrator()) {
+      <section class="account-admin-entry" aria-labelledby="account-admin-title">
+        <div>
+          <p class="eyebrow">Espace bénévoles</p>
+          <h2 id="account-admin-title">Administration du catalogue.</h2>
+          <p>Accédez aux outils de gestion des livres, des sessions de scan, des alertes et des comptes.</p>
+        </div>
+        <a class="account-button secondary" data-testid="administration-entry" routerLink="/administration">
+          Espace administration <span aria-hidden="true">→</span>
+        </a>
+      </section>
+    }
+
     @if (errorMessage()) {
       <p class="feedback error" role="alert">{{ errorMessage() }}</p>
     }

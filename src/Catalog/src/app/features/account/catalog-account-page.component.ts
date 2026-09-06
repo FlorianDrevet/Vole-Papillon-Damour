@@ -11,7 +11,10 @@ import {Meta} from '@angular/platform-browser';
 import type {AccountInfo} from '@azure/msal-browser';
 import {firstValueFrom} from 'rxjs';
 
-import {CatalogAuthService} from '../../core/catalog-auth.service';
+import {
+  CatalogAuthenticationRedirectStartedError,
+  CatalogAuthService,
+} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogWatchlistItem, CatalogWatchlistResponse} from '../../core/catalog.models';
 
@@ -26,6 +29,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly account: Signal<AccountInfo | null>;
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
+  readonly isAdministrator: Signal<boolean>;
   readonly authError: Signal<string | null>;
   readonly watchlist = signal<CatalogWatchlistResponse | null>(null);
   readonly loading = signal(false);
@@ -45,6 +49,7 @@ export class CatalogAccountPageComponent implements OnInit {
     this.account = this.auth.account;
     this.initialized = this.auth.initialized;
     this.isAuthenticated = this.auth.isAuthenticated;
+    this.isAdministrator = this.auth.isAdministrator;
     this.authError = this.auth.error;
     this.accountLabel = computed(() => this.displayAccount(this.account()));
   }
@@ -93,7 +98,9 @@ export class CatalogAccountPageComponent implements OnInit {
       this.watchlist.set(response);
     } catch (error: unknown) {
       this.watchlist.set(null);
-      this.errorMessage.set(this.describeError(error));
+      this.errorMessage.set(error instanceof CatalogAuthenticationRedirectStartedError
+        ? 'Redirection vers Microsoft pour renouveler votre session…'
+        : this.describeError(error));
     } finally {
       this.loading.set(false);
     }

@@ -339,6 +339,34 @@ h3 {
   color: #22613b;
 }
 
+.account-admin-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  margin-top: 32px;
+  padding: 24px;
+  border: 1px solid var(--catalog-line);
+  background: var(--catalog-paper-2);
+}
+
+.account-admin-entry h2 {
+  margin-bottom: 10px;
+  font-size: 1.65rem;
+}
+
+.account-admin-entry p:not(.eyebrow) {
+  max-width: 680px;
+  margin-bottom: 0;
+  color: var(--catalog-slate-2);
+  font-size: .82rem;
+  line-height: 1.6;
+}
+
+.account-admin-entry .account-button {
+  flex-shrink: 0;
+}
+
 .account-danger {
   align-items: center;
   margin-top: 52px;
@@ -432,6 +460,7 @@ h3 {
   }
 
   .account-heading,
+  .account-admin-entry,
   .watchlist-item,
   .account-danger,
   .alert-settings-panel {
@@ -440,6 +469,7 @@ h3 {
   }
 
   .account-heading .account-button,
+  .account-admin-entry .account-button,
   .account-danger > .account-button {
     align-self: flex-start;
   }
