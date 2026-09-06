@@ -28,6 +28,8 @@ env:
   WORKER_CONTAINER_APP: vpd-worker-ca-dev
   API_IDENTITY: vpd-api-id-dev
   WORKER_IDENTITY: vpd-worker-id-dev
+  DEPLOY_IDENTITY_RESOURCE_GROUP: rg-vpd-identity-dev
+  DEPLOY_IDENTITY: vpd-github-deploy-id
   KEY_VAULT: vpd-kv-dev
   WEBHOOK_SECRET_NAME: email-bounce-webhook-secret
   EVENT_SUBSCRIPTION_NAME: vpd-acs-email-delivery-reports-dev
@@ -203,6 +205,27 @@ jobs:
           if [ -z "${ACS_EMAIL_WEBHOOK_SECRET:-}" ]; then
             echo "The development secret ACS_EMAIL_WEBHOOK_SECRET is not configured." >&2
             exit 1
+          fi
+          DEPLOY_PRINCIPAL_ID=$(az identity show \
+            --name "$DEPLOY_IDENTITY" \
+            --resource-group "$DEPLOY_IDENTITY_RESOURCE_GROUP" \
+            --query principalId --output tsv)
+          KEY_VAULT_ID=$(az keyvault show \
+            --name "$KEY_VAULT" \
+            --query id --output tsv)
+          existing_assignment=$(az role assignment list \
+            --assignee-object-id "$DEPLOY_PRINCIPAL_ID" \
+            --scope "$KEY_VAULT_ID" \
+            --role "Key Vault Secrets Officer" \
+            --query '[0].id' --output tsv)
+          if [ -z "$existing_assignment" ]; then
+            az role assignment create \
+              --assignee-object-id "$DEPLOY_PRINCIPAL_ID" \
+              --assignee-principal-type ServicePrincipal \
+              --role "Key Vault Secrets Officer" \
+              --scope "$KEY_VAULT_ID" \
+              --output none
+            sleep 20
           fi
           az keyvault secret set \
             --vault-name "$KEY_VAULT" \
