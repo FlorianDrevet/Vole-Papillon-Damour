@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
-| **Prochaine action** | Relever les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. Garder le repli titre+auteur conditionné à la mesure `QT-01`. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-maquette` |
-| **Dernière mise à jour** | 2026-09-06 — migration visuelle Catalogue V2 validée localement ; PR à ouvrir |
-| **Branche** | `feat/catalog-maquette` — migration V2 isolée dans son worktree |
+| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Une évolution locale remplace le stockage Blob des couvertures par des URLs directes BnF/Open Library/Google Books ; elle attend sa PR et son déploiement. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
+| **Prochaine action** | Valider puis fusionner la branche de couvertures, appliquer la migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` avec le déploiement API/Worker, puis vérifier les couvertures BnF/Open Library/Google Books et le placeholder catalogue/Scan. Relever aussi les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-cover-url` |
+| **Dernière mise à jour** | 2026-09-06 — implémentation locale des URLs de couvertures dans un worktree dédié ; PR à ouvrir |
+| **Branche** | `feat/book-cover-direct-urls` — worktree dédié, non fusionné |
 
 ---
 
@@ -164,6 +164,30 @@ sur chaque navigation (`index, follow` pour les routes publiques, `noindex, nofo
 `vpdacrdev.azurecr.io/vpd-catalog:3a6e887`. Le smoke post-déploiement vérifie les deux
 signaux `noindex` sur les routes privées, `index, follow` sur `/`, ainsi que `robots.txt`
 et `sitemap.xml` en `200`.
+
+### État actualisé — 2026-09-06 (worktree couvertures)
+
+La branche `feat/book-cover-direct-urls`, dans le worktree
+`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-cover-url`, remplace la couverture
+Blob par `Books.CoverUrl`, avec `CoverSource` et `CoverCheckedAt`. Le Worker ne télécharge
+plus ni ne stocke de blob : il vérifie l'URL et réessaie les couvertures absentes après 30
+jours. La résolution essaie BnF puis Open Library puis Google Books ; la BnF est considérée
+comme indisponible lorsqu'elle renvoie son HTTP 500 historique, et Google Books n'est retenu
+que pour une édition dont l'ISBN-13 correspond exactement. La clé Google est facultative et
+vient de Key Vault lorsqu'elle est configurée.
+
+Le catalogue et la Scanette partagent maintenant un placeholder éditorial sans rayures quand
+aucune URL ne fonctionne. La migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl`
+renomme la colonne, augmente sa longueur à 2048, ajoute les métadonnées de contrôle et
+efface les anciennes références de blob afin que le Worker puisse les reconstituer. Cette
+branche n'a pas encore été déployée sur Azure ; l'application de la migration et les smoke
+tests de fournisseurs restent à faire après la PR.
+
+Validation locale de cette branche : suite backend complète `297` tests, Catalog `37`
+tests ChromeHeadless et build SSR/production, Scan `86` tests ChromeHeadless, `4` tests de
+bootstrap et build de production, compilation Bicep du template et des paramètres, script EF
+de migration valide, et `graphify update .` exécuté. Les avertissements déjà présents du
+dépôt (vulnérabilités NuGet/npm et dépréciations) restent à traiter séparément.
 
 Validation : `291` tests backend locaux pour la PR #61, CI #57/#58/#59/#61/#63 au vert, 79 tests
 ChromeHeadless Scan et 4 tests de bootstrap sur la PR #57, builds front et conteneurs réussis,

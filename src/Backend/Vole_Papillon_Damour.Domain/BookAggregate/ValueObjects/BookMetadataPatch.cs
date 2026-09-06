@@ -8,6 +8,6 @@ public sealed record BookMetadataPatch(
     string? PhysicalFormat,
     string? Language,
     string? Genre,
-    string? CoverBlobRef,
+    string? CoverUrl,
     IReadOnlyCollection<BookMetadataField> Fields,
     string? WorkId = null);

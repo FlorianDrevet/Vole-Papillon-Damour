@@ -21,7 +21,7 @@ public sealed class BookMetadataTests
             PhysicalFormat: null,
             Language: null,
             Genre: null,
-            CoverBlobRef: null,
+            CoverUrl: null,
             Fields: [BookMetadataField.Title, BookMetadataField.Authors]);
         var updatedAt = FirstSeenAt.AddMinutes(2);
 
@@ -170,6 +170,33 @@ public sealed class BookMetadataTests
             null);
 
         book.WorkId.Should().Be("work-42");
+    }
+
+    [Fact]
+    public void ApplyAutomaticMetadata_StoresDirectCoverUrlAndItsProvider()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var coverUrl = "https://books.google.com/books/content?id=volume-42";
+
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                coverUrl,
+                [BookMetadataField.CoverUrl]),
+            BookMetadataSource.GoogleBooks,
+            FirstSeenAt.AddMinutes(1),
+            null,
+            BookCoverSource.GoogleBooks);
+
+        book.CoverUrl.Should().Be(coverUrl);
+        book.CoverSource.Should().Be(BookCoverSource.GoogleBooks);
+        book.CoverCheckedAt.Should().Be(FirstSeenAt.AddMinutes(1));
     }
 
     [Fact]

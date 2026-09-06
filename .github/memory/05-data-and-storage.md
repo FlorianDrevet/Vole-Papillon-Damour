@@ -24,7 +24,7 @@
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
 - Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, and `product-images`.
-- The bibliographic resolver calls BnF SRU first and Open Library second; the current ISBN probe does not persist books.
+- The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books third; it validates provider image URLs before returning them. The current ISBN probe does not persist books.
 
 ## Authentication
 
@@ -69,6 +69,21 @@
 - The Books alert outbox has an exact claim lease token carried through revalidation, cancellation, success, and failure. Sent alerts write `UserAlertHistory` after ACS delivery so a retry cannot deliberately create another alert for the same book/member cooldown window.
 - Bibliographic enrichment is retryable and negative-caches not-found results. Transient provider/cover failures keep the current `Pending`/`NotFound` state, record `LastAttemptAt` without consuming the negative-cache attempt budget, and use a one-hour `Pending` cooldown so failed early rows cannot starve never-attempted books. Optional cover downloads accept only the explicit HTTPS host allowlist (`covers.openlibrary.org`, `openapi.bnf.fr`), reject redirects and oversized/non-image payloads, and store stable keys under the `book-covers` container.
 - Azure SQL migrations are applied explicitly by deployment workflows. API startup migrations are limited to `Development`; the production/dev rollout workflow runs migrations before the new API/Worker revisions.
+
+## Books cover URL update — 2026-09-06
+
+- `Books` now persists `CoverUrl` (`nvarchar(2048)`), nullable `CoverSource` (`Bnf`,
+  `OpenLibrary`, `GoogleBooks`, `Manual`), and nullable UTC `CoverCheckedAt`. The migration
+  `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` renames the old column, clears
+  legacy blob references and their manual-field markers, and leaves the other Blob containers
+  unchanged.
+- The Worker validates HTTPS image responses and stores no book-cover bytes. It keeps a
+  resolved book eligible for cover-only backfill, records a cover check, and retries a
+  missing cover after 30 days. BnF HTTP 500 responses are treated as unusable URLs, followed
+  by Open Library and then exact-ISBN Google Books.
+- Google Books is optional and rate-limited; its API key is passed through the deployment
+  secret path when supplied. URLs remain reconstructible provider references, so book-cover
+  Blob capacity and upload code are no longer part of the Books runtime.
 
 ## Dead-stock query persistence
 

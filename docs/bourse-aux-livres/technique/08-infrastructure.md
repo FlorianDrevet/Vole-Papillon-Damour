@@ -165,8 +165,8 @@ d'où ses `minReplicas: 1`.
 | Entra External ID | Utilisateur actif mensuel, bénévoles compris. **Les 50 000 premiers sont gratuits** (`QT-04`) : sans objet à notre échelle |
 | Envoi d'e-mails — ACS (`DT-12`) | 0,00025 $ par message. À quelques dizaines par semaine : **quelques centimes** |
 | Domaine et certificat (`DT-13`) | **0 €** — certificat managé gratuit sur Container Apps |
-| Storage | Couvertures, quelques Go. Négligeable |
-| BnF, Open Library | **0 €** |
+| Storage | Les couvertures de livres n'utilisent plus Blob ; seuls les médias existants restent stockés |
+| BnF, Open Library, Google Books | **0 €** hors éventuelle clé/quota Google |
 | Log Analytics | Ingestion en hausse avec deux applications de plus, et sans échantillonnage (`11` §5). **Plafond journalier obligatoire** sur chaque Application Insights — voir ci-dessous |
 
 ### La base de données, et pourquoi elle a changé de nature
@@ -246,8 +246,8 @@ requêtes SQL toutes les cinq minutes. Ce jour-là, `DT-09` se rouvre légitimem
 - Sauvegarde SQL au niveau déjà retenu pour les données existantes. Le module livres ne
   justifie pas un régime particulier — il justifie de **vérifier que celui en place
   fonctionne**.
-- Les couvertures en blob sont **reconstructibles** depuis les sources : elles ne
-  méritent pas le même niveau de protection.
+- Les URLs de couverture et leurs origines sont **reconstructibles** depuis les sources :
+  elles ne méritent pas un stockage Blob ni le même niveau de protection que le ledger.
 - La copie embarquée sur les appareils est jetable. **La file de sortie ne l'est pas**,
   mais elle ne se sauvegarde pas : elle se vide en synchronisant. D'où `ENF-07`, qui
   impose de rendre visible le nombre de gestes en attente.

@@ -1,6 +1,6 @@
 # 07 — Intégrations externes
 
-Trois dépendances sortantes : BnF, Open Library, envoi d'e-mails. **Aucune n'est sur le
+Quatre dépendances sortantes : BnF, Open Library, Google Books et envoi d'e-mails. **Aucune n'est sur le
 chemin critique d'une décision de tri** (`ENF-02`).
 
 ## 1. Le pipeline de résolution
@@ -15,10 +15,13 @@ ISBN normalisé (RG-01)
  création fiche (Pending) + contrainte d'unicité = déduplication
      │
      ▼
- BnF SRU   ── trouvée ──►  Resolved
-     │ absente / délai 800 ms dépassé
+ BnF SRU + couverture ── trouvée ──►  Resolved
+     │ notice sans couverture / erreur HTTP
      ▼
- Open Library ── trouvée ──►  Resolved (+ WorkId)
+ Open Library + couverture ── trouvée ──►  Resolved (+ WorkId)
+     │ notice sans couverture / erreur HTTP
+     ▼
+ Google Books (ISBN exact) ── image trouvée ──►  Resolved
      │ absente
      ▼
  NotFound  →  fiche à l'ISBN seul (RG-03), file de rattrapage
@@ -36,7 +39,9 @@ répond, la fiche reste `Pending` et `enrich` la reprendra. Le bénévole a déj
 verdict.
 
 **Open Library est appelée en tâche de fond même quand la BnF a répondu**, pour obtenir
-le `WorkId` de `RG-46`. Jamais dans la seconde du scan.
+le `WorkId` de `RG-46` et, si nécessaire, la couverture. Google Books n'est appelé
+qu'après une notice sans couverture exploitable ou en dernier repli. Jamais dans la
+seconde du scan.
 
 ## 2. BnF — SRU Catalogue général
 
@@ -81,6 +86,21 @@ dons en langue étrangère passeront à travers et dépendront d'Open Library se
 Le débit d'une requête par seconde impose l'appel en tâche de fond. C'est cohérent : le
 `WorkId` ne sert pas à afficher un verdict, il sert à rapprocher des demandes.
 
+## 3 bis. Google Books — troisième repli
+
+| | |
+|---|---|
+| Endpoint | `GET https://www.googleapis.com/books/v1/volumes?q=isbn:<ISBN>` |
+| Authentification | Clé API facultative, injectée par Key Vault en production |
+| Apport | Couverture et métadonnées d'une édition quand BnF et Open Library n'en fournissent pas |
+| Garde-fou | Seul un volume dont `industryIdentifiers` contient l'ISBN-13 demandé est accepté |
+| Limite | Quota Google et disponibilité des images variables ; un résultat voisin n'est jamais réutilisé |
+
+Les liens `imageLinks` sont normalisés en HTTPS puis vérifiés par une requête image avant
+d'être conservés. Une réponse de quota, une image absente ou un type MIME non-image ne
+fait pas échouer le scan : la fiche reste exploitable sans couverture et le worker
+réessaie lors d'un prochain passage.
+
 **Dumps mensuels gratuits** disponibles si l'on voulait un jour une base locale — non
 retenu (`DT-02` : des dizaines de gigaoctets pour un catalogue qui n'en utilisera jamais
 que quelques milliers de lignes).
@@ -112,12 +132,16 @@ livres jamais reçus.
 
 ## 6. Couvertures
 
-Récupérées en tâche de fond après création de la fiche, jamais pendant le scan.
-Stockées dans le **blob existant**, servies par notre propre URL.
+Résolues en tâche de fond après création de la fiche, jamais pendant le scan. Le service
+essaie l'URL BnF `couverture=1`, puis l'URL Open Library, puis le lien Google Books. Pour
+chaque candidate, un GET exige un statut de succès et un `Content-Type` commençant par
+`image/`. Le `HTTP 500` BnF « id to load is required for loading » est donc un simple
+signal de repli, pas une erreur applicative exposée au navigateur.
 
-Ne pas pointer directement vers l'image chez la source : cela casse au premier
-changement d'URL, expose les visiteurs à leur disponibilité, et leur envoie notre trafic
-sans raison. La Licence Ouverte autorise explicitement la copie.
+L'URL vérifiée est conservée directement dans `Books.CoverUrl`, avec `CoverSource` et
+`CoverCheckedAt`. Il n'y a plus de téléchargement ni d'upload de couverture dans Blob.
+Les fiches résolues sans image sont contrôlées à nouveau après 30 jours ; le catalogue
+et la Scanette affichent entre-temps le placeholder générique de `SharedUi`.
 
 ## 7. Envoi d'e-mails
 
@@ -158,8 +182,10 @@ sans écriture, car il n'y a rien à corriger.
 | Panne | Comportement attendu |
 |---|---|
 | BnF indisponible | Fiches en `Pending`, reprises plus tard. **Le tri continue** |
-| Open Library indisponible | Pas de `WorkId` ; les demandes par édition fonctionnent |
-| Les deux indisponibles | `RG-03` : fiche à l'ISBN seul, complétée à la main ou plus tard |
+| BnF répond sans image | La notice est conservée ; la couverture vient d'Open Library puis de Google Books |
+| Open Library indisponible | Pas de `WorkId` ; Google Books peut encore fournir l'image |
+| Google Books en quota ou indisponible | La fiche reste valable sans couverture ; le worker réessaie après le délai |
+| Les trois indisponibles | `RG-03` : fiche à l'ISBN seul, complétée à la main ou plus tard |
 | Envoi d'e-mail en échec | `Attempts` incrémenté, réessai ; au-delà d'un seuil, `Failed` et visible en administration |
 | Réseau absent côté appareil | `ENF-05` : scan et file locale, rien ne bloque |
 

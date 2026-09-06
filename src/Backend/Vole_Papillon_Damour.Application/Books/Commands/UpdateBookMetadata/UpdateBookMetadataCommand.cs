@@ -15,7 +15,7 @@ public sealed record UpdateBookMetadataCommand(
     string? PhysicalFormat,
     string? Language,
     string? Genre,
-    string? CoverBlobRef,
+    string? CoverUrl,
     IReadOnlyCollection<BookMetadataField> Fields,
     UserId UpdatedBy,
     string? WorkId = null) : IRequest<ErrorOr<UpdateBookMetadataResult>>;

@@ -38,10 +38,15 @@ param jwtSecret string
 @secure()
 param entraGraphClientSecret string
 
+@description('Optional API key for the Google Books volumes API')
+@secure()
+param googleBooksApiKey string
+
 var sqlSecretName = 'sql-connectionstring'
 var storageSecretName = 'storage-connectionstring'
 var jwtSecretName = 'jwt-secret'
 var entraGraphClientSecretName = 'entra-graph-client-secret'
+var googleBooksApiKeySecretName = 'google-books-api-key'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
@@ -83,10 +88,19 @@ resource entraGraphClientSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-
   }
 }
 
+resource googleBooksApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(googleBooksApiKey)) {
+  parent: keyVault
+  name: googleBooksApiKeySecretName
+  properties: {
+    value: googleBooksApiKey
+  }
+}
+
 @description('Dictionary of secret URIs keyed by secret name')
 output secretUris object = {
   '${sqlSecretName}': '${keyVault.properties.vaultUri}secrets/${sqlSecretName}'
   '${storageSecretName}': '${keyVault.properties.vaultUri}secrets/${storageSecretName}'
   '${jwtSecretName}': '${keyVault.properties.vaultUri}secrets/${jwtSecretName}'
   '${entraGraphClientSecretName}': '${keyVault.properties.vaultUri}secrets/${entraGraphClientSecretName}'
+  '${googleBooksApiKeySecretName}': '${keyVault.properties.vaultUri}secrets/${googleBooksApiKeySecretName}'
 }

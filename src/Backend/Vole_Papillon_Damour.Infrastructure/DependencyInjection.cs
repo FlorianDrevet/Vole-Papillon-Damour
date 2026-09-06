@@ -84,6 +84,12 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMilliseconds(options.OpenLibraryTimeoutMilliseconds);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         });
+        services.AddHttpClient<IGoogleBooksClient, GoogleBooksClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(options.GoogleBooksTimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
         services.AddScoped<IBibliographicMetadataResolver, BibliographicMetadataResolver>();
         
         return services;
@@ -122,13 +128,6 @@ public static class DependencyInjection
 
         services.AddSingleton(Options.Create(blobSettings));
         services.AddSingleton<IBlobService, BlobService>();
-        services.Configure<BookCoverOptions>(
-            builderConfiguration.GetSection(BookCoverOptions.SectionName));
-        services.AddHttpClient<IBookCoverStorage, BookCoverStorage>()
-            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-            {
-                AllowAutoRedirect = false
-            });
         return services;
     }
 

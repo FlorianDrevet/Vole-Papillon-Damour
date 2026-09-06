@@ -21,7 +21,7 @@ sur ce qui manque autour d'eux.
 | 🔴 **Bloquant** — la conception est fausse ou absente, et ça se paie en refonte | ~~`R-01`~~ ~~`R-02`~~ ~~`R-03`~~ ~~`R-04`~~ `R-06` ~~`R-08`~~ ~~`R-11`~~ |
 | 🟠 **Sérieux** — la conception manque, mais s'ajoute sans casser | ~~`R-05`~~ ~~`R-07`~~ `R-09` ~~`R-10`~~ ~~`R-12`~~ `R-13` `R-14` `R-15` ~~`R-16`~~ `R-17` `R-18` |
 | 🟡 **Factuel** — le document décrit un dépôt qui n'existe plus | `R-19` `R-20` `R-21` `R-22` |
-| ⚪ **Mineur** — à corriger au passage | `R-23` à `R-30` |
+| ⚪ **Mineur** — à corriger au passage | `R-23` ~~`R-24`~~ `R-25` à `R-30` |
 
 **Où en est chaque constat ouvert dans le plan.** Un constat traité dans un document est
 barré ci-dessus ; un constat ouvert est soit porté par une étape, soit non. La distinction
@@ -38,7 +38,7 @@ compte, parce que « ouvert » sans étape veut dire « oublié ».
 | `R-18` `R-29` | `L0-11` |
 | `R-19` | `L0-5` |
 | `R-20` | Correction documentaire seule — les fronts sont en Angular 21, pas 18 |
-| `R-21` `R-22` `R-24` `R-25` `R-30` | `P1-8` |
+| `R-21` `R-22` `R-25` `R-30` | `P1-8` |
 | `R-23` | `L0-6` |
 | `R-26` | Traité depuis par `T-08` §7, qui chiffre la base, l'ingestion et l'envoi. Reste « à chiffrer sur le calculateur Azure » les cinq réplicas permanents — sans étape |
 | `R-27` | `P1-1` |
@@ -492,7 +492,7 @@ qu'à la sixième application.
 | # | Constat |
 |---|---|
 | `R-23` | Aucune sonde de santé n'est configurée (`main.dev.bicepparam` : chemins vides, ports à 0) et l'API n'expose pas de point `/health`. Une révision qui démarre mal prend quand même du trafic. À régler **avant** d'ajouter trois applications, pas après. |
-| `R-24` | Le conteneur blob des couvertures n'existe pas : `main.bicep` en déclare quatre, tous en accès public `Blob`. Petit delta, mais réel — paramètre, conteneur, variable d'environnement. Et à décider : accès public comme les autres, ou servi par l'API. |
+| ~~`R-24`~~ | ✅ **Traité par `DT-24`.** Le conteneur Blob des couvertures et son upload dédié ont été supprimés ; les URLs HTTPS vérifiées sont conservées directement et disposent d'un repli BnF → Open Library → Google Books. Le texte ci-dessous est le constat d'origine. |
 | `R-25` | Le worker aura besoin de `Key Vault Secrets User` (chaîne SQL) et de sa propre identité managée. `main.bicep` ne l'accorde qu'à l'API — `08` §3 dit « rien de nouveau », ce qui est vrai en nature, faux en travail. |
 | `R-26` | `08` §7 chiffre les réplicas permanents mais oublie trois postes : la base (`R-01`), l'ingestion Log Analytics qui croît avec trois applications de plus, et l'envoi d'e-mails (`R-05`). |
 | `R-27` | `DT-04` s'appuie sur « .NET Aspire a une intégration Azure Functions » pour préserver le montage local. `AppHost` est désormais en Aspire 13.5.3, mais ne référence toujours pas `Aspire.Hosting.Azure.Functions`. À vérifier avant de s'en prévaloir : que le paquet existe à cette version, et qu'il supporte le worker isolé **.NET 10** — de même que l'image de base Functions correspondante. **`DT-15` ne referme pas ce point**, il en fait le premier essai à tenter, sur un socle à jour. |

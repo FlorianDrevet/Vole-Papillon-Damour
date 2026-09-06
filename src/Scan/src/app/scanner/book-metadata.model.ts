@@ -5,6 +5,7 @@ export interface BookMetadata {
   publisher: string | null;
   publicationYear: number | null;
   coverUrl: string | null;
+  coverSource?: string | null;
   source: string;
   workId: string | null;
   retrievedAt: string;

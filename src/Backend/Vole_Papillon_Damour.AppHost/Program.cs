@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 const string ApiResourceName = "api";
 const string AzureBlobStorageConnectionStringEnvironmentName = "ConnectionStrings__AzureBlobStorageConnectionString";
 const string BlobContainerActualityImagesEnvironmentName = "BlobSettings__ContainerActualityImagesName";
-const string BlobContainerBookCoversEnvironmentName = "BlobSettings__BlobContainerBookCoversName";
 const string BlobContainerEventImagesEnvironmentName = "BlobSettings__BlobContainerEventImagesClient";
 const string BlobContainerLotoImagesEnvironmentName = "BlobSettings__ContainerName";
 const string BlobContainerProductsImagesEnvironmentName = "BlobSettings__BlobContainerProductsImagesClient";
@@ -46,7 +45,6 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithEnvironment(BlobContainerActualityImagesEnvironmentName, "actuality-images")
     .WithEnvironment(BlobContainerEventImagesEnvironmentName, "event-images")
     .WithEnvironment(BlobContainerProductsImagesEnvironmentName, "product-images")
-    .WithEnvironment(BlobContainerBookCoversEnvironmentName, "book-covers")
     .WithExternalHttpEndpoints();
 
 builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
@@ -58,7 +56,6 @@ builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
     .WithEnvironment(BlobContainerActualityImagesEnvironmentName, "actuality-images")
     .WithEnvironment(BlobContainerEventImagesEnvironmentName, "event-images")
     .WithEnvironment(BlobContainerProductsImagesEnvironmentName, "product-images")
-    .WithEnvironment(BlobContainerBookCoversEnvironmentName, "book-covers")
     .WaitFor(projectDatabase)
     .WaitFor(storage);
 

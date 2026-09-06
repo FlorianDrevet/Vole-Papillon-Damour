@@ -15,6 +15,16 @@ public sealed class OpenLibraryClientTests
         HttpRequestMessage? capturedRequest = null;
         using var httpClient = new HttpClient(new StubHttpMessageHandler(request =>
         {
+            if (request.RequestUri?.Host == "covers.openlibrary.org")
+            {
+                var coverResponse = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent([0xFF, 0xD8, 0xFF])
+                };
+                coverResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+                return coverResponse;
+            }
+
             capturedRequest = request;
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -37,10 +47,34 @@ public sealed class OpenLibraryClientTests
         result.PublicationYear.Should().Be(1946);
         result.WorkId.Should().Be("OL123W");
         result.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/12345-L.jpg?default=false");
+        result.CoverSource.Should().Be("OpenLibrary");
         result.Source.Should().Be("OpenLibrary");
         capturedRequest.Should().NotBeNull();
         capturedRequest!.RequestUri!.Query.Should().Contain("isbn");
         capturedRequest.RequestUri.Query.Should().Contain("9782070363735");
+    }
+
+    [Fact]
+    public async Task FindAsync_WhenCoverIdIsMissing_ReturnsMetadataWithoutACover()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"numFound":1,"docs":[{"title":"Le Petit Prince"}]}""")
+            }));
+        var client = new OpenLibraryClient(
+            httpClient,
+            Options.Create(new BibliographicOptions
+            {
+                OpenLibrarySearchEndpoint = "https://openlibrary.example.test/search.json"
+            }));
+
+        var result = await client.FindAsync(isbn13, CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.CoverUrl.Should().BeNull();
+        result.CoverSource.Should().BeNull();
     }
 
     [Fact]

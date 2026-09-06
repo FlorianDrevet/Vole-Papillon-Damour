@@ -30,7 +30,8 @@ public sealed record PublicCatalogBookResult(
     DateTimeOffset? LastAvailableAt,
     DateTimeOffset FirstSeenAt,
     DateTimeOffset UpdatedAt,
-    bool IsRare);
+    bool IsRare,
+    string? CoverSource = null);
 
 public sealed record PublicCatalogSearchResult(
     DateTime GeneratedAt,

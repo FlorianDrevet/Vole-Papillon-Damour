@@ -293,7 +293,8 @@ public static class BookController
                                 metadata.CoverUrl,
                                 metadata.Source,
                                 metadata.WorkId,
-                                metadata.RetrievedAt)),
+                                metadata.RetrievedAt,
+                                metadata.CoverSource)),
                             error => error.Result());
                     })
                 .WithName("GetBookMetadata")
@@ -650,7 +651,8 @@ public static class BookController
             result.LastAvailableAt,
             result.FirstSeenAt,
             result.UpdatedAt,
-            result.IsRare);
+            result.IsRare,
+            result.CoverSource);
     }
 
     private static PublicBookFairResponse ToResponse(PublicBookFairResult result)

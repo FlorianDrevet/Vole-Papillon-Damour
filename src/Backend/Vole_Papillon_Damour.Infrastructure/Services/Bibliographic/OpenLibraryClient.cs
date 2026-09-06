@@ -42,6 +42,12 @@ public sealed class OpenLibraryClient(
         var workId = workKey?.StartsWith("/works/", StringComparison.OrdinalIgnoreCase) == true
             ? workKey["/works/".Length..]
             : null;
+        var coverUri = CreateCoverUri(coverId);
+        if (coverUri is not null &&
+            !await CoverImageValidator.IsValidAsync(httpClient, coverUri, cancellationToken))
+        {
+            coverUri = null;
+        }
 
         return new BookMetadataResult(
             isbn13.Value,
@@ -49,10 +55,11 @@ public sealed class OpenLibraryClient(
             ReadStrings(documentElement, "author_name"),
             ReadStrings(documentElement, "publisher"),
             ReadInt(documentElement, "first_publish_year"),
-            CreateCoverUri(coverId),
+            coverUri,
             "OpenLibrary",
             workId,
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow,
+            coverUri is null ? null : "OpenLibrary");
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)

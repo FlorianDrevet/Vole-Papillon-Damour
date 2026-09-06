@@ -150,3 +150,18 @@ The API startup wires:
   `X-Robots-Tag: noindex, nofollow` on `/compte` and `/administration`, and `200` for
   `/robots.txt` and `/sitemap.xml`. DNS and Entra public redirect configuration were
   unchanged.
+
+## Books cover URL update — 2026-09-06
+
+- The API and Worker no longer register a dedicated book-cover Blob container or upload
+  service. Bibliographic enrichment validates direct HTTPS image URLs from BnF, Open Library,
+  and Google Books; the resolver requires an exact ISBN-13 match before accepting Google
+  metadata/images and treats the known BnF cover HTTP 500 as a provider miss.
+- `Bibliographic:GoogleBooksApiKey` is optional and is exposed by `infra/main.bicep` through
+  the `google-books-api-key` Key Vault secret. The migration
+  `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` must run before the API/Worker
+  rollout; no Azure deployment has been made from this worktree.
+- Catalog and Scan consume the URL and use the shared `VpdBookCoverPlaceholderComponent` when
+  the provider chain has no usable image or the browser reports an image error. Local backend
+  build and targeted bibliographic/domain/application tests pass; Angular and full-suite
+  validation remain the next worktree checks.
