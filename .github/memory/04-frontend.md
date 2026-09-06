@@ -46,6 +46,12 @@ and administration pages render a renewal message instead of their generic API f
 The backend remains the authorization boundary; a client-side admin link never grants
 access by itself.
 
+The signed-out Catalog `/compte` state uses the V2 editorial shell: a two-column member
+introduction, concrete watchlist/alert benefits, provider-neutral login copy, and separate
+`Se connecter`/`Créer un compte` actions. `CatalogAuthService.register()` starts the
+External ID account-creation prompt with a `/compte` return URL; the route remains private
+and noindex while the public catalogue stays browseable without authentication.
+
 ## Planned Books Scan client decisions
 
 As of 2026-09-05, the P1-5 Scan foundation is implemented in `src/Scan` and deployed to

@@ -9,16 +9,69 @@
       <button type="button" class="account-button secondary" (click)="initialize()">Réessayer</button>
     </div>
   } @else if (!isAuthenticated()) {
-    <div class="account-gate">
-      <div class="account-gate-mark" aria-hidden="true"><span>VPD</span></div>
-      <div class="account-gate-copy">
-        <p class="eyebrow">Espace personnel</p>
-        <h1 id="account-title">Mon compte.</h1>
-        <p>Retrouvez ici les livres que vous souhaitez ajouter à votre liste de recherche. Le catalogue public reste consultable sans connexion.</p>
-        <button type="button" class="account-button" data-testid="member-login" (click)="login()">
-          Se connecter avec Microsoft <span aria-hidden="true">↗</span>
-        </button>
-        <p class="account-hint">La création du compte est proposée par Microsoft au premier ajout d'alerte.</p>
+    <div class="account-auth-hero">
+      <div class="account-auth-copy">
+        <div class="account-auth-kicker">
+          <span class="account-auth-kicker-line" aria-hidden="true"></span>
+          <p class="eyebrow">Mon compte · espace personnel</p>
+        </div>
+        <h1 id="account-title">Les livres que vous cherchez, au même endroit.</h1>
+        <p class="account-auth-lead">Créez votre espace pour garder une trace des titres qui vous intéressent et être prévenu quand une édition arrive à la bourse aux livres.</p>
+
+        <div class="account-benefits" aria-label="Les avantages de votre espace personnel">
+          <div class="account-benefit">
+            <span class="account-benefit-index" aria-hidden="true">01</span>
+            <div>
+              <h2>Créez votre espace</h2>
+              <p>Un accès personnel, sans mot de passe à retenir sur le catalogue.</p>
+            </div>
+          </div>
+          <div class="account-benefit">
+            <span class="account-benefit-index" aria-hidden="true">02</span>
+            <div>
+              <h2>Gardez vos recherches</h2>
+              <p>Ajoutez une œuvre ou une édition à votre liste depuis sa fiche.</p>
+            </div>
+          </div>
+          <div class="account-benefit">
+            <span class="account-benefit-index" aria-hidden="true">03</span>
+            <div>
+              <h2>Recevez la bonne alerte</h2>
+              <p>Nous vous prévenons lorsqu’un titre suivi arrive, sans jamais réserver l’exemplaire.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="account-access-card" aria-labelledby="account-access-title">
+        <div class="account-access-brand">
+          <span class="account-access-mark" aria-hidden="true">
+            <img src="images/papillon_without_back.png" alt="" width="38" height="38">
+          </span>
+          <p class="eyebrow">Accès membre</p>
+        </div>
+        <h2 id="account-access-title">Votre espace, à votre rythme.</h2>
+        <p>Connectez-vous si vous avez déjà un compte ou créez-en un en quelques instants pour commencer votre liste de recherche.</p>
+        <div class="account-actions">
+          <button type="button" class="account-button" data-testid="member-login" (click)="login()">
+            Se connecter <span aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="account-button secondary" data-testid="member-register" (click)="register()">
+            Créer un compte <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+        <p class="account-hint">Le catalogue reste entièrement consultable sans compte. Vous gardez le contrôle de vos alertes et de vos données.</p>
+      </aside>
+
+      <div class="account-reassurance" aria-label="À savoir avant de commencer">
+        <div class="account-reassurance-item">
+          <span class="account-reassurance-label">LIBREMENT</span>
+          <p>Parcourez les livres, les œuvres et les prochaines bourses sans vous connecter.</p>
+        </div>
+        <div class="account-reassurance-item">
+          <span class="account-reassurance-label">À SAVOIR</span>
+          <p>Une alerte signale une arrivée au catalogue ; elle ne met aucun livre de côté.</p>
+        </div>
       </div>
     </div>
   } @else {
@@ -145,7 +198,7 @@
       <div>
         <p class="eyebrow">Données personnelles</p>
         <h2 id="delete-account-title">Supprimer mon compte.</h2>
-        <p>Cette demande supprime votre profil local et votre liste de recherche. Elle ne supprime pas votre identité Microsoft.</p>
+        <p>Cette demande supprime votre profil local et votre liste de recherche. Elle ne supprime pas les informations de connexion de votre fournisseur d’identité.</p>
       </div>
       @if (!deletionRequested()) {
         <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">

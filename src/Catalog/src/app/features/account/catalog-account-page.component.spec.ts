@@ -23,6 +23,7 @@ describe('CatalogAccountPageComponent', () => {
     error: WritableSignal<string | null>;
     initialize: jasmine.Spy;
     login: jasmine.Spy;
+    register: jasmine.Spy;
     logout: jasmine.Spy;
     getApiAccessToken: jasmine.Spy;
   };
@@ -79,11 +80,13 @@ describe('CatalogAccountPageComponent', () => {
       error: signal<string | null>(null),
       initialize: jasmine.createSpy('initialize'),
       login: jasmine.createSpy('login'),
+      register: jasmine.createSpy('register'),
       logout: jasmine.createSpy('logout'),
       getApiAccessToken: jasmine.createSpy('getApiAccessToken'),
     };
     auth.initialize.and.resolveTo();
     auth.login.and.resolveTo();
+    auth.register.and.resolveTo();
     auth.logout.and.resolveTo();
     auth.getApiAccessToken.and.resolveTo('member-token');
 
@@ -108,15 +111,34 @@ describe('CatalogAccountPageComponent', () => {
     fixture = TestBed.createComponent(CatalogAccountPageComponent);
   });
 
-  it('offers a non-blocking login entry when signed out', async () => {
+  it('offers login and registration entries without provider branding when signed out', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Mon compte');
-    expect(fixture.nativeElement.textContent).toContain('Se connecter avec Microsoft');
+    expect(fixture.nativeElement.textContent).toContain('Se connecter');
+    expect(fixture.nativeElement.textContent).toContain('Créer un compte');
+    expect(fixture.nativeElement.textContent).not.toContain('Microsoft');
     expect(fixture.nativeElement.querySelector('[data-testid="member-login"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="member-register"]')).not.toBeNull();
     expect(api.getWatchlist).not.toHaveBeenCalled();
+  });
+
+  it('starts registration from the member-register action', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const registerButton = fixture.nativeElement.querySelector(
+      '[data-testid="member-register"]',
+    ) as HTMLButtonElement | null;
+    expect(registerButton).not.toBeNull();
+
+    registerButton?.click();
+    await fixture.whenStable();
+
+    expect(auth.register).toHaveBeenCalledWith('/compte');
   });
 
   it('marks the account route as not indexable', () => {
@@ -171,7 +193,8 @@ describe('CatalogAccountPageComponent', () => {
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Redirection vers Microsoft');
+    expect(fixture.nativeElement.textContent).toContain('Redirection vers votre fournisseur de connexion');
+    expect(fixture.nativeElement.textContent).not.toContain('Microsoft');
     expect(fixture.nativeElement.textContent).not.toContain('Une erreur est survenue');
   });
 

@@ -76,6 +76,16 @@ export class CatalogAccountPageComponent implements OnInit {
     }
   }
 
+  async register(): Promise<void> {
+    this.errorMessage.set(null);
+
+    try {
+      await this.auth.register('/compte');
+    } catch {
+      this.errorMessage.set('La création du compte n’a pas pu être démarrée. Réessayez.');
+    }
+  }
+
   async logout(): Promise<void> {
     try {
       await this.auth.logout();
@@ -99,7 +109,7 @@ export class CatalogAccountPageComponent implements OnInit {
     } catch (error: unknown) {
       this.watchlist.set(null);
       this.errorMessage.set(error instanceof CatalogAuthenticationRedirectStartedError
-        ? 'Redirection vers Microsoft pour renouveler votre session…'
+        ? 'Redirection vers votre fournisseur de connexion pour renouveler votre session…'
         : this.describeError(error));
     } finally {
       this.loading.set(false);
