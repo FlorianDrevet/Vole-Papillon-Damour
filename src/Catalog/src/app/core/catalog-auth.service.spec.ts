@@ -4,6 +4,7 @@ import {TestBed} from '@angular/core/testing';
 import {environment} from '../../environments/environment';
 import {
   CATALOG_MSAL_LOADER,
+  CatalogAuthenticationRedirectStartedError,
   CatalogMsalModule,
   CatalogAuthService,
 } from './catalog-auth.service';
@@ -91,6 +92,40 @@ describe('CatalogAuthService', () => {
     });
   });
 
+  it('recognizes the administration role from the API access token', async () => {
+    client.acquireTokenSilent.and.resolveTo({
+      accessToken: createAccessToken(['Administration']),
+    } as never);
+
+    await service.getApiAccessToken();
+
+    expect(service.isAdministrator()).toBeTrue();
+    expect(service.roles()).toEqual(['Administration']);
+  });
+
+  it('keeps the legacy Admin role compatible with the API policy', async () => {
+    client.acquireTokenSilent.and.resolveTo({
+      accessToken: createAccessToken(['Admin']),
+    } as never);
+
+    await service.getApiAccessToken();
+
+    expect(service.isAdministrator()).toBeTrue();
+  });
+
+  it('does not infer administration access from the cached ID token', async () => {
+    const accountWithIdTokenRole = {
+      ...account,
+      idTokenClaims: {roles: ['Administration']},
+    } as AccountInfo;
+    client.getActiveAccount.and.returnValue(accountWithIdTokenRole);
+    client.getAllAccounts.and.returnValue([accountWithIdTokenRole]);
+
+    await service.getApiAccessToken();
+
+    expect(service.isAdministrator()).toBeFalse();
+  });
+
   it('fails clearly when no cached account is available', async () => {
     client.getActiveAccount.and.returnValue(null);
     client.getAllAccounts.and.returnValue([]);
@@ -107,11 +142,22 @@ describe('CatalogAuthService', () => {
     );
     client.acquireTokenSilent.and.rejectWith(interactionRequiredError);
 
-    await expectAsync(service.getApiAccessToken()).toBeRejectedWith(interactionRequiredError);
+    await expectAsync(service.getApiAccessToken())
+      .toBeRejectedWithError(CatalogAuthenticationRedirectStartedError);
 
     expect(client.acquireTokenRedirect).toHaveBeenCalledWith({
       account,
       scopes: [environment.entra.apiScope],
+      redirectStartPage: window.location.href,
     });
   });
+
+  function createAccessToken(roles: string[]): string {
+    const encode = (value: object) =>
+      btoa(JSON.stringify(value))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+    return `${encode({alg: 'none', typ: 'JWT'})}.${encode({roles})}.signature`;
+  }
 });

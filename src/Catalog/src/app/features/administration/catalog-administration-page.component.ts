@@ -15,7 +15,10 @@ import type {AccountInfo} from '@azure/msal-browser';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
-import {CatalogAuthService} from '../../core/catalog-auth.service';
+import {
+  CatalogAuthenticationRedirectStartedError,
+  CatalogAuthService,
+} from '../../core/catalog-auth.service';
 import {
   CatalogAdminAlert,
   CatalogAdminAlertFilters,
@@ -871,7 +874,9 @@ export class CatalogAdministrationPageComponent implements OnInit {
       const token = await this.auth.getApiAccessToken();
       await operation(token);
     } catch (error: unknown) {
-      this.errorMessage.set(this.describeError(error));
+      this.errorMessage.set(error instanceof CatalogAuthenticationRedirectStartedError
+        ? 'Redirection vers Microsoft pour renouveler votre session…'
+        : this.describeError(error));
     } finally {
       this.loading.set(false);
       this.actionPending.set(null);

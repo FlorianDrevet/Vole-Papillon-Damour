@@ -32,6 +32,7 @@ export class CatalogNavigationComponent {
   readonly accountMenuOpen = signal(false);
   readonly account = this.auth.account;
   readonly isAuthenticated = this.auth.isAuthenticated;
+  readonly isAdministrator = this.auth.isAdministrator;
   readonly isAdministration = computed(() => this.url().split(/[?#]/, 1)[0].startsWith('/administration'));
   readonly accountTriggerLabel = computed(() => {
     if (!this.isAdministration()) {

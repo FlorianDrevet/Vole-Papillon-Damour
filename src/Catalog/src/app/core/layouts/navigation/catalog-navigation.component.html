@@ -77,7 +77,7 @@
                 <strong>{{ accountName() }}</strong>
                 <small>{{ account()?.username }}</small>
                 <a routerLink="/compte" (click)="closeMenus()">Ma liste de suivi</a>
-                @if (isAdministration()) {
+                @if (isAdministrator()) {
                   <a routerLink="/administration" (click)="closeMenus()">Ouvrir l'administration</a>
                 }
                 <button type="button" class="popover-logout" (click)="logout()">Se déconnecter</button>
@@ -137,6 +137,9 @@
           </div>
         }
         <a class="mobile-account-link" routerLink="/compte" (click)="closeMobileMenu()">Mon compte</a>
+        @if (isAuthenticated() && isAdministrator()) {
+          <a class="mobile-admin-link" routerLink="/administration" (click)="closeMobileMenu()">Administration du catalogue</a>
+        }
         <a class="mobile-site-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">Le site de l’association ↗</a>
       </nav>
       <div class="mobile-socials">

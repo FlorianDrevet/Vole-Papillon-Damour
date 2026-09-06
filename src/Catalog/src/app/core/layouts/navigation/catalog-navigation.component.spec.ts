@@ -11,12 +11,14 @@ describe('CatalogNavigationComponent', () => {
   let auth: {
     account: WritableSignal<AccountInfo | null>;
     isAuthenticated: WritableSignal<boolean>;
+    isAdministrator: WritableSignal<boolean>;
   };
 
   beforeEach(async () => {
     auth = {
       account: signal<AccountInfo | null>(null),
       isAuthenticated: signal(false),
+      isAdministrator: signal(false),
     };
 
     await TestBed.configureTestingModule({
@@ -47,5 +49,24 @@ describe('CatalogNavigationComponent', () => {
 
     expect(accountLink.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector('.account-popover')).not.toBeNull();
+  });
+
+  it('shows the administration workspace to an authenticated administrator', () => {
+    auth.account.set({
+      homeAccountId: 'home-account-id',
+      environment: 'volepapillondamour.ciamlogin.com',
+      tenantId: 'tenant-id',
+      username: 'administrator@example.test',
+      localAccountId: 'local-account-id',
+      name: 'Administrator',
+    });
+    auth.isAuthenticated.set(true);
+    auth.isAdministrator.set(true);
+
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain("Ouvrir l'administration");
   });
 });

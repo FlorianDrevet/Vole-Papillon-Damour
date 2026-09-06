@@ -472,7 +472,8 @@
   }
 
   .mobile-nav-item > a.active,
-  .mobile-account-link {
+  .mobile-account-link,
+  .mobile-admin-link {
     color: var(--catalog-orange-2) !important;
   }
 
@@ -502,6 +503,7 @@
   }
 
   .mobile-account-link,
+  .mobile-admin-link,
   .mobile-site-link {
     display: block;
     padding: 17px 0;

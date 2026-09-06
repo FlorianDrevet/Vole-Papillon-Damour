@@ -5,7 +5,10 @@ import {RouterModule} from '@angular/router';
 import type {AccountInfo} from '@azure/msal-browser';
 import {of} from 'rxjs';
 
-import {CatalogAuthService} from '../../core/catalog-auth.service';
+import {
+  CatalogAuthenticationRedirectStartedError,
+  CatalogAuthService,
+} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogWatchlistResponse} from '../../core/catalog.models';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
@@ -16,6 +19,7 @@ describe('CatalogAccountPageComponent', () => {
     account: WritableSignal<AccountInfo | null>;
     initialized: WritableSignal<boolean>;
     isAuthenticated: WritableSignal<boolean>;
+    isAdministrator: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
     initialize: jasmine.Spy;
     login: jasmine.Spy;
@@ -71,6 +75,7 @@ describe('CatalogAccountPageComponent', () => {
       account: signal<AccountInfo | null>(null),
       initialized: signal(true),
       isAuthenticated: signal(false),
+      isAdministrator: signal(false),
       error: signal<string | null>(null),
       initialize: jasmine.createSpy('initialize'),
       login: jasmine.createSpy('login'),
@@ -138,6 +143,35 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(api.removeWatchlistItem).toHaveBeenCalledWith('member-token', 'item-1');
     expect(fixture.nativeElement.textContent).toContain('Aucun titre suivi');
+  });
+
+  it('exposes the administration workspace to an administrator', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    auth.isAdministrator.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const administrationLink = fixture.nativeElement.querySelector(
+      '[data-testid="administration-entry"]',
+    ) as HTMLAnchorElement | null;
+
+    expect(administrationLink).not.toBeNull();
+    expect(administrationLink?.getAttribute('href')).toBe('/administration');
+    expect(fixture.nativeElement.textContent).toContain('Espace administration');
+  });
+
+  it('does not replace an interactive token redirect with a generic error', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.rejectWith(new CatalogAuthenticationRedirectStartedError());
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Redirection vers Microsoft');
+    expect(fixture.nativeElement.textContent).not.toContain('Une erreur est survenue');
   });
 
   it('requires a second explicit action before deleting the account', async () => {

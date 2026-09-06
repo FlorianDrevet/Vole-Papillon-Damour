@@ -20,6 +20,7 @@ describe('AppComponent', () => {
         useValue: {
           account: signal(null),
           isAuthenticated: signal(false),
+          isAdministrator: signal(false),
         },
       }],
     }).compileComponents();
