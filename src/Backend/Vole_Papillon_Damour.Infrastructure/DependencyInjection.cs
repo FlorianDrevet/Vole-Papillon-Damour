@@ -91,6 +91,7 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         });
         services.AddScoped<IBibliographicMetadataResolver, BibliographicMetadataResolver>();
+        services.AddScoped<IBibliographicSearchService, BibliographicSearchService>();
         
         return services;
     }

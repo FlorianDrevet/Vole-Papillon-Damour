@@ -90,6 +90,68 @@ public sealed class OpenLibraryClient(
             : null;
     }
 
+    public async Task<IReadOnlyList<BookReferenceSearchItem>> SearchAsync(
+        string query,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var fields = Uri.EscapeDataString(
+            "title,author_name,publisher,first_publish_year,cover_i,key,isbn");
+        var requestUri = new Uri(
+            $"{_options.OpenLibrarySearchEndpoint}?q={Uri.EscapeDataString(query)}&page={page}&limit={pageSize}&fields={fields}",
+            UriKind.Absolute);
+        using var response = await httpClient.GetAsync(
+            requestUri,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
+
+        await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
+        if (!document.RootElement.TryGetProperty("docs", out var documents) ||
+            documents.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var results = new List<BookReferenceSearchItem>();
+        foreach (var documentElement in documents.EnumerateArray())
+        {
+            var workKey = ReadString(documentElement, "key");
+            var workId = workKey?.StartsWith("/works/", StringComparison.OrdinalIgnoreCase) == true
+                ? workKey["/works/".Length..]
+                : null;
+            var isbn13 = ReadStrings(documentElement, "isbn")
+                ?.Split(", ", StringSplitOptions.RemoveEmptyEntries)
+                .Select(value => Isbn13.TryCreate(value, out var isbn) ? isbn.Value : null)
+                .FirstOrDefault(value => value is not null);
+            if (isbn13 is null && workId is null)
+            {
+                continue;
+            }
+
+            var coverId = ReadInt(documentElement, "cover_i");
+            results.Add(new BookReferenceSearchItem(
+                isbn13,
+                workId,
+                ReadString(documentElement, "title"),
+                ReadStrings(documentElement, "author_name"),
+                ReadStrings(documentElement, "publisher"),
+                ReadInt(documentElement, "first_publish_year"),
+                CreateCoverUri(coverId),
+                "OpenLibrary"));
+        }
+
+        return results
+            .GroupBy(item => $"{item.Isbn13}|{item.WorkId}", StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToArray();
+    }
+
     private static string? ReadStrings(JsonElement element, string propertyName)
     {
         if (!element.TryGetProperty(propertyName, out var property) ||

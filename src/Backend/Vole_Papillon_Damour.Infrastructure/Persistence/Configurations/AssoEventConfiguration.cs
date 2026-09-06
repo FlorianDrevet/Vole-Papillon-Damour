@@ -43,6 +43,10 @@ public class AssoEventConfiguration : IEntityTypeConfiguration<AssoEvents>
         builder.Property(events => events.IsCancelled)
             .HasDefaultValue(false);
 
+        builder.Property(events => events.BookRevenue)
+            .HasColumnType("decimal(12,2)")
+            .IsRequired(false);
+
         // Value Object
         builder.ComplexProperty(pdt => pdt.Adresse);
     }

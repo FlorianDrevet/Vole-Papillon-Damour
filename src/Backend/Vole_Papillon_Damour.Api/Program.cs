@@ -105,6 +105,8 @@ app.UseAcsEmailEventGridController();
 app.UseAuthenticationController();
 app.UseAccountController();
 app.UseBookController();
+app.UseBibliographicReferenceController();
+app.UseBookAdministrationController();
 app.UseActualityController();
 app.UseProductController();
 app.UseOrdersController();

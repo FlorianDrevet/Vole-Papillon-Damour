@@ -11,6 +11,7 @@ import {CaisseComponent} from "./feature/caisse/caisse.component";
 import {VpdEventsComponent} from "./feature/vpd-events/vpd-events.component";
 import {EventDetailComponent} from "./feature/event-detail/event-detail.component";
 import {TableauComponent} from "./feature/event-detail/components/tableau/tableau.component";
+import {CatalogAdministrationComponent} from "./feature/catalog-administration/catalog-administration.component";
 
 const APPLICATION_NAME = "Espace bénévoles · Vole Papillon d'Amour";
 
@@ -84,6 +85,12 @@ const routes: Routes = [
     component: CaisseComponent,
     canActivate: [MsalGuard],
     title: 'Caisse',
+  },
+  {
+    path: 'administration',
+    component: CatalogAdministrationComponent,
+    canActivate: [MsalGuard],
+    title: 'Administration catalogue',
   },
   {path: '**', redirectTo: '/actualites'}
 ];

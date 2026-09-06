@@ -20,6 +20,7 @@ using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Queries.GetMyWatchlist;
+using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.SetMyAlertStatus;
 using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -244,6 +245,33 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("RemoveCatalogWatchlistItem")
+                .RequireAuthorization();
+
+            endpoints.MapPatch(
+                    "/catalog/me/alerts",
+                    async (
+                        SetMyAlertStatusRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SetMyAlertStatusCommand(externalId, email, request.Enabled),
+                            cancellationToken);
+
+                        return result.Match(
+                            preferences => Results.Ok(new MyAlertPreferencesResponse(
+                                preferences.AlertStatus.ToString(),
+                                preferences.BounceCount,
+                                preferences.Changed)),
+                            error => error.Result());
+                    })
+                .WithName("SetMyCatalogAlertStatus")
                 .RequireAuthorization();
 
             endpoints.MapGet(

@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Une évolution locale remplace le stockage Blob des couvertures par des URLs directes BnF/Open Library/Google Books ; elle attend sa PR et son déploiement. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
-| **Prochaine action** | Valider puis fusionner la branche de couvertures, appliquer la migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` avec le déploiement API/Worker, puis vérifier les couvertures BnF/Open Library/Google Books et le placeholder catalogue/Scan. Relever aussi les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-cover-url` |
-| **Dernière mise à jour** | 2026-09-06 — implémentation locale des URLs de couvertures dans un worktree dédié ; PR à ouvrir |
-| **Branche** | `feat/book-cover-direct-urls` — worktree dédié, non fusionné |
+| **Lot en cours** | `P2/P3` — la refonte visuelle V2 du catalogue est dans `origin/main` ; le socle API/CQRS, les contrats, les corrections d'inventaire, les alertes et l'administration BackOffice sont implémentés dans cette branche. L'intégration fonctionnelle finale de `src/Catalog` est en cours. |
+| **Prochaine action** | Terminer les parcours compte/watchlist, détail et administration du catalogue dans la refonte V2, appliquer les migrations puis valider les applications. Relever ensuite les heartbeats/mesures et vérifier ACS avec un cycle d'alerte réel. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-p2-p3` |
+| **Dernière mise à jour** | 2026-09-06 — refonte V2 resynchronisée depuis `origin/main`, intégration Catalog P2/P3 en cours |
+| **Branche** | `feat/catalog-p2-p3` — worktree dédié, PR à ouvrir après validation |
 
 ---
 
@@ -98,6 +98,24 @@ Validation locale : `npm test -- --watch=false --browsers=ChromeHeadless` (42 te
 `/mentions-legales`, `/confidentialite`, `/compte` et `/administration` en 200. Les données
 du backend public distant répondaient `503` pendant le contrôle, donc l'aperçu local affiche
 correctement ses états de repli sans déclarer le catalogue distant sain.
+
+La tranche P2/P3 de cette branche complète le backend du module livres : contrats HTTP
+administration, CQRS pour les fiches, quantités, retraits, annonces, fusions, recettes,
+sessions, alertes, membres et paramètres ; recherche bibliographique externe Open Library ;
+correction/retrait idempotent des mouvements de session ; et persistance de la recette
+facultative d'une bourse via `20260906101759_AddBookFairRevenue`. Le membre peut également
+suspendre ou réactiver ses alertes via `PATCH /catalog/me/alerts`, sans pouvoir contourner
+un blocage administratif.
+
+Le BackOffice expose désormais `/administration` avec vue d'ensemble, fiches/stock,
+bourses/statistiques, sessions de rattrapage, alertes, membres et paramètres. Aucun fichier
+de `src/Catalog` n'a été modifié : la liste exacte des écrans, modèles, routes, états,
+tests et contraintes SSR à reprendre après la refonte est dans
+[`docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`](docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md).
+
+La migration doit encore être appliquée sur la base cible ; l'envoi ACS reste désactivé tant
+que le domaine n'est pas vérifié. La validation locale couvre le backend et le build/test du
+Catalog et du BackOffice sera rejouée après l'intégration des nouveaux parcours.
 
 ### État actualisé — 2026-09-05
 

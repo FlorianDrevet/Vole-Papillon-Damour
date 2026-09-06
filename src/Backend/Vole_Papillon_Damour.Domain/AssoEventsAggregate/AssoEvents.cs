@@ -20,6 +20,13 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
     public string Description { get; set; } = null!;
     public bool BingoHasBeenWon { get; set; } = false;
     public bool IsCancelled { get; private set; }
+
+    /// <summary>
+    /// Optional cash total recorded for the book fair. Prices are deliberately
+    /// not attached to individual books: the association only knows the amount
+    /// counted at the till after the fair.
+    /// </summary>
+    public decimal? BookRevenue { get; private set; }
     
     public int CurrentPartieIndex { get; set; } = 0;
     
@@ -95,6 +102,25 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
 
         IsCancelled = true;
         return true;
+    }
+
+    public void SetBookRevenue(decimal? amount)
+    {
+        if (amount is < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(amount),
+                "Book-fair revenue cannot be negative.");
+        }
+
+        if (amount is not null && decimal.Round(amount.Value, 2) != amount.Value)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(amount),
+                "Book-fair revenue must have at most two decimal places.");
+        }
+
+        BookRevenue = amount;
     }
     
     public void Update(string name,

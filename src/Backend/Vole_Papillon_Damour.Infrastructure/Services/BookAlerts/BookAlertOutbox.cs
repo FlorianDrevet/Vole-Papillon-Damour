@@ -71,6 +71,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                 movement.ScanSessionId == scanSessionId &&
                 movement.Type == movementType &&
                 movement.Quantity > 0 &&
+                !dbContext.BookMovements.Any(reversal => reversal.ReversalOfMovementId == movement.Id) &&
                 (session.Mode != ScanMode.NextFair || movement.AssoEventsId != null))
             .OrderBy(movement => movement.OccurredAt)
             .ThenBy(movement => movement.Id)
@@ -623,6 +624,98 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         return messages.Count;
     }
 
+    public async Task<BookAlertOutboxAdminPage> GetAdminPageAsync(
+        BookAlertQueueStatus? status,
+        Guid? scanSessionId,
+        Guid? memberId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        if (page <= 0 || pageSize <= 0 || pageSize > 200)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageSize));
+        }
+
+        var query = dbContext.OutboxMessages
+            .AsNoTracking()
+            .Where(message => message.Kind == OutboxMessageKind.AlertEmail);
+        if (status is not null)
+        {
+            query = query.Where(message => message.Status == ToPersistenceStatus(status.Value));
+        }
+
+        if (scanSessionId is not null)
+        {
+            query = query.Where(message => message.ScanSessionId == scanSessionId);
+        }
+
+        if (memberId is not null)
+        {
+            query = query.Where(message => message.MemberId == memberId);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var messages = await query
+            .OrderBy(message => message.DueAt)
+            .ThenBy(message => message.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+        return new BookAlertOutboxAdminPage(
+            messages.Select(ToAdminItem).ToArray(),
+            totalCount,
+            page,
+            pageSize);
+    }
+
+    public async Task<int> CancelPendingAsync(
+        Guid messageId,
+        CancellationToken cancellationToken)
+    {
+        ValidateMessageId(messageId);
+        var message = await dbContext.OutboxMessages.SingleOrDefaultAsync(
+            candidate =>
+                candidate.Id == messageId &&
+                candidate.Kind == OutboxMessageKind.AlertEmail &&
+                candidate.Status == OutboxMessageStatus.Pending,
+            cancellationToken);
+        if (message is null)
+        {
+            return 0;
+        }
+
+        message.Status = OutboxMessageStatus.Cancelled;
+        message.ClaimedUntil = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return 1;
+    }
+
+    public async Task<int> ForcePendingAsync(
+        Guid messageId,
+        DateTime dueAt,
+        CancellationToken cancellationToken)
+    {
+        ValidateMessageId(messageId);
+        ValidateUtc(dueAt, nameof(dueAt));
+        var message = await dbContext.OutboxMessages.SingleOrDefaultAsync(
+            candidate =>
+                candidate.Id == messageId &&
+                candidate.Kind == OutboxMessageKind.AlertEmail &&
+                candidate.Status == OutboxMessageStatus.Pending,
+            cancellationToken);
+        if (message is null)
+        {
+            return 0;
+        }
+
+        message.DueAt = dueAt;
+        message.ClaimedUntil = null;
+        message.LastError = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return 1;
+    }
+
     private async Task<List<OutboxMessage>> GetPendingMessagesForSessionAsync(
         ScanSessionId scanSessionId,
         CancellationToken cancellationToken)
@@ -635,6 +728,56 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             .OrderBy(message => message.DueAt)
             .ThenBy(message => message.Id)
             .ToListAsync(cancellationToken);
+    }
+
+    private static BookAlertOutboxAdminItem ToAdminItem(OutboxMessage message)
+    {
+        var itemCount = 0;
+        try
+        {
+            itemCount = DeserializePayload(message.PayloadJson).Items?.Count ?? 0;
+        }
+        catch (JsonException)
+        {
+            // A malformed payload remains visible to administration; it is more
+            // useful to show the queue row than to make the whole list fail.
+        }
+
+        return new BookAlertOutboxAdminItem(
+            message.Id,
+            message.ScanSessionId,
+            message.MemberId,
+            ToApplicationStatus(message.Status),
+            itemCount,
+            message.Attempts,
+            message.CreatedAt,
+            message.DueAt,
+            message.SentAt,
+            message.LastError);
+    }
+
+    private static OutboxMessageStatus ToPersistenceStatus(BookAlertQueueStatus status)
+    {
+        return status switch
+        {
+            BookAlertQueueStatus.Pending => OutboxMessageStatus.Pending,
+            BookAlertQueueStatus.Sent => OutboxMessageStatus.Sent,
+            BookAlertQueueStatus.Cancelled => OutboxMessageStatus.Cancelled,
+            BookAlertQueueStatus.Failed => OutboxMessageStatus.Failed,
+            _ => throw new ArgumentOutOfRangeException(nameof(status))
+        };
+    }
+
+    private static BookAlertQueueStatus ToApplicationStatus(OutboxMessageStatus status)
+    {
+        return status switch
+        {
+            OutboxMessageStatus.Pending => BookAlertQueueStatus.Pending,
+            OutboxMessageStatus.Sent => BookAlertQueueStatus.Sent,
+            OutboxMessageStatus.Cancelled => BookAlertQueueStatus.Cancelled,
+            OutboxMessageStatus.Failed => BookAlertQueueStatus.Failed,
+            _ => throw new ArgumentOutOfRangeException(nameof(status))
+        };
     }
 
     private static void ValidateScanSessionId(ScanSessionId scanSessionId)

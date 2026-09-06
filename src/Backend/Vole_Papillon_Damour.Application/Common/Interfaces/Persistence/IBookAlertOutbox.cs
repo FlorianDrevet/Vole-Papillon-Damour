@@ -20,6 +20,23 @@ public interface IBookAlertOutbox
         DateTime dueAt,
         CancellationToken cancellationToken);
 
+    Task<BookAlertOutboxAdminPage> GetAdminPageAsync(
+        BookAlertQueueStatus? status,
+        Guid? scanSessionId,
+        Guid? memberId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<int> CancelPendingAsync(
+        Guid messageId,
+        CancellationToken cancellationToken);
+
+    Task<int> ForcePendingAsync(
+        Guid messageId,
+        DateTime dueAt,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlyList<BookAlertOutboxWorkItem>> ClaimDueAsync(
         DateTime now,
         TimeSpan lease,

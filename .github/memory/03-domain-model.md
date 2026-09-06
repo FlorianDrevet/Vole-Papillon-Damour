@@ -91,6 +91,34 @@ surface is `GET /books/admin/dead-stock`, protected by the `Administration` poli
 filters are six months and more than three copies. The benchmark and the catalog administration
 screen remain to be executed/built after the branch is deployed.
 
+## Books administration — P2/P3 completion (2026-09-06)
+
+The catalog administration slice now follows the existing layered CQRS boundaries:
+`Application/Books/Commands/Admin` contains manual book creation, metadata/quantity and
+announcement corrections, withdrawals, rare/visibility flags, canonical ISBN merges,
+fair revenue, session movement removal/cancellation/reassignment, alert message control,
+member alert blocking/deletion, and settings writes. `Application/Books/Queries/Admin`
+contains overview, paged books, fair statistics, scan sessions, outbox alerts, members,
+and settings reads. `BookAdministrationController` exposes the corresponding
+`/books/admin/*` surface under the `Administration` policy.
+
+Corrections remain append-only: session removal/cancellation creates reversal movements,
+skips movements already reversed, rejects a reversal when stock has already been consumed,
+and resolves a canonical target after a merge. Announcement correction/reversal notes are
+prefixed `Announcement.Correction` so they do not inflate available stock projections.
+`BookAlertOutbox.QueueForSessionAsync` also excludes an original movement with a reversal,
+preventing a corrected session from recreating its alert.
+
+The optional `AssoEvents.BookRevenue` field is persisted as nullable `decimal(12,2)` by
+`20260906101759_AddBookFairRevenue`; absence means “not entered”, never zero. Member alert
+preferences are persisted through `PATCH /catalog/me/alerts`; a member can suspend or
+reactivate their own alerts but cannot override an administrative `Blocked` state.
+
+The current administrator presentation is the existing Angular BackOffice route
+`/administration`, with responsive tabs for overview, books/stock, fairs/statistics,
+sessions, alerts, members, and settings. The separate `src/Catalog` front is deliberately
+not changed; its handoff contract is `docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`.
+
 ## Conventions To Preserve
 
 - Keep commands and queries in their feature folders under `Application`.

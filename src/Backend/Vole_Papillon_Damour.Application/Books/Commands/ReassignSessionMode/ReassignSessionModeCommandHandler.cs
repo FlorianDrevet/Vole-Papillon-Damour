@@ -216,6 +216,9 @@ public sealed class ReassignSessionModeCommandHandler(
             book.RecordAnnouncementEntry(correctedAt);
         }
 
+        var reversalNote = movement.Type == BookMovementType.AnnouncementEntry
+            ? "Announcement.Correction: Session.Reassign.Reversal"
+            : "Session.Reassign.Reversal";
         return BookMovement.Create(
             BookMovementId.CreateUnique(),
             movement.Isbn13,
@@ -227,7 +230,7 @@ public sealed class ReassignSessionModeCommandHandler(
             session.Id,
             updatedBy,
             movement.AssoEventsId,
-            "Session.Reassign.Reversal",
+            reversalNote,
             clientGestureId: null,
             movement.Id);
     }
