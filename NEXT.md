@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. Une évolution locale remplace le stockage Blob des couvertures par des URLs directes BnF/Open Library/Google Books ; elle attend sa PR et son déploiement. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
-| **Prochaine action** | Valider puis fusionner la branche de couvertures, appliquer la migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` avec le déploiement API/Worker, puis vérifier les couvertures BnF/Open Library/Google Books et le placeholder catalogue/Scan. Relever aussi les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-cover-url` |
-| **Dernière mise à jour** | 2026-09-06 — implémentation locale des URLs de couvertures dans un worktree dédié ; PR à ouvrir |
-| **Branche** | `feat/book-cover-direct-urls` — worktree dédié, non fusionné |
+| **Lot en cours** | `P1/P2/P3` — le catalogue public, le compte/watchlist, les domaines, la Scanette, l'API et le Worker sont déployés. La migration des couvertures directes est appliquée en DEV et les images API/Worker/Catalog/Scan sont sur `ff3c725`. Le code des alertes est en place, mais l'envoi ACS reste désactivé jusqu'à la vérification du domaine ; les mesures `QT-02`, `P1-9` à `P1-11` restent à relever. |
+| **Prochaine action** | Vérifier le prochain passage `Enrich` et la disponibilité d'éventuelles couvertures ; supprimer explicitement l'ancien conteneur Azure `book-covers` après confirmation qu'il n'a plus de consommateur. Relever aussi les heartbeats `Sweep`/`Enrich`, exécuter les campagnes manuelles `P1-9` à `P1-11`, puis vérifier ACS et réaliser le cycle d'alerte de bout en bout. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-deploy-record` |
+| **Dernière mise à jour** | 2026-09-06 — déploiement DEV de la migration et des URLs directes de couvertures |
+| **Branche** | `main` — PR #70 fusionnée dans `ff3c725` |
 
 ---
 
@@ -77,6 +77,27 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-06 (déploiement couvertures)
+
+La PR #70 est fusionnée dans `main` au commit `ff3c725`. Le déploiement infrastructure
+`34028815132` a retiré les références Blob de couverture des Container Apps. Le runtime
+`34028928541` a construit l'API et le Worker avec le tag partagé `ff3c725`, appliqué avec
+succès la migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` sur la base DEV,
+puis refermé la règle firewall temporaire. Aucun livre de test n'a été supprimé.
+
+Les workflows `Catalog - deploy` `34029115151` et `Scan - deploy` `34029196832` sont verts.
+Les smoke tests post-déploiement répondent `200` sur l'API `/health`, le catalogue public,
+la fiche ISBN `9782728921607`, le catalogue complet et la Scanette. Cette fiche conserve ses
+métadonnées mais n'a pas d'image exploitable : la réponse API porte `coverUrl=null` et le
+catalogue rend le placeholder générique partagé. Les domaines existants OVH/HTTPS n'ont pas
+nécessité de modification.
+
+La clé Google Books n'est pas configurée dans l'environnement `development` ; le troisième
+fallback reste déployé mais fonctionne sans clé dans la limite du quota public. Le conteneur
+Blob historique `book-covers` n'est pas supprimé par le déploiement Bicep incrémental : il
+reste à vérifier sans consommateur puis à supprimer explicitement pour supprimer son coût
+résiduel.
 
 ### État actualisé — 2026-09-06
 
