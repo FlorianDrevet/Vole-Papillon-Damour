@@ -14,7 +14,7 @@
       <div class="account-gate-copy">
         <p class="eyebrow">Espace personnel</p>
         <h1 id="account-title">Mon compte.</h1>
-        <p>Retrouvez ici les livres que vous souhaitez surveiller. Le catalogue public reste consultable sans connexion.</p>
+        <p>Retrouvez ici les livres que vous souhaitez ajouter à votre liste de recherche. Le catalogue public reste consultable sans connexion.</p>
         <button type="button" class="account-button" data-testid="member-login" (click)="login()">
           Se connecter avec Microsoft <span aria-hidden="true">↗</span>
         </button>
@@ -55,7 +55,7 @@
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Vos alertes</p>
-          <h2 id="watchlist-title">Livres suivis.</h2>
+          <h2 id="watchlist-title">Ma liste de recherche.</h2>
           <p class="panel-subtitle">Une alerte vous prévient, elle ne réserve jamais un exemplaire.</p>
         </div>
         @if (watchlist(); as current) {
@@ -71,8 +71,8 @@
         @if (current.items.length === 0) {
           <div class="empty-watchlist">
             <span class="empty-mark" aria-hidden="true">⌁</span>
-            <h3>Aucun titre suivi</h3>
-            <p>Depuis une fiche livre, utilisez « Me prévenir » pour ajouter une œuvre ou une édition à votre liste.</p>
+            <h3>Aucun titre dans votre liste de recherche</h3>
+            <p>Depuis une fiche livre, utilisez « Me prévenir » pour ajouter une œuvre ou une édition à votre liste de recherche.</p>
             <a class="account-button secondary" routerLink="/recherche">Explorer le catalogue <span aria-hidden="true">→</span></a>
           </div>
         } @else {
@@ -119,7 +119,7 @@
         <div>
           <p class="eyebrow">Préférences</p>
           <h2 id="alert-settings-title">Mes alertes e-mail.</h2>
-          <p>Un message groupé peut vous prévenir lorsqu’un titre suivi arrive sur les tables. Il n’y a jamais de réservation.</p>
+          <p>Un message groupé peut vous prévenir lorsqu’un titre de votre liste de recherche arrive sur les tables. Il n’y a jamais de réservation.</p>
           @if (current.bounceCount > 0) {
             <small class="alert-bounce">{{ current.bounceCount }} échec{{ current.bounceCount > 1 ? 's' : '' }} de remise enregistré{{ current.bounceCount > 1 ? 's' : '' }}.</small>
           }
@@ -145,7 +145,7 @@
       <div>
         <p class="eyebrow">Données personnelles</p>
         <h2 id="delete-account-title">Supprimer mon compte.</h2>
-        <p>Cette demande supprime votre profil local et vos livres suivis. Elle ne supprime pas votre identité Microsoft.</p>
+        <p>Cette demande supprime votre profil local et votre liste de recherche. Elle ne supprime pas votre identité Microsoft.</p>
       </div>
       @if (!deletionRequested()) {
         <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">

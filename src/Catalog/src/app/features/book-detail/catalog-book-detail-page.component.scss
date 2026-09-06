@@ -179,27 +179,6 @@ h1 {
   line-height: 1.55;
 }
 
-.price-line {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-top: 26px;
-  padding-top: 21px;
-  border-top: 1px solid var(--catalog-line-2);
-}
-
-.price-line span {
-  color: var(--catalog-slate-3);
-  font: 500 .6rem/1.2 var(--catalog-mono);
-  letter-spacing: .15em;
-  text-transform: uppercase;
-}
-
-.price-line strong {
-  color: var(--catalog-ink);
-  font: 500 1.2rem/1.2 var(--catalog-display);
-}
-
 .detail-facts {
   display: flex;
   gap: 35px;

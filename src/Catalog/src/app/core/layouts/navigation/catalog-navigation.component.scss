@@ -77,6 +77,9 @@
   display: flex;
   align-items: center;
   gap: clamp(15px, 1.7vw, 25px);
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-end;
   font-size: .84rem;
 }
 
@@ -220,12 +223,15 @@
 
 .account-menu {
   position: relative;
+  flex: none;
 }
 
 .account-teaser {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 9px;
+  min-width: 146px;
   padding: 9px 16px 9px 11px;
   border: 1px solid var(--catalog-mist);
   border-radius: 999px;

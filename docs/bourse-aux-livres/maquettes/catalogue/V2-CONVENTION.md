@@ -23,10 +23,10 @@ catalogue » vers l'application Angular `src/Catalog/`.
 - Accueil : question éditoriale, recherche avec genre, compteur API, prochaine bourse,
   ajout agenda, sélections, genres et appel vers l'espace personnel.
 - Recherche/catalogue : barre de recherche, filtres latéraux, cartes de livres, pagination
-  et périmètre « pas encore reçu » séparé.
-- Fiche livre/œuvre : disponibilité actuelle et annoncée séparées, couverture, édition,
-  portée d'alerte et prix communiqué sur place.
-- Compte : connexion, liste de suivi, retrait unitaire et double confirmation de suppression.
+  et section « pas encore dans la bourse aux livres » séparée.
+- Fiche livre/œuvre : disponibilité actuelle et annoncée séparées, couverture, édition et
+  portée d'alerte.
+- Compte : connexion, liste de recherche, retrait unitaire et double confirmation de suppression.
 - Administration : cadre latéral, files de travail et désengorgement branché sur l'API.
 - Pages légales et footer : même shell, footer association en quatre colonnes et liens locaux.
 

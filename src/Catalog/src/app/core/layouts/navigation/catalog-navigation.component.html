@@ -76,13 +76,13 @@
               @if (isAuthenticated() && account()) {
                 <strong>{{ accountName() }}</strong>
                 <small>{{ account()?.username }}</small>
-                <a routerLink="/compte" (click)="closeMenus()">Ma liste de suivi</a>
+                <a routerLink="/compte" (click)="closeMenus()">Ma liste de recherche</a>
                 @if (isAdministrator()) {
                   <a routerLink="/administration" (click)="closeMenus()">Ouvrir l'administration</a>
                 }
                 <button type="button" class="popover-logout" (click)="logout()">Se déconnecter</button>
               } @else {
-                <strong>Suivez un livre, sans réservation</strong>
+                <strong>Ajoutez un livre à votre liste de recherche</strong>
                 <small>Le catalogue reste librement consultable.</small>
                 <a routerLink="/compte" (click)="closeMenus()">Se connecter ou créer un compte</a>
               }

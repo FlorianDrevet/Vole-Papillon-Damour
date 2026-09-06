@@ -205,7 +205,7 @@ export class CatalogAccountPageComponent implements OnInit {
   }
 
   itemLabel(item: CatalogWatchlistItem): string {
-    return item.book?.title || item.isbn13 || item.workId || 'Titre suivi';
+    return item.book?.title || item.isbn13 || item.workId || 'Titre de la liste de recherche';
   }
 
   private describeError(error: unknown): string {

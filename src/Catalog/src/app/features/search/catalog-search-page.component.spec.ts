@@ -101,13 +101,22 @@ describe('CatalogSearchPageComponent', () => {
     fixture = TestBed.createComponent(CatalogSearchPageComponent);
   });
 
-  it('loads external references separately for a real search query', () => {
+  it('explains the two catalogue scopes without exposing the reference provider', () => {
     fixture.detectChanges();
 
     expect(api.search).toHaveBeenCalled();
     expect(api.searchReferences).toHaveBeenCalledWith('saint-exupéry', 1, 20);
-    expect(fixture.nativeElement.textContent).toContain('Référentiel externe');
+    expect(fixture.nativeElement.textContent).toContain('Dans la bourse aux livres');
+    expect(fixture.nativeElement.textContent).toContain('Pas encore dans la bourse aux livres');
+    expect(fixture.nativeElement.textContent).toContain('À ajouter à votre liste de recherche');
+    expect(fixture.nativeElement.textContent).not.toContain('Premier périmètre');
+    expect(fixture.nativeElement.textContent).not.toContain('Second périmètre');
+    expect(fixture.nativeElement.textContent).not.toContain('Référentiel externe');
+    expect(fixture.nativeElement.textContent).not.toContain('Open Library');
+    expect(fixture.nativeElement.textContent).not.toContain('OPENLIBRARY');
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
+    expect((fixture.nativeElement.querySelector('.reference-follow') as HTMLButtonElement).textContent)
+      .toContain('Ajouter à ma liste de recherche');
   });
 
   it('renders an asynchronous catalog response in zoneless mode', async () => {
@@ -156,8 +165,8 @@ describe('CatalogSearchPageComponent', () => {
     await followPromise;
     await fixture.whenStable();
 
-    expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de suivi.');
-    expect(fixture.nativeElement.textContent).toContain('Suivre ce titre');
+    expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de recherche.');
+    expect(fixture.nativeElement.textContent).toContain('Ajouter à ma liste de recherche');
     expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
   });
 });

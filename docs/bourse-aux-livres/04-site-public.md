@@ -47,20 +47,21 @@ Elle porte sur **deux périmètres distincts, jamais mélangés** (`RG-47`) :
 ```
    Recherche : « le petit prince »
 
-   ── À la bourse ────────────────────────────────
+   ── Dans la bourse aux livres ───────────────────
    ✅ Le Petit Prince · Gallimard 1999 · 3 dispo
    📅 Le Petit Prince · Folio 2015 · dès le 14 mars
 
-   ── Pas encore reçu ────────────────────────────
+   ── Pas encore dans la bourse aux livres ────────
    Le Petit Prince · Gallimard Jeunesse, grand format
    Le Petit Prince · édition illustrée, 2021
-                              [ Suivre ce livre 🔔 ]
+                         [ Ajouter à ma liste de recherche 🔔 ]
 ```
 
-Le catalogue arrive toujours en premier : la question la plus fréquente reste
-« qu'est-ce qu'il y a à la bourse ? ». Le second bloc existe pour une seule raison —
-permettre de suivre un livre que l'association n'a jamais reçu — et ne doit jamais
-donner l'impression que ces livres sont disponibles.
+La section « Dans la bourse aux livres » arrive toujours en premier : la question la
+plus fréquente reste « qu'est-ce qu'il y a à la bourse ? ». Le second bloc existe pour
+une seule raison — permettre d'ajouter à sa liste de recherche un livre que
+l'association n'a jamais reçu — et ne doit jamais donner l'impression que ces livres
+sont disponibles.
 
 **Filtres** : genre, disponibilité, livres rares.
 **Tris** : pertinence (défaut), arrivée récente.
@@ -103,12 +104,6 @@ précisément le cas d'usage des alertes (`RG-26`).
 │                                              │
 │   📅  2 autres à partir du 14 mars           │
 │                                              │
-│   Prix : 1 à 2 € sur place                   │
-│                                              │
-│   ┌────────────────────────────────────────┐ │
-│   │  🔔  Me prévenir quand il y en aura     │ │
-│   └────────────────────────────────────────┘ │
-│                                              │
 │   ISBN 9782070408504                         │
 └──────────────────────────────────────────────┘
 ```
@@ -117,6 +112,10 @@ Une fiche peut porter les deux états à la fois : des exemplaires disponibles
 maintenant, et d'autres annoncés pour une bourse à venir. **Les deux lignes sont
 distinctes et ne s'additionnent jamais dans un total unique** — un visiteur qui se
 déplace aujourd'hui ne doit compter que sur la première.
+
+L'action « Me prévenir quand il y en aura » n'apparaît que lorsqu'aucun exemplaire
+n'est disponible. Un titre disponible se consulte directement, sans proposer une
+alerte inutile.
 
 Cas particulier : un titre uniquement annoncé sans date connue (`RG-24`) affiche
 « prochainement disponible, date à préciser », sans promesse de calendrier.
@@ -143,11 +142,12 @@ L'inscription n'est proposée qu'au moment où elle sert : au clic sur
 
 ### Liste de recherche
 
-- Ajout depuis une fiche du catalogue, **ou depuis un résultat du référentiel
-  bibliographique** — c'est-à-dire y compris un livre que l'association n'a jamais reçu
-  (`RG-47`). C'est le cas d'usage principal.
-- On peut y mettre un livre actuellement disponible : cela signifie « préviens-moi au
-  prochain réapprovisionnement ».
+- Ajout depuis une fiche du catalogue lorsque le titre n'a plus d'exemplaire disponible,
+  **ou depuis un résultat de la section « Pas encore dans la bourse aux livres »** —
+  c'est-à-dire y compris un livre que l'association n'a jamais reçu (`RG-47`). C'est le
+  cas d'usage principal.
+- Un livre actuellement disponible se consulte directement : l'action « Me prévenir »
+  n'est pas proposée tant qu'un exemplaire est disponible.
 - Retrait à tout moment, en un clic.
 - Limite raisonnable par compte (`RG-27`).
 

@@ -76,8 +76,8 @@
             <div class="block-heading">
               <div>
                 <span class="block-rule available-rule" aria-hidden="true"></span>
-                <p class="eyebrow">Premier périmètre</p>
-                <h2>À la bourse</h2>
+                <p class="eyebrow">Dans la bourse aux livres</p>
+                <h2>Livres du catalogue</h2>
               </div>
               <p class="block-help">Disponibilités enregistrées par l'association</p>
             </div>
@@ -97,19 +97,19 @@
             <div class="block-heading">
               <div>
                 <span class="block-rule external-rule" aria-hidden="true"></span>
-                <p class="eyebrow">Second périmètre</p>
-                <h2 id="external-heading">Pas encore reçu</h2>
+                <p class="eyebrow">Pas encore dans la bourse aux livres</p>
+                <h2 id="external-heading">À ajouter à votre liste de recherche</h2>
               </div>
-              <span class="coming-soon">Référentiel externe · Open Library</span>
+              <span class="coming-soon">Pour être prévenu si le titre arrive</span>
             </div>
             @if (!query.trim() || query.trim().length < 2) {
-              <p>Ajoutez au moins deux caractères pour retrouver une référence qui n’est pas encore sur les tables. Ces résultats ne sont jamais comptés comme disponibles à la bourse.</p>
+              <p>Saisissez au moins deux caractères pour chercher un titre qui n’est pas encore dans la bourse aux livres. Vous pourrez l’ajouter à votre liste de recherche.</p>
             } @else if (externalLoading) {
-              <p class="state-message">Recherche dans le référentiel externe…</p>
+              <p class="state-message">Recherche de titres à ajouter…</p>
             } @else if (externalError) {
-              <p class="state-message error-message" role="alert">Le référentiel externe est momentanément indisponible. La recherche locale reste utilisable.</p>
+              <p class="state-message error-message" role="alert">La recherche de titres à ajouter est momentanément indisponible. La recherche dans la bourse aux livres reste utilisable.</p>
             } @else if (externalResponse?.items?.length) {
-              <p class="external-intro">Ces références ne sont pas encore reçues par l’association. Suivez une œuvre ou une édition pour être prévenu lorsqu’elle rejoindra le catalogue.</p>
+              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres. Ajoutez une œuvre ou une édition à votre liste de recherche pour être prévenu si elle rejoint le catalogue.</p>
               <div class="reference-grid">
                 @for (reference of externalResponse?.items || []; track reference.workId || reference.isbn13 || reference.title) {
                   <article class="reference-card">
@@ -121,10 +121,9 @@
                       }
                     </div>
                     <div class="reference-copy">
-                      <p class="reference-source">{{ reference.source }}</p>
-                      <h3>{{ reference.title || 'Titre à compléter' }}</h3>
-                      @if (reference.authors) { <p>{{ reference.authors }}</p> }
-                      <small>
+                      <h3 [attr.title]="reference.title || 'Titre à compléter'">{{ reference.title || 'Titre à compléter' }}</h3>
+                      @if (reference.authors) { <p [attr.title]="reference.authors">{{ reference.authors }}</p> }
+                      <small [attr.title]="reference.publisher || 'Éditeur non renseigné'">
                         {{ reference.publisher || 'Éditeur non renseigné' }}
                         @if (reference.publicationYear) { · {{ reference.publicationYear }} }
                       </small>
@@ -135,7 +134,7 @@
                           class="reference-follow"
                           [disabled]="referenceFollowPending === (reference.workId || reference.isbn13)"
                           (click)="followReference(reference)">
-                          {{ referenceFollowPending === (reference.workId || reference.isbn13) ? 'Ajout…' : 'Suivre ce titre' }}
+                          {{ referenceFollowPending === (reference.workId || reference.isbn13) ? 'Ajout…' : 'Ajouter à ma liste de recherche' }}
                         </button>
                       }
                     </div>
@@ -143,20 +142,20 @@
                 }
               </div>
               @if (referenceFollowMessage) {
-                <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir mon compte</a></p>
+                <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir ma liste de recherche</a></p>
               }
               @if (referenceFollowError) {
                 <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
               }
               @if ((externalResponse?.items?.length || 0) === (externalResponse?.pageSize || 0)) {
-                <nav class="pagination external-pagination" aria-label="Pages du référentiel externe">
+                <nav class="pagination external-pagination" aria-label="Pages des titres à rechercher">
                   <button type="button" [disabled]="externalResponse?.page === 1" (click)="goToExternalPage((externalResponse?.page || 1) - 1)">← Précédente</button>
                   <span>Page {{ externalResponse?.page }}</span>
                   <button type="button" (click)="goToExternalPage((externalResponse?.page || 1) + 1)">Suivante →</button>
                 </nav>
               }
             } @else {
-              <p>Aucune référence externe ne correspond à cette recherche.</p>
+              <p>Aucun autre titre ne correspond à cette recherche.</p>
             }
           </section>
 
