@@ -6,7 +6,9 @@ import {filter} from 'rxjs/operators';
 
 import {loginRequest} from './msal-config';
 
-export const SCAN_REQUIRED_ROLE = 'Tri';
+export const SCAN_REQUIRED_ROLE = 'Tri ou Caisse';
+export const SCAN_TRI_ROLE = 'Tri';
+export const SCAN_CASH_ROLE = 'Caisse';
 
 export type ScanAuthStatus = 'checking' | 'unauthenticated' | 'unauthorized' | 'authorized';
 
@@ -73,6 +75,14 @@ export class ScanAuthService {
 
   get isAuthorized(): boolean {
     return this.authStateSubject.value.status === 'authorized';
+  }
+
+  get canSort(): boolean {
+    return hasRole(this.roles, SCAN_TRI_ROLE);
+  }
+
+  get canSell(): boolean {
+    return hasRole(this.roles, SCAN_CASH_ROLE);
   }
 
   get authState(): ScanAuthState {
@@ -149,7 +159,8 @@ export class ScanAuthService {
 
         const roles = readRoles(result.accessToken);
         const status: ScanAuthStatus = roles.some(role =>
-          role.toLowerCase() === SCAN_REQUIRED_ROLE.toLowerCase())
+          role.toLowerCase() === SCAN_TRI_ROLE.toLowerCase() ||
+          role.toLowerCase() === SCAN_CASH_ROLE.toLowerCase())
           ? 'authorized'
           : 'unauthorized';
 
@@ -167,6 +178,10 @@ export class ScanAuthService {
       },
     });
   }
+}
+
+function hasRole(roles: readonly string[], expectedRole: string): boolean {
+  return roles.some(role => role.toLowerCase() === expectedRole.toLowerCase());
 }
 
 function readRoles(accessToken: string): string[] {

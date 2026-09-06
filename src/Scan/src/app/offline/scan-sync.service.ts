@@ -7,6 +7,7 @@ import {
   ScanCatalogBook,
   ScanCatalogSyncState,
   ScanOutboxEntry,
+  ScanSaleOutboxEntry,
   ScanSessionSnapshot,
   ScanSessionResponse,
 } from './scan-offline.model';
@@ -83,13 +84,17 @@ export class ScanSyncService {
   private async syncCatalogInternal(): Promise<CatalogSyncSummary> {
     const state = await this.store.getCatalogSyncState();
     const session = await this.workflow.getSession();
-    const optimisticEntries = await this.store.listOutboxEntries();
+    const [optimisticEntries, optimisticSales] = await Promise.all([
+      this.store.listOutboxEntries(),
+      this.store.listSaleOutboxEntries(),
+    ]);
     const response = await firstValueFrom(this.api.getCatalogDelta(state?.watermark ?? null));
     const visibleBooks = response.books
       .filter(book => !book.isHidden)
       .map(book => toCatalogBook(
         book,
         optimisticEntries,
+        optimisticSales,
         session?.mode ?? 'AvailableNow',
       ));
     const removedIsbn13s = response.books
@@ -121,7 +126,8 @@ export class ScanSyncService {
     remoteSession: ScanSessionResponse | null;
   }> {
     const entries = await this.store.listTransmittableOutboxEntries();
-    if (entries.length === 0) {
+    const sales = await this.store.listSaleOutboxEntries();
+    if (entries.length === 0 && sales.length === 0) {
       return {
         summary: {
           sent: 0,
@@ -132,58 +138,72 @@ export class ScanSyncService {
       };
     }
 
-    const session = await this.workflow.getSession();
-    if (!session) {
-      return {
-        summary: {
-          sent: 0,
-          remaining: await this.store.countPendingOutboxEntries(),
-          stoppedOnError: true,
-        },
-        remoteSession: null,
-      };
-    }
-
-    let remoteSession: ScanSessionResponse;
-    try {
-      remoteSession = await firstValueFrom(this.api.openSession({
-        mode: session.mode,
-        targetAssoEventsId: session.targetAssoEventsId,
-        clientSessionId: session.scanSessionId,
-      }));
-      await this.workflow.mergeRemoteSession(remoteSession);
-    } catch {
-      return {
-        summary: {
-          sent: 0,
-          remaining: await this.store.countPendingOutboxEntries(),
-          stoppedOnError: true,
-        },
-        remoteSession: null,
-      };
-    }
-
+    let remoteSession: ScanSessionResponse | null = null;
     let sent = 0;
     let stoppedOnError = false;
-    for (const entry of entries) {
+
+    if (entries.length > 0) {
+      const session = await this.workflow.getSession();
+      if (!session) {
+        stoppedOnError = true;
+      } else {
+        try {
+          remoteSession = await firstValueFrom(this.api.openSession({
+            mode: session.mode,
+            targetAssoEventsId: session.targetAssoEventsId,
+            clientSessionId: session.scanSessionId,
+          }));
+          await this.workflow.mergeRemoteSession(remoteSession);
+        } catch {
+          stoppedOnError = true;
+        }
+      }
+
+      if (remoteSession) {
+        for (const entry of entries) {
+          try {
+            const response = await firstValueFrom(this.api.scanBook(
+              remoteSession.scanSessionId,
+              {
+                isbn: entry.isbn13,
+                kept: entry.kept === true,
+                occurredAt: entry.occurredAt,
+                clientGestureId: entry.clientGestureId,
+              },
+            ));
+            await this.store.markOutboxAttempt(entry.clientGestureId, new Date().toISOString(), null);
+            await this.applyServerProjection(entry.isbn13, entry.isRare, response);
+            await this.store.deleteOutboxEntry(entry.clientGestureId);
+            sent += 1;
+          } catch (error: unknown) {
+            stoppedOnError = true;
+            await this.store.markOutboxAttempt(
+              entry.clientGestureId,
+              new Date().toISOString(),
+              describeError(error),
+            );
+            break;
+          }
+        }
+      }
+    }
+
+    for (const sale of sales) {
       try {
-        const response = await firstValueFrom(this.api.scanBook(
-          remoteSession.scanSessionId,
-          {
-            isbn: entry.isbn13,
-            kept: entry.kept === true,
-            occurredAt: entry.occurredAt,
-            clientGestureId: entry.clientGestureId,
-          },
-        ));
-        await this.store.markOutboxAttempt(entry.clientGestureId, new Date().toISOString(), null);
-        await this.applyServerProjection(entry, response);
-        await this.store.deleteOutboxEntry(entry.clientGestureId);
+        const response = await firstValueFrom(this.api.registerSale({
+          isbn: sale.isbn13,
+          quantity: sale.quantity,
+          occurredAt: sale.occurredAt,
+          clientGestureId: sale.clientGestureId,
+        }));
+        await this.store.markSaleAttempt(sale.clientGestureId, new Date().toISOString(), null);
+        await this.applyServerProjection(sale.isbn13, false, response);
+        await this.store.deleteSaleOutboxEntry(sale.clientGestureId);
         sent += 1;
       } catch (error: unknown) {
         stoppedOnError = true;
-        await this.store.markOutboxAttempt(
-          entry.clientGestureId,
+        await this.store.markSaleAttempt(
+          sale.clientGestureId,
           new Date().toISOString(),
           describeError(error),
         );
@@ -238,25 +258,27 @@ export class ScanSyncService {
   }
 
   private async applyServerProjection(
-    entry: ScanOutboxEntry,
+    isbn13: string,
+    isRare: boolean,
     response: {
       isbn13: string;
       qtyAvailable: number;
-      qtyAnnounced: number;
+      qtyAnnounced?: number;
+      salesCount?: number;
     },
   ): Promise<void> {
     const current = await this.store.getCatalogBook(response.isbn13)
-      ?? await this.store.getCatalogBook(entry.isbn13);
+      ?? await this.store.getCatalogBook(isbn13);
     const book: ScanCatalogBook = {
       isbn13: response.isbn13,
       title: current?.title ?? null,
       authors: current?.authors ?? null,
       workId: current?.workId ?? null,
       qtyAvailable: response.qtyAvailable,
-      qtyAnnounced: response.qtyAnnounced,
-      salesCount: current?.salesCount ?? 0,
+      qtyAnnounced: response.qtyAnnounced ?? current?.qtyAnnounced ?? 0,
+      salesCount: response.salesCount ?? current?.salesCount ?? 0,
       isWanted: current?.isWanted ?? false,
-      isRare: current?.isRare ?? entry.isRare,
+      isRare: current?.isRare ?? isRare,
       updatedAt: new Date().toISOString(),
     };
     await this.store.putCatalogBooks([book]);
@@ -272,6 +294,7 @@ export class ScanSyncService {
 function toCatalogBook(
   book: ScanCatalogBook & {isHidden: boolean},
   optimisticEntries: readonly ScanOutboxEntry[],
+  optimisticSales: readonly ScanSaleOutboxEntry[],
   sessionMode: 'AvailableNow' | 'NextFair',
 ): ScanCatalogBook {
   const {isHidden: _isHidden, ...catalogBook} = book;
@@ -279,13 +302,17 @@ function toCatalogBook(
     entry.status === 'Kept' &&
     entry.catalogApplied &&
     entry.isbn13 === book.isbn13).length;
+  const localSaleQuantity = optimisticSales
+    .filter(entry => entry.isbn13 === book.isbn13)
+    .reduce((total, entry) => total + entry.quantity, 0);
 
   return {
     ...catalogBook,
-    qtyAvailable: catalogBook.qtyAvailable + (
-      sessionMode === 'AvailableNow' ? localKeptCount : 0),
+    qtyAvailable: Math.max(0, catalogBook.qtyAvailable + (
+      sessionMode === 'AvailableNow' ? localKeptCount : 0) - localSaleQuantity),
     qtyAnnounced: catalogBook.qtyAnnounced + (
       sessionMode === 'NextFair' ? localKeptCount : 0),
+    salesCount: catalogBook.salesCount + localSaleQuantity,
   };
 }
 

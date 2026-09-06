@@ -134,10 +134,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.authAvailable = this.scanAuth !== null;
     if (this.scanAuth) {
-      this.scanAuth.account$
+      this.scanAuth.authState$
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(account => {
-          this.isAuthenticated = account !== null && this.scanAuth?.isAuthorized === true;
+        .subscribe(authState => {
+          this.isAuthenticated = authState.status === 'authorized';
           this.accountName = this.scanAuth?.displayName ?? null;
           this.refreshView();
           this.trySync();
@@ -155,6 +155,14 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   get displayName(): string {
     return this.accountName ?? 'Bénévole';
+  }
+
+  get canSort(): boolean {
+    return !this.authAvailable || this.scanAuth === null || this.scanAuth.canSort;
+  }
+
+  get canSell(): boolean {
+    return !this.authAvailable || this.scanAuth === null || this.scanAuth.canSell;
   }
 
   get activeMode(): LocalScanMode {
@@ -418,6 +426,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   startSorting(): void {
+    if (this.authAvailable && !this.canSort) {
+      return;
+    }
+
     this.stopCamera();
     if (this.sessionEnded) {
       if (this.scanWorkflow && !this.sessionCloseCompleted) {
@@ -462,6 +474,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   openCash(): void {
+    if (this.authAvailable && !this.canSell) {
+      return;
+    }
+
     this.stopCamera();
     this.screen = 'cash';
     this.resetLookupState();
@@ -582,7 +598,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       }
       if (!summary.catalog) {
         this.syncStatus = 'error';
-        this.syncError = 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits Tri ou réseau).';
+        this.syncError = 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits ou réseau).';
       } else if (summary.outbox.stoppedOnError) {
         this.syncStatus = 'error';
         this.syncError = 'La file locale reste conservée et sera réessayée automatiquement.';
@@ -722,13 +738,31 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.removeCashItem(lastItem.id);
   }
 
-  validateCash(): void {
+  async validateCash(): Promise<void> {
     if (this.cashItems.length === 0) {
       return;
     }
 
-    this.cashMessage = `${this.cashItems.length} livre${this.cashItems.length > 1 ? 's' : ''} dans la vente.`;
-    this.cashItems = [];
+    const items = [...this.cashItems];
+    const count = items.length;
+
+    if (!this.scanWorkflow) {
+      this.cashMessage = `${count} livre${count > 1 ? 's' : ''} dans la vente.`;
+      this.cashItems = [];
+      this.refreshView();
+      return;
+    }
+
+    try {
+      await this.scanWorkflow.recordCashSales(items.map(item => item.isbn13));
+      this.cashItems = [];
+      this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''} localement. Synchronisation automatique en cours.`;
+      await this.refreshLocalState();
+      this.trySync();
+    } catch {
+      this.cashMessage = 'La vente n’a pas pu être conservée localement. Réessayez sans quitter cet écran.';
+    }
+
     this.refreshView();
   }
 

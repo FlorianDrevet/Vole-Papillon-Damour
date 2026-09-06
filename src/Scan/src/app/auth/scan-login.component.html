@@ -15,7 +15,7 @@
         Connectez-vous pour accéder au scan et au catalogue de la bourse.
       </p>
       <p *ngIf="authState.status === 'unauthorized'" class="login-message login-message-error" role="alert">
-        Ce compte est connecté, mais il ne possède pas le rôle {{ authState.requiredRole }} requis pour cette application.
+        Ce compte est connecté, mais il ne possède aucun rôle requis ({{ authState.requiredRole }}) pour cette application.
       </p>
       <p *ngIf="loginError()" class="login-message login-message-error" role="alert">
         {{ loginError() }}
@@ -37,6 +37,6 @@
       </button>
     </ng-container>
 
-    <p class="login-footnote">Accès réservé aux bénévoles habilités au tri.</p>
+    <p class="login-footnote">Accès réservé aux bénévoles habilités au tri ou à la caisse.</p>
   </section>
 </main>

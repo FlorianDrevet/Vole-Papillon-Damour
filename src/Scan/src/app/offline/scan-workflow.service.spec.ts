@@ -21,6 +21,9 @@ describe('ScanWorkflowService', () => {
     for (const entry of await store.listOutboxEntries()) {
       await store.deleteOutboxEntry(entry.clientGestureId);
     }
+    for (const entry of await store.listSaleOutboxEntries()) {
+      await store.deleteSaleOutboxEntry(entry.clientGestureId);
+    }
   });
 
   it('creates a durable pending gesture with an immediate local verdict', async () => {
@@ -190,6 +193,21 @@ describe('ScanWorkflowService', () => {
     expect(result.catalogBook?.title).toBe('Livre à consulter');
     expect(result.verdict.totalKnownQuantity).toBe(2);
     expect(await store.listOutboxEntries()).toHaveSize(0);
+  });
+
+  it('records a cash sale durably and decrements the local quantity immediately', async () => {
+    await store.putCatalogBooks([createBook({qtyAvailable: 1, salesCount: 2})]);
+    const entries = await service.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:06:00.000Z'),
+    );
+
+    expect(entries).toHaveSize(1);
+    expect((await store.getCatalogBook('9782070363735'))).toEqual(jasmine.objectContaining({
+      qtyAvailable: 0,
+      salesCount: 3,
+    }));
+    expect(await store.listSaleOutboxEntries()).toHaveSize(1);
   });
 
   function createBook(overrides: Partial<ScanCatalogBook> = {}): ScanCatalogBook {

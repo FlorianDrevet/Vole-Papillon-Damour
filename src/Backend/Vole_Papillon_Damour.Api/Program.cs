@@ -50,6 +50,7 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy("Administration", policy => policy.RequireRole("Administration", "Admin"))
     .AddPolicy("Tri", policy => policy.RequireRole("Tri"))
     .AddPolicy("Caisse", policy => policy.RequireRole("Caisse"))
+    .AddPolicy("ScanVolunteer", policy => policy.RequireRole("Tri", "Caisse"))
     .AddPolicy("IsAdmin", policy => policy.RequireRole("Administration", "Admin"));
 
 var applicationInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];

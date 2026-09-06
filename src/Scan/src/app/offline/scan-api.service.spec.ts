@@ -51,6 +51,21 @@ describe('ScanApiService', () => {
     request.flush(response);
   });
 
+  it('sends a cash sale to the sale endpoint', () => {
+    const sale = {
+      isbn: '9782070363735',
+      quantity: 1,
+      occurredAt: '2026-09-03T08:00:00.000Z',
+      clientGestureId: 'sale-1',
+    };
+    service.registerSale(sale).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/scan/sales`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(sale);
+    request.flush({});
+  });
+
   it('opens a session with the local client id for idempotent replay', () => {
     const response = createSessionResponse();
     const openRequest = {

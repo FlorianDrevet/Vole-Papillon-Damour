@@ -104,6 +104,19 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
+    public void Cash_sales_require_the_caisse_policy()
+    {
+        var endpoint = RegisteredEndpoints()
+            .Single(endpoint => RouteOf(endpoint) == "/scan/sales" &&
+                                HttpMethods(endpoint).Contains("POST"));
+
+        endpoint.Metadata
+            .GetOrderedMetadata<IAuthorizeData>()
+            .Should()
+            .Contain(data => data.Policy == "Caisse");
+    }
+
+    [Fact]
     public void Member_watchlist_endpoints_require_an_authenticated_member()
     {
         var expectedRoutes = new[]

@@ -70,7 +70,7 @@ describe('AppComponent', () => {
       status,
       account: null,
       roles: [],
-      requiredRole: 'Tri',
+      requiredRole: 'Tri ou Caisse',
     };
   }
 });
