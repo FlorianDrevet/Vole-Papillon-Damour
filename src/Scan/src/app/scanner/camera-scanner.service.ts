@@ -14,6 +14,7 @@ export type CameraScannerReaderFactory = (
 
 export interface CameraScannerEngine {
   start(container: HTMLElement, onDetected: (rawValue: string) => void): Promise<void>;
+  resume(): void;
   stop(): Promise<void>;
   scanFile(imageFile: File): Promise<string>;
 }
@@ -34,6 +35,7 @@ export const CAMERA_SCANNER_ENGINE_FACTORY = new InjectionToken<CameraScannerEng
 );
 
 export interface CameraScannerHandle {
+  resume(): void;
   stop(): Promise<void>;
 }
 
@@ -183,7 +185,7 @@ export class ZxingCameraScannerEngine implements CameraScannerEngine {
       const controls = await reader.decodeFromConstraints(
         {video: CAMERA_CONSTRAINTS},
         video,
-        (result, _error, callbackControls) => {
+        (result, _error) => {
           if (!this.active || !result) {
             return;
           }
@@ -194,18 +196,20 @@ export class ZxingCameraScannerEngine implements CameraScannerEngine {
           }
 
           this.active = false;
-          callbackControls.stop();
           onDetected(rawValue);
         },
       );
 
       this.controls = controls;
-      if (!this.active) {
-        controls.stop();
-      }
     } catch (error: unknown) {
       await this.stop();
       throw error;
+    }
+  }
+
+  resume(): void {
+    if (this.controls && this.video) {
+      this.active = true;
     }
   }
 
@@ -274,12 +278,14 @@ export class CameraScannerService {
 
     const engine = this.engineFactory();
     let active = true;
+    let acceptingDetections = true;
     let stopPromise: Promise<void> | null = null;
 
     const stop = (): Promise<void> => {
       if (!stopPromise) {
         stopPromise = (async (): Promise<void> => {
           active = false;
+          acceptingDetections = false;
           try {
             await engine.stop();
           } catch {
@@ -290,9 +296,18 @@ export class CameraScannerService {
       return stopPromise;
     };
 
+    const resume = (): void => {
+      if (!active || stopPromise) {
+        return;
+      }
+
+      acceptingDetections = true;
+      engine.resume();
+    };
+
     try {
       await engine.start(container, (decodedText: string) => {
-        if (!active) {
+        if (!active || !acceptingDetections) {
           return;
         }
 
@@ -301,15 +316,15 @@ export class CameraScannerService {
           return;
         }
 
+        acceptingDetections = false;
         onDetected(rawValue);
-        void stop();
       });
     } catch (error: unknown) {
       await stop();
       throw this.toCameraError(error);
     }
 
-    return {stop};
+    return {resume, stop};
   }
 
   async scanFile(imageFile: File): Promise<string> {

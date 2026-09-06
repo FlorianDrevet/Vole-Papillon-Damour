@@ -20,6 +20,7 @@ describe('CameraScannerService', () => {
   beforeEach(() => {
     engine = jasmine.createSpyObj<CameraScannerEngine>('CameraScannerEngine', [
       'start',
+      'resume',
       'stop',
       'scanFile',
     ]);
@@ -71,6 +72,21 @@ describe('CameraScannerService', () => {
     await handle.stop();
 
     expect(onDetected).toHaveBeenCalledOnceWith('9782070363735');
+  });
+
+  it('resumes a paused scan without requesting a new camera engine', async () => {
+    const onDetected = jasmine.createSpy('onDetected');
+    const handle = await service.start(container, onDetected);
+    const successCallback = engine.start.calls.mostRecent().args[1] as unknown as (rawValue: string) => void;
+
+    successCallback('9782070363735');
+    handle.resume();
+    successCallback('9780306406157');
+    await handle.stop();
+
+    expect(createEngine).toHaveBeenCalledOnceWith();
+    expect(engine.resume).toHaveBeenCalledOnceWith();
+    expect(onDetected).toHaveBeenCalledTimes(2);
   });
 
   it('decodes a photo selected on an iPhone', async () => {
@@ -131,7 +147,26 @@ describe('ZxingCameraScannerEngine', () => {
     );
   });
 
-  it('forwards the first decoded value and stops the active camera', async () => {
+  it('keeps the stream when the first barcode is decoded before startup resolves', async () => {
+    const result = jasmine.createSpyObj<Result>('Result', ['getText']);
+    result.getText.and.returnValue('9782070363735');
+    reader.decodeFromConstraints.and.callFake(async (_constraints, _preview, callback) => {
+      callback(result, undefined, controls);
+      return controls;
+    });
+    const onDetected = jasmine.createSpy('onDetected');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, onDetected);
+
+    expect(onDetected).toHaveBeenCalledOnceWith('9782070363735');
+    expect(controls.stop).not.toHaveBeenCalled();
+
+    await engine.stop();
+    expect(controls.stop).toHaveBeenCalledOnceWith();
+  });
+
+  it('pauses after the first decoded value without stopping the active camera', async () => {
     const onDetected = jasmine.createSpy('onDetected');
     const result = jasmine.createSpyObj<Result>('Result', ['getText']);
     result.getText.and.returnValue('9782070363735');
@@ -143,7 +178,28 @@ describe('ZxingCameraScannerEngine', () => {
     decodeCallback(result, undefined, controls);
 
     expect(onDetected).toHaveBeenCalledOnceWith('9782070363735');
+    expect(controls.stop).not.toHaveBeenCalled();
+
+    await engine.stop();
     expect(controls.stop).toHaveBeenCalledOnceWith();
+  });
+
+  it('resumes decoding on the existing camera stream', async () => {
+    const onDetected = jasmine.createSpy('onDetected');
+    const firstResult = jasmine.createSpyObj<Result>('Result', ['getText']);
+    firstResult.getText.and.returnValue('9782070363735');
+    const secondResult = jasmine.createSpyObj<Result>('Result', ['getText']);
+    secondResult.getText.and.returnValue('9780306406157');
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    await engine.start(container, onDetected);
+    const decodeCallback = reader.decodeFromConstraints.calls.mostRecent().args[2];
+    decodeCallback(firstResult, undefined, controls);
+    engine.resume();
+    decodeCallback(secondResult, undefined, controls);
+
+    expect(onDetected).toHaveBeenCalledTimes(2);
+    expect(controls.stop).not.toHaveBeenCalled();
   });
 
   it('falls back to cropped photo decoding when the full photo cannot be decoded', async () => {

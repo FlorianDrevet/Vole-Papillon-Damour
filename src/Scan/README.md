@@ -36,16 +36,21 @@ accepte les EAN-13/EAN-8 des livres, ainsi que les QR codes dont le contenu est 
 et fonctionne dans Safari iOS lorsqu'elle est ouverte sur une URL HTTPS. Une photo peut
 aussi être sélectionnée depuis l'iPhone si la caméra continue n'est pas disponible.
 
-Les écrans `Caisse` et `Consultation` ouvrent eux aussi la caméra dès leur arrivée et la
-relancent après chaque lecture pour enchaîner les livres. La caisse affiche les sorties
-en cours sous le cadre caméra et chaque ligne peut être retirée individuellement. En
-tri, le même ISBN relu en moins de cinq secondes dans la session affiche « déjà scanné à
+Les écrans `Caisse` et `Consultation` ouvrent eux aussi la caméra dès leur arrivée et
+conservent le même flux autorisé entre deux lectures pour enchaîner les livres sans
+redemander l’autorisation. Après une détection, le flux reste ouvert mais la détection est
+mise en pause pendant l’affichage du résultat ; elle reprend dès que nécessaire. La caisse
+affiche les sorties en cours sous le cadre caméra et chaque ligne peut être retirée
+individuellement. En tri, le même ISBN relu en moins de cinq secondes dans la session
+affiche « déjà scanné à
 l'instant » sans bloquer la décision (`RG-04`). La fin d'une session vide le snapshot
 local uniquement après synchronisation et clôture de la session distante ; en cas
 d'échec réseau, les gestes restent conservés localement.
 
 La réponse à la demande d'autorisation de caméra est conservée par le navigateur, pas
-par l'application. Pour éviter une nouvelle demande à chaque visite, utiliser toujours
+par l'application. Pendant une session, l'application conserve toutefois le flux déjà
+autorisé au lieu de rappeler `getUserMedia()` après chaque livre. Pour éviter une nouvelle
+demande à chaque visite, utiliser toujours
 la même origine HTTPS (même protocole, hôte et port), hors navigation privée, et vérifier
 le réglage Caméra du site dans Safari ou le navigateur utilisé. Le cache MSAL en
 `localStorage` conserve la session Entra, mais ne peut pas mémoriser cette permission.

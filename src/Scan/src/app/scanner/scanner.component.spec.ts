@@ -217,7 +217,7 @@ describe('ScannerComponent', () => {
     let onDetected: ((rawValue: string) => void) | undefined;
     cameraService.start.and.callFake(async (_container, callback) => {
       onDetected = callback;
-      return {stop: async () => undefined};
+      return {resume: () => undefined, stop: async () => undefined};
     });
 
     await component.toggleCamera();
@@ -228,7 +228,7 @@ describe('ScannerComponent', () => {
   });
 
   it('starts the live camera when the scan screen opens without a scanner button', async () => {
-    cameraService.start.and.returnValue(Promise.resolve({stop: async () => undefined}));
+    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, stop: async () => undefined}));
     component.authAvailable = true;
     component.isAuthenticated = true;
 
@@ -245,7 +245,7 @@ describe('ScannerComponent', () => {
   });
 
   it('starts the live camera as soon as the cash screen opens', async () => {
-    cameraService.start.and.returnValue(Promise.resolve({stop: async () => undefined}));
+    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, stop: async () => undefined}));
     component.authAvailable = true;
     component.isAuthenticated = true;
 
@@ -260,7 +260,7 @@ describe('ScannerComponent', () => {
   });
 
   it('starts the live camera as soon as consultation opens', async () => {
-    cameraService.start.and.returnValue(Promise.resolve({stop: async () => undefined}));
+    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, stop: async () => undefined}));
     component.authAvailable = true;
     component.isAuthenticated = true;
 
@@ -274,13 +274,14 @@ describe('ScannerComponent', () => {
     expect(component.cameraActive).toBeTrue();
   });
 
-  it('restarts the live camera after a cash scan so the next book can be read immediately', async () => {
+  it('keeps the live camera session after a cash scan so the next book can be read immediately', async () => {
     const metadata = createMetadata();
     metadataService.getMetadata.and.returnValue(of(metadata));
     const detected: Array<(rawValue: string) => void> = [];
+    const resume = jasmine.createSpy('resume');
     cameraService.start.and.callFake(async (_container, callback) => {
       detected.push(callback);
-      return {stop: async () => undefined};
+      return {resume, stop: async () => undefined};
     });
     component.authAvailable = true;
     component.isAuthenticated = true;
@@ -291,7 +292,47 @@ describe('ScannerComponent', () => {
     await fixture.whenStable();
 
     expect(component.cashItems).toHaveSize(1);
-    expect(cameraService.start).toHaveBeenCalledTimes(2);
+    expect(cameraService.start).toHaveBeenCalledTimes(1);
+    expect(resume).toHaveBeenCalledOnceWith();
+    expect(component.cameraActive).toBeTrue();
+  });
+
+  it('resumes the existing camera session after keeping a triaged book', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'recordScan',
+      'cacheMetadata',
+      'getPendingCount',
+      'getSession',
+      'decide',
+    ]);
+    const localScan = createLocalScanResult();
+    const resume = jasmine.createSpy('resume');
+    let onDetected: ((rawValue: string) => void) | undefined;
+
+    workflow.recordScan.and.resolveTo(localScan);
+    workflow.cacheMetadata.and.resolveTo();
+    workflow.getPendingCount.and.resolveTo(0);
+    workflow.getSession.and.resolveTo(createSession());
+    workflow.decide.and.resolveTo({...localScan.entry, status: 'Kept', kept: true});
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+    cameraService.start.and.callFake(async (_container, callback) => {
+      onDetected = callback;
+      return {resume, stop: async () => undefined};
+    });
+
+    (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;
+    (component as unknown as {localModeReady: boolean}).localModeReady = true;
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+    component.screen = 'tri';
+
+    await (component as unknown as {startCamera: () => Promise<void>}).startCamera();
+    onDetected?.('9782070363735');
+    await fixture.whenStable();
+    await component.keepCurrentScan();
+
+    expect(cameraService.start).toHaveBeenCalledTimes(1);
+    expect(resume).toHaveBeenCalledOnceWith();
     expect(component.cameraActive).toBeTrue();
   });
 

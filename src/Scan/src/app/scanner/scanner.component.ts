@@ -943,7 +943,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.trySync();
       this.resetLookupState();
       this.refreshView();
-      this.startCameraIfNeeded();
+      this.resumeCamera();
     } catch {
       this.storageError = 'La décision n’a pas pu être conservée localement.';
       this.refreshView();
@@ -967,6 +967,26 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.cameraActive = false;
   }
 
+  private resumeCamera(): void {
+    if (
+      !this.isCameraDestinationActive() ||
+      !this.authAvailable ||
+      !this.isAuthenticated
+    ) {
+      return;
+    }
+
+    if (this.cameraHandle) {
+      this.cameraHandle.resume();
+      this.cameraActive = true;
+      this.cameraError = null;
+      this.refreshView();
+      return;
+    }
+
+    this.startCameraIfNeeded(true);
+  }
+
   private startCameraIfNeeded(force = false): void {
     if (
       !this.isCameraDestinationActive() ||
@@ -987,12 +1007,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.startCameraIfNeeded(true);
+    this.resumeCamera();
   }
 
   private handleCameraDetection(rawValue: string): void {
     const destination = this.destinationForScreen();
-    this.stopCamera();
+    this.cameraActive = false;
+    this.refreshView();
     void this.lookup(rawValue, destination)
       .finally(() => this.restartContinuousCamera(destination));
   }
