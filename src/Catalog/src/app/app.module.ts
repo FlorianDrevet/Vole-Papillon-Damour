@@ -17,6 +17,8 @@ import {BookCardComponent} from './shared/book-card/book-card.component';
 import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
 import {CatalogAuthService} from './core/catalog-auth.service';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
+import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
+import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
 
 registerLocaleData(localeFr);
 
@@ -31,6 +33,8 @@ registerLocaleData(localeFr);
     BookCardComponent,
     CatalogAdministrationPageComponent,
     CatalogAccountPageComponent,
+    CatalogNavigationComponent,
+    CatalogFooterComponent,
   ],
   imports: [
     BrowserModule,
