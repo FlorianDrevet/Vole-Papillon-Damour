@@ -16,6 +16,11 @@ public sealed record MyWatchlistResult(
     int BounceCount,
     IReadOnlyList<MyWatchlistItemResult> Items);
 
+public sealed record MyAlertPreferencesResult(
+    WatchlistAlertStatus AlertStatus,
+    int BounceCount,
+    bool Changed);
+
 public sealed record MyWatchlistItemResult(
     Guid Id,
     WatchlistItemScope Scope,

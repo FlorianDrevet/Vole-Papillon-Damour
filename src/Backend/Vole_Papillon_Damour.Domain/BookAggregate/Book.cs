@@ -79,11 +79,16 @@ public sealed class Book : AggregateRoot<Isbn13>
         IsHiddenFromCatalog = true;
     }
 
-    public void RecordAvailableEntry(DateTime occurredAt)
+    public void RecordAvailableEntry(DateTime occurredAt, int quantity = 1)
     {
+        if (quantity <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Available entry quantity must be positive.");
+        }
+
         var utcOccurredAt = DomainTime.RequireUtc(occurredAt, nameof(occurredAt));
 
-        QuantityAvailable++;
+        QuantityAvailable += quantity;
         LastAvailableAt = utcOccurredAt;
         UpdatedAt = utcOccurredAt;
     }

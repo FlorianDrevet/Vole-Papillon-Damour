@@ -20,7 +20,7 @@ app.use((req, _res, next) => {
 
 app.use((req, res, next) => {
   const routePath = req.path.replace(/\/+$/, '') || '/';
-  if (routePath === '/administration' || routePath === '/compte') {
+  if (routePath === '/administration' || routePath === '/compte' || routePath === '/desinscription') {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   }
   next();

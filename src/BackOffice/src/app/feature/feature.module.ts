@@ -12,7 +12,7 @@ import {
 } from '../shared/components/dialogs/create-update-actuality-dialog/create-update-actuality-dialog.component';
 import {MatButton} from "@angular/material/button";
 import {MatDialogActions, MatDialogContent, MatDialogTitle} from "@angular/material/dialog";
-import {ReactiveFormsModule} from "@angular/forms";
+import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MatFormField, MatFormFieldModule} from "@angular/material/form-field";
 import {
   MatDatepicker,
@@ -54,6 +54,7 @@ import {
   CreateUpdateProductDialogComponent
 } from '../shared/components/dialogs/create-update-product-dialog/create-update-product-dialog.component';
 import {MatSlideToggle} from "@angular/material/slide-toggle";
+import {CatalogAdministrationComponent} from './catalog-administration/catalog-administration.component';
 
 export const MY_DATE_FORMATS: MatDateFormats = {
   parse: {
@@ -91,6 +92,7 @@ export const MY_DATE_FORMATS: MatDateFormats = {
     TagComponent,
     NumberComponent,
     CreateUpdateProductDialogComponent,
+    CatalogAdministrationComponent,
   ],
   imports: [
     CommonModule,
@@ -100,6 +102,7 @@ export const MY_DATE_FORMATS: MatDateFormats = {
     MatDialogActions,
     MatDialogTitle,
     ReactiveFormsModule,
+    FormsModule,
     MatDialogContent,
     MatFormField,
     MatDatepickerInput,

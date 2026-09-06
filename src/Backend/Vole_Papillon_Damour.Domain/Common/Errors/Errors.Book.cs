@@ -129,5 +129,41 @@ public static partial class Errors
         public static Error AnnouncementAlreadyReleased(string isbn13) => Error.Conflict(
             code: "Book.AnnouncementAlreadyReleased",
             description: $"The announcement for ISBN {isbn13} can no longer be cancelled.");
+
+        public static Error BookAlreadyExists(string isbn13) => Error.Conflict(
+            code: "Book.AlreadyExists",
+            description: $"A catalogue fiche already exists for ISBN {isbn13}.");
+
+        public static Error InvalidWithdrawalQuantity() => Error.Validation(
+            code: "Book.InvalidWithdrawalQuantity",
+            description: "The withdrawal quantity must be positive and cannot exceed available stock.");
+
+        public static Error AnnouncementNotFound(object announcementId) => Error.NotFound(
+            code: "Book.AnnouncementNotFound",
+            description: $"Book announcement not found: {announcementId}.");
+
+        public static Error AnnouncementAlreadyReleasedForCorrection(object announcementId) => Error.Conflict(
+            code: "Book.AnnouncementAlreadyReleasedForCorrection",
+            description: $"Book announcement cannot be corrected after release: {announcementId}.");
+
+        public static Error InvalidRevenue() => Error.Validation(
+            code: "Book.InvalidRevenue",
+            description: "Book-fair revenue must be zero or a positive amount with at most two decimals.");
+
+        public static Error CannotMergeBook(string description) => Error.Conflict(
+            code: "Book.CannotMerge",
+            description: description);
+
+        public static Error SessionMovementAlreadyConsumed(object movementId) => Error.Conflict(
+            code: "Book.SessionMovementAlreadyConsumed",
+            description: $"The session movement has already been consumed and cannot be removed: {movementId}.");
+
+        public static Error MemberNotFound(object memberId) => Error.NotFound(
+            code: "Book.MemberNotFound",
+            description: $"Member not found: {memberId}.");
+
+        public static Error InvalidAdminPage() => Error.Validation(
+            code: "Book.InvalidAdminPage",
+            description: "Page must be positive and page size must be between 1 and 200.");
     }
 }

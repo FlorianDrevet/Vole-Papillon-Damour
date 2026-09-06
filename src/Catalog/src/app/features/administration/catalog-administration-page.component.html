@@ -1,26 +1,30 @@
 <section class="administration-page" aria-labelledby="administration-title">
   <div class="administration-frame page-width">
     <aside class="admin-sidebar" aria-label="Navigation administration">
-      <a class="admin-sidebar-brand" href="/" aria-label="Retourner au catalogue">
+      <a class="admin-sidebar-brand" routerLink="/" aria-label="Retourner au catalogue">
         <span class="admin-mark" aria-hidden="true">VPD</span>
         <span><strong>Catalogue</strong><small>outils internes</small></span>
       </a>
 
       <p class="admin-nav-label">Espaces de travail</p>
       <nav class="admin-nav">
-        <a class="active" href="#desengorgement"><span class="nav-icon" aria-hidden="true">↘</span>Désengorgement</a>
-        <span class="admin-nav-disabled" aria-disabled="true"><span class="nav-icon" aria-hidden="true">⌁</span><span>Sessions de scan<small>API à connecter</small></span></span>
-        <span class="admin-nav-disabled" aria-disabled="true"><span class="nav-icon" aria-hidden="true">◎</span><span>Catalogue & métadonnées<small>API à connecter</small></span></span>
-        <span class="admin-nav-disabled" aria-disabled="true"><span class="nav-icon" aria-hidden="true">◇</span><span>Comptes & rôles<small>API à connecter</small></span></span>
-        <span class="admin-nav-disabled" aria-disabled="true"><span class="nav-icon" aria-hidden="true">▧</span><span>Rapports<small>API à connecter</small></span></span>
-        <span class="admin-nav-disabled" aria-disabled="true"><span class="nav-icon" aria-hidden="true">⚙</span><span>Réglages<small>API à connecter</small></span></span>
+        @for (item of navItems; track item.id) {
+          <button
+            type="button"
+            [class.active]="activeSection() === item.id"
+            [disabled]="!isAuthenticated()"
+            (click)="selectSection(item.id)">
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <span>{{ item.label }}<small>{{ item.id === 'dead-stock' ? 'stock disponible ancien' : 'données de l’API' }}</small></span>
+          </button>
+        }
       </nav>
 
       <div class="role-legend">
-        <p>Sections protégées</p>
-        <span><strong>Administration</strong> comptes & configuration</span>
-        <span><strong>Tri</strong> scans & métadonnées</span>
-        <span><strong>Caisse</strong> ventes & sorties</span>
+        <p>Accès et limites</p>
+        <span><strong>Administration</strong> accès complet à cette surface</span>
+        <span><strong>Traçabilité</strong> les corrections restent dans le ledger</span>
+        <span><strong>Cartons & rôles</strong> gestion dédiée à prévoir côté API</span>
       </div>
     </aside>
 
@@ -28,8 +32,8 @@
       <header class="admin-page-header">
         <div>
           <p class="eyebrow">Espace bénévoles / Accès administration</p>
-          <h1 id="administration-title">Faire de la place.</h1>
-          <p class="intro">Repérez les titres qui dorment dans le local et préparez la prochaine sélection à retirer.</p>
+          <h1 id="administration-title">Piloter la bourse.</h1>
+          <p class="intro">Stock, sessions de scan, alertes et comptes : les corrections sont réservées aux personnes habilitées et toujours journalisées.</p>
         </div>
         @if (isAuthenticated()) {
           <div class="admin-account">
@@ -56,99 +60,146 @@
             Se connecter avec Microsoft
           </button>
         </div>
+      } @else {
         @if (errorMessage()) {
           <div class="status-panel error-panel" role="alert">{{ errorMessage() }}</div>
         }
-      } @else {
-        <section id="desengorgement" class="work-card" aria-labelledby="dead-stock-title">
-          <div class="card-heading">
-            <div>
-              <p class="panel-kicker">File de travail active</p>
-              <h2 id="dead-stock-title">Désengorger le local.</h2>
-              <p>Repérez les titres disponibles depuis longtemps, jamais vendus, et suffisamment nombreux pour mériter un retrait physique.</p>
-            </div>
-            <span class="card-mark" aria-hidden="true">O2</span>
-          </div>
+        @if (successMessage()) {
+          <div class="status-panel success-panel" role="status">{{ successMessage() }}</div>
+        }
 
-          <form class="filters" (ngSubmit)="loadDeadStock()" #filtersForm="ngForm" novalidate>
-            <label>
-              <span>Disponible depuis au moins</span>
-              <span class="input-with-suffix">
-                <input
-                  type="number"
-                  name="minAgeMonths"
-                  [(ngModel)]="minAgeMonths"
-                  min="1"
-                  max="120000"
-                  step="1"
-                  required>
-                <span>mois</span>
-              </span>
-            </label>
-            <label>
-              <span>Plus de ce nombre d’exemplaires</span>
-              <input
-                type="number"
-                name="minQuantity"
-                [(ngModel)]="minQuantity"
-                min="0"
-                step="1"
-                required>
-            </label>
-            <button class="primary-button" type="submit" [disabled]="loading() || filtersForm.invalid">
-              {{ loading() ? 'Recherche…' : 'Actualiser la liste' }}
-            </button>
-          </form>
+        @switch (activeSection()) {
+          @case ('overview') {
+            <section class="workspace" aria-labelledby="overview-title">
+              <div class="workspace-heading">
+                <div>
+                  <p class="panel-kicker">Vue d’ensemble</p>
+                  <h2 id="overview-title">La bourse en un regard.</h2>
+                </div>
+                <span class="workspace-mark" aria-hidden="true">P3</span>
+              </div>
 
-          @if (errorMessage()) {
-            <div class="status-panel error-panel" role="alert">{{ errorMessage() }}</div>
+              @if (loading() && !overview()) {
+                <p class="status-panel" role="status">Chargement des indicateurs…</p>
+              } @else if (overview(); as current) {
+                <div class="metric-grid">
+                  <article class="metric-card metric-card-blue">
+                    <span>Sur les tables</span>
+                    <strong>{{ current.stock.availableQuantity }}</strong>
+                    <small>{{ current.stock.availableTitles }} fiches disponibles</small>
+                  </article>
+                  <article class="metric-card metric-card-orange">
+                    <span>Catalogués sur la période</span>
+                    <strong>{{ current.currentPeriod.keptCount }}</strong>
+                    <small>{{ current.currentPeriod.rejectedCount }} refusés · {{ current.currentPeriod.scannedCount }} scannés</small>
+                  </article>
+                  <article class="metric-card metric-card-green">
+                    <span>Vendus sur la période</span>
+                    <strong>{{ current.currentPeriod.soldQuantity }}</strong>
+                    <small>{{ current.currentPeriod.soldTitles }} titres distincts</small>
+                  </article>
+                  <article class="metric-card metric-card-purple">
+                    <span>Alertes en attente</span>
+                    <strong>{{ current.pendingAlerts.pendingCount }}</strong>
+                    <small>prochaine échéance {{ formatDate(current.pendingAlerts.nextDueAt, true) }}</small>
+                  </article>
+                </div>
+
+                <div class="overview-grid">
+                  <div class="overview-card">
+                    <div class="card-heading compact-heading">
+                      <div><p class="panel-kicker">Files de travail</p><h3>Ce qui mérite une action.</h3></div>
+                    </div>
+                    <button class="overview-row" type="button" (click)="selectSection('dead-stock')"><span>Désengorgement</span><strong>{{ current.deadStockCount }}</strong><small>candidats</small></button>
+                    <button class="overview-row" type="button" (click)="selectSection('catalogue')"><span>Fiches rares</span><strong>{{ current.rareQueueCount }}</strong><small>à vérifier</small></button>
+                    <button class="overview-row" type="button" (click)="selectSection('catalogue')"><span>Métadonnées manquantes</span><strong>{{ current.metadataMissingCount }}</strong><small>à compléter</small></button>
+                    <button class="overview-row" type="button" (click)="selectSection('catalogue')"><span>Annonces sans date</span><strong>{{ current.undatedAnnouncementCount }}</strong><small>à préciser</small></button>
+                  </div>
+                  <div class="overview-card overview-card-note">
+                    <p class="panel-kicker">Dernière bourse</p>
+                    @if (current.lastFair; as fair) {
+                      <h3>{{ fair.name }}</h3>
+                      <p>{{ formatDate(fair.dateStart) }} · {{ fair.soldQuantity }} exemplaires vendus</p>
+                      <strong>{{ formatMoney(fair.revenue) }}</strong>
+                      <button class="secondary-button" type="button" (click)="selectSection('fairs')">Ouvrir le bilan →</button>
+                    } @else {
+                      <h3>Aucune bourse clôturée.</h3>
+                      <p>Les indicateurs apparaîtront après la première session de caisse.</p>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <p class="status-panel">Les indicateurs ne sont pas encore disponibles.</p>
+              }
+            </section>
           }
 
-          @if (loading()) {
-            <p class="status-panel" role="status">Recherche des titres à retirer…</p>
-          } @else if (books().length === 0 && !errorMessage()) {
-            <div class="empty-panel">
-              <span class="empty-mark" aria-hidden="true">✓</span>
-              <h3>Aucun candidat avec ces critères</h3>
-              <p>Le local ne présente pas de titre correspondant à cette recherche, ou la file est déjà vide.</p>
-            </div>
-          } @else if (books().length > 0) {
-            <div class="result-heading">
-              <p><strong>{{ books().length }}</strong> {{ books().length === 1 ? 'titre candidat' : 'titres candidats' }}</p>
-              <button class="secondary-button" type="button" (click)="exportCsv()">Exporter en CSV</button>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <caption class="visually-hidden">Titres disponibles depuis longtemps et jamais vendus</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Titre</th>
-                    <th scope="col">ISBN</th>
-                    <th scope="col">Genre</th>
-                    <th scope="col">Exemplaires</th>
-                    <th scope="col">Disponible depuis</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (book of books(); track book.isbn13) {
-                    <tr>
-                      <th scope="row">
-                        <span class="book-title">{{ book.title || 'Titre inconnu' }}</span>
-                        @if (book.authors) {
-                          <span class="book-author">{{ book.authors }}</span>
-                        }
-                      </th>
-                      <td data-label="ISBN">{{ book.isbn13 }}</td>
-                      <td data-label="Genre">{{ book.genre || '—' }}</td>
-                      <td class="quantity" data-label="Exemplaires">{{ book.quantityAvailable }}</td>
-                      <td data-label="Disponible depuis">{{ formatDate(book.firstAvailableAt) }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
+          @case ('sessions') {
+            <section class="workspace" aria-labelledby="sessions-title">
+              <div class="workspace-heading"><div><p class="panel-kicker">Tri & corrections</p><h2 id="sessions-title">Sessions de scan.</h2><p class="workspace-intro">Ouvrez une session pour vérifier ses mouvements, corriger un doublon ou reprendre sa destination.</p></div><span class="workspace-mark" aria-hidden="true">S1</span></div>
+              <form class="toolbar-form" (ngSubmit)="loadSessions()">
+                <label><span>État</span><select name="sessionStatus" [(ngModel)]="sessionStatus"><option value="">Tous</option><option value="Open">Ouverte</option><option value="Closed">Clôturée</option><option value="Cancelled">Annulée</option><option value="Resumed">Reprise</option></select></label>
+                <label><span>Du</span><input type="date" name="sessionFrom" [(ngModel)]="sessionFrom"></label>
+                <label><span>Au</span><input type="date" name="sessionTo" [(ngModel)]="sessionTo"></label>
+                <button class="primary-button" type="submit" [disabled]="loading()">Actualiser</button>
+              </form>
+              @if (sessionsPage(); as page) {
+                <div class="list-heading"><p><strong>{{ page.totalCount }}</strong> sessions</p></div>
+                <div class="admin-table-wrap"><table><caption class="visually-hidden">Sessions de scan</caption><thead><tr><th>Bénévole / poste</th><th>État</th><th>Scans</th><th>Alertes</th><th>Dernier scan</th><th></th></tr></thead><tbody>
+                  @for (session of page.sessions; track session.id) {
+                    <tr><th scope="row"><span class="book-title">{{ session.volunteerName || 'Bénévole non renseigné' }}</span><span class="book-author">{{ session.fairName || 'Sans bourse' }} · {{ session.mode }}</span></th><td><span class="status-pill" [class]="statusClass(session.status)">{{ statusLabel(session.status) }}</span></td><td>{{ session.scannedCount }} <small>{{ session.keptCount }} gardés</small></td><td>{{ session.pendingAlertCount }} en attente</td><td>{{ formatDate(session.lastScanAt, true) }}</td><td><button class="table-action" type="button" (click)="openSession(session.id)">Ouvrir →</button></td></tr>
+                  } @empty { <tr><td colspan="6" class="empty-cell">Aucune session avec ces critères.</td></tr> }
+                </tbody></table></div>
+                <div class="pagination admin-pagination"><button type="button" [disabled]="sessionPage <= 1" (click)="goToSessionsPage(sessionPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToSessionsPage(sessionPage + 1)">→</button></div>
+              } @else if (loading()) { <p class="status-panel" role="status">Chargement des sessions…</p> }
+
+              @if (selectedSession(); as session) {
+                <div class="detail-panel" aria-labelledby="session-detail-title">
+                  <div class="detail-panel-heading"><div><p class="panel-kicker">Session sélectionnée</p><h3 id="session-detail-title">{{ session.volunteerName || 'Session de scan' }}</h3><p>{{ session.mode }} · commencée le {{ formatDate(session.startedAt, true) }}</p></div><button class="text-button" type="button" (click)="selectedSession.set(null)">Fermer</button></div>
+                  <div class="mini-metrics"><span><strong>{{ session.scannedCount }}</strong> scans</span><span><strong>{{ session.keptCount }}</strong> gardés</span><span><strong>{{ session.rejectedCount }}</strong> refusés</span><span><strong>{{ session.pendingAlertCount }}</strong> alertes en attente</span></div>
+                  <div class="action-row"><button class="secondary-button" type="button" (click)="reassignSession()">Rejouer la destination</button><button class="secondary-button" type="button" (click)="cancelSessionAlerts()">Annuler les alertes</button><button class="secondary-button" type="button" (click)="forceSessionAlerts()">Forcer les alertes</button><button class="danger-button" type="button" (click)="cancelSession()">Annuler la session</button></div>
+                  <div class="reassign-form"><label><span>Destination</span><select name="sessionMode" [(ngModel)]="sessionMode"><option value="AvailableNow">Sur les tables</option><option value="NextFair">Prochaine bourse</option></select></label><label><span>ID bourse cible (optionnel)</span><input name="sessionFairId" [(ngModel)]="sessionFairId" placeholder="GUID de la bourse"></label></div>
+                  <div class="admin-table-wrap"><table><caption class="visually-hidden">Mouvements de la session</caption><thead><tr><th>ISBN</th><th>Type</th><th>Quantité</th><th>Horodatage</th><th>Note</th><th></th></tr></thead><tbody>@for (movement of session.movements; track movement.id) {<tr><td>{{ movement.isbn13 }}</td><td>{{ movement.type }}</td><td>{{ movement.quantity }}</td><td>{{ formatDate(movement.occurredAt, true) }}</td><td>{{ movement.note || '—' }}</td><td><button class="table-action" type="button" [disabled]="!!movement.reversalOfMovementId" (click)="removeMovement(movement.id)">{{ movement.reversalOfMovementId ? 'Renversé' : 'Retirer' }}</button></td></tr>} @empty {<tr><td colspan="6" class="empty-cell">Aucun mouvement dans cette session.</td></tr>}</tbody></table></div>
+                </div>
+              }
+            </section>
           }
-        </section>
+
+          @case ('dead-stock') {
+            <section class="workspace" aria-labelledby="dead-stock-title">
+              <div class="workspace-heading"><div><p class="panel-kicker">File de travail active</p><h2 id="dead-stock-title">Désengorger le local.</h2><p class="workspace-intro">Repérez les titres disponibles depuis longtemps, jamais vendus, et suffisamment nombreux pour mériter un retrait physique.</p></div><span class="workspace-mark" aria-hidden="true">O2</span></div>
+              <form class="toolbar-form dead-stock-toolbar" (ngSubmit)="loadDeadStock()" #filtersForm="ngForm" novalidate><label><span>Disponible depuis au moins</span><span class="input-with-suffix"><input type="number" name="minAgeMonths" [(ngModel)]="minAgeMonths" min="1" max="120000" step="1" required><span>mois</span></span></label><label><span>Plus de ce nombre d’exemplaires</span><input type="number" name="minQuantity" [(ngModel)]="minQuantity" min="0" step="1" required></label><button class="primary-button" type="submit" [disabled]="loading() || filtersForm.invalid">{{ loading() ? 'Recherche…' : 'Actualiser la liste' }}</button></form>
+              @if (loading() && !deadStockBooks().length) {<p class="status-panel" role="status">Recherche des titres à retirer…</p>} @else if (deadStockBooks().length === 0 && !errorMessage()) {<div class="empty-panel"><span class="empty-mark" aria-hidden="true">✓</span><h3>Aucun candidat avec ces critères</h3><p>Le local ne présente pas de titre correspondant à cette recherche, ou la file est déjà vide.</p></div>} @else if (deadStockBooks().length > 0) {<div class="list-heading"><p><strong>{{ deadStockBooks().length }}</strong> titres candidats</p><button class="secondary-button" type="button" (click)="exportCsv()">Exporter en CSV</button></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Titres disponibles depuis longtemps et jamais vendus</caption><thead><tr><th>Titre</th><th>ISBN</th><th>Genre</th><th>Exemplaires</th><th>Disponible depuis</th></tr></thead><tbody>@for (book of deadStockBooks(); track book.isbn13) {<tr><th scope="row"><span class="book-title">{{ book.title || 'Titre inconnu' }}</span><span class="book-author">{{ book.authors || 'Auteur non renseigné' }}</span></th><td>{{ book.isbn13 }}</td><td>{{ book.genre || '—' }}</td><td class="quantity">{{ book.quantityAvailable }}</td><td>{{ formatDate(book.firstAvailableAt) }}</td></tr>}</tbody></table></div>}
+              <p class="surface-note">Le backend ne fournit pas encore le volume des cartons ni la capacité des tables : cette vue propose les candidats, le retrait physique reste une décision bénévole.</p>
+            </section>
+          }
+
+          @case ('catalogue') {
+            <section class="workspace" aria-labelledby="catalogue-title">
+              <div class="workspace-heading"><div><p class="panel-kicker">Fiches & inventaire</p><h2 id="catalogue-title">Catalogue.</h2><p class="workspace-intro">Complétez les notices, corrigez le stock, signalez les raretés et gardez les redirections visibles.</p></div><span class="workspace-mark" aria-hidden="true">C1</span></div>
+              <details class="add-book-panel"><summary>Ajouter une fiche manuellement <span aria-hidden="true">＋</span></summary><form class="form-grid" (ngSubmit)="addBook()"><label><span>ISBN 13 *</span><input name="addIsbn" [(ngModel)]="addBookForm.isbn13" required></label><label><span>Quantité sur les tables *</span><input type="number" name="addQuantity" [(ngModel)]="addBookForm.quantityAvailable" min="0" required></label><label><span>Titre</span><input name="addTitle" [(ngModel)]="addBookForm.title"></label><label><span>Auteur</span><input name="addAuthors" [(ngModel)]="addBookForm.authors"></label><label><span>Éditeur</span><input name="addPublisher" [(ngModel)]="addBookForm.publisher"></label><label><span>Année</span><input type="number" name="addYear" [(ngModel)]="addBookForm.publicationYear"></label><label><span>Genre</span><input name="addGenre" [(ngModel)]="addBookForm.genre"></label><label><span>Œuvre / workId</span><input name="addWorkId" [(ngModel)]="addBookForm.workId"></label><label class="field-wide"><span>Note obligatoire *</span><textarea name="addNote" [(ngModel)]="addBookForm.note" required></textarea></label><button class="primary-button" type="submit" [disabled]="loading()">Ajouter la fiche</button></form></details>
+              <form class="toolbar-form catalogue-toolbar" (ngSubmit)="loadBooks()"><label class="search-field"><span>Titre, auteur ou ISBN</span><input name="bookSearch" [(ngModel)]="bookSearch" placeholder="Rechercher…"></label><label><span>Métadonnées</span><select name="bookMetadataStatus" [(ngModel)]="bookMetadataStatus"><option value="">Toutes</option><option value="Missing">Manquantes</option><option value="Complete">Complètes</option></select></label><label class="check-control"><input type="checkbox" name="bookRareOnly" [(ngModel)]="bookRareOnly"><span>Rares</span></label><label class="check-control"><input type="checkbox" name="bookHiddenOnly" [(ngModel)]="bookHiddenOnly"><span>Masquées</span></label><label class="check-control"><input type="checkbox" name="bookUndatedOnly" [(ngModel)]="bookUndatedOnly"><span>Sans date</span></label><button class="primary-button" type="submit" [disabled]="loading()">Filtrer</button></form>
+              @if (booksPage(); as page) {<div class="list-heading"><p><strong>{{ page.totalCount }}</strong> fiches</p></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Catalogue administrateur</caption><thead><tr><th>Fiche</th><th>État des métadonnées</th><th>Stock</th><th>Signal</th><th>Dernière mise à jour</th><th></th></tr></thead><tbody>@for (book of page.books; track book.isbn13) {<tr [class.redirected-row]="!!book.redirectedToIsbn13"><th scope="row"><span class="book-title">{{ book.title || 'Titre à compléter' }}</span><span class="book-author">{{ book.authors || 'Auteur non renseigné' }} · {{ book.isbn13 }}</span></th><td>{{ book.metadataStatus }}<small>{{ book.metadataSource || 'source inconnue' }}</small></td><td>{{ book.quantityAvailable }} disponibles / {{ book.quantityAnnounced }} annoncés</td><td>{{ book.isRare ? 'Rare' : '—' }}{{ book.isHidden ? ' · Masquée' : '' }}</td><td>{{ formatDate(book.updatedAt, true) }}</td><td><button class="table-action" type="button" (click)="openBook(book.isbn13)">Fiche →</button></td></tr>} @empty {<tr><td colspan="6" class="empty-cell">Aucune fiche avec ces filtres.</td></tr>}</tbody></table></div><div class="pagination admin-pagination"><button type="button" [disabled]="bookPage <= 1" (click)="goToBooksPage(bookPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToBooksPage(bookPage + 1)">→</button></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement du catalogue…</p>}
+              @if (selectedBook(); as book) {<div class="detail-panel book-detail-panel"><div class="detail-panel-heading"><div><p class="panel-kicker">Fiche {{ book.isbn13 }}</p><h3>{{ book.title || 'Titre à compléter' }}</h3><p>{{ book.redirectedToIsbn13 ? 'Redirigée vers ' + book.redirectedToIsbn13 : 'Fiche canonique' }}</p></div><button class="text-button" type="button" (click)="selectedBook.set(null)">Fermer</button></div><div class="book-admin-grid"><div><h4>Métadonnées</h4><div class="form-grid compact-form"><label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title"></label><label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors"></label><label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher"></label><label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear"></label><label><span>Genre</span><input name="metaGenre" [(ngModel)]="metadataForm.genre"></label><label><span>WorkId</span><input name="metaWorkId" [(ngModel)]="metadataForm.workId"></label></div><button class="secondary-button" type="button" [disabled]="!!book.redirectedToIsbn13 || loading()" (click)="updateMetadata(book)">Enregistrer les métadonnées</button></div><div><h4>Stock & signalements</h4><p class="stock-callout"><strong>{{ book.quantityAvailable }}</strong> disponibles · <strong>{{ book.quantityAnnounced }}</strong> annoncés · {{ book.salesCount }} ventes · {{ book.rejectionCount }} refus</p><div class="form-grid compact-form"><label><span>Nouvelle quantité</span><input type="number" name="quantityCorrection" [(ngModel)]="quantityCorrection" min="0"></label><label><span>Note de correction</span><input name="quantityNote" [(ngModel)]="quantityNote" placeholder="Pourquoi ?"></label></div><button class="secondary-button" type="button" [disabled]="!!book.redirectedToIsbn13 || loading()" (click)="correctBookQuantity(book)">Corriger le stock</button><div class="form-grid compact-form"><label><span>Quantité à retirer</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><label><span>Note de retrait</span><input name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Pourquoi ?"></label></div><button class="danger-button" type="button" [disabled]="!!book.redirectedToIsbn13 || loading()" (click)="withdrawBook(book)">Journaliser un retrait</button><div class="action-row"><button class="secondary-button" type="button" (click)="toggleRare(book)">{{ book.isRare ? 'Retirer le signal rare' : 'Marquer comme rare' }}</button><button class="secondary-button" type="button" (click)="toggleVisibility(book)">{{ book.isHidden ? 'Rendre visible' : 'Masquer du public' }}</button></div></div></div><div class="merge-panel"><h4>Fusion par redirection</h4><p>La source reste dans l’historique et pointe vers la fiche canonique cible.</p><div class="form-grid compact-form"><label><span>ISBN cible</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13"></label><label><span>Note</span><input name="mergeNote" [(ngModel)]="mergeNote"></label></div><button class="secondary-button" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger vers la cible</button><button class="danger-button" type="button" [disabled]="loading() || !!book.movements.length || !!book.redirectedToIsbn13" (click)="deleteBook(book)">Supprimer la fiche vide</button></div><div class="announcements-panel"><h4>Annonces</h4><div class="admin-table-wrap"><table><thead><tr><th>Bourse</th><th>Quantité</th><th>État</th><th></th></tr></thead><tbody>@for (announcement of book.announcements; track announcement.id) {<tr><td>{{ announcement.fairId || 'Sans bourse' }}</td><td><input class="inline-number" type="number" [value]="announcementQuantities[announcement.id]" (input)="setAnnouncementQuantity(announcement.id, $any($event.target).value)" min="0"></td><td>{{ statusLabel(announcement.status) }}</td><td><button class="table-action" type="button" (click)="correctAnnouncement(book, announcement.id)">Corriger</button></td></tr>} @empty {<tr><td colspan="4" class="empty-cell">Aucune annonce.</td></tr>}</tbody></table></div><input class="note-input" name="announcementNote" [(ngModel)]="announcementNote" placeholder="Note obligatoire pour corriger une annonce"></div></div>}
+            </section>
+          }
+
+          @case ('fairs') {
+            <section class="workspace" aria-labelledby="fairs-title"><div class="workspace-heading"><div><p class="panel-kicker">Rapports & recettes</p><h2 id="fairs-title">Bilan des bourses.</h2><p class="workspace-intro">Comparez les ventes et saisissez la recette réelle sans confondre une donnée absente avec zéro.</p></div><span class="workspace-mark" aria-hidden="true">R1</span></div>@if (fairsPage(); as page) {<div class="admin-table-wrap"><table><caption class="visually-hidden">Bourses de livres</caption><thead><tr><th>Bourse</th><th>Dates</th><th>Vendus</th><th>Recette</th><th></th></tr></thead><tbody>@for (fair of page.fairs; track fair.id) {<tr><th scope="row"><span class="book-title">{{ fair.name }}</span><span class="book-author">{{ fair.isCancelled ? 'Annulée' : 'Conservée' }}</span></th><td>{{ formatDate(fair.dateStart) }} → {{ formatDate(fair.dateEnd) }}</td><td>—</td><td>{{ formatMoney(fair.revenue) }}</td><td><button class="table-action" type="button" (click)="openFairStats(fair)">Ouvrir →</button></td></tr>} @empty {<tr><td colspan="5" class="empty-cell">Aucune bourse.</td></tr>}</tbody></table></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement des bourses…</p>}@if (selectedFairStats(); as stats) {<div class="detail-panel"><div class="detail-panel-heading"><div><p class="panel-kicker">Bilan détaillé</p><h3>{{ stats.fair.name }}</h3><p>{{ formatDate(stats.fair.dateStart) }} · {{ stats.soldQuantity }} exemplaires vendus</p></div><button class="text-button" type="button" (click)="selectedFairStats.set(null)">Fermer</button></div><div class="metric-grid small-metrics"><article class="metric-card"><span>Vendus</span><strong>{{ stats.soldQuantity }}</strong><small>{{ stats.soldTitles }} titres</small></article><article class="metric-card"><span>Panier moyen</span><strong>{{ formatMoney(stats.averageBasket) }}</strong><small>selon les ventes</small></article><article class="metric-card"><span>Recette</span><strong>{{ formatMoney(stats.revenue) }}</strong><small>montant facultatif</small></article></div><div class="revenue-form"><label><span>Recette réelle (€), vide si non saisie</span><input type="number" name="revenue" [(ngModel)]="revenueInput" min="0" step="0.01"></label><button class="primary-button" type="button" (click)="saveFairRevenue()">Enregistrer</button></div><div class="stats-grid"><div><h4>Ventes par genre</h4><ul class="plain-list">@for (item of stats.salesByGenre; track item.genre) {<li><span>{{ item.genre || 'Sans genre' }}</span><strong>{{ item.quantity }}</strong></li>} @empty {<li>Aucune donnée.</li>}</ul></div><div><h4>Meilleures ventes</h4><ul class="plain-list">@for (item of stats.topBooks; track item.isbn13) {<li><span>{{ item.title || item.isbn13 }}</span><strong>{{ item.quantity }}</strong></li>} @empty {<li>Aucune donnée.</li>}</ul></div></div><h4>Ventes par jour</h4><div class="admin-table-wrap"><table><thead><tr><th>Jour</th><th>Quantité</th></tr></thead><tbody>@for (item of stats.dailySales; track item.day) {<tr><td>{{ formatDay(item.day) }}</td><td>{{ item.quantity }}</td></tr>} @empty {<tr><td colspan="2" class="empty-cell">Aucune vente.</td></tr>}</tbody></table></div></div>}</section>
+          }
+
+          @case ('alerts') {
+            <section class="workspace" aria-labelledby="alerts-title"><div class="workspace-heading"><div><p class="panel-kicker">Outbox & e-mails</p><h2 id="alerts-title">Files d’alertes.</h2><p class="workspace-intro">Annulez seulement ce qui n’est pas parti ; une alerte envoyée ne peut pas être rappelée.</p></div><span class="workspace-mark" aria-hidden="true">A1</span></div><form class="toolbar-form" (ngSubmit)="loadAlerts()"><label><span>État</span><select name="alertStatus" [(ngModel)]="alertStatus"><option value="">Tous</option><option value="Pending">En attente</option><option value="Sent">Envoyées</option><option value="Cancelled">Annulées</option><option value="Failed">Échecs</option></select></label><button class="primary-button" type="submit" [disabled]="loading()">Actualiser</button></form>@if (alertsPage(); as page) {<div class="list-heading"><p><strong>{{ page.totalCount }}</strong> messages</p></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Files d’alertes</caption><thead><tr><th>État</th><th>Membre</th><th>Éléments</th><th>Échéance</th><th>Tentatives</th><th></th></tr></thead><tbody>@for (alert of page.alerts; track alert.id) {<tr><td><span class="status-pill" [class]="statusClass(alert.status)">{{ statusLabel(alert.status) }}</span></td><td>{{ alert.memberId || '—' }}</td><td>{{ alert.itemCount }}</td><td>{{ formatDate(alert.dueAt, true) }}</td><td>{{ alert.attempts }}</td><td class="row-actions"><button class="table-action" type="button" [disabled]="alert.status !== 'Pending'" (click)="cancelAlert(alert)">Annuler</button><button class="table-action" type="button" [disabled]="alert.status !== 'Pending'" (click)="forceAlert(alert)">Forcer</button></td></tr>} @empty {<tr><td colspan="6" class="empty-cell">Aucun message.</td></tr>}</tbody></table></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement des alertes…</p>}</section>
+          }
+
+          @case ('members') {
+            <section class="workspace" aria-labelledby="members-title"><div class="workspace-heading"><div><p class="panel-kicker">Comptes & alertes</p><h2 id="members-title">Comptes et rôles.</h2><p class="workspace-intro">Consultez les membres et protégez la délivrabilité. La gestion des rôles applicatifs reste pilotée par Entra.</p></div><span class="workspace-mark" aria-hidden="true">U1</span></div><form class="toolbar-form" (ngSubmit)="loadMembers()"><label class="search-field"><span>Nom ou e-mail</span><input name="memberSearch" [(ngModel)]="memberSearch" placeholder="Rechercher…"></label><label><span>Alertes</span><select name="memberAlertStatus" [(ngModel)]="memberAlertStatus"><option value="">Tous</option><option value="Active">Actives</option><option value="Suspended">Suspendues</option><option value="Blocked">Bloquées</option></select></label><button class="primary-button" type="submit" [disabled]="loading()">Rechercher</button></form>@if (membersPage(); as page) {<div class="list-heading"><p><strong>{{ page.totalCount }}</strong> comptes</p></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Comptes membres</caption><thead><tr><th>Personne</th><th>Alertes</th><th>Suivis</th><th>Dernière activité</th><th></th></tr></thead><tbody>@for (member of page.members; track member.id) {<tr><th scope="row"><span class="book-title">{{ member.displayName || 'Nom non renseigné' }}</span><span class="book-author">{{ member.email || member.externalId || member.id }}</span></th><td><span class="status-pill" [class]="statusClass(member.alertStatus)">{{ statusLabel(member.alertStatus) }}</span><small>{{ member.bounceCount }} rebonds</small></td><td>{{ member.watchlistItemCount }}</td><td>{{ formatDate(member.lastSeenAt, true) }}</td><td><button class="table-action" type="button" (click)="openMember(member.id)">Voir la fiche →</button></td></tr>} @empty {<tr><td colspan="5" class="empty-cell">Aucun compte.</td></tr>}</tbody></table></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement des comptes…</p>}<p class="surface-note">Les rôles Tri, Caisse et Administration sont des rôles d’application Entra. Cette surface gère les alertes, la consultation et la suppression du compte, mais n’invente pas une modification de rôle absente de l’API.</p>@if (selectedMember(); as member) {<div class="detail-panel"><div class="detail-panel-heading"><div><p class="panel-kicker">Fiche membre</p><h3>{{ member.member.displayName || member.member.email || member.member.id }}</h3><p>{{ member.member.email || 'E-mail non renseigné' }} · créé le {{ formatDate(member.member.createdAt) }}</p></div><button class="text-button" type="button" (click)="selectedMember.set(null)">Fermer</button></div><div class="mini-metrics"><span><strong>{{ member.member.watchlistItemCount }}</strong> suivis</span><span><strong>{{ member.member.alertHistoryCount }}</strong> alertes envoyées</span><span><strong>{{ member.member.bounceCount }}</strong> rebonds</span></div><div class="action-row"><button class="secondary-button" type="button" (click)="toggleMemberBlocked(member)">{{ member.member.alertStatus === 'Blocked' ? 'Réactiver les alertes' : 'Bloquer les alertes' }}</button><button class="danger-button" type="button" (click)="deleteMember(member)">Supprimer/anonymiser</button></div><h4>Liste de suivi</h4><div class="admin-table-wrap"><table><thead><tr><th>Titre</th><th>Portée</th><th>Disponibilité</th><th>Ajout</th></tr></thead><tbody>@for (item of member.watchlist; track item.id) {<tr><th scope="row">{{ item.title || item.isbn13 || item.workId || 'Titre externe' }}</th><td>{{ item.scope }}</td><td>{{ item.quantityAvailable }} disponibles · {{ item.quantityAnnounced }} annoncés</td><td>{{ formatDate(item.addedAt) }}</td></tr>} @empty {<tr><td colspan="4" class="empty-cell">Aucun titre suivi.</td></tr>}</tbody></table></div><h4>Historique d’alertes</h4><ul class="plain-list">@for (alert of member.alerts; track alert.id) {<li><span>{{ alert.title || alert.isbn13 }}</span><small>{{ formatDate(alert.sentAt, true) }}</small></li>} @empty {<li>Aucune alerte envoyée.</li>}</ul></div>}</section>
+          }
+
+          @case ('settings') {
+            <section class="workspace" aria-labelledby="settings-title"><div class="workspace-heading"><div><p class="panel-kicker">Configuration métier</p><h2 id="settings-title">Paramètres.</h2><p class="workspace-intro">Les seuils pilotent les corrections, la file d’alertes et les suggestions de désengorgement.</p></div><span class="workspace-mark" aria-hidden="true">⚙</span></div>@if (settings(); as current) {<form class="settings-form" (ngSubmit)="saveSettings()"><div class="settings-section"><h3>Stock & catalogage</h3><div class="form-grid"><label><span>Seuil de doublon</span><input type="number" name="duplicateThreshold" [(ngModel)]="settingsForm.duplicateThreshold" min="0"></label><label><span>Seuil de demande vendue</span><input type="number" name="demandSalesThreshold" [(ngModel)]="settingsForm.demandSalesThreshold" min="0"></label><label><span>Âge dead-stock (jours)</span><input type="number" name="deadStockMinAgeDays" [(ngModel)]="settingsForm.deadStockMinAgeDays" min="0"></label><label><span>Quantité dead-stock</span><input type="number" name="deadStockMinQuantity" [(ngModel)]="settingsForm.deadStockMinQuantity" min="0"></label><label><span>Maximum de suivis</span><input type="number" name="watchlistMaxItems" [(ngModel)]="settingsForm.watchlistMaxItems" min="0"></label></div></div><div class="settings-section"><h3>Sessions & alertes</h3><div class="form-grid"><label><span>Cooldown d’alerte (jours)</span><input type="number" name="alertCooldownDays" [(ngModel)]="settingsForm.alertCooldownDays" min="0"></label><label><span>Inactivité d’une session (minutes)</span><input type="number" name="sessionIdleTimeoutMinutes" [(ngModel)]="settingsForm.sessionIdleTimeoutMinutes" min="0"></label><label><span>Délai avant alerte (minutes)</span><input type="number" name="alertDelayMinutes" [(ngModel)]="settingsForm.alertDelayMinutes" min="0"></label></div></div><div class="settings-submit"><small>Dernière mise à jour : {{ formatDate(current.updatedAt, true) }}</small><button class="primary-button" type="submit" [disabled]="loading()">Enregistrer les paramètres</button></div></form>} @else if (loading()) {<p class="status-panel" role="status">Chargement des paramètres…</p>}</section>
+          }
+        }
       }
     </div>
   </div>

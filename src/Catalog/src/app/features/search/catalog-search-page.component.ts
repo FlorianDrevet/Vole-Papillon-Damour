@@ -1,14 +1,19 @@
 import {ChangeDetectionStrategy, Component, OnDestroy, OnInit} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
 import {ActivatedRoute, Router} from '@angular/router';
-import {Subject, catchError, of, takeUntil} from 'rxjs';
+import {Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {
   CatalogAvailability,
+  CatalogBookReference,
   CatalogSearchParams,
   CatalogSearchResponse,
   CatalogSort,
+  CatalogReferenceSearchResponse,
 } from '../../core/catalog.models';
+import {CatalogAuthService} from '../../core/catalog-auth.service';
+import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 
 @Component({
   selector: 'app-catalog-search-page',
@@ -27,6 +32,12 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   loading = true;
   error = false;
   response: CatalogSearchResponse | null = null;
+  externalLoading = false;
+  externalError = false;
+  externalResponse: CatalogReferenceSearchResponse | null = null;
+  referenceFollowPending: string | null = null;
+  referenceFollowMessage: string | null = null;
+  referenceFollowError: string | null = null;
 
   private readonly destroyed = new Subject<void>();
 
@@ -34,6 +45,8 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly api: CatalogApiService,
+    private readonly auth: CatalogAuthService,
+    private readonly memberApi: CatalogMemberApiService,
   ) {}
 
   ngOnInit(): void {
@@ -84,6 +97,51 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  goToExternalPage(page: number): void {
+    if (page < 1 || !this.externalResponse || page < 1) {
+      return;
+    }
+
+    void this.router.navigate([this.browseMode ? '/catalogue' : '/recherche'], {
+      queryParams: {...this.queryParams(), referencePage: page},
+    });
+  }
+
+  async followReference(item: CatalogBookReference): Promise<void> {
+    const key = item.workId || item.isbn13;
+    if (!key || this.referenceFollowPending) {
+      return;
+    }
+
+    this.referenceFollowMessage = null;
+    this.referenceFollowError = null;
+
+    if (!this.auth.isAuthenticated()) {
+      try {
+        await this.auth.login(this.referenceReturnUrl());
+      } catch {
+        this.referenceFollowError = 'La connexion n’a pas pu être démarrée. Réessayez.';
+      }
+      return;
+    }
+
+    this.referenceFollowPending = key;
+    try {
+      const token = await this.auth.getApiAccessToken();
+      const request = item.workId
+        ? {scope: 'Work' as const, workId: item.workId, isbn13: null}
+        : {scope: 'Edition' as const, workId: null, isbn13: item.isbn13};
+      await firstValueFrom(this.memberApi.addWatchlistItem(token, request));
+      this.referenceFollowMessage = 'Le titre a été ajouté à votre liste de suivi.';
+    } catch (error: unknown) {
+      this.referenceFollowError = error instanceof HttpErrorResponse && error.status === 409
+        ? 'Ce titre est déjà présent dans votre liste, ou votre liste est pleine.'
+        : 'Le titre n’a pas pu être ajouté. Réessayez dans un instant.';
+    } finally {
+      this.referenceFollowPending = null;
+    }
+  }
+
   totalPages(): number {
     if (!this.response || this.response.totalCount === 0) {
       return 1;
@@ -126,6 +184,29 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.response = response;
         this.loading = false;
       });
+
+    const referenceQuery = this.query.trim();
+    if (referenceQuery.length < 2) {
+      this.externalResponse = null;
+      this.externalLoading = false;
+      this.externalError = false;
+      return;
+    }
+
+    this.externalLoading = true;
+    this.externalError = false;
+    this.api.searchReferences(referenceQuery, this.readReferencePage(), 20)
+      .pipe(
+        catchError(() => {
+          this.externalError = true;
+          return of(null);
+        }),
+        takeUntil(this.destroyed),
+      )
+      .subscribe(response => {
+        this.externalResponse = response;
+        this.externalLoading = false;
+      });
   }
 
   private searchParams(): CatalogSearchParams {
@@ -147,6 +228,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     if (this.availability !== 'all') params['availability'] = this.availability;
     if (this.rareOnly) params['rare'] = true;
     if (this.sort !== 'relevance') params['sort'] = this.sort;
+    if (this.readReferencePage() > 1) params['referencePage'] = this.readReferencePage();
     return params;
   }
 
@@ -157,5 +239,19 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   private readAvailability(value: string | null): CatalogAvailability {
     return value === 'available' || value === 'next' ? value : 'all';
+  }
+
+  private readReferencePage(): number {
+    const page = Number(this.route.snapshot.queryParamMap.get('referencePage') || '1');
+    return Number.isInteger(page) && page > 0 ? page : 1;
+  }
+
+  private referenceReturnUrl(): string {
+    const query = this.queryParams();
+    const search = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+      search.set(key, String(value));
+    }
+    return `/recherche${search.toString() ? `?${search.toString()}` : ''}`;
   }
 }

@@ -142,6 +142,41 @@ public sealed class BookAlertOutboxTests
     }
 
     [Fact]
+    public async Task QueueForSession_DoesNotRequeueAnEntryThatHasAlreadyBeenReversed()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        var session = await fixture.AddSessionAsync(member.Id);
+        await fixture.AddDirectEntryAsync(session, book, member.Id);
+        var original = await fixture.Context.BookMovements.SingleAsync();
+        book.ApplyQuantityCorrection(0, ClosedAt);
+        fixture.Context.BookMovements.Add(BookMovement.Create(
+            BookMovementId.CreateUnique(),
+            book.Id,
+            BookMovementType.Correction,
+            -1,
+            ClosedAt,
+            ClosedAt,
+            false,
+            session.Id,
+            member.Id,
+            null,
+            "Session.Movement.Remove.Reversal",
+            null,
+            original.Id));
+        await fixture.AddWatchlistAsync(member.Id, book);
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+
+        await outbox.QueueForSessionAsync(session.Id, ClosedAt, CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        (await fixture.Context.OutboxMessages.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task QueueForSession_CarriesEditionDetailsAndFairOpeningIntoDelivery()
     {
         await using var fixture = await BookAlertFixture.CreateAsync();
