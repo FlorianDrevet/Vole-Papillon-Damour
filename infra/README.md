@@ -19,7 +19,7 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | Log Analytics | `vpd-law-dev` | Workspace commun aux cinq Application Insights |
 | ACS Email | `vpd-acs-email-dev` / `mail.volepapillondamour.fr` | Service d'envoi, donnees en France |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
-| Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S1` Standard, 20 DTU, 250 Go, sans pause automatique (France Central) |
+| Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S0` Standard, 10 DTU, 250 Go, sans pause automatique (France Central) |
 | Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images`, `book-covers` |
 | Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
 | Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-worker-id-dev` | Une par application |

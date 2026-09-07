@@ -78,7 +78,7 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-04
+### État actualisé — 2026-09-07
 
 `P1-6` à `P1-8` sont implémentés et fusionnés dans `main` par la PR #39 (`abbb336`). Les
 les deux runs CI du code de la PR (`33822121399` et `33822129543`) sont verts, avec
@@ -169,12 +169,12 @@ La migration 0 est préparée dans `20260902223842_MigrateUsersToEntraIdentity` 
 explicitement non réversible car les identifiants legacy sont supprimés. La migration n'a
 pas encore été appliquée à la base.
 
-`L0-7` est terminé. `infra/parameters/main.dev.bicepparam` cible désormais Azure SQL `S1`
-(`Standard`, 20 DTU, 250 Go) sans pause automatique, et le type
-`infra/modules/SqlServer/types.bicep` documente explicitement les paramètres des paliers DTU.
-Les deux fichiers Bicep compilent. Le run GitHub Actions `Infra - deploy #6` a déployé le
-changement le 2026-09-02 ; le portail Azure confirme `Standard S1: 20 DTUs` pour
-`vole-papillon-damour-db`. Le test manuel après plusieurs heures d'inactivité reste à faire.
+`L0-7` est terminé. Après mesure de la charge DEV, le scaling de la base a été re-challengé :
+`infra/parameters/main.dev.bicepparam` cible désormais Azure SQL `S0` (`Standard`, 10 DTU,
+250 Go) sans pause automatique. Les deux fichiers Bicep compilent. Le changement a été
+appliqué directement à `vole-papillon-damour-db` le 2026-09-07 ; Azure confirme `S0`, la
+base est `Online`, les données sont conservées et `GET /health` répond `Healthy`.
+`vpd-sql-import` reste volontairement en `Basic / 5 DTU` pour le workflow d'import.
 
 `L0-8` est réalisé côté OVH le 2026-09-02. Les enregistrements de propriété, SPF, DKIM et
 DMARC sont posés pour `mail.volepapillondamour.fr` ; le SPF racine existant et le TXT
@@ -364,7 +364,7 @@ dans Azure sans être déductible du dépôt.
 
 | Ressource | État | Depuis |
 |---|---|---|
-| Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
+| Base SQL | `S0` (`Standard`, 10 DTU, 250 Go), sans pause automatique ; `Online`, confirmé après le re-challenge du scaling | `2026-09-07` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
 | Container Apps | `api`, `website`, `backOffice`, `scan` à `minReplicas: 1`; `worker` à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running` | `2026-09-04` |
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
@@ -433,7 +433,7 @@ reportées.
 | `QT-07` | Connexion seule, sans inscription | — | — |
 | `QT-08` *(partie jeton, `L0-12`)* | Durée de vie des jetons hors ligne | — | — |
 | `QT-08` *(partie geste, `P1-5`)* | Scan possible hors ligne après 48 h | — | — |
-| `QT-09` | Tenue de `S1` sur disque dur | — | — |
+| `QT-09` | Tenue de `S0` sur disque dur | — | — |
 | `P1-9` | Mesures SQL et traitement sur dataset de développement | Non chiffré : aucun benchmark reproductible n'a été exécuté dans cette reprise ; ne pas inventer de cadence ou de volume | 2026-09-04 |
 
 **Chiffres cibles du palier 0** *(à écrire en `S0-1`, avant la campagne — pas après)* :
@@ -469,6 +469,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-07 | Windows | **Re-challenge du scaling SQL DEV.** La charge et la taille de `vole-papillon-damour-db` justifient le passage de `Standard S1 / 20 DTU` à `Standard S0 / 10 DTU`. Le changement Azure est appliqué et vérifié (`Online`, données conservées, API `Healthy`) ; la configuration Bicep et la documentation sont alignées. `vpd-sql-import` reste en `Basic / 5 DTU`. |
 | 2026-09-04 | Windows | **Correction du smoke metadata.** Le middleware API mappe désormais l'exception d'indisponibilité des fournisseurs bibliographiques vers `503 Service Unavailable` au lieu de `500`; le résolveur conserve son exception afin que le Worker réessaie plutôt que d'écrire un cache négatif. Test API dédié, 4 tests du résolveur et build API passent. Aucun déploiement applicatif n'a été lancé pour ce correctif ; le endpoint DEV a été retesté séparément en `200` lorsque Open Library était disponible. |
 | 2026-09-04 | Windows | **P1-5 — nouveau visuel Scanette.** Intégration locale des écrans de maquette : accueil et choix de session, tri avec verdicts colorés, bandeau hors ligne, saisie manuelle, fin de session, caisse et consultation sans écriture. Ajout de la consultation catalogue locale sans geste d'outbox et conservation de la décision de mode dans IndexedDB. Validation : 53 tests ChromeHeadless, build production Scan et contrôle responsive navigateur à 390 px/1280 px. Aucun déploiement ; la persistance métier de caisse et les gates physiques restent séparées. |
 | 2026-09-04 | Windows | **P1-6 à P1-8 — worker, qualité runtime et déploiement.** Ajout de `Sweep`/`Enrich`, fermeture des sessions inactives, release/rattachement des annonces, enrichissement bibliographique avec cache négatif et couvertures Blob, livraison d'alertes ACS désactivée par défaut, bourses Books annulables, plafonds/alertes App Insights, CORS par origines et workflow runtime avec migrations avant rollout. Corrections TDD de l'isolation des types dans l'outbox de suppression de comptes et de la rétention des utilisateurs référencés par l'historique Books. Suite backend complète : 247 tests passés ; build de solution sans erreur. La vérification ACS est encore « underway », et les gates physiques/P1-9 restent non déclarables à distance. |

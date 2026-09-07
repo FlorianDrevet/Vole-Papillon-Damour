@@ -14,9 +14,10 @@ bibliographique toutes les heures. Les files métier sont persistées dans SQL
 côté développement ; le parcours d'envoi reste désactivé tant que le domaine n'est pas
 vérifié et testé.
 
-**La base cible est un `S1` Standard (20 DTU, 250 Go), sans pause automatique**, en
-France Centrale — la seule région où l'abonnement est autorisé à provisionner de l'Azure
-SQL. Le changement est piloté par `main.dev.bicepparam` et `DT-11`.
+**La base DEV est désormais un `S0` Standard (10 DTU, 250 Go), sans pause automatique**,
+en France Centrale — la seule région où l'abonnement est autorisé à provisionner de
+l'Azure SQL. Le choix initial `S1` de `DT-11` a été re-challengé après mesure et le
+paramètre `main.dev.bicepparam` a été appliqué le 2026-09-07.
 
 Les applications étaient paramétrées avec `minReplicas: 0` et `maxReplicas: 2`. C'est ce
 réglage qui a d'abord imposé un worker séparé (`DT-04`).
@@ -50,7 +51,8 @@ planifiés déclaratifs, cycles de vie distincts. Le réexamen est en
 Tout le reste tient dans l'environnement Container Apps existant.
 
 **Un changement sur une ressource existante**, et il n'est pas optionnel : la base SQL
-quitte le serverless à pause automatique pour le palier fixe `S1` (`DT-11`). C'est un
+quitte le serverless à pause automatique pour le palier fixe `S0` (re-challenge post-mesure
+de `DT-11`). C'est un
 paramètre de `main.dev.bicepparam` et le type correspondant dans le module `SqlServer`,
 mais c'est le poste qui change le plus la facture — dans le bon sens. Voir §7.
 
@@ -157,7 +159,7 @@ d'où ses `minReplicas: 1`.
 
 | Poste | Coût attendu |
 |---|---|
-| **SQL Server** | **~30 $/mois fixe** en `S1` (`DT-11`) — voir ci-dessous, c'est le poste qui a changé |
+| **SQL Server** | Palier fixe **`S0` / 10 DTU**, inférieur au `S1` initial — voir ci-dessous, c'est le poste qui a changé |
 | Container Apps — les trois applications existantes à `minReplicas: 1` | **Déjà engagé, hors module livres.** Voir ci-dessous |
 | Container Apps — `scan` | **Un réplica permanent de plus**, au même tarif que les trois historiques |
 | Container Apps — `worker` | ~21 600 vCPU-s/mois, soit moins d'un euro — sauf si `QT-02` impose `minReplicas: 1` |
@@ -175,12 +177,14 @@ moins de 100 Mo ». C'était vrai sur le volume et faux sur la facture.
 
 Le choix serverless avec pause automatique a été écarté : un balayage toutes les cinq
 minutes aurait maintenu la base éveillée et transformé la pause en coût et latence. `DT-11`
-tranche donc pour le palier fixe **`S1`, environ 30 $ par mois**, sans pause et sans
-démarrage à froid. Le paramètre est maintenant celui de `main.dev.bicepparam` ; le
-portail a confirmé `Standard S1` après le déploiement d'infrastructure du développement.
+avait donc tranché pour le palier fixe `S1`, sans pause et sans démarrage à froid. Après
+mesure de la charge DEV, le dimensionnement a été re-challengé et abaissé à **`S0`, 10
+DTU**, en conservant les 250 Go. Le paramètre est maintenant celui de
+`main.dev.bicepparam` ; le portail confirme `Standard S0` après l'application du
+2026-09-07.
 
-`QT-09` mesure au palier 1 si `S1` tient sur son stockage à disque dur ; `S2` (~74 $) est
-à un paramètre de distance.
+`QT-09` doit maintenant mesurer si `S0` tient sur son stockage à disque dur ; `S1` reste
+le palier de repli et `S2` (~74 $) est à un paramètre de distance.
 
 ### L'observabilité, et son seul risque financier
 
@@ -259,7 +263,7 @@ Aligné sur les paliers fonctionnels de `01` §7 :
 |---|---|
 | **Préalable — identité et délais externes** | **Locataire Entra External ID**, enregistrements et rôles par script (`infra/entra/`), suppression de l'authentification maison. **Ressource ACS Email et vérification du sous-domaine d'envoi** (`DT-12`). **Enregistrements DNS** du catalogue et de l'envoi, posés en une fois (`DT-13`) |
 | 0 — sonde | **Rien de plus.** Application locale, aucun déploiement |
-| 1 — socle | **Socle d'exécution unifié** (`DT-15`), **passage de la base en `S1`** (`DT-11`), migrations 1, application `scan`, worker, compilation et tests au push, **premières règles d'alerte** (`11` §8) |
+| 1 — socle | **Socle d'exécution unifié** (`DT-15`), **base en `S0` après re-challenge de `DT-11`**, migrations 1, application `scan`, worker, compilation et tests au push, **premières règles d'alerte** (`11` §8) |
 | 2 — vitrine | Application `catalog`, **domaine `livres.volepapillondamour.fr` et certificat managé**, index plein texte |
 | 3 — alertes | Ouverture de l'inscription en libre-service, envoi effectif des e-mails, migrations 3 |
 
@@ -273,7 +277,7 @@ premier lot d'alertes groupées partirait en indésirables, et `RG-28` échouera
 silence. On crée donc la ressource et on vérifie le domaine des mois avant le premier
 envoi utile.
 
-Le passage en `S1` n'a pas de délai externe mais doit précéder le worker : c'est lui qui
+Le passage en `S0` n'a pas de délai externe mais doit précéder le worker : c'est lui qui
 rend la cadence de cinq minutes gratuite.
 
 Le palier 0 ne déploie rien : c'est ce qui permet de l'abandonner sans coût si les

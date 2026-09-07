@@ -11,5 +11,15 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="sql-server" uuid="9cce8036-fc0b-49f7-81c4-087e6ce44618">
+      <driver-ref>sqlserver.jb</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.jetbrains.jdbc.sqlserver.SqlServerDriver</jdbc-driver>
+      <jdbc-url>Server=127.0.0.1,19628;User ID=sa;Password=VpdLocal!Sql2026a;TrustServerCertificate=true</jdbc-url>
+      <jdbc-additional-properties>
+        <property name="aspireResourceId" value="sql-server-84661c65" />
+      </jdbc-additional-properties>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
