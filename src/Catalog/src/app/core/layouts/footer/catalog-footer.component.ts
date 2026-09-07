@@ -1,4 +1,6 @@
-import {ChangeDetectionStrategy, Component} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject} from '@angular/core';
+
+import {CookieConsentService} from '../../../shared/services/cookie-consent.service';
 
 @Component({
   selector: 'app-catalog-footer',
@@ -7,4 +9,6 @@ import {ChangeDetectionStrategy, Component} from '@angular/core';
   styleUrls: ['./catalog-footer.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogFooterComponent {}
+export class CatalogFooterComponent {
+  readonly consent = inject(CookieConsentService);
+}

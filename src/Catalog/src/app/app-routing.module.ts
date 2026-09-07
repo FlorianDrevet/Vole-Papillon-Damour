@@ -30,6 +30,21 @@ const routes: Routes = [
     component: LegalPageComponent,
     data: {page: 'privacy'},
   },
+  {
+    path: 'politique-de-confidentialite',
+    redirectTo: 'confidentialite',
+    pathMatch: 'full',
+  },
+  {
+    path: 'politique-de-cookies',
+    component: LegalPageComponent,
+    data: {page: 'cookies'},
+  },
+  {
+    path: 'accessibilite',
+    component: LegalPageComponent,
+    data: {page: 'accessibility'},
+  },
   {path: '**', redirectTo: ''},
 ];
 

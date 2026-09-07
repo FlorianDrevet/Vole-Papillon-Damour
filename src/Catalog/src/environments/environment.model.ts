@@ -11,5 +11,7 @@ export interface CatalogEnvironment {
   production: boolean;
   apiUrl: string;
   publicUrl: string;
+  googleAnalyticsMeasurementId: string;
+  clarityProjectId: string;
   entra: CatalogEntraEnvironment;
 }

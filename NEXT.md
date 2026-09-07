@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Observabilité du scan — séparation des temps API, SQL et fournisseurs bibliographiques sur la branche `feat/scan-observability`, depuis `origin/main` (`1fead4d`). |
-| **Prochaine action** | Après merge de la [PR #90](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/90), reconnecter Azure, déployer l'API/Scan et vérifier dans `vpd-law-dev` les spans, dépendances BnF/SQL, métriques et l'alerte > 3 s. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-observability` |
-| **Dernière mise à jour** | 2026-09-07 — observabilité du scan, [PR #90](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/90) ouverte, déploiement Azure en attente |
-| **Branche** | `feat/scan-observability` — worktree dédié, rebasé sur `origin/main` (`1fead4d`) |
+| **Lot en cours** | Catalogue — mentions légales, confidentialité, cookies, accessibilité et mesure d’audience consentie sur la branche `feat/catalog-legal-analytics`, depuis `origin/main` (`8bd45d6`). |
+| **Prochaine action** | Après merge, lancer `Catalog - deploy`, vérifier le consentement puis la collecte GA4/Clarity sur le domaine public, et soumettre `https://livres.volepapillondamour.fr/sitemap.xml` dans la propriété Search Console de domaine. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-legal-analytics` |
+| **Dernière mise à jour** | 2026-09-07 — tranche légale/analytics du catalogue préparée, PR à ouvrir |
+| **Branche** | `feat/catalog-legal-analytics` — worktree dédié, basé sur `origin/main` (`8bd45d6`) |
 
 ---
 
@@ -780,6 +780,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-07 | Windows | **Catalogue — mentions légales et mesure consentie.** Ajout des pages mentions légales, confidentialité, politique de cookies et accessibilité, avec les informations de l’association, l’hébergement Azure Container Apps, les droits, les comptes/listes/alertes et les limites encore à valider (durées de conservation, transferts, audit RGAA). Ajout d’une bannière permettant d’accepter, refuser ou personnaliser ; Microsoft Clarity et GA4 ne sont chargés qu’après consentement explicite. Création du projet Clarity `yerabb7gnt`, de la propriété/du flux GA4 avec l’identifiant `G-GBHC67EGGF`, et configuration des variables GitHub dédiées du Catalogue ; la variable Website `G-D67DMFCTDG` a été préservée. Le sitemap Catalogue est prêt dans Search Console mais son envoi final reste à confirmer. Validation locale : 103 tests ChromeHeadless, build SSR/production et smoke des quatre pages légales. |
 | 2026-09-07 | Windows | **Footer dédié au Catalog.** Remplacement des liens Website « L'association / Maxence / Contact » par les parcours du catalogue (recherche, genres, prochaines dates, liste de recherche), le renvoi vers le site associatif et les pages légales locales. La grille passe à trois colonnes avec le rappel qu'aucune donnée n'est nécessaire pour consulter le catalogue. Validation : 87 tests ChromeHeadless, build SSR/navigateur et contrôles responsive à 1905/390 px ; PR et déploiement à faire. |
 | 2026-09-07 | Windows | **Scanette — feedback caméra.** Les trois destinations affichent immédiatement « Scan détecté » avec un loader pendant la recherche du livre. La prévisualisation active est accessible au toucher/clavier et demande une remise au point via `single-shot`/`continuous` lorsque le navigateur expose ces contraintes, avec repli sur l'autofocus natif. Validation : 97 tests ChromeHeadless Scan, 4 tests bootstrap, builds production et développement et `graphify update .`. Aucun test réel avec navigateur/appareil caméra ni déploiement n'a été effectué ; PR [#89](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/89) ouverte. |
 | 2026-09-07 | Windows | **Inscription publique External ID.** Le Catalog envoyait déjà `prompt=create` vers `/compte`, mais le flow External ID n'était pas provisionné ni associé à `vpd-catalog-dev`, ce qui pouvait renvoyer vers le parcours administrateur du tenant. Ajout de `Configure-EntraUserFlow.ps1` (Graph v1.0, email/mot de passe, nom affiché, association exclusive au Catalog, mode `-WhatIf`) et de 4 tests Pester ; documentation infra, identité et mémoire alignées. Aucun tenant réel, compte ou déploiement n'a été modifié ; la configuration et le retest live restent à faire après la PR. |

@@ -21,11 +21,15 @@
       <a href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">Le site de l'association</a>
       <a routerLink="/mentions-legales">Mentions légales</a>
       <a routerLink="/confidentialite">Confidentialité</a>
+      <a routerLink="/politique-de-cookies">Politique de cookies</a>
+      <a routerLink="/accessibilite">Accessibilité</a>
+      <a href="/politique-de-cookies" data-testid="manage-cookies"
+         (click)="consent.reopen(); $event.preventDefault()">Gérer les cookies</a>
     </nav>
   </div>
 
   <div class="footer-bottom page-width">
     <span class="footer-note">Aucune donnée n'est nécessaire pour consulter le catalogue</span>
-    <span class="footer-copyright">© 2025 Vole Papillon d'Amour. Tous droits réservés.</span>
+    <span class="footer-copyright">© 2026 Vole Papillon d'Amour. Tous droits réservés.</span>
   </div>
 </footer>

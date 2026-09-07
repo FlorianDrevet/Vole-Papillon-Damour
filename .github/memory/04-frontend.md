@@ -15,9 +15,9 @@ The public catalog is intentionally separate from the association Website. It us
 `CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
 the next books fair, and the dynamic sitemap; the home calendar also consumes the existing
 public `/asso-events` schedule and keeps only future Books events. Its public routes are `/`, `/recherche`,
-`/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, and the two legal pages. The UI keeps
+`/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, and the legal, privacy, cookie and accessibility pages. The UI keeps
 available quantities separate from future announcements, leaves exhausted books visible,
-and does not include audience trackers. The `/compte` member route uses a dynamic,
+and gates Microsoft Clarity and Google Analytics 4 behind explicit audience consent. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
 calls, exposes alert suspension/reactivation and the durable account-deletion request.
 `/desinscription` is a client-only authenticated opt-out route. The `/administration`
