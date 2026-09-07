@@ -94,17 +94,17 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.home-account-callout')).not.toBeNull();
   });
 
-  it('keeps the hero focused on the book fair and uses the association butterfly', () => {
+  it('keeps the hero focused on the book fair and uses a composed book visual', () => {
     const hero = fixture.nativeElement.querySelector('.hero') as HTMLElement;
     const heroSearchButton = hero.querySelector('.hero-search button') as HTMLButtonElement;
-    const butterfly = hero.querySelector('.hero-butterfly') as HTMLImageElement;
+    const heroVisual = hero.querySelector('.hero-visual') as HTMLElement;
 
     expect(hero.textContent).toContain('Est-ce que ce livre sera');
     expect(hero.textContent).toContain('à la bourse aux livres');
     expect(hero.querySelector('.hero-date')).toBeNull();
-    expect(hero.querySelector('.hero-orbit')).toBeNull();
-    expect(butterfly.getAttribute('src')).toContain('papillon_without_back.png');
-    expect(butterfly.getAttribute('alt')).toBe('');
+    expect(heroVisual).not.toBeNull();
+    expect(hero.querySelector('.hero-butterfly')).toBeNull();
+    expect(heroVisual.querySelectorAll('.hero-book').length).toBeGreaterThan(0);
     expect(heroSearchButton.textContent?.trim()).toBe('Rechercher');
     expect(heroSearchButton.querySelector('span')).toBeNull();
   });
@@ -120,19 +120,41 @@ describe('CatalogHomePageComponent', () => {
     });
   });
 
-  it('puts the next fair and its map card before the complete upcoming schedule', () => {
-    const datesSection = fixture.nativeElement.querySelector('#prochaines-dates');
+  it('shows a compact next fair teaser on the home page without the full schedule', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const teaser = element.querySelector('.home-fair-teaser') as HTMLElement;
 
+    expect(teaser).not.toBeNull();
+    expect(teaser.textContent).toContain('Prochaine bourse aux livres');
+    expect(teaser.textContent).toContain('10 octobre 2026');
+    expect(teaser.textContent).toContain('9 h 30');
+    expect(teaser.textContent).not.toContain('46 route de Saint-Marcellin');
+    expect(element.querySelector('.fair-section')).toBeNull();
+    expect(element.querySelector('.next-fair-card')).toBeNull();
+    expect(element.querySelector('.upcoming-fairs')).toBeNull();
+  });
+
+  it('keeps the upcoming dates page focused on the next fair only', () => {
+    fixture.componentInstance.upcomingOnly.set(true);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const datesSection = element.querySelector('.fair-section') as HTMLElement;
+
+    expect(element.querySelector('.hero')).toBeNull();
+    expect(element.querySelector('.home-fair-teaser')).toBeNull();
     expect(datesSection).not.toBeNull();
     expect(datesSection.querySelector('.next-fair-card')).not.toBeNull();
     expect(datesSection.querySelector('.fair-location-card iframe')?.getAttribute('title'))
       .toContain('Carte du lieu');
     expect(datesSection.querySelector('.fair-location-address')?.textContent)
       .toContain('46 route de Saint-Marcellin');
-    expect(datesSection.querySelector('.upcoming-fairs')).not.toBeNull();
-    expect(datesSection.querySelectorAll('.upcoming-fair-row').length).toBe(2);
-    expect(datesSection.textContent).toContain('Bourse de mars');
+    expect(datesSection.querySelector('.upcoming-fairs')).toBeNull();
     expect(datesSection.textContent).toContain('Bourse d’automne');
+    expect(datesSection.textContent).not.toContain('Bourse de mars');
+    expect(element.querySelector('.selection-section')).toBeNull();
+    expect(element.querySelector('.genres-section')).toBeNull();
+    expect(element.querySelector('.home-account-callout')).toBeNull();
   });
 
   it('keeps legacy fair opening hours as civil UTC components', () => {

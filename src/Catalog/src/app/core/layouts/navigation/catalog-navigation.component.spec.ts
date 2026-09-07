@@ -48,6 +48,15 @@ describe('CatalogNavigationComponent', () => {
     expect(eventLink?.textContent).toContain('Les prochaines dates');
   });
 
+  it('offers a distinct home tab and routes dates to the dedicated page', () => {
+    const links = Array.from(fixture.nativeElement.querySelectorAll('a.nav-link')) as HTMLAnchorElement[];
+    const homeLink = links.find(link => link.textContent?.trim() === 'Accueil');
+    const eventLink = links.find(link => link.textContent?.includes('Les prochaines dates'));
+
+    expect(homeLink?.getAttribute('href')).toBe('/');
+    expect(eventLink?.getAttribute('href')).toBe('/prochaines-dates');
+  });
+
   it('opens the account menu from the trigger without changing the current page', () => {
     const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
 

@@ -55,13 +55,16 @@ External ID account-creation prompt with a `/compte` return URL; the correspondi
 The route remains private and noindex while the public catalogue stays browseable without
 authentication.
 
-As of 2026-09-07, the Catalog home navigation entry is **Les prochaines dates** and its
-`#prochaines-dates` section foregrounds the next Books event in a dark editorial card with
-the date stamp, schedule, address, calendar link, and a Website-inspired map/location card.
-The same typed `CatalogApiService.getUpcomingFairs()` projection renders all future Books
-events below the featured event, with responsive date rows and itinerary links. The latest
-local check passes 77 ChromeHeadless tests, the production build, and a 500px browser check
-with no horizontal overflow; live data was not changed.
+As of 2026-09-07, the Catalog public entry point is the **Accueil** tab at `/`. It combines
+the editorial hero, search and genre shortcuts with recent books, rare books, featured
+genres, and a compact next-fair teaser that shows only the date and opening hours. The
+`Les prochaines dates` tab now routes to `/prochaines-dates`, which renders only the next
+Books event's full details: date stamp, schedule, address, calendar link, and map/location
+card; it no longer includes the home search, catalogue sections, or a list of later events.
+The hero's standalone butterfly was replaced by a CSS book composition. Fixed Catalog copy
+uses **bourse aux livres** rather than the standalone term. The latest local check passes
+85 ChromeHeadless tests and the production build; the known initial bundle budget warning
+remains, and live data was not changed.
 
 The Catalog genre navigation keeps five curated source values in
 `src/app/core/catalog-genres.ts`. The home hero and search filter merge those fallback
