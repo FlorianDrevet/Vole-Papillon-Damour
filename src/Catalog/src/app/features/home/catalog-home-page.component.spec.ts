@@ -46,20 +46,30 @@ describe('CatalogHomePageComponent', () => {
   const fair: CatalogFair = {
     id: 'fair-1',
     name: 'Bourse de mars',
-    dateStart: '2026-03-14T00:00:00Z',
-    dateEnd: '2026-03-15T00:00:00Z',
-    openAt: '2026-03-14T09:30:00Z',
-    closeAt: '2026-03-15T18:00:00Z',
+    dateStart: '2027-03-14T00:00:00Z',
+    dateEnd: '2027-03-15T00:00:00Z',
+    openAt: '2027-03-14T09:30:00Z',
+    closeAt: '2027-03-15T18:00:00Z',
     roadNumber: 46,
     city: 'Saint-Just-Saint-Rambert',
     cityCode: 42170,
     road: 'route de Saint-Marcellin',
   };
 
+  const nextFair: CatalogFair = {
+    ...fair,
+    id: 'fair-2',
+    name: 'Bourse d’automne',
+    dateStart: '2026-10-10T00:00:00Z',
+    dateEnd: '2026-10-11T00:00:00Z',
+    openAt: '2026-10-10T09:30:00Z',
+    closeAt: '2026-10-11T18:00:00Z',
+  };
+
   beforeEach(async () => {
-    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'getNextFair']);
+    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'getUpcomingFairs']);
     api.search.and.returnValue(of(searchResponse));
-    api.getNextFair.and.returnValue(of(fair));
+    api.getUpcomingFairs.and.returnValue(of([fair, nextFair]));
     await TestBed.configureTestingModule({
       declarations: [CatalogHomePageComponent, BookCardComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
@@ -108,5 +118,24 @@ describe('CatalogHomePageComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/recherche'], {
       queryParams: {q: 'petit prince', genre: 'Jeunesse'},
     });
+  });
+
+  it('puts the next fair and its map card before the complete upcoming schedule', () => {
+    const datesSection = fixture.nativeElement.querySelector('#prochaines-dates');
+
+    expect(datesSection).not.toBeNull();
+    expect(datesSection.querySelector('.next-fair-card')).not.toBeNull();
+    expect(datesSection.querySelector('.fair-location-card iframe')?.getAttribute('title'))
+      .toContain('Carte du lieu');
+    expect(datesSection.querySelector('.fair-location-address')?.textContent)
+      .toContain('46 route de Saint-Marcellin');
+    expect(datesSection.querySelector('.upcoming-fairs')).not.toBeNull();
+    expect(datesSection.querySelectorAll('.upcoming-fair-row').length).toBe(2);
+    expect(datesSection.textContent).toContain('Bourse de mars');
+    expect(datesSection.textContent).toContain('Bourse d’automne');
+  });
+
+  it('keeps legacy fair opening hours as civil UTC components', () => {
+    expect(fixture.componentInstance.formatTime('2027-03-14T09:30:00Z')).toBe('9 h 30');
   });
 });

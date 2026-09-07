@@ -24,5 +24,5 @@ export const CATALOG_NAV_ITEMS: CatalogNavItem[] = [
       {url: '/catalogue', label: 'Voir tous les genres', hint: 'Parcourir le catalogue complet'},
     ],
   },
-  {url: '/', label: 'La prochaine bourse'},
+  {url: '/', label: 'Les prochaines dates'},
 ];

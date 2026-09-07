@@ -99,4 +99,52 @@ describe('CatalogApiService', () => {
       pageSize: 20,
     });
   });
+
+  it('maps only upcoming book fairs from the public event schedule', () => {
+    service.getUpcomingFairs().subscribe(result => {
+      expect(result).toEqual([{
+        id: 'fair-1',
+        name: 'Bourse de printemps',
+        dateStart: '2027-03-14T00:00:00Z',
+        dateEnd: '2027-03-15T00:00:00Z',
+        openAt: '2027-03-14T09:30:00.000Z',
+        closeAt: '2027-03-15T18:00:00.000Z',
+        roadNumber: 46,
+        city: 'Saint-Just-Saint-Rambert',
+        cityCode: 42170,
+        road: 'route de Saint-Marcellin',
+      }]);
+    });
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/asso-events`);
+    expect(request.request.method).toBe('GET');
+    request.flush([
+      {
+        id: 'fair-1',
+        name: 'Bourse de printemps',
+        eventType: 'Books',
+        dateStart: '2027-03-14T00:00:00Z',
+        dateEnd: '2027-03-15T00:00:00Z',
+        hourOpenDoors: '2026-10-05T09:30:00Z',
+        hourCloseDoors: '2026-10-05T18:00:00Z',
+        roadNumber: 46,
+        city: 'Saint-Just-Saint-Rambert',
+        cityCode: 42170,
+        road: 'route de Saint-Marcellin',
+      },
+      {
+        id: 'bingo-1',
+        name: 'Loto',
+        eventType: 'Bingo',
+        dateStart: '2027-02-01T00:00:00Z',
+        dateEnd: null,
+        hourOpenDoors: null,
+        hourCloseDoors: null,
+        roadNumber: null,
+        city: 'Saint-Étienne',
+        cityCode: 42000,
+        road: 'rue du Test',
+      },
+    ]);
+  });
 });

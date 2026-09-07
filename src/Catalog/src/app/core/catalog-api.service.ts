@@ -1,10 +1,11 @@
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {Observable, map} from 'rxjs';
 
 import {environment} from '../../environments/environment';
 import {
   CatalogBook,
+  CatalogPublicEventResponse,
   CatalogReferenceSearchResponse,
   CatalogFair,
   CatalogSearchParams,
@@ -55,6 +56,48 @@ export class CatalogApiService {
 
   getNextFair(): Observable<CatalogFair> {
     return this.http.get<CatalogFair>(`${this.apiUrl}/catalog/fairs/next`);
+  }
+
+  getUpcomingFairs(): Observable<CatalogFair[]> {
+    return this.http.get<CatalogPublicEventResponse[]>(`${this.apiUrl}/asso-events`).pipe(
+      map(events => events
+        .filter(event => event.eventType.toLowerCase() === 'books')
+        .map(event => this.mapPublicEventToFair(event))),
+    );
+  }
+
+  private mapPublicEventToFair(event: CatalogPublicEventResponse): CatalogFair {
+    return {
+      id: event.id,
+      name: event.name,
+      dateStart: event.dateStart,
+      dateEnd: event.dateEnd,
+      openAt: event.hourOpenDoors
+        ? this.combineDateAndWallClock(event.dateStart, event.hourOpenDoors)
+        : event.dateStart,
+      closeAt: event.hourCloseDoors
+        ? this.combineDateAndWallClock(event.dateEnd ?? event.dateStart, event.hourCloseDoors)
+        : event.dateEnd,
+      roadNumber: event.roadNumber,
+      city: event.city,
+      cityCode: event.cityCode,
+      road: event.road,
+    };
+  }
+
+  /** The event API stores opening/closing values as UTC wall-clock components. */
+  private combineDateAndWallClock(dateValue: string, wallClockValue: string): string {
+    const date = new Date(dateValue);
+    const wallClock = new Date(wallClockValue);
+    return new Date(Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      wallClock.getUTCHours(),
+      wallClock.getUTCMinutes(),
+      wallClock.getUTCSeconds(),
+      wallClock.getUTCMilliseconds(),
+    )).toISOString();
   }
 
   getWork(workId: string): Observable<CatalogWorkResponse> {

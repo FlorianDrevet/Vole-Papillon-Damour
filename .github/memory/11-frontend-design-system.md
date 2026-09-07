@@ -73,7 +73,10 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
 - The home hero is an editorial question on a solid deep-navy panel, with the official
   association butterfly used as the desktop visual mark and a restrained mobile placement.
   Its search owns the genre selector and the API-backed title count; the next-fair block
-  may expose a generated `.ics` link.
+  may expose a generated `.ics` link. The home
+  `#prochaines-dates` calendar keeps the next Books event prominent with a dark date card
+  and a light map/location card inspired by the Website event detail, then uses editorial
+  date rows for the remaining future fairs.
 - Public catalogue, search, work, detail, account, legal, and existing administration
   views share the same spacing, cards, pills, border language, restrained motion, and
   responsive collapse. Availability and future announcements remain truthful and separate;
