@@ -70,6 +70,10 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   `#072b45`, slate `#33536e` / `#4e6c84` / `#6d8ba2`, blue `#0c6ea6` / `#1497d6`, cyan
   `#7fd8f5`, orange `#f0801c` / `#f9a93c` / `#dc6412`, and pale lines `#d9e9f4` /
   `#e2eef7`.
+- The External ID hosted authentication page uses the same Catalog palette through
+  `infra/entra/vpd-catalog-authentication.css`. It targets Microsoft's documented `.ext-*`
+  branding selectors, keeps the page French, and uses system fallbacks for Newsreader and
+  Libre Franklin because tenant branding CSS cannot load the Catalog's local font assets.
 - The home hero is an editorial question on a solid deep-navy panel, with the official
   association butterfly used as the desktop visual mark and a restrained mobile placement.
   Its search owns the genre selector and the API-backed title count; the next-fair block

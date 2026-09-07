@@ -8,6 +8,7 @@ import {
   CatalogMsalModule,
   CatalogAuthService,
 } from './catalog-auth.service';
+import {catalogLoginRequest, catalogRegistrationRequest} from './catalog-auth.config';
 
 describe('CatalogAuthService', () => {
   const account = {
@@ -77,7 +78,7 @@ describe('CatalogAuthService', () => {
     await service.login('/administration');
 
     expect(client.loginRedirect).toHaveBeenCalledWith({
-      scopes: [environment.entra.apiScope],
+      ...catalogLoginRequest,
       redirectStartPage: new URL('/administration', window.location.origin).href,
     });
   });
@@ -86,8 +87,7 @@ describe('CatalogAuthService', () => {
     await service.register('/compte');
 
     expect(client.loginRedirect).toHaveBeenCalledWith({
-      scopes: [environment.entra.apiScope],
-      prompt: 'create',
+      ...catalogRegistrationRequest,
       redirectStartPage: new URL('/compte', window.location.origin).href,
     });
   });
@@ -156,8 +156,8 @@ describe('CatalogAuthService', () => {
       .toBeRejectedWithError(CatalogAuthenticationRedirectStartedError);
 
     expect(client.acquireTokenRedirect).toHaveBeenCalledWith({
+      ...catalogLoginRequest,
       account,
-      scopes: [environment.entra.apiScope],
       redirectStartPage: window.location.href,
     });
   });

@@ -1,0 +1,140 @@
+/*
+ * Vole Papillon d'Amour — Microsoft Entra External ID hosted pages.
+ *
+ * External ID applies this file to the browser-delegated sign-in, sign-up and
+ * sign-out pages. Keep selectors limited to the documented .ext-* surface:
+ * the authentication engine and its security controls remain Microsoft-hosted.
+ */
+
+body {
+  background: #f7fbfe;
+  color: #041d30;
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a,
+a:link {
+  color: #0c6ea6;
+}
+
+a:hover,
+a:focus,
+a:focus:hover,
+a:active {
+  color: #dc6412;
+}
+
+.ext-middle,
+.ext-background-image,
+.ext-vertical-split-background-image-container {
+  background: #f7fbfe;
+}
+
+.ext-header {
+  background: #041d30;
+  border-bottom: 4px solid #f0801c;
+  color: #f7fbfe;
+}
+
+.ext-header-logo {
+  max-width: 245px;
+  max-height: 36px;
+}
+
+.ext-sign-in-box {
+  background: #ffffff;
+  border: 1px solid #d9e9f4;
+  border-radius: 3px;
+  box-shadow: 0 24px 45px -30px rgba(7, 43, 69, .8);
+  color: #041d30;
+}
+
+.ext-title {
+  color: #041d30;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -.03em;
+}
+
+.ext-subtitle {
+  color: #4e6c84;
+  line-height: 1.55;
+}
+
+.ext-input.ext-text-box {
+  background: #ffffff;
+  border: 1px solid #b9d4e5;
+  border-radius: 3px;
+  color: #041d30;
+}
+
+.ext-input.ext-text-box:hover,
+.ext-input.ext-text-box:focus {
+  border-color: #1497d6;
+}
+
+.ext-input.ext-text-box.ext-has-error {
+  border-color: #a33b37;
+}
+
+.ext-button.ext-primary {
+  background: #0c6ea6;
+  border: 1px solid #0c6ea6;
+  border-radius: 3px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.ext-button.ext-primary:hover,
+.ext-button.ext-primary:focus,
+.ext-button.ext-primary:focus:hover,
+.ext-button.ext-primary:active {
+  background: #041d30;
+  border-color: #041d30;
+  color: #ffffff;
+}
+
+.ext-button.ext-secondary {
+  background: #ffffff;
+  border: 1px solid #b9d4e5;
+  border-radius: 3px;
+  color: #0c6ea6;
+}
+
+.ext-button.ext-secondary:hover,
+.ext-button.ext-secondary:focus,
+.ext-button.ext-secondary:focus:hover,
+.ext-button.ext-secondary:active {
+  background: #e9f4fb;
+  border-color: #1497d6;
+  color: #041d30;
+}
+
+.ext-error {
+  border-left: 3px solid #a33b37;
+  color: #7b302c;
+}
+
+.ext-boilerplate-text {
+  color: #6d8ba2;
+  line-height: 1.55;
+}
+
+.ext-footer,
+.ext-footer-links,
+.ext-footer-item {
+  color: #6d8ba2;
+  font-size: 12px;
+}
+
+.ext-debug-item {
+  color: #6d8ba2;
+}
+
+@media (max-width: 600px) {
+  .ext-sign-in-box {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
