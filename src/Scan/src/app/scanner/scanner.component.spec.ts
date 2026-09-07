@@ -217,7 +217,7 @@ describe('ScannerComponent', () => {
     let onDetected: ((rawValue: string) => void) | undefined;
     cameraService.start.and.callFake(async (_container, callback) => {
       onDetected = callback;
-      return {resume: () => undefined, stop: async () => undefined};
+      return {resume: () => undefined, refocus: async () => true, stop: async () => undefined};
     });
 
     await component.toggleCamera();
@@ -227,8 +227,110 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
   });
 
+  it('shows that a live camera scan was found while the book lookup is pending', async () => {
+    const metadataResponse = new Subject<BookMetadata>();
+    metadataService.getMetadata.and.returnValue(metadataResponse.asObservable());
+    let onDetected: ((rawValue: string) => void) | undefined;
+    cameraService.start.and.callFake(async (_container, callback) => {
+      onDetected = callback;
+      return {resume: () => undefined, refocus: async () => true, stop: async () => undefined};
+    });
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openCash();
+    await fixture.whenStable();
+    onDetected?.('9782070363735');
+    fixture.detectChanges();
+
+    expect(component.isLoading).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.scan-progress')?.textContent)
+      .toContain('Scan détecté');
+
+    metadataResponse.next(createMetadata());
+    metadataResponse.complete();
+    await fixture.whenStable();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.scan-progress')).toBeNull();
+  });
+
+  it('shows the scan progress in the tri screen while the lookup is pending', async () => {
+    const metadataResponse = new Subject<BookMetadata>();
+    metadataService.getMetadata.and.returnValue(metadataResponse.asObservable());
+
+    const lookup = component.lookup('9782070363735', 'tri');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.scan-progress-dark')?.textContent)
+      .toContain('Recherche du livre');
+
+    metadataResponse.next(createMetadata());
+    metadataResponse.complete();
+    await lookup;
+  });
+
+  it('shows the scan progress in consultation while the lookup is pending', async () => {
+    const metadataResponse = new Subject<BookMetadata>();
+    metadataService.getMetadata.and.returnValue(metadataResponse.asObservable());
+    component.screen = 'consultation';
+
+    const lookup = component.lookup('9782070363735', 'consultation');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.consultation-lookup-progress')?.textContent)
+      .toContain('Scan détecté');
+
+    metadataResponse.next(createMetadata());
+    metadataResponse.complete();
+    await lookup;
+  });
+
+  it('requests a refocus when the active camera preview is tapped', async () => {
+    const refocus = jasmine.createSpy('refocus').and.returnValue(Promise.resolve(true));
+    cameraService.start.and.callFake(async (_container, _callback) => ({
+      resume: () => undefined,
+      refocus,
+      stop: async () => undefined,
+    }));
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openCash();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const preview = fixture.nativeElement.querySelector('.camera-engine-host-active') as HTMLElement;
+    expect(preview.getAttribute('role')).toBe('button');
+    expect(preview.getAttribute('aria-label')).toContain('mise au point');
+    preview.click();
+    await fixture.whenStable();
+
+    expect(refocus).toHaveBeenCalledOnceWith();
+  });
+
+  it('keeps the native autofocus fallback explicit when refocus is unavailable', async () => {
+    const refocus = jasmine.createSpy('refocus').and.returnValue(Promise.resolve(false));
+    cameraService.start.and.returnValue(Promise.resolve({
+      resume: () => undefined,
+      refocus,
+      stop: async () => undefined,
+    }));
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+
+    component.openCash();
+    await fixture.whenStable();
+    await component.refocusCamera();
+    fixture.detectChanges();
+
+    expect(component.cameraFocusStatus).toBe('unavailable');
+    expect(fixture.nativeElement.querySelector('.camera-engine-host-focus-unavailable')).not.toBeNull();
+  });
+
   it('starts the live camera when the scan screen opens without a scanner button', async () => {
-    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, stop: async () => undefined}));
+    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, refocus: async () => true, stop: async () => undefined}));
     component.authAvailable = true;
     component.isAuthenticated = true;
 
@@ -245,7 +347,7 @@ describe('ScannerComponent', () => {
   });
 
   it('starts the live camera as soon as the cash screen opens', async () => {
-    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, stop: async () => undefined}));
+    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, refocus: async () => true, stop: async () => undefined}));
     component.authAvailable = true;
     component.isAuthenticated = true;
 
@@ -260,7 +362,7 @@ describe('ScannerComponent', () => {
   });
 
   it('starts the live camera as soon as consultation opens', async () => {
-    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, stop: async () => undefined}));
+    cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, refocus: async () => true, stop: async () => undefined}));
     component.authAvailable = true;
     component.isAuthenticated = true;
 
@@ -281,7 +383,7 @@ describe('ScannerComponent', () => {
     const resume = jasmine.createSpy('resume');
     cameraService.start.and.callFake(async (_container, callback) => {
       detected.push(callback);
-      return {resume, stop: async () => undefined};
+      return {resume, refocus: async () => true, stop: async () => undefined};
     });
     component.authAvailable = true;
     component.isAuthenticated = true;
@@ -317,7 +419,7 @@ describe('ScannerComponent', () => {
     metadataService.getMetadata.and.returnValue(of(createMetadata()));
     cameraService.start.and.callFake(async (_container, callback) => {
       onDetected = callback;
-      return {resume, stop: async () => undefined};
+      return {resume, refocus: async () => true, stop: async () => undefined};
     });
 
     (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;

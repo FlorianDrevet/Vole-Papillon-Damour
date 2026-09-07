@@ -21,10 +21,12 @@ describe('CameraScannerService', () => {
     engine = jasmine.createSpyObj<CameraScannerEngine>('CameraScannerEngine', [
       'start',
       'resume',
+      'refocus',
       'stop',
       'scanFile',
     ]);
     engine.start.and.returnValue(Promise.resolve());
+    engine.refocus.and.returnValue(Promise.resolve(true));
     engine.stop.and.returnValue(Promise.resolve());
     engine.scanFile.and.returnValue(Promise.resolve('9782070363735'));
     createEngine = jasmine.createSpy('createEngine').and.returnValue(engine);
@@ -87,6 +89,16 @@ describe('CameraScannerService', () => {
     expect(createEngine).toHaveBeenCalledOnceWith();
     expect(engine.resume).toHaveBeenCalledOnceWith();
     expect(onDetected).toHaveBeenCalledTimes(2);
+  });
+
+  it('refocuses the active camera without creating a new camera engine', async () => {
+    const handle = await service.start(container, jasmine.createSpy('onDetected'));
+
+    const didRefocus = await handle.refocus();
+
+    expect(didRefocus).toBeTrue();
+    expect(createEngine).toHaveBeenCalledOnceWith();
+    expect(engine.refocus).toHaveBeenCalledOnceWith();
   });
 
   it('decodes a photo selected on an iPhone', async () => {
@@ -200,6 +212,30 @@ describe('ZxingCameraScannerEngine', () => {
 
     expect(onDetected).toHaveBeenCalledTimes(2);
     expect(controls.stop).not.toHaveBeenCalled();
+  });
+
+  it('asks the active video track to refocus when the browser exposes focus modes', async () => {
+    const track = {
+      getCapabilities: jasmine.createSpy('getCapabilities').and.returnValue({
+        focusMode: ['single-shot', 'continuous'],
+      }),
+      applyConstraints: jasmine.createSpy('applyConstraints').and.returnValue(Promise.resolve()),
+    };
+    const engine = new ZxingCameraScannerEngine(createReader);
+    await engine.start(container, jasmine.createSpy('onDetected'));
+    const video = container.querySelector('video') as HTMLVideoElement;
+    Object.defineProperty(video, 'srcObject', {
+      configurable: true,
+      value: {getVideoTracks: () => [track]},
+    });
+
+    const didRefocus = await engine.refocus();
+
+    expect(didRefocus).toBeTrue();
+    expect(track.applyConstraints.calls.allArgs()).toEqual([
+      [{advanced: [{focusMode: 'single-shot'}]}],
+      [{advanced: [{focusMode: 'continuous'}]}],
+    ]);
   });
 
   it('falls back to cropped photo decoding when the full photo cannot be decoded', async () => {

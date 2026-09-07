@@ -55,13 +55,16 @@ External ID account-creation prompt with a `/compte` return URL; the correspondi
 The route remains private and noindex while the public catalogue stays browseable without
 authentication.
 
-As of 2026-09-07, the Catalog home navigation entry is **Les prochaines dates** and its
-`#prochaines-dates` section foregrounds the next Books event in a dark editorial card with
-the date stamp, schedule, address, calendar link, and a Website-inspired map/location card.
-The same typed `CatalogApiService.getUpcomingFairs()` projection renders all future Books
-events below the featured event, with responsive date rows and itinerary links. The latest
-local check passes 77 ChromeHeadless tests, the production build, and a 500px browser check
-with no horizontal overflow; live data was not changed.
+As of 2026-09-07, the Catalog public entry point is the **Accueil** tab at `/`. It combines
+the editorial hero, search and genre shortcuts with recent books, rare books, featured
+genres, and a compact next-fair teaser that shows only the date and opening hours. The
+`Les prochaines dates` tab now routes to `/prochaines-dates`, which renders only the next
+Books event's full details: date stamp, schedule, address, calendar link, and map/location
+card; it no longer includes the home search, catalogue sections, or a list of later events.
+The hero's standalone butterfly was replaced by a CSS book composition. Fixed Catalog copy
+uses **bourse aux livres** rather than the standalone term. The latest local check passes
+85 ChromeHeadless tests and the production build; the known initial bundle budget warning
+remains, and live data was not changed.
 
 The Catalog genre navigation keeps five curated source values in
 `src/app/core/catalog-genres.ts`. The home hero and search filter merge those fallback
@@ -107,6 +110,14 @@ gestures rather than silently losing them. Validation for this follow-up passes 
 ChromeHeadless tests, the bootstrap contract, and the production build; it is included in
 the deployed Scan image. The subsequent nested-endpoint authentication regression is
 covered by the 79-test CI run described above.
+
+The 2026-09-07 camera feedback follow-up keeps the same live stream for all three scan
+destinations and renders a `Scan détecté` progress surface while the local/catalog and
+bibliographic lookups are pending. The active camera preview is keyboard- and touch-
+accessible; its focus action applies `single-shot`/`continuous` video-track constraints
+when the browser exposes them and falls back quietly to the device autofocus otherwise.
+The component exposes the focus state to assistive technology and preserves the existing
+permission/session reuse behavior.
 
 ## App Structure
 

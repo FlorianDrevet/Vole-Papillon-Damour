@@ -47,7 +47,6 @@
           } @else {
             <a
               [routerLink]="item.url"
-              [fragment]="item.url === '/' ? 'prochaines-dates' : undefined"
               (click)="closeMenus()"
               class="nav-link"
               [class.active]="isActive(item)">{{ item.label }}</a>
@@ -123,7 +122,7 @@
       <nav aria-label="Navigation mobile">
         @for (item of navItems; track item.url; let i = $index) {
           <div class="mobile-nav-item">
-            <a [routerLink]="item.url" [fragment]="item.url === '/' ? 'prochaines-dates' : undefined" (click)="closeMobileMenu()" [class.active]="isActive(item)">
+            <a [routerLink]="item.url" (click)="closeMobileMenu()" [class.active]="isActive(item)">
               <span class="mobile-index">{{ (i + 1).toString().padStart(2, '0') }}</span>
               <span>{{ item.label }}</span>
             </a>

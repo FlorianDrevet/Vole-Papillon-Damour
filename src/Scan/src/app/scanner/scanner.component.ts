@@ -99,6 +99,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   accountName: string | null = null;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error' = 'idle';
   sessionCloseError: string | null = null;
+  cameraFocusStatus: 'idle' | 'refocusing' | 'requested' | 'unavailable' = 'idle';
   screen: ScanScreen = 'tri';
   selectedMode: LocalScanMode = 'AvailableNow';
   manualReturnScreen: ScanDestination = 'tri';
@@ -343,6 +344,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
     return this.activeMode === 'NextFair'
       ? `Annoncés en ligne pour ${this.nextFairLongLabel}`
       : 'Disponibles à la vente immédiatement';
+  }
+
+  get cameraFocusAriaLabel(): string {
+    switch (this.cameraFocusStatus) {
+      case 'refocusing':
+        return 'Mise au point de la caméra en cours';
+      case 'requested':
+        return 'Mise au point demandée. Touchez à nouveau pour recommencer.';
+      case 'unavailable':
+        return 'La mise au point est gérée automatiquement par la caméra.';
+      default:
+        return 'Aperçu de la caméra. Touchez l’écran pour refaire la mise au point.';
+    }
   }
 
   async submit(): Promise<void> {
@@ -810,12 +824,31 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.startCameraIfNeeded(true);
   }
 
+  async refocusCamera(): Promise<void> {
+    if (!this.cameraHandle || !this.cameraActive || this.isLoading || this.cameraFocusStatus === 'refocusing') {
+      return;
+    }
+
+    this.cameraFocusStatus = 'refocusing';
+    this.refreshView();
+
+    try {
+      const didRefocus = await this.cameraHandle.refocus();
+      this.cameraFocusStatus = didRefocus ? 'requested' : 'unavailable';
+    } catch {
+      this.cameraFocusStatus = 'unavailable';
+    } finally {
+      this.refreshView();
+    }
+  }
+
   private async startCamera(): Promise<void> {
     if (this.cameraHandle || this.cameraActive) {
       return;
     }
 
     this.cameraError = null;
+    this.cameraFocusStatus = 'idle';
     this.cameraActive = true;
     const startToken = ++this.cameraStartToken;
     this.refreshView();
@@ -965,6 +998,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.cameraHandle?.stop();
     this.cameraHandle = null;
     this.cameraActive = false;
+    this.cameraFocusStatus = 'idle';
   }
 
   private resumeCamera(): void {
@@ -1013,6 +1047,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private handleCameraDetection(rawValue: string): void {
     const destination = this.destinationForScreen();
     this.cameraActive = false;
+    this.cameraFocusStatus = 'idle';
     this.refreshView();
     void this.lookup(rawValue, destination)
       .finally(() => this.restartContinuousCamera(destination));
