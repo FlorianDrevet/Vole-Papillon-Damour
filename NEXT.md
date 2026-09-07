@@ -105,7 +105,7 @@ catalogue ainsi que l'absence d'inscription libre-service sur Scan/BackOffice/Ca
 
 ### État actualisé — 2026-09-07 — filtres de genres du catalogue
 
-La branche `fix/catalogue-genre-filters` ajoute cinq genres mis en avant sur l'accueil du
+La branche `fix/catalogue-genre-filters` (PR [#84](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/84)) ajoute cinq genres mis en avant sur l'accueil du
 Catalog (`Romans`, `Jeunesse`, `BD`, `Policier` et `Documentaires`) sous forme de cartes.
 Chaque carte ouvre `/recherche?genre=...`; la page de recherche lance alors sa recherche
 avec le genre sélectionné et conserve aussi le genre dans le filtre lorsque l'API ne renvoie
