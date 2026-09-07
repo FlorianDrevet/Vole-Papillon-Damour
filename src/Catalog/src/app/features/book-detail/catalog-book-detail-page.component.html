@@ -36,7 +36,7 @@
     <div class="detail-content">
       <div class="detail-kicker">
         <span class="detail-rule" aria-hidden="true"></span>
-        <span>{{ item.genre || 'Catalogue de la bourse' }}</span>
+        <span>{{ item.genre || 'Catalogue de la bourse aux livres' }}</span>
       </div>
       <h1>{{ item.title || 'Titre à compléter' }}</h1>
       @if (item.authors) {
@@ -50,7 +50,7 @@
         </p>
       }
 
-      <p class="availability-heading">Disponibilité à la bourse</p>
+      <p class="availability-heading">Disponibilité à la bourse aux livres</p>
       <div class="availability-lines">
         @if (item.quantityAvailable > 0) {
           <div class="availability-line available-line">

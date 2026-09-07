@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, OnInit, signal} from '@angular/core';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, forkJoin, of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
@@ -25,6 +25,7 @@ const EMPTY_SEARCH: CatalogSearchResponse = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalogHomePageComponent implements OnInit {
+  upcomingOnly = signal(false);
   search = '';
   heroGenre = '';
   loading = signal(true);
@@ -35,15 +36,21 @@ export class CatalogHomePageComponent implements OnInit {
   genres = signal<string[]>([]);
   readonly featuredGenres = CATALOG_FEATURED_GENRES;
   nextFair = signal<CatalogFair | null>(null);
-  upcomingFairs = signal<CatalogFair[]>([]);
 
   constructor(
+    private readonly route: ActivatedRoute,
     private readonly api: CatalogApiService,
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
+    this.upcomingOnly.set(this.route.snapshot.data['upcomingOnly'] === true);
+    if (this.upcomingOnly()) {
+      this.loadFairs();
+      return;
+    }
+
     forkJoin({
       recent: this.api.search({sort: 'recent', pageSize: 4}).pipe(catchError(() => {
         this.hasLoadError.set(true);
@@ -62,9 +69,7 @@ export class CatalogHomePageComponent implements OnInit {
       this.recentTotal.set(recent.totalCount);
       this.rare.set(rare.books);
       this.genres.set(recent.genres ?? []);
-      const sortedFairs = [...fairs].sort((a, b) => a.dateStart.localeCompare(b.dateStart));
-      this.upcomingFairs.set(sortedFairs);
-      this.nextFair.set(sortedFairs[0] ?? null);
+      this.setFairs(fairs);
       this.loading.set(false);
     });
   }
@@ -147,5 +152,20 @@ export class CatalogHomePageComponent implements OnInit {
 
   calendarFileName(fair: CatalogFair): string {
     return calendarFilename(fair.name);
+  }
+
+  private loadFairs(): void {
+    this.api.getUpcomingFairs().pipe(catchError(() => {
+      this.hasLoadError.set(true);
+      return of([] as CatalogFair[]);
+    })).subscribe(fairs => {
+      this.setFairs(fairs);
+      this.loading.set(false);
+    });
+  }
+
+  private setFairs(fairs: CatalogFair[]): void {
+    const sortedFairs = [...fairs].sort((a, b) => a.dateStart.localeCompare(b.dateStart));
+    this.nextFair.set(sortedFairs[0] ?? null);
   }
 }

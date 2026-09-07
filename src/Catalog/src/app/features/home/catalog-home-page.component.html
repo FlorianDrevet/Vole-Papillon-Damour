@@ -1,234 +1,233 @@
-<section class="hero">
-  <img class="hero-butterfly" src="images/papillon_without_back.png" alt="" width="360" height="360" aria-hidden="true">
-  <div class="hero-inner page-width">
-    <p class="eyebrow light"><span class="hero-rule" aria-hidden="true"></span>Catalogue de la bourse aux livres</p>
-    <h1>Est-ce que ce livre sera <em>à la bourse aux livres&nbsp;?</em></h1>
-    <p class="hero-intro">Cherchez un titre, un auteur ou le code-barres au dos du livre. Sans compte, et en moins d'une minute.</p>
-
-    <form class="hero-search" (ngSubmit)="submitSearch()">
-      <span class="search-icon" aria-hidden="true"></span>
-      <label class="visually-hidden" for="home-search">Rechercher un titre, un auteur ou un ISBN</label>
-      <input id="home-search" name="search" [(ngModel)]="search" placeholder="un titre, un auteur, ou le code-barres" autocomplete="off">
-      <label class="hero-genre-field">
-        <span>Genre</span>
-        <select class="hero-genre-select" name="genre" [(ngModel)]="heroGenre" aria-label="Filtrer par genre">
-          <option value="">Tous les genres</option>
-          @for (genre of availableGenres(); track genre) {
-            <option [value]="genre">{{ genre }}</option>
-          }
-        </select>
-      </label>
-      <button type="submit">Rechercher</button>
-    </form>
-    <p class="hero-count">
-      @if (recentTotal(); as total) {
-        <strong>{{ total }}</strong> {{ total === 1 ? 'titre disponible en ce moment' : 'titres disponibles en ce moment' }}
-      } @else {
-        <strong>Le catalogue</strong> est en cours de mise à jour
-      }
-    </p>
-  </div>
-</section>
-
-<section id="prochaines-dates" class="fair-section">
-  <div class="fair-inner page-width">
-    <div class="section-heading fair-section-heading">
-      <span class="heading-rule" aria-hidden="true"></span>
-      <p class="eyebrow">Les prochaines dates</p>
-      <h2>La prochaine bourse, puis la suite.</h2>
-      <p class="fair-lead">Retrouvez le prochain rendez-vous en un coup d’œil, puis toutes les dates déjà fixées pour venir chiner des livres et soutenir l’association.</p>
-    </div>
-
-    @if (nextFair(); as fair) {
-      <article class="next-fair-card">
-        <div class="next-fair-copy">
-          <div class="next-fair-title-row">
-            <div class="fair-date-stamp" [attr.aria-label]="'Le ' + formatFairDateRange(fair)">
-              <span class="fair-date-day">{{ fair.dateStart | date:'dd':'Europe/Paris' }}</span>
-              <span class="fair-date-month">{{ fair.dateStart | date:'MMM':'Europe/Paris' }}</span>
-              <span class="fair-date-year">{{ fair.dateStart | date:'yyyy':'Europe/Paris' }}</span>
-            </div>
-            <div class="next-fair-title">
-              <p class="next-fair-kicker">Prochaine bourse aux livres</p>
-              <h3>{{ fair.name }}</h3>
-              <p class="next-fair-range">{{ formatFairDateRange(fair) }}</p>
-            </div>
-          </div>
-
-          <div class="fair-details">
-            <div class="fair-detail">
-              <span class="detail-icon calendar-icon" aria-hidden="true"></span>
-              <div>
-                <span class="detail-label">Dates</span>
-                <time [attr.datetime]="fair.dateStart">{{ formatFairDateRange(fair) }}</time>
-              </div>
-            </div>
-            <div class="fair-detail">
-              <span class="detail-icon clock-icon" aria-hidden="true"></span>
-              <div>
-                <span class="detail-label">Horaires</span>
-                <span>{{ formatTime(fair.openAt) }}@if (fair.closeAt) { à {{ formatTime(fair.closeAt) }} }</span>
-              </div>
-            </div>
-            <div class="fair-detail">
-              <span class="detail-icon pin-icon" aria-hidden="true"></span>
-              <div>
-                <span class="detail-label">Adresse</span>
-                <span>{{ address(fair) || 'Adresse communiquée prochainement' }}</span>
-              </div>
-            </div>
-          </div>
-          <a class="calendar-link" [href]="calendarLink(fair)" [download]="calendarFileName(fair)">Ajouter à mon agenda <span aria-hidden="true">↗</span></a>
-        </div>
-
-        <aside class="fair-location-card">
-          <div class="fair-location-map-wrap">
-            @if (address(fair)) {
-              <iframe
-                [src]="mapsEmbedUrl(fair)"
-                [title]="'Carte du lieu de ' + fair.name"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                class="fair-location-map"></iframe>
-              <a
-                [href]="mapsUrl(fair)"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="fair-location-map-link">
-                Ouvrir dans Maps <span aria-hidden="true">↗</span>
-              </a>
-            } @else {
-              <div class="fair-location-placeholder" role="img" aria-label="Carte du lieu à venir">
-                <span class="pin-icon" aria-hidden="true"></span>
-                <span>Carte du lieu à venir</span>
-              </div>
-            }
-          </div>
-          <div class="fair-location-copy">
-            <span class="detail-label">Lieu de la bourse</span>
-            <p class="fair-location-address">{{ address(fair) || 'Adresse communiquée prochainement' }}</p>
-            @if (address(fair)) {
-              <a [href]="mapsUrl(fair)" target="_blank" rel="noopener noreferrer" class="fair-location-route">ITINÉRAIRE <span aria-hidden="true">→</span></a>
-            }
-          </div>
-        </aside>
-      </article>
-    } @else {
-      <p class="empty-state">La prochaine bourse sera annoncée ici dès qu'une date sera confirmée.</p>
-    }
-
-    @if (upcomingFairs().length) {
-      <div class="upcoming-fairs">
-        <div class="upcoming-fairs-heading">
-          <div class="section-heading">
-            <span class="heading-rule" aria-hidden="true"></span>
-            <p class="eyebrow">Calendrier</p>
-            <h3>Toutes les dates à venir.</h3>
-          </div>
-          <span class="upcoming-count">{{ upcomingFairs().length }} {{ upcomingFairs().length === 1 ? 'date publiée' : 'dates publiées' }}</span>
-        </div>
-
-        <div class="upcoming-fair-list" aria-label="Prochaines bourses aux livres">
-          @for (fair of upcomingFairs(); track fair.id; let first = $first) {
-            <article class="upcoming-fair-row">
-              <div class="upcoming-fair-calendar" aria-hidden="true">
-                <span class="upcoming-fair-day">{{ fair.dateStart | date:'dd':'Europe/Paris' }}</span>
-                <span class="upcoming-fair-month">{{ fair.dateStart | date:'MMM yyyy':'Europe/Paris' }}</span>
-              </div>
-              <div class="upcoming-fair-info">
-                @if (first) { <span class="fair-badge">Prochaine date</span> }
-                <h4>{{ fair.name }}</h4>
-                <p class="upcoming-fair-range">{{ formatFairDateRange(fair) }} · {{ formatTime(fair.openAt) }}@if (fair.closeAt) { à {{ formatTime(fair.closeAt) }} }</p>
-                <p class="upcoming-fair-location"><span class="mini-pin" aria-hidden="true"></span>{{ address(fair) || 'Lieu communiqué prochainement' }}</p>
-              </div>
-              <div class="upcoming-fair-actions">
-                <a [href]="calendarLink(fair)" [download]="calendarFileName(fair)">Agenda <span aria-hidden="true">↗</span></a>
-                @if (address(fair)) {
-                  <a [href]="mapsUrl(fair)" target="_blank" rel="noopener noreferrer">Itinéraire <span aria-hidden="true">↗</span></a>
-                }
-              </div>
-            </article>
-          }
-        </div>
+@if (upcomingOnly()) {
+  <section id="prochaines-dates" class="fair-section upcoming-page" aria-labelledby="upcoming-title">
+    <div class="fair-inner page-width">
+      <div class="section-heading fair-section-heading">
+        <span class="heading-rule" aria-hidden="true"></span>
+        <p class="eyebrow">Les prochaines dates</p>
+        <h1 id="upcoming-title" class="upcoming-page-title">La prochaine bourse aux livres.</h1>
+        <p class="fair-lead">Retrouvez ici toutes les informations utiles pour le prochain rendez-vous : dates, horaires, lieu et ajout à votre agenda.</p>
       </div>
-    }
-  </div>
-</section>
 
-@if (hasLoadError() && !loading()) {
-  <div class="catalog-notice" role="status">Le catalogue et le calendrier se mettent à jour. Réessayez dans un instant.</div>
+      @if (nextFair(); as fair) {
+        <article class="next-fair-card">
+          <div class="next-fair-copy">
+            <div class="next-fair-title-row">
+              <div class="fair-date-stamp" [attr.aria-label]="'Le ' + formatFairDateRange(fair)">
+                <span class="fair-date-day">{{ fair.dateStart | date:'dd':'Europe/Paris' }}</span>
+                <span class="fair-date-month">{{ fair.dateStart | date:'MMM':'Europe/Paris' }}</span>
+                <span class="fair-date-year">{{ fair.dateStart | date:'yyyy':'Europe/Paris' }}</span>
+              </div>
+              <div class="next-fair-title">
+                <p class="next-fair-kicker">Prochaine bourse aux livres</p>
+                <h2>{{ fair.name }}</h2>
+                <p class="next-fair-range">{{ formatFairDateRange(fair) }}</p>
+              </div>
+            </div>
+
+            <div class="fair-details">
+              <div class="fair-detail">
+                <span class="detail-icon calendar-icon" aria-hidden="true"></span>
+                <div>
+                  <span class="detail-label">Dates</span>
+                  <time [attr.datetime]="fair.dateStart">{{ formatFairDateRange(fair) }}</time>
+                </div>
+              </div>
+              <div class="fair-detail">
+                <span class="detail-icon clock-icon" aria-hidden="true"></span>
+                <div>
+                  <span class="detail-label">Horaires</span>
+                  <span>{{ formatTime(fair.openAt) }}@if (fair.closeAt) { à {{ formatTime(fair.closeAt) }} }</span>
+                </div>
+              </div>
+              <div class="fair-detail">
+                <span class="detail-icon pin-icon" aria-hidden="true"></span>
+                <div>
+                  <span class="detail-label">Adresse</span>
+                  <span>{{ address(fair) || 'Adresse communiquée prochainement' }}</span>
+                </div>
+              </div>
+            </div>
+            <a class="calendar-link" [href]="calendarLink(fair)" [download]="calendarFileName(fair)">Ajouter à mon agenda <span aria-hidden="true">↗</span></a>
+          </div>
+
+          <aside class="fair-location-card">
+            <div class="fair-location-map-wrap">
+              @if (address(fair)) {
+                <iframe
+                  [src]="mapsEmbedUrl(fair)"
+                  [title]="'Carte du lieu de ' + fair.name"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  class="fair-location-map"></iframe>
+                <a
+                  [href]="mapsUrl(fair)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="fair-location-map-link">
+                  Ouvrir dans Maps <span aria-hidden="true">↗</span>
+                </a>
+              } @else {
+                <div class="fair-location-placeholder" role="img" aria-label="Carte du lieu à venir">
+                  <span class="pin-icon" aria-hidden="true"></span>
+                  <span>Carte du lieu à venir</span>
+                </div>
+              }
+            </div>
+            <div class="fair-location-copy">
+              <span class="detail-label">Lieu de la bourse aux livres</span>
+              <p class="fair-location-address">{{ address(fair) || 'Adresse communiquée prochainement' }}</p>
+              @if (address(fair)) {
+                <a [href]="mapsUrl(fair)" target="_blank" rel="noopener noreferrer" class="fair-location-route">ITINÉRAIRE <span aria-hidden="true">→</span></a>
+              }
+            </div>
+          </aside>
+        </article>
+      } @else {
+        <p class="empty-state">La prochaine bourse aux livres sera annoncée ici dès qu'une date sera confirmée.</p>
+      }
+    </div>
+  </section>
+
+  @if (hasLoadError() && !loading()) {
+    <div class="catalog-notice" role="status">Les dates et le catalogue se mettent à jour. Réessayez dans un instant.</div>
+  }
+} @else {
+  <section class="hero">
+    <div class="hero-visual" aria-hidden="true">
+      <span class="hero-visual-orb hero-visual-orb-one"></span>
+      <span class="hero-visual-orb hero-visual-orb-two"></span>
+      <div class="hero-book hero-book-back hero-book-cyan">
+        <span class="hero-book-spine"></span>
+      </div>
+      <div class="hero-book hero-book-back hero-book-orange">
+        <span class="hero-book-spine"></span>
+      </div>
+      <div class="hero-book hero-book-main">
+        <span class="hero-book-overline">Vole Papillon d'Amour</span>
+        <strong>Des pages<br><em>à retrouver.</em></strong>
+        <span class="hero-book-index">01 / CATALOGUE</span>
+        <span class="hero-book-bookmark"></span>
+      </div>
+      <span class="hero-visual-caption">chercher · feuilleter · partager</span>
+    </div>
+    <div class="hero-inner page-width">
+      <p class="eyebrow light"><span class="hero-rule" aria-hidden="true"></span>Catalogue de la bourse aux livres</p>
+      <h1>Est-ce que ce livre sera <em>à la bourse aux livres&nbsp;?</em></h1>
+      <p class="hero-intro">Cherchez un titre, un auteur ou le code-barres au dos du livre. Sans compte, et en moins d'une minute.</p>
+
+      <form class="hero-search" (ngSubmit)="submitSearch()">
+        <span class="search-icon" aria-hidden="true"></span>
+        <label class="visually-hidden" for="home-search">Rechercher un titre, un auteur ou un ISBN</label>
+        <input id="home-search" name="search" [(ngModel)]="search" placeholder="un titre, un auteur, ou le code-barres" autocomplete="off">
+        <label class="hero-genre-field">
+          <span>Genre</span>
+          <select class="hero-genre-select" name="genre" [(ngModel)]="heroGenre" aria-label="Filtrer par genre">
+            <option value="">Tous les genres</option>
+            @for (genre of availableGenres(); track genre) {
+              <option [value]="genre">{{ genre }}</option>
+            }
+          </select>
+        </label>
+        <button type="submit">Rechercher</button>
+      </form>
+      <p class="hero-count">
+        @if (recentTotal(); as total) {
+          <strong>{{ total }}</strong> {{ total === 1 ? 'titre disponible en ce moment' : 'titres disponibles en ce moment' }}
+        } @else {
+          <strong>Le catalogue</strong> est en cours de mise à jour
+        }
+      </p>
+
+      @if (nextFair(); as fair) {
+        <aside class="home-fair-teaser" aria-label="Informations sur la prochaine bourse aux livres">
+          <div class="home-fair-teaser-copy">
+            <span class="home-fair-teaser-label">Prochaine bourse aux livres</span>
+            <strong>{{ formatFairDateRange(fair) }}</strong>
+            <span class="home-fair-teaser-time"><span class="clock-icon" aria-hidden="true"></span>Ouverture à {{ formatTime(fair.openAt) }}@if (fair.closeAt) { · jusqu'à {{ formatTime(fair.closeAt) }} }</span>
+          </div>
+          <a routerLink="/prochaines-dates">Voir les détails <span aria-hidden="true">→</span></a>
+        </aside>
+      } @else if (!loading()) {
+        <p class="home-fair-teaser-empty">La prochaine bourse aux livres sera annoncée prochainement.</p>
+      }
+    </div>
+  </section>
+
+  @if (hasLoadError() && !loading()) {
+    <div class="catalog-notice" role="status">Le catalogue et les dates se mettent à jour. Réessayez dans un instant.</div>
+  }
+
+  <section class="selection-section">
+    <div class="selection-header page-width">
+      <div class="section-heading">
+        <span class="heading-rule" aria-hidden="true"></span>
+        <p class="eyebrow">Sur les tables</p>
+        <h2>Arrivés récemment.</h2>
+      </div>
+      <button type="button" class="text-link" (click)="showAll()">Voir les {{ recentTotal() || recent().length }} titres <span aria-hidden="true">→</span></button>
+    </div>
+
+    @if (loading()) {
+      <p class="empty-state page-width">Le catalogue arrive…</p>
+    } @else if (recent().length) {
+      <div class="book-grid page-width" aria-label="Livres arrivés récemment">
+        @for (book of recent(); track trackBook($index, book)) {
+          <app-book-card [book]="book"></app-book-card>
+        }
+      </div>
+    } @else {
+      <p class="empty-state page-width">Les nouvelles arrivées seront affichées ici.</p>
+    }
+  </section>
+
+  <section class="selection-section rare-section">
+    <div class="selection-header page-width">
+      <div class="section-heading">
+        <span class="heading-rule" aria-hidden="true"></span>
+        <p class="eyebrow">Repérés par les bénévoles</p>
+        <h2>Livres rares.</h2>
+      </div>
+      <button type="button" class="text-link" (click)="showRare()">Voir la sélection <span aria-hidden="true">→</span></button>
+    </div>
+
+    @if (!loading() && rare().length) {
+      <div class="book-grid page-width" aria-label="Livres rares">
+        @for (book of rare(); track trackBook($index, book)) {
+          <app-book-card [book]="book"></app-book-card>
+        }
+      </div>
+    } @else if (!loading()) {
+      <p class="empty-state page-width">Les livres rares seront signalés par les bénévoles au fil des tris.</p>
+    }
+  </section>
+
+  <section class="genres-section">
+    <div class="page-width section-heading">
+      <span class="heading-rule" aria-hidden="true"></span>
+      <p class="eyebrow">Pour commencer quelque part</p>
+      <h2>Parcourir par genre.</h2>
+    </div>
+    <div class="page-width genre-grid">
+      @for (genre of featuredGenres; track genre.value; let index = $index) {
+        <a class="genre-card" [routerLink]="['/recherche']" [queryParams]="{genre: genre.value}">
+          <span class="genre-card-number" aria-hidden="true">0{{ index + 1 }}</span>
+          <span class="genre-card-copy">
+            <strong>{{ genre.label }}</strong>
+            <span>{{ genre.hint }}</span>
+          </span>
+          <span class="genre-card-arrow" aria-hidden="true">↗</span>
+        </a>
+      }
+      <a class="genre-all-link" routerLink="/catalogue">Voir tout le catalogue <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <section class="home-account-callout page-width">
+    <div>
+      <p class="eyebrow">Votre sélection</p>
+      <h2>Gardez un œil sur les livres qui vous intéressent.</h2>
+      <p>Un compte vous permet de suivre une œuvre ou une édition et de retrouver vos alertes. Il ne réserve jamais un exemplaire.</p>
+    </div>
+    <a class="callout-link" routerLink="/compte">Découvrir mon espace <span aria-hidden="true">→</span></a>
+  </section>
 }
-
-<section class="selection-section">
-  <div class="selection-header page-width">
-    <div class="section-heading">
-      <span class="heading-rule" aria-hidden="true"></span>
-      <p class="eyebrow">Sur les tables</p>
-      <h2>Arrivés récemment.</h2>
-    </div>
-    <button type="button" class="text-link" (click)="showAll()">Voir les {{ recentTotal() || recent().length }} titres <span aria-hidden="true">→</span></button>
-  </div>
-
-  @if (loading()) {
-    <p class="empty-state page-width">Le catalogue arrive…</p>
-  } @else if (recent().length) {
-    <div class="book-grid page-width" aria-label="Livres arrivés récemment">
-      @for (book of recent(); track trackBook($index, book)) {
-        <app-book-card [book]="book"></app-book-card>
-      }
-    </div>
-  } @else {
-    <p class="empty-state page-width">Les nouvelles arrivées seront affichées ici.</p>
-  }
-</section>
-
-<section class="selection-section rare-section">
-  <div class="selection-header page-width">
-    <div class="section-heading">
-      <span class="heading-rule" aria-hidden="true"></span>
-      <p class="eyebrow">Repérés par les bénévoles</p>
-      <h2>Livres rares.</h2>
-    </div>
-    <button type="button" class="text-link" (click)="showRare()">Voir la sélection <span aria-hidden="true">→</span></button>
-  </div>
-
-  @if (!loading() && rare().length) {
-    <div class="book-grid page-width" aria-label="Livres rares">
-      @for (book of rare(); track trackBook($index, book)) {
-        <app-book-card [book]="book"></app-book-card>
-      }
-    </div>
-  } @else if (!loading()) {
-    <p class="empty-state page-width">Les livres rares seront signalés par les bénévoles au fil des tris.</p>
-  }
-</section>
-
-<section class="genres-section">
-  <div class="page-width section-heading">
-    <span class="heading-rule" aria-hidden="true"></span>
-    <p class="eyebrow">Pour commencer quelque part</p>
-    <h2>Parcourir par genre.</h2>
-  </div>
-  <div class="page-width genre-grid">
-    @for (genre of featuredGenres; track genre.value; let index = $index) {
-      <a class="genre-card" [routerLink]="['/recherche']" [queryParams]="{genre: genre.value}">
-        <span class="genre-card-number" aria-hidden="true">0{{ index + 1 }}</span>
-        <span class="genre-card-copy">
-          <strong>{{ genre.label }}</strong>
-          <span>{{ genre.hint }}</span>
-        </span>
-        <span class="genre-card-arrow" aria-hidden="true">↗</span>
-      </a>
-    }
-    <a class="genre-all-link" routerLink="/catalogue">Voir tout le catalogue <span aria-hidden="true">→</span></a>
-  </div>
-</section>
-
-<section class="home-account-callout page-width">
-  <div>
-    <p class="eyebrow">Votre sélection</p>
-    <h2>Gardez un œil sur les livres qui vous intéressent.</h2>
-    <p>Un compte vous permet de suivre une œuvre ou une édition et de retrouver vos alertes. Il ne réserve jamais un exemplaire.</p>
-  </div>
-  <a class="callout-link" routerLink="/compte">Découvrir mon espace <span aria-hidden="true">→</span></a>
-</section>

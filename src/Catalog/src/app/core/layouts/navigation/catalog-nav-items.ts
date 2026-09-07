@@ -13,6 +13,7 @@ export interface CatalogNavItem {
  * routes that belong to this application.
  */
 export const CATALOG_NAV_ITEMS: CatalogNavItem[] = [
+  {url: '/', label: 'Accueil'},
   {url: '/recherche', label: 'Rechercher'},
   {
     url: '/catalogue',
@@ -27,5 +28,5 @@ export const CATALOG_NAV_ITEMS: CatalogNavItem[] = [
       {url: '/catalogue', label: 'Voir tous les genres', hint: 'Parcourir le catalogue complet'},
     ],
   },
-  {url: '/', label: 'Les prochaines dates'},
+  {url: '/prochaines-dates', label: 'Les prochaines dates'},
 ];

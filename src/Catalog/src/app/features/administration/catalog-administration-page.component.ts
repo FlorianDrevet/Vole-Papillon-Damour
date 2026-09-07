@@ -505,7 +505,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('revenue', async token => {
       await firstValueFrom(this.api.setFairRevenue(token, stats.fair.id, revenue));
-      this.successMessage.set('La recette de la bourse a été enregistrée.');
+      this.successMessage.set('La recette de la bourse aux livres a été enregistrée.');
       await this.openFairStats(stats.fair);
       await this.loadFairs();
     });
