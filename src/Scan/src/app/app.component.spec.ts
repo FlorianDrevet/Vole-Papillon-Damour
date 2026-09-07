@@ -55,6 +55,14 @@ describe('AppComponent', () => {
     expect(fixture.nativeElement.querySelector('.scanner-stub')).not.toBeNull();
   });
 
+  it('keeps the scanner mounted for a cached account whose token cannot be renewed', () => {
+    authState.next(createState('degraded'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.login-stub')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.scanner-stub')).not.toBeNull();
+  });
+
   it('returns to the login surface when access expires', () => {
     authState.next(createState('authorized'));
     fixture.detectChanges();

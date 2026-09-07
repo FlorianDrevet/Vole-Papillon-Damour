@@ -45,8 +45,16 @@ export class ScanWorkflowService {
   }
 
   async getLatestPendingResult(): Promise<LocalScanResult | null> {
+    const session = await this.store.getSession();
+    if (!session) {
+      return null;
+    }
+
     const entries = await this.store.listOutboxEntries();
-    const entry = entries.filter(candidate => candidate.status === 'Pending').at(-1) ?? null;
+    const entry = entries
+      .filter(candidate =>
+        candidate.status === 'Pending' && candidate.scanSessionId === session.scanSessionId)
+      .at(-1) ?? null;
     if (!entry) {
       return null;
     }
@@ -106,6 +114,7 @@ export class ScanWorkflowService {
           clientGestureId: createClientId(),
           isbn13,
           quantity: 1,
+          status: 'Pending',
           occurredAt: timestamp,
           createdAt: new Date().toISOString(),
           attemptCount: 0,
@@ -122,6 +131,14 @@ export class ScanWorkflowService {
   async setSessionMode(mode: 'AvailableNow' | 'NextFair'): Promise<ScanSessionSnapshot> {
     return await this.enqueue(async () => {
       const session = await this.ensureSession(new Date());
+
+      if (session.closeRequested) {
+        const nextSession = createSession(new Date(), mode);
+        await this.store.orphanPendingOutboxEntriesFromOtherSessions(nextSession.scanSessionId);
+        await this.store.saveSession(nextSession);
+        return nextSession;
+      }
+
       const updated = {...session, mode};
       await this.store.saveSession(updated);
       return updated;
@@ -150,6 +167,13 @@ export class ScanWorkflowService {
         closeRequested: true,
         closeReason,
       };
+      await this.store.saveSessionCloseRequest({
+        scanSessionId: session.scanSessionId,
+        mode: session.mode,
+        targetAssoEventsId: session.targetAssoEventsId,
+        closeReason,
+        requestedAt: new Date().toISOString(),
+      });
       await this.store.saveSession(updated);
       return updated;
     });
@@ -175,6 +199,10 @@ export class ScanWorkflowService {
   }): Promise<void> {
     return await this.enqueue(async () => {
       const current = await this.ensureSession(new Date(remoteSession.startedAt));
+      if (current.scanSessionId !== remoteSession.scanSessionId) {
+        return;
+      }
+
       await this.store.saveSession({
         ...current,
         scanSessionId: remoteSession.scanSessionId,
@@ -198,13 +226,15 @@ export class ScanWorkflowService {
         throw new Error('The scan session is waiting for synchronization to close.');
       }
 
+      await this.store.orphanPendingOutboxEntriesFromOtherSessions(session.scanSessionId);
       const existingEntries = await this.store.listOutboxEntries();
       const previousEntry = existingEntries
         .slice()
         .reverse()
         .find(entry => entry.scanSessionId === session.scanSessionId && entry.status !== 'CancelledLocal');
       const previousPendingEntries = existingEntries
-        .filter(entry => entry.status === 'Pending');
+        .filter(entry =>
+          entry.status === 'Pending' && entry.scanSessionId === session.scanSessionId);
 
       let keptCount = session.keptCount;
       for (const entry of previousPendingEntries) {
@@ -263,6 +293,11 @@ export class ScanWorkflowService {
       const existing = await this.store.getOutboxEntry(clientGestureId);
       if (!existing) {
         throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+      }
+
+      if (existing.scanSessionId !== session.scanSessionId && existing.status === 'Pending') {
+        await this.store.orphanPendingOutboxEntriesFromOtherSessions(session.scanSessionId);
+        return (await this.store.getOutboxEntry(clientGestureId))!;
       }
 
       const decided = await this.store.decideOutboxEntry(
@@ -386,5 +421,24 @@ function createEmptyCatalogBook(isbn13: string, updatedAt: string): ScanCatalogB
     isWanted: false,
     isRare: false,
     updatedAt,
+  };
+}
+
+function createSession(now: Date, mode: 'AvailableNow' | 'NextFair'): ScanSessionSnapshot {
+  const timestamp = now.toISOString();
+  return {
+    key: 'active-session',
+    scanSessionId: createClientId(),
+    volunteerId: null,
+    mode,
+    targetAssoEventsId: null,
+    startedAt: timestamp,
+    lastScanAt: timestamp,
+    lastSyncAt: timestamp,
+    scannedCount: 0,
+    keptCount: 0,
+    rejectedCount: 0,
+    closeRequested: false,
+    closeReason: null,
   };
 }

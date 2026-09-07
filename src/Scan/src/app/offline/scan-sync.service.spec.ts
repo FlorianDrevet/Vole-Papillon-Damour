@@ -1,3 +1,4 @@
+import {HttpErrorResponse} from '@angular/common/http';
 import {TestBed} from '@angular/core/testing';
 import {of, throwError} from 'rxjs';
 
@@ -50,6 +51,7 @@ describe('ScanSyncService', () => {
     store = TestBed.inject(ScanLocalStoreService);
     await store.clearCatalog();
     await store.clearSession();
+    await store.clearSessionCloseRequests();
     for (const entry of await store.listOutboxEntries()) {
       await store.deleteOutboxEntry(entry.clientGestureId);
     }
@@ -161,21 +163,107 @@ describe('ScanSyncService', () => {
     expect(await workflow.getSession()).toBeNull();
   });
 
-  it('stops at the first network failure and leaves the failed gesture durable', async () => {
+  it('continues with later gestures when an earlier network attempt fails', async () => {
     const scan = await workflow.recordScan(
       '9782070363735',
       new Date('2026-09-03T08:01:00.000Z'),
     );
     await workflow.decide(scan.entry.clientGestureId, true);
-    api.scanBook.and.returnValue(throwError(() => new Error('network down')));
+    const laterScan = await workflow.recordScan(
+      '9783140464079',
+      new Date('2026-09-03T08:02:00.000Z'),
+    );
+    await workflow.decide(laterScan.entry.clientGestureId, false);
+    api.scanBook.and.returnValues(
+      throwError(() => new Error('network down')),
+      of({...createScanResponse(), isbn13: '9783140464079'}),
+    );
 
     const result = await service.flushOutbox();
     const durableEntry = await store.getOutboxEntry(scan.entry.clientGestureId);
 
-    expect(result.sent).toBe(0);
+    expect(api.scanBook).toHaveBeenCalledTimes(2);
+    expect(result.sent).toBe(1);
     expect(result.remaining).toBe(1);
     expect(durableEntry?.attemptCount).toBe(1);
     expect(durableEntry?.lastError).toBe('network down');
+    expect(await store.getOutboxEntry(laterScan.entry.clientGestureId)).toBeNull();
+  });
+
+  it('backs off a transient failure before retrying the same gesture', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-07T08:00:00.000Z'));
+
+    try {
+      const scan = await workflow.recordScan(
+        '9782070363735',
+        new Date('2026-09-03T08:01:00.000Z'),
+      );
+      await workflow.decide(scan.entry.clientGestureId, true);
+      api.scanBook.and.returnValue(throwError(() => new Error('network down')));
+
+      await service.flushOutbox();
+      await service.flushOutbox();
+
+      expect(api.scanBook).toHaveBeenCalledOnceWith(
+        'session-1',
+        jasmine.objectContaining({clientGestureId: scan.entry.clientGestureId}),
+      );
+
+      jasmine.clock().tick(60_000);
+      api.scanBook.and.returnValue(of(createScanResponse()));
+      await service.flushOutbox();
+
+      expect(api.scanBook).toHaveBeenCalledTimes(2);
+      expect(await store.getOutboxEntry(scan.entry.clientGestureId)).toBeNull();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('quarantines a repeatedly rejected gesture instead of blocking the queue', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    api.scanBook.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 422,
+      error: {title: 'Validation failed'},
+    })));
+
+    let result = await service.flushOutbox();
+    result = await service.flushOutbox();
+    result = await service.flushOutbox();
+    result = await service.flushOutbox();
+    result = await service.flushOutbox();
+
+    expect(api.scanBook).toHaveBeenCalledTimes(5);
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Quarantined');
+    expect(result.remaining).toBe(0);
+    expect(result.quarantined).toBe(1);
+  });
+
+  it('closes a requested session after its rejected gesture is quarantined', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    await workflow.requestClose('Manual');
+    api.scanBook.and.returnValue(throwError(() => new HttpErrorResponse({status: 422})));
+
+    let result = await service.syncAll();
+    result = await service.syncAll();
+    result = await service.syncAll();
+    result = await service.syncAll();
+    result = await service.syncAll();
+
+    expect(api.closeSession).toHaveBeenCalledOnceWith(
+      'session-1',
+      {closeReason: 'Manual'},
+    );
+    expect(result.closed).toBeTrue();
   });
 
   it('does not transmit a pending decision', async () => {

@@ -16,6 +16,7 @@ describe('ScanLocalStoreService', () => {
     service = TestBed.inject(ScanLocalStoreService);
     await service.clearCatalog();
     await service.clearSession();
+    await service.clearSessionCloseRequests();
 
     for (const entry of await service.listOutboxEntries()) {
       await service.deleteOutboxEntry(entry.clientGestureId);

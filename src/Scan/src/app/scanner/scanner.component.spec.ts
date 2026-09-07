@@ -329,6 +329,59 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.querySelector('.camera-engine-host-focus-unavailable')).not.toBeNull();
   });
 
+  it('does not add a cash line when the local catalog lookup fails', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'lookupCatalog',
+    ]);
+    workflow.lookupCatalog.and.rejectWith(new Error('IndexedDB unavailable'));
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+    );
+
+    await localComponent.lookup('9782070363735', 'cash');
+
+    expect(localComponent.cashItems).toEqual([]);
+    expect(localComponent.storageError).toContain('catalogue local');
+  });
+
+  it('surfaces a local catalog lookup failure in consultation', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'lookupCatalog',
+    ]);
+    workflow.lookupCatalog.and.rejectWith(new Error('IndexedDB unavailable'));
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+    );
+
+    await localComponent.lookup('9782070363735', 'consultation');
+
+    expect(localComponent.storageError).toContain('catalogue local');
+  });
+
   it('starts the live camera when the scan screen opens without a scanner button', async () => {
     cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, refocus: async () => true, stop: async () => undefined}));
     component.authAvailable = true;

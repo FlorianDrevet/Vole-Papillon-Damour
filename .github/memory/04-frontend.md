@@ -79,9 +79,11 @@ the DEV ACA: local verdicts, IndexedDB session/catalog/outbox persistence, MSAL 
 authentication, and sequential gesture replay are present. P1-2 selected the existing
 Jasmine/Karma/ChromeHeadless toolchain: browser integration tests use real IndexedDB and
 a fake transport simulates delays, failures, mid-flight disconnects, and duplicate
-responses. The local outbox states are `Pending`, `Kept`, `Rejected`, and
-`CancelledLocal`; only final decisions reach the API, while a transmitted cancellation
-becomes a new inverse gesture.
+responses. The local outbox states are `Pending`, `Kept`, `Rejected`, `CancelledLocal`,
+`Quarantined`, and `Orphaned`; only final decisions reach the API, while a transmitted
+cancellation becomes a new inverse gesture. Transient replay failures use exponential
+backoff; repeated 4xx validation failures are quarantined after the same five-attempt
+budget as the backend alert outbox.
 
 The Scanette redesign shown in `docs/bourse-aux-livres/maquettes/scanette/` is implemented
 and deployed in the same PWA: home and session-mode selection, distinct verdict surfaces,
@@ -89,8 +91,11 @@ session summary, cash register, consultation, manual ISBN keypad, and offline va
 Consultation uses the local catalog without creating an outbox gesture; the cash screen
 persists each sale in IndexedDB, decrements local stock optimistically, and replays it to
 `POST /scan/sales` with an idempotent `ClientGestureId`. The root auth gate shows a dedicated
-login surface until an Entra account with `Tri` or `Caisse` is available; token-renewal
-failures return to that surface. The tri scan view starts the ZXing camera automatically,
+login surface until an Entra account with `Tri` or `Caisse` is available. A previously
+authorized cached account enters a visible degraded mode when silent renewal fails:
+local triage, consultation, cash capture, camera and IndexedDB outbox remain usable, but
+synchronization waits for a fresh token; an explicit logout or server 401/403 clears the
+local authorization marker. The tri scan view starts the ZXing camera automatically,
 keeps manual/photo fallback, and no longer renders the former top toast stack. Both Scan environments use the tenant-scoped CIAM
 authority; the login request carries an explicit root return page and surfaces redirect
 failures inline. The MSAL interceptor protects `/scan/*` with the API bearer token; the
@@ -118,6 +123,14 @@ accessible; its focus action applies `single-shot`/`continuous` video-track cons
 when the browser exposes them and falls back quietly to the device autofocus otherwise.
 The component exposes the focus state to assistive technology and preserves the existing
 permission/session reuse behavior.
+
+The 2026-09-07 Scan Lot 1 hardening keeps close requests as durable session records so a
+new local triage session can open before an older close reaches the API. Pending gestures
+from the older session are marked `Orphaned` instead of being silently kept under the new
+mode; close processing groups decided gestures by their original session and ignores
+quarantined/orphaned entries when deciding whether a close may complete. Local catalog
+lookup failures are shown on cash and consultation, and a cash line is never created from
+an unknown `isRare: false` fallback.
 
 ## App Structure
 

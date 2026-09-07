@@ -10,7 +10,12 @@ export const SCAN_REQUIRED_ROLE = 'Tri ou Caisse';
 export const SCAN_TRI_ROLE = 'Tri';
 export const SCAN_CASH_ROLE = 'Caisse';
 
-export type ScanAuthStatus = 'checking' | 'unauthenticated' | 'unauthorized' | 'authorized';
+export type ScanAuthStatus =
+  | 'checking'
+  | 'unauthenticated'
+  | 'unauthorized'
+  | 'authorized'
+  | 'degraded';
 
 export interface ScanAuthState {
   status: ScanAuthStatus;
@@ -21,6 +26,7 @@ export interface ScanAuthState {
 
 @Injectable({providedIn: 'root'})
 export class ScanAuthService {
+  private static readonly localAuthorizationStorageKey = 'vpd-scan-local-authorization';
   private readonly accountSubject = new BehaviorSubject<AccountInfo | null>(null);
   private readonly authStateSubject = new BehaviorSubject<ScanAuthState>({
     status: 'checking',
@@ -57,11 +63,15 @@ export class ScanAuthService {
         }
 
         if (
-          message.eventType === EventType.ACQUIRE_TOKEN_FAILURE ||
           message.eventType === EventType.LOGOUT_SUCCESS ||
           message.eventType === EventType.LOGOUT_FAILURE
         ) {
           this.publishAccount(null);
+          return;
+        }
+
+        if (message.eventType === EventType.ACQUIRE_TOKEN_FAILURE) {
+          this.handleSilentTokenFailure();
           return;
         }
 
@@ -106,10 +116,16 @@ export class ScanAuthService {
   }
 
   logout(): void {
+    this.forgetLocalAuthorization(this.accountSubject.value);
     this.publishAccount(null);
     this.msalService.logoutRedirect().subscribe({
       error: () => undefined,
     });
+  }
+
+  handleServerAuthorizationFailure(): void {
+    this.forgetLocalAuthorization(this.accountSubject.value);
+    this.publishAccount(null);
   }
 
   private publishCachedAccount(): void {
@@ -164,6 +180,12 @@ export class ScanAuthService {
           ? 'authorized'
           : 'unauthorized';
 
+        if (status === 'authorized') {
+          this.rememberLocalAuthorization(account, roles);
+        } else {
+          this.forgetLocalAuthorization(account);
+        }
+
         this.authStateSubject.next({
           status,
           account,
@@ -173,15 +195,120 @@ export class ScanAuthService {
       },
       error: () => {
         if (check === this.authorizationCheck) {
-          this.publishAccount(null);
+          this.publishDegradedAccount(account);
         }
       },
     });
   }
+
+  private handleSilentTokenFailure(): void {
+    const account = this.accountSubject.value;
+    if (!account) {
+      this.publishAccount(null);
+      return;
+    }
+
+    this.publishDegradedAccount(account);
+  }
+
+  private publishDegradedAccount(account: AccountInfo): void {
+    const roles = this.getLocalAuthorizationRoles(account);
+    if (!roles || !hasScanRole(roles)) {
+      this.publishAccount(null);
+      return;
+    }
+
+    this.authorizationCheck += 1;
+    this.accountSubject.next(account);
+    this.authStateSubject.next({
+      status: 'degraded',
+      account,
+      roles,
+      requiredRole: SCAN_REQUIRED_ROLE,
+    });
+  }
+
+  private rememberLocalAuthorization(account: AccountInfo, roles: readonly string[]): void {
+    const record: LocalAuthorizationRecord = {
+      homeAccountId: account.homeAccountId,
+      roles: [...roles],
+    };
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(
+          ScanAuthService.localAuthorizationStorageKey,
+          JSON.stringify(record),
+        );
+      }
+    } catch {
+      // The in-memory auth state still protects the current page if storage is unavailable.
+    }
+  }
+
+  private getLocalAuthorizationRoles(account: AccountInfo): string[] | null {
+    const currentState = this.authStateSubject.value;
+    if (
+      currentState.account?.homeAccountId === account.homeAccountId &&
+      hasScanRole(currentState.roles)
+    ) {
+      return [...currentState.roles];
+    }
+
+    try {
+      if (typeof localStorage === 'undefined') {
+        return null;
+      }
+
+      const rawRecord = localStorage.getItem(ScanAuthService.localAuthorizationStorageKey);
+      if (!rawRecord) {
+        return null;
+      }
+
+      const record = JSON.parse(rawRecord) as Partial<LocalAuthorizationRecord>;
+      return record.homeAccountId === account.homeAccountId && Array.isArray(record.roles)
+        ? record.roles.filter((role): role is string => typeof role === 'string')
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private forgetLocalAuthorization(account: AccountInfo | null): void {
+    try {
+      if (typeof localStorage === 'undefined') {
+        return;
+      }
+
+      const rawRecord = localStorage.getItem(ScanAuthService.localAuthorizationStorageKey);
+      if (!account || !rawRecord) {
+        if (!account) {
+          localStorage.removeItem(ScanAuthService.localAuthorizationStorageKey);
+        }
+        return;
+      }
+
+      const record = JSON.parse(rawRecord) as Partial<LocalAuthorizationRecord>;
+      if (record.homeAccountId === account.homeAccountId) {
+        localStorage.removeItem(ScanAuthService.localAuthorizationStorageKey);
+      }
+    } catch {
+      // Ignore storage failures; the server remains the authority for online actions.
+    }
+  }
+}
+
+interface LocalAuthorizationRecord {
+  homeAccountId: string;
+  roles: string[];
 }
 
 function hasRole(roles: readonly string[], expectedRole: string): boolean {
   return roles.some(role => role.toLowerCase() === expectedRole.toLowerCase());
+}
+
+function hasScanRole(roles: readonly string[]): boolean {
+  return hasRole(roles, SCAN_TRI_ROLE) || hasRole(roles, SCAN_CASH_ROLE);
 }
 
 function readRoles(accessToken: string): string[] {

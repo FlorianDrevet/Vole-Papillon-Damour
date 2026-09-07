@@ -6,9 +6,11 @@ import {
   ScanAssociationSettingsRecord,
   ScanCatalogBook,
   ScanCatalogSyncState,
+  ScanFailureKind,
   ScanOutboxEntry,
   ScanOutboxStatus,
   ScanSaleOutboxEntry,
+  ScanSessionCloseRequest,
   ScanSessionSnapshot,
   ScanStoreName,
   scanDatabaseName,
@@ -172,6 +174,43 @@ export class ScanLocalStoreService {
     );
   }
 
+  async saveSessionCloseRequest(
+    request: Omit<ScanSessionCloseRequest, 'key'>,
+  ): Promise<void> {
+    await this.putSessionRecord({
+      key: sessionCloseRequestKey(request.scanSessionId),
+      ...request,
+    });
+  }
+
+  async listSessionCloseRequests(): Promise<ScanSessionCloseRequest[]> {
+    const records = await this.runRequest<Array<{key: string} & Partial<ScanSessionCloseRequest>>>(
+      scanStoreNames.session,
+      'readonly',
+      store => store.getAll(),
+    ) ?? [];
+
+    return records
+      .filter(record => record.key.startsWith('close-request:'))
+      .map(record => record as ScanSessionCloseRequest)
+      .sort((left, right) => left.requestedAt.localeCompare(right.requestedAt));
+  }
+
+  async deleteSessionCloseRequest(scanSessionId: string): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.session,
+      'readwrite',
+      store => store.delete(sessionCloseRequestKey(scanSessionId)),
+    );
+  }
+
+  async clearSessionCloseRequests(): Promise<void> {
+    const requests = await this.listSessionCloseRequests();
+    for (const request of requests) {
+      await this.deleteSessionCloseRequest(request.scanSessionId);
+    }
+  }
+
   async addOutboxEntry(entry: ScanOutboxEntry): Promise<void> {
     await this.runRequest(
       scanStoreNames.outbox,
@@ -247,6 +286,66 @@ export class ScanLocalStoreService {
     return entries.filter(entry => entry.status !== 'CancelledLocal').length + sales.length;
   }
 
+  async countBlockingOutboxEntries(): Promise<number> {
+    const [entries, sales] = await Promise.all([
+      this.listOutboxEntries(),
+      this.listSaleOutboxEntries(),
+    ]);
+    return entries.filter(entry => isBlockingScanStatus(entry.status)).length +
+      sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length;
+  }
+
+  async countBlockingOutboxEntriesForSession(scanSessionId: string): Promise<number> {
+    const entries = await this.listOutboxEntries();
+    return entries.filter(entry =>
+      entry.scanSessionId === scanSessionId && isBlockingScanStatus(entry.status)).length;
+  }
+
+  async countQuarantinedOutboxEntries(): Promise<number> {
+    const [entries, sales] = await Promise.all([
+      this.listOutboxEntries(),
+      this.listSaleOutboxEntries(),
+    ]);
+    return entries.filter(entry => entry.status === 'Quarantined').length +
+      sales.filter(entry => entry.status === 'Quarantined').length;
+  }
+
+  async orphanPendingOutboxEntriesFromOtherSessions(scanSessionId: string): Promise<number> {
+    const entries = await this.listOutboxEntries();
+    const orphanedEntries = entries.filter(entry =>
+      entry.status === 'Pending' && entry.scanSessionId !== scanSessionId);
+
+    for (const entry of orphanedEntries) {
+      await this.putOutboxEntry({
+        ...entry,
+        status: 'Orphaned',
+        lastError: 'Geste sans décision provenant d’une session précédente.',
+      });
+    }
+
+    return orphanedEntries.length;
+  }
+
+  async orphanOutboxEntry(clientGestureId: string, errorMessage: string): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+
+    const updated = {
+      ...entry,
+      status: 'Orphaned' as const,
+      lastError: errorMessage,
+    };
+    await this.putOutboxEntry(updated);
+    return updated;
+  }
+
+  async countOrphanedOutboxEntries(): Promise<number> {
+    const entries = await this.listOutboxEntries();
+    return entries.filter(entry => entry.status === 'Orphaned').length;
+  }
+
   async updateOutboxStatus(
     clientGestureId: string,
     status: ScanOutboxStatus,
@@ -259,7 +358,25 @@ export class ScanLocalStoreService {
     const updated: ScanOutboxEntry = {
       ...entry,
       status,
-      kept: status === 'Kept' ? true : status === 'Rejected' ? false : null,
+      kept: status === 'Kept' ? true : status === 'Rejected' ? false : entry.kept,
+    };
+    await this.putOutboxEntry(updated);
+    return updated;
+  }
+
+  async quarantineOutboxEntry(
+    clientGestureId: string,
+    errorMessage: string,
+  ): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+
+    const updated = {
+      ...entry,
+      status: 'Quarantined' as const,
+      lastError: errorMessage,
     };
     await this.putOutboxEntry(updated);
     return updated;
@@ -382,6 +499,7 @@ export class ScanLocalStoreService {
     clientGestureId: string,
     attemptedAt: string,
     errorMessage: string | null,
+    failureKind: ScanFailureKind | null = null,
   ): Promise<ScanOutboxEntry> {
     const entry = await this.getOutboxEntry(clientGestureId);
     if (!entry) {
@@ -393,6 +511,7 @@ export class ScanLocalStoreService {
       attemptCount: entry.attemptCount + 1,
       lastAttemptAt: attemptedAt,
       lastError: errorMessage,
+      lastFailureKind: failureKind,
     };
     await this.putOutboxEntry(updated);
     return updated;
@@ -402,6 +521,7 @@ export class ScanLocalStoreService {
     clientGestureId: string,
     attemptedAt: string,
     errorMessage: string | null,
+    failureKind: ScanFailureKind | null = null,
   ): Promise<ScanSaleOutboxEntry> {
     const entry = await this.getSaleOutboxEntry(clientGestureId);
     if (!entry) {
@@ -412,6 +532,25 @@ export class ScanLocalStoreService {
       ...entry,
       attemptCount: entry.attemptCount + 1,
       lastAttemptAt: attemptedAt,
+      lastError: errorMessage,
+      lastFailureKind: failureKind,
+    };
+    await this.putSaleOutboxEntry(updated);
+    return updated;
+  }
+
+  async quarantineSaleOutboxEntry(
+    clientGestureId: string,
+    errorMessage: string,
+  ): Promise<ScanSaleOutboxEntry> {
+    const entry = await this.getSaleOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown sale gesture: ${clientGestureId}`);
+    }
+
+    const updated: ScanSaleOutboxEntry = {
+      ...entry,
+      status: 'Quarantined',
       lastError: errorMessage,
     };
     await this.putSaleOutboxEntry(updated);
@@ -590,4 +729,12 @@ export class ScanLocalStoreService {
       );
     });
   }
+}
+
+function sessionCloseRequestKey(scanSessionId: string): string {
+  return `close-request:${scanSessionId}`;
+}
+
+function isBlockingScanStatus(status: ScanOutboxEntry['status']): boolean {
+  return status === 'Pending' || status === 'Kept' || status === 'Rejected';
 }
