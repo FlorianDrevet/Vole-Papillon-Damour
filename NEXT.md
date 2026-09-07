@@ -14,9 +14,9 @@
 | | |
 |---|---|
 | **Lot en cours** | Observabilité du scan — séparation des temps API, SQL et fournisseurs bibliographiques sur la branche `feat/scan-observability`, depuis `origin/main` (`1fead4d`). |
-| **Prochaine action** | Ouvrir la PR, déployer l'API/Scan et vérifier dans `vpd-law-dev` les spans, dépendances BnF/SQL, métriques et l'alerte > 3 s. L'accès Azure de cette machine doit d'abord être reconnecté au bon abonnement. |
+| **Prochaine action** | Après merge de la [PR #90](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/90), reconnecter Azure, déployer l'API/Scan et vérifier dans `vpd-law-dev` les spans, dépendances BnF/SQL, métriques et l'alerte > 3 s. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-observability` |
-| **Dernière mise à jour** | 2026-09-07 — observabilité du scan, PR en attente, déploiement Azure en attente |
+| **Dernière mise à jour** | 2026-09-07 — observabilité du scan, [PR #90](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/90) ouverte, déploiement Azure en attente |
 | **Branche** | `feat/scan-observability` — worktree dédié, rebasé sur `origin/main` (`1fead4d`) |
 
 ---
@@ -154,7 +154,7 @@ compilation Bicep et 90 tests/build Scan passent. Le build de la solution compl�
 bloqué par le SDK `Azure.Functions.Sdk` du Worker absent de l'environnement local, sans
 rapport avec ce patch. `az account show` n'est pas authentifié sur cette machine ; l'état
 Azure réel, le déploiement et la présence des nouvelles données dans le workspace restent
-donc à vérifier après la PR.
+ donc à vérifier après la PR.
 
 ### État actualisé — 2026-09-07 — alignement du header Catalog
 
