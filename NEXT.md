@@ -107,8 +107,8 @@ localization-css-updated`; Graph sert le même CSS de 2636 octets sur `0` et `fr
 Le smoke navigateur du Catalog montre désormais le fond bleu pâle, la carte et la typographie
 personnalisés, les textes français et la mention de sécurité du catalogue sur l'inscription
 comme sur la connexion. Aucun mot de passe ni compte de test n'a été saisi ou créé. Le
-redéploiement Catalog reste à relancer pour laisser une trace après cette correction, même
-si le dernier déploiement du Catalog contenant déjà la locale française est vert.
+redéploiement Catalog `34162378838` est terminé avec succès ; le parcours public a été
+recontrôlé après ce déploiement.
 
 ### État actualisé — 2026-09-07 — displayName et personnalisation du signup External ID
 
