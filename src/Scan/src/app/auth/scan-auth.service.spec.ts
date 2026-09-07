@@ -6,7 +6,7 @@ import {
   EventType,
   PublicClientApplication,
 } from '@azure/msal-browser';
-import {of, Subject} from 'rxjs';
+import {of, Subject, throwError} from 'rxjs';
 
 import {loginRequest} from './msal-config';
 import {ScanAuthService, ScanAuthState} from './scan-auth.service';
@@ -100,7 +100,7 @@ describe('ScanAuthService', () => {
     expect(service.roles).toEqual(['Administration', 'Tri']);
   });
 
-  it('returns to the login state when silent token renewal fails', () => {
+  it('keeps the cached account in degraded mode when silent token renewal fails', () => {
     const account = createAccount('tri@example.org', 'Tri', ['Tri']);
     const instance = createMsalInstance([account]);
     const broadcast = createBroadcastService();
@@ -111,9 +111,34 @@ describe('ScanAuthService', () => {
 
     broadcast.subject.next({eventType: EventType.ACQUIRE_TOKEN_FAILURE} as EventMessage);
 
-    expect(service.isAuthenticated).toBeFalse();
+    expect(service.isAuthenticated).toBeTrue();
     expect(service.isAuthorized).toBeFalse();
-    expect(service.authState.status).toBe('unauthenticated');
+    expect(service.authState.status).toBe('degraded');
+    expect(service.canSort).toBeTrue();
+  });
+
+  it('restores the local authorization marker after a fresh service instance', () => {
+    const storageKey = 'vpd-scan-local-authorization';
+    localStorage.removeItem(storageKey);
+    const account = createAccount('cached-tri@example.org', 'Tri', ['Tri']);
+    const firstInstance = createMsalInstance([account]);
+    new ScanAuthService(
+      createMsalService(firstInstance, createAccessToken(['Tri'])),
+      createBroadcastService().service,
+    );
+
+    const secondInstance = createMsalInstance([account]);
+    const secondMsal = createMsalService(secondInstance, createAccessToken(['Tri']));
+    secondMsal.acquireTokenSilent.and.returnValue(throwError(() => new Error('offline')));
+    const rehydrated = new ScanAuthService(secondMsal, createBroadcastService().service);
+
+    expect(rehydrated.authState.status).toBe('degraded');
+    expect(rehydrated.canSort).toBeTrue();
+
+    rehydrated.handleServerAuthorizationFailure();
+
+    expect(rehydrated.authState.status).toBe('unauthenticated');
+    expect(localStorage.getItem(storageKey)).toBeNull();
   });
 
   function createBroadcastService(): {

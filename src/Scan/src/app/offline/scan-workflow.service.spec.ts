@@ -17,6 +17,7 @@ describe('ScanWorkflowService', () => {
     store = TestBed.inject(ScanLocalStoreService);
     await store.clearCatalog();
     await store.clearSession();
+    await store.clearSessionCloseRequests();
 
     for (const entry of await store.listOutboxEntries()) {
       await store.deleteOutboxEntry(entry.clientGestureId);
@@ -182,6 +183,55 @@ describe('ScanWorkflowService', () => {
     expect(requested.closeRequested).toBeTrue();
     expect(requested.closeReason).toBe('Manual');
     expect((await service.getSession())?.closeRequested).toBeTrue();
+    expect(await store.listSessionCloseRequests()).toEqual([
+      jasmine.objectContaining({
+        scanSessionId: requested.scanSessionId,
+        mode: requested.mode,
+        closeReason: 'Manual',
+      }),
+    ]);
+  });
+
+  it('opens a new local session while the previous close request is still pending', async () => {
+    const first = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:05:00.000Z'),
+    );
+    await service.decide(first.entry.clientGestureId, true);
+    await service.requestClose('Manual');
+
+    const next = await service.setSessionMode('NextFair');
+
+    expect(next.scanSessionId).not.toBe(first.entry.scanSessionId);
+    expect(next.mode).toBe('NextFair');
+    expect(next.closeRequested).toBeFalse();
+    expect((await service.getSession())?.scanSessionId).toBe(next.scanSessionId);
+    expect(await store.listSessionCloseRequests()).toEqual([
+      jasmine.objectContaining({
+        scanSessionId: first.entry.scanSessionId,
+        mode: 'AvailableNow',
+        closeReason: 'Manual',
+      }),
+    ]);
+  });
+
+  it('does not auto-keep or publish a pending gesture from a previous session', async () => {
+    const first = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:05:00.000Z'),
+    );
+    await service.requestClose('Manual');
+    const next = await service.setSessionMode('NextFair');
+
+    const second = await service.recordScan(
+      '9783140464079',
+      new Date('2026-09-03T08:06:00.000Z'),
+    );
+
+    expect((await service.getSession())?.scanSessionId).toBe(next.scanSessionId);
+    expect((await store.getOutboxEntry(first.entry.clientGestureId))?.status).toBe('Orphaned');
+    expect(second.entry.status).toBe('Pending');
+    expect((await service.getSession())?.keptCount).toBe(0);
   });
 
   it('reads a local catalog result without creating an outbox gesture', async () => {

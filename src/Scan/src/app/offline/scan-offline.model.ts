@@ -16,7 +16,17 @@ export type LocalScanCloseReason = 'Manual' | 'Inactivity' | 'Disconnect' | 'Tok
 
 export type LocalBookVerdict = 'Wanted' | 'Selling' | 'TooMany' | 'FirstCopy';
 
-export type ScanOutboxStatus = 'Pending' | 'Kept' | 'Rejected' | 'CancelledLocal';
+export type ScanOutboxStatus =
+  | 'Pending'
+  | 'Kept'
+  | 'Rejected'
+  | 'CancelledLocal'
+  | 'Quarantined'
+  | 'Orphaned';
+
+export type ScanSaleOutboxStatus = 'Pending' | 'Quarantined';
+
+export type ScanFailureKind = 'transient' | 'permanent' | 'authorization';
 
 export interface ScanCatalogBook {
   isbn13: string;
@@ -69,6 +79,15 @@ export interface ScanSessionSnapshot {
   closeReason?: LocalScanCloseReason | null;
 }
 
+export interface ScanSessionCloseRequest {
+  key: string;
+  scanSessionId: string;
+  mode: LocalScanMode;
+  targetAssoEventsId: string | null;
+  closeReason: LocalScanCloseReason;
+  requestedAt: string;
+}
+
 export interface ScanOutboxEntry {
   clientGestureId: string;
   scanSessionId: string;
@@ -86,17 +105,20 @@ export interface ScanOutboxEntry {
   attemptCount: number;
   lastAttemptAt: string | null;
   lastError: string | null;
+  lastFailureKind?: ScanFailureKind | null;
 }
 
 export interface ScanSaleOutboxEntry {
   clientGestureId: string;
   isbn13: string;
   quantity: number;
+  status?: ScanSaleOutboxStatus;
   occurredAt: string;
   createdAt: string;
   attemptCount: number;
   lastAttemptAt: string | null;
   lastError: string | null;
+  lastFailureKind?: ScanFailureKind | null;
 }
 
 export interface LocalVerdict {

@@ -23,6 +23,10 @@
     (keydown.enter)="refocusCamera()"
     (keydown.space)="refocusCamera(); $event.preventDefault()"></div>
 
+  <div *ngIf="authDegraded" class="auth-degraded-banner" role="status">
+    Mode dégradé : la session en cache ne peut pas être renouvelée. La caméra, le catalogue local et la file d’attente restent disponibles ; reconnectez-vous pour synchroniser.
+  </div>
+
   <ng-container [ngSwitch]="screen">
     <section *ngSwitchCase="'home'" class="app-screen home-screen" aria-labelledby="home-title">
       <header class="home-header">
@@ -411,6 +415,7 @@
         <strong>Hors ligne</strong>
         <span>La file locale est conservée</span>
       </div>
+      <p *ngIf="storageError" class="cash-storage-error" role="alert">{{ storageError }}</p>
 
       <div *ngIf="isLoading" class="scan-progress scan-progress-light cash-lookup-progress" role="status" aria-live="polite">
         <span class="scan-progress-spinner" aria-hidden="true"></span>
@@ -547,6 +552,7 @@
       </ng-template>
 
       <p *ngIf="cameraError" class="consultation-camera-error" role="alert">{{ cameraError }}</p>
+      <p *ngIf="storageError" class="consultation-storage-error" role="alert">{{ storageError }}</p>
 
       <footer class="action-dock consultation-dock">
         <button type="button" class="dock-link" (click)="openManualInput()">

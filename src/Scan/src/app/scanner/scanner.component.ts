@@ -99,6 +99,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   accountName: string | null = null;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error' = 'idle';
   sessionCloseError: string | null = null;
+  authDegraded = false;
   cameraFocusStatus: 'idle' | 'refocusing' | 'requested' | 'unavailable' = 'idle';
   screen: ScanScreen = 'tri';
   selectedMode: LocalScanMode = 'AvailableNow';
@@ -109,6 +110,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private scannerBuffer = '';
   private lastScannerKeyAt = 0;
   private localModeReady = false;
+  private canSynchronize = true;
   private syncInProgress = false;
   private syncPromise: Promise<void> | null = null;
   private sessionEnding = false;
@@ -138,7 +140,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.scanAuth.authState$
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(authState => {
-          this.isAuthenticated = authState.status === 'authorized';
+          this.isAuthenticated = authState.status === 'authorized' || authState.status === 'degraded';
+          this.authDegraded = authState.status === 'degraded';
+          this.canSynchronize = authState.status === 'authorized';
           this.accountName = this.scanAuth?.displayName ?? null;
           this.refreshView();
           this.trySync();
@@ -409,6 +413,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
       }
     } else if (destination === 'tri') {
       this.storageError = 'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.';
+    } else {
+      this.storageError = destination === 'cash'
+        ? 'La lecture du catalogue local a échoué. Aucune ligne de caisse n’a été créée.'
+        : 'La lecture du catalogue local a échoué. Les informations de stock peuvent être incomplètes.';
     }
 
     let metadata: BookMetadata | null = null;
@@ -430,7 +438,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         : 'La notice ne peut pas être chargée pour le moment.';
     }
 
-    if (destination === 'cash') {
+    if (destination === 'cash' && localOutcome.status === 'fulfilled') {
       this.cashItems = [...this.cashItems, this.createCashItem(normalizedIsbn, metadata)];
       this.cashMessage = null;
     }
@@ -446,13 +454,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     this.stopCamera();
     if (this.sessionEnded) {
-      if (this.scanWorkflow && !this.sessionCloseCompleted) {
-        this.sessionCloseError = 'La session précédente doit être synchronisée avant d’en ouvrir une nouvelle.';
-        this.screen = 'session-end';
-        this.refreshView();
-        return;
-      }
-
       this.session = null;
       this.completedSession = null;
       this.sessionEnded = false;
@@ -575,6 +576,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (
       !this.scanSync ||
       !this.isAuthenticated ||
+      !this.canSynchronize ||
       !this.isOnline ||
       !this.localModeReady
     ) {
@@ -606,6 +608,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
     try {
       const summary = await scanSync.syncAll();
       const closeRequested = this.session?.closeRequested === true;
+      const quarantined = summary.outbox.quarantined ?? 0;
+      const orphaned = summary.outbox.orphaned ?? 0;
       if (summary.closed) {
         this.sessionCloseCompleted = true;
         this.sessionCloseError = null;
@@ -613,6 +617,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
       if (!summary.catalog) {
         this.syncStatus = 'error';
         this.syncError = 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits ou réseau).';
+      } else if (orphaned > 0) {
+        this.syncStatus = 'error';
+        this.syncError = `${orphaned} geste${orphaned > 1 ? 's' : ''} sans décision a été isolé${orphaned > 1 ? 's' : ''} avec la session précédente. Prévenez un responsable avant toute publication.`;
+      } else if (quarantined > 0) {
+        this.syncStatus = 'error';
+        this.syncError = `${quarantined} entrée${quarantined > 1 ? 's' : ''} a été mise en quarantaine après plusieurs refus serveur. Prévenez un responsable.`;
       } else if (summary.outbox.stoppedOnError) {
         this.syncStatus = 'error';
         this.syncError = 'La file locale reste conservée et sera réessayée automatiquement.';
@@ -702,7 +712,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         return;
       }
 
-      if (!this.isAuthenticated || !this.isOnline || !this.localModeReady) {
+      if (!this.isAuthenticated || !this.canSynchronize || !this.isOnline || !this.localModeReady) {
         this.sessionCloseError = 'Session enregistrée localement ; reconnectez-vous pour publier les livres.';
         return;
       }

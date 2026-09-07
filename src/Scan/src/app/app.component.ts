@@ -5,7 +5,7 @@ import {ScanAuthService} from './auth/scan-auth.service';
   selector: 'app-root',
   template: `
     <ng-container *ngIf="scanAuth.authState$ | async as authState">
-      <app-scanner *ngIf="authState.status === 'authorized'; else login"></app-scanner>
+      <app-scanner *ngIf="authState.status === 'authorized' || authState.status === 'degraded'; else login"></app-scanner>
       <ng-template #login><app-scan-login></app-scan-login></ng-template>
     </ng-container>
   `,
