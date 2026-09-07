@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
 | **Prochaine action** | Relever les heartbeats/mesures, réaliser un envoi e-mail de test avec un destinataire validé, puis exécuter les contrôles physiques restants. Le workflow reproductible ACS est fusionné dans `main` via la PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74). |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-roles` |
-| **Dernière mise à jour** | 2026-09-06 — comptes et rôles administrables depuis le BackOffice, en attente de PR et déploiement |
-| **Branche** | `feat/backoffice-account-roles` — worktree dédié depuis `origin/main` (`dba7127`) |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-catalog-header` |
+| **Dernière mise à jour** | 2026-09-07 — correctif d’alignement du header Catalog, en attente de PR et déploiement |
+| **Branche** | `fix/catalog-header-layout` — worktree dédié depuis `origin/main` (`e4dca95`) |
 
 ---
 
@@ -77,6 +77,16 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-07 — alignement du header Catalog
+
+Dans `src/Catalog`, le bouton « Mon compte » est maintenant un frère du `nav` desktop :
+le groupe de liens ne l’absorbe plus dans son calcul de largeur. Les liens et le bouton
+partagent une hauteur de contrôle centrée de 42 px, et le seuil mobile passe à 1040 px pour
+éviter le débordement sur les largeurs intermédiaires. Validation : 72 tests Catalog,
+build SSR/navigateur avec l’avertissement de budget initial connu, et contrôle Chrome
+lecture seule à 1200, 1041, 1040 et 390 px sans chevauchement ni débordement horizontal.
+La PR et le déploiement restent à faire.
 
 ### État actualisé — 2026-09-06 — gestion des comptes et rôles BackOffice
 
@@ -651,6 +661,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-07 | Windows | **Correctif d’alignement du header Catalog.** Le bouton « Mon compte » sort du groupe flex de navigation, les liens desktop sont centrés sur la même hauteur de contrôle et la bascule mobile intervient à 1040 px pour éviter le décalage et le débordement aux largeurs intermédiaires. Validation : 72 tests ChromeHeadless, build SSR/navigateur, `graphify update .` et contrôles Chrome lecture seule à 1200/1041/1040/390 px. PR et déploiement à faire. |
 | 2026-09-06 | Windows | **Correctif Scanette — permission caméra répétée.** Après une lecture, le flux caméra reste ouvert et la détection est seulement mise en pause ; le choix « Garder »/« Écarter » reprend le même flux au lieu de rappeler `getUserMedia()`. Ajout de tests de reprise du flux et mise à jour du README Scan. Validation : 90 tests ChromeHeadless Scan et build de production passés ; aucun déploiement ni retest iPhone effectué. |
 | 2026-09-06 | Windows | **BackOffice — comptes et rôles.** Depuis `origin/main` (`dba7127`) dans le worktree `feat/backoffice-account-roles`, ajout de l’onglet « Comptes et rôles » avec recherche, création de comptes Entra, rôles `Tri`/`Caisse`/`Administration` et garde-fou d’auto-révocation. Ajout des handlers CQRS, contrats/API, adaptateur Graph, permissions Entra/Bicep et régressions. Validation : 5 tests Application, 1 Infrastructure, 13 API, 17 BackOffice ChromeHeadless + bootstrap, builds BackOffice/API et compilation Bicep. Aucun consentement, secret, compte réel ou déploiement n’a été modifié ; PR à ouvrir. |
 | 2026-09-06 | Windows | **Correctif de la liste de recherche du Catalog.** Le parcours « Suivre ce titre » pouvait rester visuellement sur « Ajout… » après la réponse API, car l’état plain-property du composant n’était pas replanifié par Angular zoneless. Ajout de `ChangeDetectorRef.markForCheck()` en fin de parcours et d’une régression ChromeHeadless avec observable différé. Validation : 59 tests Catalog et build production ; aucun déploiement effectué, PR à ouvrir. |

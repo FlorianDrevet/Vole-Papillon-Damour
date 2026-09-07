@@ -75,4 +75,19 @@ describe('CatalogNavigationComponent', () => {
     expect(accountLink.textContent).not.toContain('FDFD');
     expect(fixture.nativeElement.textContent).toContain("Ouvrir l'administration");
   });
+
+  it('keeps the account action outside the navigation flex group', () => {
+    const headerInner = fixture.nativeElement.querySelector('.header-inner') as HTMLElement;
+    const navigation = fixture.nativeElement.querySelector('.main-navigation') as HTMLElement;
+    const accountMenu = fixture.nativeElement.querySelector('.account-menu') as HTMLElement;
+
+    expect(navigation.contains(accountMenu)).toBeFalse();
+    expect(accountMenu.parentElement).toBe(headerInner);
+  });
+
+  it('gives desktop navigation links the same control height as the account action', () => {
+    const navigationLink = fixture.nativeElement.querySelector('.nav-link') as HTMLElement;
+
+    expect(getComputedStyle(navigationLink).minHeight).toBe('42px');
+  });
 });
