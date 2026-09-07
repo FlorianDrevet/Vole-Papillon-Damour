@@ -13,7 +13,7 @@
         <span>Genre</span>
         <select class="hero-genre-select" name="genre" [(ngModel)]="heroGenre" aria-label="Filtrer par genre">
           <option value="">Tous les genres</option>
-          @for (genre of genres(); track genre) {
+          @for (genre of availableGenres(); track genre) {
             <option [value]="genre">{{ genre }}</option>
           }
         </select>
@@ -209,12 +209,18 @@
     <p class="eyebrow">Pour commencer quelque part</p>
     <h2>Parcourir par genre.</h2>
   </div>
-  <div class="page-width genre-list">
-    @for (genre of genres().slice(0, 8); track genre) {
-      <a [routerLink]="['/catalogue']" [queryParams]="{genre: genre}">{{ genre }}</a>
-    } @empty {
-      <a routerLink="/catalogue">Voir tout le catalogue</a>
+  <div class="page-width genre-grid">
+    @for (genre of featuredGenres; track genre.value; let index = $index) {
+      <a class="genre-card" [routerLink]="['/recherche']" [queryParams]="{genre: genre.value}">
+        <span class="genre-card-number" aria-hidden="true">0{{ index + 1 }}</span>
+        <span class="genre-card-copy">
+          <strong>{{ genre.label }}</strong>
+          <span>{{ genre.hint }}</span>
+        </span>
+        <span class="genre-card-arrow" aria-hidden="true">↗</span>
+      </a>
     }
+    <a class="genre-all-link" routerLink="/catalogue">Voir tout le catalogue <span aria-hidden="true">→</span></a>
   </div>
 </section>
 

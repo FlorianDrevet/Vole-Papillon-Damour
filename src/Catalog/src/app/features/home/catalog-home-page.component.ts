@@ -4,6 +4,7 @@ import {Router} from '@angular/router';
 import {catchError, forkJoin, of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
+import {CATALOG_FEATURED_GENRES, mergeCatalogGenres} from '../../core/catalog-genres';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
 
@@ -32,6 +33,7 @@ export class CatalogHomePageComponent implements OnInit {
   recentTotal = signal(0);
   rare = signal<CatalogBook[]>([]);
   genres = signal<string[]>([]);
+  readonly featuredGenres = CATALOG_FEATURED_GENRES;
   nextFair = signal<CatalogFair | null>(null);
   upcomingFairs = signal<CatalogFair[]>([]);
 
@@ -59,7 +61,7 @@ export class CatalogHomePageComponent implements OnInit {
       this.recent.set(recent.books);
       this.recentTotal.set(recent.totalCount);
       this.rare.set(rare.books);
-      this.genres.set(recent.genres);
+      this.genres.set(recent.genres ?? []);
       const sortedFairs = [...fairs].sort((a, b) => a.dateStart.localeCompare(b.dateStart));
       this.upcomingFairs.set(sortedFairs);
       this.nextFair.set(sortedFairs[0] ?? null);
@@ -76,6 +78,10 @@ export class CatalogHomePageComponent implements OnInit {
         ...(genre ? {genre} : {}),
       },
     });
+  }
+
+  availableGenres(): string[] {
+    return mergeCatalogGenres(this.genres());
   }
 
   showAll(): void {

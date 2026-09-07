@@ -26,7 +26,7 @@ describe('CatalogSearchPageComponent', () => {
   };
   let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
   let response$: Subject<CatalogSearchResponse>;
-  const routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
+  let routeParams: BehaviorSubject<ParamMap>;
 
   const response: CatalogSearchResponse = {
     generatedAt: '2026-09-05T06:00:00Z',
@@ -57,6 +57,7 @@ describe('CatalogSearchPageComponent', () => {
 
   beforeEach(async () => {
     response$ = new Subject<CatalogSearchResponse>();
+    routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'searchReferences']);
     api.search.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 24, genres: []}));
     api.searchReferences.and.returnValue(of({
@@ -168,5 +169,27 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de recherche.');
     expect(fixture.nativeElement.textContent).toContain('Ajouter à ma liste de recherche');
     expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
+  });
+
+  it('keeps featured genre filters available when the API has no genre metadata', () => {
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const options = Array.from(
+      element.querySelectorAll<HTMLOptionElement>('.filters-panel select[name="genre"] option'),
+    ).map(option => option.value);
+
+    expect(options).toContain('Romans');
+    expect(options).toContain('Jeunesse');
+  });
+
+  it('loads the filtered results when opened with a genre query parameter', async () => {
+    routeParams.next(convertToParamMap({genre: 'Romans'}));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({genre: 'Romans'}));
+    expect(((fixture.nativeElement as HTMLElement).querySelector('.filters-panel select[name="genre"]') as HTMLSelectElement).value)
+      .toBe('Romans');
   });
 });

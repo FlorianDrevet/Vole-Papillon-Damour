@@ -36,7 +36,7 @@
           <span>Genre</span>
           <select name="genre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
             <option value="">Tous les genres</option>
-            @for (availableGenre of response?.genres || []; track availableGenre) {
+            @for (availableGenre of availableGenres(); track availableGenre) {
               <option [value]="availableGenre">{{ availableGenre }}</option>
             }
           </select>
