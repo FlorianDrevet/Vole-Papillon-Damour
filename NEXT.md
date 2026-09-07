@@ -112,7 +112,7 @@ avec le genre sélectionné et conserve aussi le genre dans le filtre lorsque l'
 pas encore de liste de genres. Le sélecteur de l'accueil et celui de la recherche disposent
 du même repli éditorial, tout en conservant les genres supplémentaires fournis par l'API.
 
-Validation locale : 79 tests Catalog ChromeHeadless, build Angular SSR/navigateur et
+Validation locale : 83 tests Catalog ChromeHeadless, build Angular SSR/navigateur et
 contrôle responsive à 1280 px et 390 px. L'API catalogue locale était indisponible pendant
 le smoke navigateur : les états vide/erreur ont été vérifiés, mais aucun résultat distant
 n'est déclaré sain. La PR est ouverte ; aucun déploiement n'a été effectué.
