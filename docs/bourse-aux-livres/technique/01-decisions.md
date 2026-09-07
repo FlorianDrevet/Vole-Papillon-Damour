@@ -433,9 +433,10 @@ une extension d'authentification sur le flux d'inscription — de la mécanique 
 pour un droit qui ne dit rien de plus que « le jeton est valide ».
 
 **Toute la configuration est scriptée** en PowerShell sur Microsoft Graph
-(`infra/entra/`). Deux exceptions assumées et signalées : la création du locataire, et le
-flux d'inscription en libre-service dont l'API Graph est en `beta` pour les locataires
-externes (`QT-07`).
+(`infra/entra/`). Une seule exception reste assumée et signalée : la création du
+locataire. Le flux d'inscription en libre-service est provisionné par
+`Configure-EntraUserFlow.ps1` via l'API Graph v1.0 ; `QT-07` conserve le contrôle live du
+parcours et de l'absence d'inscription sur les applications internes.
 
 **Ce que cela change dans le plan.** La création du locataire devient le **tout premier
 élément livré**, avant même la sonde de faisabilité — voir `01` §7 des spécifications

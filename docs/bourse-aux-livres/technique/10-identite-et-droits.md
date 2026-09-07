@@ -262,12 +262,14 @@ ordre d'exécution et les prérequis sont dans
 | Script | Rôle |
 |---|---|
 | `Configure-EntraApps.ps1` | Enregistrements, portée, rôles, consentements. Rejouable |
+| `Configure-EntraUserFlow.ps1` | User flow d'inscription publique attaché au catalogue uniquement. Rejouable |
 | `Set-VpdUserRole.ps1` | Attribue ou retire un rôle à un compte |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle |
 
-Deux choses restent hors des scripts : la **création du locataire** lui-même, et le
-**flux d'inscription en libre-service**, dont l'API Graph est encore en `beta` pour les
-locataires externes. Les deux sont signalées comme telles, elles ne sont pas oubliées.
+Une seule chose reste hors des scripts : la **création du locataire** lui-même. Le flux
+d'inscription en libre-service est provisionné par `Configure-EntraUserFlow.ps1` via
+l'API Graph v1.0 et ne s'attache qu'au catalogue public. Le contrôle du parcours réel
+dans le tenant reste à effectuer.
 
 **Le retrait d'un rôle ne prend effet qu'au renouvellement du jeton.** Pour une révocation
 immédiate — un compte compromis, un départ conflictuel — il faut désactiver le compte

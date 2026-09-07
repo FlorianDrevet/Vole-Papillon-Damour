@@ -11,7 +11,7 @@ une mesure, pas par un avis, et certains peuvent invalider une décision déjà 
 | `QT-04` | Dimensionnement Entra External ID | 🟢 **Coût tranché**, reste le parcours et `ENF-12` | Au préalable d'identité |
 | `QT-05` | Unité de travail et `BaseRepository` | 🟢 Tranchée, à cadrer | Palier 1 |
 | `QT-06` | Tolérance aux fautes de la recherche | 🟢 Différée | Après le palier 2 |
-| `QT-07` | Inscription en libre-service limitée au catalogue | 🔴 **Bloquant** | Au préalable d'identité |
+| `QT-07` | Inscription en libre-service limitée au catalogue | 🟠 Implémentation scriptée, test live à faire | Au préalable d'identité |
 | `QT-08` | Durée de vie des jetons face au hors ligne | 🔴 **Bloquant** | Avant le palier 1 |
 | `QT-09` | Tenue du palier `S1` sur disque dur | 🟠 À mesurer | Palier 1 |
 
@@ -208,9 +208,11 @@ faut un autre garde-fou : restreindre l'attribution des rôles suffit à empêch
 compte auto-créé de faire quoi que ce soit, mais l'annuaire se remplirait de comptes
 sans usage, et la facturation à l'utilisateur actif s'en ressentirait.
 
-**Point connexe.** L'API Graph de ces flux est en `beta` pour les locataires externes,
-d'où l'exception assumée dans `infra/entra/` : cette partie n'est pas scriptée tant que
-l'API n'est pas stable.
+**État au 2026-09-07.** `infra/entra/Configure-EntraUserFlow.ps1` provisionne désormais
+ce flux via l'API Graph v1.0 et l'attache uniquement à `vpd-catalog-<environment>`.
+Le contrôle restant est opérationnel : exécuter le script dans le tenant, vérifier que
+le catalogue affiche le formulaire de création, puis confirmer que `vpd-scan`, la caisse
+et le back-office restent en connexion administrée sans inscription libre-service.
 
 ---
 

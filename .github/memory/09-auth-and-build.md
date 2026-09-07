@@ -62,6 +62,10 @@
   navigation affordance, while API policies still enforce every admin request. When silent
   acquisition needs user interaction, `acquireTokenRedirect` keeps the current private URL
   as `redirectStartPage` and the pages render a specific renewal state.
+- Public Catalog registration keeps the MSAL `prompt=create` request and `/compte` return
+  URL. The External ID form is provisioned separately by
+  `infra/entra/Configure-EntraUserFlow.ps1` through Graph v1.0 and is associated only with
+  `vpd-catalog-<environment>`; Scan, BackOffice and Cash have no self-service signup flow.
 - `Scan` gates the entire PWA through `ScanAuthService.authState$`: only an Entra account
   with the `Tri` role renders the scanner, while unauthenticated, unauthorized, and token-
   renewal-failure states render `ScanLoginComponent`. `AppModule` awaits

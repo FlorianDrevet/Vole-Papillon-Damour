@@ -240,8 +240,8 @@ tard.
 
 1. **Locataire Entra External ID**, rattaché à un abonnement Azure — un locataire externe
    n'a pas de capacité de gestion d'abonnement, le rattachement se fait à un abonnement
-   détenu par le locataire de travail. C'est l'une des deux exceptions assumées à la
-   configuration scriptée (`ENF-27`).
+   détenu par le locataire de travail. C'est l'unique exception assumée à la configuration
+   scriptée (`ENF-27`).
 2. **Ressource Azure Communication Services Email**, en Bicep, et vérification du
    sous-domaine d'envoi.
 

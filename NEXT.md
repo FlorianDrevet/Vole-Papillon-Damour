@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
-| **Prochaine action** | Relever les heartbeats/mesures, réaliser un envoi e-mail de test avec un destinataire validé, puis exécuter les contrôles physiques restants. Le workflow reproductible ACS est fusionné dans `main` via la PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74). |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-roles` |
-| **Dernière mise à jour** | 2026-09-07 — ajustements de l'accueil du Catalog, en attente de PR |
-| **Branche** | `fix/catalog-home-hero` — worktree dédié depuis `origin/main` |
+| **Prochaine action** | Exécuter `Configure-EntraUserFlow.ps1` dans le tenant External ID, puis vérifier la création depuis le Catalog et l'absence d'inscription libre-service sur les applications internes. Les mesures ACS et contrôles physiques restent ensuite à relever. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-account-registration` |
+| **Dernière mise à jour** | 2026-09-07 — provisioning du formulaire d'inscription publique External ID, en attente de PR et d'application dans le tenant |
+| **Branche** | `fix/catalog-account-registration` — worktree dédié depuis `origin/main` |
 
 ---
 
@@ -87,6 +87,21 @@ partagent une hauteur de contrôle centrée de 42 px, et le seuil mobile passe �
 build SSR/navigateur avec l’avertissement de budget initial connu, et contrôle Chrome
 lecture seule à 1200, 1041, 1040 et 390 px sans chevauchement ni débordement horizontal.
 La PR et le déploiement restent à faire.
+
+### État actualisé — 2026-09-07 — création de compte public External ID
+
+La branche `fix/catalog-account-registration`, basée sur `origin/main` frais, ajoute
+`infra/entra/Configure-EntraUserFlow.ps1`. Le script Graph v1.0 crée ou met à jour le
+formulaire hébergé par Entra, l'associe uniquement à `vpd-catalog-dev`, et refuse de
+remplacer silencieusement un flow déjà attaché à une autre application. Le Catalog
+conserve son appel MSAL `prompt=create` et son retour vers `/compte` : aucun formulaire
+de mot de passe n'est collecté par le site ou l'API.
+
+Les tests Pester du script passent (4/4). Le script n'a pas encore été exécuté contre le
+tenant réel : aucun compte, consentement, secret, déploiement ou ressource Entra n'a été
+modifié dans cette session. Après la PR, exécuter d'abord le `-WhatIf`, puis le script
+réel décrit dans `infra/entra/README.md`, et vérifier le parcours de création sur le
+catalogue ainsi que l'absence d'inscription libre-service sur Scan/BackOffice/Caisse.
 
 ### État actualisé — 2026-09-06 — gestion des comptes et rôles BackOffice
 
@@ -661,6 +676,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-07 | Windows | **Inscription publique External ID.** Le Catalog envoyait déjà `prompt=create` vers `/compte`, mais le flow External ID n'était pas provisionné ni associé à `vpd-catalog-dev`, ce qui pouvait renvoyer vers le parcours administrateur du tenant. Ajout de `Configure-EntraUserFlow.ps1` (Graph v1.0, email/mot de passe, nom affiché, association exclusive au Catalog, mode `-WhatIf`) et de 4 tests Pester ; documentation infra, identité et mémoire alignées. Aucun tenant réel, compte ou déploiement n'a été modifié ; la configuration et le retest live restent à faire après la PR. |
 | 2026-09-07 | Windows | **Catalog — ajustements de l'accueil.** Le hero retire son quadrillage et ses cercles décoratifs, affiche le papillon officiel de l'association, précise « bourse aux livres », supprime le doublon de date et la flèche du bouton de recherche, et reformule le compteur en titres disponibles. Validation : 71 tests ChromeHeadless Catalog, build SSR/navigateur et contrôles visuels à 375, 768 et 1440 px ; aucun déploiement effectué. |
 | 2026-09-07 | Windows | **Correctif d’alignement du header Catalog.** Le bouton « Mon compte » sort du groupe flex de navigation, les liens desktop sont centrés sur la même hauteur de contrôle et la bascule mobile intervient à 1040 px pour éviter le décalage et le débordement aux largeurs intermédiaires. Validation : 72 tests ChromeHeadless, build SSR/navigateur, `graphify update .` et contrôles Chrome lecture seule à 1200/1041/1040/390 px. PR et déploiement à faire. |
 | 2026-09-06 | Windows | **Correctif Scanette — permission caméra répétée.** Après une lecture, le flux caméra reste ouvert et la détection est seulement mise en pause ; le choix « Garder »/« Écarter » reprend le même flux au lieu de rappeler `getUserMedia()`. Ajout de tests de reprise du flux et mise à jour du README Scan. Validation : 90 tests ChromeHeadless Scan et build de production passés ; aucun déploiement ni retest iPhone effectué. |
