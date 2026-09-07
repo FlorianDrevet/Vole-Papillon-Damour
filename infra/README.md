@@ -154,6 +154,7 @@ Azure sans un lancement manuel.
 | `Website - deploy` | build + push de l'image Website, bascule de `vpd-web-ca-dev` |
 | `BackOffice - deploy` | build + push de l'image BackOffice, bascule de `vpd-bo-ca-dev` |
 | `Scan - deploy` | build + push de l'image Scan avec l'URL API et l'origine `https://scan.volepapillondamour.fr`, bascule de `vpd-scan-ca-dev` et publication HTTPS |
+| `Catalog - deploy` | build + push de l'image Catalogue avec les URLs API/domaine et les identifiants publics GA4/Clarity, bascule de `vpd-catalog-ca-dev` |
 | `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev` et contrôle du host |
 | `Books runtime - deploy` | build + push coordonné API + Worker, migration EF optionnelle avant rollout, puis bascule des deux Container Apps |
 
