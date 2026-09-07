@@ -63,6 +63,12 @@ events below the featured event, with responsive date rows and itinerary links. 
 local check passes 77 ChromeHeadless tests, the production build, and a 500px browser check
 with no horizontal overflow; live data was not changed.
 
+The Catalog genre navigation keeps five curated source values in
+`src/app/core/catalog-genres.ts`. The home hero and search filter merge those fallback
+options with any additional genres returned by `GET /catalog/search`; the home cards link to
+`/recherche?genre=...`, so the existing query-param subscription immediately loads the
+filtered catalogue and preserves a selected genre even while the response is loading.
+
 ## Planned Books Scan client decisions
 
 As of 2026-09-05, the P1-5 Scan foundation is implemented in `src/Scan` and deployed to

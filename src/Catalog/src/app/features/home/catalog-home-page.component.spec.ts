@@ -138,4 +138,28 @@ describe('CatalogHomePageComponent', () => {
   it('keeps legacy fair opening hours as civil UTC components', () => {
     expect(fixture.componentInstance.formatTime('2027-03-14T09:30:00Z')).toBe('9 h 30');
   });
+
+  it('renders featured genre cards that open a filtered search', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const cards = Array.from(
+      element.querySelectorAll<HTMLAnchorElement>('.genre-card'),
+    );
+
+    expect(cards.length).toBe(5);
+    expect(cards[0].textContent).toContain('Romans');
+    expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Romans');
+  });
+
+  it('keeps featured genres in the hero selector when the API has no genre list', () => {
+    fixture.componentInstance.genres.set([]);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const options = Array.from(
+      element.querySelectorAll<HTMLOptionElement>('.hero-genre-select option'),
+    ).map(option => option.value);
+
+    expect(options).toContain('Romans');
+    expect(options).toContain('Jeunesse');
+  });
 });

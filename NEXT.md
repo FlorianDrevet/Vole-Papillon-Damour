@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
 | **Prochaine action** | Exécuter `Configure-EntraUserFlow.ps1` dans le tenant External ID, puis vérifier la création depuis le Catalog et l'absence d'inscription libre-service sur les applications internes. Les mesures ACS et contrôles physiques restent ensuite à relever. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-account-registration` |
-| **Dernière mise à jour** | 2026-09-07 — provisioning du formulaire d'inscription publique External ID, en attente de PR et d'application dans le tenant |
-| **Branche** | `fix/catalog-account-registration` — worktree dédié depuis `origin/main` |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-catalog-genres` |
+| **Dernière mise à jour** | 2026-09-07 — filtres de genres du catalogue, PR [#84](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/84) ouverte, déploiement en attente |
+| **Branche** | `fix/catalogue-genre-filters` — worktree dédié depuis `origin/main` (`25aa11d`) |
 
 ---
 
@@ -102,6 +102,20 @@ tenant réel : aucun compte, consentement, secret, déploiement ou ressource Ent
 modifié dans cette session. Après la PR, exécuter d'abord le `-WhatIf`, puis le script
 réel décrit dans `infra/entra/README.md`, et vérifier le parcours de création sur le
 catalogue ainsi que l'absence d'inscription libre-service sur Scan/BackOffice/Caisse.
+
+### État actualisé — 2026-09-07 — filtres de genres du catalogue
+
+La branche `fix/catalogue-genre-filters` ajoute cinq genres mis en avant sur l'accueil du
+Catalog (`Romans`, `Jeunesse`, `BD`, `Policier` et `Documentaires`) sous forme de cartes.
+Chaque carte ouvre `/recherche?genre=...`; la page de recherche lance alors sa recherche
+avec le genre sélectionné et conserve aussi le genre dans le filtre lorsque l'API ne renvoie
+pas encore de liste de genres. Le sélecteur de l'accueil et celui de la recherche disposent
+du même repli éditorial, tout en conservant les genres supplémentaires fournis par l'API.
+
+Validation locale : 79 tests Catalog ChromeHeadless, build Angular SSR/navigateur et
+contrôle responsive à 1280 px et 390 px. L'API catalogue locale était indisponible pendant
+le smoke navigateur : les états vide/erreur ont été vérifiés, mais aucun résultat distant
+n'est déclaré sain. La PR est ouverte ; aucun déploiement n'a été effectué.
 
 ### État actualisé — 2026-09-06 — gestion des comptes et rôles BackOffice
 

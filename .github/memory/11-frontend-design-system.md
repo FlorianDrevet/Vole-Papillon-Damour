@@ -77,6 +77,9 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   `#prochaines-dates` calendar keeps the next Books event prominent with a dark date card
   and a light map/location card inspired by the Website event detail, then uses editorial
   date rows for the remaining future fairs.
+- The home genre section uses five compact editorial cards, with the existing paper/ink
+  palette and brand rule. Cards route to the filtered search page; the search and hero
+  selectors use the same curated fallback plus any API-provided genre values.
 - Public catalogue, search, work, detail, account, legal, and existing administration
   views share the same spacing, cards, pills, border language, restrained motion, and
   responsive collapse. Availability and future announcements remain truthful and separate;

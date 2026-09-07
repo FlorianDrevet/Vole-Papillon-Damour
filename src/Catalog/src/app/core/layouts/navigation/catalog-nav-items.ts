@@ -1,3 +1,5 @@
+import {CATALOG_FEATURED_GENRES} from '../../catalog-genres';
+
 export interface CatalogNavItem {
   url: string;
   label: string;
@@ -16,11 +18,12 @@ export const CATALOG_NAV_ITEMS: CatalogNavItem[] = [
     url: '/catalogue',
     label: 'Catalogue par genre',
     children: [
-      {url: '/catalogue', label: 'Romans', hint: 'Récits, littérature et poche', queryParams: {genre: 'Romans'}},
-      {url: '/catalogue', label: 'Jeunesse', hint: 'Albums et premières lectures', queryParams: {genre: 'Jeunesse'}},
-      {url: '/catalogue', label: 'BD, mangas & comics', hint: 'Séries et one-shots', queryParams: {genre: 'BD'}},
-      {url: '/catalogue', label: 'Policier & thriller', hint: 'Enquêtes, suspense et noir', queryParams: {genre: 'Policier'}},
-      {url: '/catalogue', label: 'Documentaires', hint: 'Histoire, nature, cuisine et art', queryParams: {genre: 'Documentaires'}},
+      ...CATALOG_FEATURED_GENRES.map(genre => ({
+        url: '/catalogue',
+        label: genre.label,
+        hint: genre.hint,
+        queryParams: {genre: genre.value},
+      })),
       {url: '/catalogue', label: 'Voir tous les genres', hint: 'Parcourir le catalogue complet'},
     ],
   },

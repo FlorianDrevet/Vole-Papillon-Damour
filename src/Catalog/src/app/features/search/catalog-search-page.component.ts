@@ -4,6 +4,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
+import {mergeCatalogGenres} from '../../core/catalog-genres';
 import {
   CatalogAvailability,
   CatalogBookReference,
@@ -165,6 +166,10 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       return 'Aucun titre trouvé dans la bourse aux livres';
     }
     return `${total} ${total === 1 ? 'titre trouvé' : 'titres trouvés'} dans la bourse aux livres`;
+  }
+
+  availableGenres(): string[] {
+    return mergeCatalogGenres(this.response?.genres, this.genre);
   }
 
   trackBook(_index: number, isbn13: string): string {
