@@ -116,6 +116,12 @@ administrateur. Le compte qui lance ce script doit disposer des permissions
 ./Configure-EntraBranding.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -UseDeviceCode
 
+# Au premier passage sur un tenant External ID neuf, le script initialise d'abord
+# le branding par défaut avant de lire les localisations. Le -WhatIf reste donc
+# utilisable même si la ressource organizationalBranding n'existe pas encore.
+# Le résultat réel attendu sans logo est :
+# localization-created, default-updated, default-css-updated, localization-css-updated.
+
 # Des fichiers PNG/JPEG peuvent être fournis en option pour remplacer le logo et le favicon.
 # Le logo d'en-tête doit être une ressource dédiée au bandeau, pas le logo carré de l'application.
 # ./Configure-EntraBranding.ps1 ... -HeaderLogoPath ./branding/header-logo.png `

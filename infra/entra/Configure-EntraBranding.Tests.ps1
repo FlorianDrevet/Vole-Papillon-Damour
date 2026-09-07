@@ -38,11 +38,52 @@ Describe 'Configure-EntraBranding.ps1' {
 
         Assert-MockCalled Connect-MgGraph -Times 1 -Exactly -Scope It
         Assert-MockCalled New-MgOrganizationBrandingLocalization -Times 1 -Exactly -Scope It
-        Assert-MockCalled Update-MgOrganizationBranding -Times 1 -Exactly -Scope It
-        Assert-MockCalled Set-MgOrganizationBrandingCustomCss -Times 1 -Exactly -Scope It
-        Assert-MockCalled Set-MgOrganizationBrandingLocalizationCustomCss -Times 1 -Exactly -Scope It
+        Assert-MockCalled Update-MgOrganizationBranding -Times 0 -Exactly -Scope It
+        Assert-MockCalled Update-MgOrganizationBrandingLocalization -Times 1 -Exactly -Scope It
+        Assert-MockCalled Set-MgOrganizationBrandingCustomCss -Times 0 -Exactly -Scope It
+        Assert-MockCalled Set-MgOrganizationBrandingLocalizationCustomCss -Times 2 -Exactly -Scope It
+        Assert-MockCalled Set-MgOrganizationBrandingLocalizationCustomCss -Times 1 -Exactly -Scope It -ParameterFilter {
+            $OrganizationalBrandingLocalizationId -eq '0'
+        }
+        Assert-MockCalled Set-MgOrganizationBrandingLocalizationCustomCss -Times 1 -Exactly -Scope It -ParameterFilter {
+            $OrganizationalBrandingLocalizationId -eq 'fr-FR'
+        }
         $result.Locale | Should Be 'fr-FR'
         $result.CssPath | Should Be $cssPath
+    }
+
+    It 'creates the default localization before applying fresh-tenant branding' {
+        $state = [pscustomobject]@{ Order = [System.Collections.Generic.List[string]]::new() }
+
+        Mock Get-MgOrganizationBrandingLocalization {
+            $state.Order.Add('read')
+            throw 'Request_ResourceNotFound: branding has not been initialized'
+        }
+        Mock New-MgOrganizationBrandingLocalization {
+            $state.Order.Add('create')
+            [pscustomobject]@{ Id = 'fr-FR' }
+        }
+        Mock Update-MgOrganizationBrandingLocalization {
+            $state.Order.Add("update:$OrganizationalBrandingLocalizationId")
+        }
+
+        $result = & $scriptPath -TenantId 'tenant-id' -CustomCssPath $cssPath
+
+        $result.Applied | Should Be $true
+        ($state.Order -join ',') | Should Be 'read,create,update:0'
+        Assert-MockCalled Update-MgOrganizationBranding -Times 0 -Exactly -Scope It
+        Assert-MockCalled Get-MgOrganizationBrandingLocalization -Times 1 -Exactly -Scope It
+    }
+
+    It 'keeps a dry run usable when the tenant has no branding resource yet' {
+        Mock Get-MgOrganizationBrandingLocalization {
+            throw 'Request_ResourceNotFound: branding has not been initialized'
+        }
+
+        $result = & $scriptPath -TenantId 'tenant-id' -CustomCssPath $cssPath -WhatIf
+
+        $result.Applied | Should Be $false
+        $result.LocalizationAction | Should Be 'localization-would-create'
     }
 
     It 'updates an existing French localization without creating a duplicate' {
@@ -53,7 +94,7 @@ Describe 'Configure-EntraBranding.ps1' {
         $result = & $scriptPath -TenantId 'tenant-id' -CustomCssPath $cssPath
 
         Assert-MockCalled New-MgOrganizationBrandingLocalization -Times 0 -Exactly -Scope It
-        Assert-MockCalled Update-MgOrganizationBrandingLocalization -Times 1 -Exactly -Scope It
+        Assert-MockCalled Update-MgOrganizationBrandingLocalization -Times 2 -Exactly -Scope It
         $result.LocalizationAction | Should Be 'localization-updated'
     }
 
