@@ -15,6 +15,7 @@ export type CameraScannerReaderFactory = (
 export interface CameraScannerEngine {
   start(container: HTMLElement, onDetected: (rawValue: string) => void): Promise<void>;
   resume(): void;
+  refocus(): Promise<boolean>;
   stop(): Promise<void>;
   scanFile(imageFile: File): Promise<string>;
 }
@@ -36,7 +37,18 @@ export const CAMERA_SCANNER_ENGINE_FACTORY = new InjectionToken<CameraScannerEng
 
 export interface CameraScannerHandle {
   resume(): void;
+  refocus(): Promise<boolean>;
   stop(): Promise<void>;
+}
+
+type CameraFocusMode = 'single-shot' | 'continuous';
+
+interface CameraFocusCapabilities {
+  focusMode?: readonly string[];
+}
+
+interface CameraFocusConstraintSet extends MediaTrackConstraintSet {
+  focusMode?: CameraFocusMode;
 }
 
 const CAMERA_CONSTRAINTS: MediaTrackConstraints = {
@@ -213,6 +225,48 @@ export class ZxingCameraScannerEngine implements CameraScannerEngine {
     }
   }
 
+  async refocus(): Promise<boolean> {
+    const stream = this.video?.srcObject as MediaStream | null;
+    const track = stream?.getVideoTracks?.()[0];
+    if (!track?.applyConstraints) {
+      return false;
+    }
+
+    let supportedModes: readonly string[] | null = null;
+    try {
+      const capabilities = track.getCapabilities?.() as CameraFocusCapabilities | undefined;
+      if (Array.isArray(capabilities?.focusMode)) {
+        supportedModes = capabilities.focusMode;
+      }
+    } catch {
+      // Some browsers expose getCapabilities but reject it for the active track.
+    }
+
+    if (supportedModes?.length === 0) {
+      return false;
+    }
+
+    const modes: CameraFocusMode[] = supportedModes
+      ? (['single-shot', 'continuous'] as const).filter(
+        (mode): mode is CameraFocusMode => supportedModes.includes(mode),
+      )
+      : ['continuous'];
+
+    let applied = false;
+    for (const mode of modes) {
+      try {
+        await track.applyConstraints({
+          advanced: [{focusMode: mode} as CameraFocusConstraintSet],
+        });
+        applied = true;
+      } catch {
+        // Focus constraints are optional; leave the camera's native autofocus active.
+      }
+    }
+
+    return applied;
+  }
+
   async stop(): Promise<void> {
     this.active = false;
 
@@ -305,6 +359,14 @@ export class CameraScannerService {
       engine.resume();
     };
 
+    const refocus = async (): Promise<boolean> => {
+      if (!active || stopPromise) {
+        return false;
+      }
+
+      return await engine.refocus();
+    };
+
     try {
       await engine.start(container, (decodedText: string) => {
         if (!active || !acceptingDetections) {
@@ -324,7 +386,7 @@ export class CameraScannerService {
       throw this.toCameraError(error);
     }
 
-    return {resume, stop};
+    return {resume, refocus, stop};
   }
 
   async scanFile(imageFile: File): Promise<string> {

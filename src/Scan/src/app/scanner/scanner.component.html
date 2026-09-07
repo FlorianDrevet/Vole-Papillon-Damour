@@ -11,9 +11,17 @@
     #cameraContainer
     class="camera-engine-host"
     [class.camera-engine-host-active]="cameraActive"
+    [class.camera-engine-host-refocusing]="cameraFocusStatus === 'refocusing'"
+    [class.camera-engine-host-focus-requested]="cameraFocusStatus === 'requested'"
+    [class.camera-engine-host-focus-unavailable]="cameraFocusStatus === 'unavailable'"
     [class.camera-engine-host-cash]="screen === 'cash'"
     [class.camera-engine-host-consultation]="screen === 'consultation'"
-    aria-label="Aperçu de la caméra pour le code-barres"></div>
+    [attr.role]="cameraActive ? 'button' : null"
+    [attr.tabindex]="cameraActive ? 0 : null"
+    [attr.aria-label]="cameraFocusAriaLabel"
+    (click)="refocusCamera()"
+    (keydown.enter)="refocusCamera()"
+    (keydown.space)="refocusCamera(); $event.preventDefault()"></div>
 
   <ng-container [ngSwitch]="screen">
     <section *ngSwitchCase="'home'" class="app-screen home-screen" aria-labelledby="home-title">
@@ -158,10 +166,16 @@
               <span class="reticle-corner reticle-corner-bottom-right"></span>
               <span class="reticle-line"></span>
             </div>
-            <h1 id="tri-title">Scannez le code-barres</h1>
+            <h1 id="tri-title">{{ isLoading ? 'Scan détecté' : 'Scannez le code-barres' }}</h1>
+            <div *ngIf="isLoading" class="scan-progress scan-progress-dark" role="status" aria-live="polite">
+              <span class="scan-progress-spinner" aria-hidden="true"></span>
+              <span class="scan-progress-copy">
+                <strong>Scan détecté</strong>
+                <span>Recherche du livre…</span>
+              </span>
+            </div>
             <p *ngIf="!isLoading && !cameraActive">La caméra va s’activer automatiquement.</p>
             <p *ngIf="!isLoading && cameraActive">Cadrez le code-barres dans la vue caméra.</p>
-            <p *ngIf="isLoading">Lecture du livre…</p>
             <p *ngIf="cameraError" class="scan-feedback scan-feedback-error message-error" role="alert">
               {{ cameraError }}
             </p>
@@ -398,6 +412,14 @@
         <span>La file locale est conservée</span>
       </div>
 
+      <div *ngIf="isLoading" class="scan-progress scan-progress-light cash-lookup-progress" role="status" aria-live="polite">
+        <span class="scan-progress-spinner" aria-hidden="true"></span>
+        <span class="scan-progress-copy">
+          <strong>Scan détecté</strong>
+          <span>Recherche du livre…</span>
+        </span>
+      </div>
+
       <div class="cash-items" aria-live="polite">
         <ng-container *ngFor="let item of cashItems">
           <article *ngIf="!item.isRare" class="cash-item">
@@ -430,7 +452,7 @@
             <p>Voir le prix indiqué sur le livre.</p>
           </article>
         </ng-container>
-        <p *ngIf="cashItems.length === 0" class="cash-empty">Scannez les livres de la vente. La gâchette suffit.</p>
+        <p *ngIf="cashItems.length === 0 && !isLoading" class="cash-empty">Scannez les livres de la vente. La gâchette suffit.</p>
       </div>
 
       <div class="cash-count"><span>Dans cette vente</span><strong>{{ cashItems.length }} livre{{ cashItems.length > 1 ? 's' : '' }}</strong></div>
@@ -504,14 +526,23 @@
 
       <ng-template #consultationEmpty>
         <div class="consultation-empty">
-          <div class="scan-reticle scan-reticle-light" aria-hidden="true">
-            <span class="reticle-corner reticle-corner-top-left"></span>
-            <span class="reticle-corner reticle-corner-top-right"></span>
-            <span class="reticle-corner reticle-corner-bottom-left"></span>
-            <span class="reticle-corner reticle-corner-bottom-right"></span>
-            <span class="reticle-line"></span>
+          <div *ngIf="isLoading; else consultationReadyToScan" class="scan-progress scan-progress-light consultation-lookup-progress" role="status" aria-live="polite">
+            <span class="scan-progress-spinner" aria-hidden="true"></span>
+            <span class="scan-progress-copy">
+              <strong>Scan détecté</strong>
+              <span>Recherche du livre…</span>
+            </span>
           </div>
-          <p>Scannez pour consulter une fiche.</p>
+          <ng-template #consultationReadyToScan>
+            <div class="scan-reticle scan-reticle-light" aria-hidden="true">
+              <span class="reticle-corner reticle-corner-top-left"></span>
+              <span class="reticle-corner reticle-corner-top-right"></span>
+              <span class="reticle-corner reticle-corner-bottom-left"></span>
+              <span class="reticle-corner reticle-corner-bottom-right"></span>
+              <span class="reticle-line"></span>
+            </div>
+            <p>Scannez pour consulter une fiche.</p>
+          </ng-template>
         </div>
       </ng-template>
 

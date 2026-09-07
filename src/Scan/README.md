@@ -47,6 +47,12 @@ l'instant » sans bloquer la décision (`RG-04`). La fin d'une session vide le s
 local uniquement après synchronisation et clôture de la session distante ; en cas
 d'échec réseau, les gestes restent conservés localement.
 
+Après une lecture caméra, les trois parcours affichent immédiatement « Scan détecté » avec
+un indicateur de recherche pendant le chargement de la fiche. La prévisualisation caméra
+est également tactile : touchez-la pour redemander une mise au point. Le navigateur
+utilise le mode de focus de la piste vidéo lorsqu'il est disponible ; sinon l'autofocus
+natif de l'appareil reste en charge de la mise au point, sans interrompre le scan.
+
 La réponse à la demande d'autorisation de caméra est conservée par le navigateur, pas
 par l'application. Pendant une session, l'application conserve toutefois le flux déjà
 autorisé au lieu de rappeler `getUserMedia()` après chaque livre. Pour éviter une nouvelle
