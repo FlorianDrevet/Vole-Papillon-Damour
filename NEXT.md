@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
-| **Prochaine action** | Exécuter `Configure-EntraUserFlow.ps1` dans le tenant External ID, puis vérifier la création depuis le Catalog et l'absence d'inscription libre-service sur les applications internes. Les mesures ACS et contrôles physiques restent ensuite à relever. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-camera-feedback-focus` |
-| **Dernière mise à jour** | 2026-09-07 — feedback caméra Scanette, PR [#89](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/89) ouverte |
-| **Branche** | `fix/scan-camera-feedback-focus` — worktree dédié depuis `origin/main` (`60b0f90`) |
+| **Prochaine action** | Après merge, rejouer le user flow et le branding External ID (`-WhatIf`, puis réel), déployer le Catalog, et vérifier création, connexion, mot de passe oublié et rendu mobile. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-custom-signup` |
+| **Dernière mise à jour** | 2026-09-07 — correction `displayName`, branding français External ID et paramètres de locale Catalog |
+| **Branche** | `feat/catalog-custom-signup` — worktree dédié depuis `origin/main` |
 
 ---
 
@@ -78,6 +78,37 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-07 — displayName et personnalisation du signup External ID
+
+Le user flow public External ID a été exécuté par l'utilisateur après le merge de la
+branche précédente. Le test de création a ensuite montré que `Florian Drevet` était
+refusé par la validation `displayName` du formulaire hébergé, avec un message trop vague.
+La nouvelle branche `feat/catalog-custom-signup` remplace cette expression régulière
+fragile par une règle portable limitée à 256 caractères : `displayName` reste un attribut
+texte facultatif, sans collecte de mot de passe par le Catalog ni l'API.
+
+Le Catalog demande désormais `ui_locales=fr-FR` et `mkt=fr-FR` pour la connexion,
+l'inscription et le renouvellement interactif de jeton. `infra/entra/Configure-EntraBranding.ps1`
+crée ou met à jour la personnalisation `fr-FR`, publie le CSS aligné sur le design system
+du Catalog et accepte en option un logo d'en-tête et un favicon PNG/JPEG. Le script est
+idempotent, supporte `-WhatIf` et demande le rôle Graph de personnalisation de marque.
+
+Cette solution conserve le parcours **browser-delegated** sécurisé, dont la page reste
+hébergée par External ID mais n'affiche plus le style générique principal. Un formulaire
+entièrement servi par le Catalog nécessiterait une décision séparée vers **Native
+Authentication** (`@azure/msal-browser/custom-auth`) et un proxy CORS ; les custom policies
+ne sont pas nécessaires pour ce besoin.
+
+Validation locale : Pester `Configure-EntraBranding.Tests.ps1` — 4/4, Pester
+`Configure-EntraUserFlow.Tests.ps1` — 5/5, Catalog — 84 tests ChromeHeadless et build
+SSR/navigateur. Le build passe avec l'avertissement de budget initial existant ; aucun
+changement de tenant n'a été effectué par cette branche.
+
+Après le merge, appliquer d'abord `Configure-EntraUserFlow.ps1 -WhatIf`, puis le script
+réel pour que la nouvelle validation portable prenne effet dans le flow déjà créé.
+Exécuter ensuite `Configure-EntraBranding.ps1 -WhatIf`, puis le script réel avec un compte
+disposant de `OrganizationalBranding.ReadWrite.All`. Enfin, lancer **Catalog - deploy** :
+aucun déploiement API, BackOffice, Scanette, Worker ou base n'est requis pour ce périmètre.
 ### État actualisé — 2026-09-07 — feedback caméra Scanette
 
 Dans `src/Scan`, les trois parcours de scan (`Trier`, `Caisse`, `Consultation`) affichent

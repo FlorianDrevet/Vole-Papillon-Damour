@@ -65,7 +65,15 @@
 - Public Catalog registration keeps the MSAL `prompt=create` request and `/compte` return
   URL. The External ID form is provisioned separately by
   `infra/entra/Configure-EntraUserFlow.ps1` through Graph v1.0 and is associated only with
-  `vpd-catalog-<environment>`; Scan, BackOffice and Cash have no self-service signup flow.
+  `vpd-catalog-<environment>`; the flow body uses a portable 0–256-character
+  `displayName` validation regex, so normal names such as `Florian Drevet` are accepted.
+  Scan, BackOffice and Cash have no self-service signup flow.
+- Catalog browser-delegated requests add `ui_locales=fr-FR` and `mkt=fr-FR` to sign-in,
+  registration, and interactive API-token renewal. `infra/entra/Configure-EntraBranding.ps1`
+  creates or updates the tenant's `fr-FR` organizational branding and uploads the Catalog
+  CSS through Graph `OrganizationalBranding.ReadWrite.All`; this changes the hosted page's
+  visual language but does not move password entry into the Catalog. A pixel-perfect custom
+  form would require a separate Native Authentication decision and a CORS proxy.
 - `Scan` gates the entire PWA through `ScanAuthService.authState$`: only an Entra account
   with the `Tri` role renders the scanner, while unauthenticated, unauthorized, and token-
   renewal-failure states render `ScanLoginComponent`. `AppModule` awaits

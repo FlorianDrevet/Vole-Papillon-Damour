@@ -118,7 +118,9 @@ function New-CatalogSignupFlowBody {
                                 editable = $true
                                 writeToDirectory = $true
                                 required = $false
-                                validationRegEx = '^[\p{L}0-9][\p{L}0-9 .''_-]*$'
+                                # \p{L} n'est pas interprété de façon portable par la page hébergée External ID.
+                                # Le nom est facultatif ; on limite seulement sa longueur.
+                                validationRegEx = '^.{0,256}$'
                             }
                         )
                     }

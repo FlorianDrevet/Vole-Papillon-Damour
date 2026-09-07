@@ -4,7 +4,7 @@ Tout ce qui se configure dans le locataire d'identité se fait **par script**, j
 la main dans le portail. Un clic dans le portail n'est ni rejouable, ni relisible, ni
 reproductible sur un second environnement.
 
-Quatre scripts, et une seule chose qui reste manuelle.
+Cinq scripts, et une seule chose qui reste manuelle.
 
 `Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
 application n'est pas un client interactif : elle recoit les permissions applicatives
@@ -19,6 +19,7 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 |---|---|---|
 | `Configure-EntraApps.ps1` | Enregistrements d'application, portée exposée, rôles applicatifs, consentements | À chaque évolution de la configuration |
 | `Configure-EntraUserFlow.ps1` | User flow External ID d'inscription publique, attaché au catalogue uniquement | À l'activation ou à l'évolution du parcours membre |
+| `Configure-EntraBranding.ps1` | Marque française et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
 | `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `Administration` à un compte | Au fil de l'eau |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle | Contrôle |
 
@@ -26,7 +27,8 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 
 ```powershell
 Install-Module Microsoft.Graph.Authentication, Microsoft.Graph.Applications, `
-               Microsoft.Graph.Identity.SignIns, Microsoft.Graph.Users `
+               Microsoft.Graph.Identity.SignIns, Microsoft.Graph.Identity.DirectoryManagement, `
+               Microsoft.Graph.Users `
                -Scope CurrentUser
 ```
 
@@ -36,6 +38,12 @@ externe. PowerShell 7 requis.
 `Microsoft.Graph.Identity.SignIns` est nécessaire pour les cmdlets de consentement
 OAuth2 et pour le user flow External ID. Les scripts déclarent eux-mêmes leurs modules
 requis et s'arrêtent immédiatement si l'un d'eux manque.
+
+`Configure-EntraBranding.ps1` utilise `Microsoft.Graph.Identity.DirectoryManagement`.
+Le compte qui le lance doit disposer du consentement Graph
+`OrganizationalBranding.ReadWrite.All` et du rôle Entra
+**Administrateur de la personnalisation de marque organisationnelle** (*Organizational
+Branding Administrator*).
 
 La connexion Graph est indépendante de `az login`. Sur un poste autorisé, le mode
 normal ouvre la connexion interactive du module Graph. Le mode `-UseDeviceCode` est
@@ -100,6 +108,19 @@ administrateur. Le compte qui lance ce script doit disposer des permissions
     -Environment 'dev' `
     -UseDeviceCode
 
+# 2 ter. Personnaliser la page hébergée External ID. La simulation ne modifie rien.
+./Configure-EntraBranding.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UseDeviceCode -WhatIf
+
+# 2 quater. Appliquer le branding français et le CSS du catalogue.
+./Configure-EntraBranding.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UseDeviceCode
+
+# Des fichiers PNG/JPEG peuvent être fournis en option pour remplacer le logo et le favicon.
+# Le logo d'en-tête doit être une ressource dédiée au bandeau, pas le logo carré de l'application.
+# ./Configure-EntraBranding.ps1 ... -HeaderLogoPath ./branding/header-logo.png `
+#     -FaviconPath ./branding/favicon.png
+
 # 3. Le premier administrateur, sans qui rien n'est administrable.
 ./Set-VpdUserRole.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -UserPrincipalName 'florian.drevet_magellangroup.eu#EXT#@volepapillondamour.onmicrosoft.com' `
@@ -111,6 +132,48 @@ administrateur. Le compte qui lance ce script doit disposer des permissions
 
 Les scripts acceptent `-WhatIf` : à utiliser systématiquement au premier passage sur un
 locataire qui contient déjà quelque chose.
+
+## Parcours hébergé ou formulaire entièrement personnalisé
+
+Le Catalog utilise le parcours **browser-delegated** : le mot de passe est saisi dans la
+page External ID hébergée par Microsoft et n'est jamais envoyé au Catalog ni à l'API.
+`Configure-EntraBranding.ps1` applique le CSS du design system, les textes français et la
+locale `fr-FR` demandée par le Catalog (`ui_locales` et `mkt`). Cette solution conserve la
+sécurité et les écrans de récupération de compte du parcours géré, tout en supprimant la
+présentation visuelle générique la plus visible. Le domaine d'authentification reste
+toutefois celui d'External ID : ce n'est pas un formulaire HTML servi par notre domaine.
+
+Si le besoin devient un contrôle pixel-perfect du formulaire, l'alternative est **Native
+Authentication** avec `@azure/msal-browser/custom-auth` dans Angular. Le Catalog posséderait
+alors ses propres champs et messages, mais il faudrait activer Native Authentication sur
+l'enregistrement de l'application et déployer un proxy serveur pour les appels, car les
+endpoints natifs External ID ne supportent pas CORS. Ce choix augmente la surface de code,
+la responsabilité de sécurité, les tests d'accessibilité et la maintenance des états
+mot de passe, MFA, vérification d'e-mail et erreurs. Il ne faut pas remplacer cela par un
+formulaire maison qui collecte le mot de passe puis l'envoie directement à Graph.
+
+Les **custom policies** ne sont donc pas nécessaires pour le besoin actuel. Elles restent
+un mécanisme distinct de l'ancien Azure AD B2C ; pour ce locataire External ID, le user flow
+hébergé avec branding, ou Native Authentication si le contrôle de l'interface devient
+prioritaire, sont les deux voies supportées à privilégier.
+
+## Déploiement après merge
+
+Cette évolution mélange une configuration de locataire et une petite modification du
+Catalog :
+
+- rejouer `Configure-EntraUserFlow.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
+  option) pour remplacer l'ancienne validation `displayName` non portable déjà présente
+  dans le tenant ;
+- exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS et les textes
+  français ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
+- lancer le workflow **Catalog - deploy** pour publier les paramètres `fr-FR` du client
+  Angular ;
+- ne pas redéployer l'API, le BackOffice, la Scanette, le Worker ou la base pour ce périmètre.
+
+Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine public,
+avec un compte de test, en contrôlant l'inscription, la connexion, le mot de passe oublié et
+le rendu mobile.
 
 ## Le modèle de droits en trois lignes
 

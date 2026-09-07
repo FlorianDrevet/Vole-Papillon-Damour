@@ -1,0 +1,276 @@
+#Requires -Version 7.0
+#Requires -Modules Microsoft.Graph.Authentication, Microsoft.Graph.Identity.DirectoryManagement
+
+<#
+.SYNOPSIS
+    Applies the Vole Papillon d'Amour branding to the External ID hosted pages.
+
+.DESCRIPTION
+    Configures the tenant-level and fr-FR company branding used by browser-
+    delegated External ID sign-in and sign-up pages. The script uploads the
+    catalog CSS and applies French copy without touching application secrets.
+
+    Native authentication is not configured here. It is a separate integration
+    choice that moves the authentication UI into the Angular application.
+
+.EXAMPLE
+    ./Configure-EntraBranding.ps1 -TenantId b23c80b3-9776-4840-8255-fcbf3b3500fd `
+        -UseDeviceCode -WhatIf
+
+.EXAMPLE
+    ./Configure-EntraBranding.ps1 -TenantId b23c80b3-9776-4840-8255-fcbf3b3500fd `
+        -UseDeviceCode
+
+.EXAMPLE
+    ./Configure-EntraBranding.ps1 -TenantId b23c80b3-9776-4840-8255-fcbf3b3500fd `
+        -HeaderLogoPath ./branding/header-logo.png `
+        -FaviconPath ./branding/favicon.png
+#>
+
+[CmdletBinding(SupportsShouldProcess = $true)]
+param(
+    [Parameter(Mandatory = $true)]
+    [ValidateNotNullOrEmpty()]
+    [string]$TenantId,
+
+    [ValidateNotNullOrEmpty()]
+    [string]$CustomCssPath = (Join-Path $PSScriptRoot 'vpd-catalog-authentication.css'),
+
+    [ValidateSet('fr-FR')]
+    [string]$Locale = 'fr-FR',
+
+    [string]$HeaderLogoPath,
+
+    [string]$FaviconPath,
+
+    [switch]$UseDeviceCode
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+
+function New-VpdBrandingUpdateBody {
+    return @{
+        backgroundColor = '#f7fbfe'
+        headerBackgroundColor = '#041d30'
+        usernameHintText = 'Votre adresse e-mail'
+        signInPageText = "Connexion sécurisée au catalogue Vole Papillon d’Amour."
+        customForgotMyPasswordText = 'Mot de passe oublié ?'
+        customPrivacyAndCookiesText = 'Confidentialité et cookies'
+        customTermsOfUseText = "Conditions d’utilisation"
+    }
+}
+
+function New-VpdBrandingLocalizationBody {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LocalizationId
+    )
+
+    $body = New-VpdBrandingUpdateBody
+    $body['id'] = $LocalizationId
+    return $body
+}
+
+function Get-VpdBrandingAsset {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$AllowedExtensions,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Description,
+
+        [Nullable[int64]]$MaximumBytes
+    )
+
+    $asset = Get-Item -LiteralPath $Path -ErrorAction Stop
+    if (-not $asset.PSIsContainer -and $asset.Extension.ToLowerInvariant() -in $AllowedExtensions) {
+        if ($null -ne $MaximumBytes -and $asset.Length -gt [int64]$MaximumBytes) {
+            throw "$Description '$($asset.FullName)' dépasse la taille maximale de $MaximumBytes octets."
+        }
+
+        return $asset
+    }
+
+    $extensions = $AllowedExtensions -join ', '
+    throw "$Description '$Path' doit être un fichier avec l'une des extensions suivantes : $extensions."
+}
+
+function Get-VpdContentType {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.IO.FileInfo]$Asset
+    )
+
+    switch ($Asset.Extension.ToLowerInvariant()) {
+        '.css' { return 'text/css' }
+        '.png' { return 'image/png' }
+        '.jpg' { return 'image/jpeg' }
+        '.jpeg' { return 'image/jpeg' }
+        default { throw "Type MIME inconnu pour '$($Asset.FullName)'." }
+    }
+}
+
+function Find-VpdBrandingLocalization {
+    param(
+        [AllowNull()]
+        [object[]]$Localizations,
+
+        [Parameter(Mandatory = $true)]
+        [string]$LocalizationId
+    )
+
+    return @(
+        $Localizations | Where-Object { $_.Id -ieq $LocalizationId }
+    )
+}
+
+if ($MyInvocation.InvocationName -eq '.') {
+    return
+}
+
+$cssAsset = Get-VpdBrandingAsset `
+    -Path $CustomCssPath `
+    -AllowedExtensions @('.css') `
+    -Description 'La feuille de style External ID' `
+    -MaximumBytes 25KB
+
+$headerLogoAsset = $null
+if (-not [string]::IsNullOrWhiteSpace($HeaderLogoPath)) {
+    $headerLogoAsset = Get-VpdBrandingAsset `
+        -Path $HeaderLogoPath `
+        -AllowedExtensions @('.png', '.jpg', '.jpeg') `
+        -Description "Le logo d’en-tête External ID"
+}
+
+$faviconAsset = $null
+if (-not [string]::IsNullOrWhiteSpace($FaviconPath)) {
+    $faviconAsset = Get-VpdBrandingAsset `
+        -Path $FaviconPath `
+        -AllowedExtensions @('.png', '.jpg', '.jpeg') `
+        -Description 'Le favicon External ID'
+}
+
+$graphScopes = @('OrganizationalBranding.ReadWrite.All')
+$connectParameters = @{
+    TenantId = $TenantId
+    Scopes = $graphScopes
+    NoWelcome = $true
+}
+if ($UseDeviceCode.IsPresent) {
+    $connectParameters.UseDeviceCode = $true
+}
+
+$null = Connect-MgGraph @connectParameters
+
+$allLocalizations = @(Get-MgOrganizationBrandingLocalization -OrganizationId $TenantId)
+$matchingLocalizations = @(Find-VpdBrandingLocalization -Localizations $allLocalizations -LocalizationId $Locale)
+if ($matchingLocalizations.Count -gt 1) {
+    throw "Plusieurs personnalisations de marque existent pour la locale '$Locale'. Supprimez le doublon manuellement avant de relancer le script."
+}
+
+$brandingBody = New-VpdBrandingUpdateBody
+$actions = [System.Collections.Generic.List[string]]::new()
+
+$frenchLocalization = $null
+if ($matchingLocalizations.Count -eq 0) {
+    if ($PSCmdlet.ShouldProcess($Locale, 'Créer la personnalisation de marque française')) {
+        $frenchLocalization = New-MgOrganizationBrandingLocalization `
+            -OrganizationId $TenantId `
+            -BodyParameter (New-VpdBrandingLocalizationBody -LocalizationId $Locale)
+        $actions.Add('localization-created')
+    }
+    else {
+        $frenchLocalization = [pscustomobject]@{ Id = $Locale }
+        $actions.Add('localization-would-create')
+    }
+}
+else {
+    $frenchLocalization = $matchingLocalizations[0]
+    if ($PSCmdlet.ShouldProcess($Locale, 'Mettre à jour la personnalisation de marque française')) {
+        $null = Update-MgOrganizationBrandingLocalization `
+            -OrganizationId $TenantId `
+            -OrganizationalBrandingLocalizationId $frenchLocalization.Id `
+            -BodyParameter $brandingBody
+        $actions.Add('localization-updated')
+    }
+    else {
+        $actions.Add('localization-would-update')
+    }
+}
+
+if ($PSCmdlet.ShouldProcess($TenantId, 'Mettre à jour la personnalisation de marque par défaut')) {
+    $null = Update-MgOrganizationBranding `
+        -OrganizationId $TenantId `
+        -BodyParameter $brandingBody
+    $actions.Add('default-updated')
+}
+else {
+    $actions.Add('default-would-update')
+}
+
+if ($PSCmdlet.ShouldProcess($TenantId, 'Téléverser la feuille de style External ID par défaut')) {
+    $null = Set-MgOrganizationBrandingCustomCss `
+        -OrganizationId $TenantId `
+        -InFile $cssAsset.FullName `
+        -ContentType (Get-VpdContentType -Asset $cssAsset)
+    $actions.Add('default-css-updated')
+}
+else {
+    $actions.Add('default-css-would-update')
+}
+
+if ($PSCmdlet.ShouldProcess($frenchLocalization.Id, 'Téléverser la feuille de style External ID française')) {
+    $null = Set-MgOrganizationBrandingLocalizationCustomCss `
+        -OrganizationId $TenantId `
+        -OrganizationalBrandingLocalizationId $frenchLocalization.Id `
+        -InFile $cssAsset.FullName `
+        -ContentType (Get-VpdContentType -Asset $cssAsset)
+    $actions.Add('localization-css-updated')
+}
+else {
+    $actions.Add('localization-css-would-update')
+}
+
+if ($null -ne $headerLogoAsset) {
+    if ($PSCmdlet.ShouldProcess($TenantId, "Téléverser le logo d’en-tête External ID par défaut")) {
+        $null = Set-MgOrganizationBrandingHeaderLogo `
+            -OrganizationId $TenantId `
+            -InFile $headerLogoAsset.FullName `
+            -ContentType (Get-VpdContentType -Asset $headerLogoAsset)
+        $actions.Add('default-header-logo-updated')
+    }
+
+    if ($PSCmdlet.ShouldProcess($frenchLocalization.Id, "Téléverser le logo d’en-tête External ID français")) {
+        $null = Set-MgOrganizationBrandingLocalizationHeaderLogo `
+            -OrganizationId $TenantId `
+            -OrganizationalBrandingLocalizationId $frenchLocalization.Id `
+            -InFile $headerLogoAsset.FullName `
+            -ContentType (Get-VpdContentType -Asset $headerLogoAsset)
+        $actions.Add('localization-header-logo-updated')
+    }
+}
+
+if ($null -ne $faviconAsset) {
+    if ($PSCmdlet.ShouldProcess($TenantId, 'Téléverser le favicon External ID')) {
+        $null = Set-MgOrganizationBrandingFavicon `
+            -OrganizationId $TenantId `
+            -InFile $faviconAsset.FullName `
+            -ContentType (Get-VpdContentType -Asset $faviconAsset)
+        $actions.Add('favicon-updated')
+    }
+}
+
+[pscustomobject]@{
+    Action = $actions -join ', '
+    Applied = -not $WhatIfPreference
+    TenantId = $TenantId
+    Locale = $Locale
+    LocalizationAction = $actions | Where-Object { $_ -like 'localization-*' } | Select-Object -First 1
+    CssPath = $cssAsset.FullName
+    HeaderLogoPath = if ($null -eq $headerLogoAsset) { $null } else { $headerLogoAsset.FullName }
+    FaviconPath = if ($null -eq $faviconAsset) { $null } else { $faviconAsset.FullName }
+}

@@ -3,6 +3,10 @@ import type {Configuration, RedirectRequest} from '@azure/msal-browser';
 import {environment} from '../../environments/environment';
 
 const CATALOG_REGISTRATION_PROMPT = 'create' as const;
+const CATALOG_LOCALE_QUERY_PARAMETERS = {
+  ui_locales: 'fr-FR',
+  mkt: 'fr-FR',
+} as const;
 
 export const catalogMsalConfig: Configuration = {
   auth: {
@@ -25,6 +29,7 @@ export const catalogMsalConfig: Configuration = {
 
 export const catalogLoginRequest: RedirectRequest = {
   scopes: [environment.entra.apiScope],
+  extraQueryParameters: CATALOG_LOCALE_QUERY_PARAMETERS,
 };
 
 export const catalogRegistrationRequest: RedirectRequest = {

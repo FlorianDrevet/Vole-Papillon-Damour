@@ -44,6 +44,24 @@ Describe 'Configure-EntraUserFlow.ps1' {
         (@($body.onAttributeCollection.attributes.id) -contains 'displayName') | Should Be $true
     }
 
+    It 'uses a portable validation for a normal French display name in the hosted form' {
+        . $scriptPath -TenantId 'tenant-id' -Environment 'dev'
+        $body = New-CatalogSignupFlowBody `
+            -CatalogClientId 'catalog-client-id' `
+            -DisplayName 'vpd-catalog-signup-dev' `
+            -Description 'test flow'
+
+        $displayNameInputs = @(
+            $body.onAttributeCollection.attributeCollectionPage.views[0].inputs |
+                Where-Object { $_.attribute -eq 'displayName' }
+        )
+
+        $displayNameInputs.Count | Should Be 1
+        $displayNameInput = $displayNameInputs[0]
+        $displayNameInput.validationRegEx | Should Be '^.{0,256}$'
+        [regex]::IsMatch('Florian Drevet', $displayNameInput.validationRegEx) | Should Be $true
+    }
+
     It 'updates the existing catalog flow instead of creating a duplicate' {
         Mock Get-MgIdentityAuthenticationEventFlow {
             @([pscustomobject]@{
