@@ -54,6 +54,21 @@ export interface CatalogFair {
   road: string;
 }
 
+/** Public event shape returned by the existing association schedule endpoint. */
+export interface CatalogPublicEventResponse {
+  id: string;
+  name: string;
+  eventType: string;
+  dateStart: string;
+  dateEnd: string | null;
+  hourOpenDoors: string | null;
+  hourCloseDoors: string | null;
+  roadNumber: number | null;
+  city: string;
+  cityCode: number;
+  road: string;
+}
+
 export interface CatalogWorkResponse {
   workId: string;
   title: string | null;

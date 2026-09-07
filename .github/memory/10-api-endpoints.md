@@ -17,7 +17,8 @@
 
 ## Event Endpoints
 
-- `GET /asso-events`, `GET /asso-events/{id}` - public event reads
+- `GET /asso-events`, `GET /asso-events/{id}` - public event reads; the Catalog home uses the
+  collection response for the upcoming calendar and filters the typed `Books` event kind.
 - `GET /asso-events/next-bingo`, `GET /asso-events/next-books`, `GET /asso-events/next-other-event` - public next-event projections
 - `POST /asso-events`, `PUT /asso-events/{id}` - admin-protected event writes
 - `POST /asso-events/{id}/numeros`, `DELETE /asso-events/{id}/numeros`, `POST /asso-events/{id}/win-partie`, `PUT /asso-events/{id}/bingo-win` - admin-protected live bingo mutations

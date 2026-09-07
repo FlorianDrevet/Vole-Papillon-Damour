@@ -13,7 +13,8 @@ Both web apps are Angular 21 projects with Angular Material and Tailwind in the 
 
 The public catalog is intentionally separate from the association Website. It uses typed
 `CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
-the next books fair, and the dynamic sitemap. Its public routes are `/`, `/recherche`,
+the next books fair, and the dynamic sitemap; the home calendar also consumes the existing
+public `/asso-events` schedule and keeps only future Books events. Its public routes are `/`, `/recherche`,
 `/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, and the two legal pages. The UI keeps
 available quantities separate from future announcements, leaves exhausted books visible,
 and does not include audience trackers. The `/compte` member route uses a dynamic,
@@ -51,6 +52,14 @@ introduction, concrete watchlist/alert benefits, provider-neutral login copy, an
 `Se connecter`/`Créer un compte` actions. `CatalogAuthService.register()` starts the
 External ID account-creation prompt with a `/compte` return URL; the route remains private
 and noindex while the public catalogue stays browseable without authentication.
+
+As of 2026-09-07, the Catalog home navigation entry is **Les prochaines dates** and its
+`#prochaines-dates` section foregrounds the next Books event in a dark editorial card with
+the date stamp, schedule, address, calendar link, and a Website-inspired map/location card.
+The same typed `CatalogApiService.getUpcomingFairs()` projection renders all future Books
+events below the featured event, with responsive date rows and itinerary links. The latest
+local check passes 77 ChromeHeadless tests, the production build, and a 500px browser check
+with no horizontal overflow; live data was not changed.
 
 ## Planned Books Scan client decisions
 

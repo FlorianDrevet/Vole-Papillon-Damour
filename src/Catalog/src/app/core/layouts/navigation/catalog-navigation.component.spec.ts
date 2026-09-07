@@ -41,6 +41,13 @@ describe('CatalogNavigationComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Le site de l’association');
   });
 
+  it('labels the event tab with the upcoming dates wording', () => {
+    const eventLink = (Array.from(fixture.nativeElement.querySelectorAll('a.nav-link')) as HTMLAnchorElement[])
+      .find(link => link.textContent?.includes('Les prochaines dates'));
+
+    expect(eventLink?.textContent).toContain('Les prochaines dates');
+  });
+
   it('opens the account menu from the trigger without changing the current page', () => {
     const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
 

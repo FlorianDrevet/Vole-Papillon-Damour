@@ -1,4 +1,5 @@
 import {ChangeDetectionStrategy, Component, OnInit, signal} from '@angular/core';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {Router} from '@angular/router';
 import {catchError, forkJoin, of} from 'rxjs';
 
@@ -32,10 +33,12 @@ export class CatalogHomePageComponent implements OnInit {
   rare = signal<CatalogBook[]>([]);
   genres = signal<string[]>([]);
   nextFair = signal<CatalogFair | null>(null);
+  upcomingFairs = signal<CatalogFair[]>([]);
 
   constructor(
     private readonly api: CatalogApiService,
     private readonly router: Router,
+    private readonly sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -48,13 +51,18 @@ export class CatalogHomePageComponent implements OnInit {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
-      fair: this.api.getNextFair().pipe(catchError(() => of(null))),
-    }).subscribe(({recent, rare, fair}) => {
+      fairs: this.api.getUpcomingFairs().pipe(catchError(() => {
+        this.hasLoadError.set(true);
+        return of([] as CatalogFair[]);
+      })),
+    }).subscribe(({recent, rare, fairs}) => {
       this.recent.set(recent.books);
       this.recentTotal.set(recent.totalCount);
       this.rare.set(rare.books);
       this.genres.set(recent.genres);
-      this.nextFair.set(fair);
+      const sortedFairs = [...fairs].sort((a, b) => a.dateStart.localeCompare(b.dateStart));
+      this.upcomingFairs.set(sortedFairs);
+      this.nextFair.set(sortedFairs[0] ?? null);
       this.loading.set(false);
     });
   }
@@ -105,13 +113,26 @@ export class CatalogHomePageComponent implements OnInit {
     return new Intl.DateTimeFormat('fr-FR', {
       hour: 'numeric',
       minute: '2-digit',
-      timeZone: 'Europe/Paris',
+      // Legacy AssoEvents store civil opening hours in UTC components.
+      timeZone: 'UTC',
     }).format(new Date(value)).replace(':', ' h ');
   }
 
   address(fair: CatalogFair): string {
     const street = [fair.roadNumber, fair.road].filter(Boolean).join(' ');
-    return [street, fair.city].filter(Boolean).join(', ');
+    const city = [fair.cityCode, fair.city].filter(Boolean).join(' ');
+    return [street, city].filter(Boolean).join(', ');
+  }
+
+  mapsUrl(fair: CatalogFair): string {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.address(fair))}`;
+  }
+
+  mapsEmbedUrl(fair: CatalogFair): SafeResourceUrl {
+    const query = encodeURIComponent(this.address(fair));
+    return this.sanitizer.bypassSecurityTrustResourceUrl(
+      `https://www.google.com/maps?q=${query}&hl=fr&z=15&output=embed`,
+    );
   }
 
   calendarLink(fair: CatalogFair): string {
