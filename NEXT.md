@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
-| **Prochaine action** | Après merge, rejouer le user flow et le branding External ID (`-WhatIf`, puis réel), déployer le Catalog, et vérifier création, connexion, mot de passe oublié et rendu mobile. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-custom-signup` |
-| **Dernière mise à jour** | 2026-09-07 — correction `displayName`, branding français External ID et paramètres de locale Catalog |
-| **Branche** | `feat/catalog-custom-signup` — worktree dédié depuis `origin/main` |
+| **Lot en cours** | Observabilité du scan — séparation des temps API, SQL et fournisseurs bibliographiques sur la branche `feat/scan-observability`, depuis `origin/main` (`1fead4d`). |
+| **Prochaine action** | Ouvrir la PR, déployer l'API/Scan et vérifier dans `vpd-law-dev` les spans, dépendances BnF/SQL, métriques et l'alerte > 3 s. L'accès Azure de cette machine doit d'abord être reconnecté au bon abonnement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-observability` |
+| **Dernière mise à jour** | 2026-09-07 — observabilité du scan, PR en attente, déploiement Azure en attente |
+| **Branche** | `feat/scan-observability` — worktree dédié, rebasé sur `origin/main` (`1fead4d`) |
 
 ---
 
@@ -132,6 +132,29 @@ est une composition CSS de livres. La PR [#87](https://github.com/FlorianDrevet/
 est ouverte ; 85 tests ChromeHeadless et le build Catalog passent, avec l'avertissement de
 budget initial Angular déjà connu. Le déploiement et le contrôle sur l'URL publique restent
 à faire.
+### État actualisé — 2026-09-07 — diagnostic du temps de scan
+
+Le socle Azure existant possède déjà six Application Insights reliés à `vpd-law-dev`,
+avec instrumentation automatique .NET pour les requêtes HTTP entrantes, `HttpClient` et
+SQL Client lorsque `APPLICATIONINSIGHTS_CONNECTION_STRING` est présent. En revanche, le
+code ne distinguait pas le temps de la résolution bibliographique du temps de la
+persistance d'un scan, et aucun nom de service API ni alerte de latence metadata n'était
+déclaré explicitement.
+
+La branche `feat/scan-observability` ajoute les spans `books.metadata.resolve`,
+`books.metadata.provider` et `books.scan.persist`, les histogrammes de durée associés,
+`OTEL_SERVICE_NAME=vpd-api`, la corrélation CORS du navigateur Scan et l'alerte Azure sur
+`GET /books/{isbn13}/metadata` au-delà de trois secondes. Les identifiants ISBN, session et
+geste restent uniquement sur les traces ; les métriques ne portent que des dimensions à
+faible cardinalité (fournisseur et issue). Les requêtes Kusto sont dans
+[`11-observabilite.md`](docs/bourse-aux-livres/technique/11-observabilite.md).
+
+Validation locale : tests RED puis GREEN ciblés, suite backend complète, build API,
+compilation Bicep et 90 tests/build Scan passent. Le build de la solution complète reste
+bloqué par le SDK `Azure.Functions.Sdk` du Worker absent de l'environnement local, sans
+rapport avec ce patch. `az account show` n'est pas authentifié sur cette machine ; l'état
+Azure réel, le déploiement et la présence des nouvelles données dans le workspace restent
+donc à vérifier après la PR.
 
 ### État actualisé — 2026-09-07 — alignement du header Catalog
 
@@ -640,7 +663,7 @@ dans Azure sans être déductible du dépôt.
 | Catalogue public | Image `vpdacrdev.azurecr.io/vpd-catalog:5601c2e` déployée par `Catalog - deploy` run `34050216526`; `/`, `/robots.txt`, `/sitemap.xml` répondent `200`, les routes privées sont `noindex` côté HTML et en-tête | `2026-09-06` |
 | Runtime Books | API `vpd-api:5601c2e` et Worker `vpd-worker:5601c2e` construits depuis le même commit ; migrations EF déjà appliquées, rollout réussi | `2026-09-06` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
-| Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard ; confirmation post-déploiement à relever | `2026-09-04` |
+| Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard et metadata API au-delà de 3 s ; confirmation post-déploiement à relever | `2026-09-07` |
 
 ### DNS — `volepapillondamour.fr`
 

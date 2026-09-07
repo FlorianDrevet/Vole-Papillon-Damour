@@ -240,6 +240,78 @@ faut avoir écrites d'avance, parce qu'on les veut au moment où l'on est press�
 2. Le cycle de vie complet d'une session — ouverture, scans, clôture, mise en file, envoi.
 3. L'état de la file d'outbox — ce qui est dû, réclamé, envoyé, en échec, et depuis quand.
 
+### Diagnostiquer un scan lent
+
+Le pipeline de métadonnées et le pipeline de persistance ne sont pas le même appel. Le
+résultat affiché par Scan attend la résolution bibliographique, alors que la décision
+locale est calculée immédiatement. La résolution `GET /books/{isbn13}/metadata` ne lit pas
+SQL : elle appelle BnF, puis éventuellement Open Library et Google Books. La synchronisation
+de la décision `POST /scan/sessions/{id}/scans`, elle, ouvre une transaction SQL et ne fait
+pas d'appel bibliographique synchrone.
+
+1. Commencer par la durée totale de la requête API :
+
+```kusto
+AppRequests
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "vpd-api"
+| where Url has "/books/" and Url has "/metadata"
+| project TimeGenerated, OperationId, Name, Url, DurationMs, ResultCode, Success
+| order by DurationMs desc
+```
+
+2. Copier l'`OperationId` d'une ligne lente et afficher ses dépendances :
+
+```kusto
+let operationId = "<OperationId>";
+AppDependencies
+| where OperationId == operationId
+| project TimeGenerated, Name, Type, Target, DurationMs, Success, Data, Properties
+| order by TimeGenerated asc
+```
+
+Les dépendances `Type == "HTTP"` dont la cible contient `bnf.fr` sont les appels BnF ;
+`openlibrary.org` et `googleapis.com` identifient les replis correspondants. Une
+dépendance `Type == "SQL"` indique Azure SQL. Pour le POST de synchronisation, les
+dépendances SQL doivent se trouver sous le même `OperationId` que
+`books.scan.persist`.
+
+3. Utiliser les spans métier pour séparer le temps de l'API, de la chaîne de fournisseurs
+et de la base :
+
+```kusto
+AppDependencies
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "vpd-api"
+| where Name in ("books.metadata.resolve", "books.metadata.provider", "books.scan.persist")
+| extend Provider = tostring(Properties["book.metadata.provider"]),
+         Outcome = tostring(Properties["book.metadata.outcome"]),
+         PersistenceOutcome = tostring(Properties["scan.persistence.outcome"])
+| project TimeGenerated, OperationId, Name, DurationMs, Provider, Outcome, PersistenceOutcome
+| order by TimeGenerated desc
+```
+
+Une résolution lente avec un span `books.metadata.provider` BnF proche de sa durée totale
+indique la BnF. Si le provider est en `timeout`, le délai est le timeout configuré avant
+le repli. Une résolution rapide mais une requête lente indique le transport ou le code API.
+Pour un scan synchronisé, `books.scan.persist` et les dépendances `SQL` mesurent la partie
+base/transaction.
+
+Les histogrammes exportés permettent ensuite de suivre les percentiles et les issues :
+
+```kusto
+AppMetrics
+| where TimeGenerated > ago(24h)
+| where Name in (
+    "vpd.books.metadata.provider.duration",
+    "vpd.books.metadata.resolution.duration",
+    "vpd.books.scan.persistence.duration")
+| project TimeGenerated, Name, Sum, Count, Min, Max, Properties
+```
+
+Les tags de métriques restent volontairement limités au fournisseur et à l'issue ; l'ISBN
+et le `ClientGestureId` sont réservés aux traces pour éviter une cardinalité coûteuse.
+
 ### La télémétrie côté navigateur
 
 L'application de scan tourne sur le téléphone personnel d'un bénévole, dans un local mal

@@ -24,7 +24,7 @@
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
 - Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, and `product-images`.
-- The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books third; it validates provider image URLs before returning them. The current ISBN probe does not persist books.
+- The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books third; it validates provider image URLs before returning them. The anonymous metadata probe does not persist books; authenticated Scan sessions and cash sales persist through the Books endpoints.
 
 ## Authentication
 
@@ -36,8 +36,8 @@
 
 - `MauiCashApp` registers `ProductDatabase` and ships `sqlite-net-pcl` for offline/local caching.
 - The MAUI app should be treated as having its own local persistence concerns in addition to backend storage.
-- `src/Scan` uses native IndexedDB database `vpd-scan` with separate `catalog`, `outbox`, and `session` stores. The catalog is replaceable projection data; the outbox is durable volunteer work with `Pending` until a local decision, then `Kept`/`Rejected` for sequential authenticated replay. Local decisions update the projection atomically and are never discarded by a catalog refresh; `CancelledLocal` entries remain local audit state until explicitly purged by a future policy. `navigator.storage.persist()` is requested at startup, while the Angular service worker caches only the app shell and public bibliographic metadata, never protected scan responses.
-- Scan authentication is MSAL Browser/Angular (`Tri` scope) and is deliberately separate from local persistence: an unauthenticated volunteer can continue recording offline gestures, and synchronization waits until an authorized account and network are available.
+- `src/Scan` uses native IndexedDB database `vpd-scan` with separate `catalog`, `outbox`, `sales`, and `session` stores. The catalog is replaceable projection data; scan decisions and cash sales are durable local work for sequential authenticated replay. Local decisions update the projection atomically and are never discarded by a catalog refresh; `CancelledLocal` entries remain local audit state until explicitly purged by a future policy. `navigator.storage.persist()` is requested at startup, while the Angular service worker caches only the app shell and public bibliographic metadata, never protected scan responses.
+- Scan authentication is MSAL Browser/Angular with `Tri`/`Caisse` role boundaries and is deliberately separate from local persistence: synchronization waits until an authorized account and network are available.
 
 ## Notable Storage Detail
 
@@ -67,7 +67,7 @@
 - `AccountDeletionStore` claims only `OutboxMessageKind.AccountDeletion`; its SQL Server claim uses update/read-past locks, while the provider query keeps the SQLite test harness executable. `AlertEmail` rows therefore cannot be deserialized by the account-deletion worker.
 - Account-deletion finalization removes member-only projections and pending/sent `AlertEmail` outbox rows for the resolved internal member ID before deleting or anonymizing `Users`. This cleanup is transactional and deliberately leaves retained `BookMovements`/`ScanSessions` available for audit; PR #61 also keeps the SQLite pending lookup free of SQL Server-only `JSON_VALUE`.
 - The Books alert outbox has an exact claim lease token carried through revalidation, cancellation, success, and failure. Sent alerts write `UserAlertHistory` after ACS delivery so a retry cannot deliberately create another alert for the same book/member cooldown window.
-- Bibliographic enrichment is retryable and negative-caches not-found results. Transient provider/cover failures keep the current `Pending`/`NotFound` state, record `LastAttemptAt` without consuming the negative-cache attempt budget, and use a one-hour `Pending` cooldown so failed early rows cannot starve never-attempted books. Optional cover downloads accept only the explicit HTTPS host allowlist (`covers.openlibrary.org`, `openapi.bnf.fr`), reject redirects and oversized/non-image payloads, and store stable keys under the `book-covers` container.
+- Bibliographic enrichment is retryable and negative-caches not-found results. Transient provider/cover failures keep the current `Pending`/`NotFound` state, record `LastAttemptAt` without consuming the negative-cache attempt budget, and use a one-hour `Pending` cooldown so failed early rows cannot starve never-attempted books.
 - Azure SQL migrations are applied explicitly by deployment workflows. API startup migrations are limited to `Development`; the production/dev rollout workflow runs migrations before the new API/Worker revisions.
 
 ## ACS email runtime update — 2026-09-06
@@ -83,9 +83,11 @@
   Event Grid subscription `vpd-acs-email-delivery-reports-dev` targets the API delivery-report
   route and sends the shared header `X-Vpd-EventGrid-Secret`. Workflow
   `.github/workflows/acs-email-configure.yml` is the reproducible owner of this out-of-band
-  Azure wiring; PR #74 contains it and remains open until merged.
+  Azure wiring; PR #74 merged the workflow into `origin/main`.
 - Workflow `34046166674` completed successfully. It does not send a real test message; the
   first end-to-end delivery and bounce check still require an explicitly approved recipient.
+- Scan cash sales use a dedicated IndexedDB `sales` store and replay to `POST /scan/sales`
+  with `ClientGestureId`; the API records the sale against an open Books fair under `Caisse`.
 
 ## Books cover URL update — 2026-09-06
 
@@ -101,6 +103,8 @@
 - Google Books is optional and rate-limited; its API key is passed through the deployment
   secret path when supplied. URLs remain reconstructible provider references, so book-cover
   Blob capacity and upload code are no longer part of the Books runtime.
+- The direct-cover migration is present in the deployed `5601c2e` main line; the final rollout
+  did not rerun EF migrations because DEV was already current.
 
 ## Dead-stock query persistence
 

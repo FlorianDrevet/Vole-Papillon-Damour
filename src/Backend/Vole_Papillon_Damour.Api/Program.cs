@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Vole_Papillon_Damour.Application.Common.Observability;
 using Vole_Papillon_Damour.Api;
 using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Common.Mapping;
@@ -24,7 +25,10 @@ builder.Services.AddCors(options =>
         var allowedOrigins = builder.Configuration
             .GetSection("Cors:AllowedOrigins")
             .Get<string[]>() ?? [];
-        policy.AllowAnyHeader().AllowAnyMethod();
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .WithExposedHeaders("Request-Context");
         if (allowedOrigins.Length == 0)
         {
             policy.AllowAnyOrigin();
@@ -56,7 +60,11 @@ builder.Services.AddAuthorizationBuilder()
 var applicationInsightsConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
 {
-    builder.Services.AddOpenTelemetry().UseAzureMonitor();
+    builder.Services
+        .AddOpenTelemetry()
+        .UseAzureMonitor()
+        .WithTracing(tracing => tracing.AddSource(BookScanTelemetry.ActivitySourceName))
+        .WithMetrics(metrics => metrics.AddMeter(BookScanTelemetry.MeterName));
 }
 
 builder.Services

@@ -72,6 +72,17 @@ The routes are consumed by the separate SSR Angular application in `src/Catalog/
 entry point. Account/watchlist/alert routes are part of the P3 member slice and must remain
 client-only/private.
 
+## Scanette endpoints
+
+- `GET /scan/catalog/delta` - `ScanVolunteer` read for the compact catalog projection;
+  both `Tri` and `Caisse` can use it.
+- `POST /scan/sessions` - `Tri` opens or replays a scan session by `ClientSessionId`.
+- `POST /scan/sessions/{scanSessionId}/scans` and
+  `POST /scan/sessions/{scanSessionId}/close` - `Tri` records idempotent decisions and
+  closes a session with a typed reason.
+- `POST /scan/sales` - `Caisse` records an idempotent sale with `ClientGestureId` and
+  returns the reconciled local-stock projection; cash sales do not open a triage session.
+
 ## Books P2/P3 member and administration endpoints
 
 - `GET /catalog/reference/search` - anonymous external bibliographic search with `q`, `page`,

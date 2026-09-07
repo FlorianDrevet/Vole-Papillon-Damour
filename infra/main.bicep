@@ -457,6 +457,23 @@ module lateAlertQueueAlert './modules/Monitor/scheduledQueryRule.module.bicep' =
   }
 }
 
+module slowBookMetadataAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'slowBookMetadataAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-book-metadata-slow', 'alert', env)
+    displayName: 'Book metadata lookup is slow'
+    ruleDescription: 'At least one API book metadata request exceeded three seconds in the last 15 minutes.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppRequests | where AppRoleName == "vpd-api" | where Url has "/books/" and Url has "/metadata" | where DurationMs > 3000'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 2
+    tags: tags
+  }
+}
+
 // -----------------------------------------------------------------------
 // Data
 // -----------------------------------------------------------------------
@@ -873,6 +890,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: applicationInsightsApiModule.outputs.connectionString
+      }
+      {
+        name: 'OTEL_SERVICE_NAME'
+        value: 'vpd-api'
       }
       {
         name: 'AZURE_CLIENT_ID'

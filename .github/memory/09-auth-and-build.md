@@ -74,9 +74,9 @@
   CSS through Graph `OrganizationalBranding.ReadWrite.All`; this changes the hosted page's
   visual language but does not move password entry into the Catalog. A pixel-perfect custom
   form would require a separate Native Authentication decision and a CORS proxy.
-- `Scan` gates the entire PWA through `ScanAuthService.authState$`: only an Entra account
-  with the `Tri` role renders the scanner, while unauthenticated, unauthorized, and token-
-  renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
+ - `Scan` gates the entire PWA through `ScanAuthService.authState$`: an Entra account with
+   `Tri` or `Caisse` renders the PWA (`Tri` triages; `Caisse` sells), while unauthenticated,
+   unauthorized, and token-renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
   `MsalService.initialize()` and `src/index.html` declares `<app-redirect>` before MSAL
   roots are bootstrapped, preventing the refresh-time `NG05104`/uninitialized-cache race.
   `msalInterceptorConfig` protects `${environment.apiUrl}/scan/*`; the wildcard is required
@@ -99,79 +99,47 @@
 
 ## Configuration Sources
 
-- Backend runtime config lives in `appsettings.json`, `appsettings.Development.json`, and local secrets/connection strings.
-- The Aspire AppHost adds local launch settings for dashboard/resource service endpoints and injects backend connection strings for SQL Server and Azurite.
-- The AppHost uses the Aspire storage connection expression for Blob clients and leaves
-  `AzureWebJobsStorage` to the Azure Functions Aspire integration (or an explicit
-  `WithHostStorage` resource), rather than forcing the default Azurite port.
-- The AppHost now also owns a local user-secret-backed SQL password parameter under `Parameters:sql-server-password` so the persisted SQL Server volume keeps matching credentials across Aspire launches.
-- The backend README points to `dotnet user-secrets` for local secret storage.
-- `BackOffice` environment config includes `api_url`, `url_vpd_web_site`, `time_numero_modal`,
-  and the public Entra settings (`tenantId`, client ID, authority, redirect URIs, and API scope).
-- `Website` environment config includes `api_url`.
-- `Scan` development config derives its API host from the browser hostname on port `5257`
-  for LAN testing; both environments target the tenant-scoped CIAM authority and the
-  production environment points to the configured API deployment.
-- `infra/entra/Configure-EntraApps.ps1` merges rather than replaces existing SPA redirect
-  URIs. The External ID portal now shows `https://livres.volepapillondamour.fr` on
-  `vpd-catalog-dev` and `https://scan.volepapillondamour.fr` on `vpd-scan-dev`, while retaining
-  the existing local/technical URIs. The canonical Scan login redirect was verified against
-  the public host; the current account is stopped by the intended missing `Tri` role.
-- Scan production bundles use `@zxing/browser` directly instead of the optional native
-  `BarcodeDetector` path. The camera scans the full video frame with `TRY_HARDER` and
-  supports EAN-13/EAN-8 ISBN barcodes plus QR codes; the scanner also accepts an image
-  selected from the phone as a fallback. Photo decoding retries cropped, resized, and
-  thresholded canvas variants, and the zoneless Scan component explicitly marks the view
-  after asynchronous scan/API state changes. The public ACA deployment is HTTPS, which
-  satisfies the secure-context requirement for camera access.
-- `MauiCashApp/appsettings.json` contains `VpdSettings.BaseUrl`; the MSAL client ID, authority,
-  API scope, and Android redirect are application configuration constants in `MsalAuthService`.
-- Dockerized deployment config now lives in `src/BackOffice/Dockerfile`, `src/Website/Dockerfile`, and `infra/aca/`.
-- Dockerized deployment config also lives in `src/Scan/Dockerfile` and
-  `src/Backend/Vole_Papillon_Damour.Worker/Dockerfile`; `.github/workflows/scan-deploy.yml`
-  and `.github/workflows/worker-deploy.yml` build/push immutable commit-tagged images and
-  update the corresponding Container Apps through GitHub OIDC.
-- The frontend Dockerfiles patch the production Angular environment files at image-build time through `API_URL` and `WEBSITE_URL` build args instead of introducing runtime templating.
-- API health probes are configured in `infra/parameters/main.dev.bicepparam` as readiness, liveness, and startup checks for `/health` on port `8080`; Azure deployment remains a separate operational step.
-- The dev SQL parameter uses Azure SQL Database `S1` (`Standard`, 20 DTUs, 250 GB) with `autoPauseDelayMinutes: 0`; `DatabaseSkuConfig` keeps DTU tiers' family optional.
+- Backend config comes from `appsettings.json`, environment-specific settings, and local
+  secrets; the AppHost injects SQL Server/Azurite connections and a stable secret-backed
+  `Parameters:sql-server-password` for its persisted SQL volume.
+- The AppHost keeps Blob storage on Aspire's dynamic connection and leaves
+  `AzureWebJobsStorage` to the Functions integration; forcing `UseDevelopmentStorage=true`
+  breaks the dynamic Azurite ports.
+- `BackOffice` config contains API/site URLs and Entra tenant, client, authority, redirect, and
+  scope values. `Website` contains its API URL. Scan derives its LAN API host from port `5257`
+  in development and uses the tenant-scoped CIAM authority in both environments.
+- `Configure-EntraApps.ps1` merges SPA redirect URIs. The public Catalog and Scan redirects are
+  registered while existing local/technical URIs remain; the public Scan role gate was verified.
+- Scan uses `@zxing/browser` with `TRY_HARDER` for ISBN/QR camera and photo fallback decoding;
+  the HTTPS ACA deployment satisfies the secure-context camera requirement.
+- MAUI keeps `VpdSettings.BaseUrl` in `appsettings.json`; its MSAL values are constants in
+  `MsalAuthService`. Dockerfiles and OIDC deployment workflows live under each app and `infra/`.
+- Frontend images patch production environment values at build time through `API_URL` and
+  `WEBSITE_URL`; Docker builds use the `src/` context so `src/SharedUi/` resolves.
+- ACA probes check `/health` on port `8080`; the dev SQL parameter is Azure SQL `S1`, 20 DTUs,
+  250 GB, with no automatic pause. Azure deployment remains an operational step.
 
 ## Build And Test Commands
 
-- Backend: `dotnet build .\src\Backend\Vole_Papillon_Damour.slnx`; `dotnet test .\src\Backend\Vole_Papillon_Damour.slnx`
-- Backend orchestration: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`
-- BackOffice: `npm install`; `npm run start`; `npm run build`; `npm test`
-- Website: `npm install`; `npm run start`; `npm run build`; `npm test`; `npm run serve:ssr:vole_papillon_damour_website`
-- Scan: `npm ci`; `npm run start`; `npm run build`; `npm test -- --watch=false --browsers=ChromeHeadless`
-- BackOffice Docker image: `docker build -f .\src\BackOffice\Dockerfile --build-arg API_URL=<url> --build-arg WEBSITE_URL=<url> .\src`
-- Website Docker image: `docker build -f .\src\Website\Dockerfile --build-arg API_URL=<url> .\src`
-- Subscription-scope ACA deploy: `az deployment sub create --location FranceCentral --template-file .\infra\aca\main.bicep --parameters .\infra\aca\parameters\main.dev.bicepparam`
-- MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`
+- Backend: `dotnet build .\src\Backend\Vole_Papillon_Damour.slnx`; `dotnet test .\src\Backend\Vole_Papillon_Damour.slnx`.
+- AppHost: `dotnet run --project .\src\Backend\Vole_Papillon_Damour.AppHost\Vole_Papillon_Damour.AppHost.csproj`.
+- Angular apps: `npm install`; `npm run start`; `npm run build`; `npm test`; Scan also uses
+  `npm test -- --watch=false --browsers=ChromeHeadless` and its SSR app has a serve command.
+- Docker images build from `src/` with the relevant `Dockerfile` and `API_URL`/`WEBSITE_URL` args;
+  ACA Bicep uses `az bicep build` and the subscription deployment command under `infra/aca/`.
+- MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`.
 
 ## Practical Warnings
 
-- Do not store secrets in memory files or commit local connection strings.
-- The Angular README files still look template-oriented; prefer `package.json`, environment files, and actual routing/services over README TODOs when you need the truth.
-- `BackOffice` now has focused tests for the MSAL bootstrap/login redirect and API token adapter;
-  `npm test -- --watch=false --browsers=ChromeHeadless` passes locally with 2 bootstrap
-  contract tests followed by 5 Angular/Karma tests. The CI workflow currently builds the
-  frontends but does not yet run frontend unit tests.
-- `npm run build` in `src/BackOffice/` exits successfully, but keeps pre-existing Angular
-  signal-diagnostic, bundle-budget, CSS-budget, and CommonJS warnings unrelated to this
-  authentication migration.
-- `Website` SSR route ownership lives in `src/app/app.routes.server.ts`; update that file when adding public static, SEO, or live routes.
-- The current frontend Dockerfiles intentionally use `npm install` instead of `npm ci` because the repository lockfiles are not accepted by `npm ci` inside the Linux container context.
-- The current frontend Dockerfiles must be built from the `src/` context, not the app subfolder, because both Angular apps resolve `@vpd/ui` through `../SharedUi` TS path mappings.
-- The Infra Flow Sculptor project was created with placeholder subscription IDs (`00000000-0000-0000-0000-000000000000`) and those must be replaced in the project settings before real deployment.
-- Rider build-with-surface-heuristics can create generated C# files under `src/Backend/Vole_Papillon_Damour.Domain/artifacts/validation/obj/`; the Domain project now excludes `artifacts/**` from SDK default items so those generated assembly attribute files do not get compiled alongside the normal `obj/` output.
-- Repeated `18456` login failures from the local SQL Server container during Aspire startup usually mean the persisted SQL volume still has an older `sa` password than the one the AppHost is currently using; stabilize the AppHost secret instead of relying on the default generated password.
-- `.github/workflows/ci.yml` is the push/pull-request gate for the backend solution, its three test projects, the Android MAUI target, and the BackOffice, Website, and Scan Angular builds. It deliberately does not run frontend unit tests yet; the Angular tests are currently validated locally. The workflow still requests `net9.0-android` while the MAUI project targets `net10.0-android`, so that Android CI step needs alignment before it is treated as authoritative.
-- `dotnet test .\src\MauiCashApp.Tests\ShopAppVpd.Tests.csproj` covers the platform-independent
-  authorization handler. The MAUI Android build remains environment-dependent and currently
-  fails locally with `XA5300` when no Android SDK is configured.
-
-## Books runtime update — 2026-09-04
-
-- The API startup migration policy is explicit: `DatabaseMigrationPolicy.ShouldRunOnStartup` returns true only for `Development`; deployed migration is performed before rollout by `Books runtime - deploy`.
-- The new workflow builds the API and Worker from the same checkout and image tag, can apply EF migrations through a temporary SQL firewall rule, and always attempts to remove that rule before finishing.
-- The Worker is intentionally configured without API authentication registration. It uses the Application/Infrastructure layers for `Sweep` and `Enrich`; DEV now enables ACS email delivery through its managed identity after domain verification, while a real delivery test remains an operational check.
-- The backend solution validation after the runtime slice includes the account-deletion outbox kind-isolation regression: an `AlertEmail` row is not claimable by `AccountDeletionStore`.
+- Never store secrets in memory files or commit local connection strings. Prefer actual config,
+  routing, and services over template-oriented Angular README TODOs.
+- CI builds the backend, MAUI target, and Angular apps but does not run frontend unit tests;
+  those remain local validation. BackOffice retains known Angular signal, bundle, CSS, and
+  CommonJS warnings. The CI MAUI request still says `net9.0-android` while the project targets
+  `net10.0-android`; a missing SDK can produce local `XA5300`.
+- Website SSR route ownership is `src/app/app.routes.server.ts`. Dockerfiles use `npm install`
+  in the Linux container context and must retain the `src/` build context for `@vpd/ui`.
+- Replace the Infra Flow Sculptor placeholder subscription IDs before a real deployment. A
+  persisted Aspire SQL volume can yield `18456` until its stable AppHost password is restored.
+- Rider validation may generate `src/Backend/Vole_Papillon_Damour.Domain/artifacts/validation/obj/`;
+  the Domain project excludes that tree from SDK default items.

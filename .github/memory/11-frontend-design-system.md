@@ -64,6 +64,9 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   24px mobile / 44px desktop gutters, the Website-like 302px dropdown panel, a thin
   cyan-blue-orange brand rule, and a four-column association footer. Navigation dropdowns
   must be keyboard/focus usable and hidden when neither hovered nor focused.
+- The current header keeps `Mon compte` outside the desktop navigation flex, centers the
+  42px controls, and switches to the mobile layout at `1040px` to avoid intermediate-width
+  overflow.
 - Typography stays `Newsreader` for editorial headings, `Libre Franklin` for body and
   controls, and `IBM Plex Mono` for labels, metadata, dates, and technical identifiers.
   The canonical Catalog palette is paper `#f7fbfe`, paper-soft `#e9f4fb`, ink `#041d30` /
