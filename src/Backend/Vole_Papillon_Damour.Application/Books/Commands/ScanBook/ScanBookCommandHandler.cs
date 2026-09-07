@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using ErrorOr;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Common.Observability;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -24,7 +26,12 @@ public sealed class ScanBookCommandHandler(
 {
     private static readonly TimeSpan MaximumFutureSkew = TimeSpan.Zero;
 
-    public async Task<ErrorOr<ScanBookResult>> Handle(
+    public Task<ErrorOr<ScanBookResult>> Handle(
+        ScanBookCommand command,
+        CancellationToken cancellationToken)
+        => HandleCoreAsync(command, cancellationToken);
+
+    private async Task<ErrorOr<ScanBookResult>> HandleCoreAsync(
         ScanBookCommand command,
         CancellationToken cancellationToken)
     {
@@ -47,160 +54,203 @@ public sealed class ScanBookCommandHandler(
             return Errors.Book.InvalidScanTimestamp();
         }
 
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        using var activity = BookScanTelemetry.StartActivity(
+            BookScanTelemetry.ScanPersistenceActivityName);
+        activity?.SetTag(
+            BookScanTelemetry.ScanSessionIdTagName,
+            command.ScanSessionId.Value.ToString("D"));
+        activity?.SetTag(
+            BookScanTelemetry.ScanClientGestureIdTagName,
+            command.ClientGestureId.ToString("D"));
+        activity?.SetTag(BookScanTelemetry.BookIsbnTagName, isbn13.Value);
+        activity?.SetTag(BookScanTelemetry.ScanKeptTagName, command.Kept);
 
-        var existingMovement = await dbContext.BookMovements
-            .SingleOrDefaultAsync(
-                movement => movement.ClientGestureId == command.ClientGestureId,
-                cancellationToken);
+        var stopwatch = Stopwatch.StartNew();
+        var outcome = BookScanTelemetry.RejectedOutcome;
 
-        if (existingMovement is not null)
+        try
         {
-            var existingResult = await BuildExistingResultAsync(
-                existingMovement,
-                cancellationToken);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-            if (existingResult.IsError)
-            {
-                return existingResult.Errors;
-            }
-
-            await transaction.CommitAsync(cancellationToken);
-            return existingResult.Value;
-        }
-
-        var session = await dbContext.ScanSessions
-            .SingleOrDefaultAsync(
-                candidate => candidate.Id == command.ScanSessionId,
-                cancellationToken);
-
-        if (session is null)
-        {
-            return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value);
-        }
-
-        if (session.Status != ScanSessionStatus.InProgress)
-        {
-            return Errors.Book.ScanSessionClosed(command.ScanSessionId.Value);
-        }
-
-        if (session.Mode == ScanMode.NextFair && session.TargetAssoEventsId is { } targetFairId)
-        {
-            // A fair may be cancelled after the session was opened. Recheck the
-            // target on the hot path so a late scan cannot create a stale
-            // announcement. Keep the missing-target behavior for legacy
-            // sessions that intentionally use the undated flow.
-            var targetFair = await dbContext.AssoEvents
+            var existingMovement = await dbContext.BookMovements
                 .SingleOrDefaultAsync(
-                    assoEvent => assoEvent.Id == targetFairId,
+                    movement => movement.ClientGestureId == command.ClientGestureId,
                     cancellationToken);
-            if (targetFair?.IsCancelled == true)
+
+            if (existingMovement is not null)
             {
-                return Errors.Book.FairCancelled(targetFairId.Value);
+                var existingResult = await BuildExistingResultAsync(
+                    existingMovement,
+                    cancellationToken);
+
+                if (existingResult.IsError)
+                {
+                    return existingResult.Errors;
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+                activity?.SetTag(
+                    BookScanTelemetry.BookIsbnTagName,
+                    existingResult.Value.Isbn13);
+                activity?.SetStatus(ActivityStatusCode.Ok);
+                outcome = BookScanTelemetry.AlreadyProcessedOutcome;
+                return existingResult.Value;
             }
 
-            if (targetFair?.EventsType?.Value is not null &&
-                targetFair.EventsType.Value !=
-                Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects.EventsType.EventsTypeEnum.Books)
+            var session = await dbContext.ScanSessions
+                .SingleOrDefaultAsync(
+                    candidate => candidate.Id == command.ScanSessionId,
+                    cancellationToken);
+
+            if (session is null)
             {
-                return Errors.Book.TargetFairMustBeBooks();
+                return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value);
             }
-        }
 
-        var book = await dbContext.Books
-            .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
+            if (session.Status != ScanSessionStatus.InProgress)
+            {
+                return Errors.Book.ScanSessionClosed(command.ScanSessionId.Value);
+            }
 
-        if (book?.RedirectedToIsbn13 is { } canonicalIsbn13)
-        {
-            isbn13 = canonicalIsbn13;
-            book = await dbContext.Books
+            if (session.Mode == ScanMode.NextFair && session.TargetAssoEventsId is { } targetFairId)
+            {
+                // A fair may be cancelled after the session was opened. Recheck the
+                // target on the hot path so a late scan cannot create a stale
+                // announcement. Keep the missing-target behavior for legacy
+                // sessions that intentionally use the undated flow.
+                var targetFair = await dbContext.AssoEvents
+                    .SingleOrDefaultAsync(
+                        assoEvent => assoEvent.Id == targetFairId,
+                        cancellationToken);
+                if (targetFair?.IsCancelled == true)
+                {
+                    return Errors.Book.FairCancelled(targetFairId.Value);
+                }
+
+                if (targetFair?.EventsType?.Value is not null &&
+                    targetFair.EventsType.Value !=
+                    Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects.EventsType.EventsTypeEnum.Books)
+                {
+                    return Errors.Book.TargetFairMustBeBooks();
+                }
+            }
+
+            var book = await dbContext.Books
                 .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
+
+            if (book?.RedirectedToIsbn13 is { } canonicalIsbn13)
+            {
+                isbn13 = canonicalIsbn13;
+                book = await dbContext.Books
+                    .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
+
+                if (book is null)
+                {
+                    return Errors.Book.RedirectTargetNotFound(isbn13.Value);
+                }
+            }
 
             if (book is null)
             {
-                return Errors.Book.RedirectTargetNotFound(isbn13.Value);
+                book = Book.Create(isbn13, receivedAt);
+                dbContext.Books.Add(book);
             }
-        }
 
-        if (book is null)
-        {
-            book = Book.Create(isbn13, receivedAt);
-            dbContext.Books.Add(book);
-        }
+            var settings = await GetOrCreateSettingsAsync(session, receivedAt, cancellationToken);
+            var quantityAnnounced = await GetQuantityAnnouncedAsync(isbn13, cancellationToken);
+            var decision = CalculateVerdict(book, quantityAnnounced, settings);
+            var (occurredAt, clockSuspect) = NormalizeClientTimestamp(
+                command.OccurredAt,
+                session.StartedAt,
+                receivedAt);
 
-        var settings = await GetOrCreateSettingsAsync(session, receivedAt, cancellationToken);
-        var quantityAnnounced = await GetQuantityAnnouncedAsync(isbn13, cancellationToken);
-        var decision = CalculateVerdict(book, quantityAnnounced, settings);
-        var (occurredAt, clockSuspect) = NormalizeClientTimestamp(
-            command.OccurredAt,
-            session.StartedAt,
-            receivedAt);
+            var movementType = BookMovementType.Rejection;
+            BookAnnouncement? announcement = null;
 
-        var movementType = BookMovementType.Rejection;
-        BookAnnouncement? announcement = null;
-
-        if (command.Kept)
-        {
-            if (session.Mode == ScanMode.AvailableNow)
+            if (command.Kept)
             {
-                book.RecordAvailableEntry(occurredAt);
-                movementType = BookMovementType.DirectEntry;
+                if (session.Mode == ScanMode.AvailableNow)
+                {
+                    book.RecordAvailableEntry(occurredAt);
+                    movementType = BookMovementType.DirectEntry;
+                }
+                else
+                {
+                    book.RecordAnnouncementEntry(occurredAt);
+                    movementType = BookMovementType.AnnouncementEntry;
+                    announcement = BookAnnouncement.Create(
+                        BookAnnouncementId.CreateUnique(),
+                        isbn13,
+                        session.TargetAssoEventsId,
+                        quantity: 1,
+                        occurredAt,
+                        session.Id,
+                        command.ClientGestureId);
+                    dbContext.BookAnnouncements.Add(announcement);
+                }
             }
             else
             {
-                book.RecordAnnouncementEntry(occurredAt);
-                movementType = BookMovementType.AnnouncementEntry;
-                announcement = BookAnnouncement.Create(
-                    BookAnnouncementId.CreateUnique(),
-                    isbn13,
-                    session.TargetAssoEventsId,
-                    quantity: 1,
-                    occurredAt,
-                    session.Id,
-                    command.ClientGestureId);
-                dbContext.BookAnnouncements.Add(announcement);
+                book.RecordRejection(occurredAt);
             }
+
+            session.RecordScan(command.Kept, occurredAt, receivedAt);
+
+            var movement = BookMovement.Create(
+                BookMovementId.CreateUnique(),
+                isbn13,
+                movementType,
+                quantity: 1,
+                occurredAt,
+                receivedAt,
+                clockSuspect,
+                session.Id,
+                session.VolunteerId,
+                session.TargetAssoEventsId,
+                note: null,
+                command.ClientGestureId);
+            dbContext.BookMovements.Add(movement);
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            if (book.MetadataStatus == BookMetadataStatus.Pending)
+            {
+                metadataEnrichmentQueue?.Enqueue(book.Id);
+            }
+
+            var finalQuantityAnnounced = quantityAnnounced + (announcement is null ? 0 : 1);
+            var result = new ScanBookResult(
+                isbn13.Value,
+                decision,
+                book.QuantityAvailable,
+                finalQuantityAnnounced,
+                session.Id,
+                movementType,
+                AlreadyProcessed: false,
+                clockSuspect);
+            activity?.SetTag(BookScanTelemetry.BookIsbnTagName, result.Isbn13);
+            activity?.SetStatus(ActivityStatusCode.Ok);
+            outcome = BookScanTelemetry.PersistedOutcome;
+            return result;
         }
-        else
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            book.RecordRejection(occurredAt);
+            outcome = BookScanTelemetry.CancelledOutcome;
+            activity?.SetStatus(ActivityStatusCode.Error);
+            throw;
         }
-
-        session.RecordScan(command.Kept, occurredAt, receivedAt);
-
-        var movement = BookMovement.Create(
-            BookMovementId.CreateUnique(),
-            isbn13,
-            movementType,
-            quantity: 1,
-            occurredAt,
-            receivedAt,
-            clockSuspect,
-            session.Id,
-            session.VolunteerId,
-            session.TargetAssoEventsId,
-            note: null,
-            command.ClientGestureId);
-        dbContext.BookMovements.Add(movement);
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        if (book.MetadataStatus == BookMetadataStatus.Pending)
+        catch
         {
-            metadataEnrichmentQueue?.Enqueue(book.Id);
+            outcome = BookScanTelemetry.FailedOutcome;
+            activity?.SetStatus(ActivityStatusCode.Error);
+            throw;
         }
-
-        var finalQuantityAnnounced = quantityAnnounced + (announcement is null ? 0 : 1);
-        return new ScanBookResult(
-            isbn13.Value,
-            decision,
-            book.QuantityAvailable,
-            finalQuantityAnnounced,
-            session.Id,
-            movementType,
-            AlreadyProcessed: false,
-            clockSuspect);
+        finally
+        {
+            activity?.SetTag(BookScanTelemetry.ScanPersistenceOutcomeTagName, outcome);
+            BookScanTelemetry.RecordScanPersistenceDuration(stopwatch.Elapsed, outcome);
+        }
     }
 
     private async Task<ErrorOr<ScanBookResult>> BuildExistingResultAsync(

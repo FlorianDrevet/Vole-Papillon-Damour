@@ -1,8 +1,11 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Common.Observability;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 
@@ -10,6 +13,76 @@ namespace Vole_Papillon_Damour.Infrastructure.tests.Bibliographic;
 
 public sealed class BibliographicMetadataResolverTests
 {
+    [Fact]
+    public async Task ResolveAsync_WhenBnfFindsMetadata_EmitsProviderActivityAndDurationMetric()
+    {
+        var stoppedActivities = new List<Activity>();
+        var providerMeasurements = new List<(double Duration, string? Provider, string? Outcome)>();
+        using var activityListener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == BookScanTelemetry.ActivitySourceName,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = activity => stoppedActivities.Add(activity),
+        };
+        using var meterListener = new MeterListener();
+        meterListener.InstrumentPublished = (instrument, listener) =>
+        {
+            if (instrument.Meter.Name == BookScanTelemetry.MeterName &&
+                instrument.Name == BookScanTelemetry.MetadataProviderDurationMetricName)
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+        meterListener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+        {
+            string? provider = null;
+            string? outcome = null;
+            foreach (var tag in tags)
+            {
+                if (tag.Key == BookScanTelemetry.MetadataProviderTagName)
+                {
+                    provider = tag.Value?.ToString();
+                }
+
+                if (tag.Key == BookScanTelemetry.MetadataOutcomeTagName)
+                {
+                    outcome = tag.Value?.ToString();
+                }
+            }
+
+            providerMeasurements.Add((measurement, provider, outcome));
+        });
+        ActivitySource.AddActivityListener(activityListener);
+        meterListener.Start();
+
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var bnfMetadata = CreateMetadata("BnF");
+        var bnf = Substitute.For<IBnfSruClient>();
+        var openLibrary = Substitute.For<IOpenLibraryClient>();
+        var googleBooks = Substitute.For<IGoogleBooksClient>();
+        bnf.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(bnfMetadata);
+        var resolver = new BibliographicMetadataResolver(
+            bnf,
+            openLibrary,
+            googleBooks,
+            NullLogger<BibliographicMetadataResolver>.Instance);
+
+        var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
+
+        result.Should().Be(bnfMetadata);
+        var providerActivity = stoppedActivities
+            .Should()
+            .ContainSingle(activity =>
+                activity.OperationName == BookScanTelemetry.MetadataProviderActivityName)
+            .Subject;
+        providerActivity.GetTagItem(BookScanTelemetry.MetadataProviderTagName).Should().Be("BnF");
+        providerActivity.GetTagItem(BookScanTelemetry.MetadataOutcomeTagName)
+            .Should()
+            .Be(BookScanTelemetry.FoundOutcome);
+        providerMeasurements.Should().ContainSingle(measurement =>
+            measurement.Provider == "BnF" && measurement.Outcome == BookScanTelemetry.FoundOutcome);
+    }
+
     [Fact]
     public async Task ResolveAsync_WhenBnfFindsMetadata_DoesNotCallOpenLibrary()
     {

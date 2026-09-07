@@ -35,9 +35,16 @@ heures échoue.
 
 Les six composants Application Insights ont un plafond de 1 Go/jour via leur
 ressource `pricingPlans`. Les alertes worker (heartbeat absent, annonces dues en
-retard, file d'e-mails en retard) sont envoyées au groupe Azure Monitor
-`vpd-alerts-dev`, vers l'adresse de contact du projet. Le premier déploiement
-nécessite la confirmation du destinataire envoyée par Azure.
+retard, file d'e-mails en retard) et l'alerte API de métadonnées lentes (> 3 s sur
+`/books/{isbn13}/metadata`) sont envoyées au groupe Azure Monitor `vpd-alerts-dev`,
+vers l'adresse de contact du projet. Le premier déploiement nécessite la confirmation
+du destinataire envoyée par Azure.
+
+L'API exporte aussi les spans métier `books.metadata.resolve`,
+`books.metadata.provider` et `books.scan.persist`, ainsi que leurs histogrammes de
+durée. `OTEL_SERVICE_NAME=vpd-api` permet de les distinguer dans le workspace partagé.
+La procédure et les requêtes Kusto de diagnostic sont dans
+[`docs/bourse-aux-livres/technique/11-observabilite.md`](../docs/bourse-aux-livres/technique/11-observabilite.md).
 
 Les conteneurs blob restants sont en accès `Blob` (lecture anonyme) : `BlobService`
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles

@@ -18,6 +18,10 @@ export async function initApplicationInsights(): Promise<ApplicationInsights | n
     config: {
       connectionString,
       enableAutoRouteTracking: true,
+      // Keep API dependency timing and W3C trace headers explicit for the
+      // cross-origin Scan -> API call. Ajax/Fetch auto-collection is enabled by default;
+      // the API CORS policy allows the correlation headers.
+      enableCorsCorrelation: true,
     },
   });
 

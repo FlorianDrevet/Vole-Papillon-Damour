@@ -8,9 +8,9 @@
 - Backend: ASP.NET Core Web API on .NET 10 under `src/Backend/`
 - Local orchestration: .NET Aspire AppHost under `src/Backend/Vole_Papillon_Damour.AppHost/` for API, Website, BackOffice, Catalog, SQL Server, and Azurite
 - Architecture: layered CQRS with `Domain`, `Application`, `Infrastructure`, `Api`, and `Contracts`
-- Web frontends: Angular 21 applications in `src/BackOffice/`, `src/Website/`, the public SSR catalog in `src/Catalog/`, and the consultation-only `src/Scan/` probe
-- Native and background clients: .NET MAUI Android cash app in `src/MauiCashApp/` and the .NET isolated account-deletion Worker under `src/Backend/`
-- Tests: xUnit domain tests exist under `src/Backend/Vole_Papillon_Damour.Domain.tests/`
+- Web frontends: Angular 21 applications in `src/BackOffice/`, `src/Website/`, the public SSR catalog in `src/Catalog/`, and the offline scan/consultation/cash-sale PWA in `src/Scan/`
+- Native and background clients: .NET MAUI Android cash app in `src/MauiCashApp/` and the .NET isolated Worker under `src/Backend/` for account deletion, Books `Sweep`/`Enrich`, and alert delivery
+- Tests: xUnit coverage spans the backend test projects; frontend ChromeHeadless suites remain a local validation step
 - CI/CD: `.github/workflows/ci.yml` is configured for backend, MAUI, and frontend builds; frontend unit tests remain a local validation step. Catalog release is manual through `.github/workflows/catalog-deploy.yml`.
 
 ## Thematic Memory

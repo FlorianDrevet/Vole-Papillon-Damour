@@ -6,8 +6,8 @@
 - `src/BackOffice/` - Angular 21 admin UI
 - `src/Website/` - Angular 21 public website
 - `src/Catalog/` - Angular 21 SSR public books catalog
-- `src/Scan/` - Angular 21 consultation-only ISBN metadata probe
-- `src/Backend/Vole_Papillon_Damour.Worker/` - .NET 10 isolated account-deletion worker
+- `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, cash sales, and synchronization
+- `src/Backend/Vole_Papillon_Damour.Worker/` - .NET 10 isolated worker for account deletion and Books background jobs
 - `src/MauiCashApp/` - .NET MAUI 10 Android client app
 
 ## Backend Structure
@@ -32,6 +32,7 @@
 - `BackOffice` is the admin surface and carries auth-related client dependencies.
 - `Website` is the public-facing association/editorial surface.
 - `Catalog` is the public books/catalogue surface, with its own SSR shell and typed API client.
+- `Scan` is a separate PWA runtime with `Tri`/`Caisse` role boundaries; it should not leak web-only assumptions into MAUI.
 - `MauiCashApp` is a separate client runtime and should not leak web-only assumptions.
 
 ## Structural Notes

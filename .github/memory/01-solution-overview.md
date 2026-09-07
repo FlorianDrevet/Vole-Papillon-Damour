@@ -6,8 +6,8 @@
 
 - an ASP.NET Core backend API
 - three Angular 21 web applications (`BackOffice`, `Website`, and the public books `Catalog`)
-- one Angular 21 consultation-only ISBN probe (`Scan`)
-- one .NET isolated account-deletion Worker
+- one Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, and cash sales (`Scan`)
+- one .NET isolated Worker for account deletion, Books `Sweep`/`Enrich`, and alert delivery
 - one .NET MAUI cashier client (`MauiCashApp`)
 
 ## Runtime Surfaces
@@ -18,9 +18,9 @@
 - `src/Website/` is the Angular public website.
 - `src/Catalog/` is the separate Angular SSR public books catalog, released at
   `https://livres.volepapillondamour.fr`.
-- `src/Scan/` is the public consultation-only ISBN metadata probe, released at
-  `https://scan.volepapillondamour.fr` with the ACA FQDN as a technical fallback.
-- `src/Backend/Vole_Papillon_Damour.Worker/` hosts the private account-deletion timer worker.
+- `src/Scan/` is the public Scanette PWA for authenticated triage, consultation, and cash sales,
+  released at `https://scan.volepapillondamour.fr` with the ACA FQDN as a technical fallback.
+- `src/Backend/Vole_Papillon_Damour.Worker/` hosts the private account-deletion, Books sweep/enrichment, and alert-delivery worker.
 - `src/MauiCashApp/` is the MAUI client that calls the deployed backend through Refit.
 
 ## Verified Functional Areas
@@ -31,7 +31,7 @@ The backend and contracts expose features around:
 - account deletion and external identity coordination
 - actuality content
 - association events
-- bibliographic ISBN metadata lookup
+- books catalogue, scanning, sales, alerts, and bibliographic metadata lookup
 - products
 - orders
 
@@ -52,4 +52,4 @@ The backend and contracts expose features around:
 - The backend projects remain free of `Aspire.*` packages; local orchestration lives only in the AppHost project.
 - `.github/workflows/ci.yml` is configured for backend, MAUI, and frontend builds; frontend unit tests are still validated locally.
 - The MAUI Android build remains dependent on an Android SDK being available in the environment.
-- A Graphify knowledge graph is available for documentation and corpus-level orientation.
+- Graphify is configured for documentation and corpus-level orientation; its ignored local report artifacts may be absent from a clean worktree.

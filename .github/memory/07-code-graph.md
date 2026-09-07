@@ -8,7 +8,7 @@
 ## Graphify Artifacts
 
 - `graphify-out/graph.json` - knowledge graph data (local, ignored by Git)
-- `graphify-out/GRAPH_REPORT.md` - god nodes, communities, and notable connections
+- `graphify-out/GRAPH_REPORT.md` - god nodes, communities, and notable connections when generated
 - `graphify-out/wiki/index.md` - optional crawlable corpus wiki
 - `.graphifyignore` - repository exclusions for Graphify ingestion
 - Latest code refresh (2026-09-03): 2,645 nodes, 4,275 edges, 389 communities.
@@ -16,6 +16,8 @@
 ## Latest Snapshot
 
 - The local report refreshed on 2026-09-03 contains 1,951 nodes, 2,400 edges, and 343 communities. Inferred edges remain hypotheses and should not replace direct source inspection.
+- `graphify-out/` is absent from this worktree on 2026-09-07, so no newer `GRAPH_REPORT.md`
+  facts were verified during this dream; the recorded snapshot above remains historical.
 
 ## Usage Rules
 
