@@ -122,8 +122,8 @@ droits de tri et de caisse suivent la même forme (`RG-40`).
 ### `ENF-27` — Configuration scriptée
 Toute configuration du locataire d'identité se fait **par script** (`infra/entra/`),
 jamais à la main dans le portail : enregistrements d'application, rôles, attribution des
-droits. Deux exceptions assumées et documentées : la création du locataire, et le flux
-d'inscription en libre-service tant que son API reste en préversion.
+droits et user flow d'inscription. Une seule exception reste assumée et documentée : la
+création du locataire lui-même.
 
 ---
 

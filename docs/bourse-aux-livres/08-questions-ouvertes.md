@@ -398,5 +398,5 @@ cher, et là que l'outil devient crédible le plus vite.
 | 2026-09-02 | Écran de remise à plat de l'inventaire | **Reporté.** Non construit avec le reste de l'administration ; la correction fiche par fiche (`05` §4) tient lieu d'interim — `05` §6 |
 | 2026-09-02 | Fournisseur d'identité | **Entra External ID pour tous les publics** — membres, bénévoles, administrateurs. L'authentification maison du backend est supprimée, pas conservée en parallèle — `DT-10` |
 | 2026-09-02 | Gestion des droits | **Rôles applicatifs** `Tri`, `Caisse`, `Administration`, portés par l'enregistrement de l'API et attribués aux comptes. Ni groupes de sécurité, ni rôle en base. Un membre du public n'a aucun rôle — `DT-10`, `10` §4 |
-| 2026-09-02 | Configuration du locataire | **Par script PowerShell** (`infra/entra/`), jamais à la main dans le portail. Deux exceptions : la création du locataire et le flux d'inscription — `ENF-27` |
+| 2026-09-02 | Configuration du locataire | **Par script PowerShell** (`infra/entra/`), jamais à la main dans le portail. Une exception : la création du locataire ; le flux d'inscription est maintenant scripté — `ENF-27` |
 | 2026-09-02 | Ordre de livraison | Le **socle d'identité passe en tout premier**, avant la sonde de faisabilité : tout en dépend, et une migration d'authentification faite après coup se ferait sur un système en service — `01` §7 |

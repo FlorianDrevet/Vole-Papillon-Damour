@@ -23,8 +23,8 @@
     Ce qu'il ne fait PAS, et qui reste manuel :
       - la creation du locataire externe lui-meme (portail Azure, ou Bicep
         `Microsoft.AzureActiveDirectory/ciamDirectories`) ;
-      - le flux d'inscription en libre-service, dont l'API Graph est en `beta` pour les
-        locataires externes. Voir `Configure-EntraUserFlow.ps1`.
+      - le user flow d'inscription en libre-service, configuré séparément par
+        `Configure-EntraUserFlow.ps1` avec l'API Graph v1.0.
 
 .PARAMETER TenantId
     Identifiant du locataire externe (GUID) ou son domaine `*.onmicrosoft.com`.

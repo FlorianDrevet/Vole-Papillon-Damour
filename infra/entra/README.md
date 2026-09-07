@@ -4,7 +4,7 @@ Tout ce qui se configure dans le locataire d'identité se fait **par script**, j
 la main dans le portail. Un clic dans le portail n'est ni rejouable, ni relisible, ni
 reproductible sur un second environnement.
 
-Trois scripts, et une seule chose qui reste manuelle.
+Quatre scripts, et une seule chose qui reste manuelle.
 
 `Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
 application n'est pas un client interactif : elle recoit les permissions applicatives
@@ -18,6 +18,7 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 | Script | Rôle | Fréquence |
 |---|---|---|
 | `Configure-EntraApps.ps1` | Enregistrements d'application, portée exposée, rôles applicatifs, consentements | À chaque évolution de la configuration |
+| `Configure-EntraUserFlow.ps1` | User flow External ID d'inscription publique, attaché au catalogue uniquement | À l'activation ou à l'évolution du parcours membre |
 | `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `Administration` à un compte | Au fil de l'eau |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle | Contrôle |
 
@@ -33,8 +34,8 @@ Le compte qui exécute doit être **Administrateur d'application** sur le locata
 externe. PowerShell 7 requis.
 
 `Microsoft.Graph.Identity.SignIns` est nécessaire pour les cmdlets de consentement
-OAuth2 utilisées par `Configure-EntraApps.ps1`. Les scripts déclarent eux-mêmes leurs
-modules requis et s'arrêtent immédiatement si l'un d'eux manque.
+OAuth2 et pour le user flow External ID. Les scripts déclarent eux-mêmes leurs modules
+requis et s'arrêtent immédiatement si l'un d'eux manque.
 
 La connexion Graph est indépendante de `az login`. Sur un poste autorisé, le mode
 normal ouvre la connexion interactive du module Graph. Le mode `-UseDeviceCode` est
@@ -52,11 +53,13 @@ Azure (*Microsoft Entra External ID → Créer un locataire → External*), ou e
 `Microsoft.AzureActiveDirectory/ciamDirectories`. C'est une ressource facturée à
 l'utilisateur actif mensuel, distincte du locataire de travail de l'association.
 
-**Le flux d'inscription en libre-service**, tant que son API Graph reste en `beta` pour
-les locataires externes. Il ne concerne que le catalogue public : l'application de scan
-et le back-office ne doivent surtout pas en avoir un, leurs comptes étant créés par un
-administrateur. Voir `QT-07` dans
-[`09-questions-techniques.md`](../../docs/bourse-aux-livres/technique/09-questions-techniques.md).
+Le flux d'inscription en libre-service n'est plus une étape manuelle :
+`Configure-EntraUserFlow.ps1` utilise l'API Graph v1.0, crée le formulaire hébergé par
+Entra et l'attache uniquement à `vpd-catalog-<environment>`. L'application de scan et le
+back-office ne doivent surtout pas en avoir un, leurs comptes étant créés par un
+administrateur. Le compte qui lance ce script doit disposer des permissions
+`Application.Read.All` et `EventListener.ReadWrite.All`, ainsi que du rôle Entra
+**External ID User Flow Administrator**.
 
 ## Ordre d'exécution
 
@@ -87,12 +90,22 @@ administrateur. Voir `QT-07` dans
 # dans l'environnement development. infra-deploy les injecte dans Key Vault ;
 # aucune valeur n'est ajoutee a un fichier suivi par Git.
 
-# 2. Le premier administrateur, sans qui rien n'est administrable.
+# 2. User flow d'inscription du catalogue public. La simulation ne modifie rien.
+./Configure-EntraUserFlow.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -Environment 'dev' `
+    -UseDeviceCode -WhatIf
+
+# 2 bis. Après relecture, appliquer le même user flow dans le tenant.
+./Configure-EntraUserFlow.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -Environment 'dev' `
+    -UseDeviceCode
+
+# 3. Le premier administrateur, sans qui rien n'est administrable.
 ./Set-VpdUserRole.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -UserPrincipalName 'florian.drevet_magellangroup.eu#EXT#@volepapillondamour.onmicrosoft.com' `
     -Role Administration
 
-# 3. Contrôle.
+# 4. Contrôle.
 ./Get-VpdUserRoles.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' | Format-Table
 ```
 
