@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
-| **Prochaine action** | Exécuter `Configure-EntraUserFlow.ps1` dans le tenant External ID, puis vérifier la création depuis le Catalog et l'absence d'inscription libre-service sur les applications internes. Les mesures ACS et contrôles physiques restent ensuite à relever. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-catalog-genres` |
-| **Dernière mise à jour** | 2026-09-07 — filtres de genres du catalogue, PR [#84](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/84) ouverte, déploiement en attente |
-| **Branche** | `fix/catalogue-genre-filters` — worktree dédié depuis `origin/main` (`25aa11d`) |
+| **Prochaine action** | Valider la PR [#87](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/87), puis déployer le Catalog et contrôler le parcours sur `livres.volepapillondamour.fr`. Les mesures ACS et contrôles physiques restent ensuite à relever. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-catalog-home-navigation` |
+| **Dernière mise à jour** | 2026-09-07 — séparation Accueil / Les prochaines dates du Catalog, PR [#87](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/87) ouverte, déploiement en attente |
+| **Branche** | `feat/catalog-home-navigation` — worktree dédié depuis `origin/main` |
 
 ---
 
@@ -77,6 +77,18 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-07 — parcours Accueil / prochaines dates du Catalog
+
+Dans `src/Catalog`, la racine `/` est maintenant l'onglet « Accueil » : elle rassemble le
+hero de recherche, les livres récemment arrivés, les livres rares, les genres et un rappel
+compact de la prochaine bourse aux livres avec sa date et ses horaires. « Les prochaines
+dates » mène à `/prochaines-dates`, une page recentrée sur les informations complètes du
+prochain rendez-vous, sans recherche, catégories ni liste d'autres dates. Le visuel du hero
+est une composition CSS de livres. La PR [#87](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/87)
+est ouverte ; 85 tests ChromeHeadless et le build Catalog passent, avec l'avertissement de
+budget initial Angular déjà connu. Le déploiement et le contrôle sur l'URL publique restent
+à faire.
 
 ### État actualisé — 2026-09-07 — alignement du header Catalog
 
