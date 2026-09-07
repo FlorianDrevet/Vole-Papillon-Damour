@@ -28,6 +28,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: development
+    env:
+      CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
+      CLARITY_PROJECT_ID: ${{ vars.CLARITY_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -66,6 +69,8 @@ jobs:
             --file "$DOCKERFILE" \
             --build-arg "API_URL=$API_URL" \
             --build-arg "DEPLOY_HOST=$DEPLOY_HOST" \
+            --build-arg "GOOGLE_ANALYTICS_MEASUREMENT_ID=$CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID" \
+            --build-arg "CLARITY_PROJECT_ID=$CLARITY_PROJECT_ID" \
             --tag "$IMAGE" \
             "$BUILD_CONTEXT"
           docker push "$IMAGE"

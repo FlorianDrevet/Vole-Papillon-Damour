@@ -20,6 +20,7 @@ import {CatalogAccountPageComponent} from './features/account/catalog-account-pa
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
+import {CatalogCookieBannerComponent} from './shared/components/cookie-banner/catalog-cookie-banner.component';
 import {DesignSystemModule} from '@vpd/ui';
 
 registerLocaleData(localeFr);
@@ -38,6 +39,7 @@ registerLocaleData(localeFr);
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,
     CatalogFooterComponent,
+    CatalogCookieBannerComponent,
   ],
   imports: [
     BrowserModule,

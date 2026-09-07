@@ -1,0 +1,53 @@
+@if (consent.bannerVisible$ | async) {
+  <aside class="cookie-banner" role="dialog" aria-modal="false" aria-labelledby="catalog-cookie-title"
+         aria-describedby="catalog-cookie-description">
+    @if (!(consent.panelOpen$ | async)) {
+      <h2 id="catalog-cookie-title">Cookies</h2>
+      <p id="catalog-cookie-description" class="cookie-banner__copy">
+        Nous utilisons Microsoft Clarity et Google Analytics 4 pour mesurer l'audience du catalogue
+        (navigation et enregistrement de session). Ces outils ne sont chargés qu'après votre consentement
+        explicite et vous pouvez refuser sans impact sur la consultation des livres.
+      </p>
+      <div class="cookie-banner__actions">
+        <button type="button" class="cookie-banner__button cookie-banner__button--primary"
+                (click)="consent.acceptAll()">Tout accepter</button>
+        <button type="button" class="cookie-banner__button cookie-banner__button--secondary"
+                (click)="consent.rejectAll()">Tout refuser</button>
+        <button type="button" class="cookie-banner__button cookie-banner__button--text"
+                (click)="openPanel()">Personnaliser</button>
+      </div>
+    } @else {
+      <h2 id="catalog-cookie-title">Personnaliser les cookies</h2>
+
+      <section class="cookie-banner__category" aria-labelledby="catalog-necessary-title">
+        <div class="cookie-banner__category-heading">
+          <h3 id="catalog-necessary-title">Cookies nécessaires</h3>
+          <span>Toujours actifs</span>
+        </div>
+        <p>Indispensables au fonctionnement et à la sécurité du catalogue. Aucun cookie tiers n'est déposé pour cette finalité.</p>
+      </section>
+
+      <section class="cookie-banner__category" aria-labelledby="catalog-analytics-title">
+        <div class="cookie-banner__category-heading">
+          <h3 id="catalog-analytics-title">Mesure d'audience</h3>
+          <label class="cookie-banner__toggle">
+            <span class="visually-hidden">Autoriser Microsoft Clarity et Google Analytics 4</span>
+            <input type="checkbox" [checked]="analyticsChecked()" (change)="onAnalyticsChange($event)" />
+            <span class="cookie-banner__toggle-track" aria-hidden="true"></span>
+          </label>
+        </div>
+        <p>
+          Microsoft Clarity et Google Analytics 4 mesurent les pages consultées et les interactions
+          de navigation après votre accord. Voir la <a href="/politique-de-cookies">politique de cookies</a>.
+        </p>
+      </section>
+
+      <div class="cookie-banner__actions">
+        <button type="button" class="cookie-banner__button cookie-banner__button--primary"
+                (click)="savePreferences()">Enregistrer mes choix</button>
+        <button type="button" class="cookie-banner__button cookie-banner__button--secondary"
+                (click)="consent.rejectAll()">Tout refuser</button>
+      </div>
+    }
+  </aside>
+}
