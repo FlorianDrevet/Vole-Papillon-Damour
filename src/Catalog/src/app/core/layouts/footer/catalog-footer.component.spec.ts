@@ -16,11 +16,39 @@ describe('CatalogFooterComponent', () => {
     fixture.detectChanges();
   });
 
-  it('keeps the four-column association footer used by the Website shell', () => {
-    expect(fixture.nativeElement.querySelectorAll('.footer-column').length).toBe(4);
-    expect(fixture.nativeElement.textContent).toContain("L'association");
-    expect(fixture.nativeElement.textContent).toContain('Maxence');
-    expect(fixture.nativeElement.textContent).toContain('Contact');
+  it('offers catalogue navigation instead of Website content sections', () => {
+    const catalogueLinks = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="catalogue-links"] a'),
+    ) as HTMLAnchorElement[];
+
+    expect(catalogueLinks.map(link => ({
+      text: link.textContent?.trim(),
+      href: link.getAttribute('href'),
+    }))).toEqual([
+      {text: 'Rechercher un livre', href: '/recherche'},
+      {text: 'Catalogue par genre', href: '/catalogue'},
+      {text: 'Les prochaines dates', href: '/prochaines-dates'},
+      {text: 'Ma liste de recherche', href: '/compte'},
+    ]);
+
+    expect(fixture.nativeElement.textContent).not.toContain('Maxence');
+    expect(fixture.nativeElement.textContent).not.toContain('Galerie photos');
+    expect(fixture.nativeElement.textContent).not.toContain('Contact');
+  });
+
+  it('limits association links to the catalogue handoff and local legal pages', () => {
+    const associationLinks = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-testid="association-links"] a'),
+    ) as HTMLAnchorElement[];
+
+    expect(associationLinks.map(link => ({
+      text: link.textContent?.trim(),
+      href: link.getAttribute('href'),
+    }))).toEqual([
+      {text: "Le site de l'association", href: 'https://volepapillondamour.fr'},
+      {text: 'Mentions légales', href: '/mentions-legales'},
+      {text: 'Confidentialité', href: '/confidentialite'},
+    ]);
   });
 
   it('keeps catalogue legal links local to the SSR application', () => {
