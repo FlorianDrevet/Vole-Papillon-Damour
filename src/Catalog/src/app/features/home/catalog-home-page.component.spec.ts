@@ -80,7 +80,23 @@ describe('CatalogHomePageComponent', () => {
   it('puts the genre selector and availability count in the hero search', () => {
     expect(fixture.nativeElement.querySelector('.hero-genre-select')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('412');
+    expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('titres disponibles en ce moment');
     expect(fixture.nativeElement.querySelector('.home-account-callout')).not.toBeNull();
+  });
+
+  it('keeps the hero focused on the book fair and uses the association butterfly', () => {
+    const hero = fixture.nativeElement.querySelector('.hero') as HTMLElement;
+    const heroSearchButton = hero.querySelector('.hero-search button') as HTMLButtonElement;
+    const butterfly = hero.querySelector('.hero-butterfly') as HTMLImageElement;
+
+    expect(hero.textContent).toContain('Est-ce que ce livre sera');
+    expect(hero.textContent).toContain('à la bourse aux livres');
+    expect(hero.querySelector('.hero-date')).toBeNull();
+    expect(hero.querySelector('.hero-orbit')).toBeNull();
+    expect(butterfly.getAttribute('src')).toContain('papillon_without_back.png');
+    expect(butterfly.getAttribute('alt')).toBe('');
+    expect(heroSearchButton.textContent?.trim()).toBe('Rechercher');
+    expect(heroSearchButton.querySelector('span')).toBeNull();
   });
 
   it('keeps the selected genre when sending a search from the hero', () => {

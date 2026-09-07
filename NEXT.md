@@ -16,8 +16,8 @@
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
 | **Prochaine action** | Relever les heartbeats/mesures, réaliser un envoi e-mail de test avec un destinataire validé, puis exécuter les contrôles physiques restants. Le workflow reproductible ACS est fusionné dans `main` via la PR [#74](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/74). |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-roles` |
-| **Dernière mise à jour** | 2026-09-06 — comptes et rôles administrables depuis le BackOffice, en attente de PR et déploiement |
-| **Branche** | `feat/backoffice-account-roles` — worktree dédié depuis `origin/main` (`dba7127`) |
+| **Dernière mise à jour** | 2026-09-07 — ajustements de l'accueil du Catalog, en attente de PR |
+| **Branche** | `fix/catalog-home-hero` — worktree dédié depuis `origin/main` |
 
 ---
 
@@ -651,6 +651,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-07 | Windows | **Catalog — ajustements de l'accueil.** Le hero retire son quadrillage et ses cercles décoratifs, affiche le papillon officiel de l'association, précise « bourse aux livres », supprime le doublon de date et la flèche du bouton de recherche, et reformule le compteur en titres disponibles. Validation : 71 tests ChromeHeadless Catalog, build SSR/navigateur et contrôles visuels à 375, 768 et 1440 px ; aucun déploiement effectué. |
 | 2026-09-06 | Windows | **Correctif Scanette — permission caméra répétée.** Après une lecture, le flux caméra reste ouvert et la détection est seulement mise en pause ; le choix « Garder »/« Écarter » reprend le même flux au lieu de rappeler `getUserMedia()`. Ajout de tests de reprise du flux et mise à jour du README Scan. Validation : 90 tests ChromeHeadless Scan et build de production passés ; aucun déploiement ni retest iPhone effectué. |
 | 2026-09-06 | Windows | **BackOffice — comptes et rôles.** Depuis `origin/main` (`dba7127`) dans le worktree `feat/backoffice-account-roles`, ajout de l’onglet « Comptes et rôles » avec recherche, création de comptes Entra, rôles `Tri`/`Caisse`/`Administration` et garde-fou d’auto-révocation. Ajout des handlers CQRS, contrats/API, adaptateur Graph, permissions Entra/Bicep et régressions. Validation : 5 tests Application, 1 Infrastructure, 13 API, 17 BackOffice ChromeHeadless + bootstrap, builds BackOffice/API et compilation Bicep. Aucun consentement, secret, compte réel ou déploiement n’a été modifié ; PR à ouvrir. |
 | 2026-09-06 | Windows | **Correctif de la liste de recherche du Catalog.** Le parcours « Suivre ce titre » pouvait rester visuellement sur « Ajout… » après la réponse API, car l’état plain-property du composant n’était pas replanifié par Angular zoneless. Ajout de `ChangeDetectorRef.markForCheck()` en fin de parcours et d’une régression ChromeHeadless avec observable différé. Validation : 59 tests Catalog et build production ; aucun déploiement effectué, PR à ouvrir. |

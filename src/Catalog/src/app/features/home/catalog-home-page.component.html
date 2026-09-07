@@ -1,12 +1,8 @@
 <section class="hero">
-  <span class="hero-orbit hero-orbit-large" aria-hidden="true"></span>
-  <span class="hero-orbit hero-orbit-small" aria-hidden="true"></span>
+  <img class="hero-butterfly" src="images/papillon_without_back.png" alt="" width="360" height="360" aria-hidden="true">
   <div class="hero-inner page-width">
     <p class="eyebrow light"><span class="hero-rule" aria-hidden="true"></span>Catalogue de la bourse aux livres</p>
-    @if (nextFair(); as fair) {
-      <p class="hero-date">Prochaine bourse · {{ formatFairDateRange(fair) }}</p>
-    }
-    <h1>Est-ce que ce livre sera <em>à la bourse&nbsp;?</em></h1>
+    <h1>Est-ce que ce livre sera <em>à la bourse aux livres&nbsp;?</em></h1>
     <p class="hero-intro">Cherchez un titre, un auteur ou le code-barres au dos du livre. Sans compte, et en moins d'une minute.</p>
 
     <form class="hero-search" (ngSubmit)="submitSearch()">
@@ -22,9 +18,15 @@
           }
         </select>
       </label>
-      <button type="submit">Rechercher <span aria-hidden="true">↗</span></button>
+      <button type="submit">Rechercher</button>
     </form>
-    <p class="hero-count"><strong>{{ recentTotal() || 'Le catalogue' }}</strong> {{ recentTotal() ? 'titres déjà repérés' : 'est en cours de mise à jour' }}</p>
+    <p class="hero-count">
+      @if (recentTotal(); as total) {
+        <strong>{{ total }}</strong> {{ total === 1 ? 'titre disponible en ce moment' : 'titres disponibles en ce moment' }}
+      } @else {
+        <strong>Le catalogue</strong> est en cours de mise à jour
+      }
+    </p>
   </div>
 </section>
 
