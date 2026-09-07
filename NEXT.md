@@ -90,6 +90,26 @@ Validation locale : 87 tests ChromeHeadless Catalog, build SSR/navigateur avec
 l'avertissement de budget initial connu, et contrôles Chrome à 1905 px et 390 px. La PR
 et le déploiement restent à faire.
 
+### État actualisé — 2026-09-07 — branding External ID appliqué
+
+Le contrôle du Catalog public après le merge de la PR précédente avait confirmé que la
+redirection d'inscription et la langue française fonctionnaient, mais que les écrans
+restaient sur le rendu neutre blanc d'External ID. Graph a montré que le tenant CIAM ne
+possédait pas encore de ressource de branding ; le script lisait les localisations trop tôt
+et les erreurs des cmdlets de flux n'étaient pas bloquantes.
+
+La branche `fix/entra-branding-initialization` traite le tenant neuf, utilise la localisation
+External ID `0` pour le branding par défaut et les flux CSS, et rend chaque écriture Graph
+bloquante. Pester `Configure-EntraBranding.Tests.ps1` passe avec 6 tests. L'exécution réelle
+retourne `localization-updated, default-updated, default-css-updated,
+localization-css-updated`; Graph sert le même CSS de 2636 octets sur `0` et `fr-FR`.
+
+Le smoke navigateur du Catalog montre désormais le fond bleu pâle, la carte et la typographie
+personnalisés, les textes français et la mention de sécurité du catalogue sur l'inscription
+comme sur la connexion. Aucun mot de passe ni compte de test n'a été saisi ou créé. Le
+redéploiement Catalog `34162378838` est terminé avec succès ; le parcours public a été
+recontrôlé après ce déploiement.
+
 ### État actualisé — 2026-09-07 — displayName et personnalisation du signup External ID
 
 Le user flow public External ID a été exécuté par l'utilisateur après le merge de la

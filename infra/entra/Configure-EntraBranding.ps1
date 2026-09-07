@@ -128,6 +128,20 @@ function Find-VpdBrandingLocalization {
     )
 }
 
+function Test-VpdBrandingResourceNotFound {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Management.Automation.ErrorRecord]$ErrorRecord
+    )
+
+    $messages = @($ErrorRecord.Exception.Message)
+    if ($null -ne $ErrorRecord.ErrorDetails) {
+        $messages += $ErrorRecord.ErrorDetails.Message
+    }
+
+    return (($messages -join ' ') -match 'Request_ResourceNotFound|ResourceNotFound')
+}
+
 if ($MyInvocation.InvocationName -eq '.') {
     return
 }
@@ -164,23 +178,37 @@ if ($UseDeviceCode.IsPresent) {
     $connectParameters.UseDeviceCode = $true
 }
 
-$null = Connect-MgGraph @connectParameters
+$null = Connect-MgGraph @connectParameters -ErrorAction Stop
 
-$allLocalizations = @(Get-MgOrganizationBrandingLocalization -OrganizationId $TenantId)
+$brandingBody = New-VpdBrandingUpdateBody
+$actions = [System.Collections.Generic.List[string]]::new()
+
+$allLocalizations = @()
+try {
+    $allLocalizations = @(Get-MgOrganizationBrandingLocalization -OrganizationId $TenantId -ErrorAction Stop)
+}
+catch {
+    if (-not (Test-VpdBrandingResourceNotFound -ErrorRecord $_)) {
+        throw
+    }
+
+    # En mode -WhatIf, le PATCH ci-dessus n'est volontairement pas exécuté. Il
+    # est donc normal que la collection n'existe pas encore sur un tenant neuf.
+    $actions.Add('localizations-assumed-empty')
+}
+
 $matchingLocalizations = @(Find-VpdBrandingLocalization -Localizations $allLocalizations -LocalizationId $Locale)
 if ($matchingLocalizations.Count -gt 1) {
     throw "Plusieurs personnalisations de marque existent pour la locale '$Locale'. Supprimez le doublon manuellement avant de relancer le script."
 }
-
-$brandingBody = New-VpdBrandingUpdateBody
-$actions = [System.Collections.Generic.List[string]]::new()
 
 $frenchLocalization = $null
 if ($matchingLocalizations.Count -eq 0) {
     if ($PSCmdlet.ShouldProcess($Locale, 'Créer la personnalisation de marque française')) {
         $frenchLocalization = New-MgOrganizationBrandingLocalization `
             -OrganizationId $TenantId `
-            -BodyParameter (New-VpdBrandingLocalizationBody -LocalizationId $Locale)
+            -BodyParameter (New-VpdBrandingLocalizationBody -LocalizationId $Locale) `
+            -ErrorAction Stop
         $actions.Add('localization-created')
     }
     else {
@@ -194,7 +222,8 @@ else {
         $null = Update-MgOrganizationBrandingLocalization `
             -OrganizationId $TenantId `
             -OrganizationalBrandingLocalizationId $frenchLocalization.Id `
-            -BodyParameter $brandingBody
+            -BodyParameter $brandingBody `
+            -ErrorAction Stop
         $actions.Add('localization-updated')
     }
     else {
@@ -202,21 +231,28 @@ else {
     }
 }
 
-if ($PSCmdlet.ShouldProcess($TenantId, 'Mettre à jour la personnalisation de marque par défaut')) {
-    $null = Update-MgOrganizationBranding `
+if ($PSCmdlet.ShouldProcess('0', 'Mettre à jour la personnalisation de marque par défaut')) {
+    # Dans un tenant External ID, le branding par défaut est la localisation 0.
+    # Le cmdlet générique /branding renvoie 404/405 pour les ressources créées
+    # par le parcours CIAM ; la même API de localisation fonctionne pour 0.
+    $null = Update-MgOrganizationBrandingLocalization `
         -OrganizationId $TenantId `
-        -BodyParameter $brandingBody
+        -OrganizationalBrandingLocalizationId '0' `
+        -BodyParameter $brandingBody `
+        -ErrorAction Stop
     $actions.Add('default-updated')
 }
 else {
     $actions.Add('default-would-update')
 }
 
-if ($PSCmdlet.ShouldProcess($TenantId, 'Téléverser la feuille de style External ID par défaut')) {
-    $null = Set-MgOrganizationBrandingCustomCss `
+if ($PSCmdlet.ShouldProcess('0', 'Téléverser la feuille de style External ID par défaut')) {
+    $null = Set-MgOrganizationBrandingLocalizationCustomCss `
         -OrganizationId $TenantId `
+        -OrganizationalBrandingLocalizationId '0' `
         -InFile $cssAsset.FullName `
-        -ContentType (Get-VpdContentType -Asset $cssAsset)
+        -ContentType (Get-VpdContentType -Asset $cssAsset) `
+        -ErrorAction Stop
     $actions.Add('default-css-updated')
 }
 else {
@@ -228,7 +264,8 @@ if ($PSCmdlet.ShouldProcess($frenchLocalization.Id, 'Téléverser la feuille de 
         -OrganizationId $TenantId `
         -OrganizationalBrandingLocalizationId $frenchLocalization.Id `
         -InFile $cssAsset.FullName `
-        -ContentType (Get-VpdContentType -Asset $cssAsset)
+        -ContentType (Get-VpdContentType -Asset $cssAsset) `
+        -ErrorAction Stop
     $actions.Add('localization-css-updated')
 }
 else {
@@ -237,10 +274,12 @@ else {
 
 if ($null -ne $headerLogoAsset) {
     if ($PSCmdlet.ShouldProcess($TenantId, "Téléverser le logo d’en-tête External ID par défaut")) {
-        $null = Set-MgOrganizationBrandingHeaderLogo `
+        $null = Set-MgOrganizationBrandingLocalizationHeaderLogo `
             -OrganizationId $TenantId `
+            -OrganizationalBrandingLocalizationId '0' `
             -InFile $headerLogoAsset.FullName `
-            -ContentType (Get-VpdContentType -Asset $headerLogoAsset)
+            -ContentType (Get-VpdContentType -Asset $headerLogoAsset) `
+            -ErrorAction Stop
         $actions.Add('default-header-logo-updated')
     }
 
@@ -249,17 +288,20 @@ if ($null -ne $headerLogoAsset) {
             -OrganizationId $TenantId `
             -OrganizationalBrandingLocalizationId $frenchLocalization.Id `
             -InFile $headerLogoAsset.FullName `
-            -ContentType (Get-VpdContentType -Asset $headerLogoAsset)
+            -ContentType (Get-VpdContentType -Asset $headerLogoAsset) `
+            -ErrorAction Stop
         $actions.Add('localization-header-logo-updated')
     }
 }
 
 if ($null -ne $faviconAsset) {
     if ($PSCmdlet.ShouldProcess($TenantId, 'Téléverser le favicon External ID')) {
-        $null = Set-MgOrganizationBrandingFavicon `
+        $null = Set-MgOrganizationBrandingLocalizationFavicon `
             -OrganizationId $TenantId `
+            -OrganizationalBrandingLocalizationId '0' `
             -InFile $faviconAsset.FullName `
-            -ContentType (Get-VpdContentType -Asset $faviconAsset)
+            -ContentType (Get-VpdContentType -Asset $faviconAsset) `
+            -ErrorAction Stop
         $actions.Add('favicon-updated')
     }
 }

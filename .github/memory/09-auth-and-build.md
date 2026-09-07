@@ -70,10 +70,14 @@
   Scan, BackOffice and Cash have no self-service signup flow.
 - Catalog browser-delegated requests add `ui_locales=fr-FR` and `mkt=fr-FR` to sign-in,
   registration, and interactive API-token renewal. `infra/entra/Configure-EntraBranding.ps1`
-  creates or updates the tenant's `fr-FR` organizational branding and uploads the Catalog
-  CSS through Graph `OrganizationalBranding.ReadWrite.All`; this changes the hosted page's
-  visual language but does not move password entry into the Catalog. A pixel-perfect custom
-  form would require a separate Native Authentication decision and a CORS proxy.
+  creates or updates the tenant's `fr-FR` branding, updates the External ID default
+  localization `0`, and uploads the Catalog CSS to both localization streams through Graph
+  `OrganizationalBranding.ReadWrite.All`. A missing branding localization is treated as an
+  empty collection only when Graph reports the expected fresh-tenant `ResourceNotFound`, and
+  every Graph write is explicitly terminating so a partial application cannot be reported as
+  successful. This changes the hosted page's visual language but does not move password entry
+  into the Catalog. A pixel-perfect custom form would require a separate Native Authentication
+  decision and a CORS proxy.
  - `Scan` gates the entire PWA through `ScanAuthService.authState$`: an Entra account with
    `Tri` or `Caisse` renders the PWA (`Tri` triages; `Caisse` sells), while unauthenticated,
    unauthorized, and token-renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
