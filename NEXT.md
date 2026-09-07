@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS, la refonte V2 et les parcours Catalog membre/admin sont fusionnés dans `origin/main` (`5601c2e`) et déployés sur l'environnement dev. |
 | **Prochaine action** | Exécuter `Configure-EntraUserFlow.ps1` dans le tenant External ID, puis vérifier la création depuis le Catalog et l'absence d'inscription libre-service sur les applications internes. Les mesures ACS et contrôles physiques restent ensuite à relever. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-catalog-genres` |
-| **Dernière mise à jour** | 2026-09-07 — filtres de genres du catalogue, PR [#84](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/84) ouverte, déploiement en attente |
-| **Branche** | `fix/catalogue-genre-filters` — worktree dédié depuis `origin/main` (`25aa11d`) |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-camera-feedback-focus` |
+| **Dernière mise à jour** | 2026-09-07 — feedback caméra Scanette, PR à ouvrir |
+| **Branche** | `fix/scan-camera-feedback-focus` — worktree dédié depuis `origin/main` (`60b0f90`) |
 
 ---
 
@@ -77,6 +77,19 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-07 — feedback caméra Scanette
+
+Dans `src/Scan`, les trois parcours de scan (`Trier`, `Caisse`, `Consultation`) affichent
+maintenant « Scan détecté » avec un indicateur pendant la recherche locale et bibliographique.
+La prévisualisation caméra est tactile/cliquable et demande une remise au point via les
+contraintes `single-shot`/`continuous` quand le navigateur les expose ; sinon l'autofocus
+natif reste actif. La permission et le flux caméra existants sont conservés.
+
+Validation locale : 97 tests ChromeHeadless Scan, 4 tests bootstrap, builds production et
+développement, et `graphify update .`. Le contrôle navigateur/appareil réel n'a pas pu être
+fait : aucune surface navigateur CUA n'est disponible dans cette session et aucun appareil
+avec caméra n'est connecté. Aucun déploiement n'a été effectué ; PR à ouvrir.
 
 ### État actualisé — 2026-09-07 — alignement du header Catalog
 
@@ -690,6 +703,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-07 | Windows | **Scanette — feedback caméra.** Les trois destinations affichent immédiatement « Scan détecté » avec un loader pendant la recherche du livre. La prévisualisation active est accessible au toucher/clavier et demande une remise au point via `single-shot`/`continuous` lorsque le navigateur expose ces contraintes, avec repli sur l'autofocus natif. Validation : 97 tests ChromeHeadless Scan, 4 tests bootstrap, builds production et développement et `graphify update .`. Aucun test réel avec navigateur/appareil caméra ni déploiement n'a été effectué ; PR à ouvrir. |
 | 2026-09-07 | Windows | **Inscription publique External ID.** Le Catalog envoyait déjà `prompt=create` vers `/compte`, mais le flow External ID n'était pas provisionné ni associé à `vpd-catalog-dev`, ce qui pouvait renvoyer vers le parcours administrateur du tenant. Ajout de `Configure-EntraUserFlow.ps1` (Graph v1.0, email/mot de passe, nom affiché, association exclusive au Catalog, mode `-WhatIf`) et de 4 tests Pester ; documentation infra, identité et mémoire alignées. Aucun tenant réel, compte ou déploiement n'a été modifié ; la configuration et le retest live restent à faire après la PR. |
 | 2026-09-07 | Windows | **Catalog — ajustements de l'accueil.** Le hero retire son quadrillage et ses cercles décoratifs, affiche le papillon officiel de l'association, précise « bourse aux livres », supprime le doublon de date et la flèche du bouton de recherche, et reformule le compteur en titres disponibles. Validation : 71 tests ChromeHeadless Catalog, build SSR/navigateur et contrôles visuels à 375, 768 et 1440 px ; aucun déploiement effectué. |
 | 2026-09-07 | Windows | **Correctif d’alignement du header Catalog.** Le bouton « Mon compte » sort du groupe flex de navigation, les liens desktop sont centrés sur la même hauteur de contrôle et la bascule mobile intervient à 1040 px pour éviter le décalage et le débordement aux largeurs intermédiaires. Validation : 72 tests ChromeHeadless, build SSR/navigateur, `graphify update .` et contrôles Chrome lecture seule à 1200/1041/1040/390 px. PR et déploiement à faire. |

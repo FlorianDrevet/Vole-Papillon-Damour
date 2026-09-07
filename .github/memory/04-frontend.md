@@ -108,6 +108,14 @@ ChromeHeadless tests, the bootstrap contract, and the production build; it is in
 the deployed Scan image. The subsequent nested-endpoint authentication regression is
 covered by the 79-test CI run described above.
 
+The 2026-09-07 camera feedback follow-up keeps the same live stream for all three scan
+destinations and renders a `Scan détecté` progress surface while the local/catalog and
+bibliographic lookups are pending. The active camera preview is keyboard- and touch-
+accessible; its focus action applies `single-shot`/`continuous` video-track constraints
+when the browser exposes them and falls back quietly to the device autofocus otherwise.
+The component exposes the focus state to assistive technology and preserves the existing
+permission/session reuse behavior.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:
