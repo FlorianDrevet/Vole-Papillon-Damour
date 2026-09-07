@@ -12,6 +12,7 @@ import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubs
 
 const routes: Routes = [
   {path: '', component: CatalogHomePageComponent},
+  {path: 'prochaines-dates', component: CatalogHomePageComponent, data: {upcomingOnly: true}},
   {path: 'recherche', component: CatalogSearchPageComponent},
   {path: 'catalogue', component: CatalogSearchPageComponent, data: {browse: true}},
   {path: 'livres/:slug', component: CatalogBookDetailPageComponent},

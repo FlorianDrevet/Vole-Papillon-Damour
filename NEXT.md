@@ -90,6 +90,17 @@ Validation locale : 97 tests ChromeHeadless Scan, 4 tests bootstrap, builds prod
 développement, et `graphify update .`. Le contrôle navigateur/appareil réel n'a pas pu être
 fait : aucune surface navigateur CUA n'est disponible dans cette session et aucun appareil
 avec caméra n'est connecté. Aucun déploiement n'a été effectué ; PR [#89](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/89) ouverte.
+### État actualisé — 2026-09-07 — parcours Accueil / prochaines dates du Catalog
+
+Dans `src/Catalog`, la racine `/` est maintenant l'onglet « Accueil » : elle rassemble le
+hero de recherche, les livres récemment arrivés, les livres rares, les genres et un rappel
+compact de la prochaine bourse aux livres avec sa date et ses horaires. « Les prochaines
+dates » mène à `/prochaines-dates`, une page recentrée sur les informations complètes du
+prochain rendez-vous, sans recherche, catégories ni liste d'autres dates. Le visuel du hero
+est une composition CSS de livres. La PR [#87](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/87)
+est ouverte ; 85 tests ChromeHeadless et le build Catalog passent, avec l'avertissement de
+budget initial Angular déjà connu. Le déploiement et le contrôle sur l'URL publique restent
+à faire.
 
 ### État actualisé — 2026-09-07 — alignement du header Catalog
 
