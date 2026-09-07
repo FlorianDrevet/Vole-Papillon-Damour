@@ -57,39 +57,39 @@
         <a class="association-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">
           Le site de l’association <span aria-hidden="true">↗</span>
         </a>
-
-        <div class="account-menu" [class.open]="accountMenuOpen()">
-          <a
-            class="account-teaser"
-            [routerLink]="isAdministration() ? '/administration' : '/compte'"
-            [attr.aria-expanded]="accountMenuOpen()"
-            aria-haspopup="true"
-            [title]="isAdministration() ? 'Compte bénévole' : 'Votre espace personnel'"
-            (click)="toggleAccountMenu($event)">
-            <span class="person-icon" aria-hidden="true">{{ isAdministration() ? accountInitials() : '' }}</span>
-            <span>{{ accountTriggerLabel() }}</span>
-          </a>
-          @if (accountMenuOpen()) {
-            <div class="account-popover" role="dialog" aria-label="Menu du compte">
-              <span class="dropdown-rule" aria-hidden="true"></span>
-              <p class="popover-kicker">{{ isAdministration() ? 'Espace bénévoles' : 'Espace personnel' }}</p>
-              @if (isAuthenticated() && account()) {
-                <strong>{{ accountName() }}</strong>
-                <small>{{ account()?.username }}</small>
-                <a routerLink="/compte" (click)="closeMenus()">Ma liste de recherche</a>
-                @if (isAdministrator()) {
-                  <a routerLink="/administration" (click)="closeMenus()">Ouvrir l'administration</a>
-                }
-                <button type="button" class="popover-logout" (click)="logout()">Se déconnecter</button>
-              } @else {
-                <strong>Ajoutez un livre à votre liste de recherche</strong>
-                <small>Le catalogue reste librement consultable.</small>
-                <a routerLink="/compte" (click)="closeMenus()">Se connecter ou créer un compte</a>
-              }
-            </div>
-          }
-        </div>
       </nav>
+
+      <div class="account-menu" [class.open]="accountMenuOpen()">
+        <a
+          class="account-teaser"
+          [routerLink]="isAdministration() ? '/administration' : '/compte'"
+          [attr.aria-expanded]="accountMenuOpen()"
+          aria-haspopup="true"
+          [title]="isAdministration() ? 'Compte bénévole' : 'Votre espace personnel'"
+          (click)="toggleAccountMenu($event)">
+          <span class="person-icon" aria-hidden="true">{{ isAdministration() ? accountInitials() : '' }}</span>
+          <span>{{ accountTriggerLabel() }}</span>
+        </a>
+        @if (accountMenuOpen()) {
+          <div class="account-popover" role="dialog" aria-label="Menu du compte">
+            <span class="dropdown-rule" aria-hidden="true"></span>
+            <p class="popover-kicker">{{ isAdministration() ? 'Espace bénévoles' : 'Espace personnel' }}</p>
+            @if (isAuthenticated() && account()) {
+              <strong>{{ accountName() }}</strong>
+              <small>{{ account()?.username }}</small>
+              <a routerLink="/compte" (click)="closeMenus()">Ma liste de recherche</a>
+              @if (isAdministrator()) {
+                <a routerLink="/administration" (click)="closeMenus()">Ouvrir l'administration</a>
+              }
+              <button type="button" class="popover-logout" (click)="logout()">Se déconnecter</button>
+            } @else {
+              <strong>Ajoutez un livre à votre liste de recherche</strong>
+              <small>Le catalogue reste librement consultable.</small>
+              <a routerLink="/compte" (click)="closeMenus()">Se connecter ou créer un compte</a>
+            }
+          </div>
+        }
+      </div>
     </div>
   </div>
 
