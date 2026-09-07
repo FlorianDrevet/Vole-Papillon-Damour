@@ -28,7 +28,8 @@ catalogue » vers l'application Angular `src/Catalog/`.
   portée d'alerte.
 - Compte : connexion, liste de recherche, retrait unitaire et double confirmation de suppression.
 - Administration : cadre latéral, files de travail et désengorgement branché sur l'API.
-- Pages légales et footer : même shell, footer association en quatre colonnes et liens locaux.
+- Pages légales et footer : même shell, footer dédié au catalogue avec navigation des livres,
+  renvoi vers le site de l'association et liens légaux locaux.
 
 ## Limites fonctionnelles à préserver
 

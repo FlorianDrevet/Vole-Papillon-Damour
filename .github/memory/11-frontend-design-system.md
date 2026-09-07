@@ -62,7 +62,9 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   account surface, and administration shell.
 - The shell uses the real `papillon_without_back.png` mark, a 1280px maximum content width,
   24px mobile / 44px desktop gutters, the Website-like 302px dropdown panel, a thin
-  cyan-blue-orange brand rule, and a four-column association footer. Navigation dropdowns
+  cyan-blue-orange brand rule, and a dedicated three-column Catalog footer. The footer
+  exposes catalogue navigation, the external association handoff, and local legal links;
+  it does not repeat the Website's Maxence or association-content sections. Navigation dropdowns
   must be keyboard/focus usable and hidden when neither hovered nor focused.
 - The current header keeps `Mon compte` outside the desktop navigation flex, centers the
   42px controls, and switches to the mobile layout at `1040px` to avoid intermediate-width

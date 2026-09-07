@@ -78,6 +78,18 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-07 — footer dédié au Catalog
+
+Dans `src/Catalog`, le footer ne reprend plus les rubriques éditoriales du Website
+(`Maxence`, galerie, presse et contact). Il présente désormais les parcours propres au
+catalogue — recherche, genres, prochaines dates et liste de recherche — ainsi que le
+renvoi vers le site de l'association et les deux pages légales locales. Le message de
+confidentialité et la grille responsive suivent la maquette Catalog.
+
+Validation locale : 87 tests ChromeHeadless Catalog, build SSR/navigateur avec
+l'avertissement de budget initial connu, et contrôles Chrome à 1905 px et 390 px. La PR
+et le déploiement restent à faire.
+
 ### État actualisé — 2026-09-07 — displayName et personnalisation du signup External ID
 
 Le user flow public External ID a été exécuté par l'utilisateur après le merge de la
@@ -768,6 +780,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-07 | Windows | **Footer dédié au Catalog.** Remplacement des liens Website « L'association / Maxence / Contact » par les parcours du catalogue (recherche, genres, prochaines dates, liste de recherche), le renvoi vers le site associatif et les pages légales locales. La grille passe à trois colonnes avec le rappel qu'aucune donnée n'est nécessaire pour consulter le catalogue. Validation : 87 tests ChromeHeadless, build SSR/navigateur et contrôles responsive à 1905/390 px ; PR et déploiement à faire. |
 | 2026-09-07 | Windows | **Scanette — feedback caméra.** Les trois destinations affichent immédiatement « Scan détecté » avec un loader pendant la recherche du livre. La prévisualisation active est accessible au toucher/clavier et demande une remise au point via `single-shot`/`continuous` lorsque le navigateur expose ces contraintes, avec repli sur l'autofocus natif. Validation : 97 tests ChromeHeadless Scan, 4 tests bootstrap, builds production et développement et `graphify update .`. Aucun test réel avec navigateur/appareil caméra ni déploiement n'a été effectué ; PR [#89](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/89) ouverte. |
 | 2026-09-07 | Windows | **Inscription publique External ID.** Le Catalog envoyait déjà `prompt=create` vers `/compte`, mais le flow External ID n'était pas provisionné ni associé à `vpd-catalog-dev`, ce qui pouvait renvoyer vers le parcours administrateur du tenant. Ajout de `Configure-EntraUserFlow.ps1` (Graph v1.0, email/mot de passe, nom affiché, association exclusive au Catalog, mode `-WhatIf`) et de 4 tests Pester ; documentation infra, identité et mémoire alignées. Aucun tenant réel, compte ou déploiement n'a été modifié ; la configuration et le retest live restent à faire après la PR. |
 | 2026-09-07 | Windows | **Catalog — ajustements de l'accueil.** Le hero retire son quadrillage et ses cercles décoratifs, affiche le papillon officiel de l'association, précise « bourse aux livres », supprime le doublon de date et la flèche du bouton de recherche, et reformule le compteur en titres disponibles. Validation : 71 tests ChromeHeadless Catalog, build SSR/navigateur et contrôles visuels à 375, 768 et 1440 px ; aucun déploiement effectué. |
