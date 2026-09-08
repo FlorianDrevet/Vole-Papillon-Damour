@@ -54,7 +54,7 @@ $ErrorActionPreference = 'Stop'
 
 function New-VpdBrandingUpdateBody {
     return @{
-        backgroundColor = '#062a44'
+        backgroundColor = '#eaf6fb'
         headerBackgroundColor = '#041d30'
         usernameHintText = 'Votre adresse e-mail'
         signInPageText = "Connexion sécurisée au catalogue Vole Papillon d’Amour."
