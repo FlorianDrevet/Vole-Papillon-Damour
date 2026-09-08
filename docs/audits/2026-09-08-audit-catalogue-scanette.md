@@ -1,13 +1,13 @@
 # Audit Catalogue + Scanette — bugs, UI/UX et visuel
 
 **Date :** 8 septembre 2026
-**Périmètre :** `src/Scan/` (PWA Scanette) et `src/Catalog/` (catalogue public + administration)
-**Méthode :** lecture statique du code (composants, services, templates, SCSS, config PWA/SSR/CI), recoupement avec le backend (`src/Backend`) et les workflows de déploiement. Aucun test d'exécution n'a été lancé.
+**Périmètre :** `src/Scan/` (PWA Scanette), `src/Catalog/` (catalogue public + administration) et les endpoints de `src/Backend/` que ces deux applications consomment.
+**Méthode :** lecture statique du code (composants, services, templates, SCSS, config PWA/SSR/CI, contrôleurs, handlers, configurations EF, `Program.cs`, paramètres d'infrastructure). Aucun test d'exécution n'a été lancé.
 **Destinataire :** agent chargé des correctifs.
 
 ## Comment lire ce document
 
-Chaque anomalie porte un identifiant (`SCAN-xx`, `CAT-xx`), une sévérité, un symptôme observable, la cause localisée dans le code, et un correctif concret.
+Chaque anomalie porte un identifiant (`SCAN-xx` pour la Scanette, `CAT-xx` pour le Catalogue, `API-xx` pour le backend), une sévérité, un symptôme observable, la cause localisée dans le code, et un correctif concret.
 
 | Sévérité | Signification |
 |---|---|
@@ -15,7 +15,16 @@ Chaque anomalie porte un identifiant (`SCAN-xx`, `CAT-xx`), une sévérité, un 
 | **P2** | Bug visible qui dégrade fortement l'usage ou l'information affichée. |
 | **P3** | Défaut d'UI/UX, incohérence visuelle, dette de qualité. |
 
-**Ordre de traitement recommandé :** SCAN-01 → SCAN-04 → SCAN-02 → SCAN-03 → CAT-01 → CAT-02 → SCAN-05 → CAT-03 → le reste.
+**Ordre de traitement recommandé.** Trois lots, dans cet ordre :
+
+1. **Sécurité et intégrité des données** — API-01 (contrôle de propriété), API-02 + API-03 (reprise hors ligne), API-07 (propagation des ventes), SCAN-03 (changement d'utilisateur), CAT-01 (consentement), CAT-02 (crash au démarrage).
+2. **Impasses fonctionnelles en bourse** — SCAN-01, SCAN-04, SCAN-02, SCAN-05, API-06, API-11.
+3. **Charge et coût** — API-04, API-05, API-08, API-10 : ces quatre points sont le principal moteur de consommation SQL/CPU et méritent d'être traités ensemble.
+
+Le reste (P2 puis P3) peut être réparti librement. **Plusieurs anomalies décrivent le même défaut sous trois angles et doivent être corrigées d'un bloc :**
+- **Règle « livre recherché » :** SCAN-10 + SCAN-11 + API-09.
+- **Fuseaux horaires :** CAT-04 + CAT-15 + API-14 + API-16 (`/asso-events`) — un utilitaire Europe/Paris partagé les résout tous.
+- **Contrastes :** SCAN-18 + CAT-12 (même palette, mêmes valeurs).
 
 ---
 
@@ -573,6 +582,227 @@ Mêmes valeurs de palette que la Scanette, mêmes échecs :
 
 ---
 
+# Partie 3 — API (`src/Backend/`)
+
+Périmètre : uniquement les endpoints consommés par la Scanette et le Catalogue
+(`BookController`, `BookAdministrationController`, handlers associés, `Program.cs`,
+configurations EF). Le reste de l'API (bingo, produits, commandes, actualités) n'a pas
+été audité.
+
+**Point positif à conserver** — plusieurs garde-fous sont bien en place et ne doivent
+pas être cassés par les correctifs : index unique filtré sur `BookMovements.ClientGestureId`
+(idempotence réelle des gestes), index unique filtré sur `ScanSessions.VolunteerId`
+(une seule session ouverte par bénévole), jeton de concurrence `rowversion` sur `Book`,
+et vérification de propriété dans `OpenScanSessionCommandHandler`. Les routes du client
+d'administration correspondent une à une aux routes serveur.
+
+## P1 — Bloquants
+
+### API-01 · Aucune vérification de propriété sur les endpoints de session de scan
+
+**Symptôme.** Tout compte porteur du rôle `Tri` peut injecter des scans dans **la session d'un autre bénévole**, et clôturer n'importe quelle session à partir de son GUID. Les mouvements créés sont attribués à `session.VolunteerId`, c'est-à-dire **au bénévole victime**. La clôture forcée déclenche en plus l'envoi des alertes e-mail aux membres (`bookAlertOutbox.QueueForSessionAsync`) avant la fin réelle du tri.
+
+**Cause.**
+- `src/Backend/…/Api/Controllers/BookController.cs:411` (`POST /scan/sessions/{id}/scans`) et `:432` (`POST /scan/sessions/{id}/close`) : le `ClaimsPrincipal` n'est **même pas injecté** dans le handler d'endpoint. Aucun appel à `TryGetUserId`. La seule protection est `.RequireAuthorization("Tri")`, qui contrôle le rôle, pas l'objet.
+- `ScanBookCommandHandler` (`…/Books/Commands/ScanBook/ScanBookCommandHandler.cs:97`) charge la session par identifiant et ne compare jamais `session.VolunteerId` à l'appelant.
+- `CloseScanSessionCommandHandler` (`…/ScanSession/CloseScanSessionCommandHandler.cs:29`) : idem.
+- La vérification existe pourtant à l'ouverture : `OpenScanSessionCommandHandler:55` renvoie `Book.ClientSessionConflict` si `existingClientSession.VolunteerId != command.VolunteerId`. Le contrôle a été oublié sur les deux endpoints suivants.
+
+**Correctif.**
+1. Injecter `ClaimsPrincipal` dans les deux endpoints et propager l'identité :
+   ```csharp
+   if (!TryGetUserId(principal, out var volunteerId)) return Results.Unauthorized();
+   var result = await mediator.Send(new ScanBookCommand(
+       ScanSessionId.Create(scanSessionId), volunteerId, request.Isbn, …), cancellationToken);
+   ```
+2. Dans les deux handlers, après le chargement de la session :
+   ```csharp
+   if (session.VolunteerId != command.VolunteerId)
+   {
+       return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value); // 404, pas 403 : ne pas divulguer l'existence
+   }
+   ```
+3. Ajouter des tests de non-régression : un bénévole B ne peut ni scanner ni clôturer la session de A.
+
+---
+
+### API-02 · La reprise hors ligne se solde par une mise en quarantaine des gestes
+
+**Symptôme.** Un bénévole trie hors ligne, puis retrouve le réseau. Si une session est restée `InProgress` côté serveur (appareil éteint, clôture jamais synchronisée, onglet fermé), **tous ses gestes finissent en quarantaine** et il voit « N entrées ont été mises en quarantaine après plusieurs refus serveur. Prévenez un responsable. » Les livres triés ne sont jamais publiés.
+
+**Cause.** Enchaînement client/serveur :
+1. `ScanSyncService.flushOutboxInternal()` appelle `api.openSession({clientSessionId: B})` avant d'envoyer les gestes du groupe de session B.
+2. `OpenScanSessionCommandHandler:88-97` : B n'existe pas côté serveur, on passe au contrôle « une session ouverte par bénévole » ; la session A du même bénévole est `InProgress` → `Errors.Book.ActiveScanSessionExists` → **409**.
+3. Côté client, `classifyFailure()` classe 4xx en `permanent`. Après `MAX_PERMANENT_ATTEMPTS = 5` tentatives, `quarantineOutboxEntry()` est appelé sur chaque geste.
+4. Le job `CloseIdleScanSessionsCommand` ne libère la session A qu'après `sessionIdleTimeoutMinutes` (30 min par défaut) — plus long que les 5 tentatives, qui s'enchaînent en quelques minutes.
+
+**Correctif.** Deux côtés, à faire ensemble :
+- **Serveur** : quand une session `InProgress` du même bénévole existe et qu'un `clientSessionId` différent est demandé, ne pas répondre 409 sèchement. Soit clôturer automatiquement l'ancienne (`ScanCloseReason.Disconnect`) et ouvrir la nouvelle, soit renvoyer la session existante avec son identifiant réel pour que le client s'y rattache. La deuxième option préserve mieux le ledger.
+- **Client** : dans `classifyFailure()` (`scan-sync.service.ts`), traiter le code métier `Book.ActiveScanSessionExists` comme `transient` — un conflit d'état transitoire ne doit jamais conduire à la quarantaine. Plus généralement, **ne mettre en quarantaine que sur 400/422** (donnée invalide), jamais sur 409 (conflit d'état).
+
+---
+
+### API-03 · Tous les scans hors ligne perdent leur horodatage réel et sont marqués suspects
+
+**Symptôme.** Une session triée hors ligne le matin et synchronisée le soir voit **tous ses gestes réhorodatés à l'heure de synchronisation**, et **tous marqués `clockSuspect`** dans le ledger. L'historique de tri devient inexploitable, et l'indicateur de qualité de données perd tout pouvoir discriminant puisqu'il est vrai partout.
+
+**Cause.** `ScanBookCommandHandler:316` :
+```csharp
+var clockSuspect = clientTimestamp < sessionStartedAt || clientTimestamp > receivedAt.Add(MaximumFutureSkew);
+return clockSuspect ? (receivedAt, true) : (clientTimestamp, false);
+```
+Or `session.StartedAt` est fixé par `OpenScanSessionCommandHandler:41` à `dateTimeProvider.UtcNow` — c'est-à-dire **à l'instant de la synchronisation**, pas au moment où le bénévole a commencé à trier. Tous les gestes hors ligne sont donc antérieurs à `StartedAt` : la condition est systématiquement vraie.
+
+Second défaut de la même fonction : `MaximumFutureSkew = TimeSpan.Zero` (`:27`). Une horloge d'appareil en avance ne serait-ce que d'une seconde suffit à déclarer suspect tout geste, même en ligne.
+
+**Correctif.**
+1. Faire porter au client la date de début réelle de la session (`ScanSessionSnapshot.startedAt` existe déjà côté Scanette) et l'accepter dans `OpenScanSessionCommand`, bornée : `startedAt = Min(clientStartedAt, serverNow)` et pas antérieure à, disons, 7 jours.
+2. Remplacer la borne haute par une tolérance réaliste : `MaximumFutureSkew = TimeSpan.FromMinutes(2)`.
+3. Ne conserver `clockSuspect` que pour ce qu'il désigne réellement — une horloge incohérente — et non pour tout travail différé.
+
+---
+
+### API-04 · `/catalog/search` charge tout le catalogue en mémoire à chaque requête publique
+
+**Symptôme.** Chaque visite anonyme sur la page d'accueil ou `/catalogue` déclenche le chargement intégral de trois tables, puis un tri et une pagination en mémoire. C'est le principal moteur de charge SQL/CPU de l'API — à rapprocher du sujet coût Azure SQL déjà ouvert.
+
+**Cause.** `…/Books/Queries/SearchCatalog/SearchCatalogQueryHandler.cs` :
+- `:70` — sans terme de recherche : `books = await booksQuery.ToListAsync()`, soit **tous** les livres visibles. C'est le cas du mode « Parcourir » et des deux requêtes de la page d'accueil (`recent` et `rareOnly`).
+- `:73` — `announcements = await dbContext.BookAnnouncements.AsNoTracking().ToListAsync()` : **toutes** les annonces, sans même filtrer sur `Status == Announced`.
+- `:77` — `fairs = await dbContext.AssoEvents.AsNoTracking().ToListAsync()` : **tous** les événements.
+- `:120-127` — genre, disponibilité, rareté, tri et `Skip/Take` sont appliqués **en LINQ-to-Objects** sur la liste complète.
+
+**Correctif.** Faire redescendre les filtres, le tri et la pagination dans SQL. La pertinence (`Score`) et la normalisation d'accents sont la vraie difficulté : les traiter avec une colonne persistée normalisée (`TitleNormalized`, `AuthorsNormalized`, calculée à l'écriture et indexée), ou une recherche plein texte SQL Server. Dans tous les cas, remplacer les trois `ToListAsync()` par des requêtes projetées et bornées, et faire le `Count()` en SQL.
+
+---
+
+### API-05 · Une recherche sans résultat recharge tout le catalogue
+
+**Symptôme.** Le pire scénario de charge est déclenché par la requête la moins utile. Sur un endpoint anonyme et sans limitation de débit (API-08), quelques requêtes `?q=xyz123` en boucle suffisent à saturer l'API et la base.
+
+**Cause.** `SearchCatalogQueryHandler.cs:63-68` :
+```csharp
+books = await sqlCandidates.ToListAsync(cancellationToken);
+if (books.Count == 0)
+{
+    books = await booksQuery.ToListAsync(cancellationToken);   // tout le catalogue
+}
+```
+Le repli existe pour rattraper les différences de collation et les ISBN contenant des séparateurs, mais il est déclenché par **toute** recherche infructueuse, alors que le filtrage en mémoire qui suit ne rendra rien non plus dans l'immense majorité des cas.
+
+**Correctif.** Restreindre le repli à ce qu'il vise réellement : ne le déclencher que si le terme, une fois normalisé, ressemble à un ISBN (chiffres et séparateurs), et le borner (`Take(500)`). Une fois API-04 traité avec des colonnes normalisées, le repli devient inutile et doit être supprimé.
+
+---
+
+### API-06 · `/books/{isbn}/metadata` : trois appels externes par scan, aucun cache, ouvert à tous
+
+**Symptôme.** Chaque scan déclenche jusqu'à trois appels sortants (BnF SRU → OpenLibrary → Google Books), y compris pour un livre déjà présent et enrichi dans la base. L'endpoint est `AllowAnonymous` et sans limitation de débit : c'est un proxy gratuit vers ces trois services, depuis l'IP de l'association, avec un risque concret de bannissement par les fournisseurs et une latence subie par les bénévoles au pire moment.
+
+**Cause.**
+- `BookController.cs:328` — `.AllowAnonymous()`, aucune limitation.
+- `…/Books/Queries/GetBookMetadata/GetBookMetadataQueryHandler.cs:16` — appelle directement `resolver.ResolveAsync(...)` : **aucune lecture préalable de la table `Books`**, aucun cache mémoire ou distribué, alors que `Book.MetadataStatus` / `MetadataSource` existent déjà et qu'une file d'enrichissement (`IBookMetadataEnrichmentQueue`) est en place.
+- Côté client, `scanner.component.ts:400` appelle `getMetadata()` à **chaque** `lookup()`, même quand le catalogue local connaît déjà le titre — et le cache service worker qui devait amortir cela ne fonctionne pas (SCAN-05).
+
+**Correctif.**
+1. Lire d'abord la fiche locale : si `MetadataStatus == Resolved`, la renvoyer immédiatement ; sinon enfiler l'ISBN dans la file d'enrichissement et n'appeler le résolveur en synchrone que pour un ISBN inconnu.
+2. Ajouter `AddOutputCache` (TTL 24 h, clé = ISBN) sur l'endpoint et un `Cache-Control: public, max-age=86400`.
+3. Le passer derrière une politique de limitation de débit dédiée (voir API-08).
+4. Côté Scanette, ne déclencher l'appel que si le catalogue local n'a pas de titre pour cet ISBN.
+
+---
+
+### API-07 · Le filigrane du delta perd des mises à jour (ventes hors ligne jamais propagées)
+
+**Symptôme.** Une vente encaissée hors ligne et transmise plus tard **n'est jamais diffusée aux autres appareils**. Les stocks affichés sur les autres scanettes restent faux jusqu'à une purge complète du catalogue local.
+
+**Cause.** Deux mécanismes qui se contredisent :
+- `GetCatalogDeltaQueryHandler.cs:104-113` — le filigrane renvoyé (`nextWatermark`) est `generatedAt`, l'heure serveur, et la sélection est `book.UpdatedAt > since && book.UpdatedAt <= generatedAt`.
+- `…/Domain/BookAggregate/Book.cs:112` — `RecordSale` fait `UpdatedAt = utcOccurredAt`, soit **l'heure du geste**, pas l'heure d'enregistrement. Idem `RecordAnnouncementEntry:98` et `RecordRejection:365`.
+- `RegisterSaleCommandHandler.cs:174-182` conserve intentionnellement l'horodatage passé d'un geste hors ligne (contrairement aux scans, cf. API-03).
+
+Une vente de 10 h transmise à 18 h écrit donc `UpdatedAt = 10 h`, alors que les appareils ont déjà un filigrane à 12 h : le livre ne ressortira **dans aucun delta ultérieur**.
+
+Le même mécanisme fait perdre toute écriture dont la transaction est committée après le `generatedAt` d'un delta déjà servi.
+
+**Correctif.** Découpler l'horodatage métier du filigrane technique :
+- ajouter une colonne technique `RowVersion` (déjà présente sur `Book` !) ou `LastWrittenAt` positionnée par un intercepteur `SaveChanges` à l'heure serveur, et **paginer le delta là-dessus**, en gardant `UpdatedAt` pour l'affichage métier ;
+- ou, en correctif immédiat et peu coûteux, reculer le filigrane servi d'une marge (`generatedAt - 5 min`) et accepter le recouvrement — le client déduplique déjà par ISBN dans `applyCatalogDelta`.
+
+---
+
+### API-08 · Limitation de débit quasi inexistante sur des endpoints anonymes coûteux
+
+**Symptôme.** Aucune protection contre l'abus, accidentel (crawler, SSR en boucle) ou délibéré.
+
+**Cause.**
+- `…/Api/Common/RateLimiting/RateLimiting.cs` ne définit **qu'une** politique, `Login` (3 requêtes / 10 s), et aucun `GlobalLimiter`.
+- Un seul `RequireRateLimiting` dans tout le backend : `AuthenticationController.cs:53`.
+- Les endpoints anonymes les plus coûteux — `/catalog/search` (API-04, API-05), `/books/{isbn}/metadata` (API-06), `/catalog/sitemap.xml` (énumère tout le catalogue) — n'ont **aucune** limite.
+
+**Correctif.** Déclarer un `GlobalLimiter` par IP (fenêtre glissante, ~100 req/min) et une politique plus stricte pour les endpoints coûteux (`Public` ~20 req/min), puis appliquer `.RequireRateLimiting("Public")` sur `/catalog/search`, `/books/{isbn13}/metadata`, `/catalog/reference/search` et `/catalog/sitemap.xml`.
+
+---
+
+## P2 — Bugs et défauts notables
+
+### API-09 · Le verdict serveur ne peut jamais valoir « Wanted »
+
+`ScanBookCommandHandler.cs:299` — `CalculateVerdict` passe `ActiveRequesterCount: 0` en dur à `BookVerdictCalculator`. Le verdict renvoyé au scanner après synchronisation, et journalisé dans le mouvement, **ne peut donc jamais être `Wanted`**, même pour un titre suivi par des membres — alors que le delta transporte bien le drapeau `isWanted` (`GetCatalogDeltaQueryHandler.cs:93`) et que le client s'en sert pour son verdict local. Le verdict local et le verdict serveur divergent sur exactement le cas qui compte.
+→ **Correctif :** compter les items de liste de suivi actifs correspondant à l'ISBN (ou à son `WorkId`) et alimenter `ActiveRequesterCount`. À traiter avec SCAN-10 et SCAN-11 : les trois portent sur la même règle.
+
+### API-10 · Le delta catalogue est en O(livres × annonces) et sans pagination
+
+`GetCatalogDeltaQueryHandler.cs` :
+- `:43` — **tous** les `AssoEvents` non annulés sont chargés, puis filtrés en mémoire pour n'en garder qu'un seul (le prochain).
+- `:63-70` — **tous** les items de liste de suivi de tous les membres actifs.
+- `:71` — **toutes** les annonces `Announced`, sans restriction aux livres du delta.
+- `:82-97` — pour **chaque** livre projeté : `announcements.Where(...)` parcourt toutes les annonces et `activeWatchlistItems.Any(...)` parcourt tous les items. Avec 20 000 livres et 2 000 suivis, cela représente des dizaines de millions de comparaisons en mémoire **par appel**.
+- `:120-152` — un simple ajout d'un membre à sa liste de recherche met `watchlistStateChanged` à vrai et déclenche le rechargement de **tout le catalogue** (`allBooks`) pour tous les appareils.
+- Le premier appel (`since == null`) renvoie l'intégralité du catalogue **sans pagination ni compression déclarée**.
+
+La Scanette synchronise automatiquement toutes les 60 s (`scanner.component.ts:165`) et plusieurs postes tournent simultanément en bourse.
+→ **Correctif :** indexer les annonces dans un `Dictionary<Isbn13, int>` et les suivis dans deux `HashSet` (ISBN et WorkId) avant la projection ; restreindre les requêtes aux ISBN du delta ; ajouter une pagination (`maxItems` + curseur) sur le premier chargement ; et ne recalculer `isWanted` que pour les livres réellement concernés au lieu de rejouer tout le catalogue.
+
+### API-11 · Aucune reprise sur conflit de concurrence
+
+`Book` porte un jeton `rowversion` (`BookConfiguration.cs:97-98`), ce qui est la bonne pratique — mais aucun handler ne rattrape `DbUpdateConcurrencyException`. Deux postes qui scannent le même ISBN au même instant (courant en bourse) produisent une **500**, que le client classe `transient` et réessaie avec un backoff pouvant atteindre 15 minutes (`scan-sync.service.ts`, `RETRY_BACKOFF_MAX_MS`).
+→ **Correctif :** encadrer la transaction de `ScanBookCommandHandler` et `RegisterSaleCommandHandler` d'une boucle de reprise (3 tentatives, rechargement de l'entité entre chaque). Une stratégie d'exécution EF (`EnableRetryOnFailure`) ne suffit pas ici : elle ne couvre pas les conflits optimistes.
+
+### API-12 · CORS en « fail-open » et liste committée désynchronisée
+
+`Program.cs:31-38` : si `Cors:AllowedOrigins` est vide ou absent, la politique retombe sur `AllowAnyOrigin()` avec `AllowAnyHeader` et `AllowAnyMethod`. Un oubli de configuration ouvre l'API à toutes les origines **silencieusement**.
+
+Par ailleurs, `src/Backend/…/appsettings.json:25-30` liste quatre origines et **omet `https://scan.volepapillondamour.fr`**. Le déploiement corrige la liste par variables d'environnement (`infra/parameters/main.dev.bicepparam:211-218` la contient bien, avec le FQDN ACA de secours), donc la production fonctionne — mais toute exécution s'appuyant sur les valeurs committées bloque la Scanette, et la dérive entre les deux sources est un piège.
+→ **Correctif :** échouer au démarrage en Production si la liste est vide, plutôt que d'ouvrir ; et aligner `appsettings.json` sur la liste réelle (ou l'y retirer complètement pour que l'infrastructure reste la seule source de vérité).
+
+### API-13 · Les jokers SQL ne sont pas échappés dans la recherche
+
+`SearchCatalogQueryHandler.cs:57` — `var pattern = $"%{term}%";` puis `EF.Functions.Like(...)`. Un terme contenant `%`, `_` ou `[` est interprété comme un motif : `?q=%` remonte tout le catalogue, `?q=%a%b%c%d%` force des balayages coûteux. Pas d'injection SQL (la requête reste paramétrée), mais amplification de charge et résultats incohérents pour l'utilisateur.
+→ **Correctif :** échapper `%`, `_`, `[` et `\` dans le terme et passer un caractère d'échappement (`EF.Functions.Like(champ, motif, "\\")`).
+
+### API-14 · La prochaine bourse disparaît de la Scanette le jour même
+
+`GetCatalogDeltaQueryHandler.cs:48-50` — le prochain événement est retenu si `(DateEnd ?? DateStart) > new DateTimeOffset(generatedAt, TimeSpan.Zero)`, donc comparé à l'instant **UTC**. Une bourse dont la date de fin est stockée à minuit expire à 00:00 UTC, soit **01:00 ou 02:00 heure de Paris le jour même de l'événement** : les scanettes perdent le libellé « Prochaine bourse » et l'affichage retombe sur « date à préciser » pendant la bourse.
+→ **Correctif :** comparer à la fin de la journée locale (`DateEnd` + 1 jour en Europe/Paris). Même famille de défaut que CAT-04 et CAT-15 : à traiter avec l'utilitaire de fuseau commun.
+
+### API-15 · Table complète chargée sur le chemin chaud d'un encaissement
+
+`RegisterSaleCommandHandler.cs:100` — `var fairs = await dbContext.AssoEvents.ToListAsync(cancellationToken);` pour résoudre la bourse correspondant à la vente. Toute la table à chaque ligne de caisse validée, alors qu'une seule bourse encadre l'horodatage.
+→ **Correctif :** filtrer en SQL sur la fenêtre de dates du geste (`DateStart <= occurredAt && (DateEnd ?? DateStart) >= occurredAt`), avec un index adapté.
+
+## P3 — Qualité et exploitation
+
+### API-16 · Divers
+
+- **La configuration JSON ne s'applique pas aux endpoints réellement utilisés.** `Program.cs:41-47` configure `AddControllers().AddJsonOptions(...)` (options **MVC**), alors que 100 % des routes sont des **Minimal APIs**, qui lisent `Microsoft.AspNetCore.Http.Json.JsonOptions`. Le `camelCase` fonctionne par coïncidence (`JsonSerializerDefaults.Web` l'applique déjà), mais toute personnalisation future sera silencieusement ignorée. Remplacer par `builder.Services.ConfigureHttpJsonOptions(...)`.
+- **`WriteIndented = true` en production.** Même ligne. Si l'option finit par s'appliquer (correctif ci-dessus), elle ajoutera 15 à 30 % de volume à **toutes** les réponses, y compris le delta catalogue téléchargé sur le réseau mobile d'une salle des fêtes. La conditionner à `builder.Environment.IsDevelopment()`.
+- **Aucun cache HTTP sur les endpoints publics.** `/catalog/search`, `/catalog/books/{isbn}`, `/catalog/works/{id}`, `/catalog/fairs/next` et `/catalog/sitemap.xml` sont anonymes, identiques pour tous les visiteurs et parfaitement cacheables, mais ne renvoient aucun `Cache-Control` et ne passent par aucun `OutputCache`. Le SSR du catalogue refait donc l'intégralité du travail à chaque visite et à chaque passage de crawler.
+- **La liste des genres ne décrit pas le catalogue.** `SearchCatalogQueryHandler.cs:79-86` calcule `genres` à partir de `projected`, c'est-à-dire du **sous-ensemble déjà filtré par la recherche**. Sur la page d'accueil, la liste déroulante « Genre » est donc dérivée d'une requête `pageSize: 4` : elle ne reflète pas les genres réellement présents. Le client masque le problème en fusionnant avec une liste figée (`catalog-genres.ts`), mais l'API ne tient pas son contrat. Calculer les genres sur le catalogue visible complet (requête `Distinct` dédiée, mise en cache).
+- **Message d'erreur trompeur sur `availability`.** `BookController.cs:56-60` annonce « availability must be one of all, available, or next-fair », alors que `TryParseAvailability` (`:710`) accepte six valeurs — dont `next`, celle que le client envoie réellement. Par ailleurs la liste des littéraux acceptés est **dupliquée** entre le `switch` et le `return` (`:714-726`, même schéma dans `TryParseSort` `:729-742`) : ajouter une valeur au `switch` sans l'ajouter au `return` la fera rejeter silencieusement. Dériver la validation d'une seule source.
+- **`/asso-events` dépend du fuseau du serveur.** `EventRepository.GetNextEventsAsync` (`…/Persistence/Repositories/EventRepository.cs:68`) filtre sur `DateTimeOffset.Now.Date`, donc sur l'heure locale du conteneur — UTC en production. Entre minuit et 02:00 heure de Paris, la notion de « aujourd'hui » diverge d'un jour. Utiliser explicitement `Europe/Paris` (même utilitaire que API-14, CAT-04 et CAT-15).
+
+---
+
 # Récapitulatif
 
 | ID | Sévérité | Titre | Fichier principal |
@@ -615,10 +845,28 @@ Mêmes valeurs de palette que la Scanette, mêmes échecs :
 | CAT-16 | P3 | Textes de remplissage en production | `catalog-administration-page.component.html:18` |
 | CAT-17 | P3 | Libellé accessible « Le Du … au … » | `catalog-home-page.component.html:15` |
 | CAT-18 | P3 | Divers (tokens, liens, CSV, confirmations) | plusieurs |
+| API-01 | P1 | Pas de contrôle de propriété de session (BOLA) | `BookController.cs:411, 432` |
+| API-02 | P1 | Reprise hors ligne → mise en quarantaine des gestes | `OpenScanSessionCommandHandler.cs:88` |
+| API-03 | P1 | Horodatage hors ligne écrasé et marqué suspect | `ScanBookCommandHandler.cs:316` |
+| API-04 | P1 | `/catalog/search` charge tout en mémoire | `SearchCatalogQueryHandler.cs:70` |
+| API-05 | P1 | Recherche vide → rechargement du catalogue entier | `SearchCatalogQueryHandler.cs:63` |
+| API-06 | P1 | Metadata : 3 appels externes/scan, sans cache, anonyme | `GetBookMetadataQueryHandler.cs:16` |
+| API-07 | P1 | Filigrane du delta : ventes hors ligne jamais propagées | `GetCatalogDeltaQueryHandler.cs:104` |
+| API-08 | P1 | Limitation de débit quasi inexistante | `RateLimiting.cs:9` |
+| API-09 | P2 | Verdict serveur jamais « Wanted » | `ScanBookCommandHandler.cs:299` |
+| API-10 | P2 | Delta en O(livres × annonces), sans pagination | `GetCatalogDeltaQueryHandler.cs:82` |
+| API-11 | P2 | Aucune reprise sur conflit de concurrence | `ScanBookCommandHandler.cs` |
+| API-12 | P2 | CORS fail-open + liste committée désynchronisée | `Program.cs:31` |
+| API-13 | P2 | Jokers SQL non échappés dans la recherche | `SearchCatalogQueryHandler.cs:57` |
+| API-14 | P2 | Prochaine bourse expirée en UTC le jour même | `GetCatalogDeltaQueryHandler.cs:48` |
+| API-15 | P2 | Table complète chargée à chaque encaissement | `RegisterSaleCommandHandler.cs:100` |
+| API-16 | P3 | Divers (options JSON, cache HTTP, genres, fuseaux) | plusieurs |
 
 ## Limites de cet audit
 
-- Analyse **statique** uniquement : aucune campagne de tests ni exécution des suites `ng test` des deux applications. Chaque correctif doit être validé sur appareil réel — en particulier SCAN-04, SCAN-07 et SCAN-08, qui dépendent du rendu.
-- Le back-end n'a été consulté que pour lever des doutes ponctuels (filtrage des événements, contrat du delta de scan). Il n'a pas fait l'objet d'un audit.
+- Analyse **statique** uniquement : aucune campagne de tests, aucune exécution des suites `ng test` ou `dotnet test`, aucune mesure de charge. Chaque correctif doit être validé sur appareil réel — en particulier SCAN-04, SCAN-07 et SCAN-08, qui dépendent du rendu, et API-04/API-10, dont l'impact réel dépend du volume actuel du catalogue.
+- **Périmètre backend limité** aux endpoints consommés par la Scanette et le Catalogue : `BookController`, `BookAdministrationController`, les handlers `Books`/`Watchlist`/`ScanSession` associés, `Program.cs` et les configurations EF correspondantes. Le reste de l'API (bingo, produits, commandes, actualités, authentification héritée) n'a pas été audité, ni le worker, ni les modèles de données historiques.
+- Les scénarios de charge cités (nombre de livres, de suivis, d'annonces) sont des ordres de grandeur illustratifs, pas des mesures. Avant de dimensionner les correctifs API-04 et API-10, relever les volumes réels en base.
 - Les ratios de contraste ont été calculés sur les valeurs de la palette. Certains usages réels peuvent superposer un fond légèrement différent ; à revérifier au cas par cas avec l'inspecteur du navigateur.
-- Les correctifs proposés pour SCAN-11 (règle de verdict) et CAT-03 (nombre de dates affichées) touchent au métier : à arbitrer avec l'association avant implémentation.
+- Les correctifs proposés pour SCAN-11 / API-09 (règle de verdict) et CAT-03 (nombre de dates affichées) touchent au métier : à arbitrer avec l'association avant implémentation.
+- API-12 mérite une vérification en environnement déployé : la liste CORS réellement appliquée provient des variables d'environnement de l'infrastructure, pas du fichier committé. Confirmer par `az containerapp show` avant de conclure.
