@@ -248,6 +248,70 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.querySelector('[aria-label="Revenir au scan"]')).not.toBeNull();
   });
 
+  it('gives labeled scan containers an accessible semantic role and lets the ISBN speak its value', () => {
+    const cameraHost = fixture.nativeElement.querySelector('.camera-engine-host') as HTMLElement;
+    expect(cameraHost.getAttribute('role')).toBe('region');
+
+    const manualFixture = TestBed.createComponent(ScannerComponent);
+    const manualComponent = manualFixture.componentInstance;
+    manualFixture.detectChanges();
+    manualComponent.openManualInput();
+    manualFixture.detectChanges();
+
+    const manualValue = manualFixture.nativeElement.querySelector('.manual-value') as HTMLElement;
+    expect(manualValue.getAttribute('aria-live')).toBe('polite');
+    expect(manualValue.hasAttribute('aria-label')).toBeFalse();
+    expect(manualFixture.nativeElement.querySelector('.manual-keypad')?.getAttribute('role')).toBe('group');
+    manualFixture.destroy();
+
+    const cashFixture = TestBed.createComponent(ScannerComponent);
+    cashFixture.componentInstance.screen = 'cash';
+    cashFixture.detectChanges();
+
+    const cashItems = cashFixture.nativeElement.querySelector('.cash-items') as HTMLElement;
+    expect(cashItems.getAttribute('role')).toBe('region');
+    expect(cashItems.getAttribute('aria-label')).toBe('Livres de la vente');
+    cashFixture.destroy();
+  });
+
+  it('keeps a valid h1 label target for every operating screen and triage state', () => {
+    const screens = [
+      ['tri', '.tri-screen'],
+      ['manual', '.manual-screen'],
+      ['session-end', '.session-end-screen'],
+      ['cash', '.cash-screen'],
+      ['consultation', '.consultation-screen'],
+    ] as const;
+
+    for (const [screen, selector] of screens) {
+      const screenFixture = TestBed.createComponent(ScannerComponent);
+      const screenComponent = screenFixture.componentInstance;
+      screenComponent.screen = screen;
+      screenComponent.localScan = null;
+      screenComponent.metadata = null;
+      screenFixture.detectChanges();
+
+      const section = screenFixture.nativeElement.querySelector(selector) as HTMLElement;
+      const headingId = section.getAttribute('aria-labelledby');
+      const heading = headingId ? section.querySelector(`#${headingId}`) : null;
+      expect(headingId).withContext(screen).toBeTruthy();
+      expect(heading?.tagName).withContext(screen).toBe('H1');
+      screenFixture.destroy();
+    }
+
+    const verdictFixture = TestBed.createComponent(ScannerComponent);
+    const verdictComponent = verdictFixture.componentInstance;
+    verdictComponent.screen = 'tri';
+    verdictComponent.localScan = createLocalScanResult();
+    verdictFixture.detectChanges();
+
+    const triSection = verdictFixture.nativeElement.querySelector('.tri-screen') as HTMLElement;
+    const triHeadingId = triSection.getAttribute('aria-labelledby');
+    expect(triHeadingId).toBeTruthy();
+    expect(triHeadingId ? triSection.querySelector(`#${triHeadingId}`)?.tagName : null).toBe('H1');
+    verdictFixture.destroy();
+  });
+
   it('refreshes the rendered result when the live camera detects an ISBN', async () => {
     const metadata = createMetadata();
     metadataService.getMetadata.and.returnValue(of(metadata));

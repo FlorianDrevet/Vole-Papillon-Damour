@@ -397,7 +397,8 @@ input:focus-visible {
   flex: none;
 }
 
-.mode-header > span:not(.mode-date):not(.mode-badge) {
+.mode-header > h1 {
+  margin: 0;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 12px;
   font-weight: 600;
@@ -543,12 +544,12 @@ input:focus-visible {
   background-image: repeating-linear-gradient(135deg, rgb(127 216 245 / 10%) 0 8px, rgb(127 216 245 / 4%) 8px 16px);
 }
 
-.scan-stage h1,
+.scan-stage h2,
 .scan-stage p {
   margin: 0;
 }
 
-.scan-stage h1 {
+.scan-stage h2 {
   color: #dcecf7;
   font-size: 16.5px;
   font-weight: 400;
@@ -843,12 +844,12 @@ input:focus-visible {
   min-width: 0;
 }
 
-.verdict-copy h1,
+.verdict-copy h2,
 .verdict-copy p {
   margin: 0;
 }
 
-.verdict-copy h1 {
+.verdict-copy h2 {
   color: #fff;
   font-size: 24px;
   font-weight: 700;
@@ -1761,7 +1762,7 @@ input:focus-visible {
 }
 
 @media (max-width: 370px) {
-  .verdict-copy h1 {
+  .verdict-copy h2 {
     font-size: 25px;
   }
 
