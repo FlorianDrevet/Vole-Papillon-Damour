@@ -17,6 +17,7 @@ Describe 'Configure-EntraBranding.ps1' {
         Mock Update-MgOrganizationBrandingLocalization { }
         Mock Set-MgOrganizationBrandingCustomCss { }
         Mock Set-MgOrganizationBrandingLocalizationCustomCss { }
+        Mock Set-MgOrganizationBrandingLocalizationBackgroundImage { }
         Mock Set-MgOrganizationBrandingHeaderLogo { }
         Mock Set-MgOrganizationBrandingLocalizationHeaderLogo { }
         Mock Set-MgOrganizationBrandingFavicon { }
@@ -26,7 +27,7 @@ Describe 'Configure-EntraBranding.ps1' {
         . $scriptPath -TenantId 'tenant-id' -CustomCssPath $cssPath
         $body = New-VpdBrandingUpdateBody
 
-        $body.backgroundColor | Should Be '#f7fbfe'
+        $body.backgroundColor | Should Be '#062a44'
         $body.headerBackgroundColor | Should Be '#041d30'
         $body.usernameHintText | Should Be 'Votre adresse e-mail'
         $body.customPrivacyAndCookiesText | Should Be 'Confidentialité et cookies'
@@ -50,6 +51,28 @@ Describe 'Configure-EntraBranding.ps1' {
         }
         $result.Locale | Should Be 'fr-FR'
         $result.CssPath | Should Be $cssPath
+    }
+
+    It 'uploads the Catalog visual background to both branding layers when provided' {
+        $backgroundPath = Join-Path $TestDrive 'papillon-background.png'
+        Set-Content -LiteralPath $backgroundPath -Value 'test image'
+
+        $result = & $scriptPath `
+            -TenantId 'tenant-id' `
+            -CustomCssPath $cssPath `
+            -BackgroundImagePath $backgroundPath
+
+        Assert-MockCalled Set-MgOrganizationBrandingLocalizationBackgroundImage `
+            -Times 2 -Exactly -Scope It
+        Assert-MockCalled Set-MgOrganizationBrandingLocalizationBackgroundImage `
+            -Times 1 -Exactly -Scope It -ParameterFilter {
+                $OrganizationalBrandingLocalizationId -eq '0'
+            }
+        Assert-MockCalled Set-MgOrganizationBrandingLocalizationBackgroundImage `
+            -Times 1 -Exactly -Scope It -ParameterFilter {
+                $OrganizationalBrandingLocalizationId -eq 'fr-FR'
+            }
+        $result.BackgroundImagePath | Should Be (Get-Item -LiteralPath $backgroundPath).FullName
     }
 
     It 'creates the default localization before applying fresh-tenant branding' {
@@ -106,6 +129,17 @@ Describe 'Configure-EntraBranding.ps1' {
         Assert-MockCalled Update-MgOrganizationBrandingLocalization -Times 0 -Exactly -Scope It
         Assert-MockCalled Set-MgOrganizationBrandingCustomCss -Times 0 -Exactly -Scope It
         Assert-MockCalled Set-MgOrganizationBrandingLocalizationCustomCss -Times 0 -Exactly -Scope It
+        Assert-MockCalled Set-MgOrganizationBrandingLocalizationBackgroundImage -Times 0 -Exactly -Scope It
+    }
+
+    It 'keeps the hosted stylesheet aligned with the Catalog visual language' {
+        $css = Get-Content -LiteralPath $cssPath -Raw
+
+        $css | Should Match '#062a44'
+        $css | Should Match 'border-radius: 18px'
+        $css | Should Match 'https://livres.volepapillondamour.fr/images/papillon_without_back.png'
+        $css | Should Match 'z-index: 0'
+        $css | Should Match 'prefers-reduced-motion'
     }
 
 }
