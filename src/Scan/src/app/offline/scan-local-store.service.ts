@@ -7,6 +7,7 @@ import {
   ScanCatalogBook,
   ScanCatalogSyncState,
   ScanFailureKind,
+  ScanLocalStoreError,
   ScanOutboxEntry,
   ScanOutboxStatus,
   ScanSaleOutboxEntry,
@@ -20,7 +21,8 @@ import {
 
 @Injectable({providedIn: 'root'})
 export class ScanLocalStoreService {
-  private readonly databasePromise = this.openDatabase();
+  private databasePromise: Promise<IDBDatabase> | null = null;
+  private database: IDBDatabase | null = null;
 
   async requestPersistentStorage(): Promise<PersistentStorageStatus> {
     const available = typeof indexedDB !== 'undefined';
@@ -28,7 +30,7 @@ export class ScanLocalStoreService {
       return {available: false, persisted: false, requestAttempted: false};
     }
 
-    await this.databasePromise;
+    await this.getDatabase();
 
     if (typeof navigator === 'undefined' || !navigator.storage) {
       return {available: true, persisted: false, requestAttempted: false};
@@ -387,13 +389,19 @@ export class ScanLocalStoreService {
     kept: boolean,
     mode: 'AvailableNow' | 'NextFair',
   ): Promise<ScanOutboxEntry> {
-    const database = await this.databasePromise;
+    const database = await this.getDatabase();
 
     return new Promise((resolve, reject) => {
-      const transaction = database.transaction(
-        [scanStoreNames.outbox, scanStoreNames.catalog],
-        'readwrite',
-      );
+      let transaction: IDBTransaction;
+      try {
+        transaction = database.transaction(
+          [scanStoreNames.outbox, scanStoreNames.catalog],
+          'readwrite',
+        );
+      } catch (error: unknown) {
+        reject(this.handleClosedDatabase(database, error));
+        return;
+      }
       const outbox = transaction.objectStore(scanStoreNames.outbox);
       const catalog = transaction.objectStore(scanStoreNames.catalog);
       let updatedEntry: ScanOutboxEntry | null = null;
@@ -605,13 +613,46 @@ export class ScanLocalStoreService {
     );
   }
 
+  private getDatabase(): Promise<IDBDatabase> {
+    if (this.databasePromise) {
+      return this.databasePromise;
+    }
+
+    const opening = this.openDatabase();
+    this.databasePromise = opening;
+    void opening.catch(() => {
+      if (this.databasePromise === opening) {
+        this.databasePromise = null;
+      }
+    });
+    return opening;
+  }
+
   private openDatabase(): Promise<IDBDatabase> {
     if (typeof indexedDB === 'undefined') {
-      return Promise.reject(new Error('IndexedDB is not available in this browser.'));
+      return Promise.reject(new ScanLocalStoreError(
+        'unavailable',
+        'Le stockage local est indisponible dans ce navigateur.',
+      ));
     }
 
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(scanDatabaseName, scanDatabaseVersion);
+      let settled = false;
+
+      const fail = (error: unknown): void => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        reject(error instanceof ScanLocalStoreError
+          ? error
+          : new ScanLocalStoreError(
+            'unavailable',
+            'Le stockage local est indisponible dans ce navigateur.',
+          ));
+      };
 
       request.onupgradeneeded = () => {
         const database = request.result;
@@ -630,12 +671,28 @@ export class ScanLocalStoreService {
       };
 
       request.onsuccess = () => {
+        if (settled) {
+          request.result.close();
+          return;
+        }
+
         const database = request.result;
-        database.onversionchange = () => database.close();
+        this.database = database;
+        database.onversionchange = () => {
+          if (this.database === database) {
+            this.database = null;
+            this.databasePromise = null;
+          }
+          database.close();
+        };
+        settled = true;
         resolve(database);
       };
-      request.onerror = () => reject(request.error ?? new Error('Unable to open IndexedDB.'));
-      request.onblocked = () => reject(new Error('IndexedDB upgrade is blocked by another tab.'));
+      request.onerror = () => fail(request.error);
+      request.onblocked = () => fail(new ScanLocalStoreError(
+        'blocked-by-other-instance',
+        'La base locale est bloquée par une autre instance. Fermez l’autre onglet puis réessayez.',
+      ));
     });
   }
 
@@ -644,10 +701,16 @@ export class ScanLocalStoreService {
     mode: IDBTransactionMode,
     operation: (store: IDBObjectStore) => IDBRequest<T>,
   ): Promise<T | undefined> {
-    const database = await this.databasePromise;
+    const database = await this.getDatabase();
 
     return new Promise((resolve, reject) => {
-      const transaction = database.transaction(storeName, mode);
+      let transaction: IDBTransaction;
+      try {
+        transaction = database.transaction(storeName, mode);
+      } catch (error: unknown) {
+        reject(this.handleClosedDatabase(database, error));
+        return;
+      }
       const store = transaction.objectStore(storeName);
       let request: IDBRequest<T>;
       let result: T | undefined;
@@ -691,10 +754,16 @@ export class ScanLocalStoreService {
     mode: IDBTransactionMode,
     operation: (stores: Record<ScanStoreName, IDBObjectStore>) => void,
   ): Promise<void> {
-    const database = await this.databasePromise;
+    const database = await this.getDatabase();
 
     return new Promise((resolve, reject) => {
-      const transaction = database.transaction([...storeNamesToUse], mode);
+      let transaction: IDBTransaction;
+      try {
+        transaction = database.transaction([...storeNamesToUse], mode);
+      } catch (error: unknown) {
+        reject(this.handleClosedDatabase(database, error));
+        return;
+      }
       const stores = {} as Record<ScanStoreName, IDBObjectStore>;
       for (const storeName of storeNamesToUse) {
         stores[storeName] = transaction.objectStore(storeName);
@@ -728,6 +797,32 @@ export class ScanLocalStoreService {
         transaction.error ?? new Error('IndexedDB transaction aborted.'),
       );
     });
+  }
+
+  private handleClosedDatabase(database: IDBDatabase, error: unknown): ScanLocalStoreError {
+    if (this.database === database) {
+      this.database = null;
+      this.databasePromise = null;
+    }
+
+    try {
+      database.close();
+    } catch {
+      // The connection was already closing or closed.
+    }
+
+    const errorName = typeof error === 'object' && error !== null && 'name' in error
+      ? (error as {name?: unknown}).name
+      : null;
+    return errorName === 'InvalidStateError'
+      ? new ScanLocalStoreError(
+        'closed-by-other-instance',
+        'La base locale a été fermée par une autre instance. Fermez l’autre onglet puis réessayez.',
+      )
+      : new ScanLocalStoreError(
+        'unavailable',
+        'Le stockage local est indisponible dans ce navigateur.',
+      );
   }
 }
 

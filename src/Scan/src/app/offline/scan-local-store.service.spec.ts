@@ -118,6 +118,50 @@ describe('ScanLocalStoreService', () => {
     expect(typeof status.persisted).toBe('boolean');
   });
 
+  it('reopens IndexedDB after another instance closes the current connection', async () => {
+    const database = await (service as unknown as {
+      databasePromise: Promise<IDBDatabase>;
+    }).databasePromise;
+    const open = spyOn(indexedDB, 'open').and.callThrough();
+
+    database.onversionchange?.(new Event('versionchange') as unknown as IDBVersionChangeEvent);
+
+    await service.getCatalogBooks();
+
+    expect(open).toHaveBeenCalledOnceWith('vpd-scan', 2);
+  });
+
+  it('can retry opening IndexedDB after an upgrade was blocked by another instance', async () => {
+    const realOpen = indexedDB.open.bind(indexedDB);
+    let blocked = true;
+    const open = spyOn(indexedDB, 'open').and.callFake((name, version) => {
+      if (!blocked) {
+        return realOpen(name, version);
+      }
+
+      const request = {} as IDBOpenDBRequest;
+      queueMicrotask(() => request.onblocked?.(new Event('blocked') as unknown as IDBVersionChangeEvent));
+      return request;
+    });
+    const freshService = new ScanLocalStoreService();
+    let firstError: unknown;
+
+    try {
+      await freshService.getCatalogBooks();
+      fail('The blocked IndexedDB open should be reported.');
+    } catch (error: unknown) {
+      firstError = error;
+    }
+
+    expect((firstError as {name?: string}).name).toBe('ScanLocalStoreError');
+    expect((firstError as {reason?: string}).reason).toBe('blocked-by-other-instance');
+
+    blocked = false;
+    await freshService.getCatalogBooks();
+
+    expect(open).toHaveBeenCalledTimes(2);
+  });
+
   function createCatalogBook(): ScanCatalogBook {
     return {
       isbn13: '9782070363735',

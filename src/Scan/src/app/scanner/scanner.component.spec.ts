@@ -3,7 +3,7 @@ import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {ChangeDetectorRef, DestroyRef} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {of, Subject, throwError} from 'rxjs';
+import {defer, of, Subject, throwError} from 'rxjs';
 
 import {DesignSystemModule} from '@vpd/ui';
 import {BookMetadata} from './book-metadata.model';
@@ -11,7 +11,12 @@ import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerService} from './camera-scanner.service';
 import {ScannerComponent} from './scanner.component';
 import {ScanAuthService} from '../auth/scan-auth.service';
-import {LocalScanResult, ScanSessionSnapshot} from '../offline/scan-offline.model';
+import {
+  LocalScanResult,
+  ScanLocalStoreError,
+  ScanSaleOutboxEntry,
+  ScanSessionSnapshot,
+} from '../offline/scan-offline.model';
 import {ScanSyncService} from '../offline/scan-sync.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
 
@@ -20,10 +25,12 @@ describe('ScannerComponent', () => {
   let component: ScannerComponent;
   let metadataService: jasmine.SpyObj<BookMetadataService>;
   let cameraService: jasmine.SpyObj<CameraScannerService>;
+  let confirmDialog: jasmine.Spy;
 
   beforeEach(async () => {
     metadataService = jasmine.createSpyObj<BookMetadataService>('BookMetadataService', ['getMetadata']);
     cameraService = jasmine.createSpyObj<CameraScannerService>('CameraScannerService', ['start', 'scanFile']);
+    confirmDialog = spyOn(window, 'confirm').and.returnValue(true);
 
     await TestBed.configureTestingModule({
       declarations: [ScannerComponent],
@@ -52,6 +59,34 @@ describe('ScannerComponent', () => {
     expect(metadataService.getMetadata).toHaveBeenCalledOnceWith('9780306406157');
     expect(component.metadata).toEqual(metadata);
     expect(component.errorMessage).toBeNull();
+  });
+
+  it('subscribes to a login request started from the scanner surface', () => {
+    let loginStarted = false;
+    const auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['login']);
+    auth.login.and.returnValue(defer(() => {
+      loginStarted = true;
+      return of(undefined);
+    }));
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      null,
+      auth,
+      null,
+    );
+
+    localComponent.login();
+
+    expect(auth.login).toHaveBeenCalledOnceWith();
+    expect(loginStarted).toBeTrue();
   });
 
   it('refreshes the rendered result when a manual lookup completes', async () => {
@@ -382,6 +417,64 @@ describe('ScannerComponent', () => {
     expect(localComponent.storageError).toContain('catalogue local');
   });
 
+  it('distinguishes a local database closed by another instance', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'lookupCatalog',
+    ]);
+    workflow.lookupCatalog.and.rejectWith(new ScanLocalStoreError(
+      'closed-by-other-instance',
+      'connection closed',
+    ));
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+    );
+
+    await localComponent.lookup('9782070363735', 'consultation');
+
+    expect(localComponent.storageError).toContain('fermée par une autre instance');
+  });
+
+  it('uses a dedicated message when a scan is attempted while the session awaits closure', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'recordScan',
+    ]);
+    workflow.recordScan.and.rejectWith(
+      new Error('The scan session is waiting for synchronization to close.'),
+    );
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+    );
+
+    await localComponent.lookup('9782070363735', 'tri');
+
+    expect(localComponent.storageError).toContain('clôture');
+    expect(localComponent.storageError).not.toContain('conservé localement');
+  });
+
   it('starts the live camera when the scan screen opens without a scanner button', async () => {
     cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, refocus: async () => true, stop: async () => undefined}));
     component.authAvailable = true;
@@ -508,6 +601,29 @@ describe('ScannerComponent', () => {
     expect(component.cashItems.map(item => item.id)).toEqual(['second']);
   });
 
+  it('keeps an unfinished cash sale when leaving is cancelled', () => {
+    confirmDialog.and.returnValue(false);
+    component.screen = 'cash';
+    component.cashItems = [createCashItem('sale-1', 'Livre vendu')];
+
+    component.returnHome();
+
+    expect(confirmDialog).toHaveBeenCalled();
+    expect(component.cashItems).toHaveSize(1);
+    expect(component.screen).toBe('cash');
+  });
+
+  it('asks for confirmation before ending a session', async () => {
+    confirmDialog.and.returnValue(false);
+    component.session = createSession({scannedCount: 1, keptCount: 1});
+
+    await component.endSession();
+
+    expect(confirmDialog).toHaveBeenCalled();
+    expect(component.screen).not.toBe('session-end');
+    expect(component.completedSession).toBeNull();
+  });
+
   it('persists the cash batch before clearing the visible list', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(
       'ScanWorkflowService',
@@ -548,6 +664,69 @@ describe('ScannerComponent', () => {
     expect(localComponent.cashItems).toEqual([]);
     expect(localComponent.cashMessage).toContain('enregistré localement');
     expect(sync.syncAll).toHaveBeenCalledOnceWith();
+  });
+
+  it('exposes cancellation of the last validated sale while its outbox entries remain pending', async () => {
+    const saleEntry = createSaleOutboxEntry();
+    const recordCashSales = jasmine.createSpy('recordCashSales').and.resolveTo([saleEntry]);
+    const deleteSaleOutboxEntry = jasmine.createSpy('deleteSaleOutboxEntry').and.resolveTo(true);
+    const workflow = {
+      recordCashSales,
+      deleteSaleOutboxEntry,
+      getPendingCount: jasmine.createSpy('getPendingCount').and.resolveTo(1),
+      getSession: jasmine.createSpy('getSession').and.resolveTo(null),
+    } as unknown as ScanWorkflowService;
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+    );
+    localComponent.cashItems = [createCashItem('sale-1', 'Livre vendu')];
+
+    await localComponent.validateCash();
+
+    const state = localComponent as unknown as {canCancelLastSale: boolean};
+    const cancelLastSale = (localComponent as unknown as {
+      cancelLastSale: () => Promise<void>;
+    }).cancelLastSale;
+    expect(state.canCancelLastSale).toBeTrue();
+
+    await cancelLastSale.call(localComponent);
+
+    expect(deleteSaleOutboxEntry).toHaveBeenCalledOnceWith(saleEntry.clientGestureId);
+    expect(state.canCancelLastSale).toBeFalse();
+  });
+
+  it('offers the ISBN-10 control key X on the manual keypad', () => {
+    expect(component.manualKeys as readonly string[]).toContain('X');
+
+    component.openManualInput();
+    fixture.detectChanges();
+
+    const keypadLabels = Array.from(
+      fixture.nativeElement.querySelectorAll('.manual-key') as NodeListOf<HTMLButtonElement>,
+    ).map(button => button.textContent?.trim());
+    expect(keypadLabels).toContain('X');
+  });
+
+  it('describes the manual input as 10 or 13 ISBN characters', () => {
+    component.openManualInput();
+    component.manualIsbn = '123456789X';
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.manual-count')?.textContent)
+      .toContain('10 caractères');
+    expect(fixture.nativeElement.querySelector('.manual-count')?.textContent)
+      .toContain('10 ou 13');
   });
 
   it('opens a new session mode screen after a session has been ended', async () => {
@@ -726,6 +905,20 @@ describe('ScannerComponent', () => {
       isRare: false,
       quantityAvailable: 0,
       quantityAnnounced: 0,
+    };
+  }
+
+  function createSaleOutboxEntry(): ScanSaleOutboxEntry {
+    return {
+      clientGestureId: 'sale-1',
+      isbn13: '9782070363735',
+      quantity: 1,
+      status: 'Pending',
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:00.000Z',
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
     };
   }
 

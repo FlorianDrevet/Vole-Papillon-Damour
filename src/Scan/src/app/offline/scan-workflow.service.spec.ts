@@ -260,6 +260,30 @@ describe('ScanWorkflowService', () => {
     expect(await store.listSaleOutboxEntries()).toHaveSize(1);
   });
 
+  it('deletes a pending cash sale when it is explicitly cancelled', async () => {
+    const entries = await service.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:06:00.000Z'),
+    );
+
+    const deleted = await service.deleteSaleOutboxEntry(entries[0].clientGestureId);
+
+    expect(deleted).toBeTrue();
+    expect(await store.getSaleOutboxEntry(entries[0].clientGestureId)).toBeNull();
+    expect(await service.deleteSaleOutboxEntry(entries[0].clientGestureId)).toBeFalse();
+  });
+
+  it('reports whether a cash sale is still pending before transmission', async () => {
+    const entries = await service.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:06:00.000Z'),
+    );
+
+    expect(await service.hasPendingSaleOutboxEntry(entries[0].clientGestureId)).toBeTrue();
+    await service.deleteSaleOutboxEntry(entries[0].clientGestureId);
+    expect(await service.hasPendingSaleOutboxEntry(entries[0].clientGestureId)).toBeFalse();
+  });
+
   function createBook(overrides: Partial<ScanCatalogBook> = {}): ScanCatalogBook {
     return {
       isbn13: '9782070363735',
