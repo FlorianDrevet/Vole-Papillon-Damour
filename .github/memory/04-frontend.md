@@ -79,6 +79,19 @@ options with any additional genres returned by `GET /catalog/search`; the home c
 `/recherche?genre=...`, so the existing query-param subscription immediately loads the
 filtered catalogue and preserves a selected genre even while the response is loading.
 
+The 2026-09-08 Catalog Lot 6 pass keeps public search filtering, ordering and pagination in
+the EF query, removes the empty-result full-table fallback, and scopes announcement/fair
+lookups to the returned page. Unknown browser routes now render a real 404 with
+`noindex,nofollow`, and the SSR adapter returns HTTP 404 for them. Book canonical/JSON-LD
+nodes are owned and removed with the detail component. Catalog HTTP now uses
+`provideHttpClient(withFetch())` with hydration, while MSAL is no longer a global bootstrap
+initializer and is loaded only when an authenticated feature needs it. The home fair read
+uses `/asso-events/next-books`; the legacy catalog fair endpoint and client method are gone.
+Validation passes with 110 Catalog and 122 Scan ChromeHeadless tests, 333 backend solution
+tests, and the Catalog production SSR build; the existing initial bundle budget warning
+remains. Local SSR smoke confirms an unknown route returns 404/noindex and a legal route
+returns 200; no deployment was made.
+
 ## Planned Books Scan client decisions
 
 As of 2026-09-05, the P1-5 Scan foundation is implemented in `src/Scan` and deployed to
@@ -156,6 +169,12 @@ demand-sales `1`. Photo decoding now creates candidates lazily and stops after t
 success, and camera permission/README copy is browser-neutral. Quarantined cash sales are
 excluded from replay and local test fixtures clear only their catalog projection without
 reintroducing a production purge method.
+
+The 2026-09-08 Scan Lot 4 accessibility pass gives labeled camera, keypad, and cash-list
+containers explicit semantics, removes the competing label from the live manual ISBN value,
+and keeps a real `h1` target for each operating screen in both the empty and triage-verdict
+states. The USB scanner focus behavior from S-22 remains deliberately unmodified until it
+has been confirmed with the association's physical scanner.
 
 ## App Structure
 

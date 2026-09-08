@@ -24,7 +24,7 @@ public sealed class ScanBookCommandHandler(
     IBookMetadataEnrichmentQueue? metadataEnrichmentQueue = null)
     : IRequestHandler<ScanBookCommand, ErrorOr<ScanBookResult>>
 {
-    private static readonly TimeSpan MaximumFutureSkew = TimeSpan.Zero;
+    private static readonly TimeSpan MaximumFutureSkew = TimeSpan.FromMinutes(2);
 
     public Task<ErrorOr<ScanBookResult>> Handle(
         ScanBookCommand command,
@@ -72,6 +72,26 @@ public sealed class ScanBookCommandHandler(
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
+            var session = await dbContext.ScanSessions
+                .SingleOrDefaultAsync(
+                    candidate => candidate.Id == command.ScanSessionId,
+                    cancellationToken);
+
+            if (session is null)
+            {
+                return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value);
+            }
+
+            if (session.VolunteerId != command.VolunteerId)
+            {
+                return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value);
+            }
+
+            if (session.Status != ScanSessionStatus.InProgress)
+            {
+                return Errors.Book.ScanSessionClosed(command.ScanSessionId.Value);
+            }
+
             var existingMovement = await dbContext.BookMovements
                 .SingleOrDefaultAsync(
                     movement => movement.ClientGestureId == command.ClientGestureId,
@@ -95,21 +115,6 @@ public sealed class ScanBookCommandHandler(
                 activity?.SetStatus(ActivityStatusCode.Ok);
                 outcome = BookScanTelemetry.AlreadyProcessedOutcome;
                 return existingResult.Value;
-            }
-
-            var session = await dbContext.ScanSessions
-                .SingleOrDefaultAsync(
-                    candidate => candidate.Id == command.ScanSessionId,
-                    cancellationToken);
-
-            if (session is null)
-            {
-                return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value);
-            }
-
-            if (session.Status != ScanSessionStatus.InProgress)
-            {
-                return Errors.Book.ScanSessionClosed(command.ScanSessionId.Value);
             }
 
             if (session.Mode == ScanMode.NextFair && session.TargetAssoEventsId is { } targetFairId)

@@ -13,7 +13,6 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetBookMetadata;
 using Vole_Papillon_Damour.Application.Books.Queries.GetDeadStock;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
-using Vole_Papillon_Damour.Application.Books.Queries.GetPublicNextBookFair;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
@@ -101,23 +100,6 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetPublicCatalogBook")
-                .AllowAnonymous();
-
-            endpoints.MapGet(
-                    "/catalog/fairs/next",
-                    async (
-                        IMediator mediator,
-                        CancellationToken cancellationToken) =>
-                    {
-                        var result = await mediator.Send(
-                            new GetPublicNextBookFairQuery(),
-                            cancellationToken);
-
-                        return result.Match(
-                            fair => Results.Ok(ToResponse(fair)),
-                            error => error.Result());
-                    })
-                .WithName("GetNextPublicBookFair")
                 .AllowAnonymous();
 
             endpoints.MapGet(
@@ -331,12 +313,12 @@ public static class BookController
             endpoints.MapGet(
                     "/scan/catalog/delta",
                     async (
-                        DateTimeOffset? since,
+                        string? since,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
                         var result = await mediator.Send(
-                            new GetCatalogDeltaQuery(since?.UtcDateTime),
+                            new GetCatalogDeltaQuery(since),
                             cancellationToken);
 
                         return result.Match(
@@ -399,7 +381,8 @@ public static class BookController
                                 volunteerId,
                                 mode,
                                 ToAssoEventsId(request.TargetAssoEventsId),
-                                request.ClientSessionId),
+                                request.ClientSessionId,
+                                request.StartedAt),
                             cancellationToken);
 
                         return result.Match(
@@ -414,16 +397,23 @@ public static class BookController
                     async (
                         Guid scanSessionId,
                         ScanBookRequest request,
+                        ClaimsPrincipal principal,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
                         var result = await mediator.Send(
                             new ScanBookCommand(
                                 ScanSessionId.Create(scanSessionId),
                                 request.Isbn,
                                 request.Kept,
                                 request.OccurredAt,
-                                request.ClientGestureId),
+                                request.ClientGestureId,
+                                volunteerId),
                             cancellationToken);
 
                         return result.Match(
@@ -438,9 +428,15 @@ public static class BookController
                     async (
                         Guid scanSessionId,
                         CloseScanSessionRequest request,
+                        ClaimsPrincipal principal,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
                         if (!Enum.TryParse<ScanCloseReason>(request.CloseReason, ignoreCase: true, out var closeReason) ||
                             !Enum.IsDefined(closeReason))
                         {
@@ -450,7 +446,8 @@ public static class BookController
                         var result = await mediator.Send(
                             new CloseScanSessionCommand(
                                 ScanSessionId.Create(scanSessionId),
-                                closeReason),
+                                closeReason,
+                                volunteerId),
                             cancellationToken);
 
                         return result.Match(

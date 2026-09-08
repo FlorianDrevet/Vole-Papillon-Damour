@@ -10,16 +10,21 @@ import {CookieConsentService, CookiePreferences} from '../../services/cookie-con
 })
 export class CatalogCookieBannerComponent {
   readonly analyticsChecked = signal(false);
+  readonly mapsChecked = signal(false);
 
   constructor(public readonly consent: CookieConsentService) {}
 
   openPanel(): void {
     this.analyticsChecked.set(this.consent.preferences.analytics);
+    this.mapsChecked.set(this.consent.preferences.maps);
     this.consent.openPanel();
   }
 
   savePreferences(): void {
-    const preferences: CookiePreferences = {analytics: this.analyticsChecked()};
+    const preferences: CookiePreferences = {
+      analytics: this.analyticsChecked(),
+      maps: this.mapsChecked(),
+    };
     this.consent.savePreferences(preferences);
   }
 
@@ -27,6 +32,13 @@ export class CatalogCookieBannerComponent {
     const target = event.target;
     if (target instanceof HTMLInputElement) {
       this.analyticsChecked.set(target.checked);
+    }
+  }
+
+  onMapsChange(event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLInputElement) {
+      this.mapsChecked.set(target.checked);
     }
   }
 }

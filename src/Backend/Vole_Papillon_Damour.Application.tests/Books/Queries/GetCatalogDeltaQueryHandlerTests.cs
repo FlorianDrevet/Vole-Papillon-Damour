@@ -42,14 +42,14 @@ public sealed class GetCatalogDeltaQueryHandlerTests
 
         var handler = fixture.CreateHandler();
         var result = await handler.Handle(
-            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5)),
+            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5).ToString("O")),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         result.Value.Books.Should().ContainSingle(book => book.Isbn13 == "9783140464079");
         result.Value.Books.Should().NotContain(book => book.Isbn13 == "9782070363735");
         result.Value.Settings.DuplicateThreshold.Should().Be(7);
-        result.Value.NextWatermark.Should().Be(GeneratedAt);
+        result.Value.NextWatermark.Should().StartWith("v2.");
     }
 
     [Fact]
@@ -88,11 +88,39 @@ public sealed class GetCatalogDeltaQueryHandlerTests
 
         var handler = fixture.CreateHandler();
         var result = await handler.Handle(
-            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5)),
+            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5).ToString("O")),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         result.Value.Books.Single().IsHidden.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_WhenOfflineSaleHasAnOlderBusinessTimestamp_ReturnsTheBookAfterItsRowVersionChanges()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var book = await fixture.AddBookAsync(
+            "9782070363735",
+            GeneratedAt.AddMinutes(-10));
+        fixture.SetRowVersion(book, [0, 0, 0, 0, 0, 0, 0, 1]);
+        await fixture.SaveAsync();
+
+        var handler = fixture.CreateHandler();
+        var initial = await handler.Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+        initial.IsError.Should().BeFalse();
+
+        book.RecordSale(GeneratedAt.AddMinutes(-20));
+        fixture.SetRowVersion(book, [0, 0, 0, 0, 0, 0, 0, 2]);
+        await fixture.SaveAsync();
+
+        var result = await handler.Handle(
+            new GetCatalogDeltaQuery(initial.Value.NextWatermark),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle(book => book.Isbn13 == "9782070363735");
     }
 
     [Fact]
@@ -116,7 +144,7 @@ public sealed class GetCatalogDeltaQueryHandlerTests
 
         var handler = fixture.CreateHandler();
         var result = await handler.Handle(
-            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5)),
+            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5).ToString("O")),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -241,6 +269,11 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
     }
 
     public async Task SaveAsync() => await Context.SaveChangesAsync();
+
+    public void SetRowVersion(Book book, byte[] rowVersion)
+    {
+        Context.Entry(book).Property(nameof(Book.RowVersion)).CurrentValue = rowVersion;
+    }
 
     public GetCatalogDeltaQueryHandler CreateHandler()
     {

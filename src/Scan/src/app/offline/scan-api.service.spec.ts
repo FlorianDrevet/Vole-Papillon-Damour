@@ -72,6 +72,7 @@ describe('ScanApiService', () => {
       mode: 'AvailableNow' as const,
       targetAssoEventsId: null,
       clientSessionId: 'session-1',
+      startedAt: '2026-09-03T08:00:00.000Z',
     };
     service.openSession(openRequest).subscribe();
 

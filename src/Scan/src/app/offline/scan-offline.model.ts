@@ -114,10 +114,12 @@ export interface ScanSessionSnapshot {
 export interface ScanSessionCloseRequest {
   key: string;
   scanSessionId: string;
+  volunteerId?: string | null;
   mode: LocalScanMode;
   targetAssoEventsId: string | null;
   closeReason: LocalScanCloseReason;
   requestedAt: string;
+  startedAt?: string;
 }
 
 export interface ScanOutboxEntry {

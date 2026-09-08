@@ -1,6 +1,8 @@
+using System.Data.Common;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
@@ -171,6 +173,95 @@ public sealed class PublicCatalogQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.Books.Should().ContainSingle();
         result.Value.Books[0].QuantityAvailable.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenPagingIsRequested_UsesSqlPagingAndLoadsRelatedDataForThePageOnly()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Alpha", "Auteur");
+        var second = fixture.AddBook("9782070363735", "Beta", "Auteur");
+        fixture.AddBook("9782253006329", "Gamma", "Auteur");
+        var fair = fixture.AddFair(
+            "Bourse de printemps",
+            fixture.NowOffset.AddDays(3),
+            fixture.NowOffset.AddDays(4));
+        fixture.AddAnnouncement(second, quantity: 1, assoEventsId: fair.Id);
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 2, PageSize: 1),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(3);
+        result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Beta");
+        sql.Commands.Should().Contain(command =>
+            command.Contains("FROM \"Books\"", StringComparison.Ordinal) &&
+            command.Contains("LIMIT", StringComparison.Ordinal) &&
+            command.Contains("OFFSET", StringComparison.Ordinal));
+        sql.Commands
+            .Where(command => command.Contains("FROM \"BookAnnouncements\"", StringComparison.Ordinal))
+            .Should()
+            .OnlyContain(command => command.Contains("\"Isbn13\"", StringComparison.Ordinal) &&
+                command.Contains("WHERE", StringComparison.Ordinal));
+        sql.Commands
+            .Where(command => command.Contains("FROM \"AssoEvents\"", StringComparison.Ordinal))
+            .Should()
+            .OnlyContain(command => command.Contains("\"Id\"", StringComparison.Ordinal) &&
+                command.Contains("WHERE", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenSearchHasNoMatches_DoesNotReloadAllBooksAfterSqlPrefilter()
+    {
+        var sql = new SqlCaptureInterceptor();
+        await using var fixture = await PublicCatalogFixture.CreateAsync(sql);
+        fixture.AddBook("9782070408504", "Le Petit Prince", "Antoine de Saint-Exupéry");
+        await fixture.SaveAsync();
+        sql.Clear();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery("titre absent", null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(0);
+        result.Value.Books.Should().BeEmpty();
+
+        var bookCommands = sql.Commands
+            .Where(command => command.Contains("FROM \"Books\"", StringComparison.Ordinal))
+            .ToArray();
+        bookCommands
+            .Where(command => !command.Contains("LIKE", StringComparison.Ordinal))
+            .Should()
+            .ContainSingle(command => command.Contains("\"Genre\"", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenNextFairFilterIsRequested_FiltersBooksBeforePaging()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var announcedBook = fixture.AddBook("9782070408504", "Livre annoncé", "Auteur");
+        fixture.AddBook("9782070363735", "Livre non annoncé", "Auteur");
+        var fair = fixture.AddFair(
+            "Bourse à venir",
+            fixture.NowOffset.AddDays(3),
+            fixture.NowOffset.AddDays(4));
+        fixture.AddAnnouncement(announcedBook, quantity: 1, assoEventsId: fair.Id);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.NextBookFair,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 1, PageSize: 20),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Livre annoncé");
     }
 
     [Fact]
@@ -382,13 +473,18 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
 
     public DateTimeOffset NowOffset => new(now, TimeSpan.Zero);
 
-    public static async Task<PublicCatalogFixture> CreateAsync()
+    public static async Task<PublicCatalogFixture> CreateAsync(DbCommandInterceptor? interceptor = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
-        var options = new DbContextOptionsBuilder<PublicCatalogTestDbContext>()
-            .UseSqlite(connection)
-            .Options;
+        var optionsBuilder = new DbContextOptionsBuilder<PublicCatalogTestDbContext>()
+            .UseSqlite(connection);
+        if (interceptor is not null)
+        {
+            optionsBuilder.AddInterceptors(interceptor);
+        }
+
+        var options = optionsBuilder.Options;
         var context = new PublicCatalogTestDbContext(options);
         await context.Database.EnsureCreatedAsync();
         return new PublicCatalogFixture(connection, context);
@@ -518,6 +614,32 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
     {
         await Context.DisposeAsync();
         await connection.DisposeAsync();
+    }
+}
+
+internal sealed class SqlCaptureInterceptor : DbCommandInterceptor
+{
+    public List<string> Commands { get; } = [];
+
+    public void Clear() => Commands.Clear();
+
+    public override InterceptionResult<DbDataReader> ReaderExecuting(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result)
+    {
+        Commands.Add(command.CommandText);
+        return result;
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        Commands.Add(command.CommandText);
+        return ValueTask.FromResult(result);
     }
 }
 

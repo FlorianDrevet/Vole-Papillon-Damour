@@ -77,7 +77,6 @@ public class EndpointAuthorizationTests
         {
             "/catalog/search",
             "/catalog/books/{isbn13}",
-            "/catalog/fairs/next",
             "/catalog/works/{workId}",
             "/catalog/sitemap.xml",
             "/catalog/reference/search",
@@ -89,6 +88,14 @@ public class EndpointAuthorizationTests
 
         publicCatalogEndpoints.Should().HaveSameCount(expectedRoutes);
         publicCatalogEndpoints.Should().OnlyContain(endpoint => !RequiresAuthorization(endpoint));
+    }
+
+    [Fact]
+    public void Removed_legacy_next_fair_endpoint_is_not_registered()
+    {
+        RegisteredEndpoints()
+            .Should()
+            .NotContain(endpoint => RouteOf(endpoint) == "/catalog/fairs/next");
     }
 
     [Fact]

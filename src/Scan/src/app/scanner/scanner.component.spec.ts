@@ -91,6 +91,92 @@ describe('ScannerComponent', () => {
     expect(loginStarted).toBeTrue();
   });
 
+  it('blocks changing user while local gestures still need attention', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'getOutboxCounts',
+      'getSession',
+      'getSettings',
+      'getCatalogSyncState',
+      'clearAccountState',
+    ]);
+    const auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['logout']);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 1, pendingTransmissionCount: 2});
+    workflow.getSession.and.resolveTo(createSession());
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      auth,
+      null,
+    );
+
+    await localComponent.logout();
+
+    expect(auth.logout).not.toHaveBeenCalled();
+    expect(workflow.clearAccountState).not.toHaveBeenCalled();
+    expect(localComponent.logoutError).toContain('Synchronisez');
+  });
+
+  it('purges local account state before logging out when no gesture remains', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'getOutboxCounts',
+      'getSession',
+      'getSettings',
+      'getCatalogSyncState',
+      'clearAccountState',
+    ]);
+    const auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['logout']);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
+    workflow.getSession.and.resolveTo(createSession());
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    workflow.clearAccountState.and.resolveTo();
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      auth,
+      null,
+    );
+    localComponent.cashItems = [{
+      id: 'cash-1',
+      isbn13: '9782070363735',
+      title: 'Livre',
+      authors: null,
+      publisher: null,
+      publicationYear: null,
+      isRare: false,
+      quantityAvailable: 1,
+      quantityAnnounced: 0,
+    }];
+    localComponent.localScan = createLocalScanResult();
+    localComponent.cashMessage = 'Vente locale';
+
+    await localComponent.logout();
+
+    expect(workflow.clearAccountState).toHaveBeenCalledOnceWith();
+    expect(auth.logout).toHaveBeenCalledOnceWith();
+    expect(localComponent.cashItems).toEqual([]);
+    expect(localComponent.localScan).toBeNull();
+    expect(localComponent.cashMessage).toBeNull();
+  });
+
   it('refreshes the rendered result when a manual lookup completes', async () => {
     const metadata = createMetadata();
     metadataService.getMetadata.and.returnValue(of(metadata));
@@ -246,6 +332,70 @@ describe('ScannerComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.manual-keypad')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[aria-label="Revenir au scan"]')).not.toBeNull();
+  });
+
+  it('gives labeled scan containers an accessible semantic role and lets the ISBN speak its value', () => {
+    const cameraHost = fixture.nativeElement.querySelector('.camera-engine-host') as HTMLElement;
+    expect(cameraHost.getAttribute('role')).toBe('region');
+
+    const manualFixture = TestBed.createComponent(ScannerComponent);
+    const manualComponent = manualFixture.componentInstance;
+    manualFixture.detectChanges();
+    manualComponent.openManualInput();
+    manualFixture.detectChanges();
+
+    const manualValue = manualFixture.nativeElement.querySelector('.manual-value') as HTMLElement;
+    expect(manualValue.getAttribute('aria-live')).toBe('polite');
+    expect(manualValue.hasAttribute('aria-label')).toBeFalse();
+    expect(manualFixture.nativeElement.querySelector('.manual-keypad')?.getAttribute('role')).toBe('group');
+    manualFixture.destroy();
+
+    const cashFixture = TestBed.createComponent(ScannerComponent);
+    cashFixture.componentInstance.screen = 'cash';
+    cashFixture.detectChanges();
+
+    const cashItems = cashFixture.nativeElement.querySelector('.cash-items') as HTMLElement;
+    expect(cashItems.getAttribute('role')).toBe('region');
+    expect(cashItems.getAttribute('aria-label')).toBe('Livres de la vente');
+    cashFixture.destroy();
+  });
+
+  it('keeps a valid h1 label target for every operating screen and triage state', () => {
+    const screens = [
+      ['tri', '.tri-screen'],
+      ['manual', '.manual-screen'],
+      ['session-end', '.session-end-screen'],
+      ['cash', '.cash-screen'],
+      ['consultation', '.consultation-screen'],
+    ] as const;
+
+    for (const [screen, selector] of screens) {
+      const screenFixture = TestBed.createComponent(ScannerComponent);
+      const screenComponent = screenFixture.componentInstance;
+      screenComponent.screen = screen;
+      screenComponent.localScan = null;
+      screenComponent.metadata = null;
+      screenFixture.detectChanges();
+
+      const section = screenFixture.nativeElement.querySelector(selector) as HTMLElement;
+      const headingId = section.getAttribute('aria-labelledby');
+      const heading = headingId ? section.querySelector(`#${headingId}`) : null;
+      expect(headingId).withContext(screen).toBeTruthy();
+      expect(heading?.tagName).withContext(screen).toBe('H1');
+      screenFixture.destroy();
+    }
+
+    const verdictFixture = TestBed.createComponent(ScannerComponent);
+    const verdictComponent = verdictFixture.componentInstance;
+    verdictComponent.screen = 'tri';
+    verdictComponent.localScan = createLocalScanResult();
+    verdictFixture.detectChanges();
+
+    const triSection = verdictFixture.nativeElement.querySelector('.tri-screen') as HTMLElement;
+    const triHeadingId = triSection.getAttribute('aria-labelledby');
+    expect(triHeadingId).toBeTruthy();
+    expect(triHeadingId ? triSection.querySelector(`#${triHeadingId}`)?.tagName : null).toBe('H1');
+    verdictFixture.destroy();
   });
 
   it('refreshes the rendered result when the live camera detects an ISBN', async () => {

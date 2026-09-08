@@ -7,6 +7,7 @@ import {CatalogApiService} from '../../core/catalog-api.service';
 import {CATALOG_FEATURED_GENRES, mergeCatalogGenres} from '../../core/catalog-genres';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
+import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 
 const EMPTY_SEARCH: CatalogSearchResponse = {
   generatedAt: '',
@@ -42,6 +43,7 @@ export class CatalogHomePageComponent implements OnInit {
     private readonly api: CatalogApiService,
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
+    public readonly consent: CookieConsentService,
   ) {}
 
   ngOnInit(): void {

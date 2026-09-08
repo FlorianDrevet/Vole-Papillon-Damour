@@ -13,4 +13,8 @@ describe('catalogRobotsForUrl', () => {
     expect(catalogRobotsForUrl('/recherche?q=livre')).toBe('index, follow');
     expect(catalogRobotsForUrl('/livres/un-livre-9782070612758#details')).toBe('index, follow');
   });
+
+  it('marks unknown routes as non-indexable', () => {
+    expect(catalogRobotsForUrl('/une-route-inconnue')).toBe('noindex, nofollow');
+  });
 });
