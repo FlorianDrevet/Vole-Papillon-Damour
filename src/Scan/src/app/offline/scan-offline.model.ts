@@ -114,6 +114,7 @@ export interface ScanSessionSnapshot {
 export interface ScanSessionCloseRequest {
   key: string;
   scanSessionId: string;
+  volunteerId?: string | null;
   mode: LocalScanMode;
   targetAssoEventsId: string | null;
   closeReason: LocalScanCloseReason;

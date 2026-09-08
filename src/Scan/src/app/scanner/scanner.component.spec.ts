@@ -91,6 +91,92 @@ describe('ScannerComponent', () => {
     expect(loginStarted).toBeTrue();
   });
 
+  it('blocks changing user while local gestures still need attention', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'getOutboxCounts',
+      'getSession',
+      'getSettings',
+      'getCatalogSyncState',
+      'clearAccountState',
+    ]);
+    const auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['logout']);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 1, pendingTransmissionCount: 2});
+    workflow.getSession.and.resolveTo(createSession());
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      auth,
+      null,
+    );
+
+    await localComponent.logout();
+
+    expect(auth.logout).not.toHaveBeenCalled();
+    expect(workflow.clearAccountState).not.toHaveBeenCalled();
+    expect(localComponent.logoutError).toContain('Synchronisez');
+  });
+
+  it('purges local account state before logging out when no gesture remains', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'getOutboxCounts',
+      'getSession',
+      'getSettings',
+      'getCatalogSyncState',
+      'clearAccountState',
+    ]);
+    const auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['logout']);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
+    workflow.getSession.and.resolveTo(createSession());
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    workflow.clearAccountState.and.resolveTo();
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      auth,
+      null,
+    );
+    localComponent.cashItems = [{
+      id: 'cash-1',
+      isbn13: '9782070363735',
+      title: 'Livre',
+      authors: null,
+      publisher: null,
+      publicationYear: null,
+      isRare: false,
+      quantityAvailable: 1,
+      quantityAnnounced: 0,
+    }];
+    localComponent.localScan = createLocalScanResult();
+    localComponent.cashMessage = 'Vente locale';
+
+    await localComponent.logout();
+
+    expect(workflow.clearAccountState).toHaveBeenCalledOnceWith();
+    expect(auth.logout).toHaveBeenCalledOnceWith();
+    expect(localComponent.cashItems).toEqual([]);
+    expect(localComponent.localScan).toBeNull();
+    expect(localComponent.cashMessage).toBeNull();
+  });
+
   it('refreshes the rendered result when a manual lookup completes', async () => {
     const metadata = createMetadata();
     metadataService.getMetadata.and.returnValue(of(metadata));

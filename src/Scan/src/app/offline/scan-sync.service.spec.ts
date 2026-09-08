@@ -141,6 +141,26 @@ describe('ScanSyncService', () => {
     expect(await store.listOutboxEntries()).toEqual([]);
   });
 
+  it('orphans gestures when the local session belongs to another account', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    await workflow.bindSessionToVolunteer('account-a');
+    (service as unknown as {scanAuth: unknown}).scanAuth = {
+      authState: {account: {homeAccountId: 'account-b'}},
+      handleServerAuthorizationFailure: jasmine.createSpy(),
+    };
+
+    const result = await service.flushOutbox();
+
+    expect(api.openSession).not.toHaveBeenCalled();
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Orphaned');
+    expect(result.orphaned).toBe(1);
+    expect(result.remaining).toBe(0);
+  });
+
   it('sends cash sales without opening a scan session and reconciles the local stock', async () => {
     await store.putCatalogBooks([createBook('9782070363735')]);
     await workflow.recordCashSales(

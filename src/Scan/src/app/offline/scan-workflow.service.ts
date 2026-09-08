@@ -197,6 +197,7 @@ export class ScanWorkflowService {
       };
       await this.store.saveSessionCloseRequest({
         scanSessionId: session.scanSessionId,
+        volunteerId: session.volunteerId,
         mode: session.mode,
         targetAssoEventsId: session.targetAssoEventsId,
         closeReason,
@@ -211,6 +212,12 @@ export class ScanWorkflowService {
   async clearSession(): Promise<void> {
     return await this.enqueue(async () => {
       await this.store.clearSession();
+    });
+  }
+
+  async clearAccountState(): Promise<void> {
+    return await this.enqueue(async () => {
+      await this.store.clearAccountState();
     });
   }
 
