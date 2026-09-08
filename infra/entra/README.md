@@ -151,10 +151,12 @@ Le Catalog utilise le parcours **browser-delegated** : le mot de passe est saisi
 page External ID hébergée par Microsoft et n'est jamais envoyé au Catalog ni à l'API.
 `Configure-EntraBranding.ps1` applique le CSS du design system, le fond visuel du papillon,
 les textes français et la locale `fr-FR` demandée par le Catalog (`ui_locales` et `mkt`).
-Cette solution conserve la sécurité et les écrans de récupération de compte du parcours
-géré, tout en remplaçant la présentation visuelle générique par le thème bleu/orange du
-Catalog. Le domaine d'authentification reste toutefois celui d'External ID : ce n'est pas
-un formulaire HTML servi par notre domaine.
+La variante actuelle reprend la maquette 1a : canvas bleu papier, carte centrée, ligne
+supérieure Catalog, papillon près du titre, boutons orange, focus/erreurs accessibles et
+footer clair. Le même CSS est utilisé par l'inscription et la connexion. Cette solution
+conserve la sécurité et les écrans de récupération de compte du parcours géré ; le domaine
+d'authentification reste toutefois celui d'External ID : ce n'est pas un formulaire HTML
+servi par notre domaine.
 
 Si le besoin devient un contrôle pixel-perfect du formulaire, l'alternative est **Native
 Authentication** avec `@azure/msal-browser/custom-auth` dans Angular. Le Catalog posséderait
@@ -180,8 +182,8 @@ Catalog :
   dans le tenant ;
 - exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS et les textes
   français ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
-- lancer le workflow **Catalog - deploy** pour publier les paramètres `fr-FR` du client
-  Angular ;
+- ne pas lancer **Catalog - deploy** pour ce seul changement : le Catalog ne contient pas de
+  code modifié et l'image publique du papillon est déjà déployée ;
 - ne pas redéployer l'API, le BackOffice, la Scanette, le Worker ou la base pour ce périmètre.
 
 Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine public,

@@ -153,6 +153,22 @@ le rendu bleu/orange complet sur l'inscription et la connexion : fond dégradé,
 carte arrondie, accent orange et textes français. Aucun mot de passe ni compte de test n'a été
 saisi ou créé.
 
+### État actualisé — 2026-09-08 — maquette 1a External ID
+
+La variante 1a du branding hébergé est préparée sur
+`feat/entra-branding-maquette-1a`. Elle remplace le grand fond bleu par un canvas bleu
+papier, centre la carte d'authentification dans le wrapper External ID, reprend la ligne
+supérieure Catalog, place le papillon à côté du titre et conserve les boutons, états de
+focus/erreur et footer français. Le même thème s'applique à l'inscription et à la connexion.
+
+Le script a été rejoué sur le tenant réel `b23c80b3-9776-4840-8255-fcbf3b3500fd` sur `0`
+et `fr-FR`. Le CSS distant relu par Graph correspond au fichier local, avec les règles
+responsive `100vw`/`box-sizing` ajoutées après un contrôle mobile. Le smoke desktop public
+confirme l'inscription et la connexion avec la carte centrée ; aucun mot de passe ni compte
+de test n'a été saisi ou créé. Le navigateur de contrôle a encore servi une ancienne feuille
+mise en cache pour le dernier essai mobile ; une nouvelle session après propagation CDN reste
+le contrôle manuel final.
+
 ### État actualisé — 2026-09-07 — displayName et personnalisation du signup External ID
 
 Le user flow public External ID a été exécuté par l'utilisateur après le merge de la

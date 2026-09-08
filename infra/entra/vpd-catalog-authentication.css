@@ -1,28 +1,23 @@
 /*
- * Vole Papillon d'Amour — Microsoft Entra External ID hosted pages.
+ * Vole Papillon d'Amour — maquette 1a for Microsoft Entra External ID.
  *
  * External ID keeps the authentication engine and its security controls
- * Microsoft-hosted. This stylesheet supplies the Catalog visual language on
- * the documented .ext-* surface; the optional background image is uploaded by
- * Configure-EntraBranding.ps1 to both the default and fr-FR branding layers.
+ * Microsoft-hosted. This stylesheet skins the same hosted structure for both
+ * sign-in and sign-up; it does not add fields, collect passwords, or run code.
+ * The optional Catalog butterfly asset is uploaded by Configure-EntraBranding.ps1.
  */
 
 html,
 body {
+  box-sizing: border-box;
+  max-width: 100vw;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
-  background-color: #062a44;
-  background-image:
-    radial-gradient(circle at 12% 18%, rgba(127, 216, 245, .2), transparent 31%),
-    radial-gradient(circle at 87% 84%, rgba(240, 128, 28, .2), transparent 28%),
-    url("https://livres.volepapillondamour.fr/images/papillon_without_back.png"),
-    linear-gradient(135deg, #041d30 0%, #062a44 52%, #0c6ea6 100%);
-  background-position: 12% 18%, 87% 84%, 90% 50%, center;
-  background-repeat: no-repeat;
-  background-size: auto, auto, min(34vw, 520px), cover;
-  color: #f7fbfe;
+  background: #eaf6fb;
+  color: #041d30;
   font-family: Arial, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -40,57 +35,77 @@ a:active {
   color: #dc6412;
 }
 
+/* Keep the authentication card centered in the editorial canvas. */
 .ext-middle {
-  background-color: #062a44;
-  background-image:
-    radial-gradient(circle at 12% 18%, rgba(127, 216, 245, .2), transparent 31%),
-    radial-gradient(circle at 87% 84%, rgba(240, 128, 28, .2), transparent 28%),
-    url("https://livres.volepapillondamour.fr/images/papillon_without_back.png"),
-    linear-gradient(135deg, #041d30 0%, #062a44 52%, #0c6ea6 100%);
-  background-position: 12% 18%, 87% 84%, 90% 50%, center;
-  background-repeat: no-repeat;
-  background-size: auto, auto, min(34vw, 520px), cover;
+  align-items: center;
+  background: #eaf6fb;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  max-width: 100vw;
+  min-height: 100vh;
+  padding: 48px 24px;
+  position: relative;
+  width: 100%;
+  z-index: 1;
 }
 
+/* The uploaded background remains available as a tenant asset, but 1a uses a
+ * quiet paper-blue canvas instead of the large full-page illustration. */
 .ext-background-image,
 .ext-vertical-split-background-image-container {
-  background-color: #062a44;
-}
-
-.ext-background-image {
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+  background: #eaf6fb !important;
   z-index: 0;
 }
 
 .ext-header {
-  background: linear-gradient(135deg, #041d30 0%, #072b45 72%, #0c6ea6 100%);
-  border-bottom: 4px solid #f0801c;
-  color: #f7fbfe;
+  background-color: #eaf6fb;
+  background-image: url("https://livres.volepapillondamour.fr/images/papillon_without_back.png");
+  background-position: 32px center;
+  background-repeat: no-repeat;
+  background-size: 38px 38px;
+  border-bottom: 1px solid #d6eaf1;
+  color: #041d30;
+  min-height: 64px;
+  padding-left: 84px;
 }
 
 .ext-header-logo {
+  max-height: 40px;
   max-width: 245px;
-  max-height: 36px;
 }
 
 .ext-sign-in-box {
-  background: rgba(255, 255, 255, .98);
-  border: 1px solid rgba(157, 194, 218, .75);
-  border-top: 6px solid #f0801c;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  border: 1px solid #d6eaf1;
+  border-image: linear-gradient(90deg, #1497d6 0%, #7fd8f5 52%, #f0801c 100%) 1;
+  border-top: 4px solid #1497d6;
   border-radius: 18px;
-  box-shadow: 0 30px 70px rgba(2, 18, 31, .42);
+  box-shadow: 0 24px 60px rgba(7, 43, 69, .14);
   color: #041d30;
+  float: none;
+  left: auto;
+  margin: 0 auto;
+  max-width: 520px;
+  overflow: hidden;
+  position: relative;
+  right: auto;
+  width: 100%;
 }
 
 .ext-title {
+  background-image: url("https://livres.volepapillondamour.fr/images/papillon_without_back.png");
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: 34px 34px;
   color: #041d30;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 500;
   letter-spacing: -.035em;
   line-height: 1.1;
+  padding-left: 46px;
 }
 
 .ext-subtitle {
@@ -164,17 +179,18 @@ a:active {
 }
 
 .ext-footer {
-  background: rgba(4, 29, 48, .92);
-  color: #dcecf7;
+  background: #f2f6f7;
+  box-sizing: border-box;
+  border-top: 1px solid #e4eef2;
+  color: #6d8ba2;
+  max-width: 100vw;
+  width: 100%;
 }
 
-.ext-footer .ext-boilerplate-text {
-  color: #dcecf7;
-}
-
+.ext-footer .ext-boilerplate-text,
 .ext-footer-links,
 .ext-footer-item {
-  color: #dcecf7;
+  color: #6d8ba2;
   font-size: 12px;
 }
 
@@ -182,14 +198,14 @@ a:active {
 .ext-footer a:link,
 .ext-footer-links a,
 .ext-footer-links a:link {
-  color: #7fd8f5;
+  color: #0c6ea6;
 }
 
 .ext-footer a:hover,
 .ext-footer a:focus,
 .ext-footer-links a:hover,
 .ext-footer-links a:focus {
-  color: #f9a93c;
+  color: #dc6412;
 }
 
 .ext-debug-item {
@@ -197,21 +213,34 @@ a:active {
 }
 
 @media (max-width: 600px) {
-  body,
   .ext-middle {
-    background-position: 12% 18%, 87% 84%, 50% 8%, center;
-    background-size: auto, auto, min(58vw, 280px), cover;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    min-height: 100vh;
+    max-width: 100vw !important;
+    overflow-x: hidden;
+    padding: 24px 16px !important;
+    width: 100vw !important;
+  }
+
+  .ext-header {
+    background-position: 20px center;
+    padding-left: 68px;
   }
 
   .ext-sign-in-box {
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
-    box-shadow: none;
+    border-radius: 16px;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .ext-footer {
+    max-width: 100vw !important;
+    width: 100vw !important;
   }
 
   .ext-title {
-    font-size: 1.75rem;
+    font-size: 1.85rem;
   }
 }
 
