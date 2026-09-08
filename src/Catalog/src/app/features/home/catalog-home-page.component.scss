@@ -749,13 +749,6 @@ h2 {
   background: var(--catalog-paper-2);
 }
 
-.fair-location-map {
-  display: block;
-  width: 100%;
-  min-height: 276px;
-  border: 0;
-}
-
 .fair-location-map-link {
   position: absolute;
   top: 16px;
@@ -792,42 +785,6 @@ h2 {
     var(--catalog-paper-2);
   color: var(--catalog-blue);
   font-size: .82rem;
-}
-
-.fair-location-map-consent {
-  flex-direction: column;
-  padding: 24px;
-  text-align: center;
-}
-
-.fair-location-map-consent-copy {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-direction: column;
-}
-
-.fair-location-map-consent-copy strong {
-  color: var(--catalog-ink-2);
-  font-size: .84rem;
-}
-
-.fair-location-map-consent-copy button {
-  padding: 9px 13px;
-  border: 1px solid var(--catalog-blue);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--catalog-blue);
-  cursor: pointer;
-  font: 500 .59rem/1.2 var(--catalog-mono);
-  letter-spacing: .09em;
-  text-transform: uppercase;
-}
-
-.fair-location-map-consent-copy button:hover,
-.fair-location-map-consent-copy button:focus-visible {
-  background: var(--catalog-orange);
-  color: var(--catalog-ink-2);
 }
 
 .fair-location-placeholder .pin-icon {
@@ -1208,7 +1165,6 @@ h2 {
   }
 
   .fair-location-map-wrap,
-  .fair-location-map,
   .fair-location-placeholder {
     min-height: 220px;
   }

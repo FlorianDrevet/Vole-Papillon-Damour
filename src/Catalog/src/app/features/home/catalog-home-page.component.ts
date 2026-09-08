@@ -1,13 +1,11 @@
 import {ChangeDetectionStrategy, Component, OnInit, signal} from '@angular/core';
-import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, forkJoin, of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
-import {CATALOG_FEATURED_GENRES, mergeCatalogGenres} from '../../core/catalog-genres';
+import {mergeCatalogGenres} from '../../core/catalog-genres';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
-import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 
 const EMPTY_SEARCH: CatalogSearchResponse = {
   generatedAt: '',
@@ -35,15 +33,12 @@ export class CatalogHomePageComponent implements OnInit {
   recentTotal = signal(0);
   rare = signal<CatalogBook[]>([]);
   genres = signal<string[]>([]);
-  readonly featuredGenres = CATALOG_FEATURED_GENRES;
   nextFair = signal<CatalogFair | null>(null);
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly api: CatalogApiService,
     private readonly router: Router,
-    private readonly sanitizer: DomSanitizer,
-    public readonly consent: CookieConsentService,
   ) {}
 
   ngOnInit(): void {
@@ -54,7 +49,7 @@ export class CatalogHomePageComponent implements OnInit {
     }
 
     forkJoin({
-      recent: this.api.search({sort: 'recent', pageSize: 4}).pipe(catchError(() => {
+      recent: this.api.search({availability: 'available', sort: 'recent', pageSize: 4}).pipe(catchError(() => {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
@@ -92,7 +87,7 @@ export class CatalogHomePageComponent implements OnInit {
   }
 
   showAll(): void {
-    void this.router.navigate(['/catalogue']);
+    void this.router.navigate(['/catalogue'], {queryParams: {availability: 'available'}});
   }
 
   showRare(): void {
@@ -139,13 +134,6 @@ export class CatalogHomePageComponent implements OnInit {
 
   mapsUrl(fair: CatalogFair): string {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.address(fair))}`;
-  }
-
-  mapsEmbedUrl(fair: CatalogFair): SafeResourceUrl {
-    const query = encodeURIComponent(this.address(fair));
-    return this.sanitizer.bypassSecurityTrustResourceUrl(
-      `https://www.google.com/maps?q=${query}&hl=fr&z=15&output=embed`,
-    );
   }
 
   calendarLink(fair: CatalogFair): string {

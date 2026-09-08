@@ -6,7 +6,6 @@ import {of} from 'rxjs';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
-import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 import {DesignSystemModule} from '@vpd/ui';
 import {CatalogHomePageComponent} from './catalog-home-page.component';
 
@@ -14,7 +13,6 @@ describe('CatalogHomePageComponent', () => {
   let fixture: ComponentFixture<CatalogHomePageComponent>;
   let api: jasmine.SpyObj<CatalogApiService>;
   let router: jasmine.SpyObj<Router>;
-  let consent: {preferences: {analytics: boolean; maps: boolean}; enableMaps: jasmine.Spy};
 
   const book: CatalogBook = {
     isbn13: '9782070612758',
@@ -72,16 +70,11 @@ describe('CatalogHomePageComponent', () => {
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'getUpcomingFairs']);
     api.search.and.returnValue(of(searchResponse));
     api.getUpcomingFairs.and.returnValue(of([fair, nextFair]));
-    consent = {
-      preferences: {analytics: false, maps: true},
-      enableMaps: jasmine.createSpy('enableMaps'),
-    };
     await TestBed.configureTestingModule({
       declarations: [CatalogHomePageComponent, BookCardComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogApiService, useValue: api},
-        {provide: CookieConsentService, useValue: consent},
       ],
     }).compileComponents();
 
@@ -99,6 +92,7 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('412');
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('titres disponibles en ce moment');
     expect(fixture.nativeElement.querySelector('.home-account-callout')).not.toBeNull();
+    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
   });
 
   it('keeps the hero focused on the book fair and uses a composed book visual', () => {
@@ -127,6 +121,14 @@ describe('CatalogHomePageComponent', () => {
     });
   });
 
+  it('keeps the availability scope when opening the counted catalogue', () => {
+    fixture.componentInstance.showAll();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/catalogue'], {
+      queryParams: {availability: 'available'},
+    });
+  });
+
   it('shows a compact next fair teaser on the home page without the full schedule', () => {
     const element = fixture.nativeElement as HTMLElement;
     const teaser = element.querySelector('.home-fair-teaser') as HTMLElement;
@@ -152,8 +154,11 @@ describe('CatalogHomePageComponent', () => {
     expect(element.querySelector('.home-fair-teaser')).toBeNull();
     expect(datesSection).not.toBeNull();
     expect(datesSection.querySelector('.next-fair-card')).not.toBeNull();
-    expect(datesSection.querySelector('.fair-location-card iframe')?.getAttribute('title'))
-      .toContain('Carte du lieu');
+    expect(datesSection.querySelector('.fair-location-card iframe')).toBeNull();
+    expect(datesSection.querySelector('.fair-location-placeholder')?.textContent)
+      .toContain('Carte consultable dans Google Maps');
+    expect(datesSection.querySelector<HTMLAnchorElement>('.fair-location-map-link')?.href)
+      .toContain('https://www.google.com/maps/search/');
     expect(datesSection.querySelector('.fair-location-address')?.textContent)
       .toContain('46 route de Saint-Marcellin');
     expect(datesSection.querySelector('.upcoming-fairs')).toBeNull();
@@ -164,37 +169,23 @@ describe('CatalogHomePageComponent', () => {
     expect(element.querySelector('.home-account-callout')).toBeNull();
   });
 
-  it('does not embed Google Maps before consent and offers an explicit opt-in', () => {
-    consent.preferences.maps = false;
-    fixture.componentInstance.upcomingOnly.set(true);
-    fixture.detectChanges();
-
-    const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelector('.fair-location-map')).toBeNull();
-    const consentButton = element.querySelector('.fair-location-map-consent button') as HTMLButtonElement;
-    expect(consentButton.textContent).toContain('Afficher la carte Google Maps');
-
-    consentButton.click();
-
-    expect(consent.enableMaps).toHaveBeenCalledOnceWith();
-  });
-
   it('keeps legacy fair opening hours as civil UTC components', () => {
     expect(fixture.componentInstance.formatTime('2027-03-14T09:30:00Z')).toBe('9 h 30');
   });
 
-  it('renders featured genre cards that open a filtered search', () => {
+  it('renders only API genres as cards that open a filtered search', () => {
     const element = fixture.nativeElement as HTMLElement;
     const cards = Array.from(
       element.querySelectorAll<HTMLAnchorElement>('.genre-card'),
     );
 
-    expect(cards.length).toBe(5);
-    expect(cards[0].textContent).toContain('Romans');
-    expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Romans');
+    expect(cards.length).toBe(3);
+    expect(cards.map(card => card.querySelector('strong')?.textContent?.trim()))
+      .toEqual(['Jeunesse', 'Romans', 'Policier']);
+    expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Jeunesse');
   });
 
-  it('keeps featured genres in the hero selector when the API has no genre list', () => {
+  it('does not invent genre options or a genre section when the API has no genres', () => {
     fixture.componentInstance.genres.set([]);
     fixture.detectChanges();
 
@@ -203,7 +194,7 @@ describe('CatalogHomePageComponent', () => {
       element.querySelectorAll<HTMLOptionElement>('.hero-genre-select option'),
     ).map(option => option.value);
 
-    expect(options).toContain('Romans');
-    expect(options).toContain('Jeunesse');
+    expect(options).toEqual(['']);
+    expect(element.querySelector('.genres-section')).toBeNull();
   });
 });

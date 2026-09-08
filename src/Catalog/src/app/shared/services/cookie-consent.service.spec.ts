@@ -58,7 +58,8 @@ describe('CookieConsentService', () => {
     }).not.toThrow();
 
     expect(service.bannerVisible$.value).toBeTrue();
-    expect(service.preferences).toEqual({analytics: false, maps: false});
+    expect(service.preferences.analytics).toBeFalse();
+    expect(Object.keys(service.preferences)).toEqual(['analytics']);
   });
 
   it('keeps the in-memory consent usable when localStorage_cannot_be_written', () => {
@@ -67,7 +68,8 @@ describe('CookieConsentService', () => {
 
     expect(() => service.acceptAll()).not.toThrow();
 
-    expect(service.preferences).toEqual({analytics: true, maps: true});
+    expect(service.preferences.analytics).toBeTrue();
+    expect(Object.keys(service.preferences)).toEqual(['analytics']);
     expect(googleAnalytics.enable).toHaveBeenCalled();
   });
 
@@ -80,7 +82,6 @@ describe('CookieConsentService', () => {
     const clarity = (window as ClarityTestWindow).clarity;
 
     expect(googleAnalytics.enable).toHaveBeenCalled();
-    expect(service.preferences.maps).toBeTrue();
     expect(clarityScript?.src).toContain('/tag/yerabb7gnt');
     expect(clarity?.q).toContain([
       'consentv2',
@@ -97,34 +98,22 @@ describe('CookieConsentService', () => {
     expect(service.preferences.analytics).toBeFalse();
     expect(JSON.parse(localStorage.getItem('vpd-catalog-cookie-consent') ?? '{}')).toEqual(jasmine.objectContaining({
       choice: 'rejected',
-      preferences: {analytics: false, maps: false},
+      preferences: {analytics: false},
     }));
   });
 
-  it('keeps an existing consent choice while defaulting the new Maps preference to false', () => {
+  it('ignores the legacy Maps preference while keeping an existing consent choice', () => {
     localStorage.setItem('vpd-catalog-cookie-consent', JSON.stringify({
       choice: 'rejected',
-      preferences: {analytics: false},
+      preferences: {analytics: false, maps: true},
       date: '2026-09-01T08:00:00.000Z',
     }));
 
     const service = TestBed.inject(CookieConsentService);
 
     expect(service.bannerVisible$.value).toBeFalse();
-    expect(service.preferences).toEqual({analytics: false, maps: false});
-  });
-
-  it('keeps Google Maps disabled until its consent is explicitly enabled', () => {
-    const service = TestBed.inject(CookieConsentService);
-
-    expect(service.preferences.maps).toBeFalse();
-
-    service.enableMaps();
-
-    expect(service.preferences.maps).toBeTrue();
-    expect(JSON.parse(localStorage.getItem('vpd-catalog-cookie-consent') ?? '{}')).toEqual(
-      jasmine.objectContaining({preferences: jasmine.objectContaining({maps: true})}),
-    );
+    expect(service.preferences.analytics).toBeFalse();
+    expect(Object.keys(service.preferences)).toEqual(['analytics']);
   });
 
   it('uses_the_current_clarity_consentv2_signal_when_consent_is_withdrawn', () => {
