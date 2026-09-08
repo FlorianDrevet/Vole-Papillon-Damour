@@ -260,6 +260,43 @@ public sealed class ScanBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenOfflineSessionStartedBeforeReception_PreservesTheClientScanTime()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var volunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        var openClock = Substitute.For<IDateTimeProvider>();
+        openClock.UtcNow.Returns(ReceivedAt);
+        var opened = await new OpenScanSessionCommandHandler(fixture.Context, openClock).Handle(
+            new OpenScanSessionCommand(
+                volunteerId,
+                ScanMode.AvailableNow,
+                null,
+                Guid.Parse("00000000-0000-0000-0000-000000000097"),
+                ReceivedAt.AddHours(-1)),
+            CancellationToken.None);
+        opened.IsError.Should().BeFalse();
+        var session = await fixture.Context.ScanSessions.SingleAsync();
+        var handler = fixture.CreateHandler();
+        var occurredAt = ReceivedAt.AddMinutes(-30);
+
+        var result = await handler.Handle(
+            CreateCommand(
+                session,
+                "9782070363735",
+                kept: true,
+                occurredAt: occurredAt,
+                volunteerId: volunteerId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.ClockSuspect.Should().BeFalse();
+        var movement = await fixture.Context.BookMovements.SingleAsync();
+        movement.OccurredAt.Should().Be(occurredAt);
+        movement.ReceivedAt.Should().Be(ReceivedAt);
+        (await fixture.Context.ScanSessions.SingleAsync()).LastScanAt.Should().Be(occurredAt);
+    }
+
+    [Fact]
     public async Task Handle_WhenIsbnIsInvalid_ReturnsValidationErrorWithoutPersisting()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

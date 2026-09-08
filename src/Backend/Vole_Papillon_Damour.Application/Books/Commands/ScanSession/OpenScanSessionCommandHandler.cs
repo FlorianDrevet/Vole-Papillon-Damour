@@ -16,6 +16,8 @@ public sealed class OpenScanSessionCommandHandler(
     IDateTimeProvider dateTimeProvider)
     : IRequestHandler<OpenScanSessionCommand, ErrorOr<ScanSessionResult>>
 {
+    private static readonly TimeSpan MaximumClientSessionAge = TimeSpan.FromDays(7);
+
     public async Task<ErrorOr<ScanSessionResult>> Handle(
         OpenScanSessionCommand command,
         CancellationToken cancellationToken)
@@ -42,6 +44,13 @@ public sealed class OpenScanSessionCommandHandler(
         {
             return Errors.Book.InvalidScanTimestamp();
         }
+
+        if (command.ClientStartedAt is {Kind: not DateTimeKind.Utc})
+        {
+            return Errors.Book.InvalidScanTimestamp();
+        }
+
+        startedAt = BoundClientStartedAt(command.ClientStartedAt, startedAt);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
@@ -126,5 +135,20 @@ public sealed class OpenScanSessionCommandHandler(
         await transaction.CommitAsync(cancellationToken);
 
         return ScanSessionResult.From(session);
+    }
+
+    private static DateTime BoundClientStartedAt(DateTime? clientStartedAt, DateTime serverNow)
+    {
+        if (clientStartedAt is not { } requestedAt)
+        {
+            return serverNow;
+        }
+
+        var earliestAllowed = serverNow.Subtract(MaximumClientSessionAge);
+        return requestedAt < earliestAllowed
+            ? earliestAllowed
+            : requestedAt > serverNow
+                ? serverNow
+                : requestedAt;
     }
 }

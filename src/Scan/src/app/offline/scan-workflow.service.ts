@@ -201,6 +201,7 @@ export class ScanWorkflowService {
         targetAssoEventsId: session.targetAssoEventsId,
         closeReason,
         requestedAt: new Date().toISOString(),
+        startedAt: session.startedAt,
       });
       await this.store.saveSession(updated);
       return updated;

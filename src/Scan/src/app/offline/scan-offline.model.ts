@@ -118,6 +118,7 @@ export interface ScanSessionCloseRequest {
   targetAssoEventsId: string | null;
   closeReason: LocalScanCloseReason;
   requestedAt: string;
+  startedAt?: string;
 }
 
 export interface ScanOutboxEntry {

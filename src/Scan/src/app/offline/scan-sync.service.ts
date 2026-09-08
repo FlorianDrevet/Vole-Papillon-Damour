@@ -171,6 +171,7 @@ export class ScanSyncService {
           mode: session.mode,
           targetAssoEventsId: session.targetAssoEventsId,
           clientSessionId: session.scanSessionId,
+          startedAt: session.startedAt,
         }));
         await this.workflow.mergeRemoteSession(remoteSession);
       } catch (error: unknown) {
@@ -307,6 +308,7 @@ export class ScanSyncService {
           mode: session.mode,
           targetAssoEventsId: session.targetAssoEventsId,
           clientSessionId: session.scanSessionId,
+          startedAt: session.startedAt,
         }));
         const closedSession = await firstValueFrom(this.api.closeSession(
           openedSession.scanSessionId,
@@ -404,6 +406,7 @@ interface LocalSessionDescriptor {
   mode: 'AvailableNow' | 'NextFair';
   targetAssoEventsId: string | null;
   closeReason: 'Manual' | 'Inactivity' | 'Disconnect' | 'TokenExpired';
+  startedAt: string;
 }
 
 // Keep the client retry budget aligned with the backend's alert outbox policy.
@@ -414,11 +417,16 @@ const RETRY_BACKOFF_MAX_MS = 15 * 60_000;
 function toSessionDescriptor(
   session: ScanSessionSnapshot | ScanSessionCloseRequest,
 ): LocalSessionDescriptor {
+  const startedAt = 'requestedAt' in session
+    ? session.startedAt ?? session.requestedAt
+    : session.startedAt;
+
   return {
     scanSessionId: session.scanSessionId,
     mode: session.mode,
     targetAssoEventsId: session.targetAssoEventsId,
     closeReason: session.closeReason ?? 'Manual',
+    startedAt,
   };
 }
 

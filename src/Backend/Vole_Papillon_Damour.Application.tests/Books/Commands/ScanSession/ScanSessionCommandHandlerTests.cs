@@ -36,6 +36,29 @@ public sealed class ScanSessionCommandHandlerTests
     }
 
     [Fact]
+    public async Task Open_WhenClientProvidesOfflineStart_PreservesTheBoundedClientTimestamp()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new OpenScanSessionCommandHandler(fixture.Context, clock);
+        var volunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        var clientStartedAt = ScanBookCommandHandlerTests.ReceivedAt.AddHours(-1);
+
+        var result = await handler.Handle(
+            new OpenScanSessionCommand(
+                volunteerId,
+                ScanMode.AvailableNow,
+                null,
+                Guid.Parse("00000000-0000-0000-0000-000000000098"),
+                clientStartedAt),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.StartedAt.Should().Be(clientStartedAt);
+    }
+
+    [Fact]
     public async Task Open_WhenClientSessionIdIsReplayed_ReturnsTheSameSession()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

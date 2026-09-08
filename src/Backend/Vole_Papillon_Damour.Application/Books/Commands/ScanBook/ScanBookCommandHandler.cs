@@ -24,7 +24,7 @@ public sealed class ScanBookCommandHandler(
     IBookMetadataEnrichmentQueue? metadataEnrichmentQueue = null)
     : IRequestHandler<ScanBookCommand, ErrorOr<ScanBookResult>>
 {
-    private static readonly TimeSpan MaximumFutureSkew = TimeSpan.Zero;
+    private static readonly TimeSpan MaximumFutureSkew = TimeSpan.FromMinutes(2);
 
     public Task<ErrorOr<ScanBookResult>> Handle(
         ScanBookCommand command,

@@ -100,6 +100,7 @@ describe('ScanSyncService', () => {
       new Date('2026-09-03T08:01:00.000Z'),
     );
     await workflow.decide(first.entry.clientGestureId, true);
+    const localSession = await workflow.getSession();
 
     const second = await workflow.recordScan(
       '9783140464079',
@@ -111,6 +112,7 @@ describe('ScanSyncService', () => {
 
     expect(api.openSession).toHaveBeenCalledOnceWith(jasmine.objectContaining({
       mode: 'AvailableNow',
+      startedAt: localSession?.startedAt,
     }));
     expect(api.scanBook.calls.count()).toBe(2);
     expect(api.scanBook.calls.argsFor(0)[1].kept).toBeTrue();

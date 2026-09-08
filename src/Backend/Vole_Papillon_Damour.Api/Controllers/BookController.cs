@@ -399,7 +399,8 @@ public static class BookController
                                 volunteerId,
                                 mode,
                                 ToAssoEventsId(request.TargetAssoEventsId),
-                                request.ClientSessionId),
+                                request.ClientSessionId,
+                                request.StartedAt),
                             cancellationToken);
 
                         return result.Match(
