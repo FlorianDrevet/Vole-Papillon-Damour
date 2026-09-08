@@ -16,7 +16,7 @@
     [class.camera-engine-host-focus-unavailable]="cameraFocusStatus === 'unavailable'"
     [class.camera-engine-host-cash]="screen === 'cash'"
     [class.camera-engine-host-consultation]="screen === 'consultation'"
-    [attr.role]="cameraActive ? 'button' : null"
+    [attr.role]="cameraActive ? 'button' : 'region'"
     [attr.tabindex]="cameraActive ? 0 : null"
     [attr.aria-label]="cameraFocusAriaLabel"
     (click)="refocusCamera()"
@@ -140,7 +140,7 @@
           <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
           <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
         </svg>
-        <span>{{ activeModeLabel }}</span>
+        <h1 id="tri-title">{{ activeModeLabel }}</h1>
         <span class="mode-date">{{ activeMode === 'AvailableNow' ? 'maintenant' : nextFairShortLabel }}</span>
       </header>
 
@@ -169,7 +169,7 @@
 
       <div class="tri-body">
         <ng-container *ngIf="!localScan && !metadata; else verdictView">
-          <section class="scan-stage" aria-labelledby="tri-title">
+          <section class="scan-stage" aria-labelledby="scan-instruction-title">
             <div class="scan-reticle" aria-hidden="true">
               <span class="reticle-corner reticle-corner-top-left"></span>
               <span class="reticle-corner reticle-corner-top-right"></span>
@@ -177,7 +177,7 @@
               <span class="reticle-corner reticle-corner-bottom-right"></span>
               <span class="reticle-line"></span>
             </div>
-            <h1 id="tri-title">{{ isLoading ? 'Scan détecté' : 'Scannez le code-barres' }}</h1>
+            <h2 id="scan-instruction-title">{{ isLoading ? 'Scan détecté' : 'Scannez le code-barres' }}</h2>
             <div *ngIf="isLoading" class="scan-progress scan-progress-dark" role="status" aria-live="polite">
               <span class="scan-progress-spinner" aria-hidden="true"></span>
               <span class="scan-progress-copy">
@@ -233,7 +233,7 @@
                   </svg>
                 </div>
                 <div class="verdict-copy">
-                  <h1 id="verdict-title">{{ verdictTitle }}</h1>
+                  <h2 id="verdict-title">{{ verdictTitle }}</h2>
                   <p>{{ verdictSummary }}</p>
                 </div>
               </div>
@@ -309,7 +309,7 @@
           <rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect>
           <path d="M8 3.5v4M16 3.5v4M3.5 10.5h17"></path>
         </svg>
-        <span>{{ activeModeLabel }}</span>
+        <h1 id="manual-title">{{ activeModeLabel }}</h1>
         <span class="mode-date">{{ activeMode === 'AvailableNow' ? 'maintenant' : nextFairShortLabel }}</span>
       </header>
       <aside class="sync-panel" [class.sync-panel-error]="syncStatus === 'error'" aria-label="État de synchronisation">
@@ -343,14 +343,14 @@
 
       <div class="manual-display">
         <span class="manual-label">ISBN — 10 ou 13 chiffres</span>
-        <div class="manual-value" aria-live="polite" aria-label="ISBN en cours de saisie">
+        <div class="manual-value" aria-live="polite">
           {{ manualIsbn || ' ' }}<span class="manual-caret" aria-hidden="true"></span>
         </div>
         <span class="manual-count">{{ manualDigitCount }} caractère{{ manualDigitCount > 1 ? 's' : '' }} saisi{{ manualDigitCount > 1 ? 's' : '' }} · 10 ou 13 attendus</span>
         <p *ngIf="manualError" class="manual-error" role="alert">{{ manualError }}</p>
       </div>
 
-      <div class="manual-keypad" aria-label="Pavé numérique ISBN">
+      <div class="manual-keypad" role="group" aria-label="Pavé numérique ISBN">
         <button *ngFor="let key of manualKeys" type="button" class="manual-key" [class.manual-key-command]="key === 'clear' || key === 'backspace'" [attr.aria-label]="key === 'clear' ? 'Vider' : key === 'backspace' ? 'Effacer le dernier chiffre' : key" (click)="appendManualKey(key)">
           <ng-container [ngSwitch]="key">
             <span *ngSwitchCase="'clear'">Vider</span>
@@ -427,7 +427,7 @@
           <path d="M15.4 8.9a4.3 4.3 0 0 0-6.7 1.3M8.7 13.9a4.3 4.3 0 0 0 6.7 1.2"></path>
           <path d="M7.4 10.9h6.2M7.4 13.4h6.2"></path>
         </svg>
-        <span id="cash-title">Caisse</span>
+        <h1 id="cash-title">Caisse</h1>
         <span class="mode-date">Bourse en cours</span>
       </header>
       <aside class="sync-panel" [class.sync-panel-error]="syncStatus === 'error'" aria-label="État de synchronisation">
@@ -456,7 +456,7 @@
         </span>
       </div>
 
-      <div class="cash-items" aria-live="polite">
+      <section class="cash-items" role="region" aria-label="Livres de la vente" aria-live="polite">
         <ng-container *ngFor="let item of cashItems">
           <article *ngIf="!item.isRare" class="cash-item">
             <div class="cash-item-copy">
@@ -489,7 +489,7 @@
           </article>
         </ng-container>
         <p *ngIf="cashItems.length === 0 && !isLoading" class="cash-empty">Scannez les livres de la vente. La gâchette suffit.</p>
-      </div>
+      </section>
 
       <div class="cash-count"><span>Dans cette vente</span><strong>{{ cashItems.length }} livre{{ cashItems.length > 1 ? 's' : '' }}</strong></div>
       <p *ngIf="cashMessage" class="cash-message" role="status">{{ cashMessage }}</p>
@@ -524,7 +524,7 @@
           <circle cx="11" cy="11" r="6.6"></circle>
           <path d="m15.8 15.8 4.7 4.7"></path>
         </svg>
-        <span id="consultation-title">Consultation</span>
+        <h1 id="consultation-title">Consultation</h1>
         <span class="mode-badge">N’enregistre rien</span>
       </header>
 
