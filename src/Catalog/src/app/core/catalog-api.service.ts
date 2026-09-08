@@ -54,15 +54,9 @@ export class CatalogApiService {
     );
   }
 
-  getNextFair(): Observable<CatalogFair> {
-    return this.http.get<CatalogFair>(`${this.apiUrl}/catalog/fairs/next`);
-  }
-
   getUpcomingFairs(): Observable<CatalogFair[]> {
-    return this.http.get<CatalogPublicEventResponse[]>(`${this.apiUrl}/asso-events`).pipe(
-      map(events => events
-        .filter(event => event.eventType.toLowerCase() === 'books')
-        .map(event => this.mapPublicEventToFair(event))),
+    return this.http.get<CatalogPublicEventResponse>(`${this.apiUrl}/asso-events/next-books`).pipe(
+      map(event => [this.mapPublicEventToFair(event)]),
     );
   }
 

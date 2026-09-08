@@ -7,6 +7,9 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate;
+using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 
@@ -36,159 +39,278 @@ public sealed class SearchCatalogQueryHandler(
                 "The catalog clock must be expressed in UTC.");
         }
 
-        var booksQuery = dbContext.Books
+        var catalogBooksQuery = dbContext.Books
             .AsNoTracking()
-            .Where(book => !book.IsHiddenFromCatalog);
+            .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null);
         var normalizedSearch = Normalize(query.Search);
         var searchTerms = query.Search?
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(Normalize)
+            .Where(term => !string.IsNullOrWhiteSpace(term))
+            .ToArray()
             ?? [];
 
-        // SQL Server's accent-insensitive collation and LIKE narrow the hot path
-        // before the application applies the same normalization to every field.
-        // The fallback keeps the contract deterministic on providers used for
-        // tests (and for ISBNs containing separators not stored in the database).
-        List<Book> books;
-        if (searchTerms.Length > 0)
+        // SQL Server's accent-insensitive collation and LIKE keep the searchable
+        // fields in the database. There is deliberately no fallback that loads
+        // the complete Books table when a search has no SQL candidates.
+        var filteredBooksQuery = catalogBooksQuery;
+        var trimmedSearch = query.Search?.Trim();
+        if (trimmedSearch is { Length: 13 } &&
+            trimmedSearch.All(char.IsAsciiDigit) &&
+            Isbn13.TryCreate(trimmedSearch, out var canonicalIsbn))
         {
-            var sqlCandidates = booksQuery;
-            foreach (var term in searchTerms)
-            {
-                var pattern = $"%{term}%";
-                sqlCandidates = sqlCandidates.Where(book =>
-                    EF.Functions.Like(book.Title ?? string.Empty, pattern) ||
-                    EF.Functions.Like(book.Authors ?? string.Empty, pattern) ||
-                    EF.Functions.Like(book.Publisher ?? string.Empty, pattern));
-            }
-
-            books = await sqlCandidates.ToListAsync(cancellationToken);
-            if (books.Count == 0)
-            {
-                books = await booksQuery.ToListAsync(cancellationToken);
-            }
+            filteredBooksQuery = filteredBooksQuery.Where(book => book.Id == canonicalIsbn);
         }
         else
         {
-            books = await booksQuery.ToListAsync(cancellationToken);
-        }
-
-        var announcements = await dbContext.BookAnnouncements
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-        var fairs = await dbContext.AssoEvents
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        var projected = PublicCatalogProjector.Project(books, announcements, fairs, nowUtc);
-        var genres = projected
-            .Select(book => book.Genre?.Trim())
-            .Where(genre => !string.IsNullOrWhiteSpace(genre))
-            .Select(genre => genre!)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(genre => genre, StringComparer.CurrentCultureIgnoreCase)
-            .ToArray()!;
-
-        var filtered = projected.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(normalizedSearch))
-        {
-            var terms = normalizedSearch
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            filtered = filtered.Where(book => terms.All(term => Matches(book, term)));
+            foreach (var term in searchTerms)
+            {
+                var pattern = $"%{term}%";
+                filteredBooksQuery = filteredBooksQuery.Where(book =>
+                    EF.Functions.Like(
+                        (book.Title ?? string.Empty)
+                            .Replace("À", "a")
+                            .Replace("Á", "a")
+                            .Replace("Â", "a")
+                            .Replace("Ä", "a")
+                            .Replace("Ç", "c")
+                            .Replace("È", "e")
+                            .Replace("É", "e")
+                            .Replace("Ê", "e")
+                            .Replace("Ë", "e")
+                            .Replace("Î", "i")
+                            .Replace("Ï", "i")
+                            .Replace("Ô", "o")
+                            .Replace("Ö", "o")
+                            .Replace("Ù", "u")
+                            .Replace("Û", "u")
+                            .Replace("Ü", "u")
+                            .Replace("Ÿ", "y")
+                            .ToLower()
+                            .Replace("à", "a")
+                            .Replace("á", "a")
+                            .Replace("â", "a")
+                            .Replace("ä", "a")
+                            .Replace("ç", "c")
+                            .Replace("è", "e")
+                            .Replace("é", "e")
+                            .Replace("ê", "e")
+                            .Replace("ë", "e")
+                            .Replace("î", "i")
+                            .Replace("ï", "i")
+                            .Replace("ô", "o")
+                            .Replace("ö", "o")
+                            .Replace("ù", "u")
+                            .Replace("û", "u")
+                            .Replace("ü", "u")
+                            .Replace("ÿ", "y")
+                            .Replace("œ", "oe"),
+                        pattern) ||
+                    EF.Functions.Like(
+                        (book.Authors ?? string.Empty)
+                            .Replace("À", "a")
+                            .Replace("Á", "a")
+                            .Replace("Â", "a")
+                            .Replace("Ä", "a")
+                            .Replace("Ç", "c")
+                            .Replace("È", "e")
+                            .Replace("É", "e")
+                            .Replace("Ê", "e")
+                            .Replace("Ë", "e")
+                            .Replace("Î", "i")
+                            .Replace("Ï", "i")
+                            .Replace("Ô", "o")
+                            .Replace("Ö", "o")
+                            .Replace("Ù", "u")
+                            .Replace("Û", "u")
+                            .Replace("Ü", "u")
+                            .Replace("Ÿ", "y")
+                            .ToLower()
+                            .Replace("à", "a")
+                            .Replace("á", "a")
+                            .Replace("â", "a")
+                            .Replace("ä", "a")
+                            .Replace("ç", "c")
+                            .Replace("è", "e")
+                            .Replace("é", "e")
+                            .Replace("ê", "e")
+                            .Replace("ë", "e")
+                            .Replace("î", "i")
+                            .Replace("ï", "i")
+                            .Replace("ô", "o")
+                            .Replace("ö", "o")
+                            .Replace("ù", "u")
+                            .Replace("û", "u")
+                            .Replace("ü", "u")
+                            .Replace("ÿ", "y")
+                            .Replace("œ", "oe"),
+                        pattern) ||
+                    EF.Functions.Like(
+                        (book.Publisher ?? string.Empty)
+                            .Replace("À", "a")
+                            .Replace("Á", "a")
+                            .Replace("Â", "a")
+                            .Replace("Ä", "a")
+                            .Replace("Ç", "c")
+                            .Replace("È", "e")
+                            .Replace("É", "e")
+                            .Replace("Ê", "e")
+                            .Replace("Ë", "e")
+                            .Replace("Î", "i")
+                            .Replace("Ï", "i")
+                            .Replace("Ô", "o")
+                            .Replace("Ö", "o")
+                            .Replace("Ù", "u")
+                            .Replace("Û", "u")
+                            .Replace("Ü", "u")
+                            .Replace("Ÿ", "y")
+                            .ToLower()
+                            .Replace("à", "a")
+                            .Replace("á", "a")
+                            .Replace("â", "a")
+                            .Replace("ä", "a")
+                            .Replace("ç", "c")
+                            .Replace("è", "e")
+                            .Replace("é", "e")
+                            .Replace("ê", "e")
+                            .Replace("ë", "e")
+                            .Replace("î", "i")
+                            .Replace("ï", "i")
+                            .Replace("ô", "o")
+                            .Replace("ö", "o")
+                            .Replace("ù", "u")
+                            .Replace("û", "u")
+                            .Replace("ü", "u")
+                            .Replace("ÿ", "y")
+                            .Replace("œ", "oe"),
+                        pattern));
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(query.Genre))
         {
-            var requestedGenre = Normalize(query.Genre);
-            filtered = filtered.Where(book => Normalize(book.Genre) == requestedGenre);
+            var genre = query.Genre.Trim();
+            filteredBooksQuery = filteredBooksQuery.Where(book =>
+                EF.Functions.Like(book.Genre ?? string.Empty, genre));
         }
 
-        filtered = query.Availability switch
+        if (query.Availability == PublicCatalogAvailabilityFilter.AvailableNow)
         {
-            PublicCatalogAvailabilityFilter.AvailableNow =>
-                filtered.Where(book => book.QuantityAvailable > 0),
-            PublicCatalogAvailabilityFilter.NextBookFair =>
-                filtered.Where(book => book.QuantityAnnounced > 0),
-            _ => filtered
-        };
+            filteredBooksQuery = filteredBooksQuery.Where(book => book.QuantityAvailable > 0);
+        }
+        else if (query.Availability == PublicCatalogAvailabilityFilter.NextBookFair)
+        {
+            // Keep the availability predicate in SQL while passing only scalar
+            // identifiers between the two queries. Value-object FK comparisons
+            // cannot be translated reliably when correlated across providers.
+            var bookFairIds = await dbContext.AssoEvents
+                .AsNoTracking()
+                .Where(assoEvent =>
+                    !assoEvent.IsCancelled &&
+                    assoEvent.EventsType == new EventsType(EventsType.EventsTypeEnum.Books))
+                .Select(assoEvent => assoEvent.Id)
+                .ToArrayAsync(cancellationToken);
+
+            var nextFairIsbns = await dbContext.BookAnnouncements
+                .AsNoTracking()
+                .Where(announcement =>
+                    announcement.Status == BookAnnouncementStatus.Announced &&
+                    (announcement.AssoEventsId == null ||
+                     bookFairIds.Contains(announcement.AssoEventsId!)))
+                .Select(announcement => announcement.Isbn13)
+                .Distinct()
+                .ToArrayAsync(cancellationToken);
+
+            filteredBooksQuery = filteredBooksQuery.Where(book =>
+                nextFairIsbns.Contains(book.Id));
+        }
 
         if (query.RareOnly)
         {
-            filtered = filtered.Where(book => book.IsRare);
+            filteredBooksQuery = filteredBooksQuery.Where(book => book.IsRare);
         }
 
-        var ordered = query.Sort switch
-        {
-            PublicCatalogSortOrder.RecentlyAdded =>
-                filtered.OrderByDescending(book => book.FirstSeenAt)
-                    .ThenBy(book => book.Title, StringComparer.CurrentCultureIgnoreCase),
-            _ => OrderByRelevance(filtered, normalizedSearch)
-        };
+        var genres = (await catalogBooksQuery
+                .Where(book => book.Genre != null && book.Genre != string.Empty)
+                .Select(book => book.Genre!)
+                .Distinct()
+                .OrderBy(genre => genre)
+                .ToListAsync(cancellationToken))
+            .Select(genre => genre.Trim())
+            .Where(genre => !string.IsNullOrWhiteSpace(genre))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(genre => genre, StringComparer.CurrentCultureIgnoreCase)
+            .ToArray();
 
-        var materialized = ordered.ToArray();
-        var page = materialized
+        var totalCount = await filteredBooksQuery.CountAsync(cancellationToken);
+        var orderedBooksQuery = OrderBooks(filteredBooksQuery, query.Sort, normalizedSearch);
+        var pageBooks = await orderedBooksQuery
             .Skip(checked((query.Page - 1) * query.PageSize))
             .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+
+        var pageIsbns = pageBooks.Select(book => book.Id).ToArray();
+        var announcements = pageIsbns.Length == 0
+            ? []
+            : await dbContext.BookAnnouncements
+                .AsNoTracking()
+                .Where(announcement => pageIsbns.Contains(announcement.Isbn13))
+                .ToListAsync(cancellationToken);
+        var fairIds = announcements
+            .Where(announcement => announcement.AssoEventsId is not null)
+            .Select(announcement => announcement.AssoEventsId!)
+            .Distinct()
             .ToArray();
+        var fairs = fairIds.Length == 0
+            ? []
+            : await dbContext.AssoEvents
+                .AsNoTracking()
+                .Where(assoEvent => fairIds.Contains(assoEvent.Id))
+                .ToListAsync(cancellationToken);
+
+        var page = PublicCatalogProjector.Project(pageBooks, announcements, fairs, nowUtc);
 
         return new PublicCatalogSearchResult(
             nowUtc,
             page,
-            materialized.Length,
+            totalCount,
             query.Page,
             query.PageSize,
             genres);
     }
 
-    private static IOrderedEnumerable<PublicCatalogBookResult> OrderByRelevance(
-        IEnumerable<PublicCatalogBookResult> books,
+    private static IOrderedQueryable<Book> OrderBooks(
+        IQueryable<Book> books,
+        PublicCatalogSortOrder sort,
         string normalizedSearch)
     {
-        return books
-            .OrderByDescending(book => Score(book, normalizedSearch))
-            .ThenByDescending(book => book.UpdatedAt)
-            .ThenBy(book => book.Title, StringComparer.CurrentCultureIgnoreCase);
-    }
+        if (sort == PublicCatalogSortOrder.RecentlyAdded)
+        {
+            return books
+                .OrderByDescending(book => book.FirstSeenAt)
+                .ThenBy(book => book.Title)
+                .ThenBy(book => book.Id);
+        }
 
-    private static int Score(PublicCatalogBookResult book, string normalizedSearch)
-    {
         if (string.IsNullOrWhiteSpace(normalizedSearch))
         {
-            return 0;
+            return books
+                .OrderByDescending(book => book.UpdatedAt)
+                .ThenBy(book => book.Title)
+                .ThenBy(book => book.Id);
         }
 
-        var title = Normalize(book.Title);
-        var authors = Normalize(book.Authors);
-        var isbn = Normalize(book.Isbn13);
-
-        if (isbn == normalizedSearch || title == normalizedSearch)
-        {
-            return 100;
-        }
-
-        if (title.StartsWith(normalizedSearch, StringComparison.Ordinal))
-        {
-            return 80;
-        }
-
-        if (title.Contains(normalizedSearch, StringComparison.Ordinal))
-        {
-            return 60;
-        }
-
-        if (authors.Contains(normalizedSearch, StringComparison.Ordinal))
-        {
-            return 40;
-        }
-
-        return isbn.Contains(normalizedSearch, StringComparison.Ordinal) ? 30 : 0;
-    }
-
-    private static bool Matches(PublicCatalogBookResult book, string term)
-    {
-        return Normalize(book.Title).Contains(term, StringComparison.Ordinal) ||
-               Normalize(book.Authors).Contains(term, StringComparison.Ordinal) ||
-               Normalize(book.Publisher).Contains(term, StringComparison.Ordinal) ||
-               Normalize(book.Isbn13).Contains(term, StringComparison.Ordinal);
+        var exactPattern = normalizedSearch;
+        var startsWithPattern = $"{normalizedSearch}%";
+        var containsPattern = $"%{normalizedSearch}%";
+        return books
+            .OrderByDescending(book => EF.Functions.Like(book.Title ?? string.Empty, exactPattern))
+            .ThenByDescending(book => EF.Functions.Like(book.Title ?? string.Empty, startsWithPattern))
+            .ThenByDescending(book => EF.Functions.Like(book.Title ?? string.Empty, containsPattern))
+            .ThenByDescending(book => EF.Functions.Like(book.Authors ?? string.Empty, containsPattern))
+            .ThenByDescending(book => book.UpdatedAt)
+            .ThenBy(book => book.Title)
+            .ThenBy(book => book.Id);
     }
 
     private static string Normalize(string? value)

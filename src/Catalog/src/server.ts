@@ -7,6 +7,8 @@ import {
 import express from 'express';
 import {join} from 'node:path';
 
+import {catalogRobotsForUrl} from './app/core/catalog-robots';
+import {catalogRoutePath, isKnownCatalogRoute} from './app/core/catalog-route';
 import {environment} from './environments/environment';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
@@ -19,8 +21,8 @@ app.use((req, _res, next) => {
 });
 
 app.use((req, res, next) => {
-  const routePath = req.path.replace(/\/+$/, '') || '/';
-  if (routePath === '/administration' || routePath === '/compte' || routePath === '/desinscription') {
+  const routePath = catalogRoutePath(req.path);
+  if (catalogRobotsForUrl(routePath) === 'noindex, nofollow') {
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   }
   next();
@@ -49,7 +51,22 @@ app.use(express.static(browserDistFolder, {
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then(response => response ? writeResponseToNodeResponse(response, res) : next())
+    .then(response => {
+      if (!response) {
+        next();
+        return;
+      }
+
+      if (!isKnownCatalogRoute(catalogRoutePath(req.path))) {
+        response = new Response(response.body, {
+          status: 404,
+          statusText: 'Not Found',
+          headers: response.headers,
+        });
+      }
+
+      return writeResponseToNodeResponse(response, res);
+    })
     .catch(next);
 });
 

@@ -1,3 +1,4 @@
+import {DOCUMENT} from '@angular/common';
 import {ActivatedRoute, convertToParamMap} from '@angular/router';
 import {provideZonelessChangeDetection} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
@@ -179,5 +180,25 @@ describe('CatalogBookDetailPageComponent', () => {
 
     expect(fixture.nativeElement.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.detail-cover span')).toBeNull();
+  });
+
+  it('removes book-specific SEO nodes when the detail page is destroyed', async () => {
+    const document = TestBed.inject(DOCUMENT);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(document.head.querySelector('link[data-catalog-book-seo]')).not.toBeNull();
+    expect(document.head.querySelector('#catalog-book-jsonld')).not.toBeNull();
+
+    try {
+      fixture.destroy();
+      expect(document.head.querySelector('link[data-catalog-book-seo]')).toBeNull();
+      expect(document.head.querySelector('#catalog-book-jsonld')).toBeNull();
+    } finally {
+      document.head.querySelector('link[data-catalog-book-seo]')?.remove();
+      document.head.querySelector('#catalog-book-jsonld')?.remove();
+    }
   });
 });

@@ -1,0 +1,34 @@
+:host {
+  display: block;
+}
+
+.not-found {
+  min-height: 55vh;
+  padding-top: clamp(72px, 12vw, 148px);
+  padding-bottom: clamp(72px, 12vw, 148px);
+}
+
+.not-found h1 {
+  max-width: 720px;
+  margin: 14px 0 20px;
+}
+
+.not-found__message {
+  max-width: 560px;
+  color: var(--catalog-slate-2);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.not-found__link {
+  display: inline-block;
+  margin-top: 18px;
+  color: var(--catalog-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.not-found__link:hover,
+.not-found__link:focus-visible {
+  color: var(--catalog-orange-3);
+}

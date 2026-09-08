@@ -38,6 +38,8 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
   readonly notifyError = signal<string | null>(null);
 
   private readonly destroyed = new Subject<void>();
+  private canonicalElement: HTMLLinkElement | null = null;
+  private structuredDataElement: HTMLScriptElement | null = null;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -78,6 +80,8 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroyed.next();
     this.destroyed.complete();
+    this.canonicalElement?.remove();
+    this.structuredDataElement?.remove();
   }
 
   bookPath(): string {
@@ -164,15 +168,22 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     });
     this.meta.updateTag({name: 'robots', content: 'index, follow'});
 
-    const canonical = this.document.head.querySelector('link[rel="canonical"]') || this.document.createElement('link');
+    const canonical = this.canonicalElement
+      || this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+      || this.document.createElement('link');
     canonical.setAttribute('rel', 'canonical');
+    canonical.setAttribute('data-catalog-book-seo', 'true');
     canonical.setAttribute('href', `${environment.publicUrl}${publicBookPath(book)}`);
     if (!canonical.parentNode) {
       this.document.head.appendChild(canonical);
     }
+    this.canonicalElement = canonical;
 
-    const structuredData = this.document.head.querySelector('#catalog-book-jsonld') || this.document.createElement('script');
+    const structuredData = this.structuredDataElement
+      || this.document.head.querySelector<HTMLScriptElement>('#catalog-book-jsonld')
+      || this.document.createElement('script');
     structuredData.setAttribute('id', 'catalog-book-jsonld');
+    structuredData.setAttribute('data-catalog-book-seo', 'true');
     structuredData.setAttribute('type', 'application/ld+json');
     structuredData.textContent = JSON.stringify({
       '@context': 'https://schema.org',
@@ -188,5 +199,6 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     if (!structuredData.parentNode) {
       this.document.head.appendChild(structuredData);
     }
+    this.structuredDataElement = structuredData;
   }
 }

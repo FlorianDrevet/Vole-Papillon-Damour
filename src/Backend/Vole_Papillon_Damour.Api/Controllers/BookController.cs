@@ -13,7 +13,6 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetBookMetadata;
 using Vole_Papillon_Damour.Application.Books.Queries.GetDeadStock;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
-using Vole_Papillon_Damour.Application.Books.Queries.GetPublicNextBookFair;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
@@ -101,23 +100,6 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetPublicCatalogBook")
-                .AllowAnonymous();
-
-            endpoints.MapGet(
-                    "/catalog/fairs/next",
-                    async (
-                        IMediator mediator,
-                        CancellationToken cancellationToken) =>
-                    {
-                        var result = await mediator.Send(
-                            new GetPublicNextBookFairQuery(),
-                            cancellationToken);
-
-                        return result.Match(
-                            fair => Results.Ok(ToResponse(fair)),
-                            error => error.Result());
-                    })
-                .WithName("GetNextPublicBookFair")
                 .AllowAnonymous();
 
             endpoints.MapGet(
