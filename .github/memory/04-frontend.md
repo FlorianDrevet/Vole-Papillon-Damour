@@ -29,6 +29,13 @@ administrator cannot remove their own `Administration` role.
 The external bibliographic result block is kept separate from local results. DEV ACS email
 delivery is enabled after domain verification; a real authorized-recipient test remains open.
 
+After the 2026-09-08 rollout, Catalog analytics use dedicated public build variables:
+`CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` for GA4 `G-GBHC67EGGF` and `CLARITY_PROJECT_ID`
+for Clarity `yerabb7gnt`; the Website variable `GOOGLE_ANALYTICS_MEASUREMENT_ID` remains
+`G-D67DMFCTDG`. Live smoke confirmed that both scripts stay absent until consent and that
+the footer can reopen the choice for withdrawal. Search Console now contains the Catalog
+sitemap; initial crawl and analytics data remain delayed external checks.
+
 As of 2026-09-06, the Catalog P2/P3 integration is implemented in the V2 visual shell:
 the search page calls local and external reference endpoints independently; reference
 items can be followed as an edition or work after Entra login; the account page manages
