@@ -100,7 +100,7 @@ describe('CatalogApiService', () => {
     });
   });
 
-  it('maps only upcoming book fairs from the public event schedule', () => {
+  it('maps the dedicated next book fair response', () => {
     service.getUpcomingFairs().subscribe(result => {
       expect(result).toEqual([{
         id: 'fair-1',
@@ -116,35 +116,24 @@ describe('CatalogApiService', () => {
       }]);
     });
 
-    const request = http.expectOne(request => request.url === `${environment.apiUrl}/asso-events`);
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/asso-events/next-books`);
     expect(request.request.method).toBe('GET');
-    request.flush([
-      {
-        id: 'fair-1',
-        name: 'Bourse de printemps',
-        eventType: 'Books',
-        dateStart: '2027-03-14T00:00:00Z',
-        dateEnd: '2027-03-15T00:00:00Z',
-        hourOpenDoors: '2026-10-05T09:30:00Z',
-        hourCloseDoors: '2026-10-05T18:00:00Z',
-        roadNumber: 46,
-        city: 'Saint-Just-Saint-Rambert',
-        cityCode: 42170,
-        road: 'route de Saint-Marcellin',
-      },
-      {
-        id: 'bingo-1',
-        name: 'Loto',
-        eventType: 'Bingo',
-        dateStart: '2027-02-01T00:00:00Z',
-        dateEnd: null,
-        hourOpenDoors: null,
-        hourCloseDoors: null,
-        roadNumber: null,
-        city: 'Saint-Étienne',
-        cityCode: 42000,
-        road: 'rue du Test',
-      },
-    ]);
+    request.flush({
+      id: 'fair-1',
+      name: 'Bourse de printemps',
+      eventType: 'Books',
+      dateStart: '2027-03-14T00:00:00Z',
+      dateEnd: '2027-03-15T00:00:00Z',
+      hourOpenDoors: '2026-10-05T09:30:00Z',
+      hourCloseDoors: '2026-10-05T18:00:00Z',
+      roadNumber: 46,
+      city: 'Saint-Just-Saint-Rambert',
+      cityCode: 42170,
+      road: 'route de Saint-Marcellin',
+    });
+  });
+
+  it('does not expose the removed legacy next-fair request', () => {
+    expect((service as unknown as {getNextFair?: unknown}).getNextFair).toBeUndefined();
   });
 });

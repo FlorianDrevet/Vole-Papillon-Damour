@@ -9,6 +9,7 @@ import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
+import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
 
 const routes: Routes = [
   {path: '', component: CatalogHomePageComponent},
@@ -45,7 +46,7 @@ const routes: Routes = [
     component: LegalPageComponent,
     data: {page: 'accessibility'},
   },
-  {path: '**', redirectTo: ''},
+  {path: '**', component: CatalogNotFoundPageComponent},
 ];
 
 @NgModule({
