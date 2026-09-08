@@ -10,6 +10,7 @@ import {
   ScanSaleOutboxEntry,
   LocalScanCloseReason,
   ScanSessionSnapshot,
+  ScanSessionClosePendingError,
 } from './scan-offline.model';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {ScanVerdictService} from './scan-verdict.service';
@@ -128,6 +129,25 @@ export class ScanWorkflowService {
     });
   }
 
+  async deleteSaleOutboxEntry(clientGestureId: string): Promise<boolean> {
+    return await this.enqueue(async () => {
+      const entry = await this.store.getSaleOutboxEntry(clientGestureId);
+      if (!entry || (entry.status ?? 'Pending') !== 'Pending') {
+        return false;
+      }
+
+      await this.store.deleteSaleOutboxEntry(clientGestureId);
+      return true;
+    });
+  }
+
+  async hasPendingSaleOutboxEntry(clientGestureId: string): Promise<boolean> {
+    return await this.enqueue(async () => {
+      const entry = await this.store.getSaleOutboxEntry(clientGestureId);
+      return entry !== null && (entry.status ?? 'Pending') === 'Pending';
+    });
+  }
+
   async setSessionMode(mode: 'AvailableNow' | 'NextFair'): Promise<ScanSessionSnapshot> {
     return await this.enqueue(async () => {
       const session = await this.ensureSession(new Date());
@@ -223,7 +243,7 @@ export class ScanWorkflowService {
     return await this.enqueue(async () => {
       const session = await this.ensureSession(occurredAt);
       if (session.closeRequested) {
-        throw new Error('The scan session is waiting for synchronization to close.');
+        throw new ScanSessionClosePendingError();
       }
 
       await this.store.orphanPendingOutboxEntriesFromOtherSessions(session.scanSessionId);

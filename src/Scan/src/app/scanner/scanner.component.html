@@ -327,7 +327,7 @@
         <div class="manual-value" aria-live="polite" aria-label="ISBN en cours de saisie">
           {{ manualIsbn || ' ' }}<span class="manual-caret" aria-hidden="true"></span>
         </div>
-        <span class="manual-count">{{ manualDigitCount }} chiffre{{ manualDigitCount > 1 ? 's' : '' }} sur 13</span>
+        <span class="manual-count">{{ manualDigitCount }} caractère{{ manualDigitCount > 1 ? 's' : '' }} saisi{{ manualDigitCount > 1 ? 's' : '' }} · 10 ou 13 attendus</span>
         <p *ngIf="manualError" class="manual-error" role="alert">{{ manualError }}</p>
       </div>
 
@@ -462,6 +462,9 @@
 
       <div class="cash-count"><span>Dans cette vente</span><strong>{{ cashItems.length }} livre{{ cashItems.length > 1 ? 's' : '' }}</strong></div>
       <p *ngIf="cashMessage" class="cash-message" role="status">{{ cashMessage }}</p>
+      <button *ngIf="canCancelLastSale" type="button" class="cash-cancel-sale" (click)="cancelLastSale()">
+        Annuler la dernière vente
+      </button>
       <p *ngIf="cameraError" class="cash-camera-error" role="alert">{{ cameraError }}</p>
 
       <footer class="action-dock cash-dock">

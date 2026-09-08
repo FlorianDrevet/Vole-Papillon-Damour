@@ -132,6 +132,14 @@ quarantined/orphaned entries when deciding whether a close may complete. Local c
 lookup failures are shown on cash and consultation, and a cash line is never created from
 an unknown `isRare: false` fallback.
 
+The 2026-09-08 Scan Lot 2 hardening subscribes to the scanner login observable, keeps the
+IndexedDB connection lazy and reopenable after `versionchange`/blocked opens, and exposes
+typed storage errors for the closed-by-another-instance versus unavailable-storage cases.
+The scan surface distinguishes a session awaiting closure from a failed local write; cash
+navigation confirms before discarding an unfinished sale, validated pending sales expose a
+local cancellation action, and session termination is confirmed. The manual ISBN keypad
+accepts the ISBN-10 `X` check character and describes its 10-or-13-character contract.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:

@@ -14,6 +14,28 @@ export type LocalScanMode = 'AvailableNow' | 'NextFair';
 
 export type LocalScanCloseReason = 'Manual' | 'Inactivity' | 'Disconnect' | 'TokenExpired';
 
+export type ScanLocalStoreFailureReason =
+  | 'unavailable'
+  | 'closed-by-other-instance'
+  | 'blocked-by-other-instance';
+
+export class ScanLocalStoreError extends Error {
+  constructor(
+    readonly reason: ScanLocalStoreFailureReason,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'ScanLocalStoreError';
+  }
+}
+
+export class ScanSessionClosePendingError extends Error {
+  constructor() {
+    super('The scan session is waiting for synchronization to close.');
+    this.name = 'ScanSessionClosePendingError';
+  }
+}
+
 export type LocalBookVerdict = 'Wanted' | 'Selling' | 'TooMany' | 'FirstCopy';
 
 export type ScanOutboxStatus =

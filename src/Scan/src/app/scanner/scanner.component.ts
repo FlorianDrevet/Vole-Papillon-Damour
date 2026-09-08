@@ -20,6 +20,8 @@ import {
   LocalScanResult,
   PersistentStorageStatus,
   ScanCatalogBook,
+  ScanLocalStoreError,
+  ScanSessionClosePendingError,
   ScanSessionSnapshot,
 } from '../offline/scan-offline.model';
 import {ScanSyncService} from '../offline/scan-sync.service';
@@ -39,7 +41,7 @@ export type ScanScreen =
   | 'consultation';
 
 type ScanDestination = 'tri' | 'cash' | 'consultation';
-type ManualKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'clear' | 'backspace';
+type ManualKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'X' | 'clear' | 'backspace';
 
 interface CashScanItem {
   id: string;
@@ -70,7 +72,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
     '1', '2', '3',
     '4', '5', '6',
     '7', '8', '9',
-    'clear', '0', 'backspace',
+    'X', 'clear', '0',
+    'backspace',
   ];
 
   isbnInput = '';
@@ -113,6 +116,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private canSynchronize = true;
   private syncInProgress = false;
   private syncPromise: Promise<void> | null = null;
+  private lastValidatedSaleIds: string[] = [];
   private sessionEnding = false;
   private sessionEnded = false;
   private sessionCloseCompleted = false;
@@ -208,6 +212,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   get manualDigitCount(): number {
     return this.manualIsbn.replace(/[^0-9Xx]/g, '').length;
+  }
+
+  get canCancelLastSale(): boolean {
+    return this.lastValidatedSaleIds.length > 0;
   }
 
   get activeBook(): ScanCatalogBook | null {
@@ -412,11 +420,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.consultationResult = localOutcome.value as LocalCatalogResult | null;
       }
     } else if (destination === 'tri') {
-      this.storageError = 'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.';
+      this.storageError = this.isSessionClosePendingError(localOutcome.reason)
+        ? 'La session attend sa clôture. Ouvrez une nouvelle session avant de scanner.'
+        : this.describeStorageError(
+          localOutcome.reason,
+          'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
+        );
     } else {
-      this.storageError = destination === 'cash'
-        ? 'La lecture du catalogue local a échoué. Aucune ligne de caisse n’a été créée.'
-        : 'La lecture du catalogue local a échoué. Les informations de stock peuvent être incomplètes.';
+      this.storageError = this.describeStorageError(
+        localOutcome.reason,
+        destination === 'cash'
+          ? 'La lecture du catalogue local a échoué. Aucune ligne de caisse n’a été créée.'
+          : 'La lecture du catalogue local a échoué. Les informations de stock peuvent être incomplètes.',
+      );
     }
 
     let metadata: BookMetadata | null = null;
@@ -476,8 +492,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (this.scanWorkflow) {
       try {
         this.session = await this.scanWorkflow.setSessionMode(mode);
-      } catch {
-        this.storageError = 'Le mode de session n’a pas pu être conservé localement.';
+      } catch (error: unknown) {
+        this.storageError = this.describeStorageError(
+          error,
+          'Le mode de session n’a pas pu être conservé localement.',
+        );
       }
     } else if (this.session) {
       this.session = {...this.session, mode};
@@ -563,7 +582,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   login(): void {
-    this.scanAuth?.login();
+    this.scanAuth?.login().subscribe({
+      error: () => undefined,
+    });
   }
 
   logout(): void {
@@ -634,6 +655,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.syncStatus = 'success';
       }
       await this.refreshLocalState();
+      await this.refreshSaleCancellationState();
     } catch {
       this.syncStatus = 'error';
       this.syncError = 'La synchronisation a échoué ; les gestes restent conservés localement.';
@@ -676,6 +698,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (typeof window !== 'undefined' && !window.confirm(
+      'Terminer cette session de tri ? La clôture sera synchronisée avec le serveur.',
+    )) {
+      return;
+    }
+
     this.sessionEnding = true;
     this.sessionCloseError = null;
 
@@ -691,8 +719,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
         try {
           this.session = await this.scanWorkflow.requestClose('Manual');
           await this.refreshLocalState();
-        } catch {
-          this.sessionCloseError = 'La demande de fin n’a pas pu être conservée localement.';
+        } catch (error: unknown) {
+          this.sessionCloseError = this.describeStorageError(
+            error,
+            'La demande de fin n’a pas pu être conservée localement.',
+          );
           this.screen = 'tri';
           return;
         }
@@ -734,6 +765,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   returnHome(): void {
+    if (this.cashItems.length > 0 && typeof window !== 'undefined' && !window.confirm(
+      'Cette vente contient encore des livres. Revenir à l’accueil et vider la vente ?',
+    )) {
+      return;
+    }
+
     this.stopCamera();
     this.resetLookupState();
     this.cashItems = [];
@@ -778,13 +815,47 @@ export class ScannerComponent implements OnInit, OnDestroy {
     }
 
     try {
-      await this.scanWorkflow.recordCashSales(items.map(item => item.isbn13));
+      const saleEntries = await this.scanWorkflow.recordCashSales(items.map(item => item.isbn13));
+      this.lastValidatedSaleIds = saleEntries
+        .filter(entry => (entry.status ?? 'Pending') === 'Pending')
+        .map(entry => entry.clientGestureId);
       this.cashItems = [];
       this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''} localement. Synchronisation automatique en cours.`;
       await this.refreshLocalState();
       this.trySync();
-    } catch {
-      this.cashMessage = 'La vente n’a pas pu être conservée localement. Réessayez sans quitter cet écran.';
+    } catch (error: unknown) {
+      this.cashMessage = this.describeStorageError(
+        error,
+        'La vente n’a pas pu être conservée localement. Réessayez sans quitter cet écran.',
+      );
+    }
+
+    this.refreshView();
+  }
+
+  async cancelLastSale(): Promise<void> {
+    if (!this.scanWorkflow || !this.canCancelLastSale) {
+      return;
+    }
+
+    const saleIds = [...this.lastValidatedSaleIds];
+    let cancelledCount = 0;
+    try {
+      for (const saleId of saleIds) {
+        if (await this.scanWorkflow.deleteSaleOutboxEntry(saleId)) {
+          cancelledCount += 1;
+        }
+      }
+      this.lastValidatedSaleIds = [];
+      this.cashMessage = cancelledCount > 0
+        ? `${cancelledCount} vente${cancelledCount > 1 ? 's' : ''} annulée${cancelledCount > 1 ? 's' : ''} localement.`
+        : 'Cette vente a déjà été transmise et ne peut plus être annulée ici.';
+      await this.refreshLocalState();
+    } catch (error: unknown) {
+      this.cashMessage = this.describeStorageError(
+        error,
+        'La vente n’a pas pu être annulée localement. Réessayez.',
+      );
     }
 
     this.refreshView();
@@ -966,8 +1037,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.trySync();
       this.refreshView();
       this.startCameraIfNeeded();
-    } catch {
-      this.storageError = 'Le stockage local ne peut pas être initialisé. Aucun geste ne sera considéré comme conservé.';
+    } catch (error: unknown) {
+      this.storageError = this.describeStorageError(
+        error,
+        'Le stockage local ne peut pas être initialisé. Aucun geste ne sera considéré comme conservé.',
+      );
       this.refreshView();
     }
   }
@@ -987,8 +1061,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.resetLookupState();
       this.refreshView();
       this.resumeCamera();
-    } catch {
-      this.storageError = 'La décision n’a pas pu être conservée localement.';
+    } catch (error: unknown) {
+      this.storageError = this.describeStorageError(
+        error,
+        'La décision n’a pas pu être conservée localement.',
+      );
       this.refreshView();
     }
   }
@@ -1001,6 +1078,29 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.pendingCount = await this.scanWorkflow.getPendingCount();
     this.session = await this.scanWorkflow.getSession();
     this.selectedMode = this.session?.mode ?? this.selectedMode;
+  }
+
+  private async refreshSaleCancellationState(): Promise<void> {
+    if (!this.scanWorkflow || this.lastValidatedSaleIds.length === 0) {
+      return;
+    }
+
+    const workflow = this.scanWorkflow as ScanWorkflowService & {
+      hasPendingSaleOutboxEntry?: (clientGestureId: string) => Promise<boolean>;
+    };
+    if (typeof workflow.hasPendingSaleOutboxEntry !== 'function') {
+      return;
+    }
+
+    const saleIds = [...this.lastValidatedSaleIds];
+    try {
+      const pending = await Promise.all(
+        saleIds.map(saleId => workflow.hasPendingSaleOutboxEntry!(saleId)),
+      );
+      this.lastValidatedSaleIds = saleIds.filter((_saleId, index) => pending[index]);
+    } catch {
+      // Keep the cancellation action available when the status cannot be read.
+    }
   }
 
   private stopCamera(): void {
@@ -1098,6 +1198,28 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.errorMessage = null;
     this.cameraError = null;
     this.isLoading = false;
+  }
+
+  private describeStorageError(error: unknown, fallback: string): string {
+    if (!(error instanceof ScanLocalStoreError)) {
+      return fallback;
+    }
+
+    switch (error.reason) {
+      case 'closed-by-other-instance':
+        return 'La base locale a été fermée par une autre instance. Fermez l’autre onglet puis réessayez.';
+      case 'blocked-by-other-instance':
+        return 'La base locale est bloquée par une autre instance. Fermez l’autre onglet puis réessayez.';
+      default:
+        return 'Le stockage local est indisponible. Aucun geste ne peut être conservé ici.';
+    }
+  }
+
+  private isSessionClosePendingError(error: unknown): boolean {
+    return error instanceof ScanSessionClosePendingError || (
+      error instanceof Error &&
+      error.message === 'The scan session is waiting for synchronization to close.'
+    );
   }
 
   private createCashItem(isbn13: string, metadata: BookMetadata | null): CashScanItem {

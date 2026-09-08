@@ -1181,6 +1181,10 @@ input:focus-visible {
   height: 26px;
 }
 
+.manual-key:last-child {
+  grid-column: 1 / -1;
+}
+
 .manual-dock {
   margin-top: auto;
   gap: 10px;
@@ -1519,6 +1523,19 @@ input:focus-visible {
   color: var(--scan-green);
   font-size: 13px;
   text-align: center;
+}
+
+.cash-cancel-sale {
+  align-self: center;
+  min-height: 34px;
+  margin: 4px 20px 0;
+  padding: 4px 10px;
+  border: 0;
+  color: var(--scan-red);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: underline;
 }
 
 .cash-dock {
