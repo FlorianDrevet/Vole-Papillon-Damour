@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalogue — mentions légales, confidentialité, cookies, accessibilité et mesure d’audience consentie sur la branche `feat/catalog-legal-analytics`, depuis `origin/main` (`8bd45d6`). |
-| **Prochaine action** | Après merge, lancer `Catalog - deploy`, vérifier le consentement puis la collecte GA4/Clarity sur le domaine public, et soumettre `https://livres.volepapillondamour.fr/sitemap.xml` dans la propriété Search Console de domaine. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-legal-analytics` |
-| **Dernière mise à jour** | 2026-09-07 — tranche légale/analytics du catalogue préparée, PR à ouvrir |
-| **Branche** | `feat/catalog-legal-analytics` — worktree dédié, basé sur `origin/main` (`8bd45d6`) |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
+| **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-live-verification` |
+| **Dernière mise à jour** | 2026-09-08 — PR #94 fusionnée, déploiement et smoke consentement terminés, sitemap soumis |
+| **Branche** | `docs/catalog-live-verification` — worktree dédié, basé sur `origin/main` (`52418a1`) |
 
 ---
 
@@ -77,6 +77,23 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-08 — déploiement et référencement du Catalogue
+
+La PR [#94](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/94) est fusionnée
+dans `main` au commit `e232d0f`. Les deux lancements `Catalog - deploy`
+`34165470413` et `34165490064` sont réussis ; les variables publiques dédiées
+`CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` et `CLARITY_PROJECT_ID` sont présentes dans
+l’environnement `development`, tandis que la variable GA4 du Website est conservée.
+
+Le smoke HTTPS du 2026-09-08 renvoie `200` sur les cinq routes légales, `robots.txt` et
+`sitemap.xml`. Dans un navigateur neuf, la bannière s’affiche sans charger Clarity ou GA4 ;
+le choix personnalisé charge exactement Clarity `yerabb7gnt` et GA4 `G-GBHC67EGGF`, puis le
+lien « Gérer les cookies » permet de retirer le choix sans erreur console. Le sitemap
+`https://livres.volepapillondamour.fr/sitemap.xml` est maintenant soumis dans la propriété
+de domaine Search Console `volepapillondamour.fr`, avec l’état « Opération effectuée » et
+3 pages découvertes. Les tableaux Clarity/GA4 et le prochain crawl Search Console restent
+à observer après leur délai de traitement.
 
 ### État actualisé — 2026-09-07 — footer dédié au Catalog
 
@@ -667,6 +684,8 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 > | Vérification du domaine d'envoi ACS | `2026-09-02` | terminée dans le workflow `34046166674` : propriété/SPF/DKIM/DKIM2 vérifiés ; DMARC reste `NotStarted` |
 > | Test d'envoi e-mail réel | — | non exécuté ; nécessite une boîte destinataire autorisée |
 > | Réputation du domaine d'envoi | *(des semaines — lancer tôt)* | |
+> | Exploration du sitemap Catalogue dans Search Console | `2026-09-08` | sitemap soumis, état « Opération effectuée », 3 pages découvertes ; attendre le prochain crawl |
+> | Premières données Clarity/GA4 | `2026-09-08` | scripts chargés après consentement sur le domaine public ; relever les tableaux après délai de collecte |
 
 ---
 
@@ -693,6 +712,7 @@ dans Azure sans être déductible du dépôt.
 | Event Grid ACS | `vpd-acs-email-delivery-reports-dev`, événement `Microsoft.Communication.EmailDeliveryReportReceived`, webhook API `/integrations/acs/email-delivery-reports` et header partagé configurés | `2026-09-06` |
 | API catalogue | Image `vpdacrdev.azurecr.io/vpd-api:5601c2e` déployée avec le Worker par `Books runtime - deploy` run `34050215862`; `/health`, `/catalog/search`, `/catalog/sitemap.xml` et metadata BnF/Open Library répondent `200` | `2026-09-06` |
 | Catalogue public | Image `vpdacrdev.azurecr.io/vpd-catalog:5601c2e` déployée par `Catalog - deploy` run `34050216526`; `/`, `/robots.txt`, `/sitemap.xml` répondent `200`, les routes privées sont `noindex` côté HTML et en-tête | `2026-09-06` |
+| Catalogue public — légal/analytics | Commit `e232d0f` déployé par `Catalog - deploy` runs `34165470413` et `34165490064`; routes légales en `200`, consentement et chargement post-accord de Clarity/GA4 vérifiés | `2026-09-08` |
 | Runtime Books | API `vpd-api:5601c2e` et Worker `vpd-worker:5601c2e` construits depuis le même commit ; migrations EF déjà appliquées, rollout réussi | `2026-09-06` |
 | Plafonds journaliers App Insights | Déclarés dans `main.bicep` à 1 Go/jour par composant ; confirmation post-déploiement à relever | `2026-09-04` |
 | Règles d'alerte | Déclarées dans `main.bicep` : heartbeat absent, annonces en retard, file d'alertes en retard et metadata API au-delà de 3 s ; confirmation post-déploiement à relever | `2026-09-07` |
@@ -744,6 +764,22 @@ reportées.
 | `ENTRA_GRAPH_CLIENT_ID` | Présent dans l'environnement `development` |
 | `ENTRA_GRAPH_CLIENT_SECRET` | Présent dans l'environnement `development` ; valeur jamais écrite dans le dépôt |
 
+### Variables GitHub
+
+| Variable | État |
+|---|---|
+| `CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` | `G-GBHC67EGGF`, identifiant public GA4 dédié au Catalogue |
+| `CLARITY_PROJECT_ID` | `yerabb7gnt`, identifiant public Clarity dédié au Catalogue |
+| `GOOGLE_ANALYTICS_MEASUREMENT_ID` | `G-D67DMFCTDG`, identifiant GA4 du Website conservé sans réutilisation par le Catalogue |
+
+### Analytics et référencement
+
+| Service | État |
+|---|---|
+| Microsoft Clarity | Projet `Vole Papillon d'Amour Catalogue`, URL `https://livres.volepapillondamour.fr`, identifiant `yerabb7gnt`; script vérifié après consentement |
+| Google Analytics 4 | Propriété `Vole Papillon d'Amour Catalogue`, flux `Catalogue Vole Papillon d'Amour`, identifiant de mesure `G-GBHC67EGGF`, stream `15735961796`; script vérifié après consentement |
+| Google Search Console | Propriété de domaine `sc-domain:volepapillondamour.fr`; sitemap `https://livres.volepapillondamour.fr/sitemap.xml` soumis le `2026-09-08`, « Opération effectuée », 3 pages découvertes |
+
 ---
 
 ## Mesures faites
@@ -759,6 +795,8 @@ reportées.
 | `QT-08` *(partie geste, `P1-5`)* | Scan possible hors ligne après 48 h | — | — |
 | `QT-09` | Tenue de `S1` sur disque dur | — | — |
 | `P1-9` | Mesures SQL et traitement sur dataset de développement | Non chiffré : aucun benchmark reproductible n'a été exécuté dans cette reprise ; ne pas inventer de cadence ou de volume | 2026-09-04 |
+| `Catalogue legal/analytics` | Déploiement et consentement vérifiés sur le domaine public ; scripts Clarity/GA4 absents avant accord, présents après accord, retrait fonctionnel | 2026-09-08 |
+| `Catalogue sitemap` | Soumission Search Console acceptée ; état « Opération effectuée », 3 pages découvertes | 2026-09-08 |
 
 **Chiffres cibles du palier 0** *(à écrire en `S0-1`, avant la campagne — pas après)* :
 
@@ -788,6 +826,9 @@ reportées.
 | POC Scan — détection à partir d'une photo sur iPhone | Détection réussie et parcours jusqu'à la fiche | `2026-09-03` |
 | Scan public — fiche BnF `9782070612758` après `Scan - deploy` `33778535757` | `200 OK`, couverture chargée dans Chrome (`103 × 150`) | `2026-09-03` |
 | Campagne `S0-4` — 300 livres réels | Test manuel déclaré concluant ; le flux a fonctionné sur les 300 livres, sans relevé chiffré des sous-mesures | `2026-09-03` |
+| Smoke post-merge — Catalogue légal/analytics | Les cinq routes légales, `/robots.txt` et `/sitemap.xml` répondent `200`; le rendu initial ne contient pas de scripts d’audience | `2026-09-08` |
+| Consentement Catalogue — accord puis retrait | Le choix personnalisé charge `https://www.clarity.ms/tag/yerabb7gnt` et `https://www.googletagmanager.com/gtag/js?id=G-GBHC67EGGF`; « Gérer les cookies » rouvre la bannière et le refus la ferme sans erreur console | `2026-09-08` |
+| Search Console — sitemap Catalogue | `https://livres.volepapillondamour.fr/sitemap.xml` soumis dans `sc-domain:volepapillondamour.fr`; retour « Sitemap envoyé », puis tableau « Opération effectuée », 3 pages découvertes | `2026-09-08` |
 
 > Un test manuel non consigné sera refait. Noter au minimum : quoi, quand, et ce qui a été
 > observé — pas seulement « OK ».
@@ -800,6 +841,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-08 | Windows | **Catalogue — post-merge et setup final.** PR #94 fusionnée (`e232d0f`) ; `Catalog - deploy` `34165470413` et `34165490064` réussis. Smoke public : cinq routes légales, robots et sitemap en `200`; aucun script avant consentement, Clarity `yerabb7gnt` et GA4 `G-GBHC67EGGF` chargés après accord, retrait vérifié sans erreur console. Sitemap Catalogue soumis dans Search Console avec « Opération effectuée » et 3 pages découvertes. Les premières données analytics et le prochain crawl restent à relever. |
 | 2026-09-07 | Windows | **Catalogue — mentions légales et mesure consentie.** Ajout des pages mentions légales, confidentialité, politique de cookies et accessibilité, avec les informations de l’association, l’hébergement Azure Container Apps, les droits, les comptes/listes/alertes et les limites encore à valider (durées de conservation, transferts, audit RGAA). Ajout d’une bannière permettant d’accepter, refuser ou personnaliser ; Microsoft Clarity et GA4 ne sont chargés qu’après consentement explicite. Création du projet Clarity `yerabb7gnt`, de la propriété/du flux GA4 avec l’identifiant `G-GBHC67EGGF`, et configuration des variables GitHub dédiées du Catalogue ; la variable Website `G-D67DMFCTDG` a été préservée. Le sitemap Catalogue est prêt dans Search Console mais son envoi final reste à confirmer. Validation locale : 103 tests ChromeHeadless, build SSR/production et smoke des quatre pages légales. |
 | 2026-09-07 | Windows | **Footer dédié au Catalog.** Remplacement des liens Website « L'association / Maxence / Contact » par les parcours du catalogue (recherche, genres, prochaines dates, liste de recherche), le renvoi vers le site associatif et les pages légales locales. La grille passe à trois colonnes avec le rappel qu'aucune donnée n'est nécessaire pour consulter le catalogue. Validation : 87 tests ChromeHeadless, build SSR/navigateur et contrôles responsive à 1905/390 px ; PR et déploiement à faire. |
 | 2026-09-07 | Windows | **Scanette — feedback caméra.** Les trois destinations affichent immédiatement « Scan détecté » avec un loader pendant la recherche du livre. La prévisualisation active est accessible au toucher/clavier et demande une remise au point via `single-shot`/`continuous` lorsque le navigateur expose ces contraintes, avec repli sur l'autofocus natif. Validation : 97 tests ChromeHeadless Scan, 4 tests bootstrap, builds production et développement et `graphify update .`. Aucun test réel avec navigateur/appareil caméra ni déploiement n'a été effectué ; PR [#89](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/89) ouverte. |
