@@ -213,6 +213,21 @@ export class ScanWorkflowService {
     });
   }
 
+  async bindSessionToVolunteer(volunteerId: string): Promise<void> {
+    return await this.enqueue(async () => {
+      const session = await this.store.getSession();
+      if (!session || session.volunteerId === volunteerId) {
+        return;
+      }
+
+      if (session.volunteerId !== null) {
+        return;
+      }
+
+      await this.store.saveSession({...session, volunteerId});
+    });
+  }
+
   async mergeRemoteSession(remoteSession: {
     scanSessionId: string;
     volunteerId: string;
@@ -228,13 +243,12 @@ export class ScanWorkflowService {
     return await this.enqueue(async () => {
       const current = await this.ensureSession(new Date(remoteSession.startedAt));
       if (current.scanSessionId !== remoteSession.scanSessionId) {
-        return;
+        await this.store.rebindSession(current.scanSessionId, remoteSession.scanSessionId);
       }
 
       await this.store.saveSession({
         ...current,
         scanSessionId: remoteSession.scanSessionId,
-        volunteerId: remoteSession.volunteerId,
         mode: remoteSession.mode,
         targetAssoEventsId: remoteSession.targetAssoEventsId,
         startedAt: remoteSession.startedAt,

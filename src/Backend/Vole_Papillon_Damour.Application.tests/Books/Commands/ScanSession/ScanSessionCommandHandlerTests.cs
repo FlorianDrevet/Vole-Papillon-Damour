@@ -79,6 +79,31 @@ public sealed class ScanSessionCommandHandlerTests
     }
 
     [Fact]
+    public async Task Open_WhenVolunteerResumesMatchingActiveSession_ReturnsTheExistingSession()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var volunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        var existingSession = await fixture.AddSessionAsync(
+            ScanMode.AvailableNow,
+            volunteerId: volunteerId);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new OpenScanSessionCommandHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new OpenScanSessionCommand(
+                volunteerId,
+                ScanMode.AvailableNow,
+                null,
+                Guid.Parse("00000000-0000-0000-0000-000000000099")),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.ScanSessionId.Should().Be(existingSession.Id);
+        (await fixture.Context.ScanSessions.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
     public async Task Open_WhenAvailableModeTargetsAFair_ReturnsValidationError()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

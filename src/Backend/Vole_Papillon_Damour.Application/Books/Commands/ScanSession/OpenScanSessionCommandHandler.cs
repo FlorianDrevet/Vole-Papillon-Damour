@@ -98,6 +98,13 @@ public sealed class OpenScanSessionCommandHandler(
 
         if (existingSession is not null)
         {
+            if (existingSession.Mode == command.Mode &&
+                existingSession.TargetAssoEventsId == command.TargetAssoEventsId)
+            {
+                await transaction.CommitAsync(cancellationToken);
+                return ScanSessionResult.From(existingSession);
+            }
+
             return Errors.Book.ActiveScanSessionExists(command.VolunteerId);
         }
 

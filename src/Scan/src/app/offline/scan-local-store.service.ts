@@ -203,6 +203,55 @@ export class ScanLocalStoreService {
     }
   }
 
+  async rebindSession(oldScanSessionId: string, newScanSessionId: string): Promise<void> {
+    if (oldScanSessionId === newScanSessionId) {
+      return;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.outbox, scanStoreNames.session],
+      'readwrite',
+      stores => {
+        const outboxRequest = stores[scanStoreNames.outbox].openCursor();
+        outboxRequest.onsuccess = () => {
+          const cursor = outboxRequest.result;
+          if (!cursor) {
+            return;
+          }
+
+          const entry = cursor.value as ScanOutboxEntry;
+          if (entry.scanSessionId === oldScanSessionId) {
+            cursor.update({...entry, scanSessionId: newScanSessionId});
+          }
+          cursor.continue();
+        };
+
+        const sessionRequest = stores[scanStoreNames.session].getAll();
+        sessionRequest.onsuccess = () => {
+          const records = sessionRequest.result as Array<{
+            key: string;
+            scanSessionId?: string;
+            [key: string]: unknown;
+          }>;
+          for (const record of records) {
+            if (record.scanSessionId !== oldScanSessionId) {
+              continue;
+            }
+
+            stores[scanStoreNames.session].delete(record.key);
+            stores[scanStoreNames.session].put({
+              ...record,
+              key: record.key.startsWith('close-request:')
+                ? sessionCloseRequestKey(newScanSessionId)
+                : record.key,
+              scanSessionId: newScanSessionId,
+            });
+          }
+        };
+      },
+    );
+  }
+
   async addOutboxEntry(entry: ScanOutboxEntry): Promise<void> {
     await this.runRequest(
       scanStoreNames.outbox,

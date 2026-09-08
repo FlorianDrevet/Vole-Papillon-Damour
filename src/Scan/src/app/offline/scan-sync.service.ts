@@ -460,7 +460,7 @@ function classifyFailure(error: unknown): ScanFailureKind {
   if (status === 401 || status === 403) {
     return 'authorization';
   }
-  if (status !== null && status >= 400 && status < 500) {
+  if (status === 400 || status === 422) {
     return 'permanent';
   }
   return 'transient';
