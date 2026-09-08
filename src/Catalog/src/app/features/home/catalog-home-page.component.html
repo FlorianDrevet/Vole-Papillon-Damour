@@ -53,22 +53,13 @@
           <aside class="fair-location-card">
             <div class="fair-location-map-wrap">
               @if (address(fair)) {
-                @if (consent.preferences.maps) {
-                  <iframe
-                    [src]="mapsEmbedUrl(fair)"
-                    [title]="'Carte du lieu de ' + fair.name"
-                    loading="lazy"
-                    referrerpolicy="no-referrer-when-downgrade"
-                    class="fair-location-map"></iframe>
-                } @else {
-                  <div class="fair-location-placeholder fair-location-map-consent" role="status">
-                    <span class="pin-icon" aria-hidden="true"></span>
-                    <span class="fair-location-map-consent-copy">
-                      <strong>Carte Google Maps non chargée</strong>
-                      <button type="button" (click)="consent.enableMaps()">Afficher la carte Google Maps</button>
-                    </span>
-                  </div>
-                }
+                <div
+                  class="fair-location-placeholder"
+                  role="img"
+                  [attr.aria-label]="'Localisation : ' + address(fair)">
+                  <span class="pin-icon" aria-hidden="true"></span>
+                  <span>Carte consultable dans Google Maps</span>
+                </div>
                 <a
                   [href]="mapsUrl(fair)"
                   target="_blank"
@@ -211,26 +202,28 @@
     }
   </section>
 
-  <section class="genres-section">
-    <div class="page-width section-heading">
-      <span class="heading-rule" aria-hidden="true"></span>
-      <p class="eyebrow">Pour commencer quelque part</p>
-      <h2>Parcourir par genre.</h2>
-    </div>
-    <div class="page-width genre-grid">
-      @for (genre of featuredGenres; track genre.value; let index = $index) {
-        <a class="genre-card" [routerLink]="['/recherche']" [queryParams]="{genre: genre.value}">
-          <span class="genre-card-number" aria-hidden="true">0{{ index + 1 }}</span>
-          <span class="genre-card-copy">
-            <strong>{{ genre.label }}</strong>
-            <span>{{ genre.hint }}</span>
-          </span>
-          <span class="genre-card-arrow" aria-hidden="true">↗</span>
-        </a>
-      }
-      <a class="genre-all-link" routerLink="/catalogue">Voir tout le catalogue <span aria-hidden="true">→</span></a>
-    </div>
-  </section>
+  @if (availableGenres().length) {
+    <section class="genres-section">
+      <div class="page-width section-heading">
+        <span class="heading-rule" aria-hidden="true"></span>
+        <p class="eyebrow">Pour commencer quelque part</p>
+        <h2>Parcourir par genre.</h2>
+      </div>
+      <div class="page-width genre-grid">
+        @for (genre of availableGenres(); track genre; let index = $index) {
+          <a class="genre-card" [routerLink]="['/recherche']" [queryParams]="{genre}">
+            <span class="genre-card-number" aria-hidden="true">0{{ index + 1 }}</span>
+            <span class="genre-card-copy">
+              <strong>{{ genre }}</strong>
+              <span>Livres classés dans ce genre</span>
+            </span>
+            <span class="genre-card-arrow" aria-hidden="true">↗</span>
+          </a>
+        }
+        <a class="genre-all-link" routerLink="/catalogue">Voir tout le catalogue <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+  }
 
   <section class="home-account-callout page-width">
     <div>

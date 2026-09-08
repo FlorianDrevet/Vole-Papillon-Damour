@@ -2,9 +2,11 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {signal} from '@angular/core';
 import {Meta} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
+import {of} from 'rxjs';
 
 import {AppComponent} from './app.component';
 import {CatalogAuthService} from './core/catalog-auth.service';
+import {CatalogApiService} from './core/catalog-api.service';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 
@@ -21,6 +23,18 @@ describe('AppComponent', () => {
           account: signal(null),
           isAuthenticated: signal(false),
           isAdministrator: signal(false),
+        },
+      }, {
+        provide: CatalogApiService,
+        useValue: {
+          search: () => of({
+            generatedAt: '',
+            books: [],
+            totalCount: 0,
+            page: 1,
+            pageSize: 1,
+            genres: [],
+          }),
         },
       }],
     }).compileComponents();

@@ -8,9 +8,6 @@
         (navigation et enregistrement de session). Ces outils ne sont chargés qu'après votre consentement
         explicite et vous pouvez refuser sans impact sur la consultation des livres.
       </p>
-      <p class="cookie-banner__copy">
-        La carte interactive Google Maps est un contenu tiers, chargé uniquement après votre accord.
-      </p>
       <div class="cookie-banner__actions">
         <button type="button" class="cookie-banner__button cookie-banner__button--primary"
                 (click)="consent.acceptAll()">Tout accepter</button>
@@ -42,21 +39,6 @@
         <p>
           Microsoft Clarity et Google Analytics 4 mesurent les pages consultées et les interactions
           de navigation après votre accord. Voir la <a href="/politique-de-cookies">politique de cookies</a>.
-        </p>
-      </section>
-
-      <section class="cookie-banner__category" aria-labelledby="catalog-maps-title">
-        <div class="cookie-banner__category-heading">
-          <h3 id="catalog-maps-title">Carte et contenus tiers</h3>
-          <label class="cookie-banner__toggle">
-            <span class="visually-hidden">Autoriser Google Maps</span>
-            <input type="checkbox" [checked]="mapsChecked()" (change)="onMapsChange($event)" />
-            <span class="cookie-banner__toggle-track" aria-hidden="true"></span>
-          </label>
-        </div>
-        <p>
-          Google Maps affiche la carte interactive du lieu de la prochaine bourse. Le contenu
-          Google Maps n’est chargé qu’après votre accord ; le lien volontaire « Ouvrir dans Maps » reste disponible.
         </p>
       </section>
 

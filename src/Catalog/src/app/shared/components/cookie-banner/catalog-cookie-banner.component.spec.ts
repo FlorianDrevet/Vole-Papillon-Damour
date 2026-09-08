@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {CommonModule} from '@angular/common';
 import {BehaviorSubject} from 'rxjs';
 
-import {CookieConsentService, CookiePreferences} from '../../services/cookie-consent.service';
+import {CookieConsentService} from '../../services/cookie-consent.service';
 import {CatalogCookieBannerComponent} from './catalog-cookie-banner.component';
 
 describe('CatalogCookieBannerComponent', () => {
@@ -10,7 +10,7 @@ describe('CatalogCookieBannerComponent', () => {
   let consent: {
     bannerVisible$: BehaviorSubject<boolean>;
     panelOpen$: BehaviorSubject<boolean>;
-    preferences: CookiePreferences;
+    preferences: {analytics: boolean};
     acceptAll: jasmine.Spy;
     rejectAll: jasmine.Spy;
     openPanel: jasmine.Spy;
@@ -21,7 +21,7 @@ describe('CatalogCookieBannerComponent', () => {
     consent = {
       bannerVisible$: new BehaviorSubject(true),
       panelOpen$: new BehaviorSubject(false),
-      preferences: {analytics: false, maps: false},
+      preferences: {analytics: false},
       acceptAll: jasmine.createSpy('acceptAll'),
       rejectAll: jasmine.createSpy('rejectAll'),
       openPanel: jasmine.createSpy('openPanel').and.callFake(() => consent.panelOpen$.next(true)),
@@ -58,7 +58,7 @@ describe('CatalogCookieBannerComponent', () => {
     expect(consent.rejectAll).toHaveBeenCalled();
   });
 
-  it('opens a keyboard-accessible panel with necessary, analytics and Maps choices', () => {
+  it('opens a keyboard-accessible panel with necessary and analytics choices', () => {
     const customize = (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
       .find(button => button.textContent?.includes('Personnaliser')) as HTMLButtonElement;
 
@@ -67,7 +67,7 @@ describe('CatalogCookieBannerComponent', () => {
 
     expect(consent.openPanel).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Cookies nécessaires');
-    expect(fixture.nativeElement.textContent).toContain('Google Maps');
-    expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]')).toHaveSize(2);
+    expect(fixture.nativeElement.textContent).not.toContain('Google Maps');
+    expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]')).toHaveSize(1);
   });
 });

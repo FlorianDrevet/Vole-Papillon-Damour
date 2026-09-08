@@ -14,7 +14,8 @@ import type {AccountInfo} from '@azure/msal-browser';
 import {Subject, filter, takeUntil} from 'rxjs';
 
 import {CatalogAuthService} from '../../catalog-auth.service';
-import {CATALOG_NAV_ITEMS, CatalogNavItem} from './catalog-nav-items';
+import {CatalogGenresService} from '../../catalog-genres.service';
+import {CatalogNavItem, createCatalogNavItems} from './catalog-nav-items';
 
 @Component({
   selector: 'app-catalog-navigation',
@@ -25,8 +26,9 @@ import {CATALOG_NAV_ITEMS, CatalogNavItem} from './catalog-nav-items';
 })
 export class CatalogNavigationComponent {
   private readonly auth = inject(CatalogAuthService);
+  private readonly catalogGenres = inject(CatalogGenresService);
 
-  readonly navItems = CATALOG_NAV_ITEMS;
+  readonly navItems = computed(() => createCatalogNavItems(this.catalogGenres.genres()));
   readonly url = signal('');
   readonly menuOpen = signal(false);
   readonly accountMenuOpen = signal(false);
@@ -54,6 +56,7 @@ export class CatalogNavigationComponent {
   private readonly suppressedGenreMenu = signal(false);
 
   constructor() {
+    this.catalogGenres.load();
     effect(() => {
       if (!isPlatformBrowser(this.platformId)) {
         return;

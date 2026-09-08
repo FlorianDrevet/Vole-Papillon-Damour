@@ -128,3 +128,5 @@
 | 2026-09-08 | Implemented audit catalogue/Scanette lot 1 on `fix/catalogue-scan-lot1`: API-01/02/03/07, SCAN-03 and CAT-01/02 with regression tests, without a database migration; local backend, Scan and Catalog validations pass, while physical offline, RGPD and watermark-contract decisions remain open. |
 
 | 2026-09-08 | Prepared Scan Lot 4 on `fix/audit-scan-accessibility`: labeled Scan containers now expose explicit roles, the live manual ISBN value is announced without an overriding label, and every operating screen keeps a valid `h1` landmark target in both empty and verdict states. S-22 remains pending a real USB scanner validation. |
+
+| 2026-09-08 | Prepared Catalog Lot 5 on `fix/audit-catalog-public`: home cards, hero and navigation now consume only API genres, the public count is filtered to available titles, Maps is a static external link without an embedded third-party frame, the footer year is dynamic, and the personal Facebook profile is removed. Existing direct publisher/host legal details were verified rather than rewritten. |

@@ -10,7 +10,7 @@
       </a>
 
       <nav class="main-navigation" aria-label="Navigation principale">
-        @for (item of navItems; track item.url) {
+        @for (item of navItems(); track item.url) {
           @if (item.children) {
             <div class="nav-dropdown" (mouseenter)="releaseGenreMenu()" (focusin)="releaseGenreMenu()">
               <a
@@ -120,7 +120,7 @@
     <div class="mobile-drawer">
       <button type="button" class="mobile-close" (click)="closeMobileMenu()" aria-label="Fermer le menu">×</button>
       <nav aria-label="Navigation mobile">
-        @for (item of navItems; track item.url; let i = $index) {
+        @for (item of navItems(); track item.url; let i = $index) {
           <div class="mobile-nav-item">
             <a [routerLink]="item.url" (click)="closeMobileMenu()" [class.active]="isActive(item)">
               <span class="mobile-index">{{ (i + 1).toString().padStart(2, '0') }}</span>
@@ -142,7 +142,6 @@
         <a class="mobile-site-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">Le site de l’association ↗</a>
       </nav>
       <div class="mobile-socials">
-        <a href="https://www.facebook.com/melvin.drevet.1" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><img src="images/facebook.svg" alt="" width="16" height="16"></a>
         <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><img src="images/instagram.svg" alt="" width="16" height="16"></a>
       </div>
     </div>

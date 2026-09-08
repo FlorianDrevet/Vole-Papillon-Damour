@@ -176,6 +176,14 @@ and keeps a real `h1` target for each operating screen in both the empty and tri
 states. The USB scanner focus behavior from S-22 remains deliberately unmodified until it
 has been confirmed with the association's physical scanner.
 
+The 2026-09-08 Catalog Lot 5 public-surface pass removes the hard-coded featured genre
+taxonomy: the home cards, hero selector, and navigation menu now use only genres returned
+by the public catalog API, and the home section stays hidden when that list is empty. The
+home availability count queries the available projection, the fair location is a static
+Google Maps link instead of a consentless embedded frame, the footer year is computed at
+render time, and the personal Facebook profile is no longer exposed. The existing direct
+publisher and hosting information in the legal page was verified and left unchanged.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:

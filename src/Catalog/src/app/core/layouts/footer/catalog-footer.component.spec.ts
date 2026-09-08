@@ -78,4 +78,20 @@ describe('CatalogFooterComponent', () => {
 
     expect(consent.reopen).toHaveBeenCalled();
   });
+
+  it('renders the current copyright year', () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date(2031, 0, 1));
+
+    try {
+      const freshFixture = TestBed.createComponent(CatalogFooterComponent);
+      freshFixture.detectChanges();
+
+      expect(freshFixture.nativeElement.querySelector('.footer-copyright')?.textContent)
+        .toContain('© 2031');
+      freshFixture.destroy();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
 });

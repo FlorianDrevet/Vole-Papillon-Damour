@@ -199,8 +199,8 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
       {
         title: 'Google Maps',
         paragraphs: [
-          'La carte interactive Google Maps est un contenu fourni par un tiers. Elle n’est chargée dans la page qu’après votre consentement dédié dans la bannière de cookies.',
-          'Le lien volontaire « Ouvrir dans Maps » permet toutefois d’ouvrir directement le service Google Maps si vous choisissez cette action. Vous pouvez refuser la carte sans empêcher la consultation du catalogue.',
+          'Le catalogue n’intègre pas de carte interactive Google Maps. La page affiche seulement une indication locale du lieu afin qu’aucun contenu tiers ne soit chargé pendant la consultation.',
+          'Le lien volontaire « Ouvrir dans Maps » ouvre directement le service Google Maps dans un nouvel onglet lorsque vous choisissez cette action. Vous pouvez ne pas suivre ce lien sans empêcher la consultation du catalogue.',
         ],
       },
       {

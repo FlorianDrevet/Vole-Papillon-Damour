@@ -50,6 +50,8 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('Microsoft Clarity');
     expect(content).toContain('Google Analytics 4');
     expect(content).toContain('Google Maps');
+    expect(content).toContain('Ouvrir dans Maps');
+    expect(content).not.toContain('consentement dédié');
     expect(content).toContain('consentement explicite');
     expect(content).toContain('Gérer les cookies');
   });
