@@ -30,10 +30,11 @@ public sealed class ReassignSessionModeCommandHandlerTests
                 "9782070363735",
                 Kept: true,
                 ScanBookCommandHandlerTests.ClientScanAt,
-                Guid.NewGuid()),
+                Guid.NewGuid(),
+                session.VolunteerId),
             CancellationToken.None);
         await fixture.CreateCloseScanSessionHandler().Handle(
-            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual, session.VolunteerId),
             CancellationToken.None);
         fixture.AlertOutbox.CancelPendingForSessionAsync(
                 session.Id,
@@ -101,10 +102,11 @@ public sealed class ReassignSessionModeCommandHandlerTests
                 "9782070363735",
                 Kept: true,
                 ScanBookCommandHandlerTests.ClientScanAt,
-                Guid.NewGuid()),
+                Guid.NewGuid(),
+                session.VolunteerId),
             CancellationToken.None);
         await fixture.CreateCloseScanSessionHandler().Handle(
-            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual, session.VolunteerId),
             CancellationToken.None);
         var handler = fixture.CreateReassignSessionModeHandler();
 
@@ -135,7 +137,7 @@ public sealed class ReassignSessionModeCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var session = await fixture.AddSessionAsync(ScanMode.AvailableNow, volunteerId: AdministratorId);
         await fixture.CreateCloseScanSessionHandler().Handle(
-            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual, session.VolunteerId),
             CancellationToken.None);
         var handler = fixture.CreateReassignSessionModeHandler();
         var command = new ReassignSessionModeCommand(

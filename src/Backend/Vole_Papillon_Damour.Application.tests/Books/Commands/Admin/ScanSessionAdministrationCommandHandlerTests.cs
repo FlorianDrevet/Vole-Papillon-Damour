@@ -30,7 +30,8 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
                 "9782070363735",
                 Kept: true,
                 OccurredAt: ScanBookCommandHandlerTests.ClientScanAt,
-                ClientGestureId: Guid.NewGuid()),
+                ClientGestureId: Guid.NewGuid(),
+                VolunteerId: session.VolunteerId),
             CancellationToken.None);
         var movement = await fixture.Context.BookMovements.SingleAsync();
         var clock = Substitute.For<IDateTimeProvider>();
@@ -74,7 +75,8 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
                 "9782070363735",
                 Kept: true,
                 OccurredAt: ScanBookCommandHandlerTests.ClientScanAt,
-                ClientGestureId: Guid.NewGuid()),
+                ClientGestureId: Guid.NewGuid(),
+                VolunteerId: session.VolunteerId),
             CancellationToken.None);
         var movement = await fixture.Context.BookMovements.SingleAsync();
         var book = await fixture.Context.Books.SingleAsync();
@@ -108,7 +110,8 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
                 "9782070363735",
                 Kept: true,
                 OccurredAt: ScanBookCommandHandlerTests.ClientScanAt,
-                ClientGestureId: Guid.NewGuid()),
+                ClientGestureId: Guid.NewGuid(),
+                VolunteerId: session.VolunteerId),
             CancellationToken.None);
         var movement = await fixture.Context.BookMovements.SingleAsync();
         var clock = Substitute.For<IDateTimeProvider>();

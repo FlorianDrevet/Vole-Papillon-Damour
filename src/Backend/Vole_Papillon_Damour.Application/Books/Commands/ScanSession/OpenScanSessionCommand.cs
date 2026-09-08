@@ -11,4 +11,5 @@ public sealed record OpenScanSessionCommand(
     UserId VolunteerId,
     ScanMode Mode,
     AssoEventsId? TargetAssoEventsId,
-    Guid? ClientSessionId = null) : IRequest<ErrorOr<ScanSessionResult>>;
+    Guid? ClientSessionId = null,
+    DateTime? ClientStartedAt = null) : IRequest<ErrorOr<ScanSessionResult>>;

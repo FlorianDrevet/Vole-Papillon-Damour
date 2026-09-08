@@ -414,16 +414,23 @@ public static class BookController
                     async (
                         Guid scanSessionId,
                         ScanBookRequest request,
+                        ClaimsPrincipal principal,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
                         var result = await mediator.Send(
                             new ScanBookCommand(
                                 ScanSessionId.Create(scanSessionId),
                                 request.Isbn,
                                 request.Kept,
                                 request.OccurredAt,
-                                request.ClientGestureId),
+                                request.ClientGestureId,
+                                volunteerId),
                             cancellationToken);
 
                         return result.Match(
@@ -438,9 +445,15 @@ public static class BookController
                     async (
                         Guid scanSessionId,
                         CloseScanSessionRequest request,
+                        ClaimsPrincipal principal,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
                         if (!Enum.TryParse<ScanCloseReason>(request.CloseReason, ignoreCase: true, out var closeReason) ||
                             !Enum.IsDefined(closeReason))
                         {
@@ -450,7 +463,8 @@ public static class BookController
                         var result = await mediator.Send(
                             new CloseScanSessionCommand(
                                 ScanSessionId.Create(scanSessionId),
-                                closeReason),
+                                closeReason,
+                                volunteerId),
                             cancellationToken);
 
                         return result.Match(

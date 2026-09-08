@@ -21,6 +21,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
@@ -211,6 +212,31 @@ public sealed class ScanBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenAnotherVolunteerUsesTheSession_ReturnsNotFoundWithoutWriting()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var ownerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        var otherVolunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        var session = await fixture.AddSessionAsync(
+            ScanMode.AvailableNow,
+            volunteerId: ownerId);
+        var handler = fixture.CreateHandler();
+
+        var result = await handler.Handle(
+            CreateCommand(
+                session,
+                "9782070363735",
+                kept: true,
+                volunteerId: otherVolunteerId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be(Errors.Book.ScanSessionNotFound(session.Id.Value).Code);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(0);
+        (await fixture.Context.ScanSessions.SingleAsync()).ScannedCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task Handle_WhenClientClockIsBeforeSession_UsesServerTimeAndMarksClockSuspect()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -255,14 +281,16 @@ public sealed class ScanBookCommandHandlerTests
         string isbn,
         bool kept,
         DateTime? occurredAt = null,
-        Guid? clientGestureId = null)
+        Guid? clientGestureId = null,
+        UserId? volunteerId = null)
     {
         return new ScanBookCommand(
             session.Id,
             isbn,
             kept,
             occurredAt ?? ClientScanAt,
-            clientGestureId ?? Guid.NewGuid());
+            clientGestureId ?? Guid.NewGuid(),
+            volunteerId ?? session.VolunteerId);
     }
 
     private static Isbn13 ParseIsbn(string value)

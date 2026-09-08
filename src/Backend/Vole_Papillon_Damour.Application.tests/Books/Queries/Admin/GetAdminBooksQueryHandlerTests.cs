@@ -22,7 +22,8 @@ public sealed class GetAdminBooksQueryHandlerTests
                 "9782070408504",
                 Kept: true,
                 OccurredAt: ScanBookCommandHandlerTests.ClientScanAt,
-                ClientGestureId: Guid.NewGuid()),
+                ClientGestureId: Guid.NewGuid(),
+                VolunteerId: session.VolunteerId),
             CancellationToken.None);
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);

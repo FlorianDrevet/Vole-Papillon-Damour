@@ -36,6 +36,11 @@ public sealed class CloseScanSessionCommandHandler(
             return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value);
         }
 
+        if (session.VolunteerId != command.VolunteerId)
+        {
+            return Errors.Book.ScanSessionNotFound(command.ScanSessionId.Value);
+        }
+
         if (session.Close(command.CloseReason, endedAt))
         {
             await bookAlertOutbox.QueueForSessionAsync(

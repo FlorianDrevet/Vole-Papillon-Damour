@@ -28,7 +28,8 @@ public sealed class ScanBookObservabilityTests
             "9782070363735",
             Kept: true,
             OccurredAt: ScanBookCommandHandlerTests.ClientScanAt,
-            ClientGestureId: gestureId);
+            ClientGestureId: gestureId,
+            VolunteerId: session.VolunteerId);
 
         var result = await fixture.CreateHandler().Handle(command, CancellationToken.None);
 

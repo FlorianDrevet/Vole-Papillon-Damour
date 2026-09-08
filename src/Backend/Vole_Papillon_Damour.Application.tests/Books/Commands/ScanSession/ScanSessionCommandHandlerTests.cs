@@ -136,7 +136,7 @@ public sealed class ScanSessionCommandHandlerTests
         var handler = new CloseScanSessionCommandHandler(fixture.Context, clock, alertOutbox);
 
         var result = await handler.Handle(
-            new CloseScanSessionCommand(session.Id, ScanCloseReason.Disconnect),
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Disconnect, session.VolunteerId),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -153,6 +153,33 @@ public sealed class ScanSessionCommandHandlerTests
     }
 
     [Fact]
+    public async Task Close_WhenAnotherVolunteerUsesTheSession_ReturnsNotFoundWithoutClosing()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var ownerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        var otherVolunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        var session = await fixture.AddSessionAsync(
+            ScanMode.AvailableNow,
+            volunteerId: ownerId);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var alertOutbox = Substitute.For<IBookAlertOutbox>();
+        var handler = new CloseScanSessionCommandHandler(fixture.Context, clock, alertOutbox);
+
+        var result = await handler.Handle(
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual, otherVolunteerId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be(Errors.Book.ScanSessionNotFound(session.Id.Value).Code);
+        (await fixture.Context.ScanSessions.SingleAsync()).Status.Should().Be(ScanSessionStatus.InProgress);
+        await alertOutbox.DidNotReceive().QueueForSessionAsync(
+            Arg.Any<ScanSessionId>(),
+            Arg.Any<DateTime>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Close_WhenSessionWasAlreadyClosed_IsIdempotent()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -163,14 +190,14 @@ public sealed class ScanSessionCommandHandlerTests
         var handler = new CloseScanSessionCommandHandler(fixture.Context, firstClock, alertOutbox);
 
         var firstResult = await handler.Handle(
-            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual, session.VolunteerId),
             CancellationToken.None);
 
         var secondClock = Substitute.For<IDateTimeProvider>();
         secondClock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt.AddMinutes(10));
         var retryHandler = new CloseScanSessionCommandHandler(fixture.Context, secondClock, alertOutbox);
         var retryResult = await retryHandler.Handle(
-            new CloseScanSessionCommand(session.Id, ScanCloseReason.TokenExpired),
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.TokenExpired, session.VolunteerId),
             CancellationToken.None);
 
         firstResult.IsError.Should().BeFalse();
@@ -201,7 +228,7 @@ public sealed class ScanSessionCommandHandlerTests
         var handler = new CloseScanSessionCommandHandler(fixture.Context, clock, alertOutbox);
 
         var action = () => handler.Handle(
-            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual),
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual, session.VolunteerId),
             CancellationToken.None);
 
         await action.Should().ThrowAsync<InvalidOperationException>();
