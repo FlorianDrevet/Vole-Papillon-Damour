@@ -24,7 +24,8 @@
 .EXAMPLE
     ./Configure-EntraBranding.ps1 -TenantId b23c80b3-9776-4840-8255-fcbf3b3500fd `
         -HeaderLogoPath ./branding/header-logo.png `
-        -FaviconPath ./branding/favicon.png
+        -FaviconPath ./branding/favicon.png `
+        -BackgroundImagePath ./branding/background.png
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -43,6 +44,8 @@ param(
 
     [string]$FaviconPath,
 
+    [string]$BackgroundImagePath,
+
     [switch]$UseDeviceCode
 )
 
@@ -51,7 +54,7 @@ $ErrorActionPreference = 'Stop'
 
 function New-VpdBrandingUpdateBody {
     return @{
-        backgroundColor = '#f7fbfe'
+        backgroundColor = '#062a44'
         headerBackgroundColor = '#041d30'
         usernameHintText = 'Votre adresse e-mail'
         signInPageText = "Connexion sécurisée au catalogue Vole Papillon d’Amour."
@@ -168,6 +171,15 @@ if (-not [string]::IsNullOrWhiteSpace($FaviconPath)) {
         -Description 'Le favicon External ID'
 }
 
+$backgroundImageAsset = $null
+if (-not [string]::IsNullOrWhiteSpace($BackgroundImagePath)) {
+    $backgroundImageAsset = Get-VpdBrandingAsset `
+        -Path $BackgroundImagePath `
+        -AllowedExtensions @('.png', '.jpg', '.jpeg') `
+        -Description "L’image de fond External ID" `
+        -MaximumBytes 300KB
+}
+
 $graphScopes = @('OrganizationalBranding.ReadWrite.All')
 $connectParameters = @{
     TenantId = $TenantId
@@ -272,6 +284,34 @@ else {
     $actions.Add('localization-css-would-update')
 }
 
+if ($null -ne $backgroundImageAsset) {
+    if ($PSCmdlet.ShouldProcess('0', "Téléverser l’image de fond External ID par défaut")) {
+        $null = Set-MgOrganizationBrandingLocalizationBackgroundImage `
+            -OrganizationId $TenantId `
+            -OrganizationalBrandingLocalizationId '0' `
+            -InFile $backgroundImageAsset.FullName `
+            -ContentType (Get-VpdContentType -Asset $backgroundImageAsset) `
+            -ErrorAction Stop
+        $actions.Add('default-background-image-updated')
+    }
+    else {
+        $actions.Add('default-background-image-would-update')
+    }
+
+    if ($PSCmdlet.ShouldProcess($frenchLocalization.Id, "Téléverser l’image de fond External ID française")) {
+        $null = Set-MgOrganizationBrandingLocalizationBackgroundImage `
+            -OrganizationId $TenantId `
+            -OrganizationalBrandingLocalizationId $frenchLocalization.Id `
+            -InFile $backgroundImageAsset.FullName `
+            -ContentType (Get-VpdContentType -Asset $backgroundImageAsset) `
+            -ErrorAction Stop
+        $actions.Add('localization-background-image-updated')
+    }
+    else {
+        $actions.Add('localization-background-image-would-update')
+    }
+}
+
 if ($null -ne $headerLogoAsset) {
     if ($PSCmdlet.ShouldProcess($TenantId, "Téléverser le logo d’en-tête External ID par défaut")) {
         $null = Set-MgOrganizationBrandingLocalizationHeaderLogo `
@@ -313,6 +353,7 @@ if ($null -ne $faviconAsset) {
     Locale = $Locale
     LocalizationAction = $actions | Where-Object { $_ -like 'localization-*' } | Select-Object -First 1
     CssPath = $cssAsset.FullName
+    BackgroundImagePath = if ($null -eq $backgroundImageAsset) { $null } else { $backgroundImageAsset.FullName }
     HeaderLogoPath = if ($null -eq $headerLogoAsset) { $null } else { $headerLogoAsset.FullName }
     FaviconPath = if ($null -eq $faviconAsset) { $null } else { $faviconAsset.FullName }
 }

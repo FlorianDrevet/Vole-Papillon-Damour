@@ -1,14 +1,28 @@
 /*
  * Vole Papillon d'Amour — Microsoft Entra External ID hosted pages.
  *
- * External ID applies this file to the browser-delegated sign-in, sign-up and
- * sign-out pages. Keep selectors limited to the documented .ext-* surface:
- * the authentication engine and its security controls remain Microsoft-hosted.
+ * External ID keeps the authentication engine and its security controls
+ * Microsoft-hosted. This stylesheet supplies the Catalog visual language on
+ * the documented .ext-* surface; the optional background image is uploaded by
+ * Configure-EntraBranding.ps1 to both the default and fr-FR branding layers.
  */
 
+html,
 body {
-  background: #f7fbfe;
-  color: #041d30;
+  min-height: 100%;
+}
+
+body {
+  background-color: #062a44;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(127, 216, 245, .2), transparent 31%),
+    radial-gradient(circle at 87% 84%, rgba(240, 128, 28, .2), transparent 28%),
+    url("https://livres.volepapillondamour.fr/images/papillon_without_back.png"),
+    linear-gradient(135deg, #041d30 0%, #062a44 52%, #0c6ea6 100%);
+  background-position: 12% 18%, 87% 84%, 90% 50%, center;
+  background-repeat: no-repeat;
+  background-size: auto, auto, min(34vw, 520px), cover;
+  color: #f7fbfe;
   font-family: Arial, "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -16,6 +30,7 @@ body {
 a,
 a:link {
   color: #0c6ea6;
+  font-weight: 600;
 }
 
 a:hover,
@@ -25,14 +40,32 @@ a:active {
   color: #dc6412;
 }
 
-.ext-middle,
+.ext-middle {
+  background-color: #062a44;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(127, 216, 245, .2), transparent 31%),
+    radial-gradient(circle at 87% 84%, rgba(240, 128, 28, .2), transparent 28%),
+    url("https://livres.volepapillondamour.fr/images/papillon_without_back.png"),
+    linear-gradient(135deg, #041d30 0%, #062a44 52%, #0c6ea6 100%);
+  background-position: 12% 18%, 87% 84%, 90% 50%, center;
+  background-repeat: no-repeat;
+  background-size: auto, auto, min(34vw, 520px), cover;
+}
+
 .ext-background-image,
 .ext-vertical-split-background-image-container {
-  background: #f7fbfe;
+  background-color: #062a44;
+}
+
+.ext-background-image {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  z-index: 0;
 }
 
 .ext-header {
-  background: #041d30;
+  background: linear-gradient(135deg, #041d30 0%, #072b45 72%, #0c6ea6 100%);
   border-bottom: 4px solid #f0801c;
   color: #f7fbfe;
 }
@@ -43,18 +76,21 @@ a:active {
 }
 
 .ext-sign-in-box {
-  background: #ffffff;
-  border: 1px solid #d9e9f4;
-  border-radius: 3px;
-  box-shadow: 0 24px 45px -30px rgba(7, 43, 69, .8);
+  background: rgba(255, 255, 255, .98);
+  border: 1px solid rgba(157, 194, 218, .75);
+  border-top: 6px solid #f0801c;
+  border-radius: 18px;
+  box-shadow: 0 30px 70px rgba(2, 18, 31, .42);
   color: #041d30;
 }
 
 .ext-title {
   color: #041d30;
   font-family: Georgia, "Times New Roman", serif;
+  font-size: 2rem;
   font-weight: 500;
-  letter-spacing: -.03em;
+  letter-spacing: -.035em;
+  line-height: 1.1;
 }
 
 .ext-subtitle {
@@ -64,42 +100,47 @@ a:active {
 
 .ext-input.ext-text-box {
   background: #ffffff;
-  border: 1px solid #b9d4e5;
-  border-radius: 3px;
+  border: 1px solid #9dc2da;
+  border-radius: 10px;
   color: #041d30;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .ext-input.ext-text-box:hover,
 .ext-input.ext-text-box:focus {
   border-color: #1497d6;
+  box-shadow: 0 0 0 3px rgba(127, 216, 245, .35);
 }
 
 .ext-input.ext-text-box.ext-has-error {
   border-color: #a33b37;
+  box-shadow: 0 0 0 3px rgba(163, 59, 55, .14);
 }
 
 .ext-button.ext-primary {
-  background: #0c6ea6;
-  border: 1px solid #0c6ea6;
-  border-radius: 3px;
-  color: #ffffff;
-  font-weight: 600;
+  background: #f0801c;
+  border: 1px solid #f0801c;
+  border-radius: 10px;
+  color: #041d30;
+  font-weight: 700;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .ext-button.ext-primary:hover,
 .ext-button.ext-primary:focus,
 .ext-button.ext-primary:focus:hover,
 .ext-button.ext-primary:active {
-  background: #041d30;
-  border-color: #041d30;
+  background: #dc6412;
+  border-color: #dc6412;
   color: #ffffff;
 }
 
 .ext-button.ext-secondary {
   background: #ffffff;
-  border: 1px solid #b9d4e5;
-  border-radius: 3px;
+  border: 1px solid #9dc2da;
+  border-radius: 10px;
   color: #0c6ea6;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
 .ext-button.ext-secondary:hover,
@@ -112,7 +153,8 @@ a:active {
 }
 
 .ext-error {
-  border-left: 3px solid #a33b37;
+  background: #fff8f7;
+  border-left: 4px solid #a33b37;
   color: #7b302c;
 }
 
@@ -121,11 +163,33 @@ a:active {
   line-height: 1.55;
 }
 
-.ext-footer,
+.ext-footer {
+  background: rgba(4, 29, 48, .92);
+  color: #dcecf7;
+}
+
+.ext-footer .ext-boilerplate-text {
+  color: #dcecf7;
+}
+
 .ext-footer-links,
 .ext-footer-item {
-  color: #6d8ba2;
+  color: #dcecf7;
   font-size: 12px;
+}
+
+.ext-footer a,
+.ext-footer a:link,
+.ext-footer-links a,
+.ext-footer-links a:link {
+  color: #7fd8f5;
+}
+
+.ext-footer a:hover,
+.ext-footer a:focus,
+.ext-footer-links a:hover,
+.ext-footer-links a:focus {
+  color: #f9a93c;
 }
 
 .ext-debug-item {
@@ -133,8 +197,28 @@ a:active {
 }
 
 @media (max-width: 600px) {
+  body,
+  .ext-middle {
+    background-position: 12% 18%, 87% 84%, 50% 8%, center;
+    background-size: auto, auto, min(58vw, 280px), cover;
+  }
+
   .ext-sign-in-box {
     border-radius: 0;
+    border-left: 0;
+    border-right: 0;
     box-shadow: none;
+  }
+
+  .ext-title {
+    font-size: 1.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ext-input.ext-text-box,
+  .ext-button.ext-primary,
+  .ext-button.ext-secondary {
+    transition: none;
   }
 }
