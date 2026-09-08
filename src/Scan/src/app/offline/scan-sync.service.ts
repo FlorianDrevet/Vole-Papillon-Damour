@@ -127,6 +127,7 @@ export class ScanSyncService {
   }
 
   private async flushOutboxInternal(): Promise<OutboxSyncSummary> {
+    await this.bindActiveSessionToCurrentAccount();
     const entries = await this.store.listTransmittableOutboxEntries();
     const sales = (await this.store.listSaleOutboxEntries())
       .filter(entry => (entry.status ?? 'Pending') === 'Pending');
@@ -160,6 +161,14 @@ export class ScanSyncService {
         continue;
       }
 
+      if (this.belongsToDifferentAccount(session)) {
+        orphaned += await this.store.orphanBlockingOutboxEntriesForSession(
+          scanSessionId,
+          'Geste provenant d’un autre bénévole ; publication suspendue.',
+        );
+        continue;
+      }
+
       const readyEntries = sessionEntries.filter(entry => isRetryDue(entry));
       if (readyEntries.length === 0) {
         continue;
@@ -171,6 +180,7 @@ export class ScanSyncService {
           mode: session.mode,
           targetAssoEventsId: session.targetAssoEventsId,
           clientSessionId: session.scanSessionId,
+          startedAt: session.startedAt,
         }));
         await this.workflow.mergeRemoteSession(remoteSession);
       } catch (error: unknown) {
@@ -285,19 +295,24 @@ export class ScanSyncService {
   }
 
   private async closeRequestedSessions(): Promise<boolean> {
+    await this.bindActiveSessionToCurrentAccount();
     const activeSession = await this.workflow.getSession();
     const requests = await this.store.listSessionCloseRequests();
     const sessions = new Map<string, LocalSessionDescriptor>();
 
     if (activeSession?.closeRequested) {
-      sessions.set(activeSession.scanSessionId, toSessionDescriptor(activeSession));
+      this.addSessionDescriptor(sessions, activeSession);
     }
     for (const request of requests) {
-      sessions.set(request.scanSessionId, toSessionDescriptor(request));
+      this.addSessionDescriptor(sessions, request);
     }
 
     let activeSessionClosed = false;
     for (const session of sessions.values()) {
+      if (this.belongsToDifferentAccount(session)) {
+        continue;
+      }
+
       if (await this.store.countBlockingOutboxEntriesForSession(session.scanSessionId) > 0) {
         continue;
       }
@@ -307,6 +322,7 @@ export class ScanSyncService {
           mode: session.mode,
           targetAssoEventsId: session.targetAssoEventsId,
           clientSessionId: session.scanSessionId,
+          startedAt: session.startedAt,
         }));
         const closedSession = await firstValueFrom(this.api.closeSession(
           openedSession.scanSessionId,
@@ -333,14 +349,26 @@ export class ScanSyncService {
     const sessions = new Map<string, LocalSessionDescriptor>();
     const activeSession = await this.workflow.getSession();
     if (activeSession) {
-      sessions.set(activeSession.scanSessionId, toSessionDescriptor(activeSession));
+      this.addSessionDescriptor(sessions, activeSession);
     }
 
     for (const request of await this.store.listSessionCloseRequests()) {
-      sessions.set(request.scanSessionId, toSessionDescriptor(request));
+      this.addSessionDescriptor(sessions, request);
     }
 
     return sessions;
+  }
+
+  private addSessionDescriptor(
+    sessions: Map<string, LocalSessionDescriptor>,
+    session: ScanSessionSnapshot | ScanSessionCloseRequest,
+  ): void {
+    const descriptor = toSessionDescriptor(session);
+    const existing = sessions.get(descriptor.scanSessionId);
+    sessions.set(descriptor.scanSessionId, {
+      ...descriptor,
+      volunteerId: existing?.volunteerId ?? descriptor.volunteerId,
+    });
   }
 
   private async createOutboxSummary(
@@ -354,6 +382,27 @@ export class ScanSyncService {
       quarantined: await this.store.countQuarantinedOutboxEntries(),
       orphaned: await this.store.countOrphanedOutboxEntries(),
     };
+  }
+
+  private async bindActiveSessionToCurrentAccount(): Promise<void> {
+    const volunteerId = this.scanAuth?.authState.account?.homeAccountId;
+    if (!volunteerId) {
+      return;
+    }
+
+    const session = await this.workflow.getSession();
+    if (session?.volunteerId === null) {
+      await this.workflow.bindSessionToVolunteer(volunteerId);
+    }
+  }
+
+  private belongsToDifferentAccount(session: LocalSessionDescriptor): boolean {
+    if (!this.scanAuth || !this.scanAuth.authState.account) {
+      return false;
+    }
+
+    const volunteerId = this.scanAuth?.authState.account?.homeAccountId;
+    return session.volunteerId !== volunteerId;
   }
 
   private handleServerAuthorizationFailure(error: unknown): boolean {
@@ -401,9 +450,11 @@ export class ScanSyncService {
 
 interface LocalSessionDescriptor {
   scanSessionId: string;
+  volunteerId: string | null;
   mode: 'AvailableNow' | 'NextFair';
   targetAssoEventsId: string | null;
   closeReason: 'Manual' | 'Inactivity' | 'Disconnect' | 'TokenExpired';
+  startedAt: string;
 }
 
 // Keep the client retry budget aligned with the backend's alert outbox policy.
@@ -414,11 +465,17 @@ const RETRY_BACKOFF_MAX_MS = 15 * 60_000;
 function toSessionDescriptor(
   session: ScanSessionSnapshot | ScanSessionCloseRequest,
 ): LocalSessionDescriptor {
+  const startedAt = 'requestedAt' in session
+    ? session.startedAt ?? session.requestedAt
+    : session.startedAt;
+
   return {
     scanSessionId: session.scanSessionId,
+    volunteerId: session.volunteerId ?? null,
     mode: session.mode,
     targetAssoEventsId: session.targetAssoEventsId,
     closeReason: session.closeReason ?? 'Manual',
+    startedAt,
   };
 }
 
@@ -460,7 +517,7 @@ function classifyFailure(error: unknown): ScanFailureKind {
   if (status === 401 || status === 403) {
     return 'authorization';
   }
-  if (status !== null && status >= 400 && status < 500) {
+  if (status === 400 || status === 422) {
     return 'permanent';
   }
   return 'transient';

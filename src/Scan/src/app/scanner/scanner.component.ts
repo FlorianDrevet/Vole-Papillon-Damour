@@ -87,6 +87,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   cameraError: string | null = null;
   storageError: string | null = null;
   syncError: string | null = null;
+  logoutError: string | null = null;
   cashMessage: string | null = null;
   isLoading = false;
   cameraActive = false;
@@ -152,6 +153,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
           this.authDegraded = authState.status === 'degraded';
           this.canSynchronize = authState.status === 'authorized';
           this.accountName = this.scanAuth?.displayName ?? null;
+          if (authState.account?.homeAccountId && this.localModeReady) {
+            void this.bindCurrentAccountToSession().catch(() => {
+              this.storageError = 'La session locale n’a pas pu être associée à ce compte.';
+              this.refreshView();
+            });
+          }
           this.refreshView();
           this.trySync();
         });
@@ -498,6 +505,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
     if (this.scanWorkflow) {
       try {
         this.session = await this.scanWorkflow.setSessionMode(mode);
+        await this.bindCurrentAccountToSession();
+        this.session = await this.scanWorkflow.getSession() ?? this.session;
       } catch (error: unknown) {
         this.storageError = this.describeStorageError(
           error,
@@ -593,7 +602,44 @@ export class ScannerComponent implements OnInit, OnDestroy {
     });
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    this.logoutError = null;
+
+    if (this.scanWorkflow) {
+      try {
+        await this.refreshLocalState();
+      } catch {
+        this.logoutError = 'Les données locales ne peuvent pas être vérifiées. Réessayez avant de changer d’utilisateur.';
+        this.refreshView();
+        return;
+      }
+    }
+
+    const pendingCount = this.pendingDecisionCount + this.pendingTransmissionCount;
+    if (pendingCount > 0) {
+      this.logoutError = `${pendingCount} geste${pendingCount > 1 ? 's' : ''} reste${pendingCount > 1 ? 'nt' : ''} à traiter ou à transmettre. Synchronisez avant de changer d’utilisateur.`;
+      this.refreshView();
+      return;
+    }
+
+    try {
+      await this.scanWorkflow?.clearAccountState();
+    } catch {
+      this.logoutError = 'Les données locales n’ont pas pu être nettoyées. Réessayez avant de changer d’utilisateur.';
+      this.refreshView();
+      return;
+    }
+
+    this.stopCamera();
+    this.cashItems = [];
+    this.cashMessage = null;
+    this.lastValidatedSaleIds = [];
+    this.resetLookupState();
+    this.session = null;
+    this.completedSession = null;
+    this.sessionEnded = false;
+    this.sessionCloseCompleted = false;
+    this.sessionCloseError = null;
     this.scanAuth?.logout();
     this.screen = 'home';
     this.refreshView();
@@ -1015,6 +1061,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private async initializeLocalMode(): Promise<void> {
     try {
       this.persistenceStatus = await this.scanWorkflow!.initialize();
+      await this.bindCurrentAccountToSession();
       this.localScan = await this.scanWorkflow!.getLatestPendingResult();
       this.session = await this.scanWorkflow!.getSession();
       this.selectedMode = this.session?.mode ?? 'AvailableNow';
@@ -1078,6 +1125,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.selectedMode = this.session?.mode ?? this.selectedMode;
     this.associationSettings = await this.scanWorkflow.getSettings();
     this.nextFair = (await this.scanWorkflow.getCatalogSyncState())?.nextFair ?? null;
+  }
+
+  private async bindCurrentAccountToSession(): Promise<void> {
+    const volunteerId = this.scanAuth?.authState.account?.homeAccountId;
+    if (volunteerId) {
+      await this.scanWorkflow?.bindSessionToVolunteer(volunteerId);
+    }
   }
 
   private async refreshSaleCancellationState(): Promise<void> {

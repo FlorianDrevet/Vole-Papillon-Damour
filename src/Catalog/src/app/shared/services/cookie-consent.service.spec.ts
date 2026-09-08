@@ -49,6 +49,28 @@ describe('CookieConsentService', () => {
     expect(googleAnalytics.enable).not.toHaveBeenCalled();
   });
 
+  it('does_not_crash_when_localStorage_cannot_be_read', () => {
+    spyOn(localStorage, 'getItem').and.throwError('SecurityError');
+
+    let service!: CookieConsentService;
+    expect(() => {
+      service = TestBed.inject(CookieConsentService);
+    }).not.toThrow();
+
+    expect(service.bannerVisible$.value).toBeTrue();
+    expect(service.preferences).toEqual({analytics: false, maps: false});
+  });
+
+  it('keeps the in-memory consent usable when localStorage_cannot_be_written', () => {
+    spyOn(localStorage, 'setItem').and.throwError('QuotaExceededError');
+    const service = TestBed.inject(CookieConsentService);
+
+    expect(() => service.acceptAll()).not.toThrow();
+
+    expect(service.preferences).toEqual({analytics: true, maps: true});
+    expect(googleAnalytics.enable).toHaveBeenCalled();
+  });
+
   it('acceptAll_loads_clarity_and_enables_google_analytics', () => {
     const service = TestBed.inject(CookieConsentService);
 
@@ -58,6 +80,7 @@ describe('CookieConsentService', () => {
     const clarity = (window as ClarityTestWindow).clarity;
 
     expect(googleAnalytics.enable).toHaveBeenCalled();
+    expect(service.preferences.maps).toBeTrue();
     expect(clarityScript?.src).toContain('/tag/yerabb7gnt');
     expect(clarity?.q).toContain([
       'consentv2',
@@ -74,8 +97,34 @@ describe('CookieConsentService', () => {
     expect(service.preferences.analytics).toBeFalse();
     expect(JSON.parse(localStorage.getItem('vpd-catalog-cookie-consent') ?? '{}')).toEqual(jasmine.objectContaining({
       choice: 'rejected',
-      preferences: {analytics: false},
+      preferences: {analytics: false, maps: false},
     }));
+  });
+
+  it('keeps an existing consent choice while defaulting the new Maps preference to false', () => {
+    localStorage.setItem('vpd-catalog-cookie-consent', JSON.stringify({
+      choice: 'rejected',
+      preferences: {analytics: false},
+      date: '2026-09-01T08:00:00.000Z',
+    }));
+
+    const service = TestBed.inject(CookieConsentService);
+
+    expect(service.bannerVisible$.value).toBeFalse();
+    expect(service.preferences).toEqual({analytics: false, maps: false});
+  });
+
+  it('keeps Google Maps disabled until its consent is explicitly enabled', () => {
+    const service = TestBed.inject(CookieConsentService);
+
+    expect(service.preferences.maps).toBeFalse();
+
+    service.enableMaps();
+
+    expect(service.preferences.maps).toBeTrue();
+    expect(JSON.parse(localStorage.getItem('vpd-catalog-cookie-consent') ?? '{}')).toEqual(
+      jasmine.objectContaining({preferences: jasmine.objectContaining({maps: true})}),
+    );
   });
 
   it('uses_the_current_clarity_consentv2_signal_when_consent_is_withdrawn', () => {

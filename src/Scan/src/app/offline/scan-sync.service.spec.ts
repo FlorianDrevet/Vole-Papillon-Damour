@@ -100,6 +100,7 @@ describe('ScanSyncService', () => {
       new Date('2026-09-03T08:01:00.000Z'),
     );
     await workflow.decide(first.entry.clientGestureId, true);
+    const localSession = await workflow.getSession();
 
     const second = await workflow.recordScan(
       '9783140464079',
@@ -111,6 +112,7 @@ describe('ScanSyncService', () => {
 
     expect(api.openSession).toHaveBeenCalledOnceWith(jasmine.objectContaining({
       mode: 'AvailableNow',
+      startedAt: localSession?.startedAt,
     }));
     expect(api.scanBook.calls.count()).toBe(2);
     expect(api.scanBook.calls.argsFor(0)[1].kept).toBeTrue();
@@ -118,6 +120,45 @@ describe('ScanSyncService', () => {
     expect(result.sent).toBe(2);
     expect(result.remaining).toBe(0);
     expect(await store.listOutboxEntries()).toEqual([]);
+  });
+
+  it('rebinds offline gestures when the server resumes an existing session', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    api.openSession.and.returnValue(of({...createSessionResponse(), scanSessionId: 'server-session'}));
+    api.scanBook.and.returnValue(of({...createScanResponse(), scanSessionId: 'server-session'}));
+
+    await service.flushOutbox();
+
+    expect(api.scanBook).toHaveBeenCalledOnceWith(
+      'server-session',
+      jasmine.objectContaining({clientGestureId: scan.entry.clientGestureId}),
+    );
+    expect((await workflow.getSession())?.scanSessionId).toBe('server-session');
+    expect(await store.listOutboxEntries()).toEqual([]);
+  });
+
+  it('orphans gestures when the local session belongs to another account', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    await workflow.bindSessionToVolunteer('account-a');
+    (service as unknown as {scanAuth: unknown}).scanAuth = {
+      authState: {account: {homeAccountId: 'account-b'}},
+      handleServerAuthorizationFailure: jasmine.createSpy(),
+    };
+
+    const result = await service.flushOutbox();
+
+    expect(api.openSession).not.toHaveBeenCalled();
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Orphaned');
+    expect(result.orphaned).toBe(1);
+    expect(result.remaining).toBe(0);
   });
 
   it('sends cash sales without opening a scan session and reconciles the local stock', async () => {
@@ -246,6 +287,36 @@ describe('ScanSyncService', () => {
     expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Quarantined');
     expect(result.remaining).toBe(0);
     expect(result.quarantined).toBe(1);
+  });
+
+  it('keeps a gesture retryable when the resumed session responds with conflict', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-07T08:00:00.000Z'));
+
+    try {
+      const scan = await workflow.recordScan(
+        '9782070363735',
+        new Date('2026-09-03T08:01:00.000Z'),
+      );
+      await workflow.decide(scan.entry.clientGestureId, true);
+      api.scanBook.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409,
+        error: {title: 'Session conflict'},
+      })));
+
+      let result;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        result = await service.flushOutbox();
+        jasmine.clock().tick(15 * 60_000);
+      }
+
+      expect(api.scanBook).toHaveBeenCalledTimes(5);
+      expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Kept');
+      expect(result?.quarantined).toBe(0);
+      expect(result?.remaining).toBe(1);
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('does not retry a quarantined cash sale', async () => {

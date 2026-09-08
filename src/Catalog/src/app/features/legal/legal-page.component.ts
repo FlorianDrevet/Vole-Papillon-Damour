@@ -197,6 +197,13 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         ],
       },
       {
+        title: 'Google Maps',
+        paragraphs: [
+          'La carte interactive Google Maps est un contenu fourni par un tiers. Elle n’est chargée dans la page qu’après votre consentement dédié dans la bannière de cookies.',
+          'Le lien volontaire « Ouvrir dans Maps » permet toutefois d’ouvrir directement le service Google Maps si vous choisissez cette action. Vous pouvez refuser la carte sans empêcher la consultation du catalogue.',
+        ],
+      },
+      {
         title: `Microsoft Clarity et Google Analytics 4`,
         paragraphs: [
           'Ces deux outils sont utilisés pour comprendre les parcours de consultation du catalogue et améliorer son ergonomie. Ils peuvent mesurer les pages visitées, les interactions, le type d’appareil ou de navigateur et, pour Clarity, produire des enregistrements de session selon les paramètres du service.',

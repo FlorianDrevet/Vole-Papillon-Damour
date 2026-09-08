@@ -21,7 +21,7 @@ describe('CatalogCookieBannerComponent', () => {
     consent = {
       bannerVisible$: new BehaviorSubject(true),
       panelOpen$: new BehaviorSubject(false),
-      preferences: {analytics: false},
+      preferences: {analytics: false, maps: false},
       acceptAll: jasmine.createSpy('acceptAll'),
       rejectAll: jasmine.createSpy('rejectAll'),
       openPanel: jasmine.createSpy('openPanel').and.callFake(() => consent.panelOpen$.next(true)),
@@ -58,7 +58,7 @@ describe('CatalogCookieBannerComponent', () => {
     expect(consent.rejectAll).toHaveBeenCalled();
   });
 
-  it('opens a keyboard-accessible panel with a necessary category and analytics toggle', () => {
+  it('opens a keyboard-accessible panel with necessary, analytics and Maps choices', () => {
     const customize = (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
       .find(button => button.textContent?.includes('Personnaliser')) as HTMLButtonElement;
 
@@ -67,6 +67,7 @@ describe('CatalogCookieBannerComponent', () => {
 
     expect(consent.openPanel).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Cookies nécessaires');
-    expect(fixture.nativeElement.querySelector('input[type="checkbox"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Google Maps');
+    expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]')).toHaveSize(2);
   });
 });

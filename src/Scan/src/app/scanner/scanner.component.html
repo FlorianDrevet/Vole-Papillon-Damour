@@ -77,6 +77,16 @@
           Se connecter comme bénévole
         </button>
         <span *ngIf="!authAvailable" class="home-local-note">Mode local disponible sur cet appareil</span>
+        <div *ngIf="logoutError" class="logout-feedback" role="alert">
+          <span>{{ logoutError }}</span>
+          <button
+            *ngIf="pendingDecisionCount > 0 || pendingTransmissionCount > 0"
+            type="button"
+            class="sync-action"
+            (click)="syncNow()">
+            Synchroniser maintenant
+          </button>
+        </div>
       </footer>
     </section>
 

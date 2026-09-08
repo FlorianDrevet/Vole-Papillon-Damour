@@ -166,6 +166,31 @@ export class ScanLocalStoreService {
     );
   }
 
+  async clearAccountState(): Promise<void> {
+    await this.runTransaction(
+      [scanStoreNames.outbox, scanStoreNames.sales, scanStoreNames.session],
+      'readwrite',
+      stores => {
+        stores[scanStoreNames.outbox].clear();
+        stores[scanStoreNames.sales].clear();
+        stores[scanStoreNames.session].delete('active-session');
+
+        const request = stores[scanStoreNames.session].openCursor();
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor) {
+            return;
+          }
+
+          if (typeof cursor.key === 'string' && cursor.key.startsWith('close-request:')) {
+            cursor.delete();
+          }
+          cursor.continue();
+        };
+      },
+    );
+  }
+
   async saveSessionCloseRequest(
     request: Omit<ScanSessionCloseRequest, 'key'>,
   ): Promise<void> {
@@ -201,6 +226,55 @@ export class ScanLocalStoreService {
     for (const request of requests) {
       await this.deleteSessionCloseRequest(request.scanSessionId);
     }
+  }
+
+  async rebindSession(oldScanSessionId: string, newScanSessionId: string): Promise<void> {
+    if (oldScanSessionId === newScanSessionId) {
+      return;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.outbox, scanStoreNames.session],
+      'readwrite',
+      stores => {
+        const outboxRequest = stores[scanStoreNames.outbox].openCursor();
+        outboxRequest.onsuccess = () => {
+          const cursor = outboxRequest.result;
+          if (!cursor) {
+            return;
+          }
+
+          const entry = cursor.value as ScanOutboxEntry;
+          if (entry.scanSessionId === oldScanSessionId) {
+            cursor.update({...entry, scanSessionId: newScanSessionId});
+          }
+          cursor.continue();
+        };
+
+        const sessionRequest = stores[scanStoreNames.session].getAll();
+        sessionRequest.onsuccess = () => {
+          const records = sessionRequest.result as Array<{
+            key: string;
+            scanSessionId?: string;
+            [key: string]: unknown;
+          }>;
+          for (const record of records) {
+            if (record.scanSessionId !== oldScanSessionId) {
+              continue;
+            }
+
+            stores[scanStoreNames.session].delete(record.key);
+            stores[scanStoreNames.session].put({
+              ...record,
+              key: record.key.startsWith('close-request:')
+                ? sessionCloseRequestKey(newScanSessionId)
+                : record.key,
+              scanSessionId: newScanSessionId,
+            });
+          }
+        };
+      },
+    );
   }
 
   async addOutboxEntry(entry: ScanOutboxEntry): Promise<void> {
@@ -324,6 +398,34 @@ export class ScanLocalStoreService {
     }
 
     return orphanedEntries.length;
+  }
+
+  async orphanBlockingOutboxEntriesForSession(
+    scanSessionId: string,
+    errorMessage: string,
+  ): Promise<number> {
+    const entries = (await this.listOutboxEntries())
+      .filter(entry =>
+        entry.scanSessionId === scanSessionId && isBlockingScanStatus(entry.status));
+    if (entries.length === 0) {
+      return 0;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.outbox],
+      'readwrite',
+      stores => {
+        for (const entry of entries) {
+          stores[scanStoreNames.outbox].put({
+            ...entry,
+            status: 'Orphaned',
+            lastError: errorMessage,
+          } satisfies ScanOutboxEntry);
+        }
+      },
+    );
+
+    return entries.length;
   }
 
   async orphanOutboxEntry(clientGestureId: string, errorMessage: string): Promise<ScanOutboxEntry> {

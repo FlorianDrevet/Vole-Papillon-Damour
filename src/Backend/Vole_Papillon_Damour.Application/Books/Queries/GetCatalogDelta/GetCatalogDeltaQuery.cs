@@ -4,5 +4,5 @@ using Vole_Papillon_Damour.Application.Books.Common;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
 
-public sealed record GetCatalogDeltaQuery(DateTime? Since)
+public sealed record GetCatalogDeltaQuery(string? Since)
     : IRequest<ErrorOr<ScanCatalogDeltaResult>>;

@@ -35,7 +35,7 @@ public sealed class CloseIdleScanSessionsCommandHandler(
         }
 
         var cutoff = now.AddMinutes(-timeoutMinutes);
-        var sessionIds = await dbContext.ScanSessions
+        var sessions = await dbContext.ScanSessions
             .AsNoTracking()
             .Where(session =>
                 session.Status == ScanSessionStatus.InProgress &&
@@ -43,14 +43,17 @@ public sealed class CloseIdleScanSessionsCommandHandler(
                 session.LastSyncAt <= cutoff)
             .OrderBy(session => session.LastSyncAt)
             .ThenBy(session => session.Id)
-            .Select(session => session.Id)
+            .Select(session => new {session.Id, session.VolunteerId})
             .ToListAsync(cancellationToken);
 
         var closedCount = 0;
-        foreach (var sessionId in sessionIds)
+        foreach (var session in sessions)
         {
             var result = await closeScanSessionHandler.Handle(
-                new CloseScanSessionCommand(sessionId, ScanCloseReason.Inactivity),
+                new CloseScanSessionCommand(
+                    session.Id,
+                    ScanCloseReason.Inactivity,
+                    session.VolunteerId),
                 cancellationToken);
 
             if (!result.IsError &&
@@ -62,7 +65,7 @@ public sealed class CloseIdleScanSessionsCommandHandler(
             }
         }
 
-        return new CloseIdleScanSessionsResult(sessionIds.Count, closedCount);
+        return new CloseIdleScanSessionsResult(sessions.Count, closedCount);
     }
 
     private static void EnsureUtc(DateTime value, string parameterName)

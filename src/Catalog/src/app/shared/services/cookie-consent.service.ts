@@ -13,6 +13,7 @@ const CLARITY_CONSENT_VERSION = {
 
 export interface CookiePreferences {
   analytics: boolean;
+  maps: boolean;
 }
 
 interface StoredConsent {
@@ -32,7 +33,7 @@ export class CookieConsentService {
 
   readonly bannerVisible$ = new BehaviorSubject<boolean>(false);
   readonly panelOpen$ = new BehaviorSubject<boolean>(false);
-  preferences: CookiePreferences = {analytics: false};
+  preferences: CookiePreferences = {analytics: false, maps: false};
 
   constructor() {
     if (!this.isBrowser) {
@@ -52,15 +53,19 @@ export class CookieConsentService {
   }
 
   acceptAll(): void {
-    this.save('accepted', {analytics: true});
+    this.save('accepted', {analytics: true, maps: true});
   }
 
   rejectAll(): void {
-    this.save('rejected', {analytics: false});
+    this.save('rejected', {analytics: false, maps: false});
   }
 
   savePreferences(preferences: CookiePreferences): void {
     this.save('customized', preferences);
+  }
+
+  enableMaps(): void {
+    this.savePreferences({...this.preferences, maps: true});
   }
 
   openPanel(): void {
@@ -73,14 +78,22 @@ export class CookieConsentService {
   }
 
   private readStored(): StoredConsent | null {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
     try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return null;
+      }
+
       const parsed: unknown = JSON.parse(raw) as unknown;
-      return isStoredConsent(parsed) ? parsed : null;
+      return isStoredConsent(parsed)
+        ? {
+          ...parsed,
+          preferences: {
+            analytics: parsed.preferences.analytics,
+            maps: parsed.preferences.maps === true,
+          },
+        }
+        : null;
     } catch {
       return null;
     }
@@ -96,7 +109,11 @@ export class CookieConsentService {
       preferences: {...preferences},
       date: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    } catch {
+      // Consent remains available in memory when browser storage is blocked.
+    }
     this.preferences = stored.preferences;
     this.bannerVisible$.next(false);
     this.panelOpen$.next(false);
@@ -164,7 +181,7 @@ function isStoredConsent(value: unknown): value is StoredConsent {
 
   const candidate = value as {
     choice?: unknown;
-    preferences?: {analytics?: unknown};
+    preferences?: {analytics?: unknown; maps?: unknown};
     date?: unknown;
   };
 

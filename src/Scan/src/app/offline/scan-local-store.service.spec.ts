@@ -132,6 +132,51 @@ describe('ScanLocalStoreService', () => {
     });
   });
 
+  it('clears account-owned state without removing the catalog synchronization state', async () => {
+    const book = createCatalogBook();
+    const syncState = {
+      key: 'catalog-sync' as const,
+      watermark: 'watermark',
+      updatedAt: '2026-09-03T08:00:00.000Z',
+      nextFair: null,
+    };
+    const session = {
+      key: 'active-session' as const,
+      scanSessionId: 'session-1',
+      volunteerId: 'volunteer-1',
+      mode: 'AvailableNow' as const,
+      targetAssoEventsId: null,
+      startedAt: '2026-09-03T08:00:00.000Z',
+      lastScanAt: '2026-09-03T08:01:00.000Z',
+      lastSyncAt: '2026-09-03T08:00:00.000Z',
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+    };
+
+    await service.putCatalogBooks([book]);
+    await service.saveCatalogSyncState(syncState);
+    await service.saveSession(session);
+    await service.saveSessionCloseRequest({
+      scanSessionId: session.scanSessionId,
+      mode: session.mode,
+      targetAssoEventsId: null,
+      closeReason: 'Manual',
+      requestedAt: '2026-09-03T08:02:00.000Z',
+    });
+    await service.addOutboxEntry(createOutboxEntry('gesture-1', undefined, 'Kept'));
+    await service.addSaleOutboxEntries([createSaleOutboxEntry()], []);
+
+    await service.clearAccountState();
+
+    expect(await service.getSession()).toBeNull();
+    expect(await service.listSessionCloseRequests()).toEqual([]);
+    expect(await service.listOutboxEntries()).toEqual([]);
+    expect(await service.listSaleOutboxEntries()).toEqual([]);
+    expect(await service.getCatalogBook(book.isbn13)).toEqual(book);
+    expect(await service.getCatalogSyncState()).toEqual(syncState);
+  });
+
   it('reports whether persistent storage is available without touching data stores', async () => {
     const status = await service.requestPersistentStorage();
 

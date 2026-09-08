@@ -197,10 +197,12 @@ export class ScanWorkflowService {
       };
       await this.store.saveSessionCloseRequest({
         scanSessionId: session.scanSessionId,
+        volunteerId: session.volunteerId,
         mode: session.mode,
         targetAssoEventsId: session.targetAssoEventsId,
         closeReason,
         requestedAt: new Date().toISOString(),
+        startedAt: session.startedAt,
       });
       await this.store.saveSession(updated);
       return updated;
@@ -210,6 +212,27 @@ export class ScanWorkflowService {
   async clearSession(): Promise<void> {
     return await this.enqueue(async () => {
       await this.store.clearSession();
+    });
+  }
+
+  async clearAccountState(): Promise<void> {
+    return await this.enqueue(async () => {
+      await this.store.clearAccountState();
+    });
+  }
+
+  async bindSessionToVolunteer(volunteerId: string): Promise<void> {
+    return await this.enqueue(async () => {
+      const session = await this.store.getSession();
+      if (!session || session.volunteerId === volunteerId) {
+        return;
+      }
+
+      if (session.volunteerId !== null) {
+        return;
+      }
+
+      await this.store.saveSession({...session, volunteerId});
     });
   }
 
@@ -228,13 +251,12 @@ export class ScanWorkflowService {
     return await this.enqueue(async () => {
       const current = await this.ensureSession(new Date(remoteSession.startedAt));
       if (current.scanSessionId !== remoteSession.scanSessionId) {
-        return;
+        await this.store.rebindSession(current.scanSessionId, remoteSession.scanSessionId);
       }
 
       await this.store.saveSession({
         ...current,
         scanSessionId: remoteSession.scanSessionId,
-        volunteerId: remoteSession.volunteerId,
         mode: remoteSession.mode,
         targetAssoEventsId: remoteSession.targetAssoEventsId,
         startedAt: remoteSession.startedAt,

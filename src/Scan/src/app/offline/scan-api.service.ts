@@ -14,6 +14,7 @@ export interface OpenScanSessionRequest {
   mode: 'AvailableNow' | 'NextFair';
   targetAssoEventsId: string | null;
   clientSessionId: string;
+  startedAt: string;
 }
 export interface ScanBookRequest {
   isbn: string;

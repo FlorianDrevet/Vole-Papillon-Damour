@@ -274,6 +274,28 @@ describe('ScanWorkflowService', () => {
     expect(await service.deleteSaleOutboxEntry(entries[0].clientGestureId)).toBeFalse();
   });
 
+  it('clears the previous volunteer state while preserving the local catalog', async () => {
+    await store.putCatalogBooks([createBook({title: 'Livre partagé'})]);
+    const scan = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:06:00.000Z'),
+    );
+    await service.decide(scan.entry.clientGestureId, true);
+    await service.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:07:00.000Z'),
+    );
+
+    await service.clearAccountState();
+
+    expect(await store.getSession()).toBeNull();
+    expect(await store.listOutboxEntries()).toEqual([]);
+    expect(await store.listSaleOutboxEntries()).toEqual([]);
+    expect(await store.getCatalogBook('9782070363735')).toEqual(
+      jasmine.objectContaining({title: 'Livre partagé'}),
+    );
+  });
+
   it('reports whether a cash sale is still pending before transmission', async () => {
     const entries = await service.recordCashSales(
       ['9782070363735'],
