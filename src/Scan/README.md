@@ -33,8 +33,9 @@ La caméra utilise `@zxing/browser` avec le décodeur ZXing en mode de recherche
 (`TRY_HARDER`) pour les codes 1D. Sur l'écran de tri, elle démarre automatiquement à
 l'arrivée dans la vue de scan ; le bouton d'activation n'est donc plus nécessaire. Elle
 accepte les EAN-13/EAN-8 des livres, ainsi que les QR codes dont le contenu est un ISBN,
-et fonctionne dans Safari iOS lorsqu'elle est ouverte sur une URL HTTPS. Une photo peut
-aussi être sélectionnée depuis l'iPhone si la caméra continue n'est pas disponible.
+et fonctionne dans les navigateurs mobiles modernes, notamment Safari iOS, lorsqu'elle est
+ouverte sur une URL HTTPS. Une photo peut aussi être sélectionnée depuis le téléphone si la
+caméra continue n'est pas disponible.
 
 Les écrans `Caisse` et `Consultation` ouvrent eux aussi la caméra dès leur arrivée et
 conservent le même flux autorisé entre deux lectures pour enchaîner les livres sans
@@ -58,7 +59,8 @@ par l'application. Pendant une session, l'application conserve toutefois le flux
 autorisé au lieu de rappeler `getUserMedia()` après chaque livre. Pour éviter une nouvelle
 demande à chaque visite, utiliser toujours
 la même origine HTTPS (même protocole, hôte et port), hors navigation privée, et vérifier
-le réglage Caméra du site dans Safari ou le navigateur utilisé. Le cache MSAL en
+le réglage Caméra du site dans le navigateur utilisé. Sur iPhone, ce réglage se trouve dans
+Safari ; sur les autres appareils, utilisez les réglages du navigateur concerné. Le cache MSAL en
 `localStorage` conserve la session Entra, mais ne peut pas mémoriser cette permission.
 
 Pour une photo, le décodeur essaie également des recadrages, une réduction de taille et

@@ -8,6 +8,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
@@ -38,6 +39,18 @@ public sealed class GetCatalogDeltaQueryHandler(
         {
             return Errors.Book.InvalidScanTimestamp();
         }
+
+        var upcomingBookFairs = await dbContext.AssoEvents
+            .AsNoTracking()
+            .Where(assoEvent => !assoEvent.IsCancelled)
+            .ToListAsync(cancellationToken);
+        var nextFair = upcomingBookFairs
+            .Where(assoEvent =>
+                assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
+                (assoEvent.DateEnd ?? assoEvent.DateStart) > new DateTimeOffset(generatedAt, TimeSpan.Zero))
+            .OrderBy(assoEvent => assoEvent.DateStart)
+            .ThenBy(assoEvent => assoEvent.Id.Value)
+            .FirstOrDefault();
 
         var selectedBooks = await GetBooksToProjectAsync(
             query.Since,
@@ -89,7 +102,16 @@ public sealed class GetCatalogDeltaQueryHandler(
             generatedAt,
             generatedAt,
             books,
-            AssociationSettingsResult.From(settings));
+            AssociationSettingsResult.From(settings),
+            nextFair is null
+                ? null
+                : new ScanNextBookFairResult(
+                    nextFair.Id.Value,
+                    nextFair.Name,
+                    nextFair.DateStart,
+                    nextFair.DateEnd,
+                    BookFairSchedule.GetOpeningInstant(nextFair),
+                    BookFairSchedule.GetClosingInstant(nextFair)));
     }
 
     private async Task<IReadOnlyList<Book>> GetBooksToProjectAsync(

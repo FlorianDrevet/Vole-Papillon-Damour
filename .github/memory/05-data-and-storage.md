@@ -90,6 +90,17 @@
 - Scan cash sales use a dedicated IndexedDB `sales` store and replay to `POST /scan/sales`
   with `ClientGestureId`; the API records the sale against an open Books fair under `Caisse`.
 
+## Scan offline quality update — 2026-09-08
+
+- The Scan IndexedDB projection keeps catalog synchronization state under `catalog-sync`,
+  including the next non-cancelled Books fair and its opening/closing instants. The `/scan/catalog/delta`
+  response remains atomic with association settings and the catalog book projection.
+- Outbox counters distinguish `Pending` scan decisions from decided scan gestures and pending
+  cash sales awaiting transmission. `Quarantined`, `Orphaned`, and locally cancelled entries
+  do not block a session close; quarantined cash sales are never replayed.
+- Photo decode candidates are generated one at a time so the decoder can stop after the first
+  successful region without allocating all eight canvases up front.
+
 ## Books cover URL update — 2026-09-06
 
 - `Books` now persists `CoverUrl` (`nvarchar(2048)`), nullable `CoverSource` (`Bnf`,

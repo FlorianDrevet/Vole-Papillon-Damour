@@ -85,19 +85,6 @@ export class ScanSyncService {
     });
   }
 
-  async closeSession(session: ScanSessionSnapshot): Promise<void> {
-    return await this.enqueue(async () => {
-      const remoteSession = await firstValueFrom(this.api.openSession({
-        mode: session.mode,
-        targetAssoEventsId: session.targetAssoEventsId,
-        clientSessionId: session.scanSessionId,
-      }));
-      await firstValueFrom(this.api.closeSession(remoteSession.scanSessionId, {
-        closeReason: 'Manual',
-      }));
-    });
-  }
-
   private async syncCatalogInternal(): Promise<CatalogSyncSummary> {
     const state = await this.store.getCatalogSyncState();
     const session = await this.workflow.getSession();
@@ -121,6 +108,7 @@ export class ScanSyncService {
       key: 'catalog-sync',
       watermark: response.nextWatermark,
       updatedAt: response.generatedAt,
+      nextFair: response.nextFair,
     };
 
     await this.store.applyCatalogDelta(
@@ -140,7 +128,8 @@ export class ScanSyncService {
 
   private async flushOutboxInternal(): Promise<OutboxSyncSummary> {
     const entries = await this.store.listTransmittableOutboxEntries();
-    const sales = await this.store.listSaleOutboxEntries();
+    const sales = (await this.store.listSaleOutboxEntries())
+      .filter(entry => (entry.status ?? 'Pending') === 'Pending');
     if (entries.length === 0 && sales.length === 0) {
       return await this.createOutboxSummary(0, false);
     }

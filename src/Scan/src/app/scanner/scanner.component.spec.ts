@@ -13,7 +13,9 @@ import {ScannerComponent} from './scanner.component';
 import {ScanAuthService} from '../auth/scan-auth.service';
 import {
   LocalScanResult,
+  ScanAssociationSettings,
   ScanLocalStoreError,
+  ScanNextBookFair,
   ScanSaleOutboxEntry,
   ScanSessionSnapshot,
 } from '../offline/scan-offline.model';
@@ -54,7 +56,7 @@ describe('ScannerComponent', () => {
     metadataService.getMetadata.and.returnValue(of(metadata));
     component.isbnInput = '0-306-40615-2';
 
-    await component.submit();
+    await component.lookup(component.isbnInput, 'tri');
 
     expect(metadataService.getMetadata).toHaveBeenCalledOnceWith('9780306406157');
     expect(component.metadata).toEqual(metadata);
@@ -94,7 +96,7 @@ describe('ScannerComponent', () => {
     metadataService.getMetadata.and.returnValue(of(metadata));
     component.isbnInput = '978-2-07-036373-5';
 
-    await component.submit();
+    await component.lookup(component.isbnInput, 'tri');
     await fixture.whenStable();
 
     expect(fixture.nativeElement.querySelector('#book-title')?.textContent).toContain(metadata.title);
@@ -116,7 +118,7 @@ describe('ScannerComponent', () => {
   it('rejects an invalid ISBN without making a request', async () => {
     component.isbnInput = '4006381333931';
 
-    await component.submit();
+    await component.lookup(component.isbnInput, 'tri');
 
     expect(metadataService.getMetadata).not.toHaveBeenCalled();
     expect(component.metadata).toBeNull();
@@ -549,8 +551,10 @@ describe('ScannerComponent', () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
       'recordScan',
       'cacheMetadata',
-      'getPendingCount',
+      'getOutboxCounts',
       'getSession',
+      'getSettings',
+      'getCatalogSyncState',
       'decide',
     ]);
     const localScan = createLocalScanResult();
@@ -559,7 +563,7 @@ describe('ScannerComponent', () => {
 
     workflow.recordScan.and.resolveTo(localScan);
     workflow.cacheMetadata.and.resolveTo();
-    workflow.getPendingCount.and.resolveTo(0);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
     workflow.getSession.and.resolveTo(createSession());
     workflow.decide.and.resolveTo({...localScan.entry, status: 'Kept', kept: true});
     metadataService.getMetadata.and.returnValue(of(createMetadata()));
@@ -627,11 +631,11 @@ describe('ScannerComponent', () => {
   it('persists the cash batch before clearing the visible list', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(
       'ScanWorkflowService',
-      ['recordCashSales', 'getPendingCount', 'getSession'],
+      ['recordCashSales', 'getOutboxCounts', 'getSession', 'getSettings', 'getCatalogSyncState'],
     );
     const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
     workflow.recordCashSales.and.resolveTo([]);
-    workflow.getPendingCount.and.resolveTo(1);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 1});
     workflow.getSession.and.resolveTo(null);
     sync.syncAll.and.resolveTo({
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
@@ -673,8 +677,10 @@ describe('ScannerComponent', () => {
     const workflow = {
       recordCashSales,
       deleteSaleOutboxEntry,
-      getPendingCount: jasmine.createSpy('getPendingCount').and.resolveTo(1),
+      getOutboxCounts: jasmine.createSpy('getOutboxCounts').and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 1}),
       getSession: jasmine.createSpy('getSession').and.resolveTo(null),
+      getSettings: jasmine.createSpy('getSettings').and.resolveTo(null),
+      getCatalogSyncState: jasmine.createSpy('getCatalogSyncState').and.resolveTo(null),
     } as unknown as ScanWorkflowService;
 
     const internals = component as unknown as {
@@ -729,6 +735,53 @@ describe('ScannerComponent', () => {
       .toContain('10 ou 13');
   });
 
+  it('shows the synchronization action and separate queue labels on every operating screen', () => {
+    for (const screen of ['tri', 'cash', 'consultation'] as const) {
+      const screenFixture = TestBed.createComponent(ScannerComponent);
+      const screenComponent = screenFixture.componentInstance;
+      screenComponent.screen = screen;
+      screenComponent.pendingDecisionCount = 2;
+      screenComponent.pendingTransmissionCount = 3;
+      screenComponent.syncError = 'Synchronisation à reprendre';
+      screenFixture.detectChanges();
+
+      const panel = screenFixture.nativeElement.querySelector('.sync-panel') as HTMLElement | null;
+      expect(panel).not.toBeNull();
+      expect(panel?.textContent).toContain('2 décisions à prendre');
+      expect(panel?.textContent).toContain('3 gestes à transmettre');
+      expect(panel?.textContent).toContain('Synchroniser');
+      expect(panel?.textContent).not.toContain('scans en attente');
+
+      screenFixture.destroy();
+    }
+  });
+
+  it('uses the synchronized next fair date and alert delay in the session copy', () => {
+    component.nextFair = {
+      id: 'fair-1',
+      name: 'Bourse de septembre',
+      dateStart: '2026-09-14T09:00:00+02:00',
+      dateEnd: '2026-09-14T18:00:00+02:00',
+      openAt: '2026-09-14T09:00:00+02:00',
+      closeAt: '2026-09-14T18:00:00+02:00',
+    } satisfies ScanNextBookFair;
+    component.associationSettings = {
+      duplicateThreshold: 5,
+      demandSalesThreshold: 1,
+      deadStockMinAgeDays: 30,
+      deadStockMinQuantity: 1,
+      watchlistMaxItems: 100,
+      alertCooldownDays: 30,
+      sessionIdleTimeoutMinutes: 120,
+      alertDelayMinutes: 90,
+      updatedAt: '2026-09-03T08:00:00Z',
+    } satisfies ScanAssociationSettings;
+
+    expect(component.nextFairShortLabel).toContain('14 septembre 2026');
+    expect(component.nextFairLongLabel).toContain('14 septembre 2026');
+    expect(component.correctionWindowLabel).toBe('1 h 30');
+  });
+
   it('opens a new session mode screen after a session has been ended', async () => {
     component.session = createSession({scannedCount: 2, keptCount: 2});
 
@@ -742,8 +795,10 @@ describe('ScannerComponent', () => {
   it('clears the durable session only after the sync service confirms close', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
       'requestClose',
-      'getPendingCount',
+      'getOutboxCounts',
       'getSession',
+      'getSettings',
+      'getCatalogSyncState',
     ]);
     const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
     const session = createSession({scannedCount: 1, keptCount: 1});
@@ -752,7 +807,7 @@ describe('ScannerComponent', () => {
     const requestedSession = {...session, closeRequested: true, closeReason: 'Manual' as const};
 
     workflow.requestClose.and.resolveTo(requestedSession);
-    workflow.getPendingCount.and.resolveTo(0);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
     workflow.getSession.and.returnValues(
       Promise.resolve(requestedSession),
       Promise.resolve(null),
@@ -782,12 +837,12 @@ describe('ScannerComponent', () => {
   it('starts synchronizing after a scan is stored locally', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(
       'ScanWorkflowService',
-      ['recordScan', 'cacheMetadata', 'getPendingCount', 'getSession'],
+      ['recordScan', 'cacheMetadata', 'getOutboxCounts', 'getSession', 'getSettings', 'getCatalogSyncState'],
     );
     const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
     workflow.recordScan.and.returnValue(Promise.resolve(createLocalScanResult()));
     workflow.cacheMetadata.and.returnValue(Promise.resolve());
-    workflow.getPendingCount.and.returnValue(Promise.resolve(1));
+    workflow.getOutboxCounts.and.returnValue(Promise.resolve({pendingDecisionCount: 0, pendingTransmissionCount: 1}));
     workflow.getSession.and.returnValue(Promise.resolve(createSession()));
     sync.syncAll.and.returnValue(Promise.resolve({
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},

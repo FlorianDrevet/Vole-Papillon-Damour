@@ -4,4 +4,5 @@ public sealed record ScanCatalogDeltaResult(
     DateTime GeneratedAt,
     DateTime NextWatermark,
     IReadOnlyList<ScanCatalogBookResult> Books,
-    AssociationSettingsResult Settings);
+    AssociationSettingsResult Settings,
+    ScanNextBookFairResult? NextFair);

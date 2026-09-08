@@ -7,6 +7,7 @@ import {
   ScanSaleOutboxEntry,
 } from './scan-offline.model';
 import {ScanLocalStoreService} from './scan-local-store.service';
+import {clearScanCatalogForTest} from './scan-test.utils';
 
 describe('ScanLocalStoreService', () => {
   let service: ScanLocalStoreService;
@@ -14,7 +15,7 @@ describe('ScanLocalStoreService', () => {
   beforeEach(async () => {
     TestBed.configureTestingModule({providers: [ScanLocalStoreService]});
     service = TestBed.inject(ScanLocalStoreService);
-    await service.clearCatalog();
+    await clearScanCatalogForTest(service);
     await service.clearSession();
     await service.clearSessionCloseRequests();
 
@@ -24,18 +25,6 @@ describe('ScanLocalStoreService', () => {
     for (const entry of await service.listSaleOutboxEntries()) {
       await service.deleteSaleOutboxEntry(entry.clientGestureId);
     }
-  });
-
-  it('keeps the catalog and outbox in separate stores', async () => {
-    const catalogBook = createCatalogBook();
-    const outboxEntry = createOutboxEntry();
-
-    await service.putCatalogBooks([catalogBook]);
-    await service.addOutboxEntry(outboxEntry);
-    await service.clearCatalog();
-
-    expect(await service.getCatalogBook(catalogBook.isbn13)).toBeNull();
-    expect(await service.getOutboxEntry(outboxEntry.clientGestureId)).toEqual(outboxEntry);
   });
 
   it('round-trips session and catalog synchronization state', async () => {
@@ -58,6 +47,7 @@ describe('ScanLocalStoreService', () => {
       key: 'catalog-sync',
       watermark: '2026-09-03T08:00:00.000Z',
       updatedAt: '2026-09-03T08:00:00.000Z',
+      nextFair: null,
     });
 
     expect(await service.getSession()).toEqual(session);
@@ -65,6 +55,7 @@ describe('ScanLocalStoreService', () => {
       key: 'catalog-sync',
       watermark: '2026-09-03T08:00:00.000Z',
       updatedAt: '2026-09-03T08:00:00.000Z',
+      nextFair: null,
     });
   });
 
@@ -84,14 +75,41 @@ describe('ScanLocalStoreService', () => {
       .toEqual(['gesture-1', 'gesture-2', 'gesture-3', 'gesture-4']);
     expect((await service.listTransmittableOutboxEntries()).map(entry => entry.clientGestureId))
       .toEqual(['gesture-2', 'gesture-3']);
-    expect(await service.countPendingOutboxEntries()).toBe(3);
+    expect(await service.getOutboxCounts()).toEqual({
+      pendingDecisionCount: 1,
+      pendingTransmissionCount: 2,
+    });
+  });
+
+  it('separates pending decisions from entries waiting for transmission', async () => {
+    for (const entry of [
+      createOutboxEntry('pending', '2026-09-03T08:01:00.000Z', 'Pending'),
+      createOutboxEntry('kept', '2026-09-03T08:02:00.000Z', 'Kept'),
+      createOutboxEntry('rejected', '2026-09-03T08:03:00.000Z', 'Rejected'),
+      createOutboxEntry('orphaned', '2026-09-03T08:04:00.000Z', 'Orphaned'),
+      createOutboxEntry('quarantined', '2026-09-03T08:05:00.000Z', 'Quarantined'),
+    ]) {
+      await service.addOutboxEntry(entry);
+    }
+    await service.addSaleOutboxEntries(
+      [
+        createSaleOutboxEntry('sale-pending'),
+        createSaleOutboxEntry('sale-quarantined', 'Quarantined'),
+      ],
+      [],
+    );
+
+    expect(await service.getOutboxCounts()).toEqual({
+      pendingDecisionCount: 1,
+      pendingTransmissionCount: 3,
+    });
   });
 
   it('updates an outbox decision without losing the durable gesture', async () => {
     const entry = createOutboxEntry();
     await service.addOutboxEntry(entry);
 
-    await service.updateOutboxStatus(entry.clientGestureId, 'Rejected');
+    await service.decideOutboxEntry(entry.clientGestureId, false, 'AvailableNow');
 
     const updated = await service.getOutboxEntry(entry.clientGestureId);
     expect(updated?.status).toBe('Rejected');
@@ -108,7 +126,10 @@ describe('ScanLocalStoreService', () => {
     expect(await service.getCatalogBook(book.isbn13)).toEqual(
       jasmine.objectContaining({qtyAvailable: 0, salesCount: 5}),
     );
-    expect(await service.countPendingOutboxEntries()).toBe(1);
+    expect(await service.getOutboxCounts()).toEqual({
+      pendingDecisionCount: 0,
+      pendingTransmissionCount: 1,
+    });
   });
 
   it('reports whether persistent storage is available without touching data stores', async () => {
@@ -202,11 +223,15 @@ describe('ScanLocalStoreService', () => {
     };
   }
 
-  function createSaleOutboxEntry(): ScanSaleOutboxEntry {
+  function createSaleOutboxEntry(
+    clientGestureId = 'sale-1',
+    status?: 'Pending' | 'Quarantined',
+  ): ScanSaleOutboxEntry {
     return {
-      clientGestureId: 'sale-1',
+      clientGestureId,
       isbn13: '9782070363735',
       quantity: 1,
+      status,
       occurredAt: '2026-09-03T08:01:00.000Z',
       createdAt: '2026-09-03T08:01:00.000Z',
       attemptCount: 0,

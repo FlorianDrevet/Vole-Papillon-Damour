@@ -110,6 +110,13 @@ describe('CameraScannerService', () => {
     expect(engine.scanFile).toHaveBeenCalledOnceWith(photo);
     expect(value).toBe('9782070363735');
   });
+
+  it('uses a browser-neutral message when camera permission is denied', async () => {
+    engine.start.and.returnValue(Promise.reject({name: 'NotAllowedError'}));
+
+    await expectAsync(service.start(container, jasmine.createSpy('onDetected')))
+      .toBeRejectedWithError('Autorisez l’accès à la caméra dans les réglages du navigateur, puis réessayez.');
+  });
 });
 
 describe('ZxingCameraScannerEngine', () => {
@@ -275,5 +282,24 @@ describe('ZxingCameraScannerEngine', () => {
     const value = await engine.scanFile(new File(['barcode'], 'book.jpg', {type: 'image/jpeg'}));
 
     expect(value).toBe('9782070363735');
+  });
+
+  it('creates photo regions lazily and stops after the first successful region', async () => {
+    const result = jasmine.createSpyObj<Result>('Result', ['getText']);
+    result.getText.and.returnValue('9782070363735');
+    reader.decodeFromImageUrl.and.returnValue(Promise.reject(new Error('not found')));
+    reader.decodeFromCanvas.and.returnValue(result);
+    spyOn(URL, 'createObjectURL').and.returnValue(
+      `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1800"></svg>')}`,
+    );
+    spyOn(URL, 'revokeObjectURL');
+    const createElement = spyOn(document, 'createElement').and.callThrough();
+    const engine = new ZxingCameraScannerEngine(createReader);
+
+    const value = await engine.scanFile(new File(['barcode'], 'book.jpg', {type: 'image/jpeg'}));
+
+    expect(value).toBe('9782070363735');
+    expect(reader.decodeFromCanvas).toHaveBeenCalledOnceWith(jasmine.any(HTMLCanvasElement));
+    expect(createElement.calls.allArgs().filter(([tagName]) => tagName === 'canvas')).toHaveSize(1);
   });
 });

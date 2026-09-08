@@ -147,6 +147,16 @@ navigation confirms before discarding an unfinished sale, validated pending sale
 local cancellation action, and session termination is confirmed. The manual ISBN keypad
 accepts the ISBN-10 `X` check character and describes its 10-or-13-character contract.
 
+The 2026-09-08 Scan Lot 3 quality pass separates pending decisions from gestures awaiting
+transmission on triage, cash, and consultation, exposes the synchronization action on each
+operating surface, and removes the listed dead entry points. The scan delta now carries the
+next Books fair date/schedule; the local session copy uses the synchronized `alertDelayMinutes`
+for its correction window, while the admin verdict defaults are aligned to duplicate `5` and
+demand-sales `1`. Photo decoding now creates candidates lazily and stops after the first
+success, and camera permission/README copy is browser-neutral. Quarantined cash sales are
+excluded from replay and local test fixtures clear only their catalog projection without
+reintroducing a production purge method.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:

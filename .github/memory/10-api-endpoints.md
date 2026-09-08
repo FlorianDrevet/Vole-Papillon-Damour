@@ -75,7 +75,8 @@ client-only/private.
 ## Scanette endpoints
 
 - `GET /scan/catalog/delta` - `ScanVolunteer` read for the compact catalog projection;
-  both `Tri` and `Caisse` can use it.
+  both `Tri` and `Caisse` can use it. The response includes association settings and the
+  next non-cancelled Books fair schedule so the Scan PWA can remain useful offline.
 - `POST /scan/sessions` - `Tri` opens or replays a scan session by `ClientSessionId`.
 - `POST /scan/sessions/{scanSessionId}/scans` and
   `POST /scan/sessions/{scanSessionId}/close` - `Tri` records idempotent decisions and

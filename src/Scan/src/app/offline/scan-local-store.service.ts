@@ -9,7 +9,6 @@ import {
   ScanFailureKind,
   ScanLocalStoreError,
   ScanOutboxEntry,
-  ScanOutboxStatus,
   ScanSaleOutboxEntry,
   ScanSessionCloseRequest,
   ScanSessionSnapshot,
@@ -83,15 +82,6 @@ export class ScanLocalStoreService {
           stores[scanStoreNames.catalog].put(book);
         }
       },
-    );
-  }
-
-  /** Purges only the replaceable catalog projection. The outbox is never touched. */
-  async clearCatalog(): Promise<void> {
-    await this.runRequest(
-      scanStoreNames.catalog,
-      'readwrite',
-      store => store.clear(),
     );
   }
 
@@ -280,12 +270,20 @@ export class ScanLocalStoreService {
     return entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected');
   }
 
-  async countPendingOutboxEntries(): Promise<number> {
+  async getOutboxCounts(): Promise<{
+    pendingDecisionCount: number;
+    pendingTransmissionCount: number;
+  }> {
     const [entries, sales] = await Promise.all([
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
     ]);
-    return entries.filter(entry => entry.status !== 'CancelledLocal').length + sales.length;
+    return {
+      pendingDecisionCount: entries.filter(entry => entry.status === 'Pending').length,
+      pendingTransmissionCount:
+        entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected').length +
+        sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length,
+    };
   }
 
   async countBlockingOutboxEntries(): Promise<number> {
@@ -346,24 +344,6 @@ export class ScanLocalStoreService {
   async countOrphanedOutboxEntries(): Promise<number> {
     const entries = await this.listOutboxEntries();
     return entries.filter(entry => entry.status === 'Orphaned').length;
-  }
-
-  async updateOutboxStatus(
-    clientGestureId: string,
-    status: ScanOutboxStatus,
-  ): Promise<ScanOutboxEntry> {
-    const entry = await this.getOutboxEntry(clientGestureId);
-    if (!entry) {
-      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
-    }
-
-    const updated: ScanOutboxEntry = {
-      ...entry,
-      status,
-      kept: status === 'Kept' ? true : status === 'Rejected' ? false : entry.kept,
-    };
-    await this.putOutboxEntry(updated);
-    return updated;
   }
 
   async quarantineOutboxEntry(
@@ -500,7 +480,12 @@ export class ScanLocalStoreService {
       return entry;
     }
 
-    return await this.updateOutboxStatus(clientGestureId, 'CancelledLocal');
+    const updated: ScanOutboxEntry = {
+      ...entry,
+      status: 'CancelledLocal',
+    };
+    await this.putOutboxEntry(updated);
+    return updated;
   }
 
   async markOutboxAttempt(

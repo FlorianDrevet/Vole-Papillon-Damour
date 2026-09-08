@@ -11,11 +11,11 @@ import {
   ScanBookResponse,
   ScanSaleResponse,
   ScanSessionResponse,
-  ScanSessionSnapshot,
 } from './scan-offline.model';
 import {ScanSyncService} from './scan-sync.service';
 import {ScanVerdictService} from './scan-verdict.service';
 import {ScanWorkflowService} from './scan-workflow.service';
+import {clearScanCatalogForTest} from './scan-test.utils';
 
 describe('ScanSyncService', () => {
   let service: ScanSyncService;
@@ -49,7 +49,7 @@ describe('ScanSyncService', () => {
     service = TestBed.inject(ScanSyncService);
     workflow = TestBed.inject(ScanWorkflowService);
     store = TestBed.inject(ScanLocalStoreService);
-    await store.clearCatalog();
+    await clearScanCatalogForTest(store);
     await store.clearSession();
     await store.clearSessionCloseRequests();
     for (const entry of await store.listOutboxEntries()) {
@@ -71,6 +71,10 @@ describe('ScanSyncService', () => {
     expect((await store.getSettings())?.duplicateThreshold).toBe(5);
     expect((await store.getCatalogSyncState())?.watermark)
       .toBe('2026-09-03T08:00:00.000Z');
+    expect((await store.getCatalogSyncState())?.nextFair).toEqual(jasmine.objectContaining({
+      id: 'fair-1',
+      name: 'Bourse de septembre',
+    }));
   });
 
   it('preserves a local kept quantity when a catalog refresh precedes outbox replay', async () => {
@@ -244,6 +248,20 @@ describe('ScanSyncService', () => {
     expect(result.quarantined).toBe(1);
   });
 
+  it('does not retry a quarantined cash sale', async () => {
+    const [sale] = await workflow.recordCashSales(
+      ['9782070363735'],
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await store.quarantineSaleOutboxEntry(sale.clientGestureId, 'Validation failed');
+
+    const result = await service.flushOutbox();
+
+    expect(api.registerSale).not.toHaveBeenCalled();
+    expect(result.remaining).toBe(0);
+    expect(result.quarantined).toBe(1);
+  });
+
   it('closes a requested session after its rejected gesture is quarantined', async () => {
     const scan = await workflow.recordScan(
       '9782070363735',
@@ -279,34 +297,6 @@ describe('ScanSyncService', () => {
     expect(result.remaining).toBe(1);
   });
 
-  it('closes the idempotent remote session after the local queue is flushed', async () => {
-    const session: ScanSessionSnapshot = {
-      key: 'active-session',
-      scanSessionId: 'session-1',
-      volunteerId: 'volunteer-1',
-      mode: 'AvailableNow',
-      targetAssoEventsId: null,
-      startedAt: '2026-09-03T08:00:00.000Z',
-      lastScanAt: '2026-09-03T08:00:00.000Z',
-      lastSyncAt: '2026-09-03T08:00:00.000Z',
-      scannedCount: 0,
-      keptCount: 0,
-      rejectedCount: 0,
-    };
-
-    await service.closeSession(session);
-
-    expect(api.openSession).toHaveBeenCalledOnceWith({
-      mode: 'AvailableNow',
-      targetAssoEventsId: null,
-      clientSessionId: 'session-1',
-    });
-    expect(api.closeSession).toHaveBeenCalledOnceWith(
-      'session-1',
-      {closeReason: 'Manual'},
-    );
-  });
-
   it('closes a requested session after transmitting its decided gestures', async () => {
     const scan = await workflow.recordScan(
       '9782070363735',
@@ -329,6 +319,14 @@ describe('ScanSyncService', () => {
     return {
       generatedAt: '2026-09-03T08:00:00.000Z',
       nextWatermark: '2026-09-03T08:00:00.000Z',
+      nextFair: {
+        id: 'fair-1',
+        name: 'Bourse de septembre',
+        dateStart: '2026-09-14T09:00:00+02:00',
+        dateEnd: '2026-09-14T18:00:00+02:00',
+        openAt: '2026-09-14T09:00:00+02:00',
+        closeAt: '2026-09-14T18:00:00+02:00',
+      },
       books: [
         {
           ...createBook('9782070363735'),

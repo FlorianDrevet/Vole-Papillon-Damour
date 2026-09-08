@@ -551,7 +551,16 @@ public static class BookController
                 result.Settings.AlertCooldownDays,
                 result.Settings.SessionIdleTimeoutMinutes,
                 result.Settings.AlertDelayMinutes,
-                result.Settings.UpdatedAt));
+                result.Settings.UpdatedAt),
+            result.NextFair is null
+                ? null
+                : new ScanNextBookFairResponse(
+                    result.NextFair.Id,
+                    result.NextFair.Name,
+                    result.NextFair.DateStart,
+                    result.NextFair.DateEnd,
+                    result.NextFair.OpenAt,
+                    result.NextFair.CloseAt));
     }
 
     private static ScanSessionResponse ToResponse(ScanSessionResult result)
