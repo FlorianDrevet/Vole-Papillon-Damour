@@ -124,7 +124,7 @@ function applyLuminanceThreshold(
   context.putImageData(imageData, 0, 0);
 }
 
-function createPhotoDecodeCanvases(image: HTMLImageElement): HTMLCanvasElement[] {
+function* createPhotoDecodeCanvases(image: HTMLImageElement): Generator<HTMLCanvasElement> {
   const sourceWidth = image.naturalWidth || image.width;
   const sourceHeight = image.naturalHeight || image.height;
   if (!sourceWidth || !sourceHeight) {
@@ -133,7 +133,7 @@ function createPhotoDecodeCanvases(image: HTMLImageElement): HTMLCanvasElement[]
 
   const baseScale = Math.min(1, MAX_PHOTO_DECODE_DIMENSION / Math.max(sourceWidth, sourceHeight));
 
-  return PHOTO_DECODE_REGIONS.map(region => {
+  for (const region of PHOTO_DECODE_REGIONS) {
     const sourceLeft = Math.round(sourceWidth * region.left);
     const sourceTop = Math.round(sourceHeight * region.top);
     const regionWidth = Math.max(1, Math.round(sourceWidth * region.width));
@@ -164,8 +164,8 @@ function createPhotoDecodeCanvases(image: HTMLImageElement): HTMLCanvasElement[]
       applyLuminanceThreshold(context, canvas.width, canvas.height, region.threshold);
     }
 
-    return canvas;
-  });
+    yield canvas;
+  }
 }
 
 export class ZxingCameraScannerEngine implements CameraScannerEngine {
@@ -398,7 +398,7 @@ export class CameraScannerService {
     const cameraError = error as {name?: unknown; message?: unknown} | null;
     switch (cameraError?.name) {
       case 'NotAllowedError':
-        return new Error('Autorisez l’accès à la caméra dans Safari, puis réessayez.');
+        return new Error('Autorisez l’accès à la caméra dans les réglages du navigateur, puis réessayez.');
       case 'NotFoundError':
         return new Error('Aucune caméra utilisable n’a été trouvée sur cet appareil.');
       case 'NotReadableError':

@@ -182,6 +182,11 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getSettings).toHaveBeenCalled();
   });
 
+  it('uses the scan-authoritative verdict defaults in the administrator form', () => {
+    expect(fixture.componentInstance.settingsForm.duplicateThreshold).toBe(5);
+    expect(fixture.componentInstance.settingsForm.demandSalesThreshold).toBe(1);
+  });
+
   it('explains when the signed-in account lacks the administration role', async () => {
     auth.account.set(account('Volunteer'));
     auth.isAuthenticated.set(true);

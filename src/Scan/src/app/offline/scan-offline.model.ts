@@ -83,6 +83,16 @@ export interface ScanCatalogSyncState {
   key: 'catalog-sync';
   watermark: string | null;
   updatedAt: string;
+  nextFair: ScanNextBookFair | null;
+}
+
+export interface ScanNextBookFair {
+  id: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string | null;
+  openAt: string;
+  closeAt: string | null;
 }
 
 export interface ScanSessionSnapshot {
@@ -173,6 +183,7 @@ export interface PersistentStorageStatus {
 export interface ScanCatalogDeltaResponse {
   generatedAt: string;
   nextWatermark: string;
+  nextFair: ScanNextBookFair | null;
   books: Array<ScanCatalogBook & {isHidden: boolean}>;
   settings: ScanAssociationSettings;
 }

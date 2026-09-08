@@ -168,8 +168,8 @@ export class CatalogAdministrationPageComponent implements OnInit {
   announcementNote = '';
 
   settingsForm: CatalogAdminSettings = {
-    duplicateThreshold: 2,
-    demandSalesThreshold: 3,
+    duplicateThreshold: 5,
+    demandSalesThreshold: 1,
     deadStockMinAgeDays: 180,
     deadStockMinQuantity: 3,
     watchlistMaxItems: 100,

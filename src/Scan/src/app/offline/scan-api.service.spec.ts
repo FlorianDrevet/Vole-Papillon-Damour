@@ -95,6 +95,7 @@ describe('ScanApiService', () => {
     return {
       generatedAt: '2026-09-03T08:00:00.000Z',
       nextWatermark: '2026-09-03T08:00:00.000Z',
+      nextFair: null,
       books: [],
       settings: {
         duplicateThreshold: 5,

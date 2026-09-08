@@ -4,6 +4,7 @@ import {ScanLocalStoreService} from './scan-local-store.service';
 import {ScanAssociationSettings, ScanCatalogBook} from './scan-offline.model';
 import {ScanVerdictService} from './scan-verdict.service';
 import {ScanWorkflowService} from './scan-workflow.service';
+import {clearScanCatalogForTest} from './scan-test.utils';
 
 describe('ScanWorkflowService', () => {
   let service: ScanWorkflowService;
@@ -15,7 +16,7 @@ describe('ScanWorkflowService', () => {
     });
     service = TestBed.inject(ScanWorkflowService);
     store = TestBed.inject(ScanLocalStoreService);
-    await store.clearCatalog();
+    await clearScanCatalogForTest(store);
     await store.clearSession();
     await store.clearSessionCloseRequests();
 

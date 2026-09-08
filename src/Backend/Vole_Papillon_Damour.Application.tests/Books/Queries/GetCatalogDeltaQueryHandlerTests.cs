@@ -6,11 +6,13 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
@@ -122,6 +124,33 @@ public sealed class GetCatalogDeltaQueryHandlerTests
         result.Value.Books.Single(book => book.Isbn13 == "9782070363735").IsWanted.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Handle_AlwaysIncludesTheNextBookFairDatesForOfflineScanMode()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var nextFair = fixture.AddFair(
+            "Bourse de septembre",
+            new DateTimeOffset(2026, 9, 14, 9, 0, 0, TimeSpan.FromHours(2)),
+            new DateTimeOffset(2026, 9, 14, 18, 0, 0, TimeSpan.FromHours(2)));
+        fixture.AddFair(
+            "Bingo",
+            new DateTimeOffset(2026, 9, 10, 9, 0, 0, TimeSpan.FromHours(2)),
+            new DateTimeOffset(2026, 9, 10, 18, 0, 0, TimeSpan.FromHours(2)),
+            EventsType.EventsTypeEnum.Bingo);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.NextFair.Should().NotBeNull();
+        result.Value.NextFair!.Id.Should().Be(nextFair.Id.Value);
+        result.Value.NextFair.Name.Should().Be("Bourse de septembre");
+        result.Value.NextFair.OpenAt.Should().Be(new DateTimeOffset(2026, 9, 14, 9, 0, 0, TimeSpan.Zero));
+        result.Value.NextFair.CloseAt.Should().Be(new DateTimeOffset(2026, 9, 14, 18, 0, 0, TimeSpan.Zero));
+    }
+
     private static Isbn13 ParseIsbn(string value)
     {
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
@@ -188,6 +217,31 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         await Context.SaveChangesAsync();
     }
 
+    public AssoEvents AddFair(
+        string name,
+        DateTimeOffset start,
+        DateTimeOffset end,
+        EventsType.EventsTypeEnum eventType = EventsType.EventsTypeEnum.Books)
+    {
+        var fair = AssoEvents.Create(
+            name,
+            urlImage: null,
+            new EventsType(eventType),
+            start,
+            end,
+            new DateTimeOffset(start.Date, TimeSpan.Zero).AddHours(9),
+            new DateTimeOffset(end.Date, TimeSpan.Zero).AddHours(18),
+            urlImageMap: null,
+            new Adresse(12, "Paris", "Rue des livres", 75001),
+            urlRegistration: null,
+            parties: [],
+            description: "Bourse aux livres");
+        Context.AssoEvents.Add(fair);
+        return fair;
+    }
+
+    public async Task SaveAsync() => await Context.SaveChangesAsync();
+
     public GetCatalogDeltaQueryHandler CreateHandler()
     {
         var clock = Substitute.For<IDateTimeProvider>();
@@ -216,10 +270,11 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     public DbSet<Watchlist> Watchlists => Set<Watchlist>();
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<AssociationSettings> AssociationSettings => Set<AssociationSettings>();
+    public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
-    DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
+    DbSet<AssoEvents> IProjectDbContext.AssoEvents => AssoEvents;
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
@@ -295,7 +350,26 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
 
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<User>();
-        modelBuilder.Ignore<AssoEvents>();
+        modelBuilder.Entity<AssoEvents>(builder =>
+        {
+            builder.HasKey(assoEvent => assoEvent.Id);
+            builder.Property(assoEvent => assoEvent.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => AssoEventsId.Create(value));
+            builder.Property(assoEvent => assoEvent.EventsType)
+                .HasConversion(
+                    type => (int)type.Value,
+                    value => new EventsType((EventsType.EventsTypeEnum)value));
+            builder.Ignore(assoEvent => assoEvent.UrlImage);
+            builder.Ignore(assoEvent => assoEvent.UrlRegistration);
+            builder.Ignore(assoEvent => assoEvent.UrlImageMap);
+            builder.Ignore(assoEvent => assoEvent.Adresse);
+            builder.Ignore(assoEvent => assoEvent.Description);
+            builder.Ignore(assoEvent => assoEvent.BingoHasBeenWon);
+            builder.Ignore(assoEvent => assoEvent.CurrentPartieIndex);
+            builder.Ignore(assoEvent => assoEvent.Parties);
+            builder.Ignore(assoEvent => assoEvent.BingoNumeros);
+        });
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<BookMovement>();
         modelBuilder.Ignore<ScanSession>();

@@ -19,8 +19,10 @@ import {
   LocalScanMode,
   LocalScanResult,
   PersistentStorageStatus,
+  ScanAssociationSettings,
   ScanCatalogBook,
   ScanLocalStoreError,
+  ScanNextBookFair,
   ScanSessionClosePendingError,
   ScanSessionSnapshot,
 } from '../offline/scan-offline.model';
@@ -91,7 +93,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
   localScan: LocalScanResult | null = null;
   consultationResult: LocalCatalogResult | null = null;
   cashItems: CashScanItem[] = [];
-  pendingCount = 0;
+  pendingDecisionCount = 0;
+  pendingTransmissionCount = 0;
   isOnline = typeof navigator === 'undefined' || navigator.onLine;
   persistenceStatus: PersistentStorageStatus | null = null;
   session: ScanSessionSnapshot | null = null;
@@ -107,6 +110,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
   screen: ScanScreen = 'tri';
   selectedMode: LocalScanMode = 'AvailableNow';
   manualReturnScreen: ScanDestination = 'tri';
+  nextFair: ScanNextBookFair | null = null;
+  associationSettings: ScanAssociationSettings | null = null;
 
   private cameraHandle: CameraScannerHandle | null = null;
   private lookupVersion = 0;
@@ -114,7 +119,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private lastScannerKeyAt = 0;
   private localModeReady = false;
   private canSynchronize = true;
-  private syncInProgress = false;
   private syncPromise: Promise<void> | null = null;
   private lastValidatedSaleIds: string[] = [];
   private sessionEnding = false;
@@ -191,11 +195,17 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   get nextFairShortLabel(): string {
-    return 'date à préciser';
+    return this.nextFair ? formatFairDate(this.nextFair.dateStart) : 'date à préciser';
   }
 
   get nextFairLongLabel(): string {
-    return 'la prochaine bourse';
+    return this.nextFair
+      ? `la bourse du ${formatFairDate(this.nextFair.dateStart)}`
+      : 'la prochaine bourse';
+  }
+
+  get correctionWindowLabel(): string {
+    return formatDuration(this.associationSettings?.alertDelayMinutes ?? 120);
   }
 
   get sessionScannedCount(): number {
@@ -369,10 +379,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
       default:
         return 'Aperçu de la caméra. Touchez l’écran pour refaire la mise au point.';
     }
-  }
-
-  async submit(): Promise<void> {
-    await this.lookup(this.isbnInput, 'tri');
   }
 
   async lookup(rawInput: string, destination: ScanDestination = this.destinationForScreen()): Promise<void> {
@@ -621,7 +627,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   private async performSync(scanSync: ScanSyncService): Promise<void> {
-    this.syncInProgress = true;
     this.syncStatus = 'syncing';
     this.syncError = null;
     this.refreshView();
@@ -660,7 +665,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.syncStatus = 'error';
       this.syncError = 'La synchronisation a échoué ; les gestes restent conservés localement.';
     } finally {
-      this.syncInProgress = false;
       this.refreshView();
     }
   }
@@ -678,20 +682,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
     }
   }
 
-  getVerdictLabel(): string {
-    return this.verdictTitle;
-  }
-
-  getVerdictDescription(): string {
-    return this.verdictSummary;
-  }
-
   async endSession(): Promise<void> {
     if (!this.session || this.sessionEnding) {
       return;
     }
 
-    if (this.localScan?.entry.status === 'Pending') {
+    if (this.localScan?.entry.status === 'Pending' || this.pendingDecisionCount > 0) {
       this.syncError = 'Choisissez « Garder » ou « Écarter » pour le dernier livre avant de terminer.';
       this.screen = 'tri';
       this.refreshView();
@@ -1075,9 +1071,13 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.pendingCount = await this.scanWorkflow.getPendingCount();
+    const counts = await this.scanWorkflow.getOutboxCounts();
+    this.pendingDecisionCount = counts.pendingDecisionCount;
+    this.pendingTransmissionCount = counts.pendingTransmissionCount;
     this.session = await this.scanWorkflow.getSession();
     this.selectedMode = this.session?.mode ?? this.selectedMode;
+    this.associationSettings = await this.scanWorkflow.getSettings();
+    this.nextFair = (await this.scanWorkflow.getCatalogSyncState())?.nextFair ?? null;
   }
 
   private async refreshSaleCancellationState(): Promise<void> {
@@ -1260,4 +1260,35 @@ export class ScannerComponent implements OnInit, OnDestroy {
       target.isContentEditable
     );
   }
+}
+
+function formatFairDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return 'date à préciser';
+  }
+
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Europe/Paris',
+  }).format(date);
+}
+
+function formatDuration(minutes: number): string {
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    return 'délai à préciser';
+  }
+
+  const roundedMinutes = Math.round(minutes);
+  const hours = Math.floor(roundedMinutes / 60);
+  const remainingMinutes = roundedMinutes % 60;
+  if (hours === 0) {
+    return `${remainingMinutes} min`;
+  }
+
+  return remainingMinutes === 0
+    ? `${hours} h`
+    : `${hours} h ${remainingMinutes}`;
 }

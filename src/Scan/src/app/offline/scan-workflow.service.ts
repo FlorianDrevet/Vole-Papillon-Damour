@@ -5,7 +5,9 @@ import {
   LocalScanResult,
   LocalCatalogResult,
   PersistentStorageStatus,
+  ScanAssociationSettings,
   ScanCatalogBook,
+  ScanCatalogSyncState,
   ScanOutboxEntry,
   ScanSaleOutboxEntry,
   LocalScanCloseReason,
@@ -36,13 +38,19 @@ export class ScanWorkflowService {
     return await this.store.getSession();
   }
 
-  async getPendingCount(): Promise<number> {
-    return await this.store.countPendingOutboxEntries();
+  async getOutboxCounts(): Promise<{
+    pendingDecisionCount: number;
+    pendingTransmissionCount: number;
+  }> {
+    return await this.store.getOutboxCounts();
   }
 
-  async getLatestPendingEntry(): Promise<ScanOutboxEntry | null> {
-    const entries = await this.store.listOutboxEntries();
-    return entries.filter(entry => entry.status === 'Pending').at(-1) ?? null;
+  async getCatalogSyncState(): Promise<ScanCatalogSyncState | null> {
+    return await this.store.getCatalogSyncState();
+  }
+
+  async getSettings(): Promise<ScanAssociationSettings | null> {
+    return await this.store.getSettings();
   }
 
   async getLatestPendingResult(): Promise<LocalScanResult | null> {
@@ -336,11 +344,6 @@ export class ScanWorkflowService {
 
       return decided;
     });
-  }
-
-  async cancel(clientGestureId: string): Promise<ScanOutboxEntry> {
-    return await this.enqueue(async () =>
-      await this.store.cancelPendingOutboxEntry(clientGestureId));
   }
 
   async cacheMetadata(metadata: BookMetadata): Promise<void> {
