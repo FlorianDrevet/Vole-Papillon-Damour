@@ -11,4 +11,5 @@ import {CookieConsentService} from '../../../shared/services/cookie-consent.serv
 })
 export class CatalogFooterComponent {
   readonly consent = inject(CookieConsentService);
+  readonly currentYear = new Date().getFullYear();
 }

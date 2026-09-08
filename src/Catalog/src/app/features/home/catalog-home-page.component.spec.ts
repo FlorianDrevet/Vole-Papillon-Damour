@@ -92,6 +92,7 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('412');
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('titres disponibles en ce moment');
     expect(fixture.nativeElement.querySelector('.home-account-callout')).not.toBeNull();
+    expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
   });
 
   it('keeps the hero focused on the book fair and uses a composed book visual', () => {
@@ -120,6 +121,14 @@ describe('CatalogHomePageComponent', () => {
     });
   });
 
+  it('keeps the availability scope when opening the counted catalogue', () => {
+    fixture.componentInstance.showAll();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/catalogue'], {
+      queryParams: {availability: 'available'},
+    });
+  });
+
   it('shows a compact next fair teaser on the home page without the full schedule', () => {
     const element = fixture.nativeElement as HTMLElement;
     const teaser = element.querySelector('.home-fair-teaser') as HTMLElement;
@@ -145,8 +154,9 @@ describe('CatalogHomePageComponent', () => {
     expect(element.querySelector('.home-fair-teaser')).toBeNull();
     expect(datesSection).not.toBeNull();
     expect(datesSection.querySelector('.next-fair-card')).not.toBeNull();
-    expect(datesSection.querySelector('.fair-location-card iframe')?.getAttribute('title'))
-      .toContain('Carte du lieu');
+    expect(datesSection.querySelector('.fair-location-card iframe')).toBeNull();
+    expect(datesSection.querySelector<HTMLAnchorElement>('.fair-location-map-link')?.href)
+      .toContain('https://www.google.com/maps/search/');
     expect(datesSection.querySelector('.fair-location-address')?.textContent)
       .toContain('46 route de Saint-Marcellin');
     expect(datesSection.querySelector('.upcoming-fairs')).toBeNull();
@@ -161,18 +171,19 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.componentInstance.formatTime('2027-03-14T09:30:00Z')).toBe('9 h 30');
   });
 
-  it('renders featured genre cards that open a filtered search', () => {
+  it('renders only API genres as cards that open a filtered search', () => {
     const element = fixture.nativeElement as HTMLElement;
     const cards = Array.from(
       element.querySelectorAll<HTMLAnchorElement>('.genre-card'),
     );
 
-    expect(cards.length).toBe(5);
-    expect(cards[0].textContent).toContain('Romans');
-    expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Romans');
+    expect(cards.length).toBe(3);
+    expect(cards.map(card => card.querySelector('strong')?.textContent?.trim()))
+      .toEqual(['Jeunesse', 'Romans', 'Policier']);
+    expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Jeunesse');
   });
 
-  it('keeps featured genres in the hero selector when the API has no genre list', () => {
+  it('does not invent genre options or a genre section when the API has no genres', () => {
     fixture.componentInstance.genres.set([]);
     fixture.detectChanges();
 
@@ -181,7 +192,7 @@ describe('CatalogHomePageComponent', () => {
       element.querySelectorAll<HTMLOptionElement>('.hero-genre-select option'),
     ).map(option => option.value);
 
-    expect(options).toContain('Romans');
-    expect(options).toContain('Jeunesse');
+    expect(options).toEqual(['']);
+    expect(element.querySelector('.genres-section')).toBeNull();
   });
 });

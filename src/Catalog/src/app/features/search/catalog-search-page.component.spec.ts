@@ -171,7 +171,7 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
   });
 
-  it('keeps featured genre filters available when the API has no genre metadata', () => {
+  it('does not invent genre filters when the API has no genre metadata', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -179,8 +179,7 @@ describe('CatalogSearchPageComponent', () => {
       element.querySelectorAll<HTMLOptionElement>('.filters-panel select[name="genre"] option'),
     ).map(option => option.value);
 
-    expect(options).toContain('Romans');
-    expect(options).toContain('Jeunesse');
+    expect(options).toEqual(['']);
   });
 
   it('loads the filtered results when opened with a genre query parameter', async () => {

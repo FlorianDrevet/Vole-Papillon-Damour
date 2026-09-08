@@ -157,6 +157,14 @@ success, and camera permission/README copy is browser-neutral. Quarantined cash 
 excluded from replay and local test fixtures clear only their catalog projection without
 reintroducing a production purge method.
 
+The 2026-09-08 Catalog Lot 5 public-surface pass removes the hard-coded featured genre
+taxonomy: the home cards, hero selector, and navigation menu now use only genres returned
+by the public catalog API, and the home section stays hidden when that list is empty. The
+home availability count queries the available projection, the fair location is a static
+Google Maps link instead of a consentless embedded frame, the footer year is computed at
+render time, and the personal Facebook profile is no longer exposed. The existing direct
+publisher and hosting information in the legal page was verified and left unchanged.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:
