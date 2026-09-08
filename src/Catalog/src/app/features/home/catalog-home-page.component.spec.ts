@@ -6,6 +6,7 @@ import {of} from 'rxjs';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 import {DesignSystemModule} from '@vpd/ui';
 import {CatalogHomePageComponent} from './catalog-home-page.component';
 
@@ -13,6 +14,7 @@ describe('CatalogHomePageComponent', () => {
   let fixture: ComponentFixture<CatalogHomePageComponent>;
   let api: jasmine.SpyObj<CatalogApiService>;
   let router: jasmine.SpyObj<Router>;
+  let consent: {preferences: {analytics: boolean; maps: boolean}; enableMaps: jasmine.Spy};
 
   const book: CatalogBook = {
     isbn13: '9782070612758',
@@ -70,11 +72,16 @@ describe('CatalogHomePageComponent', () => {
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'getUpcomingFairs']);
     api.search.and.returnValue(of(searchResponse));
     api.getUpcomingFairs.and.returnValue(of([fair, nextFair]));
+    consent = {
+      preferences: {analytics: false, maps: true},
+      enableMaps: jasmine.createSpy('enableMaps'),
+    };
     await TestBed.configureTestingModule({
       declarations: [CatalogHomePageComponent, BookCardComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogApiService, useValue: api},
+        {provide: CookieConsentService, useValue: consent},
       ],
     }).compileComponents();
 
@@ -155,6 +162,21 @@ describe('CatalogHomePageComponent', () => {
     expect(element.querySelector('.selection-section')).toBeNull();
     expect(element.querySelector('.genres-section')).toBeNull();
     expect(element.querySelector('.home-account-callout')).toBeNull();
+  });
+
+  it('does not embed Google Maps before consent and offers an explicit opt-in', () => {
+    consent.preferences.maps = false;
+    fixture.componentInstance.upcomingOnly.set(true);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.fair-location-map')).toBeNull();
+    const consentButton = element.querySelector('.fair-location-map-consent button') as HTMLButtonElement;
+    expect(consentButton.textContent).toContain('Afficher la carte Google Maps');
+
+    consentButton.click();
+
+    expect(consent.enableMaps).toHaveBeenCalledOnceWith();
   });
 
   it('keeps legacy fair opening hours as civil UTC components', () => {

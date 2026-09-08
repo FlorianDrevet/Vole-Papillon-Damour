@@ -53,12 +53,22 @@
           <aside class="fair-location-card">
             <div class="fair-location-map-wrap">
               @if (address(fair)) {
-                <iframe
-                  [src]="mapsEmbedUrl(fair)"
-                  [title]="'Carte du lieu de ' + fair.name"
-                  loading="lazy"
-                  referrerpolicy="no-referrer-when-downgrade"
-                  class="fair-location-map"></iframe>
+                @if (consent.preferences.maps) {
+                  <iframe
+                    [src]="mapsEmbedUrl(fair)"
+                    [title]="'Carte du lieu de ' + fair.name"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    class="fair-location-map"></iframe>
+                } @else {
+                  <div class="fair-location-placeholder fair-location-map-consent" role="status">
+                    <span class="pin-icon" aria-hidden="true"></span>
+                    <span class="fair-location-map-consent-copy">
+                      <strong>Carte Google Maps non chargée</strong>
+                      <button type="button" (click)="consent.enableMaps()">Afficher la carte Google Maps</button>
+                    </span>
+                  </div>
+                }
                 <a
                   [href]="mapsUrl(fair)"
                   target="_blank"

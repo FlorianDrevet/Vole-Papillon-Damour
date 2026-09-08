@@ -13,6 +13,7 @@ const CLARITY_CONSENT_VERSION = {
 
 export interface CookiePreferences {
   analytics: boolean;
+  maps: boolean;
 }
 
 interface StoredConsent {
@@ -32,7 +33,7 @@ export class CookieConsentService {
 
   readonly bannerVisible$ = new BehaviorSubject<boolean>(false);
   readonly panelOpen$ = new BehaviorSubject<boolean>(false);
-  preferences: CookiePreferences = {analytics: false};
+  preferences: CookiePreferences = {analytics: false, maps: false};
 
   constructor() {
     if (!this.isBrowser) {
@@ -52,15 +53,19 @@ export class CookieConsentService {
   }
 
   acceptAll(): void {
-    this.save('accepted', {analytics: true});
+    this.save('accepted', {analytics: true, maps: true});
   }
 
   rejectAll(): void {
-    this.save('rejected', {analytics: false});
+    this.save('rejected', {analytics: false, maps: false});
   }
 
   savePreferences(preferences: CookiePreferences): void {
     this.save('customized', preferences);
+  }
+
+  enableMaps(): void {
+    this.savePreferences({...this.preferences, maps: true});
   }
 
   openPanel(): void {
@@ -80,7 +85,15 @@ export class CookieConsentService {
 
     try {
       const parsed: unknown = JSON.parse(raw) as unknown;
-      return isStoredConsent(parsed) ? parsed : null;
+      return isStoredConsent(parsed)
+        ? {
+          ...parsed,
+          preferences: {
+            analytics: parsed.preferences.analytics,
+            maps: parsed.preferences.maps === true,
+          },
+        }
+        : null;
     } catch {
       return null;
     }
@@ -164,7 +177,7 @@ function isStoredConsent(value: unknown): value is StoredConsent {
 
   const candidate = value as {
     choice?: unknown;
-    preferences?: {analytics?: unknown};
+    preferences?: {analytics?: unknown; maps?: unknown};
     date?: unknown;
   };
 
