@@ -127,6 +127,22 @@ comme sur la connexion. Aucun mot de passe ni compte de test n'a été saisi ou 
 redéploiement Catalog `34162378838` est terminé avec succès ; le parcours public a été
 recontrôlé après ce déploiement.
 
+### État actualisé — 2026-09-08 — V2 visuelle du branding External ID
+
+La V2 du branding hébergé est préparée sur `feat/entra-branding-site-theme`. Le CSS reprend
+le thème Catalog bleu/orange avec fond dégradé, carte arrondie, boutons orange, états de
+focus/erreur, footer sombre et règle mobile ; l'image `papillon_without_back.png` est
+téléversée comme fond External ID sur les localisations `0` et `fr-FR`. Le script accepte
+désormais `-BackgroundImagePath` et limite les images à 300 KB.
+
+Validation locale : Pester `Configure-EntraBranding.Tests.ps1` — 8/8, analyse syntaxique
+PowerShell réussie et Graphify régénéré. L'application réelle au tenant
+`b23c80b3-9776-4840-8255-fcbf3b3500fd` est terminée sur `0` et `fr-FR` avec les six actions
+attendues, dont le CSS et l'image du papillon. Le smoke navigateur public confirme désormais
+le rendu bleu/orange complet sur l'inscription et la connexion : fond dégradé, papillon visible,
+carte arrondie, accent orange et textes français. Aucun mot de passe ni compte de test n'a été
+saisi ou créé.
+
 ### État actualisé — 2026-09-07 — displayName et personnalisation du signup External ID
 
 Le user flow public External ID a été exécuté par l'utilisateur après le merge de la

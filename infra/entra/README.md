@@ -19,7 +19,7 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 |---|---|---|
 | `Configure-EntraApps.ps1` | Enregistrements d'application, portée exposée, rôles applicatifs, consentements | À chaque évolution de la configuration |
 | `Configure-EntraUserFlow.ps1` | User flow External ID d'inscription publique, attaché au catalogue uniquement | À l'activation ou à l'évolution du parcours membre |
-| `Configure-EntraBranding.ps1` | Marque française et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
+| `Configure-EntraBranding.ps1` | Marque française, image de fond et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
 | `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `Administration` à un compte | Au fil de l'eau |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle | Contrôle |
 
@@ -112,20 +112,26 @@ administrateur. Le compte qui lance ce script doit disposer des permissions
 ./Configure-EntraBranding.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -UseDeviceCode -WhatIf
 
-# 2 quater. Appliquer le branding français et le CSS du catalogue.
+# 2 quater. Appliquer le branding français, le CSS et le papillon du catalogue.
 ./Configure-EntraBranding.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
-    -UseDeviceCode
+    -UseDeviceCode `
+    -BackgroundImagePath '../../src/Catalog/public/images/papillon_without_back.png'
 
 # Au premier passage sur un tenant External ID neuf, le script initialise d'abord
 # le branding par défaut avant de lire les localisations. Le -WhatIf reste donc
 # utilisable même si la ressource organizationalBranding n'existe pas encore.
-# Le résultat réel attendu sans logo est :
-# localization-created, default-updated, default-css-updated, localization-css-updated.
+# Le résultat réel attendu avec l'image de fond est :
+# localization-created, default-updated, default-css-updated, localization-css-updated,
+# default-background-image-updated, localization-background-image-updated.
 
-# Des fichiers PNG/JPEG peuvent être fournis en option pour remplacer le logo et le favicon.
+# Des fichiers PNG/JPEG peuvent être fournis en option pour remplacer l'image de fond,
+# le logo et le favicon.
+# Le fichier de fond doit faire au maximum 300 KB et mesurer au plus 1920 x 1080 pixels.
+# Le PNG du papillon du Catalog est déjà suivi dans le dépôt et respecte cette limite.
 # Le logo d'en-tête doit être une ressource dédiée au bandeau, pas le logo carré de l'application.
 # ./Configure-EntraBranding.ps1 ... -HeaderLogoPath ./branding/header-logo.png `
-#     -FaviconPath ./branding/favicon.png
+#     -FaviconPath ./branding/favicon.png `
+#     -BackgroundImagePath ./branding/background.png
 
 # 3. Le premier administrateur, sans qui rien n'est administrable.
 ./Set-VpdUserRole.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
@@ -143,11 +149,12 @@ locataire qui contient déjà quelque chose.
 
 Le Catalog utilise le parcours **browser-delegated** : le mot de passe est saisi dans la
 page External ID hébergée par Microsoft et n'est jamais envoyé au Catalog ni à l'API.
-`Configure-EntraBranding.ps1` applique le CSS du design system, les textes français et la
-locale `fr-FR` demandée par le Catalog (`ui_locales` et `mkt`). Cette solution conserve la
-sécurité et les écrans de récupération de compte du parcours géré, tout en supprimant la
-présentation visuelle générique la plus visible. Le domaine d'authentification reste
-toutefois celui d'External ID : ce n'est pas un formulaire HTML servi par notre domaine.
+`Configure-EntraBranding.ps1` applique le CSS du design system, le fond visuel du papillon,
+les textes français et la locale `fr-FR` demandée par le Catalog (`ui_locales` et `mkt`).
+Cette solution conserve la sécurité et les écrans de récupération de compte du parcours
+géré, tout en remplaçant la présentation visuelle générique par le thème bleu/orange du
+Catalog. Le domaine d'authentification reste toutefois celui d'External ID : ce n'est pas
+un formulaire HTML servi par notre domaine.
 
 Si le besoin devient un contrôle pixel-perfect du formulaire, l'alternative est **Native
 Authentication** avec `@azure/msal-browser/custom-auth` dans Angular. Le Catalog posséderait
