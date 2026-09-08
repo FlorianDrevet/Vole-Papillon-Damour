@@ -78,12 +78,12 @@ export class CookieConsentService {
   }
 
   private readStored(): StoredConsent | null {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-
     try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        return null;
+      }
+
       const parsed: unknown = JSON.parse(raw) as unknown;
       return isStoredConsent(parsed)
         ? {
@@ -109,7 +109,11 @@ export class CookieConsentService {
       preferences: {...preferences},
       date: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    } catch {
+      // Consent remains available in memory when browser storage is blocked.
+    }
     this.preferences = stored.preferences;
     this.bannerVisible$.next(false);
     this.panelOpen$.next(false);

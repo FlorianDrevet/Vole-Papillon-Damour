@@ -78,6 +78,16 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-08 — audit catalogue/Scanette, lot 1
+
+Depuis `origin/main`, la branche `fix/catalogue-scan-lot1` corrige les sept anomalies
+du lot 1 : propriété des sessions, reprise et horodatage hors ligne, filigrane du delta,
+purge au changement d'utilisateur et consentement/robustesse du Catalog. Les migrations
+de base n'ont pas été modifiées : le filigrane API-07 utilise la `rowversion` déjà
+présente sur `Book`. Les validations locales sont vertes ; le retest physique hors ligne,
+la validation RGPD et l'arbitrage du contrat de filigrane restent à faire avant mise en
+production.
+
 ### État actualisé — 2026-09-08 — déploiement et référencement du Catalogue
 
 La PR [#94](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/94) est fusionnée
@@ -841,6 +851,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-08 | Windows | **Audit catalogue/Scanette — lot 1.** Depuis `origin/main`, correction TDD de `API-01`, `API-02`, `API-03`, `API-07`, `SCAN-03`, `CAT-01` et `CAT-02` sur le worktree `fix/catalogue-scan-lot1`. Suites Application/API/Scan/Catalog et builds concernés passent localement ; aucune migration ni ressource distante n'a été modifiée. Le retest terrain hors ligne, la validation RGPD et l'arbitrage du nouveau filigrane restent à faire. |
 | 2026-09-08 | Windows | **Catalogue — post-merge et setup final.** PR #94 fusionnée (`e232d0f`) ; `Catalog - deploy` `34165470413` et `34165490064` réussis. Smoke public : cinq routes légales, robots et sitemap en `200`; aucun script avant consentement, Clarity `yerabb7gnt` et GA4 `G-GBHC67EGGF` chargés après accord, retrait vérifié sans erreur console. Sitemap Catalogue soumis dans Search Console avec « Opération effectuée » et 3 pages découvertes. Les premières données analytics et le prochain crawl restent à relever. |
 | 2026-09-07 | Windows | **Catalogue — mentions légales et mesure consentie.** Ajout des pages mentions légales, confidentialité, politique de cookies et accessibilité, avec les informations de l’association, l’hébergement Azure Container Apps, les droits, les comptes/listes/alertes et les limites encore à valider (durées de conservation, transferts, audit RGAA). Ajout d’une bannière permettant d’accepter, refuser ou personnaliser ; Microsoft Clarity et GA4 ne sont chargés qu’après consentement explicite. Création du projet Clarity `yerabb7gnt`, de la propriété/du flux GA4 avec l’identifiant `G-GBHC67EGGF`, et configuration des variables GitHub dédiées du Catalogue ; la variable Website `G-D67DMFCTDG` a été préservée. Le sitemap Catalogue est prêt dans Search Console mais son envoi final reste à confirmer. Validation locale : 103 tests ChromeHeadless, build SSR/production et smoke des quatre pages légales. |
 | 2026-09-07 | Windows | **Footer dédié au Catalog.** Remplacement des liens Website « L'association / Maxence / Contact » par les parcours du catalogue (recherche, genres, prochaines dates, liste de recherche), le renvoi vers le site associatif et les pages légales locales. La grille passe à trois colonnes avec le rappel qu'aucune donnée n'est nécessaire pour consulter le catalogue. Validation : 87 tests ChromeHeadless, build SSR/navigateur et contrôles responsive à 1905/390 px ; PR et déploiement à faire. |

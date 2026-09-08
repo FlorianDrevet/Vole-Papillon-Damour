@@ -49,6 +49,28 @@ describe('CookieConsentService', () => {
     expect(googleAnalytics.enable).not.toHaveBeenCalled();
   });
 
+  it('does_not_crash_when_localStorage_cannot_be_read', () => {
+    spyOn(localStorage, 'getItem').and.throwError('SecurityError');
+
+    let service!: CookieConsentService;
+    expect(() => {
+      service = TestBed.inject(CookieConsentService);
+    }).not.toThrow();
+
+    expect(service.bannerVisible$.value).toBeTrue();
+    expect(service.preferences).toEqual({analytics: false, maps: false});
+  });
+
+  it('keeps the in-memory consent usable when localStorage_cannot_be_written', () => {
+    spyOn(localStorage, 'setItem').and.throwError('QuotaExceededError');
+    const service = TestBed.inject(CookieConsentService);
+
+    expect(() => service.acceptAll()).not.toThrow();
+
+    expect(service.preferences).toEqual({analytics: true, maps: true});
+    expect(googleAnalytics.enable).toHaveBeenCalled();
+  });
+
   it('acceptAll_loads_clarity_and_enables_google_analytics', () => {
     const service = TestBed.inject(CookieConsentService);
 
