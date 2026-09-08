@@ -157,6 +157,12 @@ success, and camera permission/README copy is browser-neutral. Quarantined cash 
 excluded from replay and local test fixtures clear only their catalog projection without
 reintroducing a production purge method.
 
+The 2026-09-08 Scan Lot 4 accessibility pass gives labeled camera, keypad, and cash-list
+containers explicit semantics, removes the competing label from the live manual ISBN value,
+and keeps a real `h1` target for each operating screen in both the empty and triage-verdict
+states. The USB scanner focus behavior from S-22 remains deliberately unmodified until it
+has been confirmed with the association's physical scanner.
+
 ## App Structure
 
 Both Angular apps follow the same high-level split:
