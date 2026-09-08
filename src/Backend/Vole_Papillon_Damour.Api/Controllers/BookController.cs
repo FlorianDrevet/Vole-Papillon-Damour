@@ -331,12 +331,12 @@ public static class BookController
             endpoints.MapGet(
                     "/scan/catalog/delta",
                     async (
-                        DateTimeOffset? since,
+                        string? since,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
                         var result = await mediator.Send(
-                            new GetCatalogDeltaQuery(since?.UtcDateTime),
+                            new GetCatalogDeltaQuery(since),
                             cancellationToken);
 
                         return result.Match(
