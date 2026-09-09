@@ -10,31 +10,33 @@
     <h1 id="login-title">Accès bénévole</h1>
 
     <ng-container *ngIf="authState$ | async as authState">
-      <p *ngIf="authState.status === 'checking'" class="login-message">Vérification de votre session…</p>
-      <p *ngIf="authState.status === 'unauthenticated'" class="login-message">
-        Connectez-vous pour accéder au scan et au catalogue de la bourse.
-      </p>
-      <p *ngIf="authState.status === 'unauthorized'" class="login-message login-message-error" role="alert">
-        Ce compte est connecté, mais il ne possède aucun rôle requis ({{ authState.requiredRole }}) pour cette application.
-      </p>
-      <p *ngIf="loginError()" class="login-message login-message-error" role="alert">
-        {{ loginError() }}
-      </p>
+      <ng-container *ngIf="interactionStatus$ | async as interactionStatus">
+        <p *ngIf="authState.status === 'checking'" class="login-message">Restauration de votre session…</p>
+        <p *ngIf="authState.status === 'unauthenticated'" class="login-message">
+          Connectez-vous pour accéder au scan et au catalogue de la bourse.
+        </p>
+        <p *ngIf="authState.status === 'unauthorized'" class="login-message login-message-error" role="alert">
+          Ce compte est connecté, mais il ne possède aucun rôle requis ({{ authState.requiredRole }}) pour cette application.
+        </p>
+        <p *ngIf="loginError()" class="login-message login-message-error" role="alert">
+          {{ loginError() }}
+        </p>
 
-      <button
-        type="button"
-        class="login-primary"
-        [disabled]="authState.status === 'checking' || loginInProgress()"
-        (click)="login()">
-        {{ loginInProgress() ? 'Connexion…' : 'Se connecter' }}
-      </button>
-      <button
-        *ngIf="authState.status === 'unauthorized'"
-        type="button"
-        class="login-secondary"
-        (click)="logout()">
-        Changer de compte
-      </button>
+        <button
+          type="button"
+          class="login-primary"
+          [disabled]="interactionStatus !== 'none' || loginInProgress()"
+          (click)="login()">
+          {{ loginInProgress() ? 'Connexion…' : 'Se connecter' }}
+        </button>
+        <button
+          *ngIf="authState.status === 'unauthorized'"
+          type="button"
+          class="login-secondary"
+          (click)="logout()">
+          Changer de compte
+        </button>
+      </ng-container>
     </ng-container>
 
     <p class="login-footnote">Accès réservé aux bénévoles habilités au tri ou à la caisse.</p>

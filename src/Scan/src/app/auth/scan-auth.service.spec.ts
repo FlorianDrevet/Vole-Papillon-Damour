@@ -4,14 +4,32 @@ import {
   AuthenticationResult,
   EventMessage,
   EventType,
+  InteractionStatus,
   PublicClientApplication,
 } from '@azure/msal-browser';
-import {of, Subject, throwError} from 'rxjs';
+import {BehaviorSubject, of, Subject, throwError} from 'rxjs';
 
 import {loginRequest} from './msal-config';
 import {ScanAuthService, ScanAuthState} from './scan-auth.service';
 
 describe('ScanAuthService', () => {
+  it('waits for MSAL interactions to finish before reading the cached account', () => {
+    const account = createAccount('benevole@example.org', 'Bénévole', ['Tri']);
+    const instance = createMsalInstance([account]);
+    const msal = createMsalService(instance, createAccessToken(['Tri']));
+    const broadcast = createBroadcastService(InteractionStatus.Startup);
+
+    new ScanAuthService(msal, broadcast.service);
+
+    expect(instance.getActiveAccount).not.toHaveBeenCalled();
+    expect(instance.getAllAccounts).not.toHaveBeenCalled();
+
+    broadcast.progress.next(InteractionStatus.None);
+
+    expect(instance.getActiveAccount).toHaveBeenCalled();
+    expect(instance.getAllAccounts).toHaveBeenCalled();
+  });
+
   it('publishes the cached account and uses the scan API scope for login', () => {
     const account = createAccount('benevole@example.org', 'Bénévole', ['Tri']);
     const accounts = [account];
@@ -141,14 +159,20 @@ describe('ScanAuthService', () => {
     expect(localStorage.getItem(storageKey)).toBeNull();
   });
 
-  function createBroadcastService(): {
+  function createBroadcastService(initialStatus: InteractionStatus = InteractionStatus.None): {
     service: MsalBroadcastService;
     subject: Subject<EventMessage>;
+    progress: BehaviorSubject<InteractionStatus>;
   } {
     const subject = new Subject<EventMessage>();
+    const progress = new BehaviorSubject<InteractionStatus>(initialStatus);
     return {
-      service: {msalSubject$: subject.asObservable()} as MsalBroadcastService,
+      service: {
+        msalSubject$: subject.asObservable(),
+        inProgress$: progress.asObservable(),
+      } as MsalBroadcastService,
       subject,
+      progress,
     };
   }
 

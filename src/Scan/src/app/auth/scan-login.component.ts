@@ -18,6 +18,10 @@ export class ScanLoginComponent {
     return this.scanAuth.authState$;
   }
 
+  get interactionStatus$() {
+    return this.scanAuth.interactionStatus$;
+  }
+
   login(): void {
     this.loginError.set(null);
     this.loginInProgress.set(true);

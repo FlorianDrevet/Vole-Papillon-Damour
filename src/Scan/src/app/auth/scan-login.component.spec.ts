@@ -1,5 +1,6 @@
 import {CommonModule} from '@angular/common';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {InteractionStatus} from '@azure/msal-browser';
 import {BehaviorSubject, of, throwError} from 'rxjs';
 
 import {ScanAuthService, ScanAuthState} from './scan-auth.service';
@@ -9,6 +10,7 @@ describe('ScanLoginComponent', () => {
   let fixture: ComponentFixture<ScanLoginComponent>;
   let component: ScanLoginComponent;
   let authState: BehaviorSubject<ScanAuthState>;
+  let interactionStatus: BehaviorSubject<InteractionStatus>;
   let auth: jasmine.SpyObj<ScanAuthService>;
 
   beforeEach(async () => {
@@ -18,8 +20,10 @@ describe('ScanLoginComponent', () => {
       roles: [],
       requiredRole: 'Tri ou Caisse',
     });
+    interactionStatus = new BehaviorSubject<InteractionStatus>(InteractionStatus.None);
     auth = jasmine.createSpyObj<ScanAuthService>('ScanAuthService', ['login', 'logout'], {
       authState$: authState.asObservable(),
+      interactionStatus$: interactionStatus.asObservable(),
     });
     auth.login.and.returnValue(of(undefined) as never);
     auth.logout.and.returnValue(of(undefined) as never);
@@ -42,6 +46,31 @@ describe('ScanLoginComponent', () => {
     (fixture.nativeElement.querySelector('.login-primary') as HTMLButtonElement).click();
 
     expect(auth.login).toHaveBeenCalledOnceWith();
+  });
+
+  it('keeps the login action available while cached authorization is checking', () => {
+    authState.next({
+      status: 'checking',
+      account: null,
+      roles: [],
+      requiredRole: 'Tri ou Caisse',
+    });
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.login-primary') as HTMLButtonElement;
+    expect(button.disabled).toBeFalse();
+
+    button.click();
+
+    expect(auth.login).toHaveBeenCalledOnceWith();
+  });
+
+  it('disables the login action while an MSAL interaction is in progress', () => {
+    interactionStatus.next(InteractionStatus.HandleRedirect);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.login-primary') as HTMLButtonElement;
+    expect(button.disabled).toBeTrue();
   });
 
   it('explains the missing role and offers account switching', () => {

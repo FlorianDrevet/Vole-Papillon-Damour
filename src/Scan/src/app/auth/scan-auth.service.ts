@@ -1,6 +1,11 @@
 import {Injectable} from '@angular/core';
 import {MsalBroadcastService, MsalService} from '@azure/msal-angular';
-import {AccountInfo, AuthenticationResult, EventType} from '@azure/msal-browser';
+import {
+  AccountInfo,
+  AuthenticationResult,
+  EventType,
+  InteractionStatus,
+} from '@azure/msal-browser';
 import {BehaviorSubject, defer, Observable} from 'rxjs';
 import {filter} from 'rxjs/operators';
 
@@ -34,16 +39,30 @@ export class ScanAuthService {
     roles: [],
     requiredRole: SCAN_REQUIRED_ROLE,
   });
+  private readonly interactionStatusSubject = new BehaviorSubject<InteractionStatus>(
+    InteractionStatus.Startup,
+  );
   private authorizationCheck = 0;
+  private accountPublicationPending = true;
+  private interactionStatus: InteractionStatus = InteractionStatus.Startup;
 
   readonly account$ = this.accountSubject.asObservable();
   readonly authState$ = this.authStateSubject.asObservable();
+  readonly interactionStatus$ = this.interactionStatusSubject.asObservable();
 
   constructor(
     private readonly msalService: MsalService,
     private readonly msalBroadcastService: MsalBroadcastService,
   ) {
-    this.publishCachedAccount();
+    this.msalBroadcastService.inProgress$.subscribe(status => {
+      this.interactionStatus = status;
+      this.interactionStatusSubject.next(status);
+
+      if (status === InteractionStatus.None && this.accountPublicationPending) {
+        this.accountPublicationPending = false;
+        this.publishCachedAccount();
+      }
+    });
 
     this.msalBroadcastService.msalSubject$
       .pipe(filter(message =>
@@ -57,7 +76,7 @@ export class ScanAuthService {
           const result = message.payload as AuthenticationResult;
           if (result.account) {
             this.msalService.instance.setActiveAccount(result.account);
-            this.publishAccount(result.account);
+            this.requestAccountPublication();
             return;
           }
         }
@@ -66,16 +85,18 @@ export class ScanAuthService {
           message.eventType === EventType.LOGOUT_SUCCESS ||
           message.eventType === EventType.LOGOUT_FAILURE
         ) {
-          this.publishAccount(null);
+          this.requestAccountPublication();
           return;
         }
 
         if (message.eventType === EventType.ACQUIRE_TOKEN_FAILURE) {
-          this.handleSilentTokenFailure();
+          if (this.interactionStatus === InteractionStatus.None) {
+            this.handleSilentTokenFailure();
+          }
           return;
         }
 
-        this.publishCachedAccount();
+        this.requestAccountPublication();
       });
   }
 
@@ -109,10 +130,16 @@ export class ScanAuthService {
   }
 
   login(startPage = '/'): Observable<void> {
-    return defer(() => this.msalService.loginRedirect({
-      ...loginRequest,
-      redirectStartPage: new URL(startPage, window.location.origin).href,
-    }));
+    return defer(() => {
+      if (this.interactionStatus !== InteractionStatus.None) {
+        throw new Error('interaction_in_progress');
+      }
+
+      return this.msalService.loginRedirect({
+        ...loginRequest,
+        redirectStartPage: new URL(startPage, window.location.origin).href,
+      });
+    });
   }
 
   logout(): void {
@@ -140,6 +167,15 @@ export class ScanAuthService {
       this.msalService.instance.setActiveAccount(firstAccount);
     }
     this.publishAccount(firstAccount);
+  }
+
+  private requestAccountPublication(): void {
+    this.accountPublicationPending = true;
+
+    if (this.interactionStatus === InteractionStatus.None) {
+      this.accountPublicationPending = false;
+      this.publishCachedAccount();
+    }
   }
 
   private publishAccount(account: AccountInfo | null): void {
