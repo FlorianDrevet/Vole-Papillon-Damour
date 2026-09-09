@@ -26,21 +26,27 @@
 
             <div class="fair-details">
               <div class="fair-detail">
-                <span class="detail-icon calendar-icon" aria-hidden="true"></span>
+                <span class="detail-icon fair-detail-icon" aria-hidden="true">
+                  <img src="icons/calendar-icon.svg" alt="" width="20" height="20">
+                </span>
                 <div>
                   <span class="detail-label">Dates</span>
                   <time [attr.datetime]="fair.dateStart">{{ formatFairDateRange(fair) }}</time>
                 </div>
               </div>
               <div class="fair-detail">
-                <span class="detail-icon clock-icon" aria-hidden="true"></span>
+                <span class="detail-icon fair-detail-icon" aria-hidden="true">
+                  <img src="icons/clock-icon.svg" alt="" width="20" height="20">
+                </span>
                 <div>
                   <span class="detail-label">Horaires</span>
                   <span>{{ formatTime(fair.openAt) }}@if (fair.closeAt) { à {{ formatTime(fair.closeAt) }} }</span>
                 </div>
               </div>
               <div class="fair-detail">
-                <span class="detail-icon pin-icon" aria-hidden="true"></span>
+                <span class="detail-icon fair-detail-icon" aria-hidden="true">
+                  <img src="icons/location-icon.svg" alt="" width="20" height="20">
+                </span>
                 <div>
                   <span class="detail-label">Adresse</span>
                   <span>{{ address(fair) || 'Adresse communiquée prochainement' }}</span>
@@ -53,13 +59,23 @@
           <aside class="fair-location-card">
             <div class="fair-location-map-wrap">
               @if (address(fair)) {
-                <div
-                  class="fair-location-placeholder"
-                  role="img"
-                  [attr.aria-label]="'Localisation : ' + address(fair)">
-                  <span class="pin-icon" aria-hidden="true"></span>
-                  <span>Carte consultable dans Google Maps</span>
-                </div>
+                @if (consent.mapsEnabled()) {
+                  <iframe
+                    [src]="mapsEmbedUrl(fair)"
+                    [title]="'Carte du lieu de ' + fair.name"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    class="fair-location-map"></iframe>
+                } @else {
+                  <div class="fair-location-placeholder fair-location-map-consent" role="status">
+                    <img class="location-preview-icon" src="icons/location-icon.svg" alt="" width="30" height="30">
+                    <span class="fair-location-map-consent-copy">
+                      <strong>Voir le lieu sur la carte</strong>
+                      <span>Autorisez Google Maps pour afficher l'itinéraire ici.</span>
+                      <button type="button" (click)="enableMaps()">Afficher la carte Google Maps</button>
+                    </span>
+                  </div>
+                }
                 <a
                   [href]="mapsUrl(fair)"
                   target="_blank"
@@ -69,7 +85,7 @@
                 </a>
               } @else {
                 <div class="fair-location-placeholder" role="img" aria-label="Carte du lieu à venir">
-                  <span class="pin-icon" aria-hidden="true"></span>
+                  <img class="location-preview-icon" src="icons/location-icon.svg" alt="" width="30" height="30">
                   <span>Carte du lieu à venir</span>
                 </div>
               }
@@ -83,6 +99,55 @@
             </div>
           </aside>
         </article>
+
+        @if (upcomingFairs().length) {
+          <section class="upcoming-schedule" aria-labelledby="upcoming-schedule-title">
+            <div class="upcoming-schedule-heading">
+              <div class="section-heading">
+                <span class="heading-rule" aria-hidden="true"></span>
+                <p class="eyebrow">À noter dans vos agendas</p>
+                <h2 id="upcoming-schedule-title">Toutes les prochaines dates.</h2>
+              </div>
+              <p class="upcoming-schedule-intro">Retrouvez les prochaines éditions de la bourse aux livres et préparez votre visite.</p>
+            </div>
+
+            <div class="upcoming-fairs" role="list" aria-label="Prochaines bourses aux livres">
+              @for (scheduledFair of upcomingFairs(); track trackFair($index, scheduledFair); let first = $first) {
+                <article class="upcoming-fair" [class.upcoming-fair--next]="first" role="listitem">
+                  <span class="upcoming-fair-index" aria-hidden="true">{{ ($index + 1).toString().padStart(2, '0') }}</span>
+                  <time class="upcoming-fair-date" [attr.datetime]="scheduledFair.dateStart" [attr.aria-label]="formatFairDateRange(scheduledFair)">
+                    <span class="upcoming-fair-day">{{ scheduledFair.dateStart | date:'dd':'Europe/Paris' }}</span>
+                    <span class="upcoming-fair-month">{{ scheduledFair.dateStart | date:'MMM':'Europe/Paris' }}</span>
+                    <span class="upcoming-fair-year">{{ scheduledFair.dateStart | date:'yyyy':'Europe/Paris' }}</span>
+                  </time>
+                  <div class="upcoming-fair-copy">
+                    <p class="upcoming-fair-kicker">{{ first ? 'Prochaine édition' : 'À venir' }}</p>
+                    <h3>{{ scheduledFair.name }}</h3>
+                    <p class="upcoming-fair-range">{{ formatFairDateRange(scheduledFair) }}</p>
+                  </div>
+                  <div class="upcoming-fair-details">
+                    <span class="upcoming-fair-detail">
+                      <img src="icons/clock-icon.svg" alt="" width="17" height="17">
+                      {{ formatTime(scheduledFair.openAt) }}@if (scheduledFair.closeAt) { à {{ formatTime(scheduledFair.closeAt) }} }
+                    </span>
+                    @if (address(scheduledFair)) {
+                      <span class="upcoming-fair-detail">
+                        <img src="icons/location-icon.svg" alt="" width="17" height="17">
+                        {{ address(scheduledFair) }}
+                      </span>
+                    }
+                  </div>
+                  <div class="upcoming-fair-actions">
+                    <a [href]="calendarLink(scheduledFair)" [download]="calendarFileName(scheduledFair)">Agenda <span aria-hidden="true">↗</span></a>
+                    @if (address(scheduledFair)) {
+                      <a [href]="mapsUrl(scheduledFair)" target="_blank" rel="noopener noreferrer">Itinéraire <span aria-hidden="true">↗</span></a>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        }
       } @else {
         <p class="empty-state">La prochaine bourse aux livres sera annoncée ici dès qu'une date sera confirmée.</p>
       }

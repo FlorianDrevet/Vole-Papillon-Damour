@@ -17,7 +17,7 @@ the next books fair, and the dynamic sitemap; the home calendar also consumes th
 public `/asso-events` schedule and keeps only future Books events. Its public routes are `/`, `/recherche`,
 `/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, and the legal, privacy, cookie and accessibility pages. The UI keeps
 available quantities separate from future announcements, leaves exhausted books visible,
-and gates Microsoft Clarity and Google Analytics 4 behind explicit audience consent. The `/compte` member route uses a dynamic,
+and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
 calls, exposes alert suspension/reactivation and the durable account-deletion request.
 `/desinscription` is a client-only authenticated opt-out route. The `/administration`
@@ -62,12 +62,20 @@ External ID account-creation prompt with a `/compte` return URL; the correspondi
 The route remains private and noindex while the public catalogue stays browseable without
 authentication.
 
+As of 2026-09-09, `/prochaines-dates` keeps the next Books event in a prominent card and
+renders the complete future Books schedule below it. The Catalog client reads the public
+`/asso-events` collection, filters typed `Books` events and keeps the API's chronological
+ordering as the source for both views. The card reuses the Website's calendar, clock and
+location assets, embeds the same Google Maps URL only after a dedicated Maps consent, and
+keeps both an opt-in placeholder and an external Maps link when that consent is absent.
+
 As of 2026-09-07, the Catalog public entry point is the **Accueil** tab at `/`. It combines
 the editorial hero, search and genre shortcuts with recent books, rare books, featured
 genres, and a compact next-fair teaser that shows only the date and opening hours. The
-`Les prochaines dates` tab now routes to `/prochaines-dates`, which renders only the next
-Books event's full details: date stamp, schedule, address, calendar link, and map/location
-card; it no longer includes the home search, catalogue sections, or a list of later events.
+`Les prochaines dates` tab now routes to `/prochaines-dates`, which renders the next
+Books event's full details: date stamp, schedule, address, calendar link, map/location card,
+and the complete list of later events; it no longer includes the home search or catalogue
+sections.
 The hero's standalone butterfly was replaced by a CSS book composition. Fixed Catalog copy
 uses **bourse aux livres** rather than the standalone term. The latest local check passes
 85 ChromeHeadless tests and the production build; the known initial bundle budget warning
@@ -86,7 +94,8 @@ lookups to the returned page. Unknown browser routes now render a real 404 with
 nodes are owned and removed with the detail component. Catalog HTTP now uses
 `provideHttpClient(withFetch())` with hydration, while MSAL is no longer a global bootstrap
 initializer and is loaded only when an authenticated feature needs it. The home fair read
-uses `/asso-events/next-books`; the legacy catalog fair endpoint and client method are gone.
+uses the typed `/asso-events` collection and filters its future `Books` events; the client
+does not rely on the single-event `/asso-events/next-books` projection.
 Validation passes with 110 Catalog and 122 Scan ChromeHeadless tests, 333 backend solution
 tests, and the Catalog production SSR build; the existing initial bundle budget warning
 remains. Local SSR smoke confirms an unknown route returns 404/noindex and a legal route
@@ -183,8 +192,8 @@ has been confirmed with the association's physical scanner.
 The 2026-09-08 Catalog Lot 5 public-surface pass removes the hard-coded featured genre
 taxonomy: the home cards, hero selector, and navigation menu now use only genres returned
 by the public catalog API, and the home section stays hidden when that list is empty. The
-home availability count queries the available projection, the fair location is a static
-Google Maps link instead of a consentless embedded frame, the footer year is computed at
+home availability count queries the available projection, the fair location uses a
+consent-gated Google Maps frame with a static link fallback, the footer year is computed at
 render time, and the personal Facebook profile is no longer exposed. The existing direct
 publisher and hosting information in the legal page was verified and left unchanged.
 

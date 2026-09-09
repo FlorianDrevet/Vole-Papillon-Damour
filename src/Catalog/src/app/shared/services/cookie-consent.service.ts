@@ -1,5 +1,5 @@
 import {DOCUMENT, isPlatformBrowser} from '@angular/common';
-import {Injectable, PLATFORM_ID, inject} from '@angular/core';
+import {Injectable, PLATFORM_ID, inject, signal} from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 
 import {environment} from '../../../environments/environment';
@@ -13,6 +13,7 @@ const CLARITY_CONSENT_VERSION = {
 
 export interface CookiePreferences {
   analytics: boolean;
+  maps: boolean;
 }
 
 interface StoredConsent {
@@ -32,7 +33,8 @@ export class CookieConsentService {
 
   readonly bannerVisible$ = new BehaviorSubject<boolean>(false);
   readonly panelOpen$ = new BehaviorSubject<boolean>(false);
-  preferences: CookiePreferences = {analytics: false};
+  readonly mapsEnabled = signal(false);
+  preferences: CookiePreferences = {analytics: false, maps: false};
 
   constructor() {
     if (!this.isBrowser) {
@@ -46,21 +48,26 @@ export class CookieConsentService {
     }
 
     this.preferences = stored.preferences;
+    this.mapsEnabled.set(stored.preferences.maps);
     if (stored.preferences.analytics) {
       this.enableAnalytics();
     }
   }
 
   acceptAll(): void {
-    this.save('accepted', {analytics: true});
+    this.save('accepted', {analytics: true, maps: true});
   }
 
   rejectAll(): void {
-    this.save('rejected', {analytics: false});
+    this.save('rejected', {analytics: false, maps: false});
   }
 
   savePreferences(preferences: CookiePreferences): void {
     this.save('customized', preferences);
+  }
+
+  enableMaps(): void {
+    this.savePreferences({...this.preferences, maps: true});
   }
 
   openPanel(): void {
@@ -85,6 +92,7 @@ export class CookieConsentService {
           ...parsed,
           preferences: {
             analytics: parsed.preferences.analytics,
+            maps: parsed.preferences.maps === true,
           },
         }
         : null;
@@ -109,6 +117,7 @@ export class CookieConsentService {
       // Consent remains available in memory when browser storage is blocked.
     }
     this.preferences = stored.preferences;
+    this.mapsEnabled.set(stored.preferences.maps);
     this.bannerVisible$.next(false);
     this.panelOpen$.next(false);
 
@@ -175,7 +184,7 @@ function isStoredConsent(value: unknown): value is StoredConsent {
 
   const candidate = value as {
     choice?: unknown;
-    preferences?: {analytics?: unknown};
+    preferences?: {analytics?: unknown; maps?: unknown};
     date?: unknown;
   };
 
@@ -183,5 +192,6 @@ function isStoredConsent(value: unknown): value is StoredConsent {
       || candidate.choice === 'rejected'
       || candidate.choice === 'customized')
     && typeof candidate.preferences?.analytics === 'boolean'
+    && (candidate.preferences.maps === undefined || typeof candidate.preferences.maps === 'boolean')
     && typeof candidate.date === 'string';
 }

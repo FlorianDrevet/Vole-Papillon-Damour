@@ -100,7 +100,7 @@ describe('CatalogApiService', () => {
     });
   });
 
-  it('maps the dedicated next book fair response', () => {
+  it('maps the public upcoming event collection and keeps only book fairs', () => {
     service.getUpcomingFairs().subscribe(result => {
       expect(result).toEqual([{
         id: 'fair-1',
@@ -113,24 +113,63 @@ describe('CatalogApiService', () => {
         city: 'Saint-Just-Saint-Rambert',
         cityCode: 42170,
         road: 'route de Saint-Marcellin',
+      }, {
+        id: 'fair-2',
+        name: 'Bourse d’automne',
+        dateStart: '2027-10-09T00:00:00Z',
+        dateEnd: '2027-10-10T00:00:00Z',
+        openAt: '2027-10-09T09:30:00.000Z',
+        closeAt: '2027-10-10T18:00:00.000Z',
+        roadNumber: 46,
+        city: 'Saint-Just-Saint-Rambert',
+        cityCode: 42170,
+        road: 'route de Saint-Marcellin',
       }]);
     });
 
-    const request = http.expectOne(request => request.url === `${environment.apiUrl}/asso-events/next-books`);
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/asso-events`);
     expect(request.request.method).toBe('GET');
-    request.flush({
-      id: 'fair-1',
-      name: 'Bourse de printemps',
-      eventType: 'Books',
-      dateStart: '2027-03-14T00:00:00Z',
-      dateEnd: '2027-03-15T00:00:00Z',
-      hourOpenDoors: '2026-10-05T09:30:00Z',
-      hourCloseDoors: '2026-10-05T18:00:00Z',
-      roadNumber: 46,
-      city: 'Saint-Just-Saint-Rambert',
-      cityCode: 42170,
-      road: 'route de Saint-Marcellin',
-    });
+    request.flush([
+      {
+        id: 'fair-1',
+        name: 'Bourse de printemps',
+        eventType: 'Books',
+        dateStart: '2027-03-14T00:00:00Z',
+        dateEnd: '2027-03-15T00:00:00Z',
+        hourOpenDoors: '2026-10-05T09:30:00Z',
+        hourCloseDoors: '2026-10-05T18:00:00Z',
+        roadNumber: 46,
+        city: 'Saint-Just-Saint-Rambert',
+        cityCode: 42170,
+        road: 'route de Saint-Marcellin',
+      },
+      {
+        id: 'bingo-1',
+        name: 'Grand loto',
+        eventType: 'Bingo',
+        dateStart: '2027-05-01T00:00:00Z',
+        dateEnd: null,
+        hourOpenDoors: '2027-05-01T14:00:00Z',
+        hourCloseDoors: '2027-05-01T18:00:00Z',
+        roadNumber: 46,
+        city: 'Saint-Just-Saint-Rambert',
+        cityCode: 42170,
+        road: 'route de Saint-Marcellin',
+      },
+      {
+        id: 'fair-2',
+        name: 'Bourse d’automne',
+        eventType: 'Books',
+        dateStart: '2027-10-09T00:00:00Z',
+        dateEnd: '2027-10-10T00:00:00Z',
+        hourOpenDoors: '2027-10-09T09:30:00Z',
+        hourCloseDoors: '2027-10-10T18:00:00Z',
+        roadNumber: 46,
+        city: 'Saint-Just-Saint-Rambert',
+        cityCode: 42170,
+        road: 'route de Saint-Marcellin',
+      },
+    ]);
   });
 
   it('does not expose the removed legacy next-fair request', () => {

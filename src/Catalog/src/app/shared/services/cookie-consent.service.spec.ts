@@ -47,6 +47,9 @@ describe('CookieConsentService', () => {
     expect(document.querySelector('script[data-catalog-clarity="true"]')).toBeNull();
     expect(document.getElementById('catalog-google-analytics-script')).toBeNull();
     expect(googleAnalytics.enable).not.toHaveBeenCalled();
+    const service = TestBed.inject(CookieConsentService);
+    expect(service.preferences.maps).toBeFalse();
+    expect(service.mapsEnabled()).toBeFalse();
   });
 
   it('does_not_crash_when_localStorage_cannot_be_read', () => {
@@ -59,7 +62,8 @@ describe('CookieConsentService', () => {
 
     expect(service.bannerVisible$.value).toBeTrue();
     expect(service.preferences.analytics).toBeFalse();
-    expect(Object.keys(service.preferences)).toEqual(['analytics']);
+    expect(service.preferences.maps).toBeFalse();
+    expect(Object.keys(service.preferences)).toEqual(['analytics', 'maps']);
   });
 
   it('keeps the in-memory consent usable when localStorage_cannot_be_written', () => {
@@ -69,7 +73,9 @@ describe('CookieConsentService', () => {
     expect(() => service.acceptAll()).not.toThrow();
 
     expect(service.preferences.analytics).toBeTrue();
-    expect(Object.keys(service.preferences)).toEqual(['analytics']);
+    expect(service.preferences.maps).toBeTrue();
+    expect(service.mapsEnabled()).toBeTrue();
+    expect(Object.keys(service.preferences)).toEqual(['analytics', 'maps']);
     expect(googleAnalytics.enable).toHaveBeenCalled();
   });
 
@@ -96,13 +102,14 @@ describe('CookieConsentService', () => {
 
     expect(googleAnalytics.disable).toHaveBeenCalled();
     expect(service.preferences.analytics).toBeFalse();
+    expect(service.preferences.maps).toBeFalse();
     expect(JSON.parse(localStorage.getItem('vpd-catalog-cookie-consent') ?? '{}')).toEqual(jasmine.objectContaining({
       choice: 'rejected',
-      preferences: {analytics: false},
+      preferences: {analytics: false, maps: false},
     }));
   });
 
-  it('ignores the legacy Maps preference while keeping an existing consent choice', () => {
+  it('restores an explicitly stored Maps preference while keeping an existing consent choice', () => {
     localStorage.setItem('vpd-catalog-cookie-consent', JSON.stringify({
       choice: 'rejected',
       preferences: {analytics: false, maps: true},
@@ -113,7 +120,23 @@ describe('CookieConsentService', () => {
 
     expect(service.bannerVisible$.value).toBeFalse();
     expect(service.preferences.analytics).toBeFalse();
-    expect(Object.keys(service.preferences)).toEqual(['analytics']);
+    expect(service.preferences.maps).toBeTrue();
+    expect(service.mapsEnabled()).toBeTrue();
+    expect(Object.keys(service.preferences)).toEqual(['analytics', 'maps']);
+  });
+
+  it('enables Maps without changing the existing analytics preference', () => {
+    const service = TestBed.inject(CookieConsentService);
+
+    service.enableMaps();
+
+    expect(service.preferences).toEqual({analytics: false, maps: true});
+    expect(service.mapsEnabled()).toBeTrue();
+    expect(googleAnalytics.enable).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem('vpd-catalog-cookie-consent') ?? '{}')).toEqual(jasmine.objectContaining({
+      choice: 'customized',
+      preferences: {analytics: false, maps: true},
+    }));
   });
 
   it('uses_the_current_clarity_consentv2_signal_when_consent_is_withdrawn', () => {
