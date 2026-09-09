@@ -1,39 +1,88 @@
-<section class="flex flex-col gap-4 bg-paper px-shell py-14 lg:py-16">
-  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Galerie photos</span>
-  <h1 class="font-serif text-[36px] font-medium text-ink-2 lg:text-[50px]">Quinze ans de cartons de livres et de sourires.</h1>
+<section class="flex flex-col gap-5 bg-paper px-shell py-14 lg:py-20">
+  <span class="font-mono text-[11px] uppercase tracking-[.18em] text-blue">Galerie & vidéothèque</span>
+  <h1 class="max-w-[18ch] font-serif text-[36px] font-medium text-ink-2 lg:text-[50px]">Les images qui font vivre l’histoire.</h1>
+  <p class="max-w-[62ch] text-[16px] leading-relaxed text-slate-2">
+    Les archives de la famille et de l’association sont maintenant rassemblées ici : des albums simples à parcourir,
+    puis une vidéothèque pour prendre le temps de regarder et d’écouter.
+  </p>
+  <div class="flex flex-wrap gap-2 pt-2">
+    <span class="rounded-full border border-line-2 bg-white/60 px-3 py-1 font-mono text-[11px] uppercase tracking-[.12em] text-slate-2">{{ photoAlbums.length }} albums</span>
+    <span class="rounded-full border border-line-2 bg-white/60 px-3 py-1 font-mono text-[11px] uppercase tracking-[.12em] text-slate-2">{{ videos.length }} vidéos</span>
+  </div>
 </section>
 
 <section class="flex flex-col gap-10 bg-ink px-shell py-16 text-mist-2 lg:py-20">
   <div class="flex flex-col gap-2">
     <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">L'histoire de Maxence</span>
-    <h2 class="font-serif text-2xl font-medium text-white lg:text-3xl">Des centaines de photos, année par année.</h2>
+    <h2 class="font-serif text-2xl font-medium text-white lg:text-3xl">Des photos, année par année.</h2>
     <p class="max-w-[60ch] text-[15px] leading-relaxed text-mist">
-      Les photos les plus personnelles vivent directement dans le récit de sa mère, chapitre après chapitre.
+      Les albums chronologiques restent reliés au récit de Maxence, chapitre après chapitre.
     </p>
   </div>
   <app-pill-button routerLink="/maxence/histoire" class="self-start">Voir son histoire en photos</app-pill-button>
 </section>
 
-<section class="flex flex-col gap-6 bg-white px-shell py-14 lg:py-16">
-  <div class="flex flex-col gap-1">
-    <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Dons de livres</h2>
-    <span class="font-mono text-xs text-slate-3">{{ donationPhotos.length }} photos</span>
+<section class="flex flex-col gap-8 bg-white px-shell py-14 lg:py-20">
+  <div class="flex max-w-[62ch] flex-col gap-2">
+    <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Le catalogue d’images</span>
+    <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Les albums</h2>
+    <p class="text-[15px] leading-relaxed text-slate-2">
+      La bourse aux livres devient un album à part entière. Les autres archives suivent les regroupements transmis par la famille.
+    </p>
   </div>
-  <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-    @for (photo of donationPhotos; track photo) {
-      <img [src]="photo" alt="Don de livres" class="h-40 w-full rounded-sm object-cover sm:h-48">
+
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    @for (album of photoAlbums; track album.title) {
+      <article class="group flex flex-col overflow-hidden rounded-sm border border-line-2 bg-paper shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+        <div class="relative grid aspect-[4/3] grid-cols-3 gap-px overflow-hidden bg-line-2">
+          @for (photo of album.previewPhotos; track photo; let index = $index) {
+            <img [src]="photo" [alt]="index === 0 ? album.title : ''" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" [class.col-span-3]="album.previewPhotos.length === 1" [class.hidden]="index > 2">
+          }
+          <span class="absolute bottom-3 left-3 rounded-full bg-ink/85 px-3 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-white">{{ album.photoCount }} photos</span>
+        </div>
+        <div class="flex flex-1 flex-col gap-3 p-5">
+          <span class="font-mono text-[10px] uppercase tracking-[.14em] text-blue">{{ album.eyebrow }}</span>
+          <h3 class="font-serif text-xl font-medium text-ink-2">{{ album.title }}</h3>
+          <p class="text-sm leading-relaxed text-slate-2">{{ album.description }}</p>
+          @if (album.historyRoute) {
+            <a [routerLink]="album.historyRoute" class="mt-auto inline-flex items-center gap-2 pt-2 text-sm font-medium text-blue transition hover:text-ink-2">
+              Lire le récit <span aria-hidden="true">↗</span>
+            </a>
+          }
+        </div>
+      </article>
     }
   </div>
 </section>
 
-<section class="flex flex-col gap-6 bg-paper-2 px-shell py-14 lg:py-16">
-  <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Albums à venir</h2>
-  <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-    @for (album of upcomingAlbums; track album) {
-      <div class="flex flex-col gap-2">
-        <app-photo-placeholder [label]="'PHOTO - ' + album" class="h-32 rounded-sm"></app-photo-placeholder>
-        <span class="text-sm text-slate-2">{{ album }}</span>
-      </div>
+<section class="flex flex-col gap-8 bg-ink px-shell py-14 text-mist-2 lg:py-20">
+  <div class="flex max-w-[62ch] flex-col gap-2">
+    <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">La vidéothèque</span>
+    <h2 class="font-serif text-2xl font-medium text-white lg:text-3xl">Des souvenirs à regarder ensemble.</h2>
+    <p class="text-[15px] leading-relaxed text-mist">
+      Les vidéos sont chargées à la demande pour préserver le confort de navigation. Chaque carte conserve aussi le lien de téléchargement du fichier original.
+    </p>
+  </div>
+
+  <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+    @for (video of videos; track video.source) {
+      <article class="flex flex-col overflow-hidden rounded-sm border border-white/10 bg-white/[.06] shadow-xl">
+        <div class="relative aspect-video bg-black">
+          <video controls preload="none" [poster]="video.poster" [attr.aria-label]="video.title" class="h-full w-full object-cover">
+            <source [src]="video.source" [type]="video.mimeType">
+            Votre navigateur ne permet pas de lire cette vidéo.
+          </video>
+          <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-mist">Vidéo</span>
+        </div>
+        <div class="flex flex-1 flex-col gap-3 p-5">
+          <span class="font-mono text-[10px] uppercase tracking-[.14em] text-orange-2">{{ video.eyebrow }}</span>
+          <h3 class="font-serif text-xl font-medium text-white">{{ video.title }}</h3>
+          <p class="text-sm leading-relaxed text-mist">{{ video.description }}</p>
+          <a [href]="video.source" [download]="video.downloadName" class="mt-auto inline-flex items-center gap-2 pt-2 text-sm font-medium text-orange-2 transition hover:text-white">
+            Télécharger la vidéo <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </article>
     }
   </div>
 </section>
