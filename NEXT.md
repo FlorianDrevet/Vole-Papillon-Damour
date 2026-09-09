@@ -169,6 +169,20 @@ de test n'a été saisi ou créé. Le navigateur de contrôle a encore servi une
 mise en cache pour le dernier essai mobile ; une nouvelle session après propagation CDN reste
 le contrôle manuel final.
 
+### État actualisé — 2026-09-09 — détails visuels du branding External ID
+
+La page hébergée reprend maintenant les derniers détails de la maquette 1a : les champs
+ont un espace intérieur de `16px`, un décor de tranches de livres apparaît derrière la
+carte et le grand papillon de chargement est supprimé. Le tenant conservait l'image papillon
+comme `backgroundImage` ; l'endpoint Graph de suppression renvoie `405` sur ce tenant CIAM,
+donc le script téléverse à présent `infra/entra/vpd-authentication-background.png`, un PNG
+bleu clair neutre, sur `0` et `fr-FR`. Le wrapper External ID reste transparent pour laisser
+ce fond éditorial apparaître derrière la carte, sans flash visuel.
+
+Le correctif est porté par `fix/entra-branding-mockup-details`. Pester
+`Configure-EntraBranding.Tests.ps1` passe avec 9 tests ; le formulaire n'a pas été soumis et
+aucun compte ni mot de passe n'a été utilisé pendant le contrôle.
+
 ### État actualisé — 2026-09-07 — displayName et personnalisation du signup External ID
 
 Le user flow public External ID a été exécuté par l'utilisateur après le merge de la

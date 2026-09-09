@@ -139,19 +139,29 @@ Describe 'Configure-EntraBranding.ps1' {
         $css | Should Match 'border-radius: 18px'
         $css | Should Match 'https://livres.volepapillondamour.fr/images/papillon_without_back.png'
         $css | Should Match 'z-index: 0'
+        $css | Should Match 'background: transparent'
+        $css | Should Match 'background-color: #eaf6fb !important'
         $css | Should Match 'align-items: center'
         $css | Should Match 'justify-content: center'
         $css | Should Match 'max-width: 520px'
         $css | Should Match 'max-width: 100vw'
         $css | Should Match 'box-sizing: border-box'
         $css | Should Match 'overflow-x: hidden'
-        $css | Should Match 'background: #eaf6fb !important'
+        $css | Should Match 'padding: 12px 16px'
         $css | Should Match 'background-position: left center'
         $css | Should Match 'padding-left: 46px'
         $css | Should Match 'ext-title'
         $css | Should Match 'border-top: 4px solid #1497d6'
         $css | Should Match 'border-image: linear-gradient\(90deg'
         $css | Should Match 'prefers-reduced-motion'
+    }
+
+    It 'ships the neutral fallback background used by hosted External ID' {
+        $backgroundPath = Join-Path $PSScriptRoot 'vpd-authentication-background.png'
+        $background = Get-Item -LiteralPath $backgroundPath
+
+        $background.Extension | Should Be '.png'
+        $background.Length | Should BeGreaterThan 0
     }
 
 }
