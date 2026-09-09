@@ -95,21 +95,7 @@
 } @else {
   <section class="hero">
     <div class="hero-visual" aria-hidden="true">
-      <span class="hero-visual-orb hero-visual-orb-one"></span>
-      <span class="hero-visual-orb hero-visual-orb-two"></span>
-      <div class="hero-book hero-book-back hero-book-cyan">
-        <span class="hero-book-spine"></span>
-      </div>
-      <div class="hero-book hero-book-back hero-book-orange">
-        <span class="hero-book-spine"></span>
-      </div>
-      <div class="hero-book hero-book-main">
-        <span class="hero-book-overline">Vole Papillon d'Amour</span>
-        <strong>Des pages<br><em>à retrouver.</em></strong>
-        <span class="hero-book-index">01 / CATALOGUE</span>
-        <span class="hero-book-bookmark"></span>
-      </div>
-      <span class="hero-visual-caption">chercher · feuilleter · partager</span>
+      <img class="hero-butterfly" src="images/papillon_without_back.png" alt="" width="340" height="340">
     </div>
     <div class="hero-inner page-width">
       <p class="eyebrow light"><span class="hero-rule" aria-hidden="true"></span>Catalogue de la bourse aux livres</p>
@@ -138,20 +124,19 @@
           <strong>Le catalogue</strong> est en cours de mise à jour
         }
       </p>
-
-      @if (nextFair(); as fair) {
-        <aside class="home-fair-teaser" aria-label="Informations sur la prochaine bourse aux livres">
-          <div class="home-fair-teaser-copy">
-            <span class="home-fair-teaser-label">Prochaine bourse aux livres</span>
-            <strong>{{ formatFairDateRange(fair) }}</strong>
-            <span class="home-fair-teaser-time"><span class="clock-icon" aria-hidden="true"></span>Ouverture à {{ formatTime(fair.openAt) }}@if (fair.closeAt) { · jusqu'à {{ formatTime(fair.closeAt) }} }</span>
-          </div>
-          <a routerLink="/prochaines-dates">Voir les détails <span aria-hidden="true">→</span></a>
-        </aside>
-      } @else if (!loading()) {
-        <p class="home-fair-teaser-empty">La prochaine bourse aux livres sera annoncée prochainement.</p>
-      }
     </div>
+
+    @if (nextFair(); as fair) {
+      <aside class="home-fair-teaser page-width" aria-label="Informations sur la prochaine bourse aux livres">
+        <div class="home-fair-teaser-copy">
+          <span class="home-fair-teaser-label">Prochaine bourse</span>
+          <strong>{{ formatFairDateRange(fair) }}</strong>
+        </div>
+        <a routerLink="/prochaines-dates">Plus d’infos <span aria-hidden="true">→</span></a>
+      </aside>
+    } @else if (!loading()) {
+      <p class="home-fair-teaser-empty page-width">La prochaine bourse aux livres sera annoncée prochainement.</p>
+    }
   </section>
 
   @if (hasLoadError() && !loading()) {
