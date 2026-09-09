@@ -35,7 +35,7 @@ const CLARITY_ID_LABEL = isConfigured(CLARITY_PROJECT_ID)
 const GOOGLE_ANALYTICS_ID_LABEL = isConfigured(GOOGLE_ANALYTICS_MEASUREMENT_ID)
   ? `Identifiant de mesure GA4 : ${GOOGLE_ANALYTICS_MEASUREMENT_ID}.`
   : 'Identifiant de mesure GA4 : configuré au moment du déploiement.';
-const LAST_UPDATED_LABEL = '7 septembre 2026';
+const LAST_UPDATED_LABEL = '9 septembre 2026';
 
 const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
   legal: {
@@ -139,6 +139,13 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         ],
       },
       {
+        title: 'Carte interactive après consentement',
+        paragraphs: [
+          'La carte interactive Google Maps est chargée dans la page uniquement après votre consentement dédié. Google peut alors recevoir l’adresse recherchée et les données techniques nécessaires à l’affichage du service.',
+          'Sans cet accord, le catalogue affiche l’adresse et conserve un lien volontaire pour ouvrir Maps dans un nouvel onglet.',
+        ],
+      },
+      {
         title: 'Finalités et bases de traitement',
         paragraphs: [
           'Les données sont utilisées pour faire fonctionner le catalogue, protéger le service, gérer les comptes et les alertes demandés, et mesurer l’usage du site lorsque vous l’autorisez.',
@@ -158,6 +165,7 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
           'Microsoft Azure et les services techniques nécessaires à l’hébergement et à l’exécution du catalogue.',
           'Microsoft Entra External ID pour l’authentification des comptes.',
           'Microsoft Clarity et Google Analytics 4 uniquement si la mesure d’audience est acceptée.',
+          'Google Maps uniquement si la carte interactive est acceptée.',
         ],
       },
       {
@@ -171,7 +179,7 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
       {
         title: 'Vos droits',
         paragraphs: [
-          `Vous pouvez demander l’accès à vos données, leur rectification, leur effacement, la limitation du traitement ou vous opposer à certains usages selon votre situation. Vous pouvez retirer votre consentement à la mesure d’audience à tout moment.`,
+          `Vous pouvez demander l’accès à vos données, leur rectification, leur effacement, la limitation du traitement ou vous opposer à certains usages selon votre situation. Vous pouvez retirer votre consentement à la mesure d’audience ou à la carte interactive à tout moment.`,
           `Pour exercer un droit, écrivez à ${CONTACT_EMAIL} en précisant votre demande et, si nécessaire, le compte ou l’adresse concernée. Vous pouvez aussi utiliser le parcours de suppression proposé dans votre espace membre.`,
           'Si la réponse apportée ne vous paraît pas satisfaisante, vous pouvez saisir la Commission nationale de l’informatique et des libertés (CNIL).',
         ],
@@ -199,8 +207,8 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
       {
         title: 'Google Maps',
         paragraphs: [
-          'Le catalogue n’intègre pas de carte interactive Google Maps. La page affiche seulement une indication locale du lieu afin qu’aucun contenu tiers ne soit chargé pendant la consultation.',
-          'Le lien volontaire « Ouvrir dans Maps » ouvre directement le service Google Maps dans un nouvel onglet lorsque vous choisissez cette action. Vous pouvez ne pas suivre ce lien sans empêcher la consultation du catalogue.',
+          'La carte interactive Google Maps est un contenu fourni par un tiers. Elle est chargée dans la page uniquement après votre consentement dédié à cette catégorie.',
+          'Sans ce consentement, la page affiche l’adresse et un bouton volontaire « Afficher la carte Google Maps ». Le lien « Ouvrir dans Maps » permet aussi d’ouvrir directement le service Google Maps dans un nouvel onglet. Vous pouvez refuser la carte sans empêcher la consultation du catalogue.',
         ],
       },
       {
@@ -219,8 +227,8 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
       {
         title: 'Consentement explicite',
         paragraphs: [
-          'À votre première visite, la bannière recueille votre consentement explicite et vous permet de tout accepter, de tout refuser ou de personnaliser la mesure d’audience. Tant que vous n’avez pas accepté cette catégorie, Microsoft Clarity et Google Analytics 4 ne sont ni chargés ni exécutés.',
-          'Si vous retirez ensuite votre accord, le catalogue désactive les collectes futures et transmet le refus aux outils déjà chargés lorsque cela est techniquement possible.',
+          'À votre première visite, la bannière recueille votre consentement explicite et vous permet de tout accepter, de tout refuser ou de personnaliser chaque catégorie. Tant que vous n’avez pas accepté la mesure d’audience, Microsoft Clarity et Google Analytics 4 ne sont ni chargés ni exécutés ; tant que vous n’avez pas accepté la carte interactive, Google Maps n’est pas intégré à la page.',
+          'Si vous retirez ensuite l’un de vos accords, le catalogue désactive les chargements futurs correspondants et transmet le refus aux outils déjà chargés lorsque cela est techniquement possible.',
         ],
       },
       {

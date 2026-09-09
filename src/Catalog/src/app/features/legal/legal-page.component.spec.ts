@@ -41,6 +41,7 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('alertes');
     expect(content).toContain('Microsoft Entra');
     expect(content).toContain('Google Analytics 4');
+    expect(content).toContain('Google Maps');
   });
 
   it('documents explicit consent and both audience tools on the cookie page', async () => {
@@ -51,7 +52,8 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('Google Analytics 4');
     expect(content).toContain('Google Maps');
     expect(content).toContain('Ouvrir dans Maps');
-    expect(content).not.toContain('consentement dédié');
+    expect(content).toContain('carte interactive');
+    expect(content).toContain('consentement dédié');
     expect(content).toContain('consentement explicite');
     expect(content).toContain('Gérer les cookies');
   });

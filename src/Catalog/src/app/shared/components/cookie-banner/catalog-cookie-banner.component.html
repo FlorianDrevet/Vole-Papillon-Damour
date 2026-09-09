@@ -5,8 +5,8 @@
       <h2 id="catalog-cookie-title">Cookies</h2>
       <p id="catalog-cookie-description" class="cookie-banner__copy">
         Nous utilisons Microsoft Clarity et Google Analytics 4 pour mesurer l'audience du catalogue
-        (navigation et enregistrement de session). Ces outils ne sont chargés qu'après votre consentement
-        explicite et vous pouvez refuser sans impact sur la consultation des livres.
+        (navigation et enregistrement de session). La carte interactive Google Maps est également
+        chargée uniquement après votre accord. Vous pouvez refuser sans impact sur la consultation des livres.
       </p>
       <div class="cookie-banner__actions">
         <button type="button" class="cookie-banner__button cookie-banner__button--primary"
@@ -39,6 +39,21 @@
         <p>
           Microsoft Clarity et Google Analytics 4 mesurent les pages consultées et les interactions
           de navigation après votre accord. Voir la <a href="/politique-de-cookies">politique de cookies</a>.
+        </p>
+      </section>
+
+      <section class="cookie-banner__category" aria-labelledby="catalog-maps-title">
+        <div class="cookie-banner__category-heading">
+          <h3 id="catalog-maps-title">Carte interactive</h3>
+          <label class="cookie-banner__toggle">
+            <span class="visually-hidden">Autoriser la carte Google Maps</span>
+            <input type="checkbox" [checked]="mapsChecked()" (change)="onMapsChange($event)" />
+            <span class="cookie-banner__toggle-track" aria-hidden="true"></span>
+          </label>
+        </div>
+        <p>
+          Google Maps affiche la localisation des prochaines bourses directement dans la page.
+          Sans cet accord, un lien volontaire permet toujours d'ouvrir Maps dans un nouvel onglet.
         </p>
       </section>
 

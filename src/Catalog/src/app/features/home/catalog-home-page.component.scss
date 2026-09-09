@@ -342,7 +342,7 @@ h2 {
   overflow: hidden;
   border: 1px solid rgba(7, 43, 69, .16);
   border-radius: 16px;
-  background: var(--catalog-ink-2);
+  background: linear-gradient(135deg, #062a44 0%, #072f4d 62%, #0a4669 100%);
   box-shadow: 0 30px 54px -38px rgba(7, 43, 69, .75);
 }
 
@@ -370,17 +370,24 @@ h2 {
   color: white;
   flex-direction: column;
   box-shadow: 10px 14px 30px -20px rgba(0, 0, 0, .7);
+  text-align: center;
 }
 
 .fair-date-day {
+  display: block;
+  width: 100%;
   font: 500 3.1rem/.85 var(--catalog-display);
   letter-spacing: -.05em;
+  text-align: center;
 }
 
 .fair-date-month,
 .fair-date-year {
+  display: block;
+  width: 100%;
   font: 500 .64rem/1.2 var(--catalog-mono);
   letter-spacing: .16em;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -433,6 +440,7 @@ h2 {
 .fair-detail {
   display: flex;
   min-width: 0;
+  align-items: flex-start;
   gap: 13px;
   padding: 16px 0 0;
   border-top: 1px solid rgba(255, 255, 255, .14);
@@ -469,65 +477,13 @@ h2 {
   background: var(--catalog-paper-2);
 }
 
-.calendar-icon::before,
-.clock-icon::before {
-  position: absolute;
-  border: 1.6px solid var(--catalog-blue);
-  content: '';
-}
-
-.calendar-icon::before {
-  inset: 8px 7px 7px;
-  border-radius: 2px;
-}
-
-.calendar-icon::after {
-  position: absolute;
-  top: 11px;
-  right: 7px;
-  left: 7px;
-  height: 1.6px;
-  background: var(--catalog-blue);
-  content: '';
-}
-
-.clock-icon::before {
-  inset: 7px;
-  border-radius: 50%;
-}
-
-.clock-icon::after {
-  position: absolute;
-  top: 11px;
-  left: 16px;
-  width: 6px;
-  height: 7px;
-  border-bottom: 1.6px solid var(--catalog-blue);
-  border-left: 1.6px solid var(--catalog-blue);
-  content: '';
-}
-
-.pin-icon::before {
-  position: absolute;
-  top: 7px;
-  left: 10px;
-  width: 11px;
-  height: 14px;
-  border: 1.6px solid var(--catalog-blue);
-  border-radius: 9px 9px 9px 0;
-  transform: rotate(-45deg);
-  content: '';
-}
-
-.pin-icon::after {
-  position: absolute;
-  top: 12px;
-  left: 14px;
-  width: 3px;
-  height: 3px;
-  border: 1.3px solid var(--catalog-blue);
-  border-radius: 50%;
-  content: '';
+.fair-detail-icon img,
+.location-preview-icon {
+  display: block;
+  width: 19px;
+  height: 19px;
+  margin: 7px;
+  object-fit: contain;
 }
 
 .next-fair-card .fair-detail time,
@@ -541,18 +497,6 @@ h2 {
 
 .next-fair-card .detail-icon {
   background: rgba(127, 216, 245, .12);
-}
-
-.next-fair-card .calendar-icon::before,
-.next-fair-card .clock-icon::before,
-.next-fair-card .pin-icon::before {
-  border-color: var(--catalog-cyan);
-}
-
-.next-fair-card .calendar-icon::after,
-.next-fair-card .clock-icon::after {
-  background: var(--catalog-cyan);
-  border-color: var(--catalog-cyan);
 }
 
 .next-fair-card .calendar-link {
@@ -579,8 +523,16 @@ h2 {
   background: var(--catalog-paper-2);
 }
 
+.fair-location-map {
+  display: block;
+  width: 100%;
+  height: 276px;
+  border: 0;
+}
+
 .fair-location-map-link {
   position: absolute;
+  z-index: 1;
   top: 16px;
   left: 16px;
   display: inline-flex;
@@ -609,7 +561,7 @@ h2 {
   min-height: 276px;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   background:
     linear-gradient(135deg, rgba(20, 151, 214, .08) 25%, transparent 25%) 0 0 / 24px 24px,
     var(--catalog-paper-2);
@@ -617,24 +569,55 @@ h2 {
   font-size: .82rem;
 }
 
-.fair-location-placeholder .pin-icon {
-  position: relative;
-  display: inline-block;
-  width: 28px;
-  height: 28px;
+.location-preview-icon {
+  width: 30px;
+  height: 30px;
+  margin: 0;
   flex: none;
 }
 
-.fair-location-placeholder .pin-icon::before {
-  top: 3px;
-  left: 7px;
-  border-color: var(--catalog-blue);
+.fair-location-map-consent {
+  padding: 28px;
+  text-align: center;
 }
 
-.fair-location-placeholder .pin-icon::after {
-  top: 8px;
-  left: 11px;
-  border-color: var(--catalog-blue);
+.fair-location-map-consent-copy {
+  display: flex;
+  max-width: 235px;
+  align-items: center;
+  gap: 9px;
+  color: var(--catalog-slate-2);
+  flex-direction: column;
+  line-height: 1.45;
+}
+
+.fair-location-map-consent-copy strong {
+  color: var(--catalog-ink-2);
+  font-size: .86rem;
+}
+
+.fair-location-map-consent-copy button {
+  margin-top: 3px;
+  padding: 9px 13px;
+  border: 1px solid var(--catalog-blue);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--catalog-blue);
+  cursor: pointer;
+  font: 500 .59rem/1.2 var(--catalog-mono);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.fair-location-map-consent-copy button:hover,
+.fair-location-map-consent-copy button:focus-visible {
+  border-color: var(--catalog-orange);
+  background: var(--catalog-orange);
+  color: var(--catalog-ink-2);
+}
+
+.fair-location-map-consent-copy button:active {
+  transform: scale(.98);
 }
 
 .fair-location-copy {
@@ -665,6 +648,181 @@ h2 {
 
 .fair-location-route:hover,
 .fair-location-route:focus-visible {
+  color: var(--catalog-orange-3);
+}
+
+.upcoming-schedule {
+  padding-top: 48px;
+  border-top: 1px solid var(--catalog-line-2);
+}
+
+.upcoming-schedule-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.upcoming-schedule-heading .section-heading {
+  gap: 13px;
+}
+
+.upcoming-schedule-heading h2 {
+  font-size: clamp(1.9rem, 3vw, 2.45rem);
+}
+
+.upcoming-schedule-intro {
+  max-width: 35ch;
+  margin: 0 0 3px;
+  color: var(--catalog-slate-2);
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+.upcoming-fairs {
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.upcoming-fair {
+  display: grid;
+  grid-template-columns: 34px 84px minmax(190px, 1fr) minmax(210px, 1.15fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--catalog-line);
+  background: var(--catalog-white);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.upcoming-fair:hover {
+  border-color: var(--catalog-line-strong);
+  box-shadow: 0 16px 32px -30px rgba(7, 43, 69, .75);
+}
+
+.upcoming-fair--next {
+  border-color: var(--catalog-blue-soft);
+  box-shadow: inset 3px 0 var(--catalog-orange), 0 18px 34px -30px rgba(7, 43, 69, .7);
+}
+
+.upcoming-fair-index {
+  align-self: start;
+  padding-top: 5px;
+  color: var(--catalog-slate-3);
+  font: 500 .67rem/1 var(--catalog-mono);
+  letter-spacing: .08em;
+}
+
+.upcoming-fair-date {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--catalog-line);
+  color: var(--catalog-blue);
+  flex-direction: column;
+  text-align: center;
+}
+
+.upcoming-fair-day {
+  color: var(--catalog-ink-2);
+  font: 500 2.25rem/.85 var(--catalog-display);
+  letter-spacing: -.05em;
+}
+
+.upcoming-fair-month,
+.upcoming-fair-year {
+  font: 500 .58rem/1.2 var(--catalog-mono);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.upcoming-fair-month {
+  margin-top: 7px;
+}
+
+.upcoming-fair-year {
+  margin-top: 3px;
+  color: var(--catalog-slate-3);
+}
+
+.upcoming-fair-copy {
+  min-width: 0;
+}
+
+.upcoming-fair-kicker {
+  margin: 0 0 7px;
+  color: var(--catalog-blue);
+  font: 500 .59rem/1.2 var(--catalog-mono);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.upcoming-fair--next .upcoming-fair-kicker {
+  color: var(--catalog-orange-3);
+}
+
+.upcoming-fair-copy h3 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--catalog-ink-2);
+  font: 500 1.45rem/1.05 var(--catalog-display);
+  letter-spacing: -.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upcoming-fair-range {
+  margin: 7px 0 0;
+  color: var(--catalog-slate-2);
+  font-size: .75rem;
+  line-height: 1.4;
+}
+
+.upcoming-fair-details {
+  display: flex;
+  min-width: 0;
+  gap: 8px;
+  color: var(--catalog-slate-2);
+  flex-direction: column;
+  font-size: .73rem;
+  line-height: 1.4;
+}
+
+.upcoming-fair-detail {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.upcoming-fair-detail img {
+  display: block;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  object-fit: contain;
+}
+
+.upcoming-fair-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  flex-direction: column;
+  white-space: nowrap;
+}
+
+.upcoming-fair-actions a {
+  color: var(--catalog-blue);
+  font: 500 .59rem/1.2 var(--catalog-mono);
+  letter-spacing: .1em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.upcoming-fair-actions a:hover,
+.upcoming-fair-actions a:focus-visible {
   color: var(--catalog-orange-3);
 }
 
@@ -907,6 +1065,20 @@ h2 {
   .fair-location-card {
     margin: 0 14px 14px;
   }
+
+  .upcoming-fair {
+    grid-template-columns: 34px 84px minmax(0, 1fr) auto;
+  }
+
+  .upcoming-fair-details {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .upcoming-fair-actions {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1009,6 +1181,10 @@ h2 {
     min-height: 220px;
   }
 
+  .fair-location-map {
+    height: 220px;
+  }
+
   .fair-location-copy {
     padding: 20px;
   }
@@ -1016,6 +1192,79 @@ h2 {
   .fair-details {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .upcoming-schedule {
+    padding-top: 40px;
+  }
+
+  .upcoming-schedule-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .upcoming-schedule-intro {
+    max-width: 48ch;
+    margin: 0;
+  }
+
+  .upcoming-fair {
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+    padding: 18px 16px;
+  }
+
+  .upcoming-fair-index {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .upcoming-fair-date {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+    align-items: flex-start;
+    padding-bottom: 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--catalog-line);
+    flex-direction: row;
+    gap: 9px;
+    text-align: left;
+  }
+
+  .upcoming-fair-day {
+    font-size: 2rem;
+  }
+
+  .upcoming-fair-month {
+    margin-top: 7px;
+  }
+
+  .upcoming-fair-year {
+    margin-top: 8px;
+  }
+
+  .upcoming-fair-copy,
+  .upcoming-fair-details,
+  .upcoming-fair-actions {
+    grid-column: 2;
+  }
+
+  .upcoming-fair-copy {
+    grid-row: 2;
+  }
+
+  .upcoming-fair-details {
+    grid-row: 3;
+  }
+
+  .upcoming-fair-actions {
+    grid-row: 4;
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 16px;
   }
 
   .fair-detail {

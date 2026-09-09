@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
 | **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-live-verification` |
-| **Dernière mise à jour** | 2026-09-08 — PR #94 fusionnée, déploiement et smoke consentement terminés, sitemap soumis |
-| **Branche** | `docs/catalog-live-verification` — worktree dédié, basé sur `origin/main` (`52418a1`) |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-upcoming-bourses-card` |
+| **Dernière mise à jour** | 2026-09-09 — card et agenda des prochaines bourses prêts, PR à ouvrir |
+| **Branche** | `feat/upcoming-bourses-card` — worktree dédié, basé sur `origin/main` (`1673b68`) |
 
 ---
 
@@ -77,6 +77,15 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-09 — carte et agenda des prochaines bourses
+
+La branche `feat/upcoming-bourses-card` améliore `/prochaines-dates` dans `src/Catalog` :
+la carte de la prochaine édition est plus lisible, ses icônes réutilisent les assets du
+Website, la carte Google Maps reprend l’URL qui fonctionne sur le Website après un
+consentement dédié, et un lien externe reste disponible sans accord. La page affiche aussi
+toutes les futures bourses aux livres issues de la collection publique `/asso-events`, sous
+la carte mise en avant. La PR et le déploiement restent à faire.
 
 ### État actualisé — 2026-09-08 — audit catalogue/Scanette, lot 1
 
@@ -749,6 +758,11 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
+
+Au 2026-09-09, l’amélioration de la page des prochaines bourses est limitée au dépôt et à
+sa future PR. Aucun changement Azure, DNS, Entra, Search Console, consentement distant ou
+donnée de bourse n’a été effectué ; le déploiement Catalog et le contrôle sur l’URL publique
+restent à faire après le merge.
 
 ### Azure
 

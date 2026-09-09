@@ -54,7 +54,7 @@ export interface CatalogFair {
   road: string;
 }
 
-/** Public event shape returned by the dedicated next book fair endpoint. */
+/** Public event shape returned by the upcoming association-event collection. */
 export interface CatalogPublicEventResponse {
   id: string;
   name: string;

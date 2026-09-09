@@ -1,4 +1,5 @@
 import {ChangeDetectionStrategy, Component, OnInit, signal} from '@angular/core';
+import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, forkJoin, of} from 'rxjs';
 
@@ -6,6 +7,7 @@ import {CatalogApiService} from '../../core/catalog-api.service';
 import {mergeCatalogGenres} from '../../core/catalog-genres';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
+import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 
 const EMPTY_SEARCH: CatalogSearchResponse = {
   generatedAt: '',
@@ -34,11 +36,15 @@ export class CatalogHomePageComponent implements OnInit {
   rare = signal<CatalogBook[]>([]);
   genres = signal<string[]>([]);
   nextFair = signal<CatalogFair | null>(null);
+  upcomingFairs = signal<CatalogFair[]>([]);
+  private readonly mapsEmbedUrls = new Map<string, SafeResourceUrl>();
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly api: CatalogApiService,
     private readonly router: Router,
+    private readonly sanitizer: DomSanitizer,
+    public readonly consent: CookieConsentService,
   ) {}
 
   ngOnInit(): void {
@@ -136,12 +142,34 @@ export class CatalogHomePageComponent implements OnInit {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(this.address(fair))}`;
   }
 
+  mapsEmbedUrl(fair: CatalogFair): SafeResourceUrl {
+    const cachedUrl = this.mapsEmbedUrls.get(fair.id);
+    if (cachedUrl) {
+      return cachedUrl;
+    }
+
+    const query = encodeURIComponent(this.address(fair));
+    const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      `https://www.google.com/maps?q=${query}&hl=fr&z=15&output=embed`,
+    );
+    this.mapsEmbedUrls.set(fair.id, safeUrl);
+    return safeUrl;
+  }
+
+  enableMaps(): void {
+    this.consent.enableMaps();
+  }
+
   calendarLink(fair: CatalogFair): string {
     return calendarDataUri({...fair, location: this.address(fair)});
   }
 
   calendarFileName(fair: CatalogFair): string {
     return calendarFilename(fair.name);
+  }
+
+  trackFair(_index: number, fair: CatalogFair): string {
+    return fair.id;
   }
 
   private loadFairs(): void {
@@ -155,7 +183,9 @@ export class CatalogHomePageComponent implements OnInit {
   }
 
   private setFairs(fairs: CatalogFair[]): void {
-    const sortedFairs = [...fairs].sort((a, b) => a.dateStart.localeCompare(b.dateStart));
+    const sortedFairs = [...fairs].sort((a, b) =>
+      new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime());
+    this.upcomingFairs.set(sortedFairs);
     this.nextFair.set(sortedFairs[0] ?? null);
   }
 }

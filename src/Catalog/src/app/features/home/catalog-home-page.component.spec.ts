@@ -1,3 +1,4 @@
+import {signal, WritableSignal} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
 import {RouterModule, Router} from '@angular/router';
@@ -6,6 +7,7 @@ import {of} from 'rxjs';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 import {DesignSystemModule} from '@vpd/ui';
 import {CatalogHomePageComponent} from './catalog-home-page.component';
 
@@ -13,6 +15,10 @@ describe('CatalogHomePageComponent', () => {
   let fixture: ComponentFixture<CatalogHomePageComponent>;
   let api: jasmine.SpyObj<CatalogApiService>;
   let router: jasmine.SpyObj<Router>;
+  let consent: {
+    mapsEnabled: WritableSignal<boolean>;
+    enableMaps: jasmine.Spy;
+  };
 
   const book: CatalogBook = {
     isbn13: '9782070612758',
@@ -70,11 +76,16 @@ describe('CatalogHomePageComponent', () => {
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'getUpcomingFairs']);
     api.search.and.returnValue(of(searchResponse));
     api.getUpcomingFairs.and.returnValue(of([fair, nextFair]));
+    consent = {
+      mapsEnabled: signal(true),
+      enableMaps: jasmine.createSpy('enableMaps').and.callFake(() => consent.mapsEnabled.set(true)),
+    };
     await TestBed.configureTestingModule({
       declarations: [CatalogHomePageComponent, BookCardComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogApiService, useValue: api},
+        {provide: CookieConsentService, useValue: consent},
       ],
     }).compileComponents();
 
@@ -146,7 +157,7 @@ describe('CatalogHomePageComponent', () => {
     expect(element.querySelector('.upcoming-fairs')).toBeNull();
   });
 
-  it('keeps the upcoming dates page focused on the next fair only', () => {
+  it('highlights the next fair and renders the complete upcoming book-fair schedule', () => {
     fixture.componentInstance.upcomingOnly.set(true);
     fixture.detectChanges();
 
@@ -157,19 +168,44 @@ describe('CatalogHomePageComponent', () => {
     expect(element.querySelector('.home-fair-teaser')).toBeNull();
     expect(datesSection).not.toBeNull();
     expect(datesSection.querySelector('.next-fair-card')).not.toBeNull();
-    expect(datesSection.querySelector('.fair-location-card iframe')).toBeNull();
-    expect(datesSection.querySelector('.fair-location-placeholder')?.textContent)
-      .toContain('Carte consultable dans Google Maps');
+    expect(datesSection.querySelector('.fair-location-card iframe')).not.toBeNull();
+    expect(datesSection.querySelector('.fair-location-card iframe')?.getAttribute('src'))
+      .toContain('https://www.google.com/maps?q=');
+    expect(datesSection.querySelector('.fair-location-card iframe')?.getAttribute('src'))
+      .toContain('&hl=fr&z=15&output=embed');
     expect(datesSection.querySelector<HTMLAnchorElement>('.fair-location-map-link')?.href)
       .toContain('https://www.google.com/maps/search/');
     expect(datesSection.querySelector('.fair-location-address')?.textContent)
       .toContain('46 route de Saint-Marcellin');
-    expect(datesSection.querySelector('.upcoming-fairs')).toBeNull();
+    expect(datesSection.querySelectorAll('.fair-detail-icon img')).toHaveSize(3);
+    expect(datesSection.querySelector('.fair-detail-icon img')?.getAttribute('src'))
+      .toBe('icons/calendar-icon.svg');
+    expect(datesSection.querySelectorAll('.upcoming-fair')).toHaveSize(2);
+    expect(datesSection.querySelector('.upcoming-fair--next h3')?.textContent)
+      .toContain('Bourse d’automne');
     expect(datesSection.textContent).toContain('Bourse d’automne');
-    expect(datesSection.textContent).not.toContain('Bourse de mars');
+    expect(datesSection.textContent).toContain('Bourse de mars');
+    expect(datesSection.querySelector('.upcoming-fair--next')).not.toBeNull();
     expect(element.querySelector('.selection-section')).toBeNull();
     expect(element.querySelector('.genres-section')).toBeNull();
     expect(element.querySelector('.home-account-callout')).toBeNull();
+  });
+
+  it('offers an explicit Google Maps opt-in before embedding the map', () => {
+    consent.mapsEnabled.set(false);
+    fixture.componentInstance.upcomingOnly.set(true);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.fair-location-map')).toBeNull();
+    const consentButton = element.querySelector('.fair-location-map-consent button') as HTMLButtonElement;
+    expect(consentButton.textContent).toContain('Afficher la carte Google Maps');
+
+    consentButton.click();
+    fixture.detectChanges();
+
+    expect(consent.enableMaps).toHaveBeenCalledOnceWith();
+    expect(element.querySelector('.fair-location-map')).not.toBeNull();
   });
 
   it('keeps legacy fair opening hours as civil UTC components', () => {

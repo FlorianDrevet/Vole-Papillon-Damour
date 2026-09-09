@@ -10,7 +10,7 @@ describe('CatalogCookieBannerComponent', () => {
   let consent: {
     bannerVisible$: BehaviorSubject<boolean>;
     panelOpen$: BehaviorSubject<boolean>;
-    preferences: {analytics: boolean};
+    preferences: {analytics: boolean; maps: boolean};
     acceptAll: jasmine.Spy;
     rejectAll: jasmine.Spy;
     openPanel: jasmine.Spy;
@@ -21,7 +21,7 @@ describe('CatalogCookieBannerComponent', () => {
     consent = {
       bannerVisible$: new BehaviorSubject(true),
       panelOpen$: new BehaviorSubject(false),
-      preferences: {analytics: false},
+      preferences: {analytics: false, maps: false},
       acceptAll: jasmine.createSpy('acceptAll'),
       rejectAll: jasmine.createSpy('rejectAll'),
       openPanel: jasmine.createSpy('openPanel').and.callFake(() => consent.panelOpen$.next(true)),
@@ -58,7 +58,7 @@ describe('CatalogCookieBannerComponent', () => {
     expect(consent.rejectAll).toHaveBeenCalled();
   });
 
-  it('opens a keyboard-accessible panel with necessary and analytics choices', () => {
+  it('opens a keyboard-accessible panel with necessary, analytics and Maps choices', () => {
     const customize = (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
       .find(button => button.textContent?.includes('Personnaliser')) as HTMLButtonElement;
 
@@ -67,7 +67,22 @@ describe('CatalogCookieBannerComponent', () => {
 
     expect(consent.openPanel).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Cookies nécessaires');
-    expect(fixture.nativeElement.textContent).not.toContain('Google Maps');
-    expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]')).toHaveSize(1);
+    expect(fixture.nativeElement.textContent).toContain('Google Maps');
+    expect(fixture.nativeElement.querySelectorAll('input[type="checkbox"]')).toHaveSize(2);
+  });
+
+  it('forwards the personalized Maps choice to the consent service', () => {
+    const customize = (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find(button => button.textContent?.includes('Personnaliser')) as HTMLButtonElement;
+    customize.click();
+    fixture.detectChanges();
+
+    const checkboxes = fixture.nativeElement.querySelectorAll('input[type="checkbox"]');
+    (checkboxes[1] as HTMLInputElement).click();
+    const save = (Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[])
+      .find(button => button.textContent?.includes('Enregistrer mes choix')) as HTMLButtonElement;
+    save.click();
+
+    expect(consent.savePreferences).toHaveBeenCalledWith({analytics: false, maps: true});
   });
 });
