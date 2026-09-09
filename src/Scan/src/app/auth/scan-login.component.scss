@@ -4,6 +4,7 @@
 }
 
 .login-screen {
+  width: 100%;
   min-height: 100dvh;
   background: #edf5fa;
 }
@@ -11,7 +12,7 @@
 .login-welcome,
 .login-unauthorized {
   position: relative;
-  width: min(100%, 390px);
+  width: 100%;
   min-height: 100dvh;
   margin: 0 auto;
   overflow: hidden;
@@ -355,6 +356,7 @@
 @media (min-width: 600px) {
   .login-welcome,
   .login-unauthorized {
+    width: min(100%, 390px);
     box-shadow: 0 0 42px rgb(7 43 69 / 10%);
   }
 }

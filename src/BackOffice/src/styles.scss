@@ -52,6 +52,7 @@ $custom-theme: mat.define-theme((
   }
 
   html, body {
+    width: 100%;
     overflow-x: clip;
     min-height: 100vh;
     height: 100%;

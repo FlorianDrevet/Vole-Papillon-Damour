@@ -20,10 +20,15 @@
 
 html,
 body {
+  width: 100%;
   height: 100%;
   min-height: 100%;
   margin: 0;
   overflow: hidden;
+}
+
+html {
+  background: #edf5fa;
 }
 
 body {
@@ -32,6 +37,12 @@ body {
   font-family: "Libre Franklin", Arial, sans-serif;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
+}
+
+app-root {
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
 
 button,
@@ -62,6 +73,7 @@ input:focus-visible {
 .scan-shell {
   position: relative;
   display: flex;
+  width: 100%;
   height: 100dvh;
   min-height: 100dvh;
   justify-content: center;
@@ -72,7 +84,7 @@ input:focus-visible {
 .app-screen {
   position: relative;
   display: flex;
-  width: min(100%, 390px);
+  width: 100%;
   height: 100dvh;
   min-height: 0;
   max-height: 100dvh;
@@ -1757,6 +1769,7 @@ input:focus-visible {
 
 @media (min-width: 600px) {
   .app-screen {
+    width: min(100%, 390px);
     box-shadow: 0 0 42px rgb(7 43 69 / 10%);
   }
 }
