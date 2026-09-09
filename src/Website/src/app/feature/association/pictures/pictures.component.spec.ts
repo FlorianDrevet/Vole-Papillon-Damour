@@ -30,10 +30,14 @@ describe('PicturesComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should not promote a market in the upcoming albums', () => {
+  it('should organise the new photo albums and videos', () => {
     const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 
-    expect(pageText).not.toContain('Marché de Noël');
-    expect(component.upcomingAlbums).not.toContain('Marché de Noël');
+    expect(component.photoAlbums.length).toBe(6);
+    expect(component.photoAlbums.map(album => album.title)).toContain('Bourse aux livres');
+    expect(component.photoAlbums.map(album => album.title)).toContain('Maxence · 2004–2010');
+    expect(component.videos.length).toBe(14);
+    expect(pageText).toContain('La vidéothèque');
+    expect(pageText).not.toContain('Albums à venir');
   });
 });
