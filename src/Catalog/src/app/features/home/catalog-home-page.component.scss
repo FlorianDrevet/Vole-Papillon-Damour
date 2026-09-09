@@ -25,7 +25,10 @@
   position: absolute;
   z-index: 0;
   top: 100px;
-  right: clamp(3rem, 7vw, 6.25rem);
+  right: max(
+    var(--catalog-shell-gutter),
+    calc((100vw - var(--catalog-shell-max)) / 2 + var(--catalog-shell-gutter))
+  );
   width: 340px;
   height: 340px;
   pointer-events: none;
