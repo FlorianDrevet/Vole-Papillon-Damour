@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
 | **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-upcoming-bourses-card` |
-| **Dernière mise à jour** | 2026-09-09 — card et agenda des prochaines bourses prêts, PR #110 ouverte, aucun déploiement |
-| **Branche** | `feat/upcoming-bourses-card` — worktree dédié, basé sur `origin/main` (`1673b68`) |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-media-gallery` |
+| **Dernière mise à jour** | 2026-09-09 — galerie familiale et textes éditoriaux intégrés, PR #112 ouverte, aucun déploiement |
+| **Branche** | `feat/media-gallery-and-content` — worktree dédié, synchronisée avec `origin/main`, PR #112 ouverte |
 
 ---
 
@@ -77,6 +77,10 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-09 — galerie familiale, vidéos et récits éditoriaux
+
+La branche `feat/media-gallery-and-content` rassemble les contenus transmis par les mails non lus de Famille Drevet : six albums photo (dont la bourse aux livres simplifiée), quatorze vidéos accessibles depuis la nouvelle vidéothèque `/association/photos`, la suite du récit scolaire jusqu'à 2026 et la page de greffe réécrite autour des deux histoires de greffe. Les archives de téléchargement ont été nettoyées du worktree ; seuls les visuels sélectionnés et les vidéos destinées au site restent dans `src/Website/public/`. Les 67 tests ChromeHeadless, le build Website et le smoke test navigateur local passent. Aucun déploiement ni vérification de production n'a été effectué ; la branche est synchronisée avec `origin/main` et la PR #112 est ouverte.
 
 ### État actualisé — 2026-09-09 — carte et agenda des prochaines bourses
 
