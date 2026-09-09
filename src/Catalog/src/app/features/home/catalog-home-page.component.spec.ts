@@ -95,17 +95,19 @@ describe('CatalogHomePageComponent', () => {
     expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
   });
 
-  it('keeps the hero focused on the book fair and uses a composed book visual', () => {
+  it('uses the 2a hero composition with the butterfly and a footer fair row', () => {
     const hero = fixture.nativeElement.querySelector('.hero') as HTMLElement;
     const heroSearchButton = hero.querySelector('.hero-search button') as HTMLButtonElement;
     const heroVisual = hero.querySelector('.hero-visual') as HTMLElement;
+    const butterfly = hero.querySelector('.hero-butterfly') as HTMLImageElement;
 
     expect(hero.textContent).toContain('Est-ce que ce livre sera');
     expect(hero.textContent).toContain('à la bourse aux livres');
     expect(hero.querySelector('.hero-date')).toBeNull();
     expect(heroVisual).not.toBeNull();
-    expect(hero.querySelector('.hero-butterfly')).toBeNull();
-    expect(heroVisual.querySelectorAll('.hero-book').length).toBeGreaterThan(0);
+    expect(butterfly).not.toBeNull();
+    expect(butterfly.getAttribute('src')).toBe('images/papillon_without_back.png');
+    expect(heroVisual.querySelectorAll('.hero-book').length).toBe(0);
     expect(heroSearchButton.textContent?.trim()).toBe('Rechercher');
     expect(heroSearchButton.querySelector('span')).toBeNull();
   });
@@ -134,9 +136,10 @@ describe('CatalogHomePageComponent', () => {
     const teaser = element.querySelector('.home-fair-teaser') as HTMLElement;
 
     expect(teaser).not.toBeNull();
-    expect(teaser.textContent).toContain('Prochaine bourse aux livres');
+    expect(teaser.textContent).toContain('Prochaine bourse');
     expect(teaser.textContent).toContain('10 octobre 2026');
-    expect(teaser.textContent).toContain('9 h 30');
+    expect(teaser.textContent).toContain('Plus d’infos');
+    expect(teaser.querySelector('.home-fair-teaser-time')).toBeNull();
     expect(teaser.textContent).not.toContain('46 route de Saint-Marcellin');
     expect(element.querySelector('.fair-section')).toBeNull();
     expect(element.querySelector('.next-fair-card')).toBeNull();
