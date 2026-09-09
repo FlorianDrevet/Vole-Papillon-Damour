@@ -5,11 +5,13 @@ import {
   DestroyRef,
   ElementRef,
   HostListener,
+  Input,
   OnDestroy,
   OnInit,
   Optional,
   ViewChild,
 } from '@angular/core';
+import {Router} from '@angular/router';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {firstValueFrom} from 'rxjs';
 
@@ -24,10 +26,13 @@ import {
   ScanLocalStoreError,
   ScanNextBookFair,
   ScanSessionClosePendingError,
+  ScanSessionCounts,
   ScanSessionSnapshot,
 } from '../offline/scan-offline.model';
 import {ScanSyncService} from '../offline/scan-sync.service';
+import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {ScanConfirmationRequest, ScanConfirmationService} from '../scan-confirmation.service';
 import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
@@ -40,7 +45,8 @@ export type ScanScreen =
   | 'manual'
   | 'session-end'
   | 'cash'
-  | 'consultation';
+  | 'consultation'
+  | 'reprise';
 
 type ScanDestination = 'tri' | 'cash' | 'consultation';
 type ManualKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'X' | 'clear' | 'backspace';
@@ -56,6 +62,8 @@ interface CashScanItem {
   quantityAvailable: number;
   quantityAnnounced: number;
 }
+
+const ACCOUNT_SWITCH_PROMPT = "Des gestes d'une session précédente sont présents sur cet appareil. Les reprendre sous votre compte, ou les mettre de côté pour un responsable ?";
 
 @Component({
   selector: 'app-scanner',
@@ -99,16 +107,20 @@ export class ScannerComponent implements OnInit, OnDestroy {
   isOnline = typeof navigator === 'undefined' || navigator.onLine;
   persistenceStatus: PersistentStorageStatus | null = null;
   session: ScanSessionSnapshot | null = null;
+  sessionCounts: ScanSessionCounts = emptySessionCounts();
   completedSession: ScanSessionSnapshot | null = null;
+  completedSessionCounts: ScanSessionCounts = emptySessionCounts();
   sessionDurationLabel = '0 min de tri';
   authAvailable = false;
   isAuthenticated = false;
   accountName: string | null = null;
-  syncStatus: 'idle' | 'syncing' | 'success' | 'error' = 'idle';
+  accountSwitchPrompt: string | null = null;
   sessionCloseError: string | null = null;
   authDegraded = false;
   cameraFocusStatus: 'idle' | 'refocusing' | 'requested' | 'unavailable' = 'idle';
-  screen: ScanScreen = 'tri';
+  legacyStatusVisible = true;
+  private currentScreen: ScanScreen = 'tri';
+  private routeDriven = false;
   selectedMode: LocalScanMode = 'AvailableNow';
   manualReturnScreen: ScanDestination = 'tri';
   nextFair: ScanNextBookFair | null = null;
@@ -127,6 +139,8 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private sessionCloseCompleted = false;
   private syncTimer: number | null = null;
   private cameraStartToken = 0;
+  private accountSwitchAccountId: string | null = null;
+  accountSwitchBusy = false;
 
   constructor(
     private readonly metadataService: BookMetadataService,
@@ -136,11 +150,40 @@ export class ScannerComponent implements OnInit, OnDestroy {
     @Optional() private readonly scanWorkflow: ScanWorkflowService | null,
     @Optional() private readonly scanAuth: ScanAuthService | null,
     @Optional() private readonly scanSync: ScanSyncService | null,
+    @Optional() private readonly scanStatus: ScanStatusService | null = null,
+    @Optional() private readonly router: Router | null = null,
+    @Optional() private readonly confirmation: ScanConfirmationService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
     // the real PWA opens on the mode-selection home screen.
-    this.screen = scanWorkflow === null ? 'tri' : 'home';
+    this.currentScreen = scanWorkflow === null ? 'tri' : 'home';
+    this.legacyStatusVisible = true;
+  }
+
+  @Input()
+  set routeScreen(value: ScanScreen | null | undefined) {
+    if (!value) {
+      return;
+    }
+
+    this.routeDriven = true;
+    this.legacyStatusVisible = false;
+    this.currentScreen = value;
+  }
+
+  get screen(): ScanScreen {
+    return this.currentScreen;
+  }
+
+  set screen(value: ScanScreen) {
+    this.currentScreen = value;
+    const route = this.routeForScreen(value);
+    if (!this.router || !this.routeDriven || !route || this.router.url.split('?')[0] === route) {
+      return;
+    }
+
+    void this.router.navigateByUrl(route);
   }
 
   ngOnInit(): void {
@@ -158,9 +201,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
               this.storageError = 'La session locale n’a pas pu être associée à ce compte.';
               this.refreshView();
             });
+          } else {
+            this.trySync();
           }
           this.refreshView();
-          this.trySync();
         });
     }
 
@@ -216,15 +260,15 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   get sessionScannedCount(): number {
-    return this.session?.scannedCount ?? this.completedSession?.scannedCount ?? 0;
+    return this.session ? this.sessionCounts.scannedCount : this.completedSessionCounts.scannedCount;
   }
 
   get sessionKeptCount(): number {
-    return this.session?.keptCount ?? this.completedSession?.keptCount ?? 0;
+    return this.session ? this.sessionCounts.keptCount : this.completedSessionCounts.keptCount;
   }
 
   get sessionRejectedCount(): number {
-    return this.session?.rejectedCount ?? this.completedSession?.rejectedCount ?? 0;
+    return this.session ? this.sessionCounts.rejectedCount : this.completedSessionCounts.rejectedCount;
   }
 
   get manualDigitCount(): number {
@@ -389,6 +433,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   async lookup(rawInput: string, destination: ScanDestination = this.destinationForScreen()): Promise<void> {
+    if (destination === 'tri' && this.accountSwitchPrompt) {
+      return;
+    }
+
     const normalizedIsbn = normalizeIsbn(rawInput);
     const lookupVersion = ++this.lookupVersion;
     this.resetLookupState();
@@ -437,7 +485,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         ? 'La session attend sa clôture. Ouvrez une nouvelle session avant de scanner.'
         : this.describeStorageError(
           localOutcome.reason,
-          'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
+          'Le livre n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
         );
     } else {
       this.storageError = this.describeStorageError(
@@ -477,19 +525,21 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   startSorting(): void {
-    if (this.authAvailable && !this.canSort) {
+    if (this.accountSwitchPrompt || (this.authAvailable && !this.canSort)) {
       return;
     }
 
     this.stopCamera();
     if (this.sessionEnded) {
       this.session = null;
+      this.sessionCounts = emptySessionCounts();
       this.completedSession = null;
+      this.completedSessionCounts = emptySessionCounts();
       this.sessionEnded = false;
       this.sessionCloseCompleted = false;
     }
 
-    if (this.session && this.session.scannedCount > 0) {
+    if (this.session && this.sessionCounts.scannedCount > 0) {
       this.screen = 'tri';
     } else {
       this.screen = 'session-mode';
@@ -499,6 +549,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   async chooseSessionMode(mode: LocalScanMode): Promise<void> {
+    if (this.accountSwitchPrompt) {
+      return;
+    }
+
     this.selectedMode = mode;
     this.stopCamera();
 
@@ -541,6 +595,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.resetLookupState();
     this.refreshView();
     this.startCameraIfNeeded(true);
+  }
+
+  openRecovery(): void {
+    this.stopCamera();
+    this.screen = 'reprise';
+    this.refreshView();
   }
 
   openManualInput(): void {
@@ -602,6 +662,55 @@ export class ScannerComponent implements OnInit, OnDestroy {
     });
   }
 
+  async resumeAccountSwitch(): Promise<void> {
+    const volunteerId = this.accountSwitchAccountId;
+    if (!volunteerId || !this.scanWorkflow || this.accountSwitchBusy) {
+      return;
+    }
+
+    this.accountSwitchBusy = true;
+    try {
+      await this.scanWorkflow.bindSessionToVolunteer(volunteerId, true);
+      await this.scanWorkflow.reattachNeedsReattachToCurrentSession();
+      this.accountSwitchPrompt = null;
+      this.accountSwitchAccountId = null;
+      await this.refreshLocalState();
+      this.trySync();
+    } catch {
+      this.storageError = 'La session précédente n’a pas pu être reprise. Les gestes restent conservés localement.';
+    } finally {
+      this.accountSwitchBusy = false;
+      this.refreshView();
+    }
+  }
+
+  async setAsideAccountSwitch(): Promise<void> {
+    if (!this.scanWorkflow || this.accountSwitchBusy) {
+      return;
+    }
+
+    this.accountSwitchBusy = true;
+    try {
+      await this.scanWorkflow.setAsideCurrentSessionForOtherVolunteer();
+      await this.scanWorkflow.clearSession();
+      this.accountSwitchPrompt = null;
+      this.accountSwitchAccountId = null;
+      this.session = null;
+      this.sessionCounts = emptySessionCounts();
+      this.completedSession = null;
+      this.completedSessionCounts = emptySessionCounts();
+      this.sessionEnded = false;
+      this.sessionCloseCompleted = false;
+      this.screen = 'home';
+      await this.refreshLocalState();
+    } catch {
+      this.storageError = 'La session précédente n’a pas pu être mise de côté. Les gestes restent conservés localement.';
+    } finally {
+      this.accountSwitchBusy = false;
+      this.refreshView();
+    }
+  }
+
   async logout(): Promise<void> {
     this.logoutError = null;
 
@@ -617,7 +726,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
     const pendingCount = this.pendingDecisionCount + this.pendingTransmissionCount;
     if (pendingCount > 0) {
-      this.logoutError = `${pendingCount} geste${pendingCount > 1 ? 's' : ''} reste${pendingCount > 1 ? 'nt' : ''} à traiter ou à transmettre. Synchronisez avant de changer d’utilisateur.`;
+      this.logoutError = `${pendingCount} livre${pendingCount > 1 ? 's' : ''} reste${pendingCount > 1 ? 'nt' : ''} à traiter ou à transmettre. Synchronisez avant de changer d’utilisateur.`;
       this.refreshView();
       return;
     }
@@ -636,7 +745,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.lastValidatedSaleIds = [];
     this.resetLookupState();
     this.session = null;
+    this.sessionCounts = emptySessionCounts();
     this.completedSession = null;
+    this.completedSessionCounts = emptySessionCounts();
     this.sessionEnded = false;
     this.sessionCloseCompleted = false;
     this.sessionCloseError = null;
@@ -648,6 +759,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   async syncNow(): Promise<void> {
     if (
       !this.scanSync ||
+      this.accountSwitchPrompt ||
       !this.isAuthenticated ||
       !this.canSynchronize ||
       !this.isOnline ||
@@ -673,8 +785,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   private async performSync(scanSync: ScanSyncService): Promise<void> {
-    this.syncStatus = 'syncing';
     this.syncError = null;
+    this.scanStatus?.setOutboxSending();
+    this.scanStatus?.clearMessage();
     this.refreshView();
 
     try {
@@ -682,49 +795,41 @@ export class ScannerComponent implements OnInit, OnDestroy {
       const closeRequested = this.session?.closeRequested === true;
       const quarantined = summary.outbox.quarantined ?? 0;
       const orphaned = summary.outbox.orphaned ?? 0;
+      const newlySetAside = summary.outbox.newlyOrphaned + summary.outbox.newlyQuarantined;
+      const reattached = summary.outbox.reattached ?? 0;
+      this.scanStatus?.updateSetAsideTotals({orphaned, quarantined});
+      this.scanStatus?.setOutboxSummary(
+        summary.outbox.remaining,
+        summary.outbox.stoppedOnError,
+      );
       if (summary.closed) {
         this.sessionCloseCompleted = true;
         this.sessionCloseError = null;
       }
       if (!summary.catalog) {
-        this.syncStatus = 'error';
         this.syncError = 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits ou réseau).';
-      } else if (orphaned > 0) {
-        this.syncStatus = 'error';
-        this.syncError = `${orphaned} geste${orphaned > 1 ? 's' : ''} sans décision a été isolé${orphaned > 1 ? 's' : ''} avec la session précédente. Prévenez un responsable avant toute publication.`;
-      } else if (quarantined > 0) {
-        this.syncStatus = 'error';
-        this.syncError = `${quarantined} entrée${quarantined > 1 ? 's' : ''} a été mise en quarantaine après plusieurs refus serveur. Prévenez un responsable.`;
+        this.scanStatus?.showBlocking(this.syncError);
       } else if (summary.outbox.stoppedOnError) {
-        this.syncStatus = 'error';
         this.syncError = 'La file locale reste conservée et sera réessayée automatiquement.';
+        this.scanStatus?.showBlocking(this.syncError);
+      } else if (newlySetAside > 0) {
+        this.scanStatus?.showInfo(`${this.bookCountLabel(newlySetAside)} viennent d’être mis de côté.`);
+      } else if (reattached > 0) {
+        this.scanStatus?.showInfo(`${this.bookCountLabel(reattached)} repris automatiquement dans cette session.`);
       } else if (closeRequested && !summary.closed) {
-        this.syncStatus = 'error';
         this.syncError = 'La session est prête, mais sa fermeture serveur sera réessayée automatiquement.';
-        this.sessionCloseError = 'La session reste enregistrée localement et sera clôturée dès que la synchronisation aboutira.';
+        this.sessionCloseError = 'La session reste enregistrée localement ; elle sera clôturée au prochain passage en réseau.';
+        this.scanStatus?.showInfo(this.sessionCloseError);
       } else {
-        this.syncStatus = 'success';
+        this.scanStatus?.clearMessage();
       }
       await this.refreshLocalState();
       await this.refreshSaleCancellationState();
     } catch {
-      this.syncStatus = 'error';
-      this.syncError = 'La synchronisation a échoué ; les gestes restent conservés localement.';
+      this.syncError = 'La synchronisation a échoué ; les livres restent conservés localement.';
+      this.scanStatus?.showBlocking(this.syncError);
     } finally {
       this.refreshView();
-    }
-  }
-
-  get syncLabel(): string {
-    switch (this.syncStatus) {
-      case 'syncing':
-        return 'Synchronisation…';
-      case 'success':
-        return 'Catalogue synchronisé';
-      case 'error':
-        return 'Synchronisation à reprendre';
-      default:
-        return 'Synchroniser';
     }
   }
 
@@ -733,16 +838,12 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.localScan?.entry.status === 'Pending' || this.pendingDecisionCount > 0) {
-      this.syncError = 'Choisissez « Garder » ou « Écarter » pour le dernier livre avant de terminer.';
-      this.screen = 'tri';
-      this.refreshView();
-      return;
-    }
-
-    if (typeof window !== 'undefined' && !window.confirm(
-      'Terminer cette session de tri ? La clôture sera synchronisée avec le serveur.',
-    )) {
+    if (!await this.confirmAction({
+      title: 'Terminer cette session de tri ?',
+      message: 'La clôture sera synchronisée avec le serveur.',
+      confirmLabel: 'Terminer la session',
+      cancelLabel: 'Poursuivre le tri',
+    })) {
       return;
     }
 
@@ -752,6 +853,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     try {
       const completedSession = {...this.session};
       this.completedSession = completedSession;
+      this.completedSessionCounts = {...this.sessionCounts};
       this.sessionDurationLabel = this.formatSessionDuration(completedSession);
       this.sessionEnded = true;
       this.sessionCloseCompleted = false;
@@ -807,11 +909,24 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   returnHome(): void {
-    if (this.cashItems.length > 0 && typeof window !== 'undefined' && !window.confirm(
-      'Cette vente contient encore des livres. Revenir à l’accueil et vider la vente ?',
-    )) {
+    if (this.cashItems.length > 0 && this.confirmation) {
+      void this.confirmAction({
+        title: 'Quitter la caisse ?',
+        message: 'Cette vente contient encore des livres. Revenir à l’accueil videra la vente locale.',
+        confirmLabel: 'Vider et revenir',
+        cancelLabel: 'Rester dans la caisse',
+      }).then(confirmed => {
+        if (confirmed) {
+          this.completeReturnHome();
+        }
+      });
       return;
     }
+
+    this.completeReturnHome();
+  }
+
+  private completeReturnHome(): void {
 
     this.stopCamera();
     this.resetLookupState();
@@ -1061,12 +1176,15 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private async initializeLocalMode(): Promise<void> {
     try {
       this.persistenceStatus = await this.scanWorkflow!.initialize();
-      await this.bindCurrentAccountToSession();
       this.localScan = await this.scanWorkflow!.getLatestPendingResult();
       this.session = await this.scanWorkflow!.getSession();
+      this.sessionCounts = this.session
+        ? await this.getSessionCounts(this.session)
+        : emptySessionCounts();
       this.selectedMode = this.session?.mode ?? 'AvailableNow';
       await this.refreshLocalState();
       this.localModeReady = true;
+      await this.bindCurrentAccountToSession();
 
       if (!this.persistenceStatus.available) {
         this.storageError = 'Ce navigateur ne fournit pas IndexedDB : le tri hors ligne est indisponible.';
@@ -1074,7 +1192,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.storageError = 'Le navigateur n’a pas garanti la conservation des données hors ligne. Gardez l’application régulièrement connectée.';
       }
 
-      if (this.localScan || (this.session?.scannedCount ?? 0) > 0) {
+      if (this.localScan || this.sessionCounts.scannedCount > 0) {
         this.screen = 'tri';
       }
       this.trySync();
@@ -1083,7 +1201,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     } catch (error: unknown) {
       this.storageError = this.describeStorageError(
         error,
-        'Le stockage local ne peut pas être initialisé. Aucun geste ne sera considéré comme conservé.',
+        'Le stockage local ne peut pas être initialisé. Aucun livre ne sera considéré comme conservé.',
       );
       this.refreshView();
     }
@@ -1118,20 +1236,68 @@ export class ScannerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const counts = await this.scanWorkflow.getOutboxCounts();
+    this.session = await this.scanWorkflow.getSession();
+    this.sessionCounts = this.session
+      ? await this.getSessionCounts(this.session)
+      : emptySessionCounts();
+    const counts = this.session
+      ? await this.scanWorkflow.getOutboxCounts(this.session.clientSessionId)
+      : {pendingDecisionCount: 0, pendingTransmissionCount: 0};
     this.pendingDecisionCount = counts.pendingDecisionCount;
     this.pendingTransmissionCount = counts.pendingTransmissionCount;
-    this.session = await this.scanWorkflow.getSession();
     this.selectedMode = this.session?.mode ?? this.selectedMode;
     this.associationSettings = await this.scanWorkflow.getSettings();
-    this.nextFair = (await this.scanWorkflow.getCatalogSyncState())?.nextFair ?? null;
+    const catalogSyncState = await this.scanWorkflow.getCatalogSyncState();
+    this.nextFair = catalogSyncState?.nextFair ?? null;
+    if (this.scanStatus) {
+      const workflowWithSetAside = this.scanWorkflow as ScanWorkflowService & {
+        getSetAsideCounts?: () => Promise<{orphaned: number; quarantined: number}>;
+      };
+      const setAsideCounts = typeof workflowWithSetAside.getSetAsideCounts === 'function'
+        ? await workflowWithSetAside.getSetAsideCounts()
+        : {orphaned: 0, quarantined: 0};
+      this.scanStatus.updateFromLocalState(catalogSyncState, counts, setAsideCounts);
+    }
+  }
+
+  private async getSessionCounts(session: ScanSessionSnapshot): Promise<ScanSessionCounts> {
+    const workflow = this.scanWorkflow as ScanWorkflowService & {
+      getSessionCounts?: (clientSessionId: string) => Promise<ScanSessionCounts>;
+    };
+    return typeof workflow.getSessionCounts === 'function'
+      ? await workflow.getSessionCounts(session.clientSessionId)
+      : this.sessionCounts;
+  }
+
+  private bookCountLabel(count: number): string {
+    return this.scanStatus?.bookCountLabel(count)
+      ?? `${count} livre${count > 1 ? 's' : ''}`;
   }
 
   private async bindCurrentAccountToSession(): Promise<void> {
     const volunteerId = this.scanAuth?.authState.account?.homeAccountId;
     if (volunteerId) {
-      await this.scanWorkflow?.bindSessionToVolunteer(volunteerId);
+      await this.reconcileCurrentAccount(volunteerId);
     }
+  }
+
+  private async reconcileCurrentAccount(volunteerId: string): Promise<void> {
+    if (!this.scanWorkflow || !this.localModeReady) {
+      return;
+    }
+
+    const session = await this.scanWorkflow.getSession();
+    if (session?.volunteerId && session.volunteerId !== volunteerId) {
+      this.accountSwitchAccountId = volunteerId;
+      this.accountSwitchPrompt = ACCOUNT_SWITCH_PROMPT;
+      this.refreshView();
+      return;
+    }
+
+    await this.scanWorkflow.bindSessionToVolunteer(volunteerId);
+    this.accountSwitchAccountId = null;
+    this.accountSwitchPrompt = null;
+    this.trySync();
   }
 
   private async refreshSaleCancellationState(): Promise<void> {
@@ -1225,8 +1391,33 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.changeDetector.markForCheck();
   }
 
+  private confirmAction(request: ScanConfirmationRequest): Promise<boolean> {
+    return Promise.resolve(this.confirmation?.confirm(request) ?? true);
+  }
+
   private trySync(): void {
     void this.syncNow();
+  }
+
+  private routeForScreen(screen: ScanScreen): string | null {
+    switch (screen) {
+      case 'home':
+        return '/accueil';
+      case 'session-mode':
+        return '/tri/mode';
+      case 'tri':
+        return '/tri';
+      case 'session-end':
+        return '/tri/fin';
+      case 'cash':
+        return '/caisse';
+      case 'consultation':
+        return '/consulter';
+      case 'reprise':
+        return '/reprise';
+      case 'manual':
+        return null;
+    }
   }
 
   private destinationForScreen(): ScanDestination {
@@ -1265,7 +1456,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       case 'blocked-by-other-instance':
         return 'La base locale est bloquée par une autre instance. Fermez l’autre onglet puis réessayez.';
       default:
-        return 'Le stockage local est indisponible. Aucun geste ne peut être conservé ici.';
+        return 'Le stockage local est indisponible. Aucun livre ne peut être conservé ici.';
     }
   }
 
@@ -1314,6 +1505,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
       target.isContentEditable
     );
   }
+}
+
+function emptySessionCounts(): ScanSessionCounts {
+  return {scannedCount: 0, keptCount: 0, rejectedCount: 0};
 }
 
 function formatFairDate(value: string): string {

@@ -1,0 +1,20 @@
+<ng-container *ngIf="isAuthenticated; else loginSurface">
+  <header *ngIf="showBack" class="scan-global-header">
+    <button type="button" class="scan-global-back" aria-label="Retour" (click)="goBack()">
+      <span aria-hidden="true">←</span>
+      <span>Retour</span>
+    </button>
+    <span class="scan-global-title">Bourse aux livres</span>
+  </header>
+
+  <scan-status-bar
+    (syncRequested)="syncNow()"
+    (recoveryRequested)="openRecovery()"></scan-status-bar>
+
+  <router-outlet></router-outlet>
+  <app-scan-confirmation></app-scan-confirmation>
+</ng-container>
+
+<ng-template #loginSurface>
+  <app-scan-login></app-scan-login>
+</ng-template>

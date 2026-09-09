@@ -101,6 +101,21 @@
 - Photo decode candidates are generated one at a time so the decoder can stop after the first
   successful region without allocating all eight canvases up front.
 
+## Scanette reprise storage update - 2026-09-09
+
+- The Scan IndexedDB schema is now version 3. Scan outbox statuses are `Pending`, `Kept`,
+  `Rejected`, `CancelledLocal`, `NeedsDecision`, `NeedsReattach`, and `RejectedByServer`;
+  the migration preserves existing durable gestures and adds explicit set-aside reasons
+  (`no-session`, `other-volunteer`, `undecided`, `server-refused`).
+- Session close requests remain durable while a replacement local session can open. Account
+  switching isolates the prior session's pending and blocking gestures, and replay does not
+  create a second remote session when the client session identity is already known.
+- `src/Scan` sends `scan_gesture_set_aside` through the singleton Application Insights
+  adapter for every local set-aside path. Event properties are limited to the reason, ISBN-13,
+  and client gesture id; account identifiers are intentionally absent.
+- Backend administrator force-close delegates to the existing close-session transaction with
+  the `AdminForced` reason, so delayed alert outbox creation remains atomic with the close.
+
 ## Books cover URL update — 2026-09-06
 
 - `Books` now persists `CoverUrl` (`nvarchar(2048)`), nullable `CoverSource` (`Bnf`,

@@ -1,84 +1,59 @@
 import {CommonModule} from '@angular/common';
 import {Component} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {BehaviorSubject} from 'rxjs';
+import {RouterTestingModule} from '@angular/router/testing';
 
 import {AppComponent} from './app.component';
-import {ScanAuthService, ScanAuthState} from './auth/scan-auth.service';
 
 @Component({
-  selector: 'app-scan-login',
-  template: '<div class="login-stub"></div>',
+  selector: 'app-scan-shell',
+  template: '<div class="shell-stub"></div>',
   standalone: false,
 })
-class LoginStubComponent {}
+class ShellStubComponent {}
 
 @Component({
-  selector: 'app-scanner',
-  template: '<div class="scanner-stub"></div>',
+  selector: 'app-scan-diagnostic',
+  template: '<div class="diagnostic-stub"></div>',
   standalone: false,
 })
-class ScannerStubComponent {}
+class DiagnosticStubComponent {}
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
-  let authState: BehaviorSubject<ScanAuthState>;
 
   beforeEach(async () => {
-    authState = new BehaviorSubject<ScanAuthState>(createState('unauthenticated'));
-
     await TestBed.configureTestingModule({
       declarations: [
         AppComponent,
-        LoginStubComponent,
-        ScannerStubComponent,
+        ShellStubComponent,
+        DiagnosticStubComponent,
       ],
-      imports: [CommonModule],
-      providers: [{
-        provide: ScanAuthService,
-        useValue: {authState$: authState.asObservable()},
-      }],
+      imports: [CommonModule, RouterTestingModule.withRoutes([
+        {path: '', component: ShellStubComponent},
+      ])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
   });
 
-  it('shows the login surface until the account has the Tri role', () => {
-    expect(fixture.nativeElement.querySelector('.login-stub')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.scanner-stub')).toBeNull();
-
-    authState.next(createState('authorized'));
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('.login-stub')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.scanner-stub')).not.toBeNull();
+  it('mounts the routed shell for the authenticated surface', () => {
+    expect(fixture.nativeElement.querySelector('router-outlet')).not.toBeNull();
   });
 
-  it('keeps the scanner mounted for a cached account whose token cannot be renewed', () => {
-    authState.next(createState('degraded'));
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('.login-stub')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.scanner-stub')).not.toBeNull();
-  });
-
-  it('returns to the login surface when access expires', () => {
-    authState.next(createState('authorized'));
-    fixture.detectChanges();
-    authState.next(createState('unauthenticated'));
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('.login-stub')).not.toBeNull();
+  it('leaves authorization decisions to the routed shell', () => {
     expect(fixture.nativeElement.querySelector('.scanner-stub')).toBeNull();
   });
 
-  function createState(status: ScanAuthState['status']): ScanAuthState {
-    return {
-      status,
-      account: null,
-      roles: [],
-      requiredRole: 'Tri ou Caisse',
-    };
-  }
+  it('keeps the diagnostic surface available when authentication is not authorized', () => {
+    fixture.destroy();
+    fixture = TestBed.createComponent(AppComponent);
+    fixture.componentInstance.diagnosticRequested = true;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.diagnostic-stub')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.shell-stub')).toBeNull();
+  });
+
 });

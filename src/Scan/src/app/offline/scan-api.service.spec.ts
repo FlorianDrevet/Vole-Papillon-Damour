@@ -138,6 +138,7 @@ describe('ScanApiService', () => {
       endedAt: null,
       closeReason: null,
       status: 'InProgress',
+      reusedExistingSession: false,
       scannedCount: 0,
       keptCount: 0,
       rejectedCount: 0,

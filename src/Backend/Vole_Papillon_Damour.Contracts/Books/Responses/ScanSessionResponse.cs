@@ -12,6 +12,7 @@ public sealed record ScanSessionResponse(
     DateTime? EndedAt,
     string? CloseReason,
     string Status,
+    bool ReusedExistingSession,
     int ScannedCount,
     int KeptCount,
     int RejectedCount);

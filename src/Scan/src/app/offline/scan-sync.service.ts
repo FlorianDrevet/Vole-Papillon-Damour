@@ -29,6 +29,9 @@ export interface OutboxSyncSummary {
   stoppedOnError: boolean;
   quarantined?: number;
   orphaned?: number;
+  newlyQuarantined: number;
+  newlyOrphaned: number;
+  reattached?: number;
 }
 
 export interface SessionSyncSummary {
@@ -128,11 +131,12 @@ export class ScanSyncService {
 
   private async flushOutboxInternal(): Promise<OutboxSyncSummary> {
     await this.bindActiveSessionToCurrentAccount();
+    const reattached = await this.workflow.reattachNeedsReattachToCurrentSession();
     const entries = await this.store.listTransmittableOutboxEntries();
     const sales = (await this.store.listSaleOutboxEntries())
       .filter(entry => (entry.status ?? 'Pending') === 'Pending');
     if (entries.length === 0 && sales.length === 0) {
-      return await this.createOutboxSummary(0, false);
+      return await this.createOutboxSummary(0, false, reattached);
     }
 
     let sent = 0;
@@ -149,12 +153,12 @@ export class ScanSyncService {
         break;
       }
 
-      const session = sessions.get(scanSessionId);
+        const session = sessions.get(scanSessionId);
       if (!session) {
         for (const entry of sessionEntries) {
           await this.store.orphanOutboxEntry(
             entry.clientGestureId,
-            'Geste décidé sans session locale correspondante ; publication suspendue.',
+            'Livre décidé sans session locale correspondante ; publication suspendue.',
           );
           orphaned += 1;
         }
@@ -162,10 +166,7 @@ export class ScanSyncService {
       }
 
       if (this.belongsToDifferentAccount(session)) {
-        orphaned += await this.store.orphanBlockingOutboxEntriesForSession(
-          scanSessionId,
-          'Geste provenant d’un autre bénévole ; publication suspendue.',
-        );
+        stoppedOnError = true;
         continue;
       }
 
@@ -179,7 +180,7 @@ export class ScanSyncService {
         remoteSession = await firstValueFrom(this.api.openSession({
           mode: session.mode,
           targetAssoEventsId: session.targetAssoEventsId,
-          clientSessionId: session.scanSessionId,
+          clientSessionId: session.clientSessionId,
           startedAt: session.startedAt,
         }));
         await this.workflow.mergeRemoteSession(remoteSession);
@@ -289,8 +290,9 @@ export class ScanSyncService {
     const summary = await this.createOutboxSummary(sent, stoppedOnError);
     return {
       ...summary,
-      quarantined: Math.max(summary.quarantined ?? 0, quarantined),
-      orphaned: Math.max(summary.orphaned ?? 0, orphaned),
+      newlyQuarantined: quarantined,
+      newlyOrphaned: orphaned,
+      reattached,
     };
   }
 
@@ -313,7 +315,11 @@ export class ScanSyncService {
         continue;
       }
 
-      if (await this.store.countBlockingOutboxEntriesForSession(session.scanSessionId) > 0) {
+      await this.store.setAsidePendingOutboxEntriesForSession(
+        session.clientSessionId,
+        'Livre sans décision mis de côté avant la clôture de la session.',
+      );
+      if (await this.store.countBlockingOutboxEntriesForSession(session.clientSessionId) > 0) {
         continue;
       }
 
@@ -321,16 +327,16 @@ export class ScanSyncService {
         const openedSession = await firstValueFrom(this.api.openSession({
           mode: session.mode,
           targetAssoEventsId: session.targetAssoEventsId,
-          clientSessionId: session.scanSessionId,
+          clientSessionId: session.clientSessionId,
           startedAt: session.startedAt,
         }));
         const closedSession = await firstValueFrom(this.api.closeSession(
           openedSession.scanSessionId,
           {closeReason: session.closeReason},
         ));
-        await this.store.deleteSessionCloseRequest(session.scanSessionId);
+        await this.store.deleteSessionCloseRequest(session.clientSessionId);
 
-        if (activeSession?.scanSessionId === session.scanSessionId) {
+        if (activeSession?.clientSessionId === session.clientSessionId) {
           await this.workflow.mergeRemoteSession(closedSession);
           await this.workflow.clearSession();
           activeSessionClosed = true;
@@ -364,8 +370,8 @@ export class ScanSyncService {
     session: ScanSessionSnapshot | ScanSessionCloseRequest,
   ): void {
     const descriptor = toSessionDescriptor(session);
-    const existing = sessions.get(descriptor.scanSessionId);
-    sessions.set(descriptor.scanSessionId, {
+    const existing = sessions.get(descriptor.clientSessionId);
+    sessions.set(descriptor.clientSessionId, {
       ...descriptor,
       volunteerId: existing?.volunteerId ?? descriptor.volunteerId,
     });
@@ -374,6 +380,7 @@ export class ScanSyncService {
   private async createOutboxSummary(
     sent: number,
     stoppedOnError: boolean,
+    reattached = 0,
   ): Promise<OutboxSyncSummary> {
     return {
       sent,
@@ -381,6 +388,9 @@ export class ScanSyncService {
       stoppedOnError,
       quarantined: await this.store.countQuarantinedOutboxEntries(),
       orphaned: await this.store.countOrphanedOutboxEntries(),
+      newlyQuarantined: 0,
+      newlyOrphaned: 0,
+      reattached,
     };
   }
 
@@ -449,7 +459,8 @@ export class ScanSyncService {
 }
 
 interface LocalSessionDescriptor {
-  scanSessionId: string;
+  clientSessionId: string;
+  remoteSessionId: string | null;
   volunteerId: string | null;
   mode: 'AvailableNow' | 'NextFair';
   targetAssoEventsId: string | null;
@@ -470,7 +481,8 @@ function toSessionDescriptor(
     : session.startedAt;
 
   return {
-    scanSessionId: session.scanSessionId,
+    clientSessionId: session.clientSessionId,
+    remoteSessionId: session.remoteSessionId ?? null,
     volunteerId: session.volunteerId ?? null,
     mode: session.mode,
     targetAssoEventsId: session.targetAssoEventsId,
@@ -484,9 +496,9 @@ function groupEntriesBySession(
 ): Map<string, ScanOutboxEntry[]> {
   const grouped = new Map<string, ScanOutboxEntry[]>();
   for (const entry of entries) {
-    const sessionEntries = grouped.get(entry.scanSessionId) ?? [];
+    const sessionEntries = grouped.get(entry.clientSessionId) ?? [];
     sessionEntries.push(entry);
-    grouped.set(entry.scanSessionId, sessionEntries);
+    grouped.set(entry.clientSessionId, sessionEntries);
   }
   return grouped;
 }

@@ -72,7 +72,7 @@ public sealed class OpenScanSessionCommandHandler(
                 }
 
                 await transaction.CommitAsync(cancellationToken);
-                return ScanSessionResult.From(existingClientSession);
+                return ScanSessionResult.From(existingClientSession, reusedExistingSession: true);
             }
         }
 
@@ -111,7 +111,7 @@ public sealed class OpenScanSessionCommandHandler(
                 existingSession.TargetAssoEventsId == command.TargetAssoEventsId)
             {
                 await transaction.CommitAsync(cancellationToken);
-                return ScanSessionResult.From(existingSession);
+                return ScanSessionResult.From(existingSession, reusedExistingSession: true);
             }
 
             return Errors.Book.ActiveScanSessionExists(command.VolunteerId);

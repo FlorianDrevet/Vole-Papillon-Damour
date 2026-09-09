@@ -11,6 +11,7 @@ import {
   AdminMemberDetail,
   AdminScanSession,
   AdminSessionFilters,
+  AdminSettings,
   CatalogAdminOverview,
 } from '../../shared/models/catalog-admin.model';
 import {CatalogAdminFacadeService} from '../../shared/facades/catalog-admin.facade.service';
@@ -43,6 +44,7 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly fairStats = signal<any | null>(null);
   protected readonly sessions = signal<AdminScanSession[]>([]);
   protected readonly selectedSession = signal<AdminScanSession | null>(null);
+  protected readonly sessionToForceClose = signal<AdminScanSession | null>(null);
   protected readonly sessionTotal = signal(0);
   protected readonly alerts = signal<any[]>([]);
   protected readonly members = signal<any[]>([]);
@@ -53,14 +55,13 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly accountPage = signal(1);
   protected readonly editingAccountId = signal<string | null>(null);
   protected readonly editingRoles = signal<AdminAccountRole[]>([]);
-  protected readonly settings = signal<any | null>(null);
+  protected readonly settings = signal<AdminSettings | null>(null);
 
   protected bookSearch = '';
   protected metadataStatus = '';
   protected rareFilter = '';
   protected hiddenFilter = '';
   protected undatedFilter = '';
-  protected sessionStatus = '';
   protected memberSearch = '';
   protected memberAlertStatus = '';
   protected alertStatus = '';
@@ -295,7 +296,12 @@ export class CatalogAdministrationComponent implements OnInit {
   }
 
   protected loadSessions(page = 1): void {
-    const filters: AdminSessionFilters = {status: this.sessionStatus || undefined, page, pageSize: 25};
+    const filters: AdminSessionFilters = {
+      status: 'InProgress',
+      olderThan24Hours: true,
+      page,
+      pageSize: 25,
+    };
     this.load(() => this.facade.getSessions(filters), value => {
       this.sessions.set(value.sessions);
       this.sessionTotal.set(value.totalCount);
@@ -304,6 +310,42 @@ export class CatalogAdministrationComponent implements OnInit {
 
   protected selectSession(sessionId: string): void {
     this.load(() => this.facade.getSession(sessionId), value => this.selectedSession.set(value));
+  }
+
+  protected requestForceClose(): void {
+    const session = this.selectedSession();
+    if (!session || session.status !== 'InProgress') { return; }
+    this.load(() => this.facade.getSettings(), value => {
+      this.settings.set(value);
+      this.sessionToForceClose.set(session);
+    });
+  }
+
+  protected cancelForceClose(): void {
+    this.sessionToForceClose.set(null);
+  }
+
+  protected confirmForceClose(): void {
+    const session = this.sessionToForceClose();
+    if (!session) { return; }
+    this.sessionToForceClose.set(null);
+    this.save(
+      () => this.facade.forceCloseSession(session.id),
+      'La session a été clôturée d’office et les alertes ont été mises en file.',
+      () => {
+        this.selectedSession.set(null);
+        this.loadSessions();
+      },
+    );
+  }
+
+  protected alertDelayMinutes(): number {
+    return this.settings()?.alertDelayMinutes ?? 120;
+  }
+
+  protected formatAge(value: string): string {
+    const ageInHours = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 3_600_000));
+    return `${ageInHours} h`;
   }
 
   protected removeMovement(movementId: string): void {

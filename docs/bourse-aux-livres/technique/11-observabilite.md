@@ -336,6 +336,27 @@ télémétrie reste au mieux : un tampon circulaire des derniers événements, e
 réseau le permet, jeté sinon. Ce tampon a une seconde vertu — il est **affichable dans
 l'application**, ce qui donne à une bénévole de quoi décrire ce qu'elle a vu.
 
+### Suivre les gestes mis de cote
+
+La Scanette emet l'evenement Application Insights `scan_gesture_set_aside` pour chaque
+geste place dans un etat de reprise. Les proprietes sont limitees a `setAsideReason`,
+`isbn13` et `clientGestureId` : aucun identifiant de compte n'est ajoute.
+
+La requete minimale a enregistrer dans Application Insights pour suivre L3 est :
+
+```kusto
+customEvents
+| where timestamp > ago(30d)
+| where name == "scan_gesture_set_aside"
+| extend setAsideReason = tostring(customDimensions.setAsideReason)
+| summarize gestures = count() by bin(timestamp, 1d), setAsideReason
+| order by timestamp asc, setAsideReason asc
+```
+
+La tendance attendue apres L3 est une baisse du nombre quotidien. La ventilation par
+cause permet de distinguer une reprise normale (`undecided`, `other-volunteer`) d'un
+probleme de session (`no-session`) ou d'un refus serveur (`server-refused`).
+
 ## 8. Les alertes
 
 **Une mesure que personne ne regarde n'est pas une alerte.** Les mesures du §4 marquées

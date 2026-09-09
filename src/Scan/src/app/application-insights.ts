@@ -2,6 +2,12 @@ import type {ApplicationInsights} from '@microsoft/applicationinsights-web';
 
 import {environment} from '../environments/environment';
 
+let applicationInsightsClient: ApplicationInsights | null = null;
+
+export function getApplicationInsightsClient(): ApplicationInsights | null {
+  return applicationInsightsClient;
+}
+
 /**
  * Starts browser telemetry only for an image built by the deployment
  * pipeline. Local and placeholder builds keep telemetry disabled.
@@ -10,6 +16,7 @@ export async function initApplicationInsights(): Promise<ApplicationInsights | n
   const connectionString = environment.appInsightsConnectionString;
 
   if (!connectionString || connectionString.startsWith('__')) {
+    applicationInsightsClient = null;
     return null;
   }
 
@@ -27,6 +34,7 @@ export async function initApplicationInsights(): Promise<ApplicationInsights | n
 
   applicationInsights.loadAppInsights();
   applicationInsights.trackPageView();
+  applicationInsightsClient = applicationInsights;
 
   return applicationInsights;
 }

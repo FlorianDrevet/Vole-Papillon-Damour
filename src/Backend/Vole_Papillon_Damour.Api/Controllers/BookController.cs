@@ -574,6 +574,7 @@ public static class BookController
             result.EndedAt,
             result.CloseReason?.ToString(),
             result.Status.ToString(),
+            result.ReusedExistingSession,
             result.ScannedCount,
             result.KeptCount,
             result.RejectedCount);

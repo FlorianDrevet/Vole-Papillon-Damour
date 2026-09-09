@@ -1,5 +1,5 @@
 export const scanDatabaseName = 'vpd-scan';
-export const scanDatabaseVersion = 2;
+export const scanDatabaseVersion = 3;
 
 export const scanStoreNames = {
   catalog: 'catalog',
@@ -43,8 +43,15 @@ export type ScanOutboxStatus =
   | 'Kept'
   | 'Rejected'
   | 'CancelledLocal'
-  | 'Quarantined'
-  | 'Orphaned';
+  | 'NeedsDecision'
+  | 'NeedsReattach'
+  | 'RejectedByServer';
+
+export type ScanSetAsideReason =
+  | 'no-session'
+  | 'other-volunteer'
+  | 'undecided'
+  | 'server-refused';
 
 export type ScanSaleOutboxStatus = 'Pending' | 'Quarantined';
 
@@ -97,23 +104,28 @@ export interface ScanNextBookFair {
 
 export interface ScanSessionSnapshot {
   key: 'active-session';
-  scanSessionId: string;
+  clientSessionId: string;
+  remoteSessionId: string | null;
   volunteerId: string | null;
   mode: LocalScanMode;
   targetAssoEventsId: string | null;
   startedAt: string;
   lastScanAt: string;
   lastSyncAt: string;
-  scannedCount: number;
-  keptCount: number;
-  rejectedCount: number;
   closeRequested?: boolean;
   closeReason?: LocalScanCloseReason | null;
 }
 
+export interface ScanSessionCounts {
+  scannedCount: number;
+  keptCount: number;
+  rejectedCount: number;
+}
+
 export interface ScanSessionCloseRequest {
   key: string;
-  scanSessionId: string;
+  clientSessionId: string;
+  remoteSessionId: string | null;
   volunteerId?: string | null;
   mode: LocalScanMode;
   targetAssoEventsId: string | null;
@@ -124,7 +136,7 @@ export interface ScanSessionCloseRequest {
 
 export interface ScanOutboxEntry {
   clientGestureId: string;
-  scanSessionId: string;
+  clientSessionId: string;
   isbn13: string;
   occurredAt: string;
   createdAt: string;
@@ -140,6 +152,7 @@ export interface ScanOutboxEntry {
   lastAttemptAt: string | null;
   lastError: string | null;
   lastFailureKind?: ScanFailureKind | null;
+  setAsideReason?: ScanSetAsideReason | null;
 }
 
 export interface ScanSaleOutboxEntry {
@@ -202,6 +215,7 @@ export interface ScanSessionResponse {
   endedAt: string | null;
   closeReason: string | null;
   status: string;
+  reusedExistingSession: boolean;
   scannedCount: number;
   keptCount: number;
   rejectedCount: number;

@@ -27,6 +27,24 @@
     Mode dégradé : la session en cache ne peut pas être renouvelée. La caméra, le catalogue local et la file d’attente restent disponibles ; reconnectez-vous pour synchroniser.
   </div>
 
+  <section *ngIf="accountSwitchPrompt" class="account-switch-banner" role="alert" aria-labelledby="account-switch-title">
+    <h2 id="account-switch-title">Session précédente détectée</h2>
+    <p>{{ accountSwitchPrompt }}</p>
+    <div class="account-switch-actions">
+      <button type="button" class="account-switch-primary" [disabled]="accountSwitchBusy" (click)="resumeAccountSwitch()">
+        Reprendre
+      </button>
+      <button type="button" class="account-switch-secondary" [disabled]="accountSwitchBusy" (click)="setAsideAccountSwitch()">
+        Mettre de côté
+      </button>
+    </div>
+  </section>
+
+  <scan-status-bar
+    *ngIf="legacyStatusVisible"
+    (syncRequested)="syncNow()"
+    (recoveryRequested)="openRecovery()"></scan-status-bar>
+
   <ng-container [ngSwitch]="screen">
     <section *ngSwitchCase="'home'" class="app-screen home-screen" aria-labelledby="home-title">
       <header class="home-header">
@@ -154,23 +172,6 @@
         <span class="mode-date">{{ activeMode === 'AvailableNow' ? 'maintenant' : nextFairShortLabel }}</span>
       </header>
 
-      <aside class="sync-panel" [class.sync-panel-error]="syncStatus === 'error'" aria-label="État de synchronisation">
-        <div class="sync-panel-copy" role="status" aria-live="polite">
-          <strong>{{ syncLabel }}</strong>
-          <span *ngIf="!isOnline">Hors ligne · les données restent locales</span>
-          <span *ngIf="pendingDecisionCount > 0">
-            {{ pendingDecisionCount }} décision{{ pendingDecisionCount > 1 ? 's' : '' }} à prendre
-          </span>
-          <span *ngIf="pendingTransmissionCount > 0">
-            {{ pendingTransmissionCount }} geste{{ pendingTransmissionCount > 1 ? 's' : '' }} à transmettre
-          </span>
-          <span *ngIf="syncError" class="sync-panel-error-message" role="alert">{{ syncError }}</span>
-        </div>
-        <button type="button" class="sync-action" [disabled]="syncStatus === 'syncing'" (click)="syncNow()">
-          Synchroniser
-        </button>
-      </aside>
-
       <div class="session-bar">
         <span>{{ displayName }}</span>
         <span>{{ sessionScannedCount }} trié{{ sessionScannedCount > 1 ? 's' : '' }}</span>
@@ -292,6 +293,9 @@
         </button>
         <label class="dock-photo" for="image-input">Photo</label>
         <span class="dock-hint">La caméra reste active jusqu’à la lecture du code</span>
+        <button type="button" class="dock-link" (click)="toggleCamera()">
+          {{ cameraActive ? 'Arrêter la caméra' : 'Scanner avec le téléphone' }}
+        </button>
       </footer>
 
       <footer *ngIf="localScan" class="action-dock decision-dock">
@@ -304,6 +308,10 @@
           <span class="saved-decision">Décision conservée · scannez le suivant</span>
         </ng-template>
       </footer>
+    </section>
+
+    <section *ngSwitchCase="'reprise'" class="app-screen recovery-app-screen">
+      <app-scan-recovery (finished)="returnHome()"></app-scan-recovery>
     </section>
 
     <section *ngSwitchCase="'manual'" class="app-screen manual-screen" aria-labelledby="manual-title">
@@ -322,22 +330,6 @@
         <h1 id="manual-title">{{ activeModeLabel }}</h1>
         <span class="mode-date">{{ activeMode === 'AvailableNow' ? 'maintenant' : nextFairShortLabel }}</span>
       </header>
-      <aside class="sync-panel" [class.sync-panel-error]="syncStatus === 'error'" aria-label="État de synchronisation">
-        <div class="sync-panel-copy" role="status" aria-live="polite">
-          <strong>{{ syncLabel }}</strong>
-          <span *ngIf="!isOnline">Hors ligne · les données restent locales</span>
-          <span *ngIf="pendingDecisionCount > 0">
-            {{ pendingDecisionCount }} décision{{ pendingDecisionCount > 1 ? 's' : '' }} à prendre
-          </span>
-          <span *ngIf="pendingTransmissionCount > 0">
-            {{ pendingTransmissionCount }} geste{{ pendingTransmissionCount > 1 ? 's' : '' }} à transmettre
-          </span>
-          <span *ngIf="syncError" class="sync-panel-error-message" role="alert">{{ syncError }}</span>
-        </div>
-        <button type="button" class="sync-action" [disabled]="syncStatus === 'syncing'" (click)="syncNow()">
-          Synchroniser
-        </button>
-      </aside>
       <div class="session-bar">
         <span>{{ displayName }}</span>
         <span>{{ sessionScannedCount }} trié{{ sessionScannedCount > 1 ? 's' : '' }}</span>
@@ -375,12 +367,12 @@
 
       <footer class="action-dock manual-dock">
         <button type="button" class="dock-primary" (click)="validateManualIsbn()">Valider le code</button>
-        <button type="button" class="dock-link" aria-label="Revenir au scan" (click)="returnToScan()">
+        <button type="button" class="dock-link" aria-label="Fermer la saisie" (click)="returnToScan()">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3.5 8V5.5a2 2 0 0 1 2-2H8M16 3.5h2.5a2 2 0 0 1 2 2V8M20.5 16v2.5a2 2 0 0 1-2 2H16M8 20.5H5.5a2 2 0 0 1-2-2V16"></path>
             <path d="M7 12h10"></path>
           </svg>
-          Revenir au scan
+          Fermer la saisie
         </button>
       </footer>
     </section>
@@ -425,9 +417,6 @@
         <p *ngIf="syncError" class="message-error" role="status">{{ syncError }}</p>
       </div>
 
-      <footer class="session-end-footer">
-        <button type="button" class="outline-pill" (click)="returnHome()">Revenir à l’accueil</button>
-      </footer>
     </section>
 
     <section *ngSwitchCase="'cash'" class="app-screen cash-screen" [class.camera-screen-active]="cameraActive" aria-labelledby="cash-title">
@@ -440,22 +429,6 @@
         <h1 id="cash-title">Caisse</h1>
         <span class="mode-date">Bourse en cours</span>
       </header>
-      <aside class="sync-panel" [class.sync-panel-error]="syncStatus === 'error'" aria-label="État de synchronisation">
-        <div class="sync-panel-copy" role="status" aria-live="polite">
-          <strong>{{ syncLabel }}</strong>
-          <span *ngIf="!isOnline">Hors ligne · les données restent locales</span>
-          <span *ngIf="pendingDecisionCount > 0">
-            {{ pendingDecisionCount }} décision{{ pendingDecisionCount > 1 ? 's' : '' }} à prendre
-          </span>
-          <span *ngIf="pendingTransmissionCount > 0">
-            {{ pendingTransmissionCount }} geste{{ pendingTransmissionCount > 1 ? 's' : '' }} à transmettre
-          </span>
-          <span *ngIf="syncError" class="sync-panel-error-message" role="alert">{{ syncError }}</span>
-        </div>
-        <button type="button" class="sync-action" [disabled]="syncStatus === 'syncing'" (click)="syncNow()">
-          Synchroniser
-        </button>
-      </aside>
       <p *ngIf="storageError" class="cash-storage-error" role="alert">{{ storageError }}</p>
 
       <div *ngIf="isLoading" class="scan-progress scan-progress-light cash-lookup-progress" role="status" aria-live="polite">
@@ -523,7 +496,6 @@
         <div class="cash-secondary-actions">
           <button type="button" class="dock-link" (click)="openManualInput()">Saisir un code</button>
           <button type="button" class="dock-link" (click)="toggleCamera()">{{ cameraActive ? 'Arrêter la caméra' : 'Scanner avec le téléphone' }}</button>
-          <button type="button" class="dock-link dock-home-link" (click)="returnHome()">Accueil</button>
         </div>
       </footer>
     </section>
@@ -537,23 +509,6 @@
         <h1 id="consultation-title">Consultation</h1>
         <span class="mode-badge">N’enregistre rien</span>
       </header>
-
-      <aside class="sync-panel" [class.sync-panel-error]="syncStatus === 'error'" aria-label="État de synchronisation">
-        <div class="sync-panel-copy" role="status" aria-live="polite">
-          <strong>{{ syncLabel }}</strong>
-          <span *ngIf="!isOnline">Hors ligne · les données restent locales</span>
-          <span *ngIf="pendingDecisionCount > 0">
-            {{ pendingDecisionCount }} décision{{ pendingDecisionCount > 1 ? 's' : '' }} à prendre
-          </span>
-          <span *ngIf="pendingTransmissionCount > 0">
-            {{ pendingTransmissionCount }} geste{{ pendingTransmissionCount > 1 ? 's' : '' }} à transmettre
-          </span>
-          <span *ngIf="syncError" class="sync-panel-error-message" role="alert">{{ syncError }}</span>
-        </div>
-        <button type="button" class="sync-action" [disabled]="syncStatus === 'syncing'" (click)="syncNow()">
-          Synchroniser
-        </button>
-      </aside>
 
       <ng-container *ngIf="consultationResult || metadata; else consultationEmpty">
         <article class="book-card consultation-book-card">
@@ -630,7 +585,6 @@
           </svg>
           {{ cameraActive ? 'Arrêter' : 'Scanner' }}
         </button>
-        <button type="button" class="dock-link dock-home-link" (click)="returnHome()">Accueil</button>
       </footer>
     </section>
   </ng-container>
