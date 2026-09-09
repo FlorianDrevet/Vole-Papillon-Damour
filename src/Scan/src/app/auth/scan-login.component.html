@@ -1,44 +1,100 @@
 <main class="login-screen" aria-labelledby="login-title">
-  <section class="login-card">
-    <p class="login-kicker">Bourse aux livres</p>
-    <div class="login-mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 6.5C10.5 5.2 8.6 4.5 6 4.5H3.5v13H6c2.6 0 4.5.7 6 2 1.5-1.3 3.4-2 6-2h2.5v-13H18c-2.6 0-4.5.7-6 2Z"></path>
-        <path d="M12 6.5v13"></path>
-      </svg>
-    </div>
-    <h1 id="login-title">Accès bénévole</h1>
+  <ng-container *ngIf="authState$ | async as authState">
+    <ng-container *ngIf="interactionStatus$ | async as interactionStatus">
+      <section *ngIf="authState.status === 'unauthorized'; else loginWelcome" class="login-unauthorized">
+        <div class="login-unauthorized-hero">
+          <img
+            class="login-unauthorized-butterfly"
+            src="assets/papillon_without_back.png"
+            alt=""
+            width="124"
+            height="124">
+          <h1 id="login-title">Accès bénévole au tri</h1>
+          <p>Réservé aux bénévoles habilités au tri ou à la caisse.</p>
+        </div>
 
-    <ng-container *ngIf="authState$ | async as authState">
-      <ng-container *ngIf="interactionStatus$ | async as interactionStatus">
-        <p *ngIf="authState.status === 'checking'" class="login-message">Restauration de votre session…</p>
-        <p *ngIf="authState.status === 'unauthenticated'" class="login-message">
-          Connectez-vous pour accéder au scan et au catalogue de la bourse.
-        </p>
-        <p *ngIf="authState.status === 'unauthorized'" class="login-message login-message-error" role="alert">
-          Ce compte est connecté, mais il ne possède aucun rôle requis ({{ authState.requiredRole }}) pour cette application.
-        </p>
-        <p *ngIf="loginError()" class="login-message login-message-error" role="alert">
-          {{ loginError() }}
-        </p>
+        <div class="login-error-card">
+          <div class="login-alert" role="alert">
+            <span class="login-alert-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                <path d="M12 7v6M12 16.6v.4"></path>
+              </svg>
+            </span>
+            <div>
+              <p class="login-alert-kicker">Rôle manquant</p>
+              <p>Votre compte est connecté, mais il n'a ni le rôle <strong>Tri</strong> ni le rôle <strong>Caisse</strong>.</p>
+            </div>
+          </div>
 
-        <button
-          type="button"
-          class="login-primary"
-          [disabled]="interactionStatus !== 'none' || loginInProgress()"
-          (click)="login()">
-          {{ loginInProgress() ? 'Connexion…' : 'Se connecter' }}
-        </button>
-        <button
-          *ngIf="authState.status === 'unauthorized'"
-          type="button"
-          class="login-secondary"
-          (click)="logout()">
-          Changer de compte
-        </button>
-      </ng-container>
+          <div class="login-account">
+            <span class="login-account-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8.5" r="3.6"></circle>
+                <path d="M5 19.6c1.3-3.3 3.9-4.9 7-4.9s5.7 1.6 7 4.9"></path>
+              </svg>
+            </span>
+            <div class="login-account-copy">
+              <strong>{{ accountIdentifier(authState.account) }}</strong>
+              <span>Compte connecté</span>
+            </div>
+          </div>
+
+          <p class="login-error-copy">Demandez à un responsable d'ajouter le rôle, ou reconnectez-vous avec un autre compte bénévole.</p>
+
+          <p *ngIf="loginError()" class="login-inline-error" role="alert">{{ loginError() }}</p>
+
+          <div class="login-actions">
+            <button
+              type="button"
+              class="login-primary login-change-account"
+              (click)="logout()">
+              Changer de compte
+            </button>
+            <button
+              type="button"
+              class="login-secondary login-retry"
+              [disabled]="interactionStatus !== 'none' || loginInProgress()"
+              (click)="login()">
+              {{ loginInProgress() ? 'Connexion…' : 'Réessayer la connexion' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="login-footnote">Vole Papillon d'Amour · tri des livres</p>
+      </section>
+
+      <ng-template #loginWelcome>
+        <section class="login-welcome">
+          <span class="login-welcome-glow" aria-hidden="true"></span>
+          <img
+            class="login-butterfly"
+            src="assets/papillon_without_back.png"
+            alt=""
+            width="250"
+            height="250">
+
+          <div class="login-welcome-content">
+            <p class="login-kicker">
+              <span class="login-kicker-line" aria-hidden="true"></span>
+              <span>Bourse aux livres</span>
+            </p>
+            <h1 id="login-title">Tri des livres</h1>
+            <p class="login-intro">Connectez-vous avec votre compte bénévole.</p>
+
+            <p *ngIf="authState.status === 'checking'" class="login-status">Restauration de votre session…</p>
+            <p *ngIf="loginError()" class="login-inline-error" role="alert">{{ loginError() }}</p>
+
+            <button
+              type="button"
+              class="login-primary"
+              [disabled]="interactionStatus !== 'none' || loginInProgress()"
+              [attr.aria-busy]="loginInProgress()"
+              (click)="login()">
+              {{ loginInProgress() ? 'Connexion…' : 'Se connecter' }}
+            </button>
+          </div>
+        </section>
+      </ng-template>
     </ng-container>
-
-    <p class="login-footnote">Accès réservé aux bénévoles habilités au tri ou à la caisse.</p>
-  </section>
+  </ng-container>
 </main>

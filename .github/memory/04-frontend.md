@@ -111,7 +111,11 @@ session summary, cash register, consultation, manual ISBN keypad, and offline va
 Consultation uses the local catalog without creating an outbox gesture; the cash screen
 persists each sale in IndexedDB, decrements local stock optimistically, and replays it to
 `POST /scan/sales` with an idempotent `ClientGestureId`. The root auth gate shows a dedicated
-login surface until an Entra account with `Tri` or `Caisse` is available. A previously
+login surface until an Entra account with `Tri` or `Caisse` is available. Since 2026-09-09,
+the signed-out screen follows the Scan connection mockup's 1a full-marine layout with the
+official butterfly asset, while the authenticated-but-unauthorized state uses the 1c
+missing-role card and keeps `Changer de compte`/`Réessayer la connexion` wired to the
+existing MSAL actions. A previously
 authorized cached account enters a visible degraded mode when silent renewal fails:
 local triage, consultation, cash capture, camera and IndexedDB outbox remain usable, but
 synchronization waits for a fresh token; an explicit logout or server 401/403 clears the

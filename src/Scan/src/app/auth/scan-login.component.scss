@@ -1,149 +1,409 @@
 :host {
   display: block;
+  min-height: 100%;
 }
 
 .login-screen {
-  display: grid;
   min-height: 100dvh;
-  place-items: center;
-  padding: 24px 16px;
-  overflow: hidden;
   background: #edf5fa;
 }
 
-.login-card {
-  display: flex;
+.login-welcome,
+.login-unauthorized {
+  position: relative;
   width: min(100%, 390px);
-  min-height: min(560px, calc(100dvh - 48px));
+  min-height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.login-welcome::before,
+.login-unauthorized::before {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);
+  content: "";
+  pointer-events: none;
+}
+
+.login-welcome {
+  display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 34px 28px;
-  border: 1px solid #d9e9f4;
-  border-top: 3px solid #1497d6;
-  background: #f7fbfe;
-  box-shadow: 0 24px 60px rgb(7 43 69 / 12%);
-  text-align: center;
+  justify-content: flex-end;
+  padding: 0 24px 34px;
+  color: #fff;
+  background: #062a44;
+}
+
+.login-welcome-glow {
+  position: absolute;
+  top: -60px;
+  left: -120px;
+  width: 560px;
+  height: 560px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, rgb(20 151 214 / 50%), rgb(6 42 68 / 0) 68%);
+  pointer-events: none;
+}
+
+.login-butterfly {
+  position: absolute;
+  top: 150px;
+  left: 50%;
+  width: 250px;
+  height: 250px;
+  object-fit: contain;
+  opacity: .9;
+  transform: translateX(-50%) rotate(-10deg);
+}
+
+.login-welcome-content {
+  position: relative;
+  z-index: 1;
 }
 
 .login-kicker {
-  margin: 0 0 32px;
-  color: #dc6412;
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0;
+  color: #7fd8f5;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: .18em;
   text-transform: uppercase;
 }
 
-.login-mark {
-  display: grid;
-  width: 64px;
-  height: 64px;
-  place-items: center;
-  margin-bottom: 22px;
-  border-radius: 50%;
-  color: #7fd8f5;
-  background: #072b45;
+.login-kicker-line {
+  width: 26px;
+  height: 2px;
+  flex: none;
+  background: #f0801c;
 }
 
-.login-mark svg {
-  width: 34px;
-  height: 34px;
-}
-
-.login-card h1 {
+.login-welcome h1,
+.login-unauthorized-hero h1 {
   margin: 0;
-  color: #072b45;
   font-family: Newsreader, Georgia, serif;
-  font-size: 38px;
   font-weight: 500;
-  letter-spacing: -.02em;
+  letter-spacing: -.03em;
+  line-height: .98;
 }
 
-.login-message {
-  max-width: 300px;
+.login-welcome h1 {
+  margin-top: 18px;
+  color: #fff;
+  font-size: 46px;
+}
+
+.login-intro {
+  max-width: 30ch;
+  margin: 14px 0 0;
+  color: #dcecf7;
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+.login-status {
   margin: 18px 0 0;
-  color: #4e6c84;
-  font-size: 15px;
+  color: #dcecf7;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: .08em;
   line-height: 1.5;
+  text-transform: uppercase;
 }
 
-.login-message-error {
-  color: #7d2028;
+.login-inline-error {
+  margin: 16px 0 0;
+  border: 1px solid rgb(255 205 180 / 45%);
+  border-radius: 3px;
+  padding: 11px 13px;
+  color: #ffe0cf;
+  background: rgb(127 42 32 / 30%);
+  font-size: 13px;
   font-weight: 600;
+  line-height: 1.45;
 }
 
 .login-primary,
 .login-secondary {
+  display: flex;
   width: 100%;
-  min-height: 58px;
-  margin-top: 28px;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   cursor: pointer;
   font-size: 16px;
-  font-weight: 700;
-  letter-spacing: .05em;
-  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .login-primary {
+  min-height: 58px;
   color: #fff;
-  background: #dc6412;
+  background: #f0801c;
+  box-shadow: 0 22px 40px -26px rgb(240 128 28 / 90%);
 }
 
-.login-secondary {
-  min-height: 46px;
-  margin-top: 10px;
-  color: #1497d6;
-  background: transparent;
-  font-size: 13px;
+.login-welcome .login-primary {
+  margin-top: 30px;
 }
 
-.login-primary:disabled {
+.login-primary:disabled,
+.login-secondary:disabled {
   cursor: wait;
   opacity: .55;
 }
 
+.login-unauthorized {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  color: #072b45;
+  background: #f7fbfe;
+}
+
+.login-unauthorized-hero {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  padding: 60px 24px 96px;
+  background-image: linear-gradient(180deg, rgb(4 29 48 / 50%) 0%, rgb(4 29 48 / 74%) 100%), linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);
+}
+
+.login-unauthorized-butterfly {
+  position: absolute;
+  right: -26px;
+  bottom: 14px;
+  width: 124px;
+  height: 124px;
+  object-fit: contain;
+  opacity: .45;
+  transform: rotate(-12deg);
+}
+
+.login-unauthorized-hero h1 {
+  position: relative;
+  color: #fff;
+  font-size: 36px;
+}
+
+.login-unauthorized-hero p {
+  position: relative;
+  max-width: 28ch;
+  margin: 12px 0 0;
+  color: #dcecf7;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.login-error-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  margin: -44px 20px 0;
+  border: 1px solid #d9e9f4;
+  border-radius: 4px;
+  padding: 22px 22px 24px;
+  background: #fff;
+  box-shadow: 0 26px 44px -34px rgb(7 43 69 / 60%);
+}
+
+.login-alert {
+  display: flex;
+  gap: 12px;
+  padding: 14px 15px;
+  border: 1px solid #e8bcbe;
+  border-radius: 3px;
+  color: #7d2028;
+  background: #fdf4f4;
+}
+
+.login-alert-icon,
+.login-account-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 999px;
+}
+
+.login-alert-icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  color: #fff;
+  background: #b02a33;
+}
+
+.login-alert-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.login-alert p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.login-alert-kicker {
+  margin-bottom: 5px !important;
+  color: #b02a33;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px !important;
+  font-weight: 500;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.login-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 22px;
+  border-top: 1px solid #e2eef7;
+  border-bottom: 1px solid #e2eef7;
+  padding: 18px 0;
+}
+
+.login-account-icon {
+  width: 36px;
+  height: 36px;
+  color: #0c6ea6;
+  background: #e9f4fb;
+}
+
+.login-account-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.login-account-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.login-account-copy strong {
+  overflow: hidden;
+  color: #072b45;
+  font-size: 14.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-account-copy span,
 .login-footnote {
-  margin: 32px 0 0;
   color: #6d8ba2;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px;
   letter-spacing: .1em;
-  line-height: 1.5;
   text-transform: uppercase;
 }
 
-@media (max-height: 620px) {
-  .login-card {
-    min-height: calc(100dvh - 32px);
-    padding: 22px 24px;
+.login-error-copy {
+  margin: 22px 0 0;
+  color: #4e6c84;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.login-error-card .login-inline-error {
+  border-color: #e8bcbe;
+  color: #7d2028;
+  background: #fdf4f4;
+}
+
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.login-unauthorized .login-primary {
+  min-height: 56px;
+}
+
+.login-secondary {
+  min-height: 48px;
+  border: 1px solid #d9e9f4;
+  color: #0c6ea6;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.login-footnote {
+  flex: none;
+  margin: auto 24px 0;
+  padding: 18px 0 26px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+@media (min-width: 600px) {
+  .login-welcome,
+  .login-unauthorized {
+    box-shadow: 0 0 42px rgb(7 43 69 / 10%);
+  }
+}
+
+@media (max-width: 370px) {
+  .login-welcome,
+  .login-unauthorized-hero {
+    padding-right: 20px;
+    padding-left: 20px;
   }
 
-  .login-kicker {
-    margin-bottom: 18px;
+  .login-welcome h1 {
+    font-size: 42px;
   }
 
-  .login-mark {
-    width: 50px;
-    height: 50px;
-    margin-bottom: 14px;
+  .login-unauthorized-hero h1 {
+    font-size: 33px;
   }
 
-  .login-card h1 {
-    font-size: 32px;
+  .login-error-card {
+    margin-right: 16px;
+    margin-left: 16px;
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+}
+
+@media (max-height: 740px) {
+  .login-welcome {
+    padding-bottom: 20px;
   }
 
-  .login-message {
-    margin-top: 12px;
+  .login-butterfly {
+    top: 105px;
+    width: 210px;
+    height: 210px;
   }
 
-  .login-primary {
-    margin-top: 18px;
+  .login-welcome .login-primary {
+    margin-top: 20px;
+  }
+
+  .login-unauthorized-hero {
+    padding-top: 38px;
+    padding-bottom: 76px;
   }
 
   .login-footnote {
-    margin-top: 18px;
+    padding-top: 14px;
+    padding-bottom: 18px;
   }
 }

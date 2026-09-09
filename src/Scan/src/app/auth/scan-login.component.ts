@@ -1,4 +1,5 @@
 import {Component, signal} from '@angular/core';
+import {AccountInfo} from '@azure/msal-browser';
 
 import {ScanAuthService} from './scan-auth.service';
 
@@ -38,6 +39,10 @@ export class ScanLoginComponent {
 
   logout(): void {
     this.scanAuth.logout();
+  }
+
+  accountIdentifier(account: AccountInfo | null): string {
+    return account?.username || account?.name || 'Compte connecté';
   }
 
   private showLoginError(): void {
