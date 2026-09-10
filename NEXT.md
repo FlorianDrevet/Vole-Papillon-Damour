@@ -137,17 +137,18 @@ l'avertissement de budget initial connu. Aucun déploiement, compte ou changemen
 
 ### État actualisé — 2026-09-10 — ajustements du header Catalog
 
-Dans `src/Catalog`, le lien desktop « Le site de l’association » partage maintenant la
-hauteur de contrôle de 42 px des autres liens et reprend leur soulignement orange au
-survol et au focus clavier. Le bouton « Mon compte » n’affiche plus le rond bleu vide
-lorsqu’aucun compte n’est connecté ; les initiales restent disponibles pour un compte
-authentifié d’administration.
+La branche `fix/catalog-upcoming-dates-mobile-ui` recompose les cartes de la section
+« Toutes les prochaines dates » de `/prochaines-dates` : date et titre restent groupés,
+les horaires et adresses forment un bloc de métadonnées lisible, les actions deviennent
+des contrôles tactiles explicites et les titres longs ne sont plus tronqués. Sous 700 px,
+la carte s'empile avec deux actions côte à côte quand la largeur le permet, puis les
+empile à 320 px ; les paliers tablette et desktop conservent une présentation dense.
 
-Validation locale : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify
-update .` et contrôles Chrome lecture seule à 1200 px et 390 px sans débordement. Le
-budget initial Angular dépasse toujours le seuil d’avertissement connu ; aucun déploiement
-n’a été effectué et la PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117)
-est ouverte.
+Validation : 121 tests ChromeHeadless Catalog, build SSR/navigateur avec l'avertissement de
+budget initial connu, `graphify update .`, et contrôles navigateur locaux à 320, 390, 768
+et 1280 px avec une API d'événements mockée. L'API publique a répondu `503` pendant le
+contrôle live ; aucun déploiement ni changement hors dépôt n'a été effectué. La PR
+[#120](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/120) est ouverte.
 
 ### État actualisé — 2026-09-10 — galerie Website et fichiers média manquants
 
@@ -1004,6 +1005,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-10 | Windows | **Catalog — refonte mobile de « Toutes les prochaines dates ».** La branche `fix/catalog-upcoming-dates-mobile-ui` sépare l'en-tête date/titre, les métadonnées et les actions de chaque carte, supprime la troncature des titres et adapte les boutons au tactile avec repli à 320 px. Validation : 121 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .`, contrôles locaux à 320/390/768/1280 px avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. PR [#120](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/120) ouverte. |
 | 2026-09-10 | Windows | **Catalog — alignement du header et état déconnecté.** Le lien « Le site de l’association » utilise la même hauteur de contrôle de 42 px que les liens desktop et reçoit leur soulignement orange au survol/focus ; le bouton « Mon compte » ne rend plus le rond vide lorsqu’il est déconnecté. Validation : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .` et contrôles Chrome à 1200/390 px sans débordement ; avertissement de budget initial Angular connu, aucun déploiement, PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117) ouverte. |
 | 2026-09-10 | Windows | **Correctif Catalog — création de compte.** Après reproduction du retour OAuth sur la racine (`#code=...`) qui laissait l’accueil affiché, le shell initialise MSAL uniquement lorsqu’un callback est présent afin de restaurer `/compte`. Validation TDD : test rouge puis vert, 121 tests ChromeHeadless, build SSR/navigateur et `graphify update .` passants ; avertissement de budget initial connu, aucune ressource Entra ni déploiement modifié, PR à ouvrir. |
 | 2026-09-09 | Windows | **Catalog — carte et agenda des prochaines bourses.** La PR [#110](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/110) met en avant la prochaine édition, réutilise les assets d’icônes du Website, restaure l’embed Google Maps après consentement dédié avec lien de repli, et liste toutes les futures bourses depuis `/asso-events`. Validation : 120 tests ChromeHeadless, build SSR/navigateur, `graphify update .` et `git diff --check` passants ; avertissement de budget initial Angular connu, aucun déploiement. |
