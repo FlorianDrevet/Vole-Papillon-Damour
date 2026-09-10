@@ -411,7 +411,7 @@ describe('ScannerComponent', () => {
     expect(actionsCenter).toBeCloseTo(availableCenter, 0);
   });
 
-  it('keeps the live preview inside the reserved area, below the alerts and above the dock', async () => {
+  it('keeps the live preview inside the reserved area, below the status strip and above the dock', async () => {
     cameraService.start.and.returnValue(Promise.resolve({
       resume: () => undefined,
       refocus: () => Promise.resolve(true),
@@ -425,7 +425,7 @@ describe('ScannerComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const rail = fixture.nativeElement.querySelector('.alert-rail') as HTMLElement;
+    const statusStrip = fixture.nativeElement.querySelector('.status-strip') as HTMLElement;
     const slot = fixture.nativeElement.querySelector('.camera-slot') as HTMLElement;
     const dock = fixture.nativeElement.querySelector('.scan-dock') as HTMLElement;
     const preview = fixture.nativeElement.querySelector('.camera-engine-host-active') as HTMLElement;
@@ -433,13 +433,13 @@ describe('ScannerComponent', () => {
     const previewBounds = preview.getBoundingClientRect();
 
     // The preview tracks the reserved placeholder and never spills over the
-    // surrounding chrome, however little room the alerts leave it.
+    // surrounding chrome, however little room the status strip leaves it.
     expect(previewBounds.left).toBeCloseTo(slotBounds.left, 0);
     expect(previewBounds.width).toBeCloseTo(slotBounds.width, 0);
     expect(previewBounds.top).toBeGreaterThanOrEqual(slotBounds.top - 1);
     expect(previewBounds.bottom).toBeLessThanOrEqual(slotBounds.bottom + 1);
     expect(previewBounds.height).toBeGreaterThan(0);
-    expect(rail.getBoundingClientRect().bottom).toBeLessThanOrEqual(previewBounds.top);
+    expect(statusStrip.getBoundingClientRect().bottom).toBeLessThanOrEqual(previewBounds.top);
     expect(previewBounds.bottom).toBeLessThanOrEqual(dock.getBoundingClientRect().top + 1);
   });
 
@@ -1055,34 +1055,82 @@ describe('ScannerComponent', () => {
       .toContain('10 ou 13');
   });
 
-  it('shows the synchronization action on every operating screen and the queue in the rail', () => {
+  it('keeps status feedback below the session bar and opens actions from the compact strip', () => {
     for (const screen of ['tri', 'cash', 'consultation'] as const) {
       const screenFixture = TestBed.createComponent(ScannerComponent);
       const screenComponent = screenFixture.componentInstance;
       screenComponent.screen = screen;
       screenComponent.pendingDecisionCount = 2;
       screenComponent.pendingTransmissionCount = 3;
+      screenComponent.isOnline = false;
       screenFixture.detectChanges();
 
-      const panel = screenFixture.nativeElement.querySelector('.status-bar') as HTMLElement | null;
+      expect(screenFixture.nativeElement.querySelector('.alert-rail')).toBeNull();
+      const modeHeader = screenFixture.nativeElement.querySelector('.mode-header') as HTMLElement;
+      const sessionBar = screenFixture.nativeElement.querySelector('.session-bar') as HTMLElement;
+      const panel = screenFixture.nativeElement.querySelector('.status-strip') as HTMLButtonElement | null;
       expect(panel).not.toBeNull();
-      expect(panel?.textContent).toContain('Synchroniser');
-      expect(panel?.textContent).not.toContain('scans en attente');
+      expect(panel?.textContent).toContain('(hors connexion)');
+      expect(panel?.textContent).toContain('(action à faire)');
+      const statusAnchor = sessionBar ?? modeHeader;
+      if (sessionBar) {
+        expect(modeHeader.compareDocumentPosition(sessionBar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      }
+      expect(statusAnchor.compareDocumentPosition(panel as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
-      const toggle = screenFixture.nativeElement.querySelector('.alert-toggle') as HTMLButtonElement;
-      expect(toggle.textContent).toContain('2');
-      toggle.click();
+      panel?.click();
       screenFixture.detectChanges();
 
-      const list = screenFixture.nativeElement.querySelector('.alert-info-list') as HTMLElement;
-      expect(list.textContent).toContain('2 décisions à prendre');
-      expect(list.textContent).toContain('3 gestes à transmettre');
+      const modal = screenFixture.nativeElement.querySelector('.status-modal') as HTMLElement | null;
+      expect(modal).not.toBeNull();
+      expect(modal?.textContent).toContain('Hors connexion');
+      expect(modal?.textContent).toContain('2 décisions à prendre');
+      expect(modal?.textContent).toContain('3 gestes à transmettre');
 
       screenFixture.destroy();
     }
   });
 
-  it('keeps blocking alerts open and folds the self-healing ones behind a counter', () => {
+  it('announces a successful automatic synchronization with a short toast', async () => {
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    sync.syncAll.and.resolveTo({
+      catalog: {booksReceived: 2, booksRemoved: 0, watermark: 'watermark'},
+      outbox: {sent: 0, remaining: 0, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
+      closed: false,
+    });
+    const status = TestBed.inject(ScanStatusService);
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      null,
+      null,
+      sync,
+      status,
+    );
+    localComponent.authAvailable = true;
+    localComponent.isAuthenticated = true;
+    localComponent.isOnline = true;
+    (localComponent as unknown as {localModeReady: boolean}).localModeReady = true;
+    const showSuccess = spyOn(status, 'showSuccess').and.callThrough();
+    const trySync = (localComponent as unknown as {trySync: () => void}).trySync;
+
+    trySync.call(localComponent);
+    await new Promise<void>(resolve => window.setTimeout(resolve, 0));
+    trySync.call(localComponent);
+    await new Promise<void>(resolve => window.setTimeout(resolve, 0));
+
+    expect(localComponent.syncToast).toBe('Synchronisation réussie');
+    expect(sync.syncAll).toHaveBeenCalledTimes(2);
+    expect(showSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps blocking details available from the compact status modal', () => {
     const railFixture = TestBed.createComponent(ScannerComponent);
     const railComponent = railFixture.componentInstance;
     railComponent.authDegraded = true;
@@ -1098,21 +1146,14 @@ describe('ScannerComponent', () => {
     expect(railComponent.priorityAlerts.map(alert => alert.id)).toEqual(['sync', 'auth-degraded']);
     expect(railComponent.infoAlerts.map(alert => alert.id))
       .toEqual(['offline', 'pending-transmissions']);
-
-    const cards = railFixture.nativeElement.querySelectorAll('.alert-card');
-    expect(cards.length).toBe(2);
-    expect(cards[0].classList).toContain('alert-card-critical');
-    expect(cards[1].classList).toContain('alert-card-warning');
-
-    const toggle = railFixture.nativeElement.querySelector('.alert-toggle') as HTMLButtonElement;
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    expect(railFixture.nativeElement.querySelector('.alert-info-list')).toBeNull();
-
-    toggle.click();
+    expect(railComponent.hasActionableStatus).toBeTrue();
+    railComponent.openStatusModal();
     railFixture.detectChanges();
 
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(railFixture.nativeElement.querySelectorAll('.alert-info-list li').length).toBe(2);
+    const modal = railFixture.nativeElement.querySelector('.status-modal') as HTMLElement;
+    expect(modal.textContent).toContain('Hors connexion');
+    expect(modal.textContent).toContain('2 entrées ont été mises en quarantaine');
+    expect(modal.textContent).toContain('4 gestes à transmettre');
 
     railFixture.destroy();
   });

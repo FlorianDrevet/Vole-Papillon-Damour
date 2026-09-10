@@ -81,102 +81,6 @@ input:focus-visible {
   background: var(--scan-paper);
 }
 
-.alert-rail {
-  display: flex;
-  max-height: 38dvh;
-  flex: none;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 16px 0;
-  overflow-y: auto;
-}
-
-.alert-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 11px 13px;
-  border: 1px solid;
-  border-radius: 10px;
-}
-
-.alert-card svg {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  margin-top: 1px;
-}
-
-.alert-card p {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.4;
-}
-
-.alert-card-critical {
-  border-color: #d9a5a5;
-  background: #fff3f3;
-  color: #6b1c1c;
-}
-
-.alert-card-warning {
-  border-color: #e2b93b;
-  background: #fff8db;
-  color: #513f00;
-}
-
-.alert-toggle {
-  display: flex;
-  min-height: 34px;
-  align-items: center;
-  align-self: flex-start;
-  gap: 7px;
-  padding: 5px 12px 5px 6px;
-  border-radius: 999px;
-  color: var(--scan-slate);
-  background: var(--scan-blue-soft);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.alert-toggle-count {
-  display: inline-flex;
-  min-width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6px;
-  border-radius: 999px;
-  color: #fff;
-  background: var(--scan-blue);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.alert-toggle-chevron {
-  width: 14px;
-  height: 14px;
-  flex: none;
-  transition: transform .18s ease;
-}
-
-.alert-toggle.is-open .alert-toggle-chevron {
-  transform: rotate(180deg);
-}
-
-.alert-info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin: 0;
-  padding: 0 0 0 18px;
-  color: var(--scan-slate);
-  font-size: 12.5px;
-  line-height: 1.4;
-}
-
 .scan-viewport {
   position: relative;
   display: flex;
@@ -1893,15 +1797,16 @@ input:focus-visible {
     animation: none;
   }
 
-  .alert-toggle-chevron {
-    transition: none;
-  }
 }
 
 @media (min-width: 600px) {
   .scan-viewport {
     width: min(100%, 390px);
     box-shadow: 0 0 42px rgb(7 43 69 / 10%);
+  }
+
+  .app-screen {
+    width: min(100%, 390px);
   }
 }
 

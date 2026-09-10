@@ -1,49 +1,92 @@
-.status-bar {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0.75rem 0;
+:host {
+  display: block;
+  flex: none;
 }
 
-.status-message {
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.45rem;
-  background: #f2eee8;
-  color: #403b42;
-  font-size: 0.9rem;
-}
-
-.status-outbox,
-.status-decision,
-.status-set-aside,
-.status-notice-action {
-  background: #fff4d8;
-  color: #6b4b20;
-}
-
-.status-notice-blocking {
-  background: #fbe2e2;
-  color: #8f2424;
-}
-
-.status-action,
-.status-recovery {
-  justify-self: start;
-  min-height: 2.4rem;
-  padding: 0.55rem 0.85rem;
-  border: 1px solid #6b4b73;
-  border-radius: 0.45rem;
-  background: #fff;
-  color: #6b4b73;
+.status-strip {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 20px;
+  border: 0;
+  border-bottom: 1px solid #d9e7ef;
+  background: #f7fbfd;
+  color: #173244;
+  cursor: pointer;
   font: inherit;
-  font-weight: 700;
+  text-align: left;
 }
 
-.status-recovery {
-  border-color: #31724f;
-  color: #31724f;
+.status-strip-offline {
+  background: #eef7fb;
 }
 
-.status-action:focus-visible {
+.status-strip-action {
+  background: #fff8e7;
+}
+
+.status-strip-indicator {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: #d6952e;
+}
+
+.status-strip-offline .status-strip-indicator {
+  background: #317da5;
+}
+
+.status-strip-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.status-strip-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+}
+
+.status-tag {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.status-tag-offline {
+  color: #236783;
+}
+
+.status-tag-action {
+  color: #8b5b13;
+}
+
+.status-strip-detail {
+  overflow: hidden;
+  color: #526879;
+  font-size: 11.5px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-strip-chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: #317da5;
+}
+
+.status-strip:focus-visible {
   outline: 3px solid #e1a94b;
-  outline-offset: 2px;
+  outline-offset: -3px;
 }

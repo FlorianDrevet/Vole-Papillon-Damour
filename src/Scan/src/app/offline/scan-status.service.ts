@@ -10,7 +10,7 @@ export interface ScanStatusSnapshot {
 }
 
 export interface ScanStatusMessage {
-  level: 'info' | 'action' | 'blocking';
+  level: 'success' | 'info' | 'action' | 'blocking';
   text: string;
 }
 
@@ -104,6 +104,10 @@ export class ScanStatusService {
 
   showInfo(text: string): void {
     this.showMessage({level: 'info', text}, 8_000);
+  }
+
+  showSuccess(text: string): void {
+    this.showMessage({level: 'success', text}, 3_200);
   }
 
   showAction(text: string): void {

@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Relire la PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) sur la formulation du film de Maxence, ainsi que la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121), avant tout déploiement. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-maxence-film-wording` |
-| **Dernière mise à jour** | 2026-09-10 — formulation du film de Maxence ajustée, PR #126 ouverte, aucun déploiement |
-| **Branche** | `fix/website-maxence-film-wording` — worktree dédié, synchronisée avec `origin/main`, PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte |
+| **Lot en cours** | `Scan` — hiérarchie d’état et synchronisation automatique de l’application bénévole. |
+| **Prochaine action** | Relire la PR de cette branche et effectuer le smoke test connecté sur `/accueil` avant tout déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-auto-sync` |
+| **Dernière mise à jour** | 2026-09-11 — synchronisation automatique et bandeau d’état compact, PR à ouvrir, aucun déploiement |
+| **Branche** | `fix/scan-auto-sync-header` — worktree dédié, basé sur `origin/main`, PR à ouvrir |
 
 ---
 
@@ -77,6 +77,21 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-11 — synchronisation automatique et hiérarchie d’état Scan
+
+Dans `src/Scan`, le shell authentifié ne rend plus l’ancien en-tête global « Retour / Bourse aux
+livres », ni le panneau de synchronisation au-dessus du trait multicolore. La synchronisation
+reste automatique à l’arrivée après l’initialisation locale et l’autorisation du compte, puis à
+la reconnexion et sur le cycle périodique existant. Une réussite affiche seulement le toast
+éphémère « Synchronisation réussie ».
+
+Les échecs et états nécessitant une intervention sont regroupés dans `scan-status-bar` sous
+l’en-tête de mode et, lorsqu’il existe, sous la barre de session bénévole. La ligne compacte
+affiche les tags `(hors connexion)` et `(action à faire)` puis ouvre une modal d’état avec les
+actions disponibles : réessai, reprise de session, retour au tri ou ouverture des reprises.
+Les détails critiques restent accessibles dans cette modal ; aucun nouveau stockage ou contrat
+API n’est introduit. Le smoke connecté de production reste à faire après revue de la PR.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 

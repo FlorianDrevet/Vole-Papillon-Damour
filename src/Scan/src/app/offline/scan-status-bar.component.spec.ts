@@ -2,45 +2,46 @@ import {CommonModule} from '@angular/common';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {ScanStatusBarComponent} from './scan-status-bar.component';
-import {ScanStatusService} from './scan-status.service';
 
 describe('ScanStatusBarComponent', () => {
   let fixture: ComponentFixture<ScanStatusBarComponent>;
-  let status: ScanStatusService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [ScanStatusBarComponent],
       imports: [CommonModule],
-      providers: [ScanStatusService],
     }).compileComponents();
 
-    status = TestBed.inject(ScanStatusService);
-    status.updateFromLocalState(
-      {
-        key: 'catalog-sync',
-        watermark: 'watermark',
-        updatedAt: '2026-09-09T09:00:00.000Z',
-        nextFair: null,
-      },
-      {pendingDecisionCount: 1, pendingTransmissionCount: 2},
-      {orphaned: 1, quarantined: 0},
-      new Date('2026-09-09T10:00:00.000Z'),
-    );
-
     fixture = TestBed.createComponent(ScanStatusBarComponent);
-    fixture.detectChanges();
   });
 
-  it('renders each active axis in its own message', () => {
-    expect(fixture.nativeElement.querySelector('.status-catalog')?.textContent)
-      .toContain('Catalogue à jour');
-    expect(fixture.nativeElement.querySelector('.status-outbox')?.textContent)
-      .toContain('2 livres en attente d’envoi');
-    expect(fixture.nativeElement.querySelector('.status-decision')?.textContent)
-      .toContain('1 livre attend une décision');
-    expect(fixture.nativeElement.querySelector('.status-set-aside')?.textContent)
-      .toContain('1 livre attend une reprise');
-    expect(fixture.nativeElement.querySelectorAll('.status-message').length).toBe(4);
+  it('renders a compact actionable strip instead of the legacy synchronization panel', () => {
+    const bar = fixture.componentInstance;
+    bar.offline = true;
+    bar.actionRequired = true;
+    bar.detail = '3 livres restent sur cet appareil.';
+    fixture.detectChanges();
+
+    const strip = fixture.nativeElement.querySelector('.status-strip') as HTMLElement | null;
+    expect(strip).not.toBeNull();
+    expect(strip?.textContent).toContain('(hors connexion)');
+    expect(strip?.textContent).toContain('(action à faire)');
+    expect(strip?.textContent).toContain('3 livres restent sur cet appareil.');
+    expect(fixture.nativeElement.querySelector('.status-action')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.status-catalog')).toBeNull();
+  });
+
+  it('emits a status request when the compact strip is opened', () => {
+    const bar = fixture.componentInstance;
+    bar.offline = false;
+    bar.actionRequired = true;
+    bar.detail = 'La dernière synchronisation doit être vérifiée.';
+    let requested = false;
+    bar.statusRequested.subscribe(() => requested = true);
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.status-strip') as HTMLButtonElement).click();
+
+    expect(requested).toBeTrue();
   });
 });

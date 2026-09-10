@@ -1,6 +1,4 @@
-import {Component, EventEmitter, Output} from '@angular/core';
-
-import {ScanStatusService} from './scan-status.service';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 
 @Component({
   selector: 'scan-status-bar',
@@ -9,8 +7,12 @@ import {ScanStatusService} from './scan-status.service';
   standalone: false,
 })
 export class ScanStatusBarComponent {
-  @Output() readonly syncRequested = new EventEmitter<void>();
-  @Output() readonly recoveryRequested = new EventEmitter<void>();
+  @Input() offline = false;
+  @Input() actionRequired = false;
+  @Input() detail = '';
+  @Output() readonly statusRequested = new EventEmitter<void>();
 
-  constructor(readonly status: ScanStatusService) {}
+  get isVisible(): boolean {
+    return this.offline || this.actionRequired;
+  }
 }
