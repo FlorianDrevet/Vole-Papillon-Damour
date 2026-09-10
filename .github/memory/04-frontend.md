@@ -11,6 +11,13 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
 - `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, cash
   sales, IndexedDB persistence, and volunteer authentication/synchronization
 
+As of 2026-09-10, Website `/association/photos` opens every catalog card in an accessible
+image-selection dialog, keeps the Books Fair album last, and places the Maxence history
+banner after the video catalog. The hero includes a three-image mosaic. The mixed video
+grid uses top-aligned, self-sized cards and `object-contain` so landscape videos do not
+create stretched empty cards beside portrait videos. Local validation passes 70
+ChromeHeadless tests and the SSR/production build; no deployment was made.
+
 The public catalog is intentionally separate from the association Website. It uses typed
 `CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
 the next books fair, and the dynamic sitemap; the home calendar also consumes the existing

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 
 type PhotoAlbum = Readonly<{
   title: string;
@@ -37,13 +37,13 @@ export class PicturesComponent {
     'images/Association/don-dvd.jpg',
   ];
 
-  readonly photoAlbums: readonly PhotoAlbum[] = [
+  private readonly albumCatalog: readonly PhotoAlbum[] = [
     {
       title: 'Bourse aux livres',
       eyebrow: 'L’association · album simple',
       description: 'Les livres, les cartons et les visages derrière chaque collecte.',
       photoCount: this.donationPhotos.length,
-      previewPhotos: this.donationPhotos.slice(0, 3),
+      previewPhotos: this.donationPhotos,
     },
     {
       title: 'Maxence · 2004–2010',
@@ -95,6 +95,11 @@ export class PicturesComponent {
       photoCount: 15,
       previewPhotos: ['images/Association/Gallery/celebrites-yannick-noah.jpg'],
     },
+  ];
+
+  readonly photoAlbums: readonly PhotoAlbum[] = [
+    ...this.albumCatalog.slice(1),
+    this.albumCatalog[0],
   ];
 
   readonly videos: readonly VideoAsset[] = [
@@ -225,4 +230,28 @@ export class PicturesComponent {
       poster: 'images/Association/Gallery/maxence-2004-2010-03.jpg',
     },
   ];
+
+  selectedAlbum: PhotoAlbum | null = null;
+
+  openAlbum(album: PhotoAlbum): void {
+    this.selectedAlbum = album;
+  }
+
+  onAlbumKeydown(album: PhotoAlbum, event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openAlbum(album);
+    }
+  }
+
+  closeAlbum(): void {
+    this.selectedAlbum = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  closeAlbumWithEscape(): void {
+    if (this.selectedAlbum) {
+      this.closeAlbum();
+    }
+  }
 }
