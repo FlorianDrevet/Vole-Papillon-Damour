@@ -2,6 +2,7 @@ using Mapster;
 using Vole_Papillon_Damour.Application.Actuality.Commands.UpdateActuality;
 using Vole_Papillon_Damour.Application.Actuality.Common;
 using Vole_Papillon_Damour.Contracts.Actuality.Requests;
+using Vole_Papillon_Damour.Contracts.Actuality.Responses;
 using Vole_Papillon_Damour.Domain.ActualityAggregate;
 using Vole_Papillon_Damour.Domain.ActualityAggregate.ValueObjects;
 
@@ -22,6 +23,12 @@ public class ActualityMappingConfig : IRegister
         
         config.NewConfig<Actuality, ActualityResult>()
             .Map(dest => dest.Id, src => src.Id.Value)
-            .Map(dest => dest.UrlPrincipalImage, src => src.UrlPrincipalImage);
+            .Map(dest => dest.UrlPrincipalImage, src => src.UrlPrincipalImage)
+            .Map(dest => dest.Status, src => src.Status)
+            .Map(dest => dest.TitleNeedsReview, src => src.TitleNeedsReview)
+            .Map(dest => dest.ImportedAt, src => src.ImportedAt);
+
+        config.NewConfig<ActualityResult, ActualityResponse>()
+            .Map(dest => dest.Status, src => src.Status.ToString());
     }
 }

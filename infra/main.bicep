@@ -216,6 +216,46 @@ param jwtExpiryMinutes int
 @secure()
 param googleBooksApiKey string = ''
 
+@description('Optional long-lived Instagram Graph API access token')
+@secure()
+param instagramAccessToken string = ''
+
+@description('Timer schedule for the social actuality import Function')
+param socialImportSchedule string = '0 */30 * * * *'
+
+@description('Instagram Graph API version used by the social actuality importer')
+param socialImportGraphApiVersion string = 'v22.0'
+
+@description('Professional Instagram account identifier used by the social actuality importer')
+param socialImportUserId string = ''
+
+@description('UTC date before which Instagram publications are ignored')
+param socialImportFloorDate string = ''
+
+@description('Maximum number of social actualities created by one import pass')
+param socialImportMaxPostsPerRun int = 5
+
+@description('ISO-8601 timestamp when the configured Instagram long-lived token was issued')
+param socialImportAccessTokenIssuedAt string = ''
+
+@description('Whether to provision the Azure OpenAI title-generation account')
+param titleGenerationEnabled bool = false
+
+@description('Name of the Azure OpenAI title-generation account')
+param titleGenerationAccountName string = ''
+
+@description('Name of the Azure OpenAI title-generation deployment')
+param titleGenerationDeploymentName string = 'actuality-title'
+
+@description('Model family used to propose actuality titles')
+param titleGenerationModelName string = 'gpt-4.1-nano'
+
+@description('Model version used to propose actuality titles')
+param titleGenerationModelVersion string = '2025-04-14'
+
+@description('Azure region hosting the title-generation account')
+param titleGenerationLocation string = 'francecentral'
+
 // -----------------------------------------------------------------------
 // Computed
 // -----------------------------------------------------------------------
@@ -474,6 +514,58 @@ module slowBookMetadataAlert './modules/Monitor/scheduledQueryRule.module.bicep'
   }
 }
 
+module socialImportFailureAlert './modules/Monitor/scheduledQueryRule.module.bicep' = if (!empty(instagramAccessToken) && !empty(socialImportUserId)) {
+  name: 'socialImportFailureAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-social-import-failures', 'alert', env)
+    displayName: 'Social actuality import failed three times'
+    ruleDescription: 'Three consecutive social actuality import passes failed within the two-hour observation window.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where TimeGenerated > ago(2h) | where Message startswith "Social actuality import completed." or Message startswith "Social actuality import authentication failed" or Message startswith "Social actuality import was throttled" or Message startswith "Social actuality import failed unexpectedly." | sort by TimeGenerated asc | serialize | extend IsFailure = iff(Message startswith "Social actuality import completed.", 0, 1) | extend FailureSequence = row_cumsum(1 - IsFailure) | summarize FailureCount = countif(IsFailure == 1), LastFailure = maxif(TimeGenerated, IsFailure == 1) by FailureSequence | where FailureCount >= 3 and LastFailure > ago(2h)'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 1
+    windowSize: 'PT2H'
+    tags: tags
+  }
+}
+
+module socialImportAuthenticationAlert './modules/Monitor/scheduledQueryRule.module.bicep' = if (!empty(instagramAccessToken) && !empty(socialImportUserId)) {
+  name: 'socialImportAuthenticationAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-social-authentication', 'alert', env)
+    displayName: 'Social actuality import authentication rejected'
+    ruleDescription: 'The Instagram provider rejected the configured access token or permissions.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where Message startswith "Social actuality import authentication failed"'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 0
+    tags: tags
+  }
+}
+
+module socialImportTokenExpiryAlert './modules/Monitor/scheduledQueryRule.module.bicep' = if (!empty(instagramAccessToken) && !empty(socialImportUserId) && !empty(socialImportAccessTokenIssuedAt)) {
+  name: 'socialImportTokenExpiryAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-social-token-expiry', 'alert', env)
+    displayName: 'Social actuality access token is near expiry'
+    ruleDescription: 'The configured long-lived Instagram access token is at least 45 days old and must be renewed.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where Message startswith "Social actuality access token is near expiry"'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 1
+    tags: tags
+  }
+}
+
 // -----------------------------------------------------------------------
 // Data
 // -----------------------------------------------------------------------
@@ -534,6 +626,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
     jwtSecret: jwtSecret
     entraGraphClientSecret: entraGraphClientSecret
     googleBooksApiKey: googleBooksApiKey
+    instagramAccessToken: instagramAccessToken
   }
   dependsOn: [
     keyVaultModule
@@ -600,6 +693,20 @@ module userAssignedIdentityWorkerModule './modules/UserAssignedIdentity/userAssi
   params: {
     location: env.location
     name: BuildResourceName('vpd-worker', 'id', env)
+    tags: tags
+  }
+}
+
+module actualityTitleGenerationModule './modules/AiFoundry/aiFoundry.module.bicep' = if (titleGenerationEnabled) {
+  name: 'actualityTitleGeneration'
+  scope: applicationResourceGroup
+  params: {
+    location: titleGenerationLocation
+    name: titleGenerationAccountName
+    deploymentName: titleGenerationDeploymentName
+    modelName: titleGenerationModelName
+    modelVersion: titleGenerationModelVersion
+    workerPrincipalId: userAssignedIdentityWorkerModule.outputs.principalId
     tags: tags
   }
 }
@@ -1106,6 +1213,9 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
     ], empty(googleBooksApiKey) ? [] : [{
       name: 'google-books-api-key'
       keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
+    }], empty(instagramAccessToken) ? [] : [{
+      name: 'instagram-access-token'
+      keyVaultUrl: appSecretsModule.outputs.secretUris['instagram-access-token']
     }])
     envVars: concat([
       {
@@ -1131,6 +1241,22 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'AzureFunctionsJobHost__Logging__Console__IsEnabled'
         value: 'true'
+      }
+      {
+        name: 'SocialImport__Schedule'
+        value: socialImportSchedule
+      }
+      {
+        name: 'SocialImport__GraphApiVersion'
+        value: socialImportGraphApiVersion
+      }
+      {
+        name: 'SocialImport__UserId'
+        value: socialImportUserId
+      }
+      {
+        name: 'SocialImport__MaxPostsPerRun'
+        value: string(socialImportMaxPostsPerRun)
       }
       {
         name: 'AzureWebJobsStorage'
@@ -1188,6 +1314,16 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         name: 'AZURE_CLIENT_ID'
         value: userAssignedIdentityWorkerModule.outputs.clientId
       }
+    ], empty(socialImportFloorDate) ? [] : [
+      {
+        name: 'SocialImport__ImportFloorDate'
+        value: socialImportFloorDate
+      }
+    ], empty(socialImportAccessTokenIssuedAt) ? [] : [
+      {
+        name: 'SocialImport__AccessTokenIssuedAt'
+        value: socialImportAccessTokenIssuedAt
+      }
     ], empty(googleBooksApiKey) ? [] : [
       // The Google Books key is optional. Do not create a dangling Container App
       // secret reference when the deployment intentionally uses quota-less mode.
@@ -1195,7 +1331,21 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         name: 'Bibliographic__GoogleBooksApiKey'
         secretRef: 'google-books-api-key'
       }
-    ])
+    ], empty(instagramAccessToken) ? [] : [
+      {
+        name: 'SocialImport__AccessToken'
+        secretRef: 'instagram-access-token'
+      }
+    ], titleGenerationEnabled ? [
+      {
+        name: 'TitleGeneration__Endpoint'
+        value: actualityTitleGenerationModule!.outputs.endpoint
+      }
+      {
+        name: 'TitleGeneration__DeploymentName'
+        value: titleGenerationDeploymentName
+      }
+    ] : [])
   }
   dependsOn: [
     containerAppWorkerAcrRoles

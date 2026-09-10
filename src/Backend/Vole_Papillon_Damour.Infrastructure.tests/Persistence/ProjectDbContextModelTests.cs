@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
+using Vole_Papillon_Damour.Domain.ActualityAggregate;
+using Vole_Papillon_Damour.Domain.ActualityAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
@@ -29,6 +31,14 @@ public sealed class ProjectDbContextModelTests
         model.FindEntityType(typeof(WatchlistItem))!.GetTableName().Should().Be("WatchlistItems");
         model.FindEntityType(typeof(UserAlertHistory))!.GetTableName().Should().Be("UserAlertHistory");
         model.FindEntityType(typeof(EmailBounceEvent))!.GetTableName().Should().Be("EmailBounceEvents");
+        model.FindEntityType(typeof(Actuality))!.GetTableName().Should().Be("Actualities");
+        model.FindEntityType(typeof(SocialPostImport))!.GetTableName().Should().Be("SocialPostImports");
+
+        var actualities = model.FindEntityType(typeof(Actuality))!;
+        actualities.FindProperty(nameof(Actuality.Status))!.GetDefaultValue()
+            .Should().Be(ActualityStatus.Published);
+        actualities.FindProperty(nameof(Actuality.TitleNeedsReview))!.GetDefaultValue()
+            .Should().Be(false);
 
         var books = model.FindEntityType(typeof(Book))!;
         books.FindProperty(nameof(Book.RowVersion))!.IsConcurrencyToken.Should().BeTrue();
@@ -107,6 +117,23 @@ public sealed class ProjectDbContextModelTests
             .IsUnique
             .Should()
             .BeTrue();
+    }
+
+    [Fact]
+    public void Model_EnforcesOneImportPerSocialPost()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var imports = model.FindEntityType(typeof(SocialPostImport))!;
+        imports.GetIndexes()
+            .Should()
+            .ContainSingle(index => index.IsUnique && index.Properties.Select(property => property.Name)
+                .SequenceEqual(new[]
+                {
+                    nameof(SocialPostImport.Source),
+                    nameof(SocialPostImport.ExternalId),
+                }));
     }
 
     private static ProjectDbContext CreateContext()

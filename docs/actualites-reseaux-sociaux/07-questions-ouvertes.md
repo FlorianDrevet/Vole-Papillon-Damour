@@ -4,7 +4,7 @@
 
 Elles ne se décident pas en réunion : elles se **constatent**, dans l'application
 Instagram et dans le Business Manager de Meta. Tant qu'elles n'ont pas de réponse, le
-palier `L2` ne peut pas commencer. Le palier `L1` — le socle éditorial — peut être
+activation de la v1 reste bloquée. Le palier `L1` — le socle éditorial — peut être
 construit sans elles.
 
 ### `Q-ACT-01` — Le compte Instagram est-il **professionnel** ?

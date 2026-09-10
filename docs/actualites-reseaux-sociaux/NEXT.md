@@ -17,19 +17,20 @@
 
 | | |
 |---|---|
-| **Palier en cours** | Aucun. La spécification est écrite, rien n'est implémenté |
-| **Prochaine action** | Répondre à `Q-ACT-01` (le compte Instagram est-il professionnel ?) et `Q-ACT-04` (qui détient l'application Meta ?). Dix minutes, dans l'application Instagram et dans le Business Manager |
-| **Ce qui peut démarrer sans attendre** | Le palier `L1` — statut brouillon, filtrage des lectures publiques, écran BackOffice, `white-space: pre-line`. Aucune dépendance à Meta |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour\.claude\worktrees\feat-facebook-news-sync` |
-| **Dernière mise à jour** | 2026-09-10 — spécification écrite, aucune ressource créée nulle part |
-| **Branche** | `worktree-feat-facebook-news-sync` — worktree dédié |
+| **Palier en cours** | Mise en service externe de la v1 après implémentation des paliers `L1` à `L4` |
+| **Prochaine action** | Répondre à `Q-ACT-01` (compte Instagram professionnel) et `Q-ACT-04` (propriétaire de l'application Meta), puis fournir l'identifiant du compte, le jeton et la date plancher au déploiement |
+| **Ce qui est prêt dans le code** | Brouillons, lectures publiques filtrées, relecture/publication BackOffice, import Instagram minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-facebook-news` |
+| **Dernière mise à jour** | 2026-09-10 — implémentation `L1` à `L4` validée localement ; aucune ressource externe créée |
+| **Branche** | `feat/facebook-news` — worktree dédié, livraison vers la PR `#122` |
 
 ---
 
-## Ce qui n'existe encore nulle part
+## Ressources externes encore à créer
 
-Aucune des ressources ci-dessous n'a été créée. C'est la liste à cocher avant que le
-palier `L2` puisse commencer.
+Le dépôt contient désormais le code et les modules de déploiement, mais aucune ressource
+Meta, Key Vault, Foundry ou Azure Monitor n'a été créée ou modifiée par cette livraison.
+Voici la liste à cocher avant l'activation réelle de l'import.
 
 | Ressource | Où | État | Bloque |
 |---|---|---|---|
@@ -39,10 +40,10 @@ palier `L2` puisse commencer.
 | Revue d'application, accès avancé à `instagram_business_basic` | developers.facebook.com | **Non demandée** | `L2` |
 | Jeton longue durée, posé dans Key Vault sous `instagram-access-token` | Azure Key Vault du projet | **Non créé** | `L2` |
 | Identifiant du compte Instagram (`SocialImport__UserId`) | Graph API, après authentification | **Inconnu** | `L2` |
-| Version de la Graph API à figer | — | **Non tranchée** — à relever au moment de l'implémentation | `L2` |
-| Ressource Azure AI Foundry + déploiement de modèle | Abonnement Azure du projet | **Non créée** | `L3` |
-| Rôle `Cognitive Services OpenAI User` pour l'identité managée du Worker | Azure | **Non attribué** | `L3` |
-| Règles d'alerte (jeton, échecs répétés) | Azure Monitor, groupe d'action existant | **Non créées** | `L4` |
+| Version de la Graph API à figer | Configuration du Worker | **Fixée dans le code à `v22.0` ; à confirmer au moment de l'activation** | `L2` |
+| Ressource Azure AI Foundry + déploiement de modèle | Abonnement Azure du projet | **Module Bicep prêt, ressource non créée** | `L3` |
+| Rôle `Cognitive Services OpenAI User` pour l'identité managée du Worker | Azure | **Attribution Bicep prête, rôle non attribué** | `L3` |
+| Règles d'alerte (jeton, authentification, échecs répétés) | Azure Monitor, groupe d'action existant | **Modules Bicep prêts, règles non créées** | `L4` |
 | Page Facebook de l'association | facebook.com | **Non créée**, et pas décidée (`Q-ACT-03`) | `L5` |
 
 ---
@@ -69,9 +70,9 @@ Ce que la spécification a déjà tranché, et qui n'attend plus personne.
 
 | Question | Attendue de | Bloquant ? |
 |---|---|---|
-| `Q-ACT-01` — le compte Instagram est-il professionnel ? | L'association, en trois écrans | **Oui**, totalement |
+| `Q-ACT-01` — le compte Instagram est-il professionnel ? | L'association, en trois écrans | **Oui**, activation impossible sans réponse |
 | `Q-ACT-02` — le compte est-il relié à une page Facebook ? | L'association | Non si l'on prend Instagram Login |
-| `Q-ACT-04` — qui détient l'application Meta ? | Le bureau | **Oui**, avant de créer quoi que ce soit |
+| `Q-ACT-04` — qui détient l'application Meta ? | Le bureau | **Oui**, avant de créer l'application |
 | `Q-ACT-03` — crée-t-on une page Facebook ? | Le bureau | Non pour la v1 ; conditionne le palier `L5` |
 | `Q-ACT-08` — le jeton se renouvelle-t-il tout seul ? | Arbitrage technique, à prendre au palier `L4` | Non |
 | `Q-ACT-05`, `Q-ACT-06`, `Q-ACT-07` | Se répondent **après** avoir vu de vrais imports | Non |
@@ -91,13 +92,15 @@ Ce que la spécification a déjà tranché, et qui n'attend plus personne.
 
 ## Les tests manuels à passer, et par qui
 
-Aucun n'a été fait. Trois échappent au développeur seul.
+Les tests automatisés locaux sont passés ; les essais avec une vraie publication et les
+vérifications visuelles restent à faire après configuration. Trois échappent au
+développeur seul.
 
 | Test | Qui | Quand |
 |---|---|---|
-| Une actualité existante reste visible après la migration | Développeur | `L1`, avant tout déploiement |
-| Un brouillon n'apparaît nulle part sur le site public, y compris par son URL directe | Développeur | `L1` |
-| Une légende à plusieurs paragraphes s'affiche correctement sur mobile et desktop | Développeur | `L1` |
+| Une actualité existante reste visible après la migration | Développeur | **Tests de modèle et défaut `Published` passés ; vérification DEV à faire** |
+| Un brouillon n'apparaît nulle part sur le site public, y compris par son URL directe | Développeur | **Handlers filtrés et testés ; vérification HTTP DEV à faire** |
+| Une légende à plusieurs paragraphes s'affiche correctement sur mobile et desktop | Développeur | **Code `pre-line` livré ; test navigateur à faire** |
 | Le parcours complet : publier sur Facebook → voir le brouillon → publier → voir le site | **Avec la présidente**, sur une vraie publication | `L2` |
 | Le brouillon rend le contrôle du droit à l'image praticable : les images sont assez grandes pour décider | **Un administrateur non développeur** | `L2` |
 | Les titres proposés sont acceptables sur de vrais contenus | **Un administrateur non développeur** | `L3` |
@@ -106,6 +109,34 @@ Aucun n'a été fait. Trois échappent au développeur seul.
 ---
 
 ## Journal
+
+### 2026-09-10 — implémentation des paliers L1 à L4
+
+La branche de la PR `#122` contient maintenant l'implémentation dans l'ordre du plan :
+
+- `L1` : `ActualityStatus`, brouillons importés, migration `AddSocialActualityImport`,
+  trace `SocialPostImport`, filtrage des lectures publiques, endpoints `drafts` et
+  `publish`, relecture BackOffice et rendu `pre-line` ;
+- `L2` : `InstagramFeedClient` officiel, fonction `ImportSocialActualities` minutée,
+  nettoyage de légende, téléchargement préalable de tous les médias, copie Blob,
+  plafond configurable, idempotence et secret Key Vault conditionnel ;
+- `L3` : générateur `Microsoft.Extensions.AI` branché sur Azure OpenAI/Foundry par
+  identité managée, validation mécanique du titre et repli par date ;
+- `L4` : alerte de jeton proche de l'expiration, alerte d'authentification, détection de
+  trois échecs consécutifs, garde-fou de cinq posts et signalement des brouillons de
+  plus de trente jours.
+
+La validation locale couvre le build de la solution .NET, `90` tests Domain, `191`
+tests Application, `94` tests Infrastructure, `15` tests API, le build Worker, les
+deux compilations Bicep, le contrat de bootstrap BackOffice et les builds Angular ; le
+Website pré-rend ses 25 routes. Les avertissements de budget Angular et CommonJS du
+dépôt restent présents. Aucune migration, ressource Azure, configuration Meta,
+déploiement ou test avec un vrai compte n'a été effectué.
+
+La source v1 reste **Instagram professionnel uniquement**. Une publication Facebook
+recopiée vers Instagram est donc récupérable via le compte Instagram ; un profil
+Facebook personnel ne l'est pas. La Page Facebook, le webhook `feed` et la vérification
+`X-Hub-Signature-256` restent le palier `L5`, conditionné à `Q-ACT-03`.
 
 ### 2026-09-10 — spécification écrite
 
@@ -125,5 +156,6 @@ Meta et sourcés dans [`02`](02-sources-et-contraintes-plateformes.md) :
   Facebook. Le déclencheur est donc un minuteur, et l'événementiel reste conditionné à
   la création d'une page (`Q-ACT-03`).
 
-Aucune ressource créée, aucun code écrit, aucun déploiement. Aucun compte Meta ni Azure
-n'a été touché.
+À cette date, aucune ressource externe n'était créée et aucun compte Meta ou Azure
+n'avait été touché. La spécification est ensuite devenue l'implémentation décrite
+ci-dessus, sans modifier ces ressources externes.

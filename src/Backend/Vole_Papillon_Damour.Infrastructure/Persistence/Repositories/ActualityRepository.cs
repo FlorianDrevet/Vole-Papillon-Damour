@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.Entities;
 using Vole_Papillon_Damour.Domain.EventsAggregate;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ActualityAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Infrastructure.Persistence.Repositories;
 
@@ -16,6 +17,10 @@ public class ActualityRepository: BaseRepository<Actuality, ProjectDbContext>, I
 
     public Task<List<Actuality>> GetLatestActualityAsync()
     {
-        return Context.Actualities.OrderByDescending(x => x.Date).Take(3).ToListAsync();
+        return Context.Actualities
+            .Where(actuality => actuality.Status == ActualityStatus.Published)
+            .OrderByDescending(x => x.Date)
+            .Take(3)
+            .ToListAsync();
     }
 }

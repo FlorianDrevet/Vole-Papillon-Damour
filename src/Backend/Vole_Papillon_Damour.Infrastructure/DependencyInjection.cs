@@ -1,9 +1,12 @@
 using System.Text;
+using Azure.AI.OpenAI;
+using Azure.Identity;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +16,7 @@ using Microsoft.Identity.Web;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Authentication;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 using Vole_Papillon_Damour.Infrastructure.Authentication;
 using Vole_Papillon_Damour.Infrastructure.Extensions;
@@ -22,6 +26,8 @@ using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
+using Vole_Papillon_Damour.Infrastructure.Services.Ai;
+using Vole_Papillon_Damour.Infrastructure.Services.Social;
 
 namespace Vole_Papillon_Damour.Infrastructure;
 
@@ -74,6 +80,12 @@ public static class DependencyInjection
         services.AddScoped<IEntraAccountDirectory>(provider => provider.GetRequiredService<EntraGraphUserDirectory>());
         services.Configure<BibliographicOptions>(
             builderConfiguration.GetSection(BibliographicOptions.SectionName));
+        services.Configure<SocialImportOptions>(
+            builderConfiguration.GetSection(SocialImportOptions.SectionName));
+        services.Configure<InstagramOptions>(
+            builderConfiguration.GetSection(InstagramOptions.SectionName));
+        services.Configure<TitleGenerationOptions>(
+            builderConfiguration.GetSection(TitleGenerationOptions.SectionName));
         services.AddHttpClient<IBnfSruClient, BnfSruClient>((serviceProvider, client) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
@@ -94,8 +106,51 @@ public static class DependencyInjection
         });
         services.AddScoped<IBibliographicMetadataResolver, BibliographicMetadataResolver>();
         services.AddScoped<IBibliographicSearchService, BibliographicSearchService>();
+        services.AddScoped<IActualityImportStore, ActualityImportStore>();
+        AddActualityTitleGeneration(services, builderConfiguration);
+        services.AddHttpClient<ISocialFeedClient, InstagramFeedClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<InstagramOptions>>().Value;
+            client.BaseAddress = new Uri(options.ApiBaseUrl);
+            client.Timeout = TimeSpan.FromMilliseconds(options.TimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
+        services.AddHttpClient<IMediaDownloader, MediaDownloader>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<InstagramOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(options.TimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
         
         return services;
+    }
+
+    private static void AddActualityTitleGeneration(
+        IServiceCollection services,
+        IConfiguration builderConfiguration)
+    {
+        var section = builderConfiguration.GetSection(TitleGenerationOptions.SectionName);
+        var endpoint = section.GetValue<string>(nameof(TitleGenerationOptions.Endpoint));
+        var deploymentName = section.GetValue<string>(nameof(TitleGenerationOptions.DeploymentName));
+
+        if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(deploymentName))
+        {
+            services.AddScoped<IActualityTitleGenerator, NoOpActualityTitleGenerator>();
+            return;
+        }
+
+        services.AddSingleton<IChatClient>(serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<TitleGenerationOptions>>().Value;
+            var azureOpenAiClient = new AzureOpenAIClient(
+                new Uri(options.Endpoint),
+                new DefaultAzureCredential());
+
+            return azureOpenAiClient
+                .GetChatClient(options.DeploymentName)
+                .AsIChatClient();
+        });
+        services.AddScoped<IActualityTitleGenerator, FoundryActualityTitleGenerator>();
     }
 
     public static IServiceCollection AddBookMetadataEnrichmentProcessing(

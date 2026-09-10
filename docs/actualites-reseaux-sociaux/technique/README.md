@@ -3,6 +3,14 @@
 > Comment construire ce que décrivent les documents fonctionnels du dossier parent.
 > Les décisions déjà tranchées portent le préfixe `DT-ACT`.
 
+## État de l'implémentation
+
+Les paliers `L1` à `L4` sont présents dans la branche de la PR #122 : domaine et
+migration, import Instagram minuté, titres Foundry avec repli, alertes, garde-fou de
+volume et relecture BackOffice. Les ressources Meta, Key Vault et Foundry ne sont pas
+créées par le dépôt tant que les décisions `Q-ACT-01` et `Q-ACT-04` ne sont pas prises.
+Le palier `L5` (page Facebook et webhook) reste hors de cette livraison.
+
 ## 1. Les décisions
 
 | # | Décision | Motif |
@@ -52,7 +60,7 @@ en base, pas dans le code, donc elle tient même si deux passages se chevauchaie
 
 ### Migration EF
 
-Une seule migration, `AddActualityImportTracking` :
+Une seule migration, `AddSocialActualityImport` :
 
 - `Actualities.Status` (`int`, non nul, **défaut `Published`**) — c'est ce défaut qui
   garantit qu'aucune actualité existante ne disparaît du site au déploiement ;
@@ -122,8 +130,11 @@ Un échec sur un post n'interrompt pas la boucle : il est compté et journalisé
 Infrastructure/Services/Social/
   InstagramFeedClient.cs        ISocialFeedClient, HttpClient typé
   InstagramOptions.cs           GraphApiVersion, UserId, AccessToken,
-                                ImportFloorDate, MaxPostsPerRun, TimeoutMilliseconds
+                                AccessTokenIssuedAt, TimeoutMilliseconds
   MediaDownloader.cs            télécharge une URL de CDN vers un Stream
+Application/Common/Models/
+  SocialImportOptions.cs        ImportFloorDate, MaxPostsPerRun
+  SocialPost.cs, SocialPostMedia.cs
 Infrastructure/Services/Ai/
   FoundryActualityTitleGenerator.cs   IActualityTitleGenerator
   TitleGenerationOptions.cs           Endpoint, DeploymentName, Temperature,
@@ -194,10 +205,11 @@ worker de `main.bicep`.
 
 ```
 SocialImport__Schedule            0 */30 * * * *
-SocialImport__GraphApiVersion     v2x.0
+SocialImport__GraphApiVersion     v22.0
 SocialImport__UserId              <id du compte professionnel>
 SocialImport__ImportFloorDate     <date de mise en service>
 SocialImport__MaxPostsPerRun      5
+SocialImport__AccessTokenIssuedAt <timestamp ISO-8601 d'émission>
 SocialImport__AccessToken         → secretRef: instagram-access-token
 TitleGeneration__Endpoint         https://<foundry>.openai.azure.com/
 TitleGeneration__DeploymentName   <nom du déploiement>
@@ -212,9 +224,10 @@ modules `*.roleassignments.module.bicep` à copier).
 
 ### Alertes
 
-Deux règles `scheduledQueryRule`, sur le groupe d'action existant :
+Trois règles `scheduledQueryRule`, sur le groupe d'action existant :
 
 - échecs consécutifs de la fonction (`ENF-ACT-06`) ;
+- rejet d'authentification immédiat (`ENF-ACT-07`) ;
 - expiration proche du jeton (`ENF-ACT-05`) — la fonction émet une trace dédiée quand
   l'âge du jeton dépasse 45 jours, et la règle la surveille.
 
@@ -267,6 +280,7 @@ Reprend les paliers de [`../01`](../01-vision-et-perimetre.md), section 6.
 | `L4` | Alertes, brouillons dormants, garde-fous | — |
 | `L5` | Client page Facebook, fonction HTTP, vérification de signature `X-Hub-Signature-256` | `Q-ACT-03` |
 
-`L1` est livrable seul, et le sera probablement avant que Meta ait répondu. C'est
-délibéré : il porte tout le risque de régression du projet, et aucun de ses risques
-externes.
+La construction a suivi cet ordre : `L1`, puis `L2`, `L3` et `L4`. Le code est livrable
+sans activer l'import ; la mise en production attend les réponses de l'association, le
+jeton Meta, la revue de l'application et, si le titre IA est activé, le déploiement
+Foundry. `L5` reste une évolution séparée.

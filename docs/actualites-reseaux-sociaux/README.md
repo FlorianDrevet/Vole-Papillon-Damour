@@ -36,10 +36,15 @@ supprimer cette double saisie sans rien retirer au contrôle éditorial.
 
 ## Statut
 
-**Spécification écrite. Rien d'implémenté.** Trois questions bloquantes attendent une
-réponse de l'association avant tout développement : `Q-ACT-01`, `Q-ACT-02` et `Q-ACT-04`.
-Elles se répondent en dix minutes dans l'application Instagram et dans le Business
-Manager de Meta, pas en réunion.
+**Les paliers `L1` à `L4` sont implémentés dans la branche de la PR #122.** Le code
+reste désactivé tant que le compte Instagram professionnel, l'application Meta et le
+jeton n'ont pas été configurés. `L5` — une page Facebook et son webhook — reste
+volontairement reporté à la décision `Q-ACT-03`.
+
+La mise en service attend donc encore `Q-ACT-01` (compte professionnel) et
+`Q-ACT-04` (propriétaire de l'application Meta), puis la création des ressources
+externes décrites dans [`NEXT.md`](NEXT.md). La v1 lit Instagram via l'API officielle ;
+elle ne scrute jamais un profil Facebook personnel.
 
 ## Conventions
 

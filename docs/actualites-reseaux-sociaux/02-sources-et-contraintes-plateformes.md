@@ -111,7 +111,8 @@ Deux points à connaître :
   produirait des images mortes quelques jours plus tard. D'où `RG-ACT-10` : on
   télécharge et on recopie immédiatement dans le stockage de l'association.
 
-La version de la Graph API (`v2x.0`) est à figer au moment de l'implémentation, puis à
+La version de la Graph API (`v22.0` dans la configuration livrée) est à confirmer au
+moment de l'activation, puis à
 inscrire dans la configuration — Meta déprécie chaque version au bout d'environ deux ans.
 
 ## 5. Ce qu'on ne fera pas

@@ -29,6 +29,12 @@ param actionGroupId string
 @description('Severity from 0 (critical) to 4 (verbose)')
 param severity int = 2
 
+@description('How often Azure evaluates the query')
+param evaluationFrequency string = 'PT5M'
+
+@description('Time window queried by Azure Monitor')
+param windowSize string = 'PT15M'
+
 @description('Resource tags')
 param tags object = {}
 
@@ -41,8 +47,8 @@ resource scheduledQueryRule 'Microsoft.Insights/scheduledQueryRules@2023-12-01' 
     displayName: displayName
     description: ruleDescription
     enabled: true
-    evaluationFrequency: 'PT5M'
-    windowSize: 'PT15M'
+    evaluationFrequency: evaluationFrequency
+    windowSize: windowSize
     severity: severity
     scopes: [
       workspaceId
