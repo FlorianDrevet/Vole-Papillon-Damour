@@ -66,6 +66,9 @@ interaction, it starts an MSAL redirect back to the current private route and th
 and administration pages render a renewal message instead of their generic API failure.
 The backend remains the authorization boundary; a client-side admin link never grants
 access by itself.
+The root Catalog shell detects a pending OAuth `code`/`error` response and initializes the
+lazy MSAL service so the saved `/compte` start page can be restored; ordinary anonymous
+shell bootstraps remain lazy.
 
 The signed-out Catalog `/compte` state uses the V2 editorial shell: a two-column member
 introduction, concrete watchlist/alert benefits, provider-neutral login copy, and separate

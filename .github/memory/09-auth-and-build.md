@@ -78,6 +78,10 @@
   successful. This changes the hosted page's visual language but does not move password entry
   into the Catalog. A pixel-perfect custom form would require a separate Native Authentication
   decision and a CORS proxy.
+- Because the production redirect URI is the Catalog origin, the root shell checks for a
+  pending MSAL `code`/`error` response and initializes `CatalogAuthService` before the
+  saved `redirectStartPage` is restored. Normal anonymous shell bootstraps still leave MSAL
+  lazy, while sign-in and registration return to `/compte` instead of remaining on `/`.
  - `Scan` gates the entire PWA through `ScanAuthService.authState$`: an Entra account with
    `Tri` or `Caisse` renders the PWA (`Tri` triages; `Caisse` sells), while unauthenticated,
    unauthorized, and token-renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
