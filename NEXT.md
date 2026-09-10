@@ -78,6 +78,26 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — refonte du contenu de la recherche Catalog
+
+La branche `feat/catalog-recherche-portee-suivi` reprend le contenu de `/recherche` selon
+la maquette `Recherche.dc.html` : bandeau de recherche compact, filtres latéraux,
+résultats locaux en lignes éditoriales et références externes en cartes de suivi. Le
+header et le footer existants n'ont pas été modifiés.
+
+La modale `PorteeSuivi` est maintenant raccordée aux boutons des références externes.
+Elle propose par défaut le suivi de l'œuvre (`Work`) et l'édition précise (`Edition`) si
+un ISBN existe, conserve l'intention dans `sessionStorage` pendant la redirection Entra,
+restaure la modale au retour, gère les erreurs 409 et verrouille le défilement avec un
+focus clavier sur la fermeture. Le backend Watchlist déjà présent sur `origin/main`
+fournit le contrat et les invariants ; aucune nouvelle migration ou route API n'a été
+nécessaire.
+
+Les tests ciblés et la suite Catalog ChromeHeadless, ainsi que le build SSR/navigateur,
+passent. Le rendu local desktop avec un endpoint de démonstration temporaire a été
+contrôlé pour les résultats et la modale ; aucun déploiement ni test de compte réel n'a
+été effectué.
+
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 
 Depuis `origin/main` après la fusion de la PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124),

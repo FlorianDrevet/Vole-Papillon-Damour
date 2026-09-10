@@ -1,4 +1,14 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  AfterViewChecked,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
@@ -12,6 +22,7 @@ import {
   CatalogSearchResponse,
   CatalogSort,
   CatalogReferenceSearchResponse,
+  CatalogWatchlistScope,
 } from '../../core/catalog.models';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
@@ -23,7 +34,7 @@ import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
   styleUrls: ['./catalog-search-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogSearchPageComponent implements OnInit, OnDestroy {
+export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnDestroy {
   query = '';
   genre = '';
   availability: CatalogAvailability = 'all';
@@ -39,8 +50,14 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   referenceFollowPending: string | null = null;
   referenceFollowMessage: string | null = null;
   referenceFollowError: string | null = null;
+  selectedReference: CatalogBookReference | null = null;
+  followScope: CatalogWatchlistScope = 'Work';
 
   private readonly destroyed = new Subject<void>();
+  private readonly pendingReferenceStorageKey = 'vpd.catalog.pending-reference-follow';
+  private focusFollowDialog = false;
+
+  @ViewChild('followDialogClose') private followDialogClose?: ElementRef<HTMLButtonElement>;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -63,15 +80,36 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.sort = params.get('sort') === 'recent' ? 'recent' : 'relevance';
         this.load();
       });
+    void this.restorePendingReferenceFollow();
   }
 
   ngOnDestroy(): void {
+    this.closeFollowModal(true);
     this.destroyed.next();
     this.destroyed.complete();
   }
 
+  ngAfterViewChecked(): void {
+    if (this.focusFollowDialog && this.followDialogClose) {
+      this.focusFollowDialog = false;
+      this.followDialogClose.nativeElement.focus();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.selectedReference && !this.referenceFollowPending) {
+      this.closeFollowModal();
+    }
+  }
+
   submitSearch(): void {
     void this.router.navigate(['/recherche'], {queryParams: this.queryParams()});
+  }
+
+  clearSearch(): void {
+    this.query = '';
+    this.submitSearch();
   }
 
   applyFilters(): void {
@@ -109,9 +147,38 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  async followReference(item: CatalogBookReference): Promise<void> {
-    const key = item.workId || item.isbn13;
-    if (!key || this.referenceFollowPending) {
+  followReference(item: CatalogBookReference): void {
+    this.openFollowModal(item);
+  }
+
+  openFollowModal(item: CatalogBookReference): void {
+    if (!this.referenceKey(item) || this.referenceFollowPending) {
+      return;
+    }
+
+    this.referenceFollowMessage = null;
+    this.referenceFollowError = null;
+    this.selectedReference = item;
+    this.followScope = item.workId ? 'Work' : 'Edition';
+    this.focusFollowDialog = true;
+    this.setBodyScrollLocked(true);
+    this.changeDetector.markForCheck();
+  }
+
+  closeFollowModal(force = false): void {
+    if (this.referenceFollowPending && !force) {
+      return;
+    }
+
+    this.selectedReference = null;
+    this.setBodyScrollLocked(false);
+    this.changeDetector.markForCheck();
+  }
+
+  async confirmFollowReference(): Promise<void> {
+    const item = this.selectedReference;
+    const key = item ? this.referenceKey(item) : null;
+    if (!item || !key || this.referenceFollowPending) {
       return;
     }
 
@@ -119,10 +186,13 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.referenceFollowError = null;
 
     if (!this.auth.isAuthenticated()) {
+      this.savePendingReferenceFollow(item);
       try {
         await this.auth.login(this.referenceReturnUrl());
       } catch {
+        this.clearPendingReferenceFollow();
         this.referenceFollowError = 'La connexion n’a pas pu être démarrée. Réessayez.';
+        this.changeDetector.markForCheck();
       }
       return;
     }
@@ -130,11 +200,15 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.referenceFollowPending = key;
     try {
       const token = await this.auth.getApiAccessToken();
-      const request = item.workId
-        ? {scope: 'Work' as const, workId: item.workId, isbn13: null}
-        : {scope: 'Edition' as const, workId: null, isbn13: item.isbn13};
+      const request = this.followRequest(item);
+      if (!request) {
+        this.referenceFollowError = 'Cette référence ne permet pas ce type de suivi.';
+        return;
+      }
+
       await firstValueFrom(this.memberApi.addWatchlistItem(token, request));
       this.referenceFollowMessage = 'Le titre a été ajouté à votre liste de recherche.';
+      this.closeFollowModal(true);
     } catch (error: unknown) {
       this.referenceFollowError = error instanceof HttpErrorResponse && error.status === 409
         ? 'Ce titre est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
@@ -143,6 +217,35 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       this.referenceFollowPending = null;
       this.changeDetector.markForCheck();
     }
+  }
+
+  referenceKey(item: CatalogBookReference): string | null {
+    return item.workId || item.isbn13;
+  }
+
+  referenceEditionLabel(item: CatalogBookReference): string {
+    const details = [item.publisher, item.publicationYear ? String(item.publicationYear) : null]
+      .filter((value): value is string => Boolean(value));
+    return details.join(' · ') || (item.isbn13 ? `ISBN ${item.isbn13}` : 'Édition repérée');
+  }
+
+  resultHeading(): string {
+    const trimmedQuery = this.query.trim();
+    if (trimmedQuery) {
+      return `Résultats pour « ${trimmedQuery} »`;
+    }
+
+    return this.browseMode ? 'Le catalogue complet' : 'Tous les livres du catalogue';
+  }
+
+  localCountLabel(): string {
+    const total = this.response?.totalCount || 0;
+    return `${total} ${total === 1 ? 'édition' : 'éditions'}`;
+  }
+
+  externalCountLabel(): string {
+    const total = this.externalResponse?.items.length || 0;
+    return `${total} ${total === 1 ? 'édition' : 'éditions'}`;
   }
 
   totalPages(): number {
@@ -170,6 +273,15 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   availableGenres(): string[] {
     return mergeCatalogGenres(this.response?.genres, this.genre);
+  }
+
+  visibleGenres(): string[] {
+    const genres = this.availableGenres();
+    const visible = genres.slice(0, 4);
+    if (this.genre && !visible.includes(this.genre)) {
+      visible.unshift(this.genre);
+    }
+    return visible;
   }
 
   trackBook(_index: number, isbn13: string): string {
@@ -262,5 +374,106 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       search.set(key, String(value));
     }
     return `/recherche${search.toString() ? `?${search.toString()}` : ''}`;
+  }
+
+  private followRequest(item: CatalogBookReference): {
+    scope: CatalogWatchlistScope;
+    workId: string | null;
+    isbn13: string | null;
+  } | null {
+    if (this.followScope === 'Work' && item.workId) {
+      return {scope: 'Work', workId: item.workId, isbn13: null};
+    }
+
+    if (this.followScope === 'Edition' && item.isbn13) {
+      return {scope: 'Edition', workId: null, isbn13: item.isbn13};
+    }
+
+    return null;
+  }
+
+  private async restorePendingReferenceFollow(): Promise<void> {
+    const pending = this.readPendingReferenceFollow();
+    if (!pending) {
+      return;
+    }
+
+    try {
+      await this.auth.initialize();
+    } catch {
+      return;
+    }
+
+    if (!this.auth.isAuthenticated()) {
+      return;
+    }
+
+    this.clearPendingReferenceFollow();
+    this.selectedReference = pending.item;
+    this.followScope = pending.scope === 'Edition' && pending.item.isbn13
+      ? 'Edition'
+      : 'Work';
+    this.focusFollowDialog = true;
+    this.setBodyScrollLocked(true);
+    this.changeDetector.markForCheck();
+  }
+
+  private savePendingReferenceFollow(item: CatalogBookReference): void {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(
+          this.pendingReferenceStorageKey,
+          JSON.stringify({item, scope: this.followScope}),
+        );
+      }
+    } catch {
+      // A blocked session storage should not prevent the normal login redirect.
+    }
+  }
+
+  private readPendingReferenceFollow(): {
+    item: CatalogBookReference;
+    scope: CatalogWatchlistScope;
+  } | null {
+    try {
+      if (typeof sessionStorage === 'undefined') {
+        return null;
+      }
+
+      const raw = sessionStorage.getItem(this.pendingReferenceStorageKey);
+      if (!raw) {
+        return null;
+      }
+
+      const pending = JSON.parse(raw) as {
+        item?: CatalogBookReference;
+        scope?: CatalogWatchlistScope;
+      };
+      if (!pending.item || (pending.scope !== 'Work' && pending.scope !== 'Edition')) {
+        this.clearPendingReferenceFollow();
+        return null;
+      }
+
+      return {item: pending.item, scope: pending.scope};
+    } catch {
+      this.clearPendingReferenceFollow();
+      return null;
+    }
+  }
+
+  private clearPendingReferenceFollow(): void {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(this.pendingReferenceStorageKey);
+      }
+    } catch {
+      // Ignore storage cleanup failures; the current interaction remains usable.
+    }
+  }
+
+  private setBodyScrollLocked(locked: boolean): void {
+    if (typeof document !== 'undefined') {
+      document.body.classList.toggle('no-scroll', locked);
+    }
   }
 }
