@@ -67,7 +67,9 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   it does not repeat the Website's Maxence or association-content sections. Navigation dropdowns
   must be keyboard/focus usable and hidden when neither hovered nor focused.
 - The current header keeps `Mon compte` outside the desktop navigation flex, centers the
-  42px controls, and switches to the mobile layout at `1040px` to avoid intermediate-width
+  42px controls, gives the external association link the same 42px height and orange
+  hover/focus underline, and omits the decorative empty person circle for signed-out
+  visitors. It switches to the mobile layout at `1040px` to avoid intermediate-width
   overflow.
 - Typography stays `Newsreader` for editorial headings, `Libre Franklin` for body and
   controls, and `IBM Plex Mono` for labels, metadata, dates, and technical identifiers.
