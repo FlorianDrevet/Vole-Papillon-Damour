@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Relire la PR de l’enrichissement des genres bibliographiques et la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) avant tout déploiement. |
+| **Prochaine action** | Relire la PR [#123](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/123) de l’enrichissement des genres et la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) avant tout déploiement. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-genre-enrichment` |
-| **Dernière mise à jour** | 2026-09-10 — genres bibliographiques BnF/Open Library/Google Books implémentés, tests Backend passants, aucun déploiement |
-| **Branche** | `feat/catalog-genre-enrichment` — worktree dédié, synchronisée avec `origin/main`, PR à ouvrir |
+| **Dernière mise à jour** | 2026-09-10 — genres bibliographiques BnF/Open Library/Google Books implémentés, PR #123 ouverte, aucun déploiement |
+| **Branche** | `feat/catalog-genre-enrichment` — worktree dédié, synchronisée avec `origin/main`, PR [#123](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/123) ouverte |
 
 ---
 
@@ -138,7 +138,7 @@ Validation locale : Domain `84`, Application `174`, Infrastructure `73`, API `14
 passants, build `src/Backend/Vole_Papillon_Damour.slnx` passant et Graphify mis à jour.
 Les avertissements de vulnérabilités NuGet existants (`Microsoft.OpenApi` et
 `SQLitePCLRaw.lib.e_sqlite3`) restent présents. Aucun déploiement ni test manuel en production
-n'a été effectué ; la PR reste à ouvrir.
+n'a été effectué ; la PR [#123](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/123) est ouverte.
 
 ### État actualisé — 2026-09-10 — retour OAuth de l'inscription Catalog
 
