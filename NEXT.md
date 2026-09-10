@@ -13,8 +13,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la galerie photo Website de la PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119) est fusionnée. |
+| **Prochaine action** | Relire et valider la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) (app de scan) ; aucun déploiement ne doit être lancé avant sa fusion et un smoke de production. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour` |
 | **Dernière mise à jour** | 2026-09-10 — alertes de l’app de scan hiérarchisées, aperçu caméra remis dans le flux, PR #121 ouverte, aucun déploiement |
 | **Branche** | `fix/scan-alert-hierarchy` — synchronisée avec `origin/main`, PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) ouverte |
@@ -108,6 +108,22 @@ contrôle croisé templates/TS ne trouve plus aucune classe morte.
 Les 141 tests ChromeHeadless, le build Scan, Graphify et une vérification navigateur en
 360×740 passent. Aucun déploiement ni contrôle de production n’a été effectué. La PR
 [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) est ouverte.
+
+### État actualisé — 2026-09-10 — catalogue des albums photos Website
+
+La PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119), sur la
+branche `feat/website-photo-albums`, remplace la modal de la galerie par des pages
+d’albums accessibles sous `/association/photos/:albumSlug`, avec un retour vers la liste.
+Le catalogue est séparé entre 23 albums de la vie de Maxence (un par année de 2004 à
+2026) et trois albums événements (bourse aux livres, célébrités, anniversaire des 20 ans).
+Les trois dossiers 2005 sont regroupés dans un album de 94 photos ; les chapitres existants
+de `/maxence/histoire` (2004–2016) proposent leur album correspondant, sans lien ajouté
+pour les années sans chapitre. Les fichiers transmis ont été copiés dans le Website : 612
+photos Maxence et 103 photos événements, soit 715 images (~379 MB). Les 72 tests
+ChromeHeadless, le build SSR/prérendu, Graphify et un smoke navigateur desktop local
+passent ; l’émulation mobile exacte n’était pas disponible dans la session navigateur et
+aucun déploiement ni smoke de production n’a été effectué. Le build conserve ses
+avertissements existants de budget Angular, styles et dépendances CommonJS.
 
 ### État actualisé — 2026-09-10 — galerie Website et fichiers média manquants
 

@@ -30,6 +30,7 @@ import {PresentationComponent} from './association/presentation/presentation.com
 import {HowToHelpComponent} from './association/how-to-help/how-to-help.component';
 import {NewspapersComponent} from './association/newspapers/newspapers.component';
 import {PicturesComponent} from './association/pictures/pictures.component';
+import {PhotoAlbumPageComponent} from './association/pictures/photo-album-page/photo-album-page.component';
 import {SpecialEventComponent} from './vpd-events/components/special-event/special-event.component';
 import {VpdEventsPageComponent} from "./vpd-events/vpd-events-page.component";
 import {EventDetailComponent} from './event-detail/event-detail.component';
@@ -98,6 +99,7 @@ import {SouvenirsComponent} from './maxence/souvenirs/souvenirs.component';
     HowToHelpComponent,
     NewspapersComponent,
     PicturesComponent,
+    PhotoAlbumPageComponent,
     SpecialEventComponent,
     EventDetailComponent,
     BingoEventComponent,

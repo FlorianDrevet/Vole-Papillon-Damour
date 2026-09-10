@@ -53,37 +53,46 @@
     <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Le catalogue d’images</span>
     <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Les albums</h2>
     <p class="text-[15px] leading-relaxed text-slate-2">
-      Chaque carte ouvre l’album complet lorsqu’il est disponible, ou la sélection actuellement importée. La bourse aux livres ferme la série, comme un écho aux actions de l’association.
+      Le catalogue est organisé en deux collections : la vie de Maxence, année après année,
+      puis les événements qui font vivre l’association.
     </p>
   </div>
 
-  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-    @for (album of photoAlbums; track album.title) {
-      <article
-        data-album-card
-        role="button"
-        tabindex="0"
-        aria-haspopup="dialog"
-        [attr.aria-expanded]="selectedAlbum?.title === album.title"
-        [attr.aria-label]="(album.previewPhotos.length < album.photoCount ? 'Ouvrir la sélection de l’album ' : 'Ouvrir l’album ') + album.title"
-        (click)="openAlbum(album)"
-        (keydown)="onAlbumKeydown(album, $event)"
-        class="group flex cursor-pointer flex-col overflow-hidden rounded-sm border border-line-2 bg-paper shadow-sm transition hover:-translate-y-1 hover:border-blue-2 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
-        <div class="relative grid aspect-[4/3] grid-cols-3 gap-px overflow-hidden bg-line-2">
-          @for (photo of album.previewPhotos; track photo; let index = $index) {
-            <img [src]="photo" [alt]="index === 0 ? album.title : ''" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" [class.col-span-3]="album.previewPhotos.length === 1" [class.hidden]="index > 2">
+  <div class="flex flex-col gap-14">
+    @for (category of albumCategories; track category.id) {
+      <section data-album-category [attr.data-category]="category.id" class="flex flex-col gap-6" [attr.aria-labelledby]="'album-category-' + category.id">
+        <div class="flex max-w-[68ch] flex-col gap-2">
+          <span class="font-mono text-[10px] uppercase tracking-[.16em] text-orange-3">{{ category.eyebrow }}</span>
+          <h2 [id]="'album-category-' + category.id" class="font-serif text-[30px] font-medium leading-tight text-ink-2 lg:text-[38px]">{{ category.title }}</h2>
+          <p class="text-[15px] leading-relaxed text-slate-2">{{ category.description }}</p>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          @for (album of category.albums; track album.slug) {
+            <a
+              data-album-card
+              data-album-link
+              [routerLink]="[photoAlbumsRoute, album.slug]"
+              [attr.aria-label]="'Ouvrir l’album ' + album.title"
+              class="group flex h-full flex-col overflow-hidden rounded-sm border border-line-2 bg-paper shadow-sm transition hover:-translate-y-1 hover:border-blue-2 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
+              <div class="relative grid aspect-[4/3] grid-cols-3 gap-px overflow-hidden bg-line-2">
+                @for (photo of album.previewPhotos; track photo; let index = $index) {
+                  <img [src]="photo" [alt]="index === 0 ? album.title : ''" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]">
+                }
+                <span class="absolute bottom-3 left-3 rounded-full bg-ink/85 px-3 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-white">{{ album.photos.length }} photos</span>
+              </div>
+              <div class="flex flex-col gap-3 p-5">
+                <span class="font-mono text-[10px] uppercase tracking-[.14em] text-blue">{{ album.eyebrow }}</span>
+                <h3 class="font-serif text-xl font-medium text-ink-2">{{ album.title }}</h3>
+                <p class="text-sm leading-relaxed text-slate-2">{{ album.description }}</p>
+                <span class="mt-auto inline-flex items-center gap-2 pt-2 text-sm font-medium text-blue transition group-hover:text-ink-2">
+                  Voir l’album <span aria-hidden="true">→</span>
+                </span>
+              </div>
+            </a>
           }
-          <span class="absolute bottom-3 left-3 rounded-full bg-ink/85 px-3 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-white">{{ album.photoCount }} photos</span>
         </div>
-        <div class="flex flex-col gap-3 p-5">
-          <span class="font-mono text-[10px] uppercase tracking-[.14em] text-blue">{{ album.eyebrow }}</span>
-          <h3 class="font-serif text-xl font-medium text-ink-2">{{ album.title }}</h3>
-          <p class="text-sm leading-relaxed text-slate-2">{{ album.description }}</p>
-          <span class="mt-auto inline-flex items-center gap-2 pt-2 text-sm font-medium text-blue transition group-hover:text-ink-2">
-            Ouvrir {{ album.previewPhotos.length < album.photoCount ? 'la sélection' : 'l’album' }} <span aria-hidden="true">→</span>
-          </span>
-        </div>
-      </article>
+      </section>
     }
   </div>
 </section>
@@ -121,52 +130,3 @@
 </section>
 
 <ng-container *ngTemplateOutlet="historyBanner"></ng-container>
-
-@if (selectedAlbum; as album) {
-  <div class="fixed inset-0 z-[60] overflow-y-auto bg-ink/85 p-4 sm:p-8" role="presentation" (click)="closeAlbum()">
-    <section
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="album-dialog-title"
-      aria-describedby="album-dialog-description"
-      class="mx-auto my-4 max-w-[900px] overflow-hidden rounded-sm bg-paper shadow-2xl sm:my-8"
-      (click)="$event.stopPropagation()">
-      <div class="flex items-start justify-between gap-6 border-b border-line-2 px-5 py-5 sm:px-8">
-        <div class="flex flex-col gap-2">
-          <span class="font-mono text-[10px] uppercase tracking-[.16em] text-blue">{{ album.eyebrow }}</span>
-          <h2 id="album-dialog-title" class="font-serif text-2xl font-medium text-ink-2 sm:text-3xl">{{ album.title }}</h2>
-        </div>
-        <button type="button" aria-label="Fermer l’album" class="shrink-0 rounded-full border border-line-2 px-3 py-2 font-mono text-xs text-slate-2 transition hover:border-blue-2 hover:text-ink-2" (click)="closeAlbum()">✕</button>
-      </div>
-
-      <div class="flex flex-col gap-5 px-5 py-6 sm:px-8 sm:py-8">
-        @if (album.previewPhotos.length < album.photoCount) {
-          <p id="album-dialog-description" class="max-w-[62ch] text-[15px] leading-relaxed text-slate-2">
-            Une sélection de {{ album.previewPhotos.length }} photos sur les {{ album.photoCount }} que contient cet album.
-            Les fichiers complets de cet album ne sont pas encore présents sur le site.
-          </p>
-        } @else {
-          <p id="album-dialog-description" class="max-w-[62ch] text-[15px] leading-relaxed text-slate-2">
-            Les {{ album.photoCount }} photos de cet album sont disponibles sur le site.
-          </p>
-        }
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          @for (photo of album.previewPhotos; track photo; let index = $index) {
-            <img [src]="photo" [alt]="album.title + ', photo ' + (index + 1)" class="aspect-[4/3] w-full rounded-sm object-cover">
-          }
-        </div>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line-2 bg-white px-5 py-4 sm:px-8">
-        @if (album.historyRoute; as historyRoute) {
-          <a [routerLink]="historyRoute" (click)="closeAlbum()" class="inline-flex items-center gap-2 text-sm font-medium text-blue transition hover:text-ink-2">
-            Lire le récit complet <span aria-hidden="true">→</span>
-          </a>
-        } @else {
-          <span></span>
-        }
-        <button type="button" class="rounded-full bg-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[.12em] text-white transition hover:bg-blue" (click)="closeAlbum()">Fermer</button>
-      </div>
-    </section>
-  </div>
-}

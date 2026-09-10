@@ -8,6 +8,7 @@ import {PresentationComponent} from "./feature/association/presentation/presenta
 import {HowToHelpComponent} from "./feature/association/how-to-help/how-to-help.component";
 import {NewspapersComponent} from "./feature/association/newspapers/newspapers.component";
 import {PicturesComponent} from "./feature/association/pictures/pictures.component";
+import {PhotoAlbumPageComponent} from "./feature/association/pictures/photo-album-page/photo-album-page.component";
 import {VpdEventsPageComponent} from "./feature/vpd-events/vpd-events-page.component";
 import {EventDetailComponent} from "./feature/event-detail/event-detail.component";
 import {GastrostomyComponent} from "./feature/maxence/diseases/gastrostomy/gastrostomy.component";
@@ -66,9 +67,16 @@ const routes: Routes = [
         pathMatch: 'full'
       },
       {
+        path: 'photos/:albumSlug',
+        component: PhotoAlbumPageComponent,
+        pathMatch: 'full',
+        title: 'Album photo | Vole Papillon d’Amour'
+      },
+      {
         path: 'photos',
         component: PicturesComponent,
-        pathMatch: 'full'
+        pathMatch: 'full',
+        title: 'Galerie photos | Vole Papillon d’Amour'
       }
     ]
   },
