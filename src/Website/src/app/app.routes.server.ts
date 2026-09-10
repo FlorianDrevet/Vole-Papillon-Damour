@@ -20,6 +20,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
+    path: 'association/photos/:albumSlug',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'association/photos',
     renderMode: RenderMode.Prerender,
   },

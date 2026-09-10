@@ -30,45 +30,39 @@ describe('PicturesComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should organise the new photo albums and videos', () => {
+  it('should split the photo catalog into Maxence years and events', () => {
     const pageText = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+    const categories = fixture.nativeElement.querySelectorAll('[data-album-category]');
 
-    expect(component.photoAlbums.length).toBe(6);
-    expect(component.photoAlbums.at(-1)?.title).toBe('Bourse aux livres');
-    expect(component.photoAlbums.map(album => album.title)).toContain('Maxence · 2004–2010');
+    expect(component.photoAlbums.length).toBe(26);
+    expect(categories.length).toBe(2);
+    expect(categories[0].querySelector('h2').textContent).toContain('Vie de Maxence');
+    expect(categories[0].querySelectorAll('[data-album-card]').length).toBe(23);
+    expect(categories[1].querySelector('h2').textContent).toContain('Événements');
+    expect(categories[1].querySelectorAll('[data-album-card]').length).toBe(3);
+    expect(component.photoAlbums.map(album => album.title)).toContain('2004');
+    expect(component.photoAlbums.map(album => album.title)).toContain('2026');
+    expect(component.photoAlbums.map(album => album.title)).toContain('Anniversaire 20 ans Maxence');
+    const albumsBySlug = new Map(component.photoAlbums.map(album => [album.slug, album]));
+    expect(albumsBySlug.get('maxence-2005')?.photos.length).toBe(94);
+    expect(albumsBySlug.get('maxence-2026')?.photos.length).toBe(31);
+    expect(albumsBySlug.get('celebrites')?.photos.length).toBe(15);
+    expect(albumsBySlug.get('anniversaire-20-ans-maxence')?.photos.length).toBe(88);
     expect(component.videos.length).toBe(14);
     expect(fixture.nativeElement.querySelectorAll('[data-album-card]').length).toBe(component.photoAlbums.length);
     expect(pageText).toContain('La vidéothèque');
     expect(pageText).not.toContain('Albums à venir');
   });
 
-  it('should open and close an album from the catalog card', () => {
+  it('should navigate to an album page instead of opening a dialog', () => {
     const cards = fixture.nativeElement.querySelectorAll('[data-album-card]');
 
     expect(cards.length).toBe(component.photoAlbums.length);
-    expect(cards[0].getAttribute('aria-label')).toContain('Ouvrir la sélection de l’album');
+    const firstLink = cards[0] as HTMLAnchorElement;
 
-    cards[0].dispatchEvent(new Event('click'));
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[role="dialog"] h2').textContent)
-      .toContain(component.photoAlbums[0].title);
-
-    fixture.nativeElement.querySelector('[role="dialog"] button').click();
-    cards[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('[role="dialog"] h2').textContent)
-      .toContain(component.photoAlbums[1].title);
-
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')?.textContent)
-      .toContain('Les fichiers complets de cet album ne sont pas encore présents sur le site.');
-
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
-    fixture.detectChanges();
-
+    expect(firstLink.getAttribute('href')).toBe('/association/photos/maxence-2004');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-haspopup="dialog"]')).toBeNull();
   });
 
   it('should keep the history banner after the video catalog', () => {
