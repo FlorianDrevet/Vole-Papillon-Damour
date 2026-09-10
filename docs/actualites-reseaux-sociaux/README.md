@@ -17,11 +17,13 @@ supprimer cette double saisie sans rien retirer au contrôle éditorial.
 | **Pressé, et vous voulez savoir si c'est faisable** | [`02-sources-et-contraintes-plateformes.md`](02-sources-et-contraintes-plateformes.md) — tout part de là |
 | À la recherche d'une règle précise | [`04-regles-metier.md`](04-regles-metier.md) |
 | En train de préparer le chiffrage | [`07-questions-ouvertes.md`](07-questions-ouvertes.md) **en premier** — trois questions sont bloquantes |
+| **En train de construire** | [`NEXT.md`](NEXT.md) pour savoir où l'on en est, puis les paliers de [`01`](01-vision-et-perimetre.md), section 6 |
 
 ## Contenu
 
 | Document | Objet |
 |---|---|
+| [`NEXT.md`](NEXT.md) | **Où l'on en est** : ressources à créer, décisions prises, mesures et tests manuels à faire. Ce que git ne sait pas |
 | [`00-note-presidente.md`](00-note-presidente.md) | Ce qui change pour la présidente, et les décisions qu'elle seule peut prendre |
 | [`01-vision-et-perimetre.md`](01-vision-et-perimetre.md) | Objectifs, acteurs, périmètre, paliers de livraison |
 | [`02-sources-et-contraintes-plateformes.md`](02-sources-et-contraintes-plateformes.md) | Ce que les API Meta autorisent réellement, et pourquoi le déclencheur est un minuteur |

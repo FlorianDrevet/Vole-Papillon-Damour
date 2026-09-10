@@ -6,6 +6,10 @@
 > Ce fichier porte **ce que git ne sait pas** : l'état d'Azure, du locataire, du DNS, les
 > mesures en cours, les tests manuels passés. Les étapes, elles, sont dans
 > [`docs/bourse-aux-livres/plan/`](docs/bourse-aux-livres/plan/README.md).
+>
+> **Ce fichier ne couvre que la bourse aux livres.** L'import des actualités depuis les
+> réseaux sociaux avance séparément et tient son propre état dans
+> [`docs/actualites-reseaux-sociaux/NEXT.md`](docs/actualites-reseaux-sociaux/NEXT.md).
 
 ---
 

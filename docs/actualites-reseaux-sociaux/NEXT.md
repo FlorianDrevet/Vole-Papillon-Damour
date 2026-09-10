@@ -1,0 +1,129 @@
+# NEXT — où en est l'import des actualités depuis les réseaux sociaux
+
+> **À lire en premier en arrivant sur ce sujet. À mettre à jour en dernier avant de le
+> quitter**, même en pleine étape.
+>
+> Ce fichier porte **ce que git ne sait pas** : l'état du compte Instagram, de
+> l'application Meta, de la revue d'application, du jeton, de la ressource Foundry, et
+> les tests manuels passés. Les étapes, elles, sont dans les paliers de
+> [`01-vision-et-perimetre.md`](01-vision-et-perimetre.md), section 6.
+>
+> Le [`NEXT.md`](../../NEXT.md) de la racine ne couvre **que** la bourse aux livres. Les
+> deux sujets avancent séparément.
+
+---
+
+## En un coup d'œil
+
+| | |
+|---|---|
+| **Palier en cours** | Aucun. La spécification est écrite, rien n'est implémenté |
+| **Prochaine action** | Répondre à `Q-ACT-01` (le compte Instagram est-il professionnel ?) et `Q-ACT-04` (qui détient l'application Meta ?). Dix minutes, dans l'application Instagram et dans le Business Manager |
+| **Ce qui peut démarrer sans attendre** | Le palier `L1` — statut brouillon, filtrage des lectures publiques, écran BackOffice, `white-space: pre-line`. Aucune dépendance à Meta |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour\.claude\worktrees\feat-facebook-news-sync` |
+| **Dernière mise à jour** | 2026-09-10 — spécification écrite, aucune ressource créée nulle part |
+| **Branche** | `worktree-feat-facebook-news-sync` — worktree dédié |
+
+---
+
+## Ce qui n'existe encore nulle part
+
+Aucune des ressources ci-dessous n'a été créée. C'est la liste à cocher avant que le
+palier `L2` puisse commencer.
+
+| Ressource | Où | État | Bloque |
+|---|---|---|---|
+| Compte Instagram **professionnel** | Application Instagram, réglages du compte | **Non vérifié** | Tout (`Q-ACT-01`) |
+| Business Manager au nom de l'association | business.facebook.com | **Non créé** | `Q-ACT-04` |
+| Application Meta | developers.facebook.com | **Non créée** | `L2` |
+| Revue d'application, accès avancé à `instagram_business_basic` | developers.facebook.com | **Non demandée** | `L2` |
+| Jeton longue durée, posé dans Key Vault sous `instagram-access-token` | Azure Key Vault du projet | **Non créé** | `L2` |
+| Identifiant du compte Instagram (`SocialImport__UserId`) | Graph API, après authentification | **Inconnu** | `L2` |
+| Version de la Graph API à figer | — | **Non tranchée** — à relever au moment de l'implémentation | `L2` |
+| Ressource Azure AI Foundry + déploiement de modèle | Abonnement Azure du projet | **Non créée** | `L3` |
+| Rôle `Cognitive Services OpenAI User` pour l'identité managée du Worker | Azure | **Non attribué** | `L3` |
+| Règles d'alerte (jeton, échecs répétés) | Azure Monitor, groupe d'action existant | **Non créées** | `L4` |
+| Page Facebook de l'association | facebook.com | **Non créée**, et pas décidée (`Q-ACT-03`) | `L5` |
+
+---
+
+## Les décisions prises
+
+Ce que la spécification a déjà tranché, et qui n'attend plus personne.
+
+| Sujet | Décision |
+|---|---|
+| Source lue en v1 | **Instagram seul.** Le profil Facebook personnel n'est pas lisible par API pour cet usage (`02`, section 2) |
+| Déclencheur | **Minuteur, toutes les 30 minutes.** Aucun webhook Instagram ne couvre les publications du compte lui-même (`DT-ACT-01`) |
+| Chemin d'authentification | **Instagram Login**, qui n'exige pas de page Facebook et n'accroche pas le projet au compte d'une personne |
+| Où vit la fonction | Dans **`Vole_Papillon_Damour.Worker`** existant, à côté de `Enrich` et `Sweep` (`DT-ACT-02`) |
+| Publication | **Brouillon obligatoire.** Rien n'est visible sur le site sans validation humaine (`RG-ACT-04`) |
+| Images | **Recopiées** dans `actuality-images`. Aucune URL de CDN Meta en base : elles expirent (`RG-ACT-10`) |
+| Titre | **Modèle classe nano** via Azure AI Foundry, identité managée, repli par date si échec (`05`) |
+| Scraping | **Jamais**, quelle que soit la difficulté rencontrée (`ENF-ACT-15`) |
+| Trace d'import | **Table à part**, pour survivre à la suppression du brouillon (`DT-ACT-08`) |
+
+---
+
+## Ce qui attend encore une réponse
+
+| Question | Attendue de | Bloquant ? |
+|---|---|---|
+| `Q-ACT-01` — le compte Instagram est-il professionnel ? | L'association, en trois écrans | **Oui**, totalement |
+| `Q-ACT-02` — le compte est-il relié à une page Facebook ? | L'association | Non si l'on prend Instagram Login |
+| `Q-ACT-04` — qui détient l'application Meta ? | Le bureau | **Oui**, avant de créer quoi que ce soit |
+| `Q-ACT-03` — crée-t-on une page Facebook ? | Le bureau | Non pour la v1 ; conditionne le palier `L5` |
+| `Q-ACT-08` — le jeton se renouvelle-t-il tout seul ? | Arbitrage technique, à prendre au palier `L4` | Non |
+| `Q-ACT-05`, `Q-ACT-06`, `Q-ACT-07` | Se répondent **après** avoir vu de vrais imports | Non |
+
+---
+
+## Les mesures à faire, qui ne se décident pas
+
+| À mesurer | Quand | Pourquoi |
+|---|---|---|
+| Part de **reels et vidéos** dans les publications des six derniers mois | Avant `L2` | Si elle est majoritaire, la v1 perd beaucoup de son intérêt (`Q-ACT-07`, `RG-ACT-11`) |
+| Part de publications **sans image** | Avant `L2` | Elles ne produiront aucune actualité (`RG-ACT-12`) |
+| **Taux de titres conservés tels quels** sur les dix premières actualités importées | Après `L3` | Décide si la génération vaut son coût, ou si le repli par date suffit (`05`, section 8) |
+| Fréquence réelle de publication | Après `L2` | Ajuste la cadence du minuteur (`ENF-ACT-02`) |
+
+---
+
+## Les tests manuels à passer, et par qui
+
+Aucun n'a été fait. Trois échappent au développeur seul.
+
+| Test | Qui | Quand |
+|---|---|---|
+| Une actualité existante reste visible après la migration | Développeur | `L1`, avant tout déploiement |
+| Un brouillon n'apparaît nulle part sur le site public, y compris par son URL directe | Développeur | `L1` |
+| Une légende à plusieurs paragraphes s'affiche correctement sur mobile et desktop | Développeur | `L1` |
+| Le parcours complet : publier sur Facebook → voir le brouillon → publier → voir le site | **Avec la présidente**, sur une vraie publication | `L2` |
+| Le brouillon rend le contrôle du droit à l'image praticable : les images sont assez grandes pour décider | **Un administrateur non développeur** | `L2` |
+| Les titres proposés sont acceptables sur de vrais contenus | **Un administrateur non développeur** | `L3` |
+| L'alerte d'expiration du jeton arrive bien, et à quelqu'un qui sait quoi en faire | Développeur, puis destinataire réel | `L4` |
+
+---
+
+## Journal
+
+### 2026-09-10 — spécification écrite
+
+Dossier [`docs/actualites-reseaux-sociaux/`](README.md) créé dans le worktree
+`feat-facebook-news-sync` : note à la présidente, vision et paliers, contraintes des
+plateformes, parcours, 23 règles métier, titre généré, 27 exigences non fonctionnelles,
+questions ouvertes, architecture technique.
+
+Deux constats ont retourné la demande initiale, tous deux vérifiés dans la documentation
+Meta et sourcés dans [`02`](02-sources-et-contraintes-plateformes.md) :
+
+- le **profil Facebook personnel** n'est pas lisible par API pour cet usage — les usages
+  autorisés de `user_posts` se limitent aux livres-souvenirs, au repartage de ses propres
+  souvenirs et au contrôle parental ;
+- **aucun webhook Instagram** ne couvre les publications du compte lui-même ; le champ
+  `feed`, qui ferait exactement ce qui était demandé, n'existe que sur les pages
+  Facebook. Le déclencheur est donc un minuteur, et l'événementiel reste conditionné à
+  la création d'une page (`Q-ACT-03`).
+
+Aucune ressource créée, aucun code écrit, aucun déploiement. Aucun compte Meta ni Azure
+n'a été touché.
