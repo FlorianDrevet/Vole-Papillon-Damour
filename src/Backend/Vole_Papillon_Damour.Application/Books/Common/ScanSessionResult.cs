@@ -17,11 +17,12 @@ public sealed record ScanSessionResult(
     DateTime? EndedAt,
     ScanCloseReason? CloseReason,
     ScanSessionStatus Status,
+    bool ReusedExistingSession,
     int ScannedCount,
     int KeptCount,
     int RejectedCount)
 {
-    public static ScanSessionResult From(ScanSession session)
+    public static ScanSessionResult From(ScanSession session, bool reusedExistingSession = false)
     {
         return new ScanSessionResult(
             session.Id,
@@ -35,6 +36,7 @@ public sealed record ScanSessionResult(
             session.EndedAt,
             session.CloseReason,
             session.Status,
+            reusedExistingSession,
             session.ScannedCount,
             session.KeptCount,
             session.RejectedCount);

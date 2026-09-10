@@ -42,6 +42,10 @@ public sealed class GetAdminScanSessionsQueryHandler(
             return Error.Validation("Book.InvalidPeriod", "The session period must be valid UTC instants.");
         }
 
+        var staleBefore = query.OlderThan24Hours
+            ? generatedAt - AdminScanSessionPolicy.StaleSessionAge
+            : (DateTime?)null;
+
         ScanSessionStatus? status = null;
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
@@ -59,6 +63,7 @@ public sealed class GetAdminScanSessionsQueryHandler(
             .Where(session => status == null || session.Status == status.Value)
             .Where(session => from == null || session.StartedAt >= from.Value)
             .Where(session => to == null || session.StartedAt < to.Value)
+            .Where(session => staleBefore == null || session.StartedAt < staleBefore.Value)
             .OrderByDescending(session => session.StartedAt)
             .ThenByDescending(session => session.Id)
             .ToListAsync(cancellationToken);

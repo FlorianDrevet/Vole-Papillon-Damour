@@ -103,8 +103,11 @@ client-only/private.
   `PUT /books/admin/fairs/{fairId}/revenue` - fair list, sales analysis and optional nullable
   revenue entry.
 - `GET /books/admin/sessions` and `/books/admin/sessions/{scanSessionId}` - paged session
-  monitoring; movement removal, session reassign/cancel, and alert cancel/force are POST
-  actions under the same resource.
+  monitoring; `status=InProgress&olderThan24Hours=true` is the stale-session view. Movement
+  removal, session reassign/cancel, alert cancel/force, and
+  `POST /books/admin/sessions/{scanSessionId}/force-close` are Administration-protected
+  actions under the same resource. Force-close reuses the close transaction with the
+  `AdminForced` reason and queues the normal delayed alerts.
 - `GET /books/admin/alerts`, plus per-message `POST .../{messageId}/cancel|force` - outbox
   diagnosis and pending-message control.
 - `GET /books/admin/members` and detail, block/unblock, and deletion routes - member support

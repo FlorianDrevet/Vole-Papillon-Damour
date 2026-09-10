@@ -18,15 +18,17 @@ public sealed class BookEnrichmentFunction(
         using var scope = scopeFactory.CreateScope();
         var sender = scope.ServiceProvider.GetRequiredService<ISender>();
         var result = await sender.Send(
-            new EnrichPendingBooksCommand(),
+            new EnrichPendingBooksCommand(IncludeMissingGenres: true),
             cancellationToken);
 
         logger.LogInformation(
             "Worker enrichment completed. Processed: {Processed}, Resolved: {Resolved}, " +
-            "CoversUpdated: {CoversUpdated}, NotFound: {NotFound}, Failed: {Failed}",
+            "CoversUpdated: {CoversUpdated}, GenresUpdated: {GenresUpdated}, " +
+            "NotFound: {NotFound}, Failed: {Failed}",
             result.ProcessedCount,
             result.ResolvedCount,
             result.CoverUpdatedCount,
+            result.GenreUpdatedCount,
             result.NotFoundCount,
             result.FailedCount);
     }

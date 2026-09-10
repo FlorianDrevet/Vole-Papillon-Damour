@@ -20,7 +20,11 @@ import {
   ScanSessionSnapshot,
 } from '../offline/scan-offline.model';
 import {ScanSyncService} from '../offline/scan-sync.service';
+import {ScanStatusBarComponent} from '../offline/scan-status-bar.component';
+import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
+import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {ScanConfirmationService} from '../scan-confirmation.service';
 
 describe('ScannerComponent', () => {
   let fixture: ComponentFixture<ScannerComponent>;
@@ -32,17 +36,24 @@ describe('ScannerComponent', () => {
   beforeEach(async () => {
     metadataService = jasmine.createSpyObj<BookMetadataService>('BookMetadataService', ['getMetadata']);
     cameraService = jasmine.createSpyObj<CameraScannerService>('CameraScannerService', ['start', 'scanFile']);
-    confirmDialog = spyOn(window, 'confirm').and.returnValue(true);
+    const confirmation = jasmine.createSpyObj<ScanConfirmationService>(
+      'ScanConfirmationService',
+      ['confirm'],
+    );
+    confirmation.confirm.and.resolveTo(true);
+    confirmDialog = confirmation.confirm;
 
     await TestBed.configureTestingModule({
-      declarations: [ScannerComponent],
+      declarations: [ScannerComponent, ScanStatusBarComponent, ScanRecoveryComponent],
       imports: [CommonModule, FormsModule, DesignSystemModule],
       providers: [
         {provide: BookMetadataService, useValue: metadataService},
         {provide: CameraScannerService, useValue: cameraService},
         {provide: ScanAuthService, useValue: null},
         {provide: ScanSyncService, useValue: null},
+        ScanStatusService,
         {provide: ScanWorkflowService, useValue: null},
+        {provide: ScanConfirmationService, useValue: confirmation},
       ],
     }).compileComponents();
 
@@ -89,6 +100,80 @@ describe('ScannerComponent', () => {
 
     expect(auth.login).toHaveBeenCalledOnceWith();
     expect(loginStarted).toBeTrue();
+  });
+
+  it('asks before reconciling a local session owned by another account', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'getSession',
+      'bindSessionToVolunteer',
+    ]);
+    workflow.getSession.and.resolveTo(createSession({volunteerId: 'account-a'}));
+    const internals = component as unknown as {
+      reconcileCurrentAccount: (volunteerId: string) => Promise<void>;
+    };
+    (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;
+    (component as unknown as {localModeReady: boolean}).localModeReady = true;
+
+    await internals.reconcileCurrentAccount('account-b');
+
+    expect(component.accountSwitchPrompt).toBe(
+      "Des gestes d'une session précédente sont présents sur cet appareil. Les reprendre sous votre compte, ou les mettre de côté pour un responsable ?",
+    );
+    expect(workflow.bindSessionToVolunteer).not.toHaveBeenCalled();
+  });
+
+  it('rebinds explicitly and returns the set-aside gestures to the active session', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'bindSessionToVolunteer',
+      'reattachNeedsReattachToCurrentSession',
+      'getSession',
+      'getSessionCounts',
+      'getOutboxCounts',
+      'getSettings',
+      'getCatalogSyncState',
+    ]);
+    const session = createSession({volunteerId: 'account-b'});
+    workflow.bindSessionToVolunteer.and.resolveTo();
+    workflow.reattachNeedsReattachToCurrentSession.and.resolveTo(2);
+    workflow.getSession.and.resolveTo(session);
+    workflow.getSessionCounts.and.resolveTo({scannedCount: 0, keptCount: 0, rejectedCount: 0});
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    const internals = component as unknown as {
+      accountSwitchAccountId: string | null;
+    };
+    (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;
+    internals.accountSwitchAccountId = 'account-b';
+    component.accountSwitchPrompt = "Des gestes d'une session précédente sont présents sur cet appareil. Les reprendre sous votre compte, ou les mettre de côté pour un responsable ?";
+
+    await component.resumeAccountSwitch();
+
+    expect(workflow.bindSessionToVolunteer).toHaveBeenCalledOnceWith('account-b', true);
+    expect(workflow.reattachNeedsReattachToCurrentSession).toHaveBeenCalledOnceWith();
+    expect(component.accountSwitchPrompt).toBeNull();
+  });
+
+  it('sets the previous session aside explicitly before allowing a new account session', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'setAsideCurrentSessionForOtherVolunteer',
+      'clearSession',
+    ]);
+    workflow.setAsideCurrentSessionForOtherVolunteer.and.resolveTo(2);
+    workflow.clearSession.and.resolveTo();
+    const internals = component as unknown as {
+      accountSwitchAccountId: string | null;
+    };
+    (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;
+    internals.accountSwitchAccountId = 'account-b';
+    component.accountSwitchPrompt = "Des gestes d'une session précédente sont présents sur cet appareil. Les reprendre sous votre compte, ou les mettre de côté pour un responsable ?";
+
+    await component.setAsideAccountSwitch();
+
+    expect(workflow.setAsideCurrentSessionForOtherVolunteer).toHaveBeenCalledOnceWith();
+    expect(workflow.clearSession).toHaveBeenCalledOnceWith();
+    expect(component.accountSwitchPrompt).toBeNull();
+    expect(component.screen).toBe('home');
   });
 
   it('blocks changing user while local gestures still need attention', async () => {
@@ -386,7 +471,8 @@ describe('ScannerComponent', () => {
 
   it('keeps the closing action once the session holds a sorted book', () => {
     const sortedFixture = TestBed.createComponent(ScannerComponent);
-    sortedFixture.componentInstance.session = createSession({scannedCount: 2});
+    sortedFixture.componentInstance.session = createSession();
+    sortedFixture.componentInstance.sessionCounts = {scannedCount: 2, keptCount: 2, rejectedCount: 0};
     sortedFixture.detectChanges();
 
     expect(sortedFixture.componentInstance.canLeaveSession).toBeFalse();
@@ -414,7 +500,7 @@ describe('ScannerComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.manual-keypad')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[aria-label="Revenir au scan"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[aria-label="Fermer la saisie"]')).not.toBeNull();
   });
 
   it('gives labeled scan containers an accessible semantic role and lets the ISBN speak its value', () => {
@@ -852,7 +938,8 @@ describe('ScannerComponent', () => {
 
   it('asks for confirmation before ending a session', async () => {
     confirmDialog.and.returnValue(false);
-    component.session = createSession({scannedCount: 1, keptCount: 1});
+    component.session = createSession();
+    component.sessionCounts = {scannedCount: 1, keptCount: 1, rejectedCount: 0};
 
     await component.endSession();
 
@@ -872,7 +959,7 @@ describe('ScannerComponent', () => {
     workflow.getSession.and.resolveTo(null);
     sync.syncAll.and.resolveTo({
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
-      outbox: {sent: 0, remaining: 1, stoppedOnError: false},
+      outbox: {sent: 0, remaining: 1, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
       closed: false,
     });
 
@@ -977,7 +1064,7 @@ describe('ScannerComponent', () => {
       screenComponent.pendingTransmissionCount = 3;
       screenFixture.detectChanges();
 
-      const panel = screenFixture.nativeElement.querySelector('.sync-panel') as HTMLElement | null;
+      const panel = screenFixture.nativeElement.querySelector('.status-bar') as HTMLElement | null;
       expect(panel).not.toBeNull();
       expect(panel?.textContent).toContain('Synchroniser');
       expect(panel?.textContent).not.toContain('scans en attente');
@@ -1085,7 +1172,8 @@ describe('ScannerComponent', () => {
   });
 
   it('opens a new session mode screen after a session has been ended', async () => {
-    component.session = createSession({scannedCount: 2, keptCount: 2});
+    component.session = createSession();
+    component.sessionCounts = {scannedCount: 2, keptCount: 2, rejectedCount: 0};
 
     await component.endSession();
     component.returnHome();
@@ -1103,7 +1191,7 @@ describe('ScannerComponent', () => {
       'getCatalogSyncState',
     ]);
     const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
-    const session = createSession({scannedCount: 1, keptCount: 1});
+    const session = createSession();
     const completedScan = createLocalScanResult();
     completedScan.entry = {...completedScan.entry, status: 'Kept', kept: true};
     const requestedSession = {...session, closeRequested: true, closeReason: 'Manual' as const};
@@ -1116,7 +1204,7 @@ describe('ScannerComponent', () => {
     );
     sync.syncAll.and.resolveTo({
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
-      outbox: {sent: 1, remaining: 0, stoppedOnError: false},
+      outbox: {sent: 1, remaining: 0, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
       closed: true,
     });
 
@@ -1148,7 +1236,7 @@ describe('ScannerComponent', () => {
     workflow.getSession.and.returnValue(Promise.resolve(createSession()));
     sync.syncAll.and.returnValue(Promise.resolve({
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
-      outbox: {sent: 0, remaining: 1, stoppedOnError: false},
+      outbox: {sent: 0, remaining: 1, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
       closed: false,
     }));
     metadataService.getMetadata.and.returnValue(of(createMetadata()));
@@ -1176,7 +1264,7 @@ describe('ScannerComponent', () => {
     expect(sync.syncAll).toHaveBeenCalled();
   });
 
-  it('does not close a session while its last scan is still pending', async () => {
+  it('keeps a session open while its last scan still needs a decision', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(
       'ScanWorkflowService',
       ['requestClose'],
@@ -1222,7 +1310,7 @@ describe('ScannerComponent', () => {
     return {
       entry: {
         clientGestureId: 'gesture-1',
-        scanSessionId: 'session-1',
+        clientSessionId: 'session-1',
         isbn13: '9782070363735',
         occurredAt: '2026-09-03T08:00:00Z',
         createdAt: '2026-09-03T08:00:00Z',
@@ -1282,16 +1370,14 @@ describe('ScannerComponent', () => {
   function createSession(overrides: Partial<ScanSessionSnapshot> = {}): ScanSessionSnapshot {
     return {
       key: 'active-session',
-      scanSessionId: 'session-1',
+      clientSessionId: 'session-1',
+      remoteSessionId: null,
       volunteerId: null,
       mode: 'AvailableNow',
       targetAssoEventsId: null,
       startedAt: '2026-09-03T08:00:00Z',
       lastScanAt: '2026-09-03T08:02:00Z',
       lastSyncAt: '2026-09-03T08:00:00Z',
-      scannedCount: 0,
-      keptCount: 0,
-      rejectedCount: 0,
       ...overrides,
     };
   }

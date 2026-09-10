@@ -10,6 +10,7 @@ import {
   ScanCatalogSyncState,
   ScanOutboxEntry,
   ScanSaleOutboxEntry,
+  ScanSessionCounts,
   LocalScanCloseReason,
   ScanSessionSnapshot,
   ScanSessionClosePendingError,
@@ -38,11 +39,30 @@ export class ScanWorkflowService {
     return await this.store.getSession();
   }
 
-  async getOutboxCounts(): Promise<{
+  async getOutboxCounts(clientSessionId: string): Promise<{
     pendingDecisionCount: number;
     pendingTransmissionCount: number;
   }> {
-    return await this.store.getOutboxCounts();
+    return await this.store.getOutboxCounts(clientSessionId);
+  }
+
+  async getSessionCounts(clientSessionId: string): Promise<ScanSessionCounts> {
+    return await this.store.getSessionCounts(clientSessionId);
+  }
+
+  async getSetAsideCounts(): Promise<{
+    orphaned: number;
+    quarantined: number;
+  }> {
+    const [orphaned, quarantined] = await Promise.all([
+      this.store.countOrphanedOutboxEntries(),
+      this.store.countQuarantinedOutboxEntries(),
+    ]);
+    return {orphaned, quarantined};
+  }
+
+  async listSetAsideOutboxEntries(): Promise<ScanOutboxEntry[]> {
+    return await this.enqueue(() => this.store.listSetAsideOutboxEntries());
   }
 
   async getCatalogSyncState(): Promise<ScanCatalogSyncState | null> {
@@ -62,7 +82,7 @@ export class ScanWorkflowService {
     const entries = await this.store.listOutboxEntries();
     const entry = entries
       .filter(candidate =>
-        candidate.status === 'Pending' && candidate.scanSessionId === session.scanSessionId)
+        candidate.status === 'Pending' && candidate.clientSessionId === session.clientSessionId)
       .at(-1) ?? null;
     if (!entry) {
       return null;
@@ -74,7 +94,9 @@ export class ScanWorkflowService {
     const previousEntry = entries
       .slice(0, entryIndex)
       .reverse()
-      .find(candidate => candidate.scanSessionId === entry.scanSessionId && candidate.status !== 'CancelledLocal');
+      .find(candidate =>
+        candidate.clientSessionId === entry.clientSessionId &&
+        candidate.status !== 'CancelledLocal');
     return {
       entry,
       verdict,
@@ -92,6 +114,51 @@ export class ScanWorkflowService {
       const catalogBook = await this.store.getCatalogBook(isbn13);
       const verdict = this.verdictService.calculate(catalogBook, await this.store.getSettings());
       return {catalogBook, verdict};
+    });
+  }
+
+  async getCatalogBook(isbn13: string): Promise<ScanCatalogBook | null> {
+    return await this.store.getCatalogBook(isbn13);
+  }
+
+  async deleteOutboxEntry(clientGestureId: string): Promise<void> {
+    return await this.enqueue(() => this.store.deleteOutboxEntry(clientGestureId));
+  }
+
+  async retryOutboxEntry(clientGestureId: string): Promise<ScanOutboxEntry> {
+    return await this.enqueue(() => this.store.retryOutboxEntry(clientGestureId));
+  }
+
+  async reattachOutboxEntry(
+    clientGestureId: string,
+    clientSessionId: string,
+  ): Promise<ScanOutboxEntry> {
+    return await this.enqueue(() => this.store.reattachOutboxEntry(clientGestureId, clientSessionId));
+  }
+
+  async reattachOutboxEntryToCurrentSession(clientGestureId: string): Promise<ScanOutboxEntry> {
+    return await this.enqueue(async () => {
+      const session = await this.store.getSession();
+      if (!session) {
+        throw new Error('Aucune session locale active pour reprendre ce livre.');
+      }
+      return await this.store.reattachOutboxEntry(clientGestureId, session.clientSessionId);
+    });
+  }
+
+  async reattachNeedsReattachToCurrentSession(): Promise<number> {
+    return await this.enqueue(async () => {
+      const session = await this.store.getSession();
+      if (!session) {
+        return 0;
+      }
+
+      const entries = await this.store.listSetAsideOutboxEntries();
+      const pending = entries.filter(entry => entry.status === 'NeedsReattach');
+      for (const entry of pending) {
+        await this.store.reattachOutboxEntry(entry.clientGestureId, session.clientSessionId);
+      }
+      return pending.length;
     });
   }
 
@@ -162,7 +229,7 @@ export class ScanWorkflowService {
 
       if (session.closeRequested) {
         const nextSession = createSession(new Date(), mode);
-        await this.store.orphanPendingOutboxEntriesFromOtherSessions(nextSession.scanSessionId);
+        await this.store.orphanPendingOutboxEntriesFromOtherSessions(nextSession.clientSessionId);
         await this.store.saveSession(nextSession);
         return nextSession;
       }
@@ -195,8 +262,13 @@ export class ScanWorkflowService {
         closeRequested: true,
         closeReason,
       };
+      await this.store.setAsidePendingOutboxEntriesForSession(
+        session.clientSessionId,
+        'Livre sans décision mis de côté avant la clôture de la session.',
+      );
       await this.store.saveSessionCloseRequest({
-        scanSessionId: session.scanSessionId,
+        clientSessionId: session.clientSessionId,
+        remoteSessionId: session.remoteSessionId,
         volunteerId: session.volunteerId,
         mode: session.mode,
         targetAssoEventsId: session.targetAssoEventsId,
@@ -221,18 +293,31 @@ export class ScanWorkflowService {
     });
   }
 
-  async bindSessionToVolunteer(volunteerId: string): Promise<void> {
+  async bindSessionToVolunteer(volunteerId: string, allowRebind = false): Promise<void> {
     return await this.enqueue(async () => {
       const session = await this.store.getSession();
       if (!session || session.volunteerId === volunteerId) {
         return;
       }
 
-      if (session.volunteerId !== null) {
+      if (session.volunteerId !== null && !allowRebind) {
         return;
       }
 
       await this.store.saveSession({...session, volunteerId});
+    });
+  }
+
+  async setAsideCurrentSessionForOtherVolunteer(): Promise<number> {
+    return await this.enqueue(async () => {
+      const session = await this.store.getSession();
+      if (!session) {
+        return 0;
+      }
+      return await this.store.setAsideOutboxEntriesForSession(
+        session.clientSessionId,
+        'Livre provenant d’une autre session bénévole ; reprise manuelle requise.',
+      );
     });
   }
 
@@ -247,24 +332,22 @@ export class ScanWorkflowService {
     scannedCount: number;
     keptCount: number;
     rejectedCount: number;
+    reusedExistingSession: boolean;
   }): Promise<void> {
     return await this.enqueue(async () => {
-      const current = await this.ensureSession(new Date(remoteSession.startedAt));
-      if (current.scanSessionId !== remoteSession.scanSessionId) {
-        await this.store.rebindSession(current.scanSessionId, remoteSession.scanSessionId);
+      const current = await this.store.getSession();
+      if (!current) {
+        return;
       }
 
       await this.store.saveSession({
         ...current,
-        scanSessionId: remoteSession.scanSessionId,
+        remoteSessionId: remoteSession.scanSessionId,
         mode: remoteSession.mode,
         targetAssoEventsId: remoteSession.targetAssoEventsId,
         startedAt: remoteSession.startedAt,
         lastScanAt: remoteSession.lastScanAt,
         lastSyncAt: remoteSession.lastSyncAt,
-        scannedCount: Math.max(current.scannedCount, remoteSession.scannedCount),
-        keptCount: Math.max(current.keptCount, remoteSession.keptCount),
-        rejectedCount: Math.max(current.rejectedCount, remoteSession.rejectedCount),
       });
     });
   }
@@ -276,26 +359,24 @@ export class ScanWorkflowService {
         throw new ScanSessionClosePendingError();
       }
 
-      await this.store.orphanPendingOutboxEntriesFromOtherSessions(session.scanSessionId);
+      await this.store.orphanPendingOutboxEntriesFromOtherSessions(session.clientSessionId);
       const existingEntries = await this.store.listOutboxEntries();
       const previousEntry = existingEntries
         .slice()
         .reverse()
-        .find(entry => entry.scanSessionId === session.scanSessionId && entry.status !== 'CancelledLocal');
+        .find(entry =>
+          entry.clientSessionId === session.clientSessionId &&
+          entry.status !== 'CancelledLocal');
       const previousPendingEntries = existingEntries
         .filter(entry =>
-          entry.status === 'Pending' && entry.scanSessionId === session.scanSessionId);
+          entry.status === 'Pending' && entry.clientSessionId === session.clientSessionId);
 
-      let keptCount = session.keptCount;
       for (const entry of previousPendingEntries) {
-        const committed = await this.store.decideOutboxEntry(
+        await this.store.decideOutboxEntry(
           entry.clientGestureId,
           true,
           session.mode,
         );
-        if (committed.status === 'Kept' && entry.status === 'Pending') {
-          keptCount += 1;
-        }
       }
 
       const catalogBook = await this.store.getCatalogBook(isbn13);
@@ -304,7 +385,7 @@ export class ScanWorkflowService {
       const timestamp = occurredAt.toISOString();
       const entry: ScanOutboxEntry = {
         clientGestureId: createClientId(),
-        scanSessionId: session.scanSessionId,
+        clientSessionId: session.clientSessionId,
         isbn13,
         occurredAt: timestamp,
         createdAt: new Date().toISOString(),
@@ -324,8 +405,6 @@ export class ScanWorkflowService {
       await this.store.saveSession({
         ...session,
         lastScanAt: timestamp,
-        keptCount,
-        scannedCount: session.scannedCount + 1,
       });
 
       return {
@@ -345,9 +424,11 @@ export class ScanWorkflowService {
         throw new Error(`Unknown scan gesture: ${clientGestureId}`);
       }
 
-      if (existing.scanSessionId !== session.scanSessionId && existing.status === 'Pending') {
-        await this.store.orphanPendingOutboxEntriesFromOtherSessions(session.scanSessionId);
-        return (await this.store.getOutboxEntry(clientGestureId))!;
+      if (
+        existing.clientSessionId !== session.clientSessionId &&
+        (existing.status === 'Pending' || existing.status === 'NeedsDecision')
+      ) {
+        await this.store.reattachOutboxEntry(clientGestureId, session.clientSessionId);
       }
 
       const decided = await this.store.decideOutboxEntry(
@@ -355,14 +436,6 @@ export class ScanWorkflowService {
         kept,
         session.mode,
       );
-
-      if (existing.status === 'Pending') {
-        await this.store.saveSession({
-          ...session,
-          keptCount: kept ? session.keptCount + 1 : session.keptCount,
-          rejectedCount: kept ? session.rejectedCount : session.rejectedCount + 1,
-        });
-      }
 
       return decided;
     });
@@ -392,9 +465,6 @@ export class ScanWorkflowService {
     if (existing) {
       return {
         ...existing,
-        scannedCount: existing.scannedCount ?? 0,
-        keptCount: existing.keptCount ?? 0,
-        rejectedCount: existing.rejectedCount ?? 0,
         closeRequested: existing.closeRequested ?? false,
         closeReason: existing.closeReason ?? null,
       };
@@ -403,16 +473,14 @@ export class ScanWorkflowService {
     const timestamp = now.toISOString();
     const session: ScanSessionSnapshot = {
       key: 'active-session',
-      scanSessionId: createClientId(),
+      clientSessionId: createClientId(),
+      remoteSessionId: null,
       volunteerId: null,
       mode: 'AvailableNow',
       targetAssoEventsId: null,
       startedAt: timestamp,
       lastScanAt: timestamp,
       lastSyncAt: timestamp,
-      scannedCount: 0,
-      keptCount: 0,
-      rejectedCount: 0,
       closeRequested: false,
       closeReason: null,
     };
@@ -473,16 +541,14 @@ function createSession(now: Date, mode: 'AvailableNow' | 'NextFair'): ScanSessio
   const timestamp = now.toISOString();
   return {
     key: 'active-session',
-    scanSessionId: createClientId(),
+    clientSessionId: createClientId(),
+    remoteSessionId: null,
     volunteerId: null,
     mode,
     targetAssoEventsId: null,
     startedAt: timestamp,
     lastScanAt: timestamp,
     lastSyncAt: timestamp,
-    scannedCount: 0,
-    keptCount: 0,
-    rejectedCount: 0,
     closeRequested: false,
     closeReason: null,
   };

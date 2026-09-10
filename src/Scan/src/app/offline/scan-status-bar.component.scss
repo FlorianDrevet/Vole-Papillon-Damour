@@ -1,0 +1,49 @@
+.status-bar {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.75rem 0;
+}
+
+.status-message {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.45rem;
+  background: #f2eee8;
+  color: #403b42;
+  font-size: 0.9rem;
+}
+
+.status-outbox,
+.status-decision,
+.status-set-aside,
+.status-notice-action {
+  background: #fff4d8;
+  color: #6b4b20;
+}
+
+.status-notice-blocking {
+  background: #fbe2e2;
+  color: #8f2424;
+}
+
+.status-action,
+.status-recovery {
+  justify-self: start;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #6b4b73;
+  border-radius: 0.45rem;
+  background: #fff;
+  color: #6b4b73;
+  font: inherit;
+  font-weight: 700;
+}
+
+.status-recovery {
+  border-color: #31724f;
+  color: #31724f;
+}
+
+.status-action:focus-visible {
+  outline: 3px solid #e1a94b;
+  outline-offset: 2px;
+}

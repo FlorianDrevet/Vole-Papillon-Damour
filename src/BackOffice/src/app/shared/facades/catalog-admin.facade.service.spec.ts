@@ -91,4 +91,20 @@ describe('CatalogAdminFacadeService', () => {
       null,
     );
   });
+
+  it('loads stale open sessions and exposes the force-close action', async () => {
+    await service.getSessions({status: 'InProgress', olderThan24Hours: true, page: 1, pageSize: 25});
+    await service.forceCloseSession('session/1');
+
+    expect(axiosService.request$).toHaveBeenCalledWith(
+      MethodEnum.GET,
+      '/books/admin/sessions',
+      {status: 'InProgress', olderThan24Hours: true, page: 1, pageSize: 25},
+    );
+    expect(axiosService.request$).toHaveBeenCalledWith(
+      MethodEnum.POST,
+      '/books/admin/sessions/session/1/force-close',
+      null,
+    );
+  });
 });

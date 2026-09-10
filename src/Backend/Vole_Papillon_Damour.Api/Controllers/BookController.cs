@@ -304,7 +304,8 @@ public static class BookController
                                 metadata.Source,
                                 metadata.WorkId,
                                 metadata.RetrievedAt,
-                                metadata.CoverSource)),
+                                metadata.CoverSource,
+                                metadata.Genre)),
                             error => error.Result());
                     })
                 .WithName("GetBookMetadata")
@@ -574,6 +575,7 @@ public static class BookController
             result.EndedAt,
             result.CloseReason?.ToString(),
             result.Status.ToString(),
+            result.ReusedExistingSession,
             result.ScannedCount,
             result.KeptCount,
             result.RejectedCount);

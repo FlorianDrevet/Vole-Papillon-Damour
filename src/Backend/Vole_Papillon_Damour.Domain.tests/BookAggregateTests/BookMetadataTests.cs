@@ -149,6 +149,43 @@ public sealed class BookMetadataTests
     }
 
     [Fact]
+    public void ApplyAutomaticMetadata_DoesNotOverwriteManuallyEditedGenre()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        book.ApplyManualMetadata(
+            new BookMetadataPatch(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Romans",
+                null,
+                [BookMetadataField.Genre]),
+            FirstSeenAt.AddMinutes(1));
+
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "Fiction",
+                null,
+                [BookMetadataField.Genre]),
+            BookMetadataSource.OpenLibrary,
+            FirstSeenAt.AddMinutes(2),
+            rawPayload: null);
+
+        book.Genre.Should().Be("Romans");
+        book.MetadataStatus.Should().Be(BookMetadataStatus.Manual);
+        book.IsMetadataFieldManuallyEdited(BookMetadataField.Genre).Should().BeTrue();
+    }
+
+    [Fact]
     public void ApplyAutomaticMetadata_StoresWorkIdentifierForWorkWatchlists()
     {
         var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
@@ -255,6 +292,38 @@ public sealed class BookMetadataTests
         book.ResolveAttempts.Should().Be(1);
         book.LastAttemptAt.Should().Be(failedAt);
         book.UpdatedAt.Should().Be(failedAt);
+    }
+
+    [Fact]
+    public void RecordMetadataRefreshAttempt_PreservesResolvedMetadataAndStatus()
+    {
+        var book = Book.Create(CreateIsbn("9782070363735"), FirstSeenAt);
+        var fetchedAt = FirstSeenAt.AddMinutes(1);
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(
+                "Titre source",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                [BookMetadataField.Title]),
+            BookMetadataSource.Bnf,
+            fetchedAt,
+            rawPayload: null);
+        var attemptedAt = FirstSeenAt.AddMinutes(2);
+
+        var changed = book.RecordMetadataRefreshAttempt(attemptedAt);
+
+        changed.Should().BeTrue();
+        book.Title.Should().Be("Titre source");
+        book.MetadataStatus.Should().Be(BookMetadataStatus.Resolved);
+        book.MetadataFetchedAt.Should().Be(fetchedAt);
+        book.ResolveAttempts.Should().Be(1);
+        book.LastAttemptAt.Should().Be(attemptedAt);
+        book.UpdatedAt.Should().Be(attemptedAt);
     }
 
     private static Isbn13 CreateIsbn(string value)

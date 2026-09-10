@@ -55,6 +55,10 @@ public sealed class BnfSruClient(
         var publicationYear = ParseYear(
             FirstSubfield(dataFields, ["210", "214"], "d")
             ?? FirstElementValue(recordData, "date"));
+        var genre = FirstSubfield(dataFields, ["608"], "a")
+            ?? FirstSubfield(dataFields, ["606", "610"], "a")
+            ?? FirstElementValue(recordData, "genre")
+            ?? FirstElementValue(recordData, "subject");
         var coverUri = CreateCoverUri(isbn13);
         if (coverUri is not null &&
             !await CoverImageValidator.IsValidAsync(httpClient, coverUri, cancellationToken))
@@ -72,7 +76,8 @@ public sealed class BnfSruClient(
             "BnF",
             null,
             DateTimeOffset.UtcNow,
-            coverUri is null ? null : "BnF");
+            coverUri is null ? null : "BnF",
+            Genre: Clean(genre));
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)

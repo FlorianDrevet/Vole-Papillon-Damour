@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la galerie photo Website (PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119)), le retour OAuth de l’inscription Catalog (PR [#118](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/118)) et le header Catalog (PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117)) le sont également. |
-| **Prochaine action** | Relire et valider la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) (app de scan) ; aucun déploiement ne doit être lancé avant sa fusion et un smoke de production. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour` |
-| **Dernière mise à jour** | 2026-09-10 — alertes de l’app de scan hiérarchisées, aperçu caméra remis dans le flux, PR #121 ouverte, aucun déploiement |
-| **Branche** | `fix/scan-alert-hierarchy` — synchronisée avec `origin/main`, PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) ouverte |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
+| **Prochaine action** | Relire la PR [#123](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/123) de l’enrichissement des genres et la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) avant tout déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-genre-enrichment` |
+| **Dernière mise à jour** | 2026-09-10 — genres bibliographiques BnF/Open Library/Google Books implémentés, PR #123 ouverte, aucun déploiement |
+| **Branche** | `feat/catalog-genre-enrichment` — worktree dédié, synchronisée avec `origin/main`, PR [#123](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/123) ouverte |
 
 ---
 
@@ -128,6 +128,21 @@ ChromeHeadless, le build SSR/prérendu, Graphify et un smoke navigateur desktop 
 passent ; l’émulation mobile exacte n’était pas disponible dans la session navigateur et
 aucun déploiement ni smoke de production n’a été effectué. Le build conserve ses
 avertissements existants de budget Angular, styles et dépendances CommonJS.
+### État actualisé — 2026-09-10 — enrichissement des genres bibliographiques
+
+Depuis `origin/main` fraîchement récupéré dans le worktree `catalog-genre-enrichment`, le
+pipeline de métadonnées transporte désormais le genre depuis les notices BnF (UNIMARC),
+Open Library (`subject`) et Google Books (`categories`). Le resolver conserve la priorité
+BnF puis complète les champs manquants avec Open Library et Google Books. Le Worker active
+le backfill des livres déjà résolus sans genre, par lots de 50 et avec un délai de 30 jours
+entre deux tentatives ; les champs marqués manuellement restent protégés. Aucun changement
+de schéma n'est requis : `Books.Genre` existait déjà.
+
+Validation locale : Domain `84`, Application `174`, Infrastructure `73`, API `14` tests
+passants, build `src/Backend/Vole_Papillon_Damour.slnx` passant et Graphify mis à jour.
+Les avertissements de vulnérabilités NuGet existants (`Microsoft.OpenApi` et
+`SQLitePCLRaw.lib.e_sqlite3`) restent présents. Aucun déploiement ni test manuel en production
+n'a été effectué ; la PR [#123](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/123) est ouverte.
 
 ### État actualisé — 2026-09-10 — retour OAuth de l'inscription Catalog
 
@@ -1009,6 +1024,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-10 | Windows | **PR #113 — résolution des conflits publiée.** Depuis `origin/main` (`31fcead`) dans le worktree `Vole-Papillon-Damour-pr113-conflicts`, réconciliation de `feat/scanette-reprise-gestes-lots` avec le rail d’alertes et le positionnement caméra de `main`, en conservant les parcours reprise/statut/diagnostic, les contrôles de session et les évolutions backend/BackOffice. Le commit `823cbad` est publié sur le head de la PR #113, déclarée mergeable ; les deux checks CI sont en cours. Validation locale : 165 tests ChromeHeadless Scan, 5 contrats bootstrap BackOffice, 349 tests backend, builds Scan/BackOffice/backend et `graphify update .` ; aucun déploiement. |
 | 2026-09-10 | Windows | **Catalog — refonte mobile de « Toutes les prochaines dates ».** La branche `fix/catalog-upcoming-dates-mobile-ui` sépare l'en-tête date/titre, les métadonnées et les actions de chaque carte, supprime la troncature des titres et adapte les boutons au tactile avec repli à 320 px. Validation : 121 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .`, contrôles locaux à 320/390/768/1280 px avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. PR [#120](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/120) ouverte. |
 | 2026-09-10 | Windows | **Catalog — alignement du header et état déconnecté.** Le lien « Le site de l’association » utilise la même hauteur de contrôle de 42 px que les liens desktop et reçoit leur soulignement orange au survol/focus ; le bouton « Mon compte » ne rend plus le rond vide lorsqu’il est déconnecté. Validation : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .` et contrôles Chrome à 1200/390 px sans débordement ; avertissement de budget initial Angular connu, aucun déploiement, PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117) ouverte. |
 | 2026-09-10 | Windows | **Correctif Catalog — création de compte.** Après reproduction du retour OAuth sur la racine (`#code=...`) qui laissait l’accueil affiché, le shell initialise MSAL uniquement lorsqu’un callback est présent afin de restaurer `/compte`. Validation TDD : test rouge puis vert, 121 tests ChromeHeadless, build SSR/navigateur et `graphify update .` passants ; avertissement de budget initial connu, aucune ressource Entra ni déploiement modifié, PR à ouvrir. |

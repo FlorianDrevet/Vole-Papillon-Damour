@@ -99,7 +99,60 @@
   }
 
   @if (activeTab() === 'sessions') {
-    <section class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]"><div class="admin-panel"><div class="flex items-end gap-3"><label class="admin-field flex-1"><span>Statut</span><select [(ngModel)]="sessionStatus"><option value="">Tous</option><option value="InProgress">En cours</option><option value="Completed">Terminées</option><option value="Resumed">Reprises</option></select></label><app-pill-button (click)="loadSessions()" type="button" [small]="true">Filtrer</app-pill-button></div><div class="mt-4 flex flex-col divide-y divide-line">@for (session of sessions(); track session.id) {<button type="button" class="admin-row text-left" (click)="selectSession(session.id)" [class.bg-paper-2]="selectedSession()?.id === session.id"><span><strong>{{ session.mode }} · {{ session.fairName || 'Disponible' }}</strong><small>{{ formatDate(session.startedAt) }} · {{ session.status }}</small></span><span>{{ session.keptCount }}/{{ session.scannedCount }}</span></button>} @empty {<p class="py-8 text-sm text-slate-2">Aucune session.</p>}</div></div>@if (selectedSession(); as session) {<div class="admin-panel flex flex-col gap-5"><div><span class="admin-label">Session {{ session.id }}</span><h2>{{ session.mode }} · {{ session.fairName || 'Disponible maintenant' }}</h2><p class="text-sm text-slate-2">{{ session.volunteerName || session.volunteerId }} · {{ session.status }} · {{ session.keptCount }} conservés</p></div><div class="flex flex-wrap gap-2"><app-pill-button (click)="cancelSessionAlerts()" type="button" variant="secondary" [small]="true">Annuler alertes</app-pill-button><app-pill-button (click)="forceSessionAlerts()" type="button" variant="secondary" [small]="true">Forcer alertes</app-pill-button><app-pill-button (click)="cancelSession()" type="button" variant="danger" [small]="true">Annuler session</app-pill-button></div><div class="admin-subpanel grid gap-3 sm:grid-cols-3"><h3 class="sm:col-span-3">Changer le mode (session terminée)</h3><label class="admin-field"><span>Mode</span><select [(ngModel)]="reassignMode"><option value="AvailableNow">Disponible</option><option value="NextFair">Prochaine bourse</option></select></label><label class="admin-field sm:col-span-2"><span>Identifiant bourse cible</span><input [(ngModel)]="reassignFairId" placeholder="GUID si NextFair"></label><app-pill-button (click)="reassignSession()" type="button" [small]="true">Réaffecter</app-pill-button></div><div><h3>Mouvements</h3><div class="overflow-x-auto"><table class="admin-table"><thead><tr><th>ISBN</th><th>Type</th><th>Qté</th><th>Date</th><th></th></tr></thead><tbody>@for (movement of session.movements; track movement.id) {<tr><td class="font-mono text-xs">{{ movement.isbn13 }}</td><td>{{ movement.type }}</td><td>{{ movement.quantity }}</td><td>{{ formatDate(movement.occurredAt) }}</td><td>@if (!movement.reversalOfMovementId) {<button type="button" class="admin-link" (click)="removeMovement(movement.id)">Retirer</button>}</td></tr>}</tbody></table></div></div></div>} @else {<app-state-panel icon="calendar" title="Sélectionnez une session" description="Le détail permet de corriger les mouvements et les alertes."></app-state-panel>}</section>
+    <section class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+      <div class="admin-panel">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <span class="admin-label">Filet responsable</span>
+            <h2>Sessions de tri ouvertes</h2>
+            <p class="mt-2">Seules les sessions <code>InProgress</code> ouvertes depuis plus de 24 h sont affichées.</p>
+          </div>
+          <app-pill-button (click)="loadSessions()" type="button" [small]="true">Actualiser</app-pill-button>
+        </div>
+        <div class="mt-4 flex flex-col divide-y divide-line">
+          @for (session of sessions(); track session.id) {
+            <button type="button" class="admin-row text-left" (click)="selectSession(session.id)" [class.bg-paper-2]="selectedSession()?.id === session.id">
+              <span>
+                <strong>{{ session.volunteerName || session.volunteerId }} · {{ session.mode }}</strong>
+                <small>Ouverte depuis {{ formatAge(session.startedAt) }} · dernier scan {{ formatDate(session.lastScanAt) }}</small>
+              </span>
+              <span>{{ session.scannedCount }} livre(s)</span>
+            </button>
+          } @empty {
+            <p class="py-8 text-sm text-slate-2">Aucune session ouverte depuis plus de 24 h.</p>
+          }
+        </div>
+      </div>
+      @if (selectedSession(); as session) {
+        <div class="admin-panel flex flex-col gap-5">
+          <div>
+            <span class="admin-label">Session {{ session.id }}</span>
+            <h2>{{ session.mode }} · {{ session.fairName || 'Disponible maintenant' }}</h2>
+            <p class="text-sm text-slate-2">{{ session.volunteerName || session.volunteerId }} · {{ session.scannedCount }} livre(s) enregistré(s) · dernier scan {{ formatDate(session.lastScanAt) }}</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            @if (session.status === 'InProgress') {
+              <app-pill-button (click)="requestForceClose()" type="button" variant="danger" [small]="true">Clôturer d’office</app-pill-button>
+            }
+            <app-pill-button (click)="cancelSessionAlerts()" type="button" variant="secondary" [small]="true">Annuler alertes</app-pill-button>
+            <app-pill-button (click)="forceSessionAlerts()" type="button" variant="secondary" [small]="true">Forcer alertes</app-pill-button>
+          </div>
+          @if (sessionToForceClose(); as pendingSession) {
+            <div class="admin-subpanel" role="dialog" aria-modal="true" aria-labelledby="force-close-title">
+              <h3 id="force-close-title">Clôturer cette session d’office ?</h3>
+              <p>La session sera fermée avec le motif responsable. Les {{ pendingSession.scannedCount }} livre(s) concernés déclencheront les alertes différées après {{ alertDelayMinutes() }} minutes.</p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button type="button" class="admin-link" (click)="cancelForceClose()">Annuler</button>
+                <app-pill-button (click)="confirmForceClose()" type="button" variant="danger" [small]="true">Clôturer et mettre en file</app-pill-button>
+              </div>
+            </div>
+          }
+          <div><h3>Mouvements enregistrés</h3><div class="overflow-x-auto"><table class="admin-table"><thead><tr><th>ISBN</th><th>Type</th><th>Qté</th><th>Date</th></tr></thead><tbody>@for (movement of session.movements; track movement.id) {<tr><td class="font-mono text-xs">{{ movement.isbn13 }}</td><td>{{ movement.type }}</td><td>{{ movement.quantity }}</td><td>{{ formatDate(movement.occurredAt) }}</td></tr>}</tbody></table></div></div>
+        </div>
+      } @else {
+        <app-state-panel icon="calendar" title="Sélectionnez une session" description="Le détail permet de confirmer sa clôture et de voir les alertes associées."></app-state-panel>
+      }
+    </section>
   }
 
   @if (activeTab() === 'alerts') {<section class="admin-panel"><div class="flex flex-wrap items-end gap-3"><label class="admin-field"><span>Statut</span><select [(ngModel)]="alertStatus"><option value="">Tous</option><option value="Pending">En attente</option><option value="Sent">Envoyées</option><option value="Cancelled">Annulées</option><option value="Failed">En échec</option></select></label><app-pill-button (click)="loadAlerts()" type="button" [small]="true">Filtrer</app-pill-button></div><div class="mt-5 overflow-x-auto"><table class="admin-table"><thead><tr><th>Message</th><th>Membre</th><th>État</th><th>Échéance</th><th>Tentatives</th><th></th></tr></thead><tbody>@for (alert of alerts(); track alert.id) {<tr><td class="font-mono text-xs">{{ alert.id }}</td><td class="font-mono text-xs">{{ alert.memberId || '—' }}</td><td>{{ alert.status }} · {{ alert.itemCount }} livre(s)</td><td>{{ formatDate(alert.dueAt) }}</td><td>{{ alert.attempts }}</td><td class="flex gap-2"><button type="button" class="admin-link" (click)="forceAlert(alert.id)">Forcer</button><button type="button" class="admin-danger" (click)="cancelAlert(alert.id)">Annuler</button></td></tr>} @empty {<tr><td colspan="6" class="py-10 text-center text-slate-2">Aucune alerte.</td></tr>}</tbody></table></div></section>}

@@ -1,0 +1,151 @@
+:host {
+  display: block;
+}
+
+.recovery-screen {
+  min-height: 100%;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  color: #17211f;
+  background: #f6f8f4;
+}
+
+.recovery-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 68rem;
+  margin: 0 auto 1.5rem;
+}
+
+.recovery-kicker,
+.recovery-status {
+  margin: 0 0 .35rem;
+  color: #52705f;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.recovery-header h1 {
+  margin: 0;
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+}
+
+.recovery-header p:last-child {
+  max-width: 42rem;
+  margin: .6rem 0 0;
+  color: #52615c;
+}
+
+.recovery-close,
+.recovery-actions button {
+  min-height: 2.75rem;
+  border: 1px solid #a8b8ae;
+  border-radius: .75rem;
+  padding: .65rem .9rem;
+  color: #173b2a;
+  background: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.recovery-close:hover,
+.recovery-actions button:hover {
+  background: #e8f2e9;
+}
+
+.recovery-feedback,
+.recovery-empty,
+.recovery-list {
+  max-width: 68rem;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.recovery-feedback,
+.recovery-empty {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.recovery-feedback-error,
+.recovery-error {
+  color: #8d2f2f;
+}
+
+.recovery-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.recovery-entry {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #d5dfd7;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 .35rem 1.2rem rgb(22 54 35 / 7%);
+}
+
+.recovery-cover {
+  width: 5.25rem;
+  height: 7.5rem;
+  border-radius: .45rem;
+  object-fit: cover;
+  background: #edf1ed;
+}
+
+.recovery-copy h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.recovery-authors,
+.recovery-cause,
+.recovery-error {
+  margin: .35rem 0 0;
+}
+
+.recovery-cause {
+  color: #52615c;
+}
+
+.recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  margin-top: .85rem;
+}
+
+.recovery-actions .keep-entry {
+  border-color: #31724f;
+  color: #fff;
+  background: #31724f;
+}
+
+.recovery-actions .reject-entry,
+.recovery-actions .abandon-entry {
+  color: #7b2929;
+  border-color: #d9a7a7;
+}
+
+@media (max-width: 38rem) {
+  .recovery-header {
+    flex-direction: column;
+  }
+
+  .recovery-entry {
+    grid-template-columns: 4.25rem minmax(0, 1fr);
+  }
+
+  .recovery-cover {
+    width: 4.25rem;
+    height: 6rem;
+  }
+}

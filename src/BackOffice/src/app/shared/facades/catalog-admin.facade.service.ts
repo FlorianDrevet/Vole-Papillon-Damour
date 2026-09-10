@@ -136,6 +136,10 @@ export class CatalogAdminFacadeService {
     return this.request(MethodEnum.POST, `/books/admin/sessions/${sessionId}/alerts/force`);
   }
 
+  forceCloseSession(sessionId: string): Promise<object> {
+    return this.request(MethodEnum.POST, `/books/admin/sessions/${sessionId}/force-close`);
+  }
+
   getAlerts(filters: object = {}): Promise<AdminAlertPage> {
     return this.get('/books/admin/alerts', filters);
   }

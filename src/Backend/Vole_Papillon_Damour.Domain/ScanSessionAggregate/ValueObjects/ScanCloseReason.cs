@@ -5,5 +5,6 @@ public enum ScanCloseReason : byte
     Manual,
     Inactivity,
     Disconnect,
-    TokenExpired
+    TokenExpired,
+    AdminForced
 }

@@ -78,7 +78,8 @@ public sealed class BibliographicMetadataResolver(
         {
             var openLibraryResult = ProviderResult.Empty;
             if (bnfResult.Metadata.CoverUrl is null ||
-                string.IsNullOrWhiteSpace(bnfResult.Metadata.WorkId))
+                string.IsNullOrWhiteSpace(bnfResult.Metadata.WorkId) ||
+                string.IsNullOrWhiteSpace(bnfResult.Metadata.Genre))
             {
                 openLibraryResult = await TryFindAsync(
                     OpenLibraryProvider,
@@ -88,7 +89,7 @@ public sealed class BibliographicMetadataResolver(
             }
 
             var merged = Merge(bnfResult.Metadata, openLibraryResult.Metadata);
-            if (merged.CoverUrl is not null)
+            if (HasCompleteMetadata(merged))
             {
                 return merged;
             }
@@ -110,7 +111,7 @@ public sealed class BibliographicMetadataResolver(
             cancellationToken);
         if (openLibraryFallbackResult.Metadata is not null)
         {
-            if (openLibraryFallbackResult.Metadata.CoverUrl is not null)
+            if (HasCompleteMetadata(openLibraryFallbackResult.Metadata))
             {
                 return openLibraryFallbackResult.Metadata;
             }
@@ -247,7 +248,16 @@ public sealed class BibliographicMetadataResolver(
             WorkId = primary.WorkId ?? enrichment.WorkId,
             CoverUrl = coverUrl,
             CoverSource = coverSource,
+            Genre = string.IsNullOrWhiteSpace(primary.Genre)
+                ? enrichment.Genre
+                : primary.Genre,
         };
+    }
+
+    private static bool HasCompleteMetadata(BookMetadataResult metadata)
+    {
+        return metadata.CoverUrl is not null &&
+               !string.IsNullOrWhiteSpace(metadata.Genre);
     }
 
     private sealed record ProviderResult(BookMetadataResult? Metadata, bool Failed)
