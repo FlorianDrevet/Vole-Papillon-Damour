@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `Scan` — hiérarchie d’état et synchronisation automatique de l’application bénévole. |
-| **Prochaine action** | Relire la PR de cette branche et effectuer le smoke test connecté sur `/accueil` avant tout déploiement. |
+| **Prochaine action** | Relire la PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et effectuer le smoke test connecté sur `/accueil` avant tout déploiement. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-auto-sync` |
-| **Dernière mise à jour** | 2026-09-11 — synchronisation automatique et bandeau d’état compact, PR à ouvrir, aucun déploiement |
-| **Branche** | `fix/scan-auto-sync-header` — worktree dédié, basé sur `origin/main`, PR à ouvrir |
+| **Dernière mise à jour** | 2026-09-11 — synchronisation automatique et bandeau d’état compact, PR #127 ouverte, aucun déploiement |
+| **Branche** | `fix/scan-auto-sync-header` — worktree dédié, basé sur `origin/main`, PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) ouverte |
 
 ---
 
@@ -91,7 +91,7 @@ l’en-tête de mode et, lorsqu’il existe, sous la barre de session bénévole
 affiche les tags `(hors connexion)` et `(action à faire)` puis ouvre une modal d’état avec les
 actions disponibles : réessai, reprise de session, retour au tri ou ouverture des reprises.
 Les détails critiques restent accessibles dans cette modal ; aucun nouveau stockage ou contrat
-API n’est introduit. Le smoke connecté de production reste à faire après revue de la PR.
+API n’est introduit. La PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) est ouverte ; le smoke connecté de production reste à faire après revue.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 
