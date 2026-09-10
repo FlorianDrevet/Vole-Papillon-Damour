@@ -23,6 +23,7 @@ describe('AppComponent', () => {
           account: signal(null),
           isAuthenticated: signal(false),
           isAdministrator: signal(false),
+          initialize: jasmine.createSpy('initialize').and.resolveTo(),
         },
       }, {
         provide: CatalogApiService,
@@ -72,5 +73,33 @@ describe('AppComponent', () => {
 
     expect(meta.updateTag).toHaveBeenCalledWith({name: 'robots', content: 'index, follow'});
     freshFixture.destroy();
+  });
+
+  it('keeps MSAL lazy for an anonymous shell without an OAuth callback', () => {
+    const initialize = (TestBed.inject(CatalogAuthService) as unknown as {
+      initialize: jasmine.Spy;
+    }).initialize;
+
+    expect(initialize).not.toHaveBeenCalled();
+  });
+
+  it('initializes authentication when an OAuth callback lands on the root route', () => {
+    const initialize = (TestBed.inject(CatalogAuthService) as unknown as {
+      initialize: jasmine.Spy;
+    }).initialize;
+    const originalUrl = window.location.href;
+
+    window.history.replaceState({}, '', `${window.location.pathname}#code=oauth-callback`);
+
+    let freshFixture: ComponentFixture<AppComponent> | undefined;
+    try {
+      freshFixture = TestBed.createComponent(AppComponent);
+      freshFixture.detectChanges();
+
+      expect(initialize).toHaveBeenCalled();
+    } finally {
+      freshFixture?.destroy();
+      window.history.replaceState({}, '', originalUrl);
+    }
   });
 });
