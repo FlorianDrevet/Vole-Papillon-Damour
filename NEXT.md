@@ -16,8 +16,8 @@
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
 | **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-header` |
-| **Dernière mise à jour** | 2026-09-10 — header Catalog aligné, icône vide masquée pour les visiteurs, PR à ouvrir, aucun déploiement |
-| **Branche** | `fix/catalog-header-account-icon` — worktree dédié, synchronisée avec `origin/main`, PR à ouvrir |
+| **Dernière mise à jour** | 2026-09-10 — header Catalog aligné, icône vide masquée pour les visiteurs, PR #117 ouverte, aucun déploiement |
+| **Branche** | `fix/catalog-header-account-icon` — worktree dédié, synchronisée avec `origin/main`, PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117) ouverte |
 
 ---
 
@@ -89,7 +89,8 @@ authentifié d’administration.
 Validation locale : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify
 update .` et contrôles Chrome lecture seule à 1200 px et 390 px sans débordement. Le
 budget initial Angular dépasse toujours le seuil d’avertissement connu ; aucun déploiement
-n’a été effectué et la PR reste à ouvrir.
+n’a été effectué et la PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117)
+est ouverte.
 
 ### État actualisé — 2026-09-10 — galerie Website et fichiers média manquants
 
@@ -942,7 +943,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-10 | Windows | **Catalog — alignement du header et état déconnecté.** Le lien « Le site de l’association » utilise la même hauteur de contrôle de 42 px que les liens desktop et reçoit leur soulignement orange au survol/focus ; le bouton « Mon compte » ne rend plus le rond vide lorsqu’il est déconnecté. Validation : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .` et contrôles Chrome à 1200/390 px sans débordement ; avertissement de budget initial Angular connu, aucun déploiement, PR à ouvrir. |
+| 2026-09-10 | Windows | **Catalog — alignement du header et état déconnecté.** Le lien « Le site de l’association » utilise la même hauteur de contrôle de 42 px que les liens desktop et reçoit leur soulignement orange au survol/focus ; le bouton « Mon compte » ne rend plus le rond vide lorsqu’il est déconnecté. Validation : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .` et contrôles Chrome à 1200/390 px sans débordement ; avertissement de budget initial Angular connu, aucun déploiement, PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117) ouverte. |
 | 2026-09-09 | Windows | **Catalog — carte et agenda des prochaines bourses.** La PR [#110](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/110) met en avant la prochaine édition, réutilise les assets d’icônes du Website, restaure l’embed Google Maps après consentement dédié avec lien de repli, et liste toutes les futures bourses depuis `/asso-events`. Validation : 120 tests ChromeHeadless, build SSR/navigateur, `graphify update .` et `git diff --check` passants ; avertissement de budget initial Angular connu, aucun déploiement. |
 | 2026-09-08 | Windows | **PR #99 — résolution des conflits.** Depuis `origin/main` (`fbf42fb`), intégration de `fix/audit-catalog-public` en conservant les lots Scanette et Catalog, les genres fournis par l’API, le périmètre `availability=available` et le lien Maps statique. L’option de consentement devenue inutile pour l’iframe a été retirée de la bannière et de la politique. Validation : 117 tests ChromeHeadless Catalog, build SSR/production et `graphify update .` ; avertissement de budget initial connu, aucun déploiement. |
 | 2026-09-08 | Windows | **Audit catalogue/Scanette — lot 1.** Depuis `origin/main`, correction TDD de `API-01`, `API-02`, `API-03`, `API-07`, `SCAN-03`, `CAT-01` et `CAT-02` sur le worktree `fix/catalogue-scan-lot1`. Suites Application/API/Scan/Catalog et builds concernés passent localement ; aucune migration ni ressource distante n'a été modifiée. Le retest terrain hors ligne, la validation RGPD et l'arbitrage du nouveau filigrane restent à faire. |
