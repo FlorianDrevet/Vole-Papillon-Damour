@@ -1,13 +1,6 @@
-import { Component, HostListener } from '@angular/core';
+import { Component } from '@angular/core';
 
-type PhotoAlbum = Readonly<{
-  title: string;
-  eyebrow: string;
-  description: string;
-  photoCount: number;
-  previewPhotos: readonly string[];
-  historyRoute?: string;
-}>;
+import { PHOTO_ALBUM_CATEGORIES, PHOTO_ALBUMS, PHOTO_ALBUMS_ROUTE } from './photo-album-catalog';
 
 type VideoAsset = Readonly<{
   title: string;
@@ -25,82 +18,9 @@ type VideoAsset = Readonly<{
     standalone: false
 })
 export class PicturesComponent {
-  readonly donationPhotos: string[] = [
-    'images/Association/don-livre.jpg',
-    'images/Association/don-livre2.jpg',
-    'images/Association/don-livre3.jpg',
-    'images/Association/don-livre4.jpg',
-    'images/Association/don-livre5.jpg',
-    'images/Association/don-livre6.jpg',
-    'images/Association/don-livre7.jpg',
-    'images/Association/don-livre8.jpg',
-    'images/Association/don-dvd.jpg',
-  ];
-
-  private readonly albumCatalog: readonly PhotoAlbum[] = [
-    {
-      title: 'Bourse aux livres',
-      eyebrow: 'L’association · album simple',
-      description: 'Les livres, les cartons et les visages derrière chaque collecte.',
-      photoCount: this.donationPhotos.length,
-      previewPhotos: this.donationPhotos,
-    },
-    {
-      title: 'Maxence · 2004–2010',
-      eyebrow: 'Le récit de Maxence · 231 photos',
-      description: 'Les premières années, de la naissance aux souvenirs de famille.',
-      photoCount: 231,
-      previewPhotos: [
-        'images/Association/Gallery/maxence-2004-2010-01.jpg',
-        'images/Association/Gallery/maxence-2004-2010-02.jpg',
-        'images/Association/Gallery/maxence-2004-2010-03.jpg',
-      ],
-      historyRoute: '/maxence/histoire',
-    },
-    {
-      title: 'Maxence · 2011–2019',
-      eyebrow: 'Le récit de Maxence · 145 photos',
-      description: 'L’école, les hospitalisations et les progrès qui ouvrent la suite.',
-      photoCount: 145,
-      previewPhotos: [
-        'images/Association/Gallery/maxence-2011-2019-01.jpg',
-        'images/Association/Gallery/maxence-2011-2019-02.jpg',
-        'images/Association/Gallery/maxence-2011-2019-03.jpg',
-      ],
-      historyRoute: '/maxence/histoire',
-    },
-    {
-      title: 'Maxence · 2020–2026',
-      eyebrow: 'Le récit de Maxence · 215 photos',
-      description: 'Les années lycée, les études supérieures et une nouvelle autonomie.',
-      photoCount: 215,
-      previewPhotos: [
-        'images/Association/Gallery/maxence-2020-2026-01.jpg',
-        'images/Association/Gallery/maxence-2020-2026-02.jpg',
-        'images/Association/Gallery/maxence-2020-2026-03.jpg',
-      ],
-      historyRoute: '/maxence/histoire',
-    },
-    {
-      title: 'Anniversaires',
-      eyebrow: 'Famille · 88 photos',
-      description: 'Des fêtes, des décors et les petits rituels qui deviennent de grands souvenirs.',
-      photoCount: 88,
-      previewPhotos: ['images/Association/Gallery/anniversaires-20-ans.jpg'],
-    },
-    {
-      title: 'Célébrités rencontrées',
-      eyebrow: 'Rencontres · 15 photos',
-      description: 'Les rencontres qui ont marqué les actions et les années de l’association.',
-      photoCount: 15,
-      previewPhotos: ['images/Association/Gallery/celebrites-yannick-noah.jpg'],
-    },
-  ];
-
-  readonly photoAlbums: readonly PhotoAlbum[] = [
-    ...this.albumCatalog.slice(1),
-    this.albumCatalog[0],
-  ];
+  readonly albumCategories = PHOTO_ALBUM_CATEGORIES;
+  readonly photoAlbums = PHOTO_ALBUMS;
+  readonly photoAlbumsRoute = PHOTO_ALBUMS_ROUTE;
 
   readonly videos: readonly VideoAsset[] = [
     {
@@ -231,27 +151,4 @@ export class PicturesComponent {
     },
   ];
 
-  selectedAlbum: PhotoAlbum | null = null;
-
-  openAlbum(album: PhotoAlbum): void {
-    this.selectedAlbum = album;
-  }
-
-  onAlbumKeydown(album: PhotoAlbum, event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      this.openAlbum(album);
-    }
-  }
-
-  closeAlbum(): void {
-    this.selectedAlbum = null;
-  }
-
-  @HostListener('document:keydown.escape')
-  closeAlbumWithEscape(): void {
-    if (this.selectedAlbum) {
-      this.closeAlbum();
-    }
-  }
 }
