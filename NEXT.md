@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-full-photo-albums` |
-| **Dernière mise à jour** | 2026-09-10 — les sélections photo incomplètes sont annoncées comme telles, les cartes vidéo sont alignées, PR #115 ouverte, aucun déploiement |
-| **Branche** | `fix/website-full-photo-albums` — worktree dédié, synchronisée avec `origin/main`, PR [#115](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/115) ouverte |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche courante est la galerie photo Website de la PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119). |
+| **Prochaine action** | Relire et valider la PR #119 ; aucun déploiement Website ne doit être lancé avant sa fusion et un smoke de production. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-website-photo-albums` |
+| **Dernière mise à jour** | 2026-09-10 — 23 albums annuels Maxence, trois albums événements, 715 photos ajoutées, PR #119 ouverte, aucun déploiement |
+| **Branche** | `feat/website-photo-albums` — worktree dédié, synchronisée avec `origin/main`, PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119) ouverte |
 
 ---
 
@@ -77,6 +77,22 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-10 — catalogue des albums photos Website
+
+La PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119), sur la
+branche `feat/website-photo-albums`, remplace la modal de la galerie par des pages
+d’albums accessibles sous `/association/photos/:albumSlug`, avec un retour vers la liste.
+Le catalogue est séparé entre 23 albums de la vie de Maxence (un par année de 2004 à
+2026) et trois albums événements (bourse aux livres, célébrités, anniversaire des 20 ans).
+Les trois dossiers 2005 sont regroupés dans un album de 94 photos ; les chapitres existants
+de `/maxence/histoire` (2004–2016) proposent leur album correspondant, sans lien ajouté
+pour les années sans chapitre. Les fichiers transmis ont été copiés dans le Website : 612
+photos Maxence et 103 photos événements, soit 715 images (~379 MB). Les 72 tests
+ChromeHeadless, le build SSR/prérendu, Graphify et un smoke navigateur desktop local
+passent ; l’émulation mobile exacte n’était pas disponible dans la session navigateur et
+aucun déploiement ni smoke de production n’a été effectué. Le build conserve ses
+avertissements existants de budget Angular, styles et dépendances CommonJS.
 
 ### État actualisé — 2026-09-10 — galerie Website et fichiers média manquants
 
