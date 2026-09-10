@@ -308,6 +308,20 @@ public sealed class Book : AggregateRoot<Isbn13>
         return changed;
     }
 
+    public bool RecordMetadataRefreshAttempt(DateTime attemptedAt)
+    {
+        var utcAttemptedAt = DomainTime.RequireUtc(attemptedAt, nameof(attemptedAt));
+        if (MetadataStatus != BookMetadataStatus.Resolved)
+        {
+            return false;
+        }
+
+        var changed = LastAttemptAt != utcAttemptedAt;
+        LastAttemptAt = utcAttemptedAt;
+        UpdatedAt = utcAttemptedAt;
+        return changed;
+    }
+
     public bool IsMetadataFieldManuallyEdited(BookMetadataField field)
     {
         return ReadManuallyEditedFields().Contains(field);

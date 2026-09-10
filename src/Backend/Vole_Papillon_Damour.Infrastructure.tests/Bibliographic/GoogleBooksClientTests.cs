@@ -44,6 +44,7 @@ public sealed class GoogleBooksClientTests
         result.Title.Should().Be("Le Petit Prince");
         result.Authors.Should().Be("Antoine de Saint-Exupéry");
         result.PublicationYear.Should().Be(1946);
+        result.Genre.Should().Be("Fiction");
         result.CoverUrl.Should().Be("https://books.google.com/books/content?id=volume-42");
         result.CoverSource.Should().Be("GoogleBooks");
     }
@@ -112,6 +113,7 @@ public sealed class GoogleBooksClientTests
                 "authors": ["Antoine de Saint-Exupéry"],
                 "publisher": "Gallimard",
                 "publishedDate": "1946-01-01",
+                "categories": ["Fiction", "Children's fiction"],
                 "industryIdentifiers": [{"type":"ISBN_13","identifier":"978-2-07-036373-5"}],
                 "imageLinks": {"thumbnail":"http://books.google.com/books/content?id=volume-42"}
               }

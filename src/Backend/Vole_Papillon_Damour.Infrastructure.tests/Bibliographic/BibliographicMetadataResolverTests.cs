@@ -105,6 +105,54 @@ public sealed class BibliographicMetadataResolverTests
     }
 
     [Fact]
+    public async Task ResolveAsync_WhenBnfHasNoGenre_UsesOpenLibraryGenre()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var bnfMetadata = CreateMetadata("BnF") with { Genre = null };
+        var openLibraryMetadata = CreateMetadata("OpenLibrary") with { Genre = "Jeunesse" };
+        var bnf = Substitute.For<IBnfSruClient>();
+        var openLibrary = Substitute.For<IOpenLibraryClient>();
+        var googleBooks = Substitute.For<IGoogleBooksClient>();
+        bnf.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(bnfMetadata);
+        openLibrary.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(openLibraryMetadata);
+        var resolver = new BibliographicMetadataResolver(
+            bnf,
+            openLibrary,
+            googleBooks,
+            NullLogger<BibliographicMetadataResolver>.Instance);
+
+        var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
+
+        result.Should().Be(bnfMetadata with { Genre = "Jeunesse" });
+        await openLibrary.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ResolveAsync_WhenBnfAndOpenLibraryHaveNoGenre_UsesGoogleBooksGenre()
+    {
+        Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
+        var bnfMetadata = CreateMetadata("BnF") with { Genre = null };
+        var openLibraryMetadata = CreateMetadata("OpenLibrary") with { Genre = null };
+        var googleMetadata = CreateMetadata("GoogleBooks") with { Genre = "Essais" };
+        var bnf = Substitute.For<IBnfSruClient>();
+        var openLibrary = Substitute.For<IOpenLibraryClient>();
+        var googleBooks = Substitute.For<IGoogleBooksClient>();
+        bnf.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(bnfMetadata);
+        openLibrary.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(openLibraryMetadata);
+        googleBooks.FindAsync(isbn13, Arg.Any<CancellationToken>()).Returns(googleMetadata);
+        var resolver = new BibliographicMetadataResolver(
+            bnf,
+            openLibrary,
+            googleBooks,
+            NullLogger<BibliographicMetadataResolver>.Instance);
+
+        var result = await resolver.ResolveAsync(isbn13, CancellationToken.None);
+
+        result.Should().Be(bnfMetadata with { Genre = "Essais" });
+        await googleBooks.Received(1).FindAsync(isbn13, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task ResolveAsync_WhenBnfFindsMetadataWithoutWorkId_UsesOpenLibraryForWorkId()
     {
         Isbn13.TryCreate("9782070363735", out var isbn13).Should().BeTrue();
@@ -291,5 +339,6 @@ public sealed class BibliographicMetadataResolverTests
         source,
         "OL123W",
         new DateTimeOffset(2026, 9, 3, 8, 0, 0, TimeSpan.Zero),
-        source);
+        source,
+        "Romans");
 }

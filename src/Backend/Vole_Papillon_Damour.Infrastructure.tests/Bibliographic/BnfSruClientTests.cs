@@ -46,6 +46,7 @@ public sealed class BnfSruClientTests
         result.Authors.Should().Be("Saint-Exupéry, Antoine de");
         result.Publisher.Should().Be("Gallimard");
         result.PublicationYear.Should().Be(1946);
+        result.Genre.Should().Be("Roman");
         result.Source.Should().Be("BnF");
         result.CoverUrl.Should().Be("https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782070363735&couverture=1");
         result.CoverSource.Should().Be("BnF");
@@ -132,6 +133,7 @@ public sealed class BnfSruClientTests
                     <mxc:subfield code="c">Gallimard</mxc:subfield>
                     <mxc:subfield code="d">1946</mxc:subfield>
                   </mxc:datafield>
+                  <mxc:datafield tag="608"><mxc:subfield code="a">Roman</mxc:subfield></mxc:datafield>
                   <mxc:datafield tag="856">
                     <mxc:subfield code="b">Première de couverture</mxc:subfield>
                     <mxc:subfield code="u">119563</mxc:subfield>

@@ -103,6 +103,11 @@ options with any additional genres returned by `GET /catalog/search`; the home c
 `/recherche?genre=...`, so the existing query-param subscription immediately loads the
 filtered catalogue and preserves a selected genre even while the response is loading.
 
+The public Catalog does not need a client contract change for bibliographic genre enrichment:
+its existing `genres` projection remains API-driven, so newly persisted provider genres will
+appear in the home/search dropdown and navigation after the Worker backfill. Curated fallback
+values remain available while the catalog contains no matching provider genres.
+
 The 2026-09-08 Catalog Lot 6 pass keeps public search filtering, ordering and pagination in
 the EF query, removes the empty-result full-table fallback, and scopes announcement/fair
 lookups to the returned page. Unknown browser routes now render a real 404 with

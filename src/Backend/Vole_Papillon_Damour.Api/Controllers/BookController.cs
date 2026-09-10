@@ -304,7 +304,8 @@ public static class BookController
                                 metadata.Source,
                                 metadata.WorkId,
                                 metadata.RetrievedAt,
-                                metadata.CoverSource)),
+                                metadata.CoverSource,
+                                metadata.Genre)),
                             error => error.Result());
                     })
                 .WithName("GetBookMetadata")
