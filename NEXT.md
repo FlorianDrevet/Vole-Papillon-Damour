@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Ouvrir puis relire la PR de la refonte visuelle Catalog administration et effectuer, si nécessaire, un contrôle authentifié manuel avant tout déploiement. |
+| **Prochaine action** | Relire la PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) de la refonte visuelle Catalog administration et effectuer, si nécessaire, un contrôle authentifié manuel avant tout déploiement. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-admin-maquette-refresh` |
 | **Dernière mise à jour** | 2026-09-11 — refonte visuelle de l’administration Catalog, aucun déploiement |
-| **Branche** | `feat/catalog-admin-maquette-refresh` — worktree dédié, synchronisée avec `origin/main`, PR à ouvrir |
+| **Branche** | `feat/catalog-admin-maquette-refresh` — worktree dédié, synchronisée avec `origin/main`, PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) ouverte |
 
 ---
 
@@ -96,7 +96,8 @@ Inventaire garde donc un état vide et des actions désactivées, sans inventer 
 Validation locale : 130 tests Catalog ChromeHeadless, build production Catalog, Graphify et
 contrôle Chrome desktop du shell public/admin passent. L’avertissement de budget du bundle
 initial reste celui du projet ; aucun déploiement ni contrôle authentifié de production n’a
-été effectué. La PR reste à ouvrir après la synchronisation finale avec `origin/main`.
+été effectué. La PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) est
+ouverte pour relecture ; aucun déploiement n’est autorisé par cette étape.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 
