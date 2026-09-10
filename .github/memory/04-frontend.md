@@ -78,6 +78,15 @@ External ID account-creation prompt with a `/compte` return URL; the correspondi
 The route remains private and noindex while the public catalogue stays browseable without
 authentication.
 
+The authenticated Catalog `/compte` surface keeps the member watchlist as the default
+tabbed view. `Ma liste de recherche` renders typed watchlist items with cover fallback,
+edition scope, available/future/pending availability and alert dates; `Préférences et
+compte` contains alert suspension, the authenticated identity, administration handoff and
+account deletion. The header account trigger uses the full cached MSAL display name and a
+filled navy treatment when connected, while anonymous visitors keep an outlined trigger
+with a person icon. The Catalog account component owns the tab state locally and continues
+to use the existing bearer-protected member API without changing its contracts.
+
 As of 2026-09-09, `/prochaines-dates` keeps the next Books event in a prominent card and
 renders the complete future Books schedule below it. The Catalog client reads the public
 `/asso-events` collection, filters typed `Books` events and keeps the API's chronological

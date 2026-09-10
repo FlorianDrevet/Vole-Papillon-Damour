@@ -78,6 +78,20 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — page « Mon compte » du Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree `feat/catalog-account-page`, la
+page membre place la liste de recherche au premier plan, avec les onglets « Ma liste de
+recherche » et « Préférences et compte ». Les suivis reprennent leur couverture, édition,
+disponibilité, date d’ajout, dernière alerte et retrait ; les préférences conservent la
+suspension des alertes, l’accès administration et la suppression de compte.
+
+Le bouton de compte du header affiche désormais l’icône et le nom complet en état connecté
+dans un contrôle plein, contre un contrôle outline avec icône en état anonyme. Les tests
+Catalog et le build SSR/navigateur passent ; les smokes Chrome local desktop et mobile
+390×844 confirment le rendu anonyme sans débordement. Le nouvel état connecté est couvert
+par les tests composant/navigation ; aucun déploiement ni changement Entra n’a été effectué.
+
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 
 Depuis `origin/main` après la fusion de la PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124),

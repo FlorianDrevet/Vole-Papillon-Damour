@@ -235,32 +235,49 @@
   align-items: center;
   justify-content: center;
   gap: 9px;
+  min-height: 42px;
   min-width: 146px;
-  padding: 9px 16px 9px 11px;
-  border: 1px solid var(--catalog-mist);
+  padding: 0 16px;
+  border: 1px solid var(--catalog-line-strong);
   border-radius: 999px;
   color: var(--catalog-blue);
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
+  transition: background 160ms var(--catalog-ease-out), border-color 160ms var(--catalog-ease-out), color 160ms var(--catalog-ease-out), transform 160ms var(--catalog-ease-out);
 }
 
 .account-teaser:hover,
 .account-teaser:focus-visible,
-.account-menu.open .account-teaser {
+.account-teaser.signed-out:hover,
+.account-teaser.signed-out:focus-visible,
+.account-menu.open .account-teaser.signed-out {
   border-color: var(--catalog-blue-2);
   background: var(--catalog-paper-2);
 }
 
-.person-icon {
-  display: inline-flex;
-  width: 22px;
-  height: 22px;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid currentColor;
-  border-radius: 50%;
-  font: 500 .52rem/1 var(--catalog-mono);
+.account-teaser.connected {
+  min-width: 154px;
+  border-color: var(--catalog-ink-2);
+  background: var(--catalog-ink-2);
+  color: var(--catalog-paper);
+}
+
+.account-teaser.connected:hover,
+.account-teaser.connected:focus-visible,
+.account-menu.open .account-teaser.connected {
+  border-color: var(--catalog-blue);
+  background: var(--catalog-blue);
+  color: var(--catalog-white);
+}
+
+.account-teaser:active {
+  transform: scale(.98);
+}
+
+.account-icon {
+  display: block;
+  flex: none;
 }
 
 .account-popover {

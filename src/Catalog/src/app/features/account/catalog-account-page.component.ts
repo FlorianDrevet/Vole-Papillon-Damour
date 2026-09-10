@@ -18,6 +18,8 @@ import {
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogWatchlistItem, CatalogWatchlistResponse} from '../../core/catalog.models';
 
+type CatalogAccountTab = 'watchlist' | 'preferences';
+
 @Component({
   selector: 'app-catalog-account-page',
   standalone: false,
@@ -40,6 +42,16 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly accountLabel: Signal<string>;
+  readonly activeTab = signal<CatalogAccountTab>('watchlist');
+  readonly watchlistIntro = computed(() => {
+    const count = this.watchlist()?.items.length;
+    if (count === undefined) {
+      return 'Votre liste de recherche se prépare. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, et jamais sans la date à laquelle il sera disponible.';
+    }
+
+    const bookLabel = count === 1 ? 'livre suivi' : 'livres suivis';
+    return `${count} ${bookLabel}. Vous recevrez un e-mail dès qu’un exemplaire arrive — au plus un par livre, et jamais sans la date à laquelle il sera disponible.`;
+  });
 
   constructor(
     private readonly auth: CatalogAuthService,
@@ -92,6 +104,10 @@ export class CatalogAccountPageComponent implements OnInit {
     } catch {
       this.errorMessage.set('La déconnexion n’a pas pu être démarrée. Réessayez.');
     }
+  }
+
+  selectTab(tab: CatalogAccountTab): void {
+    this.activeTab.set(tab);
   }
 
   async loadWatchlist(): Promise<void> {
@@ -214,8 +230,65 @@ export class CatalogAccountPageComponent implements OnInit {
     }).format(new Date(value));
   }
 
+  formatShortDate(value: string): string {
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'Europe/Paris',
+    }).format(new Date(value));
+  }
+
   itemLabel(item: CatalogWatchlistItem): string {
     return item.book?.title || item.isbn13 || item.workId || 'Titre de la liste de recherche';
+  }
+
+  editionLabel(item: CatalogWatchlistItem): string {
+    if (item.scope === 'Work') {
+      return 'Toutes éditions';
+    }
+
+    if (!item.book) {
+      return 'Édition recherchée';
+    }
+
+    const edition = [item.book.publisher, item.book.publicationYear]
+      .filter(value => value !== null && value !== undefined && value !== '')
+      .join(' · ');
+
+    return edition || 'Édition suivie';
+  }
+
+  availabilityClass(item: CatalogWatchlistItem): 'available' | 'next' | 'pending' {
+    if (item.book?.quantityAvailable && item.book.quantityAvailable > 0) {
+      return 'available';
+    }
+
+    if (item.book?.quantityAnnounced && item.book.quantityAnnounced > 0) {
+      return 'next';
+    }
+
+    return 'pending';
+  }
+
+  availabilityLabel(item: CatalogWatchlistItem): string {
+    const book = item.book;
+    if (!book) {
+      return 'Pas encore reçu par l’association';
+    }
+
+    if (book.quantityAvailable > 0) {
+      return `${book.quantityAvailable} disponible${book.quantityAvailable > 1 ? 's' : ''}`;
+    }
+
+    if (book.quantityAnnounced > 0) {
+      if (book.nextFairAt) {
+        return `${book.quantityAnnounced} dès le ${this.formatShortDate(book.nextFairAt)}`;
+      }
+
+      return `${book.quantityAnnounced} annoncé${book.quantityAnnounced > 1 ? 's' : ''}`;
+    }
+
+    return 'Pas encore reçu par l’association';
   }
 
   private describeError(error: unknown): string {

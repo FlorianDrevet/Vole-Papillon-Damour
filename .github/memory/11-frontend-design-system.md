@@ -66,11 +66,12 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   exposes catalogue navigation, the external association handoff, and local legal links;
   it does not repeat the Website's Maxence or association-content sections. Navigation dropdowns
   must be keyboard/focus usable and hidden when neither hovered nor focused.
-- The current header keeps `Mon compte` outside the desktop navigation flex, centers the
-  42px controls, gives the external association link the same 42px height and orange
-  hover/focus underline, and omits the decorative empty person circle for signed-out
-  visitors. It switches to the mobile layout at `1040px` to avoid intermediate-width
-  overflow.
+- The current header keeps the account trigger outside the desktop navigation flex, centers
+  the 42px controls, gives the external association link the same 42px height and orange
+  hover/focus underline, and uses a person/login icon in both auth states. Anonymous users
+  get an outlined `Mon compte` trigger; a connected user gets a filled navy trigger with
+  the full display name from MSAL. It switches to the mobile layout at `1040px` to avoid
+  intermediate-width overflow.
 - Typography stays `Newsreader` for editorial headings, `Libre Franklin` for body and
   controls, and `IBM Plex Mono` for labels, metadata, dates, and technical identifiers.
   The canonical Catalog palette is paper `#f7fbfe`, paper-soft `#e9f4fb`, ink `#041d30` /
@@ -95,6 +96,11 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   views share the same spacing, cards, pills, border language, restrained motion, and
   responsive collapse. Availability and future announcements remain truthful and separate;
   no price, stock, role, or external-reference data may be invented in the UI.
+- The account page's authenticated watchlist follows the September 2026 mockup: a large
+  editorial heading, two local tabs, one bordered card per followed title, and a separate
+  preferences/account panel. Cards use the existing `CatalogWatchlistItem` contract for
+  cover URL, edition publisher/year, quantity availability, next fair date, added date and
+  last alert; they must not invent a reservation or price state.
 - The Catalog client now consumes the typed P2/P3 administration API for overview,
   catalogue metadata/stock, dead stock, scan sessions, fairs/revenue, alert queues,
   members and settings. It also consumes the external bibliographic search separately
