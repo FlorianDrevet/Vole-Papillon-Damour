@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Relire la PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) sur la formulation du film de Maxence, ainsi que la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121), avant tout déploiement. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-maxence-film-wording` |
-| **Dernière mise à jour** | 2026-09-10 — formulation du film de Maxence ajustée, PR #126 ouverte, aucun déploiement |
-| **Branche** | `fix/website-maxence-film-wording` — worktree dédié, synchronisée avec `origin/main`, PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte |
+| **Prochaine action** | Ouvrir puis relire la PR de la refonte visuelle Catalog administration et effectuer, si nécessaire, un contrôle authentifié manuel avant tout déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-admin-maquette-refresh` |
+| **Dernière mise à jour** | 2026-09-11 — refonte visuelle de l’administration Catalog, aucun déploiement |
+| **Branche** | `feat/catalog-admin-maquette-refresh` — worktree dédié, synchronisée avec `origin/main`, PR à ouvrir |
 
 ---
 
@@ -77,6 +77,26 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-11 — refonte visuelle de l’administration Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree dédié
+`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-admin-maquette-refresh`, la
+route Catalog `/administration` reprend l’architecture et le visuel de la maquette
+`AdminSidebar` sur les dix espaces d’administration : tableau de bord, statistiques par
+bourse, sessions de scan, catalogue, désengorgement, inventaire, membres, bénévoles et
+paramètres, avec la fiche livre et la correction de session intégrées. Le shell public
+(navigation et pied de page) est retiré de cette route privée.
+
+Les contrats admin existants sont réutilisés. Le workspace bénévoles consomme désormais
+le contrat typé `/accounts/admin` pour la liste, la création et l’affectation de rôles
+Entra. L’API ne porte pas encore d’historique physique de cartons/rayons : l’écran
+Inventaire garde donc un état vide et des actions désactivées, sans inventer de données.
+
+Validation locale : 130 tests Catalog ChromeHeadless, build production Catalog, Graphify et
+contrôle Chrome desktop du shell public/admin passent. L’avertissement de budget du bundle
+initial reste celui du projet ; aucun déploiement ni contrôle authentifié de production n’a
+été effectué. La PR reste à ouvrir après la synchronisation finale avec `origin/main`.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 

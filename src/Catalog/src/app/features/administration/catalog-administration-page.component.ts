@@ -20,6 +20,10 @@ import {
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
 import {
+  CatalogAdminAccount,
+  CatalogAdminAccountFilters,
+  CatalogAdminAccountPage,
+  CatalogAdminAccountRole,
   CatalogAdminAlert,
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
@@ -33,6 +37,7 @@ import {
   CatalogAdminMemberFilters,
   CatalogAdminMemberPage,
   CatalogAdminOverview,
+  CatalogAdminCreateAccountRequest,
   CatalogAdminScanSession,
   CatalogAdminScanSessionPage,
   CatalogAdminSessionFilters,
@@ -49,17 +54,22 @@ export type CatalogAdminSection =
   | 'overview'
   | 'sessions'
   | 'dead-stock'
+  | 'inventory'
   | 'catalogue'
   | 'fairs'
   | 'alerts'
   | 'members'
+  | 'volunteers'
   | 'settings';
 
 interface CatalogAdminNavItem {
   id: CatalogAdminSection;
   label: string;
-  icon: string;
-  hint?: string;
+}
+
+interface CatalogAdminNavGroup {
+  label: string;
+  items: CatalogAdminNavItem[];
 }
 
 @Component({
@@ -81,16 +91,36 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
-  readonly navItems: CatalogAdminNavItem[] = [
-    {id: 'overview', label: 'Tableau de bord', icon: '⌂'},
-    {id: 'sessions', label: 'Sessions de scan', icon: '⌁'},
-    {id: 'dead-stock', label: 'Désengorgement', icon: '↘'},
-    {id: 'catalogue', label: 'Catalogue & métadonnées', icon: '◎'},
-    {id: 'fairs', label: 'Bilan des bourses', icon: '▧'},
-    {id: 'alerts', label: 'Files d’alertes', icon: '◇'},
-    {id: 'members', label: 'Comptes & rôles', icon: '♙'},
-    {id: 'settings', label: 'Paramètres', icon: '⚙'},
+  readonly navGroups: CatalogAdminNavGroup[] = [
+    {
+      label: 'Pilotage',
+      items: [
+        {id: 'overview', label: 'Tableau de bord'},
+        {id: 'fairs', label: 'Statistiques par bourse'},
+      ],
+    },
+    {
+      label: 'Travail',
+      items: [
+        {id: 'sessions', label: 'Sessions de scan'},
+        {id: 'catalogue', label: 'Catalogue'},
+        {id: 'dead-stock', label: 'Désengorgement'},
+        {id: 'inventory', label: 'Inventaire'},
+      ],
+    },
+    {
+      label: 'Comptes',
+      items: [
+        {id: 'members', label: 'Membres du site'},
+        {id: 'volunteers', label: 'Bénévoles'},
+      ],
+    },
+    {
+      label: 'Réglages',
+      items: [{id: 'settings', label: 'Paramètres'}],
+    },
   ];
+  readonly navItems: CatalogAdminNavItem[] = this.navGroups.flatMap(group => group.items);
 
   readonly overview = signal<CatalogAdminOverview | null>(null);
   readonly booksPage = signal<CatalogAdminBookPage | null>(null);
@@ -103,6 +133,10 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly membersPage = signal<CatalogAdminMemberPage | null>(null);
   readonly selectedMember = signal<CatalogAdminMemberDetail | null>(null);
   readonly settings = signal<CatalogAdminSettings | null>(null);
+  readonly accountsPage = signal<CatalogAdminAccountPage | null>(null);
+  readonly editingAccountId = signal<string | null>(null);
+  readonly editingAccountRoles = signal<CatalogAdminAccountRole[]>([]);
+  readonly showCreateAccount = signal(false);
 
   readonly deadStockBooks = signal<CatalogDeadStockBook[]>([]);
   readonly deadStockGeneratedAt = signal<string | null>(null);
@@ -111,7 +145,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   minQuantity = DEFAULT_MIN_QUANTITY;
 
   bookSearch = '';
-  bookMetadataStatus = '';
+  bookMetadataStatus = 'Missing';
   bookRareOnly = false;
   bookHiddenOnly = false;
   bookUndatedOnly = false;
@@ -125,6 +159,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly sessionPageSize = 25;
   sessionMode = 'AvailableNow';
   sessionFairId = '';
+  sessionPreset: 'correctable' | 'all' | 'open' | 'alerts' = 'correctable';
 
   alertStatus = '';
   alertPage = 1;
@@ -134,6 +169,21 @@ export class CatalogAdministrationPageComponent implements OnInit {
   memberAlertStatus = '';
   memberPage = 1;
   readonly memberPageSize = 25;
+
+  accountSearch = '';
+  accountPage = 1;
+  readonly accountPageSize = 25;
+  readonly accountRoleOptions: {value: CatalogAdminAccountRole; label: string}[] = [
+    {value: 'Tri', label: 'Tri'},
+    {value: 'Caisse', label: 'Caisse'},
+    {value: 'Administration', label: 'Administration'},
+  ];
+  readonly createAccountForm: CatalogAdminCreateAccountRequest = {
+    email: '',
+    displayName: '',
+    temporaryPassword: '',
+    roles: [],
+  };
 
   readonly addBookForm = {
     isbn13: '',
@@ -180,6 +230,9 @@ export class CatalogAdministrationPageComponent implements OnInit {
     updatedBy: '',
   };
   revenueInput: number | null = null;
+  deadStockAgeMonths = DEFAULT_MIN_AGE_MONTHS;
+  sessionIdleHours = 2;
+  alertDelayHours = 2;
 
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -204,6 +257,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
     await this.auth.initialize();
     if (this.auth.isAuthenticated()) {
       await this.loadOverview();
+      await this.loadSessions();
       await this.loadDeadStock();
     }
   }
@@ -241,6 +295,9 @@ export class CatalogAdministrationPageComponent implements OnInit {
       case 'dead-stock':
         await this.loadDeadStock();
         break;
+      case 'inventory':
+        await this.loadOverview();
+        break;
       case 'catalogue':
         await this.loadBooks();
         break;
@@ -252,6 +309,9 @@ export class CatalogAdministrationPageComponent implements OnInit {
         break;
       case 'members':
         await this.loadMembers();
+        break;
+      case 'volunteers':
+        await Promise.all([this.loadAccounts(), this.loadMembers()]);
         break;
       case 'settings':
         await this.loadSettings();
@@ -282,6 +342,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   }
 
   async openBook(isbn13: string): Promise<void> {
+    this.activeSection.set('catalogue');
     await this.run('book-detail', async token => {
       const book = await firstValueFrom(this.api.getBook(token, isbn13));
       this.selectedBook.set(book);
@@ -477,7 +538,13 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   async loadFairs(): Promise<void> {
     await this.run('fairs', async token => {
-      this.fairsPage.set(await firstValueFrom(this.api.getFairs(token)));
+      const page = await firstValueFrom(this.api.getFairs(token));
+      this.fairsPage.set(page);
+      if (!this.selectedFairStats() && page.fairs.length > 0) {
+        const stats = await firstValueFrom(this.api.getFairStats(token, page.fairs[0].id));
+        this.selectedFairStats.set(stats);
+        this.revenueInput = stats.revenue;
+      }
     });
   }
 
@@ -487,6 +554,13 @@ export class CatalogAdministrationPageComponent implements OnInit {
       this.selectedFairStats.set(stats);
       this.revenueInput = stats.revenue;
     });
+  }
+
+  async selectFair(fairId: string): Promise<void> {
+    const fair = this.fairsPage()?.fairs.find(candidate => candidate.id === fairId);
+    if (fair) {
+      await this.openFairStats(fair);
+    }
   }
 
   async saveFairRevenue(): Promise<void> {
@@ -525,9 +599,47 @@ export class CatalogAdministrationPageComponent implements OnInit {
     });
   }
 
+  setSessionPreset(preset: 'correctable' | 'all' | 'open' | 'alerts'): void {
+    this.sessionPreset = preset;
+  }
+
+  visibleSessions(): CatalogAdminScanSession[] {
+    const sessions = this.sessionsPage()?.sessions ?? [];
+    switch (this.sessionPreset) {
+      case 'correctable':
+        return sessions.filter(session => this.sessionNeedsCorrection(session));
+      case 'open':
+        return sessions.filter(session => session.status === 'Open');
+      case 'alerts':
+        return sessions.filter(session => session.pendingAlertCount === 0 && session.alertCount > 0);
+      default:
+        return sessions;
+    }
+  }
+
+  correctableSessionCount(): number {
+    return (this.sessionsPage()?.sessions ?? []).filter(session => this.sessionNeedsCorrection(session)).length;
+  }
+
+  alertSessionCount(): number {
+    return (this.sessionsPage()?.sessions ?? []).filter(session => session.pendingAlertCount === 0 && session.alertCount > 0).length;
+  }
+
+  pendingAlertSessions(): CatalogAdminScanSession[] {
+    return (this.sessionsPage()?.sessions ?? [])
+      .filter(session => session.pendingAlertCount > 0)
+      .slice(0, 2);
+  }
+
   async openSession(sessionId: string): Promise<void> {
     await this.run('session-detail', async token => {
-      this.selectedSession.set(await firstValueFrom(this.api.getSession(token, sessionId)));
+      const session = await firstValueFrom(this.api.getSession(token, sessionId));
+      this.selectedSession.set(session);
+      this.sessionMode = session.mode;
+      this.sessionFairId = session.fairId || '';
+      if (!this.fairsPage()) {
+        this.fairsPage.set(await firstValueFrom(this.api.getFairs(token)));
+      }
     });
   }
 
@@ -649,6 +761,119 @@ export class CatalogAdministrationPageComponent implements OnInit {
     });
   }
 
+  async loadAccounts(): Promise<void> {
+    const filters: CatalogAdminAccountFilters = {
+      search: this.accountSearch.trim() || undefined,
+      page: this.accountPage,
+      pageSize: this.accountPageSize,
+    };
+    await this.run('accounts', async token => {
+      this.accountsPage.set(await firstValueFrom(this.api.getAdminAccounts(token, filters)));
+    });
+  }
+
+  async createAccount(): Promise<void> {
+    const form = this.createAccountForm;
+    if (!form.email.trim() || !form.displayName.trim() || form.temporaryPassword.length < 8 || form.roles.length === 0) {
+      this.errorMessage.set('E-mail, nom, mot de passe temporaire et au moins un droit sont obligatoires.');
+      return;
+    }
+
+    await this.run('create-account', async token => {
+      await firstValueFrom(this.api.createAdminAccount(token, {
+        email: form.email.trim(),
+        displayName: form.displayName.trim(),
+        temporaryPassword: form.temporaryPassword,
+        roles: [...form.roles],
+      }));
+      this.successMessage.set('Le compte bénévole a été créé.');
+      form.email = '';
+      form.displayName = '';
+      form.temporaryPassword = '';
+      form.roles = [];
+      this.showCreateAccount.set(false);
+      await this.loadAccounts();
+    });
+  }
+
+  toggleCreateRole(role: CatalogAdminAccountRole): void {
+    this.createAccountForm.roles = this.createAccountForm.roles.includes(role)
+      ? this.createAccountForm.roles.filter(item => item !== role)
+      : [...this.createAccountForm.roles, role];
+  }
+
+  hasCreateRole(role: CatalogAdminAccountRole): boolean {
+    return this.createAccountForm.roles.includes(role);
+  }
+
+  startAccountRoleEdit(account: CatalogAdminAccount): void {
+    this.editingAccountId.set(account.externalId);
+    this.editingAccountRoles.set([...account.roles]);
+  }
+
+  cancelAccountRoleEdit(): void {
+    this.editingAccountId.set(null);
+    this.editingAccountRoles.set([]);
+  }
+
+  toggleEditingRole(role: CatalogAdminAccountRole): void {
+    const roles = this.editingAccountRoles();
+    this.editingAccountRoles.set(roles.includes(role)
+      ? roles.filter(item => item !== role)
+      : [...roles, role]);
+  }
+
+  hasEditingRole(role: CatalogAdminAccountRole): boolean {
+    return this.editingAccountRoles().includes(role);
+  }
+
+  async saveAccountRoles(account: CatalogAdminAccount): Promise<void> {
+    if (this.editingAccountRoles().length === 0) {
+      this.errorMessage.set('Un compte doit conserver au moins un droit.');
+      return;
+    }
+
+    await this.run('account-roles', async token => {
+      await firstValueFrom(this.api.updateAdminAccountRoles(
+        token,
+        account.externalId,
+        this.editingAccountRoles(),
+      ));
+      this.successMessage.set('Les droits du compte ont été mis à jour.');
+      this.cancelAccountRoleEdit();
+      await this.loadAccounts();
+    });
+  }
+
+  accountRoleLabel(role: CatalogAdminAccountRole): string {
+    return this.accountRoleOptions.find(option => option.value === role)?.label ?? role;
+  }
+
+  accountActivity(account: CatalogAdminAccount): string {
+    const sessions = this.sessionsPage()?.sessions.filter(session => session.volunteerId === account.externalId);
+    if (!sessions?.length) {
+      return 'Aucune session de tri';
+    }
+
+    const scanCount = sessions.reduce((total, session) => total + session.scannedCount, 0);
+    const latestScan = sessions
+      .map(session => session.lastScanAt)
+      .sort()
+      .at(-1);
+    return `${sessions.length} session${sessions.length > 1 ? 's' : ''} · ${this.formatNumber(scanCount)} scans · dernier scan ${this.formatDate(latestScan)}`;
+  }
+
+  maskedEmail(email: string | null): string {
+    if (!email) {
+      return 'E-mail non renseigné';
+    }
+    const [local, domain] = email.split('@');
+    if (!local || !domain) {
+      return email;
+    }
+    return `${local.slice(0, 1)}•••••@${domain}`;
+  }
+
   async openMember(memberId: string): Promise<void> {
     await this.run('member-detail', async token => {
       this.selectedMember.set(await firstValueFrom(this.api.getMember(token, memberId)));
@@ -688,22 +913,27 @@ export class CatalogAdministrationPageComponent implements OnInit {
       const settings = await firstValueFrom(this.api.getSettings(token));
       this.settings.set(settings);
       this.settingsForm = {...settings};
+      this.deadStockAgeMonths = settings.deadStockMinAgeDays > 0
+        ? Math.max(1, Math.round(settings.deadStockMinAgeDays / 30))
+        : 0;
+      this.sessionIdleHours = settings.sessionIdleTimeoutMinutes / 60;
+      this.alertDelayHours = settings.alertDelayMinutes / 60;
     });
   }
 
   async saveSettings(): Promise<void> {
-    const numericFields = [
+    const integerFields = [
       this.settingsForm.duplicateThreshold,
       this.settingsForm.demandSalesThreshold,
-      this.settingsForm.deadStockMinAgeDays,
       this.settingsForm.deadStockMinQuantity,
       this.settingsForm.watchlistMaxItems,
       this.settingsForm.alertCooldownDays,
-      this.settingsForm.sessionIdleTimeoutMinutes,
-      this.settingsForm.alertDelayMinutes,
+      this.deadStockAgeMonths,
     ];
-    if (numericFields.some(value => !Number.isInteger(Number(value)) || Number(value) < 0)) {
-      this.errorMessage.set('Tous les réglages doivent être des nombres entiers positifs ou nuls.');
+    const hourFields = [this.sessionIdleHours, this.alertDelayHours];
+    if (integerFields.some(value => !Number.isInteger(Number(value)) || Number(value) < 0)
+      || hourFields.some(value => !Number.isFinite(Number(value)) || Number(value) < 0)) {
+      this.errorMessage.set('Les seuils doivent être des entiers positifs ou nuls ; les durées peuvent être exprimées par demi-heure.');
       return;
     }
 
@@ -711,12 +941,12 @@ export class CatalogAdministrationPageComponent implements OnInit {
       const settings = await firstValueFrom(this.api.updateSettings(token, {
         duplicateThreshold: Number(this.settingsForm.duplicateThreshold),
         demandSalesThreshold: Number(this.settingsForm.demandSalesThreshold),
-        deadStockMinAgeDays: Number(this.settingsForm.deadStockMinAgeDays),
+        deadStockMinAgeDays: Math.round(Number(this.deadStockAgeMonths) * 30),
         deadStockMinQuantity: Number(this.settingsForm.deadStockMinQuantity),
         watchlistMaxItems: Number(this.settingsForm.watchlistMaxItems),
         alertCooldownDays: Number(this.settingsForm.alertCooldownDays),
-        sessionIdleTimeoutMinutes: Number(this.settingsForm.sessionIdleTimeoutMinutes),
-        alertDelayMinutes: Number(this.settingsForm.alertDelayMinutes),
+        sessionIdleTimeoutMinutes: Math.round(Number(this.sessionIdleHours) * 60),
+        alertDelayMinutes: Math.round(Number(this.alertDelayHours) * 60),
       }));
       this.settings.set(settings);
       this.settingsForm = {...settings};
@@ -788,6 +1018,13 @@ export class CatalogAdministrationPageComponent implements OnInit {
     }
   }
 
+  goToAccountsPage(page: number): void {
+    if (this.validPage(page, this.accountsPage())) {
+      this.accountPage = page;
+      void this.loadAccounts();
+    }
+  }
+
   formatDate(value: string | null | undefined, withTime = false): string {
     if (!value) {
       return '—';
@@ -819,11 +1056,125 @@ export class CatalogAdministrationPageComponent implements OnInit {
       : new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'}).format(value);
   }
 
+  formatNumber(value: number | null | undefined): string {
+    return new Intl.NumberFormat('fr-FR').format(value ?? 0);
+  }
+
+  formatDurationHours(value: number | null | undefined): string {
+    if (value === null || value === undefined) {
+      return '—';
+    }
+    const hours = Math.floor(value / 60);
+    const minutes = value % 60;
+    return hours > 0 ? `${hours} h ${String(minutes).padStart(2, '0')}` : `${minutes} min`;
+  }
+
+  formatCountdown(value: string | null | undefined): string {
+    if (!value) {
+      return '—';
+    }
+    const remainingMinutes = Math.ceil((new Date(value).getTime() - Date.now()) / 60_000);
+    if (remainingMinutes <= 0) {
+      return 'Maintenant';
+    }
+    const hours = Math.floor(remainingMinutes / 60);
+    const minutes = remainingMinutes % 60;
+    return hours > 0 ? `${hours} h ${String(minutes).padStart(2, '0')}` : `${minutes} min`;
+  }
+
+  sessionModeLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      AvailableNow: 'Disponible maintenant',
+      NextFair: 'Prochaine bourse',
+    };
+    return value ? labels[value] || value : 'Sans destination';
+  }
+
+  sessionCloseLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      Manual: 'clôture manuelle',
+      Disconnect: 'déconnexion',
+      TokenExpired: 'session expirée',
+      AdminForced: 'clôture forcée',
+      Idle: 'inactivité',
+    };
+    return value ? labels[value] || value : 'session ouverte';
+  }
+
+  sessionNeedsCorrection(session: CatalogAdminScanSession): boolean {
+    return session.pendingAlertCount > 0 && session.status !== 'Cancelled';
+  }
+
+  barWidth(value: number | null | undefined, maximum: number): string {
+    const amount = Math.max(0, value ?? 0);
+    const width = maximum > 0 ? Math.round((amount / maximum) * 100) : 0;
+    return `${Math.min(100, width)}%`;
+  }
+
+  maxFairSales(): number {
+    const stats = this.selectedFairStats();
+    return Math.max(
+      stats?.soldQuantity ?? 0,
+      ...(stats?.previousFairs.map(fair => fair.soldQuantity) ?? [0]),
+    );
+  }
+
+  maxDailySales(): number {
+    return Math.max(...(this.selectedFairStats()?.dailySales.map(item => item.quantity) ?? [0]));
+  }
+
+  maxGenreSales(): number {
+    return Math.max(...(this.selectedFairStats()?.salesByGenre.map(item => item.quantity) ?? [0]));
+  }
+
+  maxTopBookSales(): number {
+    return Math.max(...(this.selectedFairStats()?.topBooks.map(item => item.quantity) ?? [0]));
+  }
+
+  fairOpenDays(fair: CatalogAdminFair | CatalogAdminFairStats['fair'] | null | undefined): string {
+    if (!fair?.dateStart || !fair.dateEnd) {
+      return '—';
+    }
+    const from = new Date(fair.dateStart).getTime();
+    const to = new Date(fair.dateEnd).getTime();
+    if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) {
+      return '—';
+    }
+    return this.formatNumber(Math.max(1, Math.ceil((to - from) / 86_400_000)) + 1);
+  }
+
+  movementLabel(value: string): string {
+    const labels: Record<string, string> = {
+      AnnouncementEntry: 'Entrée',
+      DirectEntry: 'Entrée',
+      FairRelease: 'Entrée',
+      Sale: 'Vente',
+      Rejection: 'Écart',
+      Correction: 'Correction',
+      Withdrawal: 'Retrait',
+    };
+    return labels[value] || value;
+  }
+
+  movementClass(value: string): string {
+    return this.statusClass(this.movementLabel(value));
+  }
+
+  movementQuantity(value: number): string {
+    return value > 0 ? `+${this.formatNumber(value)}` : this.formatNumber(value);
+  }
+
+  settingsAgeMonths(): number {
+    return this.settingsForm.deadStockMinAgeDays > 0
+      ? Math.max(1, Math.round(this.settingsForm.deadStockMinAgeDays / 30))
+      : 0;
+  }
+
   statusLabel(value: string | null | undefined): string {
     const labels: Record<string, string> = {
       Active: 'Active',
-      Open: 'Ouverte',
-      Closed: 'Clôturée',
+      Open: 'En cours',
+      Closed: 'Terminée',
       Inactive: 'Inactive',
       Pending: 'En attente',
       Sent: 'Envoyée',

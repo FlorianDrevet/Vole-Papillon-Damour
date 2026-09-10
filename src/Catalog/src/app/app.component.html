@@ -1,9 +1,15 @@
-<app-catalog-navigation></app-catalog-navigation>
+@if (isAdministrationRoute()) {
+  <main class="administration-route-main">
+    <router-outlet></router-outlet>
+  </main>
+} @else {
+  <app-catalog-navigation></app-catalog-navigation>
 
-<main>
-  <router-outlet></router-outlet>
-</main>
+  <main>
+    <router-outlet></router-outlet>
+  </main>
 
-<app-catalog-footer></app-catalog-footer>
+  <app-catalog-footer></app-catalog-footer>
 
-<div app-catalog-cookie-banner></div>
+  <div app-catalog-cookie-banner></div>
+}

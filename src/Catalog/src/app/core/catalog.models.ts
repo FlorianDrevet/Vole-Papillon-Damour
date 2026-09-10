@@ -426,6 +426,38 @@ export interface CatalogAdminSettings {
   updatedBy: string;
 }
 
+export type CatalogAdminAccountRole = 'Tri' | 'Caisse' | 'Administration';
+
+export interface CatalogAdminAccount {
+  externalId: string;
+  email: string | null;
+  displayName: string | null;
+  accountEnabled: boolean;
+  createdAt: string | null;
+  roles: CatalogAdminAccountRole[];
+}
+
+export interface CatalogAdminAccountPage {
+  generatedAt: string;
+  accounts: CatalogAdminAccount[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogAdminAccountFilters {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CatalogAdminCreateAccountRequest {
+  email: string;
+  displayName: string;
+  temporaryPassword: string;
+  roles: CatalogAdminAccountRole[];
+}
+
 export interface CatalogAdminBookFilters {
   search?: string;
   metadataStatus?: string;
