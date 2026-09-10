@@ -191,6 +191,20 @@ describe('CatalogHomePageComponent', () => {
     expect(element.querySelector('.home-account-callout')).toBeNull();
   });
 
+  it('groups each upcoming date into scannable regions with clear mobile actions', () => {
+    fixture.componentInstance.upcomingOnly.set(true);
+    fixture.detectChanges();
+
+    const firstFair = fixture.nativeElement.querySelector('.upcoming-fair') as HTMLElement;
+    const primaryAction = firstFair.querySelector('.upcoming-fair-action--primary') as HTMLAnchorElement;
+
+    expect(firstFair.querySelector('.upcoming-fair-main')).not.toBeNull();
+    expect(firstFair.querySelector('.upcoming-fair-meta')).not.toBeNull();
+    expect(firstFair.querySelector('.upcoming-fair-actions')).not.toBeNull();
+    expect(primaryAction.textContent).toContain('Ajouter à l’agenda');
+    expect(primaryAction.getAttribute('aria-label')).toBe('Ajouter Bourse d’automne à l’agenda');
+  });
+
   it('offers an explicit Google Maps opt-in before embedding the map', () => {
     consent.mapsEnabled.set(false);
     fixture.componentInstance.upcomingOnly.set(true);

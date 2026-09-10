@@ -114,33 +114,50 @@
             <div class="upcoming-fairs" role="list" aria-label="Prochaines bourses aux livres">
               @for (scheduledFair of upcomingFairs(); track trackFair($index, scheduledFair); let first = $first) {
                 <article class="upcoming-fair" [class.upcoming-fair--next]="first" role="listitem">
-                  <span class="upcoming-fair-index" aria-hidden="true">{{ ($index + 1).toString().padStart(2, '0') }}</span>
-                  <time class="upcoming-fair-date" [attr.datetime]="scheduledFair.dateStart" [attr.aria-label]="formatFairDateRange(scheduledFair)">
-                    <span class="upcoming-fair-day">{{ scheduledFair.dateStart | date:'dd':'Europe/Paris' }}</span>
-                    <span class="upcoming-fair-month">{{ scheduledFair.dateStart | date:'MMM':'Europe/Paris' }}</span>
-                    <span class="upcoming-fair-year">{{ scheduledFair.dateStart | date:'yyyy':'Europe/Paris' }}</span>
-                  </time>
-                  <div class="upcoming-fair-copy">
-                    <p class="upcoming-fair-kicker">{{ first ? 'Prochaine édition' : 'À venir' }}</p>
-                    <h3>{{ scheduledFair.name }}</h3>
-                    <p class="upcoming-fair-range">{{ formatFairDateRange(scheduledFair) }}</p>
+                  <div class="upcoming-fair-main">
+                    <span class="upcoming-fair-index" aria-hidden="true">{{ ($index + 1).toString().padStart(2, '0') }}</span>
+                    <time class="upcoming-fair-date" [attr.datetime]="scheduledFair.dateStart" [attr.aria-label]="formatFairDateRange(scheduledFair)">
+                      <span class="upcoming-fair-day">{{ scheduledFair.dateStart | date:'dd':'Europe/Paris' }}</span>
+                      <span class="upcoming-fair-month">{{ scheduledFair.dateStart | date:'MMM':'Europe/Paris' }}</span>
+                      <span class="upcoming-fair-year">{{ scheduledFair.dateStart | date:'yyyy':'Europe/Paris' }}</span>
+                    </time>
+                    <div class="upcoming-fair-copy">
+                      <p class="upcoming-fair-kicker">{{ first ? 'Prochaine édition' : 'À venir' }}</p>
+                      <h3>{{ scheduledFair.name }}</h3>
+                      <p class="upcoming-fair-range">{{ formatFairDateRange(scheduledFair) }}</p>
+                    </div>
                   </div>
-                  <div class="upcoming-fair-details">
+                  <div class="upcoming-fair-meta">
                     <span class="upcoming-fair-detail">
                       <img src="icons/clock-icon.svg" alt="" width="17" height="17">
-                      {{ formatTime(scheduledFair.openAt) }}@if (scheduledFair.closeAt) { à {{ formatTime(scheduledFair.closeAt) }} }
+                      <span class="upcoming-fair-detail-copy">{{ formatTime(scheduledFair.openAt) }}@if (scheduledFair.closeAt) { à {{ formatTime(scheduledFair.closeAt) }} }</span>
                     </span>
                     @if (address(scheduledFair)) {
                       <span class="upcoming-fair-detail">
                         <img src="icons/location-icon.svg" alt="" width="17" height="17">
-                        {{ address(scheduledFair) }}
+                        <span class="upcoming-fair-detail-copy">{{ address(scheduledFair) }}</span>
                       </span>
                     }
                   </div>
                   <div class="upcoming-fair-actions">
-                    <a [href]="calendarLink(scheduledFair)" [download]="calendarFileName(scheduledFair)">Agenda <span aria-hidden="true">↗</span></a>
+                    <a
+                      class="upcoming-fair-action upcoming-fair-action--primary"
+                      [href]="calendarLink(scheduledFair)"
+                      [download]="calendarFileName(scheduledFair)"
+                      [attr.aria-label]="'Ajouter ' + scheduledFair.name + ' à l’agenda'">
+                      <span>Ajouter à l’agenda</span>
+                      <span aria-hidden="true">↗</span>
+                    </a>
                     @if (address(scheduledFair)) {
-                      <a [href]="mapsUrl(scheduledFair)" target="_blank" rel="noopener noreferrer">Itinéraire <span aria-hidden="true">↗</span></a>
+                      <a
+                        class="upcoming-fair-action upcoming-fair-action--secondary"
+                        [href]="mapsUrl(scheduledFair)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        [attr.aria-label]="'Itinéraire vers ' + address(scheduledFair)">
+                        <span>Itinéraire</span>
+                        <span aria-hidden="true">↗</span>
+                      </a>
                     }
                   </div>
                 </article>
