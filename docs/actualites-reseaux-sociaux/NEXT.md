@@ -18,11 +18,11 @@
 | | |
 |---|---|
 | **Palier en cours** | Mise en service externe de la v1 après implémentation des paliers `L1` à `L4` |
-| **Prochaine action** | Répondre à `Q-ACT-01` (compte Instagram professionnel) et `Q-ACT-04` (propriétaire de l'application Meta), puis fournir l'identifiant du compte, le jeton et la date plancher au déploiement |
+| **Prochaine action** | Répondre à `Q-ACT-01` (compte Instagram professionnel) et `Q-ACT-04` (propriétaire de l'application Meta), puis fournir l'identifiant du compte, le jeton et la date plancher au déploiement ; le déploiement Azure reste à confirmer |
 | **Ce qui est prêt dans le code** | Brouillons, lectures publiques filtrées, relecture/publication BackOffice, import Instagram minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-facebook-news` |
-| **Dernière mise à jour** | 2026-09-10 — implémentation `L1` à `L4` validée localement ; aucune ressource externe créée |
-| **Branche** | `feat/facebook-news` — worktree dédié, livraison vers la PR `#122` |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-facebook-news-pr122` |
+| **Dernière mise à jour** | 2026-09-10 — implémentation `L1` à `L4`, CI et `what-if` Azure validés ; aucun déploiement Azure appliqué |
+| **Branche** | `delivery/pr-122` — worktree dédié, livraison vers la PR `#122` (`docs/actualites-import-reseaux-sociaux`) |
 
 ---
 
@@ -137,6 +137,21 @@ La source v1 reste **Instagram professionnel uniquement**. Une publication Faceb
 recopiée vers Instagram est donc récupérable via le compte Instagram ; un profil
 Facebook personnel ne l'est pas. La Page Facebook, le webhook `feed` et la vérification
 `X-Hub-Signature-256` restent le palier `L5`, conditionné à `Q-ACT-03`.
+
+### 2026-09-10 — validation de livraison et prévisualisation Azure
+
+Le câblage des paramètres sociaux et Foundry a été ajouté aux deux étapes du workflow
+`Infra - deploy`, puis poussé sur la PR dans `a8df4dd`. Les deux exécutions CI de la
+tête de branche sont vertes ; la PR `#122` est sans conflit et prête à être fusionnée,
+mais reste ouverte.
+
+Le workflow `Infra - deploy` a été lancé depuis GitHub Actions en mode `what-if` sur
+`development` (`run 34528967017`). La prévisualisation est passée sans erreur et n'a
+appliqué aucune modification. Les secrets `INSTAGRAM_*` et `TITLE_GENERATION_*` de
+l'environnement GitHub restent vides : seuls les changements conditionnels liés à la
+configuration sociale apparaissent donc dans la prévisualisation. Aucun compte Meta,
+jeton, ressource Foundry, règle sociale Azure Monitor ou migration de base n'est encore
+activé.
 
 ### 2026-09-10 — spécification écrite
 
