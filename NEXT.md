@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-upcoming-dates-mobile` |
-| **Dernière mise à jour** | 2026-09-10 — refonte mobile de « Toutes les prochaines dates » du Catalog, PR [#120](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/120) ouverte, aucun déploiement |
-| **Branche** | `fix/catalog-upcoming-dates-mobile-ui` — worktree dédié, synchronisée avec `origin/main`, PR [#120](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/120) ouverte |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la galerie photo Website (PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119)), le retour OAuth de l’inscription Catalog (PR [#118](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/118)) et le header Catalog (PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117)) le sont également. |
+| **Prochaine action** | Relire et valider la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) (app de scan) ; aucun déploiement ne doit être lancé avant sa fusion et un smoke de production. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour` |
+| **Dernière mise à jour** | 2026-09-10 — alertes de l’app de scan hiérarchisées, aperçu caméra remis dans le flux, PR #121 ouverte, aucun déploiement |
+| **Branche** | `fix/scan-alert-hierarchy` — synchronisée avec `origin/main`, PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) ouverte |
 
 ---
 
@@ -78,7 +78,64 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-10 — liste mobile des prochaines dates Catalog
+### État actualisé — 2026-09-10 — alertes et mise en page de l’app de scan
+
+Sur téléphone, le bandeau « Mode dégradé » était rendu à côté de l’écran au lieu d’être
+au-dessus (le conteneur `.scan-shell` était une rangée), et l’aperçu caméra, `position:
+fixed` calé à `top: 92px`, recouvrait le panneau de synchronisation. Les deux sont
+corrigés : un conteneur colonne `.scan-viewport` empile les alertes au-dessus de l’écran,
+et l’aperçu se cale désormais sur un emplacement réservé dans le flux, mesuré à chaque
+cycle de rendu puis rogné par ses conteneurs, si bien qu’il rétrécit au lieu de masquer
+quoi que ce soit — 367 px sans alerte, 140 px dans le pire empilement, jamais par-dessus
+la barre d’actions.
+
+Les quatre canaux d’alerte qui pouvaient s’empiler sont regroupés dans un rail unique et
+classés : `critical` (gestes orphelins, quarantaine, écriture locale échouée, IndexedDB
+absent, décision manquante avant clôture) et `warning` (mode dégradé, catalogue non
+synchronisé, persistance non garantie) restent dépliés ; les `info` (hors ligne, file en
+attente, ré-essais automatiques) sont repliés derrière une pastille dépliable. Le rail est
+plafonné à `38dvh`. Le panneau de synchronisation redevient une ligne compacte. Au
+passage, `storageError` mélangeait la capacité du navigateur (fait durable, désormais
+dérivé de `persistenceStatus`) et l’échec de la dernière écriture (transitoire, désormais
+remis à zéro à chaque scan).
+
+Côté barre d’actions : « Saisir un code », « Photo » et « Galerie » tiennent sur une ligne,
+la galerie étant un second `input file` sans `capture` ; un retour vers le menu apparaît
+tant que la session n’a rien trié ; l’écran de choix de mode reçoit lui aussi un retour.
+Code mort supprimé (`.offline-strip` et ce que ce remaniement a rendu inutile) — un
+contrôle croisé templates/TS ne trouve plus aucune classe morte.
+
+Les 141 tests ChromeHeadless, le build Scan, Graphify et une vérification navigateur en
+360×740 passent. Aucun déploiement ni contrôle de production n’a été effectué. La PR
+[#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) est ouverte.
+
+### État actualisé — 2026-09-10 — catalogue des albums photos Website
+
+La PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119), sur la
+branche `feat/website-photo-albums`, remplace la modal de la galerie par des pages
+d’albums accessibles sous `/association/photos/:albumSlug`, avec un retour vers la liste.
+Le catalogue est séparé entre 23 albums de la vie de Maxence (un par année de 2004 à
+2026) et trois albums événements (bourse aux livres, célébrités, anniversaire des 20 ans).
+Les trois dossiers 2005 sont regroupés dans un album de 94 photos ; les chapitres existants
+de `/maxence/histoire` (2004–2016) proposent leur album correspondant, sans lien ajouté
+pour les années sans chapitre. Les fichiers transmis ont été copiés dans le Website : 612
+photos Maxence et 103 photos événements, soit 715 images (~379 MB). Les 72 tests
+ChromeHeadless, le build SSR/prérendu, Graphify et un smoke navigateur desktop local
+passent ; l’émulation mobile exacte n’était pas disponible dans la session navigateur et
+aucun déploiement ni smoke de production n’a été effectué. Le build conserve ses
+avertissements existants de budget Angular, styles et dépendances CommonJS.
+
+### État actualisé — 2026-09-10 — retour OAuth de l'inscription Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree `fix/account-registration-button`,
+le shell racine du Catalog détecte un retour MSAL `code`/`error` et initialise le service
+d'authentification avant que le retour `redirectStartPage` vers `/compte` soit perdu. Le
+chargement reste différé pour les visiteurs anonymes. La régression est couverte par le
+test AppComponent ; les 122 tests ChromeHeadless et le build SSR/navigateur passent avec
+l'avertissement de budget initial connu. Aucun déploiement, compte ou changement Entra n'a
+été effectué ; la PR et le retest public restent à faire.
+
+### État actualisé — 2026-09-10 — ajustements du header Catalog
 
 La branche `fix/catalog-upcoming-dates-mobile-ui` recompose les cartes de la section
 « Toutes les prochaines dates » de `/prochaines-dates` : date et titre restent groupés,

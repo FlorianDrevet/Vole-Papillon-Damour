@@ -1,8 +1,10 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {
+  AfterViewChecked,
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  DoCheck,
   ElementRef,
   HostListener,
   OnDestroy,
@@ -43,6 +45,19 @@ export type ScanScreen =
   | 'consultation';
 
 type ScanDestination = 'tri' | 'cash' | 'consultation';
+
+/**
+ * `critical` needs a human decision before the data can be trusted, `warning`
+ * degrades what the app can do, `info` resolves on its own. Only the first two
+ * are shown expanded; the rest sit behind a counter.
+ */
+export type ScanAlertLevel = 'critical' | 'warning' | 'info';
+
+export interface ScanAlert {
+  id: string;
+  level: ScanAlertLevel;
+  message: string;
+}
 type ManualKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'X' | 'clear' | 'backspace';
 
 interface CashScanItem {
@@ -63,12 +78,18 @@ interface CashScanItem {
   styleUrl: './scanner.component.scss',
   standalone: false,
 })
-export class ScannerComponent implements OnInit, OnDestroy {
+export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDestroy {
   private static readonly openLibraryCoverUrlTemplate =
     'https://covers.openlibrary.org/b/isbn/{isbn13}-L.jpg?default=false';
 
   @ViewChild('cameraContainer', {static: true})
   private readonly cameraContainer!: ElementRef<HTMLElement>;
+
+  // The preview is a single fixed element shared by every screen, so it is
+  // aligned on the placeholder the active screen reserves for it. Alerts and
+  // banners then push the preview down and shrink it instead of hiding behind it.
+  @ViewChild('cameraSlot')
+  private readonly cameraSlot?: ElementRef<HTMLElement>;
 
   readonly manualKeys: readonly ManualKey[] = [
     '1', '2', '3',
@@ -85,8 +106,11 @@ export class ScannerComponent implements OnInit, OnDestroy {
   coverUrl: string | null = null;
   errorMessage: string | null = null;
   cameraError: string | null = null;
-  storageError: string | null = null;
-  syncError: string | null = null;
+  storageAlert: ScanAlert | null = null;
+  syncAlert: ScanAlert | null = null;
+  priorityAlerts: readonly ScanAlert[] = [];
+  infoAlerts: readonly ScanAlert[] = [];
+  alertsExpanded = false;
   logoutError: string | null = null;
   cashMessage: string | null = null;
   isLoading = false;
@@ -127,6 +151,9 @@ export class ScannerComponent implements OnInit, OnDestroy {
   private sessionCloseCompleted = false;
   private syncTimer: number | null = null;
   private cameraStartToken = 0;
+  private cameraFrame: string | null = null;
+  private cameraSlotElement: HTMLElement | null = null;
+  private cameraClipAncestors: readonly HTMLElement[] = [];
 
   constructor(
     private readonly metadataService: BookMetadataService,
@@ -155,7 +182,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
           this.accountName = this.scanAuth?.displayName ?? null;
           if (authState.account?.homeAccountId && this.localModeReady) {
             void this.bindCurrentAccountToSession().catch(() => {
-              this.storageError = 'La session locale n’a pas pu être associée à ce compte.';
+              this.setStorageError('warning', 'La session locale n’a pas pu être associée à ce compte.');
               this.refreshView();
             });
           }
@@ -229,6 +256,50 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   get manualDigitCount(): number {
     return this.manualIsbn.replace(/[^0-9Xx]/g, '').length;
+  }
+
+  get storageError(): string | null {
+    return this.storageAlert?.message ?? null;
+  }
+
+  get syncError(): string | null {
+    return this.syncAlert?.message ?? null;
+  }
+
+  get storageCapabilityAlert(): ScanAlert | null {
+    // A lasting fact about the browser, unlike storageAlert which only
+    // describes the last gesture.
+    if (!this.persistenceStatus) {
+      return null;
+    }
+
+    if (!this.persistenceStatus.available) {
+      return {
+        id: 'storage-capability',
+        level: 'critical',
+        message: 'Ce navigateur ne fournit pas IndexedDB : le tri hors ligne est indisponible.',
+      };
+    }
+
+    if (!this.persistenceStatus.persisted) {
+      return {
+        id: 'storage-capability',
+        level: 'warning',
+        message: 'Le navigateur n’a pas garanti la conservation des données hors ligne. Gardez l’application régulièrement connectée.',
+      };
+    }
+
+    return null;
+  }
+
+  get hasAlerts(): boolean {
+    return this.priorityAlerts.length > 0 || this.infoAlerts.length > 0;
+  }
+
+  get canLeaveSession(): boolean {
+    return this.sessionScannedCount === 0
+      && this.localScan === null
+      && this.pendingDecisionCount === 0;
   }
 
   get canCancelLastSale(): boolean {
@@ -433,19 +504,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
         this.consultationResult = localOutcome.value as LocalCatalogResult | null;
       }
     } else if (destination === 'tri') {
-      this.storageError = this.isSessionClosePendingError(localOutcome.reason)
+      this.setStorageError('critical', this.isSessionClosePendingError(localOutcome.reason)
         ? 'La session attend sa clôture. Ouvrez une nouvelle session avant de scanner.'
         : this.describeStorageError(
           localOutcome.reason,
           'Le geste n’a pas pu être conservé localement. Vérifiez le stockage du navigateur.',
-        );
+        ));
     } else {
-      this.storageError = this.describeStorageError(
+      this.setStorageError('critical', this.describeStorageError(
         localOutcome.reason,
         destination === 'cash'
           ? 'La lecture du catalogue local a échoué. Aucune ligne de caisse n’a été créée.'
           : 'La lecture du catalogue local a échoué. Les informations de stock peuvent être incomplètes.',
-      );
+      ));
     }
 
     let metadata: BookMetadata | null = null;
@@ -508,10 +579,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
         await this.bindCurrentAccountToSession();
         this.session = await this.scanWorkflow.getSession() ?? this.session;
       } catch (error: unknown) {
-        this.storageError = this.describeStorageError(
+        this.setStorageError('critical', this.describeStorageError(
           error,
           'Le mode de session n’a pas pu être conservé localement.',
-        );
+        ));
       }
     } else if (this.session) {
       this.session = {...this.session, mode};
@@ -674,7 +745,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
 
   private async performSync(scanSync: ScanSyncService): Promise<void> {
     this.syncStatus = 'syncing';
-    this.syncError = null;
+    this.syncAlert = null;
     this.refreshView();
 
     try {
@@ -688,19 +759,19 @@ export class ScannerComponent implements OnInit, OnDestroy {
       }
       if (!summary.catalog) {
         this.syncStatus = 'error';
-        this.syncError = 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits ou réseau).';
+        this.setSyncError('warning', 'Le compte est connecté, mais le catalogue n’a pas pu être synchronisé (droits ou réseau).');
       } else if (orphaned > 0) {
         this.syncStatus = 'error';
-        this.syncError = `${orphaned} geste${orphaned > 1 ? 's' : ''} sans décision a été isolé${orphaned > 1 ? 's' : ''} avec la session précédente. Prévenez un responsable avant toute publication.`;
+        this.setSyncError('critical', `${orphaned} geste${orphaned > 1 ? 's' : ''} sans décision a été isolé${orphaned > 1 ? 's' : ''} avec la session précédente. Prévenez un responsable avant toute publication.`);
       } else if (quarantined > 0) {
         this.syncStatus = 'error';
-        this.syncError = `${quarantined} entrée${quarantined > 1 ? 's' : ''} a été mise en quarantaine après plusieurs refus serveur. Prévenez un responsable.`;
+        this.setSyncError('critical', `${quarantined} entrée${quarantined > 1 ? 's' : ''} a été mise en quarantaine après plusieurs refus serveur. Prévenez un responsable.`);
       } else if (summary.outbox.stoppedOnError) {
         this.syncStatus = 'error';
-        this.syncError = 'La file locale reste conservée et sera réessayée automatiquement.';
+        this.setSyncError('info', 'La file locale reste conservée et sera réessayée automatiquement.');
       } else if (closeRequested && !summary.closed) {
         this.syncStatus = 'error';
-        this.syncError = 'La session est prête, mais sa fermeture serveur sera réessayée automatiquement.';
+        this.setSyncError('info', 'La session est prête, mais sa fermeture serveur sera réessayée automatiquement.');
         this.sessionCloseError = 'La session reste enregistrée localement et sera clôturée dès que la synchronisation aboutira.';
       } else {
         this.syncStatus = 'success';
@@ -709,7 +780,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
       await this.refreshSaleCancellationState();
     } catch {
       this.syncStatus = 'error';
-      this.syncError = 'La synchronisation a échoué ; les gestes restent conservés localement.';
+      this.setSyncError('info', 'La synchronisation a échoué ; les gestes restent conservés localement.');
     } finally {
       this.refreshView();
     }
@@ -734,7 +805,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
     }
 
     if (this.localScan?.entry.status === 'Pending' || this.pendingDecisionCount > 0) {
-      this.syncError = 'Choisissez « Garder » ou « Écarter » pour le dernier livre avant de terminer.';
+      this.setSyncError('critical', 'Choisissez « Garder » ou « Écarter » pour le dernier livre avant de terminer.');
       this.screen = 'tri';
       this.refreshView();
       return;
@@ -804,6 +875,23 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.sessionEnding = false;
       this.refreshView();
     }
+  }
+
+  toggleAlerts(): void {
+    this.alertsExpanded = !this.alertsExpanded;
+    this.refreshView();
+  }
+
+  trackAlert(_index: number, alert: ScanAlert): string {
+    return alert.id;
+  }
+
+  leaveSession(): void {
+    if (!this.canLeaveSession) {
+      return;
+    }
+
+    this.returnHome();
   }
 
   returnHome(): void {
@@ -914,6 +1002,20 @@ export class ScannerComponent implements OnInit, OnDestroy {
   onNetworkOffline(): void {
     this.isOnline = false;
     this.refreshView();
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:orientationchange')
+  onViewportResize(): void {
+    this.syncCameraFrame();
+  }
+
+  ngDoCheck(): void {
+    this.rebuildAlerts();
+  }
+
+  ngAfterViewChecked(): void {
+    this.syncCameraFrame();
   }
 
   onCoverError(): void {
@@ -1068,12 +1170,6 @@ export class ScannerComponent implements OnInit, OnDestroy {
       await this.refreshLocalState();
       this.localModeReady = true;
 
-      if (!this.persistenceStatus.available) {
-        this.storageError = 'Ce navigateur ne fournit pas IndexedDB : le tri hors ligne est indisponible.';
-      } else if (!this.persistenceStatus.persisted) {
-        this.storageError = 'Le navigateur n’a pas garanti la conservation des données hors ligne. Gardez l’application régulièrement connectée.';
-      }
-
       if (this.localScan || (this.session?.scannedCount ?? 0) > 0) {
         this.screen = 'tri';
       }
@@ -1081,10 +1177,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.refreshView();
       this.startCameraIfNeeded();
     } catch (error: unknown) {
-      this.storageError = this.describeStorageError(
+      this.setStorageError('critical', this.describeStorageError(
         error,
         'Le stockage local ne peut pas être initialisé. Aucun geste ne sera considéré comme conservé.',
-      );
+      ));
       this.refreshView();
     }
   }
@@ -1105,10 +1201,10 @@ export class ScannerComponent implements OnInit, OnDestroy {
       this.refreshView();
       this.resumeCamera();
     } catch (error: unknown) {
-      this.storageError = this.describeStorageError(
+      this.setStorageError('critical', this.describeStorageError(
         error,
         'La décision n’a pas pu être conservée localement.',
-      );
+      ));
       this.refreshView();
     }
   }
@@ -1225,6 +1321,157 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.changeDetector.markForCheck();
   }
 
+  private rebuildAlerts(): void {
+    const alerts: ScanAlert[] = [];
+
+    const capabilityAlert = this.storageCapabilityAlert;
+    if (capabilityAlert) {
+      alerts.push(capabilityAlert);
+    }
+
+    if (this.storageAlert) {
+      alerts.push(this.storageAlert);
+    }
+
+    if (this.authDegraded) {
+      alerts.push({
+        id: 'auth-degraded',
+        level: 'warning',
+        message: 'Mode dégradé : reconnectez-vous pour synchroniser. Caméra, catalogue local et file d’attente restent disponibles.',
+      });
+    }
+
+    if (this.syncAlert) {
+      alerts.push(this.syncAlert);
+    }
+
+    if (!this.isOnline) {
+      alerts.push({
+        id: 'offline',
+        level: 'info',
+        message: 'Hors ligne : les gestes restent sur cet appareil et partiront à la reconnexion.',
+      });
+    }
+
+    if (this.pendingDecisionCount > 0) {
+      const count = this.pendingDecisionCount;
+      alerts.push({
+        id: 'pending-decisions',
+        level: 'info',
+        message: `${count} décision${count > 1 ? 's' : ''} à prendre`,
+      });
+    }
+
+    if (this.pendingTransmissionCount > 0) {
+      const count = this.pendingTransmissionCount;
+      alerts.push({
+        id: 'pending-transmissions',
+        level: 'info',
+        message: `${count} geste${count > 1 ? 's' : ''} à transmettre`,
+      });
+    }
+
+    this.priorityAlerts = alerts
+      .filter(alert => alert.level !== 'info')
+      .sort((left, right) => (left.level === 'critical' ? 0 : 1) - (right.level === 'critical' ? 0 : 1));
+    this.infoAlerts = alerts.filter(alert => alert.level === 'info');
+
+    if (this.infoAlerts.length === 0) {
+      this.alertsExpanded = false;
+    }
+  }
+
+  /**
+   * The placeholder can be pushed out of a scrolled or clipped container when
+   * the alerts take over the screen; the preview follows what is really visible
+   * so it never paints over the dock or the header.
+   */
+  private visibleSlotBounds(slot: HTMLElement): {top: number; left: number; width: number; height: number} | null {
+    if (slot !== this.cameraSlotElement) {
+      this.cameraSlotElement = slot;
+      this.cameraClipAncestors = this.collectClippingAncestors(slot);
+    }
+
+    const bounds = slot.getBoundingClientRect();
+    let top = bounds.top;
+    let left = bounds.left;
+    let bottom = bounds.bottom;
+    let right = bounds.right;
+
+    for (const ancestor of this.cameraClipAncestors) {
+      const clip = ancestor.getBoundingClientRect();
+      top = Math.max(top, clip.top);
+      left = Math.max(left, clip.left);
+      bottom = Math.min(bottom, clip.bottom);
+      right = Math.min(right, clip.right);
+    }
+
+    return {top, left, width: right - left, height: bottom - top};
+  }
+
+  private collectClippingAncestors(slot: HTMLElement): readonly HTMLElement[] {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+
+    const ancestors: HTMLElement[] = [];
+    for (let node = slot.parentElement; node; node = node.parentElement) {
+      const {overflowX, overflowY} = window.getComputedStyle(node);
+      if (overflowX !== 'visible' || overflowY !== 'visible') {
+        ancestors.push(node);
+      }
+    }
+
+    return ancestors;
+  }
+
+  private setStorageError(level: ScanAlertLevel, message: string): void {
+    this.storageAlert = {id: 'storage', level, message};
+  }
+
+  private setSyncError(level: ScanAlertLevel, message: string): void {
+    this.syncAlert = {id: 'sync', level, message};
+  }
+
+  private syncCameraFrame(): void {
+    const host = this.cameraContainer?.nativeElement;
+    if (!host) {
+      return;
+    }
+
+    const slot = this.cameraActive ? this.cameraSlot?.nativeElement : undefined;
+    const bounds = slot ? this.visibleSlotBounds(slot) : null;
+    if (!bounds || bounds.width < 1 || bounds.height < 1) {
+      if (this.cameraFrame !== null) {
+        this.cameraFrame = null;
+        host.style.removeProperty('top');
+        host.style.removeProperty('left');
+        host.style.removeProperty('right');
+        host.style.removeProperty('width');
+        host.style.removeProperty('height');
+      }
+      return;
+    }
+
+    const top = Math.round(bounds.top);
+    const left = Math.round(bounds.left);
+    const width = Math.round(bounds.width);
+    const height = Math.round(bounds.height);
+
+    // Layout is read on every check, so only a real move touches the style.
+    const frame = `${top}:${left}:${width}:${height}`;
+    if (frame === this.cameraFrame) {
+      return;
+    }
+
+    this.cameraFrame = frame;
+    host.style.top = `${top}px`;
+    host.style.left = `${left}px`;
+    host.style.right = 'auto';
+    host.style.width = `${width}px`;
+    host.style.height = `${height}px`;
+  }
+
   private trySync(): void {
     void this.syncNow();
   }
@@ -1245,6 +1492,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   }
 
   private resetLookupState(): void {
+    this.storageAlert = null;
     this.metadata = null;
     this.coverUrl = null;
     this.localScan = null;
