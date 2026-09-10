@@ -76,7 +76,7 @@ const routes: Routes = [
         path: 'photos',
         component: PicturesComponent,
         pathMatch: 'full',
-        title: 'Galerie photos | Vole Papillon d’Amour'
+        title: 'Photos et vidéothèque | Vole Papillon d’Amour'
       }
     ]
   },
