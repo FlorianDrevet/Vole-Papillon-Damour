@@ -17,4 +17,12 @@
   <div class="content-history flex flex-col gap-8 pt-9 text-[17px] leading-[1.78] text-slate">
     <ng-content></ng-content>
   </div>
+  <footer class="mt-10 border-t border-line-2 pt-6">
+    <a
+      data-history-album-link
+      [routerLink]="albumRoute()"
+      class="inline-flex items-center gap-2 font-mono text-[11px] tracking-[.12em] text-blue transition hover:text-ink-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
+      Voir les photos de {{ Year() }} <span aria-hidden="true">→</span>
+    </a>
+  </footer>
 </article>

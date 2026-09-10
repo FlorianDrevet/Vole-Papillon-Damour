@@ -796,6 +796,10 @@ la PR [#110](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/110). Au
 Azure, DNS, Entra, Search Console, consentement distant ou donnée de bourse n’a été effectué ;
 le déploiement Catalog et le contrôle sur l’URL publique restent à faire après le merge.
 
+Le correctif du retour OAuth Catalog est également limité au dépôt : aucun déploiement
+Catalog, compte ou changement du locataire Entra n’a été effectué. Le contrôle public après
+mise en ligne reste à faire.
+
 ### Azure
 
 | Ressource | État | Depuis |
@@ -944,6 +948,7 @@ Une ligne par session de travail. Le plus récent en haut.
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
 | 2026-09-10 | Windows | **Catalog — alignement du header et état déconnecté.** Le lien « Le site de l’association » utilise la même hauteur de contrôle de 42 px que les liens desktop et reçoit leur soulignement orange au survol/focus ; le bouton « Mon compte » ne rend plus le rond vide lorsqu’il est déconnecté. Validation : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .` et contrôles Chrome à 1200/390 px sans débordement ; avertissement de budget initial Angular connu, aucun déploiement, PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117) ouverte. |
+| 2026-09-10 | Windows | **Correctif Catalog — création de compte.** Après reproduction du retour OAuth sur la racine (`#code=...`) qui laissait l’accueil affiché, le shell initialise MSAL uniquement lorsqu’un callback est présent afin de restaurer `/compte`. Validation TDD : test rouge puis vert, 121 tests ChromeHeadless, build SSR/navigateur et `graphify update .` passants ; avertissement de budget initial connu, aucune ressource Entra ni déploiement modifié, PR à ouvrir. |
 | 2026-09-09 | Windows | **Catalog — carte et agenda des prochaines bourses.** La PR [#110](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/110) met en avant la prochaine édition, réutilise les assets d’icônes du Website, restaure l’embed Google Maps après consentement dédié avec lien de repli, et liste toutes les futures bourses depuis `/asso-events`. Validation : 120 tests ChromeHeadless, build SSR/navigateur, `graphify update .` et `git diff --check` passants ; avertissement de budget initial Angular connu, aucun déploiement. |
 | 2026-09-08 | Windows | **PR #99 — résolution des conflits.** Depuis `origin/main` (`fbf42fb`), intégration de `fix/audit-catalog-public` en conservant les lots Scanette et Catalog, les genres fournis par l’API, le périmètre `availability=available` et le lien Maps statique. L’option de consentement devenue inutile pour l’iframe a été retirée de la bannière et de la politique. Validation : 117 tests ChromeHeadless Catalog, build SSR/production et `graphify update .` ; avertissement de budget initial connu, aucun déploiement. |
 | 2026-09-08 | Windows | **Audit catalogue/Scanette — lot 1.** Depuis `origin/main`, correction TDD de `API-01`, `API-02`, `API-03`, `API-07`, `SCAN-03`, `CAT-01` et `CAT-02` sur le worktree `fix/catalogue-scan-lot1`. Suites Application/API/Scan/Catalog et builds concernés passent localement ; aucune migration ni ressource distante n'a été modifiée. Le retest terrain hors ligne, la validation RGPD et l'arbitrage du nouveau filigrane restent à faire. |
