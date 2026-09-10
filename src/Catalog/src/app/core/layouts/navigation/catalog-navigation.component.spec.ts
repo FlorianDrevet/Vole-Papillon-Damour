@@ -58,6 +58,19 @@ describe('CatalogNavigationComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Le site de l’association');
   });
 
+  it('gives the association link the same control height and underline treatment as navigation links', () => {
+    const associationLink = fixture.nativeElement.querySelector('.association-link') as HTMLElement;
+    const style = getComputedStyle(associationLink);
+
+    expect(style.minHeight).toBe('42px');
+    expect(style.borderBottomWidth).toBe('2px');
+    expect(style.borderBottomStyle).toBe('solid');
+  });
+
+  it('does not show a person icon for a signed-out account action', () => {
+    expect(fixture.nativeElement.querySelector('.account-teaser .person-icon')).toBeNull();
+  });
+
   it('labels the event tab with the upcoming dates wording', () => {
     const eventLink = (Array.from(fixture.nativeElement.querySelectorAll('a.nav-link')) as HTMLAnchorElement[])
       .find(link => link.textContent?.includes('Les prochaines dates'));

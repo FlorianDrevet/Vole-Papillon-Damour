@@ -11,13 +11,18 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
 - `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, cash
   sales, IndexedDB persistence, and volunteer authentication/synchronization
 
-As of 2026-09-10, Website `/association/photos` opens every catalog card in an accessible
-image-selection dialog, explicitly labels incomplete albums as selections until their
-original files are imported, keeps the Books Fair album last, and places the Maxence
-history banner after the video catalog. The hero includes a three-image mosaic. The mixed
-video grid uses stretch-to-row cards, a flexible copy block, and `object-contain` so
-landscape videos do not create misaligned cards beside portrait videos. Local validation
-passes 70 ChromeHeadless tests and the SSR/production build; no deployment was made.
+As of 2026-09-10, Website `/association/photos` separates the image catalog into 23
+yearly Maxence albums (2004–2026) and three event albums. Cards now navigate to the
+SSR-rendered `/association/photos/:albumSlug` page, which exposes a masonry gallery and
+keyboard-accessible links back to the catalog; the previous image-selection dialog has
+been removed. The 2005 source folders are merged into one 94-photo album, and the
+celebrity and Maxence 20th-birthday folders are included as 15- and 88-photo event
+albums. Existing `/maxence/histoire` chapters link to their matching year album only
+where a chapter exists (2004–2016). The hero still includes a three-image mosaic, the
+history banner remains after the video catalog, and the mixed video grid uses
+stretch-to-row cards with a flexible copy block and `object-contain`. The Website asset
+addition contains 715 source images; local validation passes 72 ChromeHeadless tests and
+the SSR/production build, with no deployment made.
 
 The public catalog is intentionally separate from the association Website. It uses typed
 `CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
@@ -61,6 +66,9 @@ interaction, it starts an MSAL redirect back to the current private route and th
 and administration pages render a renewal message instead of their generic API failure.
 The backend remains the authorization boundary; a client-side admin link never grants
 access by itself.
+The root Catalog shell detects a pending OAuth `code`/`error` response and initializes the
+lazy MSAL service so the saved `/compte` start page can be restored; ordinary anonymous
+shell bootstraps remain lazy.
 
 The signed-out Catalog `/compte` state uses the V2 editorial shell: a two-column member
 introduction, concrete watchlist/alert benefits, provider-neutral login copy, and separate

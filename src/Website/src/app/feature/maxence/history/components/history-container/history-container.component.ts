@@ -1,6 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 
 import { HistoryReaderService } from '../../history-reader.service';
+import { maxenceAlbumSlug, PHOTO_ALBUMS_ROUTE } from '../../../../association/pictures/photo-album-catalog';
 
 /**
  * Un chapitre du récit. Le texte de la maman est projeté tel quel par le
@@ -23,4 +24,5 @@ export class HistoryContainerComponent {
   protected readonly reader = inject(HistoryReaderService);
   protected readonly position = computed(() => this.reader.positionOf(this.Year()));
   protected readonly isOpen = computed(() => this.reader.isActive(this.Year()));
+  protected readonly albumRoute = computed(() => [PHOTO_ALBUMS_ROUTE, maxenceAlbumSlug(this.Year())]);
 }
