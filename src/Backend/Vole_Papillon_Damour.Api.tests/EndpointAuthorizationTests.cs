@@ -168,6 +168,19 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
+    public void Force_closing_a_scan_session_requires_the_administration_policy()
+    {
+        var endpoint = RegisteredEndpoints()
+            .Single(endpoint => RouteOf(endpoint) == "/books/admin/sessions/{scanSessionId:guid}/force-close");
+
+        RequiresAuthorization(endpoint).Should().BeTrue();
+        endpoint.Metadata
+            .GetOrderedMetadata<IAuthorizeData>()
+            .Should()
+            .Contain(data => data.Policy == "Administration");
+    }
+
+    [Fact]
     public void Account_administration_endpoints_require_administration_policy()
     {
         var accountEndpoints = RegisteredEndpoints()

@@ -10,18 +10,28 @@ import {
   ScanLocalStoreError,
   ScanOutboxEntry,
   ScanSaleOutboxEntry,
+  ScanSetAsideReason,
   ScanSessionCloseRequest,
+  ScanSessionCounts,
   ScanSessionSnapshot,
   ScanStoreName,
   scanDatabaseName,
   scanDatabaseVersion,
   scanStoreNames,
 } from './scan-offline.model';
+import type {ScanDiagnosticStoreState} from './scan-diagnostic-export';
+import {
+  migrateLegacyScanOutboxEntry,
+  LegacyScanOutboxEntry,
+} from './scan-local-store-migration';
+import {ScanTelemetryService} from './scan-telemetry.service';
 
 @Injectable({providedIn: 'root'})
 export class ScanLocalStoreService {
   private databasePromise: Promise<IDBDatabase> | null = null;
   private database: IDBDatabase | null = null;
+
+  constructor(private readonly telemetry: ScanTelemetryService = new ScanTelemetryService()) {}
 
   async requestPersistentStorage(): Promise<PersistentStorageStatus> {
     const available = typeof indexedDB !== 'undefined';
@@ -67,6 +77,21 @@ export class ScanLocalStoreService {
       'readonly',
       store => store.getAll(),
     ) ?? [];
+  }
+
+  private async getCatalogDiagnosticSummary(): Promise<{
+    count: number;
+    recent: ScanCatalogBook[];
+  }> {
+    const books = await this.getCatalogBooks();
+    return {
+      count: books.length,
+      recent: books
+        .sort((left, right) =>
+          right.updatedAt.localeCompare(left.updatedAt) ||
+          right.isbn13.localeCompare(left.isbn13))
+        .slice(0, 5),
+    };
   }
 
   async putCatalogBooks(books: readonly ScanCatalogBook[]): Promise<void> {
@@ -147,11 +172,12 @@ export class ScanLocalStoreService {
   }
 
   async getSession(): Promise<ScanSessionSnapshot | null> {
-    return await this.runRequest<ScanSessionSnapshot | undefined>(
+    const record = await this.runRequest<RawScanSessionRecord | undefined>(
       scanStoreNames.session,
       'readonly',
       store => store.get('active-session'),
-    ) ?? null;
+    );
+    return record ? normalizeSession(record) : null;
   }
 
   async saveSession(session: ScanSessionSnapshot): Promise<void> {
@@ -195,13 +221,13 @@ export class ScanLocalStoreService {
     request: Omit<ScanSessionCloseRequest, 'key'>,
   ): Promise<void> {
     await this.putSessionRecord({
-      key: sessionCloseRequestKey(request.scanSessionId),
+      key: sessionCloseRequestKey(request.clientSessionId),
       ...request,
     });
   }
 
   async listSessionCloseRequests(): Promise<ScanSessionCloseRequest[]> {
-    const records = await this.runRequest<Array<{key: string} & Partial<ScanSessionCloseRequest>>>(
+    const records = await this.runRequest<RawScanSessionCloseRequest[]>(
       scanStoreNames.session,
       'readonly',
       store => store.getAll(),
@@ -209,72 +235,44 @@ export class ScanLocalStoreService {
 
     return records
       .filter(record => record.key.startsWith('close-request:'))
-      .map(record => record as ScanSessionCloseRequest)
+      .map(record => normalizeCloseRequest(record))
       .sort((left, right) => left.requestedAt.localeCompare(right.requestedAt));
   }
 
-  async deleteSessionCloseRequest(scanSessionId: string): Promise<void> {
+  async getDiagnosticState(): Promise<ScanDiagnosticStoreState> {
+    const session = await this.getSession();
+    const [catalog, sessionCounts, closeRequests, outbox, sales] = await Promise.all([
+      this.getCatalogDiagnosticSummary(),
+      session ? this.getSessionCounts(session.clientSessionId) : Promise.resolve(null),
+      this.listSessionCloseRequests(),
+      this.listOutboxEntries(),
+      this.listSaleOutboxEntries(),
+    ]);
+
+    return {
+      catalogCount: catalog.count,
+      recentCatalog: catalog.recent,
+      session,
+      sessionCounts,
+      closeRequests,
+      outbox,
+      sales,
+    };
+  }
+
+  async deleteSessionCloseRequest(clientSessionId: string): Promise<void> {
     await this.runRequest(
       scanStoreNames.session,
       'readwrite',
-      store => store.delete(sessionCloseRequestKey(scanSessionId)),
+      store => store.delete(sessionCloseRequestKey(clientSessionId)),
     );
   }
 
   async clearSessionCloseRequests(): Promise<void> {
     const requests = await this.listSessionCloseRequests();
     for (const request of requests) {
-      await this.deleteSessionCloseRequest(request.scanSessionId);
+      await this.deleteSessionCloseRequest(request.clientSessionId);
     }
-  }
-
-  async rebindSession(oldScanSessionId: string, newScanSessionId: string): Promise<void> {
-    if (oldScanSessionId === newScanSessionId) {
-      return;
-    }
-
-    await this.runTransaction(
-      [scanStoreNames.outbox, scanStoreNames.session],
-      'readwrite',
-      stores => {
-        const outboxRequest = stores[scanStoreNames.outbox].openCursor();
-        outboxRequest.onsuccess = () => {
-          const cursor = outboxRequest.result;
-          if (!cursor) {
-            return;
-          }
-
-          const entry = cursor.value as ScanOutboxEntry;
-          if (entry.scanSessionId === oldScanSessionId) {
-            cursor.update({...entry, scanSessionId: newScanSessionId});
-          }
-          cursor.continue();
-        };
-
-        const sessionRequest = stores[scanStoreNames.session].getAll();
-        sessionRequest.onsuccess = () => {
-          const records = sessionRequest.result as Array<{
-            key: string;
-            scanSessionId?: string;
-            [key: string]: unknown;
-          }>;
-          for (const record of records) {
-            if (record.scanSessionId !== oldScanSessionId) {
-              continue;
-            }
-
-            stores[scanStoreNames.session].delete(record.key);
-            stores[scanStoreNames.session].put({
-              ...record,
-              key: record.key.startsWith('close-request:')
-                ? sessionCloseRequestKey(newScanSessionId)
-                : record.key,
-              scanSessionId: newScanSessionId,
-            });
-          }
-        };
-      },
-    );
   }
 
   async addOutboxEntry(entry: ScanOutboxEntry): Promise<void> {
@@ -308,21 +306,22 @@ export class ScanLocalStoreService {
   }
 
   async getOutboxEntry(clientGestureId: string): Promise<ScanOutboxEntry | null> {
-    return await this.runRequest<ScanOutboxEntry | undefined>(
+    const entry = await this.runRequest<LegacyScanOutboxEntry | undefined>(
       scanStoreNames.outbox,
       'readonly',
       store => store.get(clientGestureId),
-    ) ?? null;
+    );
+    return entry ? migrateLegacyScanOutboxEntry(entry) : null;
   }
 
   async listOutboxEntries(): Promise<ScanOutboxEntry[]> {
-    const entries = await this.runRequest<ScanOutboxEntry[]>(
+    const entries = await this.runRequest<LegacyScanOutboxEntry[]>(
       scanStoreNames.outbox,
       'readonly',
       store => store.getAll(),
     ) ?? [];
 
-    return entries.sort((left, right) =>
+    return entries.map(entry => migrateLegacyScanOutboxEntry(entry)).sort((left, right) =>
       left.createdAt.localeCompare(right.createdAt) ||
       left.clientGestureId.localeCompare(right.clientGestureId));
   }
@@ -344,7 +343,15 @@ export class ScanLocalStoreService {
     return entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected');
   }
 
-  async getOutboxCounts(): Promise<{
+  async listSetAsideOutboxEntries(): Promise<ScanOutboxEntry[]> {
+    const entries = await this.listOutboxEntries();
+    return entries.filter(entry =>
+      entry.status === 'NeedsDecision' ||
+      entry.status === 'NeedsReattach' ||
+      entry.status === 'RejectedByServer');
+  }
+
+  async getOutboxCounts(clientSessionId: string): Promise<{
     pendingDecisionCount: number;
     pendingTransmissionCount: number;
   }> {
@@ -353,10 +360,24 @@ export class ScanLocalStoreService {
       this.listSaleOutboxEntries(),
     ]);
     return {
-      pendingDecisionCount: entries.filter(entry => entry.status === 'Pending').length,
+      pendingDecisionCount: entries.filter(entry =>
+        entry.clientSessionId === clientSessionId &&
+        (entry.status === 'Pending' || entry.status === 'NeedsDecision')).length,
       pendingTransmissionCount:
-        entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected').length +
+        entries.filter(entry =>
+          entry.clientSessionId === clientSessionId &&
+          (entry.status === 'Kept' || entry.status === 'Rejected')).length +
         sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length,
+    };
+  }
+
+  async getSessionCounts(clientSessionId: string): Promise<ScanSessionCounts> {
+    const entries = await this.listOutboxEntries();
+    const sessionEntries = entries.filter(entry => entry.clientSessionId === clientSessionId);
+    return {
+      scannedCount: sessionEntries.filter(entry => entry.status !== 'CancelledLocal').length,
+      keptCount: sessionEntries.filter(entry => entry.status === 'Kept').length,
+      rejectedCount: sessionEntries.filter(entry => entry.status === 'Rejected').length,
     };
   }
 
@@ -369,10 +390,10 @@ export class ScanLocalStoreService {
       sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length;
   }
 
-  async countBlockingOutboxEntriesForSession(scanSessionId: string): Promise<number> {
+  async countBlockingOutboxEntriesForSession(clientSessionId: string): Promise<number> {
     const entries = await this.listOutboxEntries();
     return entries.filter(entry =>
-      entry.scanSessionId === scanSessionId && isBlockingScanStatus(entry.status)).length;
+      entry.clientSessionId === clientSessionId && isBlockingScanStatus(entry.status)).length;
   }
 
   async countQuarantinedOutboxEntries(): Promise<number> {
@@ -380,33 +401,34 @@ export class ScanLocalStoreService {
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
     ]);
-    return entries.filter(entry => entry.status === 'Quarantined').length +
+    return entries.filter(entry => entry.status === 'RejectedByServer').length +
       sales.filter(entry => entry.status === 'Quarantined').length;
   }
 
-  async orphanPendingOutboxEntriesFromOtherSessions(scanSessionId: string): Promise<number> {
+  async orphanPendingOutboxEntriesFromOtherSessions(clientSessionId: string): Promise<number> {
     const entries = await this.listOutboxEntries();
     const orphanedEntries = entries.filter(entry =>
-      entry.status === 'Pending' && entry.scanSessionId !== scanSessionId);
+      entry.status === 'Pending' && entry.clientSessionId !== clientSessionId);
 
     for (const entry of orphanedEntries) {
       await this.putOutboxEntry({
         ...entry,
-        status: 'Orphaned',
-        lastError: 'Geste sans décision provenant d’une session précédente.',
+        status: 'NeedsDecision',
+        setAsideReason: 'undecided',
+        lastError: 'Livre sans décision provenant d’une session précédente.',
       });
+      this.trackGestureSetAside(entry, 'undecided');
     }
 
     return orphanedEntries.length;
   }
 
-  async orphanBlockingOutboxEntriesForSession(
-    scanSessionId: string,
+  async setAsidePendingOutboxEntriesForSession(
+    clientSessionId: string,
     errorMessage: string,
   ): Promise<number> {
-    const entries = (await this.listOutboxEntries())
-      .filter(entry =>
-        entry.scanSessionId === scanSessionId && isBlockingScanStatus(entry.status));
+    const entries = (await this.listOutboxEntries()).filter(entry =>
+      entry.clientSessionId === clientSessionId && entry.status === 'Pending');
     if (entries.length === 0) {
       return 0;
     }
@@ -418,12 +440,79 @@ export class ScanLocalStoreService {
         for (const entry of entries) {
           stores[scanStoreNames.outbox].put({
             ...entry,
-            status: 'Orphaned',
+            status: 'NeedsDecision',
+            setAsideReason: 'undecided',
             lastError: errorMessage,
           } satisfies ScanOutboxEntry);
         }
       },
     );
+    for (const entry of entries) {
+      this.trackGestureSetAside(entry, 'undecided');
+    }
+    return entries.length;
+  }
+
+  async setAsideOutboxEntriesForSession(
+    clientSessionId: string,
+    errorMessage: string,
+  ): Promise<number> {
+    const entries = (await this.listOutboxEntries()).filter(entry =>
+      entry.clientSessionId === clientSessionId &&
+      (entry.status === 'Pending' || entry.status === 'Kept' || entry.status === 'Rejected'));
+    if (entries.length === 0) {
+      return 0;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.outbox],
+      'readwrite',
+      stores => {
+        for (const entry of entries) {
+          stores[scanStoreNames.outbox].put({
+            ...entry,
+            status: 'NeedsReattach',
+            setAsideReason: 'other-volunteer',
+            lastError: errorMessage,
+          } satisfies ScanOutboxEntry);
+        }
+      },
+    );
+    for (const entry of entries) {
+      this.trackGestureSetAside(entry, 'other-volunteer');
+    }
+    return entries.length;
+  }
+
+  async orphanBlockingOutboxEntriesForSession(
+    clientSessionId: string,
+    errorMessage: string,
+  ): Promise<number> {
+    const entries = (await this.listOutboxEntries())
+      .filter(entry =>
+        entry.clientSessionId === clientSessionId && isBlockingScanStatus(entry.status));
+    if (entries.length === 0) {
+      return 0;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.outbox],
+      'readwrite',
+      stores => {
+        for (const entry of entries) {
+          stores[scanStoreNames.outbox].put({
+            ...entry,
+            status: 'NeedsReattach',
+            setAsideReason: 'other-volunteer',
+            lastError: errorMessage,
+          } satisfies ScanOutboxEntry);
+        }
+      },
+    );
+
+    for (const entry of entries) {
+      this.trackGestureSetAside(entry, 'other-volunteer');
+    }
 
     return entries.length;
   }
@@ -436,16 +525,19 @@ export class ScanLocalStoreService {
 
     const updated = {
       ...entry,
-      status: 'Orphaned' as const,
+      status: 'NeedsReattach' as const,
+      setAsideReason: 'no-session' as const,
       lastError: errorMessage,
     };
     await this.putOutboxEntry(updated);
+    this.trackGestureSetAside(entry, 'no-session');
     return updated;
   }
 
   async countOrphanedOutboxEntries(): Promise<number> {
     const entries = await this.listOutboxEntries();
-    return entries.filter(entry => entry.status === 'Orphaned').length;
+    return entries.filter(entry =>
+      entry.status === 'NeedsDecision' || entry.status === 'NeedsReattach').length;
   }
 
   async quarantineOutboxEntry(
@@ -459,10 +551,12 @@ export class ScanLocalStoreService {
 
     const updated = {
       ...entry,
-      status: 'Quarantined' as const,
+      status: 'RejectedByServer' as const,
+      setAsideReason: 'server-refused' as const,
       lastError: errorMessage,
     };
     await this.putOutboxEntry(updated);
+    this.trackGestureSetAside(entry, 'server-refused');
     return updated;
   }
 
@@ -504,7 +598,7 @@ export class ScanLocalStoreService {
           return;
         }
 
-        if (entry.status !== 'Pending') {
+        if (entry.status !== 'Pending' && entry.status !== 'NeedsDecision') {
           updatedEntry = entry;
           return;
         }
@@ -514,6 +608,8 @@ export class ScanLocalStoreService {
           status: kept ? 'Kept' : 'Rejected',
           kept,
           catalogApplied: entry.catalogApplied,
+          setAsideReason: null,
+          lastError: null,
         };
 
         if (!kept || entry.catalogApplied) {
@@ -588,6 +684,68 @@ export class ScanLocalStoreService {
     };
     await this.putOutboxEntry(updated);
     return updated;
+  }
+
+  async reattachOutboxEntry(
+    clientGestureId: string,
+    clientSessionId: string,
+  ): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+
+    if (entry.status === 'Pending' || entry.status === 'NeedsDecision') {
+      const updated = {...entry, clientSessionId};
+      await this.putOutboxEntry(updated);
+      return updated;
+    }
+
+    if (entry.status !== 'NeedsReattach') {
+      return entry;
+    }
+
+    const updated: ScanOutboxEntry = {
+      ...entry,
+      clientSessionId,
+      status: entry.kept === true ? 'Kept' : 'Rejected',
+      setAsideReason: null,
+      lastError: null,
+      lastAttemptAt: null,
+      lastFailureKind: null,
+    };
+    await this.putOutboxEntry(updated);
+    return updated;
+  }
+
+  async retryOutboxEntry(clientGestureId: string): Promise<ScanOutboxEntry> {
+    const entry = await this.getOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown scan gesture: ${clientGestureId}`);
+    }
+
+    if (entry.status !== 'RejectedByServer') {
+      return entry;
+    }
+
+    const updated: ScanOutboxEntry = {
+      ...entry,
+      status: entry.kept === true ? 'Kept' : 'Rejected',
+      setAsideReason: null,
+      lastError: null,
+      lastAttemptAt: null,
+      lastFailureKind: null,
+    };
+    await this.putOutboxEntry(updated);
+    return updated;
+  }
+
+  private trackGestureSetAside(entry: ScanOutboxEntry, setAsideReason: ScanSetAsideReason): void {
+    this.telemetry.trackEvent('scan_gesture_set_aside', {
+      setAsideReason,
+      isbn13: entry.isbn13,
+      clientGestureId: entry.clientGestureId,
+    });
   }
 
   async markOutboxAttempt(
@@ -741,7 +899,7 @@ export class ScanLocalStoreService {
           ));
       };
 
-      request.onupgradeneeded = () => {
+      request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const database = request.result;
         if (!database.objectStoreNames.contains(scanStoreNames.catalog)) {
           database.createObjectStore(scanStoreNames.catalog, {keyPath: 'isbn13'});
@@ -754,6 +912,22 @@ export class ScanLocalStoreService {
         }
         if (!database.objectStoreNames.contains(scanStoreNames.session)) {
           database.createObjectStore(scanStoreNames.session, {keyPath: 'key'});
+        }
+
+        if (event.oldVersion < 3 && database.objectStoreNames.contains(scanStoreNames.outbox)) {
+          const outbox = request.transaction?.objectStore(scanStoreNames.outbox);
+          if (outbox) {
+            const cursorRequest = outbox.openCursor();
+            cursorRequest.onsuccess = () => {
+              const cursor = cursorRequest.result;
+              if (!cursor) {
+                return;
+              }
+
+              cursor.update(migrateLegacyScanOutboxEntry(cursor.value as LegacyScanOutboxEntry));
+              cursor.continue();
+            };
+          }
         }
       };
 
@@ -913,10 +1087,78 @@ export class ScanLocalStoreService {
   }
 }
 
-function sessionCloseRequestKey(scanSessionId: string): string {
-  return `close-request:${scanSessionId}`;
+function sessionCloseRequestKey(clientSessionId: string): string {
+  return `close-request:${clientSessionId}`;
 }
 
 function isBlockingScanStatus(status: ScanOutboxEntry['status']): boolean {
-  return status === 'Pending' || status === 'Kept' || status === 'Rejected';
+  return status === 'Kept' || status === 'Rejected';
+}
+
+interface RawScanSessionRecord {
+  key: 'active-session';
+  clientSessionId?: string;
+  remoteSessionId?: string | null;
+  scanSessionId?: string;
+  volunteerId?: string | null;
+  mode: ScanSessionSnapshot['mode'];
+  targetAssoEventsId: string | null;
+  startedAt: string;
+  lastScanAt: string;
+  lastSyncAt: string;
+  closeRequested?: boolean;
+  closeReason?: ScanSessionSnapshot['closeReason'] | null;
+}
+
+interface RawScanSessionCloseRequest {
+  key: string;
+  clientSessionId?: string;
+  remoteSessionId?: string | null;
+  scanSessionId?: string;
+  volunteerId?: string | null;
+  mode: ScanSessionCloseRequest['mode'];
+  targetAssoEventsId: string | null;
+  closeReason: ScanSessionCloseRequest['closeReason'];
+  requestedAt: string;
+  startedAt?: string;
+}
+
+function normalizeSession(record: RawScanSessionRecord): ScanSessionSnapshot {
+  const clientSessionId = record.clientSessionId ?? record.scanSessionId;
+  if (!clientSessionId) {
+    throw new Error('The local scan session has no client session identifier.');
+  }
+
+  return {
+    key: 'active-session',
+    clientSessionId,
+    remoteSessionId: record.remoteSessionId ?? null,
+    volunteerId: record.volunteerId ?? null,
+    mode: record.mode,
+    targetAssoEventsId: record.targetAssoEventsId,
+    startedAt: record.startedAt,
+    lastScanAt: record.lastScanAt,
+    lastSyncAt: record.lastSyncAt,
+    closeRequested: record.closeRequested ?? false,
+    closeReason: record.closeReason ?? null,
+  };
+}
+
+function normalizeCloseRequest(record: RawScanSessionCloseRequest): ScanSessionCloseRequest {
+  const clientSessionId = record.clientSessionId ?? record.scanSessionId;
+  if (!clientSessionId) {
+    throw new Error('The local close request has no client session identifier.');
+  }
+
+  return {
+    key: record.key,
+    clientSessionId,
+    remoteSessionId: record.remoteSessionId ?? null,
+    volunteerId: record.volunteerId ?? null,
+    mode: record.mode,
+    targetAssoEventsId: record.targetAssoEventsId,
+    closeReason: record.closeReason,
+    requestedAt: record.requestedAt,
+    startedAt: record.startedAt,
+  };
 }

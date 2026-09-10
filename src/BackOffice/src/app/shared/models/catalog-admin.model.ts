@@ -322,6 +322,7 @@ export interface AdminSessionFilters {
   status?: string;
   from?: string;
   to?: string;
+  olderThan24Hours?: boolean;
   page?: number;
   pageSize?: number;
 }

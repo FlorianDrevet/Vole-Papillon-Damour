@@ -38,7 +38,7 @@ describe('ScanWorkflowService', () => {
     );
 
     expect(result.entry.status).toBe('Pending');
-    expect(result.entry.scanSessionId).not.toBe('');
+    expect(result.entry.clientSessionId).not.toBe('');
     expect(result.verdict.verdict).toBe('FirstCopy');
     expect((await store.listOutboxEntries()).length).toBe(1);
     expect((await store.getSession())?.lastScanAt).toBe('2026-09-03T08:01:00.000Z');
@@ -97,10 +97,12 @@ describe('ScanWorkflowService', () => {
 
     const next = await service.setSessionMode('AvailableNow');
 
-    expect(next.scanSessionId).not.toBe(previous.entry.scanSessionId);
-    expect(next.scannedCount).toBe(0);
-    expect(next.keptCount).toBe(0);
-    expect(next.rejectedCount).toBe(0);
+    expect(next.clientSessionId).not.toBe(previous.entry.clientSessionId);
+    expect(await service.getSessionCounts(next.clientSessionId)).toEqual({
+      scannedCount: 0,
+      keptCount: 0,
+      rejectedCount: 0,
+    });
   });
 
   it('keeps or rejects the current gesture explicitly without deleting it', async () => {
@@ -168,8 +170,11 @@ describe('ScanWorkflowService', () => {
     const updated = await service.setSessionMode('NextFair');
 
     expect(updated.mode).toBe('NextFair');
-    expect(updated.scannedCount).toBe(1);
-    expect(updated.keptCount).toBe(1);
+    expect(await service.getSessionCounts(updated.clientSessionId)).toEqual({
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+    });
   });
 
   it('persists a manual close request until the server confirms the session close', async () => {
@@ -186,7 +191,7 @@ describe('ScanWorkflowService', () => {
     expect((await service.getSession())?.closeRequested).toBeTrue();
     expect(await store.listSessionCloseRequests()).toEqual([
       jasmine.objectContaining({
-        scanSessionId: requested.scanSessionId,
+        clientSessionId: requested.clientSessionId,
         mode: requested.mode,
         closeReason: 'Manual',
       }),
@@ -203,13 +208,13 @@ describe('ScanWorkflowService', () => {
 
     const next = await service.setSessionMode('NextFair');
 
-    expect(next.scanSessionId).not.toBe(first.entry.scanSessionId);
+    expect(next.clientSessionId).not.toBe(first.entry.clientSessionId);
     expect(next.mode).toBe('NextFair');
     expect(next.closeRequested).toBeFalse();
-    expect((await service.getSession())?.scanSessionId).toBe(next.scanSessionId);
+    expect((await service.getSession())?.clientSessionId).toBe(next.clientSessionId);
     expect(await store.listSessionCloseRequests()).toEqual([
       jasmine.objectContaining({
-        scanSessionId: first.entry.scanSessionId,
+        clientSessionId: first.entry.clientSessionId,
         mode: 'AvailableNow',
         closeReason: 'Manual',
       }),
@@ -229,10 +234,29 @@ describe('ScanWorkflowService', () => {
       new Date('2026-09-03T08:06:00.000Z'),
     );
 
-    expect((await service.getSession())?.scanSessionId).toBe(next.scanSessionId);
-    expect((await store.getOutboxEntry(first.entry.clientGestureId))?.status).toBe('Orphaned');
+    expect((await service.getSession())?.clientSessionId).toBe(next.clientSessionId);
+    expect((await store.getOutboxEntry(first.entry.clientGestureId))?.status).toBe('NeedsDecision');
     expect(second.entry.status).toBe('Pending');
-    expect((await service.getSession())?.keptCount).toBe(0);
+    expect(await service.getSessionCounts(next.clientSessionId)).toEqual({
+      scannedCount: 1,
+      keptCount: 0,
+      rejectedCount: 0,
+    });
+  });
+
+  it('applies an explicit decision after the pending entry is moved to another session', async () => {
+    const first = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:05:00.000Z'),
+    );
+    await service.requestClose('Manual');
+    const next = await service.setSessionMode('NextFair');
+
+    const decided = await service.decide(first.entry.clientGestureId, true);
+
+    expect(decided.status).toBe('Kept');
+    expect(decided.kept).toBeTrue();
+    expect(decided.clientSessionId).toBe(next.clientSessionId);
   });
 
   it('reads a local catalog result without creating an outbox gesture', async () => {

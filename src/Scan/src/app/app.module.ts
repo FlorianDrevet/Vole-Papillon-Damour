@@ -4,12 +4,20 @@ import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule} from '@angular/forms';
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {ServiceWorkerModule} from '@angular/service-worker';
+import {RouterModule} from '@angular/router';
 import {MsalInterceptor, MsalModule, MsalRedirectComponent, MsalService} from '@azure/msal-angular';
 
 import {DesignSystemModule} from '@vpd/ui';
 import {AppComponent} from './app.component';
 import {ScanLoginComponent} from './auth/scan-login.component';
 import {ScannerComponent} from './scanner/scanner.component';
+import {ScanDiagnosticComponent} from './offline/scan-diagnostic.component';
+import {ScanRecoveryComponent} from './offline/scan-recovery.component';
+import {ScanStatusBarComponent} from './offline/scan-status-bar.component';
+import {ScanConfirmationComponent} from './scan-confirmation.component';
+import {ScanPageComponent} from './scan-page.component';
+import {ScanShellComponent} from './scan-shell.component';
+import {scanRoutes} from './scan-routing';
 import {
   msalGuardConfig,
   msalInstanceFactory,
@@ -18,13 +26,24 @@ import {
 import {environment} from '../environments/environment';
 
 @NgModule({
-  declarations: [AppComponent, ScanLoginComponent, ScannerComponent],
+  declarations: [
+    AppComponent,
+    ScanLoginComponent,
+    ScannerComponent,
+    ScanDiagnosticComponent,
+    ScanRecoveryComponent,
+    ScanStatusBarComponent,
+    ScanConfirmationComponent,
+    ScanPageComponent,
+    ScanShellComponent,
+  ],
   imports: [
     BrowserModule,
     CommonModule,
     FormsModule,
     HttpClientModule,
     DesignSystemModule,
+    RouterModule.forRoot(scanRoutes),
     MsalModule.forRoot(
       msalInstanceFactory(),
       msalGuardConfig,

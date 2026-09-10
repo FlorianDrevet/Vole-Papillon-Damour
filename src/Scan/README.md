@@ -68,6 +68,19 @@ un seuillage noir/blanc afin de mieux tolérer les prises de vue difficiles. Une
 écran avec moirage ou reflets peut toutefois rester illisible ; une photo nette du code
 EAN imprimé est le cas de référence.
 
+## Extraire le journal local pour le support
+
+Sur le téléphone concerné, ouvrir
+`https://scan.volepapillondamour.fr/?diagnostic=1`. Cette adresse ouvre un écran de
+diagnostic même si la connexion Entra a échoué. Appuyer sur **Copier le journal local**,
+puis coller le résultat dans le message adressé au responsable ou au support.
+
+Le journal contient les entrées des quatre magasins locaux, notamment le statut réel de
+chaque entrée de la file d’envoi. Il ne contient pas l'identifiant du compte ni de jeton.
+**Ne pas vider les données du site, désinstaller l'application ou effacer le cache avant
+d'avoir extrait et conservé ce journal** : les gestes qui n'ont pas encore quitté le
+téléphone ne peuvent pas être récupérés autrement.
+
 ## Lancer en local
 
 Depuis `src/Scan` :

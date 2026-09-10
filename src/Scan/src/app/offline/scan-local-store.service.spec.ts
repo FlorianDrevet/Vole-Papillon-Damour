@@ -8,12 +8,20 @@ import {
 } from './scan-offline.model';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {clearScanCatalogForTest} from './scan-test.utils';
+import {ScanTelemetryService} from './scan-telemetry.service';
 
 describe('ScanLocalStoreService', () => {
   let service: ScanLocalStoreService;
+  let telemetry: jasmine.SpyObj<ScanTelemetryService>;
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({providers: [ScanLocalStoreService]});
+    telemetry = jasmine.createSpyObj<ScanTelemetryService>('ScanTelemetryService', ['trackEvent']);
+    TestBed.configureTestingModule({
+      providers: [
+        ScanLocalStoreService,
+        {provide: ScanTelemetryService, useValue: telemetry},
+      ],
+    });
     service = TestBed.inject(ScanLocalStoreService);
     await clearScanCatalogForTest(service);
     await service.clearSession();
@@ -30,16 +38,16 @@ describe('ScanLocalStoreService', () => {
   it('round-trips session and catalog synchronization state', async () => {
     const session = {
       key: 'active-session' as const,
-      scanSessionId: 'session-1',
+      clientSessionId: 'session-1',
+      remoteSessionId: null,
       volunteerId: 'volunteer-1',
       mode: 'AvailableNow' as const,
       targetAssoEventsId: null,
       startedAt: '2026-09-03T08:00:00.000Z',
       lastScanAt: '2026-09-03T08:01:00.000Z',
       lastSyncAt: '2026-09-03T08:00:00.000Z',
-      scannedCount: 0,
-      keptCount: 0,
-      rejectedCount: 0,
+      closeRequested: false,
+      closeReason: null,
     };
 
     await service.saveSession(session);
@@ -75,7 +83,7 @@ describe('ScanLocalStoreService', () => {
       .toEqual(['gesture-1', 'gesture-2', 'gesture-3', 'gesture-4']);
     expect((await service.listTransmittableOutboxEntries()).map(entry => entry.clientGestureId))
       .toEqual(['gesture-2', 'gesture-3']);
-    expect(await service.getOutboxCounts()).toEqual({
+    expect(await service.getOutboxCounts('session-1')).toEqual({
       pendingDecisionCount: 1,
       pendingTransmissionCount: 2,
     });
@@ -86,8 +94,8 @@ describe('ScanLocalStoreService', () => {
       createOutboxEntry('pending', '2026-09-03T08:01:00.000Z', 'Pending'),
       createOutboxEntry('kept', '2026-09-03T08:02:00.000Z', 'Kept'),
       createOutboxEntry('rejected', '2026-09-03T08:03:00.000Z', 'Rejected'),
-      createOutboxEntry('orphaned', '2026-09-03T08:04:00.000Z', 'Orphaned'),
-      createOutboxEntry('quarantined', '2026-09-03T08:05:00.000Z', 'Quarantined'),
+      createOutboxEntry('orphaned', '2026-09-03T08:04:00.000Z', 'NeedsReattach'),
+      createOutboxEntry('quarantined', '2026-09-03T08:05:00.000Z', 'RejectedByServer'),
     ]) {
       await service.addOutboxEntry(entry);
     }
@@ -99,10 +107,71 @@ describe('ScanLocalStoreService', () => {
       [],
     );
 
-    expect(await service.getOutboxCounts()).toEqual({
+    expect(await service.getOutboxCounts('session-1')).toEqual({
       pendingDecisionCount: 1,
       pendingTransmissionCount: 3,
     });
+  });
+
+  it('tracks every gesture moved to the set-aside states without account identity', async () => {
+    await service.addOutboxEntry({
+      ...createOutboxEntry('old-pending'),
+      clientSessionId: 'old-session',
+    });
+    await service.addOutboxEntry(createOutboxEntry('closing-pending'));
+    await service.addOutboxEntry(createOutboxEntry('account-switch-rejected', '2026-09-03T08:03:00.000Z', 'Rejected'));
+    await service.addOutboxEntry({
+      ...createOutboxEntry('missing-session', '2026-09-03T08:05:00.000Z', 'Kept'),
+      clientSessionId: 'other-session',
+    });
+    await service.addOutboxEntry({
+      ...createOutboxEntry('server-refused', '2026-09-03T08:06:00.000Z', 'Rejected'),
+      clientSessionId: 'other-session',
+    });
+
+    await service.orphanPendingOutboxEntriesFromOtherSessions('session-1');
+    await service.setAsidePendingOutboxEntriesForSession('session-1', 'pending before close');
+    await service.setAsideOutboxEntriesForSession('session-1', 'account switch');
+    await service.addOutboxEntry(createOutboxEntry('account-switch-kept', '2026-09-03T08:07:00.000Z', 'Kept'));
+    await service.orphanBlockingOutboxEntriesForSession('session-1', 'account switch');
+    await service.orphanOutboxEntry('missing-session', 'missing local session');
+    await service.quarantineOutboxEntry('server-refused', 'server refused');
+
+    expect(telemetry.trackEvent).toHaveBeenCalledTimes(6);
+    expect(telemetry.trackEvent).toHaveBeenCalledWith('scan_gesture_set_aside', {
+      setAsideReason: 'undecided',
+      isbn13: '9782070363735',
+      clientGestureId: 'old-pending',
+    });
+    expect(telemetry.trackEvent).toHaveBeenCalledWith('scan_gesture_set_aside', {
+      setAsideReason: 'undecided',
+      isbn13: '9782070363735',
+      clientGestureId: 'closing-pending',
+    });
+    expect(telemetry.trackEvent).toHaveBeenCalledWith('scan_gesture_set_aside', {
+      setAsideReason: 'other-volunteer',
+      isbn13: '9782070363735',
+      clientGestureId: 'account-switch-rejected',
+    });
+    expect(telemetry.trackEvent).toHaveBeenCalledWith('scan_gesture_set_aside', {
+      setAsideReason: 'other-volunteer',
+      isbn13: '9782070363735',
+      clientGestureId: 'account-switch-kept',
+    });
+    expect(telemetry.trackEvent).toHaveBeenCalledWith('scan_gesture_set_aside', {
+      setAsideReason: 'no-session',
+      isbn13: '9782070363735',
+      clientGestureId: 'missing-session',
+    });
+    expect(telemetry.trackEvent).toHaveBeenCalledWith('scan_gesture_set_aside', {
+      setAsideReason: 'server-refused',
+      isbn13: '9782070363735',
+      clientGestureId: 'server-refused',
+    });
+    for (const [, properties] of telemetry.trackEvent.calls.allArgs()) {
+      expect(properties).not.toEqual(jasmine.objectContaining({volunteerId: jasmine.any(String)}));
+      expect(properties).not.toEqual(jasmine.objectContaining({homeAccountId: jasmine.any(String)}));
+    }
   });
 
   it('updates an outbox decision without losing the durable gesture', async () => {
@@ -126,7 +195,7 @@ describe('ScanLocalStoreService', () => {
     expect(await service.getCatalogBook(book.isbn13)).toEqual(
       jasmine.objectContaining({qtyAvailable: 0, salesCount: 5}),
     );
-    expect(await service.getOutboxCounts()).toEqual({
+    expect(await service.getOutboxCounts('session-1')).toEqual({
       pendingDecisionCount: 0,
       pendingTransmissionCount: 1,
     });
@@ -142,23 +211,22 @@ describe('ScanLocalStoreService', () => {
     };
     const session = {
       key: 'active-session' as const,
-      scanSessionId: 'session-1',
+      clientSessionId: 'session-1',
+      remoteSessionId: null,
       volunteerId: 'volunteer-1',
       mode: 'AvailableNow' as const,
       targetAssoEventsId: null,
       startedAt: '2026-09-03T08:00:00.000Z',
       lastScanAt: '2026-09-03T08:01:00.000Z',
       lastSyncAt: '2026-09-03T08:00:00.000Z',
-      scannedCount: 1,
-      keptCount: 1,
-      rejectedCount: 0,
     };
 
     await service.putCatalogBooks([book]);
     await service.saveCatalogSyncState(syncState);
     await service.saveSession(session);
     await service.saveSessionCloseRequest({
-      scanSessionId: session.scanSessionId,
+      clientSessionId: session.clientSessionId,
+      remoteSessionId: session.remoteSessionId,
       mode: session.mode,
       targetAssoEventsId: null,
       closeReason: 'Manual',
@@ -194,7 +262,7 @@ describe('ScanLocalStoreService', () => {
 
     await service.getCatalogBooks();
 
-    expect(open).toHaveBeenCalledOnceWith('vpd-scan', 2);
+    expect(open).toHaveBeenCalledOnceWith('vpd-scan', 3);
   });
 
   it('can retry opening IndexedDB after an upgrade was blocked by another instance', async () => {
@@ -250,7 +318,7 @@ describe('ScanLocalStoreService', () => {
   ): ScanOutboxEntry {
     return {
       clientGestureId,
-      scanSessionId: 'session-1',
+      clientSessionId: 'session-1',
       isbn13: '9782070363735',
       occurredAt: createdAt,
       createdAt,

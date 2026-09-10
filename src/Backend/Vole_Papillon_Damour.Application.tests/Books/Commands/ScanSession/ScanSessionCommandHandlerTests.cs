@@ -30,6 +30,7 @@ public sealed class ScanSessionCommandHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.Mode.Should().Be(ScanMode.AvailableNow);
         result.Value.Status.Should().Be(ScanSessionStatus.InProgress);
+        result.Value.ReusedExistingSession.Should().BeFalse();
         result.Value.StartedAt.Should().Be(ScanBookCommandHandlerTests.ReceivedAt);
         var session = await fixture.Context.ScanSessions.SingleAsync();
         session.VolunteerId.Should().Be(volunteerId);
@@ -77,8 +78,12 @@ public sealed class ScanSessionCommandHandlerTests
 
         firstResult.IsError.Should().BeFalse();
         replayResult.IsError.Should().BeFalse();
+        firstResult.Value.ReusedExistingSession.Should().BeFalse();
+        replayResult.Value.ReusedExistingSession.Should().BeTrue();
         firstResult.Value.ScanSessionId.Value.Should().Be(clientSessionId);
-        replayResult.Value.Should().Be(firstResult.Value);
+        replayResult.Value.Should().BeEquivalentTo(
+            firstResult.Value,
+            options => options.Excluding(result => result.ReusedExistingSession));
         (await fixture.Context.ScanSessions.CountAsync()).Should().Be(1);
     }
 
@@ -123,6 +128,7 @@ public sealed class ScanSessionCommandHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.ScanSessionId.Should().Be(existingSession.Id);
+        result.Value.ReusedExistingSession.Should().BeTrue();
         (await fixture.Context.ScanSessions.CountAsync()).Should().Be(1);
     }
 
@@ -194,6 +200,29 @@ public sealed class ScanSessionCommandHandlerTests
         var persisted = await fixture.Context.ScanSessions.SingleAsync();
         persisted.Status.Should().Be(ScanSessionStatus.Completed);
         persisted.EndedAt.Should().Be(ScanBookCommandHandlerTests.ReceivedAt);
+        await alertOutbox.Received(1).QueueForSessionAsync(
+            session.Id,
+            ScanBookCommandHandlerTests.ReceivedAt,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Close_WhenForcedByAnAdministrator_StoresTheDedicatedReasonAndQueuesAlerts()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var alertOutbox = Substitute.For<IBookAlertOutbox>();
+        var handler = new CloseScanSessionCommandHandler(fixture.Context, clock, alertOutbox);
+
+        var result = await handler.Handle(
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.AdminForced, session.VolunteerId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.CloseReason.Should().Be(ScanCloseReason.AdminForced);
+        result.Value.Status.Should().Be(ScanSessionStatus.Completed);
         await alertOutbox.Received(1).QueueForSessionAsync(
             session.Id,
             ScanBookCommandHandlerTests.ReceivedAt,

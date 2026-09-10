@@ -1,0 +1,132 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f7f5f1;
+  color: #27242a;
+}
+
+.diagnostic-page {
+  box-sizing: border-box;
+  max-width: 54rem;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.diagnostic-header,
+.diagnostic-card {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid #ddd5cc;
+  border-radius: 0.75rem;
+  background: #fff;
+}
+
+.diagnostic-header h1,
+.diagnostic-card h2 {
+  margin-top: 0;
+}
+
+.diagnostic-eyebrow {
+  margin: 0;
+  color: #6b4b73;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.copy-journal {
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #6b4b73;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.copy-journal:focus-visible {
+  outline: 3px solid #e1a94b;
+  outline-offset: 2px;
+}
+
+.copy-journal:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.copy-confirmation {
+  color: #24623c;
+  font-weight: 700;
+}
+
+.diagnostic-error {
+  color: #9d2d2d;
+  font-weight: 700;
+}
+
+.diagnostic-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diagnostic-outbox-entry {
+  padding: 0.75rem;
+  border: 1px solid #d8d0c8;
+  border-left: 0.35rem solid #8b6f47;
+  border-radius: 0.5rem;
+}
+
+.diagnostic-outbox-entry[data-status='Orphaned'],
+.diagnostic-outbox-entry[data-status='Quarantined'] {
+  border-left-color: #b04444;
+}
+
+.diagnostic-entry-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.diagnostic-status {
+  color: #8f2424;
+  font-weight: 800;
+}
+
+dl {
+  display: grid;
+  grid-template-columns: minmax(10rem, max-content) 1fr;
+  gap: 0.4rem 1rem;
+  margin: 0;
+}
+
+dt {
+  font-weight: 700;
+}
+
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 40rem) {
+  .diagnostic-page {
+    padding: 0.75rem;
+  }
+
+  .diagnostic-entry-heading,
+  dl {
+    display: block;
+  }
+
+  .diagnostic-status,
+  dd {
+    display: block;
+    margin-top: 0.25rem;
+  }
+}

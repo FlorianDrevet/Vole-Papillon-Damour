@@ -9,4 +9,5 @@ public sealed record GetAdminScanSessionsQuery(
     DateTimeOffset? From,
     DateTimeOffset? To,
     int Page = 1,
-    int PageSize = 50) : IRequest<ErrorOr<AdminScanSessionPageResult>>;
+    int PageSize = 50,
+    bool OlderThan24Hours = false) : IRequest<ErrorOr<AdminScanSessionPageResult>>;

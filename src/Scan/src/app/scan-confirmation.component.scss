@@ -1,0 +1,57 @@
+.scan-confirmation-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(10 27 42 / 55%);
+}
+
+.scan-confirmation-dialog {
+  width: min(100%, 30rem);
+  padding: 1.25rem;
+  border: 1px solid #c9d8e2;
+  border-radius: 1rem;
+  background: #fff;
+  color: #173244;
+  box-shadow: 0 1rem 3rem rgb(10 27 42 / 25%);
+}
+
+.scan-confirmation-dialog h2,
+.scan-confirmation-dialog p {
+  margin: 0;
+}
+
+.scan-confirmation-dialog p {
+  margin-top: 0.6rem;
+  line-height: 1.45;
+}
+
+.scan-confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.scan-confirmation-actions button {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.scan-confirmation-cancel {
+  background: transparent;
+  color: #173244;
+}
+
+.scan-confirmation-confirm {
+  background: #173244;
+  color: #fff;
+}

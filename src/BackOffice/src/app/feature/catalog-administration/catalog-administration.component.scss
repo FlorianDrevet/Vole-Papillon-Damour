@@ -17,6 +17,7 @@
 
 .admin-panel { padding: 1.25rem; }
 .admin-subpanel { padding: 1rem; background: #f7fbfe; }
+.admin-subpanel[role='dialog'] { border-color: rgba(192, 57, 43, .35); background: #fff8f6; }
 .admin-card strong { color: #072b45; font-family: Newsreader, Georgia, serif; font-size: 2rem; line-height: 1; }
 .admin-label { color: #6d8ba2; font-family: 'IBM Plex Mono', monospace; font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; }
 .admin-card small, .admin-row small, .admin-list small { display: block; color: #6d8ba2; font-size: .78rem; }

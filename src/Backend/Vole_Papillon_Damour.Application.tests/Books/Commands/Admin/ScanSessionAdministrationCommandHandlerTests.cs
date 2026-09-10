@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.Admin;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
@@ -134,5 +135,28 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
             .Where(candidate => candidate.ReversalOfMovementId == movement.Id)
             .SingleAsync();
         reversal.Note.Should().StartWith("Announcement.Correction:");
+    }
+
+    [Fact]
+    public async Task ForceClose_UsesTheSessionOwnerForTheSharedCloseHandlerAndStoresAdminForced()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var closeHandler = new CloseScanSessionCommandHandler(fixture.Context, clock, fixture.AlertOutbox);
+        var handler = new ForceCloseScanSessionCommandHandler(fixture.Context, closeHandler);
+
+        var result = await handler.Handle(
+            new ForceCloseScanSessionCommand(session.Id, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.CloseReason.Should().Be(ScanCloseReason.AdminForced);
+        (await fixture.Context.ScanSessions.SingleAsync()).Status.Should().Be(ScanSessionStatus.Completed);
+        await fixture.AlertOutbox.Received(1).QueueForSessionAsync(
+            session.Id,
+            ScanBookCommandHandlerTests.ReceivedAt,
+            Arg.Any<CancellationToken>());
     }
 }
