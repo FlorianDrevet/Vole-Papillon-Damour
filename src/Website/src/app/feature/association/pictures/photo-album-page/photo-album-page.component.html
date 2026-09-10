@@ -1,0 +1,62 @@
+@if (album; as selectedAlbum) {
+  <div data-photo-album-page>
+    <header class="bg-ink px-shell py-10 text-mist-2 lg:py-14">
+      <div class="mx-auto flex max-w-[1440px] flex-col gap-8">
+        <a
+          data-back-to-albums
+          [routerLink]="albumsRoute"
+          class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-cyan transition hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan/30">
+          <span aria-hidden="true">←</span> Retour aux albums
+        </a>
+        <div class="flex max-w-[70ch] flex-col gap-3">
+          <span class="font-mono text-[11px] uppercase tracking-[.16em] text-orange-2">{{ selectedAlbum.eyebrow }}</span>
+          <h1 class="font-serif text-[38px] font-medium leading-tight text-white lg:text-[56px]">{{ selectedAlbum.title }}</h1>
+          <p class="text-[16px] leading-relaxed text-mist">{{ selectedAlbum.description }}</p>
+          <span class="w-fit rounded-full border border-white/20 px-3 py-1 font-mono text-[11px] uppercase tracking-[.12em] text-cyan">
+            {{ selectedAlbum.photos.length }} photos
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <section data-photo-gallery class="bg-paper px-shell py-12 lg:py-16" aria-labelledby="photo-gallery-title">
+      <div class="mx-auto flex max-w-[1440px] flex-col gap-8">
+        <div class="flex max-w-[62ch] flex-col gap-2">
+          <span class="font-mono text-[10px] uppercase tracking-[.16em] text-blue">Album photo</span>
+          <h2 id="photo-gallery-title" class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Les images de {{ selectedAlbum.title }}</h2>
+        </div>
+
+        <div class="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+          @for (photo of selectedAlbum.photos; track photo; let index = $index) {
+            <figure data-photo-card class="mb-4 break-inside-avoid overflow-hidden rounded-sm border border-line-2 bg-white shadow-sm">
+              <img
+                [src]="photo"
+                [alt]="selectedAlbum.title + ', photo ' + (index + 1)"
+                [attr.loading]="index === 0 ? 'eager' : 'lazy'"
+                decoding="async"
+                class="h-auto w-full">
+            </figure>
+          }
+        </div>
+
+        <a
+          [routerLink]="albumsRoute"
+          class="inline-flex w-fit items-center gap-2 font-mono text-[11px] uppercase tracking-[.14em] text-blue transition hover:text-ink-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
+          <span aria-hidden="true">←</span> Retour à la liste des albums
+        </a>
+      </div>
+    </section>
+  </div>
+} @else {
+  <div data-photo-album-not-found class="flex min-h-[50vh] flex-col items-start gap-5 bg-paper px-shell py-16 lg:py-24">
+    <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Galerie photos</span>
+    <h1 class="font-serif text-[38px] font-medium leading-tight text-ink-2">Album introuvable</h1>
+    <p class="max-w-[55ch] text-[16px] leading-relaxed text-slate-2">Cet album n’est pas disponible ou le lien n’est plus valide.</p>
+    <a
+      data-back-to-albums
+      [routerLink]="albumsRoute"
+      class="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[.12em] text-white transition hover:bg-blue focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
+      Retour à la liste des albums <span aria-hidden="true">→</span>
+    </a>
+  </div>
+}
