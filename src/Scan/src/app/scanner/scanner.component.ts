@@ -907,19 +907,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
   }
 
-  get syncLabel(): string {
-    switch (this.syncStatus) {
-      case 'syncing':
-        return 'Synchronisation…';
-      case 'success':
-        return 'Catalogue synchronisé';
-      case 'error':
-        return 'Synchronisation à reprendre';
-      default:
-        return 'Synchroniser';
-    }
-  }
-
   async endSession(): Promise<void> {
     if (!this.session || this.sessionEnding) {
       return;
