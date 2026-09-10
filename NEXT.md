@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Relire la PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) sur la formulation du film de Maxence, ainsi que la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121), avant tout déploiement. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-maxence-film-wording` |
-| **Dernière mise à jour** | 2026-09-10 — formulation du film de Maxence ajustée, PR #126 ouverte, aucun déploiement |
-| **Branche** | `fix/website-maxence-film-wording` — worktree dédié, synchronisée avec `origin/main`, PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte |
+| **Prochaine action** | Relire la PR [#128](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/128) et effectuer le smoke authentifié après déploiement, avant toute validation de production. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-account-page` |
+| **Dernière mise à jour** | 2026-09-11 — page « Mon compte » du Catalog refondue, PR #128 ouverte, aucun déploiement |
+| **Branche** | `feat/catalog-account-page` — worktree dédié, synchronisée avec `origin/main`, PR [#128](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/128) ouverte |
 
 ---
 
@@ -91,6 +91,7 @@ dans un contrôle plein, contre un contrôle outline avec icône en état anonym
 Catalog et le build SSR/navigateur passent ; les smokes Chrome local desktop et mobile
 390×844 confirment le rendu anonyme sans débordement. Le nouvel état connecté est couvert
 par les tests composant/navigation ; aucun déploiement ni changement Entra n’a été effectué.
+La PR [#128](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/128) est ouverte.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 
