@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
 | **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-website-media-polish` |
-| **Dernière mise à jour** | 2026-09-10 — interactions et mise en page de la galerie Website corrigées, PR #114 ouverte, aucun déploiement |
-| **Branche** | `fix/website-media-gallery-layout` — worktree dédié, synchronisée avec `origin/main`, PR #114 ouverte |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-full-photo-albums` |
+| **Dernière mise à jour** | 2026-09-10 — les sélections photo incomplètes sont annoncées comme telles, les cartes vidéo sont alignées, PR #115 ouverte, aucun déploiement |
+| **Branche** | `fix/website-full-photo-albums` — worktree dédié, synchronisée avec `origin/main`, PR [#115](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/115) ouverte |
 
 ---
 
@@ -78,16 +78,19 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-10 — interactions et mise en page de la galerie Website
+### État actualisé — 2026-09-10 — galerie Website et fichiers média manquants
 
-La branche `fix/website-media-gallery-layout` corrige la page `/association/photos` : les
-six cartes du catalogue ouvrent maintenant une sélection photo dans une boîte de dialogue
-accessible, la bourse aux livres est placée en dernier, et le bandeau « L'histoire de
-Maxence » est déplacé après la vidéothèque. Le hero reçoit une mosaïque de trois images ;
-la grille vidéo aligne et dimensionne chaque carte indépendamment afin que les vidéos
-horizontales ne laissent plus de grands espaces vides à côté des verticales. Les 70 tests
-ChromeHeadless, le build Website et une vérification navigateur responsive locale passent.
-Aucun déploiement ni contrôle de production n'a été effectué ; la PR [#114](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/114) est ouverte.
+La PR [#114](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/114) est maintenant
+fusionnée dans `origin/main`. La branche `fix/website-full-photo-albums` conserve les six
+cartes du catalogue et leur boîte de dialogue accessible, mais indique explicitement
+qu’une carte n’ouvre qu’une sélection lorsque ses fichiers originaux ne sont pas importés.
+Le dépôt ne contient actuellement que les trois visuels de prévisualisation de l’album
+2004–2010, pas ses 231 photos complètes ; les fichiers source devront être fournis pour
+ouvrir cet album en entier. La grille vidéo utilise des cartes étendues à la hauteur de
+leur ligne, avec un bloc texte flexible, et conserve le cadre média 16:9 avec
+`object-contain`. Les 70 tests ChromeHeadless, le build Website, Graphify et un smoke
+navigateur desktop local passent ; l’émulation mobile et la production restent à vérifier.
+La PR [#115](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/115) est ouverte.
 
 ### État actualisé — 2026-09-09 — galerie familiale, vidéos et récits éditoriaux
 

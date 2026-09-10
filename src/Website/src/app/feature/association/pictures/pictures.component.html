@@ -53,7 +53,7 @@
     <span class="font-mono text-[11px] uppercase tracking-[.16em] text-blue">Le catalogue d’images</span>
     <h2 class="font-serif text-2xl font-medium text-ink-2 lg:text-3xl">Les albums</h2>
     <p class="text-[15px] leading-relaxed text-slate-2">
-      Chaque carte ouvre une sélection de l’album. La bourse aux livres ferme la série, comme un écho aux actions de l’association.
+      Chaque carte ouvre l’album complet lorsqu’il est disponible, ou la sélection actuellement importée. La bourse aux livres ferme la série, comme un écho aux actions de l’association.
     </p>
   </div>
 
@@ -65,7 +65,7 @@
         tabindex="0"
         aria-haspopup="dialog"
         [attr.aria-expanded]="selectedAlbum?.title === album.title"
-        [attr.aria-label]="'Ouvrir l’album ' + album.title"
+        [attr.aria-label]="(album.previewPhotos.length < album.photoCount ? 'Ouvrir la sélection de l’album ' : 'Ouvrir l’album ') + album.title"
         (click)="openAlbum(album)"
         (keydown)="onAlbumKeydown(album, $event)"
         class="group flex cursor-pointer flex-col overflow-hidden rounded-sm border border-line-2 bg-paper shadow-sm transition hover:-translate-y-1 hover:border-blue-2 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-2/30">
@@ -80,7 +80,7 @@
           <h3 class="font-serif text-xl font-medium text-ink-2">{{ album.title }}</h3>
           <p class="text-sm leading-relaxed text-slate-2">{{ album.description }}</p>
           <span class="mt-auto inline-flex items-center gap-2 pt-2 text-sm font-medium text-blue transition group-hover:text-ink-2">
-            Ouvrir l’album <span aria-hidden="true">→</span>
+            Ouvrir {{ album.previewPhotos.length < album.photoCount ? 'la sélection' : 'l’album' }} <span aria-hidden="true">→</span>
           </span>
         </div>
       </article>
@@ -97,9 +97,9 @@
     </p>
   </div>
 
-  <div data-video-grid class="grid items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
+  <div data-video-grid class="grid items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
     @for (video of videos; track video.source) {
-      <article data-video-card class="flex h-fit self-start flex-col overflow-hidden rounded-sm border border-white/10 bg-white/[.06] shadow-xl">
+      <article data-video-card class="flex h-full flex-col overflow-hidden rounded-sm border border-white/10 bg-white/[.06] shadow-xl">
         <div class="relative flex aspect-video items-center justify-center overflow-hidden bg-black">
           <video controls playsinline preload="none" [poster]="video.poster" [attr.aria-label]="video.title" class="h-full w-full object-contain">
             <source [src]="video.source" [type]="video.mimeType">
@@ -107,7 +107,7 @@
           </video>
           <span class="pointer-events-none absolute left-3 top-3 rounded-full bg-ink/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-mist">Vidéo</span>
         </div>
-        <div class="flex flex-col gap-3 p-5">
+        <div data-video-copy class="flex flex-1 flex-col gap-3 p-5">
           <span class="font-mono text-[10px] uppercase tracking-[.14em] text-orange-2">{{ video.eyebrow }}</span>
           <h3 class="font-serif text-xl font-medium text-white">{{ video.title }}</h3>
           <p class="text-sm leading-relaxed text-mist">{{ video.description }}</p>
@@ -140,9 +140,16 @@
       </div>
 
       <div class="flex flex-col gap-5 px-5 py-6 sm:px-8 sm:py-8">
-        <p id="album-dialog-description" class="max-w-[62ch] text-[15px] leading-relaxed text-slate-2">
-          Une sélection de {{ album.previewPhotos.length }} photos sur les {{ album.photoCount }} que contient cet album.
-        </p>
+        @if (album.previewPhotos.length < album.photoCount) {
+          <p id="album-dialog-description" class="max-w-[62ch] text-[15px] leading-relaxed text-slate-2">
+            Une sélection de {{ album.previewPhotos.length }} photos sur les {{ album.photoCount }} que contient cet album.
+            Les fichiers complets de cet album ne sont pas encore présents sur le site.
+          </p>
+        } @else {
+          <p id="album-dialog-description" class="max-w-[62ch] text-[15px] leading-relaxed text-slate-2">
+            Les {{ album.photoCount }} photos de cet album sont disponibles sur le site.
+          </p>
+        }
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
           @for (photo of album.previewPhotos; track photo; let index = $index) {
             <img [src]="photo" [alt]="album.title + ', photo ' + (index + 1)" class="aspect-[4/3] w-full rounded-sm object-cover">
