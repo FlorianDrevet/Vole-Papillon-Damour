@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la galerie photo Website (PR [#119](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/119)), le retour OAuth de l’inscription Catalog (PR [#118](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/118)) et le header Catalog (PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117)) le sont également. |
-| **Prochaine action** | Relire et valider la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) (app de scan) ; aucun déploiement ne doit être lancé avant sa fusion et un smoke de production. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour` |
-| **Dernière mise à jour** | 2026-09-10 — alertes de l’app de scan hiérarchisées, aperçu caméra remis dans le flux, PR #121 ouverte, aucun déploiement |
-| **Branche** | `fix/scan-alert-hierarchy` — synchronisée avec `origin/main`, PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) ouverte |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
+| **Prochaine action** | Relire la PR de l’enrichissement des genres bibliographiques et la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) avant tout déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-genre-enrichment` |
+| **Dernière mise à jour** | 2026-09-10 — genres bibliographiques BnF/Open Library/Google Books implémentés, tests Backend passants, aucun déploiement |
+| **Branche** | `feat/catalog-genre-enrichment` — worktree dédié, synchronisée avec `origin/main`, PR à ouvrir |
 
 ---
 
@@ -124,6 +124,21 @@ ChromeHeadless, le build SSR/prérendu, Graphify et un smoke navigateur desktop 
 passent ; l’émulation mobile exacte n’était pas disponible dans la session navigateur et
 aucun déploiement ni smoke de production n’a été effectué. Le build conserve ses
 avertissements existants de budget Angular, styles et dépendances CommonJS.
+### État actualisé — 2026-09-10 — enrichissement des genres bibliographiques
+
+Depuis `origin/main` fraîchement récupéré dans le worktree `catalog-genre-enrichment`, le
+pipeline de métadonnées transporte désormais le genre depuis les notices BnF (UNIMARC),
+Open Library (`subject`) et Google Books (`categories`). Le resolver conserve la priorité
+BnF puis complète les champs manquants avec Open Library et Google Books. Le Worker active
+le backfill des livres déjà résolus sans genre, par lots de 50 et avec un délai de 30 jours
+entre deux tentatives ; les champs marqués manuellement restent protégés. Aucun changement
+de schéma n'est requis : `Books.Genre` existait déjà.
+
+Validation locale : Domain `84`, Application `174`, Infrastructure `73`, API `14` tests
+passants, build `src/Backend/Vole_Papillon_Damour.slnx` passant et Graphify mis à jour.
+Les avertissements de vulnérabilités NuGet existants (`Microsoft.OpenApi` et
+`SQLitePCLRaw.lib.e_sqlite3`) restent présents. Aucun déploiement ni test manuel en production
+n'a été effectué ; la PR reste à ouvrir.
 
 ### État actualisé — 2026-09-10 — retour OAuth de l'inscription Catalog
 

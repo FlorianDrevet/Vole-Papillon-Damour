@@ -71,6 +71,8 @@ public sealed class GoogleBooksClient(
             return null;
         }
 
+        var genre = ReadFirstString(selected, "categories");
+
         return new BookMetadataResult(
             isbn13.Value,
             ReadString(selected, "title"),
@@ -81,7 +83,8 @@ public sealed class GoogleBooksClient(
             "GoogleBooks",
             null,
             DateTimeOffset.UtcNow,
-            coverUri is null ? null : "GoogleBooks");
+            coverUri is null ? null : "GoogleBooks",
+            Genre: genre);
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)
@@ -208,6 +211,22 @@ public sealed class GoogleBooksClient(
             .ToArray();
 
         return values.Length == 0 ? null : string.Join(", ", values);
+    }
+
+    private static string? ReadFirstString(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        return property
+            .EnumerateArray()
+            .Where(item => item.ValueKind == JsonValueKind.String)
+            .Select(item => item.GetString())
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?
+            .Trim();
     }
 
     private static int? ParseYear(string? value)

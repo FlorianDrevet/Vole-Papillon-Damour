@@ -17,6 +17,7 @@ public sealed class EnrichPendingBooksCommandHandler(
     private static readonly TimeSpan NotFoundRetryAfterFirstAttempt = TimeSpan.FromDays(7);
     private static readonly TimeSpan NotFoundRetryAfterSecondAttempt = TimeSpan.FromDays(30);
     private static readonly TimeSpan CoverRetryAfter = TimeSpan.FromDays(30);
+    private static readonly TimeSpan GenreRetryAfter = TimeSpan.FromDays(30);
 
     public async Task<EnrichPendingBooksResult> Handle(
         EnrichPendingBooksCommand command,
@@ -45,9 +46,16 @@ public sealed class EnrichPendingBooksCommandHandler(
                   (book.ResolveAttempts == 2 &&
                    book.LastAttemptAt <= now.Subtract(NotFoundRetryAfterSecondAttempt)))) ||
                 (book.MetadataStatus == BookMetadataStatus.Resolved &&
-                 book.CoverUrl == null &&
-                 (book.CoverCheckedAt == null ||
-                  book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))));
+                  book.CoverUrl == null &&
+                  (book.CoverCheckedAt == null ||
+                   book.CoverCheckedAt <= now.Subtract(CoverRetryAfter))) ||
+                (command.IncludeMissingGenres &&
+                 book.MetadataStatus == BookMetadataStatus.Resolved &&
+                 book.Genre == null &&
+                 (book.MetadataFetchedAt == null ||
+                  book.MetadataFetchedAt <= now.Subtract(GenreRetryAfter)) &&
+                 (book.LastAttemptAt == null ||
+                  book.LastAttemptAt <= now.Subtract(GenreRetryAfter))));
 
         if (command.Isbn13 is { } requestedIsbn13)
         {
@@ -65,6 +73,7 @@ public sealed class EnrichPendingBooksCommandHandler(
         var notFoundCount = 0;
         var failedCount = 0;
         var coverUpdatedCount = 0;
+        var genreUpdatedCount = 0;
         foreach (var isbn13 in candidates)
         {
             BookMetadataResult? metadata;
@@ -79,7 +88,11 @@ public sealed class EnrichPendingBooksCommandHandler(
             catch
             {
                 failedCount++;
-                await RecordProviderFailureAsync(isbn13, now, cancellationToken);
+                await RecordProviderFailureAsync(
+                    isbn13,
+                    now,
+                    command.IncludeMissingGenres,
+                    cancellationToken);
                 continue;
             }
 
@@ -90,9 +103,14 @@ public sealed class EnrichPendingBooksCommandHandler(
                 continue;
             }
 
+            var genreOnly = command.IncludeMissingGenres &&
+                            book.MetadataStatus == BookMetadataStatus.Resolved &&
+                            book.Genre is null;
             var coverOnly = book.MetadataStatus == BookMetadataStatus.Resolved &&
-                            book.CoverUrl is null;
+                            book.CoverUrl is null &&
+                            (!command.IncludeMissingGenres || book.Genre is not null);
             if (!coverOnly &&
+                !genreOnly &&
                 book.MetadataStatus is BookMetadataStatus.Manual or BookMetadataStatus.Resolved)
             {
                 continue;
@@ -103,6 +121,10 @@ public sealed class EnrichPendingBooksCommandHandler(
                 if (coverOnly)
                 {
                     book.RecordCoverCheck(now);
+                }
+                else if (genreOnly)
+                {
+                    book.RecordMetadataRefreshAttempt(now);
                 }
                 else
                 {
@@ -121,6 +143,10 @@ public sealed class EnrichPendingBooksCommandHandler(
                 if (coverOnly)
                 {
                     book.RecordCoverCheck(now);
+                }
+                else if (genreOnly)
+                {
+                    book.RecordMetadataRefreshAttempt(now);
                 }
                 else
                 {
@@ -142,7 +168,14 @@ public sealed class EnrichPendingBooksCommandHandler(
                 }
 
                 failedCount++;
-                book.RecordMetadataProviderFailure(now);
+                if (genreOnly)
+                {
+                    book.RecordMetadataRefreshAttempt(now);
+                }
+                else
+                {
+                    book.RecordMetadataProviderFailure(now);
+                }
                 await dbContext.SaveChangesAsync(cancellationToken);
                 continue;
             }
@@ -157,6 +190,10 @@ public sealed class EnrichPendingBooksCommandHandler(
                 {
                     book.RecordCoverCheck(now);
                 }
+                else if (genreOnly)
+                {
+                    book.RecordMetadataRefreshAttempt(now);
+                }
                 else
                 {
                     book.RecordMetadataProviderFailure(now);
@@ -167,6 +204,9 @@ public sealed class EnrichPendingBooksCommandHandler(
             }
             coverSource = metadata.CoverUrl is null ? null : mappedCoverSource;
 
+            var wasResolved = book.MetadataStatus == BookMetadataStatus.Resolved;
+            var hadCover = book.CoverUrl is not null;
+            var hadGenre = !string.IsNullOrWhiteSpace(book.Genre);
             try
             {
                 book.ApplyAutomaticMetadata(
@@ -176,6 +216,10 @@ public sealed class EnrichPendingBooksCommandHandler(
                     rawPayload: null,
                     coverSource: metadata.CoverUrl is null ? null : coverSource,
                     coverCheckedAt: metadata.RetrievedAt.UtcDateTime);
+                if (!hadGenre && !string.IsNullOrWhiteSpace(book.Genre))
+                {
+                    genreUpdatedCount++;
+                }
             }
             catch (ArgumentException)
             {
@@ -183,6 +227,10 @@ public sealed class EnrichPendingBooksCommandHandler(
                 if (coverOnly)
                 {
                     book.RecordCoverCheck(now);
+                }
+                else if (genreOnly)
+                {
+                    book.RecordMetadataRefreshAttempt(now);
                 }
                 else
                 {
@@ -193,12 +241,12 @@ public sealed class EnrichPendingBooksCommandHandler(
                 continue;
             }
 
-            if (metadata.CoverUrl is not null)
+            if (!hadCover && metadata.CoverUrl is not null)
             {
                 coverUpdatedCount++;
             }
 
-            if (!coverOnly)
+            if (!coverOnly && !wasResolved)
             {
                 resolvedCount++;
             }
@@ -211,12 +259,14 @@ public sealed class EnrichPendingBooksCommandHandler(
             resolvedCount,
             notFoundCount,
             failedCount,
-            coverUpdatedCount);
+            coverUpdatedCount,
+            genreUpdatedCount);
     }
 
     private async Task RecordProviderFailureAsync(
         Isbn13 isbn13,
         DateTime attemptedAt,
+        bool includeMissingGenres,
         CancellationToken cancellationToken)
     {
         var book = await dbContext.Books
@@ -226,9 +276,20 @@ public sealed class EnrichPendingBooksCommandHandler(
             return;
         }
 
-        if (book.MetadataStatus == BookMetadataStatus.Resolved && book.CoverUrl is null)
+        if (book.MetadataStatus == BookMetadataStatus.Resolved)
         {
-            if (book.RecordCoverCheck(attemptedAt))
+            var changed = false;
+            if (book.CoverUrl is null)
+            {
+                changed |= book.RecordCoverCheck(attemptedAt);
+            }
+
+            if (includeMissingGenres && book.Genre is null)
+            {
+                changed |= book.RecordMetadataRefreshAttempt(attemptedAt);
+            }
+
+            if (changed)
             {
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
@@ -254,6 +315,7 @@ public sealed class EnrichPendingBooksCommandHandler(
         var title = coverOnly ? null : Clean(metadata.Title);
         var authors = coverOnly ? null : Clean(metadata.Authors);
         var publisher = coverOnly ? null : Clean(metadata.Publisher);
+        var genre = coverOnly ? null : CleanGenre(metadata.Genre);
         var workId = coverOnly ? null : Clean(metadata.WorkId);
         var fields = new List<BookMetadataField>();
 
@@ -261,6 +323,7 @@ public sealed class EnrichPendingBooksCommandHandler(
         if (authors is not null) fields.Add(BookMetadataField.Authors);
         if (publisher is not null) fields.Add(BookMetadataField.Publisher);
         if (!coverOnly && metadata.PublicationYear is not null) fields.Add(BookMetadataField.PublicationYear);
+        if (genre is not null) fields.Add(BookMetadataField.Genre);
         if (workId is not null) fields.Add(BookMetadataField.WorkId);
         if (metadata.CoverUrl is not null) fields.Add(BookMetadataField.CoverUrl);
 
@@ -271,7 +334,7 @@ public sealed class EnrichPendingBooksCommandHandler(
             coverOnly ? null : metadata.PublicationYear,
             PhysicalFormat: null,
             Language: null,
-            Genre: null,
+            Genre: genre,
             CoverUrl: metadata.CoverUrl?.ToString(),
             fields,
             workId);
@@ -280,6 +343,12 @@ public sealed class EnrichPendingBooksCommandHandler(
     private static string? Clean(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string? CleanGenre(string? value)
+    {
+        var genre = Clean(value);
+        return genre is { Length: <= 100 } ? genre : null;
     }
 
     private static bool TryMapSource(string source, out BookMetadataSource mappedSource)

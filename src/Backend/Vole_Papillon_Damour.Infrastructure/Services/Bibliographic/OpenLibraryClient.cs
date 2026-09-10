@@ -42,6 +42,8 @@ public sealed class OpenLibraryClient(
         var workId = workKey?.StartsWith("/works/", StringComparison.OrdinalIgnoreCase) == true
             ? workKey["/works/".Length..]
             : null;
+        var genre = ReadFirstString(documentElement, "subject")
+            ?? ReadFirstString(documentElement, "subject_facet");
         var coverUri = CreateCoverUri(coverId);
         if (coverUri is not null &&
             !await CoverImageValidator.IsValidAsync(httpClient, coverUri, cancellationToken))
@@ -59,13 +61,14 @@ public sealed class OpenLibraryClient(
             "OpenLibrary",
             workId,
             DateTimeOffset.UtcNow,
-            coverUri is null ? null : "OpenLibrary");
+            coverUri is null ? null : "OpenLibrary",
+            Genre: genre);
     }
 
     private Uri BuildRequestUri(Isbn13 isbn13)
     {
         var fields = Uri.EscapeDataString(
-            "title,author_name,publisher,first_publish_year,cover_i,key");
+            "title,author_name,publisher,first_publish_year,cover_i,key,subject,subject_facet");
         return new Uri(
             $"{_options.OpenLibrarySearchEndpoint}?isbn={isbn13.Value}&limit=1&fields={fields}",
             UriKind.Absolute);
@@ -88,6 +91,22 @@ public sealed class OpenLibraryClient(
                property.ValueKind == JsonValueKind.String
             ? property.GetString()
             : null;
+    }
+
+    private static string? ReadFirstString(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var property) ||
+            property.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        return property
+            .EnumerateArray()
+            .Where(item => item.ValueKind == JsonValueKind.String)
+            .Select(item => item.GetString())
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?
+            .Trim();
     }
 
     public async Task<IReadOnlyList<BookReferenceSearchItem>> SearchAsync(

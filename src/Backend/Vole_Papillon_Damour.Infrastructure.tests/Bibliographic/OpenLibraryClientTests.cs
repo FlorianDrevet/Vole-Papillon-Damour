@@ -45,6 +45,7 @@ public sealed class OpenLibraryClientTests
         result.Authors.Should().Be("Antoine de Saint-Exupéry");
         result.Publisher.Should().Be("Gallimard");
         result.PublicationYear.Should().Be(1946);
+        result.Genre.Should().Be("Fiction");
         result.WorkId.Should().Be("OL123W");
         result.CoverUrl.Should().Be("https://covers.openlibrary.org/b/id/12345-L.jpg?default=false");
         result.CoverSource.Should().Be("OpenLibrary");
@@ -52,6 +53,7 @@ public sealed class OpenLibraryClientTests
         capturedRequest.Should().NotBeNull();
         capturedRequest!.RequestUri!.Query.Should().Contain("isbn");
         capturedRequest.RequestUri.Query.Should().Contain("9782070363735");
+        capturedRequest.RequestUri.Query.Should().Contain("subject");
     }
 
     [Fact]
@@ -138,6 +140,7 @@ public sealed class OpenLibraryClientTests
               "author_name": ["Antoine de Saint-Exupéry"],
               "publisher": ["Gallimard"],
               "first_publish_year": 1946,
+              "subject": ["Fiction", "Children's fiction"],
               "cover_i": 12345,
               "key": "/works/OL123W"
             }
