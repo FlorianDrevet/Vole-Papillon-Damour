@@ -16,8 +16,8 @@
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
 | **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour` |
-| **Dernière mise à jour** | 2026-09-10 — alertes de l’app de scan hiérarchisées, aperçu caméra remis dans le flux, PR à ouvrir, aucun déploiement |
-| **Branche** | `fix/scan-alert-hierarchy` — synchronisée avec `origin/main`, PR à ouvrir |
+| **Dernière mise à jour** | 2026-09-10 — alertes de l’app de scan hiérarchisées, aperçu caméra remis dans le flux, PR #121 ouverte, aucun déploiement |
+| **Branche** | `fix/scan-alert-hierarchy` — synchronisée avec `origin/main`, PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) ouverte |
 
 ---
 
@@ -106,7 +106,8 @@ Code mort supprimé (`.offline-strip` et ce que ce remaniement a rendu inutile) 
 contrôle croisé templates/TS ne trouve plus aucune classe morte.
 
 Les 141 tests ChromeHeadless, le build Scan, Graphify et une vérification navigateur en
-360×740 passent. Aucun déploiement ni contrôle de production n’a été effectué.
+360×740 passent. Aucun déploiement ni contrôle de production n’a été effectué. La PR
+[#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121) est ouverte.
 
 ### État actualisé — 2026-09-10 — galerie Website et fichiers média manquants
 
