@@ -16,8 +16,8 @@
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
 | **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-website-media-polish` |
-| **Dernière mise à jour** | 2026-09-10 — interactions et mise en page de la galerie Website corrigées, aucun déploiement |
-| **Branche** | `fix/website-media-gallery-layout` — worktree dédié, synchronisée avec `origin/main`, PR à ouvrir |
+| **Dernière mise à jour** | 2026-09-10 — interactions et mise en page de la galerie Website corrigées, PR #114 ouverte, aucun déploiement |
+| **Branche** | `fix/website-media-gallery-layout` — worktree dédié, synchronisée avec `origin/main`, PR #114 ouverte |
 
 ---
 
@@ -87,7 +87,7 @@ Maxence » est déplacé après la vidéothèque. Le hero reçoit une mosaïque 
 la grille vidéo aligne et dimensionne chaque carte indépendamment afin que les vidéos
 horizontales ne laissent plus de grands espaces vides à côté des verticales. Les 70 tests
 ChromeHeadless, le build Website et une vérification navigateur responsive locale passent.
-Aucun déploiement ni contrôle de production n'a été effectué ; la PR reste à ouvrir.
+Aucun déploiement ni contrôle de production n'a été effectué ; la PR [#114](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/114) est ouverte.
 
 ### État actualisé — 2026-09-09 — galerie familiale, vidéos et récits éditoriaux
 
