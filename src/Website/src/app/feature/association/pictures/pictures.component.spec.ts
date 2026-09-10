@@ -46,6 +46,7 @@ describe('PicturesComponent', () => {
     const cards = fixture.nativeElement.querySelectorAll('[data-album-card]');
 
     expect(cards.length).toBe(component.photoAlbums.length);
+    expect(cards[0].getAttribute('aria-label')).toContain('Ouvrir la sélection de l’album');
 
     cards[0].dispatchEvent(new Event('click'));
     fixture.detectChanges();
@@ -61,6 +62,9 @@ describe('PicturesComponent', () => {
     expect(fixture.nativeElement.querySelector('[role="dialog"] h2').textContent)
       .toContain(component.photoAlbums[1].title);
 
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')?.textContent)
+      .toContain('Les fichiers complets de cet album ne sont pas encore présents sur le site.');
+
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     fixture.detectChanges();
 
@@ -74,10 +78,12 @@ describe('PicturesComponent', () => {
     expect(sections.indexOf('videos')).toBeLessThan(sections.indexOf('history'));
   });
 
-  it('should prevent mixed video cards from stretching each other', () => {
+  it('should align mixed video cards within each grid row', () => {
     const videoGrid = fixture.nativeElement.querySelector('[data-video-grid]');
 
-    expect(videoGrid.classList).toContain('items-start');
+    expect(videoGrid.classList).toContain('items-stretch');
     expect(videoGrid.querySelectorAll('[data-video-card]').length).toBe(component.videos.length);
+    expect(videoGrid.querySelector('[data-video-card]')?.classList).toContain('h-full');
+    expect(videoGrid.querySelector('[data-video-copy]')?.classList).toContain('flex-1');
   });
 });

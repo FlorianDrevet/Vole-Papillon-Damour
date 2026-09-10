@@ -12,11 +12,12 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
   sales, IndexedDB persistence, and volunteer authentication/synchronization
 
 As of 2026-09-10, Website `/association/photos` opens every catalog card in an accessible
-image-selection dialog, keeps the Books Fair album last, and places the Maxence history
-banner after the video catalog. The hero includes a three-image mosaic. The mixed video
-grid uses top-aligned, self-sized cards and `object-contain` so landscape videos do not
-create stretched empty cards beside portrait videos. Local validation passes 70
-ChromeHeadless tests and the SSR/production build; no deployment was made.
+image-selection dialog, explicitly labels incomplete albums as selections until their
+original files are imported, keeps the Books Fair album last, and places the Maxence
+history banner after the video catalog. The hero includes a three-image mosaic. The mixed
+video grid uses stretch-to-row cards, a flexible copy block, and `object-contain` so
+landscape videos do not create misaligned cards beside portrait videos. Local validation
+passes 70 ChromeHeadless tests and the SSR/production build; no deployment was made.
 
 The public catalog is intentionally separate from the association Website. It uses typed
 `CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
