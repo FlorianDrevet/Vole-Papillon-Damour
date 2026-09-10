@@ -2,50 +2,31 @@
   display: block;
 }
 
-.auth-degraded-banner {
-  margin: 0.75rem 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e2b93b;
-  border-radius: 0.75rem;
-  background: #fff8db;
-  color: #513f00;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
 .sync-panel {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin: 0.75rem 1rem;
-  padding: 0.7rem 0.85rem;
+  flex: none;
+  margin: 0.6rem 1rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.85rem;
   border: 1px solid #c9d8e2;
   border-radius: 0.75rem;
   background: #f3f8fb;
   color: #173244;
 }
 
-.sync-panel-copy {
-  display: grid;
-  gap: 0.2rem;
+.sync-panel > strong {
   min-width: 0;
-  font-size: 0.84rem;
-  line-height: 1.3;
-}
-
-.sync-panel-copy strong {
   font-size: 0.9rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .sync-panel-error {
   border-color: #d9a5a5;
   background: #fff5f5;
   color: #651d1d;
-}
-
-.sync-panel-error-message {
-  overflow-wrap: anywhere;
 }
 
 .sync-action {
@@ -82,15 +63,4 @@
 
 .logout-feedback .sync-action {
   justify-self: start;
-}
-
-@media (max-width: 34rem) {
-  .sync-panel {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .sync-action {
-    width: 100%;
-  }
 }

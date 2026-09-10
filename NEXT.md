@@ -15,9 +15,9 @@
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
 | **Prochaine action** | Laisser Search Console explorer le sitemap du Catalogue et relever les premières données Clarity/GA4 après consentement ; valider ensuite les durées de conservation, transferts et le statut RGAA avec l’association. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-full-photo-albums` |
-| **Dernière mise à jour** | 2026-09-10 — les sélections photo incomplètes sont annoncées comme telles, les cartes vidéo sont alignées, PR #115 ouverte, aucun déploiement |
-| **Branche** | `fix/website-full-photo-albums` — worktree dédié, synchronisée avec `origin/main`, PR [#115](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/115) ouverte |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour` |
+| **Dernière mise à jour** | 2026-09-10 — alertes de l’app de scan hiérarchisées, aperçu caméra remis dans le flux, PR à ouvrir, aucun déploiement |
+| **Branche** | `fix/scan-alert-hierarchy` — synchronisée avec `origin/main`, PR à ouvrir |
 
 ---
 
@@ -77,6 +77,36 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-10 — alertes et mise en page de l’app de scan
+
+Sur téléphone, le bandeau « Mode dégradé » était rendu à côté de l’écran au lieu d’être
+au-dessus (le conteneur `.scan-shell` était une rangée), et l’aperçu caméra, `position:
+fixed` calé à `top: 92px`, recouvrait le panneau de synchronisation. Les deux sont
+corrigés : un conteneur colonne `.scan-viewport` empile les alertes au-dessus de l’écran,
+et l’aperçu se cale désormais sur un emplacement réservé dans le flux, mesuré à chaque
+cycle de rendu puis rogné par ses conteneurs, si bien qu’il rétrécit au lieu de masquer
+quoi que ce soit — 367 px sans alerte, 140 px dans le pire empilement, jamais par-dessus
+la barre d’actions.
+
+Les quatre canaux d’alerte qui pouvaient s’empiler sont regroupés dans un rail unique et
+classés : `critical` (gestes orphelins, quarantaine, écriture locale échouée, IndexedDB
+absent, décision manquante avant clôture) et `warning` (mode dégradé, catalogue non
+synchronisé, persistance non garantie) restent dépliés ; les `info` (hors ligne, file en
+attente, ré-essais automatiques) sont repliés derrière une pastille dépliable. Le rail est
+plafonné à `38dvh`. Le panneau de synchronisation redevient une ligne compacte. Au
+passage, `storageError` mélangeait la capacité du navigateur (fait durable, désormais
+dérivé de `persistenceStatus`) et l’échec de la dernière écriture (transitoire, désormais
+remis à zéro à chaque scan).
+
+Côté barre d’actions : « Saisir un code », « Photo » et « Galerie » tiennent sur une ligne,
+la galerie étant un second `input file` sans `capture` ; un retour vers le menu apparaît
+tant que la session n’a rien trié ; l’écran de choix de mode reçoit lui aussi un retour.
+Code mort supprimé (`.offline-strip` et ce que ce remaniement a rendu inutile) — un
+contrôle croisé templates/TS ne trouve plus aucune classe morte.
+
+Les 141 tests ChromeHeadless, le build Scan, Graphify et une vérification navigateur en
+360×740 passent. Aucun déploiement ni contrôle de production n’a été effectué.
 
 ### État actualisé — 2026-09-10 — galerie Website et fichiers média manquants
 

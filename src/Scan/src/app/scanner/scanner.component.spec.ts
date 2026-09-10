@@ -326,6 +326,89 @@ describe('ScannerComponent', () => {
     expect(actionsCenter).toBeCloseTo(availableCenter, 0);
   });
 
+  it('keeps the live preview inside the reserved area, below the alerts and above the dock', async () => {
+    cameraService.start.and.returnValue(Promise.resolve({
+      resume: () => undefined,
+      refocus: () => Promise.resolve(true),
+      stop: () => Promise.resolve(),
+    }));
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+    component.authDegraded = true;
+
+    component.retryCamera();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const rail = fixture.nativeElement.querySelector('.alert-rail') as HTMLElement;
+    const slot = fixture.nativeElement.querySelector('.camera-slot') as HTMLElement;
+    const dock = fixture.nativeElement.querySelector('.scan-dock') as HTMLElement;
+    const preview = fixture.nativeElement.querySelector('.camera-engine-host-active') as HTMLElement;
+    const slotBounds = slot.getBoundingClientRect();
+    const previewBounds = preview.getBoundingClientRect();
+
+    // The preview tracks the reserved placeholder and never spills over the
+    // surrounding chrome, however little room the alerts leave it.
+    expect(previewBounds.left).toBeCloseTo(slotBounds.left, 0);
+    expect(previewBounds.width).toBeCloseTo(slotBounds.width, 0);
+    expect(previewBounds.top).toBeGreaterThanOrEqual(slotBounds.top - 1);
+    expect(previewBounds.bottom).toBeLessThanOrEqual(slotBounds.bottom + 1);
+    expect(previewBounds.height).toBeGreaterThan(0);
+    expect(rail.getBoundingClientRect().bottom).toBeLessThanOrEqual(previewBounds.top);
+    expect(previewBounds.bottom).toBeLessThanOrEqual(dock.getBoundingClientRect().top + 1);
+  });
+
+  it('lines up manual entry, live photo and gallery pick on a single dock row', () => {
+    const actions = Array.from(
+      fixture.nativeElement.querySelectorAll('.scan-dock .dock-action'),
+    ) as HTMLElement[];
+
+    expect(actions.map(action => action.textContent?.trim()))
+      .toEqual(['Saisir un code', 'Photo', 'Galerie']);
+    expect(new Set(actions.map(action => Math.round(action.getBoundingClientRect().top))).size).toBe(1);
+
+    const cameraInput = fixture.nativeElement.querySelector('#camera-input') as HTMLInputElement;
+    const galleryInput = fixture.nativeElement.querySelector('#gallery-input') as HTMLInputElement;
+
+    expect(cameraInput.getAttribute('capture')).toBe('environment');
+    expect(galleryInput.hasAttribute('capture')).toBeFalse();
+  });
+
+  it('offers a way back to the menu while the session has nothing sorted yet', () => {
+    expect(component.canLeaveSession).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.session-finish')).toBeNull();
+
+    (fixture.nativeElement.querySelector('.session-back') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(component.screen).toBe('home');
+  });
+
+  it('keeps the closing action once the session holds a sorted book', () => {
+    const sortedFixture = TestBed.createComponent(ScannerComponent);
+    sortedFixture.componentInstance.session = createSession({scannedCount: 2});
+    sortedFixture.detectChanges();
+
+    expect(sortedFixture.componentInstance.canLeaveSession).toBeFalse();
+    expect(sortedFixture.nativeElement.querySelector('.session-back')).toBeNull();
+    expect(sortedFixture.nativeElement.querySelector('.session-finish')).not.toBeNull();
+  });
+
+  it('lets a volunteer step back from the session mode choice', () => {
+    component.returnHome();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.home-mode-tri') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.session-mode-screen')).not.toBeNull();
+
+    (fixture.nativeElement.querySelector('.session-mode-screen .screen-back') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(component.screen).toBe('home');
+  });
+
   it('renders the manual ISBN keypad with an accessible return action', () => {
     component.openManualInput();
     fixture.detectChanges();
@@ -885,25 +968,94 @@ describe('ScannerComponent', () => {
       .toContain('10 ou 13');
   });
 
-  it('shows the synchronization action and separate queue labels on every operating screen', () => {
+  it('shows the synchronization action on every operating screen and the queue in the rail', () => {
     for (const screen of ['tri', 'cash', 'consultation'] as const) {
       const screenFixture = TestBed.createComponent(ScannerComponent);
       const screenComponent = screenFixture.componentInstance;
       screenComponent.screen = screen;
       screenComponent.pendingDecisionCount = 2;
       screenComponent.pendingTransmissionCount = 3;
-      screenComponent.syncError = 'Synchronisation à reprendre';
       screenFixture.detectChanges();
 
       const panel = screenFixture.nativeElement.querySelector('.sync-panel') as HTMLElement | null;
       expect(panel).not.toBeNull();
-      expect(panel?.textContent).toContain('2 décisions à prendre');
-      expect(panel?.textContent).toContain('3 gestes à transmettre');
       expect(panel?.textContent).toContain('Synchroniser');
       expect(panel?.textContent).not.toContain('scans en attente');
 
+      const toggle = screenFixture.nativeElement.querySelector('.alert-toggle') as HTMLButtonElement;
+      expect(toggle.textContent).toContain('2');
+      toggle.click();
+      screenFixture.detectChanges();
+
+      const list = screenFixture.nativeElement.querySelector('.alert-info-list') as HTMLElement;
+      expect(list.textContent).toContain('2 décisions à prendre');
+      expect(list.textContent).toContain('3 gestes à transmettre');
+
       screenFixture.destroy();
     }
+  });
+
+  it('keeps blocking alerts open and folds the self-healing ones behind a counter', () => {
+    const railFixture = TestBed.createComponent(ScannerComponent);
+    const railComponent = railFixture.componentInstance;
+    railComponent.authDegraded = true;
+    railComponent.pendingTransmissionCount = 4;
+    railComponent.isOnline = false;
+    railComponent.syncAlert = {
+      id: 'sync',
+      level: 'critical',
+      message: '2 entrées ont été mises en quarantaine. Prévenez un responsable.',
+    };
+    railFixture.detectChanges();
+
+    expect(railComponent.priorityAlerts.map(alert => alert.id)).toEqual(['sync', 'auth-degraded']);
+    expect(railComponent.infoAlerts.map(alert => alert.id))
+      .toEqual(['offline', 'pending-transmissions']);
+
+    const cards = railFixture.nativeElement.querySelectorAll('.alert-card');
+    expect(cards.length).toBe(2);
+    expect(cards[0].classList).toContain('alert-card-critical');
+    expect(cards[1].classList).toContain('alert-card-warning');
+
+    const toggle = railFixture.nativeElement.querySelector('.alert-toggle') as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(railFixture.nativeElement.querySelector('.alert-info-list')).toBeNull();
+
+    toggle.click();
+    railFixture.detectChanges();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(railFixture.nativeElement.querySelectorAll('.alert-info-list li').length).toBe(2);
+
+    railFixture.destroy();
+  });
+
+  it('ranks an unusable local store above a browser that only refuses persistence', () => {
+    const unusable = TestBed.createComponent(ScannerComponent);
+    unusable.componentInstance.persistenceStatus =
+      {available: false, persisted: false, requestAttempted: true};
+    unusable.detectChanges();
+
+    expect(unusable.componentInstance.priorityAlerts[0].level).toBe('critical');
+    expect(unusable.componentInstance.priorityAlerts[0].message).toContain('IndexedDB');
+    unusable.destroy();
+
+    const fragile = TestBed.createComponent(ScannerComponent);
+    fragile.componentInstance.persistenceStatus =
+      {available: true, persisted: false, requestAttempted: true};
+    fragile.detectChanges();
+
+    expect(fragile.componentInstance.priorityAlerts[0].level).toBe('warning');
+    expect(fragile.componentInstance.priorityAlerts[0].message).toContain('conservation des données');
+    fragile.destroy();
+
+    const healthy = TestBed.createComponent(ScannerComponent);
+    healthy.componentInstance.persistenceStatus =
+      {available: true, persisted: true, requestAttempted: true};
+    healthy.detectChanges();
+
+    expect(healthy.componentInstance.hasAlerts).toBeFalse();
+    healthy.destroy();
   });
 
   it('uses the synchronized next fair date and alert delay in the session copy', () => {
