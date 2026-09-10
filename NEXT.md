@@ -107,7 +107,8 @@ Validation : tests TDD rouge puis vert, 19 tests ciblés et 128 tests Catalog co
 de production, `graphify update .`, et contrôles Chrome locaux à 1280 px et 390×844 avec
 API mockée sans débordement. L'API publique a renvoyé `503` pendant le contrôle ; aucun
 déploiement ni smoke public n'a été effectué. La branche `feat/catalog-home-sections` est
-prête à être poussée et sa PR reste à ouvrir.
+poussée et la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) est
+ouverte.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 
@@ -928,7 +929,7 @@ Azure, DNS, Entra, Search Console, consentement distant ou donnée de bourse n�
 le déploiement Catalog et le contrôle sur l’URL publique restent à faire après le merge.
 
 L'alignement de l'accueil Catalog décrit ci-dessus est également limité au dépôt et à sa
-future PR. Le contrôle local a utilisé une API mockée parce que l'API publique renvoyait
+PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129). Le contrôle local a utilisé une API mockée parce que l'API publique renvoyait
 `503`; aucun changement Azure, DNS, Entra, Search Console, consentement distant ou donnée
 de bourse n'a été effectué, et le smoke public reste à faire après le merge et le déploiement.
 
@@ -1083,7 +1084,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-11 | Windows | **Catalog — sections de l'accueil et cartes récentes.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-catalog-home-sections`, ajout de « Par genres » et du callout « Avec un compte » après les livres rares, suppression de « Votre sélection » et ajout d'une variante de carte récente inspirée de la maquette, avec le placeholder conservé pour les couvertures absentes. Validation : test rouge puis vert, 128 tests Catalog, build de production, `graphify update .` et contrôles Chrome locaux à 1280/390×844 avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. Branche `feat/catalog-home-sections`, PR à ouvrir. |
+| 2026-09-11 | Windows | **Catalog — sections de l'accueil et cartes récentes.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-catalog-home-sections`, ajout de « Par genres » et du callout « Avec un compte » après les livres rares, suppression de « Votre sélection » et ajout d'une variante de carte récente inspirée de la maquette, avec le placeholder conservé pour les couvertures absentes. Validation : test rouge puis vert, 128 tests Catalog, build de production, `graphify update .` et contrôles Chrome locaux à 1280/390×844 avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. Branche `feat/catalog-home-sections`, PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) ouverte. |
 | 2026-09-10 | Windows | **Website — formulation du film de Maxence.** Après la fusion de la PR #124, la description de « Vole, Papillon d’amour » devient « Le film qui raconte le combat de Maxence. ». Validation : test rouge puis vert, 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements Angular connus, aucun déploiement. PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte. |
 | 2026-09-10 | Windows | **Website — libellés de la galerie.** Depuis `origin/main`, correction des descriptions du film consacré au combat de Maxence et du clip avec Michael Jones ; l’entrée de navigation devient « Photos et vidéothèque » et ses relais (footer, fil d’Ariane, titre) sont alignés. Validation : 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements de budget Angular/CommonJS connus, aucun déploiement. PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124) fusionnée. |
 | 2026-09-10 | Windows | **PR #113 — résolution des conflits publiée.** Depuis `origin/main` (`31fcead`) dans le worktree `Vole-Papillon-Damour-pr113-conflicts`, réconciliation de `feat/scanette-reprise-gestes-lots` avec le rail d’alertes et le positionnement caméra de `main`, en conservant les parcours reprise/statut/diagnostic, les contrôles de session et les évolutions backend/BackOffice. Le commit `823cbad` est publié sur le head de la PR #113, déclarée mergeable ; les deux checks CI sont en cours. Validation locale : 165 tests ChromeHeadless Scan, 5 contrats bootstrap BackOffice, 349 tests backend, builds Scan/BackOffice/backend et `graphify update .` ; aucun déploiement. |
