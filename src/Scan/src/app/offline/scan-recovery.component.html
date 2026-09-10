@@ -1,0 +1,77 @@
+<section class="recovery-screen" aria-labelledby="recovery-title">
+  <header class="recovery-header">
+    <div>
+      <p class="recovery-kicker">File locale</p>
+      <h1 id="recovery-title">Reprendre les livres mis de côté</h1>
+      <p>Chaque action est enregistrée sur cet appareil et pourra être synchronisée ensuite.</p>
+    </div>
+    <button type="button" class="recovery-close" (click)="close()">Retour</button>
+  </header>
+
+  <p *ngIf="loading" class="recovery-feedback" role="status">Lecture de la file locale…</p>
+  <p *ngIf="errorMessage" class="recovery-feedback recovery-feedback-error" role="alert">
+    {{ errorMessage }}
+  </p>
+
+  <div *ngIf="!loading && !errorMessage && entries.length === 0" class="recovery-empty">
+    <strong>Aucun livre en attente de reprise.</strong>
+    <span>La file locale est à jour.</span>
+  </div>
+
+  <div *ngIf="!loading && !errorMessage" class="recovery-list">
+    <article
+      *ngFor="let view of entries; trackBy: trackByGesture"
+      class="recovery-entry"
+      [attr.data-status]="view.entry.status">
+      <img
+        class="recovery-cover"
+        [src]="'https://covers.openlibrary.org/b/isbn/' + view.entry.isbn13 + '-L.jpg?default=false'"
+        [alt]="view.book?.title ? 'Couverture de ' + view.book?.title : 'Couverture indisponible'"
+        loading="lazy">
+      <div class="recovery-copy">
+        <p class="recovery-status">{{ view.entry.status }}</p>
+        <h2>{{ view.book?.title || 'Livre ' + view.entry.isbn13 }}</h2>
+        <p *ngIf="view.book?.authors" class="recovery-authors">{{ view.book?.authors }}</p>
+        <p class="recovery-cause">{{ causeLabel(view.entry) }}</p>
+        <p *ngIf="view.entry.lastError" class="recovery-error">{{ view.entry.lastError }}</p>
+        <div class="recovery-actions">
+          <button
+            *ngIf="view.entry.status === 'NeedsDecision'"
+            type="button"
+            class="keep-entry"
+            (click)="keep(view)">
+            Garder
+          </button>
+          <button
+            *ngIf="view.entry.status === 'NeedsDecision'"
+            type="button"
+            class="reject-entry"
+            (click)="reject(view)">
+            Refuser
+          </button>
+          <button
+            *ngIf="view.entry.status === 'NeedsDecision' || view.entry.status === 'RejectedByServer'"
+            type="button"
+            class="abandon-entry"
+            (click)="abandon(view)">
+            Abandonner
+          </button>
+          <button
+            *ngIf="view.entry.status === 'RejectedByServer'"
+            type="button"
+            class="retry-entry"
+            (click)="retry(view)">
+            Réessayer
+          </button>
+          <button
+            *ngIf="view.entry.status === 'NeedsReattach'"
+            type="button"
+            class="reattach-entry"
+            (click)="reattach(view)">
+            Reprendre dans cette session
+          </button>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

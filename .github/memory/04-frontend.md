@@ -210,6 +210,18 @@ and keeps a real `h1` target for each operating screen in both the empty and tri
 states. The USB scanner focus behavior from S-22 remains deliberately unmodified until it
 has been confirmed with the association's physical scanner.
 
+The 2026-09-09 Scanette reprise lots 0-5 add the diagnostic export and recovery surfaces,
+explicit IndexedDB migration/status handling, stale-session integrity checks, and durable
+account-switch/session-close decisions. The Scan shell now routes home, triage, cash,
+consultation, recovery, diagnostics, settings, and confirmation screens without the former
+in-component navigation/status chrome. Every local set-aside gesture emits the low-cardinality
+`scan_gesture_set_aside` telemetry event without account identifiers. BackOffice lists only
+`InProgress` sessions older than 24 hours and can force-close them through an
+`Administration`-protected action with the configured delayed-alert timing explained before
+confirmation. After reconciling this delivery with the alert/camera layout from `main`, local
+validation passes 165 Scan tests, 5 BackOffice bootstrap tests, 349 backend solution tests, and
+both Angular production builds; responsive/device retests remain manual.
+
 The 2026-09-08 Catalog Lot 5 public-surface pass removes the hard-coded featured genre
 taxonomy: the home cards, hero selector, and navigation menu now use only genres returned
 by the public catalog API, and the home section stays hidden when that list is empty. The

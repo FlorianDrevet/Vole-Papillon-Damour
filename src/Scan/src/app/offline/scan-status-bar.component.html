@@ -1,0 +1,51 @@
+<aside class="status-bar" aria-label="État de l’application" *ngIf="status.snapshot() as snapshot">
+  <div *ngIf="snapshot.catalog.state === 'fresh'" class="status-message status-catalog" role="status">
+    Catalogue à jour<span *ngIf="snapshot.catalog.syncedAt"> · {{ snapshot.catalog.syncedAt }}</span>
+  </div>
+  <div *ngIf="snapshot.catalog.state === 'stale'" class="status-message status-catalog" role="status">
+    Catalogue à actualiser<span *ngIf="snapshot.catalog.syncedAt"> · dernière mise à jour {{ snapshot.catalog.syncedAt }}</span>
+  </div>
+  <div *ngIf="snapshot.catalog.state === 'never'" class="status-message status-catalog" role="status">
+    Catalogue pas encore synchronisé
+  </div>
+
+  <div *ngIf="snapshot.outbox.state === 'sending'" class="status-message status-outbox" role="status">
+    Envoi des livres en cours…
+  </div>
+  <div *ngIf="snapshot.outbox.queued > 0" class="status-message status-outbox" role="status">
+    {{ status.outboxLabel(snapshot.outbox.queued) }}
+  </div>
+
+  <div *ngIf="snapshot.decision.pending > 0" class="status-message status-decision" role="status">
+    {{ status.decisionLabel(snapshot.decision.pending) }}
+  </div>
+
+  <div *ngIf="snapshot.setAside.total > 0" class="status-message status-set-aside" role="status">
+    {{ status.setAsideLabel(snapshot.setAside.total) }}
+  </div>
+
+  <div
+    *ngIf="status.message() as message"
+    class="status-message status-notice"
+    [class.status-notice-action]="message.level === 'action'"
+    [class.status-notice-blocking]="message.level === 'blocking'"
+    role="status"
+    aria-live="polite">
+    {{ message.text }}
+  </div>
+
+  <button
+    type="button"
+    class="status-action"
+    [disabled]="snapshot.outbox.state === 'sending'"
+    (click)="syncRequested.emit()">
+    {{ snapshot.outbox.state === 'sending' ? 'Synchronisation…' : 'Synchroniser' }}
+  </button>
+  <button
+    *ngIf="snapshot.setAside.total > 0"
+    type="button"
+    class="status-recovery"
+    (click)="recoveryRequested.emit()">
+    Les reprendre
+  </button>
+</aside>

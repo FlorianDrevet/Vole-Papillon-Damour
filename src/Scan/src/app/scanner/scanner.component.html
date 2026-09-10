@@ -30,6 +30,26 @@
     (keydown.enter)="refocusCamera()"
     (keydown.space)="refocusCamera(); $event.preventDefault()"></div>
 
+  <div class="scan-top-chrome">
+    <section *ngIf="accountSwitchPrompt" class="account-switch-banner" role="alert" aria-labelledby="account-switch-title">
+      <h2 id="account-switch-title">Session précédente détectée</h2>
+      <p>{{ accountSwitchPrompt }}</p>
+      <div class="account-switch-actions">
+        <button type="button" class="account-switch-primary" [disabled]="accountSwitchBusy" (click)="resumeAccountSwitch()">
+          Reprendre
+        </button>
+        <button type="button" class="account-switch-secondary" [disabled]="accountSwitchBusy" (click)="setAsideAccountSwitch()">
+          Mettre de côté
+        </button>
+      </div>
+    </section>
+
+    <scan-status-bar
+      *ngIf="legacyStatusVisible"
+      (syncRequested)="syncNow()"
+      (recoveryRequested)="openRecovery()"></scan-status-bar>
+  </div>
+
   <div class="scan-viewport">
     <section *ngIf="hasAlerts" class="alert-rail" aria-label="Alertes de l’application">
       <article
@@ -368,6 +388,10 @@
         </footer>
       </section>
 
+      <section *ngSwitchCase="'reprise'" class="app-screen recovery-app-screen">
+        <app-scan-recovery (finished)="returnHome()"></app-scan-recovery>
+      </section>
+
       <section *ngSwitchCase="'manual'" class="app-screen manual-screen" aria-labelledby="manual-title">
         <header
           class="mode-header"
@@ -427,12 +451,12 @@
 
         <footer class="action-dock manual-dock">
           <button type="button" class="dock-primary" (click)="validateManualIsbn()">Valider le code</button>
-          <button type="button" class="dock-link" aria-label="Revenir au scan" (click)="returnToScan()">
+          <button type="button" class="dock-link" aria-label="Fermer la saisie" (click)="returnToScan()">
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3.5 8V5.5a2 2 0 0 1 2-2H8M16 3.5h2.5a2 2 0 0 1 2 2V8M20.5 16v2.5a2 2 0 0 1-2 2H16M8 20.5H5.5a2 2 0 0 1-2-2V16"></path>
               <path d="M7 12h10"></path>
             </svg>
-            Revenir au scan
+            Fermer la saisie
           </button>
         </footer>
       </section>
@@ -548,6 +572,7 @@
           Annuler la dernière vente
         </button>
         <p *ngIf="cameraError" class="cash-camera-error" role="alert">{{ cameraError }}</p>
+        <p *ngIf="storageError" class="cash-storage-error" role="alert">{{ storageError }}</p>
 
         <footer class="action-dock cash-dock">
           <span class="dock-hint">Aucun prix, aucun total — l’encaissement reste manuel</span>
@@ -646,6 +671,7 @@
         </ng-template>
 
         <p *ngIf="cameraError" class="consultation-camera-error" role="alert">{{ cameraError }}</p>
+        <p *ngIf="storageError" class="consultation-storage-error" role="alert">{{ storageError }}</p>
 
         <footer class="action-dock consultation-dock">
           <button type="button" class="dock-primary" (click)="toggleCamera()">

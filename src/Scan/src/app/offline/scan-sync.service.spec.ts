@@ -137,11 +137,11 @@ describe('ScanSyncService', () => {
       'server-session',
       jasmine.objectContaining({clientGestureId: scan.entry.clientGestureId}),
     );
-    expect((await workflow.getSession())?.scanSessionId).toBe('server-session');
+    expect((await workflow.getSession())?.remoteSessionId).toBe('server-session');
     expect(await store.listOutboxEntries()).toEqual([]);
   });
 
-  it('orphans gestures when the local session belongs to another account', async () => {
+  it('does not silently move gestures when the local session belongs to another account', async () => {
     const scan = await workflow.recordScan(
       '9782070363735',
       new Date('2026-09-03T08:01:00.000Z'),
@@ -156,9 +156,10 @@ describe('ScanSyncService', () => {
     const result = await service.flushOutbox();
 
     expect(api.openSession).not.toHaveBeenCalled();
-    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Orphaned');
-    expect(result.orphaned).toBe(1);
-    expect(result.remaining).toBe(0);
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Kept');
+    expect(result.orphaned).toBe(0);
+    expect(result.newlyOrphaned).toBe(0);
+    expect(result.remaining).toBe(1);
   });
 
   it('sends cash sales without opening a scan session and reconciles the local stock', async () => {
@@ -284,9 +285,10 @@ describe('ScanSyncService', () => {
     result = await service.flushOutbox();
 
     expect(api.scanBook).toHaveBeenCalledTimes(5);
-    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('Quarantined');
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.status).toBe('RejectedByServer');
     expect(result.remaining).toBe(0);
     expect(result.quarantined).toBe(1);
+    expect(result.newlyQuarantined).toBe(1);
   });
 
   it('keeps a gesture retryable when the resumed session responds with conflict', async () => {
@@ -365,7 +367,8 @@ describe('ScanSyncService', () => {
 
     expect(api.openSession).not.toHaveBeenCalled();
     expect(api.scanBook).not.toHaveBeenCalled();
-    expect(result.remaining).toBe(1);
+    expect((await store.listOutboxEntries())[0].status).toBe('Pending');
+    expect(result.remaining).toBe(0);
   });
 
   it('closes a requested session after transmitting its decided gestures', async () => {
@@ -454,6 +457,7 @@ describe('ScanSyncService', () => {
       endedAt: null,
       closeReason: null,
       status: 'InProgress',
+      reusedExistingSession: false,
       scannedCount: 0,
       keptCount: 0,
       rejectedCount: 0,

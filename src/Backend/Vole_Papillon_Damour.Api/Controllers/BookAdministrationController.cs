@@ -450,6 +450,7 @@ public static class BookAdministrationController
                         DateTimeOffset? to,
                         int? page,
                         int? pageSize,
+                        bool? olderThan24Hours,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
@@ -459,13 +460,45 @@ public static class BookAdministrationController
                                 from,
                                 to,
                                 page ?? 1,
-                                pageSize ?? 50),
+                                pageSize ?? 50,
+                                olderThan24Hours ?? false),
                             cancellationToken);
                         return result.Match(
                             sessions => Results.Ok(ToResponse(sessions)),
                             error => error.Result());
                     })
                 .WithName("GetAdminScanSessions")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/sessions/{scanSessionId:guid}/force-close",
+                    async (
+                        Guid scanSessionId,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new ForceCloseScanSessionCommand(
+                                ScanSessionId.Create(scanSessionId),
+                                administratorId),
+                            cancellationToken);
+                        return result.Match(
+                            session => Results.Ok(new
+                            {
+                                scanSessionId = session.ScanSessionId.Value,
+                                status = session.Status.ToString(),
+                                closeReason = session.CloseReason?.ToString(),
+                                session.ScannedCount
+                            }),
+                            error => error.Result());
+                    })
+                .WithName("ForceCloseAdminScanSession")
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(

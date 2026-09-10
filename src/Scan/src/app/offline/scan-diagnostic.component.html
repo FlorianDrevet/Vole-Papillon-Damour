@@ -1,0 +1,84 @@
+<main class="diagnostic-page" aria-labelledby="diagnostic-title">
+  <header class="diagnostic-header">
+    <p class="diagnostic-eyebrow">Support Scanette</p>
+    <h1 id="diagnostic-title">Journal local</h1>
+    <p>Cette page lit les données conservées sur ce téléphone. Elle ne les modifie pas.</p>
+    <button class="copy-journal" type="button" [disabled]="!diagnostic || copying" (click)="copyJournal()">
+      {{ copying ? 'Copie en cours…' : 'Copier le journal local' }}
+    </button>
+    <p *ngIf="copyConfirmation" class="copy-confirmation" role="status" aria-live="polite">
+      {{ copyConfirmation }}
+    </p>
+    <p *ngIf="copyError" class="diagnostic-error" role="alert">{{ copyError }}</p>
+  </header>
+
+  <p *ngIf="loadError" class="diagnostic-error" role="alert">{{ loadError }}</p>
+
+  <ng-container *ngIf="diagnostic as journal">
+    <section class="diagnostic-card" aria-labelledby="catalog-title">
+      <h2 id="catalog-title">Catalogue local</h2>
+      <p><strong>{{ journal.catalogCount }}</strong> entrée(s) conservée(s).</p>
+      <ul *ngIf="recentCatalog.length > 0" class="diagnostic-list">
+        <li *ngFor="let book of recentCatalog">
+          {{ book.isbn13 }} · {{ book.title ?? 'Titre inconnu' }} · {{ book.updatedAt }}
+        </li>
+      </ul>
+    </section>
+
+    <section class="diagnostic-card" aria-labelledby="outbox-title">
+      <h2 id="outbox-title">File d’envoi ({{ journal.outbox.length }})</h2>
+      <div *ngIf="journal.outbox.length === 0">Aucune entrée.</div>
+      <ul *ngIf="journal.outbox.length > 0" class="diagnostic-list">
+        <li
+          *ngFor="let entry of journal.outbox"
+          class="diagnostic-outbox-entry"
+          [attr.data-status]="entry.status"
+        >
+          <div class="diagnostic-entry-heading">
+            <strong>{{ entry.isbn13 }}</strong>
+            <span class="diagnostic-status">{{ entry.status }}</span>
+          </div>
+          <small>Créé le {{ entry.createdAt }} · {{ entry.clientGestureId }}</small>
+          <p *ngIf="entry.lastError">{{ entry.lastError }}</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="diagnostic-card" aria-labelledby="session-title">
+      <h2 id="session-title">Session</h2>
+      <ng-container *ngIf="journal.session as session; else noSession">
+        <dl>
+           <dt>Identifiant local</dt><dd>{{ session.clientSessionId }}</dd>
+           <dt>Identifiant serveur</dt><dd>{{ session.remoteSessionId ?? 'non ouvert' }}</dd>
+          <dt>Mode</dt><dd>{{ session.mode }}</dd>
+          <dt>Compte présent</dt><dd>{{ session.hasVolunteerId ? 'oui' : 'non' }}</dd>
+          <dt>Début</dt><dd>{{ session.startedAt }}</dd>
+          <dt>Dernier scan</dt><dd>{{ session.lastScanAt }}</dd>
+           <dt>Dernière synchronisation</dt><dd>{{ session.lastSyncAt }}</dd>
+           <dt>Compteurs dérivés</dt><dd>{{ session.scannedCount }} scanné(s) · {{ session.keptCount }} gardé(s) · {{ session.rejectedCount }} écarté(s)</dd>
+        </dl>
+      </ng-container>
+      <ng-template #noSession>Aucune session active.</ng-template>
+    </section>
+
+    <section class="diagnostic-card" aria-labelledby="close-title">
+      <h2 id="close-title">Demandes de clôture ({{ journal.closeRequests.length }})</h2>
+      <ul *ngIf="journal.closeRequests.length > 0" class="diagnostic-list">
+        <li *ngFor="let request of journal.closeRequests">
+           {{ request.clientSessionId }} · {{ request.closeReason }} · {{ request.requestedAt }}
+        </li>
+      </ul>
+      <p *ngIf="journal.closeRequests.length === 0">Aucune demande en attente.</p>
+    </section>
+
+    <section class="diagnostic-card" aria-labelledby="sales-title">
+      <h2 id="sales-title">Ventes ({{ journal.sales.length }})</h2>
+      <ul *ngIf="journal.sales.length > 0" class="diagnostic-list">
+        <li *ngFor="let sale of journal.sales">
+          {{ sale.isbn13 }} · {{ sale.quantity }} exemplaire(s) · {{ sale.status ?? 'Pending' }}
+        </li>
+      </ul>
+      <p *ngIf="journal.sales.length === 0">Aucune entrée.</p>
+    </section>
+  </ng-container>
+</main>

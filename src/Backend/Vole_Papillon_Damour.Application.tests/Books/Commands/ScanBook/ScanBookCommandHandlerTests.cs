@@ -367,13 +367,14 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     public async Task<DomainScanSession> AddSessionAsync(
         ScanMode mode,
         AssoEventsId? targetFairId = null,
-        UserId? volunteerId = null)
+        UserId? volunteerId = null,
+        DateTime? startedAt = null)
     {
         var session = DomainScanSession.Create(
             volunteerId ?? UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
             mode,
             targetFairId,
-            ScanBookCommandHandlerTests.SessionStartedAt);
+            startedAt ?? ScanBookCommandHandlerTests.SessionStartedAt);
 
         Context.ScanSessions.Add(session);
         await Context.SaveChangesAsync();
@@ -543,18 +544,18 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<Watchlist> Watchlists => Set<Watchlist>();
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
+    public DbSet<User> Users => Set<User>();
 
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
-    DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
+    DbSet<User> IProjectDbContext.Users => Users;
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => AssoEvents;
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<Product>();
-        modelBuilder.Ignore<User>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();
         modelBuilder.Ignore<Watchlist>();
@@ -580,6 +581,18 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
             builder.Ignore(assoEvent => assoEvent.CurrentPartieIndex);
             builder.Ignore(assoEvent => assoEvent.Parties);
             builder.Ignore(assoEvent => assoEvent.BingoNumeros);
+        });
+
+        modelBuilder.Entity<User>(builder =>
+        {
+            builder.HasKey(user => user.Id);
+            builder.Property(user => user.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Ignore(user => user.Password);
+            builder.Ignore(user => user.Salt);
+            builder.Ignore(user => user.Role);
+            builder.ComplexProperty(user => user.Name);
         });
 
         modelBuilder.Entity<Book>(builder =>
