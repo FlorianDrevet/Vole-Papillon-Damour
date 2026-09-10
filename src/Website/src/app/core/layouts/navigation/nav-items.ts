@@ -21,7 +21,7 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
       { url: '/association/presentation', label: 'Qui sommes-nous ?', hint: 'Nos missions et nos valeurs' },
       { url: '/association/comment-aider', label: 'Comment nous aider ?', hint: 'Donner des livres, devenir bénévole' },
       { url: '/association/revue-de-presses', label: 'La presse en parle', hint: 'Les articles consacrés à Maxence' },
-      { url: '/association/photos', label: 'Galerie photos', hint: 'Les dons de livres, le loto et nos actions' },
+      { url: '/association/photos', label: 'Photos et vidéothèque', hint: 'Les albums photo et la vidéothèque' },
     ],
   },
   {
@@ -52,7 +52,7 @@ const BREADCRUMB_ENTRIES: [string, string][] = [
   ['/association/presentation', "L'association · qui sommes-nous"],
   ['/association/comment-aider', "L'association · nous aider"],
   ['/association/revue-de-presses', "L'association · la presse en parle"],
-  ['/association/photos', "L'association · galerie photos"],
+  ['/association/photos', "L'association · photos et vidéothèque"],
   ['/maxence/histoire', 'Maxence · son histoire'],
   ['/maxence/maladies', 'Maxence · ses maladies'],
   ['/maxence/souvenirs', 'Maxence · ses souvenirs'],

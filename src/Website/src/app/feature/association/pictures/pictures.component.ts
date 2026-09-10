@@ -89,7 +89,7 @@ export class PicturesComponent {
     {
       title: 'Vole, Papillon d’amour',
       eyebrow: 'L’association',
-      description: 'Le film qui raconte l’association et son combat.',
+      description: 'C’est le combat de Maxence, pas celui de l’association.',
       source: 'videos/association/vole-papillon-damour.mp4',
       downloadName: 'vole-papillon-damour.mp4',
       mimeType: 'video/mp4',
@@ -125,7 +125,7 @@ export class PicturesComponent {
     {
       title: 'Le clip',
       eyebrow: 'Souvenir',
-      description: 'Un clip familial conservé dans les archives.',
+      description: 'Une chanson et un clip avec la participation de Michael Jones.',
       source: 'videos/association/clip.mp4',
       downloadName: 'clip-maxence.mp4',
       mimeType: 'video/mp4',

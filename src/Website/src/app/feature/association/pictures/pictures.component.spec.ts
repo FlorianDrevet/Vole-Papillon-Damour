@@ -72,6 +72,13 @@ describe('PicturesComponent', () => {
     expect(sections.indexOf('videos')).toBeLessThan(sections.indexOf('history'));
   });
 
+  it('should describe the association film and Michael Jones clip accurately', () => {
+    const descriptions = new Map(component.videos.map(video => [video.title, video.description]));
+
+    expect(descriptions.get('Vole, Papillon d’amour')).toBe('C’est le combat de Maxence, pas celui de l’association.');
+    expect(descriptions.get('Le clip')).toBe('Une chanson et un clip avec la participation de Michael Jones.');
+  });
+
   it('should align mixed video cards within each grid row', () => {
     const videoGrid = fixture.nativeElement.querySelector('[data-video-grid]');
 
