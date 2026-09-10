@@ -230,7 +230,7 @@
       <div class="section-heading">
         <span class="heading-rule" aria-hidden="true"></span>
         <p class="eyebrow">Sur les tables</p>
-        <h2>Arrivés récemment.</h2>
+        <h2>Arrivés cette semaine.</h2>
       </div>
       <button type="button" class="text-link" (click)="showAll()">Voir les {{ recentTotal() || recent().length }} titres <span aria-hidden="true">→</span></button>
     </div>
@@ -240,7 +240,7 @@
     } @else if (recent().length) {
       <div class="book-grid page-width" aria-label="Livres arrivés récemment">
         @for (book of recent(); track trackBook($index, book)) {
-          <app-book-card [book]="book"></app-book-card>
+          <app-book-card variant="home" [book]="book"></app-book-card>
         }
       </div>
     } @else {
@@ -270,34 +270,64 @@
   </section>
 
   @if (availableGenres().length) {
-    <section class="genres-section">
+    <section class="genres-section" aria-labelledby="home-genres-title">
       <div class="page-width section-heading">
         <span class="heading-rule" aria-hidden="true"></span>
-        <p class="eyebrow">Pour commencer quelque part</p>
-        <h2>Parcourir par genre.</h2>
+        <p class="eyebrow">Parcourir</p>
+        <h2 id="home-genres-title">Par genres</h2>
       </div>
       <div class="page-width genre-grid">
-        @for (genre of availableGenres(); track genre; let index = $index) {
+        @for (genre of availableGenres(); track genre) {
           <a class="genre-card" [routerLink]="['/recherche']" [queryParams]="{genre}">
-            <span class="genre-card-number" aria-hidden="true">0{{ index + 1 }}</span>
             <span class="genre-card-copy">
               <strong>{{ genre }}</strong>
-              <span>Livres classés dans ce genre</span>
+              <span>Voir les livres</span>
             </span>
-            <span class="genre-card-arrow" aria-hidden="true">↗</span>
+            <span class="genre-card-arrow" aria-hidden="true">›</span>
           </a>
         }
-        <a class="genre-all-link" routerLink="/catalogue">Voir tout le catalogue <span aria-hidden="true">→</span></a>
+        <a class="genre-card genre-card--all" routerLink="/catalogue">
+          <span class="genre-card-copy">
+            <strong>Les {{ availableGenres().length }} genres</strong>
+            <span>Tout le catalogue</span>
+          </span>
+          <span class="genre-card-arrow" aria-hidden="true">→</span>
+        </a>
       </div>
     </section>
   }
 
-  <section class="home-account-callout page-width">
-    <div>
-      <p class="eyebrow">Votre sélection</p>
-      <h2>Gardez un œil sur les livres qui vous intéressent.</h2>
-      <p>Un compte vous permet de suivre une œuvre ou une édition et de retrouver vos alertes. Il ne réserve jamais un exemplaire.</p>
+  <section class="home-account-section" aria-labelledby="home-account-title">
+    <div class="home-account-callout page-width">
+      <div class="home-account-copy">
+        <p class="eyebrow">Avec un compte</p>
+        <h2 id="home-account-title">Suivez un livre, on vous prévient quand il arrive.</h2>
+        <p>Le catalogue se consulte librement. Le compte sert uniquement à garder votre liste de suivi et à recevoir un e-mail quand un titre suivi rejoint les tables.</p>
+        <a class="callout-link" routerLink="/compte">Créer mon compte <span aria-hidden="true">→</span></a>
+      </div>
+      <ol class="home-account-steps">
+        <li class="home-account-step">
+          <span class="home-account-step-number">01</span>
+          <span class="home-account-step-copy">
+            <strong>Trouvez le livre</strong>
+            <span>Par titre, auteur ou code-barres, même s'il n'est pas encore sur les tables.</span>
+          </span>
+        </li>
+        <li class="home-account-step">
+          <span class="home-account-step-number">02</span>
+          <span class="home-account-step-copy">
+            <strong>Ajoutez-le à votre suivi</strong>
+            <span>Un clic sur « Suivre ». Aucune réservation : les livres se prennent sur place.</span>
+          </span>
+        </li>
+        <li class="home-account-step">
+          <span class="home-account-step-number">03</span>
+          <span class="home-account-step-copy">
+            <strong>Recevez l'e-mail</strong>
+            <span>Recevez un mail si ce livre arrive à la bourse aux livres.</span>
+          </span>
+        </li>
+      </ol>
     </div>
-    <a class="callout-link" routerLink="/compte">Découvrir mon espace <span aria-hidden="true">→</span></a>
   </section>
 }

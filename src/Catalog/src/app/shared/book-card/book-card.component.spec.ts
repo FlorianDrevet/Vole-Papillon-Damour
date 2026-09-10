@@ -152,4 +152,36 @@ describe('BookCardComponent', () => {
 
     expect(fixture.nativeElement.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
   });
+
+  it('renders the compact home variant with its status and follow affordance', () => {
+    fixture.componentInstance.book = {
+      isbn13: '9782070408504',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+      physicalFormat: null,
+      language: 'fr',
+      genre: 'Jeunesse',
+      workId: 'work-1',
+      coverUrl: null,
+      quantityAvailable: 3,
+      quantityAnnounced: 0,
+      nextFairAt: null,
+      lastAvailableAt: '2026-09-03T10:00:00Z',
+      firstSeenAt: '2026-09-03T10:00:00Z',
+      updatedAt: '2026-09-04T10:00:00Z',
+      isRare: false,
+    };
+    (fixture.componentInstance as BookCardComponent & {variant: 'home'}).variant = 'home';
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.book-card') as HTMLElement;
+    expect(card.classList).toContain('book-card--home');
+    expect(card.querySelector('.book-card-status')?.textContent).toContain('3 dispo.');
+    expect(card.querySelector('.book-card-footer')).not.toBeNull();
+    expect(card.querySelector('.book-card-action')?.textContent?.trim()).toBe('Suivre');
+    expect(card.querySelector('.availability-list')).toBeNull();
+    expect(card.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
+  });
 });

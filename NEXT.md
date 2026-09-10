@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `Scan` — hiérarchie d’état et synchronisation automatique de l’application bénévole. |
-| **Prochaine action** | Relire la PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et effectuer le smoke test connecté sur `/accueil` avant tout déploiement. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-auto-sync` |
-| **Dernière mise à jour** | 2026-09-11 — synchronisation automatique et bandeau d’état compact, PR #127 ouverte, aucun déploiement |
-| **Branche** | `fix/scan-auto-sync-header` — worktree dédié, basé sur `origin/main`, PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) ouverte |
+| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
+| **Prochaine action** | Relire la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) après résolution de ses conflits, puis contrôler le Catalog public après merge et déploiement ; les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent à suivre. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-pr129-conflicts` |
+| **Dernière mise à jour** | 2026-09-11 — conflits de la PR #129 en cours de résolution, aucun déploiement |
+| **Branche** | `fix/pr-129-conflicts` — worktree dédié depuis `origin/main`, résolution destinée à mettre à jour la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) |
 
 ---
 
@@ -92,6 +92,22 @@ affiche les tags `(hors connexion)` et `(action à faire)` puis ouvre une modal 
 actions disponibles : réessai, reprise de session, retour au tri ou ouverture des reprises.
 Les détails critiques restent accessibles dans cette modal ; aucun nouveau stockage ou contrat
 API n’est introduit. La PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) est ouverte ; le smoke connecté de production reste à faire après revue.
+
+### État actualisé — 2026-09-11 — sections de l'accueil Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-home-sections`, la page d'accueil du Catalog conserve son
+header actuel mais reprend les blocs utiles de la maquette : « Parcourir — Par genres » et
+« Avec un compte — Suivez un livre, on vous prévient quand il arrive. » sont placés après
+« Livres rares », et « Votre sélection » est supprimé. Les livres de « Arrivés cette
+semaine » utilisent une variante compacte des cartes de la maquette ; les cartes rares
+conservent leur rendu existant et le placeholder de couverture reste utilisé sans image.
+
+Validation : tests TDD rouge puis vert, 19 tests ciblés et 128 tests Catalog complets, build
+de production, `graphify update .`, et contrôles Chrome locaux à 1280 px et 390×844 avec
+API mockée sans débordement. L'API publique a renvoyé `503` pendant le contrôle ; aucun
+déploiement ni smoke public n'a été effectué. La branche `feat/catalog-home-sections` est
+prête à être poussée et sa PR reste à ouvrir.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 
@@ -911,6 +927,11 @@ la PR [#110](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/110). Au
 Azure, DNS, Entra, Search Console, consentement distant ou donnée de bourse n’a été effectué ;
 le déploiement Catalog et le contrôle sur l’URL publique restent à faire après le merge.
 
+L'alignement de l'accueil Catalog décrit ci-dessus est également limité au dépôt et à sa
+future PR. Le contrôle local a utilisé une API mockée parce que l'API publique renvoyait
+`503`; aucun changement Azure, DNS, Entra, Search Console, consentement distant ou donnée
+de bourse n'a été effectué, et le smoke public reste à faire après le merge et le déploiement.
+
 Le correctif du retour OAuth Catalog est également limité au dépôt : aucun déploiement
 Catalog, compte ou changement du locataire Entra n’a été effectué. Le contrôle public après
 mise en ligne reste à faire.
@@ -1062,6 +1083,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Catalog — sections de l'accueil et cartes récentes.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-catalog-home-sections`, ajout de « Par genres » et du callout « Avec un compte » après les livres rares, suppression de « Votre sélection » et ajout d'une variante de carte récente inspirée de la maquette, avec le placeholder conservé pour les couvertures absentes. Validation : test rouge puis vert, 128 tests Catalog, build de production, `graphify update .` et contrôles Chrome locaux à 1280/390×844 avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. Branche `feat/catalog-home-sections`, PR à ouvrir. |
 | 2026-09-10 | Windows | **Website — formulation du film de Maxence.** Après la fusion de la PR #124, la description de « Vole, Papillon d’amour » devient « Le film qui raconte le combat de Maxence. ». Validation : test rouge puis vert, 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements Angular connus, aucun déploiement. PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte. |
 | 2026-09-10 | Windows | **Website — libellés de la galerie.** Depuis `origin/main`, correction des descriptions du film consacré au combat de Maxence et du clip avec Michael Jones ; l’entrée de navigation devient « Photos et vidéothèque » et ses relais (footer, fil d’Ariane, titre) sont alignés. Validation : 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements de budget Angular/CommonJS connus, aucun déploiement. PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124) fusionnée. |
 | 2026-09-10 | Windows | **PR #113 — résolution des conflits publiée.** Depuis `origin/main` (`31fcead`) dans le worktree `Vole-Papillon-Damour-pr113-conflicts`, réconciliation de `feat/scanette-reprise-gestes-lots` avec le rail d’alertes et le positionnement caméra de `main`, en conservant les parcours reprise/statut/diagnostic, les contrôles de session et les évolutions backend/BackOffice. Le commit `823cbad` est publié sur le head de la PR #113, déclarée mergeable ; les deux checks CI sont en cours. Validation locale : 165 tests ChromeHeadless Scan, 5 contrats bootstrap BackOffice, 349 tests backend, builds Scan/BackOffice/backend et `graphify update .` ; aucun déploiement. |

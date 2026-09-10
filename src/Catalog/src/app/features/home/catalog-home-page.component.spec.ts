@@ -103,7 +103,35 @@ describe('CatalogHomePageComponent', () => {
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('412');
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('titres disponibles en ce moment');
     expect(fixture.nativeElement.querySelector('.home-account-callout')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).toContain('Avec un compte');
+    expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent)
+      .toContain('Suivez un livre, on vous prévient quand il arrive.');
+    expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
     expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
+  });
+
+  it('places the genre browser and account guidance after the rare books section', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const rareSection = element.querySelector('.rare-section') as HTMLElement;
+    const genresSection = element.querySelector('.genres-section') as HTMLElement;
+    const accountSection = element.querySelector('.home-account-callout') as HTMLElement;
+
+    expect(rareSection.compareDocumentPosition(genresSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(genresSection.compareDocumentPosition(accountSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(genresSection.querySelector('.eyebrow')?.textContent).toContain('Parcourir');
+    expect(genresSection.querySelector('h2')?.textContent).toContain('Par genres');
+    expect(genresSection.querySelector('.genre-card--all')).not.toBeNull();
+    expect(accountSection.querySelectorAll('.home-account-step')).toHaveSize(3);
+    expect(accountSection.querySelector('.callout-link')?.textContent).toContain('Créer mon compte');
+  });
+
+  it('uses the mockup card variant only for recent books', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const recentCard = element.querySelector('.book-grid[aria-label="Livres arrivés récemment"] app-book-card');
+    const rareCard = element.querySelector('.book-grid[aria-label="Livres rares"] app-book-card');
+
+    expect(recentCard?.getAttribute('variant')).toBe('home');
+    expect(rareCard?.getAttribute('variant')).toBeNull();
   });
 
   it('uses the 2a hero composition with the butterfly and a footer fair row', () => {
@@ -232,10 +260,12 @@ describe('CatalogHomePageComponent', () => {
       element.querySelectorAll<HTMLAnchorElement>('.genre-card'),
     );
 
-    expect(cards.length).toBe(3);
-    expect(cards.map(card => card.querySelector('strong')?.textContent?.trim()))
+    expect(cards.length).toBe(4);
+    expect(cards.slice(0, 3).map(card => card.querySelector('strong')?.textContent?.trim()))
       .toEqual(['Jeunesse', 'Romans', 'Policier']);
     expect(cards[0].getAttribute('href')).toBe('/recherche?genre=Jeunesse');
+    expect(cards[3].classList).toContain('genre-card--all');
+    expect(cards[3].querySelector('strong')?.textContent?.trim()).toBe('Les 3 genres');
   });
 
   it('does not invent genre options or a genre section when the API has no genres', () => {

@@ -102,9 +102,14 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   `#prochaines-dates` calendar keeps the next Books event prominent with a dark date card
   and a light map/location card inspired by the Website event detail, then uses editorial
   date rows for the remaining future fairs.
-- The home genre section uses five compact editorial cards, with the existing paper/ink
-  palette and brand rule. Cards route to the filtered search page; the search and hero
-  selectors use the same curated fallback plus any API-provided genre values.
+- The home genre section uses compact four-column editorial cards, with the existing
+  paper/ink palette and brand rule. Cards route to the filtered search page and end with a
+  catalogue-wide link; labels come from the API/fallback genre list, without invented
+  counts. The home also places its account-following guidance after the rare-books section.
+- Recent home books use the shared `BookCardComponent` `home` variant: a square paper cover
+  treatment, truthful availability status, compact Newsreader metadata and a follow/alert
+  affordance. The default card variant remains the visual contract for rare, search, work
+  and detail entry points, including the shared no-cover placeholder.
 - Public catalogue, search, work, detail, account, legal, and existing administration
   views share the same spacing, cards, pills, border language, restrained motion, and
   responsive collapse. Availability and future announcements remain truthful and separate;
