@@ -89,7 +89,7 @@ export class PicturesComponent {
     {
       title: 'Vole, Papillon d’amour',
       eyebrow: 'L’association',
-      description: 'C’est le combat de Maxence, pas celui de l’association.',
+      description: 'Le film qui raconte le combat de Maxence.',
       source: 'videos/association/vole-papillon-damour.mp4',
       downloadName: 'vole-papillon-damour.mp4',
       mimeType: 'video/mp4',
