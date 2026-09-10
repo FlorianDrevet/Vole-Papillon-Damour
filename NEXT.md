@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Relire la PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124) sur les libellés de la galerie, ainsi que les PR [#123](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/123) et [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121), avant tout déploiement. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-gallery-wording` |
-| **Dernière mise à jour** | 2026-09-10 — libellés et descriptions de la galerie Website corrigés, PR #124 ouverte, aucun déploiement |
-| **Branche** | `fix/website-gallery-labels` — worktree dédié, synchronisée avec `origin/main`, PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124) ouverte |
+| **Prochaine action** | Relire la PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) sur la formulation du film de Maxence, ainsi que la PR [#121](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/121), avant tout déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-maxence-film-wording` |
+| **Dernière mise à jour** | 2026-09-10 — formulation du film de Maxence ajustée, PR #126 ouverte, aucun déploiement |
+| **Branche** | `fix/website-maxence-film-wording` — worktree dédié, synchronisée avec `origin/main`, PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte |
 
 ---
 
@@ -78,6 +78,19 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-10 — formulation du film de Maxence
+
+Depuis `origin/main` après la fusion de la PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124),
+la description du film « Vole, Papillon d’amour » devient « Le film qui raconte le combat
+de Maxence. » dans la vidéothèque Website. La description du clip avec Michael Jones et le
+reste de la navigation restent inchangés.
+
+Validation : test rouge puis vert, 74 tests ChromeHeadless Website, build SSR/prérendu de
+25 routes, Graphify et smoke Chrome local desktop/mobile (390×844) sans débordement. Les
+avertissements de budget Angular et de dépendances CommonJS restent ceux du projet ; aucun
+déploiement ni smoke de production n’a été effectué. La PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126)
+est ouverte.
+
 ### État actualisé — 2026-09-10 — libellés de la galerie Website
 
 Depuis `origin/main` fraîchement récupéré dans le worktree `fix/website-gallery-labels`, les
@@ -90,7 +103,7 @@ Validation : 74 tests ChromeHeadless Website, build SSR/prérendu de 25 routes, 
 smoke Chrome local desktop/mobile (390×844) sans débordement. Les avertissements de budget
 Angular et de dépendances CommonJS restent ceux du projet ; aucun déploiement ni smoke de
 production n’a été effectué. La PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124)
-est ouverte.
+a été fusionnée dans `origin/main`.
 
 ### État actualisé — 2026-09-10 — alertes et mise en page de l’app de scan
 
@@ -1034,7 +1047,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-10 | Windows | **Website — libellés de la galerie.** Depuis `origin/main`, correction des descriptions du film consacré au combat de Maxence et du clip avec Michael Jones ; l’entrée de navigation devient « Photos et vidéothèque » et ses relais (footer, fil d’Ariane, titre) sont alignés. Validation : 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements de budget Angular/CommonJS connus, aucun déploiement. PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124) ouverte. |
+| 2026-09-10 | Windows | **Website — formulation du film de Maxence.** Après la fusion de la PR #124, la description de « Vole, Papillon d’amour » devient « Le film qui raconte le combat de Maxence. ». Validation : test rouge puis vert, 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements Angular connus, aucun déploiement. PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte. |
+| 2026-09-10 | Windows | **Website — libellés de la galerie.** Depuis `origin/main`, correction des descriptions du film consacré au combat de Maxence et du clip avec Michael Jones ; l’entrée de navigation devient « Photos et vidéothèque » et ses relais (footer, fil d’Ariane, titre) sont alignés. Validation : 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements de budget Angular/CommonJS connus, aucun déploiement. PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124) fusionnée. |
 | 2026-09-10 | Windows | **PR #113 — résolution des conflits publiée.** Depuis `origin/main` (`31fcead`) dans le worktree `Vole-Papillon-Damour-pr113-conflicts`, réconciliation de `feat/scanette-reprise-gestes-lots` avec le rail d’alertes et le positionnement caméra de `main`, en conservant les parcours reprise/statut/diagnostic, les contrôles de session et les évolutions backend/BackOffice. Le commit `823cbad` est publié sur le head de la PR #113, déclarée mergeable ; les deux checks CI sont en cours. Validation locale : 165 tests ChromeHeadless Scan, 5 contrats bootstrap BackOffice, 349 tests backend, builds Scan/BackOffice/backend et `graphify update .` ; aucun déploiement. |
 | 2026-09-10 | Windows | **Catalog — refonte mobile de « Toutes les prochaines dates ».** La branche `fix/catalog-upcoming-dates-mobile-ui` sépare l'en-tête date/titre, les métadonnées et les actions de chaque carte, supprime la troncature des titres et adapte les boutons au tactile avec repli à 320 px. Validation : 121 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .`, contrôles locaux à 320/390/768/1280 px avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. PR [#120](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/120) ouverte. |
 | 2026-09-10 | Windows | **Catalog — alignement du header et état déconnecté.** Le lien « Le site de l’association » utilise la même hauteur de contrôle de 42 px que les liens desktop et reçoit leur soulignement orange au survol/focus ; le bouton « Mon compte » ne rend plus le rond vide lorsqu’il est déconnecté. Validation : 122 tests ChromeHeadless Catalog, build SSR/navigateur, `graphify update .` et contrôles Chrome à 1200/390 px sans débordement ; avertissement de budget initial Angular connu, aucun déploiement, PR [#117](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/117) ouverte. |

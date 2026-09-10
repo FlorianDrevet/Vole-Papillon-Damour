@@ -75,7 +75,7 @@ describe('PicturesComponent', () => {
   it('should describe the association film and Michael Jones clip accurately', () => {
     const descriptions = new Map(component.videos.map(video => [video.title, video.description]));
 
-    expect(descriptions.get('Vole, Papillon d’amour')).toBe('C’est le combat de Maxence, pas celui de l’association.');
+    expect(descriptions.get('Vole, Papillon d’amour')).toBe('Le film qui raconte le combat de Maxence.');
     expect(descriptions.get('Le clip')).toBe('Une chanson et un clip avec la participation de Michael Jones.');
   });
 
