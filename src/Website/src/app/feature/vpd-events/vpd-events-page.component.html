@@ -116,20 +116,7 @@
   </div>
 
   @if (isLoading()) {
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Chargement des autres rendez-vous">
-      @for (card of loadingCards; track card) {
-        <div class="vpd-events-other-skeleton flex flex-col overflow-hidden rounded-lg border border-line bg-white shadow-[0_22px_40px_-36px_rgba(7,43,69,0.6)]" aria-hidden="true">
-          <span class="skeleton skeleton-dark block h-36 w-full"></span>
-          <span class="flex flex-1 flex-col gap-2 px-6 py-5">
-            <span class="skeleton h-5 w-4/5 rounded-sm"></span>
-            <span class="skeleton h-3 w-2/5 rounded-sm"></span>
-            <span class="skeleton h-3 w-full rounded-sm"></span>
-            <span class="skeleton h-3 w-10/12 rounded-sm"></span>
-            <span class="skeleton mt-auto h-3 w-16 rounded-sm"></span>
-          </span>
-        </div>
-      }
-    </div>
+    <vpd-loader variant="skeleton" [count]="loadingCards.length" label="Chargement des autres rendez-vous"></vpd-loader>
   } @else if (otherEvents().length) {
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       @for (event of otherEvents(); track event.id) {

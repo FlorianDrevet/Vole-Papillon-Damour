@@ -236,7 +236,11 @@
     </div>
 
     @if (loading()) {
-      <p class="empty-state page-width">Le catalogue arrive…</p>
+      <vpd-loader
+        class="page-width"
+        variant="skeleton"
+        [count]="4"
+        label="Chargement des nouveautés"></vpd-loader>
     } @else if (recent().length) {
       <div class="book-grid page-width" aria-label="Livres arrivés récemment">
         @for (book of recent(); track trackBook($index, book)) {
@@ -258,7 +262,13 @@
       <button type="button" class="text-link" (click)="showRare()">Voir la sélection <span aria-hidden="true">→</span></button>
     </div>
 
-    @if (!loading() && rare().length) {
+    @if (loading()) {
+      <vpd-loader
+        class="page-width"
+        variant="skeleton"
+        [count]="4"
+        label="Chargement des livres rares"></vpd-loader>
+    } @else if (rare().length) {
       <div class="book-grid page-width" aria-label="Livres rares">
         @for (book of rare(); track trackBook($index, book)) {
           <app-book-card [book]="book"></app-book-card>

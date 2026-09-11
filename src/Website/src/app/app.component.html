@@ -1,5 +1,6 @@
 <ng-container>
   <app-navigation></app-navigation>
+  <vpd-loader *ngIf="isNavigating()" variant="line" label="Chargement de la page"></vpd-loader>
   <main>
     <router-outlet></router-outlet>
   </main>

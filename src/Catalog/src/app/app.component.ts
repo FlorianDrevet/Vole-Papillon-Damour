@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import {Meta} from '@angular/platform-browser';
-import {NavigationEnd, Router} from '@angular/router';
+import {NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router} from '@angular/router';
 import {Subject, filter, takeUntil} from 'rxjs';
 
 import {CatalogAuthService} from './core/catalog-auth.service';
@@ -25,6 +25,7 @@ import {catalogRobotsForUrl} from './core/catalog-robots';
 export class AppComponent implements OnInit, OnDestroy {
   private readonly destroyed = new Subject<void>();
   readonly isAdministrationRoute = signal(false);
+  readonly isNavigating = signal(false);
 
   constructor(
     private readonly router: Router,
@@ -39,10 +40,20 @@ export class AppComponent implements OnInit, OnDestroy {
     this.initializeAuthentication();
     this.router.events
       .pipe(
-        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        filter(event =>
+          event instanceof NavigationStart ||
+          event instanceof NavigationEnd ||
+          event instanceof NavigationCancel ||
+          event instanceof NavigationError,
+        ),
         takeUntil(this.destroyed),
       )
       .subscribe(event => {
+        this.isNavigating.set(event instanceof NavigationStart);
+        if (!(event instanceof NavigationEnd)) {
+          return;
+        }
+
         this.updateRobotsMetadata(event.urlAfterRedirects);
         this.isAdministrationRoute.set(this.isAdminUrl(event.urlAfterRedirects));
       });

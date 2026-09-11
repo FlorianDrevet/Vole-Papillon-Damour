@@ -3,6 +3,7 @@ import {signal} from '@angular/core';
 import {Meta} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 import {of} from 'rxjs';
+import {DesignSystemModule} from '@vpd/ui';
 
 import {AppComponent} from './app.component';
 import {CatalogAuthService} from './core/catalog-auth.service';
@@ -16,7 +17,7 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [AppComponent, CatalogNavigationComponent, CatalogFooterComponent],
-      imports: [RouterModule.forRoot([])],
+      imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [{
         provide: CatalogAuthService,
         useValue: {

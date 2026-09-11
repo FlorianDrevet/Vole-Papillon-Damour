@@ -96,6 +96,21 @@ submits directly after the cached session is restored. The administrator header 
 clickable `Administration` tag as the sole header entry to `/administration`; the mobile drawer
 does not duplicate the former `Espace administrateur` link.
 
+As of 2026-09-11, the shared `VpdLoaderComponent` brings the loader catalogue from the design
+artifact to Website, Catalog, and Scan. Its variants map to the nine supplied screens: `line`
+(1a), `flight` (1b), `squares` (1c), `skeleton` (1d), `ring` (1e), `traverse` (2a),
+`butterflies` (2b), `fill` (2c), and `compact` (2d). The shared Sass is imported globally by
+the three consuming apps so the loader styles do not inflate Angular component-style budgets;
+the component exposes status/progress semantics and stops motion under `prefers-reduced-motion`.
+Website uses the line loader for route transitions and skeletons for actuality/event reads.
+Catalog uses traverse for navigation, squares for search, skeletons for catalogue grids/lists,
+butterflies for bibliographic lookups, and compact/ring states for detail, account, and follow
+actions. Scan uses `flight`/1b only while the root auth state is `checking`, which makes it the
+first screen during startup before the login surface appears; lookup waits use butterflies.
+The determinate `fill`/2c variant is available for a future flow that exposes a real percentage,
+but no current client invents one. Local validation passes 75 Website, 165 Catalog, and 175 Scan
+ChromeHeadless tests plus the three production builds; no deployment was made.
+
 After the 2026-09-08 rollout, Catalog analytics use dedicated public build variables:
 `CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` for GA4 `G-GBHC67EGGF` and `CLARITY_PROJECT_ID`
 for Clarity `yerabb7gnt`; the Website variable `GOOGLE_ANALYTICS_MEASUREMENT_ID` remains

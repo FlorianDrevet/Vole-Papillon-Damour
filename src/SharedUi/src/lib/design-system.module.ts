@@ -10,6 +10,7 @@ import { VpdEventCardComponent } from './components/vpd-event-card/vpd-event-car
 import { VpdProductCardComponent } from './components/vpd-product-card/vpd-product-card.component';
 import { VpdProductListComponent } from './components/vpd-product-list/vpd-product-list.component';
 import { VpdBookCoverPlaceholderComponent } from './components/vpd-book-cover-placeholder/vpd-book-cover-placeholder.component';
+import { VpdLoaderComponent } from './components/vpd-loader/vpd-loader.component';
 
 import { VpdPricePipe } from './pipes/vpd-price.pipe';
 import { VpdCapitalizePipe } from './pipes/vpd-capitalize.pipe';
@@ -24,6 +25,7 @@ const COMPONENTS = [
   VpdProductCardComponent,
   VpdProductListComponent,
   VpdBookCoverPlaceholderComponent,
+  VpdLoaderComponent,
 ];
 
 const PIPES = [VpdPricePipe, VpdCapitalizePipe, VpdLineNumberTitlePipe];

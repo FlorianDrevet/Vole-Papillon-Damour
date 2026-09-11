@@ -1,5 +1,11 @@
 @if (loading) {
-  <div class="work-state">L'œuvre arrive…</div>
+  <div class="work-state">
+    <vpd-loader
+      variant="compact"
+      logoSrc="images/papillon_without_back.png"
+      label="L'œuvre arrive…"
+      detail="Quelques secondes"></vpd-loader>
+  </div>
 } @else if (notFound) {
   <section class="work-state page-width" role="alert">
     <p class="eyebrow">Œuvre introuvable</p>
