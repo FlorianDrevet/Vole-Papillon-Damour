@@ -235,7 +235,9 @@
   flex: none;
   min-height: 28px;
   align-items: center;
-  margin-left: -16px;
+  justify-content: center;
+  min-width: 124px;
+  margin-left: -8px;
   padding: 0 11px;
   border-radius: 999px;
   background: var(--catalog-ink-2);
@@ -273,10 +275,16 @@
 }
 
 .account-teaser.connected {
-  min-width: 154px;
+  min-width: 184px;
   border-color: var(--catalog-ink-2);
   background: var(--catalog-ink-2);
   color: var(--catalog-paper);
+}
+
+.account-teaser > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .account-teaser.connected:hover,
@@ -387,9 +395,14 @@
   }
 
   .header-admin-pill {
-    margin-left: -10px;
+    min-width: 112px;
+    margin-left: -6px;
     padding-right: 9px;
     padding-left: 9px;
+  }
+
+  .account-teaser.connected {
+    min-width: 170px;
   }
 }
 

@@ -2,12 +2,8 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  ElementRef,
-  HostListener,
-  AfterViewChecked,
   OnDestroy,
   OnInit,
-  ViewChild,
 } from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -34,7 +30,7 @@ import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
   styleUrls: ['./catalog-search-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnDestroy {
+export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   query = '';
   genre = '';
   availability: CatalogAvailability = 'all';
@@ -50,14 +46,9 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
   referenceFollowPending: string | null = null;
   referenceFollowMessage: string | null = null;
   referenceFollowError: string | null = null;
-  selectedReference: CatalogBookReference | null = null;
-  followScope: CatalogWatchlistScope = 'Work';
 
   private readonly destroyed = new Subject<void>();
   private readonly pendingReferenceStorageKey = 'vpd.catalog.pending-reference-follow';
-  private focusFollowDialog = false;
-
-  @ViewChild('followDialogClose') private followDialogClose?: ElementRef<HTMLButtonElement>;
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -84,23 +75,8 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
   }
 
   ngOnDestroy(): void {
-    this.closeFollowModal(true);
     this.destroyed.next();
     this.destroyed.complete();
-  }
-
-  ngAfterViewChecked(): void {
-    if (this.focusFollowDialog && this.followDialogClose) {
-      this.focusFollowDialog = false;
-      this.followDialogClose.nativeElement.focus();
-    }
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.selectedReference && !this.referenceFollowPending) {
-      this.closeFollowModal();
-    }
   }
 
   submitSearch(): void {
@@ -147,38 +123,12 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
     });
   }
 
-  followReference(item: CatalogBookReference): void {
-    this.openFollowModal(item);
-  }
-
-  openFollowModal(item: CatalogBookReference): void {
-    if (!this.referenceKey(item) || this.referenceFollowPending) {
-      return;
-    }
-
-    this.referenceFollowMessage = null;
-    this.referenceFollowError = null;
-    this.selectedReference = item;
-    this.followScope = item.workId ? 'Work' : 'Edition';
-    this.focusFollowDialog = true;
-    this.setBodyScrollLocked(true);
-    this.changeDetector.markForCheck();
-  }
-
-  closeFollowModal(force = false): void {
-    if (this.referenceFollowPending && !force) {
-      return;
-    }
-
-    this.selectedReference = null;
-    this.setBodyScrollLocked(false);
-    this.changeDetector.markForCheck();
-  }
-
-  async confirmFollowReference(): Promise<void> {
-    const item = this.selectedReference;
-    const key = item ? this.referenceKey(item) : null;
-    if (!item || !key || this.referenceFollowPending) {
+  async followReference(
+    item: CatalogBookReference,
+    scope: CatalogWatchlistScope = 'Edition',
+  ): Promise<void> {
+    const key = this.referenceFollowKey(item, scope);
+    if (!key || this.referenceFollowPending) {
       return;
     }
 
@@ -186,7 +136,7 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
     this.referenceFollowError = null;
 
     if (!this.auth.isAuthenticated()) {
-      this.savePendingReferenceFollow(item);
+      this.savePendingReferenceFollow(item, scope);
       try {
         await this.auth.login(this.referenceReturnUrl());
       } catch {
@@ -197,18 +147,37 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
       return;
     }
 
+    await this.submitReferenceFollow(item, scope, key);
+  }
+
+  referenceFollowKey(item: CatalogBookReference, scope: CatalogWatchlistScope): string | null {
+    const target = scope === 'Work' ? item.workId : item.isbn13;
+    return target ? `${scope}:${target}` : null;
+  }
+
+  workReference(): CatalogBookReference | null {
+    const items = this.externalResponse?.items ?? [];
+    return items.length === 1 && items[0].workId ? items[0] : null;
+  }
+
+  private async submitReferenceFollow(
+    item: CatalogBookReference,
+    scope: CatalogWatchlistScope,
+    key: string,
+  ): Promise<void> {
     this.referenceFollowPending = key;
     try {
       const token = await this.auth.getApiAccessToken();
-      const request = this.followRequest(item);
+      const request = this.followRequest(item, scope);
       if (!request) {
         this.referenceFollowError = 'Cette référence ne permet pas ce type de suivi.';
         return;
       }
 
       await firstValueFrom(this.memberApi.addWatchlistItem(token, request));
-      this.referenceFollowMessage = 'Le titre a été ajouté à votre liste de recherche.';
-      this.closeFollowModal(true);
+      this.referenceFollowMessage = scope === 'Work'
+        ? 'Le titre a été ajouté à votre liste de recherche.'
+        : 'L’édition a été ajoutée à votre liste de recherche.';
     } catch (error: unknown) {
       this.referenceFollowError = error instanceof HttpErrorResponse && error.status === 409
         ? 'Ce titre est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
@@ -217,10 +186,6 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
       this.referenceFollowPending = null;
       this.changeDetector.markForCheck();
     }
-  }
-
-  referenceKey(item: CatalogBookReference): string | null {
-    return item.workId || item.isbn13;
   }
 
   referenceEditionLabel(item: CatalogBookReference): string {
@@ -376,16 +341,16 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
     return `/recherche${search.toString() ? `?${search.toString()}` : ''}`;
   }
 
-  private followRequest(item: CatalogBookReference): {
+  private followRequest(item: CatalogBookReference, scope: CatalogWatchlistScope): {
     scope: CatalogWatchlistScope;
     workId: string | null;
     isbn13: string | null;
   } | null {
-    if (this.followScope === 'Work' && item.workId) {
+    if (scope === 'Work' && item.workId) {
       return {scope: 'Work', workId: item.workId, isbn13: null};
     }
 
-    if (this.followScope === 'Edition' && item.isbn13) {
+    if (scope === 'Edition' && item.isbn13) {
       return {scope: 'Edition', workId: null, isbn13: item.isbn13};
     }
 
@@ -409,21 +374,18 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
     }
 
     this.clearPendingReferenceFollow();
-    this.selectedReference = pending.item;
-    this.followScope = pending.scope === 'Edition' && pending.item.isbn13
-      ? 'Edition'
-      : 'Work';
-    this.focusFollowDialog = true;
-    this.setBodyScrollLocked(true);
-    this.changeDetector.markForCheck();
+    const key = this.referenceFollowKey(pending.item, pending.scope);
+    if (key) {
+      await this.submitReferenceFollow(pending.item, pending.scope, key);
+    }
   }
 
-  private savePendingReferenceFollow(item: CatalogBookReference): void {
+  private savePendingReferenceFollow(item: CatalogBookReference, scope: CatalogWatchlistScope): void {
     try {
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.setItem(
           this.pendingReferenceStorageKey,
-          JSON.stringify({item, scope: this.followScope}),
+          JSON.stringify({item, scope}),
         );
       }
     } catch {
@@ -471,9 +433,4 @@ export class CatalogSearchPageComponent implements AfterViewChecked, OnInit, OnD
     }
   }
 
-  private setBodyScrollLocked(locked: boolean): void {
-    if (typeof document !== 'undefined') {
-      document.body.classList.toggle('no-scroll', locked);
-    }
-  }
 }

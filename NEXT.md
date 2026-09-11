@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133), puis rejouer le branding Entra sans image et contrôler la connexion/création de compte sur desktop et mobile. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-entra-auth-card-background` |
-| **Dernière mise à jour** | 2026-09-11 — fond External ID neutralisé derrière la carte, PR #133 ouverte, aucun déploiement |
-| **Branche** | `fix/entra-auth-card-background` — worktree dédié depuis `origin/main`, PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, les PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) et [#134](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/134) ; puis rejouer le branding Entra sans image et contrôler la connexion/création de compte ainsi que le reconnect automatique et le suivi authentifié du Catalog public. Les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent à suivre. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-pr134-conflicts` |
+| **Dernière mise à jour** | 2026-09-11 — résolution des conflits de la PR #134 depuis `origin/main` (`3a96844`), aucun déploiement |
+| **Branche** | `feat/catalog-session-and-search-polish` — branche de la PR #134 mise à jour depuis le worktree de résolution `fix/pr-134-merge-conflicts`, basé sur `origin/main` (`3a96844`) |
 
 ---
 
@@ -107,6 +107,29 @@ NuGet `NU1903` et le budget initial Angular restent ceux du dépôt. Aucun dépl
 Azure n’a été effectué ; après merge, déployer API/Catalog, appliquer la migration Books via le
 workflow runtime avec `run_migrations=true` si nécessaire, puis vérifier les secrets Graph et
 les deux endpoints administratifs.
+
+### État actualisé — 2026-09-11 — reconnexion Catalog et suivi direct
+
+Dans le worktree `Vole-Papillon-Damour-catalog-polish`, le shell navigateur du Catalog initialise
+désormais le service MSAL dès l'arrivée côté client. Le cache de compte actif est donc restauré
+automatiquement : un membre ou un administrateur déjà connu voit son nom et ses affordances sans
+devoir cliquer sur « Me connecter ». L'initialisation reste SSR-safe, idempotente et tolère une
+panne de configuration sans rendre le catalogue public indisponible.
+
+Le header garde une largeur stable entre les comptes connectés simples et administrateurs ; les
+cartes « Arrivés cette semaine » utilisent des tags de disponibilité colorés inspirés de la
+maquette. La section `Parcourir — Par genres`, déjà présente après `Livres rares` dans la base
+fraîche, est conservée. Dans la recherche, « Disponibilité » respire davantage, les deux traits
+de section reprennent le gradient bleu → orange habituel, et « Pas encore dans la bourse aux
+livres » remplace la modale de choix par des actions inline : suivi de toute l'œuvre quand une
+référence unique le permet, suivi d'une édition précise sous chaque référence, avec reprise
+directe après la connexion.
+
+Validation locale : 147 tests Catalog ChromeHeadless, build de production (764,65 kB initiaux
+pour un budget de 500 kB — avertissement connu), `git diff --check`, deux mises à jour Graphify
+(4 309 nœuds, 7 343 liens) et contrôle Chrome local du shell mobile et de la recherche. L'API
+locale n'étant pas démarrée, les cartes alimentées par les données et le parcours authentifié
+restent à vérifier en smoke connecté après déploiement. Aucun déploiement n'a été effectué.
 
 ### État actualisé — 2026-09-11 — résolution des conflits de la PR #129
 

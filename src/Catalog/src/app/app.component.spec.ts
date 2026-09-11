@@ -84,15 +84,15 @@ describe('AppComponent', () => {
     freshFixture.destroy();
   });
 
-  it('keeps MSAL lazy for an anonymous shell without an OAuth callback', () => {
+  it('initializes authentication on shell bootstrap so a cached account can be restored', () => {
     const initialize = (TestBed.inject(CatalogAuthService) as unknown as {
       initialize: jasmine.Spy;
     }).initialize;
 
-    expect(initialize).not.toHaveBeenCalled();
+    expect(initialize).toHaveBeenCalledTimes(1);
   });
 
-  it('initializes authentication when an OAuth callback lands on the root route', () => {
+  it('keeps authentication initialization independent of the OAuth callback state', () => {
     const initialize = (TestBed.inject(CatalogAuthService) as unknown as {
       initialize: jasmine.Spy;
     }).initialize;
@@ -105,7 +105,7 @@ describe('AppComponent', () => {
       freshFixture = TestBed.createComponent(AppComponent);
       freshFixture.detectChanges();
 
-      expect(initialize).toHaveBeenCalled();
+      expect(initialize).toHaveBeenCalledTimes(2);
     } finally {
       freshFixture?.destroy();
       window.history.replaceState({}, '', originalUrl);

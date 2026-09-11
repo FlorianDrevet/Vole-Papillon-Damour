@@ -134,6 +134,16 @@ describe('CatalogHomePageComponent', () => {
     expect(rareCard?.getAttribute('variant')).toBeNull();
   });
 
+  it('renders recent availability as a colored status tag on the cover', () => {
+    const status = fixture.nativeElement.querySelector(
+      '.book-grid[aria-label="Livres arrivés récemment"] .book-card-status',
+    ) as HTMLElement;
+
+    expect(status.classList).toContain('status-available');
+    expect(getComputedStyle(status).borderRadius).toBe('999px');
+    expect(getComputedStyle(status).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
   it('uses the 2a hero composition with the butterfly and a footer fair row', () => {
     const hero = fixture.nativeElement.querySelector('.hero') as HTMLElement;
     const heroSearchButton = hero.querySelector('.hero-search button') as HTMLButtonElement;
