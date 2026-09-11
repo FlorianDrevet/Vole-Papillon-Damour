@@ -126,6 +126,7 @@ export class CatalogAuthService {
         account,
         scopes: catalogLoginRequest.scopes,
       });
+      this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
       this._roles.set(readRoles(result.accessToken));
       return result.accessToken;
     } catch (error: unknown) {
@@ -156,7 +157,10 @@ export class CatalogAuthService {
         this.client.setActiveAccount(result.account);
       }
 
-      this.syncFromCache();
+      this.syncFromCache(result?.idTokenClaims as AccountInfo['idTokenClaims']);
+      if (!result?.idTokenClaims) {
+        await this.hydrateAccountClaims();
+      }
       if (result?.accessToken) {
         this._roles.set(readRoles(result.accessToken));
       }
@@ -174,7 +178,26 @@ export class CatalogAuthService {
     }
   }
 
-  private syncFromCache(): void {
+  private async hydrateAccountClaims(): Promise<void> {
+    const account = this._account();
+    if (!account) {
+      return;
+    }
+
+    try {
+      const result = await this.requireClient().acquireTokenSilent({
+        account,
+        scopes: catalogLoginRequest.scopes,
+      });
+      this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
+      this._roles.set(readRoles(result.accessToken));
+    } catch {
+      // A cached account remains usable; the member action will handle a
+      // silent-token failure and request interaction only when it is needed.
+    }
+  }
+
+  private syncFromCache(idTokenClaims?: AccountInfo['idTokenClaims']): void {
     const client = this.requireClient();
     const activeAccount = client.getActiveAccount();
     const active = activeAccount ?? client.getAllAccounts()[0] ?? null;
@@ -183,8 +206,15 @@ export class CatalogAuthService {
       client.setActiveAccount(active);
     }
 
-    this._account.set(active);
+    this._account.set(active && idTokenClaims ? {...active, idTokenClaims} : active);
     this._roles.set([]);
+  }
+
+  private setTokenClaims(idTokenClaims: AccountInfo['idTokenClaims']): void {
+    const account = this._account();
+    if (account && idTokenClaims) {
+      this._account.set({...account, idTokenClaims});
+    }
   }
 
   private requireClient(): IPublicClientApplication {
