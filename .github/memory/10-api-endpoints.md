@@ -101,7 +101,10 @@ client-only/private.
   `PATCH /books/admin/announcements/{announcementId}/quantity`.
 - `GET /books/admin/fairs`, `GET /books/admin/fairs/{fairId}/stats`, and
   `PUT /books/admin/fairs/{fairId}/revenue` - fair list, sales analysis and optional nullable
-  revenue entry.
+  revenue entry. The fair list and previous-fair comparison keep the Books type predicate
+  compatible with the configured EF value converter and perform provider-sensitive date
+  ordering/filtering after materialization, so the admin endpoints do not fail on SQLite
+  translation.
 - `GET /books/admin/sessions` and `/books/admin/sessions/{scanSessionId}` - paged session
   monitoring; `status=InProgress&olderThan24Hours=true` is the stale-session view. Movement
   removal, session reassign/cancel, alert cancel/force, and
@@ -118,7 +121,9 @@ client-only/private.
 
 - `GET /accounts/admin` - Administration-policy paged Entra account list with optional
   `search`, `page`, and `pageSize` filters. The response includes the current `Tri`,
-  `Caisse`, and `Administration` app-role assignments.
+  `Caisse`, and `Administration` app-role assignments. Graph transport or malformed-payload
+  failures are returned as a typed `Account.DirectoryUnavailable` `503` rather than an
+  unhandled `500`; omitted Graph collections are treated as empty.
 - `POST /accounts/admin` - Administration-policy account creation with `email`,
   `displayName`, `temporaryPassword`, and at least one selected role. The app-only Graph
   directory creates the External ID local identity and assigns the requested API roles.

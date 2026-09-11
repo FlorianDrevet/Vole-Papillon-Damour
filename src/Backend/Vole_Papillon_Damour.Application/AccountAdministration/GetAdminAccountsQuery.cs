@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ErrorOr;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -52,6 +53,14 @@ public sealed class GetAdminAccountsQueryHandler(
         {
             return ToDirectoryError(exception);
         }
+        catch (HttpRequestException)
+        {
+            return DirectoryUnavailable();
+        }
+        catch (JsonException)
+        {
+            return DirectoryUnavailable();
+        }
     }
 
     private static bool Matches(EntraAccount account, string search)
@@ -71,9 +80,11 @@ public sealed class GetAdminAccountsQueryHandler(
             StatusCodes.Status409Conflict => Error.Conflict(
                 "Account.AlreadyExists",
                 "This account already exists in the identity directory."),
-            _ => Error.Failure(
-                "Account.DirectoryUnavailable",
-                "The identity directory is temporarily unavailable.")
+            _ => DirectoryUnavailable()
         };
     }
+
+    private static Error DirectoryUnavailable() => Error.Failure(
+        "Account.DirectoryUnavailable",
+        "The identity directory is temporarily unavailable.");
 }

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using ErrorOr;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -10,6 +11,15 @@ namespace Vole_Papillon_Damour.Api.tests;
 
 public sealed class ErrorHandlingTests
 {
+    [Fact]
+    public void Directory_unavailable_errors_return_service_unavailable()
+    {
+        Error.Failure("Account.DirectoryUnavailable", "The identity directory is temporarily unavailable.")
+            .GetStatusCode()
+            .Should()
+            .Be((int)HttpStatusCode.ServiceUnavailable);
+    }
+
     [Fact]
     public async Task UseErrorHandling_WhenBibliographicProvidersAreUnavailable_ReturnsServiceUnavailable()
     {

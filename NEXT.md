@@ -78,6 +78,36 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — corrections de l’espace administrateur Catalog
+
+La branche `fix/backoffice-admin-catalog-corrections` corrige les retours sur `src/Catalog`.
+Les titres « Tableau de bord » et « Bénévoles » restent maintenant alignés à gauche comme
+les autres vues. Les périodes du tableau de bord sont devenues interactives — `30 derniers
+jours`, `3 derniers mois` et `Année` — et rechargent `/books/admin/overview` avec des bornes
+UTC typées ; `Année` correspond aux douze derniers mois. Le badge « Sessions de scan » reprend
+la même règle que « Encore corrigeables » (alertes encore en attente sur une session non
+annulée). Les projections de session affichent le prénom et le nom du bénévole ; si le profil
+historique ne contient aucun nom, l’interface affiche un libellé neutre plutôt que l’e-mail.
+
+La requête `/books/admin/fairs` filtre désormais le type Books via le convertisseur EF de la
+valeur objet et garde le tri de date côté application pour rester compatible avec le provider
+SQLite de test ; les statistiques par bourse utilisent la même stratégie pour les bourses
+précédentes. Les erreurs de transport/JSON du répertoire Entra sont transformées en erreur
+`503 Service Unavailable`, et les collections Graph omises sont traitées comme vides. Le
+déploiement doit néanmoins charger la configuration Graph réelle. Enfin, le tri de
+`Catalogue par genre` conserve un `<select>` accessible mais reçoit un habillage Catalog
+personnalisé, et l’icône Paramètres de la sidebar a été remplacée par un tracé SVG équilibré.
+
+Validation : Domain `86`, Application `183`, Infrastructure `74`, API `16` tests ; `147`
+tests Catalog ChromeHeadless ; build `src/Backend/Vole_Papillon_Damour.slnx` et build
+production Catalog passants. Le contrôle Chrome local à 1280 px et 390 px couvre le catalogue
+public et la shell d’administration non authentifiée ; le tableau de bord authentifié et
+les réponses API avec données réelles n’ont pas été exercés sans identifiants. Les avertissements
+NuGet `NU1903` et le budget initial Angular restent ceux du dépôt. Aucun déploiement ni smoke
+Azure n’a été effectué ; après merge, déployer API/Catalog, appliquer la migration Books via le
+workflow runtime avec `run_migrations=true` si nécessaire, puis vérifier les secrets Graph et
+les deux endpoints administratifs.
+
 ### État actualisé — 2026-09-11 — résolution des conflits de la PR #129
 
 La PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) a été

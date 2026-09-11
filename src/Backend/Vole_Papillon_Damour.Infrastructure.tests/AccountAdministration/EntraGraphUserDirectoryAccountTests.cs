@@ -78,6 +78,54 @@ public sealed class EntraGraphUserDirectoryAccountTests
         createBody.Should().Contain("\"passwordPolicies\":\"DisablePasswordExpiration\"");
     }
 
+    [Fact]
+    public async Task ListAsync_TreatsOmittedGraphCollectionsAsEmptyAndKeepsDisplayName()
+    {
+        using var client = new HttpClient(new RecordingHandler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (request.Method == HttpMethod.Post && path.EndsWith("/token", StringComparison.Ordinal))
+            {
+                return JsonResponse("{\"access_token\":\"access-token\"}");
+            }
+
+            if (request.Method == HttpMethod.Get && path == "/v1.0/servicePrincipals")
+            {
+                return JsonResponse("{\"value\":[{\"id\":\"api-service-principal\"}]}");
+            }
+
+            if (request.Method == HttpMethod.Get && path == "/v1.0/users")
+            {
+                return JsonResponse("""
+                    {"value":[{"id":"account-1","displayName":"Ada Lovelace","mail":null,"userPrincipalName":"ada@example.test","accountEnabled":true,"createdDateTime":"2026-09-06T12:00:00Z","identities":[]}]}
+                    """);
+            }
+
+            if (request.Method == HttpMethod.Get && path.EndsWith("/appRoleAssignedTo", StringComparison.Ordinal))
+            {
+                return JsonResponse("{}");
+            }
+
+            throw new InvalidOperationException($"Unexpected Graph request: {request.Method} {request.RequestUri}");
+        }));
+        var options = Options.Create(new EntraGraphOptions
+        {
+            TenantId = "tenant-id",
+            TenantDomain = "volepapillondamour.onmicrosoft.com",
+            ApiClientId = "api-client-id",
+            ClientId = "client-id",
+            ClientSecret = "client-secret"
+        });
+        var directory = new EntraGraphUserDirectory(client, options);
+
+        var accounts = await directory.ListAsync(CancellationToken.None);
+
+        accounts.Should().ContainSingle();
+        accounts[0].DisplayName.Should().Be("Ada Lovelace");
+        accounts[0].Email.Should().Be("ada@example.test");
+        accounts[0].Roles.Should().BeEmpty();
+    }
+
     private static HttpResponseMessage JsonResponse(string json)
     {
         return new HttpResponseMessage(HttpStatusCode.OK)

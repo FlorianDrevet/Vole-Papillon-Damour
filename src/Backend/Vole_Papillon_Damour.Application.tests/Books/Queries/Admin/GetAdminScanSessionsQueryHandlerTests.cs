@@ -56,7 +56,7 @@ public sealed class GetAdminScanSessionsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenVolunteerNameIsMissing_UsesVolunteerEmailAsDisplayName()
+    public async Task Handle_WhenVolunteerNameIsMissing_DoesNotExposeVolunteerEmail()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var now = new DateTime(2026, 9, 5, 17, 0, 0, DateTimeKind.Utc);
@@ -90,6 +90,45 @@ public sealed class GetAdminScanSessionsQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Sessions.Should().ContainSingle();
-        result.Value.Sessions[0].VolunteerName.Should().Be("volunteer@example.test");
+        result.Value.Sessions[0].VolunteerName.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenVolunteerHasName_ReturnsFirstAndLastName()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var now = new DateTime(2026, 9, 5, 17, 0, 0, DateTimeKind.Utc);
+        var volunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000003"));
+        fixture.Context.Users.Add(User.CreateFromExternalIdentity(
+            volunteerId,
+            volunteerId.Value.ToString(),
+            "volunteer@example.test",
+            now,
+            new Name("Ada", "Lovelace")));
+        await fixture.Context.SaveChangesAsync();
+        await fixture.AddSessionAsync(ScanMode.AvailableNow, volunteerId: volunteerId, startedAt: now);
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(now);
+        fixture.AlertOutbox.GetAdminPageAsync(
+                Arg.Any<BookAlertQueueStatus?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<Guid?>(),
+                Arg.Any<int>(),
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new BookAlertOutboxAdminPage([], 0, 1, 1));
+        var handler = new GetAdminScanSessionsQueryHandler(
+            fixture.Context,
+            clock,
+            fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new GetAdminScanSessionsQuery(null, null, null, Page: 1, PageSize: 50),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Sessions.Should().ContainSingle();
+        result.Value.Sessions[0].VolunteerName.Should().Be("Ada Lovelace");
     }
 }
