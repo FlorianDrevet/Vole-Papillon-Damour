@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Relire la PR [#128](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/128) et effectuer le smoke authentifié après déploiement, avant toute validation de production. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-account-page` |
-| **Dernière mise à jour** | 2026-09-11 — page « Mon compte » du Catalog refondue, PR #128 ouverte, aucun déploiement |
-| **Branche** | `feat/catalog-account-page` — worktree dédié, synchronisée avec `origin/main`, PR [#128](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/128) ouverte |
+| **Prochaine action** | Relire la PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) de la refonte visuelle Catalog administration et effectuer, si nécessaire, un contrôle authentifié manuel avant tout déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-admin-maquette-refresh` |
+| **Dernière mise à jour** | 2026-09-11 — refonte visuelle de l’administration Catalog, aucun déploiement |
+| **Branche** | `feat/catalog-admin-maquette-refresh` — worktree dédié, synchronisée avec `origin/main`, PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) ouverte |
 
 ---
 
@@ -78,25 +78,26 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-11 — refonte du contenu de la recherche Catalog
+### État actualisé — 2026-09-11 — refonte visuelle de l’administration Catalog
 
-La branche `feat/catalog-recherche-portee-suivi` reprend le contenu de `/recherche` selon
-la maquette `Recherche.dc.html` : bandeau de recherche compact, filtres latéraux,
-résultats locaux en lignes éditoriales et références externes en cartes de suivi. Le
-header et le footer existants n'ont pas été modifiés.
+Depuis `origin/main` fraîchement récupéré dans le worktree dédié
+`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-admin-maquette-refresh`, la
+route Catalog `/administration` reprend l’architecture et le visuel de la maquette
+`AdminSidebar` sur les dix espaces d’administration : tableau de bord, statistiques par
+bourse, sessions de scan, catalogue, désengorgement, inventaire, membres, bénévoles et
+paramètres, avec la fiche livre et la correction de session intégrées. Le shell public
+(navigation et pied de page) est retiré de cette route privée.
 
-La modale `PorteeSuivi` est maintenant raccordée aux boutons des références externes.
-Elle propose par défaut le suivi de l'œuvre (`Work`) et l'édition précise (`Edition`) si
-un ISBN existe, conserve l'intention dans `sessionStorage` pendant la redirection Entra,
-restaure la modale au retour, gère les erreurs 409 et verrouille le défilement avec un
-focus clavier sur la fermeture. Le backend Watchlist déjà présent sur `origin/main`
-fournit le contrat et les invariants ; aucune nouvelle migration ou route API n'a été
-nécessaire.
+Les contrats admin existants sont réutilisés. Le workspace bénévoles consomme désormais
+le contrat typé `/accounts/admin` pour la liste, la création et l’affectation de rôles
+Entra. L’API ne porte pas encore d’historique physique de cartons/rayons : l’écran
+Inventaire garde donc un état vide et des actions désactivées, sans inventer de données.
 
-Les tests ciblés et la suite Catalog ChromeHeadless, ainsi que le build SSR/navigateur,
-passent. Le rendu local desktop avec un endpoint de démonstration temporaire a été
-contrôlé pour les résultats et la modale ; aucun déploiement ni test de compte réel n'a
-été effectué.
+Validation locale : 130 tests Catalog ChromeHeadless, build production Catalog, Graphify et
+contrôle Chrome desktop du shell public/admin passent. L’avertissement de budget du bundle
+initial reste celui du projet ; aucun déploiement ni contrôle authentifié de production n’a
+été effectué. La PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) est
+ouverte pour relecture ; aucun déploiement n’est autorisé par cette étape.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 

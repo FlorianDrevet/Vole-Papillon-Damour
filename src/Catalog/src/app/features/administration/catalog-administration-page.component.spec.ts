@@ -14,6 +14,7 @@ import {
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
 import {
   CatalogAdminAlertPage,
+  CatalogAdminAccountPage,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
   CatalogAdminMemberPage,
@@ -87,7 +88,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'removeMovement', 'reassignSession', 'cancelSession', 'cancelSessionAlerts',
       'forceSessionAlerts', 'getAlerts', 'cancelAlert', 'forceAlert', 'getMembers',
       'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
-      'getDeadStock',
+      'getDeadStock', 'getAdminAccounts', 'createAdminAccount', 'updateAdminAccountRoles',
     ]);
     api.getOverview.and.returnValue(of({
       generatedAt: '',
@@ -108,6 +109,7 @@ describe('CatalogAdministrationPageComponent', () => {
     api.getSessions.and.returnValue(of({generatedAt: '', sessions: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminScanSessionPage));
     api.getAlerts.and.returnValue(of({generatedAt: '', alerts: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminAlertPage));
     api.getMembers.and.returnValue(of({generatedAt: '', members: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminMemberPage));
+    api.getAdminAccounts.and.returnValue(of({generatedAt: '', accounts: [], totalCount: 0, page: 1, pageSize: 25} as CatalogAdminAccountPage));
     api.getSettings.and.returnValue(of({} as CatalogAdminSettings));
     api.getDeadStock.and.returnValue(of(response));
 
@@ -156,7 +158,49 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getDeadStock).toHaveBeenCalledWith('access-token', 6, 3);
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).toContain('7');
-    expect(fixture.nativeElement.querySelector('table')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="dead-stock-list"]')).not.toBeNull();
+  });
+
+  it('uses the AdminSidebar information architecture from the maquette', () => {
+    fixture.detectChanges();
+
+    const sidebar = fixture.nativeElement.querySelector('[data-testid="admin-sidebar"]');
+    expect(sidebar).not.toBeNull();
+    expect(sidebar.textContent).toContain('Pilotage');
+    expect(sidebar.textContent).toContain('Statistiques par bourse');
+    expect(sidebar.textContent).toContain('Inventaire');
+    expect(sidebar.textContent).toContain('Membres du site');
+    expect(sidebar.textContent).toContain('Bénévoles');
+    expect(sidebar.textContent).toContain('Réglages');
+    expect(sidebar.textContent).not.toContain('Catalogue & métadonnées');
+  });
+
+  it('renders the maquette dashboard title and eight data cards', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getOverview.and.returnValue(of({
+      generatedAt: '2026-09-04T12:00:00Z',
+      currentPeriod: {from: '', to: '', scannedCount: 230, keptCount: 183, rejectedCount: 47, soldQuantity: 812, soldTitles: 100},
+      previousPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
+      stock: {availableQuantity: 4_812, availableTitles: 1_240, announcedQuantity: 0, announcedTitles: 0},
+      lastFair: {id: 'fair', name: 'Bourse du 8 février', dateStart: '2026-02-08', dateEnd: null, soldQuantity: 812, soldTitles: 100, revenue: 1_140},
+      deadStockCount: 287,
+      rareQueueCount: 12,
+      metadataMissingCount: 38,
+      undatedAnnouncementCount: 7,
+      inventoryDriftTitleCount: 38,
+      inventoryDriftQuantity: 124,
+      pendingAlerts: {pendingCount: 14, oldestDueAt: null, nextDueAt: null},
+    } as CatalogAdminOverview));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="admin-title"]')?.textContent).toContain('Tableau de bord.');
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="admin-stat-card"]').length).toBe(8);
+    expect(fixture.nativeElement.textContent).toContain('Disponibles et annoncés');
+    expect(fixture.nativeElement.textContent).toContain('Alertes en attente d’envoi');
   });
 
   it('loads the dashboard first and can switch to each connected workspace', async () => {
@@ -180,6 +224,35 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getAlerts).toHaveBeenCalled();
     expect(api.getMembers).toHaveBeenCalled();
     expect(api.getSettings).toHaveBeenCalled();
+  });
+
+  it('loads the volunteer workspace from the typed Entra accounts endpoint', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getAdminAccounts.and.returnValue(of({
+      generatedAt: '2026-09-04T12:00:00Z',
+      accounts: [{
+        externalId: 'volunteer-id',
+        email: 'volunteer@example.test',
+        displayName: 'Bénévole Test',
+        accountEnabled: true,
+        createdAt: '2026-09-01T10:00:00Z',
+        roles: ['Tri'],
+      }],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    } as CatalogAdminAccountPage));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('volunteers');
+    fixture.detectChanges();
+
+    expect(api.getAdminAccounts).toHaveBeenCalledWith('access-token', {search: undefined, page: 1, pageSize: 25});
+    expect(fixture.nativeElement.textContent).toContain('Bénévoles.');
+    expect(fixture.nativeElement.textContent).toContain('Bénévole Test');
+    expect(fixture.nativeElement.textContent).toContain('Tri');
   });
 
   it('uses the scan-authoritative verdict defaults in the administrator form', () => {

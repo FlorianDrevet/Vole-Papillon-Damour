@@ -4,7 +4,13 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogAdminApiService} from './catalog-admin-api.service';
-import {CatalogAdminBookPage, CatalogAdminOverview, CatalogDeadStockResponse} from './catalog.models';
+import {
+  CatalogAdminAccount,
+  CatalogAdminAccountPage,
+  CatalogAdminBookPage,
+  CatalogAdminOverview,
+  CatalogDeadStockResponse,
+} from './catalog.models';
 
 describe('CatalogAdminApiService', () => {
   let service: CatalogAdminApiService;
@@ -99,5 +105,56 @@ describe('CatalogAdminApiService', () => {
     expect(memberRequest.request.method).toBe('POST');
     expect(memberRequest.request.headers.get('Authorization')).toBe('Bearer access-token');
     memberRequest.flush({});
+  });
+
+  it('loads Entra volunteer accounts with the administration bearer token', () => {
+    const response = {
+      generatedAt: '2026-09-04T12:00:00Z',
+      accounts: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 25,
+    } as CatalogAdminAccountPage;
+
+    service.getAdminAccounts('access-token', {search: 'Michel', page: 2, pageSize: 25})
+      .subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/accounts/admin`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('search')).toBe('Michel');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(request.request.params.get('pageSize')).toBe('25');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('creates and updates typed volunteer account roles', () => {
+    const account: CatalogAdminAccount = {
+      externalId: 'account-id',
+      email: 'michel@example.test',
+      displayName: 'Michel Bonnet',
+      accountEnabled: true,
+      createdAt: null,
+      roles: ['Tri'],
+    };
+
+    service.createAdminAccount('access-token', {
+      email: 'michel@example.test',
+      displayName: 'Michel Bonnet',
+      temporaryPassword: 'temporary-password',
+      roles: ['Tri'],
+    }).subscribe(result => expect(result).toEqual(account));
+
+    const createRequest = http.expectOne(request => request.url === `${environment.apiUrl}/accounts/admin`);
+    expect(createRequest.request.method).toBe('POST');
+    expect(createRequest.request.body.roles).toEqual(['Tri']);
+    createRequest.flush(account);
+
+    service.updateAdminAccountRoles('access-token', 'account-id', ['Tri', 'Caisse']).subscribe();
+
+    const updateRequest = http.expectOne(request => request.url === `${environment.apiUrl}/accounts/admin/account-id/roles`);
+    expect(updateRequest.request.method).toBe('PUT');
+    expect(updateRequest.request.body).toEqual({roles: ['Tri', 'Caisse']});
+    updateRequest.flush(account);
   });
 });

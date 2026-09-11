@@ -39,6 +39,13 @@ fairs, alerts, members and settings; the BackOffice administration screen also e
 typed **Comptes et rôles** tab for creating Entra accounts and assigning `Tri`, `Caisse`
 or `Administration` roles. The API remains the authorization boundary and the current
 administrator cannot remove their own `Administration` role.
+As of 2026-09-11, the Catalog `/administration` shell follows the `AdminSidebar` maquette
+across its dashboard, scan sessions, catalogue, dead-stock, inventory, fair statistics,
+members, volunteers and settings workspaces. The volunteer workspace consumes the existing
+`/accounts/admin` contract for typed listing, account creation and role updates. The
+inventory workspace keeps physical history and carton/rayon actions explicitly empty or
+disabled because no corresponding endpoint or domain model exists; the UI does not invent
+those values.
 The external bibliographic result block is kept separate from local results. DEV ACS email
 delivery is enabled after domain verification; a real authorized-recipient test remains open.
 
@@ -57,7 +64,9 @@ opt-out; and `/administration` exposes every currently available admin workspace
 typed filters, details, corrections, confirmations and truthful empty/error states. The
 Catalog client keeps private data client-rendered and marks `/compte`, `/administration`
 and `/desinscription` `noindex, nofollow`. It deliberately does not add role-editing or
-physical-carton controls because those contracts do not exist.
+physical-carton controls without a contract: role assignment in the Catalog volunteer
+workspace uses the existing `/accounts/admin` contract, while physical carton/rayon
+controls remain explanatory rather than fake.
 
 The Catalog auth service reads the `roles` claim from the API access token after silent
 acquisition, exposes an `isAdministrator` signal for navigation affordances, and accepts

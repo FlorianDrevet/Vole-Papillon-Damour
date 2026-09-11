@@ -1,206 +1,428 @@
-<section class="administration-page" aria-labelledby="administration-title">
-  <div class="administration-frame page-width">
-    <aside class="admin-sidebar" aria-label="Navigation administration">
-      <a class="admin-sidebar-brand" routerLink="/" aria-label="Retourner au catalogue">
-        <span class="admin-mark" aria-hidden="true">VPD</span>
-        <span><strong>Catalogue</strong><small>outils internes</small></span>
-      </a>
-
-      <p class="admin-nav-label">Espaces de travail</p>
-      <nav class="admin-nav">
-        @for (item of navItems; track item.id) {
-          <button
-            type="button"
-            [class.active]="activeSection() === item.id"
-            [disabled]="!isAuthenticated()"
-            (click)="selectSection(item.id)">
-            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
-            <span>{{ item.label }}<small>{{ item.id === 'dead-stock' ? 'stock disponible ancien' : 'données de l’API' }}</small></span>
-          </button>
-        }
-      </nav>
-
-      <div class="role-legend">
-        <p>Accès et limites</p>
-        <span><strong>Administration</strong> accès complet à cette surface</span>
-        <span><strong>Traçabilité</strong> les corrections restent dans le ledger</span>
-        <span><strong>Cartons & rôles</strong> gestion dédiée à prévoir côté API</span>
+<section class="admin-shell" aria-labelledby="admin-title">
+  <header class="admin-header">
+    <div class="admin-brand-group">
+      <a class="admin-logo" routerLink="/" aria-label="Retourner au catalogue public">VPD</a>
+      <div class="admin-brand-copy">
+        <span class="admin-brand-name">Vole Papillon d'Amour</span>
+        <span class="admin-brand-subtitle">Bourse aux livres · catalogue</span>
       </div>
+      <span class="admin-context-pill">Administration</span>
+    </div>
+
+    <div class="admin-header-actions">
+      <a class="admin-public-link" routerLink="/">Voir le catalogue public →</a>
+      @if (isAuthenticated()) {
+        <button class="admin-account-pill" type="button" (click)="logout()" title="Se déconnecter">
+          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8.5" r="3.6"></circle>
+            <path d="M5 19.6c1.3-3.3 3.9-4.9 7-4.9s5.7 1.6 7 4.9"></path>
+          </svg>
+          <span>{{ accountLabel() || 'Compte' }}</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <aside class="admin-sidebar" data-testid="admin-sidebar" aria-label="Navigation administration">
+      @for (group of navGroups; track group.label) {
+        <div class="admin-nav-group">
+          <span class="admin-nav-label">{{ group.label }}</span>
+          <nav>
+            @for (item of group.items; track item.id) {
+              <button
+                class="admin-nav-item"
+                type="button"
+                [class.active]="activeSection() === item.id"
+                [disabled]="!isAuthenticated()"
+                [attr.aria-current]="activeSection() === item.id ? 'page' : null"
+                (click)="selectSection(item.id)">
+                {{ item.label }}
+              </button>
+            }
+          </nav>
+        </div>
+      }
     </aside>
 
-    <div class="administration-main">
-      <header class="admin-page-header">
-        <div>
-          <p class="eyebrow">Espace bénévoles / Accès administration</p>
-          <h1 id="administration-title">Piloter la bourse aux livres.</h1>
-          <p class="intro">Stock, sessions de scan, alertes et comptes : les corrections sont réservées aux personnes habilitées et toujours journalisées.</p>
-        </div>
-        @if (isAuthenticated()) {
-          <div class="admin-account">
-            <span class="admin-account-dot" aria-hidden="true"></span>
-            <span><small>Connecté</small><strong>{{ accountLabel() }}</strong></span>
-            <button class="text-button" type="button" (click)="logout()">Se déconnecter</button>
-          </div>
-        }
-      </header>
-
+    <div class="admin-content">
       @if (!initialized()) {
-        <p class="status-panel" role="status">Préparation de la connexion sécurisée…</p>
+        <p class="admin-status" role="status">Préparation de la connexion sécurisée…</p>
       } @else if (authError()) {
-        <div class="status-panel error-panel" role="alert">{{ authError() }}</div>
+        <div class="admin-status admin-status-error" role="alert">{{ authError() }}</div>
       } @else if (!isAuthenticated()) {
-        <div class="login-panel">
-          <div>
-            <p class="panel-kicker">Zone réservée</p>
-            <h2>Ouvrir les outils de suivi</h2>
-            <p>La consultation publique reste ouverte à tous. La connexion est uniquement nécessaire pour l’administration.</p>
+        <div class="admin-login-view">
+          <div class="admin-heading">
+            <span class="admin-accent" aria-hidden="true"></span>
+            <span class="admin-kicker">Accès administration</span>
+            <h1 id="admin-title">Accès administration.</h1>
+            <p class="admin-intro">La consultation publique reste ouverte à tous. La connexion est uniquement nécessaire pour les outils de suivi, de correction et de pilotage.</p>
           </div>
-          <button class="primary-button" data-testid="admin-login" type="button" (click)="login()">
-            <span class="person-icon" aria-hidden="true"></span>
-            Se connecter avec Microsoft
-          </button>
+          <div class="admin-login-card">
+            <div>
+              <span class="section-kicker">Zone réservée</span>
+              <h2>Ouvrir les outils de suivi</h2>
+              <p>Connectez-vous avec votre compte bénévole habilité. Les corrections restent attribuées et journalisées.</p>
+            </div>
+            <button class="button button-primary" data-testid="admin-login" type="button" (click)="login()">
+              <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8.5" r="3.6"></circle>
+                <path d="M5 19.6c1.3-3.3 3.9-4.9 7-4.9s5.7 1.6 7 4.9"></path>
+              </svg>
+              Se connecter avec Microsoft
+            </button>
+          </div>
         </div>
       } @else {
         @if (errorMessage()) {
-          <div class="status-panel error-panel" role="alert">{{ errorMessage() }}</div>
+          <div class="admin-status admin-status-error" role="alert">{{ errorMessage() }}</div>
         }
         @if (successMessage()) {
-          <div class="status-panel success-panel" role="status">{{ successMessage() }}</div>
+          <div class="admin-status admin-status-success" role="status">{{ successMessage() }}</div>
         }
 
         @switch (activeSection()) {
           @case ('overview') {
-            <section class="workspace" aria-labelledby="overview-title">
-              <div class="workspace-heading">
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading admin-heading-split">
                 <div>
-                  <p class="panel-kicker">Vue d’ensemble</p>
-                  <h2 id="overview-title">La bourse aux livres en un regard.</h2>
+                  <span class="admin-accent" aria-hidden="true"></span>
+                  <span class="admin-kicker">Administration</span>
+                  <h1 id="admin-title" data-testid="admin-title">Tableau de bord.</h1>
                 </div>
-                <span class="workspace-mark" aria-hidden="true">P3</span>
+                <div class="period-chips" aria-label="Période du tableau de bord">
+                  <button class="period-chip active" type="button">30 derniers jours</button>
+                  <button class="period-chip" type="button">Depuis février</button>
+                  <button class="period-chip" type="button">Année</button>
+                </div>
               </div>
 
               @if (loading() && !overview()) {
-                <p class="status-panel" role="status">Chargement des indicateurs…</p>
+                <p class="admin-status" role="status">Chargement des indicateurs…</p>
               } @else if (overview(); as current) {
-                <div class="metric-grid">
-                  <article class="metric-card metric-card-blue">
-                    <span>Sur les tables</span>
-                    <strong>{{ current.stock.availableQuantity }}</strong>
-                    <small>{{ current.stock.availableTitles }} fiches disponibles</small>
+                <div class="stat-grid">
+                  <article class="stat-card" data-testid="admin-stat-card">
+                    <strong class="stat-value">{{ formatNumber(current.stock.availableQuantity + current.stock.announcedQuantity) }}</strong>
+                    <span class="stat-label">Disponibles et annoncés</span>
+                    <span class="stat-sub">{{ formatNumber(current.stock.availableTitles) }} fiches disponibles · {{ formatNumber(current.stock.announcedTitles) }} annoncées</span>
+                    <span class="stat-foot">Stock courant</span>
                   </article>
-                  <article class="metric-card metric-card-orange">
-                    <span>Catalogués sur la période</span>
-                    <strong>{{ current.currentPeriod.keptCount }}</strong>
-                    <small>{{ current.currentPeriod.rejectedCount }} refusés · {{ current.currentPeriod.scannedCount }} scannés</small>
+                  <article class="stat-card" data-testid="admin-stat-card">
+                    <strong class="stat-value">{{ formatNumber(current.currentPeriod.scannedCount) }}</strong>
+                    <span class="stat-label">Livres triés</span>
+                    <span class="stat-sub">{{ formatNumber(current.currentPeriod.keptCount) }} gardés · {{ formatNumber(current.currentPeriod.rejectedCount) }} écartés</span>
+                    <span class="stat-foot">Taux de rejet {{ current.currentPeriod.scannedCount ? ((current.currentPeriod.rejectedCount / current.currentPeriod.scannedCount) * 100 | number:'1.0-0') : 0 }} %</span>
                   </article>
-                  <article class="metric-card metric-card-green">
-                    <span>Vendus sur la période</span>
-                    <strong>{{ current.currentPeriod.soldQuantity }}</strong>
-                    <small>{{ current.currentPeriod.soldTitles }} titres distincts</small>
+                  <article class="stat-card" data-testid="admin-stat-card">
+                    <strong class="stat-value">{{ formatNumber(current.currentPeriod.soldQuantity) }}</strong>
+                    <span class="stat-label">Livres vendus</span>
+                    <span class="stat-sub">{{ current.lastFair?.name || 'Sur la période sélectionnée' }}</span>
+                    <span class="stat-foot">Recette saisie : {{ current.lastFair?.revenue === null || current.lastFair?.revenue === undefined ? '—' : formatMoney(current.lastFair?.revenue) }}</span>
                   </article>
-                  <article class="metric-card metric-card-purple">
-                    <span>Alertes en attente</span>
-                    <strong>{{ current.pendingAlerts.pendingCount }}</strong>
-                    <small>prochaine échéance {{ formatDate(current.pendingAlerts.nextDueAt, true) }}</small>
+                  <article class="stat-card stat-card-dark" data-testid="admin-stat-card">
+                    <strong class="stat-value">{{ formatNumber(current.deadStockCount) }}</strong>
+                    <span class="stat-label">Titres jamais vendus</span>
+                    <span class="stat-sub">Le principal levier de désengorgement</span>
+                    <span class="stat-foot">À vérifier dans la file de retrait</span>
+                  </article>
+                  <article class="stat-card stat-card-blue" data-testid="admin-stat-card">
+                    <strong class="stat-value">{{ formatNumber(current.pendingAlerts.pendingCount) }}</strong>
+                    <span class="stat-label">E-mails en attente</span>
+                    <span class="stat-sub">Les sessions restent corrigeables pendant la fenêtre prévue</span>
+                    <span class="stat-foot">Prochaine échéance : {{ formatCountdown(current.pendingAlerts.nextDueAt) }}</span>
+                  </article>
+                  <article class="stat-card stat-card-purple" data-testid="admin-stat-card">
+                    <strong class="stat-value">{{ formatNumber(current.rareQueueCount) }}</strong>
+                    <span class="stat-label">Rares à expertiser</span>
+                    <span class="stat-sub">À étiqueter manuellement sur le livre</span>
+                    <span class="stat-foot">File de travail</span>
+                  </article>
+                  <article class="stat-card" data-testid="admin-stat-card">
+                    <strong class="stat-value">{{ formatNumber(current.metadataMissingCount) }}</strong>
+                    <span class="stat-label">Fiches sans métadonnées</span>
+                    <span class="stat-sub">Titre, auteur ou éditeur à compléter</span>
+                    <span class="stat-foot">File de travail</span>
+                  </article>
+                  <article class="stat-card stat-card-red" data-testid="admin-stat-card">
+                    <strong class="stat-value">− {{ formatNumber(current.inventoryDriftQuantity) }}</strong>
+                    <span class="stat-label">Écart d’inventaire</span>
+                    <span class="stat-sub">{{ formatNumber(current.inventoryDriftTitleCount) }} fiches concernées par le ledger</span>
+                    <span class="stat-foot">Remise à plat physique à réaliser</span>
                   </article>
                 </div>
 
-                <div class="overview-grid">
-                  <div class="overview-card">
-                    <div class="card-heading compact-heading">
-                      <div><p class="panel-kicker">Files de travail</p><h3>Ce qui mérite une action.</h3></div>
-                    </div>
-                    <button class="overview-row" type="button" (click)="selectSection('dead-stock')"><span>Désengorgement</span><strong>{{ current.deadStockCount }}</strong><small>candidats</small></button>
-                    <button class="overview-row" type="button" (click)="selectSection('catalogue')"><span>Fiches rares</span><strong>{{ current.rareQueueCount }}</strong><small>à vérifier</small></button>
-                    <button class="overview-row" type="button" (click)="selectSection('catalogue')"><span>Métadonnées manquantes</span><strong>{{ current.metadataMissingCount }}</strong><small>à compléter</small></button>
-                    <button class="overview-row" type="button" (click)="selectSection('catalogue')"><span>Annonces sans date</span><strong>{{ current.undatedAnnouncementCount }}</strong><small>à préciser</small></button>
+                <div class="section-heading section-heading-with-kicker">
+                  <div>
+                    <span class="section-kicker">Fenêtre de rattrapage</span>
+                    <h2>Alertes en attente d’envoi</h2>
                   </div>
-                  <div class="overview-card overview-card-note">
-            <p class="panel-kicker">Dernière bourse aux livres</p>
-                    @if (current.lastFair; as fair) {
-                      <h3>{{ fair.name }}</h3>
-                      <p>{{ formatDate(fair.dateStart) }} · {{ fair.soldQuantity }} exemplaires vendus</p>
-                      <strong>{{ formatMoney(fair.revenue) }}</strong>
-                      <button class="secondary-button" type="button" (click)="selectSection('fairs')">Ouvrir le bilan →</button>
-                    } @else {
-              <h3>Aucune bourse aux livres clôturée.</h3>
-                      <p>Les indicateurs apparaîtront après la première session de caisse.</p>
-                    }
-                  </div>
+                  <button class="text-link" type="button" (click)="selectSection('sessions')">Voir les sessions →</button>
+                </div>
+                <p class="section-intro">Tant que le compte à rebours n’est pas arrivé à son terme, une session peut encore être corrigée sans envoyer de mauvaise alerte aux membres.</p>
+                <div class="pending-alert-list">
+                  @for (session of pendingAlertSessions(); track session.id) {
+                    <article class="pending-alert-row">
+                      <div class="pending-alert-main">
+                        <strong>{{ session.volunteerName || 'Bénévole non renseigné' }}</strong>
+                        <span>{{ formatDate(session.startedAt, true) }} → {{ formatDate(session.endedAt, true) }}</span>
+                        <small>{{ session.fairName || 'Sans bourse aux livres' }} · {{ formatNumber(session.scannedCount) }} scannés · {{ formatNumber(session.keptCount) }} gardés</small>
+                      </div>
+                      <div class="pending-alert-countdown"><strong>{{ formatCountdown(session.nextAlertDueAt) }}</strong><span>{{ formatNumber(session.pendingAlertCount) }} e-mails</span></div>
+                      <button class="button button-outline" type="button" (click)="openSession(session.id)">Corriger</button>
+                    </article>
+                  } @empty {
+                    <div class="empty-inline">Aucune session dans la fenêtre de rattrapage.</div>
+                  }
+                </div>
+                <div class="info-strip">
+                  <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg>
+                  <p>Ces chiffres servent à piloter le système, jamais à comparer les bénévoles entre eux. Les écarts sont des signaux de processus à corriger.</p>
                 </div>
               } @else {
-                <p class="status-panel">Les indicateurs ne sont pas encore disponibles.</p>
+                <p class="admin-status">Les indicateurs ne sont pas encore disponibles.</p>
               }
             </section>
           }
 
           @case ('sessions') {
-            <section class="workspace" aria-labelledby="sessions-title">
-              <div class="workspace-heading"><div><p class="panel-kicker">Tri & corrections</p><h2 id="sessions-title">Sessions de scan.</h2><p class="workspace-intro">Ouvrez une session pour vérifier ses mouvements, corriger un doublon ou reprendre sa destination.</p></div><span class="workspace-mark" aria-hidden="true">S1</span></div>
-              <form class="toolbar-form" (ngSubmit)="loadSessions()">
-                <label><span>État</span><select name="sessionStatus" [(ngModel)]="sessionStatus"><option value="">Tous</option><option value="Open">Ouverte</option><option value="Closed">Clôturée</option><option value="Cancelled">Annulée</option><option value="Resumed">Reprise</option></select></label>
-                <label><span>Du</span><input type="date" name="sessionFrom" [(ngModel)]="sessionFrom"></label>
-                <label><span>Au</span><input type="date" name="sessionTo" [(ngModel)]="sessionTo"></label>
-                <button class="primary-button" type="submit" [disabled]="loading()">Actualiser</button>
-              </form>
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading">
+                <span class="admin-accent" aria-hidden="true"></span>
+                <span class="admin-kicker">Travail</span>
+                <h1 id="admin-title">Sessions de scan.</h1>
+                <p class="admin-intro">Le mode d’une session détermine l’effet public des scans, et sa clôture déclenche les e-mails. C’est le seul endroit d’où l’on voit ce qui s’est réellement passé.</p>
+              </div>
+              <div class="period-chips session-chips" aria-label="Filtrer les sessions">
+                <button class="period-chip" [class.active]="sessionPreset === 'correctable'" type="button" (click)="setSessionPreset('correctable')">Encore corrigeables ({{ correctableSessionCount() }})</button>
+                <button class="period-chip" [class.active]="sessionPreset === 'all'" type="button" (click)="setSessionPreset('all')">Toutes</button>
+                <button class="period-chip" [class.active]="sessionPreset === 'open'" type="button" (click)="setSessionPreset('open')">En cours</button>
+                <button class="period-chip" [class.active]="sessionPreset === 'alerts'" type="button" (click)="setSessionPreset('alerts')">Alertes envoyées ({{ alertSessionCount() }})</button>
+              </div>
               @if (sessionsPage(); as page) {
-                <div class="list-heading"><p><strong>{{ page.totalCount }}</strong> sessions</p></div>
-                <div class="admin-table-wrap"><table><caption class="visually-hidden">Sessions de scan</caption><thead><tr><th>Bénévole / poste</th><th>État</th><th>Scans</th><th>Alertes</th><th>Dernier scan</th><th></th></tr></thead><tbody>
-                  @for (session of page.sessions; track session.id) {
-                    <tr><th scope="row"><span class="book-title">{{ session.volunteerName || 'Bénévole non renseigné' }}</span><span class="book-author">{{ session.fairName || 'Sans bourse aux livres' }} · {{ session.mode }}</span></th><td><span class="status-pill" [class]="statusClass(session.status)">{{ statusLabel(session.status) }}</span></td><td>{{ session.scannedCount }} <small>{{ session.keptCount }} gardés</small></td><td>{{ session.pendingAlertCount }} en attente</td><td>{{ formatDate(session.lastScanAt, true) }}</td><td><button class="table-action" type="button" (click)="openSession(session.id)">Ouvrir →</button></td></tr>
-                  } @empty { <tr><td colspan="6" class="empty-cell">Aucune session avec ces critères.</td></tr> }
-                </tbody></table></div>
-                <div class="pagination admin-pagination"><button type="button" [disabled]="sessionPage <= 1" (click)="goToSessionsPage(sessionPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToSessionsPage(sessionPage + 1)">→</button></div>
-              } @else if (loading()) { <p class="status-panel" role="status">Chargement des sessions…</p> }
-
-              @if (selectedSession(); as session) {
-                <div class="detail-panel" aria-labelledby="session-detail-title">
-                  <div class="detail-panel-heading"><div><p class="panel-kicker">Session sélectionnée</p><h3 id="session-detail-title">{{ session.volunteerName || 'Session de scan' }}</h3><p>{{ session.mode }} · commencée le {{ formatDate(session.startedAt, true) }}</p></div><button class="text-button" type="button" (click)="selectedSession.set(null)">Fermer</button></div>
-                  <div class="mini-metrics"><span><strong>{{ session.scannedCount }}</strong> scans</span><span><strong>{{ session.keptCount }}</strong> gardés</span><span><strong>{{ session.rejectedCount }}</strong> refusés</span><span><strong>{{ session.pendingAlertCount }}</strong> alertes en attente</span></div>
-                  <div class="action-row"><button class="secondary-button" type="button" (click)="reassignSession()">Rejouer la destination</button><button class="secondary-button" type="button" (click)="cancelSessionAlerts()">Annuler les alertes</button><button class="secondary-button" type="button" (click)="forceSessionAlerts()">Forcer les alertes</button><button class="danger-button" type="button" (click)="cancelSession()">Annuler la session</button></div>
-                  <div class="reassign-form"><label><span>Destination</span><select name="sessionMode" [(ngModel)]="sessionMode"><option value="AvailableNow">Sur les tables</option><option value="NextFair">Prochaine bourse aux livres</option></select></label><label><span>ID bourse aux livres cible (optionnel)</span><input name="sessionFairId" [(ngModel)]="sessionFairId" placeholder="GUID de la bourse aux livres"></label></div>
-                  <div class="admin-table-wrap"><table><caption class="visually-hidden">Mouvements de la session</caption><thead><tr><th>ISBN</th><th>Type</th><th>Quantité</th><th>Horodatage</th><th>Note</th><th></th></tr></thead><tbody>@for (movement of session.movements; track movement.id) {<tr><td>{{ movement.isbn13 }}</td><td>{{ movement.type }}</td><td>{{ movement.quantity }}</td><td>{{ formatDate(movement.occurredAt, true) }}</td><td>{{ movement.note || '—' }}</td><td><button class="table-action" type="button" [disabled]="!!movement.reversalOfMovementId" (click)="removeMovement(movement.id)">{{ movement.reversalOfMovementId ? 'Renversé' : 'Retirer' }}</button></td></tr>} @empty {<tr><td colspan="6" class="empty-cell">Aucun mouvement dans cette session.</td></tr>}</tbody></table></div>
+                <div class="list-meta"><span>{{ formatNumber(visibleSessions().length) }} session{{ visibleSessions().length > 1 ? 's' : '' }}</span><button class="text-link" type="button" (click)="loadSessions()">Actualiser</button></div>
+                <div class="session-list">
+                  @for (session of visibleSessions(); track session.id) {
+                    <article class="session-card" [class.session-correctable]="sessionNeedsCorrection(session)">
+                      <div class="session-card-main">
+                        <div class="session-title-line"><strong>{{ session.volunteerName || 'Bénévole non renseigné' }}</strong><span class="mode-pill" [class.mode-pill-dark]="session.mode === 'AvailableNow'">{{ sessionModeLabel(session.mode) }}{{ session.fairName ? ' · ' + session.fairName : '' }}</span><span class="status-pill" [class]="statusClass(session.status)">{{ statusLabel(session.status) }}</span></div>
+                        <span class="session-date">{{ formatDate(session.startedAt, true) }} · {{ session.endedAt ? formatDate(session.endedAt, true) : 'session ouverte' }} · {{ sessionCloseLabel(session.closeReason) }}</span>
+                      </div>
+                      <div class="session-metrics"><span><strong>{{ formatNumber(session.scannedCount) }}</strong>Scannés</span><span><strong>{{ formatNumber(session.keptCount) }}</strong>Gardés</span><span><strong>{{ formatNumber(session.rejectedCount) }}</strong>Écartés</span></div>
+                      <div class="session-alert-state"><strong>{{ session.pendingAlertCount ? formatCountdown(session.nextAlertDueAt) : '—' }}</strong><span>{{ session.pendingAlertCount ? formatNumber(session.pendingAlertCount) + ' e-mails' : (session.alertCount ? 'Envoyés' : 'Aucune alerte') }}</span></div>
+                      <button class="button" [class.button-primary]="sessionNeedsCorrection(session)" [class.button-outline]="!sessionNeedsCorrection(session)" type="button" (click)="openSession(session.id)">{{ sessionNeedsCorrection(session) ? 'Corriger' : 'Ouvrir' }}</button>
+                    </article>
+                  } @empty {
+                    <div class="empty-panel"><h2>Aucune session dans cette vue</h2><p>Les sessions remontées par l’API apparaîtront ici, avec leur mode et leurs compteurs réels.</p></div>
+                  }
                 </div>
+                <div class="pagination"><button type="button" [disabled]="sessionPage <= 1" (click)="goToSessionsPage(sessionPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToSessionsPage(sessionPage + 1)">→</button></div>
+              } @else if (loading()) {
+                <p class="admin-status" role="status">Chargement des sessions…</p>
               }
+              <div class="info-strip">
+                <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg>
+                <p>Deux erreurs se rattrapent en bloc : une session tenue dans le mauvais mode de mise à disposition, et des livres scannés en caisse alors qu’il s’agissait d’un tri.</p>
+              </div>
             </section>
           }
 
           @case ('dead-stock') {
-            <section class="workspace" aria-labelledby="dead-stock-title">
-              <div class="workspace-heading"><div><p class="panel-kicker">File de travail active</p><h2 id="dead-stock-title">Désengorger le local.</h2><p class="workspace-intro">Repérez les titres disponibles depuis longtemps, jamais vendus, et suffisamment nombreux pour mériter un retrait physique.</p></div><span class="workspace-mark" aria-hidden="true">O2</span></div>
-              <form class="toolbar-form dead-stock-toolbar" (ngSubmit)="loadDeadStock()" #filtersForm="ngForm" novalidate><label><span>Disponible depuis au moins</span><span class="input-with-suffix"><input type="number" name="minAgeMonths" [(ngModel)]="minAgeMonths" min="1" max="120000" step="1" required><span>mois</span></span></label><label><span>Plus de ce nombre d’exemplaires</span><input type="number" name="minQuantity" [(ngModel)]="minQuantity" min="0" step="1" required></label><button class="primary-button" type="submit" [disabled]="loading() || filtersForm.invalid">{{ loading() ? 'Recherche…' : 'Actualiser la liste' }}</button></form>
-              @if (loading() && !deadStockBooks().length) {<p class="status-panel" role="status">Recherche des titres à retirer…</p>} @else if (deadStockBooks().length === 0 && !errorMessage()) {<div class="empty-panel"><span class="empty-mark" aria-hidden="true">✓</span><h3>Aucun candidat avec ces critères</h3><p>Le local ne présente pas de titre correspondant à cette recherche, ou la file est déjà vide.</p></div>} @else if (deadStockBooks().length > 0) {<div class="list-heading"><p><strong>{{ deadStockBooks().length }}</strong> titres candidats</p><button class="secondary-button" type="button" (click)="exportCsv()">Exporter en CSV</button></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Titres disponibles depuis longtemps et jamais vendus</caption><thead><tr><th>Titre</th><th>ISBN</th><th>Genre</th><th>Exemplaires</th><th>Disponible depuis</th></tr></thead><tbody>@for (book of deadStockBooks(); track book.isbn13) {<tr><th scope="row"><span class="book-title">{{ book.title || 'Titre inconnu' }}</span><span class="book-author">{{ book.authors || 'Auteur non renseigné' }}</span></th><td>{{ book.isbn13 }}</td><td>{{ book.genre || '—' }}</td><td class="quantity">{{ book.quantityAvailable }}</td><td>{{ formatDate(book.firstAvailableAt) }}</td></tr>}</tbody></table></div>}
-              <p class="surface-note">Le backend ne fournit pas encore le volume des cartons ni la capacité des tables : cette vue propose les candidats, le retrait physique reste une décision bénévole.</p>
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading">
+                <span class="admin-accent" aria-hidden="true"></span>
+                <span class="admin-kicker">Travail</span>
+                <h1 id="admin-title">Désengorgement.</h1>
+                <p class="admin-intro">Les titres qui dorment : disponibles depuis longtemps, jamais vendus, en plusieurs exemplaires. Sans cet écran, le système ne fait qu’observer la saturation sans jamais aider à la résorber.</p>
+              </div>
+              <form class="filter-card" (ngSubmit)="loadDeadStock()" #filtersForm="ngForm" novalidate>
+                <label><span>Disponibles depuis plus de</span><span class="field-with-suffix"><input type="number" name="minAgeMonths" [(ngModel)]="minAgeMonths" min="1" max="120000" step="1" required><em>mois</em></span></label>
+                <label><span>En plus de</span><span class="field-with-suffix"><input type="number" name="minQuantity" [(ngModel)]="minQuantity" min="0" step="1" required><em>exemplaires</em></span></label>
+                <label class="checkbox-label"><input type="checkbox" checked disabled><span>Jamais vendus</span></label>
+                <button class="button button-primary" type="submit" [disabled]="loading() || filtersForm.invalid"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>Exporter la liste de retrait</button>
+              </form>
+              @if (loading() && !deadStockBooks().length) {
+                <p class="admin-status" role="status">Recherche des titres à retirer…</p>
+              } @else {
+                <div class="section-heading"><div><h2>{{ formatNumber(deadStockBooks().length) }} titres candidats au retrait</h2><p>{{ formatNumber(deadStockBooks().reduce((total, book) => total + book.quantityAvailable, 0)) }} exemplaires · triés par quantité décroissante</p></div><button class="text-link" type="button" (click)="exportCsv()">Télécharger le CSV</button></div>
+                <div class="dead-stock-list" data-testid="dead-stock-list">
+                  @for (book of deadStockBooks(); track book.isbn13) {
+                    <article class="dead-stock-row">
+                      <div class="dead-stock-book"><span class="book-cover-placeholder" aria-hidden="true"></span><div><strong>{{ book.title || 'Titre inconnu' }}</strong><span>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</span></div></div>
+                      <span class="age-label">dispo. depuis {{ formatDate(book.firstAvailableAt) }}</span>
+                      <strong class="quantity-value">{{ formatNumber(book.quantityAvailable) }}</strong>
+                      <button class="button button-outline" type="button" (click)="openBook(book.isbn13)">Retirer</button>
+                    </article>
+                  } @empty {
+                    <div class="empty-panel"><h2>Aucun candidat avec ces critères</h2><p>La file de retrait est vide pour les seuils sélectionnés.</p></div>
+                  }
+                </div>
+              }
+              <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Le retrait crée un mouvement RETRAIT attribué au compte connecté. L’export sert au traitement physique ; le backend ne connaît ni cartons ni rayons.</p></div>
+            </section>
+          }
+
+          @case ('inventory') {
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading">
+                <span class="admin-accent" aria-hidden="true"></span>
+                <span class="admin-kicker">Travail</span>
+                <h1 id="admin-title">Remise à plat de l’inventaire.</h1>
+                <p class="admin-intro">Le compteur dérive à cause des ventes non scannées. Suivre cet écart dans le temps, c’est mesurer la discipline de scan en caisse — le principal indicateur de santé du projet.</p>
+              </div>
+              @if (overview(); as current) {
+                <div class="stat-grid inventory-stat-grid">
+                  <article class="stat-card stat-card-red"><strong class="stat-value">− {{ formatNumber(current.inventoryDriftQuantity) }}</strong><span class="stat-label">Écart de l’état courant</span><span class="stat-sub">{{ formatNumber(current.inventoryDriftTitleCount) }} fiches présentent un écart</span></article>
+                  <article class="stat-card"><strong class="stat-value">—</strong><span class="stat-label">Écart estimé depuis</span><span class="stat-sub">Historique de remises à plat non exposé par l’API</span></article>
+                  <article class="stat-card"><strong class="stat-value">—</strong><span class="stat-label">Dernière remise à plat</span><span class="stat-sub">Aucune saisie physique enregistrée</span></article>
+                </div>
+                <div class="inventory-grid">
+                  <article class="chart-card">
+                    <div class="section-heading"><div><h2>Écart constaté à chaque remise à plat</h2><p>Historique des comptages physiques</p></div></div>
+                    <div class="chart-empty"><span class="chart-empty-mark">—</span><p>L’historique des remises à plat n’est pas encore modélisé. Le chiffre courant ci-dessus est calculé à partir du ledger et du stock déclaré.</p></div>
+                  </article>
+                  <article class="inventory-action-card">
+                    <span class="section-kicker">Action terrain</span>
+                    <h2>Lancer une remise à plat</h2>
+                    <p>La saisie d’un comptage physique sera disponible lorsque les zones et les fiches à compter seront exposées par l’API.</p>
+                    <label><span>Fiches à compter</span><select disabled><option>Zones physiques non paramétrées</option></select></label>
+                    <span class="muted-note">Les emplacements et cartons ne font pas partie du modèle actuel.</span>
+                    <button class="button button-primary" type="button" disabled>Saisir le comptage</button>
+                  </article>
+                </div>
+                <div class="section-heading inventory-heading"><div><h2>Comptage en cours</h2><p>Aucune session de comptage physique ouverte</p></div><span class="mono-note">—</span></div>
+                <div class="inventory-table empty-table"><span>Le comptage manuel sera affiché ici lorsqu’une remise à plat sera créée.</span><button class="button button-primary" type="button" disabled>Appliquer les corrections</button></div>
+                <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Le système ne doit pas transformer un écart calculé en comptage physique. La correction ne sera activée qu’avec une saisie terrain tracée.</p></div>
+              } @else {
+                <p class="admin-status">Chargement de l’état d’inventaire…</p>
+              }
             </section>
           }
 
           @case ('catalogue') {
-            <section class="workspace" aria-labelledby="catalogue-title">
-              <div class="workspace-heading"><div><p class="panel-kicker">Fiches & inventaire</p><h2 id="catalogue-title">Catalogue.</h2><p class="workspace-intro">Complétez les notices, corrigez le stock, signalez les raretés et gardez les redirections visibles.</p></div><span class="workspace-mark" aria-hidden="true">C1</span></div>
-              <details class="add-book-panel"><summary>Ajouter une fiche manuellement <span aria-hidden="true">＋</span></summary><form class="form-grid" (ngSubmit)="addBook()"><label><span>ISBN 13 *</span><input name="addIsbn" [(ngModel)]="addBookForm.isbn13" required></label><label><span>Quantité sur les tables *</span><input type="number" name="addQuantity" [(ngModel)]="addBookForm.quantityAvailable" min="0" required></label><label><span>Titre</span><input name="addTitle" [(ngModel)]="addBookForm.title"></label><label><span>Auteur</span><input name="addAuthors" [(ngModel)]="addBookForm.authors"></label><label><span>Éditeur</span><input name="addPublisher" [(ngModel)]="addBookForm.publisher"></label><label><span>Année</span><input type="number" name="addYear" [(ngModel)]="addBookForm.publicationYear"></label><label><span>Genre</span><input name="addGenre" [(ngModel)]="addBookForm.genre"></label><label><span>Œuvre / workId</span><input name="addWorkId" [(ngModel)]="addBookForm.workId"></label><label class="field-wide"><span>Note obligatoire *</span><textarea name="addNote" [(ngModel)]="addBookForm.note" required></textarea></label><button class="primary-button" type="submit" [disabled]="loading()">Ajouter la fiche</button></form></details>
-              <form class="toolbar-form catalogue-toolbar" (ngSubmit)="loadBooks()"><label class="search-field"><span>Titre, auteur ou ISBN</span><input name="bookSearch" [(ngModel)]="bookSearch" placeholder="Rechercher…"></label><label><span>Métadonnées</span><select name="bookMetadataStatus" [(ngModel)]="bookMetadataStatus"><option value="">Toutes</option><option value="Missing">Manquantes</option><option value="Complete">Complètes</option></select></label><label class="check-control"><input type="checkbox" name="bookRareOnly" [(ngModel)]="bookRareOnly"><span>Rares</span></label><label class="check-control"><input type="checkbox" name="bookHiddenOnly" [(ngModel)]="bookHiddenOnly"><span>Masquées</span></label><label class="check-control"><input type="checkbox" name="bookUndatedOnly" [(ngModel)]="bookUndatedOnly"><span>Sans date</span></label><button class="primary-button" type="submit" [disabled]="loading()">Filtrer</button></form>
-              @if (booksPage(); as page) {<div class="list-heading"><p><strong>{{ page.totalCount }}</strong> fiches</p></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Catalogue administrateur</caption><thead><tr><th>Fiche</th><th>État des métadonnées</th><th>Stock</th><th>Signal</th><th>Dernière mise à jour</th><th></th></tr></thead><tbody>@for (book of page.books; track book.isbn13) {<tr [class.redirected-row]="!!book.redirectedToIsbn13"><th scope="row"><span class="book-title">{{ book.title || 'Titre à compléter' }}</span><span class="book-author">{{ book.authors || 'Auteur non renseigné' }} · {{ book.isbn13 }}</span></th><td>{{ book.metadataStatus }}<small>{{ book.metadataSource || 'source inconnue' }}</small></td><td>{{ book.quantityAvailable }} disponibles / {{ book.quantityAnnounced }} annoncés</td><td>{{ book.isRare ? 'Rare' : '—' }}{{ book.isHidden ? ' · Masquée' : '' }}</td><td>{{ formatDate(book.updatedAt, true) }}</td><td><button class="table-action" type="button" (click)="openBook(book.isbn13)">Fiche →</button></td></tr>} @empty {<tr><td colspan="6" class="empty-cell">Aucune fiche avec ces filtres.</td></tr>}</tbody></table></div><div class="pagination admin-pagination"><button type="button" [disabled]="bookPage <= 1" (click)="goToBooksPage(bookPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToBooksPage(bookPage + 1)">→</button></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement du catalogue…</p>}
-              @if (selectedBook(); as book) {<div class="detail-panel book-detail-panel"><div class="detail-panel-heading"><div><p class="panel-kicker">Fiche {{ book.isbn13 }}</p><h3>{{ book.title || 'Titre à compléter' }}</h3><p>{{ book.redirectedToIsbn13 ? 'Redirigée vers ' + book.redirectedToIsbn13 : 'Fiche canonique' }}</p></div><button class="text-button" type="button" (click)="selectedBook.set(null)">Fermer</button></div><div class="book-admin-grid"><div><h4>Métadonnées</h4><div class="form-grid compact-form"><label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title"></label><label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors"></label><label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher"></label><label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear"></label><label><span>Genre</span><input name="metaGenre" [(ngModel)]="metadataForm.genre"></label><label><span>WorkId</span><input name="metaWorkId" [(ngModel)]="metadataForm.workId"></label></div><button class="secondary-button" type="button" [disabled]="!!book.redirectedToIsbn13 || loading()" (click)="updateMetadata(book)">Enregistrer les métadonnées</button></div><div><h4>Stock & signalements</h4><p class="stock-callout"><strong>{{ book.quantityAvailable }}</strong> disponibles · <strong>{{ book.quantityAnnounced }}</strong> annoncés · {{ book.salesCount }} ventes · {{ book.rejectionCount }} refus</p><div class="form-grid compact-form"><label><span>Nouvelle quantité</span><input type="number" name="quantityCorrection" [(ngModel)]="quantityCorrection" min="0"></label><label><span>Note de correction</span><input name="quantityNote" [(ngModel)]="quantityNote" placeholder="Pourquoi ?"></label></div><button class="secondary-button" type="button" [disabled]="!!book.redirectedToIsbn13 || loading()" (click)="correctBookQuantity(book)">Corriger le stock</button><div class="form-grid compact-form"><label><span>Quantité à retirer</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><label><span>Note de retrait</span><input name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Pourquoi ?"></label></div><button class="danger-button" type="button" [disabled]="!!book.redirectedToIsbn13 || loading()" (click)="withdrawBook(book)">Journaliser un retrait</button><div class="action-row"><button class="secondary-button" type="button" (click)="toggleRare(book)">{{ book.isRare ? 'Retirer le signal rare' : 'Marquer comme rare' }}</button><button class="secondary-button" type="button" (click)="toggleVisibility(book)">{{ book.isHidden ? 'Rendre visible' : 'Masquer du public' }}</button></div></div></div><div class="merge-panel"><h4>Fusion par redirection</h4><p>La source reste dans l’historique et pointe vers la fiche canonique cible.</p><div class="form-grid compact-form"><label><span>ISBN cible</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13"></label><label><span>Note</span><input name="mergeNote" [(ngModel)]="mergeNote"></label></div><button class="secondary-button" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger vers la cible</button><button class="danger-button" type="button" [disabled]="loading() || !!book.movements.length || !!book.redirectedToIsbn13" (click)="deleteBook(book)">Supprimer la fiche vide</button></div><div class="announcements-panel"><h4>Annonces</h4><div class="admin-table-wrap"><table><thead><tr><th>Bourse aux livres</th><th>Quantité</th><th>État</th><th></th></tr></thead><tbody>@for (announcement of book.announcements; track announcement.id) {<tr><td>{{ announcement.fairId || 'Sans bourse aux livres' }}</td><td><input class="inline-number" type="number" [value]="announcementQuantities[announcement.id]" (input)="setAnnouncementQuantity(announcement.id, $any($event.target).value)" min="0"></td><td>{{ statusLabel(announcement.status) }}</td><td><button class="table-action" type="button" (click)="correctAnnouncement(book, announcement.id)">Corriger</button></td></tr>} @empty {<tr><td colspan="4" class="empty-cell">Aucune annonce.</td></tr>}</tbody></table></div><input class="note-input" name="announcementNote" [(ngModel)]="announcementNote" placeholder="Note obligatoire pour corriger une annonce"></div></div>}
+            <section class="admin-view" aria-labelledby="admin-title">
+              @if (selectedBook(); as book) {
+                <div class="detail-screen">
+                  <div class="breadcrumb"><button class="text-link" type="button" (click)="selectedBook.set(null)">Catalogue</button><span>· Fiche</span></div>
+                  <div class="detail-heading"><div><span class="admin-kicker">Catalogue · Fiche</span><h1 id="admin-title">{{ book.title || 'Titre à compléter' }}</h1><p>ISBN {{ book.isbn13 }} · créée le {{ formatDate(book.firstSeenAt) }}</p></div><a class="button button-outline" routerLink="/recherche">Voir la fiche publique →</a></div>
+                  <div class="detail-layout">
+                    <div class="detail-main-column">
+                      <section class="detail-section"><div class="section-heading"><h2>Métadonnées</h2><span class="mono-note">{{ book.metadataStatus }}</span></div><div class="metadata-editor"><div class="cover-column">@if (book.coverUrl) {<img class="book-cover" [src]="book.coverUrl" alt="">} @else {<span class="book-cover book-cover-placeholder" aria-hidden="true"></span>}<button class="button button-outline" type="button" disabled>Remplacer</button></div><form class="detail-form" (ngSubmit)="updateMetadata(book)"><label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title"></label><label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors"></label><label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher"></label><label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear"></label><label><span>Genre</span><input name="metaGenre" [(ngModel)]="metadataForm.genre"></label><label><span>ISBN</span><input name="metaIsbn" [value]="book.isbn13" readonly></label><button class="button button-primary detail-form-action" type="submit" [disabled]="loading() || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button></form></div><div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>La correction manuelle est conservée comme telle et ne sera pas écrasée par une prochaine mise à jour automatique.</p></div></section>
+                      <section class="detail-section"><div class="section-heading"><h2>Quantités</h2><span class="mono-note">stock déclaré</span></div><div class="quantity-editor"><label><span>Disponible</span><input type="number" name="quantityCorrection" [(ngModel)]="quantityCorrection" min="0"></label><label><span>Annoncé</span><input type="number" name="quantityAnnounced" [value]="book.quantityAnnounced" readonly></label><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="correctBookQuantity(book)">Enregistrer la correction</button></div><p class="detail-help">Toute modification produit un mouvement CORRECTION dans le ledger. Une note obligatoire explique le geste.</p><input class="wide-input" name="quantityNote" [(ngModel)]="quantityNote" placeholder="Note obligatoire pour la correction"></section>
+                      <section class="detail-section"><div class="section-heading"><h2>Historique des mouvements</h2><span class="mono-note">{{ formatNumber(book.movements.length) }} mouvements</span></div><div class="movement-list">@for (movement of book.movements; track movement.id) {<div class="movement-row"><span>{{ formatDate(movement.occurredAt) }}</span><span class="movement-type" [class]="movementClass(movement.type)">{{ movementLabel(movement.type) }}</span><strong [class.movement-negative]="movement.quantity < 0">{{ movementQuantity(movement.quantity) }}</strong><span>{{ movement.note || movement.volunteerId || 'Système' }}</span></div>} @empty {<div class="empty-inline">Aucun mouvement enregistré.</div>}</div></section>
+                      <details class="secondary-detail"><summary>Annonces et corrections avancées</summary><div class="announcement-editor">@for (announcement of book.announcements; track announcement.id) {<div class="announcement-row"><span>{{ announcement.fairId || 'Sans bourse' }}</span><input type="number" [name]="'announcement-' + announcement.id" [value]="announcementQuantities[announcement.id]" (input)="setAnnouncementQuantity(announcement.id, $any($event.target).value)" min="0"><span>{{ statusLabel(announcement.status) }}</span><button class="text-link" type="button" (click)="correctAnnouncement(book, announcement.id)">Corriger</button></div>} @empty {<p>Aucune annonce.</p>}<input class="wide-input" name="announcementNote" [(ngModel)]="announcementNote" placeholder="Note obligatoire pour corriger une annonce"></div></details>
+                    </div>
+                    <aside class="detail-aside">
+                      <section class="side-card"><span class="section-kicker">État de la fiche</span><label class="switch-row"><span><strong>Livre rare</strong><small>Marquage manuel pour expertise</small></span><input type="checkbox" [checked]="book.isRare" (change)="toggleRare(book)"></label><label class="switch-row"><span><strong>Masquer du public</strong><small>La fiche reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" (change)="toggleVisibility(book)"></label></section>
+                      <section class="side-card"><span class="section-kicker">Actions</span><button class="side-action" type="button" (click)="withdrawalNote = ''; openBook(book.isbn13)">Retirer des exemplaires <span>→</span></button><label class="side-field"><span>Fusionner avec une autre fiche</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13" placeholder="ISBN cible"></label><input class="wide-input" name="mergeNote" [(ngModel)]="mergeNote" placeholder="Note de fusion"><button class="button button-outline" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger la fiche</button><button class="danger-link" type="button" [disabled]="loading() || !!book.movements.length || !!book.redirectedToIsbn13" (click)="deleteBook(book)">Supprimer la fiche</button><small>Impossible si des mouvements existent.</small></section>
+                      <section class="side-card withdrawal-card"><span class="section-kicker">Retrait physique</span><label><span>Quantité</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><input class="wide-input" name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Note obligatoire"><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="withdrawBook(book)">Journaliser le retrait</button></section>
+                    </aside>
+                  </div>
+                </div>
+              } @else {
+                <div class="admin-heading">
+                  <span class="admin-accent" aria-hidden="true"></span>
+                  <span class="admin-kicker">Travail</span>
+                  <h1 id="admin-title">Catalogue.</h1>
+                  <p class="admin-intro">Trois files de travail concrètes, plutôt qu’un écran de recherche.</p>
+                </div>
+                <details class="secondary-detail add-book-panel">
+                  <summary>Ajouter une fiche manuellement <span aria-hidden="true">＋</span></summary>
+                  <form class="add-book-form" (ngSubmit)="addBook()">
+                    <label><span>ISBN 13 *</span><input name="addIsbn" [(ngModel)]="addBookForm.isbn13" required></label>
+                    <label><span>Quantité sur les tables *</span><input type="number" name="addQuantity" [(ngModel)]="addBookForm.quantityAvailable" min="0" required></label>
+                    <label><span>Titre</span><input name="addTitle" [(ngModel)]="addBookForm.title"></label>
+                    <label><span>Auteur</span><input name="addAuthors" [(ngModel)]="addBookForm.authors"></label>
+                    <label><span>Éditeur</span><input name="addPublisher" [(ngModel)]="addBookForm.publisher"></label>
+                    <label><span>Année</span><input type="number" name="addYear" [(ngModel)]="addBookForm.publicationYear"></label>
+                    <label><span>Genre</span><input name="addGenre" [(ngModel)]="addBookForm.genre"></label>
+                    <label><span>Œuvre / workId</span><input name="addWorkId" [(ngModel)]="addBookForm.workId"></label>
+                    <label class="add-book-note"><span>Note obligatoire *</span><textarea name="addNote" [(ngModel)]="addBookForm.note" required></textarea></label>
+                    <button class="button button-primary" type="submit" [disabled]="loading()">Ajouter la fiche</button>
+                  </form>
+                </details>
+                <div class="queue-grid">
+                  <button class="queue-card queue-card-dark" type="button" (click)="bookMetadataStatus = 'Missing'; bookPage = 1; loadBooks()"><strong>{{ formatNumber(overview()?.metadataMissingCount) }}</strong><span>Fiches sans métadonnées</span><small>À compléter manuellement</small><em>File ouverte ci-dessous</em></button>
+                  <button class="queue-card queue-card-purple" type="button" (click)="bookMetadataStatus = ''; bookRareOnly = true; bookPage = 1; loadBooks()"><strong>{{ formatNumber(overview()?.rareQueueCount) }}</strong><span>Livres marqués rares</span><small>À expertiser et étiqueter sur le livre</small><em>Traiter →</em></button>
+                  <button class="queue-card queue-card-orange" type="button" (click)="bookMetadataStatus = ''; bookRareOnly = false; bookUndatedOnly = true; bookPage = 1; loadBooks()"><strong>{{ formatNumber(overview()?.undatedAnnouncementCount) }}</strong><span>Annonces sans date</span><small>Rattachement à une bourse à vérifier</small><em>Traiter →</em></button>
+                </div>
+                <div class="section-heading catalogue-heading"><div><h2>Fiches sans métadonnées</h2><p>{{ booksPage()?.totalCount ?? overview()?.metadataMissingCount ?? 0 }} à compléter</p></div><form class="search-pill" (ngSubmit)="loadBooks()"><input name="bookSearch" [(ngModel)]="bookSearch" placeholder="Chercher un ISBN" aria-label="Chercher un ISBN"><button type="submit" aria-label="Rechercher">⌕</button></form></div>
+                @if (booksPage(); as page) {
+                  <div class="book-queue-list">
+                    @for (book of page.books; track book.isbn13) {
+                      <article class="book-queue-row">
+                        @if (book.coverUrl) {<img class="book-cover-small" [src]="book.coverUrl" alt="">} @else {<span class="book-cover-small book-cover-placeholder" aria-hidden="true"></span>}
+                        <div class="book-queue-primary"><span class="isbn-label">{{ book.isbn13 }}</span><strong>{{ book.title || 'Titre inconnu' }}</strong><span>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</span></div>
+                        <span class="book-queue-quantity">{{ formatNumber(book.quantityAvailable) }} dispo.<br><small>{{ formatNumber(book.quantityAnnounced) }} annoncés</small></span>
+                        <button class="button button-outline" type="button" (click)="openBook(book.isbn13)">Compléter</button>
+                      </article>
+                    } @empty {<div class="empty-panel"><h2>Aucune fiche à compléter</h2><p>Les données remontées par l’API ne contiennent pas de fiche correspondant à cette file.</p></div>}
+                  </div>
+                  <div class="pagination"><button type="button" [disabled]="bookPage <= 1" (click)="goToBooksPage(bookPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToBooksPage(bookPage + 1)">→</button></div>
+                } @else if (loading()) {<p class="admin-status" role="status">Chargement du catalogue…</p>}
+                <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Une correction manuelle de métadonnées est conservée comme telle. Elle ne sera pas écrasée par une mise à jour automatique ultérieure.</p></div>
+              }
             </section>
           }
 
           @case ('fairs') {
-            <section class="workspace" aria-labelledby="fairs-title"><div class="workspace-heading"><div><p class="panel-kicker">Rapports & recettes</p><h2 id="fairs-title">Bilan des bourses aux livres.</h2><p class="workspace-intro">Comparez les ventes et saisissez la recette réelle sans confondre une donnée absente avec zéro.</p></div><span class="workspace-mark" aria-hidden="true">R1</span></div>@if (fairsPage(); as page) {<div class="admin-table-wrap"><table><caption class="visually-hidden">Bourses aux livres</caption><thead><tr><th>Bourse aux livres</th><th>Dates</th><th>Vendus</th><th>Recette</th><th></th></tr></thead><tbody>@for (fair of page.fairs; track fair.id) {<tr><th scope="row"><span class="book-title">{{ fair.name }}</span><span class="book-author">{{ fair.isCancelled ? 'Annulée' : 'Conservée' }}</span></th><td>{{ formatDate(fair.dateStart) }} → {{ formatDate(fair.dateEnd) }}</td><td>—</td><td>{{ formatMoney(fair.revenue) }}</td><td><button class="table-action" type="button" (click)="openFairStats(fair)">Ouvrir →</button></td></tr>} @empty {<tr><td colspan="5" class="empty-cell">Aucune bourse aux livres.</td></tr>}</tbody></table></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement des bourses aux livres…</p>}@if (selectedFairStats(); as stats) {<div class="detail-panel"><div class="detail-panel-heading"><div><p class="panel-kicker">Bilan détaillé</p><h3>{{ stats.fair.name }}</h3><p>{{ formatDate(stats.fair.dateStart) }} · {{ stats.soldQuantity }} exemplaires vendus</p></div><button class="text-button" type="button" (click)="selectedFairStats.set(null)">Fermer</button></div><div class="metric-grid small-metrics"><article class="metric-card"><span>Vendus</span><strong>{{ stats.soldQuantity }}</strong><small>{{ stats.soldTitles }} titres</small></article><article class="metric-card"><span>Panier moyen</span><strong>{{ formatMoney(stats.averageBasket) }}</strong><small>selon les ventes</small></article><article class="metric-card"><span>Recette</span><strong>{{ formatMoney(stats.revenue) }}</strong><small>montant facultatif</small></article></div><div class="revenue-form"><label><span>Recette réelle (€), vide si non saisie</span><input type="number" name="revenue" [(ngModel)]="revenueInput" min="0" step="0.01"></label><button class="primary-button" type="button" (click)="saveFairRevenue()">Enregistrer</button></div><div class="stats-grid"><div><h4>Ventes par genre</h4><ul class="plain-list">@for (item of stats.salesByGenre; track item.genre) {<li><span>{{ item.genre || 'Sans genre' }}</span><strong>{{ item.quantity }}</strong></li>} @empty {<li>Aucune donnée.</li>}</ul></div><div><h4>Meilleures ventes</h4><ul class="plain-list">@for (item of stats.topBooks; track item.isbn13) {<li><span>{{ item.title || item.isbn13 }}</span><strong>{{ item.quantity }}</strong></li>} @empty {<li>Aucune donnée.</li>}</ul></div></div><h4>Ventes par jour</h4><div class="admin-table-wrap"><table><thead><tr><th>Jour</th><th>Quantité</th></tr></thead><tbody>@for (item of stats.dailySales; track item.day) {<tr><td>{{ formatDay(item.day) }}</td><td>{{ item.quantity }}</td></tr>} @empty {<tr><td colspan="2" class="empty-cell">Aucune vente.</td></tr>}</tbody></table></div></div>}</section>
-          }
-
-          @case ('alerts') {
-            <section class="workspace" aria-labelledby="alerts-title"><div class="workspace-heading"><div><p class="panel-kicker">Outbox & e-mails</p><h2 id="alerts-title">Files d’alertes.</h2><p class="workspace-intro">Annulez seulement ce qui n’est pas parti ; une alerte envoyée ne peut pas être rappelée.</p></div><span class="workspace-mark" aria-hidden="true">A1</span></div><form class="toolbar-form" (ngSubmit)="loadAlerts()"><label><span>État</span><select name="alertStatus" [(ngModel)]="alertStatus"><option value="">Tous</option><option value="Pending">En attente</option><option value="Sent">Envoyées</option><option value="Cancelled">Annulées</option><option value="Failed">Échecs</option></select></label><button class="primary-button" type="submit" [disabled]="loading()">Actualiser</button></form>@if (alertsPage(); as page) {<div class="list-heading"><p><strong>{{ page.totalCount }}</strong> messages</p></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Files d’alertes</caption><thead><tr><th>État</th><th>Membre</th><th>Éléments</th><th>Échéance</th><th>Tentatives</th><th></th></tr></thead><tbody>@for (alert of page.alerts; track alert.id) {<tr><td><span class="status-pill" [class]="statusClass(alert.status)">{{ statusLabel(alert.status) }}</span></td><td>{{ alert.memberId || '—' }}</td><td>{{ alert.itemCount }}</td><td>{{ formatDate(alert.dueAt, true) }}</td><td>{{ alert.attempts }}</td><td class="row-actions"><button class="table-action" type="button" [disabled]="alert.status !== 'Pending'" (click)="cancelAlert(alert)">Annuler</button><button class="table-action" type="button" [disabled]="alert.status !== 'Pending'" (click)="forceAlert(alert)">Forcer</button></td></tr>} @empty {<tr><td colspan="6" class="empty-cell">Aucun message.</td></tr>}</tbody></table></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement des alertes…</p>}</section>
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading admin-heading-split">
+                <div><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Pilotage</span><h1 id="admin-title">{{ selectedFairStats()?.fair?.name || 'Statistiques par bourse.' }}</h1></div>
+                <label class="fair-select"><span>Bourse analysée</span><select name="fairId" [ngModel]="selectedFairStats()?.fair?.id || ''" (ngModelChange)="selectFair($event)"><option value="">Choisir une bourse</option>@for (fair of fairsPage()?.fairs ?? []; track fair.id) {<option [value]="fair.id">{{ fair.name }} · {{ fair.isCancelled ? 'annulée' : 'conservée' }}</option>}</select></label>
+              </div>
+              @if (selectedFairStats(); as stats) {
+                <div class="stat-grid fair-stat-grid"><article class="stat-card"><strong class="stat-value">{{ formatNumber(stats.soldQuantity) }}</strong><span class="stat-label">Livres vendus</span><span class="stat-foot">{{ formatNumber(stats.soldTitles) }} titres distincts</span></article><article class="stat-card"><strong class="stat-value">{{ stats.revenue === null ? '—' : formatMoney(stats.revenue) }}</strong><span class="stat-label">Recette saisie</span><span class="stat-foot">Montant facultatif</span></article><article class="stat-card"><strong class="stat-value">{{ stats.averageBasket === null ? '—' : formatMoney(stats.averageBasket) }}</strong><span class="stat-label">Panier moyen</span><span class="stat-foot">Calculé sur les ventes</span></article><article class="stat-card"><strong class="stat-value">{{ fairOpenDays(stats.fair) }}</strong><span class="stat-label">Jours ouverts</span><span class="stat-foot">{{ formatDate(stats.fair.dateStart) }} → {{ formatDate(stats.fair.dateEnd) }}</span></article></div>
+                <div class="charts-grid"><article class="chart-card"><div class="section-heading"><div><h2>Livres vendus, par bourse</h2><p>Comparaison des bourses conservées</p></div></div><div class="bar-chart"><div class="bar-row bar-row-active"><span>{{ stats.fair.name }}</span><div class="bar-track"><i [style.width]="barWidth(stats.soldQuantity, maxFairSales())"></i></div><strong>{{ formatNumber(stats.soldQuantity) }}</strong></div>@for (fair of stats.previousFairs; track fair.fairId) {<div class="bar-row"><span>{{ fair.name }}</span><div class="bar-track"><i [style.width]="barWidth(fair.soldQuantity, maxFairSales())"></i></div><strong>{{ formatNumber(fair.soldQuantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune comparaison disponible.</p>}</div></article><div class="fair-side-stack"><article class="chart-card"><div class="section-heading"><div><h2>Ventes par journée</h2><p>Répartition des exemplaires vendus</p></div></div><div class="daily-bars">@for (day of stats.dailySales; track day.day) {<div><span>{{ formatDay(day.day) }}</span><div class="bar-track"><i [style.width]="barWidth(day.quantity, maxDailySales())"></i></div><strong>{{ formatNumber(day.quantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune vente par journée.</p>}</div></article><article class="revenue-card"><span class="section-kicker">La recette</span><p>Le catalogue connaît le total encaissé, pas le prix individuel de chaque livre.</p><strong>{{ stats.revenue === null ? '—' : formatMoney(stats.revenue) }}</strong><div class="revenue-editor"><input type="number" name="fairRevenue" [(ngModel)]="revenueInput" min="0" step="0.01" aria-label="Recette"><button class="text-link" type="button" (click)="saveFairRevenue()">Modifier</button></div><small>Source : saisie administrative</small></article></div></div>
+                <div class="charts-grid"><article class="chart-card"><div class="section-heading"><div><h2>Répartition par genre</h2><p>Exemplaires vendus</p></div></div><div class="bar-chart genre-chart">@for (item of stats.salesByGenre; track item.genre) {<div class="bar-row"><span>{{ item.genre || 'Sans genre' }}</span><div class="bar-track"><i [style.width]="barWidth(item.quantity, maxGenreSales())"></i></div><strong>{{ formatNumber(item.quantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune donnée de genre.</p>}</div></article><article class="chart-card"><div class="section-heading"><div><h2>Meilleures ventes</h2><p>Titres les plus vendus de la bourse</p></div></div><div class="top-book-list">@for (item of stats.topBooks; track item.isbn13) {<div class="top-book-row"><span>{{ item.title || item.isbn13 }}</span><div class="bar-track"><i [style.width]="barWidth(item.quantity, maxTopBookSales())"></i></div><strong>{{ formatNumber(item.quantity) }}</strong></div>} @empty {<p class="empty-inline">Aucune donnée de vente.</p>}</div></article></div>
+              } @else if (loading()) {<p class="admin-status" role="status">Chargement des bourses…</p>} @else {<div class="empty-panel"><h2>Choisissez une bourse</h2><p>Les statistiques détaillées sont calculées à partir des mouvements de vente réellement associés à la bourse.</p></div>}
+            </section>
           }
 
           @case ('members') {
-            <section class="workspace" aria-labelledby="members-title"><div class="workspace-heading"><div><p class="panel-kicker">Comptes & alertes</p><h2 id="members-title">Comptes et rôles.</h2><p class="workspace-intro">Consultez les membres et protégez la délivrabilité. La gestion des rôles applicatifs reste pilotée par Entra.</p></div><span class="workspace-mark" aria-hidden="true">U1</span></div><form class="toolbar-form" (ngSubmit)="loadMembers()"><label class="search-field"><span>Nom ou e-mail</span><input name="memberSearch" [(ngModel)]="memberSearch" placeholder="Rechercher…"></label><label><span>Alertes</span><select name="memberAlertStatus" [(ngModel)]="memberAlertStatus"><option value="">Tous</option><option value="Active">Actives</option><option value="Suspended">Suspendues</option><option value="Blocked">Bloquées</option></select></label><button class="primary-button" type="submit" [disabled]="loading()">Rechercher</button></form>@if (membersPage(); as page) {<div class="list-heading"><p><strong>{{ page.totalCount }}</strong> comptes</p></div><div class="admin-table-wrap"><table><caption class="visually-hidden">Comptes membres</caption><thead><tr><th>Personne</th><th>Alertes</th><th>Suivis</th><th>Dernière activité</th><th></th></tr></thead><tbody>@for (member of page.members; track member.id) {<tr><th scope="row"><span class="book-title">{{ member.displayName || 'Nom non renseigné' }}</span><span class="book-author">{{ member.email || member.externalId || member.id }}</span></th><td><span class="status-pill" [class]="statusClass(member.alertStatus)">{{ statusLabel(member.alertStatus) }}</span><small>{{ member.bounceCount }} rebonds</small></td><td>{{ member.watchlistItemCount }}</td><td>{{ formatDate(member.lastSeenAt, true) }}</td><td><button class="table-action" type="button" (click)="openMember(member.id)">Voir la fiche →</button></td></tr>} @empty {<tr><td colspan="5" class="empty-cell">Aucun compte.</td></tr>}</tbody></table></div>} @else if (loading()) {<p class="status-panel" role="status">Chargement des comptes…</p>}<p class="surface-note">Les rôles Tri, Caisse et Administration sont des rôles d’application Entra. Cette surface gère les alertes, la consultation et la suppression du compte, mais n’invente pas une modification de rôle absente de l’API.</p>@if (selectedMember(); as member) {<div class="detail-panel"><div class="detail-panel-heading"><div><p class="panel-kicker">Fiche membre</p><h3>{{ member.member.displayName || member.member.email || member.member.id }}</h3><p>{{ member.member.email || 'E-mail non renseigné' }} · créé le {{ formatDate(member.member.createdAt) }}</p></div><button class="text-button" type="button" (click)="selectedMember.set(null)">Fermer</button></div><div class="mini-metrics"><span><strong>{{ member.member.watchlistItemCount }}</strong> suivis</span><span><strong>{{ member.member.alertHistoryCount }}</strong> alertes envoyées</span><span><strong>{{ member.member.bounceCount }}</strong> rebonds</span></div><div class="action-row"><button class="secondary-button" type="button" (click)="toggleMemberBlocked(member)">{{ member.member.alertStatus === 'Blocked' ? 'Réactiver les alertes' : 'Bloquer les alertes' }}</button><button class="danger-button" type="button" (click)="deleteMember(member)">Supprimer/anonymiser</button></div><h4>Liste de suivi</h4><div class="admin-table-wrap"><table><thead><tr><th>Titre</th><th>Portée</th><th>Disponibilité</th><th>Ajout</th></tr></thead><tbody>@for (item of member.watchlist; track item.id) {<tr><th scope="row">{{ item.title || item.isbn13 || item.workId || 'Titre externe' }}</th><td>{{ item.scope }}</td><td>{{ item.quantityAvailable }} disponibles · {{ item.quantityAnnounced }} annoncés</td><td>{{ formatDate(item.addedAt) }}</td></tr>} @empty {<tr><td colspan="4" class="empty-cell">Aucun titre suivi.</td></tr>}</tbody></table></div><h4>Historique d’alertes</h4><ul class="plain-list">@for (alert of member.alerts; track alert.id) {<li><span>{{ alert.title || alert.isbn13 }}</span><small>{{ formatDate(alert.sentAt, true) }}</small></li>} @empty {<li>Aucune alerte envoyée.</li>}</ul></div>}</section>
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes</span><h1 id="admin-title">Membres du site.</h1><p class="admin-intro">Consultez les listes de recherche et protégez la délivrabilité des alertes. Les comptes sont créés en autonomie via Entra External ID.</p></div>
+              <form class="search-toolbar" (ngSubmit)="loadMembers()"><label class="search-field"><span>Nom ou e-mail</span><input name="memberSearch" [(ngModel)]="memberSearch" placeholder="Rechercher…"></label><label><span>Alertes</span><select name="memberAlertStatus" [(ngModel)]="memberAlertStatus"><option value="">Tous</option><option value="Active">Actives</option><option value="Suspended">Suspendues</option><option value="Blocked">Bloquées</option></select></label><button class="button button-primary" type="submit">Rechercher</button></form>
+              @if (membersPage(); as page) {<div class="list-meta"><span>{{ formatNumber(page.totalCount) }} comptes</span></div><div class="member-list">@for (member of page.members; track member.id) {<article class="member-row"><div><strong>{{ member.displayName || 'Nom non renseigné' }}</strong><span>{{ maskedEmail(member.email) }}</span></div><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span><span class="member-last-seen">{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" (click)="openMember(member.id)">Voir la fiche →</button></article>} @empty {<div class="empty-panel"><h2>Aucun membre</h2><p>Aucun compte ne correspond à ces critères.</p></div>}</div><div class="pagination"><button type="button" [disabled]="memberPage <= 1" (click)="goToMembersPage(memberPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToMembersPage(memberPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des membres…</p>}
+              <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Consulter la liste de recherche d’un membre sert au support — jamais à de l’exploitation commerciale.</p></div>
+              @if (selectedMember(); as member) {<section class="member-detail side-detail"><div class="detail-heading"><div><span class="admin-kicker">Fiche membre</span><h2>{{ member.member.displayName || member.member.email || member.member.id }}</h2><p>{{ member.member.email || 'E-mail non renseigné' }} · créé le {{ formatDate(member.member.createdAt) }}</p></div><button class="text-link" type="button" (click)="selectedMember.set(null)">Fermer</button></div><div class="mini-stat-row"><span><strong>{{ formatNumber(member.member.watchlistItemCount) }}</strong> suivis</span><span><strong>{{ formatNumber(member.member.alertHistoryCount) }}</strong> alertes envoyées</span><span><strong>{{ formatNumber(member.member.bounceCount) }}</strong> rebonds</span></div><div class="action-row"><button class="button button-outline" type="button" (click)="toggleMemberBlocked(member)">{{ member.member.alertStatus === 'Blocked' ? 'Réactiver les alertes' : 'Bloquer les alertes' }}</button><button class="button button-danger" type="button" (click)="deleteMember(member)">Supprimer / anonymiser</button></div><h3>Liste de suivi</h3><div class="simple-list">@for (item of member.watchlist; track item.id) {<div><span>{{ item.title || item.isbn13 || item.workId || 'Titre externe' }}</span><small>{{ item.quantityAvailable }} disponibles · ajouté le {{ formatDate(item.addedAt) }}</small></div>} @empty {<p>Aucun titre suivi.</p>}</div></section>}
+            </section>
+          }
+
+          @case ('volunteers') {
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading admin-heading-split"><div><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes</span><h1 id="admin-title">Bénévoles.</h1></div><button class="button button-primary" type="button" (click)="showCreateAccount.set(!showCreateAccount())">{{ showCreateAccount() ? 'Fermer le formulaire' : 'Créer un compte bénévole' }}</button></div>
+              @if (showCreateAccount()) {<form class="account-create-card" (ngSubmit)="createAccount()"><div><span class="section-kicker">Nouveau compte Entra</span><h2>Créer un compte bénévole</h2><p>Le mot de passe temporaire est transmis hors de cette interface.</p></div><label><span>Nom affiché</span><input name="accountDisplayName" [(ngModel)]="createAccountForm.displayName" required></label><label><span>E-mail</span><input type="email" name="accountEmail" [(ngModel)]="createAccountForm.email" required></label><label><span>Mot de passe temporaire</span><input type="password" name="accountPassword" [(ngModel)]="createAccountForm.temporaryPassword" minlength="8" required></label><fieldset><legend>Droits</legend>@for (role of accountRoleOptions; track role.value) {<label class="role-checkbox"><input type="checkbox" [checked]="hasCreateRole(role.value)" (change)="toggleCreateRole(role.value)"><span>{{ role.label }}</span></label>}</fieldset><button class="button button-primary" type="submit" [disabled]="loading()">Créer le compte</button></form>}
+              <form class="search-toolbar account-search-toolbar" (ngSubmit)="loadAccounts()"><label class="search-field"><span>Nom ou e-mail</span><input name="accountSearch" [(ngModel)]="accountSearch" placeholder="Rechercher…"></label><button class="button button-outline" type="submit">Rechercher</button></form>
+              @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" disabled title="La désactivation Entra n’est pas encore exposée par l’API">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>}
+              <div class="section-heading subsection-heading"><h2>Membres du site</h2><span>{{ membersPage()?.totalCount ?? '—' }} comptes</span><button class="text-link" type="button" (click)="selectSection('members')">Voir tous les membres →</button></div>
+              @if (membersPage(); as page) {<div class="member-list compact-member-list">@for (member of page.members | slice:0:3; track member.id) {<article class="member-row"><div><strong>{{ maskedEmail(member.email) }}</strong><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span></div><span>{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" (click)="openMember(member.id)">{{ member.alertStatus === 'Blocked' ? 'Débloquer' : 'Bloquer' }}</button><button class="danger-link" type="button" (click)="openMember(member.id)">Supprimer</button></article>} @empty {<p class="empty-inline">Aucun membre à afficher.</p>}</div>}
+              <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri, Caisse et Administration sont des rôles d’application Entra. Les comptes sont gérés ici ; les sessions restent la source de vérité pour l’activité.</p></div>
+            </section>
           }
 
           @case ('settings') {
-            <section class="workspace" aria-labelledby="settings-title"><div class="workspace-heading"><div><p class="panel-kicker">Configuration métier</p><h2 id="settings-title">Paramètres.</h2><p class="workspace-intro">Les seuils pilotent les corrections, la file d’alertes et les suggestions de désengorgement.</p></div><span class="workspace-mark" aria-hidden="true">⚙</span></div>@if (settings(); as current) {<form class="settings-form" (ngSubmit)="saveSettings()"><div class="settings-section"><h3>Stock & catalogage</h3><div class="form-grid"><label><span>Seuil de doublon</span><input type="number" name="duplicateThreshold" [(ngModel)]="settingsForm.duplicateThreshold" min="0"></label><label><span>Seuil de demande vendue</span><input type="number" name="demandSalesThreshold" [(ngModel)]="settingsForm.demandSalesThreshold" min="0"></label><label><span>Âge dead-stock (jours)</span><input type="number" name="deadStockMinAgeDays" [(ngModel)]="settingsForm.deadStockMinAgeDays" min="0"></label><label><span>Quantité dead-stock</span><input type="number" name="deadStockMinQuantity" [(ngModel)]="settingsForm.deadStockMinQuantity" min="0"></label><label><span>Maximum de suivis</span><input type="number" name="watchlistMaxItems" [(ngModel)]="settingsForm.watchlistMaxItems" min="0"></label></div></div><div class="settings-section"><h3>Sessions & alertes</h3><div class="form-grid"><label><span>Cooldown d’alerte (jours)</span><input type="number" name="alertCooldownDays" [(ngModel)]="settingsForm.alertCooldownDays" min="0"></label><label><span>Inactivité d’une session (minutes)</span><input type="number" name="sessionIdleTimeoutMinutes" [(ngModel)]="settingsForm.sessionIdleTimeoutMinutes" min="0"></label><label><span>Délai avant alerte (minutes)</span><input type="number" name="alertDelayMinutes" [(ngModel)]="settingsForm.alertDelayMinutes" min="0"></label></div></div><div class="settings-submit"><small>Dernière mise à jour : {{ formatDate(current.updatedAt, true) }}</small><button class="primary-button" type="submit" [disabled]="loading()">Enregistrer les paramètres</button></div></form>} @else if (loading()) {<p class="status-panel" role="status">Chargement des paramètres…</p>}</section>
+            <section class="admin-view" aria-labelledby="admin-title">
+              <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Réglages</span><h1 id="admin-title">Paramètres.</h1><p class="admin-intro">Ces valeurs sont des décisions métier, pas des constantes techniques. Elles déterminent le verdict de la scanette, la pression sur les rayons et le délai de rattrapage.</p></div>
+              @if (settings(); as current) {<form class="settings-form" (ngSubmit)="saveSettings()"><div class="settings-table-head"><span>Paramètre</span><span>Règle</span><span>Valeur</span></div><div class="setting-row"><div><strong>Seuil de doublon déclenchant « inutile d’en garder »</strong><small>Au-delà de ce nombre d’exemplaires en rayon, la scanette affiche le verdict rouge.</small></div><span class="rule-id">RG-10</span><label class="setting-input"><input type="number" name="duplicateThreshold" [(ngModel)]="settingsForm.duplicateThreshold" min="0"><em>exemplaires</em></label></div><div class="setting-row"><div><strong>Nombre de ventes à partir duquel un titre est « demandé »</strong><small>Sert au verdict vert « à garder » lors du tri.</small></div><span class="rule-id">RG-12</span><label class="setting-input"><input type="number" name="demandSalesThreshold" [(ngModel)]="settingsForm.demandSalesThreshold" min="0"><em>ventes</em></label></div><div class="setting-row"><div><strong>Seuil de valeur d’un livre rare</strong><small>Sans estimation automatique, le marquage reste manuel et ce seuil n’a aucun effet.</small></div><span class="rule-id">RG-14</span><label class="setting-input setting-input-disabled"><input value="—" disabled><em>non utilisé</em></label></div><div class="setting-row"><div><strong>Ancienneté déclenchant une proposition de retrait</strong><small>Filtre par défaut de l’écran de désengorgement.</small></div><span class="rule-id">§ 5</span><label class="setting-input"><input type="number" name="deadStockAgeMonths" [(ngModel)]="deadStockAgeMonths" min="0"><em>mois</em></label></div><div class="setting-row"><div><strong>Quantité déclenchant une proposition de retrait</strong><small>Second filtre de l’écran de désengorgement.</small></div><span class="rule-id">§ 5</span><label class="setting-input"><input type="number" name="deadStockMinQuantity" [(ngModel)]="settingsForm.deadStockMinQuantity" min="0"><em>exemplaires</em></label></div><div class="setting-row"><div><strong>Limite d’entrées d’une liste de recherche</strong><small>Par compte membre, sur le site public.</small></div><span class="rule-id">RG-27</span><label class="setting-input"><input type="number" name="watchlistMaxItems" [(ngModel)]="settingsForm.watchlistMaxItems" min="0"><em>livres</em></label></div><div class="setting-row"><div><strong>Délai minimum entre deux alertes</strong><small>Pour un même livre et un même membre, afin d’éviter le harcèlement au réapprovisionnement.</small></div><span class="rule-id">RG-30</span><label class="setting-input"><input type="number" name="alertCooldownDays" [(ngModel)]="settingsForm.alertCooldownDays" min="0"><em>jours</em></label></div><div class="setting-row"><div><strong>Inactivité avant clôture automatique d’une session</strong><small>Un bénévole qui range son appareil sans clôturer.</small></div><span class="rule-id">RG-43</span><label class="setting-input"><input type="number" name="sessionIdleHours" [(ngModel)]="sessionIdleHours" min="0" step="0.5"><em>heures</em></label></div><div class="setting-row setting-row-active"><div><strong>Délai entre clôture et envoi des alertes</strong><small>C’est la fenêtre de rattrapage. La réduire, c’est réduire le temps disponible pour corriger une erreur.</small></div><span class="rule-id">RG-44</span><label class="setting-input"><input type="number" name="alertDelayHours" [(ngModel)]="alertDelayHours" min="0" step="0.5"><em>heures</em></label></div><div class="settings-footer"><span>Chaque modification est tracée et attribuée. Les valeurs prennent effet immédiatement, sans redéploiement.</span><button class="button button-primary" type="submit" [disabled]="loading()">Enregistrer</button></div></form>} @else if (loading()) {<p class="admin-status">Chargement des paramètres…</p>}
+            </section>
+          }
+
+          @case ('alerts') {
+            <section class="admin-view" aria-labelledby="admin-title"><div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Fenêtre de rattrapage</span><h1 id="admin-title">Alertes.</h1><p class="admin-intro">Cette file reste accessible depuis les sessions : une alerte envoyée ne peut pas être rappelée.</p></div>@if (alertsPage(); as page) {<div class="simple-list alert-admin-list">@for (alert of page.alerts; track alert.id) {<div><span class="status-pill" [class]="statusClass(alert.status)">{{ statusLabel(alert.status) }}</span><strong>{{ formatNumber(alert.itemCount) }} livres · échéance {{ formatDate(alert.dueAt, true) }}</strong><span>{{ alert.memberId || 'Membre non renseigné' }}</span><button class="text-link" type="button" [disabled]="alert.status !== 'Pending'" (click)="cancelAlert(alert)">Annuler</button><button class="text-link" type="button" [disabled]="alert.status !== 'Pending'" (click)="forceAlert(alert)">Forcer</button></div>} @empty {<p class="empty-inline">Aucune alerte.</p>}</div>} @else if (loading()) {<p class="admin-status">Chargement des alertes…</p>}</section>
           }
         }
       }
     </div>
   </div>
+
+  @if (selectedSession(); as session) {
+    <div class="correction-overlay" role="presentation" (click)="selectedSession.set(null)">
+      <section class="correction-dialog" role="dialog" aria-modal="true" aria-labelledby="correction-title" (click)="$event.stopPropagation()">
+        <header class="correction-header"><span class="admin-kicker">Corriger une session</span><h2 id="correction-title">{{ session.volunteerName || 'Bénévole' }} — {{ formatDate(session.startedAt, true) }} → {{ formatDate(session.endedAt, true) }}</h2><span class="mode-pill">{{ sessionModeLabel(session.mode) }}{{ session.fairName ? ' · ' + session.fairName : '' }}</span><p>{{ formatNumber(session.scannedCount) }} scannés · {{ formatNumber(session.keptCount) }} gardés · {{ formatNumber(session.rejectedCount) }} écartés</p></header>
+        @if (session.pendingAlertCount > 0) {<div class="correction-alert"><div><strong>Alertes encore en attente</strong><p>Cette session peut encore être corrigée avant que les membres ne soient prévenus.</p></div><strong>{{ formatCountdown(session.nextAlertDueAt) }}<small>avant envoi</small></strong></div>}
+        <div class="correction-body"><section><h3>Mode et rattachement</h3><div class="correction-fields"><label><span>Mode de mise à disposition</span><select name="correctionMode" [(ngModel)]="sessionMode"><option value="AvailableNow">Disponible maintenant</option><option value="NextFair">Prochaine bourse</option></select><small>Changer le mode rejoue les mouvements concernés et conserve la trace de la reprise.</small></label><label><span>Bourse de rattachement</span><select name="correctionFair" [(ngModel)]="sessionFairId"><option value="">Aucune bourse</option>@for (fair of fairsPage()?.fairs ?? []; track fair.id) {<option [value]="fair.id">{{ fair.name }}</option>}</select></label></div></section><section><h3>Alertes</h3><div class="correction-actions"><button class="button button-outline" type="button" [disabled]="!session.pendingAlertCount" (click)="cancelSessionAlerts()">Annuler les {{ formatNumber(session.pendingAlertCount) }} alertes en attente</button><button class="button button-outline" type="button" [disabled]="!session.pendingAlertCount" (click)="forceSessionAlerts()">Forcer l’envoi immédiat</button></div><small>Une alerte déjà envoyée ne peut pas être annulée.</small></section><section><h3>Le détail, et le reste</h3><div class="correction-actions"><button class="text-link" type="button" [disabled]="!session.movements.length" (click)="session.movements[0] && removeMovement(session.movements[0].id)">Retirer un mouvement</button><button class="text-link" type="button" (click)="loadSessions()">Voir le journal complet</button><button class="danger-link" type="button" (click)="cancelSession()">Annuler la session</button></div></section><div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Toutes les corrections sont tracées. La session sera marquée REPRISE dans l’historique.</p></div></div>
+        <footer class="correction-footer"><button class="button button-outline" type="button" (click)="selectedSession.set(null)">Fermer</button><button class="button button-primary" type="button" (click)="reassignSession()">Appliquer les corrections</button></footer>
+      </section>
+    </div>
+  }
 </section>
