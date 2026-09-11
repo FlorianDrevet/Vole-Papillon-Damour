@@ -110,7 +110,7 @@ de protection des données hors ligne, tandis que le réessai de synchronisation
 lorsqu’un envoi ou une erreur de synchronisation le justifie. L’alerte de capacité est masquée
 sur les écrans de choix (`home` et `session-mode`), avant le scan opératoire.
 
-Validation locale : TDD rouge puis vert, 181 tests Scan ChromeHeadless, build de production et
+Validation locale : TDD rouge puis vert, 184 tests Scan ChromeHeadless, build de production et
 `graphify update .` passent. Le shell local a été vérifié dans Chrome ; la vérification
 responsive/appareil réel avec une session bénévole reste à faire, car aucune connexion n’a été
 automatisée. Aucun déploiement ni changement Azure, Entra, compte ou API publique n’a été effectué.
