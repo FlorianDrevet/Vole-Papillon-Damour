@@ -54,8 +54,8 @@ type ScanDestination = 'tri' | 'cash' | 'consultation';
 
 /**
  * `critical` needs a human decision before the data can be trusted, `warning`
- * degrades what the app can do, `info` resolves on its own. Only the first two
- * are shown expanded; the rest sit behind a counter.
+ * degrades what the app can do, and `info` resolves on its own. All details
+ * are available from the compact status modal.
  */
 export type ScanAlertLevel = 'critical' | 'warning' | 'info';
 
@@ -94,8 +94,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private readonly cameraContainer!: ElementRef<HTMLElement>;
 
   // The preview is a single fixed element shared by every screen, so it is
-  // aligned on the placeholder the active screen reserves for it. Alerts and
-  // banners then push the preview down and shrink it instead of hiding behind it.
+  // aligned on the placeholder the active screen reserves for it. Status strips
+  // then push the preview down and shrink it instead of hiding behind it.
   @ViewChild('cameraSlot')
   private readonly cameraSlot?: ElementRef<HTMLElement>;
 
@@ -118,7 +118,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   syncAlert: ScanAlert | null = null;
   priorityAlerts: readonly ScanAlert[] = [];
   infoAlerts: readonly ScanAlert[] = [];
-  alertsExpanded = false;
   logoutError: string | null = null;
   cashMessage: string | null = null;
   isLoading = false;
@@ -128,6 +127,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   cashItems: CashScanItem[] = [];
   pendingDecisionCount = 0;
   pendingTransmissionCount = 0;
+  setAsideCount = 0;
   isOnline = typeof navigator === 'undefined' || navigator.onLine;
   persistenceStatus: PersistentStorageStatus | null = null;
   session: ScanSessionSnapshot | null = null;
@@ -140,11 +140,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   accountName: string | null = null;
   accountSwitchPrompt: string | null = null;
   accountSwitchBusy = false;
+  statusModalOpen = false;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error' = 'idle';
   sessionCloseError: string | null = null;
   authDegraded = false;
   cameraFocusStatus: 'idle' | 'refocusing' | 'requested' | 'unavailable' = 'idle';
-  legacyStatusVisible = true;
   private currentScreen: ScanScreen = 'tri';
   private routeDriven = false;
   selectedMode: LocalScanMode = 'AvailableNow';
@@ -164,6 +164,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private sessionEnded = false;
   private sessionCloseCompleted = false;
   private syncTimer: number | null = null;
+  private automaticSuccessToastShown = false;
   private cameraStartToken = 0;
   private accountSwitchAccountId: string | null = null;
   private cameraFrame: string | null = null;
@@ -186,7 +187,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     // them on the scan surface preserves the old direct-lookup test harness;
     // the real PWA opens on the mode-selection home screen.
     this.currentScreen = scanWorkflow === null ? 'tri' : 'home';
-    this.legacyStatusVisible = true;
   }
 
   @Input()
@@ -196,7 +196,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     this.routeDriven = true;
-    this.legacyStatusVisible = false;
     this.currentScreen = value;
   }
 
@@ -311,6 +310,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.syncAlert?.message ?? null;
   }
 
+  get syncToast(): string | null {
+    const message = this.scanStatus?.message();
+    return message?.level === 'success' ? message.text : null;
+  }
+
   get storageCapabilityAlert(): ScanAlert | null {
     // A lasting fact about the browser, unlike storageAlert which only
     // describes the last gesture.
@@ -339,6 +343,86 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   get hasAlerts(): boolean {
     return this.priorityAlerts.length > 0 || this.infoAlerts.length > 0;
+  }
+
+  get hasActionableStatus(): boolean {
+    return !this.isOnline
+      || this.authDegraded
+      || this.accountSwitchPrompt !== null
+      || this.syncStatus === 'error'
+      || this.pendingDecisionCount > 0
+      || this.pendingTransmissionCount > 0
+      || this.setAsideCount > 0
+      || this.storageCapabilityAlert !== null
+      || this.storageAlert !== null
+      || this.syncAlert !== null;
+  }
+
+  get statusSummary(): string {
+    const pendingCount = this.pendingDecisionCount + this.pendingTransmissionCount + this.setAsideCount;
+    if (this.accountSwitchPrompt) {
+      return 'Une session précédente attend votre choix.';
+    }
+
+    if (!this.isOnline) {
+      return pendingCount > 0
+        ? `${this.bookCountLabel(pendingCount)} ${pendingCount > 1 ? 'restent' : 'reste'} sur cet appareil.`
+        : 'La synchronisation reprendra dès la reconnexion.';
+    }
+
+    if (this.authDegraded) {
+      return 'Reconnectez-vous pour reprendre la synchronisation.';
+    }
+
+    if (this.syncStatus === 'error') {
+      return this.syncAlert?.message ?? 'La dernière synchronisation doit être vérifiée.';
+    }
+
+    if (this.pendingDecisionCount > 0) {
+      return `${this.bookCountLabel(this.pendingDecisionCount)} attend${this.pendingDecisionCount > 1 ? 'ent' : ''} une décision.`;
+    }
+
+    if (this.setAsideCount > 0) {
+      return `${this.bookCountLabel(this.setAsideCount)} attend${this.setAsideCount > 1 ? 'ent' : ''} une reprise.`;
+    }
+
+    if (this.pendingTransmissionCount > 0) {
+      return `${this.bookCountLabel(this.pendingTransmissionCount)} attend${this.pendingTransmissionCount > 1 ? 'ent' : ''} l’envoi.`;
+    }
+
+    return this.priorityAlerts[0]?.message
+      ?? this.storageAlert?.message
+      ?? 'Vérifiez les actions en attente.';
+  }
+
+  get statusModalDescription(): string {
+    if (this.accountSwitchPrompt) {
+      return this.accountSwitchPrompt;
+    }
+
+    if (!this.isOnline) {
+      return 'Hors connexion : les gestes restent sur cet appareil et seront synchronisés automatiquement dès que la connexion reviendra.';
+    }
+
+    if (this.authDegraded) {
+      return 'Le compte est reconnu sur cet appareil, mais la session serveur doit être rétablie.';
+    }
+
+    return this.statusSummary;
+  }
+
+  get statusDetails(): readonly ScanAlert[] {
+    return [...this.priorityAlerts, ...this.infoAlerts];
+  }
+
+  get canRetrySyncFromStatus(): boolean {
+    return this.scanSync !== null
+      && this.localModeReady
+      && this.isAuthenticated
+      && this.canSynchronize
+      && this.isOnline
+      && this.accountSwitchPrompt === null
+      && this.syncStatus !== 'syncing';
   }
 
   get canLeaveSession(): boolean {
@@ -785,6 +869,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   async logout(): Promise<void> {
     this.logoutError = null;
+    this.automaticSuccessToastShown = false;
 
     if (this.scanWorkflow) {
       try {
@@ -828,7 +913,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.refreshView();
   }
 
-  async syncNow(): Promise<void> {
+  async syncNow(showSuccessToast = true): Promise<void> {
     if (
       !this.scanSync ||
       this.accountSwitchPrompt ||
@@ -845,7 +930,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    const syncPromise = this.performSync(this.scanSync);
+    const syncPromise = this.performSync(this.scanSync, showSuccessToast);
     this.syncPromise = syncPromise;
     try {
       await syncPromise;
@@ -856,7 +941,48 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
   }
 
-  private async performSync(scanSync: ScanSyncService): Promise<void> {
+  openStatusModal(): void {
+    if (!this.hasActionableStatus) {
+      return;
+    }
+
+    this.statusModalOpen = true;
+    this.refreshView();
+  }
+
+  closeStatusModal(): void {
+    this.statusModalOpen = false;
+    this.refreshView();
+  }
+
+  async retrySyncFromStatus(): Promise<void> {
+    this.closeStatusModal();
+    await this.syncNow();
+  }
+
+  goToSortingFromStatus(): void {
+    this.closeStatusModal();
+    this.screen = 'tri';
+    this.refreshView();
+    this.startCameraIfNeeded();
+  }
+
+  openRecoveryFromStatus(): void {
+    this.closeStatusModal();
+    this.openRecovery();
+  }
+
+  async resumeAccountSwitchFromStatus(): Promise<void> {
+    this.closeStatusModal();
+    await this.resumeAccountSwitch();
+  }
+
+  async setAsideAccountSwitchFromStatus(): Promise<void> {
+    this.closeStatusModal();
+    await this.setAsideAccountSwitch();
+  }
+
+  private async performSync(scanSync: ScanSyncService, showSuccessToast: boolean): Promise<void> {
     this.syncStatus = 'syncing';
     this.syncAlert = null;
     this.refreshView();
@@ -895,12 +1021,15 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         this.sessionCloseError = 'La session reste enregistrée localement et sera clôturée dès que la synchronisation aboutira.';
       } else {
         this.syncStatus = 'success';
-        this.scanStatus?.clearMessage();
+        if (showSuccessToast) {
+          this.scanStatus?.showSuccess('Synchronisation réussie');
+        }
       }
       await this.refreshLocalState();
       await this.refreshSaleCancellationState();
     } catch {
       this.syncStatus = 'error';
+      this.scanStatus?.clearMessage();
       this.setSyncError('info', 'La synchronisation a échoué ; les gestes restent conservés localement.');
     } finally {
       this.refreshView();
@@ -987,15 +1116,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       this.sessionEnding = false;
       this.refreshView();
     }
-  }
-
-  toggleAlerts(): void {
-    this.alertsExpanded = !this.alertsExpanded;
-    this.refreshView();
-  }
-
-  trackAlert(_index: number, alert: ScanAlert): string {
-    return alert.id;
   }
 
   leaveSession(): void {
@@ -1126,6 +1246,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   @HostListener('window:offline')
   onNetworkOffline(): void {
     this.isOnline = false;
+    this.automaticSuccessToastShown = false;
     this.refreshView();
   }
 
@@ -1255,6 +1376,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.statusModalOpen) {
+      this.closeStatusModal();
+      return;
+    }
+
     if (!this.isScanDestinationActive() || this.isEditableTarget(event.target)) {
       return;
     }
@@ -1356,13 +1482,14 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.associationSettings = await this.scanWorkflow.getSettings();
     const catalogSyncState = await this.scanWorkflow.getCatalogSyncState();
     this.nextFair = catalogSyncState?.nextFair ?? null;
+    const workflowWithSetAside = this.scanWorkflow as ScanWorkflowService & {
+      getSetAsideCounts?: () => Promise<{orphaned: number; quarantined: number}>;
+    };
+    const setAsideCounts = typeof workflowWithSetAside.getSetAsideCounts === 'function'
+      ? await workflowWithSetAside.getSetAsideCounts()
+      : {orphaned: 0, quarantined: 0};
+    this.setAsideCount = setAsideCounts.orphaned + setAsideCounts.quarantined;
     if (this.scanStatus) {
-      const workflowWithSetAside = this.scanWorkflow as ScanWorkflowService & {
-        getSetAsideCounts?: () => Promise<{orphaned: number; quarantined: number}>;
-      };
-      const setAsideCounts = typeof workflowWithSetAside.getSetAsideCounts === 'function'
-        ? await workflowWithSetAside.getSetAsideCounts()
-        : {orphaned: 0, quarantined: 0};
       this.scanStatus.updateFromLocalState(catalogSyncState, counts, setAsideCounts);
     }
   }
@@ -1552,16 +1679,12 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       .filter(alert => alert.level !== 'info')
       .sort((left, right) => (left.level === 'critical' ? 0 : 1) - (right.level === 'critical' ? 0 : 1));
     this.infoAlerts = alerts.filter(alert => alert.level === 'info');
-
-    if (this.infoAlerts.length === 0) {
-      this.alertsExpanded = false;
-    }
   }
 
   /**
    * The placeholder can be pushed out of a scrolled or clipped container when
-   * the alerts take over the screen; the preview follows what is really visible
-   * so it never paints over the dock or the header.
+   * the status strip takes space; the preview follows what is really visible so
+   * it never paints over the dock or the header.
    */
   private visibleSlotBounds(slot: HTMLElement): {top: number; left: number; width: number; height: number} | null {
     if (slot !== this.cameraSlotElement) {
@@ -1654,7 +1777,12 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   private trySync(): void {
-    void this.syncNow();
+    const announceSuccess = !this.automaticSuccessToastShown;
+    void this.syncNow(announceSuccess).then(() => {
+      if (announceSuccess && this.syncStatus === 'success') {
+        this.automaticSuccessToastShown = true;
+      }
+    });
   }
 
   private routeForScreen(screen: ScanScreen): string | null {

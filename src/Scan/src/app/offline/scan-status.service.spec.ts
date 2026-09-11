@@ -58,4 +58,13 @@ describe('ScanStatusService', () => {
       syncedAt: '2026-09-09T05:00:00.000Z',
     });
   });
+
+  it('exposes a transient success message for completed automatic synchronization', () => {
+    service.showSuccess('Synchronisation réussie');
+
+    expect(service.message()).toEqual({
+      level: 'success',
+      text: 'Synchronisation réussie',
+    });
+  });
 });

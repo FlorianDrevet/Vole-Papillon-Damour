@@ -13,11 +13,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; la tranche légale/analytics est également fusionnée (`e232d0f`) et déployée sur l’environnement dev. |
-| **Prochaine action** | Relire la PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) de la refonte visuelle Catalog administration et effectuer, si nécessaire, un contrôle authentifié manuel avant tout déploiement. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-admin-maquette-refresh` |
-| **Dernière mise à jour** | 2026-09-11 — refonte visuelle de l’administration Catalog, aucun déploiement |
-| **Branche** | `feat/catalog-admin-maquette-refresh` — worktree dédié, synchronisée avec `origin/main`, PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) ouverte |
+| **Lot en cours** | `Scan` — hiérarchie d’état et synchronisation automatique de l’application bénévole. |
+| **Prochaine action** | Relire la PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et effectuer le smoke test connecté sur `/accueil` avant tout déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-auto-sync` |
+| **Dernière mise à jour** | 2026-09-11 — synchronisation automatique et bandeau d’état compact, PR #127 ouverte, aucun déploiement |
+| **Branche** | `fix/scan-auto-sync-header` — worktree dédié, basé sur `origin/main`, PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) ouverte |
 
 ---
 
@@ -78,26 +78,20 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-11 — refonte visuelle de l’administration Catalog
+### État actualisé — 2026-09-11 — synchronisation automatique et hiérarchie d’état Scan
 
-Depuis `origin/main` fraîchement récupéré dans le worktree dédié
-`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-admin-maquette-refresh`, la
-route Catalog `/administration` reprend l’architecture et le visuel de la maquette
-`AdminSidebar` sur les dix espaces d’administration : tableau de bord, statistiques par
-bourse, sessions de scan, catalogue, désengorgement, inventaire, membres, bénévoles et
-paramètres, avec la fiche livre et la correction de session intégrées. Le shell public
-(navigation et pied de page) est retiré de cette route privée.
+Dans `src/Scan`, le shell authentifié ne rend plus l’ancien en-tête global « Retour / Bourse aux
+livres », ni le panneau de synchronisation au-dessus du trait multicolore. La synchronisation
+reste automatique à l’arrivée après l’initialisation locale et l’autorisation du compte, puis à
+la reconnexion et sur le cycle périodique existant. Une réussite affiche seulement le toast
+éphémère « Synchronisation réussie ».
 
-Les contrats admin existants sont réutilisés. Le workspace bénévoles consomme désormais
-le contrat typé `/accounts/admin` pour la liste, la création et l’affectation de rôles
-Entra. L’API ne porte pas encore d’historique physique de cartons/rayons : l’écran
-Inventaire garde donc un état vide et des actions désactivées, sans inventer de données.
-
-Validation locale : 130 tests Catalog ChromeHeadless, build production Catalog, Graphify et
-contrôle Chrome desktop du shell public/admin passent. L’avertissement de budget du bundle
-initial reste celui du projet ; aucun déploiement ni contrôle authentifié de production n’a
-été effectué. La PR [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) est
-ouverte pour relecture ; aucun déploiement n’est autorisé par cette étape.
+Les échecs et états nécessitant une intervention sont regroupés dans `scan-status-bar` sous
+l’en-tête de mode et, lorsqu’il existe, sous la barre de session bénévole. La ligne compacte
+affiche les tags `(hors connexion)` et `(action à faire)` puis ouvre une modal d’état avec les
+actions disponibles : réessai, reprise de session, retour au tri ou ouverture des reprises.
+Les détails critiques restent accessibles dans cette modal ; aucun nouveau stockage ou contrat
+API n’est introduit. La PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) est ouverte ; le smoke connecté de production reste à faire après revue.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 

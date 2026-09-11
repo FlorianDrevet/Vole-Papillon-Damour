@@ -240,6 +240,18 @@ confirmation. After reconciling this delivery with the alert/camera layout from 
 validation passes 165 Scan tests, 5 BackOffice bootstrap tests, 349 backend solution tests, and
 both Angular production builds; responsive/device retests remain manual.
 
+The 2026-09-11 Scan synchronization UX pass removes the authenticated shell's global return
+header and legacy synchronization panel, leaving the multicolor rule as the first page chrome.
+Automatic synchronization still runs when local mode becomes ready, after account authorization,
+on reconnection, and on the existing periodic retry. Successful syncs use the transient
+`Synchronisation réussie` toast. Offline, failed, and pending-action states render as one compact
+`scan-status-bar` below the active mode/session header; `(hors connexion)` and `(action à faire)`
+are explicit tags, and the strip opens a status modal with typed actions for retry, session
+account-switch recovery, triage, and set-aside recovery. The old expanded alert rail is gone from
+the user-facing layout. Local validation passes 170 Scan ChromeHeadless tests and the Scan
+production build; PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) is open,
+connected production smoke remains pending, and no deployment was made.
+
 The 2026-09-08 Catalog Lot 5 public-surface pass removes the hard-coded featured genre
 taxonomy: the home cards, hero selector, and navigation menu now use only genres returned
 by the public catalog API, and the home section stays hidden when that list is empty. The
