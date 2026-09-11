@@ -21,6 +21,9 @@ immediately; an empty title or article is rejected before the transaction is com
 `InstagramFeedClient` and `MediaDownloader` are typed HTTP clients registered by
 Infrastructure; title generation is optional and uses `Microsoft.Extensions.AI` with
 an Azure managed identity when its Foundry endpoint/deployment are configured.
+`InstagramFeedClient` removes copy/paste formatting at the edges of the configured
+access token before creating the Bearer header and rejects remaining non-ASCII,
+control, or embedded-whitespace characters with a safe authentication exception.
 
 ## Entry Points
 

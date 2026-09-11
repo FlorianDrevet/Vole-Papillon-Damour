@@ -29,9 +29,10 @@ public sealed class InstagramFeedClient(
         using var request = new HttpRequestMessage(
             HttpMethod.Get,
             BuildMediaEndpoint());
+        var accessToken = NormalizeAccessToken(_options.AccessToken);
         request.Headers.Authorization = new AuthenticationHeaderValue(
             "Bearer",
-            _options.AccessToken);
+            accessToken);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -71,6 +72,33 @@ public sealed class InstagramFeedClient(
         return new Uri(
             $"{version}/{userId}/media?fields={fields}&limit=100",
             UriKind.Relative);
+    }
+
+    private static string NormalizeAccessToken(string accessToken)
+    {
+        var normalized = accessToken.Trim()
+            .Trim('\uFEFF', '\u200B', '\u200C', '\u200D')
+            .Trim();
+
+        if (normalized.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized["Bearer ".Length..]
+                .Trim()
+                .Trim('\uFEFF', '\u200B', '\u200C', '\u200D')
+                .Trim();
+        }
+
+        if (normalized.Length == 0 ||
+            normalized.Any(character =>
+                character > 0x7F ||
+                char.IsControl(character) ||
+                char.IsWhiteSpace(character)))
+        {
+            throw new SocialFeedAuthenticationException(
+                "The Instagram access token contains invalid characters; configure the raw token without formatting.");
+        }
+
+        return normalized;
     }
 
     private static bool TryReadPost(JsonElement item, out SocialPost post)
