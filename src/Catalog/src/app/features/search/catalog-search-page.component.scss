@@ -566,13 +566,6 @@
   color: var(--catalog-white);
 }
 
-.reference-follow--work:hover,
-.reference-follow--work:focus-visible {
-  border-color: var(--catalog-ink-2);
-  background: var(--catalog-ink-2);
-  color: var(--catalog-white);
-}
-
 .external-follow-callout .reference-follow {
   flex: none;
 }
@@ -586,6 +579,13 @@
 .reference-follow:disabled {
   cursor: wait;
   opacity: .55;
+}
+
+.reference-follow--work:hover,
+.reference-follow--work:focus-visible {
+  border-color: var(--catalog-ink-2);
+  background: var(--catalog-ink-2);
+  color: var(--catalog-white);
 }
 
 .reference-feedback {
