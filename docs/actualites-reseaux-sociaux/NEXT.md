@@ -18,15 +18,15 @@
 | | |
 |---|---|
 | **Palier en cours** | Vérification opérationnelle de la v1 sur `development` après configuration externe |
-| **Prochaine action** | Laisser le Worker exécuter son premier tick de 30 minutes, puis vérifier un import réel en brouillon avec un administrateur ; renouveler le jeton avant son seuil d'alerte |
-| **Ce qui est prêt dans le code** | Brouillons, lectures publiques filtrées, relecture/publication BackOffice, import Instagram minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
+| **Prochaine action** | Laisser le Worker exécuter son premier tick de 30 minutes, puis vérifier un import réel publié directement avec un titre Foundry ; renouveler le jeton avant son seuil d'alerte |
+| **Ce qui est prêt dans le code** | Publication directe des imports Instagram, lectures publiques filtrées, relecture BackOffice, import minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-instagram-activation` |
-| **Dernière mise à jour** | 2026-09-11 — configuration Meta/Instagram, secrets `development`, migration EF et déploiements v1 validés ; premier import réel encore à observer |
+| **Dernière mise à jour** | 2026-09-12 — Foundry activé, publication directe fusionnée et API/Worker redéployés ; premier import réel encore à observer |
 | **Branche** | `docs/record-instagram-activation-state` — worktree dédié pour documenter l'activation post-PR `#122` |
 
 ---
 
-## Ressources externes encore à créer
+## État des ressources externes
 
 Le dépôt contient le code et les modules de déploiement. L'activation externe a été
 réalisée sur `development` pour le compte Instagram de test ; les valeurs sensibles ne
@@ -42,8 +42,8 @@ figurent ni dans git ni dans ce fichier.
 | Identifiant du compte Instagram (`SocialImport__UserId`) | Configuration du Worker | **Configuré sur `development`** | — |
 | Date plancher d'import | Configuration du Worker | **Configurée au `2026-01-01T00:00:00Z`** | À ajuster si le métier souhaite une autre période |
 | Version de la Graph API | Configuration du Worker | **Fixée dans le code à `v22.0`** | — |
-| Ressource Azure AI Foundry + déploiement de modèle | Abonnement Azure du projet | **Module Bicep prêt, ressource non créée ; titres générés désactivés** | `L3` optionnel |
-| Rôle `Cognitive Services OpenAI User` pour l'identité managée du Worker | Azure | **Non attribué ; non nécessaire tant que la génération est désactivée** | `L3` optionnel |
+| Ressource Azure AI Foundry + déploiement de modèle | Abonnement Azure du projet | **Déployée sur `development` : `gpt-4.1-nano`, SKU `GlobalStandard`, déploiement `actuality-title`** | — |
+| Rôle `Cognitive Services OpenAI User` pour l'identité managée du Worker | Azure | **Attribué par Bicep à l'identité managée du Worker** | — |
 | Règles d'alerte (jeton, authentification, échecs répétés) | Azure Monitor, groupe d'action existant | **Créées par le déploiement `development`** | — |
 | Page Facebook de l'association | facebook.com | **Non créée**, et pas décidée (`Q-ACT-03`) | `L5` |
 
@@ -59,11 +59,11 @@ Ce que la spécification a déjà tranché, et qui n'attend plus personne.
 | Déclencheur | **Minuteur, toutes les 30 minutes.** Aucun webhook Instagram ne couvre les publications du compte lui-même (`DT-ACT-01`) |
 | Chemin d'authentification | **Instagram Login**, qui n'exige pas de page Facebook et n'accroche pas le projet au compte d'une personne |
 | Où vit la fonction | Dans **`Vole_Papillon_Damour.Worker`** existant, à côté de `Enrich` et `Sweep` (`DT-ACT-02`) |
-| Publication | **Brouillon obligatoire.** Rien n'est visible sur le site sans validation humaine (`RG-ACT-04`) |
+| Publication | **Publication directe après préparation du média, de l'article et du titre.** Aucun brouillon de validation n'est créé par l'import Instagram |
 | Images | **Recopiées** dans `actuality-images`. Aucune URL de CDN Meta en base : elles expirent (`RG-ACT-10`) |
 | Titre | **Modèle classe nano** via Azure AI Foundry, identité managée, repli par date si échec (`05`) |
 | Scraping | **Jamais**, quelle que soit la difficulté rencontrée (`ENF-ACT-15`) |
-| Trace d'import | **Table à part**, pour survivre à la suppression du brouillon (`DT-ACT-08`) |
+| Trace d'import | **Table à part**, pour survivre à la suppression de l'actualité importée (`DT-ACT-08`) |
 
 ---
 
@@ -100,9 +100,9 @@ développeur seul.
 | Test | Qui | Quand |
 |---|---|---|
 | Une actualité existante reste visible après la migration | Développeur | **Migration appliquée ; API publique `/actuality/latest` et `/actuality/all` répondent `200`** |
-| Un brouillon n'apparaît nulle part sur le site public, y compris par son URL directe | Développeur | **Handlers filtrés et testés ; test avec un brouillon réel encore à faire** |
+| Un brouillon manuel n'apparaît nulle part sur le site public, y compris par son URL directe | Développeur | **Handlers filtrés et testés ; test avec un brouillon réel encore à faire** |
 | Une légende à plusieurs paragraphes s'affiche correctement sur mobile et desktop | Développeur | **Code `pre-line` livré ; endpoints Website/BackOffice `200`, contrôle visuel réel encore à faire** |
-| Le parcours complet : publier sur Instagram → voir le brouillon → publier → voir le site | **Avec la présidente**, sur une vraie publication | `L2` |
+| Le parcours complet : publier sur Instagram → générer le titre → voir l'actualité publiée sur le site | **Avec la présidente**, sur une vraie publication | `L2`/`L3` |
 | Le brouillon rend le contrôle du droit à l'image praticable : les images sont assez grandes pour décider | **Un administrateur non développeur** | `L2` |
 | Les titres proposés sont acceptables sur de vrais contenus | **Un administrateur non développeur** | `L3` |
 | L'alerte d'expiration du jeton arrive bien, et à quelqu'un qui sait quoi en faire | Développeur, puis destinataire réel | `L4` |
@@ -110,6 +110,27 @@ développeur seul.
 ---
 
 ## Journal
+
+### 2026-09-12 — Foundry activé et publication directe déployée
+
+La PR [`#148`](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/148) a été
+fusionnée dans `main` (`418cc675`). Elle remplace le brouillon automatique par une
+publication immédiate après préparation des médias, de l'article et du titre. Un contenu
+incomplet est rejeté avant la transaction et ne laisse pas de brouillon.
+
+Le compte Azure OpenAI/Foundry et le déploiement `actuality-title` (`gpt-4.1-nano`,
+SKU `GlobalStandard`) ont été créés sur `development` par le workflow
+[`34651970380`](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/34651970380).
+Le Worker dispose de l'identité managée et du rôle `Cognitive Services OpenAI User`.
+L'API et le Worker ont ensuite été déployés avec le commit `418cc675` :
+[`API`](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/34652671434),
+[`Worker`](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/34652671544).
+La migration a confirmé que la base est à jour et les endpoints publics `/health` et
+`/actuality/latest` renvoient `200`.
+
+Le premier import réel reste à observer sur le prochain tick de 30 minutes. L'application
+Meta demeure en mode développement ; l'accès live de comptes non testeurs et la revue
+d'application restent hors de cette activation.
 
 ### 2026-09-11 — configuration externe et déploiement de la v1
 
@@ -123,8 +144,8 @@ dans git ou dans cette mémoire.
 Les paramètres `INSTAGRAM_USER_ID`, `INSTAGRAM_IMPORT_FLOOR_DATE` et
 `INSTAGRAM_ACCESS_TOKEN_ISSUED_AT` sont également présents dans l'environnement GitHub.
 La date plancher choisie pour cette première activation est `2026-01-01T00:00:00Z`.
-Les titres Foundry restent désactivés : aucun compte Foundry ni rôle supplémentaire n'a
-été provisionné.
+À cette date, les titres Foundry restaient désactivés ; ils ont été provisionnés et activés
+le 2026-09-12.
 
 La PR [`#122`](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/122) a été
 fusionnée dans `main` (`a787439`). Le `what-if` Azure
@@ -143,9 +164,9 @@ La CI du `main` courant est verte
 Le smoke test public après rollout renvoie `200` pour l'API `/health`, les lectures
 d'actualités, le Website de développement, le domaine public et le BackOffice public.
 Le Worker utilise le minuteur existant toutes les 30 minutes : le premier import réel,
-la qualité des brouillons et la publication manuelle restent à vérifier après un vrai
-contenu Instagram. L'application Meta est encore en mode développement ; l'accès live
-de comptes non testeurs et la revue d'application ne sont pas validés.
+la qualité des titres et la publication restent à vérifier après un vrai contenu Instagram.
+L'application Meta est encore en mode développement ; l'accès live de comptes non testeurs
+et la revue d'application ne sont pas validés.
 
 ### 2026-09-10 — implémentation des paliers L1 à L4
 
