@@ -78,6 +78,25 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — panneau de tri de la recherche Catalog
+
+Depuis `origin/main` (`359eea7`), le worktree
+`C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-sort-panel` sur la branche
+`fix/catalog-search-sort-panel` remplace le `select` natif du tri de `/recherche` par un
+menu Angular accessible. La pastille existante reste le déclencheur ; le panneau reprend
+le filet dégradé, le style des popovers Catalog, l’option sélectionnée, les descriptions
+courtes et les états hover/focus. La sélection conserve les paramètres de recherche, la
+fermeture au clic extérieur et les parcours clavier (Entrée, espace, flèches, Home/End,
+Échap et Tab).
+
+Validation : test rouge puis vert, 153 tests ChromeHeadless Catalog, build SSR/navigateur,
+`graphify update .`, smoke navigateur local desktop sur `127.0.0.1:4301` avec ouverture,
+sélection et fermeture du panneau, et rendu headless à `390×844` sans débordement du
+déclencheur ni de la mise en page mobile. L’API CUA de cette session ne permettait pas
+d’ouvrir le panneau dans une émulation mobile interactive ; la règle responsive borne donc
+explicitement sa largeur à `calc(100vw - 3rem)`. Aucun déploiement ni changement hors dépôt
+n’a été effectué ; PR à ouvrir.
+
 ### État actualisé — 2026-09-11 — résolution des conflits de la PR #134
 
 Depuis le worktree `Vole-Papillon-Damour-pr134-conflicts`, la branche de livraison a intégré
@@ -1173,6 +1192,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Catalog — panneau personnalisé du tri de la recherche.** Depuis `origin/main` (`359eea7`), remplacement du `select` natif de `/recherche` par un menu accessible qui conserve la pastille de déclenchement, affiche l’option active et ses descriptions, gère le focus/clavier et se ferme au clic extérieur. Validation TDD (RED/GREEN), 153 tests ChromeHeadless, build SSR/navigateur avec l’avertissement de budget initial connu, `graphify update .`, smoke desktop local à `127.0.0.1:4301` et rendu headless à `390×844` sans débordement. L’ouverture interactive du panneau en émulation mobile reste à refaire avec une surface dédiée ; aucun déploiement ni changement hors dépôt, PR à ouvrir. |
 | 2026-09-11 | Windows | **Correctif branding Entra — suppression du fond derrière la carte.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-auth-card-background`, le CSS partagé des écrans de connexion et de création de compte force un canvas uni et supprime `background-image`, ce qui masque les barres de l'ancien asset déjà stocké dans le tenant. Le runbook et la mémoire sont alignés. Validation : test statique rouge puis vert, parse PowerShell, `graphify update .` et `git diff --check` ; Pester reste bloqué par l'absence du module Graph local. PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte, aucun tenant ni déploiement modifié. |
 | 2026-09-11 | Windows | **PR #129 — résolution des conflits publiée.** Depuis `origin/main` (`b359829`) dans le worktree `Vole-Papillon-Damour-pr129-conflicts`, conservation des changements main de Scan/administration et réconciliation des variantes `BookCardComponent` `list` et `home` avec les sections de l'accueil Catalog. La branche locale `fix/pr-129-conflicts` a publié la résolution sur `feat/catalog-home-sections`, head de la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129). Validation : 139 tests Catalog, build de production, `graphify update .`, requête Graphify, `git diff --check` et contrôles Chrome à 1280/390 px sans débordement ; l'API locale était indisponible pendant le smoke, aucun déploiement. |
 | 2026-09-11 | Windows | **Catalog — sections de l'accueil et cartes récentes.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-catalog-home-sections`, ajout de « Par genres » et du callout « Avec un compte » après les livres rares, suppression de « Votre sélection » et ajout d'une variante de carte récente inspirée de la maquette, avec le placeholder conservé pour les couvertures absentes. Validation : test rouge puis vert, 128 tests Catalog, build de production, `graphify update .` et contrôles Chrome locaux à 1280/390×844 avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. Branche `feat/catalog-home-sections`, PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) ouverte. |

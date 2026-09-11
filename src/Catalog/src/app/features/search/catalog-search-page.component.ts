@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  HostListener,
   OnDestroy,
   OnInit,
 } from '@angular/core';
@@ -36,6 +38,8 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   availability: CatalogAvailability = 'all';
   rareOnly = false;
   sort: CatalogSort = 'relevance';
+  sortMenuOpen = false;
+  sortMenuActiveIndex = 0;
   browseMode = false;
   loading = true;
   error = false;
@@ -47,6 +51,23 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   referenceFollowMessage: string | null = null;
   referenceFollowError: string | null = null;
 
+  readonly sortChoices: ReadonlyArray<{
+    value: CatalogSort;
+    label: string;
+    description: string;
+  }> = [
+    {
+      value: 'relevance',
+      label: 'Pertinence',
+      description: 'Titres proches de votre recherche',
+    },
+    {
+      value: 'recent',
+      label: 'Arrivée récente',
+      description: 'Titres ajoutés récemment',
+    },
+  ];
+
   private readonly destroyed = new Subject<void>();
   private readonly pendingReferenceStorageKey = 'vpd.catalog.pending-reference-follow';
 
@@ -57,6 +78,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     private readonly auth: CatalogAuthService,
     private readonly memberApi: CatalogMemberApiService,
     private readonly changeDetector: ChangeDetectorRef,
+    private readonly elementRef: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
@@ -69,6 +91,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.availability = this.readAvailability(params.get('availability'));
         this.rareOnly = params.get('rare') === 'true';
         this.sort = params.get('sort') === 'recent' ? 'recent' : 'relevance';
+        this.sortMenuOpen = false;
         this.load();
       });
     void this.restorePendingReferenceFollow();
@@ -92,6 +115,96 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     void this.router.navigate([this.browseMode ? '/catalogue' : '/recherche'], {
       queryParams: this.queryParams(),
     });
+  }
+
+  sortLabel(): string {
+    return this.sortChoices.find(choice => choice.value === this.sort)?.label ?? 'Pertinence';
+  }
+
+  toggleSortMenu(): void {
+    if (this.sortMenuOpen) {
+      this.closeSortMenu();
+      return;
+    }
+
+    this.openSortMenu();
+  }
+
+  selectSort(value: CatalogSort): void {
+    this.sort = value;
+    this.sortMenuActiveIndex = this.sortChoices.findIndex(choice => choice.value === value);
+    this.closeSortMenu(true);
+    this.applyFilters();
+    this.changeDetector.markForCheck();
+  }
+
+  handleSortTriggerKeydown(event: KeyboardEvent): void {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.toggleSortMenu();
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.openSortMenu();
+        this.moveSortMenuFocus(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.openSortMenu();
+        this.moveSortMenuFocus(-1);
+        break;
+      case 'Escape':
+        if (this.sortMenuOpen) {
+          event.preventDefault();
+          this.closeSortMenu();
+        }
+        break;
+    }
+  }
+
+  handleSortOptionKeydown(event: KeyboardEvent, index: number): void {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.selectSort(this.sortChoices[index].value);
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.moveSortMenuFocus(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.moveSortMenuFocus(-1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        this.sortMenuActiveIndex = 0;
+        this.focusSortOption(this.sortMenuActiveIndex);
+        break;
+      case 'End':
+        event.preventDefault();
+        this.sortMenuActiveIndex = this.sortChoices.length - 1;
+        this.focusSortOption(this.sortMenuActiveIndex);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeSortMenu(true);
+        break;
+      case 'Tab':
+        this.closeSortMenu();
+        break;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeSortMenuOnDocumentClick(event: MouseEvent): void {
+    if (this.sortMenuOpen && !this.elementRef.nativeElement.contains(event.target as Node)) {
+      this.closeSortMenu();
+    }
   }
 
   clearFilters(): void {
@@ -316,6 +429,53 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     if (this.sort !== 'relevance') params['sort'] = this.sort;
     if (this.readReferencePage() > 1) params['referencePage'] = this.readReferencePage();
     return params;
+  }
+
+  private openSortMenu(): void {
+    if (this.sortMenuOpen) {
+      return;
+    }
+
+    this.sortMenuActiveIndex = this.sortIndex();
+    this.sortMenuOpen = true;
+    this.changeDetector.markForCheck();
+  }
+
+  private closeSortMenu(returnFocus = false): void {
+    if (!this.sortMenuOpen) {
+      return;
+    }
+
+    this.sortMenuOpen = false;
+    this.changeDetector.markForCheck();
+    if (returnFocus) {
+      this.elementRef.nativeElement.querySelector<HTMLButtonElement>('.sort-select-trigger')?.focus();
+    }
+  }
+
+  private sortIndex(): number {
+    const index = this.sortChoices.findIndex(choice => choice.value === this.sort);
+    return index >= 0 ? index : 0;
+  }
+
+  private moveSortMenuFocus(delta: number): void {
+    const optionCount = this.sortChoices.length;
+    this.sortMenuActiveIndex = (this.sortMenuActiveIndex + delta + optionCount) % optionCount;
+    this.focusSortOption(this.sortMenuActiveIndex);
+  }
+
+  private focusSortOption(index: number): void {
+    const optionCount = this.sortChoices.length;
+    this.sortMenuActiveIndex = (index + optionCount) % optionCount;
+    setTimeout(() => {
+      if (!this.sortMenuOpen) {
+        return;
+      }
+
+      this.elementRef.nativeElement
+        .querySelector<HTMLButtonElement>(`#catalog-sort-option-${this.sortMenuActiveIndex}`)
+        ?.focus();
+    });
   }
 
   private readPage(): number {
