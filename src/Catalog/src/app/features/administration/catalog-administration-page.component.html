@@ -200,7 +200,7 @@
                     <strong class="stat-value">− {{ formatNumber(current.inventoryDriftQuantity) }}</strong>
                     <span class="stat-label">Écart d’inventaire</span>
                     <span class="stat-sub">{{ formatNumber(current.inventoryDriftTitleCount) }} fiches concernées par le ledger</span>
-                    <span class="stat-foot">Remise à plat physique à réaliser</span>
+                    <span class="stat-foot">Écart à traiter fiche par fiche</span>
                   </article>
                 </div>
 
@@ -319,35 +319,78 @@
               <div class="admin-heading">
                 <span class="admin-accent" aria-hidden="true"></span>
                 <span class="admin-kicker">Travail</span>
-                <h1 id="admin-title">Remise à plat de l’inventaire.</h1>
-                <p class="admin-intro">Le compteur dérive à cause des ventes non scannées. Suivre cet écart dans le temps, c’est mesurer la discipline de scan en caisse — le principal indicateur de santé du projet.</p>
+                <h1 id="admin-title">Inventaire.</h1>
+                <p class="admin-intro">Retrouvez toutes les fiches du fonds, ajustez les exemplaires disponibles et ajoutez une nouvelle fiche à partir d’un ISBN ou du référentiel bibliographique.</p>
               </div>
-              @if (overview(); as current) {
-                <div class="stat-grid inventory-stat-grid">
-                  <article class="stat-card stat-card-red"><strong class="stat-value">− {{ formatNumber(current.inventoryDriftQuantity) }}</strong><span class="stat-label">Écart de l’état courant</span><span class="stat-sub">{{ formatNumber(current.inventoryDriftTitleCount) }} fiches présentent un écart</span></article>
-                  <article class="stat-card"><strong class="stat-value">—</strong><span class="stat-label">Écart estimé depuis</span><span class="stat-sub">Historique de remises à plat non exposé par l’API</span></article>
-                  <article class="stat-card"><strong class="stat-value">—</strong><span class="stat-label">Dernière remise à plat</span><span class="stat-sub">Aucune saisie physique enregistrée</span></article>
+              <section class="inventory-add-zone" aria-labelledby="inventory-add-title">
+                <div class="inventory-zone-heading">
+                  <div>
+                    <span class="section-kicker">Ajouter au fonds</span>
+                    <h2 id="inventory-add-title">Trouver une nouvelle fiche</h2>
+                    <p>Interrogez un ISBN précis ou cherchez un titre dans le référentiel externe, puis vérifiez les informations avant l’ajout.</p>
+                  </div>
+                  <span class="inventory-process">1 · Trouver&nbsp;&nbsp; 2 · Vérifier&nbsp;&nbsp; 3 · Ajouter</span>
                 </div>
-                <div class="inventory-grid">
-                  <article class="chart-card">
-                    <div class="section-heading"><div><h2>Écart constaté à chaque remise à plat</h2><p>Historique des comptages physiques</p></div></div>
-                    <div class="chart-empty"><span class="chart-empty-mark">—</span><p>L’historique des remises à plat n’est pas encore modélisé. Le chiffre courant ci-dessus est calculé à partir du ledger et du stock déclaré.</p></div>
-                  </article>
-                  <article class="inventory-action-card">
-                    <span class="section-kicker">Action terrain</span>
-                    <h2>Lancer une remise à plat</h2>
-                    <p>La saisie d’un comptage physique sera disponible lorsque les zones et les fiches à compter seront exposées par l’API.</p>
-                    <label><span>Fiches à compter</span><select disabled><option>Zones physiques non paramétrées</option></select></label>
-                    <span class="muted-note">Les emplacements et cartons ne font pas partie du modèle actuel.</span>
-                    <button class="button button-primary" type="button" disabled>Saisir le comptage</button>
-                  </article>
+                <div class="inventory-lookup-grid">
+                  <form class="inventory-lookup-card" data-testid="inventory-isbn-form" (ngSubmit)="lookupInventoryIsbn()" novalidate>
+                    <label><span>ISBN</span><input name="inventoryIsbn" data-testid="inventory-isbn" [(ngModel)]="inventoryIsbn" inputmode="numeric" autocomplete="off" placeholder="978… ou ISBN-10"></label>
+                    <p>Pour retrouver une édition exacte.</p>
+                    <button class="button button-outline" type="submit" [disabled]="inventoryLookupLoading()">Rechercher l’ISBN</button>
+                  </form>
+                  <form class="inventory-lookup-card" data-testid="inventory-reference-form" (ngSubmit)="searchInventoryReferences()" novalidate>
+                    <label><span>Titre ou auteur</span><input name="inventoryReferenceQuery" data-testid="inventory-reference-query" [(ngModel)]="inventoryReferenceQuery" autocomplete="off" placeholder="Rechercher dans le référentiel…"></label>
+                    <p>Les résultats externes ne sont pas encore dans votre fonds.</p>
+                    <button class="button button-outline" data-testid="inventory-reference-search" type="submit" [disabled]="inventoryLookupLoading()">Rechercher une référence</button>
+                  </form>
                 </div>
-                <div class="section-heading inventory-heading"><div><h2>Comptage en cours</h2><p>Aucune session de comptage physique ouverte</p></div><span class="mono-note">—</span></div>
-                <div class="inventory-table empty-table"><span>Le comptage manuel sera affiché ici lorsqu’une remise à plat sera créée.</span><button class="button button-primary" type="button" disabled>Appliquer les corrections</button></div>
-                <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Le système ne doit pas transformer un écart calculé en comptage physique. La correction ne sera activée qu’avec une saisie terrain tracée.</p></div>
-              } @else {
-                <p class="admin-status">Chargement de l’état d’inventaire…</p>
-              }
+                @if (inventoryLookupLoading()) {
+                  <p class="inventory-lookup-status" role="status">Recherche bibliographique en cours…</p>
+                }
+                @if (inventoryLookupError(); as message) {
+                  <p class="inventory-lookup-status inventory-lookup-status-error" role="alert">{{ message }}</p>
+                }
+                @if (inventoryReferenceResults().length > 0) {
+                  <div class="inventory-reference-results" data-testid="inventory-reference-results">
+                    <div class="inventory-reference-heading"><div><span class="section-kicker">Référentiel externe</span><h3>{{ inventoryReferenceResults().length }} références trouvées</h3></div><span>À ajouter après vérification</span></div>
+                    @for (reference of inventoryReferenceResults(); track reference.isbn13 || reference.workId || reference.title) {
+                      <article class="inventory-reference-row">
+                        @if (reference.coverUrl) {<img class="inventory-reference-cover" [src]="reference.coverUrl" alt="">} @else {<span class="inventory-reference-cover book-cover-placeholder" aria-hidden="true"></span>}
+                        <div class="inventory-reference-copy"><strong>{{ reference.title || 'Titre à compléter' }}</strong><span>{{ reference.authors || 'Auteur non renseigné' }}{{ reference.publisher ? ' · ' + reference.publisher : '' }}{{ reference.publicationYear ? ' · ' + reference.publicationYear : '' }}</span><small>{{ reference.isbn13 ? 'ISBN ' + reference.isbn13 : 'ISBN non renseigné' }} · {{ reference.source }}</small></div>
+                        <button class="button button-outline" data-testid="inventory-use-reference" type="button" [disabled]="!reference.isbn13" (click)="selectInventoryCandidate(reference)">{{ reference.isbn13 ? 'Utiliser cette fiche' : 'ISBN manquant' }}</button>
+                      </article>
+                    }
+                  </div>
+                }
+                @if (inventoryAddCandidate(); as candidate) {
+                  <form class="inventory-candidate" data-testid="inventory-candidate-form" (ngSubmit)="addInventoryCandidate()" novalidate>
+                    <div class="inventory-candidate-copy"><span class="section-kicker">Fiche prête à ajouter</span><h3>{{ candidate.title || 'Titre à compléter' }}</h3><p>{{ candidate.authors || 'Auteur non renseigné' }}{{ candidate.publisher ? ' · ' + candidate.publisher : '' }}{{ candidate.publicationYear ? ' · ' + candidate.publicationYear : '' }}</p><small>ISBN {{ candidate.isbn13 }} · source {{ candidate.source }}</small></div>
+                    <div class="inventory-candidate-fields"><label><span>Exemplaires disponibles</span><input type="number" name="inventoryAddQuantity" data-testid="inventory-add-quantity" [(ngModel)]="inventoryAddQuantity" min="0" max="100000" required></label><label><span>Note obligatoire</span><input name="inventoryAddNote" data-testid="inventory-add-note" maxlength="500" [(ngModel)]="inventoryAddNote" required></label><button class="button button-primary" data-testid="inventory-add-submit" type="submit" [disabled]="loading()">Ajouter la fiche</button></div>
+                  </form>
+                }
+              </section>
+
+              <section class="inventory-books-zone" aria-labelledby="inventory-books-title">
+                <div class="section-heading inventory-heading">
+                  <div><span class="section-kicker">Le fonds de livres</span><h2 id="inventory-books-title">Toutes les fiches</h2><p>{{ inventoryBooksPage()?.totalCount ?? 0 }} fiches · les quantités annoncées restent séparées du stock disponible</p></div>
+                  <button class="text-link" type="button" (click)="loadInventory()">Actualiser</button>
+                </div>
+                <form class="inventory-search-toolbar" (ngSubmit)="inventoryPage = 1; loadInventory()" novalidate><label class="search-field"><span>Rechercher une fiche</span><input name="inventorySearch" [(ngModel)]="inventorySearch" placeholder="ISBN, titre ou auteur…"></label><button class="button button-outline" type="submit">Rechercher</button><button class="text-link" type="button" (click)="inventorySearch = ''; inventoryPage = 1; loadInventory()">Afficher toutes les fiches</button></form>
+                <div class="inventory-adjustment-bar"><div><span class="section-kicker">Ajuster le stock disponible</span><p>Les boutons − et + créent une correction tracée sur la fiche sélectionnée.</p></div><div class="inventory-adjustment-fields"><label><span>Quantité par action</span><input type="number" name="inventoryAdjustmentQuantity" data-testid="inventory-adjustment-quantity" [(ngModel)]="inventoryAdjustmentQuantity" min="1" max="100000"></label><label><span>Motif</span><input name="inventoryAdjustmentNote" data-testid="inventory-adjustment-note" maxlength="500" [(ngModel)]="inventoryAdjustmentNote" placeholder="Ex. don reçu, correction…"></label></div></div>
+                @if (inventoryBooksPage(); as page) {
+                  <div class="inventory-book-list" data-testid="inventory-book-list">
+                    @for (book of page.books; track book.isbn13) {
+                      <article class="inventory-book-row" [class.inventory-book-hidden]="book.isHidden" [class.inventory-book-redirected]="!!book.redirectedToIsbn13">
+                        @if (book.coverUrl) {<img class="inventory-book-cover" [src]="book.coverUrl" alt="">} @else {<span class="inventory-book-cover book-cover-placeholder" aria-hidden="true"></span>}
+                        <div class="inventory-book-identity"><span class="isbn-label">{{ book.isbn13 }}</span><strong>{{ book.title || 'Titre inconnu' }}</strong><span>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</span><div class="inventory-book-tags"><span>{{ book.metadataStatus }}</span>@if (book.isRare) {<span>Rare</span>}@if (book.isHidden) {<span>Masqué</span>}@if (book.redirectedToIsbn13) {<span>Redirigée vers {{ book.redirectedToIsbn13 }}</span>}</div></div>
+                        <div class="inventory-book-stock"><span>Disponible</span><strong>{{ formatNumber(book.quantityAvailable) }}</strong><small>{{ formatNumber(book.quantityAnnounced) }} annoncé{{ book.quantityAnnounced > 1 ? 's' : '' }}</small></div>
+                        <div class="inventory-book-actions"><div class="inventory-stepper" aria-label="Modifier la quantité disponible"><button class="inventory-stepper-button inventory-stepper-decrease" type="button" [disabled]="loading() || book.quantityAvailable === 0 || !!book.redirectedToIsbn13" [attr.data-testid]="'inventory-decrease-' + book.isbn13" [attr.aria-label]="'Retirer des exemplaires de ' + (book.title || book.isbn13)" (click)="adjustInventoryQuantity(book, 'decrease')">−</button><output>{{ formatNumber(book.quantityAvailable) }}</output><button class="inventory-stepper-button inventory-stepper-increase" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" [attr.data-testid]="'inventory-increase-' + book.isbn13" [attr.aria-label]="'Ajouter des exemplaires à ' + (book.title || book.isbn13)" (click)="adjustInventoryQuantity(book, 'increase')">+</button></div><button class="button button-outline inventory-book-detail" type="button" (click)="openBook(book.isbn13)">Voir la fiche</button></div>
+                      </article>
+                    } @empty {<div class="empty-panel"><h2>Aucune fiche trouvée</h2><p>Modifiez la recherche ou ajoutez une nouvelle fiche depuis le référentiel externe.</p></div>}
+                  </div>
+                  <div class="pagination"><button type="button" [disabled]="inventoryPage <= 1" (click)="goToInventoryPage(inventoryPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToInventoryPage(inventoryPage + 1)">→</button></div>
+                } @else if (loading()) {<p class="admin-status" role="status">Chargement de l’inventaire…</p>}
+              </section>
+              <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Chaque ajout et chaque correction reste attribué au compte connecté et inscrit dans l’historique. Les fiches redirigées restent consultables mais ne peuvent plus être modifiées.</p></div>
             </section>
           }
 

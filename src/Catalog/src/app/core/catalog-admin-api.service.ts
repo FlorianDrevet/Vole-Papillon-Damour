@@ -11,6 +11,7 @@ import {
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
   CatalogAdminAlertOperation,
+  CatalogAdminAddBookRequest,
   CatalogAdminBook,
   CatalogAdminBookFilters,
   CatalogAdminBookPage,
@@ -23,6 +24,7 @@ import {
   CatalogAdminOperation,
   CatalogAdminOverview,
   CatalogAdminCreateAccountRequest,
+  CatalogAdminQuantityCorrectionRequest,
   CatalogAdminQuantityCorrection,
   CatalogAdminScanSession,
   CatalogAdminScanSessionPage,
@@ -93,7 +95,7 @@ export class CatalogAdminApiService {
     );
   }
 
-  addBook(accessToken: string, request: object): Observable<CatalogAdminOperation> {
+  addBook(accessToken: string, request: CatalogAdminAddBookRequest): Observable<CatalogAdminOperation> {
     return this.http.post<CatalogAdminOperation>(
       `${this.apiUrl}/books/admin/books`,
       request,
@@ -109,7 +111,11 @@ export class CatalogAdminApiService {
     );
   }
 
-  correctQuantity(accessToken: string, isbn13: string, request: object): Observable<CatalogAdminQuantityCorrection> {
+  correctQuantity(
+    accessToken: string,
+    isbn13: string,
+    request: CatalogAdminQuantityCorrectionRequest,
+  ): Observable<CatalogAdminQuantityCorrection> {
     return this.http.patch<CatalogAdminQuantityCorrection>(
       `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/quantity`,
       request,

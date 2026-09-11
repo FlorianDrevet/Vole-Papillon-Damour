@@ -12,9 +12,11 @@ import {
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
+import {CatalogApiService} from '../../core/catalog-api.service';
 import {
   CatalogAdminAlertPage,
   CatalogAdminAccountPage,
+  CatalogAdminBook,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
   CatalogAdminMemberPage,
@@ -41,6 +43,7 @@ describe('CatalogAdministrationPageComponent', () => {
     getApiAccessToken: jasmine.Spy;
   };
   let api: jasmine.SpyObj<CatalogAdminApiService>;
+  let catalogApi: jasmine.SpyObj<CatalogApiService>;
 
   const response: CatalogDeadStockResponse = {
     generatedAt: '2026-09-04T12:00:00Z',
@@ -89,6 +92,35 @@ describe('CatalogAdministrationPageComponent', () => {
     movements: [],
   });
 
+  const inventoryBook = (overrides: Partial<CatalogAdminBook> = {}): CatalogAdminBook => ({
+    isbn13: '9782070363735',
+    workId: 'OL42W',
+    title: 'Le Petit Prince',
+    authors: 'Antoine de Saint-Exupéry',
+    publisher: 'Gallimard',
+    publicationYear: 1999,
+    physicalFormat: 'Poche',
+    language: 'fr',
+    genre: 'Jeunesse',
+    metadataStatus: 'Complete',
+    metadataSource: 'OpenLibrary',
+    manuallyEditedFields: null,
+    quantityAvailable: 4,
+    quantityAnnounced: 1,
+    salesCount: 2,
+    rejectionCount: 0,
+    isRare: false,
+    isHidden: false,
+    redirectedToIsbn13: null,
+    coverUrl: null,
+    firstSeenAt: '2026-01-10T10:00:00Z',
+    lastAvailableAt: '2026-09-10T10:00:00Z',
+    updatedAt: '2026-09-10T10:00:00Z',
+    announcements: [],
+    movements: [],
+    ...overrides,
+  });
+
   beforeEach(async () => {
     auth = {
       account: signal<AccountInfo | null>(null),
@@ -115,6 +147,14 @@ describe('CatalogAdministrationPageComponent', () => {
       'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
       'getDeadStock', 'getAdminAccounts', 'createAdminAccount', 'updateAdminAccountRoles',
     ]);
+    catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
+    catalogApi.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: '',
+      items: [],
+      page: 1,
+      pageSize: 20,
+    }));
     api.getOverview.and.returnValue(of({
       generatedAt: '',
       currentPeriod: {from: '', to: '', scannedCount: 0, keptCount: 0, rejectedCount: 0, soldQuantity: 0, soldTitles: 0},
@@ -144,6 +184,7 @@ describe('CatalogAdministrationPageComponent', () => {
       providers: [
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogAdminApiService, useValue: api},
+        {provide: CatalogApiService, useValue: catalogApi},
         provideHttpClient(),
         provideHttpClientTesting(),
       ],
@@ -355,6 +396,258 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getAlerts).toHaveBeenCalled();
     expect(api.getMembers).toHaveBeenCalled();
     expect(api.getSettings).toHaveBeenCalled();
+  });
+
+  it('loads every book in the inventory workspace without work-queue filters', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getBooks.and.returnValue(of({
+      generatedAt: '2026-09-12T10:00:00Z',
+      books: [inventoryBook()],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    }));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.detectChanges();
+
+    expect(api.getBooks).toHaveBeenCalledWith('access-token', {
+      search: undefined,
+      metadataStatus: undefined,
+      rare: undefined,
+      hidden: undefined,
+      undated: undefined,
+      page: 1,
+      pageSize: 25,
+    });
+    expect(fixture.nativeElement.querySelector('[data-testid="inventory-book-list"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Toutes les fiches');
+    expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
+    expect(fixture.nativeElement.textContent).not.toContain('Remise à plat');
+  });
+
+  it('adjusts a fiche quantity from the inventory controls with a trace note', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = inventoryBook({quantityAvailable: 4});
+    api.getBooks.and.returnValue(of({
+      generatedAt: '',
+      books: [book],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    }));
+    api.correctQuantity.and.returnValue(of({
+      isbn13: book.isbn13,
+      previousQuantityAvailable: 4,
+      quantityAvailable: 6,
+      delta: 2,
+      changed: true,
+      movementId: 'movement-id',
+    }));
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.detectChanges();
+
+    const amount = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="inventory-adjustment-quantity"]',
+    );
+    const note = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="inventory-adjustment-note"]',
+    );
+    const increase = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      `[data-testid="inventory-increase-${book.isbn13}"]`,
+    );
+    expect(amount).not.toBeNull();
+    expect(note).not.toBeNull();
+    expect(increase).not.toBeNull();
+
+    fixture.componentInstance.inventoryAdjustmentQuantity = 2;
+    fixture.componentInstance.inventoryAdjustmentNote = 'Don reçu';
+    fixture.detectChanges();
+    await fixture.componentInstance.adjustInventoryQuantity(book, 'increase');
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
+      quantityAvailable: 6,
+      note: 'Don reçu',
+    });
+  });
+
+  it('removes a requested quantity without allowing a negative stock', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = inventoryBook({quantityAvailable: 4});
+    api.getBooks.and.returnValue(of({
+      generatedAt: '',
+      books: [book],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    }));
+    api.correctQuantity.and.returnValue(of({
+      isbn13: book.isbn13,
+      previousQuantityAvailable: 4,
+      quantityAvailable: 2,
+      delta: -2,
+      changed: true,
+      movementId: 'movement-id',
+    }));
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.componentInstance.inventoryAdjustmentQuantity = 2;
+    fixture.componentInstance.inventoryAdjustmentNote = 'Livre retiré';
+
+    await fixture.componentInstance.adjustInventoryQuantity(book, 'decrease');
+
+    expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
+      quantityAvailable: 2,
+      note: 'Livre retiré',
+    });
+  });
+
+  it('normalizes an ISBN before preparing a fiche from the external reference', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const reference = {
+      isbn13: '9782070612758',
+      workId: 'OL42W',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+      coverUrl: null,
+      source: 'OpenLibrary',
+    };
+    catalogApi.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: reference.isbn13,
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.componentInstance.inventoryIsbn = '978-207-061-2758';
+    await fixture.componentInstance.lookupInventoryIsbn();
+
+    expect(catalogApi.searchReferences).toHaveBeenCalledWith(reference.isbn13, 1, 20);
+    expect(fixture.componentInstance.inventoryAddCandidate()?.isbn13).toBe(reference.isbn13);
+  });
+
+  it('clears stale external references when the ISBN is invalid', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.componentInstance.inventoryReferenceResults.set([{
+      isbn13: '9782070612758',
+      workId: null,
+      title: 'Ancienne notice',
+      authors: null,
+      publisher: null,
+      publicationYear: null,
+      coverUrl: null,
+      source: 'OpenLibrary',
+    }]);
+    fixture.componentInstance.inventoryIsbn = '9782070612759';
+
+    await fixture.componentInstance.lookupInventoryIsbn();
+
+    expect(catalogApi.searchReferences).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.inventoryReferenceResults()).toEqual([]);
+    expect(fixture.componentInstance.inventoryLookupError()).toBe('Saisissez un ISBN-10 ou ISBN-13 valide.');
+  });
+
+  it('keeps external references separate and lets an administrator add the selected fiche', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const reference = {
+      isbn13: '9782070612758',
+      workId: 'OL42W',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+      coverUrl: 'https://covers.openlibrary.org/isbn/9782070612758-M.jpg',
+      source: 'OpenLibrary',
+    };
+    catalogApi.searchReferences.and.returnValue(of({
+      generatedAt: '2026-09-12T10:00:00Z',
+      query: 'Le Petit Prince',
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    }));
+    api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 25}));
+    api.addBook.and.returnValue(of({changed: true, isbn13: reference.isbn13}));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.detectChanges();
+
+    const query = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="inventory-reference-query"]',
+    );
+    const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-reference-search"]',
+    );
+    expect(query).not.toBeNull();
+    expect(search).not.toBeNull();
+
+    fixture.componentInstance.inventoryReferenceQuery = 'Le Petit Prince';
+    fixture.detectChanges();
+    search!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(catalogApi.searchReferences).toHaveBeenCalledWith('Le Petit Prince', 1, 20);
+    expect(fixture.nativeElement.textContent).toContain('Référentiel externe');
+    const useReference = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-use-reference"]',
+    );
+    expect(useReference).not.toBeNull();
+
+    useReference!.click();
+    fixture.detectChanges();
+    const quantity = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="inventory-add-quantity"]',
+    );
+    const note = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
+      '[data-testid="inventory-add-note"]',
+    );
+    const add = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-add-submit"]',
+    );
+    expect(quantity).not.toBeNull();
+    expect(note).not.toBeNull();
+    expect(add).not.toBeNull();
+
+    fixture.componentInstance.inventoryAddQuantity = 3;
+    fixture.componentInstance.inventoryAddNote = 'Ajout du don';
+    fixture.detectChanges();
+    add!.click();
+    await fixture.whenStable();
+
+    expect(api.addBook).toHaveBeenCalledWith('access-token', {
+      isbn13: reference.isbn13,
+      quantityAvailable: 3,
+      note: 'Ajout du don',
+      title: reference.title,
+      authors: reference.authors,
+      publisher: reference.publisher,
+      publicationYear: reference.publicationYear,
+      physicalFormat: null,
+      language: null,
+      genre: null,
+      coverUrl: reference.coverUrl,
+      workId: reference.workId,
+    });
   });
 
   it('distinguishes fairs with the same name by their dates in the statistics selector', () => {

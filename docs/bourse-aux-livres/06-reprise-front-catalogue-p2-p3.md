@@ -122,7 +122,7 @@ présenter ce délai comme une règle de disponibilité, pas comme une réservat
 
 Le BackOffice et `src/Catalog` utilisent désormais `/administration`. Le client Catalog
 fournit une navigation par espaces de travail : tableau de bord, sessions, désengorgement,
-catalogue/métadonnées, bilan des bourses, files d'alertes, membres et paramètres. Chaque
+catalogue/inventaire, bilan des bourses, files d'alertes, membres et paramètres. Chaque
 écran charge les données à la demande, conserve les confirmations pour les corrections
 destructives et affiche les états `401`/`403` sans simuler une autorisation.
 
@@ -148,6 +148,15 @@ Les corrections ne suppriment jamais une ligne du ledger. Les réponses d'opéra
 renvoient `changed` et, quand applicable, `movementId`. Une fusion redirige la fiche
 source vers l'ISBN cible sans réécrire l'historique ; l'UI doit afficher la cible
 canonique et désactiver les actions sur la fiche redirigée.
+
+L'espace **Inventaire** du Catalog liste toutes les fiches sans les réduire à une file de
+travail. Sa recherche accepte un ISBN, un titre ou un auteur ; une recherche ISBN interroge
+le référentiel externe après normalisation ISBN-10/ISBN-13. Les résultats externes restent
+distincts des fiches locales jusqu'à la sélection d'une notice, puis l'ajout demande la
+quantité initiale et une note. Dans la liste locale, les boutons `+` et `−` corrigent la
+quantité disponible via `PATCH /books/admin/books/{isbn13}/quantity`, avec confirmation et
+motif ; la quantité annoncée est affichée à part. Les fiches redirigées restent consultables
+mais ne proposent pas d'action de stock.
 
 ### Bourses et statistiques
 
@@ -240,7 +249,7 @@ remplacée par des données inventées.
 
 ## Hors périmètre volontairement
 
-L'estimation de valeur marchande, la remise à plat d'inventaire en masse, les
+L'estimation de valeur marchande, le comptage physique en masse, les
 notifications push, le support des livres sans ISBN, la gestion des rôles Entra et le
 suivi de cartons physiques ne sont pas inventés dans cette tranche. Les rôles
 `Tri`/`Caisse`/`Administration` restent attribués dans Entra ; le module ne possède pas

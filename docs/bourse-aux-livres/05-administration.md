@@ -71,6 +71,19 @@ qu'il se vend ? ».
 | Saisir la recette d'une bourse | Un montant unique à la clôture, facultatif (`RG-51`) |
 | Fusionner deux fiches | Cas des ISBN-10 et ISBN-13 d'une même édition mal normalisés (`RG-07`) |
 
+### Espace Inventaire
+
+L'onglet **Inventaire** travaille à l'échelle des fiches et affiche l'ensemble du
+catalogue administratif, avec recherche par ISBN, titre ou auteur. Une fiche peut être
+ajoutée depuis un ISBN ou depuis une recherche bibliographique externe ; la notice
+sélectionnée est présentée séparément avant la confirmation de l'ajout.
+
+Depuis la liste, l'administrateur peut augmenter ou diminuer la quantité disponible d'une
+fiche. Chaque action demande une quantité et un motif, puis crée la correction `CORRECTION`
+attribuée dans le ledger (`RG-35`). La quantité annoncée pour une future bourse reste
+visible séparément de la quantité disponible. Une fiche redirigée vers une édition canonique
+reste consultable, mais ses actions de stock sont désactivées.
+
 ### Files de travail
 
 Des listes de travail concrètes, plutôt que des écrans de recherche :
@@ -156,25 +169,18 @@ Il en découle une liste de retrait, exportable pour être traitée physiquement
 local. Sans cet écran, le système ne fait qu'observer la saturation sans jamais aider
 à la résorber.
 
-## 6. Remise à plat de l'inventaire
+## 6. Périmètre de l'inventaire
 
-> 🟢 **Reportée.** Cet écran dédié n'est pas construit avec le reste de
-> l'administration ; il arrivera plus tard.
+L'inventaire administratif est volontairement centré sur les fiches : l'administrateur
+voit le catalogue complet, ajoute une notice identifiée par ISBN ou trouvée dans le
+référentiel externe, puis corrige le stock disponible par petits ajustements tracés.
+Les quantités annoncées restent une projection distincte ; elles ne sont jamais écrasées
+par une correction du stock disponible.
 
-Conséquence directe du suivi par ISBN sans exemplaire individuel : le compteur dérive
-à cause des ventes non scannées. Le mécanisme est décrit en `RG-34`.
-
-À terme, l'administration doit permettre :
-
-- de saisir un comptage physique pour un ensemble de fiches et d'ajuster les quantités,
-- de visualiser l'ampleur de l'écart constaté à chaque remise à plat,
-- de suivre cet écart dans le temps : **c'est l'indicateur de la discipline de scan en
-  caisse**, donc le principal indicateur de santé du projet.
-
-**En attendant**, la remise à plat s'effectue fiche par fiche via la correction
-manuelle des quantités (§4, mouvement `CORRECTION`, tracé par `RG-35`). Ce n'est pas
-un ajustement en masse et rien n'agrège l'écart dans le temps — mais `RG-34` reste
-exigible dès le palier 1, sans attendre cet écran.
+Le produit ne modélise pas d'exemplaire individuel, d'emplacement, de carton ou de saisie
+collective de comptage. Les écarts constatés sur le terrain sont donc traités sur la fiche
+concernée, avec une note et une ligne de ledger, sans inventer de mesure globale ni de
+capacité physique que le domaine ne possède pas (`RG-34`, `RG-35`).
 
 ## 7. Gestion des membres du site
 
