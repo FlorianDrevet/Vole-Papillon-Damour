@@ -114,6 +114,8 @@ Validation locale : TDD rouge puis vert, 184 tests Scan ChromeHeadless, build de
 `graphify update .` passent. Le shell local a été vérifié dans Chrome ; la vérification
 responsive/appareil réel avec une session bénévole reste à faire, car aucune connexion n’a été
 automatisée. Aucun déploiement ni changement Azure, Entra, compte ou API publique n’a été effectué.
+La PR [#150](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/150) est ouverte ; aucun
+déploiement ni merge n’a été effectué.
 
 ### État actualisé — 2026-09-11 — toasts de validation de l'administration Catalog
 
