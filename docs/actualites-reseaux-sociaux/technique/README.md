@@ -5,12 +5,11 @@
 
 ## État de l'implémentation
 
-Les paliers `L1` à `L4` sont présents dans la branche de la PR #122 : domaine et
-migration, import Instagram minuté, publication automatique réussie, titres Foundry
-avec repli, alertes, garde-fou de volume et relecture BackOffice. Les ressources Meta,
-Key Vault et Foundry ne sont pas créées par le dépôt tant que les décisions `Q-ACT-01`
-et `Q-ACT-04` ne sont pas prises. Le palier `L5` (page Facebook et webhook) reste hors
-de cette livraison.
+Les paliers `L1` à `L4` sont présents dans les livraisons des PR #122 et #148 : domaine
+et migration, import Instagram minuté, publication automatique réussie, titres Foundry
+avec repli, alertes, garde-fou de volume et relecture BackOffice. La configuration Meta,
+le secret d'import et la ressource Foundry sont activés sur `development`. Le palier `L5`
+(page Facebook et webhook) reste hors de cette livraison.
 
 ## 1. Les décisions
 
@@ -224,7 +223,8 @@ TitleGeneration__DeploymentName   <nom du déploiement>
 Nouveau module `infra/modules/AiFoundry/`, sur le patron des modules existants : la
 ressource, son déploiement de modèle, et l'attribution du rôle
 `Cognitive Services OpenAI User` à l'identité managée du Worker (le dépôt a déjà des
-modules `*.roleassignments.module.bicep` à copier).
+modules `*.roleassignments.module.bicep` à copier). Sur `development`, le module est
+activé avec `gpt-4.1-nano` en `GlobalStandard`, sous le déploiement `actuality-title`.
 
 ### Alertes
 
@@ -250,6 +250,9 @@ Trois règles `scheduledQueryRule`, sur le groupe d'action existant :
 - marqueur « titre à revoir » ;
 - bouton *Publier* à côté de *Enregistrer*.
 
+Ces outils restent disponibles pour les brouillons créés manuellement ; l'import
+Instagram publié automatiquement ne passe plus par cette file de validation.
+
 Le formulaire d'édition existant n'est pas refait.
 
 ## 9. Tests
@@ -260,7 +263,7 @@ Le dépôt impose le TDD (`.github/skills/tdd-workflow`). Les tests qui portent 
 |---|---|---|
 | Nettoyage de légende | `Application.tests` | Bloc de hashtags terminal retiré, paragraphes conservés, emoji conservés, légende vide gérée (`RG-ACT-07`, `RG-ACT-08`) |
 | Idempotence | `Application.tests` | Deux passages sur le même post → une actualité. Post déjà importé puis supprimé → pas de réimport (`RG-ACT-02`) |
-| Repli du titre | `Application.tests` | Générateur qui renvoie `null`, qui dépasse le délai, qui renvoie un titre invalide → actualité créée, titre de repli, marqueur posé (`RG-ACT-20`) |
+| Repli du titre | `Application.tests` | Générateur qui renvoie `null`, qui dépasse le délai, qui renvoie un titre invalide → actualité publiée, titre de repli, marqueur posé (`RG-ACT-20`) |
 | Validation du titre | `Infrastructure.tests` | Chaque contrainte de `05` section 3, une par test |
 | Échec d'image | `Application.tests` | Une image en échec → **aucune** écriture en base (`RG-ACT-19`, `ENF-ACT-21`) |
 | Visibilité | `Api.tests` | `all`, `latest` et `{id}` ne renvoient pas de brouillon (`RG-ACT-05`) |
@@ -281,10 +284,10 @@ Reprend les paliers de [`../01`](../01-vision-et-perimetre.md), section 6.
 | `L1` | Domaine, migration, filtrage des lectures publiques, endpoints admin, BackOffice, `pre-line` | **Aucune** |
 | `L2` | `ISocialFeedClient` + implémentation, commande d'import, fonction minuteur, secret Key Vault | `Q-ACT-01`, `Q-ACT-04`, revue d'application Meta |
 | `L3` | Générateur de titre, validation, module Foundry, attribution de rôle | Ressource Foundry |
-| `L4` | Alertes, brouillons dormants, garde-fous | — |
+| `L4` | Alertes, brouillons manuels dormants, garde-fous | — |
 | `L5` | Client page Facebook, fonction HTTP, vérification de signature `X-Hub-Signature-256` | `Q-ACT-03` |
 
-La construction a suivi cet ordre : `L1`, puis `L2`, `L3` et `L4`. Le code est livrable
-sans activer l'import ; la mise en production attend les réponses de l'association, le
-jeton Meta, la revue de l'application et, si le titre IA est activé, le déploiement
-Foundry. `L5` reste une évolution séparée.
+La construction a suivi cet ordre : `L1`, puis `L2`, `L3` et `L4`. L'import et la
+génération de titres sont activés sur `development`, avec publication directe ; la revue
+Meta et l'accès live de comptes non testeurs restent à obtenir. `L5` reste une évolution
+séparée.
