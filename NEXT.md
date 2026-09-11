@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) mise à jour, puis contrôler le Catalog public après merge et déploiement ; les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent à suivre. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-pr129-conflicts` |
-| **Dernière mise à jour** | 2026-09-11 — conflits de la PR #129 résolus et branche publiée, aucun déploiement |
-| **Branche** | `fix/pr-129-conflicts` — worktree dédié depuis `origin/main` (`b359829`), résolution publiée sur `feat/catalog-home-sections` pour mettre à jour la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) |
+| **Prochaine action** | Ouvrir puis faire relire la PR du user flow d'inscription, appliquer `Configure-EntraUserFlow.ps1` en `-WhatIf` puis réellement, et contrôler le formulaire en navigation privée sur desktop/mobile ; les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) restent à suivre. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-registration-name-fields` |
+| **Dernière mise à jour** | 2026-09-11 — formulaire d'inscription préparé avec Prénom/Nom, aucun tenant ni déploiement modifié |
+| **Branche** | `feat/catalog-account-registration-name-fields` — worktree dédié depuis `origin/main` (`469ef2e`), PR à ouvrir |
 
 ---
 
@@ -77,6 +77,22 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-11 — champs Prénom et Nom de l'inscription Catalog
+
+Depuis `origin/main` (`469ef2e`) dans le worktree
+`Vole-Papillon-Damour-account-registration-name-fields`, le user flow External ID du
+Catalog collecte désormais les attributs intégrés `givenName` et `surname` dans deux champs
+distincts libellés « Prénom » et « Nom ». Ils restent facultatifs comme l'ancien champ de
+nom, acceptent les caractères accentués via une validation portable limitée à 64 caractères,
+et l'e-mail reste masqué et prérempli. Le titre « Créer votre compte » et sa description
+française sont conservés comme chaînes Unicode ; le champ `displayName` n'est plus collecté.
+
+Le script reste idempotent et associé uniquement à `vpd-catalog-<environment>`. Validation
+TDD : le test Pester a d'abord échoué sur l'ancien payload, puis les 5 tests du script passent
+après la modification. Aucun tenant, compte, mot de passe, déploiement ou configuration hors
+dépôt n'a été modifié. Après la PR, exécuter le script avec `-WhatIf`, puis sans cette option,
+et vérifier le formulaire, la création/connexion et le rendu mobile avec un compte de test.
 
 ### État actualisé — 2026-09-11 — résolution des conflits de la PR #129
 

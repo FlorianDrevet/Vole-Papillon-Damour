@@ -69,8 +69,9 @@
 - Public Catalog registration keeps the MSAL `prompt=create` request and `/compte` return
   URL. The External ID form is provisioned separately by
   `infra/entra/Configure-EntraUserFlow.ps1` through Graph v1.0 and is associated only with
-  `vpd-catalog-<environment>`; the flow body uses a portable 0–256-character
-  `displayName` validation regex, so normal names such as `Florian Drevet` are accepted.
+  `vpd-catalog-<environment>`; the flow body collects the built-in `givenName` and `surname`
+  attributes with French `Prénom`/`Nom` labels, optional portable 0–64-character validation,
+  and a hidden prefilled email attribute. The hosted form no longer collects `displayName`.
   Scan, BackOffice and Cash have no self-service signup flow.
 - Catalog browser-delegated requests add `ui_locales=fr-FR` and `mkt=fr-FR` to sign-in,
   registration, and interactive API-token renewal. `infra/entra/Configure-EntraBranding.ps1`

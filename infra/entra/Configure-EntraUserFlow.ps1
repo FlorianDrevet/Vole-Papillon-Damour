@@ -87,9 +87,16 @@ function New-CatalogSignupFlowBody {
                     dataType = 'string'
                 }
                 @{
-                    id = 'displayName'
-                    displayName = 'Nom affiché'
-                    description = 'Nom affiché du membre dans le catalogue.'
+                    id = 'givenName'
+                    displayName = 'Prénom'
+                    description = 'Prénom du membre dans le catalogue.'
+                    userFlowAttributeType = 'builtIn'
+                    dataType = 'string'
+                }
+                @{
+                    id = 'surname'
+                    displayName = 'Nom'
+                    description = 'Nom du membre dans le catalogue.'
                     userFlowAttributeType = 'builtIn'
                     dataType = 'string'
                 }
@@ -111,16 +118,27 @@ function New-CatalogSignupFlowBody {
                                 validationRegEx = '^[a-zA-Z0-9.!#$%&*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$'
                             }
                             @{
-                                attribute = 'displayName'
-                                label = 'Nom affiché'
+                                attribute = 'givenName'
+                                label = 'Prénom'
                                 inputType = 'text'
                                 hidden = $false
                                 editable = $true
                                 writeToDirectory = $true
                                 required = $false
                                 # \p{L} n'est pas interprété de façon portable par la page hébergée External ID.
-                                # Le nom est facultatif ; on limite seulement sa longueur.
-                                validationRegEx = '^.{0,256}$'
+                                # Le prénom est facultatif ; on limite seulement sa longueur native External ID.
+                                validationRegEx = '^.{0,64}$'
+                            }
+                            @{
+                                attribute = 'surname'
+                                label = 'Nom'
+                                inputType = 'text'
+                                hidden = $false
+                                editable = $true
+                                writeToDirectory = $true
+                                required = $false
+                                # Le nom est facultatif ; on limite seulement sa longueur native External ID.
+                                validationRegEx = '^.{0,64}$'
                             }
                         )
                     }
