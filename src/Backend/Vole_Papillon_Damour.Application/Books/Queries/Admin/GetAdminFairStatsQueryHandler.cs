@@ -83,13 +83,15 @@ public sealed class GetAdminFairStatsQueryHandler(IProjectDbContext dbContext)
 
         var previousFairs = await dbContext.AssoEvents
             .AsNoTracking()
-            .Where(candidate =>
-                candidate.EventsType.Value == EventsType.EventsTypeEnum.Books &&
-                candidate.DateStart < fair.DateStart &&
-                !candidate.IsCancelled)
+            .Where(candidate => candidate.EventsType == new EventsType(EventsType.EventsTypeEnum.Books) &&
+                                !candidate.IsCancelled)
+            .ToListAsync(cancellationToken);
+        // SQLite cannot translate DateTimeOffset comparisons consistently; compare dates in memory.
+        previousFairs = previousFairs
+            .Where(candidate => candidate.DateStart < fair.DateStart)
             .OrderByDescending(candidate => candidate.DateStart)
             .Take(5)
-            .ToListAsync(cancellationToken);
+            .ToList();
         var previousFairIds = previousFairs.Select(candidate => candidate.Id).ToArray();
         var previousSales = await dbContext.BookMovements
             .AsNoTracking()

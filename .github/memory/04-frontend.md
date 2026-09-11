@@ -48,9 +48,17 @@ creation and role updates and shows a contextual notice when the Entra directory
 read. The inventory workspace keeps physical history and carton/rayon actions explicitly
 empty or disabled because no corresponding endpoint or domain model exists; the UI does not
 invent those values. Opening a scan session now upserts the local member projection with
-the display-name claim; session reads prefer that name, then the stored email. Historic
-sessions with neither a local user row nor stored contact data cannot be reconstructed by
-the repository alone and require reopening or a separate backfill.
+the display-name claim; session reads show that first/last name only and never expose the
+stored volunteer email as a substitute. Historic sessions with neither a local user row nor
+stored contact data show a neutral missing-name label and require reopening or a separate
+backfill. The dashboard period chips are typed and reload the overview with UTC bounds for
+30 days, three calendar months, or twelve months; the scan-session navigation badge uses the
+same pending-alert/non-cancelled predicate as the `Encore corrigeables` view.
+
+The public search sort control keeps a native accessible `<select>` for keyboard and screen
+reader behavior while wrapping it in Catalog design-system spacing, border, pill, chevron,
+hover, and focus styles. The administration Settings navigation icon uses a balanced custom
+SVG so it remains legible at the responsive sidebar sizes.
 The external bibliographic result block is kept separate from local results. DEV ACS email
 delivery is enabled after domain verification; a real authorized-recipient test remains open.
 

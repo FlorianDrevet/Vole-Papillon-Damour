@@ -61,6 +61,8 @@ export type CatalogAdminSection =
   | 'accounts'
   | 'settings';
 
+export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
+
 type CatalogAdminNavIcon =
   | 'dashboard'
   | 'scan'
@@ -129,7 +131,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   navBadge(section: CatalogAdminSection): string | null {
     const totalCount = section === 'sessions'
-      ? this.sessionsPage()?.totalCount
+      ? this.sessionsPage() ? this.correctableSessionCount() : undefined
       : section === 'catalogue'
         ? this.booksPage()?.totalCount
         : undefined;
@@ -176,6 +178,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   sessionMode = 'AvailableNow';
   sessionFairId = '';
   sessionPreset: 'correctable' | 'all' | 'open' | 'alerts' = 'correctable';
+  overviewPeriod: CatalogAdminOverviewPeriod = '30-days';
 
   alertStatus = '';
   alertPage = 1;
@@ -325,8 +328,22 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   async loadOverview(): Promise<void> {
     await this.run('overview', async token => {
-      this.overview.set(await firstValueFrom(this.api.getOverview(token)));
+      const overview = this.overviewPeriod === '30-days'
+        ? this.api.getOverview(token)
+        : this.api.getOverview(token, ...this.overviewPeriodBounds(this.overviewPeriod));
+      this.overview.set(await firstValueFrom(overview));
     });
+  }
+
+  setOverviewPeriod(period: CatalogAdminOverviewPeriod): void {
+    if (this.overviewPeriod === period) {
+      return;
+    }
+
+    this.overviewPeriod = period;
+    if (this.auth.isAuthenticated()) {
+      void this.loadOverview();
+    }
   }
 
   async loadBooks(): Promise<void> {
@@ -605,6 +622,38 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   setSessionPreset(preset: 'correctable' | 'all' | 'open' | 'alerts'): void {
     this.sessionPreset = preset;
+  }
+
+  private overviewPeriodBounds(period: CatalogAdminOverviewPeriod): [string, string] {
+    const to = new Date();
+    const from = new Date(to);
+    if (period === '30-days') {
+      from.setUTCDate(from.getUTCDate() - 30);
+    } else if (period === '3-months') {
+      this.subtractCalendarMonths(from, 3);
+    } else {
+      this.subtractCalendarYears(from, 1);
+    }
+
+    return [from.toISOString(), to.toISOString()];
+  }
+
+  private subtractCalendarMonths(date: Date, months: number): void {
+    const day = date.getUTCDate();
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() - months);
+    date.setUTCDate(Math.min(day, this.daysInUtcMonth(date)));
+  }
+
+  private subtractCalendarYears(date: Date, years: number): void {
+    const day = date.getUTCDate();
+    date.setUTCDate(1);
+    date.setUTCFullYear(date.getUTCFullYear() - years);
+    date.setUTCDate(Math.min(day, this.daysInUtcMonth(date)));
+  }
+
+  private daysInUtcMonth(date: Date): number {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
   }
 
   visibleSessions(): CatalogAdminScanSession[] {

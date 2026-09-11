@@ -31,12 +31,15 @@ public sealed class GetAdminBookFairsQueryHandler(
 
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
-            .Where(fair => fair.EventsType.Value == EventsType.EventsTypeEnum.Books &&
+            .Where(fair => fair.EventsType == new EventsType(EventsType.EventsTypeEnum.Books) &&
                           (query.IncludeCancelled || !fair.IsCancelled))
-            .OrderByDescending(fair => fair.DateStart)
             .ToListAsync(cancellationToken);
-        var totalCount = fairs.Count;
-        var page = fairs.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize);
+        // SQLite cannot translate DateTimeOffset ordering consistently; keep the result ordering provider-neutral.
+        var bookFairs = fairs
+            .OrderByDescending(fair => fair.DateStart)
+            .ToArray();
+        var totalCount = bookFairs.Length;
+        var page = bookFairs.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize);
         return new AdminFairPageResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
             page.Select(fair => new AdminFairResult(

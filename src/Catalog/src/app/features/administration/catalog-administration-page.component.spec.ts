@@ -20,6 +20,7 @@ import {
   CatalogAdminMemberPage,
   CatalogAdminOverview,
   CatalogAdminScanSessionPage,
+  CatalogAdminScanSession,
   CatalogAdminSettings,
   CatalogDeadStockResponse,
 } from '../../core/catalog.models';
@@ -64,6 +65,28 @@ describe('CatalogAdministrationPageComponent', () => {
     username: `${name.toLowerCase()}@example.test`,
     localAccountId: 'local-account-id',
     name,
+  });
+
+  const scanSession = (id: string, pendingAlertCount: number): CatalogAdminScanSession => ({
+    id,
+    volunteerId: 'volunteer-id',
+    volunteerName: 'Ada Lovelace',
+    mode: 'AvailableNow',
+    fairId: null,
+    fairName: null,
+    startedAt: '2026-09-11T08:00:00Z',
+    lastScanAt: '2026-09-11T08:01:00Z',
+    lastSyncAt: '2026-09-11T08:01:00Z',
+    endedAt: '2026-09-11T08:02:00Z',
+    closeReason: 'Manual',
+    status: 'Closed',
+    scannedCount: 2,
+    keptCount: 1,
+    rejectedCount: 1,
+    alertCount: pendingAlertCount,
+    pendingAlertCount,
+    nextAlertDueAt: pendingAlertCount > 0 ? '2026-09-11T09:00:00Z' : null,
+    movements: [],
   });
 
   beforeEach(async () => {
@@ -205,6 +228,73 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-testid="admin-stat-card"]').length).toBe(8);
     expect(fixture.nativeElement.textContent).toContain('Disponibles et annoncés');
     expect(fixture.nativeElement.textContent).toContain('Alertes en attente d’envoi');
+  });
+
+  it('reloads the dashboard when a period is selected', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-11T10:00:00Z'));
+    try {
+      auth.account.set(account('Administrator'));
+      auth.isAuthenticated.set(true);
+      fixture.detectChanges();
+      await fixture.componentInstance.initialize();
+      api.getOverview.calls.reset();
+
+      const buttons = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
+        '.period-chips:not(.session-chips) .period-chip',
+      );
+      expect(Array.from(buttons).map(button => button.textContent?.trim())).toEqual([
+        '30 derniers jours',
+        '3 derniers mois',
+        'Année',
+      ]);
+      expect(buttons[0].getAttribute('aria-pressed')).toBe('true');
+
+      buttons[1].click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect((fixture.componentInstance as unknown as {overviewPeriod: string}).overviewPeriod).toBe('3-months');
+      expect(buttons[1].getAttribute('aria-pressed')).toBe('true');
+      expect(api.getOverview).toHaveBeenCalledTimes(1);
+      expect(api.getOverview).toHaveBeenCalledWith(
+        'access-token',
+        '2026-06-11T10:00:00.000Z',
+        '2026-09-11T10:00:00.000Z',
+      );
+
+      api.getOverview.calls.reset();
+      buttons[2].click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(buttons[2].getAttribute('aria-pressed')).toBe('true');
+      expect(api.getOverview).toHaveBeenCalledWith(
+        'access-token',
+        '2025-09-11T10:00:00.000Z',
+        '2026-09-11T10:00:00.000Z',
+      );
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('shows the number of correctable sessions in the sidebar badge', () => {
+    fixture.componentInstance.sessionsPage.set({
+      generatedAt: '2026-09-11T10:00:00Z',
+      sessions: [scanSession('correctable', 2), scanSession('already-sent', 0)],
+      totalCount: 12,
+      page: 1,
+      pageSize: 25,
+    });
+    fixture.detectChanges();
+
+    const sessionButton = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.admin-nav-item'),
+    ).find(button => button.textContent?.includes('Sessions de scan'));
+
+    expect(sessionButton).toBeDefined();
+    expect(sessionButton?.querySelector('.admin-nav-badge')?.textContent?.trim()).toBe('1');
   });
 
   it('loads the dashboard first and can switch to each connected workspace', async () => {

@@ -181,7 +181,7 @@ public sealed class EntraGraphUserDirectory(
             accessToken,
             payload: null,
             cancellationToken);
-        var servicePrincipal = result.Value.FirstOrDefault();
+        var servicePrincipal = (result.Value ?? []).FirstOrDefault();
         return servicePrincipal ?? throw new EntraAccountDirectoryException("graph-api-service-principal-not-found");
     }
 
@@ -200,7 +200,7 @@ public sealed class EntraGraphUserDirectory(
                 accessToken,
                 payload: null,
                 cancellationToken);
-            values.AddRange(page.Value);
+            values.AddRange(page.Value ?? []);
             nextUri = string.IsNullOrWhiteSpace(page.NextLink) ? null : new Uri(page.NextLink);
         }
 
@@ -331,7 +331,7 @@ public sealed class EntraGraphUserDirectory(
 
     private static Dictionary<Guid, string> GetSupportedRoleNames(GraphServicePrincipal servicePrincipal)
     {
-        return servicePrincipal.AppRoles
+        return (servicePrincipal.AppRoles ?? [])
             .Where(role => role.Value is not null
                 && role.IsEnabled
                 && Guid.TryParse(role.Id, out _)
@@ -352,7 +352,7 @@ public sealed class EntraGraphUserDirectory(
         [property: JsonPropertyName("access_token")] string? AccessToken);
 
     private sealed record GraphCollection<T>(
-        [property: JsonPropertyName("value")] IReadOnlyList<T> Value,
+        [property: JsonPropertyName("value")] IReadOnlyList<T>? Value,
         [property: JsonPropertyName("@odata.nextLink")] string? NextLink = null);
 
     private sealed record GraphUser(
@@ -371,7 +371,7 @@ public sealed class EntraGraphUserDirectory(
 
     private sealed record GraphServicePrincipal(
         [property: JsonPropertyName("id")] string Id,
-        [property: JsonPropertyName("appRoles")] IReadOnlyList<GraphAppRole> AppRoles);
+        [property: JsonPropertyName("appRoles")] IReadOnlyList<GraphAppRole>? AppRoles);
 
     private sealed record GraphAppRole(
         [property: JsonPropertyName("id")] string Id,

@@ -218,6 +218,16 @@ describe('CatalogSearchPageComponent', () => {
     expect(options).toEqual(['']);
   });
 
+  it('renders the sort select with the catalogue control styling hook', () => {
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector('.sort-select-input') as HTMLSelectElement;
+
+    expect(select).not.toBeNull();
+    expect(select.getAttribute('aria-label')).toBe('Trier les résultats');
+    expect(fixture.nativeElement.querySelector('.sort-select-chevron')).not.toBeNull();
+  });
+
   it('loads the filtered results when opened with a genre query parameter', async () => {
     routeParams.next(convertToParamMap({genre: 'Romans'}));
     fixture.detectChanges();

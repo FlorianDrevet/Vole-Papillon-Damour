@@ -128,9 +128,10 @@ physical cartons are not represented by the domain.
 
 The Catalog scan-session opening endpoint ensures a local `User` projection from the
 authenticated external identity before creating the session. It stores the optional token
-display name as the domain `Name` value and keeps the email as the fallback. Administrative
-session list/detail projections render `Name`, then email; a session whose volunteer ID has
-no local user cannot expose a human name because `ScanSession` stores only that ID.
+display name as the domain `Name` value. Administrative session list/detail projections
+render only the formatted first and last name; they do not fall back to the volunteer email.
+A session whose volunteer ID has no local user or whose projection has no name therefore
+shows a neutral missing-name label in the UI, because `ScanSession` stores only that ID.
 
 ## Conventions To Preserve
 

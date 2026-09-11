@@ -273,7 +273,8 @@
 }
 
 .admin-heading-split {
-  align-items: flex-end;
+  flex-direction: row;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
 }

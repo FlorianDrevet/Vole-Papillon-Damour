@@ -33,6 +33,25 @@ public sealed class AccountAdministrationHandlerTests
     }
 
     [Fact]
+    public async Task GetAdminAccountsQuery_WhenDirectoryTransportFails_ReturnsDirectoryUnavailable()
+    {
+        var directory = Substitute.For<IEntraAccountDirectory>();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        directory.ListAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<IReadOnlyList<EntraAccount>>(new HttpRequestException("Graph unavailable")));
+
+        var handler = new GetAdminAccountsQueryHandler(directory, clock);
+
+        var result = await handler.Handle(
+            new GetAdminAccountsQuery(null, 1, 10),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Account.DirectoryUnavailable");
+    }
+
+    [Fact]
     public async Task CreateAdminAccountCommand_NormalizesRolesBeforeCreatingDirectoryAccount()
     {
         var directory = Substitute.For<IEntraAccountDirectory>();

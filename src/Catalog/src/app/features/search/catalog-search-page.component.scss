@@ -136,21 +136,52 @@
 
 .sort-control {
   display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
+  align-items: center;
+  gap: 9px;
   color: var(--catalog-slate-2);
   font-size: .78rem;
   white-space: nowrap;
 }
 
-.sort-control select {
-  padding: 0 1px 4px;
-  border: 0;
-  border-bottom: 1px solid var(--catalog-blue-soft);
-  background: transparent;
+.sort-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sort-select-input {
+  min-width: 156px;
+  min-height: 36px;
+  padding: 0 32px 0 13px;
+  appearance: none;
+  border: 1px solid var(--catalog-line-strong);
+  border-radius: 999px;
+  background: var(--catalog-white);
   color: var(--catalog-ink-2);
   cursor: pointer;
   font-weight: 600;
+}
+
+.sort-select-input:hover {
+  border-color: var(--catalog-blue);
+}
+
+.sort-select-input:focus-visible {
+  border-color: var(--catalog-blue);
+  box-shadow: 0 0 0 3px rgba(20, 151, 214, .14);
+}
+
+.sort-select-chevron {
+  position: absolute;
+  right: 13px;
+  width: 11px;
+  height: 8px;
+  fill: none;
+  pointer-events: none;
+  stroke: var(--catalog-blue);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
 }
 
 .search-layout {
