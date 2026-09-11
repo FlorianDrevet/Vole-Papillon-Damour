@@ -320,6 +320,46 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getSettings).toHaveBeenCalled();
   });
 
+  it('distinguishes fairs with the same name by their dates in the statistics selector', () => {
+    fixture.detectChanges();
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.componentInstance.activeSection.set('fairs');
+    fixture.componentInstance.fairsPage.set({
+      generatedAt: '2026-09-11T10:00:00Z',
+      fairs: [
+        {
+          id: 'fair-october',
+          name: 'Bourse aux livres',
+          dateStart: '2026-10-10T10:00:00Z',
+          dateEnd: '2026-10-10T18:00:00Z',
+          isCancelled: false,
+          revenue: null,
+        },
+        {
+          id: 'fair-november',
+          name: 'Bourse aux livres',
+          dateStart: '2026-11-14T10:00:00Z',
+          dateEnd: '2026-11-14T18:00:00Z',
+          isCancelled: false,
+          revenue: null,
+        },
+      ],
+      totalCount: 2,
+      page: 1,
+      pageSize: 50,
+    });
+    fixture.detectChanges();
+
+    const options = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLOptionElement>('select[name="fairId"] option'),
+    ).map(option => option.textContent?.trim() ?? '');
+
+    expect(options[1]).toContain(fixture.componentInstance.formatDate('2026-10-10T10:00:00Z'));
+    expect(options[2]).toContain(fixture.componentInstance.formatDate('2026-11-14T10:00:00Z'));
+    expect(options[1]).not.toBe(options[2]);
+  });
+
   it('loads the accounts and roles workspace from the typed Entra accounts endpoint', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
