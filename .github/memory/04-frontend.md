@@ -74,8 +74,9 @@ does not provide.
 The Catalog follow-up polish keeps the genre section in that position and turns recent-home
 availability into compact colored pill tags. The browser shell initializes cached MSAL state
 on arrival, keeps connected member/admin account controls at the same width, and the search
-page exposes direct typed `Work`/`Edition` follow buttons: a single external title gets a
-section-level all-editions action, while each precise edition remains independently followable.
+page exposes direct typed `Work`/`Edition` follow buttons: references that identify one
+common work get a single section-level all-editions action above the list, while each precise
+edition remains independently followable and empty reference results expose no follow action.
 The old scope-selection modal is removed; a pending follow survives the sign-in redirect and
 submits directly after the cached session is restored.
 
