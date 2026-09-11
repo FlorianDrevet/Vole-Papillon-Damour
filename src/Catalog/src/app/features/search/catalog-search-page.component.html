@@ -21,16 +21,56 @@
   <div class="page-width">
     <div class="results-toolbar">
       <h1>{{ resultHeading() }}</h1>
-      <label class="sort-control">
+      <div class="sort-control">
         <span>Trier par :</span>
         <span class="sort-select">
-          <select class="sort-select-input" name="sort" aria-label="Trier les résultats" [(ngModel)]="sort" (ngModelChange)="applyFilters()">
-            <option value="relevance">pertinence</option>
-            <option value="recent">arrivée récente</option>
-          </select>
-          <svg class="sort-select-chevron" aria-hidden="true" viewBox="0 0 12 8"><path d="m1 1 5 5 5-5"></path></svg>
+          <button
+            #sortTrigger
+            type="button"
+            class="sort-select-trigger"
+            aria-label="Trier les résultats"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="sortMenuOpen"
+            aria-controls="catalog-sort-menu"
+            (click)="toggleSortMenu()"
+            (keydown)="handleSortTriggerKeydown($event)">
+            <span>{{ sortLabel() }}</span>
+            <svg class="sort-select-chevron" [class.sort-select-chevron--open]="sortMenuOpen" aria-hidden="true" viewBox="0 0 12 8"><path d="m1 1 5 5 5-5"></path></svg>
+          </button>
+          @if (sortMenuOpen) {
+            <div id="catalog-sort-menu" class="sort-select-panel" role="menu" aria-label="Options de tri">
+              <span class="sort-panel-kicker">Ordre d’affichage</span>
+              <div class="sort-panel-options">
+                @for (choice of sortChoices; track choice.value; let index = $index) {
+                  <button
+                    #sortOption
+                    [id]="'catalog-sort-option-' + index"
+                    type="button"
+                    class="sort-option"
+                    [class.sort-option--selected]="sort === choice.value"
+                    [class.sort-option--active]="sortMenuActiveIndex === index"
+                    role="menuitemradio"
+                    [attr.aria-checked]="sort === choice.value"
+                    [attr.tabindex]="sortMenuActiveIndex === index ? 0 : -1"
+                    [attr.data-sort]="choice.value"
+                    (click)="selectSort(choice.value)"
+                    (keydown)="handleSortOptionKeydown($event, index)">
+                    <span class="sort-option-mark" aria-hidden="true">
+                      @if (sort === choice.value) {
+                        <svg viewBox="0 0 16 16"><path d="m3.2 8.4 3 3 6.6-6.8"></path></svg>
+                      }
+                    </span>
+                    <span class="sort-option-copy">
+                      <strong>{{ choice.label }}</strong>
+                      <small>{{ choice.description }}</small>
+                    </span>
+                  </button>
+                }
+              </div>
+            </div>
+          }
         </span>
-      </label>
+      </div>
     </div>
 
     <div class="search-layout">
