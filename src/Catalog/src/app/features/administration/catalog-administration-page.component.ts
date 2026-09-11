@@ -14,6 +14,7 @@ import {Meta} from '@angular/platform-browser';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
+import {CatalogApiService} from '../../core/catalog-api.service';
 import {
   CatalogAuthenticationRedirectStartedError,
   CatalogAuthService,
@@ -41,6 +42,7 @@ import {
   CatalogAdminScanSessionPage,
   CatalogAdminSessionFilters,
   CatalogAdminSettings,
+  CatalogBookReference,
   CatalogDeadStockBook,
 } from '../../core/catalog.models';
 import {toDeadStockCsv} from './dead-stock-export';
@@ -48,6 +50,7 @@ import {toDeadStockCsv} from './dead-stock-export';
 const DEFAULT_MIN_AGE_MONTHS = 6;
 const DEFAULT_MIN_QUANTITY = 3;
 const MAX_MIN_AGE_MONTHS = 120_000;
+const MAX_BOOK_QUANTITY = 100_000;
 
 export type CatalogAdminSection =
   | 'overview'
@@ -83,6 +86,20 @@ interface CatalogAdminNavGroup {
   label: string;
   items: CatalogAdminNavItem[];
 }
+
+interface CatalogInventoryCandidate {
+  isbn13: string;
+  workId: string | null;
+  title: string | null;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  genre: string | null;
+  coverUrl: string | null;
+  source: string;
+}
+
+type CatalogInventoryAdjustmentDirection = 'increase' | 'decrease';
 
 @Component({
   selector: 'app-catalog-administration-page',
@@ -134,6 +151,8 @@ export class CatalogAdministrationPageComponent implements OnInit {
       ? this.sessionsPage() ? this.correctableSessionCount() : undefined
       : section === 'catalogue'
         ? this.booksPage()?.totalCount
+        : section === 'inventory'
+          ? this.inventoryBooksPage()?.totalCount
         : undefined;
 
     return totalCount === undefined ? null : this.formatNumber(totalCount);
@@ -141,6 +160,11 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   readonly overview = signal<CatalogAdminOverview | null>(null);
   readonly booksPage = signal<CatalogAdminBookPage | null>(null);
+  readonly inventoryBooksPage = signal<CatalogAdminBookPage | null>(null);
+  readonly inventoryReferenceResults = signal<CatalogBookReference[]>([]);
+  readonly inventoryAddCandidate = signal<CatalogInventoryCandidate | null>(null);
+  readonly inventoryLookupLoading = signal(false);
+  readonly inventoryLookupError = signal<string | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
   readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
   readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
@@ -169,6 +193,16 @@ export class CatalogAdministrationPageComponent implements OnInit {
   bookUndatedOnly = false;
   bookPage = 1;
   readonly bookPageSize = 25;
+
+  inventorySearch = '';
+  inventoryIsbn = '';
+  inventoryReferenceQuery = '';
+  inventoryPage = 1;
+  readonly inventoryPageSize = 25;
+  inventoryAdjustmentQuantity = 1;
+  inventoryAdjustmentNote = 'Correction depuis l’inventaire';
+  inventoryAddQuantity = 1;
+  inventoryAddNote = 'Ajout depuis l’inventaire';
 
   sessionStatus = '';
   sessionFrom = '';
@@ -258,6 +292,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   constructor(
     private readonly auth: CatalogAuthService,
     private readonly api: CatalogAdminApiService,
+    private readonly catalogApi: CatalogApiService,
     private readonly meta: Meta,
   ) {
     this.initialized = this.auth.initialized;
@@ -310,7 +345,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         await this.loadDeadStock();
         break;
       case 'inventory':
-        await this.loadOverview();
+        await this.loadInventory();
         break;
       case 'catalogue':
         await this.loadBooks();
@@ -363,6 +398,150 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('books', async token => {
       this.booksPage.set(await firstValueFrom(this.api.getBooks(token, filters)));
+    });
+  }
+
+  async loadInventory(): Promise<void> {
+    await this.run('inventory', async token => {
+      await this.loadInventoryPage(token);
+    });
+  }
+
+  async lookupInventoryIsbn(): Promise<void> {
+    const isbn = this.normalizeIsbn(this.inventoryIsbn);
+    this.inventoryIsbn = isbn;
+    if (!this.isValidIsbn(isbn)) {
+      this.inventoryLookupError.set('Saisissez un ISBN-10 ou ISBN-13 valide.');
+      this.inventoryReferenceResults.set([]);
+      this.inventoryAddCandidate.set(null);
+      return;
+    }
+
+    this.inventoryReferenceResults.set([]);
+    this.inventoryAddCandidate.set(null);
+    await this.runInventoryLookup(async () => {
+      const response = await firstValueFrom(this.catalogApi.searchReferences(isbn, 1, 20));
+      const isbn13 = this.isbn13Equivalent(isbn);
+      const reference = response.items.find(item => this.normalizeIsbn(item.isbn13 || '') === (isbn13 ?? isbn));
+      const candidate = reference ? this.toInventoryCandidate(reference) : null;
+      if (!candidate) {
+        this.inventoryLookupError.set('Aucune notice bibliographique ne correspond à cet ISBN.');
+        return;
+      }
+      this.inventoryAddCandidate.set(candidate);
+    });
+  }
+
+  async searchInventoryReferences(): Promise<void> {
+    const query = this.inventoryReferenceQuery.trim();
+    if (query.length < 2) {
+      this.inventoryLookupError.set('La recherche doit contenir au moins deux caractères.');
+      this.inventoryReferenceResults.set([]);
+      this.inventoryAddCandidate.set(null);
+      return;
+    }
+
+    this.inventoryReferenceQuery = query;
+    this.inventoryReferenceResults.set([]);
+    this.inventoryAddCandidate.set(null);
+    await this.runInventoryLookup(async () => {
+      const response = await firstValueFrom(this.catalogApi.searchReferences(query, 1, 20));
+      this.inventoryReferenceResults.set(response.items);
+      if (response.items.length === 0) {
+        this.inventoryLookupError.set('Aucune référence ne correspond à cette recherche.');
+      }
+    });
+  }
+
+  selectInventoryCandidate(reference: CatalogBookReference): void {
+    const candidate = this.toInventoryCandidate(reference);
+    if (!candidate) {
+      return;
+    }
+
+    this.inventoryAddCandidate.set(candidate);
+    this.inventoryAddQuantity = 1;
+    this.inventoryAddNote = 'Ajout depuis l’inventaire';
+    this.inventoryLookupError.set(null);
+  }
+
+  async addInventoryCandidate(): Promise<void> {
+    const candidate = this.inventoryAddCandidate();
+    const quantity = Number(this.inventoryAddQuantity);
+    const note = this.inventoryAddNote.trim();
+    if (!candidate || !Number.isInteger(quantity) || quantity < 0 || quantity > MAX_BOOK_QUANTITY || !note) {
+      this.inventoryLookupError.set('La quantité doit être un entier positif ou nul et la note est obligatoire.');
+      return;
+    }
+
+    if (note.length > 500) {
+      this.inventoryLookupError.set('La note ne peut pas dépasser 500 caractères.');
+      return;
+    }
+
+    await this.run('add-inventory-book', async token => {
+      await firstValueFrom(this.api.addBook(token, {
+        isbn13: candidate.isbn13,
+        quantityAvailable: quantity,
+        note,
+        title: candidate.title,
+        authors: candidate.authors,
+        publisher: candidate.publisher,
+        publicationYear: candidate.publicationYear,
+        physicalFormat: null,
+        language: null,
+        genre: candidate.genre,
+        coverUrl: candidate.coverUrl,
+        workId: candidate.workId,
+      }));
+      this.inventoryAddCandidate.set(null);
+      this.inventoryReferenceResults.set([]);
+      this.showSuccess('La fiche a été ajoutée à l’inventaire.');
+      await this.loadInventoryPage(token);
+    });
+  }
+
+  async adjustInventoryQuantity(
+    book: CatalogAdminBook,
+    direction: CatalogInventoryAdjustmentDirection,
+  ): Promise<void> {
+    const amount = Number(this.inventoryAdjustmentQuantity);
+    const note = this.inventoryAdjustmentNote.trim();
+    if (!Number.isInteger(amount) || amount <= 0 || amount > MAX_BOOK_QUANTITY || !note) {
+      this.showError('La quantité d’ajustement doit être un entier positif et le motif est obligatoire.');
+      return;
+    }
+
+    if (note.length > 500) {
+      this.showError('Le motif ne peut pas dépasser 500 caractères.');
+      return;
+    }
+
+    const nextQuantity = direction === 'increase'
+      ? book.quantityAvailable + amount
+      : book.quantityAvailable - amount;
+    if (nextQuantity < 0) {
+      this.showError('Impossible de retirer davantage d’exemplaires que le stock disponible.');
+      return;
+    }
+
+    if (nextQuantity > MAX_BOOK_QUANTITY) {
+      this.showError('Le stock disponible ne peut pas dépasser 100 000 exemplaires.');
+      return;
+    }
+
+    const actionLabel = direction === 'increase' ? 'Ajouter' : 'Retirer';
+    if (!this.confirmAction(`${actionLabel} ${amount} exemplaire(s) de « ${book.title || book.isbn13} » ?`)) {
+      return;
+    }
+
+    await this.run('inventory-quantity', async token => {
+      await firstValueFrom(this.api.correctQuantity(token, book.isbn13, {
+        quantityAvailable: nextQuantity,
+        note,
+      }));
+      this.showSuccess(`Le stock de « ${book.title || book.isbn13} » est maintenant de ${nextQuantity} exemplaire(s).`);
+      await this.loadInventoryPage(token);
     });
   }
 
@@ -1054,6 +1233,13 @@ export class CatalogAdministrationPageComponent implements OnInit {
     }
   }
 
+  goToInventoryPage(page: number): void {
+    if (this.validPage(page, this.inventoryBooksPage())) {
+      this.inventoryPage = page;
+      void this.loadInventory();
+    }
+  }
+
   goToSessionsPage(page: number): void {
     if (this.validPage(page, this.sessionsPage())) {
       this.sessionPage = page;
@@ -1274,6 +1460,105 @@ export class CatalogAdministrationPageComponent implements OnInit {
     }
 
     return {minAgeMonths, minQuantity};
+  }
+
+  private async loadInventoryPage(token: string): Promise<void> {
+    this.inventoryBooksPage.set(await firstValueFrom(this.api.getBooks(token, {
+      search: this.inventorySearch.trim() || undefined,
+      metadataStatus: undefined,
+      rare: undefined,
+      hidden: undefined,
+      undated: undefined,
+      page: this.inventoryPage,
+      pageSize: this.inventoryPageSize,
+    })));
+  }
+
+  private async runInventoryLookup(operation: () => Promise<void>): Promise<void> {
+    this.inventoryLookupLoading.set(true);
+    this.inventoryLookupError.set(null);
+    try {
+      await operation();
+    } catch (error: unknown) {
+      this.inventoryLookupError.set(this.describeInventoryLookupError(error));
+    } finally {
+      this.inventoryLookupLoading.set(false);
+    }
+  }
+
+  private toInventoryCandidate(reference: CatalogBookReference): CatalogInventoryCandidate | null {
+    const isbn13 = this.normalizeIsbn(reference.isbn13 || '');
+    if (!isbn13) {
+      return null;
+    }
+
+    return {
+      isbn13,
+      workId: reference.workId,
+      title: reference.title,
+      authors: reference.authors,
+      publisher: reference.publisher,
+      publicationYear: reference.publicationYear,
+      genre: null,
+      coverUrl: reference.coverUrl,
+      source: reference.source,
+    };
+  }
+
+  private normalizeIsbn(value: string): string {
+    return value.replace(/[\s-]/g, '').toUpperCase();
+  }
+
+  private isValidIsbn(value: string): boolean {
+    if (/^\d{13}$/.test(value)) {
+      const checksum = [...value].reduce(
+        (sum, digit, index) => sum + Number(digit) * (index % 2 === 0 ? 1 : 3),
+        0,
+      );
+      return checksum % 10 === 0;
+    }
+
+    if (/^\d{9}[\dX]$/.test(value)) {
+      const checksum = [...value].reduce(
+        (sum, digit, index) => sum + (digit === 'X' ? 10 : Number(digit)) * (10 - index),
+        0,
+      );
+      return checksum % 11 === 0;
+    }
+
+    return false;
+  }
+
+  private isbn13Equivalent(value: string): string | null {
+    if (/^\d{13}$/.test(value)) {
+      return value;
+    }
+    if (!/^\d{9}[\dX]$/.test(value)) {
+      return null;
+    }
+
+    const body = `978${value.slice(0, 9)}`;
+    const checksum = [...body].reduce(
+      (sum, digit, index) => sum + Number(digit) * (index % 2 === 0 ? 1 : 3),
+      0,
+    );
+    return `${body}${(10 - (checksum % 10)) % 10}`;
+  }
+
+  private describeInventoryLookupError(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 404) {
+        return 'Aucune notice bibliographique ne correspond à cette recherche.';
+      }
+      if (error.status === 0 || error.status >= 500) {
+        return 'Le référentiel externe est momentanément indisponible. Réessayez dans un instant.';
+      }
+      if (error.status === 400) {
+        return 'La recherche bibliographique n’est pas valide. Vérifiez votre saisie.';
+      }
+    }
+
+    return 'La recherche bibliographique n’a pas pu aboutir. Réessayez dans un instant.';
   }
 
   private async run(

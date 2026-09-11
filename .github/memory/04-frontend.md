@@ -131,6 +131,16 @@ physical-carton controls without a contract: role assignment in the Catalog volu
 workspace uses the existing `/accounts/admin` contract, while physical carton/rayon
 controls remain explanatory rather than fake.
 
+As of 2026-09-12, the Catalog administration Inventory workspace is fiche-first: it loads
+all admin book fiches without dead-stock or metadata work-queue filters, supports search by
+ISBN/title/author, and keeps external reference results separate from local inventory until
+an administrator selects one. An ISBN lookup normalizes ISBN-10/ISBN-13 before calling the
+typed reference API; adding a selected reference sends its bibliographic metadata, initial
+available quantity and required note through `POST /books/admin/books`. Each local row exposes
+confirmed `+`/`−` corrections through the typed quantity endpoint, while announced quantity
+remains visibly separate and redirected fiches are read-only for stock actions. The view does
+not invent carton/rayon counts or a bulk physical-count workflow.
+
 The Catalog auth service reads the `roles` claim from the API access token after silent
 acquisition, exposes an `isAdministrator` signal for navigation affordances, and accepts
 the API's `Administration`/legacy `Admin` role names. If silent acquisition requires an

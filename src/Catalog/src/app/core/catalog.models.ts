@@ -385,6 +385,27 @@ export interface CatalogAdminAlertOperation {
   changed: boolean;
 }
 
+export interface CatalogAdminAddBookRequest {
+  isbn13: string;
+  quantityAvailable: number;
+  note: string;
+  title?: string | null;
+  authors?: string | null;
+  publisher?: string | null;
+  publicationYear?: number | null;
+  physicalFormat?: string | null;
+  language?: string | null;
+  genre?: string | null;
+  coverUrl?: string | null;
+  workId?: string | null;
+  fields?: string[] | null;
+}
+
+export interface CatalogAdminQuantityCorrectionRequest {
+  quantityAvailable: number;
+  note: string;
+}
+
 export interface CatalogAdminQuantityCorrection {
   isbn13: string;
   previousQuantityAvailable: number;

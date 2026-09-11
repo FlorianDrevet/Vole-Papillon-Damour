@@ -82,6 +82,24 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-12 — gestion fiche par fiche de l'inventaire Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-inventory-admin`, la page `/administration` du Catalog remplace
+l'ancien écran de remise à plat par un espace Inventaire centré sur les fiches. Toutes les
+fiches administratives sont listées avec recherche et pagination ; la quantité disponible
+peut être augmentée ou diminuée par une correction confirmée et motivée, tandis que la
+quantité annoncée reste séparée. Une fiche peut être préparée depuis un ISBN normalisé ou
+une recherche bibliographique externe, puis ajoutée après vérification de la notice.
+
+Validation locale : TDD rouge puis vert, 24 tests ciblés de l'administration Catalog, 174
+tests ChromeHeadless Catalog, build SSR/navigateur, `python -m graphify update .` et
+`git diff --check`. Le shell desktop local a été contrôlé dans Chrome ; le smoke connecté
+avec un compte Entra Administration et une API joignable reste à faire pour vérifier les
+parcours métier réels. Aucun déploiement ni merge n'a été effectué. La PR
+[#151](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/151) est ouverte pour
+relecture.
+
 ### État actualisé — 2026-09-12 — statistiques privées des bénévoles
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
