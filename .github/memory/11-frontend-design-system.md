@@ -83,8 +83,10 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   the 42px controls, gives the external association link the same 42px height and orange
   hover/focus underline, and uses a person/login icon in both auth states. Anonymous users
   get an outlined `Mon compte` trigger; a connected user gets a filled navy trigger with
-  the full display name from MSAL. It switches to the mobile layout at `1040px` to avoid
-  intermediate-width overflow.
+  the full display name from MSAL. An administrator gets a clickable `Administration` tag as
+  the sole header entry to `/administration`; it uses the same 42px control height as the
+  account trigger. It switches to the mobile layout at `1040px` to avoid intermediate-width
+  overflow.
 - Typography stays `Newsreader` for editorial headings, `Libre Franklin` for body and
   controls, and `IBM Plex Mono` for labels, metadata, dates, and technical identifiers.
   The canonical Catalog palette is paper `#f7fbfe`, paper-soft `#e9f4fb`, ink `#041d30` /
