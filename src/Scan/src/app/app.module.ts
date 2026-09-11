@@ -17,6 +17,7 @@ import {ScanStatusBarComponent} from './offline/scan-status-bar.component';
 import {ScanConfirmationComponent} from './scan-confirmation.component';
 import {ScanPageComponent} from './scan-page.component';
 import {ScanShellComponent} from './scan-shell.component';
+import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
 import {scanRoutes} from './scan-routing';
 import {
   msalGuardConfig,
@@ -36,6 +37,7 @@ import {environment} from '../environments/environment';
     ScanConfirmationComponent,
     ScanPageComponent,
     ScanShellComponent,
+    ScanStatisticsComponent,
   ],
   imports: [
     BrowserModule,

@@ -34,6 +34,16 @@ describe('CatalogMemberApiService', () => {
     request.flush({generatedAt: '2026-09-04T20:00:00Z', alertStatus: 'Active', bounceCount: 0, items: []});
   });
 
+  it('sends the member token to the private volunteer statistics endpoint', () => {
+    service.getVolunteerStatistics('member-token').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/scan/me/statistics`);
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({});
+  });
+
   it('posts a typed target and can remove it with the same bearer token', () => {
     service.addWatchlistItem('member-token', {
       scope: 'Edition',

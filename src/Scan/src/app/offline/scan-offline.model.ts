@@ -246,3 +246,117 @@ export interface ScanSaleResponse {
   clockSuspect: boolean;
   alreadyProcessed: boolean;
 }
+
+export interface ScanVolunteerStatisticsResponse {
+  generatedAt: string;
+  memberSince: string | null;
+  scan: ScanVolunteerScanStatistics;
+  cash: ScanVolunteerCashStatistics;
+}
+
+export interface ScanVolunteerStatisticsRecord {
+  key: 'volunteer-statistics';
+  accountId: string;
+  fetchedAt: string;
+  statistics: ScanVolunteerStatisticsResponse;
+}
+
+export interface ScanVolunteerScanStatistics {
+  scannedCount: number;
+  keptCount: number;
+  rejectedCount: number;
+  sessionCount: number;
+  durationMinutes: number;
+  firstSessionAt: string | null;
+  medianTeamKeepRatePercent: number | null;
+  monthly: ScanVolunteerMonthlyStatistics[];
+  timeSlots: ScanVolunteerTimeSlotStatistics[];
+  impact: ScanVolunteerImpactStatistics;
+  topGenres: ScanVolunteerGenreStatistics[];
+  recentSessions: ScanVolunteerSessionStatistics[];
+}
+
+export interface ScanVolunteerCashStatistics {
+  grossSoldQuantity: number;
+  soldQuantity: number;
+  saleMovementCount: number;
+  voidedSaleQuantity: number;
+  fairCount: number;
+  estimatedDurationMinutes: number;
+  estimatedCadencePerHour: number | null;
+  medianTeamCadencePerHour: number | null;
+  fairBreakdown: ScanVolunteerFairStatistics[];
+  peak: ScanVolunteerPeakStatistics;
+  topBooks: ScanVolunteerBookStatistics[];
+  topGenres: ScanVolunteerGenreStatistics[];
+  estimatedTriAndCashOverlap: number;
+  estimatedRevenueShare: number | null;
+  revenueShare: ScanVolunteerRevenueShare | null;
+  durationIsEstimated: boolean;
+  cadenceIsEstimated: boolean;
+  revenueShareIsEstimated: boolean;
+  triAndCashOverlapIsEstimated: boolean;
+}
+
+export interface ScanVolunteerMonthlyStatistics {
+  periodStart: string;
+  kept: number;
+  rejected: number;
+}
+
+export interface ScanVolunteerTimeSlotStatistics {
+  dayOfWeek: number;
+  slot: 'morning' | 'afternoon' | 'evening' | string;
+  count: number;
+}
+
+export interface ScanVolunteerImpactStatistics {
+  foundReaderCount: number;
+  newTitleCount: number;
+  rareCount: number;
+  alertItemCount: number;
+  foundReaderIsEstimated: boolean;
+}
+
+export interface ScanVolunteerGenreStatistics {
+  name: string;
+  quantity: number;
+}
+
+export interface ScanVolunteerSessionStatistics {
+  id: string;
+  startedAt: string;
+  durationMinutes: number;
+  scannedCount: number;
+  keptRatePercent: number;
+  mode: string;
+}
+
+export interface ScanVolunteerFairStatistics {
+  id: string;
+  name: string;
+  dateStart: string;
+  netSoldQuantity: number;
+}
+
+export interface ScanVolunteerPeakStatistics {
+  fairDate: string | null;
+  localHour: number | null;
+  quantity: number;
+}
+
+export interface ScanVolunteerBookStatistics {
+  isbn13: string;
+  title: string;
+  quantity: number;
+}
+
+export interface ScanVolunteerRevenueShare {
+  fairId: string;
+  fairName: string;
+  fairDate: string;
+  fairRevenue: number;
+  volunteerSoldQuantity: number;
+  fairSoldQuantity: number;
+  estimatedShare: number;
+}

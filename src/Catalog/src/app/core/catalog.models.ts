@@ -133,6 +133,113 @@ export interface CatalogAlertPreferencesResponse {
   changed: boolean;
 }
 
+export interface CatalogVolunteerStatisticsResponse {
+  generatedAt: string;
+  memberSince: string | null;
+  scan: CatalogVolunteerScanStatistics;
+  cash: CatalogVolunteerCashStatistics;
+}
+
+export interface CatalogVolunteerScanStatistics {
+  scannedCount: number;
+  keptCount: number;
+  rejectedCount: number;
+  sessionCount: number;
+  durationMinutes: number;
+  firstSessionAt: string | null;
+  medianTeamKeepRatePercent: number | null;
+  monthly: CatalogVolunteerMonthlyStatistics[];
+  timeSlots: CatalogVolunteerTimeSlotStatistics[];
+  impact: CatalogVolunteerImpactStatistics;
+  topGenres: CatalogVolunteerGenreStatistics[];
+  recentSessions: CatalogVolunteerSessionStatistics[];
+}
+
+export interface CatalogVolunteerCashStatistics {
+  grossSoldQuantity: number;
+  soldQuantity: number;
+  saleMovementCount: number;
+  voidedSaleQuantity: number;
+  fairCount: number;
+  estimatedDurationMinutes: number;
+  estimatedCadencePerHour: number | null;
+  medianTeamCadencePerHour: number | null;
+  fairBreakdown: CatalogVolunteerFairStatistics[];
+  peak: CatalogVolunteerPeakStatistics;
+  topBooks: CatalogVolunteerBookStatistics[];
+  topGenres: CatalogVolunteerGenreStatistics[];
+  estimatedTriAndCashOverlap: number;
+  estimatedRevenueShare: number | null;
+  revenueShare: CatalogVolunteerRevenueShare | null;
+  durationIsEstimated: boolean;
+  cadenceIsEstimated: boolean;
+  revenueShareIsEstimated: boolean;
+  triAndCashOverlapIsEstimated: boolean;
+}
+
+export interface CatalogVolunteerMonthlyStatistics {
+  periodStart: string;
+  kept: number;
+  rejected: number;
+}
+
+export interface CatalogVolunteerTimeSlotStatistics {
+  dayOfWeek: number;
+  slot: 'morning' | 'afternoon' | 'evening' | string;
+  count: number;
+}
+
+export interface CatalogVolunteerImpactStatistics {
+  foundReaderCount: number;
+  newTitleCount: number;
+  rareCount: number;
+  alertItemCount: number;
+  foundReaderIsEstimated: boolean;
+}
+
+export interface CatalogVolunteerGenreStatistics {
+  name: string;
+  quantity: number;
+}
+
+export interface CatalogVolunteerSessionStatistics {
+  id: string;
+  startedAt: string;
+  durationMinutes: number;
+  scannedCount: number;
+  keptRatePercent: number;
+  mode: string;
+}
+
+export interface CatalogVolunteerFairStatistics {
+  id: string;
+  name: string;
+  dateStart: string;
+  netSoldQuantity: number;
+}
+
+export interface CatalogVolunteerPeakStatistics {
+  fairDate: string | null;
+  localHour: number | null;
+  quantity: number;
+}
+
+export interface CatalogVolunteerBookStatistics {
+  isbn13: string;
+  title: string;
+  quantity: number;
+}
+
+export interface CatalogVolunteerRevenueShare {
+  fairId: string;
+  fairName: string;
+  fairDate: string;
+  fairRevenue: number;
+  volunteerSoldQuantity: number;
+  fairSoldQuantity: number;
+  estimatedShare: number;
+}
+
 export interface CatalogBookReference {
   isbn13: string | null;
   workId: string | null;

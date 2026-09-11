@@ -15,6 +15,7 @@ import {
   ScanSessionCounts,
   ScanSessionSnapshot,
   ScanStoreName,
+  ScanVolunteerStatisticsRecord,
   scanDatabaseName,
   scanDatabaseVersion,
   scanStoreNames,
@@ -145,6 +146,29 @@ export class ScanLocalStoreService {
     await this.putSessionRecord(state);
   }
 
+  async getVolunteerStatistics(accountId: string): Promise<ScanVolunteerStatisticsRecord | null> {
+    const record = await this.runRequest<ScanVolunteerStatisticsRecord | undefined>(
+      scanStoreNames.session,
+      'readonly',
+      store => store.get('volunteer-statistics'),
+    );
+
+    return record?.accountId === accountId ? record : null;
+  }
+
+  async saveVolunteerStatistics(
+    accountId: string,
+    statistics: ScanVolunteerStatisticsRecord['statistics'],
+  ): Promise<void> {
+    const record: ScanVolunteerStatisticsRecord = {
+      key: 'volunteer-statistics',
+      accountId,
+      fetchedAt: statistics.generatedAt,
+      statistics,
+    };
+    await this.putSessionRecord(record);
+  }
+
   async applyCatalogDelta(
     books: readonly ScanCatalogBook[],
     settings: ScanAssociationSettings,
@@ -200,6 +224,7 @@ export class ScanLocalStoreService {
         stores[scanStoreNames.outbox].clear();
         stores[scanStoreNames.sales].clear();
         stores[scanStoreNames.session].delete('active-session');
+        stores[scanStoreNames.session].delete('volunteer-statistics');
 
         const request = stores[scanStoreNames.session].openCursor();
         request.onsuccess = () => {

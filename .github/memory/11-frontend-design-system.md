@@ -126,6 +126,14 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   preferences/account panel. Cards use the existing `CatalogWatchlistItem` contract for
   cover URL, edition publisher/year, quantity availability, next fair date, added date and
   last alert; they must not invent a reservation or price state.
+- The volunteer account extension keeps the same Catalog typography and paper/ink palette:
+  `Ma contribution` is a third tab only for `Tri`/`Caisse` users, with blue/orange/ink KPI
+  rules, a dark impact band, bordered analytical cards, a twelve-month chart, weekday-slot
+  heatmap, fair sales bars and a compact session table. Estimated values use an explicit
+  `estimé` label and the footer explains that timestamps do not define per-book prices.
+  The Scan companion uses the compact mobile layout, a `TRI`/`CAISSE` badge or role switch,
+  local snapshot status and the same restrained visual vocabulary; its statistics styles
+  live in the global Scan stylesheet to stay below Angular component-style budgets.
 - The Catalog client now consumes the typed P2/P3 administration API for overview,
   catalogue metadata/stock, dead stock, scan sessions, fairs/revenue, alert queues,
   members and settings. It also consumes the external bibliographic search separately

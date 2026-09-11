@@ -1,10 +1,10 @@
 import {TestBed} from '@angular/core/testing';
-
 import {
   ScanCatalogBook,
   ScanOutboxEntry,
   ScanOutboxStatus,
   ScanSaleOutboxEntry,
+  ScanVolunteerStatisticsRecord,
 } from './scan-offline.model';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {clearScanCatalogForTest} from './scan-test.utils';
@@ -65,6 +65,62 @@ describe('ScanLocalStoreService', () => {
       updatedAt: '2026-09-03T08:00:00.000Z',
       nextFair: null,
     });
+  });
+
+  it('round-trips statistics for one account and does not expose another account cache', async () => {
+    const statistics: ScanVolunteerStatisticsRecord['statistics'] = {
+      generatedAt: '2026-09-11T12:00:00.000Z',
+      memberSince: null,
+      scan: {
+        scannedCount: 0,
+        keptCount: 0,
+        rejectedCount: 0,
+        sessionCount: 0,
+        durationMinutes: 0,
+        firstSessionAt: null,
+        medianTeamKeepRatePercent: null,
+        monthly: [],
+        timeSlots: [],
+        impact: {
+          foundReaderCount: 0,
+          newTitleCount: 0,
+          rareCount: 0,
+          alertItemCount: 0,
+          foundReaderIsEstimated: true,
+        },
+        topGenres: [],
+        recentSessions: [],
+      },
+      cash: {
+        grossSoldQuantity: 0,
+        soldQuantity: 0,
+        saleMovementCount: 0,
+        voidedSaleQuantity: 0,
+        fairCount: 0,
+        estimatedDurationMinutes: 0,
+        estimatedCadencePerHour: null,
+        medianTeamCadencePerHour: null,
+        fairBreakdown: [],
+        peak: {fairDate: null, localHour: null, quantity: 0},
+        topBooks: [],
+        topGenres: [],
+        estimatedTriAndCashOverlap: 0,
+        estimatedRevenueShare: null,
+        revenueShare: null,
+        durationIsEstimated: true,
+        cadenceIsEstimated: true,
+        revenueShareIsEstimated: true,
+        triAndCashOverlapIsEstimated: true,
+      },
+    };
+
+    await service.saveVolunteerStatistics('account-a', statistics);
+
+    expect((await service.getVolunteerStatistics('account-a'))?.statistics).toEqual(statistics);
+    expect(await service.getVolunteerStatistics('account-b')).toBeNull();
+
+    await service.clearAccountState();
+    expect(await service.getVolunteerStatistics('account-a')).toBeNull();
   });
 
   it('orders the outbox by creation time and filters transmittable decisions', async () => {

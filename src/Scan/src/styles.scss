@@ -1,4 +1,5 @@
 @use '../../SharedUi/src/lib/components/vpd-loader/vpd-loader.component';
+@use './app/statistics/scan-statistics.styles' as scan-statistics;
 
 :root {
   color-scheme: light;

@@ -37,6 +37,7 @@ export const CATALOG_MSAL_LOADER = new InjectionToken<CatalogMsalLoader>(
 
 const ADMINISTRATION_ROUTE = '/administration';
 const ADMINISTRATION_ROLES = new Set(['administration', 'admin']);
+const VOLUNTEER_ROLES = new Set(['tri', 'caisse']);
 
 export class CatalogAuthenticationRedirectStartedError extends Error {
   constructor() {
@@ -65,6 +66,9 @@ export class CatalogAuthService {
   // This signal controls navigation affordances only; API policies remain authoritative.
   readonly isAdministrator = computed(() =>
     this._roles().some(role => ADMINISTRATION_ROLES.has(role.trim().toLowerCase())),
+  );
+  readonly isVolunteer = computed(() =>
+    this._roles().some(role => VOLUNTEER_ROLES.has(role.trim().toLowerCase())),
   );
   readonly error = this._error.asReadonly();
 

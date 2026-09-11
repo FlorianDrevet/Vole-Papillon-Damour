@@ -669,6 +669,43 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             pageSize);
     }
 
+    public async Task<int> GetSentItemCountForSessionsAsync(
+        IReadOnlyCollection<Guid> scanSessionIds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(scanSessionIds);
+        if (scanSessionIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var messages = await dbContext.OutboxMessages
+            .AsNoTracking()
+            .Where(message =>
+                message.Kind == OutboxMessageKind.AlertEmail &&
+                message.Status == OutboxMessageStatus.Sent &&
+                message.ScanSessionId != null &&
+                scanSessionIds.Contains(message.ScanSessionId.Value))
+            .Select(message => message.PayloadJson)
+            .ToListAsync(cancellationToken);
+
+        var itemCount = 0;
+        foreach (var payloadJson in messages)
+        {
+            try
+            {
+                itemCount += DeserializePayload(payloadJson).Items?.Count ?? 0;
+            }
+            catch (JsonException)
+            {
+                // A malformed historical message must not make a private
+                // contribution screen unavailable.
+            }
+        }
+
+        return itemCount;
+    }
+
     public async Task<int> CancelPendingAsync(
         Guid messageId,
         CancellationToken cancellationToken)
