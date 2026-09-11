@@ -42,7 +42,6 @@ resource account 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
   properties: {
     customSubDomainName: name
     disableLocalAuth: true
-    dynamicThrottlingEnabled: true
     publicNetworkAccess: 'Enabled'
   }
 }
