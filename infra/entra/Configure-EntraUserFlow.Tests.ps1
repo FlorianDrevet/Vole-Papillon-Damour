@@ -41,25 +41,42 @@ Describe 'Configure-EntraUserFlow.ps1' {
         $body.conditions.applications.includeApplications[0].appId | Should Be 'catalog-client-id'
         $body.onAuthenticationMethodLoadStart.identityProviders[0].id | Should Be 'EmailPassword-OAUTH'
         $body.onInteractiveAuthFlowStart.isSignUpAllowed | Should Be $true
-        (@($body.onAttributeCollection.attributes.id) -contains 'displayName') | Should Be $true
+        $attributes = @($body.onAttributeCollection.attributes)
+        $attributes.Count | Should Be 3
+        $attributes[0].id | Should Be 'email'
+        $attributes[1].id | Should Be 'givenName'
+        $attributes[2].id | Should Be 'surname'
+        (@($attributes | Where-Object { $_.id -eq 'displayName' })).Count | Should Be 0
+        $body.onAttributeCollection.attributeCollectionPage.views[0].title | Should Be 'Créer votre compte'
+        $body.onAttributeCollection.attributeCollectionPage.views[0].description | Should Be 'Utilisez une adresse e-mail valide pour créer votre compte.'
     }
 
-    It 'uses a portable validation for a normal French display name in the hosted form' {
+    It 'collects separate given name and surname fields in the hosted form' {
         . $scriptPath -TenantId 'tenant-id' -Environment 'dev'
         $body = New-CatalogSignupFlowBody `
             -CatalogClientId 'catalog-client-id' `
             -DisplayName 'vpd-catalog-signup-dev' `
             -Description 'test flow'
 
-        $displayNameInputs = @(
-            $body.onAttributeCollection.attributeCollectionPage.views[0].inputs |
-                Where-Object { $_.attribute -eq 'displayName' }
-        )
+        $inputs = @($body.onAttributeCollection.attributeCollectionPage.views[0].inputs)
+        $givenNameInput = $inputs | Where-Object { $_.attribute -eq 'givenName' } | Select-Object -First 1
+        $surnameInput = $inputs | Where-Object { $_.attribute -eq 'surname' } | Select-Object -First 1
 
-        $displayNameInputs.Count | Should Be 1
-        $displayNameInput = $displayNameInputs[0]
-        $displayNameInput.validationRegEx | Should Be '^.{0,256}$'
-        [regex]::IsMatch('Florian Drevet', $displayNameInput.validationRegEx) | Should Be $true
+        $givenNameInput | Should Not BeNullOrEmpty
+        $givenNameInput.label | Should Be 'Prénom'
+        $givenNameInput.inputType | Should Be 'text'
+        $givenNameInput.required | Should Be $false
+        $givenNameInput.validationRegEx | Should Be '^.{0,64}$'
+        [regex]::IsMatch('Élodie', $givenNameInput.validationRegEx) | Should Be $true
+
+        $surnameInput | Should Not BeNullOrEmpty
+        $surnameInput.label | Should Be 'Nom'
+        $surnameInput.inputType | Should Be 'text'
+        $surnameInput.required | Should Be $false
+        $surnameInput.validationRegEx | Should Be '^.{0,64}$'
+        [regex]::IsMatch('Noël', $surnameInput.validationRegEx) | Should Be $true
+
+        (@($inputs | Where-Object { $_.attribute -eq 'displayName' })).Count | Should Be 0
     }
 
     It 'updates the existing catalog flow instead of creating a duplicate' {
