@@ -76,26 +76,10 @@
     </div>
   } @else {
     <div class="account-heading">
-      <div>
-        <p class="eyebrow">Espace personnel</p>
-        <h1 id="account-title">Mon compte.</h1>
-        <p class="account-identity">{{ accountLabel() }}</p>
-      </div>
-      <button type="button" class="account-button quiet" (click)="logout()">Se déconnecter</button>
+      <p class="eyebrow">Mon compte</p>
+      <h1 id="account-title">Ma liste de recherche.</h1>
+      <p class="account-lead">{{ watchlistIntro() }}</p>
     </div>
-
-    @if (isAdministrator()) {
-      <section class="account-admin-entry" aria-labelledby="account-admin-title">
-        <div>
-          <p class="eyebrow">Espace bénévoles</p>
-          <h2 id="account-admin-title">Administration du catalogue.</h2>
-          <p>Accédez aux outils de gestion des livres, des sessions de scan, des alertes et des comptes.</p>
-        </div>
-        <a class="account-button secondary" data-testid="administration-entry" routerLink="/administration">
-          Espace administration <span aria-hidden="true">→</span>
-        </a>
-      </section>
-    }
 
     @if (errorMessage()) {
       <p class="feedback error" role="alert">{{ errorMessage() }}</p>
@@ -104,118 +88,186 @@
       <p class="feedback success" role="status">{{ successMessage() }}</p>
     }
 
-    <section class="watchlist-panel" aria-labelledby="watchlist-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Vos alertes</p>
-          <h2 id="watchlist-title">Ma liste de recherche.</h2>
-          <p class="panel-subtitle">Une alerte vous prévient, elle ne réserve jamais un exemplaire.</p>
-        </div>
+    <div class="account-tabs" role="tablist" aria-label="Navigation du compte">
+      <button
+        type="button"
+        role="tab"
+        id="account-watchlist-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'watchlist'"
+        [attr.aria-selected]="activeTab() === 'watchlist'"
+        aria-controls="account-watchlist-panel"
+        (click)="selectTab('watchlist')">
+        Ma liste de recherche
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="account-preferences-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'preferences'"
+        [attr.aria-selected]="activeTab() === 'preferences'"
+        aria-controls="account-preferences-panel"
+        (click)="selectTab('preferences')">
+        Préférences et compte
+      </button>
+    </div>
+
+    @if (activeTab() === 'watchlist') {
+      <section
+        id="account-watchlist-panel"
+        class="watchlist-panel"
+        data-testid="account-watchlist-panel"
+        role="tabpanel"
+        aria-labelledby="account-watchlist-tab">
+        @if (loading()) {
+          <p class="account-state compact" role="status">Chargement de votre liste…</p>
+        } @else if (watchlist(); as current) {
+          @if (current.items.length === 0) {
+            <div class="empty-watchlist">
+              <span class="empty-mark" aria-hidden="true">⌁</span>
+              <h2>Aucun titre dans votre liste de recherche</h2>
+              <p>Depuis une fiche livre, utilisez « Me prévenir » pour ajouter une œuvre ou une édition à votre liste de recherche.</p>
+              <a class="account-button secondary" routerLink="/recherche">Explorer le catalogue <span aria-hidden="true">→</span></a>
+            </div>
+          } @else {
+            <div class="watchlist-list">
+              @for (item of current.items; track item.id) {
+                <article class="watchlist-item">
+                  <div class="watchlist-cover">
+                    @if (item.book?.coverUrl; as coverUrl) {
+                      <img [src]="coverUrl" [alt]="'Couverture de ' + itemLabel(item)" loading="lazy">
+                    } @else {
+                      <span aria-hidden="true">Couv.</span>
+                    }
+                  </div>
+                  <div class="watchlist-item-copy">
+                    <h2>{{ itemLabel(item) }}</h2>
+                    @if (item.book?.authors) {
+                      <p class="watchlist-author">{{ item.book?.authors }}</p>
+                    } @else if (!item.book) {
+                      <p class="watchlist-author">Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.</p>
+                    }
+                    <div class="watchlist-meta">
+                      <span class="watchlist-edition">{{ editionLabel(item) }}</span>
+                      <span
+                        class="watchlist-availability"
+                        [class.available]="availabilityClass(item) === 'available'"
+                        [class.next]="availabilityClass(item) === 'next'"
+                        [class.pending]="availabilityClass(item) === 'pending'">
+                        <span class="availability-dot" aria-hidden="true"></span>
+                        {{ availabilityLabel(item) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="watchlist-item-details">
+                    <p>Ajouté le {{ formatDate(item.addedAt) }}</p>
+                    <p>{{ item.lastAlertAt ? 'Dernière alerte : ' + formatDate(item.lastAlertAt) : 'Aucune alerte envoyée' }}</p>
+                    <div class="watchlist-item-actions">
+                      <button
+                        type="button"
+                        class="remove-button"
+                        [disabled]="removingItemId() === item.id"
+                        (click)="removeItem(item)">
+                        {{ removingItemId() === item.id ? 'Retrait…' : 'Retirer de ma liste' }}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        } @else if (!errorMessage()) {
+          <p class="account-state compact">Votre liste n’a pas pu être préparée.</p>
+        }
+      </section>
+    } @else {
+      <section
+        id="account-preferences-panel"
+        class="account-preferences-panel"
+        data-testid="account-preferences-panel"
+        role="tabpanel"
+        aria-labelledby="account-preferences-tab">
+        <section class="account-profile" aria-labelledby="account-profile-title">
+          <div>
+            <p class="eyebrow">Compte</p>
+            <h2 id="account-profile-title">{{ accountLabel() }}</h2>
+            <p>{{ account()?.username }}</p>
+          </div>
+          <button type="button" class="account-button quiet" (click)="logout()">Se déconnecter</button>
+        </section>
+
         @if (watchlist(); as current) {
-          <span class="watchlist-status" [class.suspended]="current.alertStatus !== 'Active'">
-            {{ current.alertStatus === 'Active' ? 'Alertes actives' : 'Alertes suspendues' }}
-          </span>
-        }
-      </div>
-
-      @if (loading()) {
-        <p class="account-state compact" role="status">Chargement de votre liste…</p>
-      } @else if (watchlist(); as current) {
-        @if (current.items.length === 0) {
-          <div class="empty-watchlist">
-            <span class="empty-mark" aria-hidden="true">⌁</span>
-            <h3>Aucun titre dans votre liste de recherche</h3>
-            <p>Depuis une fiche livre, utilisez « Me prévenir » pour ajouter une œuvre ou une édition à votre liste de recherche.</p>
-            <a class="account-button secondary" routerLink="/recherche">Explorer le catalogue <span aria-hidden="true">→</span></a>
-          </div>
-        } @else {
-          <div class="watchlist-list">
-            @for (item of current.items; track item.id; let i = $index) {
-              <article class="watchlist-item">
-                <span class="watchlist-index" aria-hidden="true">{{ (i + 1).toString().padStart(2, '0') }}</span>
-                <div class="watchlist-item-copy">
-                  <p class="watchlist-scope">{{ item.scope === 'Work' ? 'Œuvre' : 'Édition' }}</p>
-                  <h3>{{ item.book?.title || 'Titre pas encore reçu' }}</h3>
-                  @if (item.book?.authors) {
-                    <p>{{ item.book?.authors }}</p>
-                  } @else if (!item.book) {
-                    <p>Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.</p>
-                  }
-                  <small>Ajouté le {{ formatDate(item.addedAt) }}</small>
-                  @if (item.lastAlertAt) {
-                    <small>Dernière alerte : {{ formatDate(item.lastAlertAt) }}</small>
-                  }
+          <section class="alert-settings-panel" aria-labelledby="alert-settings-title">
+            <div>
+              <div class="settings-heading">
+                <div>
+                  <p class="eyebrow">Préférences</p>
+                  <h2 id="alert-settings-title">Mes alertes e-mail.</h2>
                 </div>
-                <div class="watchlist-item-actions">
-                  @if (item.book) {
-                    <a class="text-link" [routerLink]="['/livres', item.book.isbn13]">Voir la fiche <span aria-hidden="true">→</span></a>
-                  }
-                  <button
-                    type="button"
-                    class="remove-button"
-                    [disabled]="removingItemId() === item.id"
-                    (click)="removeItem(item)">
-                    {{ removingItemId() === item.id ? 'Retrait…' : 'Retirer' }}
-                  </button>
-                </div>
-              </article>
-            }
-          </div>
+                <span class="watchlist-status" [class.suspended]="current.alertStatus !== 'Active'">
+                  {{ current.alertStatus === 'Active' ? 'Alertes actives' : 'Alertes suspendues' }}
+                </span>
+              </div>
+              <p>Un message groupé peut vous prévenir lorsqu’un titre de votre liste de recherche arrive sur les tables. Il n’y a jamais de réservation.</p>
+              @if (current.bounceCount > 0) {
+                <small class="alert-bounce">{{ current.bounceCount }} échec{{ current.bounceCount > 1 ? 's' : '' }} de remise enregistré{{ current.bounceCount > 1 ? 's' : '' }}.</small>
+              }
+              @if (current.alertStatus === 'Blocked') {
+                <p class="alert-blocked" role="status">Les alertes ont été bloquées par l’association. Contactez-nous si vous pensez qu’il s’agit d’une erreur.</p>
+              }
+            </div>
+            <div class="alert-settings-actions">
+              @if (current.alertStatus === 'Active') {
+                <button type="button" class="account-button quiet" [disabled]="alertPending()" (click)="setAlertsEnabled(false)">
+                  {{ alertPending() ? 'Mise à jour…' : 'Suspendre les alertes' }}
+                </button>
+              } @else if (current.alertStatus !== 'Blocked') {
+                <button type="button" class="account-button secondary" [disabled]="alertPending()" (click)="setAlertsEnabled(true)">
+                  {{ alertPending() ? 'Mise à jour…' : 'Recevoir les alertes' }}
+                </button>
+              }
+            </div>
+          </section>
         }
-      } @else if (!errorMessage()) {
-        <p class="account-state compact">Votre liste n’a pas pu être préparée.</p>
-      }
-    </section>
 
-    @if (watchlist(); as current) {
-      <section class="alert-settings-panel" aria-labelledby="alert-settings-title">
-        <div>
-          <p class="eyebrow">Préférences</p>
-          <h2 id="alert-settings-title">Mes alertes e-mail.</h2>
-          <p>Un message groupé peut vous prévenir lorsqu’un titre de votre liste de recherche arrive sur les tables. Il n’y a jamais de réservation.</p>
-          @if (current.bounceCount > 0) {
-            <small class="alert-bounce">{{ current.bounceCount }} échec{{ current.bounceCount > 1 ? 's' : '' }} de remise enregistré{{ current.bounceCount > 1 ? 's' : '' }}.</small>
-          }
-          @if (current.alertStatus === 'Blocked') {
-            <p class="alert-blocked" role="status">Les alertes ont été bloquées par l’association. Contactez-nous si vous pensez qu’il s’agit d’une erreur.</p>
-          }
-        </div>
-        <div class="alert-settings-actions">
-          @if (current.alertStatus === 'Active') {
-            <button type="button" class="account-button quiet" [disabled]="alertPending()" (click)="setAlertsEnabled(false)">
-              {{ alertPending() ? 'Mise à jour…' : 'Suspendre les alertes' }}
+        @if (isAdministrator()) {
+          <section class="account-admin-entry" aria-labelledby="account-admin-title">
+            <div>
+              <p class="eyebrow">Espace bénévoles</p>
+              <h2 id="account-admin-title">Administration du catalogue.</h2>
+              <p>Accédez aux outils de gestion des livres, des sessions de scan, des alertes et des comptes.</p>
+            </div>
+            <a class="account-button secondary" data-testid="administration-entry" routerLink="/administration">
+              Espace administration <span aria-hidden="true">→</span>
+            </a>
+          </section>
+        }
+
+        <section class="account-danger" aria-labelledby="delete-account-title">
+          <div>
+            <p class="eyebrow">Données personnelles</p>
+            <h2 id="delete-account-title">Supprimer mon compte.</h2>
+            <p>Cette demande supprime votre profil local et votre liste de recherche. Elle ne supprime pas les informations de connexion de votre fournisseur d’identité.</p>
+          </div>
+          @if (!deletionRequested()) {
+            <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">
+              Supprimer mon compte
             </button>
-          } @else if (current.alertStatus !== 'Blocked') {
-            <button type="button" class="account-button secondary" [disabled]="alertPending()" (click)="setAlertsEnabled(true)">
-              {{ alertPending() ? 'Mise à jour…' : 'Recevoir les alertes' }}
-            </button>
+          } @else {
+            <div class="delete-confirmation" role="alertdialog" aria-labelledby="delete-confirmation-title">
+              <h3 id="delete-confirmation-title">Confirmer la suppression ?</h3>
+              <p>Cette action est irréversible pour les données du catalogue.</p>
+              <div class="confirmation-actions">
+                <button type="button" class="account-button quiet" (click)="cancelAccountDeletion()">Annuler</button>
+                <button type="button" class="account-button danger" data-testid="confirm-delete-account" [disabled]="deleting()" (click)="confirmAccountDeletion()">
+                  {{ deleting() ? 'Suppression…' : 'Oui, supprimer' }}
+                </button>
+              </div>
+            </div>
           }
-        </div>
+        </section>
       </section>
     }
-
-    <section class="account-danger" aria-labelledby="delete-account-title">
-      <div>
-        <p class="eyebrow">Données personnelles</p>
-        <h2 id="delete-account-title">Supprimer mon compte.</h2>
-        <p>Cette demande supprime votre profil local et votre liste de recherche. Elle ne supprime pas les informations de connexion de votre fournisseur d’identité.</p>
-      </div>
-      @if (!deletionRequested()) {
-        <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">
-          Supprimer mon compte
-        </button>
-      } @else {
-        <div class="delete-confirmation" role="alertdialog" aria-labelledby="delete-confirmation-title">
-          <h3 id="delete-confirmation-title">Confirmer la suppression ?</h3>
-          <p>Cette action est irréversible pour les données du catalogue.</p>
-          <div class="confirmation-actions">
-            <button type="button" class="account-button quiet" (click)="cancelAccountDeletion()">Annuler</button>
-            <button type="button" class="account-button danger" data-testid="confirm-delete-account" [disabled]="deleting()" (click)="confirmAccountDeletion()">
-              {{ deleting() ? 'Suppression…' : 'Oui, supprimer' }}
-            </button>
-          </div>
-        </div>
-      }
-    </section>
   }
 </section>
