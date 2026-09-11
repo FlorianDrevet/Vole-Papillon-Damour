@@ -411,6 +411,22 @@ describe('ScannerComponent', () => {
     expect(actionsCenter).toBeCloseTo(availableCenter, 0);
   });
 
+  it('presents authenticated secondary actions as paired cards with a chart icon for statistics', () => {
+    component.authAvailable = true;
+    component.isAuthenticated = true;
+    component.returnHome();
+    fixture.detectChanges();
+
+    const actions = Array.from(
+      fixture.nativeElement.querySelectorAll('.home-footer-action'),
+    ) as HTMLElement[];
+
+    expect(actions.length).toBe(2);
+    expect(actions[0].querySelector('[data-icon="statistics"]')).not.toBeNull();
+    expect(actions[0].textContent).toContain('Mes statistiques');
+    expect(actions[1].textContent).toContain('Changer d’utilisateur');
+  });
+
   it('keeps the live preview inside the reserved area, below the status strip and above the dock', async () => {
     cameraService.start.and.returnValue(Promise.resolve({
       resume: () => undefined,

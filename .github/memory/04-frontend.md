@@ -271,6 +271,12 @@ heatmap, impact, genres, fair sales, recent sessions and explicit estimated-valu
 The Scan view supports a Tri/Caisse role switch when both roles are present. Connected
 account smoke and post-deploy responsive checks remain required.
 
+The 2026-09-12 Scan follow-up presents the authenticated home secondary actions as two
+paired cards: a blue chart icon opens `/statistiques`, and an orange account-switch icon
+starts the existing logout flow. The statistics route now owns a fixed viewport-height
+surface and a touch-enabled `.statistics-scroll` container, so its long private report
+scrolls internally while the global scan screens keep their intentional overflow lock.
+
 The 2026-09-07 camera feedback follow-up keeps the same live stream for all three scan
 destinations and renders a `Scan détecté` progress surface while the local/catalog and
 bibliographic lookups are pending. The active camera preview is keyboard- and touch-

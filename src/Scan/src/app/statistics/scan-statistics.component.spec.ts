@@ -83,6 +83,23 @@ describe('ScanStatisticsComponent', () => {
     expect(store.getVolunteerStatistics).toHaveBeenCalledWith('home-camille');
   });
 
+  it('keeps the statistics body independently touch-scrollable', async () => {
+    fixture.detectChanges();
+    await fixture.componentInstance.load();
+    fixture.detectChanges();
+
+    const screen = fixture.nativeElement.querySelector('.statistics-screen') as HTMLElement;
+    const scroll = fixture.nativeElement.querySelector('.statistics-scroll') as HTMLElement;
+
+    expect(getComputedStyle(screen).overflow).toBe('hidden');
+    expect(getComputedStyle(scroll).overflowY).toBe('auto');
+    expect(getComputedStyle(scroll).touchAction).toBe('pan-y');
+    expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight);
+
+    scroll.scrollTop = 80;
+    expect(scroll.scrollTop).toBeGreaterThan(0);
+  });
+
   function createStatistics(): ScanVolunteerStatisticsRecord['statistics'] {
     return {
       generatedAt: '2026-09-11T12:00:00.000Z',

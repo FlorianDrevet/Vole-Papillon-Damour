@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — ajout du catalogue de loaders partagés dans Website, Catalog et Scan; la PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) est ouverte pour relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147). Après merge, déployer les applications concernées puis vérifier les états d'attente sur navigateur/appareil. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-loader-system` |
-| **Dernière mise à jour** | 2026-09-11 — loaders 1a–2d intégrés, écran 1b réservé au démarrage Scan avant connexion, PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) ouverte, aucun déploiement |
-| **Branche** | `feat/loader-system-catalog-scan` — dédiée depuis `origin/main`, PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) ouverte |
+| **Lot en cours** | `P2/P3` — suivi de l’app Scan après les statistiques bénévoles : accueil authentifié et scroll interne de la page privée ; la PR #149 reste ouverte et la présente branche attend sa PR. |
+| **Prochaine action** | Ouvrir puis relire la PR `fix/scan-statistics-ui`; après merge, vérifier le parcours authentifié sur navigateur/appareil et déployer le Scan. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-statistics-ui` |
+| **Dernière mise à jour** | 2026-09-12 — actions secondaires de l’accueil Scan améliorées et scroll des statistiques limité à leur page, aucun déploiement |
+| **Branche** | `fix/scan-statistics-ui` — dédiée depuis `origin/main`, PR à ouvrir |
 
 ---
 
@@ -117,6 +117,21 @@ Worker et sa résolution locale de `Azure.Functions.Sdk`. Le smoke connecté sur
 `Caisse` et double rôle, ainsi que le recontrôle mobile post-déploiement, restent à faire.
 La PR [#149](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/149) est ouverte ;
 aucun déploiement ni merge n'a été effectué.
+
+### État actualisé — 2026-09-12 — accueil et statistiques de l’app de scan
+
+L’accueil authentifié de `src/Scan` présente maintenant ses deux actions secondaires dans
+des cartes tactiles équilibrées : « Mes statistiques » utilise une icône de graphique en
+barres, et « Changer d’utilisateur » conserve le parcours de déconnexion avec une icône
+de changement de compte. Le texte complémentaire reste lisible sur les petits écrans.
+
+La route privée `/statistiques` fixe désormais sa surface à la hauteur du viewport, la
+clipse et laisse `.statistics-scroll` gérer le défilement vertical tactile. Le verrouillage
+global de `html`, `body` et des écrans de scan n’est donc pas rouvert. Les régressions
+ChromeHeadless couvrent les deux cartes, l’icône de statistiques et le défilement effectif
+(`scrollHeight`/`scrollTop`). Les 186 tests Scan et le build de production passent ; le
+contrôle authentifié sur appareil réel/navigateur reste à faire. Aucun déploiement n’a été
+effectué.
 
 ### État actualisé — 2026-09-12 — alerte de conservation hors ligne du Scan
 
@@ -1330,6 +1345,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-12 | Windows | **Scan — accueil authentifié et statistiques.** Les deux actions secondaires deviennent des cartes tactiles équilibrées, avec une icône de graphique pour « Mes statistiques » et une icône de changement de compte. La route `/statistiques` possède son propre viewport fixe et son conteneur de scroll tactile ; les autres écrans conservent le verrouillage global. Validation : 186 tests ChromeHeadless et build de production Scan ; contrôle authentifié appareil/navigateur à faire, aucun déploiement. PR à ouvrir. |
 | 2026-09-11 | Windows | **Catalog — toasts de validation de l’administration.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, regroupement des succès et erreurs dans un toast fixe, accessible et fermable, avec remplacement atomique des états de feedback pour éviter les messages périmés. Validation : TDD rouge puis vert, 165 tests Catalog ChromeHeadless, build SSR/navigateur avec l’avertissement de budget initial connu, `graphify update .` et `git diff --check` ; smoke connecté à refaire, aucun déploiement ni changement hors dépôt. PR [#146](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/146) ouverte. |
 | 2026-09-11 | Windows | **Catalog — sélection des statistiques par bourse.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-admin-statistics-date`, les options de la liste des statistiques affichent désormais la date de la bourse (et sa plage si nécessaire) avant le nom et le statut, afin de distinguer les éditions qui partagent « Bourse aux livres ». Ajout d’une régression Angular avec deux bourses au même nom. Validation : test rouge puis vert, 161 tests Catalog ChromeHeadless, build SSR/navigateur, smoke local à 390×844 et 1280×900 sans débordement, `graphify update .` et aucun déploiement ni changement hors dépôt. |
 | 2026-09-11 | Windows | **Catalog/Entra — synchronisation du `displayName`.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-name-claims`, l'API met à jour le `displayName` Graph depuis `givenName + surname` lors des requêtes membres, avec cache des succès et reprise après échec ; la projection locale reste disponible si Graph est indisponible. Ajout du script `Sync-EntraDisplayNames.ps1` pour les comptes existants, protégé par `-WhatIf`, avec 4 tests Pester. Validation finale : 368 tests backend, 160 tests Catalog, builds backend/Catalog, parse PowerShell, 4+5+9 tests Pester, Graphify et `git diff --check` passants. PR #140 mise à jour ; aucun changement Entra réel. |
