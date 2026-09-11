@@ -124,6 +124,14 @@ books/stock, fairs/statistics, sessions, alerts, members, and settings. The Cata
 owns the public member/watchlist flows; role assignment remains an Entra concern and
 physical cartons are not represented by the domain.
 
+## Scan session identity projection
+
+The Catalog scan-session opening endpoint ensures a local `User` projection from the
+authenticated external identity before creating the session. It stores the optional token
+display name as the domain `Name` value and keeps the email as the fallback. Administrative
+session list/detail projections render `Name`, then email; a session whose volunteer ID has
+no local user cannot expose a human name because `ScanSession` stores only that ID.
+
 ## Conventions To Preserve
 
 - Keep commands and queries in their feature folders under `Application`.

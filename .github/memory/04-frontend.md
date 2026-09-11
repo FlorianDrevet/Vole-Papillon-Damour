@@ -39,13 +39,18 @@ fairs, alerts, members and settings; the BackOffice administration screen also e
 typed **Comptes et rôles** tab for creating Entra accounts and assigning `Tri`, `Caisse`
 or `Administration` roles. The API remains the authorization boundary and the current
 administrator cannot remove their own `Administration` role.
-As of 2026-09-11, the Catalog `/administration` shell follows the `AdminSidebar` maquette
-across its dashboard, scan sessions, catalogue, dead-stock, inventory, fair statistics,
-members, volunteers and settings workspaces. The volunteer workspace consumes the existing
-`/accounts/admin` contract for typed listing, account creation and role updates. The
-inventory workspace keeps physical history and carton/rayon actions explicitly empty or
-disabled because no corresponding endpoint or domain model exists; the UI does not invent
-those values.
+As of 2026-09-11, Catalog `/administration` keeps the public catalogue header and uses the
+AdminSidebar visual language for its dashboard, scan sessions, catalogue, dead-stock,
+inventory, fair statistics, accounts and settings workspaces. The navigation groups the
+site-member and volunteer surfaces under `Réservé à l'administration` → `Comptes & rôles`;
+the workspace keeps the existing `/accounts/admin` contract for typed listing, account
+creation and role updates and shows a contextual notice when the Entra directory cannot be
+read. The inventory workspace keeps physical history and carton/rayon actions explicitly
+empty or disabled because no corresponding endpoint or domain model exists; the UI does not
+invent those values. Opening a scan session now upserts the local member projection with
+the display-name claim; session reads prefer that name, then the stored email. Historic
+sessions with neither a local user row nor stored contact data cannot be reconstructed by
+the repository alone and require reopening or a separate backfill.
 The external bibliographic result block is kept separate from local results. DEV ACS email
 delivery is enabled after domain verification; a real authorized-recipient test remains open.
 

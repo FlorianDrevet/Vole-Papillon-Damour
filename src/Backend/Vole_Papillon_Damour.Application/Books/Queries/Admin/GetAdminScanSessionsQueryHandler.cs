@@ -114,7 +114,7 @@ public sealed class GetAdminScanSessionsQueryHandler(
                 cancellationToken);
             var firstPending = pendingAlerts.Items.FirstOrDefault();
             var volunteerName = volunteers.TryGetValue(session.VolunteerId, out var volunteer)
-                ? FormatName(volunteer.Name)
+                ? FormatName(volunteer.Name) ?? volunteer.Email
                 : null;
             var fairName = session.TargetAssoEventsId is { } fairId && fairs.TryGetValue(fairId, out var fair)
                 ? fair.Name
