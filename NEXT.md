@@ -78,6 +78,21 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — résolution des conflits de la PR #134
+
+Depuis le worktree `Vole-Papillon-Damour-pr134-conflicts`, la branche de livraison a intégré
+`feat/catalog-session-and-search-polish` à `origin/main` (`3a96844`). La résolution conserve
+les corrections de l’espace administrateur Catalog présentes dans `main`, ainsi que la
+reconnexion automatique, le suivi direct œuvre/édition et les ajustements visuels de la PR
+[#134](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/134). Les deux régressions
+de recherche — le sélecteur de tri et les traits de section — sont couvertes dans le spec
+fusionné.
+
+Validation locale : `npm ci`, 150 tests Catalog ChromeHeadless, build de production
+(766,68 kB initiaux pour un budget de 500 kB — avertissement connu), `graphify update .` et
+`git diff --check`. Les workflows CI GitHub n’ont pas été attendus ; aucun déploiement n’a
+été effectué.
+
 ### État actualisé — 2026-09-11 — corrections de l’espace administrateur Catalog
 
 La branche `fix/backoffice-admin-catalog-corrections` corrige les retours sur `src/Catalog`.
