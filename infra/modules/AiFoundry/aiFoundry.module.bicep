@@ -50,7 +50,7 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01
   parent: account
   name: deploymentName
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: capacity
   }
   properties: {
