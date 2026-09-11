@@ -54,6 +54,15 @@ the repository alone and require reopening or a separate backfill.
 The external bibliographic result block is kept separate from local results. DEV ACS email
 delivery is enabled after domain verification; a real authorized-recipient test remains open.
 
+As of 2026-09-11, the Catalog home places an API-driven `Par genres` browser and an
+account-following callout after the rare-books section; the former `Votre sélection` block
+is removed. Recent books use the shared `BookCardComponent` `home` variant for the compact
+mockup treatment (cover/status/content/footer). The existing `list` variant remains the
+search-result layout with publisher/year/genre metadata and availability rows, while rare,
+work and detail cards keep the default/grid contract. The existing cover placeholder remains
+the fallback whenever a book has no image, and the home never invents genre counts that the API
+does not provide.
+
 After the 2026-09-08 rollout, Catalog analytics use dedicated public build variables:
 `CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` for GA4 `G-GBHC67EGGF` and `CLARITY_PROJECT_ID`
 for Clarity `yerabb7gnt`; the Website variable `GOOGLE_ANALYTICS_MEASUREMENT_ID` remains

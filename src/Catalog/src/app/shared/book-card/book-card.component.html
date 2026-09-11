@@ -1,5 +1,15 @@
-<a class="book-card" [class.book-card--list]="variant === 'list'" [routerLink]="bookPath()" [attr.aria-label]="book.title || 'Voir la fiche du livre'">
+<a class="book-card" [class.book-card--list]="variant === 'list'" [class.book-card--home]="variant === 'home'" [routerLink]="bookPath()" [attr.aria-label]="book.title || 'Voir la fiche du livre'">
   <div class="cover-frame">
+    @if (variant === 'home') {
+      <p
+        class="book-card-status"
+        [class.status-available]="book.quantityAvailable > 0"
+        [class.status-announced]="book.quantityAvailable === 0 && book.quantityAnnounced > 0"
+        [class.status-exhausted]="book.quantityAvailable === 0 && book.quantityAnnounced === 0">
+        <span class="status-dot" aria-hidden="true"></span>
+        {{ homeStatusLabel() }}
+      </p>
+    }
     @if (book.coverUrl && !coverFailed) {
       <img
         [src]="book.coverUrl"
@@ -11,39 +21,61 @@
     }
   </div>
 
-  <div class="book-card-content">
-    <div class="book-card-meta">
-      @if (variant === 'list') {
-        <span>
-          {{ book.publisher || 'Éditeur non renseigné' }}
-          @if (book.publisher && book.publicationYear) { · }
-          {{ book.publicationYear || '' }}
-          @if ((book.publisher || book.publicationYear) && book.genre) { · }
-          {{ book.genre || '' }}
-        </span>
-      } @else {
+  @if (variant === 'home') {
+    <div class="book-card-content">
+      <div class="book-card-meta">
         <span>{{ book.genre || 'Catalogue' }}</span>
-      }
-      @if (book.isRare) { <span class="rare-badge">Rare</span> }
+      </div>
+      <h3>{{ book.title || 'Titre à compléter' }}</h3>
+      <p class="authors">{{ book.authors || 'Auteur non renseigné' }}</p>
+      <div class="book-card-footer">
+        @if (book.publisher || book.publicationYear) {
+          <p class="edition">
+            {{ book.publisher || 'Éditeur non renseigné' }}
+            @if (book.publisher && book.publicationYear) { <span>·</span> }
+            {{ book.publicationYear || '' }}
+          </p>
+        } @else {
+          <span class="edition edition--empty" aria-hidden="true"></span>
+        }
+        <span class="book-card-action">{{ homeActionLabel() }}</span>
+      </div>
     </div>
-    <h3>{{ book.title || 'Titre à compléter' }}</h3>
-    <p class="authors">{{ book.authors || 'Auteur non renseigné' }}</p>
-    @if (book.publisher || book.publicationYear) {
-      <p class="edition">
-        {{ book.publisher || 'Éditeur non renseigné' }}
-        @if (book.publisher && book.publicationYear) { <span>·</span> }
-        {{ book.publicationYear || '' }}
-      </p>
-    }
+  } @else {
+    <div class="book-card-content">
+      <div class="book-card-meta">
+        @if (variant === 'list') {
+          <span>
+            {{ book.publisher || 'Éditeur non renseigné' }}
+            @if (book.publisher && book.publicationYear) { · }
+            {{ book.publicationYear || '' }}
+            @if ((book.publisher || book.publicationYear) && book.genre) { · }
+            {{ book.genre || '' }}
+          </span>
+        } @else {
+          <span>{{ book.genre || 'Catalogue' }}</span>
+        }
+        @if (book.isRare) { <span class="rare-badge">Rare</span> }
+      </div>
+      <h3>{{ book.title || 'Titre à compléter' }}</h3>
+      <p class="authors">{{ book.authors || 'Auteur non renseigné' }}</p>
+      @if (book.publisher || book.publicationYear) {
+        <p class="edition">
+          {{ book.publisher || 'Éditeur non renseigné' }}
+          @if (book.publisher && book.publicationYear) { <span>·</span> }
+          {{ book.publicationYear || '' }}
+        </p>
+      }
 
-    <div class="availability-list">
-      <p class="availability" [class.available]="book.quantityAvailable > 0" [class.announced-only]="book.quantityAvailable === 0 && book.quantityAnnounced > 0" [class.exhausted]="book.quantityAvailable === 0 && book.quantityAnnounced === 0">
-        <span class="status-dot" aria-hidden="true"></span>
-        {{ availabilityLabel() }}
-      </p>
-      @if (book.quantityAnnounced > 0) {
-        <p class="announced"><span aria-hidden="true">↳</span>{{ announcedLabel() }}</p>
-      }
+      <div class="availability-list">
+        <p class="availability" [class.available]="book.quantityAvailable > 0" [class.announced-only]="book.quantityAvailable === 0 && book.quantityAnnounced > 0" [class.exhausted]="book.quantityAvailable === 0 && book.quantityAnnounced === 0">
+          <span class="status-dot" aria-hidden="true"></span>
+          {{ availabilityLabel() }}
+        </p>
+        @if (book.quantityAnnounced > 0) {
+          <p class="announced"><span aria-hidden="true">↳</span>{{ announcedLabel() }}</p>
+        }
+      </div>
     </div>
-  </div>
+  }
 </a>
