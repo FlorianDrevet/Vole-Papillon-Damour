@@ -108,8 +108,9 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   counts. The home also places its account-following guidance after the rare-books section.
 - Recent home books use the shared `BookCardComponent` `home` variant: a square paper cover
   treatment, truthful availability status, compact Newsreader metadata and a follow/alert
-  affordance. The default card variant remains the visual contract for rare, search, work
-  and detail entry points, including the shared no-cover placeholder.
+  affordance. Search results keep the shared `list` variant with publisher/year/genre
+  metadata and availability rows; default/grid remains the visual contract for rare, work and
+  detail entry points, including the shared no-cover placeholder.
 - Public catalogue, search, work, detail, account, legal, and existing administration
   views share the same spacing, cards, pills, border language, restrained motion, and
   responsive collapse. Availability and future announcements remain truthful and separate;
