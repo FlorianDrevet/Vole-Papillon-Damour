@@ -78,6 +78,16 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — favicon des apps Scan et Catalog
+
+La branche `fix/browser-favicons` ajoute `vpd_icon.ico`, copié à l’identique depuis le
+Website, aux assets publics du Scan et du Catalog et référence cette icône dans leurs
+pages d’entrée. La PR [#137](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/137)
+est ouverte ; les builds, les 170 tests ChromeHeadless Scan et les 147 tests ChromeHeadless
+Catalog passent. Les deux serveurs locaux ont répondu `200 image/x-icon` pour l’asset et les
+onglets Chrome locaux ont chargé les titres attendus. Aucun déploiement ni smoke de production
+n’a été effectué.
+
 ### État actualisé — 2026-09-11 — corrections de l’espace administrateur Catalog
 
 La branche `fix/backoffice-admin-catalog-corrections` corrige les retours sur `src/Catalog`.
