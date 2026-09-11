@@ -42,11 +42,7 @@ export class CatalogNavigationComponent {
       return this.accountName();
     }
 
-    if (!this.isAdministration()) {
-      return 'Mon compte';
-    }
-
-    return 'Administration';
+    return 'Mon compte';
   });
 
   private readonly platformId = inject(PLATFORM_ID);

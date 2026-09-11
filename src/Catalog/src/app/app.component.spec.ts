@@ -52,6 +52,15 @@ describe('AppComponent', () => {
     expect(accountLink?.getAttribute('href')).toBe('/compte');
   });
 
+  it('keeps the catalogue header mounted on the administration route', () => {
+    fixture.componentInstance.isAdministrationRoute.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.catalog-header')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.catalog-header .brand-subtitle')?.textContent)
+      .toContain('catalogue');
+  });
+
   it('keeps the mobile menu button label synchronized with its state', () => {
     const menuButton = fixture.nativeElement.querySelector('.menu-toggle') as HTMLButtonElement;
 

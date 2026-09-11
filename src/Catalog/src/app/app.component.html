@@ -1,14 +1,10 @@
-@if (isAdministrationRoute()) {
-  <main class="administration-route-main">
-    <router-outlet></router-outlet>
-  </main>
-} @else {
-  <app-catalog-navigation></app-catalog-navigation>
+<app-catalog-navigation></app-catalog-navigation>
 
-  <main>
-    <router-outlet></router-outlet>
-  </main>
+<main [class.administration-route-main]="isAdministrationRoute()">
+  <router-outlet></router-outlet>
+</main>
 
+@if (!isAdministrationRoute()) {
   <app-catalog-footer></app-catalog-footer>
 
   <div app-catalog-cookie-banner></div>

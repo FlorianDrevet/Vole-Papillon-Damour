@@ -5,13 +5,12 @@ import {
   OnInit,
   PLATFORM_ID,
   Signal,
-  computed,
+  WritableSignal,
   inject,
   signal,
 } from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Meta} from '@angular/platform-browser';
-import type {AccountInfo} from '@azure/msal-browser';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
@@ -59,12 +58,23 @@ export type CatalogAdminSection =
   | 'fairs'
   | 'alerts'
   | 'members'
-  | 'volunteers'
+  | 'accounts'
+  | 'settings';
+
+type CatalogAdminNavIcon =
+  | 'dashboard'
+  | 'scan'
+  | 'dead-stock'
+  | 'catalogue'
+  | 'inventory'
+  | 'fairs'
+  | 'accounts'
   | 'settings';
 
 interface CatalogAdminNavItem {
   id: CatalogAdminSection;
   label: string;
+  icon: CatalogAdminNavIcon;
 }
 
 interface CatalogAdminNavGroup {
@@ -80,11 +90,10 @@ interface CatalogAdminNavGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CatalogAdministrationPageComponent implements OnInit {
-  readonly account: Signal<AccountInfo | null>;
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
+  readonly isAdministrator: Signal<boolean>;
   readonly authError: Signal<string | null>;
-  readonly accountLabel: Signal<string>;
   readonly activeSection = signal<CatalogAdminSection>('overview');
   readonly loading = signal(false);
   readonly actionPending = signal<string | null>(null);
@@ -93,34 +102,40 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   readonly navGroups: CatalogAdminNavGroup[] = [
     {
-      label: 'Pilotage',
+      label: 'Pendant la bourse',
       items: [
-        {id: 'overview', label: 'Tableau de bord'},
-        {id: 'fairs', label: 'Statistiques par bourse'},
+        {id: 'overview', label: 'Tableau de bord', icon: 'dashboard'},
+        {id: 'sessions', label: 'Sessions de scan', icon: 'scan'},
+        {id: 'dead-stock', label: 'Désengorgement', icon: 'dead-stock'},
       ],
     },
     {
-      label: 'Travail',
+      label: 'Le fonds de livres',
       items: [
-        {id: 'sessions', label: 'Sessions de scan'},
-        {id: 'catalogue', label: 'Catalogue'},
-        {id: 'dead-stock', label: 'Désengorgement'},
-        {id: 'inventory', label: 'Inventaire'},
+        {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
+        {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
+        {id: 'fairs', label: 'Statistiques par bourse', icon: 'fairs'},
       ],
     },
     {
-      label: 'Comptes',
+      label: "Réservé à l'administration",
       items: [
-        {id: 'members', label: 'Membres du site'},
-        {id: 'volunteers', label: 'Bénévoles'},
+        {id: 'accounts', label: 'Comptes & rôles', icon: 'accounts'},
+        {id: 'settings', label: 'Paramètres', icon: 'settings'},
       ],
-    },
-    {
-      label: 'Réglages',
-      items: [{id: 'settings', label: 'Paramètres'}],
     },
   ];
   readonly navItems: CatalogAdminNavItem[] = this.navGroups.flatMap(group => group.items);
+
+  navBadge(section: CatalogAdminSection): string | null {
+    const totalCount = section === 'sessions'
+      ? this.sessionsPage()?.totalCount
+      : section === 'catalogue'
+        ? this.booksPage()?.totalCount
+        : undefined;
+
+    return totalCount === undefined ? null : this.formatNumber(totalCount);
+  }
 
   readonly overview = signal<CatalogAdminOverview | null>(null);
   readonly booksPage = signal<CatalogAdminBookPage | null>(null);
@@ -134,6 +149,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly selectedMember = signal<CatalogAdminMemberDetail | null>(null);
   readonly settings = signal<CatalogAdminSettings | null>(null);
   readonly accountsPage = signal<CatalogAdminAccountPage | null>(null);
+  readonly accountErrorMessage = signal<string | null>(null);
   readonly editingAccountId = signal<string | null>(null);
   readonly editingAccountRoles = signal<CatalogAdminAccountRole[]>([]);
   readonly showCreateAccount = signal(false);
@@ -241,11 +257,10 @@ export class CatalogAdministrationPageComponent implements OnInit {
     private readonly api: CatalogAdminApiService,
     private readonly meta: Meta,
   ) {
-    this.account = this.auth.account;
     this.initialized = this.auth.initialized;
     this.isAuthenticated = this.auth.isAuthenticated;
+    this.isAdministrator = this.auth.isAdministrator;
     this.authError = this.auth.error;
-    this.accountLabel = computed(() => this.displayAccount(this.account()));
   }
 
   ngOnInit(): void {
@@ -268,14 +283,6 @@ export class CatalogAdministrationPageComponent implements OnInit {
       await this.auth.login('/administration');
     } catch {
       this.errorMessage.set('La connexion n’a pas pu être démarrée. Réessayez.');
-    }
-  }
-
-  async logout(): Promise<void> {
-    try {
-      await this.auth.logout();
-    } catch {
-      this.errorMessage.set('La déconnexion n’a pas pu être démarrée. Réessayez.');
     }
   }
 
@@ -307,10 +314,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
       case 'alerts':
         await this.loadAlerts();
         break;
-      case 'members':
-        await this.loadMembers();
-        break;
-      case 'volunteers':
+      case 'accounts':
         await Promise.all([this.loadAccounts(), this.loadMembers()]);
         break;
       case 'settings':
@@ -769,7 +773,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
     };
     await this.run('accounts', async token => {
       this.accountsPage.set(await firstValueFrom(this.api.getAdminAccounts(token, filters)));
-    });
+    }, this.accountErrorMessage, error => this.describeAccountError(error));
   }
 
   async createAccount(): Promise<void> {
@@ -1212,7 +1216,12 @@ export class CatalogAdministrationPageComponent implements OnInit {
     return {minAgeMonths, minQuantity};
   }
 
-  private async run(action: string, operation: (token: string) => Promise<void>): Promise<void> {
+  private async run(
+    action: string,
+    operation: (token: string) => Promise<void>,
+    errorTarget: WritableSignal<string | null> = this.errorMessage,
+    describeError: (error: unknown) => string = error => this.describeError(error),
+  ): Promise<void> {
     if (!this.auth.isAuthenticated()) {
       return;
     }
@@ -1220,14 +1229,15 @@ export class CatalogAdministrationPageComponent implements OnInit {
     this.loading.set(true);
     this.actionPending.set(action);
     this.errorMessage.set(null);
+    errorTarget.set(null);
 
     try {
       const token = await this.auth.getApiAccessToken();
       await operation(token);
     } catch (error: unknown) {
-      this.errorMessage.set(error instanceof CatalogAuthenticationRedirectStartedError
+      errorTarget.set(error instanceof CatalogAuthenticationRedirectStartedError
         ? 'Redirection vers Microsoft pour renouveler votre session…'
-        : this.describeError(error));
+        : describeError(error));
     } finally {
       this.loading.set(false);
       this.actionPending.set(null);
@@ -1273,7 +1283,12 @@ export class CatalogAdministrationPageComponent implements OnInit {
     return 'L’opération n’a pas pu être effectuée. Réessayez dans un instant.';
   }
 
-  private displayAccount(account: AccountInfo | null): string {
-    return account?.name?.trim() || account?.username || '';
+  private describeAccountError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500)) {
+      return 'Le répertoire des comptes Entra est temporairement indisponible. Vérifiez sa configuration côté API ou réessayez plus tard.';
+    }
+
+    return this.describeError(error);
   }
+
 }

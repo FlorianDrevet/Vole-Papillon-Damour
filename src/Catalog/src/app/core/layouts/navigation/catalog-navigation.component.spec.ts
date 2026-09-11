@@ -182,6 +182,61 @@ describe('CatalogNavigationComponent', () => {
     expect(fixture.nativeElement.textContent).toContain("Ouvrir l'administration");
   });
 
+  it('exposes the administration workspace in the catalogue navigation for administrators', () => {
+    auth.account.set({
+      homeAccountId: 'home-account-id',
+      environment: 'volepapillondamour.ciamlogin.com',
+      tenantId: 'tenant-id',
+      username: 'administrator@example.test',
+      localAccountId: 'local-account-id',
+      name: 'Florian DREVET',
+    });
+    auth.isAuthenticated.set(true);
+    auth.isAdministrator.set(true);
+    fixture.detectChanges();
+
+    const workspaceLink = fixture.nativeElement.querySelector('.admin-workspace-link') as HTMLAnchorElement | null;
+    const adminPill = fixture.nativeElement.querySelector('.header-admin-pill') as HTMLElement | null;
+
+    expect(workspaceLink?.getAttribute('href')).toBe('/administration');
+    expect(workspaceLink?.textContent).toContain('Espace administrateur');
+    expect(adminPill?.textContent).toContain('Administration');
+
+    const menuButton = fixture.nativeElement.querySelector('.menu-toggle') as HTMLButtonElement;
+    menuButton.click();
+    fixture.detectChanges();
+
+    const mobileWorkspaceLink = fixture.nativeElement.querySelector('.mobile-admin-link') as HTMLAnchorElement | null;
+    expect(mobileWorkspaceLink?.textContent).toContain('Espace administrateur');
+  });
+
+  it('keeps the catalogue brand subtitle when the current route is administrative', () => {
+    fixture.componentInstance.url.set('/administration');
+    fixture.detectChanges();
+
+    const subtitles = Array.from(fixture.nativeElement.querySelectorAll('.brand-subtitle')) as HTMLElement[];
+
+    expect(subtitles.length).toBe(2);
+    expect(subtitles.every(subtitle => subtitle.textContent?.includes('catalogue'))).toBeTrue();
+    expect(subtitles.some(subtitle => subtitle.textContent?.includes('administration'))).toBeFalse();
+  });
+
+  it('keeps the public account action unchanged on the administration route', () => {
+    fixture.componentInstance.url.set('/administration');
+    fixture.detectChanges();
+
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
+
+    expect(accountLink.getAttribute('href')).toBe('/compte');
+    expect(accountLink.getAttribute('title')).toBe('Votre espace personnel');
+    expect(accountLink.textContent).toContain('Mon compte');
+
+    accountLink.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.popover-kicker')?.textContent).toContain('Espace personnel');
+  });
+
   it('keeps the account action outside the navigation flex group', () => {
     const headerInner = fixture.nativeElement.querySelector('.header-inner') as HTMLElement;
     const navigation = fixture.nativeElement.querySelector('.main-navigation') as HTMLElement;

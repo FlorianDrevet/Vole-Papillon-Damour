@@ -30,6 +30,19 @@ public sealed class UserExternalIdentityTests
     }
 
     [Fact]
+    public void CreateFromExternalIdentity_StoresTheOptionalDisplayNameProjection()
+    {
+        var user = User.CreateFromExternalIdentity(
+            UserId.CreateUnique(),
+            "oid-value",
+            "member@example.test",
+            FirstSeenAt,
+            new Name("Camille", "Dupont"));
+
+        user.Name.Should().BeEquivalentTo(new Name("Camille", "Dupont"));
+    }
+
+    [Fact]
     public void SynchronizeExternalIdentity_RefreshesEmailAndLastSeen()
     {
         var user = User.CreateFromExternalIdentity(
@@ -45,5 +58,23 @@ public sealed class UserExternalIdentityTests
         user.Email.Should().Be("new@example.test");
         user.CreatedAt.Should().Be(FirstSeenAt);
         user.LastSeenAt.Should().Be(lastSeenAt);
+    }
+
+    [Fact]
+    public void SynchronizeExternalIdentity_RefreshesTheOptionalDisplayNameProjection()
+    {
+        var user = User.CreateFromExternalIdentity(
+            UserId.CreateUnique(),
+            "old-oid",
+            "old@example.test",
+            FirstSeenAt);
+
+        user.SynchronizeExternalIdentity(
+            "new-oid",
+            "new@example.test",
+            FirstSeenAt.AddHours(2),
+            new Name("Camille", "Renard"));
+
+        user.Name.Should().BeEquivalentTo(new Name("Camille", "Renard"));
     }
 }

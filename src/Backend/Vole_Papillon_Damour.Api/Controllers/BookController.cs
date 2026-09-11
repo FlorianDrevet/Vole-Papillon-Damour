@@ -8,6 +8,7 @@ using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
 using Vole_Papillon_Damour.Application.Books.Queries.GetBookMetadata;
 using Vole_Papillon_Damour.Application.Books.Queries.GetDeadStock;
@@ -364,18 +365,27 @@ public static class BookController
                         OpenScanSessionRequest request,
                         ClaimsPrincipal principal,
                         IMediator mediator,
+                        [FromServices] MemberIdentityService memberIdentityService,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetUserId(principal, out var volunteerId))
+                        if (!TryGetMemberIdentity(principal, out var externalId, out var email, out var displayName))
                         {
                             return Results.Unauthorized();
                         }
+
+                        var volunteerId = UserId.Create(externalId);
 
                         if (!Enum.TryParse<ScanMode>(request.Mode, ignoreCase: true, out var mode) ||
                             !Enum.IsDefined(mode))
                         {
                             return DomainErrors.Book.InvalidScanMode().Result();
                         }
+
+                        await memberIdentityService.EnsureAsync(
+                            externalId,
+                            email,
+                            displayName,
+                            cancellationToken);
 
                         var result = await mediator.Send(
                             new OpenScanSessionCommand(
@@ -481,6 +491,15 @@ public static class BookController
         out Guid externalId,
         out string email)
     {
+        return TryGetMemberIdentity(principal, out externalId, out email, out _);
+    }
+
+    private static bool TryGetMemberIdentity(
+        ClaimsPrincipal principal,
+        out Guid externalId,
+        out string email,
+        out string? displayName)
+    {
         var externalIdValue = principal.FindFirst("oid")?.Value
             ?? principal.FindFirst(
                 "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
@@ -496,6 +515,15 @@ public static class BookController
             .Select(principal.FindFirst)
             .Select(claim => claim?.Value)
             .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+        var displayNameValue = new[]
+            {
+                "name",
+                ClaimTypes.Name,
+                "displayName"
+            }
+            .Select(principal.FindFirst)
+            .Select(claim => claim?.Value)
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
         if (Guid.TryParse(externalIdValue, out externalId) &&
             externalId != Guid.Empty &&
@@ -503,11 +531,15 @@ public static class BookController
             emailValue.Trim().Length <= 320)
         {
             email = emailValue.Trim();
+            displayName = string.IsNullOrWhiteSpace(displayNameValue)
+                ? null
+                : displayNameValue.Trim();
             return true;
         }
 
         externalId = Guid.Empty;
         email = string.Empty;
+        displayName = null;
         return false;
     }
 
