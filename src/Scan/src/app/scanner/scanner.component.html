@@ -661,7 +661,7 @@
       <header class="status-modal-header">
         <div>
           <p class="status-modal-eyebrow">État de l’application</p>
-          <h2 id="status-modal-title">Synchronisation</h2>
+          <h2 id="status-modal-title">{{ statusModalTitle }}</h2>
         </div>
         <button type="button" class="status-modal-close" aria-label="Fermer" (click)="closeStatusModal()">×</button>
       </header>
@@ -672,6 +672,10 @@
       </div>
 
       <p class="status-modal-description">{{ statusModalDescription }}</p>
+
+      <p *ngIf="storagePersistenceFeedback" class="status-modal-feedback" role="status">
+        {{ storagePersistenceFeedback }}
+      </p>
 
       <ul *ngIf="statusDetails.length > 0" class="status-modal-details">
         <li *ngFor="let alert of statusDetails">{{ alert.message }}</li>
@@ -693,6 +697,14 @@
           [disabled]="accountSwitchBusy"
           (click)="setAsideAccountSwitchFromStatus()">
           Mettre de côté
+        </button>
+        <button
+          *ngIf="canRequestPersistentStorage"
+          type="button"
+          class="status-modal-primary"
+          [disabled]="storagePersistenceBusy"
+          (click)="protectOfflineData()">
+          {{ storagePersistenceBusy ? 'Protection en cours…' : 'Protéger les données hors ligne' }}
         </button>
         <button
           *ngIf="canRetrySyncFromStatus"
