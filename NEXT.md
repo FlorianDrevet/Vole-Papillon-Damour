@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Faire relire puis fusionner la PR [#135](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/135), appliquer `Configure-EntraUserFlow.ps1` en `-WhatIf` puis réellement, et contrôler le formulaire en navigation privée sur desktop/mobile ; les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) restent à suivre. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-registration-name-fields` |
-| **Dernière mise à jour** | 2026-09-11 — PR [#135](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/135) ouverte pour le formulaire Prénom/Nom, aucun tenant ni déploiement modifié |
-| **Branche** | `feat/catalog-account-registration-name-fields` — worktree dédié depuis `origin/main` (`469ef2e`), PR [#135](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/135) ouverte |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133), puis rejouer le branding Entra sans image et contrôler la connexion/création de compte sur desktop et mobile. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-entra-auth-card-background` |
+| **Dernière mise à jour** | 2026-09-11 — fond External ID neutralisé derrière la carte, PR #133 ouverte, aucun déploiement |
+| **Branche** | `fix/entra-auth-card-background` — worktree dédié depuis `origin/main`, PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte |
 
 ---
 
@@ -78,22 +78,20 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-11 — champs Prénom et Nom de l'inscription Catalog
+### État actualisé — 2026-09-11 — retrait du décor de fond des écrans Entra
 
-Depuis `origin/main` (`469ef2e`) dans le worktree
-`Vole-Papillon-Damour-account-registration-name-fields`, le user flow External ID du
-Catalog collecte désormais les attributs intégrés `givenName` et `surname` dans deux champs
-distincts libellés « Prénom » et « Nom ». Ils restent facultatifs comme l'ancien champ de
-nom, acceptent les caractères accentués via une validation portable limitée à 64 caractères,
-et l'e-mail reste masqué et prérempli. Le titre « Créer votre compte » et sa description
-française sont conservés comme chaînes Unicode ; le champ `displayName` n'est plus collecté.
+Dans `infra/entra/vpd-catalog-authentication.css`, les conteneurs de fond External ID
+forcent désormais un canvas bleu pâle uni et `background-image: none !important`. L'ancien
+asset `vpd-authentication-background.png`, qui dessinait les barres en bas de l'écran,
+n'apparaît donc plus derrière la carte sur les parcours de connexion et de création de
+compte, qui partagent cette feuille CSS. La documentation Entra indique de rejouer le
+branding sans `-BackgroundImagePath` ; aucune ressource du tenant, aucun compte et aucun
+mot de passe n'ont été modifiés dans cette session.
 
-Le script reste idempotent et associé uniquement à `vpd-catalog-<environment>`. La PR
-[#135](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/135) est ouverte. Validation
-TDD : le test Pester a d'abord échoué sur l'ancien payload, puis les 5 tests du script passent
-après la modification. Aucun tenant, compte, mot de passe, déploiement ou configuration hors
-dépôt n'a été modifié. Après la PR, exécuter le script avec `-WhatIf`, puis sans cette option,
-et vérifier le formulaire, la création/connexion et le rendu mobile avec un compte de test.
+Validation : test statique rouge puis vert sur la règle CSS, `graphify update .` et
+`git diff --check`. La suite Pester n'a pas pu s'initialiser localement car le module
+`Microsoft.Graph.Identity.DirectoryManagement` manque dans `pwsh` ; l'application du CSS
+au tenant et le contrôle live restent à faire après la PR.
 
 ### État actualisé — 2026-09-11 — résolution des conflits de la PR #129
 
@@ -1119,6 +1117,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Correctif branding Entra — suppression du fond derrière la carte.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-auth-card-background`, le CSS partagé des écrans de connexion et de création de compte force un canvas uni et supprime `background-image`, ce qui masque les barres de l'ancien asset déjà stocké dans le tenant. Le runbook et la mémoire sont alignés. Validation : test statique rouge puis vert, parse PowerShell, `graphify update .` et `git diff --check` ; Pester reste bloqué par l'absence du module Graph local. PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte, aucun tenant ni déploiement modifié. |
 | 2026-09-11 | Windows | **PR #129 — résolution des conflits publiée.** Depuis `origin/main` (`b359829`) dans le worktree `Vole-Papillon-Damour-pr129-conflicts`, conservation des changements main de Scan/administration et réconciliation des variantes `BookCardComponent` `list` et `home` avec les sections de l'accueil Catalog. La branche locale `fix/pr-129-conflicts` a publié la résolution sur `feat/catalog-home-sections`, head de la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129). Validation : 139 tests Catalog, build de production, `graphify update .`, requête Graphify, `git diff --check` et contrôles Chrome à 1280/390 px sans débordement ; l'API locale était indisponible pendant le smoke, aucun déploiement. |
 | 2026-09-11 | Windows | **Catalog — sections de l'accueil et cartes récentes.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-catalog-home-sections`, ajout de « Par genres » et du callout « Avec un compte » après les livres rares, suppression de « Votre sélection » et ajout d'une variante de carte récente inspirée de la maquette, avec le placeholder conservé pour les couvertures absentes. Validation : test rouge puis vert, 128 tests Catalog, build de production, `graphify update .` et contrôles Chrome locaux à 1280/390×844 avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. Branche `feat/catalog-home-sections`, PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) ouverte. |
 | 2026-09-10 | Windows | **Website — formulation du film de Maxence.** Après la fusion de la PR #124, la description de « Vole, Papillon d’amour » devient « Le film qui raconte le combat de Maxence. ». Validation : test rouge puis vert, 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements Angular connus, aucun déploiement. PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte. |

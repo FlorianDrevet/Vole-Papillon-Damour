@@ -53,11 +53,12 @@ a:active {
   z-index: 1;
 }
 
-/* The uploaded background remains available as a tenant asset, but 1a uses a
- * neutral paper-blue book slices instead of the old full-page butterfly. */
+/* The uploaded tenant asset may still exist, but the hosted form must use a
+ * plain canvas so it cannot paint the book-slice bars behind the card. */
 .ext-background-image,
 .ext-vertical-split-background-image-container {
-  background-color: #eaf6fb !important;
+  background: #eaf6fb !important;
+  background-image: none !important;
   z-index: 0;
 }
 
