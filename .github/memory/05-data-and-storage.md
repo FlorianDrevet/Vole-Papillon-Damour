@@ -12,10 +12,11 @@
 Migration `20260910191056_AddSocialActualityImport` adds `Actualities.Status`,
 `TitleNeedsReview`, and nullable `ImportedAt`; existing rows default to `Published`.
 It adds `SocialPostImports` with a unique `(Source, ExternalId)` index and a nullable
-`ActualityId` foreign key using `SetNull`, so deleting a draft does not permit a
-re-import. `Infrastructure.Persistence.ActualityImportStore` writes the draft and its
-trace in one SQL transaction. Imported media reuse the `actuality-images` Blob
-container; `BlobService.DeleteFileAsync` only deletes URLs belonging to that container.
+`ActualityId` foreign key using `SetNull`, so deleting an imported actuality does not
+permit a re-import. `Infrastructure.Persistence.ActualityImportStore` writes the
+published actuality and its trace in one SQL transaction. Imported media reuse the
+`actuality-images` Blob container; `BlobService.DeleteFileAsync` only deletes URLs
+belonging to that container.
 
 ## Books module persistence
 

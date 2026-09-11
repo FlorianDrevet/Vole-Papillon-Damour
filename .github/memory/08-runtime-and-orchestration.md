@@ -16,10 +16,11 @@
 `src/Backend/Vole_Papillon_Damour.Worker/SocialImportFunction.cs` adds the
 `ImportSocialActualities` timer trigger using `%SocialImport:Schedule%`. It creates a
 scope, dispatches `ImportSocialActualitiesCommand`, logs counters, and distinguishes
-Instagram authentication and quota failures. `InstagramFeedClient` and
-`MediaDownloader` are typed HTTP clients registered by Infrastructure; title generation
-is optional and uses `Microsoft.Extensions.AI` with an Azure managed identity when its
-Foundry endpoint/deployment are configured.
+Instagram authentication and quota failures. A successful social import is published
+immediately; an empty title or article is rejected before the transaction is committed.
+`InstagramFeedClient` and `MediaDownloader` are typed HTTP clients registered by
+Infrastructure; title generation is optional and uses `Microsoft.Extensions.AI` with
+an Azure managed identity when its Foundry endpoint/deployment are configured.
 
 ## Entry Points
 

@@ -188,6 +188,12 @@ public sealed class ImportSocialActualitiesCommandHandler(
                 post.PublishedAt,
                 importedAt,
                 title.UsedFallback);
+            if (!actuality.Publish())
+            {
+                throw new InvalidOperationException(
+                    "The imported actuality cannot be published because its title or article is empty.");
+            }
+
             var import = SocialPostImportAggregate.Create(
                 Guid.NewGuid(),
                 Source,
