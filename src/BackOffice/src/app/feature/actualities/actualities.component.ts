@@ -40,9 +40,21 @@ export class ActualitiesComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
 
   private readonly actualities = signal<ActualityModel[]>([]);
+  protected readonly showDraftsOnly = signal(false);
 
   protected readonly isLoading = signal(true);
   protected readonly hasFailed = signal(false);
+  protected readonly draftCount = computed(() =>
+    this.actualities().filter(actuality => actuality.status === 'Draft').length,
+  );
+  protected readonly emptyStateTitle = computed(() =>
+    this.showDraftsOnly() ? 'Aucun brouillon à relire' : 'Aucune actualité',
+  );
+  protected readonly emptyStateDescription = computed(() =>
+    this.showDraftsOnly()
+      ? "Les brouillons importés apparaîtront ici dès qu'ils seront disponibles."
+      : "Les actualités publiées ici apparaissent sur le site de l'association.",
+  );
 
   /**
    * Regroupement dérivé de la liste, et non recopié à chaque mutation : les deux
@@ -50,7 +62,11 @@ export class ActualitiesComponent implements OnInit {
    * regroupement après une création ou une suppression.
    */
   protected readonly groupedActualities = computed<ActualityMonth[]>(() =>
-    this.groupByMonth(this.actualities()),
+    this.groupByMonth(
+      this.showDraftsOnly()
+        ? this.actualities().filter(actuality => actuality.status === 'Draft')
+        : this.actualities(),
+    ),
   );
 
   ngOnInit(): void {
@@ -61,7 +77,7 @@ export class ActualitiesComponent implements OnInit {
     this.isLoading.set(true);
     this.hasFailed.set(false);
 
-    this.axiosService.request$(MethodEnum.GET, 'actuality/all', {})
+    this.axiosService.request$(MethodEnum.GET, 'actuality/all', {includeDrafts: true})
       .then((actualities: ActualityModel[]) => {
         this.actualities.set(actualities);
         this.isLoading.set(false);
@@ -72,6 +88,10 @@ export class ActualitiesComponent implements OnInit {
         this.hasFailed.set(true);
         this.isLoading.set(false);
       });
+  }
+
+  protected toggleDraftFilter(): void {
+    this.showDraftsOnly.update(value => !value);
   }
 
   protected openDialogCreation(): void {

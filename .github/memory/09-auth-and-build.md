@@ -168,6 +168,12 @@
   ACA Bicep uses `az bicep build` and the subscription deployment command under `infra/aca/`.
 - MAUI: `dotnet build .\src\MauiCashApp\ShopAppVpd.csproj --framework net10.0-android`.
 
+The social-import change was validated locally with the backend solution build, Worker
+build, Bicep source and parameter compilation, and the four backend suites (Domain,
+Application, Infrastructure, API). BackOffice `test:bootstrap` and production build
+also pass. The Website production build prerenders 25 routes successfully; its existing
+bundle-budget and CommonJS warnings remain non-blocking.
+
 ## Practical Warnings
 
 - Never store secrets in memory files or commit local connection strings. Prefer actual config,

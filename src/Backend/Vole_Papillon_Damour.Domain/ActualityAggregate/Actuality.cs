@@ -14,6 +14,9 @@ public sealed class Actuality : AggregateRoot<ActualityId>
     public Uri? InstagramLink { get; private set; } = null!;
     private List<Uri> _images = new();
     public IReadOnlyList<Uri> Images => _images.AsReadOnly();
+    public ActualityStatus Status { get; private set; } = ActualityStatus.Published;
+    public bool TitleNeedsReview { get; private set; }
+    public DateTimeOffset? ImportedAt { get; private set; }
 
     public Actuality(
         ActualityId id,
@@ -32,6 +35,9 @@ public sealed class Actuality : AggregateRoot<ActualityId>
         InstagramLink = instagramLink;
         _images = images;
         Date = date;
+        Status = ActualityStatus.Published;
+        TitleNeedsReview = false;
+        ImportedAt = null;
     }
 
     public static Actuality Create(string title,
@@ -45,6 +51,32 @@ public sealed class Actuality : AggregateRoot<ActualityId>
         return new Actuality(ActualityId.CreateUnique(), 
             title, article, urlPrincipalImage,
             facebookLink, instagramLink, images, date);
+    }
+
+    public static Actuality CreateImported(
+        string title,
+        string article,
+        Uri urlPrincipalImage,
+        Uri? instagramLink,
+        List<Uri> images,
+        DateTimeOffset date,
+        DateTimeOffset importedAt,
+        bool titleNeedsReview)
+    {
+        var actuality = new Actuality(
+            ActualityId.CreateUnique(),
+            title,
+            article,
+            urlPrincipalImage,
+            facebookLink: null,
+            instagramLink,
+            images,
+            date.ToUniversalTime());
+
+        actuality.Status = ActualityStatus.Draft;
+        actuality.TitleNeedsReview = titleNeedsReview;
+        actuality.ImportedAt = importedAt.ToUniversalTime();
+        return actuality;
     }
     
     public void Update(string title,
@@ -62,6 +94,23 @@ public sealed class Actuality : AggregateRoot<ActualityId>
         InstagramLink = instagramLink;
         _images = images;
         Date = date;
+        TitleNeedsReview = false;
+    }
+
+    public bool Publish()
+    {
+        if (string.IsNullOrWhiteSpace(Title) || string.IsNullOrWhiteSpace(Article))
+        {
+            return false;
+        }
+
+        Status = ActualityStatus.Published;
+        return true;
+    }
+
+    public void MarkTitleReviewed()
+    {
+        TitleNeedsReview = false;
     }
 
     public Actuality()

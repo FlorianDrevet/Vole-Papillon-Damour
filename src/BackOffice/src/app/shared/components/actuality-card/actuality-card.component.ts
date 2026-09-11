@@ -6,6 +6,8 @@ import { ConfirmationDialogComponent } from '../dialogs/confirmation-dialog/conf
 import { CreateUpdateActualityDialogComponent } from '../dialogs/create-update-actuality-dialog/create-update-actuality-dialog.component';
 import { ActualityFacadeService } from '../../facades/actuality.facade.service';
 
+const DORMANT_DRAFT_DAYS = 30;
+
 /**
  * Wrapper "smart" autour du composant `vpd-actuality-card` du design system.
  * Conserve le selector `app-actuality-card` historique pour ne pas casser les templates existants.
@@ -65,5 +67,28 @@ export class ActualityCardComponent {
         this.actualityUpdated.emit(result);
       }
     });
+  }
+
+  sourceLink(): string | null {
+    const actuality = this.ActualityModel();
+    return actuality.status === 'Draft'
+      ? actuality.instagramLink ?? actuality.facebookLink
+      : null;
+  }
+
+  isDormant(): boolean {
+    const actuality = this.ActualityModel();
+    if (actuality.status !== 'Draft' || actuality.importedAt === null) {
+      return false;
+    }
+
+    const importedAt = Date.parse(actuality.importedAt);
+    return Number.isFinite(importedAt) &&
+      Date.now() - importedAt >= DORMANT_DRAFT_DAYS * 24 * 60 * 60 * 1000;
+  }
+
+  imageUrls(): string[] {
+    const actuality = this.ActualityModel();
+    return [actuality.urlPrincipalImage, ...actuality.images];
   }
 }

@@ -49,6 +49,17 @@ Verified slices in `Application` and `Contracts` include:
 - `Orders`
 - `Products`
 
+### Actuality social-import slice
+
+`Domain.ActualityAggregate.Actuality` keeps manual creations `Published`, while
+`CreateImported` creates a `Draft` with `ImportedAt` and an optional
+`TitleNeedsReview` marker. `Publish()` enforces a non-empty title and article;
+`Update()` keeps a draft in draft state and clears the review marker. The separate
+`SocialPostImport` aggregate records `(Source, ExternalId)` and survives actuality
+deletion through the nullable `ActualityId` relationship. The import command lives in
+`Application/Actuality/Commands/Background`, downloads media before persistence, and
+commits the actuality plus import trace through `IActualityImportStore`.
+
 Residual `MailingList` folders still exist in `Application` and `Contracts`, but `Program.cs` no longer wires a mailing-list endpoint surface into the active API runtime.
 The dedicated `BingoCard` OCR slice was removed from `Application`, `Contracts`, and `Api` in May 2026; automatic loto-card analysis no longer exists in the active runtime.
 

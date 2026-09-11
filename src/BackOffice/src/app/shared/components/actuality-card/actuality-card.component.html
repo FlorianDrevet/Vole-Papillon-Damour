@@ -1,5 +1,40 @@
-<vpd-actuality-card
-  [actuality]="ActualityModel()"
-  [editable]="true"
-  (editRequested)="openDialogUpdate()"
-  (deleteRequested)="openDialogDeletion()"></vpd-actuality-card>
+<div class="flex w-full flex-col gap-2 sm:w-[280px]">
+  @if (ActualityModel().status === 'Draft') {
+    <div class="flex flex-wrap items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-[.08em] text-orange-900">
+      <span class="rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1">Brouillon</span>
+      @if (ActualityModel().titleNeedsReview) {
+        <span class="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1">Titre à revoir</span>
+      }
+      @if (isDormant()) {
+        <span class="rounded-full border border-red-300 bg-red-50 px-2.5 py-1">En attente depuis 30 jours</span>
+      }
+    </div>
+  }
+
+  <vpd-actuality-card
+    [actuality]="ActualityModel()"
+    [editable]="true"
+    (editRequested)="openDialogUpdate()"
+    (deleteRequested)="openDialogDeletion()"></vpd-actuality-card>
+
+  @if (ActualityModel().status === 'Draft' && ActualityModel().images.length > 0) {
+    <div class="grid grid-cols-2 gap-2" aria-label="Galerie complète du brouillon">
+      @for (image of imageUrls(); track image + $index) {
+        <img
+          [src]="image"
+          [alt]="ActualityModel().title"
+          class="h-32 w-full rounded-sm border border-line object-cover sm:h-36">
+      }
+    </div>
+  }
+
+  @if (sourceLink(); as link) {
+    <a
+      [href]="link"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="px-1 font-mono text-[11px] uppercase tracking-[.1em] text-blue hover:underline">
+      Voir la publication d'origine →
+    </a>
+  }
+</div>

@@ -11,6 +11,16 @@
 - `src/Backend/Vole_Papillon_Damour.Worker/` - .NET isolated Azure Functions worker for account deletion, Books Sweep/Enrich, and alert delivery
 - `src/MauiCashApp/` - .NET MAUI cashier client
 
+### Worker social import
+
+`src/Backend/Vole_Papillon_Damour.Worker/SocialImportFunction.cs` adds the
+`ImportSocialActualities` timer trigger using `%SocialImport:Schedule%`. It creates a
+scope, dispatches `ImportSocialActualitiesCommand`, logs counters, and distinguishes
+Instagram authentication and quota failures. `InstagramFeedClient` and
+`MediaDownloader` are typed HTTP clients registered by Infrastructure; title generation
+is optional and uses `Microsoft.Extensions.AI` with an Azure managed identity when its
+Foundry endpoint/deployment are configured.
+
 ## Entry Points
 
 - Backend entry point: `src/Backend/Vole_Papillon_Damour.Api/Program.cs`

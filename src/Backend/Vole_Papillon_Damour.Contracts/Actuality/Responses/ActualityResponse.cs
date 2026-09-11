@@ -10,4 +10,7 @@ public class ActualityResponse
     public Uri? InstagramLink { get; set; }
     public List<Uri> Images { get; set; } = null!;
     public DateTimeOffset Date { get; set; }
+    public string Status { get; set; } = null!;
+    public bool TitleNeedsReview { get; set; }
+    public DateTimeOffset? ImportedAt { get; set; }
 }

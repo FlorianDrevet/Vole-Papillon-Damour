@@ -27,5 +27,17 @@ public class ActualityConfiguration : IEntityTypeConfiguration<Actuality>
                 images => string.Join(',', images),
                 value => value.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(i => new Uri(i)).ToList()
             );
+
+        builder.Property(actuality => actuality.Status)
+            .HasConversion<byte>()
+            .HasDefaultValue(ActualityStatus.Published)
+            .IsRequired();
+        builder.Property(actuality => actuality.TitleNeedsReview)
+            .HasDefaultValue(false)
+            .IsRequired();
+        builder.Property(actuality => actuality.ImportedAt)
+            .HasColumnType("datetimeoffset");
+
+        builder.HasIndex(actuality => new { actuality.Status, actuality.Date });
     }
 }

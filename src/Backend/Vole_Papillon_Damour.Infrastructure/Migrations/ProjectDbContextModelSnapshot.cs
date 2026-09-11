@@ -42,12 +42,25 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTimeOffset?>("ImportedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("InstagramLink")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TitleNeedsReview")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("UrlPrincipalImage")
                         .IsRequired()
@@ -55,7 +68,48 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Status", "Date");
+
                     b.ToTable("Actualities", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.ActualityAggregate.SocialPostImport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ActualityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExternalId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTimeOffset>("ImportedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Permalink")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(2048)");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte>("Source")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActualityId");
+
+                    b.HasIndex("Source", "ExternalId")
+                        .IsUnique();
+
+                    b.ToTable("SocialPostImports", (string)null);
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", b =>
@@ -789,6 +843,14 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasIndex("Status", "DueAt");
 
                     b.ToTable("OutboxMessages", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.ActualityAggregate.SocialPostImport", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.ActualityAggregate.Actuality", null)
+                        .WithMany()
+                        .HasForeignKey("ActualityId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", b =>

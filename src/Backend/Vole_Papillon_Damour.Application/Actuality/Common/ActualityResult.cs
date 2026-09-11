@@ -5,8 +5,11 @@ namespace Vole_Papillon_Damour.Application.Actuality.Common;
 public record ActualityResult(string Title,
     string Article,
     Uri UrlPrincipalImage,
-    Uri FacebookLink, 
-    Uri InstagramLink,
+    Uri? FacebookLink,
+    Uri? InstagramLink,
     List<Uri> Images,
     DateTimeOffset Date,
-    Guid Id);
+    Guid Id,
+    Vole_Papillon_Damour.Domain.ActualityAggregate.ValueObjects.ActualityStatus Status,
+    bool TitleNeedsReview,
+    DateTimeOffset? ImportedAt);

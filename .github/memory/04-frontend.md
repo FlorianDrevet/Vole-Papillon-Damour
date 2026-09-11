@@ -11,6 +11,15 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
 - `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, cash
   sales, IndexedDB persistence, and volunteer authentication/synchronization
 
+### Actuality review workflow
+
+`BackOffice/src/app/feature/actualities` requests `GET /actuality/all?includeDrafts=true`
+and shows a draft-count banner, an optional draft-only filter, source links, title-review
+and dormant-after-30-days badges. The existing edit dialog can save a draft or save then
+call `POST /actuality/{id}/publish`; `Website` renders the public actuality article with
+`white-space: pre-line`. The public API still hides drafts, so the Website model does
+not need an import-specific UI.
+
 As of 2026-09-10, Website `/association/photos` separates the image catalog into 23
 yearly Maxence albums (2004–2026) and three event albums. Cards now navigate to the
 SSR-rendered `/association/photos/:albumSlug` page, which exposes a masonry gallery and

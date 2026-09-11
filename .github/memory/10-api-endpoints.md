@@ -12,7 +12,10 @@
 
 ## Actuality Endpoints
 
-- `GET /actuality/all`, `GET /actuality/latest`, `GET /actuality/{id}` - public reads
+- `GET /actuality/all`, `GET /actuality/latest`, `GET /actuality/{id}` - public reads;
+  all three expose only `Published` actualities, and a draft by id is treated as not found
+- `GET /actuality/all?includeDrafts=true` - admin-authorized complete actuality list
+- `GET /actuality/drafts`, `POST /actuality/{id}/publish` - `IsAdmin` review/publish flow
 - `POST /actuality`, `PUT /actuality/{id}`, `DELETE /actuality/{id}` - admin-protected writes
 
 ## Event Endpoints

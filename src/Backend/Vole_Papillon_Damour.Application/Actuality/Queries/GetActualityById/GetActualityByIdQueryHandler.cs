@@ -4,6 +4,7 @@ using MediatR;
 using Vole_Papillon_Damour.Application.Actuality.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.ActualityAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Actuality.Queries.GetActualityById;
 
@@ -14,7 +15,7 @@ public class GetActualityByIdQueryHandler(IActualityRepository actualityReposito
     {
         var actuality = await actualityRepository.GetByIdAsync(command.Id);
 
-        if (actuality is null)
+        if (actuality is null || actuality.Status != ActualityStatus.Published)
         {
             return Errors.Actuality.ActualityNotFound(command.Id);
         }

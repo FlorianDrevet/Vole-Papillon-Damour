@@ -20,8 +20,11 @@ export class ActualityFacadeService {
   }
 
   public putUpdateActuality$(id: string, actuality: FormData): Promise<ActualityModel> {
-    console.log(actuality)
     return this.axiosService.request$(MethodEnum.PUT, `/actuality/${id}`, actuality, {}, true);
+  }
+
+  public publishActuality$(id: string): Promise<ActualityModel> {
+    return this.axiosService.request$(MethodEnum.POST, `/actuality/${id}/publish`, null);
   }
 
   public deleteActualityById$(id: string): Promise<boolean> {

@@ -54,8 +54,34 @@ public class BlobService
         return blobClient.Uri;
     }
 
-    public Task<string> DeleteFileAsync(string fileName)
+    public async Task<string> DeleteFileAsync(string fileName)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return string.Empty;
+        }
+
+        var blobName = fileName;
+        if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri))
+        {
+            var containerUri = _blobContainerActualityImagesClient.Uri;
+            var containerPath = containerUri.AbsolutePath.TrimEnd('/') + "/";
+            if (!string.Equals(uri.Host, containerUri.Host, StringComparison.OrdinalIgnoreCase) ||
+                !uri.AbsolutePath.StartsWith(containerPath, StringComparison.Ordinal))
+            {
+                return string.Empty;
+            }
+
+            blobName = Uri.UnescapeDataString(uri.AbsolutePath[containerPath.Length..]);
+        }
+
+        if (string.IsNullOrWhiteSpace(blobName))
+        {
+            return string.Empty;
+        }
+
+        var blobClient = _blobContainerActualityImagesClient.GetBlobClient(blobName);
+        await blobClient.DeleteIfExistsAsync();
+        return blobName;
     }
 }

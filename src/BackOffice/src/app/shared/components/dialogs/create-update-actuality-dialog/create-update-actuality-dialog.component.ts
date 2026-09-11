@@ -98,6 +98,14 @@ export class CreateUpdateActualityDialogComponent {
   }
 
   onYesClick(): void {
+    this.submit(false);
+  }
+
+  onPublishClick(): void {
+    this.submit(true);
+  }
+
+  private submit(publishAfterSave: boolean): void {
     if (this.newActualityForm.invalid) {
       // Le bouton ne faisait rien et les erreurs de saisie partaient dans la
       // console : de l'extérieur, la modale paraissait bloquée.
@@ -108,41 +116,34 @@ export class CreateUpdateActualityDialogComponent {
 
     this.hasValidationErrors.set(false);
     this.isLoading.set(true);
-    if (this.updateActuality() === null) {
-      this.actualityFacade.postNewActuality$(this.createFormData()).then((result) => {
-        this._snackBar.open("L'actualité a bien été créée", "Fermer", {
+    const actuality = this.updateActuality();
+    const savePromise = actuality === null
+      ? this.actualityFacade.postNewActuality$(this.createFormData())
+      : this.actualityFacade.putUpdateActuality$(actuality.id, this.createFormData());
+
+    savePromise
+      .then((result) => publishAfterSave && actuality !== null
+        ? this.actualityFacade.publishActuality$(result.id)
+        : result)
+      .then((result) => {
+        const action = publishAfterSave ? 'publiée' : actuality === null ? 'créée' : 'modifiée';
+        this._snackBar.open(`L'actualité a bien été ${action}`, "Fermer", {
           duration: 2000,
           horizontalPosition: "end",
           verticalPosition: "top"
         });
         this.isLoading.set(false);
         this._dialogRef.close(result);
-      }).catch((error) => {
-        this._snackBar.open("Erreur lors de la création de cette actualité", "Fermer", {
-          duration: 2000,
-          horizontalPosition: "end",
-          verticalPosition: "top"
-        });
-        this.isLoading.set(false);
       })
-    } else {
-      this.actualityFacade.putUpdateActuality$(this.updateActuality()!.id, this.createFormData()).then((result) => {
-        this._snackBar.open("L'actualité a bien été modifiée", "Fermer", {
+      .catch(() => {
+        const action = publishAfterSave ? 'de la publication' : actuality === null ? 'de la création' : 'de la modification';
+        this._snackBar.open(`Erreur lors de ${action} de cette actualité`, "Fermer", {
           duration: 2000,
           horizontalPosition: "end",
           verticalPosition: "top"
         });
         this.isLoading.set(false);
-        this._dialogRef.close(result);
-      }).catch((error) => {
-        this._snackBar.open("Erreur lors de la modification de cette actualité", "Fermer", {
-          duration: 2000,
-          horizontalPosition: "end",
-          verticalPosition: "top"
-        });
-        this.isLoading.set(false);
-      })
-    }
+      });
   }
 
   deleteOptionalImage(index: number) {

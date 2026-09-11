@@ -1,5 +1,7 @@
 import {MyDate} from "../extensions/MyDate";
 
+export type ActualityStatus = 'Draft' | 'Published';
+
 export interface ActualityModel {
   id: string,
   title: string,
@@ -9,4 +11,7 @@ export interface ActualityModel {
   date: MyDate,
   facebookLink: string | null,
   instagramLink: string | null,
+  status: ActualityStatus,
+  titleNeedsReview: boolean,
+  importedAt: string | null,
 }

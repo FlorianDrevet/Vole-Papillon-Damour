@@ -6,6 +6,24 @@
     </app-pill-button>
   </app-page-header>
 
+  @if (draftCount() > 0) {
+    <section class="flex flex-col gap-3 rounded-sm border border-orange-200 bg-orange-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" aria-live="polite">
+      <div>
+        <p class="font-semibold text-ink-2">
+          {{ draftCount() }} brouillon{{ draftCount() > 1 ? 's' : '' }} à relire
+        </p>
+        <p class="mt-1 text-sm text-slate-2">Les importations restent invisibles sur le site tant qu'elles ne sont pas publiées.</p>
+      </div>
+      <button
+        type="button"
+        class="w-fit rounded-full border border-orange-300 px-4 py-2 text-sm font-semibold text-orange-900 hover:bg-orange-100"
+        [attr.aria-pressed]="showDraftsOnly()"
+        (click)="toggleDraftFilter()">
+        {{ showDraftsOnly() ? 'Voir toutes les actualités' : 'Afficher les brouillons' }}
+      </button>
+    </section>
+  }
+
   @if (isLoading()) {
     <app-loading-placeholder variant="rows" [count]="3"></app-loading-placeholder>
   } @else if (hasFailed()) {
@@ -21,10 +39,10 @@
   } @else if (groupedActualities().length === 0) {
     <app-state-panel
       icon="add"
-      title="Aucune actualité publiée"
-      description="Les actualités publiées ici apparaissent sur le site de l'association.">
-      <app-pill-button (click)="openDialogCreation()" type="button" [small]="true">
-        Écrire la première actualité
+      [title]="emptyStateTitle()"
+      [description]="emptyStateDescription()">
+      <app-pill-button (click)="showDraftsOnly() ? toggleDraftFilter() : openDialogCreation()" type="button" [small]="true">
+        {{ showDraftsOnly() ? 'Voir les actualités' : 'Écrire la première actualité' }}
       </app-pill-button>
     </app-state-panel>
   } @else {

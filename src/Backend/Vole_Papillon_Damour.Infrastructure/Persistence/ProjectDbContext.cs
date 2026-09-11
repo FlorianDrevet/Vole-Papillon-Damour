@@ -24,6 +24,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Actuality> Actualities => Set<Actuality>();
+    public DbSet<SocialPostImport> SocialPostImports => Set<SocialPostImport>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();

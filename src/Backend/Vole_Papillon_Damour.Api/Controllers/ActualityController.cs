@@ -1,12 +1,15 @@
 using MapsterMapper;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Actuality.Commands.AddActuality;
 using Vole_Papillon_Damour.Application.Actuality.Commands.DeleteActuality;
+using Vole_Papillon_Damour.Application.Actuality.Commands.PublishActuality;
 using Vole_Papillon_Damour.Application.Actuality.Commands.UpdateActuality;
 using Vole_Papillon_Damour.Application.Actuality.Queries;
 using Vole_Papillon_Damour.Application.Actuality.Queries.GetActualityById;
+using Vole_Papillon_Damour.Application.Actuality.Queries.GetDraftActualities;
 using Vole_Papillon_Damour.Application.Actuality.Queries.GetAllActuality;
 using Vole_Papillon_Damour.Application.Authentication.Commands.Register;
 using Vole_Papillon_Damour.Application.Authentication.Queries.Login;
@@ -21,6 +24,8 @@ namespace Vole_Papillon_Damour.Api.Controllers;
 
 public static class ActualityController
 {
+    private const string AdminPolicyName = "IsAdmin";
+
     public static IApplicationBuilder UseActualityController(this IApplicationBuilder builder)
     {
         return builder.UseEndpoints(endpoints =>
@@ -44,9 +49,28 @@ public static class ActualityController
                 .RequireAuthorization("IsAdmin");
 
             endpoints.MapGet("/actuality/all",
-                    async (IMediator mediator, IMapper mapper) =>
+                    async (
+                        bool? includeDrafts,
+                        HttpContext httpContext,
+                        IAuthorizationService authorizationService,
+                        IMediator mediator,
+                        IMapper mapper) =>
                     {
-                        var command = new GetAllActualityQuery();
+                        var includeDraftsValue = includeDrafts ?? false;
+                        if (includeDraftsValue)
+                        {
+                            var authorization = await authorizationService.AuthorizeAsync(
+                                httpContext.User,
+                                resource: null,
+                                policyName: AdminPolicyName);
+
+                            if (!authorization.Succeeded)
+                            {
+                                return Results.Forbid();
+                            }
+                        }
+
+                        var command = new GetAllActualityQuery(includeDraftsValue);
                         var commandResult = await mediator.Send(command);
 
                         return commandResult.Match(
@@ -58,6 +82,31 @@ public static class ActualityController
                             error => error.Result());
                     })
                 .WithName("Get all the actuality");
+
+            endpoints.MapGet("/actuality/drafts",
+                    async (IMediator mediator, IMapper mapper) =>
+                    {
+                        var queryResult = await mediator.Send(new GetDraftActualitiesQuery());
+
+                        return queryResult.Match(
+                            result => Results.Ok(mapper.Map<List<ActualityResponse>>(result)),
+                            error => error.Result());
+                    })
+                .WithName("Get actuality drafts")
+                .RequireAuthorization(AdminPolicyName);
+
+            endpoints.MapPost("/actuality/{id}/publish",
+                    async (Guid id, IMediator mediator, IMapper mapper) =>
+                    {
+                        var commandResult = await mediator.Send(
+                            new PublishActualityCommand(ActualityId.Create(id)));
+
+                        return commandResult.Match(
+                            result => Results.Ok(mapper.Map<ActualityResponse>(result)),
+                            error => error.Result());
+                    })
+                .WithName("Publish an actuality")
+                .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapGet("/actuality/latest",
                     async (IMediator mediator, IMapper mapper) =>
@@ -116,7 +165,7 @@ public static class ActualityController
                         return commandResult.Match(
                             result =>
                             {
-                                return Results.Ok(result);
+                                return Results.Ok(mapper.Map<ActualityResponse>(result));
                             },
                             error => error.Result());
                     })

@@ -11,5 +11,10 @@ public static partial class Errors
             code: "Actuality.NotFound",
             description: "Actuality not found with id: " + id.Value
         );
+
+        public static Error CannotPublish(ActualityId id) => Error.Validation(
+            code: "Actuality.CannotPublish",
+            description: "Actuality cannot be published until its title and article are filled: " + id.Value
+        );
     }
 }

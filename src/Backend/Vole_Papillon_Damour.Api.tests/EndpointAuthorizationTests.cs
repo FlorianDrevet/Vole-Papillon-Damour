@@ -195,6 +195,27 @@ public class EndpointAuthorizationTests
             .OnlyContain(data => data.Policy == "Administration");
     }
 
+    [Fact]
+    public void Actuality_administration_endpoints_require_the_admin_policy()
+    {
+        var expectedRoutes = new[]
+        {
+            "/actuality/drafts",
+            "/actuality/{id}/publish",
+        };
+
+        var administrationEndpoints = RegisteredEndpoints()
+            .Where(endpoint => expectedRoutes.Contains(RouteOf(endpoint)))
+            .ToList();
+
+        administrationEndpoints.Should().HaveCount(2);
+        administrationEndpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
+        administrationEndpoints
+            .SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
+            .Should()
+            .OnlyContain(data => data.Policy == "IsAdmin");
+    }
+
     private static IReadOnlyList<RouteEndpoint> MutatingEndpoints() =>
         RegisteredEndpoints()
             .Where(endpoint => HttpMethods(endpoint).Intersect(MutatingMethods).Any())

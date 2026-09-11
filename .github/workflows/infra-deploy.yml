@@ -71,6 +71,13 @@ jobs:
           ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
           ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
           GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          INSTAGRAM_IMPORT_FLOOR_DATE: ${{ secrets.INSTAGRAM_IMPORT_FLOOR_DATE }}
+          INSTAGRAM_ACCESS_TOKEN_ISSUED_AT: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_ISSUED_AT }}
+          TITLE_GENERATION_ENABLED: ${{ secrets.TITLE_GENERATION_ENABLED }}
+          TITLE_GENERATION_ACCOUNT_NAME: ${{ secrets.TITLE_GENERATION_ACCOUNT_NAME }}
+          TITLE_GENERATION_DEPLOYMENT_NAME: ${{ secrets.TITLE_GENERATION_DEPLOYMENT_NAME }}
         run: |
           az deployment sub what-if \
             --name "vpd-infra-${{ github.run_number }}" \
@@ -87,6 +94,13 @@ jobs:
           ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
           ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
           GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          INSTAGRAM_IMPORT_FLOOR_DATE: ${{ secrets.INSTAGRAM_IMPORT_FLOOR_DATE }}
+          INSTAGRAM_ACCESS_TOKEN_ISSUED_AT: ${{ secrets.INSTAGRAM_ACCESS_TOKEN_ISSUED_AT }}
+          TITLE_GENERATION_ENABLED: ${{ secrets.TITLE_GENERATION_ENABLED }}
+          TITLE_GENERATION_ACCOUNT_NAME: ${{ secrets.TITLE_GENERATION_ACCOUNT_NAME }}
+          TITLE_GENERATION_DEPLOYMENT_NAME: ${{ secrets.TITLE_GENERATION_DEPLOYMENT_NAME }}
         run: |
           set -euo pipefail
           az deployment sub create \
