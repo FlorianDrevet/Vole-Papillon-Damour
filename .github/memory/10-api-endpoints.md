@@ -86,6 +86,10 @@ client-only/private.
   closes a session with a typed reason.
 - `POST /scan/sales` - `Caisse` records an idempotent sale with `ClientGestureId` and
   returns the reconciled local-stock projection; cash sales do not open a triage session.
+- `GET /scan/me/statistics` - `ScanVolunteer` read for the authenticated volunteer's private
+  triage/cash contribution. The API derives the volunteer from `oid`, returns typed `scan`
+  and `cash` blocks, and marks timestamp-derived duration, cadence, overlap, reader linkage
+  and revenue share as estimates.
 
 ## Books P2/P3 member and administration endpoints
 

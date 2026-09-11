@@ -251,6 +251,16 @@ ChromeHeadless tests, the bootstrap contract, and the production build; it is in
 the deployed Scan image. The subsequent nested-endpoint authentication regression is
 covered by the 79-test CI run described above.
 
+The September 2026 volunteer statistics slice adds a private `/statistiques` route to the
+Scan PWA and a `Ma contribution` tab to the authenticated Catalog account page when the
+API token contains `Tri` or `Caisse`. Both clients consume the typed `GET /scan/me/statistics`
+response. Scan stores one account-guarded snapshot in its existing IndexedDB `session` store
+and renders it when the API is unavailable; clearing account state removes that snapshot.
+The Catalog renders the same scan/cash data online, with twelve-month bars, time-slot
+heatmap, impact, genres, fair sales, recent sessions and explicit estimated-value labels.
+The Scan view supports a Tri/Caisse role switch when both roles are present. Connected
+account smoke and post-deploy responsive checks remain required.
+
 The 2026-09-07 camera feedback follow-up keeps the same live stream for all three scan
 destinations and renders a `Scan détecté` progress surface while the local/catalog and
 bibliographic lookups are pending. The active camera preview is keyboard- and touch-
@@ -314,6 +324,13 @@ account-switch recovery, triage, and set-aside recovery. The old expanded alert 
 the user-facing layout. Local validation passes 170 Scan ChromeHeadless tests and the Scan
 production build; PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) is open,
 connected production smoke remains pending, and no deployment was made.
+
+The 2026-09-12 Scan storage-capability follow-up keeps the browser-persistence warning out of
+the `home` and `session-mode` choice screens. On operating screens, its modal copy distinguishes local
+browser retention from server synchronization, offers a user-gesture retry through
+`ScanWorkflowService.requestPersistentStorage()`, and removes the sync retry action when no
+outbox or synchronization error needs it. The repeated primary alert is omitted from the modal
+details; an accepted persistence request closes the modal and shows the existing success toast.
 
 The 2026-09-08 Catalog Lot 5 public-surface pass removes the hard-coded featured genre
 taxonomy: the home cards, hero selector, and navigation menu now use only genres returned

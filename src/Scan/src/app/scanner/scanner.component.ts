@@ -79,6 +79,11 @@ interface CashScanItem {
 }
 
 const ACCOUNT_SWITCH_PROMPT = "Des gestes d'une session précédente sont présents sur cet appareil. Les reprendre sous votre compte, ou les mettre de côté pour un responsable ?";
+const STORAGE_PERSISTENCE_WARNING = 'Données hors ligne non protégées : ce navigateur peut les supprimer.';
+const STORAGE_PERSISTENCE_UNAVAILABLE_DESCRIPTION = 'Ce navigateur ne fournit pas IndexedDB. Le tri hors ligne n’est pas disponible sur cet appareil.';
+const STORAGE_PERSISTENCE_DESCRIPTION = 'Données hors ligne non protégées : ce navigateur peut les supprimer. Cela concerne les données conservées uniquement sur cet appareil (scans en attente et catalogue local). Ce n’est pas une erreur de synchronisation : les données déjà envoyées au serveur restent disponibles. Vous pouvez demander au navigateur de protéger ce stockage ou synchroniser régulièrement.';
+const STORAGE_PERSISTENCE_REJECTED_FEEDBACK = 'Le navigateur n’a pas accepté la demande. Synchronisez régulièrement pour éviter de perdre les données conservées uniquement sur cet appareil.';
+const STORAGE_PERSISTENCE_ERROR_FEEDBACK = 'La demande de protection n’a pas pu être vérifiée. Synchronisez régulièrement pour éviter de perdre les données conservées uniquement sur cet appareil.';
 
 @Component({
   selector: 'app-scanner',
@@ -140,6 +145,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   accountName: string | null = null;
   accountSwitchPrompt: string | null = null;
   accountSwitchBusy = false;
+  storagePersistenceBusy = false;
+  storagePersistenceFeedback: string | null = null;
   statusModalOpen = false;
   syncStatus: 'idle' | 'syncing' | 'success' | 'error' = 'idle';
   sessionCloseError: string | null = null;
@@ -334,11 +341,17 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return {
         id: 'storage-capability',
         level: 'warning',
-        message: 'Le navigateur n’a pas garanti la conservation des données hors ligne. Gardez l’application régulièrement connectée.',
+        message: STORAGE_PERSISTENCE_WARNING,
       };
     }
 
     return null;
+  }
+
+  get visibleStorageCapabilityAlert(): ScanAlert | null {
+    const alert = this.storageCapabilityAlert;
+    const isPreScanChoiceScreen = this.screen === 'home' || this.screen === 'session-mode';
+    return alert?.level === 'warning' && isPreScanChoiceScreen ? null : alert;
   }
 
   get hasAlerts(): boolean {
@@ -353,9 +366,22 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       || this.pendingDecisionCount > 0
       || this.pendingTransmissionCount > 0
       || this.setAsideCount > 0
-      || this.storageCapabilityAlert !== null
+      || this.visibleStorageCapabilityAlert !== null
       || this.storageAlert !== null
       || this.syncAlert !== null;
+  }
+
+  get isStorageOnlyStatus(): boolean {
+    return this.visibleStorageCapabilityAlert !== null
+      && this.accountSwitchPrompt === null
+      && !this.authDegraded
+      && this.isOnline
+      && this.syncStatus !== 'error'
+      && this.storageAlert === null
+      && this.syncAlert === null
+      && this.pendingDecisionCount === 0
+      && this.pendingTransmissionCount === 0
+      && this.setAsideCount === 0;
   }
 
   get statusSummary(): string {
@@ -408,11 +434,29 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return 'Le compte est reconnu sur cet appareil, mais la session serveur doit être rétablie.';
     }
 
+    if (this.isStorageOnlyStatus) {
+      return this.visibleStorageCapabilityAlert?.level === 'critical'
+        ? STORAGE_PERSISTENCE_UNAVAILABLE_DESCRIPTION
+        : STORAGE_PERSISTENCE_DESCRIPTION;
+    }
+
     return this.statusSummary;
   }
 
+  get statusModalTitle(): string {
+    return this.isStorageOnlyStatus ? 'Données hors ligne' : 'Synchronisation';
+  }
+
   get statusDetails(): readonly ScanAlert[] {
-    return [...this.priorityAlerts, ...this.infoAlerts];
+    const summary = this.statusSummary;
+    return [...this.priorityAlerts, ...this.infoAlerts]
+      .filter(alert => alert.message !== summary);
+  }
+
+  get canRequestPersistentStorage(): boolean {
+    return this.scanWorkflow !== null
+      && this.visibleStorageCapabilityAlert?.level === 'warning'
+      && !this.storagePersistenceBusy;
   }
 
   get canRetrySyncFromStatus(): boolean {
@@ -422,7 +466,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       && this.canSynchronize
       && this.isOnline
       && this.accountSwitchPrompt === null
-      && this.syncStatus !== 'syncing';
+      && this.syncStatus !== 'syncing'
+      && (this.syncStatus === 'error'
+        || this.pendingDecisionCount > 0
+        || this.pendingTransmissionCount > 0
+        || this.session?.closeRequested === true);
   }
 
   get canLeaveSession(): boolean {
@@ -958,6 +1006,31 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   async retrySyncFromStatus(): Promise<void> {
     this.closeStatusModal();
     await this.syncNow();
+  }
+
+  async protectOfflineData(): Promise<void> {
+    if (!this.scanWorkflow || !this.canRequestPersistentStorage) {
+      return;
+    }
+
+    this.storagePersistenceBusy = true;
+    this.storagePersistenceFeedback = null;
+    this.refreshView();
+
+    try {
+      this.persistenceStatus = await this.scanWorkflow.requestPersistentStorage();
+      if (this.persistenceStatus.persisted) {
+        this.scanStatus?.showSuccess('Données hors ligne protégées');
+        this.closeStatusModal();
+      } else {
+        this.storagePersistenceFeedback = STORAGE_PERSISTENCE_REJECTED_FEEDBACK;
+      }
+    } catch {
+      this.storagePersistenceFeedback = STORAGE_PERSISTENCE_ERROR_FEEDBACK;
+    } finally {
+      this.storagePersistenceBusy = false;
+      this.refreshView();
+    }
   }
 
   goToSortingFromStatus(): void {
@@ -1628,7 +1701,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private rebuildAlerts(): void {
     const alerts: ScanAlert[] = [];
 
-    const capabilityAlert = this.storageCapabilityAlert;
+    const capabilityAlert = this.visibleStorageCapabilityAlert;
     if (capabilityAlert) {
       alerts.push(capabilityAlert);
     }

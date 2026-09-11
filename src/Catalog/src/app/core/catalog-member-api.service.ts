@@ -8,6 +8,7 @@ import {
   CatalogAlertPreferencesResponse,
   CatalogWatchlistItemRequest,
   CatalogWatchlistResponse,
+  CatalogVolunteerStatisticsResponse,
 } from './catalog.models';
 
 @Injectable({providedIn: 'root'})
@@ -19,6 +20,13 @@ export class CatalogMemberApiService {
   getWatchlist(accessToken: string): Observable<CatalogWatchlistResponse> {
     return this.http.get<CatalogWatchlistResponse>(
       `${this.apiUrl}/catalog/me/watchlist`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  getVolunteerStatistics(accessToken: string): Observable<CatalogVolunteerStatisticsResponse> {
+    return this.http.get<CatalogVolunteerStatisticsResponse>(
+      `${this.apiUrl}/scan/me/statistics`,
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

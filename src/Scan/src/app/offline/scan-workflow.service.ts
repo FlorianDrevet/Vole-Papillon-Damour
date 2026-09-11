@@ -35,6 +35,10 @@ export class ScanWorkflowService {
     });
   }
 
+  async requestPersistentStorage(): Promise<PersistentStorageStatus> {
+    return await this.enqueue(() => this.store.requestPersistentStorage());
+  }
+
   async getSession(): Promise<ScanSessionSnapshot | null> {
     return await this.store.getSession();
   }

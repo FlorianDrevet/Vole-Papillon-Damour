@@ -150,3 +150,13 @@ The dead-stock read deliberately keeps its aggregate filters on `Books` and its 
 availability/sale checks on `BookMovements`. The movement index `Isbn13 + Type + OccurredAt`
 supports the correlated sale and first-availability subqueries; SQLite-backed application tests
 also exercise the translated query rather than evaluating it in memory.
+
+## Scan browser-retention update — 2026-09-12
+
+- `ScanLocalStoreService.requestPersistentStorage()` still checks IndexedDB availability and
+  `navigator.storage.persisted()`, then requests `navigator.storage.persist()` when needed.
+- `ScanWorkflowService.requestPersistentStorage()` serializes an explicit retry without creating
+  or replacing the local scan session, so the Scan modal can make the request from a user gesture.
+- A `false` result is a browser capability/permission limitation, not a failed server sync. The
+  Scan UI therefore keeps the warning and recommends regular synchronization; it does not claim
+  that local data is guaranteed.

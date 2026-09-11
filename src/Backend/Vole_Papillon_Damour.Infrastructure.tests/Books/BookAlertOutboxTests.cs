@@ -70,6 +70,82 @@ public sealed class BookAlertOutboxTests
     }
 
     [Fact]
+    public async Task GetSentItemCountForSessions_CountsOnlySentAlertItemsForRequestedSessions()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var requestedSessionId = Guid.NewGuid();
+        var otherSessionId = Guid.NewGuid();
+        const string payload =
+            "{\"items\":[{\"isbn13\":\"9782070363735\",\"title\":\"Titre\",\"quantity\":1,\"mode\":\"AvailableNow\"},{\"isbn13\":\"9783140464079\",\"title\":\"Autre titre\",\"quantity\":1,\"mode\":\"AvailableNow\"}]}";
+
+        fixture.Context.OutboxMessages.AddRange(
+            new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Kind = OutboxMessageKind.AlertEmail,
+                PayloadJson = payload,
+                DueAt = ClosedAt,
+                Status = OutboxMessageStatus.Sent,
+                ScanSessionId = requestedSessionId,
+                MemberId = Guid.NewGuid(),
+                CreatedAt = ClosedAt,
+            },
+            new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Kind = OutboxMessageKind.AlertEmail,
+                PayloadJson = payload,
+                DueAt = ClosedAt,
+                Status = OutboxMessageStatus.Pending,
+                ScanSessionId = requestedSessionId,
+                MemberId = Guid.NewGuid(),
+                CreatedAt = ClosedAt,
+            },
+            new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Kind = OutboxMessageKind.AlertEmail,
+                PayloadJson = payload,
+                DueAt = ClosedAt,
+                Status = OutboxMessageStatus.Sent,
+                ScanSessionId = otherSessionId,
+                MemberId = Guid.NewGuid(),
+                CreatedAt = ClosedAt,
+            },
+            new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Kind = OutboxMessageKind.AccountDeletion,
+                PayloadJson = payload,
+                DueAt = ClosedAt,
+                Status = OutboxMessageStatus.Sent,
+                ScanSessionId = requestedSessionId,
+                MemberId = Guid.NewGuid(),
+                CreatedAt = ClosedAt,
+            },
+            new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Kind = OutboxMessageKind.AlertEmail,
+                PayloadJson = "not-json",
+                DueAt = ClosedAt,
+                Status = OutboxMessageStatus.Sent,
+                ScanSessionId = requestedSessionId,
+                MemberId = Guid.NewGuid(),
+                CreatedAt = ClosedAt,
+            });
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+
+        var count = await outbox.GetSentItemCountForSessionsAsync(
+            [requestedSessionId],
+            CancellationToken.None);
+
+        count.Should().Be(2);
+    }
+
+    [Fact]
     public async Task QueueForSession_WhenNextFairHasNoDate_DoesNotCreateAnAlert()
     {
         await using var fixture = await BookAlertFixture.CreateAsync();

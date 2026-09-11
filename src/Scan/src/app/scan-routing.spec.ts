@@ -1,7 +1,7 @@
 import {scanRoutes} from './scan-routing';
 
 describe('scan routing', () => {
-  it('exposes the unified shell and the seven operating routes', () => {
+  it('exposes the unified shell, operating routes, and private statistics route', () => {
     const shell = scanRoutes.find(route => route.path === '');
     const childPaths = shell?.children?.map(route => route.path)
       .filter(path => path !== '**') ?? [];
@@ -15,6 +15,7 @@ describe('scan routing', () => {
       'tri/fin',
       'caisse',
       'consulter',
+      'statistiques',
     ]));
   });
 

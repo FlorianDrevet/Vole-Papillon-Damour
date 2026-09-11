@@ -4,7 +4,12 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {ScanApiService} from './scan-api.service';
-import {ScanCatalogDeltaResponse, ScanBookResponse, ScanSessionResponse} from './scan-offline.model';
+import {
+  ScanCatalogDeltaResponse,
+  ScanBookResponse,
+  ScanSessionResponse,
+  ScanVolunteerStatisticsResponse,
+} from './scan-offline.model';
 
 describe('ScanApiService', () => {
   let service: ScanApiService;
@@ -49,6 +54,18 @@ describe('ScanApiService', () => {
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual(gesture);
     request.flush(response);
+  });
+
+  it('requests the private volunteer statistics snapshot', () => {
+    const response = createStatisticsResponse();
+    let received: ScanVolunteerStatisticsResponse | undefined;
+    service.getVolunteerStatistics().subscribe(value => received = value);
+
+    const request = http.expectOne(`${environment.apiUrl}/scan/me/statistics`);
+    expect(request.request.method).toBe('GET');
+    request.flush(response);
+
+    expect(received).toEqual(response);
   });
 
   it('sends a cash sale to the sale endpoint', () => {
@@ -142,6 +159,54 @@ describe('ScanApiService', () => {
       scannedCount: 0,
       keptCount: 0,
       rejectedCount: 0,
+    };
+  }
+
+  function createStatisticsResponse(): ScanVolunteerStatisticsResponse {
+    return {
+      generatedAt: '2026-09-11T12:00:00.000Z',
+      memberSince: null,
+      scan: {
+        scannedCount: 0,
+        keptCount: 0,
+        rejectedCount: 0,
+        sessionCount: 0,
+        durationMinutes: 0,
+        firstSessionAt: null,
+        medianTeamKeepRatePercent: null,
+        monthly: [],
+        timeSlots: [],
+        impact: {
+          foundReaderCount: 0,
+          newTitleCount: 0,
+          rareCount: 0,
+          alertItemCount: 0,
+          foundReaderIsEstimated: true,
+        },
+        topGenres: [],
+        recentSessions: [],
+      },
+      cash: {
+        grossSoldQuantity: 0,
+        soldQuantity: 0,
+        saleMovementCount: 0,
+        voidedSaleQuantity: 0,
+        fairCount: 0,
+        estimatedDurationMinutes: 0,
+        estimatedCadencePerHour: null,
+        medianTeamCadencePerHour: null,
+        fairBreakdown: [],
+        peak: {fairDate: null, localHour: null, quantity: 0},
+        topBooks: [],
+        topGenres: [],
+        estimatedTriAndCashOverlap: 0,
+        estimatedRevenueShare: null,
+        revenueShare: null,
+        durationIsEstimated: true,
+        cadenceIsEstimated: true,
+        revenueShareIsEstimated: true,
+        triAndCashOverlapIsEstimated: true,
+      },
     };
   }
 });

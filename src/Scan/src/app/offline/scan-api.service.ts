@@ -8,6 +8,7 @@ import {
   ScanCatalogDeltaResponse,
   ScanSaleResponse,
   ScanSessionResponse,
+  ScanVolunteerStatisticsResponse,
 } from './scan-offline.model';
 
 export interface OpenScanSessionRequest {
@@ -49,6 +50,12 @@ export class ScanApiService {
     return this.http.get<ScanCatalogDeltaResponse>(
       `${this.baseUrl}/scan/catalog/delta`,
       {params},
+    );
+  }
+
+  getVolunteerStatistics(): Observable<ScanVolunteerStatisticsResponse> {
+    return this.http.get<ScanVolunteerStatisticsResponse>(
+      `${this.baseUrl}/scan/me/statistics`,
     );
   }
 
