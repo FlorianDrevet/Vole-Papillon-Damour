@@ -87,8 +87,10 @@
   of being reconstructed from a display string. The API also synchronizes the Entra directory
   `displayName` from those fields when a protected member request is processed.
   `Configure-EntraApps.ps1` merges the two
-  optional claims into the Catalog ID token and API access token; existing sessions need a
-  sign-out/sign-in to receive the updated claims.
+  optional claims into the Catalog ID token and API access token; `CatalogAuthService` keeps
+  those claims from the interactive result and hydrates them silently for cached accounts so
+  the header and account page do not regress to the email fallback after a browser refresh.
+  Existing sessions still need a sign-out/sign-in after an Entra claim configuration change.
 - Catalog browser-delegated requests add `ui_locales=fr-FR` and `mkt=fr-FR` to sign-in,
   registration, and interactive API-token renewal. `infra/entra/Configure-EntraBranding.ps1`
   creates or updates the tenant's `fr-FR` branding, updates the External ID default

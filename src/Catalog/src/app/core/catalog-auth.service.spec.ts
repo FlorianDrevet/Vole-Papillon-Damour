@@ -74,6 +74,40 @@ describe('CatalogAuthService', () => {
     expect(service.isAuthenticated()).toBeTrue();
   });
 
+  it('restores separate name claims from a cached account token', async () => {
+    const cachedAccount = {...account, name: 'unknown'} as AccountInfo;
+    const idTokenClaims = {
+      given_name: 'Camille',
+      family_name: 'Dupont',
+    };
+    client.getActiveAccount.and.returnValue(cachedAccount);
+    client.getAllAccounts.and.returnValue([cachedAccount]);
+    client.acquireTokenSilent.and.resolveTo({
+      accessToken: 'api-access-token',
+      idTokenClaims,
+    } as never);
+
+    await service.initialize();
+
+    expect(service.account()?.idTokenClaims).toEqual(idTokenClaims);
+  });
+
+  it('keeps separate name claims returned by the interactive login', async () => {
+    const idTokenClaims = {
+      given_name: 'Camille',
+      family_name: 'Dupont',
+    };
+    client.handleRedirectPromise.and.resolveTo({
+      account: {...account, name: 'unknown'},
+      accessToken: 'api-access-token',
+      idTokenClaims,
+    } as never);
+
+    await service.initialize();
+
+    expect(service.account()?.idTokenClaims).toEqual(idTokenClaims);
+  });
+
   it('returns to the administration page after starting an interactive login', async () => {
     await service.login('/administration');
 
