@@ -138,6 +138,52 @@ public sealed class ImportSocialActualitiesCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_PublishesImportedActualityImmediately()
+    {
+        var post = CreatePost(
+            "post-published",
+            FloorDate.AddDays(1),
+            [new SocialPostMedia(
+                SocialMediaKind.Image,
+                new Uri("https://cdn.example.test/published.jpg"),
+                null)]);
+        var fixture = CreateFixture([post]);
+
+        await fixture.Handler.Handle(
+            new ImportSocialActualitiesCommand(),
+            CancellationToken.None);
+
+        var actuality = fixture.ImportedActualities.Should().ContainSingle().Which;
+        actuality.Status.Should().Be(ActualityStatus.Published);
+    }
+
+    [Fact]
+    public async Task Handle_DoesNotPersistAnImportedActualityWhenItsArticleIsEmpty()
+    {
+        var post = new SocialPost(
+            "post-empty-caption",
+            Caption: null,
+            new Uri("https://www.instagram.com/p/post-empty-caption/"),
+            FloorDate.AddDays(1),
+            [new SocialPostMedia(
+                SocialMediaKind.Image,
+                new Uri("https://cdn.example.test/empty-caption.jpg"),
+                null)]);
+        var fixture = CreateFixture([post]);
+
+        var result = await fixture.Handler.Handle(
+            new ImportSocialActualitiesCommand(),
+            CancellationToken.None);
+
+        result.FailedCount.Should().Be(1);
+        fixture.ImportedActualities.Should().BeEmpty();
+        await fixture.Store.DidNotReceive().PersistAsync(
+            Arg.Any<ActualityAggregate>(),
+            Arg.Any<SocialPostImport>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_UsesFallbackTitleAndMarksItForReviewWhenGeneratorReturnsNull()
     {
         var post = CreatePost(

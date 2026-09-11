@@ -6,10 +6,11 @@
 ## État de l'implémentation
 
 Les paliers `L1` à `L4` sont présents dans la branche de la PR #122 : domaine et
-migration, import Instagram minuté, titres Foundry avec repli, alertes, garde-fou de
-volume et relecture BackOffice. Les ressources Meta, Key Vault et Foundry ne sont pas
-créées par le dépôt tant que les décisions `Q-ACT-01` et `Q-ACT-04` ne sont pas prises.
-Le palier `L5` (page Facebook et webhook) reste hors de cette livraison.
+migration, import Instagram minuté, publication automatique réussie, titres Foundry
+avec repli, alertes, garde-fou de volume et relecture BackOffice. Les ressources Meta,
+Key Vault et Foundry ne sont pas créées par le dépôt tant que les décisions `Q-ACT-01`
+et `Q-ACT-04` ne sont pas prises. Le palier `L5` (page Facebook et webhook) reste hors
+de cette livraison.
 
 ## 1. Les décisions
 
@@ -43,8 +44,10 @@ Deux méthodes de comportement, pas des propriétés publiques en écriture :
 - `MarkTitleReviewed()` — retire `TitleNeedsReview`, appelé à l'enregistrement.
 
 Les fabriques existantes `Create` et `Update` gardent leur signature et produisent
-`Published` (`RG-ACT-06`) ; une fabrique `CreateImported` produit `Draft`. Le
-constructeur EF public reste tel quel.
+`Published` (`RG-ACT-06`) ; `CreateImported` initialise les métadonnées d'import dans
+`Draft`, puis le handler appelle `Publish()` avant la transaction. Ainsi un import
+réussi est visible immédiatement ; si le titre ou l'article est vide, l'import échoue
+et aucun brouillon incomplet n'est persisté. Le constructeur EF public reste tel quel.
 
 ### `SocialPostImport` — nouvel agrégat
 
@@ -119,7 +122,8 @@ rend le chemin dégradé facile à tester.
    - **téléchargement de toutes les images d'abord**, puis téléversement — un échec ici
      abandonne le post entier avant toute écriture en base (`RG-ACT-19`) ;
    - appel au générateur de titre, repli si `null` ;
-   - `CreateImported` + insertion de `SocialPostImport`, **dans la même transaction**.
+   - `CreateImported` + `Publish()` + insertion de `SocialPostImport`, **dans la même
+     transaction**.
 4. agrégation du compte-rendu, renvoyé à la fonction pour journalisation.
 
 Un échec sur un post n'interrompt pas la boucle : il est compté et journalisé.
