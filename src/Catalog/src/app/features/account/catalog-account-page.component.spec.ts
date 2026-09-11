@@ -168,12 +168,61 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucun titre dans votre liste de recherche');
   });
 
+  it('makes the watchlist the default account tab and keeps preferences behind the second tab', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
+
+    expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
+      'Ma liste de recherche',
+      'Préférences et compte',
+    ]);
+    expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+    expect(tabs[1]?.getAttribute('aria-selected')).toBe('false');
+    expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="account-preferences-panel"]')).toBeNull();
+
+    tabs[1]?.click();
+    fixture.detectChanges();
+
+    expect(tabs[1]?.getAttribute('aria-selected')).toBe('true');
+    expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="account-preferences-panel"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Mes alertes e-mail.');
+  });
+
+  it('renders a watchlist card with its availability and alert history', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    const current = structuredClone(watchlist);
+    current.items[0].book!.quantityAvailable = 3;
+    current.items[0].lastAlertAt = '2026-09-05T10:00:00Z';
+    api.getWatchlist.and.returnValue(of(current));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.watchlist-cover')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('3 disponibles');
+    expect(fixture.nativeElement.textContent).toContain('Dernière alerte');
+    expect(fixture.nativeElement.textContent).toContain('Retirer de ma liste');
+  });
+
   it('exposes the administration workspace to an administrator', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     auth.isAdministrator.set(true);
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const preferencesTab = fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement;
+    preferencesTab.click();
     fixture.detectChanges();
 
     const administrationLink = fixture.nativeElement.querySelector(
@@ -205,6 +254,10 @@ describe('CatalogAccountPageComponent', () => {
     await fixture.componentInstance.initialize();
     fixture.detectChanges();
 
+    const preferencesTab = fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement;
+    preferencesTab.click();
+    fixture.detectChanges();
+
     const deleteButton = fixture.nativeElement.querySelector('[data-testid="delete-account"]') as HTMLButtonElement;
     deleteButton.click();
     fixture.detectChanges();
@@ -225,6 +278,10 @@ describe('CatalogAccountPageComponent', () => {
     await fixture.componentInstance.initialize();
 
     await fixture.componentInstance.setAlertsEnabled(false);
+    fixture.detectChanges();
+
+    const preferencesTab = fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement;
+    preferencesTab.click();
     fixture.detectChanges();
 
     expect(api.setAlertStatus).toHaveBeenCalledWith('member-token', false);
