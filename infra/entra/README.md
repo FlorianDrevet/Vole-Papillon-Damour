@@ -19,7 +19,7 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 |---|---|---|
 | `Configure-EntraApps.ps1` | Enregistrements d'application, portée exposée, rôles applicatifs, consentements | À chaque évolution de la configuration |
 | `Configure-EntraUserFlow.ps1` | User flow External ID d'inscription publique, attaché au catalogue uniquement | À l'activation ou à l'évolution du parcours membre |
-| `Configure-EntraBranding.ps1` | Marque française, fond de repli et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
+| `Configure-EntraBranding.ps1` | Marque française, canvas uni et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
 | `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `Administration` à un compte | Au fil de l'eau |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle | Contrôle |
 
@@ -112,23 +112,22 @@ administrateur. Le compte qui lance ce script doit disposer des permissions
 ./Configure-EntraBranding.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -UseDeviceCode -WhatIf
 
-# 2 quater. Appliquer le branding français, le CSS et le fond léger de la maquette 1a.
+# 2 quater. Appliquer le branding français et le CSS de la maquette 1a, sans image de fond.
 ./Configure-EntraBranding.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
-    -UseDeviceCode `
-    -BackgroundImagePath './vpd-authentication-background.png'
+    -UseDeviceCode
 
 # Au premier passage sur un tenant External ID neuf, le script initialise d'abord
 # le branding par défaut avant de lire les localisations. Le -WhatIf reste donc
 # utilisable même si la ressource organizationalBranding n'existe pas encore.
-# Le résultat réel attendu avec le fond de repli est :
-# localization-created, default-updated, default-css-updated, localization-css-updated,
-# default-background-image-updated, localization-background-image-updated.
+# Le CSS force un canvas bleu pâle opaque et neutralise toute image de fond déjà
+# enregistrée dans le tenant. Le résultat réel attendu est donc :
+# localization-created, default-updated, default-css-updated, localization-css-updated.
 
 # Des fichiers PNG/JPEG peuvent être fournis en option pour remplacer l'image de fond,
 # le logo et le favicon.
 # Le fichier de fond doit faire au maximum 300 KB et mesurer au plus 1920 x 1080 pixels.
-# Le fond vpd-authentication-background.png est volontairement calme : il évite le flash
-# du grand papillon pendant le chargement du CSS et reste visible derrière la carte.
+# La maquette Catalog n'utilise plus d'image de fond : les anciennes images restent
+# masquées par le CSS, y compris lorsque Graph ne permet pas de les supprimer (405).
 # Le logo d'en-tête doit être une ressource dédiée au bandeau, pas le logo carré de l'application.
 # ./Configure-EntraBranding.ps1 ... -HeaderLogoPath ./branding/header-logo.png `
 #     -FaviconPath ./branding/favicon.png `
@@ -150,13 +149,17 @@ locataire qui contient déjà quelque chose.
 
 Le Catalog utilise le parcours **browser-delegated** : le mot de passe est saisi dans la
 page External ID hébergée par Microsoft et n'est jamais envoyé au Catalog ni à l'API.
+`Configure-EntraBranding.ps1` applique le CSS du design system et un canvas bleu pâle uni,
+Le formulaire d'inscription collecte l'adresse e-mail, le `givenName` (« Prénom ») et le
+`surname` (« Nom ») comme attributs intégrés External ID ; les deux champs de nom restent
+facultatifs et sont limités à 64 caractères chacun.
 `Configure-EntraBranding.ps1` applique le CSS du design system, un fond de repli léger,
 les textes français et la locale `fr-FR` demandée par le Catalog (`ui_locales` et `mkt`).
-La variante actuelle reprend la maquette 1a : canvas bleu papier, décor de tranches de
-livres derrière la carte, carte centrée, ligne supérieure Catalog, papillon près du titre,
-boutons orange, focus/erreurs accessibles et footer clair. Le même CSS est utilisé par
-l'inscription et la connexion. Le grand papillon n'est plus téléversé comme fond : le PNG
-de repli neutre empêche son affichage transitoire avant le chargement du CSS. Cette solution
+La variante actuelle reprend la maquette 1a : canvas bleu papier uni, carte centrée, ligne
+supérieure Catalog, papillon près du titre, boutons orange, focus/erreurs accessibles et
+footer clair. Le même CSS est utilisé par l'inscription et la connexion ; il supprime aussi
+`background-image` sur les conteneurs External ID afin qu'un ancien asset du tenant ne
+réapparaisse pas derrière la carte. Cette solution
 conserve la sécurité et les écrans de récupération de compte du parcours géré ; le domaine
 d'authentification reste toutefois celui d'External ID : ce n'est pas un formulaire HTML
 servi par notre domaine.
@@ -177,16 +180,15 @@ prioritaire, sont les deux voies supportées à privilégier.
 
 ## Déploiement après merge
 
-Cette évolution mélange une configuration de locataire et une petite modification du
-Catalog :
+Cette évolution modifie uniquement la configuration du user flow External ID :
 
 - rejouer `Configure-EntraUserFlow.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
-  option) pour remplacer l'ancienne validation `displayName` non portable déjà présente
-  dans le tenant ;
+  option) pour remplacer l'ancien champ `displayName` par les champs `givenName` et
+  `surname` dans le tenant ;
 - exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS et les textes
   français ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
 - ne pas lancer **Catalog - deploy** pour ce seul changement : le Catalog ne contient pas de
-  code modifié et l'image publique du papillon est déjà déployée ;
+  code modifié ;
 - ne pas redéployer l'API, le BackOffice, la Scanette, le Worker ou la base pour ce périmètre.
 
 Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine public,

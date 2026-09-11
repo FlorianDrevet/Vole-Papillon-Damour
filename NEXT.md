@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) mise à jour, puis contrôler le Catalog public après merge et déploiement ; les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent à suivre. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-pr129-conflicts` |
-| **Dernière mise à jour** | 2026-09-11 — conflits de la PR #129 résolus et branche publiée, aucun déploiement |
-| **Branche** | `fix/pr-129-conflicts` — worktree dédié depuis `origin/main` (`b359829`), résolution publiée sur `feat/catalog-home-sections` pour mettre à jour la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133), puis rejouer le branding Entra sans image et contrôler la connexion/création de compte sur desktop et mobile. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-entra-auth-card-background` |
+| **Dernière mise à jour** | 2026-09-11 — fond External ID neutralisé derrière la carte, PR #133 ouverte, aucun déploiement |
+| **Branche** | `fix/entra-auth-card-background` — worktree dédié depuis `origin/main`, PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte |
 
 ---
 
@@ -1132,6 +1132,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Correctif branding Entra — suppression du fond derrière la carte.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-auth-card-background`, le CSS partagé des écrans de connexion et de création de compte force un canvas uni et supprime `background-image`, ce qui masque les barres de l'ancien asset déjà stocké dans le tenant. Le runbook et la mémoire sont alignés. Validation : test statique rouge puis vert, parse PowerShell, `graphify update .` et `git diff --check` ; Pester reste bloqué par l'absence du module Graph local. PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte, aucun tenant ni déploiement modifié. |
 | 2026-09-11 | Windows | **PR #129 — résolution des conflits publiée.** Depuis `origin/main` (`b359829`) dans le worktree `Vole-Papillon-Damour-pr129-conflicts`, conservation des changements main de Scan/administration et réconciliation des variantes `BookCardComponent` `list` et `home` avec les sections de l'accueil Catalog. La branche locale `fix/pr-129-conflicts` a publié la résolution sur `feat/catalog-home-sections`, head de la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129). Validation : 139 tests Catalog, build de production, `graphify update .`, requête Graphify, `git diff --check` et contrôles Chrome à 1280/390 px sans débordement ; l'API locale était indisponible pendant le smoke, aucun déploiement. |
 | 2026-09-11 | Windows | **Catalog — sections de l'accueil et cartes récentes.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-catalog-home-sections`, ajout de « Par genres » et du callout « Avec un compte » après les livres rares, suppression de « Votre sélection » et ajout d'une variante de carte récente inspirée de la maquette, avec le placeholder conservé pour les couvertures absentes. Validation : test rouge puis vert, 128 tests Catalog, build de production, `graphify update .` et contrôles Chrome locaux à 1280/390×844 avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. Branche `feat/catalog-home-sections`, PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) ouverte. |
 | 2026-09-10 | Windows | **Website — formulation du film de Maxence.** Après la fusion de la PR #124, la description de « Vole, Papillon d’amour » devient « Le film qui raconte le combat de Maxence. ». Validation : test rouge puis vert, 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements Angular connus, aucun déploiement. PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte. |
