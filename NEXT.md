@@ -125,6 +125,9 @@ livres » remplace la modale de choix par des actions inline : suivi de toute l'
 référence unique le permet, suivi d'une édition précise sous chaque référence, avec reprise
 directe après la connexion.
 
+La PR [#134](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/134) est ouverte pour
+relecture ; elle n'est pas fusionnée.
+
 Validation locale : 147 tests Catalog ChromeHeadless, build de production (764,65 kB initiaux
 pour un budget de 500 kB — avertissement connu), `git diff --check`, deux mises à jour Graphify
 (4 309 nœuds, 7 343 liens) et contrôle Chrome local du shell mobile et de la recherche. L'API
