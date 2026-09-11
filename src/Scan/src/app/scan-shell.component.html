@@ -1,7 +1,18 @@
-<ng-container *ngIf="isAuthenticated; else loginSurface">
-  <router-outlet></router-outlet>
-  <app-scan-confirmation></app-scan-confirmation>
+<ng-container *ngIf="isBootstrapping; else readySurface">
+  <vpd-loader
+    variant="flight"
+    logoSrc="assets/papillon_without_back.png"
+    title="Tri des livres"
+    detail="Préparation de la session"
+    label="Préparation de la session de tri"></vpd-loader>
 </ng-container>
+
+<ng-template #readySurface>
+  <ng-container *ngIf="isAuthenticated; else loginSurface">
+    <router-outlet></router-outlet>
+    <app-scan-confirmation></app-scan-confirmation>
+  </ng-container>
+</ng-template>
 
 <ng-template #loginSurface>
   <app-scan-login></app-scan-login>

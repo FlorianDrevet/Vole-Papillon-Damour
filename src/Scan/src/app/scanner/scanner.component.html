@@ -207,11 +207,12 @@
               </div>
               <h2 id="scan-instruction-title">{{ isLoading ? 'Scan détecté' : 'Scannez le code-barres' }}</h2>
               <div *ngIf="isLoading" class="scan-progress scan-progress-dark" role="status" aria-live="polite">
-                <span class="scan-progress-spinner" aria-hidden="true"></span>
-                <span class="scan-progress-copy">
-                  <strong>Scan détecté</strong>
-                  <span>Recherche du livre…</span>
-                </span>
+                <vpd-loader
+                  variant="butterflies"
+                  surface="dark"
+                  logoSrc="assets/papillon_without_back.png"
+                  label="Scan détecté"
+                  detail="Recherche du livre…"></vpd-loader>
               </div>
               <p *ngIf="!isLoading && !cameraActive">La caméra va s’activer automatiquement.</p>
               <p *ngIf="!isLoading && cameraActive">Cadrez le code-barres dans la vue caméra.</p>
@@ -465,11 +466,11 @@
         <div *ngIf="cameraActive" #cameraSlot class="camera-slot camera-slot-band"></div>
 
         <div *ngIf="isLoading" class="scan-progress scan-progress-light cash-lookup-progress" role="status" aria-live="polite">
-          <span class="scan-progress-spinner" aria-hidden="true"></span>
-          <span class="scan-progress-copy">
-            <strong>Scan détecté</strong>
-            <span>Recherche du livre…</span>
-          </span>
+          <vpd-loader
+            variant="butterflies"
+            logoSrc="assets/papillon_without_back.png"
+            label="Scan détecté"
+            detail="Recherche du livre…"></vpd-loader>
         </div>
 
         <section class="cash-items" role="region" aria-label="Livres de la vente" aria-live="polite">
@@ -586,11 +587,11 @@
         <ng-template #consultationEmpty>
           <div class="consultation-empty">
             <div *ngIf="isLoading; else consultationReadyToScan" class="scan-progress scan-progress-light consultation-lookup-progress" role="status" aria-live="polite">
-              <span class="scan-progress-spinner" aria-hidden="true"></span>
-              <span class="scan-progress-copy">
-                <strong>Scan détecté</strong>
-                <span>Recherche du livre…</span>
-              </span>
+              <vpd-loader
+                variant="butterflies"
+                logoSrc="assets/papillon_without_back.png"
+                label="Scan détecté"
+                detail="Recherche du livre…"></vpd-loader>
             </div>
             <ng-template #consultationReadyToScan>
               <div *ngIf="!cameraActive" class="scan-reticle scan-reticle-light" aria-hidden="true">

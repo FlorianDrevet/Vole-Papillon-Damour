@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#141](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/141) sur l'accès administration depuis le badge du header Catalog. Après merge, déployer le Catalog/API et effectuer le contrôle navigateur d'un compte administrateur de test. Les autres PR ouvertes restent à traiter selon leur ordre de relecture. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-admin-header-link` |
-| **Dernière mise à jour** | 2026-09-11 — badge `Administration` du header Catalog, PR [#141](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/141) ouverte, aucun déploiement |
-| **Branche** | `fix/catalog-admin-header-link` — dédiée depuis `origin/main`, PR [#141](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/141) ouverte |
+| **Lot en cours** | `P2/P3` — ajout du catalogue de loaders partagés dans Website, Catalog et Scan; la PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) est ouverte pour relecture avant déploiement. |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147). Après merge, déployer les applications concernées puis vérifier les états d'attente sur navigateur/appareil. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-loader-system` |
+| **Dernière mise à jour** | 2026-09-11 — loaders 1a–2d intégrés, écran 1b réservé au démarrage Scan avant connexion, PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) ouverte, aucun déploiement |
+| **Branche** | `feat/loader-system-catalog-scan` — dédiée depuis `origin/main`, PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) ouverte |
 
 ---
 
@@ -95,6 +95,32 @@ l'avertissement de budget initial connu, `graphify update .` et `git diff --chec
 manuel avec un compte administrateur reste à refaire ; aucun déploiement ni changement Azure,
 Entra, compte ou API publique n'a été effectué. La PR [#146](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/146)
 est ouverte ; aucun déploiement n'a été effectué.
+
+### État actualisé — 2026-09-11 — catalogue de loaders Website / Catalog / Scan
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-loader-system`, le catalogue des loaders issu de l'artefact de design
+est mutualisé dans `src/SharedUi`. Les écrans 1a à 2d sont disponibles sous forme de variantes
+typées : progression de page, vol plein écran, carrés, skeleton grille/liste, anneau, traversée
+de page, groupe de papillons, progression déterminée et variante compacte. Website emploie la
+ligne pendant les changements de route et les skeletons pour les actualités/rendez-vous.
+Catalog emploie la traversée pour les navigations, les carrés à la recherche, les skeletons pour
+les listes, les papillons pendant la recherche bibliographique et les variantes compacte/anneau
+pour les fiches, le compte et les actions.
+
+Dans Scan, l'écran 1b (`flight`) est volontairement rendu par le shell uniquement lorsque
+l'état d'authentification est `checking` : il apparaît donc à l'arrivée sur l'application, avant
+que la surface de connexion ne soit affichée, sans temporisation artificielle. Les recherches
+du scanner réutilisent le loader 2b. Le loader 2c reste prêt pour une opération dont le client
+connaîtra réellement le pourcentage ; aucun flux actuel n'en fabrique un.
+
+Validation locale : test TDD rouge puis vert pour le shell Scan et le composant partagé, 75 tests
+Website, 165 tests Catalog, 175 tests Scan ChromeHeadless, les trois builds de production,
+`graphify update .` et `git diff --check`. Les commandes ont été lancées séquentiellement car le
+le lien `src/SharedUi/node_modules` est partagé entre les applications. `rtk` n'est pas installé
+sur cette machine ; les commandes équivalentes directes ont été utilisées. La PR
+[#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) est ouverte, aucun
+déploiement ni changement Azure, Entra, compte ou API publique n'a été effectué.
 
 ### État actualisé — 2026-09-11 — noms séparés Entra dans le Catalog
 

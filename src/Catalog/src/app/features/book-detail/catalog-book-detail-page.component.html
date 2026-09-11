@@ -1,5 +1,11 @@
 @if (loading) {
-  <div class="detail-state">La fiche arrive…</div>
+  <div class="detail-state">
+    <vpd-loader
+      variant="compact"
+      logoSrc="images/papillon_without_back.png"
+      label="La fiche arrive…"
+      detail="Quelques secondes"></vpd-loader>
+  </div>
 } @else if (notFound) {
   <section class="detail-state page-width" role="alert">
     <p class="eyebrow">Fiche introuvable</p>
@@ -134,7 +140,11 @@
           class="notify-button"
           [disabled]="notifyPending()"
           (click)="notify(item)">
-          <span class="bell-icon" aria-hidden="true"></span>
+          @if (notifyPending()) {
+            <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+          } @else {
+            <span class="bell-icon" aria-hidden="true"></span>
+          }
           {{ notifyPending() ? 'Ajout en cours…' : 'Me prévenir quand il y en aura' }}
         </button>
 

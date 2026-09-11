@@ -202,13 +202,13 @@ describe('CatalogSearchPageComponent', () => {
     api.search.and.returnValue(response$.asObservable());
 
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Le catalogue arrive…');
+    expect(fixture.nativeElement.querySelector('[data-loader="skeleton"]')).not.toBeNull();
 
     response$.next(response);
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('Petit Ours brun se promène en forêt');
-    expect(fixture.nativeElement.textContent).not.toContain('Le catalogue arrive…');
+    expect(fixture.nativeElement.querySelector('[data-loader="skeleton"]')).toBeNull();
   });
 
   it('follows a precise edition with only the edition target', async () => {

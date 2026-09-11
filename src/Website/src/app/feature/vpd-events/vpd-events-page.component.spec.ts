@@ -1,5 +1,6 @@
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DesignSystemModule } from '@vpd/ui';
 
 import { VpdEventsPageComponent } from './vpd-events-page.component';
 import { VpdEventsFacadeService } from '../../shared/facades/vpd-events.facade.service';
@@ -13,6 +14,7 @@ describe('VpdEventsPageComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [VpdEventsPageComponent],
+      imports: [DesignSystemModule],
       providers: [{ provide: VpdEventsFacadeService, useValue: eventsFacadeSpy }],
       schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
@@ -24,7 +26,7 @@ describe('VpdEventsPageComponent', () => {
     fixture = TestBed.createComponent(VpdEventsPageComponent);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('.vpd-events-other-skeleton').length).toBe(3);
+    expect(fixture.nativeElement.querySelectorAll('.vpd-loader-skeleton-card').length).toBe(3);
     expect(fixture.nativeElement.querySelectorAll('.vpd-event-date-skeleton').length).toBe(2);
   });
 });

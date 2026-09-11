@@ -1,4 +1,7 @@
 <app-catalog-navigation></app-catalog-navigation>
+@if (isNavigating()) {
+  <vpd-loader variant="traverse" logoSrc="images/papillon_without_back.png" label="Chargement du catalogue"></vpd-loader>
+}
 
 <main [class.administration-route-main]="isAdministrationRoute()">
   <router-outlet></router-outlet>

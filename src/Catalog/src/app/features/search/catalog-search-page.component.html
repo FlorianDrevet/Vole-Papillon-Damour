@@ -12,7 +12,13 @@
       @if (query) {
         <button type="button" class="search-clear" aria-label="Effacer la recherche" (click)="clearSearch()">×</button>
       }
-      <button type="submit" class="search-submit">Rechercher <span aria-hidden="true">↗</span></button>
+      <button type="submit" class="search-submit" [disabled]="loading">
+        @if (loading) {
+          <vpd-loader variant="squares" label="Recherche en cours" surface="dark"></vpd-loader>
+        } @else {
+          Rechercher <span aria-hidden="true">↗</span>
+        }
+      </button>
     </form>
   </div>
 </section>
@@ -137,7 +143,7 @@
 
       <div class="results-column">
         @if (loading) {
-          <p class="state-message">Le catalogue arrive…</p>
+          <vpd-loader variant="skeleton" layout="list" [count]="5" label="Chargement du catalogue"></vpd-loader>
         } @else if (error) {
           <p class="state-message error-message" role="alert">Le catalogue est momentanément indisponible. Réessayez dans un instant.</p>
         } @else {
@@ -181,7 +187,11 @@
             @if (!query.trim() || query.trim().length < 2) {
               <p class="external-empty">Saisissez au moins deux caractères pour chercher un titre qui n’est pas encore dans la bourse aux livres. Vous pourrez l’ajouter à votre liste de recherche.</p>
             } @else if (externalLoading) {
-              <p class="state-message">Recherche de titres à ajouter…</p>
+              <vpd-loader
+                variant="butterflies"
+                logoSrc="images/papillon_without_back.png"
+                label="Recherche de titres à ajouter"
+                detail="Quelques secondes"></vpd-loader>
             } @else if (externalError) {
               <p class="state-message error-message" role="alert">La recherche de titres à ajouter est momentanément indisponible. La recherche dans la bourse aux livres reste utilisable.</p>
             } @else if (externalResponse?.items?.length) {
@@ -196,6 +206,9 @@
                     class="reference-follow reference-follow--work"
                     [disabled]="referenceFollowPending === referenceFollowKey(workReference, 'Work')"
                     (click)="followReference(workReference, 'Work')">
+                    @if (referenceFollowPending === referenceFollowKey(workReference, 'Work')) {
+                      <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                    }
                     {{ referenceFollowPending === referenceFollowKey(workReference, 'Work') ? 'Ajout…' : 'Suivre toutes les éditions' }}
                   </button>
                 </div>
@@ -224,6 +237,9 @@
                           class="reference-follow reference-follow--edition"
                           [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Edition')"
                           (click)="followReference(reference)">
+                          @if (referenceFollowPending === referenceFollowKey(reference, 'Edition')) {
+                            <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                          }
                           {{ referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'Ajout…' : 'Suivre cette édition' }}
                         </button>
                       }

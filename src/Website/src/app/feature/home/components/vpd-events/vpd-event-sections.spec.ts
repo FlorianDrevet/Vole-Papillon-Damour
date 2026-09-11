@@ -1,5 +1,6 @@
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DesignSystemModule } from '@vpd/ui';
 
 import { VpdEventSections } from './vpd-event-sections';
 import { AxiosService } from '../../../../shared/services/axios.service';
@@ -45,6 +46,7 @@ describe('VpdEventSections', () => {
 
     await TestBed.configureTestingModule({
       declarations: [VpdEventSections],
+      imports: [DesignSystemModule],
       providers: [
         { provide: AxiosService, useValue: axiosServiceSpy }
       ],
@@ -124,7 +126,7 @@ describe('VpdEventSections', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('.vpd-upcoming-event-skeleton').length).toBe(3);
+    expect(fixture.nativeElement.querySelectorAll('.vpd-loader-skeleton-card').length).toBe(3);
 
     resolveRequest([]);
     await fixture.whenStable();

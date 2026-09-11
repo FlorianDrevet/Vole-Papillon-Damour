@@ -1,0 +1,82 @@
+<div
+  class="vpd-loader"
+  [class]="'vpd-loader vpd-loader--' + variant + (surface === 'dark' ? ' vpd-loader--dark' : '')"
+  [attr.data-loader]="variant"
+  [attr.aria-label]="label"
+  [attr.aria-busy]="variant === 'fill' ? null : 'true'"
+  [attr.role]="variant === 'fill' ? 'progressbar' : 'status'"
+  [attr.aria-valuemin]="variant === 'fill' ? 0 : null"
+  [attr.aria-valuemax]="variant === 'fill' ? 100 : null"
+  [attr.aria-valuenow]="variant === 'fill' ? progressPercent : null">
+  @switch (variant) {
+    @case ('line') {
+      <span class="vpd-loader__sr">{{ label }}</span>
+      <span class="vpd-loader-line-track" aria-hidden="true"><span class="vpd-loader-line-runner"></span></span>
+    }
+    @case ('flight') {
+      <div class="vpd-loader-flight__visual" aria-hidden="true">
+        <span class="vpd-loader-flight__halo vpd-loader-flight__halo--outer"></span>
+        <span class="vpd-loader-flight__halo vpd-loader-flight__halo--inner"></span>
+        <img [src]="logoSrc" alt="" width="132" height="132">
+      </div>
+      <div class="vpd-loader-flight__copy">
+        <strong>{{ flightTitle }}</strong>
+        <span>{{ flightDetail }}</span>
+      </div>
+      <span class="vpd-loader-flight__progress" aria-hidden="true"><span></span></span>
+    }
+    @case ('squares') {
+      <span class="vpd-loader-squares" aria-hidden="true">
+        @for (square of butterflies; track square) {
+          <i [style.animation-delay.ms]="square * 140"></i>
+        }
+      </span>
+      <span class="vpd-loader__copy">{{ label }}</span>
+    }
+    @case ('skeleton') {
+      <div class="vpd-loader-skeletons" [class.vpd-loader-skeletons--list]="layout === 'list'" aria-hidden="true">
+        @for (item of skeletonItems; track item) {
+          <span class="vpd-loader-skeleton-card">
+            <span class="vpd-loader-skeleton-cover"></span>
+            <span class="vpd-loader-skeleton-lines"><i></i><i></i><i></i></span>
+          </span>
+        }
+      </div>
+    }
+    @case ('ring') {
+      <span class="vpd-loader-ring" [class]="'vpd-loader-ring vpd-loader-ring--' + size" aria-hidden="true"></span>
+      <span class="vpd-loader__sr">{{ label }}</span>
+    }
+    @case ('traverse') {
+      <span class="vpd-loader-traverse__trail" aria-hidden="true"></span>
+      <img class="vpd-loader-traverse__butterfly" [src]="logoSrc" alt="" width="28" height="28" aria-hidden="true">
+      <span class="vpd-loader-traverse__label">{{ label }}</span>
+    }
+    @case ('butterflies') {
+      <span class="vpd-loader-butterflies" aria-hidden="true">
+        @for (butterfly of butterflies; track butterfly) {
+          <img [class]="'vpd-loader-butterfly vpd-loader-butterfly--' + butterfly" [src]="logoSrc" alt="" width="28" height="28">
+        }
+      </span>
+      <span class="vpd-loader__copy">{{ label }}</span>
+      @if (detail) { <span class="vpd-loader__detail">{{ detail }}</span> }
+    }
+    @case ('fill') {
+      <span class="vpd-loader-fill__visual" aria-hidden="true">
+        <img class="vpd-loader-fill__base" [src]="logoSrc" alt="" width="118" height="118">
+        <img class="vpd-loader-fill__progress" [style.clip-path]="progressClipPath" [src]="logoSrc" alt="" width="118" height="118">
+      </span>
+      <span class="vpd-loader__copy">{{ label }}</span>
+      @if (detail) { <span class="vpd-loader__detail">{{ detail }}</span> }
+      <span class="vpd-loader-fill__track" aria-hidden="true"><span [style.width.%]="progressPercent"></span></span>
+    }
+    @default {
+      <span class="vpd-loader-compact__visual" aria-hidden="true">
+        <img [src]="logoSrc" alt="" width="84" height="84">
+        <i></i>
+      </span>
+      <span class="vpd-loader__copy">{{ label }}</span>
+      @if (detail) { <span class="vpd-loader__detail">{{ detail }}</span> }
+    }
+  }
+</div>

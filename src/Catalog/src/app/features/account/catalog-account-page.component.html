@@ -121,7 +121,13 @@
         role="tabpanel"
         aria-labelledby="account-watchlist-tab">
         @if (loading()) {
-          <p class="account-state compact" role="status">Chargement de votre liste…</p>
+          <div class="account-state compact">
+            <vpd-loader
+              variant="compact"
+              logoSrc="images/papillon_without_back.png"
+              label="Chargement de votre liste…"
+              detail="Quelques secondes"></vpd-loader>
+          </div>
         } @else if (watchlist(); as current) {
           @if (current.items.length === 0) {
             <div class="empty-watchlist">

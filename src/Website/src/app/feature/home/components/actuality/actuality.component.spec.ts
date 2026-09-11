@@ -1,5 +1,6 @@
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DesignSystemModule } from '@vpd/ui';
 
 import { ActualityComponent } from './actuality.component';
 import { AxiosService } from '../../../../shared/services/axios.service';
@@ -14,6 +15,7 @@ describe('ActualityComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [ActualityComponent],
+      imports: [DesignSystemModule],
       providers: [
         { provide: AxiosService, useValue: axiosServiceSpy }
       ],
@@ -43,7 +45,7 @@ describe('ActualityComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('.vpd-home-actuality-skeleton').length).toBe(3);
+    expect(fixture.nativeElement.querySelectorAll('.vpd-loader-skeleton-card').length).toBe(3);
 
     resolveRequest([]);
   });
