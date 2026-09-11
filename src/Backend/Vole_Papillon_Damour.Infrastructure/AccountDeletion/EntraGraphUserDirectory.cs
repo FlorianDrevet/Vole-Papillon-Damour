@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -15,6 +16,8 @@ public sealed class EntraGraphUserDirectory(
 {
     private const string GraphRoot = "https://graph.microsoft.com/v1.0/";
     private static readonly Uri GraphUsersUri = new($"{GraphRoot}users/");
+    private static readonly ConcurrentDictionary<string, string> SynchronizedDisplayNames =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly EntraGraphOptions _options = options.Value;
 
     public async Task DeleteAsync(string externalId, CancellationToken cancellationToken)
@@ -37,6 +40,33 @@ public sealed class EntraGraphUserDirectory(
         {
             throw new AccountDeletionDependencyException($"graph-http-{(int)response.StatusCode}");
         }
+    }
+
+    public async Task UpdateDisplayNameAsync(
+        string externalId,
+        string displayName,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(externalId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
+        externalId = externalId.Trim();
+        displayName = displayName.Trim();
+        if (SynchronizedDisplayNames.TryGetValue(externalId, out var synchronizedDisplayName) &&
+            string.Equals(synchronizedDisplayName, displayName, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        EnsureConfigured();
+
+        var accessToken = await GetAccessTokenAsync(cancellationToken);
+        await SendAsync(
+            HttpMethod.Patch,
+            new Uri(GraphRoot + "users/" + Uri.EscapeDataString(externalId)),
+            accessToken,
+            new GraphUpdateUserRequest(displayName),
+            cancellationToken);
+        SynchronizedDisplayNames[externalId] = displayName;
     }
 
     public async Task<IReadOnlyList<EntraAccount>> ListAsync(CancellationToken cancellationToken)
@@ -391,6 +421,9 @@ public sealed class EntraGraphUserDirectory(
         [property: JsonPropertyName("passwordProfile")] GraphPasswordProfile PasswordProfile,
         [property: JsonPropertyName("passwordPolicies")] string PasswordPolicies,
         [property: JsonPropertyName("identities")] IReadOnlyList<GraphIdentity> Identities);
+
+    private sealed record GraphUpdateUserRequest(
+        [property: JsonPropertyName("displayName")] string DisplayName);
 
     private sealed record GraphPasswordProfile(
         [property: JsonPropertyName("password")] string Password,

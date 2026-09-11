@@ -11,6 +11,7 @@
       - les enregistrements des clients : catalogue public, application de scan,
         back-office, application de caisse MAUI ;
       - les principaux de service correspondants ;
+      - les claims `given_name` et `family_name` dans les jetons du Catalog et de l'API ;
       - l'enregistrement applicatif de gestion des comptes avec les permissions
         applicatives Microsoft Graph `User.ReadWrite.All`,
         `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ;
@@ -163,7 +164,7 @@ function Get-OrNewApplication {
 
     $existing = Get-MgApplication `
         -Filter "displayName eq '$DisplayName'" `
-        -Property 'id','appId','displayName','spa','publicClient','requiredResourceAccess','passwordCredentials' `
+        -Property 'id','appId','displayName','spa','publicClient','requiredResourceAccess','passwordCredentials','optionalClaims' `
         -ErrorAction SilentlyContinue
 
     if ($existing) {
@@ -185,6 +186,7 @@ function Get-OrNewApplication {
             Spa         = $null
             PublicClient = $null
             PasswordCredentials = @()
+            OptionalClaims = $null
         }
     }
 
@@ -228,6 +230,41 @@ function Merge-RedirectUris {
             Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
             Select-Object -Unique
     )
+}
+
+function Merge-OptionalNameClaims {
+    param(
+        [Parameter(Mandatory)] $Application,
+        [Parameter(Mandatory)] [ValidateSet('IdToken', 'AccessToken')] [string] $TokenType
+    )
+
+    $optionalClaims = $Application.OptionalClaims
+    $mergedOptionalClaims = @{}
+    foreach ($tokenTypeName in @('IdToken', 'AccessToken', 'Saml2Token')) {
+        $currentClaims = if ($null -eq $optionalClaims) {
+            @()
+        } else {
+            @($optionalClaims.$tokenTypeName)
+        }
+
+        $mergedClaims = @($currentClaims)
+        if ($tokenTypeName -eq $TokenType) {
+            foreach ($claimName in @('given_name', 'family_name')) {
+                if (-not (@($mergedClaims | Where-Object { $_.Name -eq $claimName } | Select-Object -First 1))) {
+                    $mergedClaims += @{
+                        Name      = $claimName
+                        Essential = $false
+                    }
+                }
+            }
+        }
+
+        if ($mergedClaims.Count -gt 0) {
+            $mergedOptionalClaims[$tokenTypeName] = $mergedClaims
+        }
+    }
+
+    return $mergedOptionalClaims
 }
 
 function Grant-ApiScope {
@@ -411,6 +448,12 @@ if ($PSCmdlet.ShouldProcess($ApiAppName, 'Publier la portee et les roles applica
     Write-Detail "portee access_as_user publiee, $($AppRoles.Count) roles applicatifs declares"
 }
 
+if ($PSCmdlet.ShouldProcess($ApiAppName, 'Emettre les noms du membre dans les jetons API')) {
+    Update-MgApplication -ApplicationId $apiApp.Id `
+        -OptionalClaims (Merge-OptionalNameClaims -Application $apiApp -TokenType 'AccessToken')
+    Write-Detail 'claims given_name et family_name ajoutees aux jetons d''acces'
+}
+
 $apiSp = Get-OrNewServicePrincipal -AppId $apiApp.AppId
 
 # ---------------------------------------------------------------------------
@@ -447,8 +490,9 @@ foreach ($client in $clients) {
     $platform = if ($client.Kind -eq 'Spa') { @{ Spa = $redirect } } else { @{ PublicClient = $redirect } }
 
     if ($PSCmdlet.ShouldProcess($client.Name, 'Configurer la plateforme et la permission vers l''API')) {
-        Update-MgApplication -ApplicationId $app.Id @platform `
-            -RequiredResourceAccess @(
+        $updateParameters = @{
+            ApplicationId = $app.Id
+            RequiredResourceAccess = @(
                 @{
                     ResourceAppId  = $apiApp.AppId
                     ResourceAccess = @(
@@ -456,7 +500,19 @@ foreach ($client in $clients) {
                     )
                 }
             )
+        }
+
+        if ($client.Name -eq $CatalogAppName) {
+            $updateParameters.OptionalClaims = Merge-OptionalNameClaims `
+                -Application $app `
+                -TokenType 'IdToken'
+        }
+
+        Update-MgApplication @platform @updateParameters
         Write-Detail "redirections $($redirectUris -join ', ') ($($client.Kind))"
+        if ($client.Name -eq $CatalogAppName) {
+            Write-Detail 'claims given_name et family_name ajoutees aux jetons d''identite'
+        }
     }
 
     $sp = Get-OrNewServicePrincipal -AppId $app.AppId

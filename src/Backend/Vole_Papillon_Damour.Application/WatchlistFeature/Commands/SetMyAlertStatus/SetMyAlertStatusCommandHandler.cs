@@ -25,6 +25,8 @@ public sealed class SetMyAlertStatusCommandHandler(
         var user = await memberIdentityService.EnsureAsync(
             command.ExternalId,
             command.Email,
+            command.FirstName,
+            command.LastName,
             cancellationToken);
         var updatedAt = dateTimeProvider.UtcNow;
         if (updatedAt.Kind != DateTimeKind.Utc)

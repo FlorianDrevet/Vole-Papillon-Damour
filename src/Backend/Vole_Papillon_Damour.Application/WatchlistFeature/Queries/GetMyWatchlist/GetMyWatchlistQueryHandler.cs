@@ -23,6 +23,8 @@ public sealed class GetMyWatchlistQueryHandler(
         var user = await memberIdentityService.EnsureAsync(
             query.ExternalId,
             query.Email,
+            query.FirstName,
+            query.LastName,
             cancellationToken);
         var generatedAt = dateTimeProvider.UtcNow;
         if (generatedAt.Kind != DateTimeKind.Utc)

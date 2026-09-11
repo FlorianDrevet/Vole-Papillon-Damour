@@ -6,4 +6,6 @@ namespace Vole_Papillon_Damour.Application.WatchlistFeature.Queries.GetMyWatchli
 
 public sealed record GetMyWatchlistQuery(
     Guid ExternalId,
-    string Email) : IRequest<ErrorOr<MyWatchlistResult>>;
+    string Email,
+    string? FirstName = null,
+    string? LastName = null) : IRequest<ErrorOr<MyWatchlistResult>>;

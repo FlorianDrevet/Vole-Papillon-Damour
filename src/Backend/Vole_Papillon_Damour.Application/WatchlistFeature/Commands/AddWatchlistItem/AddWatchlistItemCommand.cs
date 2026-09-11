@@ -10,4 +10,6 @@ public sealed record AddWatchlistItemCommand(
     string Email,
     WatchlistItemScope Scope,
     string? WorkId,
-    string? Isbn13) : IRequest<ErrorOr<AddedWatchlistItemResult>>;
+    string? Isbn13,
+    string? FirstName = null,
+    string? LastName = null) : IRequest<ErrorOr<AddedWatchlistItemResult>>;

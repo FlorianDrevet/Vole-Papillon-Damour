@@ -7,4 +7,6 @@ namespace Vole_Papillon_Damour.Application.WatchlistFeature.Commands.SetMyAlertS
 public sealed record SetMyAlertStatusCommand(
     Guid ExternalId,
     string Email,
-    bool Enabled) : IRequest<ErrorOr<MyAlertPreferencesResult>>;
+    bool Enabled,
+    string? FirstName = null,
+    string? LastName = null) : IRequest<ErrorOr<MyAlertPreferencesResult>>;

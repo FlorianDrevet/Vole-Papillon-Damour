@@ -4,7 +4,8 @@ Tout ce qui se configure dans le locataire d'identité se fait **par script**, j
 la main dans le portail. Un clic dans le portail n'est ni rejouable, ni relisible, ni
 reproductible sur un second environnement.
 
-Cinq scripts, et une seule chose qui reste manuelle.
+Six scripts ; la création du tenant et, si nécessaire, le mapping des claims External ID
+restent manuels.
 
 `Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
 application n'est pas un client interactif : elle recoit les permissions applicatives
@@ -20,6 +21,7 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 | `Configure-EntraApps.ps1` | Enregistrements d'application, portée exposée, rôles applicatifs, consentements | À chaque évolution de la configuration |
 | `Configure-EntraUserFlow.ps1` | User flow External ID d'inscription publique, attaché au catalogue uniquement | À l'activation ou à l'évolution du parcours membre |
 | `Configure-EntraBranding.ps1` | Marque française, canvas uni et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
+| `Sync-EntraDisplayNames.ps1` | Corrige les `displayName` restés à `unknown` depuis `givenName` et `surname` | Migration des comptes existants |
 | `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `Administration` à un compte | Au fil de l'eau |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle | Contrôle |
 
@@ -55,6 +57,42 @@ disponible si le navigateur interactif ne peut pas être utilisé :
 ```
 
 ## Ce qui reste manuel
+
+Les noms collectés par le formulaire sont aussi exposés par
+`Configure-EntraApps.ps1` : `given_name` est ajouté au jeton d'identité du Catalog et
+`family_name` ainsi que `given_name` aux jetons d'accès de l'API. Le Catalog et l'API
+acceptent également les anciennes variantes `givenName`/`surname` afin de rester
+compatibles avec les configurations External ID déjà en place. Après toute modification
+du user flow ou des claims, une nouvelle connexion est nécessaire pour obtenir un jeton
+actualisé.
+
+Après la première exécution réelle, contrôler le contenu du jeton avec un compte de test.
+Si le tenant External ID ne reprend pas les attributs collectés malgré les claims optionnels,
+ouvrir l'application gérée depuis `vpd-catalog-<environment>` puis **Single sign-on →
+Attributes & Claims**, et ajouter `given_name` depuis l'attribut intégré `givenName` ainsi
+que `family_name` depuis `surname`. Répéter le mapping sur l'application gérée de l'API si
+le jeton d'accès ne contient pas ces deux valeurs. Cette étape ne change pas le formulaire :
+elle publie seulement les attributs déjà enregistrés dans les jetons.
+
+Le backend synchronise ensuite le `displayName` de l'utilisateur vers l'annuaire avec
+`givenName + surname`, lors de sa première utilisation du Catalog ou lorsque son
+nom local change. Cette mise à jour utilise l'application Graph app-only déjà créée pour
+la gestion/suppression des comptes et la permission `User.ReadWrite.All`. Une panne
+Graph ne bloque pas la projection locale du membre ; elle est journalisée et sera
+réessayée lors d'une nouvelle synchronisation.
+
+Pour corriger immédiatement les comptes déjà créés avec `displayName = unknown`, utiliser
+le script dédié après consentement Graph. Il ne touche jamais aux `displayName` déjà
+renseignés et les utilisateurs sans prénom ni nom sont signalés comme ignorés :
+
+```powershell
+./Sync-EntraDisplayNames.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UseDeviceCode -WhatIf
+
+# Après vérification de la liste simulée :
+./Sync-EntraDisplayNames.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UseDeviceCode
+```
 
 **La création du locataire externe lui-même.** Elle se fait une fois, depuis le portail
 Azure (*Microsoft Entra External ID → Créer un locataire → External*), ou en Bicep via
@@ -138,7 +176,15 @@ administrateur. Le compte qui lance ce script doit disposer des permissions
     -UserPrincipalName 'florian.drevet_magellangroup.eu#EXT#@volepapillondamour.onmicrosoft.com' `
     -Role Administration
 
-# 4. Contrôle.
+# 4. Corriger les anciens comptes dont le displayName vaut unknown. La simulation ne modifie rien.
+./Sync-EntraDisplayNames.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UseDeviceCode -WhatIf
+
+# 4 bis. Après relecture, rejouer sans -WhatIf.
+./Sync-EntraDisplayNames.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
+    -UseDeviceCode
+
+# 5. Contrôle.
 ./Get-VpdUserRoles.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' | Format-Table
 ```
 
@@ -180,20 +226,25 @@ prioritaire, sont les deux voies supportées à privilégier.
 
 ## Déploiement après merge
 
-Cette évolution modifie uniquement la configuration du user flow External ID :
+Cette évolution modifie le Catalog, l'API et la configuration des applications/du user flow
+External ID :
 
-- rejouer `Configure-EntraUserFlow.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
-  option) pour remplacer l'ancien champ `displayName` par les champs `givenName` et
-  `surname` dans le tenant ;
+- rejouer `Configure-EntraApps.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
+  option) pour ajouter les claims `given_name` et `family_name` aux jetons attendus ;
+- rejouer `Configure-EntraUserFlow.ps1` (d'abord `-WhatIf`, puis sans cette option) pour
+  conserver dans le tenant le formulaire `givenName`/`surname` ;
 - exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS et les textes
   français ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
-- ne pas lancer **Catalog - deploy** pour ce seul changement : le Catalog ne contient pas de
-  code modifié ;
-- ne pas redéployer l'API, le BackOffice, la Scanette, le Worker ou la base pour ce périmètre.
+- lancer **Catalog - deploy** et le déploiement de l'API après validation des simulations ;
+- vérifier que le secret et le consentement de l'application Graph de gestion des comptes
+  sont présents, puis lancer `Sync-EntraDisplayNames.ps1` avec `-WhatIf` et sans
+  `-WhatIf` pour les anciens comptes. Les nouveaux comptes sont mis à jour par l'API
+  lors de leur première requête membre protégée.
 
-Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine public,
-avec un compte de test, en contrôlant l'inscription, la connexion, le mot de passe oublié et
-le rendu mobile.
+Un compte déjà connecté doit se déconnecter puis se reconnecter afin de recevoir un nouveau
+jeton. Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine
+public, avec un compte de test, en contrôlant l'inscription, la connexion, le mot de passe
+oublié, le nom affiché dans le header et l'espace compte, ainsi que le rendu mobile.
 
 ## Le modèle de droits en trois lignes
 

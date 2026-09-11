@@ -60,6 +60,52 @@ public class EntraGraphUserDirectoryTests
         exception.Which.FailureCode.Should().Be("graph-http-503");
     }
 
+    [Fact]
+    public async Task UpdateDisplayNameAsync_PatchesTheEntraUserWithTheCombinedName()
+    {
+        var requests = new List<HttpRequestMessage>();
+        var patchBody = string.Empty;
+        using var client = new HttpClient(new RecordingHandler(request =>
+        {
+            requests.Add(request);
+            if (request.Method == HttpMethod.Post)
+            {
+                return JsonResponse("{\"access_token\":\"access-token\"}");
+            }
+
+            if (request.Method == HttpMethod.Patch)
+            {
+                patchBody = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+                return new HttpResponseMessage(HttpStatusCode.NoContent);
+            }
+
+            throw new InvalidOperationException($"Unexpected Graph request: {request.Method} {request.RequestUri}");
+        }));
+        var options = Options.Create(new EntraGraphOptions
+        {
+            TenantId = "tenant-id",
+            ClientId = "client-id",
+            ClientSecret = "client-secret"
+        });
+        var directory = new EntraGraphUserDirectory(client, options);
+
+        await directory.UpdateDisplayNameAsync(
+            "object-id",
+            "Camille Dupont",
+            CancellationToken.None);
+        await directory.UpdateDisplayNameAsync(
+            "object-id",
+            " Camille Dupont ",
+            CancellationToken.None);
+
+        requests.Should().HaveCount(2);
+        requests[1].Method.Should().Be(HttpMethod.Patch);
+        requests[1].RequestUri!.ToString()
+            .Should().Be("https://graph.microsoft.com/v1.0/users/object-id");
+        requests[1].Headers.Authorization!.Parameter.Should().Be("access-token");
+        patchBody.Should().Be("{\"displayName\":\"Camille Dupont\"}");
+    }
+
     private static HttpResponseMessage JsonResponse(string json)
     {
         return new HttpResponseMessage(HttpStatusCode.OK)

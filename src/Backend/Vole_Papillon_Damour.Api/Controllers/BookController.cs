@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Vole_Papillon_Damour.Api.Authentication;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
@@ -152,13 +153,17 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        if (!TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
 
                         var result = await mediator.Send(
-                            new GetMyWatchlistQuery(externalId, email),
+                            new GetMyWatchlistQuery(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName),
                             cancellationToken);
 
                         return result.Match(
@@ -176,7 +181,7 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        if (!TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
@@ -192,11 +197,13 @@ public static class BookController
 
                         var result = await mediator.Send(
                             new AddWatchlistItemCommand(
-                                externalId,
-                                email,
+                                identity.ExternalId,
+                                identity.Email,
                                 scope,
                                 request.WorkId,
-                                request.Isbn13),
+                                request.Isbn13,
+                                identity.FirstName,
+                                identity.LastName),
                             cancellationToken);
 
                         return result.Match(
@@ -214,13 +221,18 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        if (!TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
 
                         var result = await mediator.Send(
-                            new RemoveWatchlistItemCommand(externalId, email, itemId),
+                            new RemoveWatchlistItemCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                itemId,
+                                identity.FirstName,
+                                identity.LastName),
                             cancellationToken);
 
                         return result.Match(
@@ -238,13 +250,18 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var externalId, out var email))
+                        if (!TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
 
                         var result = await mediator.Send(
-                            new SetMyAlertStatusCommand(externalId, email, request.Enabled),
+                            new SetMyAlertStatusCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                request.Enabled,
+                                identity.FirstName,
+                                identity.LastName),
                             cancellationToken);
 
                         return result.Match(
@@ -368,12 +385,12 @@ public static class BookController
                         [FromServices] MemberIdentityService memberIdentityService,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var externalId, out var email, out var displayName))
+                        if (!TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
 
-                        var volunteerId = UserId.Create(externalId);
+                        var volunteerId = UserId.Create(identity.ExternalId);
 
                         if (!Enum.TryParse<ScanMode>(request.Mode, ignoreCase: true, out var mode) ||
                             !Enum.IsDefined(mode))
@@ -382,9 +399,10 @@ public static class BookController
                         }
 
                         await memberIdentityService.EnsureAsync(
-                            externalId,
-                            email,
-                            displayName,
+                            identity.ExternalId,
+                            identity.Email,
+                            identity.FirstName,
+                            identity.LastName,
                             cancellationToken);
 
                         var result = await mediator.Send(
@@ -488,58 +506,15 @@ public static class BookController
 
     private static bool TryGetMemberIdentity(
         ClaimsPrincipal principal,
-        out Guid externalId,
-        out string email)
+        out EntraMemberIdentityClaims identity)
     {
-        return TryGetMemberIdentity(principal, out externalId, out email, out _);
-    }
-
-    private static bool TryGetMemberIdentity(
-        ClaimsPrincipal principal,
-        out Guid externalId,
-        out string email,
-        out string? displayName)
-    {
-        var externalIdValue = principal.FindFirst("oid")?.Value
-            ?? principal.FindFirst(
-                "http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
-        var emailValue = new[]
-            {
-                ClaimTypes.Email,
-                "email",
-                "emails",
-                "preferred_username",
-                ClaimTypes.Upn,
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-            }
-            .Select(principal.FindFirst)
-            .Select(claim => claim?.Value)
-            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-        var displayNameValue = new[]
-            {
-                "name",
-                ClaimTypes.Name,
-                "displayName"
-            }
-            .Select(principal.FindFirst)
-            .Select(claim => claim?.Value)
-            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-
-        if (Guid.TryParse(externalIdValue, out externalId) &&
-            externalId != Guid.Empty &&
-            !string.IsNullOrWhiteSpace(emailValue) &&
-            emailValue.Trim().Length <= 320)
+        if (EntraMemberIdentityClaimsReader.TryRead(principal, out var parsed) && parsed is not null)
         {
-            email = emailValue.Trim();
-            displayName = string.IsNullOrWhiteSpace(displayNameValue)
-                ? null
-                : displayNameValue.Trim();
+            identity = parsed;
             return true;
         }
 
-        externalId = Guid.Empty;
-        email = string.Empty;
-        displayName = null;
+        identity = null!;
         return false;
     }
 

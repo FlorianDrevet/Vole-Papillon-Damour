@@ -20,6 +20,8 @@ public sealed class RemoveWatchlistItemCommandHandler(
         var user = await memberIdentityService.EnsureAsync(
             command.ExternalId,
             command.Email,
+            command.FirstName,
+            command.LastName,
             cancellationToken);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
