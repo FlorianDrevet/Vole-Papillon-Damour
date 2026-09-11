@@ -150,6 +150,10 @@ locataire qui contient déjà quelque chose.
 Le Catalog utilise le parcours **browser-delegated** : le mot de passe est saisi dans la
 page External ID hébergée par Microsoft et n'est jamais envoyé au Catalog ni à l'API.
 `Configure-EntraBranding.ps1` applique le CSS du design system et un canvas bleu pâle uni,
+Le formulaire d'inscription collecte l'adresse e-mail, le `givenName` (« Prénom ») et le
+`surname` (« Nom ») comme attributs intégrés External ID ; les deux champs de nom restent
+facultatifs et sont limités à 64 caractères chacun.
+`Configure-EntraBranding.ps1` applique le CSS du design system, un fond de repli léger,
 les textes français et la locale `fr-FR` demandée par le Catalog (`ui_locales` et `mkt`).
 La variante actuelle reprend la maquette 1a : canvas bleu papier uni, carte centrée, ligne
 supérieure Catalog, papillon près du titre, boutons orange, focus/erreurs accessibles et
@@ -176,16 +180,15 @@ prioritaire, sont les deux voies supportées à privilégier.
 
 ## Déploiement après merge
 
-Cette évolution mélange une configuration de locataire et une petite modification du
-Catalog :
+Cette évolution modifie uniquement la configuration du user flow External ID :
 
 - rejouer `Configure-EntraUserFlow.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
-  option) pour remplacer l'ancienne validation `displayName` non portable déjà présente
-  dans le tenant ;
+  option) pour remplacer l'ancien champ `displayName` par les champs `givenName` et
+  `surname` dans le tenant ;
 - exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS et les textes
   français ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
 - ne pas lancer **Catalog - deploy** pour ce seul changement : le Catalog ne contient pas de
-  code modifié et l'image publique du papillon est déjà déployée ;
+  code modifié ;
 - ne pas redéployer l'API, le BackOffice, la Scanette, le Worker ou la base pour ce périmètre.
 
 Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine public,
