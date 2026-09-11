@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138) sur le suivi du titre dans la recherche Catalog, puis les PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) et [#134](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/134). Le branding Entra sans image et le contrôle de la connexion/création de compte ainsi que du suivi authentifié du Catalog public restent à suivre. Les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent ouvertes. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-search-follow-ui` |
-| **Dernière mise à jour** | 2026-09-11 — suivi du titre placé au-dessus des éditions de la recherche Catalog, PR #138 ouverte, aucun déploiement |
-| **Branche** | `fix/catalog-search-title-follow-ui` — dédiée depuis `origin/main`, PR [#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138) ouverte |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#140](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/140) sur les claims de nom séparés Entra dans le Catalog. Après merge, rejouer la configuration Entra documentée, déployer le Catalog/API et effectuer le contrôle navigateur d'un compte de test. Les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent ouvertes. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-entra-name-claims` |
+| **Dernière mise à jour** | 2026-09-11 — claims `given_name`/`family_name` du Catalog/API, PR #140 ouverte, aucun changement Entra réel |
+| **Branche** | `fix/catalog-entra-name-claims` — dédiée depuis `origin/main`, PR [#140](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/140) ouverte |
 
 ---
 
