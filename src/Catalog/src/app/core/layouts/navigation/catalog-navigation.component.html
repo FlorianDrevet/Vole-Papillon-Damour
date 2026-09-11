@@ -53,15 +53,6 @@
           }
         }
 
-        @if (isAuthenticated() && isAdministrator()) {
-          <a
-            class="nav-link admin-workspace-link"
-            routerLink="/administration"
-            [class.active]="isAdministration()"
-            [attr.aria-current]="isAdministration() ? 'page' : null"
-            (click)="closeMenus()">Espace administrateur</a>
-        }
-
         <a class="association-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">
           Le site de l’association <span aria-hidden="true">↗</span>
         </a>
@@ -104,7 +95,12 @@
         }
       </div>
       @if (isAuthenticated() && isAdministrator()) {
-        <span class="header-admin-pill">Administration</span>
+        <a
+          class="header-admin-pill"
+          routerLink="/administration"
+          [class.active]="isAdministration()"
+          [attr.aria-current]="isAdministration() ? 'page' : null"
+          (click)="closeMenus()">Administration</a>
       }
     </div>
   </div>
@@ -153,9 +149,6 @@
           </div>
         }
         <a class="mobile-account-link" routerLink="/compte" (click)="closeMobileMenu()">{{ accountTriggerLabel() }}</a>
-        @if (isAuthenticated() && isAdministrator()) {
-          <a class="mobile-admin-link" routerLink="/administration" (click)="closeMobileMenu()">Espace administrateur</a>
-        }
         <a class="mobile-site-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">Le site de l’association ↗</a>
       </nav>
       <div class="mobile-socials">

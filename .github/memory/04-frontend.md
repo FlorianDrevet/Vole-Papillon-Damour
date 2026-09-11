@@ -78,7 +78,9 @@ page exposes direct typed `Work`/`Edition` follow buttons: references that ident
 common work get a single section-level all-editions action above the list, while each precise
 edition remains independently followable and empty reference results expose no follow action.
 The old scope-selection modal is removed; a pending follow survives the sign-in redirect and
-submits directly after the cached session is restored.
+submits directly after the cached session is restored. The administrator header uses the
+clickable `Administration` tag as the sole header entry to `/administration`; the mobile drawer
+does not duplicate the former `Espace administrateur` link.
 
 After the 2026-09-08 rollout, Catalog analytics use dedicated public build variables:
 `CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` for GA4 `G-GBHC67EGGF` and `CLARITY_PROJECT_ID`

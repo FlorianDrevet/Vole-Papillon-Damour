@@ -186,7 +186,7 @@ describe('CatalogNavigationComponent', () => {
     expect(fixture.nativeElement.textContent).toContain("Ouvrir l'administration");
   });
 
-  it('exposes the administration workspace in the catalogue navigation for administrators', () => {
+  it('uses the administrator tag as the only header entry to the administration workspace', () => {
     auth.account.set({
       homeAccountId: 'home-account-id',
       environment: 'volepapillondamour.ciamlogin.com',
@@ -200,18 +200,23 @@ describe('CatalogNavigationComponent', () => {
     fixture.detectChanges();
 
     const workspaceLink = fixture.nativeElement.querySelector('.admin-workspace-link') as HTMLAnchorElement | null;
-    const adminPill = fixture.nativeElement.querySelector('.header-admin-pill') as HTMLElement | null;
+    const adminPill = fixture.nativeElement.querySelector('.header-admin-pill') as HTMLAnchorElement | null;
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLElement;
 
-    expect(workspaceLink?.getAttribute('href')).toBe('/administration');
-    expect(workspaceLink?.textContent).toContain('Espace administrateur');
+    expect(workspaceLink).toBeNull();
+    expect(adminPill?.tagName).toBe('A');
+    expect(adminPill?.getAttribute('href')).toBe('/administration');
     expect(adminPill?.textContent).toContain('Administration');
+    expect(adminPill).not.toBeNull();
+    expect(getComputedStyle(adminPill as HTMLElement).minHeight).toBe(getComputedStyle(accountLink).minHeight);
 
     const menuButton = fixture.nativeElement.querySelector('.menu-toggle') as HTMLButtonElement;
     menuButton.click();
     fixture.detectChanges();
 
     const mobileWorkspaceLink = fixture.nativeElement.querySelector('.mobile-admin-link') as HTMLAnchorElement | null;
-    expect(mobileWorkspaceLink?.textContent).toContain('Espace administrateur');
+    expect(mobileWorkspaceLink).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Espace administrateur');
   });
 
   it('keeps the catalogue brand subtitle when the current route is administrative', () => {

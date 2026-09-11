@@ -233,7 +233,7 @@
 .header-admin-pill {
   display: inline-flex;
   flex: none;
-  min-height: 28px;
+  min-height: 42px;
   align-items: center;
   justify-content: center;
   min-width: 124px;
@@ -245,7 +245,20 @@
   font: 600 .54rem/1 var(--catalog-mono);
   letter-spacing: .16em;
   text-transform: uppercase;
+  text-decoration: none;
   white-space: nowrap;
+  transition: background 160ms var(--catalog-ease-out), color 160ms var(--catalog-ease-out), transform 160ms var(--catalog-ease-out);
+}
+
+.header-admin-pill:hover,
+.header-admin-pill:focus-visible,
+.header-admin-pill.active {
+  background: var(--catalog-blue);
+  color: var(--catalog-white);
+}
+
+.header-admin-pill:active {
+  transform: scale(.98);
 }
 
 .account-teaser {
@@ -534,8 +547,7 @@
   }
 
   .mobile-nav-item > a.active,
-  .mobile-account-link,
-  .mobile-admin-link {
+  .mobile-account-link {
     color: var(--catalog-orange-2) !important;
   }
 
@@ -565,7 +577,6 @@
   }
 
   .mobile-account-link,
-  .mobile-admin-link,
   .mobile-site-link {
     display: block;
     padding: 17px 0;
