@@ -148,3 +148,111 @@
 .announced > span {
   margin-right: 2px;
 }
+
+.book-card--list {
+  display: grid;
+  grid-template-columns: 94px minmax(0, 1fr);
+  gap: 22px;
+  padding: 24px 0;
+  border: 0;
+  border-bottom: 1px solid var(--catalog-line-2);
+  background: transparent;
+  box-shadow: none;
+}
+
+.book-card--list:hover,
+.book-card--list:focus-visible {
+  border-color: var(--catalog-line-2);
+  box-shadow: none;
+  transform: none;
+}
+
+.book-card--list:focus-visible {
+  outline-offset: 6px;
+}
+
+.book-card--list .cover-frame {
+  width: 94px;
+  height: 136px;
+  aspect-ratio: auto;
+  border: 1px solid var(--catalog-line);
+  background: repeating-linear-gradient(135deg, var(--catalog-paper-2) 0 8px, var(--catalog-paper) 8px 16px);
+}
+
+.book-card--list .cover-frame::after {
+  display: none;
+}
+
+.book-card--list .book-card-content {
+  min-height: 136px;
+  padding: 4px 0 0;
+  gap: 6px;
+}
+
+.book-card--list .book-card-meta {
+  justify-content: flex-start;
+  gap: 10px;
+  color: var(--catalog-slate-3);
+  font-size: .61rem;
+  letter-spacing: .04em;
+  text-transform: none;
+}
+
+.book-card--list h3 {
+  margin-top: 1px;
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.book-card--list .authors {
+  color: var(--catalog-slate-2);
+  font-size: .9rem;
+}
+
+.book-card--list .edition {
+  display: none;
+}
+
+.book-card--list .availability-list {
+  padding-top: 9px;
+}
+
+.book-card--list .availability {
+  font-size: .62rem;
+}
+
+.book-card--list .announced {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .book-card--list {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 16px;
+    padding: 18px 0;
+  }
+
+  .book-card--list .cover-frame {
+    width: 76px;
+    height: 110px;
+  }
+
+  .book-card--list .book-card-content {
+    min-height: 110px;
+    padding-top: 1px;
+  }
+
+  .book-card--list h3 {
+    font-size: 1.28rem;
+  }
+
+  .book-card--list .authors {
+    font-size: .78rem;
+  }
+
+  .book-card--list .book-card-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

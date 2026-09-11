@@ -78,20 +78,25 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-11 — page « Mon compte » du Catalog
+### État actualisé — 2026-09-11 — refonte du contenu de la recherche Catalog
 
-Depuis `origin/main` fraîchement récupéré dans le worktree `feat/catalog-account-page`, la
-page membre place la liste de recherche au premier plan, avec les onglets « Ma liste de
-recherche » et « Préférences et compte ». Les suivis reprennent leur couverture, édition,
-disponibilité, date d’ajout, dernière alerte et retrait ; les préférences conservent la
-suspension des alertes, l’accès administration et la suppression de compte.
+La branche `feat/catalog-recherche-portee-suivi` reprend le contenu de `/recherche` selon
+la maquette `Recherche.dc.html` : bandeau de recherche compact, filtres latéraux,
+résultats locaux en lignes éditoriales et références externes en cartes de suivi. Le
+header et le footer existants n'ont pas été modifiés.
 
-Le bouton de compte du header affiche désormais l’icône et le nom complet en état connecté
-dans un contrôle plein, contre un contrôle outline avec icône en état anonyme. Les tests
-Catalog et le build SSR/navigateur passent ; les smokes Chrome local desktop et mobile
-390×844 confirment le rendu anonyme sans débordement. Le nouvel état connecté est couvert
-par les tests composant/navigation ; aucun déploiement ni changement Entra n’a été effectué.
-La PR [#128](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/128) est ouverte.
+La modale `PorteeSuivi` est maintenant raccordée aux boutons des références externes.
+Elle propose par défaut le suivi de l'œuvre (`Work`) et l'édition précise (`Edition`) si
+un ISBN existe, conserve l'intention dans `sessionStorage` pendant la redirection Entra,
+restaure la modale au retour, gère les erreurs 409 et verrouille le défilement avec un
+focus clavier sur la fermeture. Le backend Watchlist déjà présent sur `origin/main`
+fournit le contrat et les invariants ; aucune nouvelle migration ou route API n'a été
+nécessaire.
+
+Les tests ciblés et la suite Catalog ChromeHeadless, ainsi que le build SSR/navigateur,
+passent. Le rendu local desktop avec un endpoint de démonstration temporaire a été
+contrôlé pour les résultats et la modale ; aucun déploiement ni test de compte réel n'a
+été effectué.
 
 ### État actualisé — 2026-09-10 — formulation du film de Maxence
 

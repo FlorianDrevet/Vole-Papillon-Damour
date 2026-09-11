@@ -1,18 +1,18 @@
-<section class="search-intro">
+<section class="search-toolbar" aria-label="Recherche dans le catalogue">
   <div class="page-width">
-    <p class="eyebrow"><span class="heading-rule" aria-hidden="true"></span>{{ browseMode ? 'Le catalogue complet' : 'Recherche' }}</p>
-    <h1>{{ browseMode ? 'Parcourir les livres.' : 'Trouvez votre prochain livre.' }}</h1>
-    @if (browseMode) {
-      <p class="intro-copy">Les livres épuisés restent visibles. Un genre est un repère bibliographique, pas une indication de rayon.</p>
-    } @else {
-      <p class="intro-copy">Titre, auteur ou code-barres : les accents et les petites différences ne vous empêcheront pas de trouver une fiche.</p>
-    }
-
     <form class="search-form" (ngSubmit)="submitSearch()">
       <span class="search-icon" aria-hidden="true"></span>
       <label class="visually-hidden" for="catalog-search">Votre recherche</label>
-      <input id="catalog-search" name="query" [(ngModel)]="query" placeholder="un titre, un auteur, ou le code-barres" autocomplete="off">
-      <button type="submit">Rechercher <span aria-hidden="true">↗</span></button>
+      <input
+        id="catalog-search"
+        name="query"
+        [(ngModel)]="query"
+        placeholder="un titre, un auteur, ou le code-barres"
+        autocomplete="off">
+      @if (query) {
+        <button type="button" class="search-clear" aria-label="Effacer la recherche" (click)="clearSearch()">×</button>
+      }
+      <button type="submit" class="search-submit">Rechercher <span aria-hidden="true">↗</span></button>
     </form>
   </div>
 </section>
@@ -20,46 +20,72 @@
 <section class="results-section">
   <div class="page-width">
     <div class="results-toolbar">
-      <div>
-        <p class="eyebrow blue">{{ browseMode ? 'Navigation' : 'Résultats' }}</p>
-        <h2>{{ resultSummary() }}</h2>
-      </div>
-      @if (query || genre || rareOnly || availability !== 'all') {
-        <button type="button" class="clear-link" (click)="clearFilters()">Réinitialiser les filtres</button>
-      }
+      <h1>{{ resultHeading() }}</h1>
+      <label class="sort-control">
+        <span>Trier par :</span>
+        <select name="sort" [(ngModel)]="sort" (ngModelChange)="applyFilters()">
+          <option value="relevance">pertinence</option>
+          <option value="recent">arrivée récente</option>
+        </select>
+      </label>
     </div>
 
     <div class="search-layout">
       <aside class="filters-panel" aria-label="Filtres du catalogue">
-        <p class="panel-kicker">Affiner la sélection</p>
-        <label>
-          <span>Genre</span>
-          <select name="genre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
-            <option value="">Tous les genres</option>
-            @for (availableGenre of availableGenres(); track availableGenre) {
-              <option [value]="availableGenre">{{ availableGenre }}</option>
-            }
-          </select>
-        </label>
-        <label>
-          <span>Disponibilité</span>
-          <select name="availability" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
-            <option value="all">Tout le catalogue</option>
-            <option value="available">Disponible maintenant</option>
-            <option value="next">À la prochaine bourse aux livres</option>
-          </select>
-        </label>
-        <label>
-          <span>Tri</span>
-          <select name="sort" [(ngModel)]="sort" (ngModelChange)="applyFilters()">
-            <option value="relevance">Pertinence</option>
-            <option value="recent">Arrivée récente</option>
-          </select>
-        </label>
-        <label class="check-label">
+        <p class="filter-kicker">Affiner</p>
+
+        <fieldset class="filter-group">
+          <legend>Disponibilité</legend>
+          <label class="filter-option">
+            <input type="radio" name="availability" value="available" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
+            <span class="filter-control radio-control" aria-hidden="true"></span>
+            <span>Disponible maintenant</span>
+          </label>
+          <label class="filter-option">
+            <input type="radio" name="availability" value="next" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
+            <span class="filter-control radio-control" aria-hidden="true"></span>
+            <span>À la prochaine bourse</span>
+          </label>
+          <label class="filter-option">
+            <input type="radio" name="availability" value="all" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
+            <span class="filter-control radio-control" aria-hidden="true"></span>
+            <span>Tout</span>
+          </label>
+        </fieldset>
+
+        <div class="filter-divider" aria-hidden="true"></div>
+
+        <fieldset class="filter-group">
+          <legend>Genre</legend>
+          <label class="filter-option filter-option--checkbox">
+            <input type="radio" name="genre" value="" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
+            <span class="filter-control checkbox-control" aria-hidden="true"></span>
+            <span>Tous les genres</span>
+          </label>
+          @for (availableGenre of visibleGenres(); track availableGenre) {
+            <label class="filter-option filter-option--checkbox">
+              <input type="radio" name="genre" [value]="availableGenre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
+              <span class="filter-control checkbox-control" aria-hidden="true"></span>
+              <span>{{ availableGenre }}</span>
+            </label>
+          }
+          @if (availableGenres().length > visibleGenres().length) {
+            <button type="button" class="all-genres-link" (click)="genre = ''; applyFilters()">Tous les genres <span aria-hidden="true">→</span></button>
+          }
+        </fieldset>
+
+        <div class="filter-divider" aria-hidden="true"></div>
+
+        <label class="filter-option filter-option--checkbox rare-option">
           <input type="checkbox" name="rare" [(ngModel)]="rareOnly" (ngModelChange)="applyFilters()">
-          <span>Livres rares uniquement</span>
+          <span class="filter-control checkbox-control" aria-hidden="true"></span>
+          <span>Uniquement les livres rares</span>
         </label>
+
+        @if (query || genre || rareOnly || availability !== 'all' || sort !== 'relevance') {
+          <button type="button" class="reset-filters" (click)="clearFilters()">Réinitialiser les filtres</button>
+        }
+
         <div class="filter-note">
           <span aria-hidden="true">i</span>
           <p>Les disponibilités sont indicatives : elles peuvent évoluer entre deux mises à jour.</p>
@@ -72,20 +98,22 @@
         } @else if (error) {
           <p class="state-message error-message" role="alert">Le catalogue est momentanément indisponible. Réessayez dans un instant.</p>
         } @else {
-          <section class="catalog-block">
+          <section class="catalog-block" aria-labelledby="catalog-results-title">
             <div class="block-heading">
               <div>
                 <span class="block-rule available-rule" aria-hidden="true"></span>
-                <p class="eyebrow">Dans la bourse aux livres</p>
-                <h2>Livres du catalogue</h2>
+                <div class="section-heading-line">
+                  <h2 id="catalog-results-title">Dans la bourse aux livres</h2>
+                  <span class="section-count">{{ localCountLabel() }}</span>
+                </div>
               </div>
               <p class="block-help">Disponibilités enregistrées par l'association</p>
             </div>
 
             @if (response?.books?.length) {
-              <div class="book-grid">
+              <div class="book-list">
                 @for (book of response?.books || []; track trackBook($index, book.isbn13)) {
-                  <app-book-card [book]="book"></app-book-card>
+                  <app-book-card [book]="book" variant="list"></app-book-card>
                 }
               </div>
             } @else {
@@ -97,20 +125,25 @@
             <div class="block-heading">
               <div>
                 <span class="block-rule external-rule" aria-hidden="true"></span>
-                <p class="eyebrow">Pas encore dans la bourse aux livres</p>
-                <h2 id="external-heading">À ajouter à votre liste de recherche</h2>
+                <div class="section-heading-line">
+                  <h2 id="external-heading">Pas encore dans la bourse aux livres</h2>
+                  @if (externalResponse?.items?.length) {
+                    <span class="section-count">{{ externalCountLabel() }}</span>
+                  }
+                </div>
               </div>
               <span class="coming-soon">Pour être prévenu si le titre arrive</span>
             </div>
+
             @if (!query.trim() || query.trim().length < 2) {
-              <p>Saisissez au moins deux caractères pour chercher un titre qui n’est pas encore dans la bourse aux livres. Vous pourrez l’ajouter à votre liste de recherche.</p>
+              <p class="external-empty">Saisissez au moins deux caractères pour chercher un titre qui n’est pas encore dans la bourse aux livres. Vous pourrez l’ajouter à votre liste de recherche.</p>
             } @else if (externalLoading) {
               <p class="state-message">Recherche de titres à ajouter…</p>
             } @else if (externalError) {
               <p class="state-message error-message" role="alert">La recherche de titres à ajouter est momentanément indisponible. La recherche dans la bourse aux livres reste utilisable.</p>
             } @else if (externalResponse?.items?.length) {
-              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres. Ajoutez une œuvre ou une édition à votre liste de recherche pour être prévenu si elle rejoint le catalogue.</p>
-              <div class="reference-grid">
+              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Ajoutez-en un à votre liste de recherche pour être prévenu s'il arrive un jour.</p>
+              <div class="reference-list">
                 @for (reference of externalResponse?.items || []; track reference.workId || reference.isbn13 || reference.title) {
                   <article class="reference-card">
                     <div class="reference-cover">
@@ -123,28 +156,29 @@
                     <div class="reference-copy">
                       <h3 [attr.title]="reference.title || 'Titre à compléter'">{{ reference.title || 'Titre à compléter' }}</h3>
                       @if (reference.authors) { <p [attr.title]="reference.authors">{{ reference.authors }}</p> }
-                      <small [attr.title]="reference.publisher || 'Éditeur non renseigné'">
-                        {{ reference.publisher || 'Éditeur non renseigné' }}
-                        @if (reference.publicationYear) { · {{ reference.publicationYear }} }
-                      </small>
+                      <small [attr.title]="referenceEditionLabel(reference)">{{ referenceEditionLabel(reference) }}</small>
                       @if (reference.isbn13) { <small>ISBN {{ reference.isbn13 }}</small> }
-                      @if (reference.workId || reference.isbn13) {
-                        <button
-                          type="button"
-                          class="reference-follow"
-                          [disabled]="referenceFollowPending === (reference.workId || reference.isbn13)"
-                          (click)="followReference(reference)">
-                          {{ referenceFollowPending === (reference.workId || reference.isbn13) ? 'Ajout…' : 'Ajouter à ma liste de recherche' }}
-                        </button>
-                      }
                     </div>
+                    @if (referenceKey(reference)) {
+                      <button
+                        type="button"
+                        class="reference-follow"
+                        [disabled]="referenceFollowPending === referenceKey(reference)"
+                        (click)="followReference(reference)">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M18 9.2a6 6 0 1 0-12 0c0 5-2 6.4-2 6.4h16s-2-1.4-2-6.4Z"></path>
+                          <path d="M13.7 19.4a2 2 0 0 1-3.4 0"></path>
+                        </svg>
+                        {{ referenceFollowPending === referenceKey(reference) ? 'Ajout…' : 'Ajouter à ma liste de recherche' }}
+                      </button>
+                    }
                   </article>
                 }
               </div>
               @if (referenceFollowMessage) {
                 <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir ma liste de recherche</a></p>
               }
-              @if (referenceFollowError) {
+              @if (referenceFollowError && !selectedReference) {
                 <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
               }
               @if ((externalResponse?.items?.length || 0) === (externalResponse?.pageSize || 0)) {
@@ -155,7 +189,7 @@
                 </nav>
               }
             } @else {
-              <p>Aucun autre titre ne correspond à cette recherche.</p>
+              <p class="external-empty">Aucun autre titre ne correspond à cette recherche.</p>
             }
           </section>
 
@@ -173,3 +207,60 @@
     </div>
   </div>
 </section>
+
+@if (selectedReference; as reference) {
+  <div class="follow-dialog-backdrop" role="presentation" (click)="closeFollowModal()">
+    <section
+      class="follow-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="follow-dialog-title"
+      aria-describedby="follow-dialog-description"
+      (click)="$event.stopPropagation()">
+      <div class="follow-dialog-rule" aria-hidden="true"></div>
+      <div class="follow-dialog-content">
+        <button #followDialogClose type="button" class="dialog-close" aria-label="Fermer" (click)="closeFollowModal()">×</button>
+        <span class="dialog-kicker">Ajouter à ma liste</span>
+        <div class="dialog-book-heading">
+          <h2 id="follow-dialog-title">{{ reference.title || 'Titre à compléter' }}</h2>
+          @if (reference.authors) { <p>{{ reference.authors }}</p> }
+        </div>
+
+        <form (ngSubmit)="confirmFollowReference()">
+          <p id="follow-dialog-description" class="dialog-question">Que souhaitez-vous suivre ?</p>
+
+          @if (reference.workId) {
+            <label class="scope-option" [class.selected]="followScope === 'Work'">
+              <input type="radio" name="followScope" value="Work" [checked]="followScope === 'Work'" (change)="followScope = 'Work'">
+              <span class="scope-control radio-control" aria-hidden="true"></span>
+              <span class="scope-copy">
+                <strong>N'importe quelle édition</strong>
+                <span>Vous serez prévenu dès qu'un exemplaire arrive, quel que soit l'éditeur.</span>
+              </span>
+            </label>
+          }
+
+          @if (reference.isbn13) {
+            <label class="scope-option" [class.selected]="followScope === 'Edition'">
+              <input type="radio" name="followScope" value="Edition" [checked]="followScope === 'Edition'" (change)="followScope = 'Edition'">
+              <span class="scope-control radio-control" aria-hidden="true"></span>
+              <span class="scope-copy">
+                <strong>Une édition précise</strong>
+                <span class="edition-choice">{{ referenceEditionLabel(reference) }}</span>
+              </span>
+            </label>
+          }
+
+          @if (referenceFollowError) {
+            <p class="dialog-feedback" role="alert">{{ referenceFollowError }}</p>
+          }
+
+          <button type="submit" class="dialog-submit" [disabled]="referenceFollowPending !== null">
+            {{ referenceFollowPending ? 'Ajout…' : 'Ajouter à ma liste' }}
+          </button>
+          <span class="dialog-note">Retirable en un clic, à tout moment</span>
+        </form>
+      </div>
+    </section>
+  </div>
+}
