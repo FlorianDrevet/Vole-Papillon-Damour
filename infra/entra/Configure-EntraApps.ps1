@@ -225,8 +225,11 @@ function Merge-RedirectUris {
         @()
     }
 
+    # Une seule URI est stockee comme une chaine PowerShell ; utiliser deux
+    # expressions de tableau evite alors l'operateur `+` de concatenation de
+    # chaines (`anciennehttps://nouvelle`).
     return @(
-        $currentUris + $Uri |
+        @($currentUris) + @($Uri) |
             Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
             Select-Object -Unique
     )
@@ -247,10 +250,25 @@ function Merge-OptionalNameClaims {
             @($optionalClaims.$tokenTypeName)
         }
 
-        $mergedClaims = @($currentClaims)
+        # Graph peut renvoyer une collection vide sous la forme d'une valeur
+        # $null. La conserver dans le tableau ferait ensuite echouer l'acces a
+        # `.Name` sous StrictMode.
+        $mergedClaims = @(
+            @($currentClaims) | Where-Object { $null -ne $_ }
+        )
         if ($tokenTypeName -eq $TokenType) {
             foreach ($claimName in @('given_name', 'family_name')) {
-                if (-not (@($mergedClaims | Where-Object { $_.Name -eq $claimName } | Select-Object -First 1))) {
+                $existingClaim = @(
+                    $mergedClaims |
+                        Where-Object {
+                            $null -ne $_ -and
+                            $null -ne $_.PSObject.Properties['Name'] -and
+                            $_.Name -eq $claimName
+                        } |
+                        Select-Object -First 1
+                )
+
+                if ($existingClaim.Count -eq 0) {
                     $mergedClaims += @{
                         Name      = $claimName
                         Essential = $false
