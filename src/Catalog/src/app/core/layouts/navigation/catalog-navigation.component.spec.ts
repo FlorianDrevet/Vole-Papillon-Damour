@@ -67,8 +67,12 @@ describe('CatalogNavigationComponent', () => {
     expect(style.borderBottomStyle).toBe('solid');
   });
 
-  it('does not show a person icon for a signed-out account action', () => {
-    expect(fixture.nativeElement.querySelector('.account-teaser .person-icon')).toBeNull();
+  it('shows a login icon in the outlined signed-out account action', () => {
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
+
+    expect(accountLink.classList.contains('signed-out')).toBeTrue();
+    expect(accountLink.querySelector('.account-icon')).not.toBeNull();
+    expect(getComputedStyle(accountLink).backgroundColor).toBe('rgba(0, 0, 0, 0)');
   });
 
   it('labels the event tab with the upcoming dates wording', () => {
@@ -133,6 +137,25 @@ describe('CatalogNavigationComponent', () => {
     expect(fixture.nativeElement.querySelector('.account-popover')).not.toBeNull();
   });
 
+  it('uses the connected member display name in the personal account action', () => {
+    auth.account.set({
+      homeAccountId: 'home-account-id',
+      environment: 'volepapillondamour.ciamlogin.com',
+      tenantId: 'tenant-id',
+      username: 'camille@example.test',
+      localAccountId: 'local-account-id',
+      name: 'Camille Dupont',
+    });
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
+
+    expect(accountLink.textContent).toContain('Camille Dupont');
+    expect(accountLink.textContent).not.toContain('Mon compte');
+    expect(accountLink.classList.contains('connected')).toBeTrue();
+  });
+
   it('shows the administration workspace with a clear connected label', () => {
     auth.account.set({
       homeAccountId: 'home-account-id',
@@ -148,13 +171,14 @@ describe('CatalogNavigationComponent', () => {
     fixture.componentInstance.url.set('/administration');
     fixture.detectChanges();
     const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
-    const accountIcon = fixture.nativeElement.querySelector('.person-icon') as HTMLElement;
+    const accountIcon = fixture.nativeElement.querySelector('.account-icon') as HTMLElement;
     accountLink.click();
     fixture.detectChanges();
 
-    expect(accountIcon.textContent?.trim()).toBe('FD');
-    expect(accountLink.textContent).toContain('Administration');
-    expect(accountLink.textContent).not.toContain('FDFD');
+    expect(accountIcon).not.toBeNull();
+    expect(accountLink.textContent).toContain('Florian DREVET');
+    expect(accountLink.classList.contains('connected')).toBeTrue();
+    expect(getComputedStyle(accountLink).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
     expect(fixture.nativeElement.textContent).toContain("Ouvrir l'administration");
   });
 

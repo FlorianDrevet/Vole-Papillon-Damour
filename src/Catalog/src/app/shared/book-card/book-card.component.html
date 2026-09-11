@@ -1,4 +1,4 @@
-<a class="book-card" [routerLink]="bookPath()" [attr.aria-label]="book.title || 'Voir la fiche du livre'">
+<a class="book-card" [class.book-card--list]="variant === 'list'" [routerLink]="bookPath()" [attr.aria-label]="book.title || 'Voir la fiche du livre'">
   <div class="cover-frame">
     @if (book.coverUrl && !coverFailed) {
       <img
@@ -13,7 +13,17 @@
 
   <div class="book-card-content">
     <div class="book-card-meta">
-      <span>{{ book.genre || 'Catalogue' }}</span>
+      @if (variant === 'list') {
+        <span>
+          {{ book.publisher || 'Éditeur non renseigné' }}
+          @if (book.publisher && book.publicationYear) { · }
+          {{ book.publicationYear || '' }}
+          @if ((book.publisher || book.publicationYear) && book.genre) { · }
+          {{ book.genre || '' }}
+        </span>
+      } @else {
+        <span>{{ book.genre || 'Catalogue' }}</span>
+      }
       @if (book.isRare) { <span class="rare-badge">Rare</span> }
     </div>
     <h3>{{ book.title || 'Titre à compléter' }}</h3>

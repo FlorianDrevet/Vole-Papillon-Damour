@@ -36,17 +36,17 @@ export class CatalogNavigationComponent {
   readonly isAuthenticated = this.auth.isAuthenticated;
   readonly isAdministrator = this.auth.isAdministrator;
   readonly isAdministration = computed(() => this.url().split(/[?#]/, 1)[0].startsWith('/administration'));
+  readonly accountName = computed(() => this.displayAccount(this.account()));
   readonly accountTriggerLabel = computed(() => {
+    if (this.isAuthenticated() && this.accountName()) {
+      return this.accountName();
+    }
+
     if (!this.isAdministration()) {
       return 'Mon compte';
     }
 
     return 'Administration';
-  });
-  readonly accountName = computed(() => this.displayAccount(this.account()));
-  readonly accountInitials = computed(() => {
-    const account = this.account();
-    return account ? this.initials(account) : 'MO';
   });
 
   private readonly platformId = inject(PLATFORM_ID);
@@ -146,11 +146,5 @@ export class CatalogNavigationComponent {
 
   private displayAccount(account: AccountInfo | null): string {
     return account?.name?.trim() || account?.username || '';
-  }
-
-  private initials(account: AccountInfo): string {
-    const source = account.name?.trim() || account.username.split('@')[0];
-    const words = source.split(/[\s._-]+/).filter(Boolean);
-    return words.slice(0, 2).map(word => word[0]).join('').toUpperCase().padEnd(2, '•');
   }
 }

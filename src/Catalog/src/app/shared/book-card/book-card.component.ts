@@ -12,6 +12,7 @@ import {publicBookPath} from '../catalog-url';
 })
 export class BookCardComponent {
   @Input({required: true}) book!: CatalogBook;
+  @Input() variant: 'grid' | 'list' = 'grid';
 
   coverFailed = false;
 
