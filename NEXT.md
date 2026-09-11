@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — ajout du catalogue de loaders partagés dans Website, Catalog et Scan; la livraison reste soumise à relecture avant déploiement. |
-| **Prochaine action** | Terminer la validation, pousser `feat/loader-system-catalog-scan` et ouvrir sa PR vers `main`. Après merge, déployer les applications concernées puis vérifier les états d'attente sur navigateur/appareil. |
+| **Lot en cours** | `P2/P3` — ajout du catalogue de loaders partagés dans Website, Catalog et Scan; la PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) est ouverte pour relecture avant déploiement. |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147). Après merge, déployer les applications concernées puis vérifier les états d'attente sur navigateur/appareil. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-loader-system` |
-| **Dernière mise à jour** | 2026-09-11 — loaders 1a–2d intégrés, écran 1b réservé au démarrage Scan avant connexion, PR à ouvrir, aucun déploiement |
-| **Branche** | `feat/loader-system-catalog-scan` — dédiée depuis `origin/main`, PR à ouvrir |
+| **Dernière mise à jour** | 2026-09-11 — loaders 1a–2d intégrés, écran 1b réservé au démarrage Scan avant connexion, PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) ouverte, aucun déploiement |
+| **Branche** | `feat/loader-system-catalog-scan` — dédiée depuis `origin/main`, PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) ouverte |
 
 ---
 
@@ -117,9 +117,10 @@ connaîtra réellement le pourcentage ; aucun flux actuel n'en fabrique un.
 Validation locale : test TDD rouge puis vert pour le shell Scan et le composant partagé, 75 tests
 Website, 165 tests Catalog, 175 tests Scan ChromeHeadless, les trois builds de production,
 `graphify update .` et `git diff --check`. Les commandes ont été lancées séquentiellement car le
-lien `src/SharedUi/node_modules` est partagé entre les applications. `rtk` n'est pas installé
-sur cette machine ; les commandes équivalentes directes ont été utilisées. La PR reste à ouvrir,
-aucun déploiement ni changement Azure, Entra, compte ou API publique n'a été effectué.
+le lien `src/SharedUi/node_modules` est partagé entre les applications. `rtk` n'est pas installé
+sur cette machine ; les commandes équivalentes directes ont été utilisées. La PR
+[#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147) est ouverte, aucun
+déploiement ni changement Azure, Entra, compte ou API publique n'a été effectué.
 
 ### État actualisé — 2026-09-11 — noms séparés Entra dans le Catalog
 

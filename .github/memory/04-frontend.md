@@ -109,7 +109,8 @@ actions. Scan uses `flight`/1b only while the root auth state is `checking`, whi
 first screen during startup before the login surface appears; lookup waits use butterflies.
 The determinate `fill`/2c variant is available for a future flow that exposes a real percentage,
 but no current client invents one. Local validation passes 75 Website, 165 Catalog, and 175 Scan
-ChromeHeadless tests plus the three production builds; no deployment was made.
+ChromeHeadless tests plus the three production builds. PR [#147](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/147)
+is open for review; no deployment was made.
 
 After the 2026-09-08 rollout, Catalog analytics use dedicated public build variables:
 `CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` for GA4 `G-GBHC67EGGF` and `CLARITY_PROJECT_ID`
