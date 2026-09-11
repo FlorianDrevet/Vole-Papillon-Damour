@@ -53,6 +53,19 @@ association-content shell. The shared `BookCardComponent` is the visual primitiv
 recent, rare, search, work, and detail entry points; available quantities and future
 announcements are rendered as separate lines.
 
+### Catalog administration shell
+
+The Catalog `/administration` route follows the administration maquettes rather than the
+public header/footer shell. Its canonical desktop frame is a 244px deep-navy
+`AdminSidebar` (`#072b45`) beside a paper workspace with 40px top / 44px horizontal
+content padding; the sidebar groups are Pilotage, Travail, Comptes and Réglages, with a
+cyan active rule and translucent active background. Dashboard and workspace headings use
+Newsreader, metadata uses IBM Plex Mono, and body controls use Libre Franklin. The shell
+collapses the sidebar and content gutters at tablet/mobile breakpoints while preserving
+the same information architecture. All maquette workspaces are represented, including
+the correction dialog and account role editor; physical inventory history/actions remain
+truthful empty or disabled when the API has no corresponding domain contract.
+
 ### Catalogue V2 — convention canonique
 
 The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md).

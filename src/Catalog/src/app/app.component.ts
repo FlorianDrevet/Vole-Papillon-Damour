@@ -6,6 +6,7 @@ import {
   OnDestroy,
   OnInit,
   PLATFORM_ID,
+  signal,
 } from '@angular/core';
 import {Meta} from '@angular/platform-browser';
 import {NavigationEnd, Router} from '@angular/router';
@@ -23,6 +24,7 @@ import {catalogRobotsForUrl} from './core/catalog-robots';
 })
 export class AppComponent implements OnInit, OnDestroy {
   private readonly destroyed = new Subject<void>();
+  readonly isAdministrationRoute = signal(false);
 
   constructor(
     private readonly router: Router,
@@ -33,13 +35,17 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.updateRobotsMetadata(this.router.url);
+    this.isAdministrationRoute.set(this.isAdminUrl(this.router.url));
     this.initializeAuthenticationRedirect();
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntil(this.destroyed),
       )
-      .subscribe(event => this.updateRobotsMetadata(event.urlAfterRedirects));
+      .subscribe(event => {
+        this.updateRobotsMetadata(event.urlAfterRedirects);
+        this.isAdministrationRoute.set(this.isAdminUrl(event.urlAfterRedirects));
+      });
   }
 
   ngOnDestroy(): void {
@@ -55,6 +61,10 @@ export class AppComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId) && hasAuthenticationResponse(window.location)) {
       void this.auth.initialize();
     }
+  }
+
+  private isAdminUrl(url: string): boolean {
+    return url.split(/[?#]/, 1)[0].replace(/\/$/, '') === '/administration';
   }
 }
 
