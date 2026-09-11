@@ -172,6 +172,43 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(meta.updateTag).toHaveBeenCalledWith({name: 'robots', content: 'noindex, nofollow'});
   });
 
+  it('renders feedback as an accessible fixed toast that can be dismissed', () => {
+    auth.isAuthenticated.set(true);
+    fixture.componentInstance.successMessage.set('Les paramètres ont été enregistrés.');
+    fixture.detectChanges();
+
+    const toast = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '[data-testid="admin-feedback-toast"]',
+    );
+
+    expect(toast).not.toBeNull();
+    expect(toast?.classList.contains('admin-toast-success')).toBeTrue();
+    expect(toast?.getAttribute('role')).toBe('status');
+    expect(toast?.querySelector('button[aria-label="Fermer la notification"]')).not.toBeNull();
+    expect(getComputedStyle(toast!).position).toBe('fixed');
+    expect(fixture.nativeElement.querySelector('.admin-status-success')).toBeNull();
+
+    (toast?.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="admin-feedback-toast"]')).toBeNull();
+  });
+
+  it('replaces a previous success toast with a validation error', async () => {
+    auth.isAuthenticated.set(true);
+    fixture.componentInstance.successMessage.set('Une ancienne action a réussi.');
+    fixture.componentInstance.addBookForm.isbn13 = '';
+    fixture.componentInstance.addBookForm.note = '';
+
+    await fixture.componentInstance.addBook();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.errorMessage()).toBe('ISBN et note d’ajout sont obligatoires.');
+    expect(fixture.componentInstance.successMessage()).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="admin-feedback-toast"]').length).toBe(1);
+    expect(fixture.nativeElement.querySelector('.admin-toast-error')).not.toBeNull();
+  });
+
   it('loads and renders the dead-stock list for an authenticated administrator', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);

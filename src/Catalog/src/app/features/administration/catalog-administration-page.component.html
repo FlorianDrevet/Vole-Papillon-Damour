@@ -96,11 +96,42 @@
           </div>
         </div>
       } @else {
-        @if (errorMessage()) {
-          <div class="admin-status admin-status-error" role="alert">{{ errorMessage() }}</div>
-        }
-        @if (successMessage()) {
-          <div class="admin-status admin-status-success" role="status">{{ successMessage() }}</div>
+        @if (errorMessage(); as message) {
+          <div
+            class="admin-toast admin-toast-error"
+            data-testid="admin-feedback-toast"
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true">
+            <span class="admin-toast-icon" aria-hidden="true">!</span>
+            <div class="admin-toast-content">
+              <strong>Vérification nécessaire</strong>
+              <p>{{ message }}</p>
+            </div>
+            <button
+              class="admin-toast-dismiss"
+              type="button"
+              aria-label="Fermer la notification"
+              (click)="dismissFeedback()">×</button>
+          </div>
+        } @else if (successMessage(); as message) {
+          <div
+            class="admin-toast admin-toast-success"
+            data-testid="admin-feedback-toast"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true">
+            <span class="admin-toast-icon" aria-hidden="true">✓</span>
+            <div class="admin-toast-content">
+              <strong>Modification enregistrée</strong>
+              <p>{{ message }}</p>
+            </div>
+            <button
+              class="admin-toast-dismiss"
+              type="button"
+              aria-label="Fermer la notification"
+              (click)="dismissFeedback()">×</button>
+          </div>
         }
 
         @switch (activeSection()) {

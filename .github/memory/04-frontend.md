@@ -64,6 +64,11 @@ backfill. The dashboard period chips are typed and reload the overview with UTC 
 30 days, three calendar months, or twelve months; the scan-session navigation badge uses the
 same pending-alert/non-cancelled predicate as the `Encore corrigeables` view.
 
+Administration action feedback is rendered as one fixed, dismissible toast above the content
+flow, with separate accessible success/error tones and live-region semantics. The page keeps
+only the latest feedback state so a stale success cannot remain visible alongside a validation
+error; loading and contextual empty/error notices remain in the normal page flow.
+
 The public search sort control keeps a native accessible `<select>` for keyboard and screen
 reader behavior while wrapping it in Catalog design-system spacing, border, pill, chevron,
 hover, and focus styles. The administration Settings navigation icon uses a balanced custom
