@@ -1,5 +1,6 @@
 using System.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.UserAggregate;
@@ -9,7 +10,9 @@ namespace Vole_Papillon_Damour.Application.Common.Services;
 
 public sealed class MemberIdentityService(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IEntraUserDirectory? directory = null,
+    ILogger<MemberIdentityService>? logger = null)
 {
     public async Task<User> EnsureAsync(
         Guid externalId,
@@ -71,6 +74,7 @@ public sealed class MemberIdentityService(
         var externalIdValue = externalId.ToString();
         var executionStrategy = dbContext.Database.CreateExecutionStrategy();
         User? user = null;
+        var synchronizeDisplayName = false;
 
         await executionStrategy.ExecuteAsync(async () =>
         {
@@ -97,9 +101,19 @@ public sealed class MemberIdentityService(
                 user.SynchronizeExternalIdentity(externalIdValue, email, seenAt, name);
             }
 
+            synchronizeDisplayName = name is not null;
+
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
         });
+
+        if (synchronizeDisplayName && name is not null)
+        {
+            await TrySynchronizeDisplayNameAsync(
+                externalIdValue,
+                FormatDisplayName(name),
+                cancellationToken);
+        }
 
         return user ?? throw new InvalidOperationException("The member identity was not persisted.");
     }
@@ -131,5 +145,40 @@ public sealed class MemberIdentityService(
     private static string? NormalizeNamePart(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private async Task TrySynchronizeDisplayNameAsync(
+        string externalId,
+        string displayName,
+        CancellationToken cancellationToken)
+    {
+        if (directory is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await directory.UpdateDisplayNameAsync(
+                externalId,
+                displayName,
+                cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger?.LogWarning(
+                exception,
+                "Unable to synchronize Entra displayName for member {ExternalId}.",
+                externalId);
+        }
+    }
+
+    private static string FormatDisplayName(Name name)
+    {
+        return string.Join(
+            ' ',
+            new[] { name.FirstName, name.LastName }
+                .Where(part => !string.IsNullOrWhiteSpace(part))
+                .Select(part => part.Trim()));
     }
 }

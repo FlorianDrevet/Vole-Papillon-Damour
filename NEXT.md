@@ -14,9 +14,9 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#140](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/140) sur les claims de nom séparés Entra dans le Catalog. Après merge, rejouer la configuration Entra documentée, déployer le Catalog/API et effectuer le contrôle navigateur d'un compte de test. Les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent ouvertes. |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#140](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/140) sur les claims de nom séparés Entra et la synchronisation de `displayName` dans le Catalog. Après merge, rejouer la configuration Entra, déployer le Catalog/API, lancer `Sync-EntraDisplayNames.ps1` en `-WhatIf` puis en réel pour les anciens comptes, et effectuer le contrôle navigateur d'un compte de test. Les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent ouvertes. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-entra-name-claims` |
-| **Dernière mise à jour** | 2026-09-11 — claims `given_name`/`family_name` du Catalog/API, PR #140 ouverte, aucun changement Entra réel |
+| **Dernière mise à jour** | 2026-09-11 — claims `given_name`/`family_name` et synchronisation `displayName` du Catalog/API, PR #140 ouverte, aucun changement Entra réel |
 | **Branche** | `fix/catalog-entra-name-claims` — dédiée depuis `origin/main`, PR [#140](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/140) ouverte |
 
 ---
@@ -86,13 +86,15 @@ Le formulaire public collecte maintenant `givenName` et `surname`, et non plus
 `unknown` et retombe ensuite sur le nom lisible puis l'adresse de connexion. Le même
 profil séparé est extrait par l'API et transmis à la projection membre pour les routes
 watchlist et scan. `Configure-EntraApps.ps1` ajoute les claims optionnels aux jetons
-Catalog/API sans écraser les autres claims déjà configurés.
+Catalog/API sans écraser les autres claims déjà configurés. L'API synchronise aussi
+`displayName` vers Entra avec `givenName + surname` lors de l'utilisation d'un compte ;
+`Sync-EntraDisplayNames.ps1` permet de rattraper les comptes déjà créés avec `unknown`.
 
-Validation : 21 tests API, 184 tests Application, 364 tests backend sur la solution, 160
-tests Catalog ChromeHeadless, build Catalog SSR, analyse PowerShell et 5 tests Pester du
-user flow ; `git diff --check` passe également. La mise à jour Graph réelle et le contrôle
-navigateur d'un compte existant restent à faire avant le merge. Une déconnexion/reconnexion
-sera nécessaire sur les sessions déjà ouvertes.
+Validation : 368 tests backend sur la solution, 160 tests Catalog ChromeHeadless, build
+backend et build Catalog SSR/navigateur, parse PowerShell, 4 tests Pester du script de
+migration, 5 tests Pester du user flow et 9 tests Pester du branding ; `git diff --check`
+et `graphify update .` passent. Aucun tenant, compte, secret ou déploiement n'a
+été modifié.
 
 ### État actualisé — 2026-09-11 — suivi du titre au-dessus des éditions Catalog
 
@@ -1213,6 +1215,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Catalog/Entra — synchronisation du `displayName`.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-name-claims`, l'API met à jour le `displayName` Graph depuis `givenName + surname` lors des requêtes membres, avec cache des succès et reprise après échec ; la projection locale reste disponible si Graph est indisponible. Ajout du script `Sync-EntraDisplayNames.ps1` pour les comptes existants, protégé par `-WhatIf`, avec 4 tests Pester. Validation finale : 368 tests backend, 160 tests Catalog, builds backend/Catalog, parse PowerShell, 4+5+9 tests Pester, Graphify et `git diff --check` passants. PR #140 mise à jour ; aucun changement Entra réel. |
 | 2026-09-11 | Windows | **Catalog — suivi du titre au-dessus des éditions.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-book-search-follow-ui`, déplacement du CTA œuvre au-dessus de la liste des références, texte explicatif entre toutes les éditions et édition précise, suppression des CTA œuvre par carte, absence du CTA quand la réponse externe est vide, et clés `track` uniques pour plusieurs ISBN d'une même œuvre. Validation : test rouge puis vert, 152 tests Catalog, build SSR/production, Graphify, `git diff --check` et smoke Chrome local desktop avec stub mémoire ; émulation mobile exacte indisponible, aucun déploiement. PR [#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138) ouverte. |
 | 2026-09-11 | Windows | **Catalog — panneau personnalisé du tri de la recherche.** Depuis `origin/main` (`359eea7`), remplacement du `select` natif de `/recherche` par un menu accessible qui conserve la pastille de déclenchement, affiche l’option active et ses descriptions, gère le focus/clavier et se ferme au clic extérieur. Validation TDD (RED/GREEN), 153 tests ChromeHeadless, build SSR/navigateur avec l’avertissement de budget initial connu, `graphify update .`, smoke desktop local à `127.0.0.1:4301` et rendu headless à `390×844` sans débordement. L’ouverture interactive du panneau en émulation mobile reste à refaire avec une surface dédiée ; aucun déploiement ni changement hors dépôt, PR à ouvrir. |
 | 2026-09-11 | Windows | **Correctif branding Entra — suppression du fond derrière la carte.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-auth-card-background`, le CSS partagé des écrans de connexion et de création de compte force un canvas uni et supprime `background-image`, ce qui masque les barres de l'ancien asset déjà stocké dans le tenant. Le runbook et la mémoire sont alignés. Validation : test statique rouge puis vert, parse PowerShell, `graphify update .` et `git diff --check` ; Pester reste bloqué par l'absence du module Graph local. PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte, aucun tenant ni déploiement modifié. |
