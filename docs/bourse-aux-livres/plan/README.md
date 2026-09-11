@@ -27,6 +27,7 @@ s'y réfère par leurs identifiants (`RG-nn`, `ENF-nn`, `DT-nn`, `QT-nn`, `R-nn`
 | [`01`](01-palier-0-sonde.md) | **Palier 0** — sonde de faisabilité, et les mesures qui décident de la suite | `S0-1` à `S0-5` | Fin |
 | [`02`](02-palier-1-socle-interne.md) | **Palier 1** — le socle interne : tri, quantités, bascule, caisse | `P1-1` à `P1-11` | Moyen |
 | [`03`](03-paliers-2-et-3.md) | **Paliers 2 et 3** — vitrine publique, puis alertes | — | **Grossier, volontairement** |
+| [`04`](04-statistiques-benevoles.md) | **Statistiques bénévoles** — contribution privée dans Scan et Catalog | — | Implémenté localement |
 
 **État d'exécution au 2026-09-06.** Le palier 2 est implémenté et déployé. Cette tranche
 complète le palier 3 côté backend/API/CQRS et interfaces : corrections et administration

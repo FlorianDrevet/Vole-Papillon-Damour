@@ -137,6 +137,24 @@ books/stock, fairs/statistics, sessions, alerts, members, and settings. The Cata
 owns the public member/watchlist flows; role assignment remains an Entra concern and
 physical cartons are not represented by the domain.
 
+## Private volunteer statistics
+
+The private contribution projection is a read-only CQRS query at
+`Application/Books/Queries/GetVolunteerStatistics`. `GET /scan/me/statistics` accepts only
+the authenticated `oid` and is protected by `ScanVolunteer` (`Tri` or `Caisse`); it never
+accepts a client-supplied volunteer id. The query derives triage totals from the volunteer's
+`ScanSession` counters and entry/rejection movements, sales from signed `BookMovements`,
+genres/rare flags from `Book`, fairs and optional `BookRevenue` from `AssoEvents`, and sent
+alert quantities from the alert outbox. It returns twelve monthly buckets, local Paris
+time slots, recent sessions, a team median, and cash breakdowns in one typed response.
+
+No schema change is needed: duration/cadence, tri-cash overlap, found-reader linkage, and
+revenue share are explicitly estimated from the append-only records and marked in the
+response. Corrections are netted against the linked sale movement before cash totals and
+revenue-share estimates are calculated. The query currently materializes the relevant
+ledger/read models for the projection; if the real catalogue grows materially, its measured
+query duration should drive a later SQL projection/index optimization.
+
 ## Scan session identity projection
 
 The Catalog scan-session opening endpoint ensures a local `User` projection from the

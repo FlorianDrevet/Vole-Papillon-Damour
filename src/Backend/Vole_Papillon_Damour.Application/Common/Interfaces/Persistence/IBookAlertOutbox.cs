@@ -28,6 +28,10 @@ public interface IBookAlertOutbox
         int pageSize,
         CancellationToken cancellationToken);
 
+    Task<int> GetSentItemCountForSessionsAsync(
+        IReadOnlyCollection<Guid> scanSessionIds,
+        CancellationToken cancellationToken);
+
     Task<int> CancelPendingAsync(
         Guid messageId,
         CancellationToken cancellationToken);

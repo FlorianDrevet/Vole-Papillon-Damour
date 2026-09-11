@@ -147,6 +147,16 @@ describe('CatalogAuthService', () => {
     expect(service.roles()).toEqual(['Administration']);
   });
 
+  it('recognizes tri and caisse roles as volunteer access', async () => {
+    client.acquireTokenSilent.and.resolveTo({
+      accessToken: createAccessToken(['Tri', 'Caisse']),
+    } as never);
+
+    await service.getApiAccessToken();
+
+    expect(service.isVolunteer()).toBeTrue();
+  });
+
   it('keeps the legacy Admin role compatible with the API policy', async () => {
     client.acquireTokenSilent.and.resolveTo({
       accessToken: createAccessToken(['Admin']),

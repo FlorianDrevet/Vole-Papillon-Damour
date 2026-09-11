@@ -77,8 +77,8 @@
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title">Ma liste de recherche.</h1>
-      <p class="account-lead">{{ watchlistIntro() }}</p>
+      <h1 id="account-title">{{ activeTab() === 'contribution' ? 'Ma contribution.' : 'Ma liste de recherche.' }}</h1>
+      <p class="account-lead">{{ activeTab() === 'contribution' ? contributionIntro() : watchlistIntro() }}</p>
     </div>
 
     @if (errorMessage()) {
@@ -100,6 +100,19 @@
         (click)="selectTab('watchlist')">
         Ma liste de recherche
       </button>
+      @if (isVolunteer()) {
+        <button
+          type="button"
+          role="tab"
+          id="account-contribution-tab"
+          class="account-tab"
+          [class.active]="activeTab() === 'contribution'"
+          [attr.aria-selected]="activeTab() === 'contribution'"
+          aria-controls="account-contribution-panel"
+          (click)="selectTab('contribution')">
+          Ma contribution
+        </button>
+      }
       <button
         type="button"
         role="tab"
@@ -185,6 +198,150 @@
           }
         } @else if (!errorMessage()) {
           <p class="account-state compact">Votre liste n’a pas pu être préparée.</p>
+        }
+      </section>
+    } @else if (activeTab() === 'contribution') {
+      <section
+        id="account-contribution-panel"
+        class="account-contribution-panel"
+        data-testid="account-contribution-panel"
+        role="tabpanel"
+        aria-labelledby="account-contribution-tab">
+        @if (contributionLoading()) {
+          <p class="account-state compact" role="status">Préparation de vos statistiques…</p>
+        } @else if (contribution(); as stats) {
+          <div class="contribution-heading">
+            <div>
+              <p class="eyebrow">Bénévole depuis {{ formatMonthYear(stats.memberSince) }}</p>
+              <h2>Ce que vous avez trié et encaissé.</h2>
+              <p>Une lecture personnelle de vos sessions, des livres gardés et de ce qu’ils sont devenus.</p>
+            </div>
+            <span class="contribution-private">Privé · visible par vous seul</span>
+          </div>
+
+          <div class="contribution-kpis" aria-label="Résumé de votre contribution">
+            <article class="contribution-kpi contribution-kpi-blue">
+              <p class="eyebrow">Livres scannés au tri</p>
+              <strong>{{ stats.scan.scannedCount | number:'1.0-0' }}</strong>
+              <span>{{ stats.scan.sessionCount }} session{{ stats.scan.sessionCount > 1 ? 's' : '' }}</span>
+            </article>
+            <article class="contribution-kpi contribution-kpi-orange">
+              <p class="eyebrow">Gardés pour la vente</p>
+              <strong>{{ stats.scan.keptCount | number:'1.0-0' }}</strong>
+              <span>{{ stats.scan.scannedCount ? ((stats.scan.keptCount / stats.scan.scannedCount) | percent:'1.0-0') : '—' }} · médiane équipe {{ stats.scan.medianTeamKeepRatePercent === null ? '—' : (stats.scan.medianTeamKeepRatePercent | number:'1.0-0') + ' %' }}</span>
+            </article>
+            <article class="contribution-kpi contribution-kpi-ink">
+              <p class="eyebrow">Livres encaissés</p>
+              <strong>{{ stats.cash.soldQuantity | number:'1.0-0' }}</strong>
+              <span>net de {{ stats.cash.voidedSaleQuantity }} annulation{{ stats.cash.voidedSaleQuantity > 1 ? 's' : '' }}</span>
+            </article>
+            <article class="contribution-kpi contribution-kpi-soft">
+              <p class="eyebrow">Temps donné</p>
+              <strong>{{ formatDuration(stats.scan.durationMinutes + stats.cash.estimatedDurationMinutes) }}</strong>
+              <span>{{ formatDuration(stats.scan.durationMinutes) }} tri + {{ formatDuration(stats.cash.estimatedDurationMinutes) }} caisse <i>estimé</i></span>
+            </article>
+            <article class="contribution-kpi contribution-kpi-wide">
+              <p class="eyebrow">Titres inédits apportés</p>
+              <strong>{{ stats.scan.impact.newTitleCount }}</strong>
+              <span>jamais vus au catalogue avant vous</span>
+            </article>
+          </div>
+
+          <section class="contribution-impact" aria-labelledby="contribution-impact-title">
+            <div>
+              <p class="eyebrow">Ce que cela a rendu possible</p>
+              <h3 id="contribution-impact-title">Des livres qui continuent leur chemin.</h3>
+            </div>
+            <div class="impact-numbers">
+              <div><strong>{{ stats.scan.impact.foundReaderCount }}</strong><span>ont trouvé un lecteur <i *ngIf="stats.scan.impact.foundReaderIsEstimated">estimé</i></span></div>
+              <div><strong>{{ stats.scan.impact.rareCount }}</strong><span>livre{{ stats.scan.impact.rareCount > 1 ? 's' : '' }} rare{{ stats.scan.impact.rareCount > 1 ? 's' : '' }} repéré{{ stats.scan.impact.rareCount > 1 ? 's' : '' }}</span></div>
+              <div><strong>{{ stats.scan.impact.alertItemCount }}</strong><span>alertes envoyées à des membres</span></div>
+            </div>
+          </section>
+
+          <div class="contribution-grid">
+            <section class="contribution-card contribution-chart-card" aria-labelledby="contribution-monthly-title">
+              <div class="contribution-card-heading">
+                <div><p class="eyebrow">Tri · douze derniers mois</p><h3 id="contribution-monthly-title">Vos livres, mois après mois.</h3></div>
+                <div class="chart-legend"><span class="legend-kept">Gardés</span><span class="legend-rejected">Écartés</span></div>
+              </div>
+              <div class="monthly-chart" role="img" aria-label="Livres gardés et écartés sur les douze derniers mois">
+                @for (month of stats.scan.monthly; track month.periodStart) {
+                  <div class="monthly-column">
+                    <div class="monthly-bars">
+                      <span class="monthly-bar kept" [style.height.%]="monthBarHeight(month, 'kept', stats.scan.monthly)"></span>
+                      <span class="monthly-bar rejected" [style.height.%]="monthBarHeight(month, 'rejected', stats.scan.monthly)"></span>
+                    </div>
+                    <span>{{ monthLabel(month) }}</span>
+                  </div>
+                }
+              </div>
+              <p class="chart-note">Les pics tombent juste avant les bourses. La médiane équipe de gardés est {{ stats.scan.medianTeamKeepRatePercent === null ? 'indisponible' : (stats.scan.medianTeamKeepRatePercent | number:'1.0-0') + ' %' }}.</p>
+            </section>
+
+            <section class="contribution-card" aria-labelledby="contribution-heatmap-title">
+              <div class="contribution-card-heading"><div><p class="eyebrow">Rythme de tri</p><h3 id="contribution-heatmap-title">Quand triez-vous ?</h3></div></div>
+              <div class="heatmap" role="img" aria-label="Répartition de vos scans par jour et moment de la journée">
+                @for (slot of contributionSlots; track slot) {
+                  <div class="heatmap-row">
+                    <span class="heatmap-label">{{ timeSlotLabel(slot) }}</span>
+                    <div class="heatmap-cells">
+                      @for (day of contributionDays; track day.value) {
+                        <span class="heatmap-cell" [class.busy]="timeSlotCount(stats.scan.timeSlots, day.value, slot) > 0" [style.opacity]="Math.min(1, .22 + timeSlotCount(stats.scan.timeSlots, day.value, slot) / Math.max(1, stats.scan.scannedCount) * 5)" [attr.title]="day.label + ' · ' + timeSlotLabel(slot)"></span>
+                      }
+                    </div>
+                  </div>
+                }
+                <div class="heatmap-days"><span></span>@for (day of contributionDays; track day.value) {<span>{{ day.label }}</span>}</div>
+              </div>
+            </section>
+
+            <section class="contribution-card" aria-labelledby="contribution-genres-title">
+              <div class="contribution-card-heading"><div><p class="eyebrow">Vos habitudes</p><h3 id="contribution-genres-title">Les genres que vous voyez le plus.</h3></div></div>
+              <div class="genre-list">
+                @for (genre of stats.scan.topGenres; track genre.name) {
+                  <div class="genre-row"><span>{{ genre.name }}</span><strong>{{ genre.quantity }}</strong><span class="genre-track"><i [style.width.%]="genreWidth(genre, stats.scan.topGenres)"></i></span></div>
+                } @empty {<p class="chart-note">Les genres apparaîtront quand les notices seront enrichies.</p>}
+              </div>
+            </section>
+
+            <section class="contribution-card contribution-cash-card" aria-labelledby="contribution-cash-title">
+              <div class="contribution-card-heading"><div><p class="eyebrow">Caisse · bourse après bourse</p><h3 id="contribution-cash-title">Le coup de feu, sans inventer le prix du livre.</h3></div></div>
+              <div class="fair-chart" role="img" aria-label="Livres encaissés par bourse">
+                @for (fair of stats.cash.fairBreakdown; track fair.id) {
+                  <div class="fair-column"><strong>{{ fair.netSoldQuantity }}</strong><span class="fair-bar" [style.height.%]="fairBarHeight(fair, stats.cash.fairBreakdown)"></span><small>{{ formatShortDate(fair.dateStart) }}</small></div>
+                } @empty {<p class="chart-note">Vos ventes par bourse apparaîtront ici.</p>}
+              </div>
+              <div class="cash-summary-line"><span>Cadence de vente</span><strong>{{ stats.cash.estimatedCadencePerHour === null ? '—' : stats.cash.estimatedCadencePerHour + ' livres/h' }} <i>estimé</i></strong></div>
+              <div class="cash-summary-line"><span>Annulations ou corrections</span><strong>{{ stats.cash.voidedSaleQuantity }} / {{ stats.cash.grossSoldQuantity }} <i>{{ stats.cash.grossSoldQuantity ? ((stats.cash.voidedSaleQuantity / stats.cash.grossSoldQuantity) | percent:'1.1-1') : '0 %' }}</i></strong></div>
+              @if (stats.cash.revenueShare; as share) {
+                <div class="revenue-share"><span>Votre part de la recette <i>estimé</i></span><strong>{{ formatCurrency(share.estimatedShare) }}</strong><small>{{ share.fairName }} · calcul d’ordre de grandeur à partir du total de la bourse</small></div>
+              }
+            </section>
+
+            <section class="contribution-card" aria-labelledby="contribution-sales-title">
+              <div class="contribution-card-heading"><div><p class="eyebrow">Vos meilleures ventes</p><h3 id="contribution-sales-title">Les titres passés par vos mains.</h3></div></div>
+              <div class="book-list">
+                @for (book of stats.cash.topBooks; track book.isbn13) {<div class="book-row"><span>{{ book.title }}</span><strong>{{ book.quantity }}</strong></div>}
+                @empty {<p class="chart-note">Les ventes apparaîtront après une première caisse.</p>}
+              </div>
+              <p class="overlap-note"><strong>{{ stats.cash.estimatedTriAndCashOverlap }}</strong> livre{{ stats.cash.estimatedTriAndCashOverlap > 1 ? 's' : '' }} que vous aviez trié{{ stats.cash.estimatedTriAndCashOverlap > 1 ? 's' : '' }}, vous les avez vendu{{ stats.cash.estimatedTriAndCashOverlap > 1 ? 's' : '' }} vous-même. <i>Rapprochement estimé par exemplaire.</i></p>
+            </section>
+          </div>
+
+          <section class="contribution-sessions" aria-labelledby="contribution-sessions-title">
+            <div class="contribution-card-heading"><div><p class="eyebrow">Journal récent</p><h3 id="contribution-sessions-title">Vos dernières sessions.</h3></div><span>{{ stats.scan.sessionCount }} session{{ stats.scan.sessionCount > 1 ? 's' : '' }}</span></div>
+            <div class="session-table-wrap">
+              <table class="contribution-session-table">
+                <thead><tr><th>Date</th><th>Mode</th><th>Durée</th><th>Scans</th><th>Gardés</th></tr></thead>
+                <tbody>@for (session of stats.scan.recentSessions; track session.id) {<tr><td>{{ formatShortDate(session.startedAt) }}</td><td>{{ session.mode === 'AvailableNow' ? 'Disponibles' : 'Prochaine bourse' }}</td><td>{{ formatDuration(session.durationMinutes) }}</td><td>{{ session.scannedCount }}</td><td>{{ session.keptRatePercent | number:'1.0-0' }} %</td></tr>}</tbody>
+              </table>
+            </div>
+          </section>
+
+          <p class="contribution-footnote"><span aria-hidden="true">···</span> Les durées de caisse, cadences, rapprochements et parts de recette soulignés sont reconstruits à partir des horodatages disponibles. Ils donnent un ordre de grandeur, pas un prix par livre. Cette page reste privée.</p>
+        } @else if (!errorMessage()) {
+          <p class="account-state compact">Vos statistiques n’ont pas encore pu être préparées.</p>
         }
       </section>
     } @else {

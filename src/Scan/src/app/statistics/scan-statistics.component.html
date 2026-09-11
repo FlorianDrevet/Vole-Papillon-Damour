@@ -1,0 +1,125 @@
+<section class="statistics-screen" aria-labelledby="statistics-title">
+  <header class="statistics-header">
+    <a class="statistics-back" routerLink="/accueil" aria-label="Retourner à l'accueil">‹ <span>Accueil</span></a>
+    <div class="statistics-kicker">
+      <p class="brand-label">Bourse aux livres</p>
+      @if (canSort && canSell) {
+        <div class="role-switch" aria-label="Choisir le rôle à afficher">
+          <button type="button" [class.active]="activeRole() === 'tri'" (click)="selectRole('tri')">Tri</button>
+          <button type="button" [class.active]="activeRole() === 'cash'" (click)="selectRole('cash')">Caisse</button>
+        </div>
+      } @else {
+        <span class="role-badge">{{ activeRole() === 'tri' ? 'TRI' : 'CAISSE' }}</span>
+      }
+    </div>
+    <h1 id="statistics-title">Mes stats</h1>
+    @if (statistics(); as stats) {
+      <p class="statistics-snapshot">
+        Instantané du {{ formatSnapshot(stats.generatedAt) }} · {{ displayName }}
+        @if (fromCache()) { <span class="cache-note">Dernier instantané local</span> }
+        @else { <span class="sync-note">Tout est synchronisé</span> }
+      </p>
+    } @else {
+      <p class="statistics-snapshot">Vos gestes, au même endroit.</p>
+    }
+    @if (pendingSynchronizationCount() > 0) {
+      <p class="pending-note">{{ pendingSynchronizationCount() }} geste{{ pendingSynchronizationCount() > 1 ? 's' : '' }} à synchroniser</p>
+    }
+  </header>
+
+  <div class="statistics-scroll">
+    @if (loading()) {
+      <p class="statistics-state" role="status">Préparation de vos statistiques…</p>
+    } @else if (statistics(); as stats) {
+      @if (activeRole() === 'tri') {
+        <section class="statistics-section" aria-labelledby="tri-statistics-title">
+          <div class="section-intro"><p class="section-label">Votre tri</p><h2 id="tri-statistics-title">Les livres que vous avez ouverts, un par un.</h2></div>
+
+          <div class="statistics-kpis">
+            <article class="statistics-kpi dark"><span>Temps de tri</span><strong>{{ formatDuration(stats.scan.durationMinutes) }}</strong><small>sur {{ stats.scan.sessionCount }} session{{ stats.scan.sessionCount > 1 ? 's' : '' }}</small></article>
+            <article class="statistics-kpi blue"><span>Livres scannés</span><strong>{{ stats.scan.scannedCount | number:'1.0-0' }}</strong><small>depuis votre première session</small></article>
+            <article class="statistics-kpi orange"><span>Gardés</span><strong>{{ stats.scan.scannedCount ? ((stats.scan.keptCount / stats.scan.scannedCount) | percent:'1.0-0') : '—' }}</strong><small>{{ stats.scan.keptCount }} gardés · {{ stats.scan.rejectedCount }} écartés</small></article>
+            <article class="statistics-kpi soft"><span>Cadence équipe</span><strong>{{ stats.scan.medianTeamKeepRatePercent === null ? '—' : (stats.scan.medianTeamKeepRatePercent | number:'1.0-0') + ' %' }}</strong><small>médiane de gardés</small></article>
+          </div>
+
+          <div class="statistics-grid">
+            <section class="statistics-card wide" aria-labelledby="tri-monthly-title">
+              <div class="card-heading"><div><p class="section-label">Tri · douze derniers mois</p><h3 id="tri-monthly-title">Votre rythme.</h3></div><div class="legend"><span class="kept">Gardés</span><span class="rejected">Écartés</span></div></div>
+              <div class="monthly-chart" role="img" aria-label="Gardés et écartés par mois">
+                @for (month of stats.scan.monthly; track month.periodStart) {
+                  <div class="month-column"><div class="month-bars"><i class="month-bar kept" [style.height.%]="monthBarHeight(month, 'kept', stats.scan.monthly)"></i><i class="month-bar rejected" [style.height.%]="monthBarHeight(month, 'rejected', stats.scan.monthly)"></i></div><small>{{ monthLabel(month) }}</small></div>
+                }
+              </div>
+              <p class="card-note">Les douze derniers mois · gardés et écartés, sans classement entre bénévoles.</p>
+            </section>
+
+            <section class="statistics-card" aria-labelledby="tri-when-title">
+              <div class="card-heading"><div><p class="section-label">Votre rythme</p><h3 id="tri-when-title">Quand triez-vous ?</h3></div></div>
+              <div class="heatmap" role="img" aria-label="Répartition des scans par jour et moment">
+                @for (slot of contributionSlots; track slot) {
+                  <div class="heatmap-row"><span>{{ timeSlotLabel(slot) }}</span><div>@for (day of contributionDays; track day.value) {<i [class.busy]="timeSlotCount(stats.scan.timeSlots, day.value, slot) > 0" [style.opacity]="Math.min(1, .22 + timeSlotCount(stats.scan.timeSlots, day.value, slot) / Math.max(1, stats.scan.scannedCount) * 5)" [attr.title]="day.label + ' · ' + timeSlotLabel(slot)"></i>}</div></div>
+                }
+                <div class="heatmap-days"><span></span>@for (day of contributionDays; track day.value) {<small>{{ day.label }}</small>}</div>
+              </div>
+              <p class="card-note">Les cellules les plus pleines montrent vos moments de tri.</p>
+            </section>
+
+            <section class="statistics-card" aria-labelledby="tri-impact-title">
+              <div class="card-heading"><div><p class="section-label">Votre impact</p><h3 id="tri-impact-title">Des livres remis en circulation.</h3></div></div>
+              <div class="impact-list"><div><strong>{{ stats.scan.impact.foundReaderCount }}</strong><span>ont trouvé un lecteur <i *ngIf="stats.scan.impact.foundReaderIsEstimated">estimé</i></span></div><div><strong>{{ stats.scan.impact.newTitleCount }}</strong><span>titres inédits au catalogue</span></div><div><strong>{{ stats.scan.impact.rareCount }}</strong><span>livres rares repérés</span></div><div><strong>{{ stats.scan.impact.alertItemCount }}</strong><span>alertes envoyées à des membres</span></div></div>
+            </section>
+
+            <section class="statistics-card" aria-labelledby="tri-genres-title">
+              <div class="card-heading"><div><p class="section-label">Vos habitudes</p><h3 id="tri-genres-title">Les genres que vous voyez le plus.</h3></div></div>
+              <div class="genre-list">@for (genre of stats.scan.topGenres; track genre.name) {<div><span>{{ genre.name }}</span><strong>{{ genre.quantity }}</strong><i><b [style.width.%]="genreWidth(genre, stats.scan.topGenres)"></b></i></div>} @empty {<p class="card-note">Les genres apparaîtront quand les notices seront enrichies.</p>}</div>
+            </section>
+          </div>
+
+          <section class="statistics-card sessions-card" aria-labelledby="tri-sessions-title">
+            <div class="card-heading"><div><p class="section-label">Journal récent</p><h3 id="tri-sessions-title">Vos dernières sessions.</h3></div><span class="session-count">{{ stats.scan.sessionCount }} au total</span></div>
+            <div class="session-table-wrap"><table><thead><tr><th>Date</th><th>Durée</th><th>Scans</th><th>Gardés</th><th>Mode</th></tr></thead><tbody>@for (session of stats.scan.recentSessions; track session.id) {<tr><td>{{ formatShortDate(session.startedAt) }}</td><td>{{ formatDuration(session.durationMinutes) }}</td><td>{{ session.scannedCount }}</td><td>{{ session.keptRatePercent | number:'1.0-0' }} %</td><td>{{ session.mode === 'AvailableNow' ? 'Disponibles' : 'Prochaine bourse' }}</td></tr>}</tbody></table></div>
+          </section>
+        </section>
+      } @else {
+        <section class="statistics-section" aria-labelledby="cash-statistics-title">
+          <div class="section-intro"><p class="section-label">Votre caisse</p><h2 id="cash-statistics-title">Le coup de feu, avec les chiffres qui résistent.</h2></div>
+
+          <div class="statistics-kpis">
+            <article class="statistics-kpi dark"><span>Livres vendus par vos mains</span><strong>{{ stats.cash.soldQuantity | number:'1.0-0' }}</strong><small>net de {{ stats.cash.voidedSaleQuantity }} annulation{{ stats.cash.voidedSaleQuantity > 1 ? 's' : '' }}</small></article>
+            <article class="statistics-kpi orange"><span>Temps en caisse</span><strong>{{ formatDuration(stats.cash.estimatedDurationMinutes) }}</strong><small><i>estimé à partir des horodatages</i></small></article>
+            <article class="statistics-kpi blue"><span>Cadence de vente</span><strong>{{ stats.cash.estimatedCadencePerHour === null ? '—' : stats.cash.estimatedCadencePerHour + ' /h' }}</strong><small><i>médiane équipe {{ stats.cash.medianTeamCadencePerHour === null ? '—' : stats.cash.medianTeamCadencePerHour + ' /h' }}</i></small></article>
+          </div>
+
+          <div class="statistics-grid">
+            <section class="statistics-card wide" aria-labelledby="cash-fairs-title">
+              <div class="card-heading"><div><p class="section-label">Bourse après bourse</p><h3 id="cash-fairs-title">Vos ventes se répondent.</h3></div><span class="session-count">{{ stats.cash.fairCount }} bourse{{ stats.cash.fairCount > 1 ? 's' : '' }}</span></div>
+              <div class="fair-chart" role="img" aria-label="Ventes nettes par bourse">@for (fair of stats.cash.fairBreakdown; track fair.id) {<div><strong>{{ fair.netSoldQuantity }}</strong><i [style.height.%]="fairBarHeight(fair, stats.cash.fairBreakdown)"></i><small>{{ formatShortDate(fair.dateStart) }}</small></div>} @empty {<p class="card-note">Vos ventes par bourse apparaîtront après une première caisse.</p>}</div>
+              @if (stats.cash.peak.localHour !== null) {<div class="peak-line"><span>Le coup de feu</span><strong>{{ stats.cash.peak.localHour }} h · {{ stats.cash.peak.quantity }} livres/h</strong></div>}
+            </section>
+
+            <section class="statistics-card" aria-labelledby="cash-corrections-title">
+              <div class="card-heading"><div><p class="section-label">Fiabilité du geste</p><h3 id="cash-corrections-title">Annulations et corrections.</h3></div></div>
+              <div class="correction-number"><strong>{{ stats.cash.voidedSaleQuantity }}</strong><span>sur {{ stats.cash.grossSoldQuantity }} livres encaissés</span><b>{{ stats.cash.grossSoldQuantity ? ((stats.cash.voidedSaleQuantity / stats.cash.grossSoldQuantity) | percent:'1.1-1') : '0 %' }}</b></div>
+              <p class="card-note">Les annulations restent visibles dans le ledger et ne sont pas comptées deux fois dans le net.</p>
+            </section>
+
+            <section class="statistics-card" aria-labelledby="cash-books-title">
+              <div class="card-heading"><div><p class="section-label">Vos meilleures ventes</p><h3 id="cash-books-title">Les titres passés par vos mains.</h3></div></div>
+              <div class="book-list">@for (book of stats.cash.topBooks; track book.isbn13) {<div><span>{{ book.title }}</span><strong>{{ book.quantity }}</strong></div>} @empty {<p class="card-note">Les ventes apparaîtront après une première caisse.</p>}</div>
+              <p class="overlap-note"><strong>{{ stats.cash.estimatedTriAndCashOverlap }}</strong> livres que vous aviez triés, vous les avez vendus vous-même. <i>Rapprochement estimé par exemplaire.</i></p>
+            </section>
+
+            <section class="statistics-card" aria-labelledby="cash-revenue-title">
+              <div class="card-heading"><div><p class="section-label">Part de la recette</p><h3 id="cash-revenue-title">Un ordre de grandeur, pas un prix par livre.</h3></div></div>
+              @if (stats.cash.revenueShare; as share) {<div class="revenue-number"><strong>{{ formatCurrency(share.estimatedShare) }}</strong><span>sur {{ share.fairName }} · {{ share.volunteerSoldQuantity }} / {{ share.fairSoldQuantity }} livres</span></div>} @else {<p class="card-note">La recette de la dernière bourse n’est pas encore renseignée.</p>}
+              <p class="card-note"><i>Cette valeur est estimée à partir de la recette globale de la bourse.</i></p>
+            </section>
+          </div>
+        </section>
+      }
+      <p class="statistics-footnote"><span>···</span> Les valeurs de caisse, les cadences, le rapprochement tri/caisse et la part de recette sont reconstruits à partir des horodatages disponibles. Dernier instantané : {{ formatSnapshot(stats.generatedAt) }}. Cette page est privée.</p>
+    } @else {
+      <div class="statistics-state" role="status"><h2>Pas encore de statistique.</h2><p>{{ errorMessage() }}</p><button type="button" (click)="load()">Réessayer</button></div>
+    }
+  </div>
+</section>

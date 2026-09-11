@@ -17,6 +17,7 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
+using Vole_Papillon_Damour.Application.Books.Queries.GetVolunteerStatistics;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatchlistItem;
@@ -347,6 +348,29 @@ public static class BookController
                 .WithName("GetScanCatalogDelta")
                 .RequireAuthorization("ScanVolunteer");
 
+            endpoints.MapGet(
+                    "/scan/me/statistics",
+                    async (
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetVolunteerStatisticsQuery(volunteerId),
+                            cancellationToken);
+
+                        return result.Match(
+                            statistics => Results.Ok(ToResponse(statistics)),
+                            error => error.Result());
+                    })
+                .WithName("GetMyVolunteerStatistics")
+                .RequireAuthorization("ScanVolunteer");
+
             endpoints.MapPost(
                     "/scan/sales",
                     async (
@@ -586,6 +610,98 @@ public static class BookController
             result.ScannedCount,
             result.KeptCount,
             result.RejectedCount);
+    }
+
+    private static VolunteerStatisticsResponse ToResponse(VolunteerStatisticsResult result)
+    {
+        return new VolunteerStatisticsResponse(
+            result.GeneratedAt,
+            result.MemberSince,
+            ToResponse(result.Scan),
+            ToResponse(result.Cash));
+    }
+
+    private static VolunteerScanStatisticsResponse ToResponse(
+        VolunteerScanStatisticsResult result)
+    {
+        return new VolunteerScanStatisticsResponse(
+            result.ScannedCount,
+            result.KeptCount,
+            result.RejectedCount,
+            result.SessionCount,
+            result.DurationMinutes,
+            result.FirstSessionAt,
+            result.MedianTeamKeepRatePercent,
+            result.Monthly.Select(month => new VolunteerMonthlyStatisticsResponse(
+                month.PeriodStart,
+                month.Kept,
+                month.Rejected)).ToArray(),
+            result.TimeSlots.Select(slot => new VolunteerTimeSlotStatisticsResponse(
+                slot.DayOfWeek,
+                slot.Slot,
+                slot.Count)).ToArray(),
+            new VolunteerImpactStatisticsResponse(
+                result.Impact.FoundReaderCount,
+                result.Impact.NewTitleCount,
+                result.Impact.RareCount,
+                result.Impact.AlertItemCount,
+                result.Impact.FoundReaderIsEstimated),
+            result.TopGenres.Select(genre => new VolunteerGenreStatisticsResponse(
+                genre.Name,
+                genre.Quantity)).ToArray(),
+            result.RecentSessions.Select(session => new VolunteerSessionStatisticsResponse(
+                session.Id,
+                session.StartedAt,
+                session.DurationMinutes,
+                session.ScannedCount,
+                session.KeptRatePercent,
+                session.Mode)).ToArray());
+    }
+
+    private static VolunteerCashStatisticsResponse ToResponse(
+        VolunteerCashStatisticsResult result)
+    {
+        return new VolunteerCashStatisticsResponse(
+            result.GrossSoldQuantity,
+            result.SoldQuantity,
+            result.SaleMovementCount,
+            result.VoidedSaleQuantity,
+            result.FairCount,
+            result.EstimatedDurationMinutes,
+            result.EstimatedCadencePerHour,
+            result.MedianTeamCadencePerHour,
+            result.FairBreakdown.Select(fair => new VolunteerFairStatisticsResponse(
+                fair.Id,
+                fair.Name,
+                fair.DateStart,
+                fair.NetSoldQuantity)).ToArray(),
+            new VolunteerPeakStatisticsResponse(
+                result.Peak.FairDate,
+                result.Peak.LocalHour,
+                result.Peak.Quantity),
+            result.TopBooks.Select(book => new VolunteerBookStatisticsResponse(
+                book.Isbn13,
+                book.Title,
+                book.Quantity)).ToArray(),
+            result.TopGenres.Select(genre => new VolunteerGenreStatisticsResponse(
+                genre.Name,
+                genre.Quantity)).ToArray(),
+            result.EstimatedTriAndCashOverlap,
+            result.EstimatedRevenueShare,
+            result.RevenueShare is null
+                ? null
+                : new VolunteerRevenueShareResponse(
+                    result.RevenueShare.FairId,
+                    result.RevenueShare.FairName,
+                    result.RevenueShare.FairDate,
+                    result.RevenueShare.FairRevenue,
+                    result.RevenueShare.VolunteerSoldQuantity,
+                    result.RevenueShare.FairSoldQuantity,
+                    result.RevenueShare.EstimatedShare),
+            result.DurationIsEstimated,
+            result.CadenceIsEstimated,
+            result.RevenueShareIsEstimated,
+            result.TriAndCashOverlapIsEstimated);
     }
 
     private static ScanBookResponse ToResponse(ScanBookResult result)

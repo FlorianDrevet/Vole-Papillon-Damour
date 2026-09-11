@@ -10,7 +10,7 @@ import {
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
-import {CatalogWatchlistResponse} from '../../core/catalog.models';
+import {CatalogVolunteerStatisticsResponse, CatalogWatchlistResponse} from '../../core/catalog.models';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 
 describe('CatalogAccountPageComponent', () => {
@@ -20,6 +20,7 @@ describe('CatalogAccountPageComponent', () => {
     initialized: WritableSignal<boolean>;
     isAuthenticated: WritableSignal<boolean>;
     isAdministrator: WritableSignal<boolean>;
+    isVolunteer: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
     initialize: jasmine.Spy;
     login: jasmine.Spy;
@@ -71,12 +72,79 @@ describe('CatalogAccountPageComponent', () => {
     }],
   };
 
+  const volunteerStatistics: CatalogVolunteerStatisticsResponse = {
+    generatedAt: '2026-09-11T12:00:00Z',
+    memberSince: '2024-03-01T12:00:00Z',
+    scan: {
+      scannedCount: 12,
+      keptCount: 9,
+      rejectedCount: 3,
+      sessionCount: 2,
+      durationMinutes: 80,
+      firstSessionAt: '2024-03-01T12:00:00Z',
+      medianTeamKeepRatePercent: 74,
+      monthly: [{periodStart: '2026-09-01T00:00:00Z', kept: 9, rejected: 3}],
+      timeSlots: [{dayOfWeek: 6, slot: 'morning', count: 12}],
+      impact: {
+        foundReaderCount: 5,
+        newTitleCount: 2,
+        rareCount: 1,
+        alertItemCount: 3,
+        foundReaderIsEstimated: true,
+      },
+      topGenres: [{name: 'Romans', quantity: 6}],
+      recentSessions: [{
+        id: 'session-1',
+        startedAt: '2026-09-06T08:00:00Z',
+        durationMinutes: 50,
+        scannedCount: 8,
+        keptRatePercent: 75,
+        mode: 'AvailableNow',
+      }],
+    },
+    cash: {
+      grossSoldQuantity: 4,
+      soldQuantity: 4,
+      saleMovementCount: 4,
+      voidedSaleQuantity: 0,
+      fairCount: 1,
+      estimatedDurationMinutes: 45,
+      estimatedCadencePerHour: 5,
+      medianTeamCadencePerHour: 6,
+      fairBreakdown: [{
+        id: 'fair-1',
+        name: 'Bourse de juin',
+        dateStart: '2026-06-01T00:00:00Z',
+        netSoldQuantity: 4,
+      }],
+      peak: {fairDate: '2026-06-01T00:00:00Z', localHour: 11, quantity: 2},
+      topBooks: [{isbn13: '9782070363735', title: 'Le livre suivi', quantity: 2}],
+      topGenres: [{name: 'Romans', quantity: 4}],
+      estimatedTriAndCashOverlap: 1,
+      estimatedRevenueShare: 12,
+      revenueShare: {
+        fairId: 'fair-1',
+        fairName: 'Bourse de juin',
+        fairDate: '2026-06-01T00:00:00Z',
+        fairRevenue: 100,
+        volunteerSoldQuantity: 4,
+        fairSoldQuantity: 30,
+        estimatedShare: 12,
+      },
+      durationIsEstimated: true,
+      cadenceIsEstimated: true,
+      revenueShareIsEstimated: true,
+      triAndCashOverlapIsEstimated: true,
+    },
+  };
+
   beforeEach(async () => {
     auth = {
       account: signal<AccountInfo | null>(null),
       initialized: signal(true),
       isAuthenticated: signal(false),
       isAdministrator: signal(false),
+      isVolunteer: signal(false),
       error: signal<string | null>(null),
       initialize: jasmine.createSpy('initialize'),
       login: jasmine.createSpy('login'),
@@ -92,9 +160,10 @@ describe('CatalogAccountPageComponent', () => {
 
     api = jasmine.createSpyObj<CatalogMemberApiService>(
       'CatalogMemberApiService',
-      ['getWatchlist', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
+      ['getWatchlist', 'getVolunteerStatistics', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
     );
     api.getWatchlist.and.returnValue(of(watchlist));
+    api.getVolunteerStatistics.and.returnValue(of(volunteerStatistics));
     api.removeWatchlistItem.and.returnValue(of(void 0));
     api.setAlertStatus.and.returnValue(of({alertStatus: 'Suspended', bounceCount: 0, changed: true}));
     api.deleteAccount.and.returnValue(of(void 0));
@@ -214,6 +283,30 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="account-preferences-panel"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Mes alertes e-mail.');
+  });
+
+  it('exposes contribution as a third tab only to a volunteer and loads both roles together', async () => {
+    auth.account.set(account('Volunteer'));
+    auth.isAuthenticated.set(true);
+    auth.isVolunteer.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
+    expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
+      'Ma liste de recherche',
+      'Ma contribution',
+      'Préférences et compte',
+    ]);
+    expect(api.getVolunteerStatistics).toHaveBeenCalledWith('member-token');
+
+    tabs[1]?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="account-contribution-panel"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Ce que vous avez trié et encaissé');
+    expect(fixture.nativeElement.textContent).toContain('Livres encaissés');
   });
 
   it('renders a watchlist card with its availability and alert history', async () => {

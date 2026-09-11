@@ -82,6 +82,24 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-12 — statistiques privées des bénévoles
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-volunteer-statistics`, cette tranche implémente la vue « Mes stats »
+de la maquette dans `src/Scan` et « Ma contribution » dans le compte Catalog. Le backend
+expose `GET /scan/me/statistics`, protégé par `ScanVolunteer`, et reconstruit les chiffres
+personnels depuis les sessions, mouvements, livres, bourses et alertes envoyées. Les durées
+de caisse, cadences, rapprochements, liens lecteur et parts de recette restent explicitement
+estimés ; aucune migration ni donnée Azure/Entra n'est touchée.
+
+Validation locale après rebase : Application 207, Infrastructure 97, API 23, Scan
+ChromeHeadless 178, Catalog ChromeHeadless 168, builds Scan/Catalog et API passants. Le warning
+de budget initial Catalog reste celui du dépôt ; le build complet reste limité par le projet
+Worker et sa résolution locale de `Azure.Functions.Sdk`. Le smoke connecté sur compte `Tri`,
+`Caisse` et double rôle, ainsi que le recontrôle mobile post-déploiement, restent à faire.
+La PR [#149](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/149) est ouverte ;
+aucun déploiement ni merge n'a été effectué.
+
 ### État actualisé — 2026-09-11 — toasts de validation de l'administration Catalog
 
 Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, les
