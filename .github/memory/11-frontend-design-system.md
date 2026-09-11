@@ -66,6 +66,10 @@ body controls use Libre Franklin. The shell collapses the sidebar and content gu
 tablet/mobile breakpoints; physical inventory history/actions remain truthful empty or
 disabled when the API has no corresponding domain contract.
 
+Action confirmations and validation errors use a single fixed toast with the same paper/ink,
+blue/orange and restrained-shadow language; it is live-region accessible, dismissible, and
+responsive to the mobile header offset without shifting the administration layout.
+
 ### Catalogue V2 — convention canonique
 
 The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-aux-livres/maquettes/catalogue/V2-CONVENTION.md).

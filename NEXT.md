@@ -82,6 +82,20 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — toasts de validation de l'administration Catalog
+
+Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, les
+confirmations et erreurs de validation de l'administration Catalog sont regroupées dans un
+toast fixe, accessible et fermable. Il reste au-dessus du flux de page, se repositionne sous
+le header sur mobile et ne permet plus à un ancien succès de rester affiché avec une erreur de
+validation ; les messages de chargement et les états contextuels restent dans le contenu.
+
+Validation : TDD rouge puis vert, 165 tests Catalog ChromeHeadless, build SSR/navigateur avec
+l'avertissement de budget initial connu, `graphify update .` et `git diff --check`. Le smoke
+manuel avec un compte administrateur reste à refaire ; aucun déploiement ni changement Azure,
+Entra, compte ou API publique n'a été effectué. La PR [#146](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/146)
+est ouverte ; aucun déploiement n'a été effectué.
+
 ### État actualisé — 2026-09-11 — noms séparés Entra dans le Catalog
 
 Le formulaire public collecte maintenant `givenName` et `surname`, et non plus
@@ -1237,6 +1251,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Catalog — toasts de validation de l’administration.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, regroupement des succès et erreurs dans un toast fixe, accessible et fermable, avec remplacement atomique des états de feedback pour éviter les messages périmés. Validation : TDD rouge puis vert, 165 tests Catalog ChromeHeadless, build SSR/navigateur avec l’avertissement de budget initial connu, `graphify update .` et `git diff --check` ; smoke connecté à refaire, aucun déploiement ni changement hors dépôt. PR [#146](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/146) ouverte. |
 | 2026-09-11 | Windows | **Catalog — sélection des statistiques par bourse.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-admin-statistics-date`, les options de la liste des statistiques affichent désormais la date de la bourse (et sa plage si nécessaire) avant le nom et le statut, afin de distinguer les éditions qui partagent « Bourse aux livres ». Ajout d’une régression Angular avec deux bourses au même nom. Validation : test rouge puis vert, 161 tests Catalog ChromeHeadless, build SSR/navigateur, smoke local à 390×844 et 1280×900 sans débordement, `graphify update .` et aucun déploiement ni changement hors dépôt. |
 | 2026-09-11 | Windows | **Catalog/Entra — synchronisation du `displayName`.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-name-claims`, l'API met à jour le `displayName` Graph depuis `givenName + surname` lors des requêtes membres, avec cache des succès et reprise après échec ; la projection locale reste disponible si Graph est indisponible. Ajout du script `Sync-EntraDisplayNames.ps1` pour les comptes existants, protégé par `-WhatIf`, avec 4 tests Pester. Validation finale : 368 tests backend, 160 tests Catalog, builds backend/Catalog, parse PowerShell, 4+5+9 tests Pester, Graphify et `git diff --check` passants. PR #140 mise à jour ; aucun changement Entra réel. |
 

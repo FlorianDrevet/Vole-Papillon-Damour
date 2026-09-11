@@ -285,8 +285,12 @@ export class CatalogAdministrationPageComponent implements OnInit {
     try {
       await this.auth.login('/administration');
     } catch {
-      this.errorMessage.set('La connexion n’a pas pu être démarrée. Réessayez.');
+      this.showError('La connexion n’a pas pu être démarrée. Réessayez.');
     }
+  }
+
+  dismissFeedback(): void {
+    this.clearFeedback();
   }
 
   async selectSection(section: CatalogAdminSection): Promise<void> {
@@ -391,7 +395,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   async addBook(): Promise<void> {
     if (!this.addBookForm.isbn13.trim() || !this.addBookForm.note.trim()) {
-      this.errorMessage.set('ISBN et note d’ajout sont obligatoires.');
+      this.showError('ISBN et note d’ajout sont obligatoires.');
       return;
     }
 
@@ -409,7 +413,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         genre: this.optional(this.addBookForm.genre),
         workId: this.optional(this.addBookForm.workId),
       }));
-      this.successMessage.set('La fiche a été ajoutée au catalogue.');
+      this.showSuccess('La fiche a été ajoutée au catalogue.');
       await this.loadBooks();
     });
   }
@@ -428,7 +432,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         workId: this.optional(this.metadataForm.workId),
         fields: ['Title', 'Authors', 'Publisher', 'PublicationYear', 'PhysicalFormat', 'Language', 'Genre', 'WorkId'],
       }));
-      this.successMessage.set('Les métadonnées ont été enregistrées.');
+      this.showSuccess('Les métadonnées ont été enregistrées.');
       await this.openBook(book.isbn13);
       await this.loadBooks();
     });
@@ -437,7 +441,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   async correctBookQuantity(book: CatalogAdminBook): Promise<void> {
     const quantity = Number(this.quantityCorrection);
     if (!Number.isInteger(quantity) || quantity < 0 || !this.quantityNote.trim()) {
-      this.errorMessage.set('La quantité doit être un entier positif et la note est obligatoire.');
+      this.showError('La quantité doit être un entier positif et la note est obligatoire.');
       return;
     }
 
@@ -450,7 +454,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         quantityAvailable: quantity,
         note: this.quantityNote.trim(),
       }));
-      this.successMessage.set('La correction de stock a été journalisée.');
+      this.showSuccess('La correction de stock a été journalisée.');
       await this.openBook(book.isbn13);
       await this.loadBooks();
     });
@@ -459,7 +463,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   async withdrawBook(book: CatalogAdminBook): Promise<void> {
     const quantity = Number(this.withdrawalQuantity);
     if (!Number.isInteger(quantity) || quantity <= 0 || !this.withdrawalNote.trim()) {
-      this.errorMessage.set('La quantité retirée doit être positive et la note est obligatoire.');
+      this.showError('La quantité retirée doit être positive et la note est obligatoire.');
       return;
     }
 
@@ -472,7 +476,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         quantity,
         note: this.withdrawalNote.trim(),
       }));
-      this.successMessage.set('Le retrait a été journalisé.');
+      this.showSuccess('Le retrait a été journalisé.');
       await this.openBook(book.isbn13);
       await this.loadBooks();
     });
@@ -481,7 +485,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   async correctAnnouncement(book: CatalogAdminBook, announcementId: string): Promise<void> {
     const quantity = Number(this.announcementQuantities[announcementId]);
     if (!Number.isInteger(quantity) || quantity < 0 || !this.announcementNote.trim()) {
-      this.errorMessage.set('La quantité annoncée doit être positive ou nulle et la note est obligatoire.');
+      this.showError('La quantité annoncée doit être positive ou nulle et la note est obligatoire.');
       return;
     }
 
@@ -494,7 +498,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         quantity,
         note: this.announcementNote.trim(),
       }));
-      this.successMessage.set('La correction de l’annonce a été journalisée.');
+      this.showSuccess('La correction de l’annonce a été journalisée.');
       await this.openBook(book.isbn13);
       await this.loadBooks();
     });
@@ -507,7 +511,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   async toggleRare(book: CatalogAdminBook): Promise<void> {
     await this.run('rare', async token => {
       await firstValueFrom(this.api.setRare(token, book.isbn13, !book.isRare));
-      this.successMessage.set(book.isRare ? 'Le signal rare a été retiré.' : 'Le livre est marqué comme rare.');
+      this.showSuccess(book.isRare ? 'Le signal rare a été retiré.' : 'Le livre est marqué comme rare.');
       await this.openBook(book.isbn13);
       await this.loadBooks();
     });
@@ -516,7 +520,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   async toggleVisibility(book: CatalogAdminBook): Promise<void> {
     await this.run('visibility', async token => {
       await firstValueFrom(this.api.setVisibility(token, book.isbn13, !book.isHidden));
-      this.successMessage.set(book.isHidden ? 'La fiche est à nouveau visible.' : 'La fiche est masquée du catalogue public.');
+      this.showSuccess(book.isHidden ? 'La fiche est à nouveau visible.' : 'La fiche est masquée du catalogue public.');
       await this.openBook(book.isbn13);
       await this.loadBooks();
     });
@@ -525,7 +529,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   async mergeBook(book: CatalogAdminBook): Promise<void> {
     const target = this.mergeTargetIsbn13.trim();
     if (!target || !this.mergeNote.trim()) {
-      this.errorMessage.set('ISBN cible et note de fusion sont obligatoires.');
+      this.showError('ISBN cible et note de fusion sont obligatoires.');
       return;
     }
 
@@ -538,7 +542,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         targetIsbn13: target,
         note: this.mergeNote.trim(),
       }));
-      this.successMessage.set('La fiche source est redirigée vers la fiche canonique.');
+      this.showSuccess('La fiche source est redirigée vers la fiche canonique.');
       this.selectedBook.set(null);
       await this.loadBooks();
     });
@@ -551,7 +555,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('delete-book', async token => {
       await firstValueFrom(this.api.deleteBook(token, book.isbn13));
-      this.successMessage.set('La fiche a été supprimée.');
+      this.showSuccess('La fiche a été supprimée.');
       this.selectedBook.set(null);
       await this.loadBooks();
     });
@@ -594,13 +598,13 @@ export class CatalogAdministrationPageComponent implements OnInit {
       ? null
       : Number(this.revenueInput);
     if (revenue !== null && (!Number.isFinite(revenue) || revenue < 0)) {
-      this.errorMessage.set('La recette doit être positive ou vide.');
+      this.showError('La recette doit être positive ou vide.');
       return;
     }
 
     await this.run('revenue', async token => {
       await firstValueFrom(this.api.setFairRevenue(token, stats.fair.id, revenue));
-      this.successMessage.set('La recette de la bourse aux livres a été enregistrée.');
+      this.showSuccess('La recette de la bourse aux livres a été enregistrée.');
       await this.openFairStats(stats.fair);
       await this.loadFairs();
     });
@@ -704,7 +708,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('remove-movement', async token => {
       await firstValueFrom(this.api.removeMovement(token, session.id, movementId));
-      this.successMessage.set('Le mouvement a été renversé et reste visible dans le ledger.');
+      this.showSuccess('Le mouvement a été renversé et reste visible dans le ledger.');
       await this.openSession(session.id);
       await this.loadSessions();
     });
@@ -721,7 +725,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         mode: this.sessionMode,
         targetAssoEventsId: this.sessionFairId || null,
       }));
-      this.successMessage.set('La session a été corrigée et son historique est conservé.');
+      this.showSuccess('La session a été corrigée et son historique est conservé.');
       await this.openSession(session.id);
       await this.loadSessions();
     });
@@ -735,7 +739,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('cancel-session', async token => {
       await firstValueFrom(this.api.cancelSession(token, session.id));
-      this.successMessage.set('La session a été annulée avec une correction tracée.');
+      this.showSuccess('La session a été annulée avec une correction tracée.');
       await this.openSession(session.id);
       await this.loadSessions();
     });
@@ -749,7 +753,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('cancel-session-alerts', async token => {
       await firstValueFrom(this.api.cancelSessionAlerts(token, session.id));
-      this.successMessage.set('Les alertes non envoyées ont été annulées.');
+      this.showSuccess('Les alertes non envoyées ont été annulées.');
       await this.openSession(session.id);
       await this.loadSessions();
     });
@@ -763,7 +767,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('force-session-alerts', async token => {
       await firstValueFrom(this.api.forceSessionAlerts(token, session.id));
-      this.successMessage.set('Les alertes en attente ont été forcées.');
+      this.showSuccess('Les alertes en attente ont été forcées.');
       await this.openSession(session.id);
       await this.loadSessions();
     });
@@ -786,7 +790,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
     }
     await this.run('cancel-alert', async token => {
       await firstValueFrom(this.api.cancelAlert(token, alert.id));
-      this.successMessage.set('L’alerte a été annulée.');
+      this.showSuccess('L’alerte a été annulée.');
       await this.loadAlerts();
     });
   }
@@ -797,7 +801,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
     }
     await this.run('force-alert', async token => {
       await firstValueFrom(this.api.forceAlert(token, alert.id));
-      this.successMessage.set('L’alerte a été forcée.');
+      this.showSuccess('L’alerte a été forcée.');
       await this.loadAlerts();
     });
   }
@@ -828,7 +832,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   async createAccount(): Promise<void> {
     const form = this.createAccountForm;
     if (!form.email.trim() || !form.displayName.trim() || form.temporaryPassword.length < 8 || form.roles.length === 0) {
-      this.errorMessage.set('E-mail, nom, mot de passe temporaire et au moins un droit sont obligatoires.');
+      this.showError('E-mail, nom, mot de passe temporaire et au moins un droit sont obligatoires.');
       return;
     }
 
@@ -839,7 +843,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         temporaryPassword: form.temporaryPassword,
         roles: [...form.roles],
       }));
-      this.successMessage.set('Le compte bénévole a été créé.');
+      this.showSuccess('Le compte bénévole a été créé.');
       form.email = '';
       form.displayName = '';
       form.temporaryPassword = '';
@@ -882,7 +886,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   async saveAccountRoles(account: CatalogAdminAccount): Promise<void> {
     if (this.editingAccountRoles().length === 0) {
-      this.errorMessage.set('Un compte doit conserver au moins un droit.');
+      this.showError('Un compte doit conserver au moins un droit.');
       return;
     }
 
@@ -892,7 +896,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         account.externalId,
         this.editingAccountRoles(),
       ));
-      this.successMessage.set('Les droits du compte ont été mis à jour.');
+      this.showSuccess('Les droits du compte ont été mis à jour.');
       this.cancelAccountRoleEdit();
       await this.loadAccounts();
     });
@@ -942,7 +946,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('member-alert-status', async token => {
       await firstValueFrom(this.api.setAlertStatus(token, member.member.id, blocked));
-      this.successMessage.set(blocked ? 'Les alertes du membre sont réactivées.' : 'Les alertes du membre sont bloquées.');
+      this.showSuccess(blocked ? 'Les alertes du membre sont réactivées.' : 'Les alertes du membre sont bloquées.');
       await this.openMember(member.member.id);
       await this.loadMembers();
     });
@@ -955,7 +959,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
     await this.run('delete-member', async token => {
       await firstValueFrom(this.api.deleteMember(token, member.member.id));
-      this.successMessage.set('La demande de suppression du membre a été enregistrée.');
+      this.showSuccess('La demande de suppression du membre a été enregistrée.');
       this.selectedMember.set(null);
       await this.loadMembers();
     });
@@ -986,7 +990,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
     const hourFields = [this.sessionIdleHours, this.alertDelayHours];
     if (integerFields.some(value => !Number.isInteger(Number(value)) || Number(value) < 0)
       || hourFields.some(value => !Number.isFinite(Number(value)) || Number(value) < 0)) {
-      this.errorMessage.set('Les seuils doivent être des entiers positifs ou nuls ; les durées peuvent être exprimées par demi-heure.');
+      this.showError('Les seuils doivent être des entiers positifs ou nuls ; les durées peuvent être exprimées par demi-heure.');
       return;
     }
 
@@ -1003,7 +1007,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
       }));
       this.settings.set(settings);
       this.settingsForm = {...settings};
-      this.successMessage.set('Les paramètres ont été enregistrés.');
+      this.showSuccess('Les paramètres ont été enregistrés.');
     });
   }
 
@@ -1260,12 +1264,12 @@ export class CatalogAdministrationPageComponent implements OnInit {
     const minQuantity = Number(this.minQuantity);
 
     if (!Number.isInteger(minAgeMonths) || minAgeMonths < 1 || minAgeMonths > MAX_MIN_AGE_MONTHS) {
-      this.errorMessage.set(`L’ancienneté doit être un nombre entier entre 1 et ${MAX_MIN_AGE_MONTHS} mois.`);
+      this.showError(`L’ancienneté doit être un nombre entier entre 1 et ${MAX_MIN_AGE_MONTHS} mois.`);
       return null;
     }
 
     if (!Number.isInteger(minQuantity) || minQuantity < 0) {
-      this.errorMessage.set('Le nombre d’exemplaires doit être un entier positif ou nul.');
+      this.showError('Le nombre d’exemplaires doit être un entier positif ou nul.');
       return null;
     }
 
@@ -1291,9 +1295,14 @@ export class CatalogAdministrationPageComponent implements OnInit {
       const token = await this.auth.getApiAccessToken();
       await operation(token);
     } catch (error: unknown) {
-      errorTarget.set(error instanceof CatalogAuthenticationRedirectStartedError
+      const message = error instanceof CatalogAuthenticationRedirectStartedError
         ? 'Redirection vers Microsoft pour renouveler votre session…'
-        : describeError(error));
+        : describeError(error);
+      if (errorTarget === this.errorMessage) {
+        this.showError(message);
+      } else {
+        errorTarget.set(message);
+      }
     } finally {
       this.loading.set(false);
       this.actionPending.set(null);
@@ -1306,6 +1315,16 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   private confirmAction(message: string): boolean {
     return !isPlatformBrowser(this.platformId) || window.confirm(message);
+  }
+
+  private showError(message: string): void {
+    this.successMessage.set(null);
+    this.errorMessage.set(message);
+  }
+
+  private showSuccess(message: string): void {
+    this.errorMessage.set(null);
+    this.successMessage.set(message);
   }
 
   private clearFeedback(): void {
