@@ -71,6 +71,13 @@ describe('CatalogSearchPageComponent', () => {
     source: 'OpenLibrary',
   };
 
+  const secondEditionReference: CatalogBookReference = {
+    ...reference,
+    isbn13: '9782070612759',
+    publisher: 'Folio',
+    publicationYear: 2015,
+  };
+
   beforeEach(async () => {
     sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
     response$ = new Subject<CatalogSearchResponse>();
@@ -128,6 +135,42 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.reference-follow--work')).not.toBeNull();
     expect((fixture.nativeElement.querySelector('.reference-follow--edition') as HTMLButtonElement).textContent)
       .toContain('Suivre cette édition');
+  });
+
+  it('places the work follow action above the edition list', () => {
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [reference, secondEditionReference],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    const callout = fixture.nativeElement.querySelector('.external-follow-callout') as HTMLElement;
+
+    expect(callout).not.toBeNull();
+    expect(callout.textContent).toContain('Suivre toutes les éditions');
+    expect(callout.textContent).toContain('édition précise');
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
+  });
+
+  it('does not offer a work follow action when the reference search is empty', () => {
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.external-follow-callout')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.reference-follow--work')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Aucun autre titre ne correspond à cette recherche.');
   });
 
   it('follows any edition from the section callout without opening a modal', async () => {

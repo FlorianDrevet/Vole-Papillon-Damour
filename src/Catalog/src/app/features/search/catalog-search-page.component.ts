@@ -270,7 +270,9 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   workReference(): CatalogBookReference | null {
     const items = this.externalResponse?.items ?? [];
-    return items.length === 1 && items[0].workId ? items[0] : null;
+    const referencesWithWork = items.filter(item => item.workId);
+    const workIds = new Set(referencesWithWork.map(item => item.workId));
+    return workIds.size === 1 ? referencesWithWork[0] : null;
   }
 
   private async submitReferenceFollow(
@@ -364,6 +366,10 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   trackBook(_index: number, isbn13: string): string {
     return isbn13;
+  }
+
+  trackReference(index: number, reference: CatalogBookReference): string {
+    return `${reference.isbn13 || reference.workId || reference.title || 'reference'}-${index}`;
   }
 
   private load(): void {

@@ -189,7 +189,7 @@
                 <div class="external-follow-callout">
                   <div class="external-follow-copy">
                     <p class="external-follow-kicker">Suivre le titre</p>
-                    <p>Recevez une alerte dès qu'une édition de ce titre arrive, quel que soit l'éditeur.</p>
+                    <p>Suivez toutes les éditions liées à ce titre, ou choisissez une édition précise dans la liste ci-dessous.</p>
                   </div>
                   <button
                     type="button"
@@ -200,9 +200,9 @@
                   </button>
                 </div>
               }
-              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Choisissez une édition précise ci-dessous, ou suivez le titre quelle que soit l'édition quand l'option est proposée.</p>
+              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Choisissez une édition précise ci-dessous pour être prévenu si elle arrive un jour.</p>
               <div class="reference-list">
-                @for (reference of externalResponse?.items || []; track reference.workId || reference.isbn13 || reference.title) {
+                @for (reference of externalResponse?.items || []; track trackReference($index, reference)) {
                   <article class="reference-card">
                     <div class="reference-cover">
                       @if (reference.coverUrl) {
@@ -218,15 +218,6 @@
                       @if (reference.isbn13) { <small>ISBN {{ reference.isbn13 }}</small> }
                     </div>
                     <div class="reference-actions">
-                      @if (externalResponse?.items?.length !== 1 && reference.workId) {
-                        <button
-                          type="button"
-                          class="reference-follow reference-follow--work"
-                          [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Work')"
-                          (click)="followReference(reference, 'Work')">
-                          {{ referenceFollowPending === referenceFollowKey(reference, 'Work') ? 'Ajout…' : 'Suivre le titre' }}
-                        </button>
-                      }
                       @if (reference.isbn13) {
                         <button
                           type="button"

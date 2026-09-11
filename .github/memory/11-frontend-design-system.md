@@ -129,8 +129,10 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   explanatory rather than fake.
 - The September 11 Catalog polish keeps the search section rules on the shared blue-to-orange
   brand gradient, gives the `Disponibilité` legend a visible gap before its options, and
-  replaces the external-reference scope modal with an inline callout plus direct edition/work
-  actions. The connected account trigger and adjacent administration pill use stable widths
+  replaces the external-reference scope modal with one explanatory all-editions callout above
+  a reference list, while edition cards keep only their precise-edition action. The callout is
+  rendered only when the results identify a common work. The connected account trigger and
+  adjacent administration pill use stable widths
   so the public header does not jump between member and administrator states. Recent home
   cards show availability as bordered colored status tags; the genre browser remains directly
   after `Livres rares`.
