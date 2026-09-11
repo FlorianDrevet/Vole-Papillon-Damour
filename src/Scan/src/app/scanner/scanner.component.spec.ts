@@ -1174,7 +1174,8 @@ describe('ScannerComponent', () => {
     fragile.detectChanges();
 
     expect(fragile.componentInstance.priorityAlerts[0].level).toBe('warning');
-    expect(fragile.componentInstance.priorityAlerts[0].message).toContain('conservation des données');
+    expect(fragile.componentInstance.priorityAlerts[0].message)
+      .toContain('Données hors ligne non protégées');
     fragile.destroy();
 
     const healthy = TestBed.createComponent(ScannerComponent);
@@ -1184,6 +1185,133 @@ describe('ScannerComponent', () => {
 
     expect(healthy.componentInstance.hasAlerts).toBeFalse();
     healthy.destroy();
+  });
+
+  it('does not show the persistence warning on either pre-scan choice screen', () => {
+    for (const screen of ['home', 'session-mode'] as const) {
+      const choiceFixture = TestBed.createComponent(ScannerComponent);
+      choiceFixture.componentInstance.screen = screen;
+      choiceFixture.componentInstance.persistenceStatus =
+        {available: true, persisted: false, requestAttempted: true};
+      choiceFixture.detectChanges();
+
+      expect(choiceFixture.nativeElement.querySelector('.status-strip')).toBeNull();
+      expect(choiceFixture.componentInstance.priorityAlerts.map(alert => alert.id))
+        .not.toContain('storage-capability');
+
+      choiceFixture.destroy();
+    }
+  });
+
+  it('offers browser storage protection instead of a synchronization retry', () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['requestPersistentStorage'],
+    );
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    (component as unknown as {scanWorkflow: ScanWorkflowService | null}).scanWorkflow = workflow;
+    (component as unknown as {scanSync: ScanSyncService | null}).scanSync = sync;
+    (component as unknown as {localModeReady: boolean}).localModeReady = true;
+    component.isAuthenticated = true;
+    component.persistenceStatus =
+      {available: true, persisted: false, requestAttempted: true};
+    component.screen = 'tri';
+    component.openStatusModal();
+    fixture.detectChanges();
+
+    const modal = fixture.nativeElement.querySelector('.status-modal') as HTMLElement;
+    expect(modal.querySelector('#status-modal-title')?.textContent).toContain('Données hors ligne');
+    expect(modal.textContent).toContain('Protéger les données hors ligne');
+    expect(modal.textContent).not.toContain('Synchroniser maintenant');
+  });
+
+  it('retries persistent storage and closes the status when the browser accepts it', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['requestPersistentStorage'],
+    );
+    workflow.requestPersistentStorage.and.resolveTo({
+      available: true,
+      persisted: true,
+      requestAttempted: true,
+    });
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+      TestBed.inject(ScanStatusService),
+    );
+    localComponent.persistenceStatus =
+      {available: true, persisted: false, requestAttempted: true};
+    localComponent.screen = 'tri';
+    localComponent.statusModalOpen = true;
+
+    await localComponent.protectOfflineData();
+
+    expect(workflow.requestPersistentStorage).toHaveBeenCalledOnceWith();
+    expect(localComponent.persistenceStatus?.persisted).toBeTrue();
+    expect(localComponent.storageCapabilityAlert).toBeNull();
+    expect(localComponent.statusModalOpen).toBeFalse();
+  });
+
+  it('keeps the warning and explains when the browser declines protection', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['requestPersistentStorage'],
+    );
+    workflow.requestPersistentStorage.and.resolveTo({
+      available: true,
+      persisted: false,
+      requestAttempted: true,
+    });
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      null,
+      TestBed.inject(ScanStatusService),
+    );
+    localComponent.persistenceStatus =
+      {available: true, persisted: false, requestAttempted: true};
+    localComponent.screen = 'tri';
+    localComponent.statusModalOpen = true;
+
+    await localComponent.protectOfflineData();
+
+    expect(localComponent.storageCapabilityAlert).not.toBeNull();
+    expect(localComponent.storagePersistenceFeedback).toContain('n’a pas accepté');
+    expect(localComponent.statusModalOpen).toBeTrue();
+  });
+
+  it('does not duplicate the persistence explanation in its status modal', () => {
+    const statusFixture = TestBed.createComponent(ScannerComponent);
+    const statusComponent = statusFixture.componentInstance;
+    statusComponent.persistenceStatus =
+      {available: true, persisted: false, requestAttempted: true};
+    statusFixture.detectChanges();
+    statusComponent.openStatusModal();
+    statusFixture.detectChanges();
+
+    const warning = statusComponent.storageCapabilityAlert?.message ?? '';
+    const modalText = (statusFixture.nativeElement.querySelector('.status-modal') as HTMLElement).textContent ?? '';
+    expect(modalText.split(warning).length - 1).toBe(1);
+
+    statusFixture.destroy();
   });
 
   it('uses the synchronized next fair date and alert delay in the session copy', () => {

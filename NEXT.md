@@ -100,6 +100,21 @@ Worker et sa résolution locale de `Azure.Functions.Sdk`. Le smoke connecté sur
 La PR [#149](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/149) est ouverte ;
 aucun déploiement ni merge n'a été effectué.
 
+### État actualisé — 2026-09-12 — alerte de conservation hors ligne du Scan
+
+Depuis `origin/main` dans le worktree
+`Vole-Papillon-Damour-fix-scan-storage-alert`, l’alerte de capacité de stockage du Scan
+explique désormais qu’il s’agit d’une autorisation du navigateur, et non d’un échec de
+synchronisation. La modal ne répète plus le même message : elle propose une demande explicite
+de protection des données hors ligne, tandis que le réessai de synchronisation n’apparaît que
+lorsqu’un envoi ou une erreur de synchronisation le justifie. L’alerte de capacité est masquée
+sur les écrans de choix (`home` et `session-mode`), avant le scan opératoire.
+
+Validation locale : TDD rouge puis vert, 181 tests Scan ChromeHeadless, build de production et
+`graphify update .` passent. Le shell local a été vérifié dans Chrome ; la vérification
+responsive/appareil réel avec une session bénévole reste à faire, car aucune connexion n’a été
+automatisée. Aucun déploiement ni changement Azure, Entra, compte ou API publique n’a été effectué.
+
 ### État actualisé — 2026-09-11 — toasts de validation de l'administration Catalog
 
 Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, les

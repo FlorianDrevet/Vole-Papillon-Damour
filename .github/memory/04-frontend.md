@@ -325,6 +325,13 @@ the user-facing layout. Local validation passes 170 Scan ChromeHeadless tests an
 production build; PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) is open,
 connected production smoke remains pending, and no deployment was made.
 
+The 2026-09-12 Scan storage-capability follow-up keeps the browser-persistence warning out of
+the `home` and `session-mode` choice screens. On operating screens, its modal copy distinguishes local
+browser retention from server synchronization, offers a user-gesture retry through
+`ScanWorkflowService.requestPersistentStorage()`, and removes the sync retry action when no
+outbox or synchronization error needs it. The repeated primary alert is omitted from the modal
+details; an accepted persistence request closes the modal and shows the existing success toast.
+
 The 2026-09-08 Catalog Lot 5 public-surface pass removes the hard-coded featured genre
 taxonomy: the home cards, hero selector, and navigation menu now use only genres returned
 by the public catalog API, and the home section stays hidden when that list is empty. The

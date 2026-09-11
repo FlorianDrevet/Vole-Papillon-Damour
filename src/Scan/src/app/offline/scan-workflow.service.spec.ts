@@ -28,6 +28,15 @@ describe('ScanWorkflowService', () => {
     }
   });
 
+  it('can retry persistent storage without creating a local session', async () => {
+    const status = {available: true, persisted: true, requestAttempted: true};
+    spyOn(store, 'requestPersistentStorage').and.resolveTo(status);
+
+    expect(await service.requestPersistentStorage()).toEqual(status);
+    expect(store.requestPersistentStorage).toHaveBeenCalledOnceWith();
+    expect(await store.getSession()).toBeNull();
+  });
+
   it('creates a durable pending gesture with an immediate local verdict', async () => {
     await store.saveSettings(createSettings(2, 10));
     await store.putCatalogBooks([createBook({qtyAvailable: 1})]);
