@@ -78,6 +78,21 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — retrait du décor de fond des écrans Entra
+
+Dans `infra/entra/vpd-catalog-authentication.css`, les conteneurs de fond External ID
+forcent désormais un canvas bleu pâle uni et `background-image: none !important`. L'ancien
+asset `vpd-authentication-background.png`, qui dessinait les barres en bas de l'écran,
+n'apparaît donc plus derrière la carte sur les parcours de connexion et de création de
+compte, qui partagent cette feuille CSS. La documentation Entra indique de rejouer le
+branding sans `-BackgroundImagePath` ; aucune ressource du tenant, aucun compte et aucun
+mot de passe n'ont été modifiés dans cette session.
+
+Validation : test statique rouge puis vert sur la règle CSS, `graphify update .` et
+`git diff --check`. La suite Pester n'a pas pu s'initialiser localement car le module
+`Microsoft.Graph.Identity.DirectoryManagement` manque dans `pwsh` ; l'application du CSS
+au tenant et le contrôle live restent à faire après la PR.
+
 ### État actualisé — 2026-09-11 — résolution des conflits de la PR #129
 
 La PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) a été
