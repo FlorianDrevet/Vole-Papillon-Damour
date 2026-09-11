@@ -1091,6 +1091,13 @@ export class CatalogAdministrationPageComponent implements OnInit {
     }).format(new Date(value)).replace('.', '');
   }
 
+  fairOptionLabel(fair: CatalogAdminFair): string {
+    const start = this.formatDate(fair.dateStart);
+    const end = fair.dateEnd ? this.formatDate(fair.dateEnd) : null;
+    const dateLabel = end && end !== start ? `${start} → ${end}` : start;
+    return `${dateLabel} · ${fair.name} · ${fair.isCancelled ? 'annulée' : 'conservée'}`;
+  }
+
   formatDay(value: string | null | undefined): string {
     if (!value) {
       return '—';
