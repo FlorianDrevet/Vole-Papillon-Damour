@@ -92,11 +92,13 @@ personnels depuis les sessions, mouvements, livres, bourses et alertes envoyées
 de caisse, cadences, rapprochements, liens lecteur et parts de recette restent explicitement
 estimés ; aucune migration ni donnée Azure/Entra n'est touchée.
 
-Validation locale : tests Application 205, API ciblés 12, Infrastructure ciblé 1, Scan
-ChromeHeadless 173, Catalog ChromeHeadless 168, builds Scan et Catalog passants. Le warning
-de budget initial Catalog reste celui du dépôt ; le smoke connecté sur compte `Tri`,
+Validation locale après rebase : Application 207, Infrastructure 97, API 23, Scan
+ChromeHeadless 178, Catalog ChromeHeadless 168, builds Scan/Catalog et API passants. Le warning
+de budget initial Catalog reste celui du dépôt ; le build complet reste limité par le projet
+Worker et sa résolution locale de `Azure.Functions.Sdk`. Le smoke connecté sur compte `Tri`,
 `Caisse` et double rôle, ainsi que le recontrôle mobile post-déploiement, restent à faire.
-La branche est prête pour une PR ; aucun déploiement ni merge n'a été effectué.
+La PR [#149](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/149) est ouverte ;
+aucun déploiement ni merge n'a été effectué.
 
 ### État actualisé — 2026-09-11 — toasts de validation de l'administration Catalog
 
