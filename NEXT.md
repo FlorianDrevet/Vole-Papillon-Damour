@@ -129,7 +129,7 @@ La PR [#134](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/134) est
 relecture ; elle n'est pas fusionnée.
 
 Validation locale : 147 tests Catalog ChromeHeadless, build de production (764,65 kB initiaux
-pour un budget de 500 kB — avertissement connu), `git diff --check`, deux mises à jour Graphify
+pour un budget de 500 kB — avertissement connu), `git diff --check`, `graphify update .`
 (4 309 nœuds, 7 343 liens) et contrôle Chrome local du shell mobile et de la recherche. L'API
 locale n'étant pas démarrée, les cartes alimentées par les données et le parcours authentifié
 restent à vérifier en smoke connecté après déploiement. Aucun déploiement n'a été effectué.
