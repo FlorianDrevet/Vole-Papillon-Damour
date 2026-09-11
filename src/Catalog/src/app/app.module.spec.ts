@@ -32,7 +32,7 @@ describe('AppModule', () => {
     expect(backend.constructor.name).toContain('FetchBackend');
   });
 
-  it('does not initialize MSAL while bootstrapping the anonymous shell', async () => {
+  it('does not initialize MSAL from an application module initializer', async () => {
     const {initialize} = configureModule();
 
     await TestBed.inject(ApplicationInitStatus).donePromise;

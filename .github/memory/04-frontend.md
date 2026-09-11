@@ -71,6 +71,14 @@ work and detail cards keep the default/grid contract. The existing cover placeho
 the fallback whenever a book has no image, and the home never invents genre counts that the API
 does not provide.
 
+The Catalog follow-up polish keeps the genre section in that position and turns recent-home
+availability into compact colored pill tags. The browser shell initializes cached MSAL state
+on arrival, keeps connected member/admin account controls at the same width, and the search
+page exposes direct typed `Work`/`Edition` follow buttons: a single external title gets a
+section-level all-editions action, while each precise edition remains independently followable.
+The old scope-selection modal is removed; a pending follow survives the sign-in redirect and
+submits directly after the cached session is restored.
+
 After the 2026-09-08 rollout, Catalog analytics use dedicated public build variables:
 `CATALOG_GOOGLE_ANALYTICS_MEASUREMENT_ID` for GA4 `G-GBHC67EGGF` and `CLARITY_PROJECT_ID`
 for Clarity `yerabb7gnt`; the Website variable `GOOGLE_ANALYTICS_MEASUREMENT_ID` remains

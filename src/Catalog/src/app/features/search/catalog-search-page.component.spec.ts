@@ -25,6 +25,7 @@ describe('CatalogSearchPageComponent', () => {
     initialized: WritableSignal<boolean>;
     isAuthenticated: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
+    initialize: jasmine.Spy;
     login: jasmine.Spy;
     getApiAccessToken: jasmine.Spy;
   };
@@ -71,6 +72,7 @@ describe('CatalogSearchPageComponent', () => {
   };
 
   beforeEach(async () => {
+    sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
     response$ = new Subject<CatalogSearchResponse>();
     routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'searchReferences']);
@@ -88,6 +90,7 @@ describe('CatalogSearchPageComponent', () => {
       initialized: signal(true),
       isAuthenticated: signal(false),
       error: signal<string | null>(null),
+      initialize: jasmine.createSpy('initialize').and.resolveTo(),
       login: jasmine.createSpy('login'),
       getApiAccessToken: jasmine.createSpy('getApiAccessToken'),
     };
@@ -122,22 +125,34 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Open Library');
     expect(fixture.nativeElement.textContent).not.toContain('OPENLIBRARY');
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
-    expect((fixture.nativeElement.querySelector('.reference-follow') as HTMLButtonElement).textContent)
-      .toContain('Ajouter à ma liste de recherche');
+    expect(fixture.nativeElement.querySelector('.reference-follow--work')).not.toBeNull();
+    expect((fixture.nativeElement.querySelector('.reference-follow--edition') as HTMLButtonElement).textContent)
+      .toContain('Suivre cette édition');
   });
 
-  it('opens the follow-scope modal before changing the watchlist', () => {
+  it('follows any edition from the section callout without opening a modal', async () => {
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(of({
+      id: 'work-watchlist-item',
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      addedAt: '2026-09-05T06:00:00Z',
+    }));
+
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('.reference-follow') as HTMLButtonElement).click();
-    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('.reference-follow--work') as HTMLButtonElement).click();
+    await fixture.whenStable();
 
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Que souhaitez-vous suivre ?');
-    expect((fixture.nativeElement.querySelector('input[value="Work"]') as HTMLInputElement).checked)
-      .toBeTrue();
-    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('.dialog-close'));
-    expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
+    expect(memberApi.addWatchlistItem).toHaveBeenCalledWith('member-token', {
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+    });
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de recherche.');
   });
 
   it('renders an asynchronous catalog response in zoneless mode', async () => {
@@ -153,7 +168,7 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Le catalogue arrive…');
   });
 
-  it('submits the selected edition scope with only the edition target', async () => {
+  it('follows a precise edition with only the edition target', async () => {
     const addResponse$ = new Subject<CatalogAddedWatchlistItem>();
     auth.isAuthenticated.set(true);
     auth.getApiAccessToken.and.resolveTo('member-token');
@@ -161,12 +176,7 @@ describe('CatalogSearchPageComponent', () => {
 
     fixture.detectChanges();
 
-    fixture.componentInstance.followReference(reference);
-    fixture.detectChanges();
-    (fixture.nativeElement.querySelector('input[value="Edition"]') as HTMLInputElement).click();
-    fixture.detectChanges();
-
-    const followPromise = fixture.componentInstance.confirmFollowReference();
+    const followPromise = fixture.componentInstance.followReference(reference);
     await Promise.resolve();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Ajout…');
@@ -188,23 +198,50 @@ describe('CatalogSearchPageComponent', () => {
     await followPromise;
     await fixture.whenStable();
 
-    expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de recherche.');
-    expect(fixture.nativeElement.textContent).toContain('Ajouter à ma liste de recherche');
+    expect(fixture.nativeElement.textContent).toContain('L’édition a été ajoutée à votre liste de recherche.');
+    expect(fixture.nativeElement.textContent).toContain('Suivre cette édition');
     expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
   });
 
-  it('keeps the selected scope across the sign-in redirect', async () => {
+  it('keeps the direct edition target across the sign-in redirect', async () => {
     fixture.detectChanges();
-    fixture.componentInstance.followReference(reference);
-    fixture.componentInstance.followScope = 'Edition';
 
-    await fixture.componentInstance.confirmFollowReference();
+    await fixture.componentInstance.followReference(reference);
 
     expect(auth.login).toHaveBeenCalled();
     expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow'))
       .toContain('"scope":"Edition"');
     sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
+  });
+
+  it('resumes a pending direct follow after sign-in without opening a modal', async () => {
+    sessionStorage.setItem('vpd.catalog.pending-reference-follow', JSON.stringify({
+      item: reference,
+      scope: 'Work',
+    }));
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(of({
+      id: 'work-watchlist-item',
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      addedAt: '2026-09-05T06:00:00Z',
+    }));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+
+    expect(auth.initialize).toHaveBeenCalledOnceWith();
+    expect(memberApi.addWatchlistItem).toHaveBeenCalledWith('member-token', {
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+    });
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow')).toBeNull();
   });
 
   it('does not invent genre filters when the API has no genre metadata', () => {
@@ -226,6 +263,18 @@ describe('CatalogSearchPageComponent', () => {
     expect(select).not.toBeNull();
     expect(select.getAttribute('aria-label')).toBe('Trier les résultats');
     expect(fixture.nativeElement.querySelector('.sort-select-chevron')).not.toBeNull();
+  });
+
+  it('gives the availability heading breathing room and uses the brand gradient for both sections', () => {
+    fixture.detectChanges();
+
+    const availabilityLegend = fixture.nativeElement.querySelector('.filter-group legend') as HTMLElement;
+    const availableRule = fixture.nativeElement.querySelector('.available-rule') as HTMLElement;
+    const externalRule = fixture.nativeElement.querySelector('.external-rule') as HTMLElement;
+
+    expect(getComputedStyle(availabilityLegend).marginBottom).toBe('6px');
+    expect(getComputedStyle(availableRule).backgroundImage).toBe(getComputedStyle(externalRule).backgroundImage);
+    expect(getComputedStyle(availableRule).backgroundImage).toContain('linear-gradient');
   });
 
   it('loads the filtered results when opened with a genre query parameter', async () => {

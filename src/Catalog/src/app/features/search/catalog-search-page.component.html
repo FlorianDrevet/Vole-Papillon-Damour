@@ -145,7 +145,22 @@
             } @else if (externalError) {
               <p class="state-message error-message" role="alert">La recherche de titres à ajouter est momentanément indisponible. La recherche dans la bourse aux livres reste utilisable.</p>
             } @else if (externalResponse?.items?.length) {
-              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Ajoutez-en un à votre liste de recherche pour être prévenu s'il arrive un jour.</p>
+              @if (workReference(); as workReference) {
+                <div class="external-follow-callout">
+                  <div class="external-follow-copy">
+                    <p class="external-follow-kicker">Suivre le titre</p>
+                    <p>Recevez une alerte dès qu'une édition de ce titre arrive, quel que soit l'éditeur.</p>
+                  </div>
+                  <button
+                    type="button"
+                    class="reference-follow reference-follow--work"
+                    [disabled]="referenceFollowPending === referenceFollowKey(workReference, 'Work')"
+                    (click)="followReference(workReference, 'Work')">
+                    {{ referenceFollowPending === referenceFollowKey(workReference, 'Work') ? 'Ajout…' : 'Suivre toutes les éditions' }}
+                  </button>
+                </div>
+              }
+              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Choisissez une édition précise ci-dessous, ou suivez le titre quelle que soit l'édition quand l'option est proposée.</p>
               <div class="reference-list">
                 @for (reference of externalResponse?.items || []; track reference.workId || reference.isbn13 || reference.title) {
                   <article class="reference-card">
@@ -162,26 +177,33 @@
                       <small [attr.title]="referenceEditionLabel(reference)">{{ referenceEditionLabel(reference) }}</small>
                       @if (reference.isbn13) { <small>ISBN {{ reference.isbn13 }}</small> }
                     </div>
-                    @if (referenceKey(reference)) {
-                      <button
-                        type="button"
-                        class="reference-follow"
-                        [disabled]="referenceFollowPending === referenceKey(reference)"
-                        (click)="followReference(reference)">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                          <path d="M18 9.2a6 6 0 1 0-12 0c0 5-2 6.4-2 6.4h16s-2-1.4-2-6.4Z"></path>
-                          <path d="M13.7 19.4a2 2 0 0 1-3.4 0"></path>
-                        </svg>
-                        {{ referenceFollowPending === referenceKey(reference) ? 'Ajout…' : 'Ajouter à ma liste de recherche' }}
-                      </button>
-                    }
+                    <div class="reference-actions">
+                      @if (externalResponse?.items?.length !== 1 && reference.workId) {
+                        <button
+                          type="button"
+                          class="reference-follow reference-follow--work"
+                          [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Work')"
+                          (click)="followReference(reference, 'Work')">
+                          {{ referenceFollowPending === referenceFollowKey(reference, 'Work') ? 'Ajout…' : 'Suivre le titre' }}
+                        </button>
+                      }
+                      @if (reference.isbn13) {
+                        <button
+                          type="button"
+                          class="reference-follow reference-follow--edition"
+                          [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Edition')"
+                          (click)="followReference(reference)">
+                          {{ referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'Ajout…' : 'Suivre cette édition' }}
+                        </button>
+                      }
+                    </div>
                   </article>
                 }
               </div>
               @if (referenceFollowMessage) {
                 <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir ma liste de recherche</a></p>
               }
-              @if (referenceFollowError && !selectedReference) {
+              @if (referenceFollowError) {
                 <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
               }
               @if ((externalResponse?.items?.length || 0) === (externalResponse?.pageSize || 0)) {
@@ -210,60 +232,3 @@
     </div>
   </div>
 </section>
-
-@if (selectedReference; as reference) {
-  <div class="follow-dialog-backdrop" role="presentation" (click)="closeFollowModal()">
-    <section
-      class="follow-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="follow-dialog-title"
-      aria-describedby="follow-dialog-description"
-      (click)="$event.stopPropagation()">
-      <div class="follow-dialog-rule" aria-hidden="true"></div>
-      <div class="follow-dialog-content">
-        <button #followDialogClose type="button" class="dialog-close" aria-label="Fermer" (click)="closeFollowModal()">×</button>
-        <span class="dialog-kicker">Ajouter à ma liste</span>
-        <div class="dialog-book-heading">
-          <h2 id="follow-dialog-title">{{ reference.title || 'Titre à compléter' }}</h2>
-          @if (reference.authors) { <p>{{ reference.authors }}</p> }
-        </div>
-
-        <form (ngSubmit)="confirmFollowReference()">
-          <p id="follow-dialog-description" class="dialog-question">Que souhaitez-vous suivre ?</p>
-
-          @if (reference.workId) {
-            <label class="scope-option" [class.selected]="followScope === 'Work'">
-              <input type="radio" name="followScope" value="Work" [checked]="followScope === 'Work'" (change)="followScope = 'Work'">
-              <span class="scope-control radio-control" aria-hidden="true"></span>
-              <span class="scope-copy">
-                <strong>N'importe quelle édition</strong>
-                <span>Vous serez prévenu dès qu'un exemplaire arrive, quel que soit l'éditeur.</span>
-              </span>
-            </label>
-          }
-
-          @if (reference.isbn13) {
-            <label class="scope-option" [class.selected]="followScope === 'Edition'">
-              <input type="radio" name="followScope" value="Edition" [checked]="followScope === 'Edition'" (change)="followScope = 'Edition'">
-              <span class="scope-control radio-control" aria-hidden="true"></span>
-              <span class="scope-copy">
-                <strong>Une édition précise</strong>
-                <span class="edition-choice">{{ referenceEditionLabel(reference) }}</span>
-              </span>
-            </label>
-          }
-
-          @if (referenceFollowError) {
-            <p class="dialog-feedback" role="alert">{{ referenceFollowError }}</p>
-          }
-
-          <button type="submit" class="dialog-submit" [disabled]="referenceFollowPending !== null">
-            {{ referenceFollowPending ? 'Ajout…' : 'Ajouter à ma liste' }}
-          </button>
-          <span class="dialog-note">Retirable en un clic, à tout moment</span>
-        </form>
-      </div>
-    </section>
-  </div>
-}

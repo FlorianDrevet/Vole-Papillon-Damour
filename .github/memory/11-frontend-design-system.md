@@ -127,6 +127,13 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   suspend alerts. Keep the navigation/data contracts truthful: role assignment remains
   Entra-owned and physical cartons/capacity are not API concepts, so those controls stay
   explanatory rather than fake.
+- The September 11 Catalog polish keeps the search section rules on the shared blue-to-orange
+  brand gradient, gives the `Disponibilité` legend a visible gap before its options, and
+  replaces the external-reference scope modal with an inline callout plus direct edition/work
+  actions. The connected account trigger and adjacent administration pill use stable widths
+  so the public header does not jump between member and administrator states. Recent home
+  cards show availability as bordered colored status tags; the genre browser remains directly
+  after `Livres rares`.
 
 ## Shared Design System Library (`@vpd/ui`)
 

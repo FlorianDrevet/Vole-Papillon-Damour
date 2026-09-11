@@ -36,7 +36,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.updateRobotsMetadata(this.router.url);
     this.isAdministrationRoute.set(this.isAdminUrl(this.router.url));
-    this.initializeAuthenticationRedirect();
+    this.initializeAuthentication();
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -57,17 +57,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.meta.updateTag({name: 'robots', content: catalogRobotsForUrl(url)});
   }
 
-  private initializeAuthenticationRedirect(): void {
-    if (isPlatformBrowser(this.platformId) && hasAuthenticationResponse(window.location)) {
-      void this.auth.initialize();
+  private initializeAuthentication(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      void this.auth.initialize().catch(() => undefined);
     }
   }
 
   private isAdminUrl(url: string): boolean {
     return url.split(/[?#]/, 1)[0].replace(/\/$/, '') === '/administration';
   }
-}
-
-function hasAuthenticationResponse(location: Pick<Location, 'hash' | 'search'>): boolean {
-  return /(?:[?#&])(code|error)=/i.test(`${location.search}${location.hash}`);
 }

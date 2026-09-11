@@ -290,20 +290,31 @@
   align-items: center;
   gap: 7px;
   margin: 0;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px -12px rgba(7, 43, 69, .75);
   font: 500 .61rem/1.2 var(--catalog-mono);
   letter-spacing: .09em;
   text-transform: uppercase;
 }
 
 .book-card-status.status-available {
+  border-color: #b8d7c1;
+  background: #edf7ef;
   color: var(--catalog-green);
 }
 
 .book-card-status.status-announced {
+  border-color: #f0c897;
+  background: #fff5e8;
   color: var(--catalog-orange-3);
 }
 
 .book-card-status.status-exhausted {
+  border-color: var(--catalog-line-strong);
+  background: rgba(255, 255, 255, .88);
   color: var(--catalog-slate-3);
 }
 
