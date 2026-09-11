@@ -1,30 +1,13 @@
 <section class="admin-shell" aria-labelledby="admin-title">
-  <header class="admin-header">
-    <div class="admin-brand-group">
-      <a class="admin-logo" routerLink="/" aria-label="Retourner au catalogue public">VPD</a>
-      <div class="admin-brand-copy">
-        <span class="admin-brand-name">Vole Papillon d'Amour</span>
-        <span class="admin-brand-subtitle">Bourse aux livres · catalogue</span>
-      </div>
-      <span class="admin-context-pill">Administration</span>
-    </div>
-
-    <div class="admin-header-actions">
-      <a class="admin-public-link" routerLink="/">Voir le catalogue public →</a>
-      @if (isAuthenticated()) {
-        <button class="admin-account-pill" type="button" (click)="logout()" title="Se déconnecter">
-          <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8.5" r="3.6"></circle>
-            <path d="M5 19.6c1.3-3.3 3.9-4.9 7-4.9s5.7 1.6 7 4.9"></path>
-          </svg>
-          <span>{{ accountLabel() || 'Compte' }}</span>
-        </button>
-      }
-    </div>
-  </header>
-
   <div class="admin-layout">
     <aside class="admin-sidebar" data-testid="admin-sidebar" aria-label="Navigation administration">
+      <div class="admin-sidebar-brand">
+        <span class="admin-sidebar-rule" aria-hidden="true"></span>
+        <span class="admin-sidebar-kicker">Administration</span>
+        <h2 class="admin-sidebar-title">Bourse aux livres</h2>
+        <span class="admin-sidebar-status">Espace sécurisé</span>
+      </div>
+
       @for (group of navGroups; track group.label) {
         <div class="admin-nav-group">
           <span class="admin-nav-label">{{ group.label }}</span>
@@ -37,10 +20,49 @@
                 [disabled]="!isAuthenticated()"
                 [attr.aria-current]="activeSection() === item.id ? 'page' : null"
                 (click)="selectSection(item.id)">
-                {{ item.label }}
+                <span class="admin-nav-icon" aria-hidden="true">
+                  @switch (item.icon) {
+                    @case ('dashboard') {
+                      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><rect x="14" y="14" width="6" height="6" rx="1"></rect></svg>
+                    }
+                    @case ('scan') {
+                      <svg viewBox="0 0 24 24"><path d="M5 4H3.5A1.5 1.5 0 0 0 2 5.5V7M19 4h1.5A1.5 1.5 0 0 1 22 5.5V7M5 20H3.5A1.5 1.5 0 0 1 2 18.5V17M19 20h1.5a1.5 1.5 0 0 0 1.5-1.5V17"></path><path d="M7 12h10M12 7v10"></path></svg>
+                    }
+                    @case ('dead-stock') {
+                      <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>
+                    }
+                    @case ('catalogue') {
+                      <svg viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v17H7.5A2.5 2.5 0 0 0 5 21.5z"></path><path d="M5 4.5v17M9 6h6M9 10h6"></path></svg>
+                    }
+                    @case ('inventory') {
+                      <svg viewBox="0 0 24 24"><path d="m4 7 8-4 8 4-8 4zM4 7v10l8 4 8-4V7M12 11v10M8 5l8 4"></path></svg>
+                    }
+                    @case ('fairs') {
+                      <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>
+                    }
+                    @case ('accounts') {
+                      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.6-3.1 2.4-4.7 5.5-4.7s4.9 1.6 5.5 4.7M16 5.5a3 3 0 0 1 0 5.7M16 14.3c2.5.2 4 1.7 4.5 4.7"></path></svg>
+                    }
+                    @case ('settings') {
+                      <svg viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"></path><path d="m19 13.5 1.3 1-.2 1.8-1.7 1-1.3 1.4.1 1.9-1.7.8-1.6-.7-1.9.2-1.3 1.2-1.7-.8.1-1.9-1.3-1.4-1.7-1-.2-1.8 1.3-1 .3-1.8-.3-1.8-1.3-1 .2-1.8 1.7-1 1.3-1.4-.1-1.9 1.7-.8 1.6.7 1.9-.2 1.3-1.2 1.7.8-.1 1.9 1.3 1.4 1.7 1 .2 1.8-1.3 1Z"></path></svg>
+                    }
+                  }
+                </span>
+                <span class="admin-nav-item-label">{{ item.label }}</span>
+                @if (navBadge(item.id); as badge) {
+                  <span class="admin-nav-badge">{{ badge }}</span>
+                }
               </button>
             }
           </nav>
+        </div>
+      }
+
+      @if (isAuthenticated()) {
+        <div class="admin-role-card">
+          <span class="admin-role-kicker">Votre rôle</span>
+          <strong>{{ isAdministrator() ? 'Administration' : 'Compte connecté' }}</strong>
+          <p>{{ isAdministrator() ? 'Accès complet, y compris aux comptes et aux paramètres.' : 'Accès limité aux outils autorisés.' }}</p>
         </div>
       }
     </aside>
@@ -388,12 +410,12 @@
             </section>
           }
 
-          @case ('volunteers') {
+          @case ('accounts') {
             <section class="admin-view" aria-labelledby="admin-title">
-              <div class="admin-heading admin-heading-split"><div><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes</span><h1 id="admin-title">Bénévoles.</h1></div><button class="button button-primary" type="button" (click)="showCreateAccount.set(!showCreateAccount())">{{ showCreateAccount() ? 'Fermer le formulaire' : 'Créer un compte bénévole' }}</button></div>
+              <div class="admin-heading admin-heading-split"><div><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes &amp; rôles</span><h1 id="admin-title">Bénévoles.</h1></div><button class="button button-primary" type="button" (click)="showCreateAccount.set(!showCreateAccount())">{{ showCreateAccount() ? 'Fermer le formulaire' : 'Créer un compte bénévole' }}</button></div>
               @if (showCreateAccount()) {<form class="account-create-card" (ngSubmit)="createAccount()"><div><span class="section-kicker">Nouveau compte Entra</span><h2>Créer un compte bénévole</h2><p>Le mot de passe temporaire est transmis hors de cette interface.</p></div><label><span>Nom affiché</span><input name="accountDisplayName" [(ngModel)]="createAccountForm.displayName" required></label><label><span>E-mail</span><input type="email" name="accountEmail" [(ngModel)]="createAccountForm.email" required></label><label><span>Mot de passe temporaire</span><input type="password" name="accountPassword" [(ngModel)]="createAccountForm.temporaryPassword" minlength="8" required></label><fieldset><legend>Droits</legend>@for (role of accountRoleOptions; track role.value) {<label class="role-checkbox"><input type="checkbox" [checked]="hasCreateRole(role.value)" (change)="toggleCreateRole(role.value)"><span>{{ role.label }}</span></label>}</fieldset><button class="button button-primary" type="submit" [disabled]="loading()">Créer le compte</button></form>}
               <form class="search-toolbar account-search-toolbar" (ngSubmit)="loadAccounts()"><label class="search-field"><span>Nom ou e-mail</span><input name="accountSearch" [(ngModel)]="accountSearch" placeholder="Rechercher…"></label><button class="button button-outline" type="submit">Rechercher</button></form>
-              @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" disabled title="La désactivation Entra n’est pas encore exposée par l’API">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>}
+              @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><small>{{ account.email || account.externalId }}</small><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" disabled title="La désactivation Entra n’est pas encore exposée par l’API">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>} @else if (accountErrorMessage(); as error) {<div class="account-directory-notice" data-testid="account-directory-notice" role="status"><strong>Les comptes et rôles ne sont pas disponibles.</strong><p>{{ error }}</p></div>}
               <div class="section-heading subsection-heading"><h2>Membres du site</h2><span>{{ membersPage()?.totalCount ?? '—' }} comptes</span><button class="text-link" type="button" (click)="selectSection('members')">Voir tous les membres →</button></div>
               @if (membersPage(); as page) {<div class="member-list compact-member-list">@for (member of page.members | slice:0:3; track member.id) {<article class="member-row"><div><strong>{{ maskedEmail(member.email) }}</strong><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span></div><span>{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" (click)="openMember(member.id)">{{ member.alertStatus === 'Blocked' ? 'Débloquer' : 'Bloquer' }}</button><button class="danger-link" type="button" (click)="openMember(member.id)">Supprimer</button></article>} @empty {<p class="empty-inline">Aucun membre à afficher.</p>}</div>}
               <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri, Caisse et Administration sont des rôles d’application Entra. Les comptes sont gérés ici ; les sessions restent la source de vérité pour l’activité.</p></div>

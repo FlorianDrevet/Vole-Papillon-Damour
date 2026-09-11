@@ -42,7 +42,8 @@ public sealed class User : AggregateRoot<UserId>
         UserId userId,
         string externalId,
         string email,
-        DateTime firstSeenAt)
+        DateTime firstSeenAt,
+        Name? name = null)
     {
         ArgumentNullException.ThrowIfNull(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(externalId);
@@ -54,6 +55,7 @@ public sealed class User : AggregateRoot<UserId>
             Id = userId,
             ExternalId = externalId.Trim(),
             Email = email.Trim(),
+            Name = name,
             CreatedAt = utcFirstSeenAt,
             LastSeenAt = utcFirstSeenAt
         };
@@ -69,13 +71,18 @@ public sealed class User : AggregateRoot<UserId>
     public void SynchronizeExternalIdentity(
         string externalId,
         string email,
-        DateTime lastSeenAt)
+        DateTime lastSeenAt,
+        Name? name = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(externalId);
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
 
         ExternalId = externalId.Trim();
         Email = email.Trim();
+        if (name is not null)
+        {
+            Name = name;
+        }
         LastSeenAt = DomainTime.RequireUtc(lastSeenAt, nameof(lastSeenAt));
         AnonymizedAt = null;
     }

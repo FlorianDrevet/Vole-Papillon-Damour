@@ -32,6 +32,7 @@ describe('CatalogAdministrationPageComponent', () => {
     account: WritableSignal<AccountInfo | null>;
     initialized: WritableSignal<boolean>;
     isAuthenticated: WritableSignal<boolean>;
+    isAdministrator: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
     initialize: jasmine.Spy;
     login: jasmine.Spy;
@@ -70,6 +71,7 @@ describe('CatalogAdministrationPageComponent', () => {
       account: signal<AccountInfo | null>(null),
       initialized: signal(true),
       isAuthenticated: signal(false),
+      isAdministrator: signal(false),
       error: signal<string | null>(null),
       initialize: jasmine.createSpy('initialize'),
       login: jasmine.createSpy('login'),
@@ -166,13 +168,15 @@ describe('CatalogAdministrationPageComponent', () => {
 
     const sidebar = fixture.nativeElement.querySelector('[data-testid="admin-sidebar"]');
     expect(sidebar).not.toBeNull();
-    expect(sidebar.textContent).toContain('Pilotage');
+    expect(sidebar.textContent).toContain('Pendant la bourse');
+    expect(sidebar.textContent).toContain('Le fonds de livres');
+    expect(sidebar.textContent).toContain("Réservé à l'administration");
     expect(sidebar.textContent).toContain('Statistiques par bourse');
-    expect(sidebar.textContent).toContain('Inventaire');
-    expect(sidebar.textContent).toContain('Membres du site');
-    expect(sidebar.textContent).toContain('Bénévoles');
-    expect(sidebar.textContent).toContain('Réglages');
-    expect(sidebar.textContent).not.toContain('Catalogue & métadonnées');
+    expect(sidebar.textContent).toContain('Comptes & rôles');
+    expect(sidebar.textContent).toContain('Paramètres');
+    expect(sidebar.textContent).not.toContain('Membres du site');
+    expect(sidebar.textContent).not.toContain('Bénévoles');
+    expect(getComputedStyle(sidebar).backgroundColor).not.toBe('rgb(7, 43, 69)');
   });
 
   it('renders the maquette dashboard title and eight data cards', async () => {
@@ -215,7 +219,7 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.componentInstance.selectSection('sessions');
     await fixture.componentInstance.selectSection('fairs');
     await fixture.componentInstance.selectSection('alerts');
-    await fixture.componentInstance.selectSection('members');
+    await fixture.componentInstance.selectSection('accounts');
     await fixture.componentInstance.selectSection('settings');
 
     expect(api.getBooks).toHaveBeenCalled();
@@ -226,7 +230,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getSettings).toHaveBeenCalled();
   });
 
-  it('loads the volunteer workspace from the typed Entra accounts endpoint', async () => {
+  it('loads the accounts and roles workspace from the typed Entra accounts endpoint', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     api.getAdminAccounts.and.returnValue(of({
@@ -246,13 +250,30 @@ describe('CatalogAdministrationPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
-    await fixture.componentInstance.selectSection('volunteers');
+    await fixture.componentInstance.selectSection('accounts');
     fixture.detectChanges();
 
     expect(api.getAdminAccounts).toHaveBeenCalledWith('access-token', {search: undefined, page: 1, pageSize: 25});
+    expect(fixture.nativeElement.textContent).toContain('Comptes & rôles');
     expect(fixture.nativeElement.textContent).toContain('Bénévoles.');
     expect(fixture.nativeElement.textContent).toContain('Bénévole Test');
     expect(fixture.nativeElement.textContent).toContain('Tri');
+  });
+
+  it('keeps the accounts workspace readable when the Entra directory is unavailable', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getAdminAccounts.and.returnValue(throwError(() => new HttpErrorResponse({status: 503})));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.admin-status-error')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="account-directory-notice"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('répertoire des comptes Entra');
+    expect(api.getMembers).toHaveBeenCalled();
   });
 
   it('uses the scan-authoritative verdict defaults in the administrator form', () => {

@@ -78,6 +78,25 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — navigation et comptes de l’administration Catalog
+
+Dans `src/Catalog`, `/administration` réutilise maintenant le header public du catalogue.
+Un administrateur voit le lien `Espace administrateur` dans la navigation et le tag
+`Administration` à droite du bouton de compte. La sidebar responsive reprend la maquette
+avec les groupes `Pendant la bourse`, `Le fonds de livres` et `Réservé à l'administration`;
+`Comptes & rôles` regroupe les comptes bénévoles Entra et les membres du site sans supprimer
+la vue détaillée de support. Une indisponibilité Graph est affichée comme une dépendance
+temporaire contextualisée, mais sa configuration/secrétisation runtime reste externe.
+
+L’ouverture d’une session de scan crée ou met à jour la projection locale du bénévole avec
+son nom affiché et les listes affichent désormais ce nom, puis l’e-mail en repli. Les
+anciennes sessions sans ligne `Users` ne contiennent toutefois pas assez d’informations pour
+être renommées rétroactivement sans réouverture ou backfill séparé.
+
+Validation locale : 140 tests ChromeHeadless Catalog, build Catalog, 86 tests Domain,
+179 Application, 73 Infrastructure et 15 API, `graphify update .`. Aucun déploiement ni
+changement Entra/Azure n’a été effectué. La branche dédiée et la PR restent à publier.
+
 ### État actualisé — 2026-09-11 — synchronisation automatique et hiérarchie d’état Scan
 
 Dans `src/Scan`, le shell authentifié ne rend plus l’ancien en-tête global « Retour / Bourse aux
@@ -1062,6 +1081,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Catalog — header public, sidebar admin et identité des sessions.** Le parcours `/administration` partage le header catalogue, ajoute le lien admin réservé au rôle et regroupe les comptes sous « Comptes & rôles » avec la sidebar maquette. L’ouverture d’une session projette le nom affiché/e-mail du bénévole et les lectures utilisent le nom puis l’e-mail ; une notice dédiée couvre une dépendance Graph indisponible. Validation : 140 tests Catalog, build Catalog, 86 Domain, 179 Application, 73 Infrastructure, 15 API et `graphify update .` ; aucun déploiement ni changement Azure. PR à publier. |
 | 2026-09-10 | Windows | **Website — formulation du film de Maxence.** Après la fusion de la PR #124, la description de « Vole, Papillon d’amour » devient « Le film qui raconte le combat de Maxence. ». Validation : test rouge puis vert, 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements Angular connus, aucun déploiement. PR [#126](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/126) ouverte. |
 | 2026-09-10 | Windows | **Website — libellés de la galerie.** Depuis `origin/main`, correction des descriptions du film consacré au combat de Maxence et du clip avec Michael Jones ; l’entrée de navigation devient « Photos et vidéothèque » et ses relais (footer, fil d’Ariane, titre) sont alignés. Validation : 74 tests ChromeHeadless, build SSR/prérendu, `graphify update .`, contrôle Chrome desktop/mobile à 390×844 sans débordement ; avertissements de budget Angular/CommonJS connus, aucun déploiement. PR [#124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/124) fusionnée. |
 | 2026-09-10 | Windows | **PR #113 — résolution des conflits publiée.** Depuis `origin/main` (`31fcead`) dans le worktree `Vole-Papillon-Damour-pr113-conflicts`, réconciliation de `feat/scanette-reprise-gestes-lots` avec le rail d’alertes et le positionnement caméra de `main`, en conservant les parcours reprise/statut/diagnostic, les contrôles de session et les évolutions backend/BackOffice. Le commit `823cbad` est publié sur le head de la PR #113, déclarée mergeable ; les deux checks CI sont en cours. Validation locale : 165 tests ChromeHeadless Scan, 5 contrats bootstrap BackOffice, 349 tests backend, builds Scan/BackOffice/backend et `graphify update .` ; aucun déploiement. |

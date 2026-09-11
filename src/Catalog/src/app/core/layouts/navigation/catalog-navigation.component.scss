@@ -230,6 +230,22 @@
   flex: none;
 }
 
+.header-admin-pill {
+  display: inline-flex;
+  flex: none;
+  min-height: 28px;
+  align-items: center;
+  margin-left: -16px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--catalog-ink-2);
+  color: var(--catalog-cyan);
+  font: 600 .54rem/1 var(--catalog-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .account-teaser {
   display: inline-flex;
   align-items: center;
@@ -368,6 +384,12 @@
 
   .brand-name {
     font-size: 1rem;
+  }
+
+  .header-admin-pill {
+    margin-left: -10px;
+    padding-right: 9px;
+    padding-left: 9px;
   }
 }
 
@@ -558,6 +580,26 @@
     place-items: center;
     border-radius: 50%;
     background: rgba(127, 216, 245, .14);
+  }
+}
+
+@media (max-width: 680px) {
+  .mobile-header-row {
+    gap: 10px;
+  }
+
+  .mobile-header-row .brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .mobile-actions {
+    flex: none;
+    gap: 8px;
+  }
+
+  .mobile-help {
+    display: none;
   }
 }
 

@@ -28,7 +28,11 @@
   and synchronizes `Tri`, `Caisse`, and `Administration` assignments. The app-only Graph
   registration needs `User.ReadWrite.All`, `Application.Read.All`, and
   `AppRoleAssignment.ReadWrite.All`; the API receives its tenant domain and API client ID
-  through `EntraGraph__TenantDomain` and `EntraGraph__ApiClientId`.
+  through `EntraGraph__TenantDomain` and `EntraGraph__ApiClientId`, plus the app-only
+  credential through `EntraGraph__ClientId` and `EntraGraph__ClientSecret`. If the Graph
+  directory cannot authenticate or lacks permissions, Catalog now keeps the accounts
+  workspace readable with a contextual dependency notice instead of the generic red error;
+  the runtime secret/permission fix remains an external deployment check.
 
 ## Frontend And Client Auth Touchpoints
 

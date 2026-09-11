@@ -64,7 +64,7 @@ public sealed class GetAdminScanSessionQueryHandler(
         return new AdminScanSessionResult(
             session.Id.Value,
             session.VolunteerId.Value,
-            GetAdminScanSessionsQueryHandler.FormatName(volunteer?.Name),
+            GetAdminScanSessionsQueryHandler.FormatName(volunteer?.Name) ?? volunteer?.Email,
             session.Mode.ToString(),
             session.TargetAssoEventsId?.Value,
             fair?.Name,

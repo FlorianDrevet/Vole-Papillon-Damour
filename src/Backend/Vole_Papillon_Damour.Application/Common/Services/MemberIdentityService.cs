@@ -16,6 +16,15 @@ public sealed class MemberIdentityService(
         string email,
         CancellationToken cancellationToken)
     {
+        return await EnsureAsync(externalId, email, null, cancellationToken);
+    }
+
+    public async Task<User> EnsureAsync(
+        Guid externalId,
+        string email,
+        string? displayName,
+        CancellationToken cancellationToken)
+    {
         if (externalId == Guid.Empty)
         {
             throw new ArgumentException("A valid external identity is required.", nameof(externalId));
@@ -33,6 +42,7 @@ public sealed class MemberIdentityService(
         }
 
         var externalIdValue = externalId.ToString();
+        var name = ParseDisplayName(displayName);
         var executionStrategy = dbContext.Database.CreateExecutionStrategy();
         User? user = null;
 
@@ -52,12 +62,13 @@ public sealed class MemberIdentityService(
                     UserId.Create(externalId),
                     externalIdValue,
                     email,
-                    seenAt);
+                    seenAt,
+                    name);
                 dbContext.Users.Add(user);
             }
             else
             {
-                user.SynchronizeExternalIdentity(externalIdValue, email, seenAt);
+                user.SynchronizeExternalIdentity(externalIdValue, email, seenAt, name);
             }
 
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -65,5 +76,20 @@ public sealed class MemberIdentityService(
         });
 
         return user ?? throw new InvalidOperationException("The member identity was not persisted.");
+    }
+
+    private static Name? ParseDisplayName(string? displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            return null;
+        }
+
+        var parts = displayName
+            .Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 1
+            ? new Name(parts[0], string.Empty)
+            : new Name(parts[0], string.Join(' ', parts.Skip(1)));
     }
 }
