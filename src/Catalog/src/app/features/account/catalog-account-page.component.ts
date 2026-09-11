@@ -15,6 +15,7 @@ import {
   CatalogAuthenticationRedirectStartedError,
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
+import {getCatalogAccountDisplayName} from '../../core/catalog-account-name';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogWatchlistItem, CatalogWatchlistResponse} from '../../core/catalog.models';
 
@@ -63,7 +64,7 @@ export class CatalogAccountPageComponent implements OnInit {
     this.isAuthenticated = this.auth.isAuthenticated;
     this.isAdministrator = this.auth.isAdministrator;
     this.authError = this.auth.error;
-    this.accountLabel = computed(() => this.displayAccount(this.account()));
+    this.accountLabel = computed(() => getCatalogAccountDisplayName(this.account()));
   }
 
   ngOnInit(): void {
@@ -303,11 +304,4 @@ export class CatalogAccountPageComponent implements OnInit {
     return 'Une erreur est survenue. Réessayez dans un instant.';
   }
 
-  private displayAccount(account: AccountInfo | null): string {
-    if (!account) {
-      return '';
-    }
-
-    return account.name?.trim() || account.username;
-  }
 }

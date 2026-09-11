@@ -78,6 +78,22 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-11 — noms séparés Entra dans le Catalog
+
+Le formulaire public collecte maintenant `givenName` et `surname`, et non plus
+`displayName`. Le Catalog reconstruit le libellé de compte avec les claims
+`given_name`/`family_name` (ou `givenName`/`surname`) ; il ignore un claim `name` égal à
+`unknown` et retombe ensuite sur le nom lisible puis l'adresse de connexion. Le même
+profil séparé est extrait par l'API et transmis à la projection membre pour les routes
+watchlist et scan. `Configure-EntraApps.ps1` ajoute les claims optionnels aux jetons
+Catalog/API sans écraser les autres claims déjà configurés.
+
+Validation : 21 tests API, 184 tests Application, 364 tests backend sur la solution, 160
+tests Catalog ChromeHeadless, build Catalog SSR, analyse PowerShell et 5 tests Pester du
+user flow ; `git diff --check` passe également. La mise à jour Graph réelle et le contrôle
+navigateur d'un compte existant restent à faire avant le merge. Une déconnexion/reconnexion
+sera nécessaire sur les sessions déjà ouvertes.
+
 ### État actualisé — 2026-09-11 — suivi du titre au-dessus des éditions Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

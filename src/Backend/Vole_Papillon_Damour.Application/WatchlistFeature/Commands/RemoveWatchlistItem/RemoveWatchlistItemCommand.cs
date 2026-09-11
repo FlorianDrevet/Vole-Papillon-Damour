@@ -6,4 +6,6 @@ namespace Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatch
 public sealed record RemoveWatchlistItemCommand(
     Guid ExternalId,
     string Email,
-    Guid ItemId) : IRequest<ErrorOr<Success>>;
+    Guid ItemId,
+    string? FirstName = null,
+    string? LastName = null) : IRequest<ErrorOr<Success>>;

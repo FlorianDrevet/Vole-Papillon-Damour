@@ -16,13 +16,40 @@ public sealed class MemberIdentityService(
         string email,
         CancellationToken cancellationToken)
     {
-        return await EnsureAsync(externalId, email, null, cancellationToken);
+        return await EnsureAsync(externalId, email, null, null, cancellationToken);
     }
 
     public async Task<User> EnsureAsync(
         Guid externalId,
         string email,
         string? displayName,
+        CancellationToken cancellationToken)
+    {
+        return await EnsureCoreAsync(
+            externalId,
+            email,
+            ParseDisplayName(displayName),
+            cancellationToken);
+    }
+
+    public async Task<User> EnsureAsync(
+        Guid externalId,
+        string email,
+        string? firstName,
+        string? lastName,
+        CancellationToken cancellationToken)
+    {
+        return await EnsureCoreAsync(
+            externalId,
+            email,
+            CreateName(firstName, lastName),
+            cancellationToken);
+    }
+
+    private async Task<User> EnsureCoreAsync(
+        Guid externalId,
+        string email,
+        Name? name,
         CancellationToken cancellationToken)
     {
         if (externalId == Guid.Empty)
@@ -42,7 +69,6 @@ public sealed class MemberIdentityService(
         }
 
         var externalIdValue = externalId.ToString();
-        var name = ParseDisplayName(displayName);
         var executionStrategy = dbContext.Database.CreateExecutionStrategy();
         User? user = null;
 
@@ -91,5 +117,19 @@ public sealed class MemberIdentityService(
         return parts.Length == 1
             ? new Name(parts[0], string.Empty)
             : new Name(parts[0], string.Join(' ', parts.Skip(1)));
+    }
+
+    private static Name? CreateName(string? firstName, string? lastName)
+    {
+        var normalizedFirstName = NormalizeNamePart(firstName);
+        var normalizedLastName = NormalizeNamePart(lastName);
+        return normalizedFirstName is null && normalizedLastName is null
+            ? null
+            : new Name(normalizedFirstName ?? string.Empty, normalizedLastName ?? string.Empty);
+    }
+
+    private static string? NormalizeNamePart(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

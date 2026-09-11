@@ -73,6 +73,14 @@
   attributes with French `Prénom`/`Nom` labels, optional portable 0–64-character validation,
   and a hidden prefilled email attribute. The hosted form no longer collects `displayName`.
   Scan, BackOffice and Cash have no self-service signup flow.
+- Catalog account labels do not depend on the legacy MSAL `AccountInfo.name` claim. The shared
+  formatter prefers `given_name`/`family_name`, also accepts the External ID spellings
+  `givenName`/`surname`, ignores placeholder values such as `unknown`, then falls back to a
+  usable `name` and finally `username`. The API uses the same claim families when it creates
+  or synchronizes the member projection, so separate first/last names are preserved instead
+  of being reconstructed from a display string. `Configure-EntraApps.ps1` merges the two
+  optional claims into the Catalog ID token and API access token; existing sessions need a
+  sign-out/sign-in to receive the updated claims.
 - Catalog browser-delegated requests add `ui_locales=fr-FR` and `mkt=fr-FR` to sign-in,
   registration, and interactive API-token renewal. `infra/entra/Configure-EntraBranding.ps1`
   creates or updates the tenant's `fr-FR` branding, updates the External ID default

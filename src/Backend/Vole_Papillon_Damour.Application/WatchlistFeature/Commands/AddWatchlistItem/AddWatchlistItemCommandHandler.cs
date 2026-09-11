@@ -32,6 +32,8 @@ public sealed class AddWatchlistItemCommandHandler(
         var user = await memberIdentityService.EnsureAsync(
             command.ExternalId,
             command.Email,
+            command.FirstName,
+            command.LastName,
             cancellationToken);
         var addedAt = dateTimeProvider.UtcNow;
         if (addedAt.Kind != DateTimeKind.Utc)

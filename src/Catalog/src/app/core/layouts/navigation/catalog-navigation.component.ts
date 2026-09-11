@@ -10,10 +10,10 @@ import {
   signal,
 } from '@angular/core';
 import {NavigationEnd, Router} from '@angular/router';
-import type {AccountInfo} from '@azure/msal-browser';
 import {Subject, filter, takeUntil} from 'rxjs';
 
 import {CatalogAuthService} from '../../catalog-auth.service';
+import {getCatalogAccountDisplayName} from '../../catalog-account-name';
 import {CatalogGenresService} from '../../catalog-genres.service';
 import {CatalogNavItem, createCatalogNavItems} from './catalog-nav-items';
 
@@ -36,7 +36,7 @@ export class CatalogNavigationComponent {
   readonly isAuthenticated = this.auth.isAuthenticated;
   readonly isAdministrator = this.auth.isAdministrator;
   readonly isAdministration = computed(() => this.url().split(/[?#]/, 1)[0].startsWith('/administration'));
-  readonly accountName = computed(() => this.displayAccount(this.account()));
+  readonly accountName = computed(() => getCatalogAccountDisplayName(this.account()));
   readonly accountTriggerLabel = computed(() => {
     if (this.isAuthenticated() && this.accountName()) {
       return this.accountName();
@@ -140,7 +140,4 @@ export class CatalogNavigationComponent {
     }
   }
 
-  private displayAccount(account: AccountInfo | null): string {
-    return account?.name?.trim() || account?.username || '';
-  }
 }

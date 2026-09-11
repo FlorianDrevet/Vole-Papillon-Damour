@@ -144,7 +144,11 @@ describe('CatalogNavigationComponent', () => {
       tenantId: 'tenant-id',
       username: 'camille@example.test',
       localAccountId: 'local-account-id',
-      name: 'Camille Dupont',
+      name: 'unknown',
+      idTokenClaims: {
+        given_name: 'Camille',
+        family_name: 'Dupont',
+      },
     });
     auth.isAuthenticated.set(true);
     fixture.detectChanges();

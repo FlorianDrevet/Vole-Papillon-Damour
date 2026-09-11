@@ -168,6 +168,27 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucun titre dans votre liste de recherche');
   });
 
+  it('shows the separate Entra name claims in the account heading', async () => {
+    auth.account.set({
+      ...account('Member'),
+      name: 'unknown',
+      idTokenClaims: {
+        given_name: 'Camille',
+        family_name: 'Dupont',
+      },
+    });
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('#account-profile-title')?.textContent?.trim())
+      .toBe('Camille Dupont');
+  });
+
   it('makes the watchlist the default account tab and keeps preferences behind the second tab', async () => {
     auth.account.set(account('Member'));
     auth.isAuthenticated.set(true);

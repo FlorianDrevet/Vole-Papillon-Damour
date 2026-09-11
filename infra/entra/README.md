@@ -4,7 +4,8 @@ Tout ce qui se configure dans le locataire d'identité se fait **par script**, j
 la main dans le portail. Un clic dans le portail n'est ni rejouable, ni relisible, ni
 reproductible sur un second environnement.
 
-Cinq scripts, et une seule chose qui reste manuelle.
+Cinq scripts ; la création du tenant et, si nécessaire, le mapping des claims External ID
+restent manuels.
 
 `Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
 application n'est pas un client interactif : elle recoit les permissions applicatives
@@ -55,6 +56,22 @@ disponible si le navigateur interactif ne peut pas être utilisé :
 ```
 
 ## Ce qui reste manuel
+
+Les noms collectés par le formulaire sont aussi exposés par
+`Configure-EntraApps.ps1` : `given_name` est ajouté au jeton d'identité du Catalog et
+`family_name` ainsi que `given_name` aux jetons d'accès de l'API. Le Catalog et l'API
+acceptent également les anciennes variantes `givenName`/`surname` afin de rester
+compatibles avec les configurations External ID déjà en place. Après toute modification
+du user flow ou des claims, une nouvelle connexion est nécessaire pour obtenir un jeton
+actualisé.
+
+Après la première exécution réelle, contrôler le contenu du jeton avec un compte de test.
+Si le tenant External ID ne reprend pas les attributs collectés malgré les claims optionnels,
+ouvrir l'application gérée depuis `vpd-catalog-<environment>` puis **Single sign-on →
+Attributes & Claims**, et ajouter `given_name` depuis l'attribut intégré `givenName` ainsi
+que `family_name` depuis `surname`. Répéter le mapping sur l'application gérée de l'API si
+le jeton d'accès ne contient pas ces deux valeurs. Cette étape ne change pas le formulaire :
+elle publie seulement les attributs déjà enregistrés dans les jetons.
 
 **La création du locataire externe lui-même.** Elle se fait une fois, depuis le portail
 Azure (*Microsoft Entra External ID → Créer un locataire → External*), ou en Bicep via
@@ -180,20 +197,21 @@ prioritaire, sont les deux voies supportées à privilégier.
 
 ## Déploiement après merge
 
-Cette évolution modifie uniquement la configuration du user flow External ID :
+Cette évolution modifie le Catalog, l'API et la configuration des applications/du user flow
+External ID :
 
-- rejouer `Configure-EntraUserFlow.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
-  option) pour remplacer l'ancien champ `displayName` par les champs `givenName` et
-  `surname` dans le tenant ;
+- rejouer `Configure-EntraApps.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
+  option) pour ajouter les claims `given_name` et `family_name` aux jetons attendus ;
+- rejouer `Configure-EntraUserFlow.ps1` (d'abord `-WhatIf`, puis sans cette option) pour
+  conserver dans le tenant le formulaire `givenName`/`surname` ;
 - exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS et les textes
   français ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
-- ne pas lancer **Catalog - deploy** pour ce seul changement : le Catalog ne contient pas de
-  code modifié ;
-- ne pas redéployer l'API, le BackOffice, la Scanette, le Worker ou la base pour ce périmètre.
+- lancer **Catalog - deploy** et le déploiement de l'API après validation des deux simulations.
 
-Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine public,
-avec un compte de test, en contrôlant l'inscription, la connexion, le mot de passe oublié et
-le rendu mobile.
+Un compte déjà connecté doit se déconnecter puis se reconnecter afin de recevoir un nouveau
+jeton. Le premier passage du formulaire doit être vérifié en navigation privée sur le domaine
+public, avec un compte de test, en contrôlant l'inscription, la connexion, le mot de passe
+oublié, le nom affiché dans le header et l'espace compte, ainsi que le rendu mobile.
 
 ## Le modèle de droits en trois lignes
 
