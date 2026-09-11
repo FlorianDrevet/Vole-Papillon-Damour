@@ -14,10 +14,10 @@
 | | |
 |---|---|
 | **Lot en cours** | `P2/P3` — le socle API/CQRS et les parcours Catalog sont fusionnés dans `origin/main`; les évolutions Catalog et Scan restent soumises à relecture avant déploiement. |
-| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, les PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) et [#134](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/134) ; puis rejouer le branding Entra sans image et contrôler la connexion/création de compte ainsi que le reconnect automatique et le suivi authentifié du Catalog public. Les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent à suivre. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-pr134-conflicts` |
-| **Dernière mise à jour** | 2026-09-11 — résolution des conflits de la PR #134 depuis `origin/main` (`3a96844`), aucun déploiement |
-| **Branche** | `feat/catalog-session-and-search-polish` — branche de la PR #134 mise à jour depuis le worktree de résolution `fix/pr-134-merge-conflicts`, basé sur `origin/main` (`3a96844`) |
+| **Prochaine action** | Relire puis fusionner, sur décision du mainteneur, la PR [#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138) sur le suivi du titre dans la recherche Catalog, puis les PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) et [#134](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/134). Le branding Entra sans image et le contrôle de la connexion/création de compte ainsi que du suivi authentifié du Catalog public restent à suivre. Les PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) et [#131](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/131) restent ouvertes. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-book-search-follow-ui` |
+| **Dernière mise à jour** | 2026-09-11 — suivi du titre placé au-dessus des éditions de la recherche Catalog, PR #138 ouverte, aucun déploiement |
+| **Branche** | `fix/catalog-search-title-follow-ui` — dédiée depuis `origin/main`, PR [#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138) ouverte |
 
 ---
 
@@ -77,6 +77,25 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-11 — suivi du titre au-dessus des éditions Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-book-search-follow-ui`, la recherche Catalog place désormais l'action
+« Suivre toutes les éditions » dans un callout au-dessus de la liste lorsqu'un même `workId`
+est partagé par les références affichées. Le texte explique le choix entre le suivi de toute
+l'œuvre et celui d'une édition précise ; les cartes ne gardent que « Suivre cette édition ».
+Quand la recherche externe ne renvoie rien, aucun CTA d'œuvre n'est proposé. Les références
+ayant la même œuvre mais des ISBN différents reçoivent aussi des clés de suivi Angular
+distinctes.
+
+Validation : test rouge puis vert, 12 tests ciblés et 152 tests Catalog ChromeHeadless, build
+SSR/production (avertissement de budget initial connu), `graphify update .`, `git diff --check`
+et smoke Chrome local desktop avec deux références mockées puis une recherche vide. L'émulation
+mobile exacte n'était pas disponible dans la session ; les règles responsive existantes restent
+à recontrôler sur appareil ou viewport mobile avant mise en production. La PR
+[#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138) est ouverte ; aucun
+déploiement ni changement Azure, Entra ou API publique n'a été effectué.
 
 ### État actualisé — 2026-09-11 — résolution des conflits de la PR #134
 
@@ -1022,6 +1041,11 @@ PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129). Le co
 `503`; aucun changement Azure, DNS, Entra, Search Console, consentement distant ou donnée
 de bourse n'a été effectué, et le smoke public reste à faire après le merge et le déploiement.
 
+Le correctif du suivi du titre dans la recherche Catalog est limité au dépôt et à la PR
+[#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138). Le contrôle local a
+utilisé un stub HTTP en mémoire pour deux références du même titre puis une réponse vide ;
+aucun changement Azure, DNS, Entra, compte, migration ou donnée de bourse n'a été effectué.
+
 Le correctif du retour OAuth Catalog est également limité au dépôt : aucun déploiement
 Catalog, compte ou changement du locataire Entra n’a été effectué. Le contrôle public après
 mise en ligne reste à faire.
@@ -1173,6 +1197,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-11 | Windows | **Catalog — suivi du titre au-dessus des éditions.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-book-search-follow-ui`, déplacement du CTA œuvre au-dessus de la liste des références, texte explicatif entre toutes les éditions et édition précise, suppression des CTA œuvre par carte, absence du CTA quand la réponse externe est vide, et clés `track` uniques pour plusieurs ISBN d'une même œuvre. Validation : test rouge puis vert, 152 tests Catalog, build SSR/production, Graphify, `git diff --check` et smoke Chrome local desktop avec stub mémoire ; émulation mobile exacte indisponible, aucun déploiement. PR [#138](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/138) ouverte. |
 | 2026-09-11 | Windows | **Correctif branding Entra — suppression du fond derrière la carte.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-entra-auth-card-background`, le CSS partagé des écrans de connexion et de création de compte force un canvas uni et supprime `background-image`, ce qui masque les barres de l'ancien asset déjà stocké dans le tenant. Le runbook et la mémoire sont alignés. Validation : test statique rouge puis vert, parse PowerShell, `graphify update .` et `git diff --check` ; Pester reste bloqué par l'absence du module Graph local. PR [#133](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/133) ouverte, aucun tenant ni déploiement modifié. |
 | 2026-09-11 | Windows | **PR #129 — résolution des conflits publiée.** Depuis `origin/main` (`b359829`) dans le worktree `Vole-Papillon-Damour-pr129-conflicts`, conservation des changements main de Scan/administration et réconciliation des variantes `BookCardComponent` `list` et `home` avec les sections de l'accueil Catalog. La branche locale `fix/pr-129-conflicts` a publié la résolution sur `feat/catalog-home-sections`, head de la PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129). Validation : 139 tests Catalog, build de production, `graphify update .`, requête Graphify, `git diff --check` et contrôles Chrome à 1280/390 px sans débordement ; l'API locale était indisponible pendant le smoke, aucun déploiement. |
 | 2026-09-11 | Windows | **Catalog — sections de l'accueil et cartes récentes.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-catalog-home-sections`, ajout de « Par genres » et du callout « Avec un compte » après les livres rares, suppression de « Votre sélection » et ajout d'une variante de carte récente inspirée de la maquette, avec le placeholder conservé pour les couvertures absentes. Validation : test rouge puis vert, 128 tests Catalog, build de production, `graphify update .` et contrôles Chrome locaux à 1280/390×844 avec API mockée ; l'API publique a renvoyé `503`, aucun déploiement. Branche `feat/catalog-home-sections`, PR [#129](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/129) ouverte. |
