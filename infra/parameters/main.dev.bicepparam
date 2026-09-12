@@ -247,11 +247,11 @@ param sqlAdministratorLoginPassword = readEnvironmentVariable('SQL_ADMIN_PASSWOR
 param jwtSecret = readEnvironmentVariable('JWT_SECRET', '')
 param googleBooksApiKey = readEnvironmentVariable('GOOGLE_BOOKS_API_KEY', '')
 param instagramAccessToken = readEnvironmentVariable('INSTAGRAM_ACCESS_TOKEN', '')
-param socialImportSchedule = '0 * * * * *'
+param socialImportSchedule = '0 */30 * * * *'
 param socialImportGraphApiVersion = 'v22.0'
 param socialImportUserId = readEnvironmentVariable('INSTAGRAM_USER_ID', '')
 param socialImportFloorDate = readEnvironmentVariable('INSTAGRAM_IMPORT_FLOOR_DATE', '')
-param socialImportMaxPostsPerRun = 25
+param socialImportMaxPostsPerRun = 5
 param socialImportAccessTokenIssuedAt = readEnvironmentVariable('INSTAGRAM_ACCESS_TOKEN_ISSUED_AT', '')
 param titleGenerationEnabled = readEnvironmentVariable('TITLE_GENERATION_ENABLED', 'false') == 'true'
 param titleGenerationAccountName = readEnvironmentVariable('TITLE_GENERATION_ACCOUNT_NAME', '')
