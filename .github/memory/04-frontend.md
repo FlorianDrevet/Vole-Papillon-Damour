@@ -69,6 +69,14 @@ flow, with separate accessible success/error tones and live-region semantics. Th
 only the latest feedback state so a stale success cannot remain visible alongside a validation
 error; loading and contextual empty/error notices remain in the normal page flow.
 
+As of 2026-09-12, Catalog `/administration` groups the former fair-statistics sidebar item
+under one `Statistiques` entry with two tabs: `Statistiques par bourse` and
+`Statistiques des bénévoles`. The second tab consumes the typed
+`/books/admin/volunteers/stats` aggregation and renders contribution, concentration,
+calibration, waiting-stock, monthly heatmap, renewal and genre views with period/fair
+filters. The quality-data mockup subtab and its 4C screen are intentionally not implemented.
+The UI keeps roles activity-derived (Tri/Caisse) and does not pretend to mirror Entra roles.
+
 The public search sort control keeps a native accessible `<select>` for keyboard and screen
 reader behavior while wrapping it in Catalog design-system spacing, border, pill, chevron,
 hover, and focus styles. The administration Settings navigation icon uses a balanced custom

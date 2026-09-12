@@ -66,6 +66,12 @@ body controls use Libre Franklin. The shell collapses the sidebar and content gu
 tablet/mobile breakpoints; physical inventory history/actions remain truthful empty or
 disabled when the API has no corresponding domain contract.
 
+The statistics workspace keeps the sidebar at one `Statistiques` item and uses an internal
+underlined tab bar for fair and volunteer statistics. Volunteer cards, table, scatter plot,
+calibration bars and monthly heatmap reuse the paper/ink/blue/orange palette and collapse to
+two-column cards, horizontal table scrolling and compact heatmap rows on mobile. The omitted
+quality-data mockup subtab is not represented in the navigation or DOM.
+
 Action confirmations and validation errors use a single fixed toast with the same paper/ink,
 blue/orange and restrained-shadow language; it is live-region accessible, dismissible, and
 responsive to the mobile header offset without shifting the administration layout.

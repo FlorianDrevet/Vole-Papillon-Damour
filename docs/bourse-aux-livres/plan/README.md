@@ -28,6 +28,7 @@ s'y réfère par leurs identifiants (`RG-nn`, `ENF-nn`, `DT-nn`, `QT-nn`, `R-nn`
 | [`02`](02-palier-1-socle-interne.md) | **Palier 1** — le socle interne : tri, quantités, bascule, caisse | `P1-1` à `P1-11` | Moyen |
 | [`03`](03-paliers-2-et-3.md) | **Paliers 2 et 3** — vitrine publique, puis alertes | — | **Grossier, volontairement** |
 | [`04`](04-statistiques-benevoles.md) | **Statistiques bénévoles** — contribution privée dans Scan et Catalog | — | Implémenté localement |
+| [`05`](05-statistiques-administration.md) | **Statistiques d'administration** — bourse et équipe bénévole dans Catalog | — | Implémenté localement — PR #154 en attente |
 
 **État d'exécution au 2026-09-06.** Le palier 2 est implémenté et déployé. Cette tranche
 complète le palier 3 côté backend/API/CQRS et interfaces : corrections et administration

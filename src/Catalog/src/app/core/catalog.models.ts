@@ -444,6 +444,76 @@ export interface CatalogAdminFairStats {
   previousFairs: {fairId: string; name: string; dateStart: string; soldQuantity: number; revenue: number | null}[];
 }
 
+export interface CatalogAdminVolunteerStatistics {
+  generatedAt: string;
+  from: string | null;
+  to: string | null;
+  fairId: string | null;
+  team: CatalogAdminVolunteerTeamSummary;
+  volunteers: CatalogAdminVolunteerContribution[];
+  monthlyActivity: CatalogAdminVolunteerMonthlyActivity[];
+  renewal: CatalogAdminVolunteerRenewal;
+  dominantGenres: CatalogAdminVolunteerGenre[];
+}
+
+export interface CatalogAdminVolunteerTeamSummary {
+  activeVolunteerCount: number;
+  scannedCount: number;
+  keptCount: number;
+  rejectedCount: number;
+  keptRatePercent: number | null;
+  soldQuantity: number;
+  soldOfKeptRatePercent: number | null;
+  sessionCount: number;
+  scanDurationMinutes: number;
+  cashDurationMinutes: number;
+  totalDurationMinutes: number;
+  averageSessionsPerVolunteer: number | null;
+}
+
+export interface CatalogAdminVolunteerContribution {
+  volunteerId: string;
+  displayName: string;
+  roles: string[];
+  sessionCount: number;
+  scanDurationMinutes: number;
+  cashDurationMinutes: number;
+  totalDurationMinutes: number;
+  scannedCount: number;
+  keptCount: number;
+  keptRatePercent: number | null;
+  soldQuantity: number;
+  waitingQuantity: number;
+  waitingOverYearQuantity: number;
+  flowRatePercent: number | null;
+  firstActivityAt: string | null;
+  lastActivityAt: string | null;
+  dominantGenre: string | null;
+}
+
+export interface CatalogAdminVolunteerMonthlyActivity {
+  volunteerId: string;
+  displayName: string;
+  months: CatalogAdminVolunteerMonth[];
+}
+
+export interface CatalogAdminVolunteerMonth {
+  periodStart: string;
+  sessionCount: number;
+}
+
+export interface CatalogAdminVolunteerRenewal {
+  newCount: number;
+  regularCount: number;
+  withdrawingCount: number;
+  windowDays: number;
+}
+
+export interface CatalogAdminVolunteerGenre {
+  name: string;
+  quantity: number;
+}
+
 export interface CatalogAdminScanSession {
   id: string;
   volunteerId: string;

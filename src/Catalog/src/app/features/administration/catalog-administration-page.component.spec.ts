@@ -24,6 +24,7 @@ import {
   CatalogAdminScanSessionPage,
   CatalogAdminScanSession,
   CatalogAdminSettings,
+  CatalogAdminVolunteerStatistics,
   CatalogDeadStockResponse,
 } from '../../core/catalog.models';
 import {CatalogAdministrationPageComponent} from './catalog-administration-page.component';
@@ -142,6 +143,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'getOverview', 'getBooks', 'getBook', 'addBook', 'updateMetadata', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setRare', 'setVisibility', 'merge', 'deleteBook',
       'getFairs', 'getFairStats', 'setFairRevenue', 'getSessions', 'getSession',
+      'getVolunteerStatistics',
       'removeMovement', 'reassignSession', 'cancelSession', 'cancelSessionAlerts',
       'forceSessionAlerts', 'getAlerts', 'cancelAlert', 'forceAlert', 'getMembers',
       'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
@@ -171,6 +173,30 @@ describe('CatalogAdministrationPageComponent', () => {
     } as CatalogAdminOverview));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
     api.getFairs.and.returnValue(of({generatedAt: '', fairs: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminFairPage));
+    api.getVolunteerStatistics.and.returnValue(of({
+      generatedAt: '',
+      from: null,
+      to: null,
+      fairId: null,
+      team: {
+        activeVolunteerCount: 0,
+        scannedCount: 0,
+        keptCount: 0,
+        rejectedCount: 0,
+        keptRatePercent: null,
+        soldQuantity: 0,
+        soldOfKeptRatePercent: null,
+        sessionCount: 0,
+        scanDurationMinutes: 0,
+        cashDurationMinutes: 0,
+        totalDurationMinutes: 0,
+        averageSessionsPerVolunteer: null,
+      },
+      volunteers: [],
+      monthlyActivity: [],
+      renewal: {newCount: 0, regularCount: 0, withdrawingCount: 0, windowDays: 90},
+      dominantGenres: [],
+    } as CatalogAdminVolunteerStatistics));
     api.getSessions.and.returnValue(of({generatedAt: '', sessions: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminScanSessionPage));
     api.getAlerts.and.returnValue(of({generatedAt: '', alerts: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminAlertPage));
     api.getMembers.and.returnValue(of({generatedAt: '', members: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminMemberPage));
@@ -272,7 +298,8 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(sidebar.textContent).toContain('Pendant la bourse');
     expect(sidebar.textContent).toContain('Le fonds de livres');
     expect(sidebar.textContent).toContain("Réservé à l'administration");
-    expect(sidebar.textContent).toContain('Statistiques par bourse');
+    expect(sidebar.textContent).toContain('Statistiques');
+    expect(sidebar.textContent).not.toContain('Statistiques par bourse');
     expect(sidebar.textContent).toContain('Comptes & rôles');
     expect(sidebar.textContent).toContain('Paramètres');
     expect(sidebar.textContent).not.toContain('Membres du site');
@@ -385,7 +412,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
     await fixture.componentInstance.selectSection('catalogue');
     await fixture.componentInstance.selectSection('sessions');
-    await fixture.componentInstance.selectSection('fairs');
+    await fixture.componentInstance.selectSection('statistics');
     await fixture.componentInstance.selectSection('alerts');
     await fixture.componentInstance.selectSection('accounts');
     await fixture.componentInstance.selectSection('settings');
@@ -648,13 +675,78 @@ describe('CatalogAdministrationPageComponent', () => {
       coverUrl: reference.coverUrl,
       workId: reference.workId,
     });
+
+  });
+
+  it('renders the two statistics tabs and omits the quality-data screen', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getVolunteerStatistics.and.returnValue(of({
+      generatedAt: '2026-09-12T12:00:00Z',
+      from: '2026-08-13T12:00:00Z',
+      to: '2026-09-12T12:00:00Z',
+      fairId: null,
+      team: {
+        activeVolunteerCount: 2,
+        scannedCount: 5916,
+        keptCount: 4619,
+        rejectedCount: 1297,
+        keptRatePercent: 78,
+        soldQuantity: 3697,
+        soldOfKeptRatePercent: 80,
+        sessionCount: 215,
+        scanDurationMinutes: 8340,
+        cashDurationMinutes: 3240,
+        totalDurationMinutes: 11580,
+        averageSessionsPerVolunteer: 14.3,
+      },
+      volunteers: [{
+        volunteerId: 'volunteer-id',
+        displayName: 'Michel Bonnet',
+        roles: ['Tri', 'Caisse'],
+        sessionCount: 31,
+        scanDurationMinutes: 1230,
+        cashDurationMinutes: 0,
+        totalDurationMinutes: 1230,
+        scannedCount: 985,
+        keptCount: 798,
+        keptRatePercent: 81,
+        soldQuantity: 662,
+        waitingQuantity: 20,
+        waitingOverYearQuantity: 4,
+        flowRatePercent: 98,
+        firstActivityAt: '2026-06-01T08:00:00Z',
+        lastActivityAt: '2026-09-09T18:00:00Z',
+        dominantGenre: 'Romans',
+      }],
+      monthlyActivity: [],
+      renewal: {newCount: 3, regularCount: 12, withdrawingCount: 3, windowDays: 90},
+      dominantGenres: [{name: 'Romans', quantity: 2100}],
+    } as CatalogAdminVolunteerStatistics));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('statistics');
+    await fixture.componentInstance.selectStatisticsTab('volunteers');
+    fixture.detectChanges();
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.textContent).toContain('Statistiques par bourse');
+    expect(page.textContent).toContain('Statistiques des bénévoles');
+    expect(page.textContent).toContain('Michel Bonnet');
+    expect(page.textContent).not.toContain('Qualité des données');
+    expect(page.textContent).not.toContain('4C');
+    expect(page.querySelectorAll('.admin-nav-item')).not.toHaveSize(0);
+    expect(Array.from(page.querySelectorAll('.admin-nav-item')).map(item => item.textContent?.trim()))
+      .not.toContain('Bénévoles');
+    expect(api.getVolunteerStatistics).toHaveBeenCalled();
   });
 
   it('distinguishes fairs with the same name by their dates in the statistics selector', () => {
     fixture.detectChanges();
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    fixture.componentInstance.activeSection.set('fairs');
+    fixture.componentInstance.activeSection.set('statistics');
     fixture.componentInstance.fairsPage.set({
       generatedAt: '2026-09-11T10:00:00Z',
       fairs: [

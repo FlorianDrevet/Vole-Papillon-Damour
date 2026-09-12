@@ -112,6 +112,11 @@ client-only/private.
   compatible with the configured EF value converter and perform provider-sensitive date
   ordering/filtering after materialization, so the admin endpoints do not fail on SQLite
   translation.
+- `GET /books/admin/volunteers/stats?from=&to=&fairId=` - Administration-only, one-shot
+  volunteer team aggregation for Catalog. It returns typed team totals, per-volunteer
+  contribution, inferred activity roles, monthly activity, renewal buckets and dominant
+  genres; sale corrections are netted by their reversal link and no client volunteer id is
+  accepted. Till duration and waiting-stock values are explicitly reconstructed indicators.
 - `GET /books/admin/sessions` and `/books/admin/sessions/{scanSessionId}` - paged session
   monitoring; `status=InProgress&olderThan24Hours=true` is the stale-session view. Movement
   removal, session reassign/cancel, alert cancel/force, and
