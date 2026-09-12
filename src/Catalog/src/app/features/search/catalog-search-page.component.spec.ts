@@ -12,6 +12,7 @@ import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {
   CatalogAddedWatchlistItem,
   CatalogBookReference,
+  CatalogReferenceSearchResponse,
   CatalogSearchResponse,
 } from '../../core/catalog.models';
 import {CatalogSearchPageComponent} from './catalog-search-page.component';
@@ -253,6 +254,26 @@ describe('CatalogSearchPageComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Petit Ours brun se promène en forêt');
     expect(fixture.nativeElement.querySelector('[data-loader="skeleton"]')).toBeNull();
+  });
+
+  it('centers the external reference loader in its section', () => {
+    const references$ = new Subject<CatalogReferenceSearchResponse>();
+    api.searchReferences.and.returnValue(references$.asObservable());
+
+    fixture.detectChanges();
+
+    const loader = fixture.nativeElement.querySelector('.external-loader') as HTMLElement;
+    expect(loader).not.toBeNull();
+    if (!loader) {
+      return;
+    }
+
+    const loaderStyle = getComputedStyle(loader);
+
+    expect(loaderStyle.display).toBe('grid');
+    expect(loaderStyle.alignItems).toBe('center');
+    expect(loaderStyle.justifyItems).toBe('center');
+    expect(loaderStyle.minHeight).toBe('150px');
   });
 
   it('follows a precise edition with only the edition target', async () => {
