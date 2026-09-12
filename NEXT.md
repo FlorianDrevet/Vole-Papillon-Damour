@@ -63,7 +63,7 @@ réservée à l'action explicite. Validation locale : TDD rouge puis vert, 190 t
 ChromeHeadless, build production et `graphify update .`. Le navigateur local a bien servi le
 bundle de cette branche, mais les résultats ne peuvent pas être chargés sans l'instance SQL
 nécessaire au backend de développement. Aucun déploiement, changement Azure/Entra ou donnée de
-compte n'a été effectué ; `rtk` n'est pas installé et les commandes natives ont été utilisées.
+compte n'a été effectué ; [PR #163](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/163) est ouverte vers `main`. `rtk` n'est pas installé et les commandes natives ont été utilisées.
 
 ### État actualisé — 2026-09-12 — RGPD du compte Catalog
 
