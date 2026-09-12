@@ -101,6 +101,9 @@ public sealed class ProjectDbContextModelTests
         watchlist.FindProperty(nameof(Watchlist.Id))!.GetColumnName().Should().Be("UserId");
 
         var watchlistItems = model.FindEntityType(typeof(WatchlistItem))!;
+        watchlistItems.FindProperty(nameof(WatchlistItem.Title))!.GetMaxLength().Should().Be(500);
+        watchlistItems.FindProperty(nameof(WatchlistItem.Authors))!.GetMaxLength().Should().Be(500);
+        watchlistItems.FindProperty(nameof(WatchlistItem.Publisher))!.GetMaxLength().Should().Be(200);
         watchlistItems.GetCheckConstraints()
             .Single(constraint => constraint.Name == "CK_WatchlistItems_ExactlyOneTarget")
             .Sql

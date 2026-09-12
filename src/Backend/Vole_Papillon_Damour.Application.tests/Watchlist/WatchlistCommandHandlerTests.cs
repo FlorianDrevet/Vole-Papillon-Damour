@@ -43,6 +43,33 @@ public sealed class WatchlistCommandHandlerTests
     }
 
     [Fact]
+    public async Task AddEditionItem_PersistsReferenceMetadataForAnEditionNotYetReceived()
+    {
+        await using var fixture = await WatchlistFeatureTestFixture.CreateAsync();
+        var handler = CreateAddHandler(fixture);
+
+        var result = await handler.Handle(
+            new AddWatchlistItemCommand(
+                MemberId,
+                "member@example.test",
+                WatchlistItemScope.Edition,
+                null,
+                "9782070363735",
+                Title: "Le Petit Prince",
+                Authors: "Antoine de Saint-Exupéry",
+                Publisher: "Gallimard",
+                PublicationYear: 1999),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var item = await fixture.Context.WatchlistItems.SingleAsync();
+        item.Title.Should().Be("Le Petit Prince");
+        item.Authors.Should().Be("Antoine de Saint-Exupéry");
+        item.Publisher.Should().Be("Gallimard");
+        item.PublicationYear.Should().Be(1999);
+    }
+
+    [Fact]
     public async Task AddItem_WhenTheSameTargetExists_ReturnsConflict()
     {
         await using var fixture = await WatchlistFeatureTestFixture.CreateAsync();

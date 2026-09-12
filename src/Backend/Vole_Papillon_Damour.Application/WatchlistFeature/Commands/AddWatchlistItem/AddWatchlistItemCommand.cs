@@ -12,4 +12,8 @@ public sealed record AddWatchlistItemCommand(
     string? WorkId,
     string? Isbn13,
     string? FirstName = null,
-    string? LastName = null) : IRequest<ErrorOr<AddedWatchlistItemResult>>;
+    string? LastName = null,
+    string? Title = null,
+    string? Authors = null,
+    string? Publisher = null,
+    int? PublicationYear = null) : IRequest<ErrorOr<AddedWatchlistItemResult>>;

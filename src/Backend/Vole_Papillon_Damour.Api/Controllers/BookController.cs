@@ -204,7 +204,11 @@ public static class BookController
                                 request.WorkId,
                                 request.Isbn13,
                                 identity.FirstName,
-                                identity.LastName),
+                                identity.LastName,
+                                request.Title,
+                                request.Authors,
+                                request.Publisher,
+                                request.PublicationYear),
                             cancellationToken);
 
                         return result.Match(
@@ -785,6 +789,10 @@ public static class BookController
                     item.Scope.ToString(),
                     item.WorkId,
                     item.Isbn13,
+                    item.Title,
+                    item.Authors,
+                    item.Publisher,
+                    item.PublicationYear,
                     item.Book is null ? null : ToResponse(item.Book),
                     item.AddedAt,
                     item.LastAlertAt))
