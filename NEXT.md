@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Hotfix Catalog — rendre récupérable l’échec d’obtention silencieuse du jeton sur `/compte`. |
-| **Prochaine action** | Relire puis ouvrir la PR Catalog, déployer depuis `main`, et contrôler `/compte` avec une session connectée. |
+| **Prochaine action** | Faire relire/fusionner la [PR #161](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/161), déployer depuis `main`, et contrôler `/compte` avec une session connectée. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-watchlist-error` |
 | **Dernière mise à jour** | 2026-09-13 — la panne reproduite ne déclenche aucune requête `/catalog/me/watchlist` : l’erreur est antérieure à l’API, dans le renouvellement silencieux MSAL ; le schéma API a par ailleurs été migré par le déploiement `34721709446`. |
-| **Branche** | `fix/catalog-account-watchlist-error` — dédiée depuis `origin/main` fraîchement récupéré, PR à ouvrir après validation |
+| **Branche** | `fix/catalog-account-watchlist-error` — dédiée depuis `origin/main` fraîchement récupéré, [PR #161](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/161) ouverte |
 
 ---
 
