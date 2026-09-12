@@ -40,8 +40,28 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('liste de recherche');
     expect(content).toContain('alertes');
     expect(content).toContain('Microsoft Entra');
+    expect(content).toContain('Azure Communication Services');
     expect(content).toContain('Google Analytics 4');
     expect(content).toContain('Google Maps');
+  });
+
+  it('explains how members can access, export or delete their data', async () => {
+    const fixture = await renderPage('rights');
+    const content = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+
+    expect(content).toContain('Vos données et le RGPD');
+    expect(content).toContain('Microsoft Entra External ID');
+    expect(content).toContain('Portabilité');
+    expect(content).toContain('un mois');
+    expect(content).toContain('Ne joignez pas de pièce d’identité');
+
+    const requestLink = fixture.nativeElement.querySelector(
+      '[data-testid="rights-request"]',
+    ) as HTMLAnchorElement | null;
+    expect(requestLink?.getAttribute('href')).toContain('mailto:volepapillondamour@sfr.fr');
+    expect(fixture.nativeElement.querySelector(
+      'a[href="https://www.cnil.fr/fr/plaintes"]',
+    )).not.toBeNull();
   });
 
   it('documents explicit consent and both audience tools on the cookie page', async () => {

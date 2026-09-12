@@ -11,6 +11,7 @@ describe('catalogRobotsForUrl', () => {
   it('keeps public routes indexable', () => {
     expect(catalogRobotsForUrl('/')).toBe('index, follow');
     expect(catalogRobotsForUrl('/recherche?q=livre')).toBe('index, follow');
+    expect(catalogRobotsForUrl('/donnees-personnelles')).toBe('index, follow');
     expect(catalogRobotsForUrl('/livres/un-livre-9782070612758#details')).toBe('index, follow');
   });
 

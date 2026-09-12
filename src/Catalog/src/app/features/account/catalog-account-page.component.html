@@ -52,6 +52,10 @@
         </div>
         <h2 id="account-access-title">Votre espace, à votre rythme.</h2>
         <p>Connectez-vous si vous avez déjà un compte ou créez-en un en quelques instants pour commencer votre liste de recherche.</p>
+        <p class="account-privacy-notice">
+          La création du compte utilise votre adresse e-mail, votre prénom et votre nom lorsqu’ils sont renseignés pour fournir votre espace et vos alertes.
+          <a data-testid="account-privacy-link" routerLink="/donnees-personnelles">Voir vos données et vos droits</a>.
+        </p>
         <div class="account-actions">
           <button type="button" class="account-button" data-testid="member-login" (click)="login()">
             Se connecter <span aria-hidden="true">→</span>
@@ -411,7 +415,7 @@
           <div>
             <p class="eyebrow">Données personnelles</p>
             <h2 id="delete-account-title">Supprimer mon compte.</h2>
-            <p>Cette demande supprime votre profil local et votre liste de recherche. Elle ne supprime pas les informations de connexion de votre fournisseur d’identité.</p>
+            <p>Cette demande supprime votre profil local, votre liste de recherche et l’historique de vos alertes. Elle demande aussi la suppression de votre identité de connexion externe ; la finalisation peut se poursuivre en arrière-plan.</p>
           </div>
           @if (!deletionRequested()) {
             <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">
@@ -420,7 +424,7 @@
           } @else {
             <div class="delete-confirmation" role="alertdialog" aria-labelledby="delete-confirmation-title">
               <h3 id="delete-confirmation-title">Confirmer la suppression ?</h3>
-              <p>Cette action est irréversible pour les données du catalogue.</p>
+              <p>Cette action est irréversible pour les données du catalogue et la connexion associée.</p>
               <div class="confirmation-actions">
                 <button type="button" class="account-button quiet" (click)="cancelAccountDeletion()">Annuler</button>
                 <button type="button" class="account-button danger" data-testid="confirm-delete-account" [disabled]="deleting()" (click)="confirmAccountDeletion()">

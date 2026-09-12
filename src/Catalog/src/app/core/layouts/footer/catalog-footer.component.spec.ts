@@ -53,6 +53,7 @@ describe('CatalogFooterComponent', () => {
       {text: "Le site de l'association", href: 'https://volepapillondamour.fr'},
       {text: 'Mentions légales', href: '/mentions-legales'},
       {text: 'Confidentialité', href: '/confidentialite'},
+      {text: 'Vos données & RGPD', href: '/donnees-personnelles'},
       {text: 'Politique de cookies', href: '/politique-de-cookies'},
       {text: 'Accessibilité', href: '/accessibilite'},
       {text: 'Gérer les cookies', href: '/politique-de-cookies'},
@@ -64,6 +65,7 @@ describe('CatalogFooterComponent', () => {
 
     expect(links.some(link => link.getAttribute('href') === '/mentions-legales')).toBeTrue();
     expect(links.some(link => link.getAttribute('href') === '/confidentialite')).toBeTrue();
+    expect(links.some(link => link.getAttribute('href') === '/donnees-personnelles')).toBeTrue();
     expect(links.some(link => link.getAttribute('href') === '/politique-de-cookies')).toBeTrue();
     expect(links.some(link => link.getAttribute('href') === '/accessibilite')).toBeTrue();
   });

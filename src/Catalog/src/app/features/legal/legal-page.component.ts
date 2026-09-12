@@ -3,13 +3,21 @@ import {ActivatedRoute} from '@angular/router';
 
 import {environment} from '../../../environments/environment';
 
-type CatalogLegalPage = 'legal' | 'privacy' | 'cookies' | 'accessibility';
+type CatalogLegalPage = 'legal' | 'privacy' | 'rights' | 'cookies' | 'accessibility';
+
+type LegalLink = Readonly<{
+  label: string;
+  href: string;
+  external?: boolean;
+  testId?: string;
+}>;
 
 type LegalSection = Readonly<{
   title: string;
   paragraphs: readonly string[];
   bullets?: readonly string[];
   note?: string;
+  links?: readonly LegalLink[];
 }>;
 
 type LegalPageViewModel = Readonly<{
@@ -35,7 +43,11 @@ const CLARITY_ID_LABEL = isConfigured(CLARITY_PROJECT_ID)
 const GOOGLE_ANALYTICS_ID_LABEL = isConfigured(GOOGLE_ANALYTICS_MEASUREMENT_ID)
   ? `Identifiant de mesure GA4 : ${GOOGLE_ANALYTICS_MEASUREMENT_ID}.`
   : 'Identifiant de mesure GA4 : configuré au moment du déploiement.';
-const LAST_UPDATED_LABEL = '9 septembre 2026';
+const RIGHTS_REQUEST_HREF = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Demande RGPD — mes données')}&body=${encodeURIComponent(
+  'Bonjour,\n\nJe souhaite exercer le droit suivant : accès / rectification / effacement / limitation / opposition / portabilité.\nAdresse e-mail utilisée pour mon compte :\n\nMerci.',
+)}`;
+const CNIL_COMPLAINT_URL = 'https://www.cnil.fr/fr/plaintes';
+const LAST_UPDATED_LABEL = '12 septembre 2026';
 
 const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
   legal: {
@@ -118,13 +130,13 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
       {
         title: 'Compte, liste de recherche et alertes',
         paragraphs: [
-          'Si vous créez un compte, Microsoft Entra External ID peut traiter votre adresse électronique, votre nom d’affichage et les éléments nécessaires à l’authentification. Le catalogue associe ensuite à votre compte les livres suivis dans votre liste de recherche et votre préférence d’alertes.',
+          'Si vous créez un compte, Microsoft Entra External ID peut traiter votre adresse électronique, votre prénom et votre nom lorsqu’ils sont renseignés, ainsi que les éléments nécessaires à l’authentification. Le catalogue associe ensuite à votre compte les livres suivis dans votre liste de recherche et votre préférence d’alertes. Le catalogue et son API ne conservent pas votre mot de passe.',
           'Ces données servent uniquement à fournir les fonctions de compte, de liste de recherche et d’alerte liées au catalogue. Aucun paiement ni achat en ligne n’est réalisé depuis ce site.',
         ],
         bullets: [
-          'Données de compte et d’authentification.',
+          'Adresse e-mail, prénom et nom renseignés, identifiant technique de compte et éléments de session nécessaires à l’authentification.',
           'Identifiants des éditions ou œuvres ajoutées à la liste de recherche.',
-          'Préférence d’activation, de suspension ou de désinscription des alertes.',
+          'Préférence d’activation, de suspension ou de désinscription des alertes, ainsi que les éléments techniques de remise nécessaires au service.',
         ],
       },
       {
@@ -164,6 +176,7 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         bullets: [
           'Microsoft Azure et les services techniques nécessaires à l’hébergement et à l’exécution du catalogue.',
           'Microsoft Entra External ID pour l’authentification des comptes.',
+          'Azure Communication Services pour l’envoi des alertes demandées et le suivi technique de leur remise.',
           'Microsoft Clarity et Google Analytics 4 uniquement si la mesure d’audience est acceptée.',
           'Google Maps uniquement si la carte interactive est acceptée.',
         ],
@@ -180,14 +193,90 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         title: 'Vos droits',
         paragraphs: [
           `Vous pouvez demander l’accès à vos données, leur rectification, leur effacement, la limitation du traitement ou vous opposer à certains usages selon votre situation. Vous pouvez retirer votre consentement à la mesure d’audience ou à la carte interactive à tout moment.`,
-          `Pour exercer un droit, écrivez à ${CONTACT_EMAIL} en précisant votre demande et, si nécessaire, le compte ou l’adresse concernée. Vous pouvez aussi utiliser le parcours de suppression proposé dans votre espace membre.`,
+          `Pour connaître la procédure, les délais et les données concernées, consultez la page « Vos données et le RGPD ». Vous pouvez aussi utiliser le parcours de suppression proposé dans votre espace membre.`,
           'Si la réponse apportée ne vous paraît pas satisfaisante, vous pouvez saisir la Commission nationale de l’informatique et des libertés (CNIL).',
+        ],
+        links: [
+          {label: 'Consulter vos données et vos droits', href: '/donnees-personnelles'},
         ],
       },
       {
         title: 'Transferts éventuels',
         paragraphs: [
           'Les prestataires techniques peuvent traiter certaines données en dehors de la France ou de l’Union européenne selon leurs infrastructures et leurs conditions de service. Les garanties et lieux de traitement applicables doivent être suivis dans la documentation contractuelle et le registre de l’association.',
+        ],
+      },
+    ],
+  },
+  rights: {
+    title: 'Vos données et le RGPD.',
+    eyebrow: 'Exercer vos droits',
+    intro: 'Vous pouvez demander à consulter, corriger, exporter ou supprimer les données liées à votre compte Catalogue. Cette page vous indique quoi demander et comment le faire.',
+    sections: [
+      {
+        title: 'Responsable du traitement',
+        paragraphs: [
+          `Pour le compte, la liste de recherche et les alertes du catalogue ${CATALOG_URL}, le responsable du traitement est l’association ${ASSOCIATION_NAME}, ${POSTAL_ADDRESS}. Le point de contact pour toute demande est ${CONTACT_EMAIL}.`,
+          'Cette page complète la politique de confidentialité et la politique de cookies. Elle ne concerne que les données liées au Catalogue ; les éventuels services tiers ouverts depuis un lien restent soumis à leurs propres informations.',
+        ],
+      },
+      {
+        title: 'Quelles données sont liées à mon compte ?',
+        paragraphs: [
+          'La création du compte utilise votre adresse e-mail, votre prénom et votre nom lorsqu’ils sont renseignés, pour fournir votre espace personnel et vos alertes. Microsoft Entra External ID conserve l’identité nécessaire à la connexion ; le catalogue et son API ne conservent pas votre mot de passe.',
+          'Lorsque vous utilisez les fonctions du catalogue, nous pouvons associer à votre compte un identifiant technique, des dates de création et de dernière activité, les éditions ou œuvres suivies, votre préférence d’alerte, l’historique des alertes et les informations techniques de remise d’un e-mail. La consultation publique reste possible sans compte.',
+        ],
+        bullets: [
+          'Aucune adresse postale, aucun téléphone et aucune date de naissance ne sont nécessaires pour ce compte.',
+          'Les alertes sont des messages liés au service demandé ; elles ne réservent pas un livre et ne constituent pas une inscription à une prospection commerciale.',
+        ],
+      },
+      {
+        title: 'Demander une copie de mes données',
+        paragraphs: [
+          `Écrivez à ${CONTACT_EMAIL} ou utilisez le bouton ci-dessus. Indiquez « Je demande l’accès à mes données au titre de l’article 15 du RGPD », l’adresse e-mail utilisée pour le compte et, si vous le souhaitez, le périmètre demandé : compte, liste de recherche, alertes ou données techniques.`,
+          'La réponse est fournie dans un format électronique courant et par un moyen approprié à la confidentialité des informations. Ne joignez pas de pièce d’identité ou de document sensible dans le premier e-mail. Si un doute raisonnable sur votre identité subsiste, l’association peut demander une vérification proportionnée et vous indiquer un canal sécurisé.',
+        ],
+      },
+      {
+        title: 'Les autres droits',
+        paragraphs: [
+          'Votre demande peut porter sur plusieurs droits. L’association examine la demande au regard de la finalité, de la base juridique du traitement, des obligations de conservation et des droits d’autres personnes.',
+        ],
+        bullets: [
+          'Rectification : corriger une donnée inexacte ou incomplète.',
+          'Effacement : demander la suppression des données lorsque les conditions sont réunies.',
+          'Limitation : demander que les données soient conservées mais que leur utilisation soit temporairement restreinte.',
+          'Opposition : vous opposer à un traitement fondé sur l’intérêt légitime, pour des raisons tenant à votre situation.',
+          'Portabilité : recevoir les données que vous avez fournies, dans les cas prévus par le RGPD, dans un format structuré et lisible par machine.',
+          'Retrait du consentement : modifier à tout moment vos choix de mesure d’audience ou de carte interactive avec « Gérer les cookies ».',
+        ],
+      },
+      {
+        title: 'Supprimer mon compte',
+        paragraphs: [
+          'Depuis « Mon compte », la demande supprime le profil local, la liste de recherche et l’historique des alertes associés. Elle demande également la suppression de votre identité de connexion Microsoft Entra External ID ; la finalisation peut se poursuivre en arrière-plan si un traitement différé est nécessaire.',
+          'Lorsqu’une donnée doit être conservée pour une trace métier ou une obligation légale, l’association retire les éléments permettant de vous identifier et conserve uniquement ce qui est nécessaire. Les données de membre supprimées ne doivent pas rester dans une file d’envoi d’alerte.',
+        ],
+        links: [
+          {label: 'Ouvrir « Mon compte »', href: '/compte'},
+        ],
+      },
+      {
+        title: 'Délais et gratuité',
+        paragraphs: [
+          'L’exercice de ces droits est gratuit, sauf demande manifestement infondée ou excessive dans les limites prévues par le RGPD. Une réponse est apportée dans un délai d’un mois à compter de la réception de la demande. Ce délai peut être prolongé de deux mois si la demande est complexe ou nombreuse ; l’association doit vous en informer dans le premier mois et en expliquer la raison.',
+          'Si l’association ne donne pas suite, elle vous explique pourquoi et vous rappelle votre possibilité de saisir la CNIL. Les droits peuvent être limités lorsque la loi, la sécurité du service ou les droits d’une autre personne l’exigent.',
+        ],
+      },
+      {
+        title: 'Contact et réclamation',
+        paragraphs: [
+          `Pour toute demande RGPD, écrivez à ${CONTACT_EMAIL} ou par courrier à ${POSTAL_ADDRESS}. Décrivez le droit exercé et l’adresse e-mail du compte concerné ; n’envoyez pas de secret ni de mot de passe.`,
+          'Vous pouvez introduire une réclamation auprès de la Commission nationale de l’informatique et des libertés si vous estimez que vos droits ne sont pas respectés.',
+        ],
+        links: [
+          {label: 'Saisir la CNIL', href: CNIL_COMPLAINT_URL, external: true},
         ],
       },
     ],
@@ -292,6 +381,7 @@ export class LegalPageComponent implements OnInit {
   readonly hostingProviderName = HOSTING_PROVIDER_NAME;
   readonly hostingProviderUrl = HOSTING_PROVIDER_URL;
   readonly lastUpdatedLabel = LAST_UPDATED_LABEL;
+  readonly rightsRequestHref = RIGHTS_REQUEST_HREF;
 
   page: CatalogLegalPage = 'legal';
   content: LegalPageViewModel = LEGAL_PAGES.legal;
@@ -308,6 +398,7 @@ export class LegalPageComponent implements OnInit {
 function isCatalogLegalPage(value: unknown): value is CatalogLegalPage {
   return value === 'legal'
     || value === 'privacy'
+    || value === 'rights'
     || value === 'cookies'
     || value === 'accessibility';
 }

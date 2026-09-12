@@ -270,6 +270,22 @@ h3 {
   line-height: 1.55;
 }
 
+.account-privacy-notice {
+  margin-top: 16px !important;
+  padding-top: 16px;
+  border-top: 1px solid rgba(247, 251, 254, .18);
+  color: var(--catalog-mist-2) !important;
+  font-size: .74rem !important;
+  line-height: 1.6 !important;
+}
+
+.account-privacy-notice a {
+  color: var(--catalog-cyan);
+  text-decoration: underline;
+  text-decoration-thickness: .08em;
+  text-underline-offset: .16em;
+}
+
 .account-reassurance {
   grid-column: 1 / -1;
   display: grid;

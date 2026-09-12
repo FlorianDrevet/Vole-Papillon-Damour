@@ -28,6 +28,7 @@ ces documents.
 | [`06-regles-metier.md`](06-regles-metier.md) | Règles numérotées et vérifiables |
 | [`07-exigences-non-fonctionnelles.md`](07-exigences-non-fonctionnelles.md) | Performance, hors-ligne, RGPD, accessibilité, authentification |
 | [`08-questions-ouvertes.md`](08-questions-ouvertes.md) | Décisions restant à prendre et risques assumés |
+| [`09-rgpd-compte-et-droits.md`](09-rgpd-compte-et-droits.md) | Étude opérationnelle RGPD du compte Catalog et parcours d'exercice des droits |
 | [`technique/`](technique/README.md) | **Architecture technique** — comment construire ce que décrit ce dossier |
 | [`plan/`](plan/README.md) | **Plan d'exécution** — dans quel ordre construire, quels tests manuels, quels déploiements |
 

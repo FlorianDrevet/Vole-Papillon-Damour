@@ -8,6 +8,7 @@ const KNOWN_STATIC_ROUTE_PATHS = new Set([
   '/desinscription',
   '/mentions-legales',
   '/confidentialite',
+  '/donnees-personnelles',
   '/politique-de-confidentialite',
   '/politique-de-cookies',
   '/accessibilite',

@@ -63,25 +63,38 @@ l'association, et il vaut plus que n'importe quelle campagne de communication.
 ## Données personnelles
 
 ### `ENF-10` — Minimisation
-Seules sont collectées l'adresse e-mail et la liste de recherche. Ni nom, ni adresse
-postale, ni téléphone, ni date de naissance.
+Le compte utilise l'adresse e-mail, le prénom et le nom lorsqu'ils sont renseignés,
+l'identifiant externe nécessaire au rapprochement et les dates techniques de compte,
+ainsi que la liste de recherche et l'état technique des alertes lorsqu'ils sont utilisés.
+Ni adresse postale, ni téléphone, ni date de naissance ne sont nécessaires. Le mot de
+passe reste chez Microsoft Entra External ID et n'est pas stocké par l'association.
 
 ### `ENF-11` — Information et consentement
-La finalité est annoncée au moment de l'inscription, en clair, et pas seulement dans
-les mentions légales. Aucune case pré-cochée.
+La finalité et les catégories de données sont annoncées avant ou au moment de
+l'inscription, en clair, avec un lien vers la page « Vos données et le RGPD ». Aucune
+case pré-cochée ; les consentements éventuels pour les cookies et la mesure d'audience
+restent séparés de la création du compte.
 
 ### `ENF-12` — Droit à l'effacement
 La suppression du compte est accessible en deux clics depuis « Mon compte » et supprime
-effectivement la liste de recherche et l'historique d'alertes. Les mouvements de vente,
-qui ne contiennent aucune donnée personnelle, sont conservés.
+effectivement le profil local, la liste de recherche et l'historique d'alertes. Elle
+demande aussi la suppression de l'identité Entra ; la finalisation peut être différée et
+rejouée. Les mouvements de vente nécessaires à la traçabilité sont conservés sans
+identité personnelle exploitable, par anonymisation lorsque c'est nécessaire.
 
 ### `ENF-13` — Conservation
-Un compte inactif depuis trois ans est supprimé après une relance par e-mail.
+La cible fonctionnelle d'un compte inactif depuis trois ans, après une relance par
+e-mail, doit être implémentée, testée et inscrite dans le registre des traitements avant
+d'être annoncée comme une règle effective. En attendant, la page publique ne promet pas
+une purge automatique ; les demandes explicites de suppression sont traitées par le
+worker durable.
 
 ### `ENF-14` — Absence de cession et de traçage
-Aucune adresse e-mail n'est transmise à un tiers. Aucun traceur publicitaire sur le site
-public. Les statistiques de fréquentation, si elles existent, doivent fonctionner sans
-consentement — c'est-à-dire sans bandeau de cookies.
+Aucune adresse e-mail n'est vendue ni utilisée pour de la prospection non demandée. Elle
+est transmise à Microsoft Entra External ID pour l'authentification et, lorsqu'une
+alerte est demandée, au service d'envoi Azure Communication Services. Aucun traceur
+publicitaire n'est utilisé. Clarity, GA4 et Google Maps ne sont chargés qu'après le
+consentement correspondant, gérable à tout moment.
 
 ### `ENF-15` — Données des bénévoles
 L'activité individuelle des bénévoles est visible des administrateurs pour la

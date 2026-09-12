@@ -35,8 +35,9 @@ domaine `volepapillondamour.fr` ; aucune propriété supplémentaire n'est néce
 
 ## Mentions à maintenir
 
-Les pages `/mentions-legales`, `/confidentialite`, `/politique-de-cookies` et
-`/accessibilite` décrivent le fonctionnement actuel. Toute évolution du compte, des
-alertes, des prestataires, des durées de conservation, des transferts ou de l'audit
-RGAA doit être répercutée dans ces pages et validée par l'association avant mise en
-production.
+Les pages `/mentions-legales`, `/confidentialite`, `/donnees-personnelles`,
+`/politique-de-cookies` et `/accessibilite` décrivent le fonctionnement actuel. Toute
+évolution du compte, des alertes, des prestataires, des durées de conservation, des
+transferts ou de l'audit RGAA doit être répercutée dans ces pages et validée par
+l'association avant mise en production. L'étude de référence est
+[`docs/bourse-aux-livres/09-rgpd-compte-et-droits.md`](../../docs/bourse-aux-livres/09-rgpd-compte-et-droits.md).

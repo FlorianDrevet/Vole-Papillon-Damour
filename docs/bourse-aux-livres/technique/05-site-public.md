@@ -117,13 +117,13 @@ Le détail — enregistrements, rôles, migration de l'existant — est en
 
 | Exigence | Implémentation |
 |---|---|
-| `ENF-10` | Seuls e-mail et liste de recherche. Aucun nom, aucune adresse |
-| `ENF-11` | Finalité annoncée à l'inscription, en clair. Aucune case pré-cochée |
-| `ENF-12` | Suppression en deux clics, cascade effective sur liste et historique d'alertes |
-| `ENF-14` | Aucun traceur publicitaire. Une mesure d'audience, si elle existe, doit fonctionner **sans consentement** — donc sans bandeau de cookies |
+| `ENF-10` | E-mail, prénom/nom lorsqu'ils sont renseignés, identifiant externe et état de compte nécessaire ; aucune adresse postale, aucun téléphone |
+| `ENF-11` | Finalité et catégories annoncées avant ou pendant l'inscription, avec lien vers la page des droits ; aucune case pré-cochée |
+| `ENF-12` | Suppression en deux clics du profil local, de la liste et de l'historique ; demande de suppression Entra traitée de façon durable |
+| `ENF-14` | Aucun traceur publicitaire ; Clarity, GA4 et Google Maps sont chargés après le consentement correspondant |
 
-Ce dernier point est un choix d'architecture autant que de conformité : une mesure sans
-cookie évite d'imposer un bandeau à chaque visiteur d'un site associatif.
+La page publique [`09-rgpd-compte-et-droits.md`](../09-rgpd-compte-et-droits.md) détaille
+les droits, les destinataires, les durées à valider et les contrôles fournisseurs.
 
 ## 7. Administration
 

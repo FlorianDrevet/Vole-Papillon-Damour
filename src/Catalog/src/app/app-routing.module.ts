@@ -32,6 +32,12 @@ const routes: Routes = [
     data: {page: 'privacy'},
   },
   {
+    path: 'donnees-personnelles',
+    component: LegalPageComponent,
+    title: 'Vos données et le RGPD | Vole Papillon d’Amour',
+    data: {page: 'rights'},
+  },
+  {
     path: 'politique-de-confidentialite',
     redirectTo: 'confidentialite',
     pathMatch: 'full',
