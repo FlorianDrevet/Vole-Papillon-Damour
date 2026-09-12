@@ -104,6 +104,7 @@ export interface CatalogWatchlistItemRequest {
   authors?: string | null;
   publisher?: string | null;
   publicationYear?: number | null;
+  coverUrl?: string | null;
 }
 
 export interface CatalogAddedWatchlistItem {
@@ -123,6 +124,7 @@ export interface CatalogWatchlistItem {
   authors?: string | null;
   publisher?: string | null;
   publicationYear?: number | null;
+  coverUrl: string | null;
   book: CatalogBook | null;
   addedAt: string;
   lastAlertAt: string | null;

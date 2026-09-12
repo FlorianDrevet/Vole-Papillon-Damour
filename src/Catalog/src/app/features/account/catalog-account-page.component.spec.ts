@@ -48,6 +48,7 @@ describe('CatalogAccountPageComponent', () => {
       scope: 'Edition',
       workId: null,
       isbn13: '9782070363735',
+      coverUrl: null,
       book: {
         isbn13: '9782070363735',
         title: 'Le livre suivi',
@@ -365,6 +366,22 @@ describe('CatalogAccountPageComponent', () => {
     expect(card.querySelector('.watchlist-author')?.textContent).toContain('Antoine de Saint-Exupéry');
     expect(card.querySelector('.watchlist-publisher')?.textContent).toContain('Gallimard');
     expect(card.textContent).not.toContain('Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.');
+  });
+
+  it('renders the saved reference cover when an edition is not yet in the catalogue', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    const current = structuredClone(watchlist);
+    current.items[0].book = null;
+    current.items[0].coverUrl = 'https://covers.example.test/le-petit-prince.jpg';
+    api.getWatchlist.and.returnValue(of(current));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const cover = fixture.nativeElement.querySelector('.watchlist-cover img') as HTMLImageElement | null;
+    expect(cover?.src).toBe('https://covers.example.test/le-petit-prince.jpg');
   });
 
   it('uses a smaller account heading for the watchlist page', async () => {

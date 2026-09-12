@@ -532,6 +532,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     authors: string | null;
     publisher: string | null;
     publicationYear: number | null;
+    coverUrl: string | null;
   } | null {
     if (scope === 'Work' && item.workId) {
       return {
@@ -542,6 +543,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         authors: item.authors,
         publisher: item.publisher,
         publicationYear: item.publicationYear,
+        coverUrl: item.coverUrl,
       };
     }
 
@@ -554,6 +556,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         authors: item.authors,
         publisher: item.publisher,
         publicationYear: item.publicationYear,
+        coverUrl: item.coverUrl,
       };
     }
 

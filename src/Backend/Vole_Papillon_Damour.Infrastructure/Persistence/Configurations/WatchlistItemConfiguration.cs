@@ -39,6 +39,7 @@ public sealed class WatchlistItemConfiguration : IEntityTypeConfiguration<Watchl
             .UseCollation("Latin1_General_100_CI_AI");
         builder.Property(item => item.Publisher).HasMaxLength(200);
         builder.Property(item => item.PublicationYear);
+        builder.Property(item => item.CoverUrl).HasMaxLength(2048);
         builder.Property(item => item.AddedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)

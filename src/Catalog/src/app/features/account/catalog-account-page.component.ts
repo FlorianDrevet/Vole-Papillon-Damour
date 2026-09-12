@@ -316,6 +316,10 @@ export class CatalogAccountPageComponent implements OnInit {
     return item.book?.publicationYear || item.publicationYear || null;
   }
 
+  itemCoverUrl(item: CatalogWatchlistItem): string | null {
+    return item.book?.coverUrl || item.coverUrl || null;
+  }
+
   editionLabel(item: CatalogWatchlistItem): string {
     if (item.scope === 'Work') {
       return 'Toutes éditions';

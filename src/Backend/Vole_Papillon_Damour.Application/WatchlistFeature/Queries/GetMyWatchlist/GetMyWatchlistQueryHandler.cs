@@ -123,6 +123,7 @@ public sealed class GetMyWatchlistQueryHandler(
                     item.Authors,
                     item.Publisher,
                     item.PublicationYear,
+                    item.CoverUrl,
                     selectedBook,
                     new DateTimeOffset(item.AddedAt, TimeSpan.Zero),
                     lastAlertAt);

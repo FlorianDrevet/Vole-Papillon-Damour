@@ -16,4 +16,5 @@ public sealed record AddWatchlistItemCommand(
     string? Title = null,
     string? Authors = null,
     string? Publisher = null,
-    int? PublicationYear = null) : IRequest<ErrorOr<AddedWatchlistItemResult>>;
+    int? PublicationYear = null,
+    string? CoverUrl = null) : IRequest<ErrorOr<AddedWatchlistItemResult>>;

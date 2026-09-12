@@ -152,6 +152,25 @@ exécutable n'a changé et aucune base ni ressource Azure n'a été modifiée de
 La [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) est ouverte pour
 relecture.
 
+### État actualisé — 2026-09-12 — couverture des suivis Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-watchlist-cover`, la recherche et la fiche livre transmettent aussi
+la couverture de la référence externe lorsqu'un membre suit un Work ou une Edition. Le
+backend la valide comme URL HTTPS, la conserve comme snapshot optionnel de
+`WatchlistItem.CoverUrl` et la restitue dans `GET /catalog/me/watchlist`. La liste du compte
+utilise ce snapshot quand aucune fiche locale ou couverture live n'est encore disponible ;
+les anciennes lignes restent compatibles et gardent leur placeholder.
+
+La migration `20260912214304_AddWatchlistItemCoverUrl` est générée. Les tests ciblés
+Watchlist et Catalog sont verts, ainsi que les 183 tests Catalog, les 426 tests backend,
+les builds API/solution/Catalog, `graphify update .` et `git diff --check`. Le shell
+déconnecté a été contrôlé sur desktop ; le parcours connecté avec compte Entra et API
+joignable, ainsi que le contrôle mobile authentifié, restent des vérifications distantes.
+La branche est rebasée sur `origin/main`, poussée et proposée dans la [PR
+#159](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/159). Aucun déploiement ni
+changement Azure, Entra, compte ou base distante n'a été effectué.
+
 ### État actualisé — 2026-09-12 — métadonnées des cartes de liste Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

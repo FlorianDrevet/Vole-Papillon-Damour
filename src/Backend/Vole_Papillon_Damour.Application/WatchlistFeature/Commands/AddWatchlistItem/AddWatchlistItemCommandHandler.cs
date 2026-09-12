@@ -89,7 +89,8 @@ public sealed class AddWatchlistItemCommandHandler(
                 command.Title,
                 command.Authors,
                 command.Publisher,
-                command.PublicationYear)
+                command.PublicationYear,
+                command.CoverUrl)
             : WatchlistItem.CreateEdition(
                 Guid.NewGuid(),
                 user.Id,
@@ -98,7 +99,8 @@ public sealed class AddWatchlistItemCommandHandler(
                 command.Title,
                 command.Authors,
                 command.Publisher,
-                command.PublicationYear);
+                command.PublicationYear,
+                command.CoverUrl);
         dbContext.WatchlistItems.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

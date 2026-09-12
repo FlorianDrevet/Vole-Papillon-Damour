@@ -22,6 +22,7 @@ public sealed record WatchlistItemResponse(
     string? Authors,
     string? Publisher,
     int? PublicationYear,
+    string? CoverUrl,
     PublicCatalogBookResponse? Book,
     DateTimeOffset AddedAt,
     DateTimeOffset? LastAlertAt);
