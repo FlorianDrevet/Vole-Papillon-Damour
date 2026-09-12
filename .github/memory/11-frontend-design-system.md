@@ -132,8 +132,11 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   heatmap, fair sales bars and a compact session table. Estimated values use an explicit
   `estimé` label and the footer explains that timestamps do not define per-book prices.
   The Scan companion uses the compact mobile layout, a `TRI`/`CAISSE` badge or role switch,
-  local snapshot status and the same restrained visual vocabulary; its statistics styles
-  live in the global Scan stylesheet to stay below Angular component-style budgets.
+  local snapshot status and the same restrained visual vocabulary; its authenticated home
+  uses paired paper action cards with blue/orange icon chips, and its statistics styles
+  live in the global Scan stylesheet to stay below Angular component-style budgets. The
+  statistics report clips its route surface and scrolls through `.statistics-scroll` only,
+  preserving the Scan PWA's no-body-scroll behavior elsewhere.
 - The Catalog client now consumes the typed P2/P3 administration API for overview,
   catalogue metadata/stock, dead stock, scan sessions, fairs/revenue, alert queues,
   members and settings. It also consumes the external bibliographic search separately

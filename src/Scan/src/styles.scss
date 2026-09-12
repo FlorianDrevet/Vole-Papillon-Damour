@@ -283,10 +283,92 @@ input:focus-visible {
 
 .home-footer {
   display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
   min-height: 76px;
   align-items: center;
   justify-content: center;
   padding: 12px 20px 20px;
+}
+
+.home-footer-actions {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-footer-action {
+  display: flex;
+  min-width: 0;
+  min-height: 68px;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: 1px solid var(--scan-line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--scan-ink);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.home-footer-action:hover {
+  border-color: var(--scan-blue);
+  box-shadow: 0 12px 22px -20px rgb(7 43 69 / 80%);
+  transform: translateY(-1px);
+}
+
+.home-footer-action:active {
+  transform: translateY(1px);
+}
+
+.home-footer-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--scan-blue-soft);
+  color: var(--scan-blue);
+}
+
+.home-footer-action-account .home-footer-icon {
+  background: #fff2e8;
+  color: var(--scan-orange);
+}
+
+.home-footer-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.home-footer-action-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.home-footer-action-label {
+  overflow-wrap: anywhere;
+  color: var(--scan-ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.home-footer-action-copy small {
+  overflow-wrap: anywhere;
+  color: var(--scan-muted);
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .quiet-link,
@@ -1816,8 +1898,14 @@ input:focus-visible {
   }
 
   .home-footer {
+    min-height: 94px;
+    gap: 7px;
+    padding: 8px 16px 12px;
+  }
+
+  .home-footer-action {
     min-height: 60px;
-    padding-bottom: 12px;
+    padding: 9px 10px;
   }
 
   .scan-stage {
