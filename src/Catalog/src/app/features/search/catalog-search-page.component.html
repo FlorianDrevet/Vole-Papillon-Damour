@@ -215,18 +215,28 @@
                   <p id="external-follow-description">Suivez toutes les éditions quand la recherche identifie un même titre. Choisissez une édition précise dans la liste ci-dessous si le titre ne peut pas être identifié.</p>
                 }
               </div>
-              <button
-                type="button"
-                class="reference-follow reference-follow--work"
-                aria-describedby="external-follow-description"
-                [disabled]="!workReference() || referenceFollowPending !== null"
-                [attr.aria-disabled]="workReference() ? null : 'true'"
-                (click)="followWork()">
-                @if (workFollowPending()) {
-                  <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
-                }
-                {{ workFollowPending() ? 'Ajout…' : 'Suivre toutes les éditions' }}
-              </button>
+              @if (workFollowed()) {
+                <span class="reference-followed reference-followed--work" role="status">
+                  <span aria-hidden="true">✓</span>
+                  Toutes les éditions sont déjà dans votre liste de recherche
+                </span>
+              } @else {
+                <button
+                  type="button"
+                  class="reference-follow reference-follow--work"
+                  aria-describedby="external-follow-description"
+                  [attr.aria-label]="workFollowPending() ? 'Ajout en cours' : 'Suivre toutes les éditions'"
+                  [attr.aria-busy]="workFollowPending() ? 'true' : null"
+                  [disabled]="!workReference() || referenceFollowPending !== null"
+                  [attr.aria-disabled]="workReference() ? null : 'true'"
+                  (click)="followWork()">
+                  @if (workFollowPending()) {
+                    <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                  } @else {
+                    <span>Suivre toutes les éditions</span>
+                  }
+                </button>
+              }
             </div>
             @if (externalResponse.items.length) {
               <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Choisissez une édition précise ci-dessous pour être prévenu si elle arrive un jour.</p>
@@ -248,16 +258,26 @@
                     </div>
                     <div class="reference-actions">
                       @if (reference.isbn13) {
-                        <button
-                          type="button"
-                          class="reference-follow reference-follow--edition"
-                          [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Edition')"
-                          (click)="followReference(reference)">
-                          @if (referenceFollowPending === referenceFollowKey(reference, 'Edition')) {
-                            <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
-                          }
-                          {{ referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'Ajout…' : 'Suivre cette édition' }}
-                        </button>
+                        @if (referenceFollowed(reference)) {
+                          <span class="reference-followed" role="status">
+                            <span aria-hidden="true">✓</span>
+                            Déjà dans votre liste de recherche
+                          </span>
+                        } @else {
+                          <button
+                            type="button"
+                            class="reference-follow reference-follow--edition"
+                            [attr.aria-label]="referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'Ajout en cours' : 'Suivre cette édition'"
+                            [attr.aria-busy]="referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'true' : null"
+                            [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Edition')"
+                            (click)="followReference(reference)">
+                            @if (referenceFollowPending === referenceFollowKey(reference, 'Edition')) {
+                              <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                            } @else {
+                              <span>Suivre cette édition</span>
+                            }
+                          </button>
+                        }
                       }
                     </div>
                   </article>

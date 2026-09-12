@@ -14,9 +14,19 @@ import {
   CatalogBookReference,
   CatalogReferenceSearchResponse,
   CatalogSearchResponse,
+  CatalogWatchlistResponse,
 } from '../../core/catalog.models';
 import {CatalogSearchPageComponent} from './catalog-search-page.component';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+
+function emptyWatchlist(items: CatalogWatchlistResponse['items'] = []): CatalogWatchlistResponse {
+  return {
+    generatedAt: '',
+    alertStatus: 'Active',
+    bounceCount: 0,
+    items,
+  };
+}
 
 describe('CatalogSearchPageComponent', () => {
   let fixture: ComponentFixture<CatalogSearchPageComponent>;
@@ -29,6 +39,7 @@ describe('CatalogSearchPageComponent', () => {
     initialize: jasmine.Spy;
     login: jasmine.Spy;
     getApiAccessToken: jasmine.Spy;
+    tryGetApiAccessToken: jasmine.Spy;
   };
   let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
   let response$: Subject<CatalogSearchResponse>;
@@ -108,8 +119,13 @@ describe('CatalogSearchPageComponent', () => {
       initialize: jasmine.createSpy('initialize').and.resolveTo(),
       login: jasmine.createSpy('login'),
       getApiAccessToken: jasmine.createSpy('getApiAccessToken'),
+      tryGetApiAccessToken: jasmine.createSpy('tryGetApiAccessToken').and.resolveTo('member-token'),
     };
-    memberApi = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['addWatchlistItem']);
+    memberApi = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', [
+      'addWatchlistItem',
+      'getWatchlist',
+    ]);
+    memberApi.getWatchlist.and.returnValue(of(emptyWatchlist()));
 
     await TestBed.configureTestingModule({
       declarations: [CatalogSearchPageComponent, BookCardComponent],
@@ -273,6 +289,38 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucun autre titre ne correspond à cette recherche.');
   });
 
+  it('replaces the edition follow button when the edition is already in the watchlist', async () => {
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.getWatchlist.and.returnValue(of(emptyWatchlist([{
+      id: 'watchlist-item',
+      scope: 'Edition',
+      workId: null,
+      isbn13: reference.isbn13,
+      title: reference.title,
+      authors: reference.authors,
+      publisher: reference.publisher,
+      publicationYear: reference.publicationYear,
+      coverUrl: reference.coverUrl,
+      book: null,
+      addedAt: '2026-09-05T06:00:00Z',
+      lastAlertAt: null,
+    }])));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.reference-card') as HTMLElement;
+
+    expect(card.querySelector('.reference-follow--edition')).toBeNull();
+    expect(card.querySelector('.reference-followed')).not.toBeNull();
+    expect(card.textContent).toContain('Déjà dans votre liste de recherche');
+    await fixture.componentInstance.followReference(reference);
+    expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
+  });
+
   it('follows any edition from the section callout without opening a modal', async () => {
     auth.isAuthenticated.set(true);
     auth.getApiAccessToken.and.resolveTo('member-token');
@@ -404,7 +452,8 @@ describe('CatalogSearchPageComponent', () => {
     const followPromise = fixture.componentInstance.followReference(reference);
     await Promise.resolve();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Ajout…');
+    expect(fixture.nativeElement.querySelector('.reference-follow--edition [data-loader="ring"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
 
     const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
     expect(request).toEqual({
@@ -430,8 +479,9 @@ describe('CatalogSearchPageComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('L’édition a été ajoutée à votre liste de recherche.');
-    expect(fixture.nativeElement.textContent).toContain('Suivre cette édition');
-    expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
+    expect(fixture.nativeElement.querySelector('.reference-follow--edition')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.reference-followed')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Déjà dans votre liste de recherche');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
   });
 

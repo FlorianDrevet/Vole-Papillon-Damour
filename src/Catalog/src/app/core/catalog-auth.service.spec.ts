@@ -136,6 +136,20 @@ describe('CatalogAuthService', () => {
     });
   });
 
+  it('does not start an interactive token request for passive token checks', async () => {
+    await service.initialize();
+    const interactionRequiredError = new msalModule.InteractionRequiredAuthError(
+      'interaction_required',
+      'correlation-id',
+    );
+    client.acquireTokenSilent.and.rejectWith(interactionRequiredError);
+
+    const token = await service.tryGetApiAccessToken();
+
+    expect(token).toBeNull();
+    expect(client.acquireTokenRedirect).not.toHaveBeenCalled();
+  });
+
   it('recognizes the administration role from the API access token', async () => {
     client.acquireTokenSilent.and.resolveTo({
       accessToken: createAccessToken(['Administration']),

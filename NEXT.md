@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Hotfix Catalog — rendre récupérable l’échec d’obtention silencieuse du jeton sur `/compte`. |
-| **Prochaine action** | Faire relire/fusionner la [PR #161](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/161), déployer depuis `main`, et contrôler `/compte` avec une session connectée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-watchlist-error` |
-| **Dernière mise à jour** | 2026-09-13 — la panne reproduite ne déclenche aucune requête `/catalog/me/watchlist` : l’erreur est antérieure à l’API, dans le renouvellement silencieux MSAL ; le schéma API a par ailleurs été migré par le déploiement `34721709446`. |
-| **Branche** | `fix/catalog-account-watchlist-error` — dédiée depuis `origin/main` fraîchement récupéré, [PR #161](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/161) ouverte |
+| **Lot en cours** | Catalog — afficher l’état déjà suivi et le loader lors du suivi depuis la recherche externe. |
+| **Prochaine action** | Faire relire la [PR #163](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/163), puis déployer depuis `main` et contrôler le parcours recherche avec une session connectée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-search-follow-state` |
+| **Dernière mise à jour** | 2026-09-13 — les conflits de la PR #163 ont été résolus sur `origin/main` à jour ; les éditions déjà présentes sont reconnues via la liste de recherche et le chargement passif du statut n’engage jamais de redirection MSAL. Tests Catalog et build repassants ; contrôle navigateur limité par l’absence de SQL local. |
+| **Branche** | `fix/catalog-search-follow-state` — dédiée depuis `origin/main` fraîchement récupéré, [PR #163](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/163) vers `main` |
 
 ---
 
@@ -45,6 +45,25 @@ tests. Aucun déploiement, changement API, Entra ou compte n'a été effectué ;
 est ouverte pour relecture.
 `rtk` n'est pas installé sur cette machine ; les commandes Git/npm natives équivalentes ont
 été utilisées.
+
+### État actualisé — 2026-09-13 — état de suivi dans la recherche Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-search-follow-state`, la recherche Catalog charge la liste de recherche
+de façon silencieuse pour reconnaître les cibles `Work` et `Edition` déjà suivies. Une édition
+présente remplace le bouton « Suivre cette édition » par l'indication « Déjà dans votre liste
+de recherche » ; une cible Work déjà suivie remplace de la même manière l'action globale.
+Après un clic, le bouton conserve sa place et n'affiche plus « Ajout… » : seul le loader circulaire
+est visible pendant la requête, puis l'indication de suivi et le message de confirmation sont
+rendus. Les doublons sont également ignorés côté composant.
+
+Le contrôle passif utilise `tryGetApiAccessToken()` afin qu'un jeton silencieux indisponible ne
+déclenche pas une redirection interactive pendant une simple consultation ; la redirection reste
+réservée à l'action explicite. Validation locale : TDD rouge puis vert, 196 tests Catalog
+ChromeHeadless, build production et `graphify update .`. Le navigateur local a bien servi le
+bundle de cette branche, mais les résultats ne peuvent pas être chargés sans l'instance SQL
+nécessaire au backend de développement. Aucun déploiement, changement Azure/Entra ou donnée de
+compte n'a été effectué ; [PR #163](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/163) est ouverte vers `main`. `rtk` n'est pas installé et les commandes natives ont été utilisées.
 
 ### État actualisé — 2026-09-12 — RGPD du compte Catalog
 

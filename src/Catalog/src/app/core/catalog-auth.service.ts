@@ -167,6 +167,27 @@ export class CatalogAuthService {
     }
   }
 
+  async tryGetApiAccessToken(): Promise<string | null> {
+    try {
+      await this.initialize();
+      const account = this._account();
+      if (!account) {
+        return null;
+      }
+
+      const result = await this.requireClient().acquireTokenSilent({
+        account,
+        scopes: catalogLoginRequest.scopes,
+      });
+      this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
+      this._roles.set(readRoles(result.accessToken));
+      return result.accessToken;
+    } catch {
+      // Passive checks must never start an interactive redirect or surface an auth failure.
+      return null;
+    }
+  }
+
   private async initializeBrowser(): Promise<void> {
     let succeeded = false;
 
