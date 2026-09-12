@@ -86,7 +86,32 @@
     </div>
 
     @if (errorMessage()) {
-      <p class="feedback error" role="alert">{{ errorMessage() }}</p>
+      <div class="feedback error" role="alert">
+        <p>{{ errorMessage() }}</p>
+        @if (activeTab() === 'watchlist' && !watchlist()) {
+          <div class="feedback-actions">
+            @if (watchlistRecoveryAction() === 'retry') {
+              <button
+                type="button"
+                class="account-button secondary"
+                data-testid="watchlist-retry"
+                [disabled]="loading()"
+                (click)="loadWatchlist()">
+                Réessayer
+              </button>
+            } @else if (watchlistRecoveryAction() === 'reconnect') {
+              <button
+                type="button"
+                class="account-button secondary"
+                data-testid="watchlist-reconnect"
+                [disabled]="loading()"
+                (click)="reconnect()">
+                Se reconnecter
+              </button>
+            }
+          </div>
+        }
+      </div>
     }
     @if (successMessage()) {
       <p class="feedback success" role="status">{{ successMessage() }}</p>

@@ -423,6 +423,21 @@ h3 {
   background: var(--catalog-paper);
 }
 
+.feedback > p {
+  margin-bottom: 0;
+}
+
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.feedback-actions .account-button {
+  min-height: 38px;
+}
+
 .feedback.error {
   border-left-color: #a33b37;
   color: #7b302c;

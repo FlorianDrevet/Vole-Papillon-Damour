@@ -27,6 +27,7 @@ import {
 } from '../../core/catalog.models';
 
 type CatalogAccountTab = 'watchlist' | 'contribution' | 'preferences';
+type WatchlistRecoveryAction = 'retry' | 'reconnect' | null;
 
 @Component({
   selector: 'app-catalog-account-page',
@@ -52,6 +53,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly deleting = signal(false);
   readonly deletionRequested = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly watchlistRecoveryAction = signal<WatchlistRecoveryAction>(null);
   readonly successMessage = signal<string | null>(null);
   readonly accountLabel: Signal<string>;
   readonly activeTab = signal<CatalogAccountTab>('watchlist');
@@ -154,6 +156,7 @@ export class CatalogAccountPageComponent implements OnInit {
 
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.watchlistRecoveryAction.set(null);
 
     try {
       const token = await this.auth.getApiAccessToken();
@@ -161,11 +164,26 @@ export class CatalogAccountPageComponent implements OnInit {
       this.watchlist.set(response);
     } catch (error: unknown) {
       this.watchlist.set(null);
-      this.errorMessage.set(error instanceof CatalogAuthenticationRedirectStartedError
-        ? 'Redirection vers votre fournisseur de connexion pour renouveler votre session…'
-        : this.describeError(error));
+      if (error instanceof CatalogAuthenticationRedirectStartedError) {
+        this.errorMessage.set('Redirection vers votre fournisseur de connexion pour renouveler votre session…');
+      } else {
+        this.watchlistRecoveryAction.set(this.watchlistRecoveryFor(error));
+        this.errorMessage.set(this.describeWatchlistError(error));
+      }
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async reconnect(): Promise<void> {
+    this.errorMessage.set(null);
+    this.watchlistRecoveryAction.set(null);
+
+    try {
+      await this.auth.login('/compte');
+    } catch {
+      this.watchlistRecoveryAction.set('reconnect');
+      this.errorMessage.set('La reconnexion n’a pas pu être démarrée. Réessayez.');
     }
   }
 
@@ -453,6 +471,26 @@ export class CatalogAccountPageComponent implements OnInit {
     }
 
     return 'Une erreur est survenue. Réessayez dans un instant.';
+  }
+
+  private describeWatchlistError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && error.status === 401) {
+      return 'La session a expiré. Reconnectez-vous pour continuer.';
+    }
+
+    if (error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500)) {
+      return 'Le service de votre liste est momentanément indisponible. Réessayez dans un instant.';
+    }
+
+    return 'La session n’a pas pu être renouvelée. Reconnectez-vous pour continuer.';
+  }
+
+  private watchlistRecoveryFor(error: unknown): WatchlistRecoveryAction {
+    if (error instanceof HttpErrorResponse && (error.status === 0 || error.status >= 500)) {
+      return 'retry';
+    }
+
+    return 'reconnect';
   }
 
 }

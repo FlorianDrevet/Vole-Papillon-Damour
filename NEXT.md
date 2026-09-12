@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Hotfix API — restaurer la compatibilité du schéma EF Core avec les cartes de liste de recherche Catalog. |
-| **Prochaine action** | Relancer `API - deploy` avec `run_migrations=true`, puis contrôler `GET /catalog/me/watchlist` avec une session connectée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-api-migration-guard` |
-| **Dernière mise à jour** | 2026-09-12 — incident 500 confirmé : les deux derniers déploiements API avaient ignoré l'étape de migration ; les workflows activent désormais les migrations par défaut ; [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) ouverte. |
-| **Branche** | `fix/api-deploy-migrations-default` — dédiée depuis `origin/main` fraîchement récupéré, [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) ouverte |
+| **Lot en cours** | Hotfix Catalog — rendre récupérable l’échec d’obtention silencieuse du jeton sur `/compte`. |
+| **Prochaine action** | Faire relire/fusionner la [PR #161](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/161), déployer depuis `main`, et contrôler `/compte` avec une session connectée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-watchlist-error` |
+| **Dernière mise à jour** | 2026-09-13 — la panne reproduite ne déclenche aucune requête `/catalog/me/watchlist` : l’erreur est antérieure à l’API, dans le renouvellement silencieux MSAL ; le schéma API a par ailleurs été migré par le déploiement `34721709446`. |
+| **Branche** | `fix/catalog-account-watchlist-error` — dédiée depuis `origin/main` fraîchement récupéré, [PR #161](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/161) ouverte |
 
 ---
 
@@ -62,6 +62,27 @@ Validation locale : TDD rouge puis vert, 183 tests ChromeHeadless Catalog, build
 `graphify update .`, `git diff --check` passe, et smoke Chrome avec API mockée à
 la taille par défaut puis à 390×844 et 320×740 sans débordement horizontal. Aucun déploiement,
 changement Azure/Entra ou donnée de catalogue n'a été effectué ; PR [#160](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/160) ouverte.
+
+### État actualisé — 2026-09-13 — erreur de liste sur `/compte`
+
+Le parcours authentifié a été reproduit dans Chrome avec le compte déjà présent : le Catalog
+affiche le message générique, mais aucun `GET /catalog/me/watchlist` correspondant n'est visible
+dans les logs HTTP de `vpd-api-ca-dev`. L'échec arrive donc dans `CatalogAuthService.getApiAccessToken()`
+pendant `acquireTokenSilent`, après que MSAL a conservé le compte en cache. Le message initial
+ne permettait pas de distinguer ce cas d'un `500`.
+
+L'API Azure appelée par le bundle Catalog est saine (`/health` en `200`, CORS accepté, route
+watchlist protégée répondant `401` sans jeton). L'incident de schéma EF Core de la veille est
+résolu : l'exécution API `34721709446` a appliqué `20260912214304_AddWatchlistItemCoverUrl`.
+Le fallback d'environnement source pointe encore vers le service Render suspendu, mais le bundle
+Catalog déployé injecte l'URL Azure via `catalog-deploy.yml` ; ce service Render n'est pas la
+cause de cette reproduction.
+
+Le correctif de la branche détecte les codes MSAL interaction-required même sans `instanceof`,
+décrit séparément les indisponibilités réseau/5xx, et fournit `Réessayer` ou `Se reconnecter`
+dans l'état d'erreur de la liste. Validation locale : TDD rouge puis vert, 188 tests Catalog
+ChromeHeadless, build SSR/navigateur, `graphify update .` et `git diff --check`. Aucun compte,
+jeton ou secret n'a été extrait ; le déploiement et le retest live restent à faire.
 
 ## Décisions prises
 
