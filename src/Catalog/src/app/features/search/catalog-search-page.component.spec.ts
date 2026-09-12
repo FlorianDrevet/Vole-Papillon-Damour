@@ -145,6 +145,17 @@ describe('CatalogSearchPageComponent', () => {
       .toContain('Suivre cette édition');
   });
 
+  it('keeps the result heading on the last submitted query while the draft changes', async () => {
+    fixture.detectChanges();
+
+    fixture.componentInstance.query = 'petit prince';
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.querySelector('.results-toolbar h1') as HTMLElement).textContent)
+      .toContain('Résultats pour « saint-exupéry »');
+  });
+
   it('places the work follow action above the edition list', () => {
     api.searchReferences.and.returnValue(of({
       generatedAt: '',
@@ -163,6 +174,56 @@ describe('CatalogSearchPageComponent', () => {
     expect(callout.textContent).toContain('édition précise');
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
+  });
+
+  it('enables the title follow action for several editions of the same title', () => {
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [
+        reference,
+        {...reference, isbn13: '9782070612759', workId: 'OL99W'},
+      ],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.querySelector('.reference-follow--work') as HTMLButtonElement).disabled)
+      .toBeFalse();
+  });
+
+  it('follows each identified work when the title follow action is used', async () => {
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(of({
+      id: 'work-watchlist-item',
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      addedAt: '2026-09-05T06:00:00Z',
+    }));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [
+        reference,
+        {...reference, isbn13: '9782070612759', workId: 'OL99W'},
+      ],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.reference-follow--work') as HTMLButtonElement).click();
+    await fixture.whenStable();
+
+    expect(memberApi.addWatchlistItem.calls.count()).toBe(2);
+    expect(memberApi.addWatchlistItem.calls.allArgs().map(args => (args[1] as unknown as Record<string, unknown>)['workId']))
+      .toEqual(['OL42W', 'OL99W']);
+    expect(fixture.nativeElement.textContent).toContain('Les éditions ont été ajoutées');
   });
 
   it('keeps one disabled title follow action before unrelated reference results', () => {
@@ -253,6 +314,62 @@ describe('CatalogSearchPageComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.textContent).toContain('Petit Ours brun se promène en forêt');
+    expect(fixture.nativeElement.querySelector('[data-loader="skeleton"]')).toBeNull();
+  });
+
+  it('reloads only the external section when its page changes', async () => {
+    const initialReferences: CatalogReferenceSearchResponse = {
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    };
+    const externalPage$ = new Subject<CatalogReferenceSearchResponse>();
+    api.search.and.returnValue(of({...response, totalCount: 48}));
+    api.searchReferences.and.returnValues(of(initialReferences), externalPage$.asObservable());
+
+    fixture.detectChanges();
+    api.search.calls.reset();
+    api.searchReferences.calls.reset();
+
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', referencePage: '2'}));
+    fixture.detectChanges();
+
+    expect(api.search).not.toHaveBeenCalled();
+    expect(api.searchReferences).toHaveBeenCalledOnceWith('saint-exupéry', 2, 20);
+    expect(fixture.componentInstance.loading).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.book-list')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.external-loader')).not.toBeNull();
+
+    externalPage$.next({...initialReferences, items: [secondEditionReference], page: 2});
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Folio');
+    expect(fixture.nativeElement.querySelector('.external-loader')).toBeNull();
+  });
+
+  it('reloads only the catalogue section when its page changes', async () => {
+    const localPage$ = new Subject<CatalogSearchResponse>();
+    api.search.and.returnValues(of({...response, totalCount: 48}), localPage$.asObservable());
+
+    fixture.detectChanges();
+    api.search.calls.reset();
+    api.searchReferences.calls.reset();
+
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', page: '2'}));
+    fixture.detectChanges();
+
+    expect(api.search).toHaveBeenCalledOnceWith(jasmine.objectContaining({page: 2}));
+    expect(api.searchReferences).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('.external-block')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
+
+    localPage$.next({...response, totalCount: 48, page: 2});
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     expect(fixture.nativeElement.querySelector('[data-loader="skeleton"]')).toBeNull();
   });
 

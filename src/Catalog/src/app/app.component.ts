@@ -24,6 +24,7 @@ import {catalogRobotsForUrl} from './core/catalog-robots';
 })
 export class AppComponent implements OnInit, OnDestroy {
   private readonly destroyed = new Subject<void>();
+  private hasStartedNavigation = false;
   readonly isAdministrationRoute = signal(false);
   readonly isNavigating = signal(false);
 
@@ -49,7 +50,14 @@ export class AppComponent implements OnInit, OnDestroy {
         takeUntil(this.destroyed),
       )
       .subscribe(event => {
-        this.isNavigating.set(event instanceof NavigationStart);
+        if (event instanceof NavigationStart) {
+          this.isNavigating.set(
+            !this.hasStartedNavigation || this.isPageTransition(this.router.url, event.url),
+          );
+          this.hasStartedNavigation = true;
+        } else {
+          this.isNavigating.set(false);
+        }
         if (!(event instanceof NavigationEnd)) {
           return;
         }
@@ -72,6 +80,14 @@ export class AppComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       void this.auth.initialize().catch(() => undefined);
     }
+  }
+
+  private isPageTransition(currentUrl: string, targetUrl: string): boolean {
+    return this.urlPath(currentUrl) !== this.urlPath(targetUrl);
+  }
+
+  private urlPath(url: string): string {
+    return url.split(/[?#]/, 1)[0].replace(/\/$/, '') || '/';
   }
 
   private isAdminUrl(url: string): boolean {

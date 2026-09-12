@@ -106,15 +106,20 @@ does not provide.
 The Catalog follow-up polish keeps the genre section in that position and turns recent-home
 availability into compact colored pill tags. The browser shell initializes cached MSAL state
 on arrival, keeps connected member/admin account controls at the same width, and the search
-page exposes direct typed `Work`/`Edition` follow buttons: references that identify one
-common work get a single section-level all-editions action above the list, while each precise
-edition remains independently followable. After every completed reference search, the
-section-level callout remains visible; its native button is disabled when the response is
-empty or does not identify one unambiguous `WorkId`, avoiding an arbitrary follow target.
-The old scope-selection modal is removed; a pending follow survives the sign-in redirect and
-submits directly after the cached session is restored. The administrator header uses the
-clickable `Administration` tag as the sole header entry to `/administration`; the mobile drawer
-does not duplicate the former `Espace administrateur` link.
+page exposes direct typed `Work`/`Edition` follow buttons: references that share the most
+likely normalized title get a single section-level all-editions action above the list, while
+each precise edition remains independently followable. The global action deduplicates the
+identified `WorkId` values and submits one typed `Work` watchlist request per work, so several
+external edition rows no longer leave the action disabled merely because Open Library mapped
+them to different works. It remains disabled for an empty response or an unresolved tie between
+unrelated title groups. After every completed reference search, the section-level callout
+remains visible. The search draft is kept separate from the last submitted query, and local
+catalogue/external-reference pagination reloads only its own section; the shell loader is
+reserved for path changes, not query-only navigation. The old scope-selection modal is removed;
+a pending follow survives the sign-in redirect and submits directly after the cached session is
+restored. The administrator header uses the clickable `Administration` tag as the sole header
+entry to `/administration`; the mobile drawer does not duplicate the former `Espace
+administrateur` link.
 
 As of 2026-09-11, the shared `VpdLoaderComponent` brings the loader catalogue from the design
 artifact to Website, Catalog, and Scan. Its variants map to the nine supplied screens: `line`

@@ -93,6 +93,15 @@ describe('AppComponent', () => {
     expect(initialize).toHaveBeenCalledTimes(1);
   });
 
+  it('does not show the shell loader for query-only navigation', () => {
+    const component = fixture.componentInstance as unknown as {
+      isPageTransition: (currentUrl: string, targetUrl: string) => boolean;
+    };
+
+    expect(component.isPageTransition('/recherche?q=ancien', '/recherche?q=nouveau')).toBeFalse();
+    expect(component.isPageTransition('/recherche?q=ancien', '/catalogue?q=ancien')).toBeTrue();
+  });
+
   it('keeps authentication initialization independent of the OAuth callback state', () => {
     const initialize = (TestBed.inject(CatalogAuthService) as unknown as {
       initialize: jasmine.Spy;

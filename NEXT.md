@@ -25,6 +25,27 @@
 
 ---
 
+### État actualisé — 2026-09-13 — interactions de recherche Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-search-interactions`, l'écran de recherche sépare désormais
+la saisie en cours de la dernière recherche validée : le titre « Résultats pour » ne change
+plus avant soumission. Les chargements et erreurs du catalogue local et des références
+externes sont indépendants ; changer une page ne remplace que la section concernée, et le
+loader global du shell ne s'affiche plus pour une navigation limitée aux paramètres de query.
+Le suivi global est activé lorsque les résultats proposent un groupe majoritaire de même
+titre et peut ajouter chaque `WorkId` distinct identifié, tandis que les résultats ambigus ou
+vides restent protégés et que le suivi d'une édition précise demeure disponible.
+
+Validation locale : TDD rouge puis vert, 191 tests Catalog ChromeHeadless, build Catalog
+SSR/navigateur, `python -m graphify update .`, `git diff --check` et smoke Chrome mobile à
+390×844 sur les états de recherche. L'API locale n'était pas démarrée : le smoke a donc
+contrôlé le shell et les états d'erreur, et les résultats avec données sont couverts par les
+tests. Aucun déploiement, changement API, Entra ou compte n'a été effectué ; la [PR #162](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/162)
+est ouverte pour relecture.
+`rtk` n'est pas installé sur cette machine ; les commandes Git/npm natives équivalentes ont
+été utilisées.
+
 ### État actualisé — 2026-09-12 — RGPD du compte Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
