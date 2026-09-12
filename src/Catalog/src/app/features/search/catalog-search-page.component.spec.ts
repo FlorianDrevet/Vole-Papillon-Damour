@@ -67,7 +67,7 @@ describe('CatalogSearchPageComponent', () => {
     authors: 'Antoine de Saint-Exupéry',
     publisher: 'Gallimard',
     publicationYear: 1999,
-    coverUrl: null,
+    coverUrl: 'https://covers.example.test/le-petit-prince.jpg',
     source: 'OpenLibrary',
   };
 
@@ -236,6 +236,7 @@ describe('CatalogSearchPageComponent', () => {
       authors: 'Antoine de Saint-Exupéry',
       publisher: 'Gallimard',
       publicationYear: 1999,
+      coverUrl: 'https://covers.example.test/le-petit-prince.jpg',
     });
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de recherche.');
@@ -276,6 +277,7 @@ describe('CatalogSearchPageComponent', () => {
       authors: 'Antoine de Saint-Exupéry',
       publisher: 'Gallimard',
       publicationYear: 1999,
+      coverUrl: 'https://covers.example.test/le-petit-prince.jpg',
     });
 
     addResponse$.next({
@@ -293,6 +295,24 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Suivre cette édition');
     expect(fixture.nativeElement.textContent).not.toContain('Ajout…');
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('sends the reference cover URL when following an edition', async () => {
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.resolveTo('member-token');
+    memberApi.addWatchlistItem.and.returnValue(of({
+      id: 'watchlist-item',
+      scope: 'Edition',
+      workId: null,
+      isbn13: '9782070612758',
+      addedAt: '2026-09-05T06:00:00Z',
+    }));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.followReference(reference);
+
+    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
+    expect(request['coverUrl']).toBe(reference.coverUrl);
   });
 
   it('keeps the direct edition target across the sign-in redirect', async () => {
@@ -335,6 +355,7 @@ describe('CatalogSearchPageComponent', () => {
       authors: 'Antoine de Saint-Exupéry',
       publisher: 'Gallimard',
       publicationYear: 1999,
+      coverUrl: 'https://covers.example.test/le-petit-prince.jpg',
     });
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow')).toBeNull();

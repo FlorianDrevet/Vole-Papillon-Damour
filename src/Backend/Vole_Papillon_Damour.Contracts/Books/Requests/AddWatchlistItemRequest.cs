@@ -7,4 +7,5 @@ public sealed record AddWatchlistItemRequest(
     string? Title = null,
     string? Authors = null,
     string? Publisher = null,
-    int? PublicationYear = null);
+    int? PublicationYear = null,
+    string? CoverUrl = null);

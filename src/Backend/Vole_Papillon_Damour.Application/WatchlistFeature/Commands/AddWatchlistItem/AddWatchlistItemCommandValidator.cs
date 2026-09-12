@@ -16,5 +16,11 @@ public sealed class AddWatchlistItemCommandValidator : AbstractValidator<AddWatc
         RuleFor(command => command.PublicationYear)
             .InclusiveBetween(1, 9999)
             .When(command => command.PublicationYear.HasValue);
+        RuleFor(command => command.CoverUrl)
+            .MaximumLength(2048)
+            .Must(value => value is null ||
+                           (Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+                            string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+            .WithMessage("The cover URL must be an absolute HTTPS URL.");
     }
 }

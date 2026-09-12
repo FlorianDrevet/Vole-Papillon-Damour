@@ -16,6 +16,7 @@ public sealed class WatchlistItem : Entity<Guid>
     public string? Authors { get; private set; }
     public string? Publisher { get; private set; }
     public int? PublicationYear { get; private set; }
+    public string? CoverUrl { get; private set; }
     public DateTime AddedAt { get; private set; }
 
     private WatchlistItem(
@@ -28,7 +29,8 @@ public sealed class WatchlistItem : Entity<Guid>
         string? title,
         string? authors,
         string? publisher,
-        int? publicationYear) : base(id)
+        int? publicationYear,
+        string? coverUrl) : base(id)
     {
         if (id == Guid.Empty)
         {
@@ -71,6 +73,7 @@ public sealed class WatchlistItem : Entity<Guid>
         Authors = NormalizeText(authors, 500, nameof(authors));
         Publisher = NormalizeText(publisher, 200, nameof(publisher));
         PublicationYear = NormalizePublicationYear(publicationYear);
+        CoverUrl = NormalizeText(coverUrl, 2048, nameof(coverUrl));
         AddedAt = DomainTime.RequireUtc(addedAt, nameof(addedAt));
     }
 
@@ -82,7 +85,8 @@ public sealed class WatchlistItem : Entity<Guid>
         string? title = null,
         string? authors = null,
         string? publisher = null,
-        int? publicationYear = null)
+        int? publicationYear = null,
+        string? coverUrl = null)
     {
         return new WatchlistItem(
             id,
@@ -94,7 +98,8 @@ public sealed class WatchlistItem : Entity<Guid>
             title,
             authors,
             publisher,
-            publicationYear);
+            publicationYear,
+            coverUrl);
     }
 
     public static WatchlistItem CreateWork(
@@ -105,7 +110,8 @@ public sealed class WatchlistItem : Entity<Guid>
         string? title = null,
         string? authors = null,
         string? publisher = null,
-        int? publicationYear = null)
+        int? publicationYear = null,
+        string? coverUrl = null)
     {
         return new WatchlistItem(
             id,
@@ -117,7 +123,8 @@ public sealed class WatchlistItem : Entity<Guid>
             title,
             authors,
             publisher,
-            publicationYear);
+            publicationYear,
+            coverUrl);
     }
 
     public WatchlistItem()

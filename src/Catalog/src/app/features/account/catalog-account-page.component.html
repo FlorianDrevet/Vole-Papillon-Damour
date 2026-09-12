@@ -158,7 +158,7 @@
               @for (item of current.items; track item.id) {
                 <article class="watchlist-item">
                   <div class="watchlist-cover">
-                    @if (item.book?.coverUrl; as coverUrl) {
+                    @if (itemCoverUrl(item); as coverUrl) {
                       <img [src]="coverUrl" [alt]="'Couverture de ' + itemLabel(item)" loading="lazy">
                     } @else {
                       <span aria-hidden="true">Couv.</span>

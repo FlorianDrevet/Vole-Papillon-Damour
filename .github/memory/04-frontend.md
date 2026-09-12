@@ -190,13 +190,14 @@ with a person icon. The Catalog account component owns the tab state locally and
 to use the existing bearer-protected member API and endpoint lifecycle.
 
 As of 2026-09-12, Catalog watchlist follow requests preserve the bibliographic title,
-authors, publisher and publication year returned by search and book detail. The API stores
-that snapshot on `WatchlistItem` and returns it alongside the live book projection, so an
-edition not yet received by the association can still render its title and metadata. The
-account card now uses the live book values first, then the saved snapshot, displays the ISBN
-as compact secondary information, and removes the repeated alert sentence. Legacy watchlist
-rows created before this snapshot was introduced continue to fall back to their ISBN until
-they are followed again or otherwise receive metadata; no backfill or deployment was made.
+authors, publisher, publication year and external cover URL returned by search and book
+detail. The API stores that snapshot on `WatchlistItem` and returns it alongside the live
+book projection, so an edition not yet received by the association can still render its
+title, metadata and cover. The account card now uses the live book values first, then the
+saved snapshot, displays the ISBN as compact secondary information, and removes the
+repeated alert sentence. Legacy watchlist rows created before this snapshot was introduced
+continue to fall back to their ISBN and placeholder until they are followed again or
+otherwise receive metadata; no backfill or deployment was made.
 
 As of 2026-09-09, `/prochaines-dates` keeps the next Books event in a prominent card and
 renders the complete future Books schedule below it. The Catalog client reads the public

@@ -139,6 +139,7 @@ describe('CatalogBookDetailPageComponent', () => {
       authors: 'Une autrice',
       publisher: 'Un éditeur',
       publicationYear: 2020,
+      coverUrl: null,
     });
     expect(fixture.nativeElement.textContent).toContain('ajouté à votre liste');
   });

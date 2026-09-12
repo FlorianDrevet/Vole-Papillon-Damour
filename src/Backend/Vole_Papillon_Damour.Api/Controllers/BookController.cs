@@ -208,7 +208,8 @@ public static class BookController
                                 request.Title,
                                 request.Authors,
                                 request.Publisher,
-                                request.PublicationYear),
+                                request.PublicationYear,
+                                request.CoverUrl),
                             cancellationToken);
 
                         return result.Match(
@@ -793,6 +794,7 @@ public static class BookController
                     item.Authors,
                     item.Publisher,
                     item.PublicationYear,
+                    item.CoverUrl,
                     item.Book is null ? null : ToResponse(item.Book),
                     item.AddedAt,
                     item.LastAlertAt))

@@ -134,6 +134,7 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
         authors: item.authors,
         publisher: item.publisher,
         publicationYear: item.publicationYear,
+        coverUrl: item.coverUrl,
       }
       : {
         scope,
@@ -143,6 +144,7 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
         authors: item.authors,
         publisher: item.publisher,
         publicationYear: item.publicationYear,
+        coverUrl: item.coverUrl,
       };
 
     this.notifyPending.set(true);

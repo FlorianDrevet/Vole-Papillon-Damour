@@ -101,7 +101,8 @@ public sealed class GetMyWatchlistQueryHandlerTests
                 Title: "Le Petit Prince",
                 Authors: "Antoine de Saint-Exupéry",
                 Publisher: "Gallimard",
-                PublicationYear: 1999),
+                PublicationYear: 1999,
+                CoverUrl: "https://covers.example.test/le-petit-prince.jpg"),
             CancellationToken.None);
         var handler = new GetMyWatchlistQueryHandler(fixture.Context, identity, clock);
 
@@ -116,5 +117,6 @@ public sealed class GetMyWatchlistQueryHandlerTests
         item.Authors.Should().Be("Antoine de Saint-Exupéry");
         item.Publisher.Should().Be("Gallimard");
         item.PublicationYear.Should().Be(1999);
+        item.CoverUrl.Should().Be("https://covers.example.test/le-petit-prince.jpg");
     }
 }

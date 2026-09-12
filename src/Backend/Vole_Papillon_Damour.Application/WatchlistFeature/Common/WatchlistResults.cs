@@ -30,6 +30,7 @@ public sealed record MyWatchlistItemResult(
     string? Authors,
     string? Publisher,
     int? PublicationYear,
+    string? CoverUrl,
     PublicCatalogBookResult? Book,
     DateTimeOffset AddedAt,
     DateTimeOffset? LastAlertAt);
