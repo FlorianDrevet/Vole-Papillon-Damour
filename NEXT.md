@@ -82,6 +82,25 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-12 — métadonnées des cartes de liste Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-watchlist-book-metadata`, la liste de recherche du compte Catalog
+affiche maintenant le titre bibliographique comme libellé principal, avec ISBN compact,
+auteur et éditeur. Les suivis ajoutés depuis la recherche ou la fiche livre transmettent et
+conservent ces métadonnées dans `WatchlistItem`; le GET les restitue lorsqu'aucune fiche
+locale n'est encore arrivée au catalogue. La phrase d'alerte répétée a été retirée de la
+carte et le titre de page a été réduit.
+
+Validation locale : TDD rouge puis vert, 423 tests backend, 178 tests ChromeHeadless Catalog,
+build API, build Catalog SSR/navigateur, migration EF et `git diff --check` passent. Le shell
+Catalog signé-out a été contrôlé dans Chrome sur le worktree local ; le smoke connecté avec
+un compte Entra et une API joignable reste à faire, ainsi que la vérification responsive
+mobile du parcours authentifié. Les anciennes lignes de liste sans snapshot de métadonnées
+conservent leur repli ISBN. Aucun déploiement ni merge n'a été effectué ; la PR
+[#155](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/155) est ouverte pour
+relecture.
+
 ### État actualisé — 2026-09-12 — gestion fiche par fiche de l'inventaire Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

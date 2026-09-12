@@ -297,7 +297,23 @@ export class CatalogAccountPageComponent implements OnInit {
   }
 
   itemLabel(item: CatalogWatchlistItem): string {
-    return item.book?.title || item.isbn13 || item.workId || 'Titre de la liste de recherche';
+    return this.itemTitle(item) || item.isbn13 || item.workId || 'Titre de la liste de recherche';
+  }
+
+  itemTitle(item: CatalogWatchlistItem): string | null {
+    return item.book?.title || item.title || null;
+  }
+
+  itemAuthors(item: CatalogWatchlistItem): string | null {
+    return item.book?.authors || item.authors || null;
+  }
+
+  itemPublisher(item: CatalogWatchlistItem): string | null {
+    return item.book?.publisher || item.publisher || null;
+  }
+
+  itemPublicationYear(item: CatalogWatchlistItem): number | null {
+    return item.book?.publicationYear || item.publicationYear || null;
   }
 
   editionLabel(item: CatalogWatchlistItem): string {
@@ -305,15 +321,7 @@ export class CatalogAccountPageComponent implements OnInit {
       return 'Toutes éditions';
     }
 
-    if (!item.book) {
-      return 'Édition recherchée';
-    }
-
-    const edition = [item.book.publisher, item.book.publicationYear]
-      .filter(value => value !== null && value !== undefined && value !== '')
-      .join(' · ');
-
-    return edition || 'Édition suivie';
+    return item.book ? 'Édition suivie' : 'Édition recherchée';
   }
 
   availabilityClass(item: CatalogWatchlistItem): 'available' | 'next' | 'pending' {

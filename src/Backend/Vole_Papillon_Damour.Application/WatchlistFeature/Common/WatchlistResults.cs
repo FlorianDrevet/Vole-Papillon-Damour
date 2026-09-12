@@ -26,6 +26,10 @@ public sealed record MyWatchlistItemResult(
     WatchlistItemScope Scope,
     string? WorkId,
     string? Isbn13,
+    string? Title,
+    string? Authors,
+    string? Publisher,
+    int? PublicationYear,
     PublicCatalogBookResult? Book,
     DateTimeOffset AddedAt,
     DateTimeOffset? LastAlertAt);

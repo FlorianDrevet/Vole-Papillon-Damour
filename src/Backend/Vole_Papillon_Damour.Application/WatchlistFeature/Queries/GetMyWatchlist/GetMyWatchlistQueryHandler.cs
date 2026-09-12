@@ -119,6 +119,10 @@ public sealed class GetMyWatchlistQueryHandler(
                     item.Scope,
                     item.WorkId,
                     item.Isbn13?.Value,
+                    item.Title,
+                    item.Authors,
+                    item.Publisher,
+                    item.PublicationYear,
                     selectedBook,
                     new DateTimeOffset(item.AddedAt, TimeSpan.Zero),
                     lastAlertAt);

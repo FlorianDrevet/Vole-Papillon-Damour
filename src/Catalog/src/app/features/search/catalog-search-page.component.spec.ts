@@ -189,10 +189,15 @@ describe('CatalogSearchPageComponent', () => {
     (fixture.nativeElement.querySelector('.reference-follow--work') as HTMLButtonElement).click();
     await fixture.whenStable();
 
-    expect(memberApi.addWatchlistItem).toHaveBeenCalledWith('member-token', {
+    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
+    expect(request).toEqual({
       scope: 'Work',
       workId: 'OL42W',
       isbn13: null,
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
     });
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Le titre a été ajouté à votre liste de recherche.');
@@ -224,10 +229,15 @@ describe('CatalogSearchPageComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Ajout…');
 
-    expect(memberApi.addWatchlistItem).toHaveBeenCalledWith('member-token', {
+    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
+    expect(request).toEqual({
       scope: 'Edition',
       workId: null,
       isbn13: '9782070612758',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
     });
 
     addResponse$.next({
@@ -278,10 +288,15 @@ describe('CatalogSearchPageComponent', () => {
     await new Promise<void>(resolve => setTimeout(resolve, 0));
 
     expect(auth.initialize).toHaveBeenCalledOnceWith();
-    expect(memberApi.addWatchlistItem).toHaveBeenCalledWith('member-token', {
+    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
+    expect(request).toEqual({
       scope: 'Work',
       workId: 'OL42W',
       isbn13: null,
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
     });
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow')).toBeNull();

@@ -82,4 +82,39 @@ public sealed class GetMyWatchlistQueryHandlerTests
         result.Value.Items.Single().Book.Should().BeNull();
         result.Value.Items.Single().WorkId.Should().Be("not-yet-received");
     }
+
+    [Fact]
+    public async Task Handle_ReturnsSavedReferenceMetadataWhenTheEditionIsNotYetReceived()
+    {
+        await using var fixture = await WatchlistFeatureTestFixture.CreateAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WatchlistFeatureTestFixture.Now);
+        var identity = new MemberIdentityService(fixture.Context, clock);
+        var addHandler = new AddWatchlistItemCommandHandler(fixture.Context, identity, clock);
+        await addHandler.Handle(
+            new AddWatchlistItemCommand(
+                MemberId,
+                "member@example.test",
+                WatchlistItemScope.Edition,
+                null,
+                "9782070363735",
+                Title: "Le Petit Prince",
+                Authors: "Antoine de Saint-Exupéry",
+                Publisher: "Gallimard",
+                PublicationYear: 1999),
+            CancellationToken.None);
+        var handler = new GetMyWatchlistQueryHandler(fixture.Context, identity, clock);
+
+        var result = await handler.Handle(
+            new GetMyWatchlistQuery(MemberId, "member@example.test"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var item = result.Value.Items.Single();
+        item.Book.Should().BeNull();
+        item.Title.Should().Be("Le Petit Prince");
+        item.Authors.Should().Be("Antoine de Saint-Exupéry");
+        item.Publisher.Should().Be("Gallimard");
+        item.PublicationYear.Should().Be(1999);
+    }
 }
