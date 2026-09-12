@@ -20,8 +20,8 @@
 | **Lot en cours** | Hotfix API — restaurer la compatibilité du schéma EF Core avec les cartes de liste de recherche Catalog. |
 | **Prochaine action** | Relancer `API - deploy` avec `run_migrations=true`, puis contrôler `GET /catalog/me/watchlist` avec une session connectée. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-api-migration-guard` |
-| **Dernière mise à jour** | 2026-09-12 — incident 500 confirmé : les deux derniers déploiements API avaient ignoré l'étape de migration ; les workflows activent désormais les migrations par défaut. |
-| **Branche** | `fix/api-deploy-migrations-default` — dédiée depuis `origin/main` fraîchement récupéré |
+| **Dernière mise à jour** | 2026-09-12 — incident 500 confirmé : les deux derniers déploiements API avaient ignoré l'étape de migration ; les workflows activent désormais les migrations par défaut ; [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) ouverte. |
+| **Branche** | `fix/api-deploy-migrations-default` — dédiée depuis `origin/main` fraîchement récupéré, [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) ouverte |
 
 ---
 
@@ -124,6 +124,8 @@ Azure. La restauration immédiate reste à faire depuis GitHub : relancer `API -
 
 Validation locale : contrôle statique du diff YAML et `git diff --check` ; aucun code
 exécutable n'a changé et aucune base ni ressource Azure n'a été modifiée depuis ce worktree.
+La [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) est ouverte pour
+relecture.
 
 ### État actualisé — 2026-09-12 — métadonnées des cartes de liste Catalog
 

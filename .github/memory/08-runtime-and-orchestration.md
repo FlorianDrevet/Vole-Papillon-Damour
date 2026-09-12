@@ -128,7 +128,8 @@ The API startup wires:
   `0443c5d` while skipping the explicit EF migration step, leaving the Catalog watchlist API
   incompatible with the newly added `WatchlistItem` metadata columns and returning `500`.
   Both backend deployment workflows now default `run_migrations` to `true`; the immediate
-  Azure SQL migration still requires a deliberate rerun of the API workflow.
+  Azure SQL migration still requires a deliberate rerun of the API workflow. The guardrail is
+  tracked in [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157).
 - ACS delivery is enabled in DEV after domain verification; the domain is verified but DMARC is
   `NotStarted`, and a real authorized-recipient delivery test remains open.
 - Bibliographic covers now use validated direct HTTPS provider URLs; the dedicated Blob cover
