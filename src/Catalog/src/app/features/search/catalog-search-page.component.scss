@@ -568,6 +568,13 @@
   line-height: 1.6;
 }
 
+.external-loader {
+  display: grid;
+  min-height: 150px;
+  margin-top: 20px;
+  place-items: center;
+}
+
 .external-follow-callout {
   display: flex;
   align-items: center;

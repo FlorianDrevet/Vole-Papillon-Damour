@@ -49,6 +49,20 @@ ceux du dépôt. Aucun déploiement ni changement Azure, Entra, compte ou API n'
 `rtk` n'est pas installé sur cette machine ; les commandes Git/npm natives équivalentes ont
 été utilisées.
 
+### État actualisé — 2026-09-12 — centrage du loader de recherche Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-search-loader-centered`, le loader de la section « Pas encore
+dans la bourse aux livres » est placé dans une zone dédiée centrée horizontalement et
+verticalement, avec une hauteur minimale pour ne plus coller à l'en-tête. Le comportement est
+couvert par une régression du composant de recherche ; aucune logique API ou contrat n'est
+modifié.
+
+Validation locale : TDD rouge puis vert, 182 tests ChromeHeadless Catalog, build SSR/navigateur,
+`graphify update .`, `git diff --check` passe, et smoke Chrome avec API mockée à
+la taille par défaut puis à 390×844 et 320×740 sans débordement horizontal. Aucun déploiement,
+changement Azure/Entra ou donnée de catalogue n'a été effectué ; PR à ouvrir.
+
 ## Décisions prises
 
 Les arbitrages que le plan ne pouvait pas prendre seul sont tranchés. Rien n'attend
@@ -130,6 +144,14 @@ refaire après déploiement. Aucun déploiement ni merge n’a été effectué. 
 est ouverte pour relecture.
 `rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été
 utilisées.
+
+### État actualisé — 2026-09-12 — centrage du loader de recherche Catalog
+
+Le worktree `Vole-Papillon-Damour-catalog-search-loader-centered` réserve désormais une zone
+de `150px` sous l'en-tête de la section « Pas encore dans la bourse aux livres » et y centre le
+loader de recherche bibliographique. Le test du composant vérifie le centrage CSS ; le reste du
+parcours de recherche et les états d'erreur restent inchangés. La branche est poussée après la
+validation finale et la PR reste à ouvrir.
 
 ### État actualisé — 2026-09-12 — incident 500 de la liste de recherche Catalog
 
@@ -1305,6 +1327,11 @@ Le correctif du suivi du titre dans la recherche Catalog est limité au dépôt 
 utilisé un stub HTTP en mémoire pour deux références du même titre puis une réponse vide ;
 aucun changement Azure, DNS, Entra, compte, migration ou donnée de bourse n'a été effectué.
 
+Le correctif du centrage du loader de recherche Catalog est limité au dépôt, à la branche
+`fix/catalog-search-loader-centered` et à sa future PR. Le contrôle local a utilisé une API
+mockée uniquement pour maintenir la recherche externe en chargement ; aucun changement Azure,
+DNS, Entra, compte, migration ou donnée de bourse n'a été effectué.
+
 Le correctif du retour OAuth Catalog est également limité au dépôt : aucun déploiement
 Catalog, compte ou changement du locataire Entra n’a été effectué. Le contrôle public après
 mise en ligne reste à faire.
@@ -1456,6 +1483,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-12 | Windows | **Catalog — centrage du loader de recherche.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-loader-centered`, ajout d'une zone de chargement de 150 px centrée sous l'en-tête de « Pas encore dans la bourse aux livres », sans toucher au loader partagé ni aux contrats. Validation : TDD rouge puis vert, 182 tests ChromeHeadless Catalog, build SSR/navigateur, Graphify et smoke Chrome avec API mockée à la taille par défaut, 390×844 et 320×740 sans débordement. Aucun déploiement ni changement hors dépôt ; PR à ouvrir. |
 | 2026-09-12 | Windows | **Scan — accueil authentifié et statistiques.** Les deux actions secondaires deviennent des cartes tactiles équilibrées, avec une icône de graphique pour « Mes statistiques » et une icône de changement de compte. La route `/statistiques` possède son propre viewport fixe et son conteneur de scroll tactile ; les autres écrans conservent le verrouillage global. Validation : 186 tests ChromeHeadless et build de production Scan ; contrôle authentifié appareil/navigateur à faire, aucun déploiement. PR [#152](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/152) ouverte. |
 | 2026-09-11 | Windows | **Catalog — toasts de validation de l’administration.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, regroupement des succès et erreurs dans un toast fixe, accessible et fermable, avec remplacement atomique des états de feedback pour éviter les messages périmés. Validation : TDD rouge puis vert, 165 tests Catalog ChromeHeadless, build SSR/navigateur avec l’avertissement de budget initial connu, `graphify update .` et `git diff --check` ; smoke connecté à refaire, aucun déploiement ni changement hors dépôt. PR [#146](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/146) ouverte. |
 | 2026-09-11 | Windows | **Catalog — sélection des statistiques par bourse.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-admin-statistics-date`, les options de la liste des statistiques affichent désormais la date de la bourse (et sa plage si nécessaire) avant le nom et le statut, afin de distinguer les éditions qui partagent « Bourse aux livres ». Ajout d’une régression Angular avec deux bourses au même nom. Validation : test rouge puis vert, 161 tests Catalog ChromeHeadless, build SSR/navigateur, smoke local à 390×844 et 1280×900 sans débordement, `graphify update .` et aucun déploiement ni changement hors dépôt. |

@@ -187,11 +187,13 @@
             @if (!query.trim() || query.trim().length < 2) {
               <p class="external-empty">Saisissez au moins deux caractères pour chercher un titre qui n’est pas encore dans la bourse aux livres. Vous pourrez l’ajouter à votre liste de recherche.</p>
             } @else if (externalLoading) {
-              <vpd-loader
-                variant="butterflies"
-                logoSrc="images/papillon_without_back.png"
-                label="Recherche de titres à ajouter"
-                detail="Quelques secondes"></vpd-loader>
+              <div class="external-loader">
+                <vpd-loader
+                  variant="butterflies"
+                  logoSrc="images/papillon_without_back.png"
+                  label="Recherche de titres à ajouter"
+                  detail="Quelques secondes"></vpd-loader>
+              </div>
             } @else if (externalError) {
               <p class="state-message error-message" role="alert">La recherche de titres à ajouter est momentanément indisponible. La recherche dans la bourse aux livres reste utilisable.</p>
             } @else if (externalResponse) {
