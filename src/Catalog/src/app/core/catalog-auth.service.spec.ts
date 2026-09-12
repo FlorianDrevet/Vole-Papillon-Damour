@@ -206,6 +206,23 @@ describe('CatalogAuthService', () => {
     });
   });
 
+  it('recognizes an interaction-required error across an MSAL boundary', async () => {
+    await service.initialize();
+    client.acquireTokenSilent.and.rejectWith({
+      errorCode: 'interaction_required',
+      message: 'An interactive token request is required.',
+    } as never);
+
+    await expectAsync(service.getApiAccessToken())
+      .toBeRejectedWithError(CatalogAuthenticationRedirectStartedError);
+
+    expect(client.acquireTokenRedirect).toHaveBeenCalledWith({
+      ...catalogLoginRequest,
+      account,
+      redirectStartPage: window.location.href,
+    });
+  });
+
   function createAccessToken(roles: string[]): string {
     const encode = (value: object) =>
       btoa(JSON.stringify(value))

@@ -38,6 +38,26 @@ export const CATALOG_MSAL_LOADER = new InjectionToken<CatalogMsalLoader>(
 const ADMINISTRATION_ROUTE = '/administration';
 const ADMINISTRATION_ROLES = new Set(['administration', 'admin']);
 const VOLUNTEER_ROLES = new Set(['tri', 'caisse']);
+const INTERACTION_REQUIRED_ERROR_CODES = new Set([
+  'interaction_required',
+  'consent_required',
+  'login_required',
+  'bad_token',
+  'ui_not_allowed',
+  'interrupted_user',
+  'no_tokens_found',
+  'refresh_token_expired',
+]);
+const INTERACTION_REQUIRED_SUBERRORS = new Set([
+  'message_only',
+  'additional_action',
+  'basic_action',
+  'user_password_expired',
+  'consent_required',
+  'bad_token',
+  'ui_not_allowed',
+  'interrupted_user',
+]);
 
 export class CatalogAuthenticationRedirectStartedError extends Error {
   constructor() {
@@ -134,7 +154,7 @@ export class CatalogAuthService {
       this._roles.set(readRoles(result.accessToken));
       return result.accessToken;
     } catch (error: unknown) {
-      if (this.msal && error instanceof this.msal.InteractionRequiredAuthError) {
+      if (isInteractionRequiredError(this.msal, error)) {
         await client.acquireTokenRedirect({
           ...catalogLoginRequest,
           account,
@@ -255,4 +275,37 @@ function readRoles(accessToken: string): string[] {
   return Array.isArray(rawRoles)
     ? rawRoles.filter((role): role is string => typeof role === 'string')
     : [];
+}
+
+function isInteractionRequiredError(
+  msal: CatalogMsalModule | null,
+  error: unknown,
+): boolean {
+  if (msal && error instanceof msal.InteractionRequiredAuthError) {
+    return true;
+  }
+
+  const errorCode = readErrorProperty(error, 'errorCode');
+  const subError = readErrorProperty(error, 'subError');
+  if (errorCode && INTERACTION_REQUIRED_ERROR_CODES.has(errorCode)) {
+    return true;
+  }
+
+  if (subError && INTERACTION_REQUIRED_SUBERRORS.has(subError)) {
+    return true;
+  }
+
+  const message = readErrorProperty(error, 'message');
+  return message
+    ? [...INTERACTION_REQUIRED_ERROR_CODES].some(code => message.includes(code))
+    : false;
+}
+
+function readErrorProperty(error: unknown, property: string): string | null {
+  if (!error || typeof error !== 'object') {
+    return null;
+  }
+
+  const value = (error as Record<string, unknown>)[property];
+  return typeof value === 'string' ? value.trim().toLowerCase() : null;
 }

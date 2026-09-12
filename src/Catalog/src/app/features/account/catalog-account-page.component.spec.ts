@@ -1,9 +1,10 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {HttpErrorResponse} from '@angular/common/http';
 import {signal, WritableSignal} from '@angular/core';
 import {Meta} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 import type {AccountInfo} from '@azure/msal-browser';
-import {of} from 'rxjs';
+import {of, throwError} from 'rxjs';
 
 import {
   CatalogAuthenticationRedirectStartedError,
@@ -426,6 +427,50 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Redirection vers votre fournisseur de connexion');
     expect(fixture.nativeElement.textContent).not.toContain('Microsoft');
     expect(fixture.nativeElement.textContent).not.toContain('Une erreur est survenue');
+  });
+
+  it('offers reconnection when token acquisition fails before the watchlist request', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    auth.getApiAccessToken.and.rejectWith(new Error('silent token acquisition failed'));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('La session n’a pas pu être renouvelée');
+    const reconnectButton = fixture.nativeElement.querySelector(
+      '[data-testid="watchlist-reconnect"]',
+    ) as HTMLButtonElement | null;
+    expect(reconnectButton).not.toBeNull();
+
+    reconnectButton?.click();
+    await fixture.whenStable();
+
+    expect(auth.login).toHaveBeenCalledWith('/compte');
+  });
+
+  it('explains a watchlist service outage and offers a retry', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    api.getWatchlist.and.returnValue(throwError(() => new HttpErrorResponse({status: 503})));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Le service de votre liste est momentanément indisponible');
+    const retryButton = fixture.nativeElement.querySelector(
+      '[data-testid="watchlist-retry"]',
+    ) as HTMLButtonElement | null;
+    expect(retryButton).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="watchlist-reconnect"]')).toBeNull();
+
+    const callCountBeforeRetry = api.getWatchlist.calls.count();
+    retryButton?.click();
+    await fixture.whenStable();
+
+    expect(api.getWatchlist.calls.count()).toBeGreaterThan(callCountBeforeRetry);
   });
 
   it('requires a second explicit action before deleting the account', async () => {

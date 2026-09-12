@@ -108,6 +108,13 @@
   name and navigation affordances without first pressing `Se connecter`. A configuration
   failure still leaves the public catalogue available, and pending external-reference
   follows reuse the same initialization promise after the redirect.
+- Catalog watchlist loading can fail before any API request when a cached account cannot
+  silently acquire the delegated API token. `CatalogAuthService` therefore recognizes the
+  official MSAL interaction-required error codes as well as the error class, including across
+  a module boundary; the account page offers reconnection for token failures and retry for
+  `status 0`/5xx watchlist transport failures. Keep this distinction when changing the
+  generic account feedback because a displayed error is not evidence that the API returned
+  `500`.
  - `Scan` gates the entire PWA through `ScanAuthService.authState$`: an Entra account with
    `Tri` or `Caisse` renders the PWA (`Tri` triages; `Caisse` sells), while unauthenticated,
    unauthorized, and token-renewal-failure states render `ScanLoginComponent`. `AppModule` awaits
