@@ -12,7 +12,8 @@ on:
       run_migrations:
         description: Apply all pending EF Core migrations before rollout
         type: boolean
-        default: false
+        # Deployed API environments do not migrate on startup; keep schema rollout safe by default.
+        default: true
 
 permissions:
   id-token: write

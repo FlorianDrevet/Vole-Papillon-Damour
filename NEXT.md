@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — transparence RGPD du compte Catalog : page publique des droits, information avant inscription et cohérence de la suppression de compte. |
-| **Prochaine action** | Faire relire la page et valider par l'association les bases, durées, DPO éventuel, contrats fournisseurs et transferts ; après merge, déployer puis contrôler les routes publiques. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-rgpd` |
-| **Dernière mise à jour** | 2026-09-12 — page `/donnees-personnelles`, liens footer/compte, étude RGPD et documentation ajoutées ; [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156) ouverte, aucun déploiement |
-| **Branche** | `feat/website-rgpd-account-rights` — dédiée depuis `origin/main`, [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156) ouverte |
+| **Lot en cours** | Hotfix API — restaurer la compatibilité du schéma EF Core avec les cartes de liste de recherche Catalog. |
+| **Prochaine action** | Relancer `API - deploy` avec `run_migrations=true`, puis contrôler `GET /catalog/me/watchlist` avec une session connectée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-api-migration-guard` |
+| **Dernière mise à jour** | 2026-09-12 — incident 500 confirmé : les deux derniers déploiements API avaient ignoré l'étape de migration ; les workflows activent désormais les migrations par défaut ; [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) ouverte. |
+| **Branche** | `fix/api-deploy-migrations-default` — dédiée depuis `origin/main` fraîchement récupéré, [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) ouverte |
 
 ---
 
@@ -105,6 +105,27 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-12 — incident 500 de la liste de recherche Catalog
+
+Après le déploiement du commit `0443c5d` contenant les métadonnées bibliographiques des
+suivis, `GET /catalog/me/watchlist` renvoie `500` dans l'environnement DEV. Les exécutions
+GitHub `34717607127` et `34718378378` ont bien livré l'image, mais ont laissé l'étape
+« Apply the EF Core migrations before rollout » à l'état `skipped`, car l'entrée manuelle
+`run_migrations` avait `default: false`. L'API déployée ne migre volontairement pas sa base
+au démarrage ; les colonnes `Title`, `Authors`, `Publisher` et `PublicationYear` de
+`WatchlistItem` peuvent donc manquer dans Azure SQL, ce qui explique le 500.
+
+Le worktree `Vole-Papillon-Damour-api-migration-guard` rend `run_migrations` vrai par défaut
+dans `API - deploy` et `Books runtime - deploy`, tout en conservant l'option explicite de
+désactivation pour un rollout strictement applicatif. Ce changement ne lance aucune action
+Azure. La restauration immédiate reste à faire depuis GitHub : relancer `API - deploy` sur
+`main` avec `run_migrations=true`, puis vérifier la route authentifiée et les logs de l'API.
+
+Validation locale : contrôle statique du diff YAML et `git diff --check` ; aucun code
+exécutable n'a changé et aucune base ni ressource Azure n'a été modifiée depuis ce worktree.
+La [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157) est ouverte pour
+relecture.
 
 ### État actualisé — 2026-09-12 — métadonnées des cartes de liste Catalog
 

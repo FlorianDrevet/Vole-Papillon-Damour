@@ -9,9 +9,10 @@ on:
         type: string
         default: ''
       run_migrations:
-        description: Apply the EF Core migrations to the database before deploying the new image
+        description: Apply the EF Core migrations before deploying the new image
         type: boolean
-        default: false
+        # Deployed API environments do not migrate on startup; keep schema rollout safe by default.
+        default: true
 
 permissions:
   id-token: write

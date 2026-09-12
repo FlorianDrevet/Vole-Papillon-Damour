@@ -124,6 +124,12 @@ The API startup wires:
 - `Books runtime - deploy` builds API and Worker from one commit, applies EF migrations before
   rollout when requested through the temporary SQL firewall rule, and cleans up that rule. API
   startup migrations run only in `Development`; deployed environments use the explicit workflow.
+- 2026-09-12 incident: API deploy runs `34717607127` and `34718378378` rolled out commit
+  `0443c5d` while skipping the explicit EF migration step, leaving the Catalog watchlist API
+  incompatible with the newly added `WatchlistItem` metadata columns and returning `500`.
+  Both backend deployment workflows now default `run_migrations` to `true`; the immediate
+  Azure SQL migration still requires a deliberate rerun of the API workflow. The guardrail is
+  tracked in [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157).
 - ACS delivery is enabled in DEV after domain verification; the domain is verified but DMARC is
   `NotStarted`, and a real authorized-recipient delivery test remains open.
 - Bibliographic covers now use validated direct HTTPS provider URLs; the dedicated Blob cover
