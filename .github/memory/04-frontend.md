@@ -121,6 +121,15 @@ restored. The administrator header uses the clickable `Administration` tag as th
 entry to `/administration`; the mobile drawer does not duplicate the former `Espace
 administrateur` link.
 
+As of 2026-09-13, that search follow surface also loads the authenticated watchlist with a
+non-interactive token check and indexes its typed `Work`/`Edition` targets. A matching edition
+renders a status pill (`Déjà dans votre liste de recherche`) instead of an add button; a
+matching work renders the equivalent all-editions status. Follow actions replace the temporary
+`Ajout…` label with the shared small ring loader and, after success, keep the status visible.
+The passive token path never starts an MSAL redirect, and the component ignores duplicate follow
+calls even if invoked programmatically. The local API could not be started during validation
+because the development SQL Server instance was unavailable.
+
 As of 2026-09-11, the shared `VpdLoaderComponent` brings the loader catalogue from the design
 artifact to Website, Catalog, and Scan. Its variants map to the nine supplied screens: `line`
 (1a), `flight` (1b), `squares` (1c), `skeleton` (1d), `ring` (1e), `traverse` (2a),
