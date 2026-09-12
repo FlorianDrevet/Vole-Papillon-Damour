@@ -59,7 +59,7 @@ rendus. Les doublons sont également ignorés côté composant.
 
 Le contrôle passif utilise `tryGetApiAccessToken()` afin qu'un jeton silencieux indisponible ne
 déclenche pas une redirection interactive pendant une simple consultation ; la redirection reste
-réservée à l'action explicite. Validation locale : TDD rouge puis vert, 190 tests Catalog
+réservée à l'action explicite. Validation locale : TDD rouge puis vert, 196 tests Catalog
 ChromeHeadless, build production et `graphify update .`. Le navigateur local a bien servi le
 bundle de cette branche, mais les résultats ne peuvent pas être chargés sans l'instance SQL
 nécessaire au backend de développement. Aucun déploiement, changement Azure/Entra ou donnée de
