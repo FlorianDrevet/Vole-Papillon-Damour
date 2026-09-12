@@ -41,8 +41,8 @@ Validation locale : TDD rouge puis vert, 191 tests Catalog ChromeHeadless, build
 SSR/navigateur, `python -m graphify update .`, `git diff --check` et smoke Chrome mobile à
 390×844 sur les états de recherche. L'API locale n'était pas démarrée : le smoke a donc
 contrôlé le shell et les états d'erreur, et les résultats avec données sont couverts par les
-tests. Aucun déploiement, changement API, Entra ou compte n'a été effectué ; la PR est à
-ouvrir.
+tests. Aucun déploiement, changement API, Entra ou compte n'a été effectué ; la [PR #162](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/162)
+est ouverte pour relecture.
 `rtk` n'est pas installé sur cette machine ; les commandes Git/npm natives équivalentes ont
 été utilisées.
 
