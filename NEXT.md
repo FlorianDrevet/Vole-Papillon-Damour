@@ -167,8 +167,9 @@ Watchlist et Catalog sont verts, ainsi que les 183 tests Catalog, les 426 tests 
 les builds API/solution/Catalog, `graphify update .` et `git diff --check`. Le shell
 déconnecté a été contrôlé sur desktop ; le parcours connecté avec compte Entra et API
 joignable, ainsi que le contrôle mobile authentifié, restent des vérifications distantes.
-Le rebase, le push et la PR restent à finaliser. Aucun déploiement ni changement Azure,
-Entra, compte ou base distante n'a été effectué.
+La branche est rebasée sur `origin/main`, poussée et proposée dans la [PR
+#159](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/159). Aucun déploiement ni
+changement Azure, Entra, compte ou base distante n'a été effectué.
 
 ### État actualisé — 2026-09-12 — métadonnées des cartes de liste Catalog
 
