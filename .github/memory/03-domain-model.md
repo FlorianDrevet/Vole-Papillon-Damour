@@ -137,6 +137,18 @@ books/stock, fairs/statistics, sessions, alerts, members, and settings. The Cata
 owns the public member/watchlist flows; role assignment remains an Entra concern and
 physical cartons are not represented by the domain.
 
+## Administration volunteer statistics (2026-09-12)
+
+The administrator volunteer projection is a read-only CQRS query at
+`Application/Books/Queries/Admin/GetAdminVolunteerStatisticsQueryHandler`. Its single
+typed response aggregates sessions, scan movements, effective sales, corrections, books and
+local user names for the selected UTC period and optional Books fair. It returns team totals,
+per-volunteer contribution, inferred `Tri`/`Caisse` activity roles, monthly session buckets,
+90-day renewal buckets and dominant genres. Sales are netted through
+`ReversalOfMovementId`; no schema change is needed. Time spent at the till and the
+contributor-level waiting-stock signal are reconstructed estimates, not a replacement for
+the inventory ledger or Entra role assignment.
+
 ## Private volunteer statistics
 
 The private contribution projection is a read-only CQRS query at

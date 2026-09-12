@@ -415,6 +415,25 @@ public static class BookAdministrationController
                 .WithName("GetAdminBookFairStats")
                 .RequireAuthorization("Administration");
 
+            endpoints.MapGet(
+                    "/books/admin/volunteers/stats",
+                    async (
+                        DateTimeOffset? from,
+                        DateTimeOffset? to,
+                        Guid? fairId,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetAdminVolunteerStatisticsQuery(from, to, fairId),
+                            cancellationToken);
+                        return result.Match(
+                            stats => Results.Ok(ToResponse(stats)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminVolunteerStatistics")
+                .RequireAuthorization("Administration");
+
             endpoints.MapPut(
                     "/books/admin/fairs/{fairId:guid}/revenue",
                     async (
@@ -1024,6 +1043,56 @@ public static class BookAdministrationController
             result.TopBooks.Select(item => new AdminTopBookResponse(item.Isbn13, item.Title, item.Authors, item.Genre, item.Quantity)).ToArray(),
             result.DailySales.Select(item => new AdminDailySalesResponse(item.Day, item.Quantity)).ToArray(),
             result.PreviousFairs.Select(item => new AdminFairComparisonResponse(item.FairId, item.Name, item.DateStart, item.SoldQuantity, item.Revenue)).ToArray());
+
+    private static AdminVolunteerStatisticsResponse ToResponse(AdminVolunteerStatisticsResult result) =>
+        new(
+            result.GeneratedAt,
+            result.From,
+            result.To,
+            result.FairId,
+            new AdminVolunteerTeamSummaryResponse(
+                result.Team.ActiveVolunteerCount,
+                result.Team.ScannedCount,
+                result.Team.KeptCount,
+                result.Team.RejectedCount,
+                result.Team.KeptRatePercent,
+                result.Team.SoldQuantity,
+                result.Team.SoldOfKeptRatePercent,
+                result.Team.SessionCount,
+                result.Team.ScanDurationMinutes,
+                result.Team.CashDurationMinutes,
+                result.Team.TotalDurationMinutes,
+                result.Team.AverageSessionsPerVolunteer),
+            result.Volunteers.Select(item => new AdminVolunteerContributionResponse(
+                item.VolunteerId,
+                item.DisplayName,
+                item.Roles,
+                item.SessionCount,
+                item.ScanDurationMinutes,
+                item.CashDurationMinutes,
+                item.TotalDurationMinutes,
+                item.ScannedCount,
+                item.KeptCount,
+                item.KeptRatePercent,
+                item.SoldQuantity,
+                item.WaitingQuantity,
+                item.WaitingOverYearQuantity,
+                item.FlowRatePercent,
+                item.FirstActivityAt,
+                item.LastActivityAt,
+                item.DominantGenre)).ToArray(),
+            result.MonthlyActivity.Select(item => new AdminVolunteerMonthlyActivityResponse(
+                item.VolunteerId,
+                item.DisplayName,
+                item.Months.Select(month => new AdminVolunteerMonthResponse(
+                    month.PeriodStart,
+                    month.SessionCount)).ToArray())).ToArray(),
+            new AdminVolunteerRenewalResponse(
+                result.Renewal.NewCount,
+                result.Renewal.RegularCount,
+                result.Renewal.WithdrawingCount,
+                result.Renewal.WindowDays),
+            result.DominantGenres.Select(item => new AdminVolunteerGenreResponse(item.Name, item.Quantity)).ToArray());
 
     private static AdminScanSessionPageResponse ToResponse(AdminScanSessionPageResult result) =>
         new(result.GeneratedAt, result.Sessions.Select(ToResponse).ToArray(), result.TotalCount,

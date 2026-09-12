@@ -23,6 +23,7 @@ import {
   CatalogAdminMemberPage,
   CatalogAdminOperation,
   CatalogAdminOverview,
+  CatalogAdminVolunteerStatistics,
   CatalogAdminCreateAccountRequest,
   CatalogAdminQuantityCorrectionRequest,
   CatalogAdminQuantityCorrection,
@@ -181,6 +182,18 @@ export class CatalogAdminApiService {
     return this.http.get<CatalogAdminFairStats>(
       `${this.apiUrl}/books/admin/fairs/${encodeURIComponent(fairId)}/stats`,
       this.options(accessToken),
+    );
+  }
+
+  getVolunteerStatistics(
+    accessToken: string,
+    from?: string,
+    to?: string,
+    fairId?: string,
+  ): Observable<CatalogAdminVolunteerStatistics> {
+    return this.http.get<CatalogAdminVolunteerStatistics>(
+      `${this.apiUrl}/books/admin/volunteers/stats`,
+      this.options(accessToken, this.params({from, to, fairId})),
     );
   }
 

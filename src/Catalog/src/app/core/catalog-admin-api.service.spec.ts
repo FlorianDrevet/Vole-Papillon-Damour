@@ -9,6 +9,7 @@ import {
   CatalogAdminAccountPage,
   CatalogAdminBookPage,
   CatalogAdminOverview,
+  CatalogAdminVolunteerStatistics,
   CatalogDeadStockResponse,
 } from './catalog.models';
 
@@ -64,6 +65,48 @@ describe('CatalogAdminApiService', () => {
     const request = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/overview`);
     expect(request.request.params.get('from')).toBe('2026-03-01T00:00:00Z');
     expect(request.request.params.get('to')).toBe('2026-03-15T00:00:00Z');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('loads typed administrator volunteer statistics with period and fair filters', () => {
+    const response = {
+      generatedAt: '2026-09-12T12:00:00Z',
+      from: '2026-08-13T12:00:00Z',
+      to: '2026-09-12T12:00:00Z',
+      fairId: 'fair-id',
+      team: {
+        activeVolunteerCount: 0,
+        scannedCount: 0,
+        keptCount: 0,
+        rejectedCount: 0,
+        keptRatePercent: null,
+        soldQuantity: 0,
+        soldOfKeptRatePercent: null,
+        sessionCount: 0,
+        scanDurationMinutes: 0,
+        cashDurationMinutes: 0,
+        totalDurationMinutes: 0,
+        averageSessionsPerVolunteer: null,
+      },
+      volunteers: [],
+      monthlyActivity: [],
+      renewal: {newCount: 0, regularCount: 0, withdrawingCount: 0, windowDays: 90},
+      dominantGenres: [],
+    } as CatalogAdminVolunteerStatistics;
+
+    service.getVolunteerStatistics(
+      'access-token',
+      '2026-08-13T12:00:00Z',
+      '2026-09-12T12:00:00Z',
+      'fair-id',
+    ).subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/volunteers/stats`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('from')).toBe('2026-08-13T12:00:00Z');
+    expect(request.request.params.get('to')).toBe('2026-09-12T12:00:00Z');
+    expect(request.request.params.get('fairId')).toBe('fair-id');
     expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
     request.flush(response);
   });

@@ -100,6 +100,25 @@ parcours métier réels. Aucun déploiement ni merge n'a été effectué. La PR
 [#151](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/151) est ouverte pour
 relecture.
 
+### État actualisé — 2026-09-12 — statistiques d'administration Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-backoffice-statistics-section`, cette tranche ajoute l'entrée latérale
+`Statistiques` dans `src/Catalog`, avec les onglets `Statistiques par bourse` et
+`Statistiques des bénévoles`. Un endpoint Administration unique,
+`GET /books/admin/volunteers/stats`, agrège les sessions, mouvements, ventes nettes,
+contributions, activité mensuelle, renouvellement et genres dominants ; aucune migration ni
+modification Azure/Entra n'est nécessaire. Le sous-onglet qualité des données et l'écran 4C
+de la maquette sont volontairement exclus.
+
+Validation locale : les quatre suites backend passent (Application 209, API 23, Infrastructure
+97 et Domain 92 tests), les 170 tests Catalog passent, ainsi que les builds API et Catalog.
+Graphify a été mis à jour. Le build Catalog conserve les avertissements de budget initial et de
+style du dépôt ; les avertissements de vulnérabilités NuGet/npm sont ceux des dépendances
+existantes. Le smoke connecté avec un compte Administration et la vérification responsive
+finale restent à faire. La branche de livraison est `feat/backoffice-statistics-section` ;
+aucun déploiement ni merge n'a été effectué.
+
 ### État actualisé — 2026-09-12 — statistiques privées des bénévoles
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

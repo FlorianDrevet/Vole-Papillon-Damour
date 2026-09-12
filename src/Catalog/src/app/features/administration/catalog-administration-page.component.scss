@@ -1972,7 +1972,363 @@ input:disabled {
   font-size: 35px;
 }
 
-.charts-grid {
+.admin-subtabs {
+  display: flex;
+  gap: 28px;
+  margin: 0 0 38px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.admin-subtabs button {
+  position: relative;
+  min-height: 42px;
+  padding: 0 0 13px;
+  border: 0;
+  background: transparent;
+  color: var(--admin-muted);
+  cursor: pointer;
+  font: 600 11px/1 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.admin-subtabs button::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  background: transparent;
+  content: '';
+}
+
+.admin-subtabs button:hover,
+.admin-subtabs button.active {
+  color: var(--admin-ink);
+}
+
+.admin-subtabs button.active::after {
+  background: var(--admin-orange);
+}
+
+.statistics-period-chips {
+  margin-top: 14px;
+}
+
+.statistics-fair-select {
+  width: min(100%, 390px);
+  margin-top: 4px;
+}
+
+.statistics-fair-select select {
+  min-height: 42px;
+}
+
+.volunteer-stat-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.volunteer-stat-grid .stat-card {
+  min-height: 154px;
+  padding: 19px 18px 16px;
+}
+
+.volunteer-stat-grid .stat-value {
+  font-size: clamp(29px, 2.5vw, 38px);
+}
+
+.volunteer-contribution-card {
+  margin-top: 20px;
+}
+
+.chart-note,
+.table-caption,
+.chart-caption {
+  color: var(--admin-muted);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.volunteer-table-wrap {
+  overflow-x: auto;
+  margin-top: 4px;
+}
+
+.volunteer-table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.volunteer-table th {
+  padding: 14px 10px 10px;
+  color: var(--admin-muted);
+  font: 600 9px/1.2 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .1em;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.volunteer-table th:first-child,
+.volunteer-table td:first-child,
+.volunteer-table th:nth-child(2),
+.volunteer-table td:nth-child(2) {
+  text-align: left;
+}
+
+.volunteer-table td {
+  padding: 15px 10px;
+  border-top: 1px solid var(--admin-line-soft);
+  color: var(--admin-slate);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.volunteer-table td:first-child {
+  color: var(--admin-ink);
+}
+
+.volunteer-table td small,
+.volunteer-name {
+  display: block;
+}
+
+.volunteer-table td small {
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 10px;
+}
+
+.volunteer-name {
+  font-weight: 600;
+}
+
+.volunteer-name i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--admin-line);
+  vertical-align: 1px;
+}
+
+.volunteer-name i.active-dot {
+  background: #33a861;
+}
+
+.role-list-inline {
+  color: var(--admin-blue);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.table-caption {
+  margin: 17px 0 0;
+}
+
+.volunteer-charts-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr);
+}
+
+.scatter-plot {
+  position: relative;
+  min-height: 240px;
+  margin: 30px 14px 18px 34px;
+  border-bottom: 1px solid var(--admin-line);
+  border-left: 1px solid var(--admin-line);
+  background-image: linear-gradient(to right, transparent 49.8%, var(--admin-line-soft) 50%, transparent 50.2%), linear-gradient(to top, transparent 49.8%, var(--admin-line-soft) 50%, transparent 50.2%);
+}
+
+.scatter-point {
+  position: absolute;
+  display: block;
+  min-width: 12px;
+  min-height: 12px;
+  transform: translate(-50%, 50%);
+  border: 2px solid var(--admin-white);
+  border-radius: 50%;
+  background: var(--admin-orange);
+  box-shadow: 0 2px 8px rgba(4, 29, 48, .18);
+}
+
+.scatter-median {
+  position: absolute;
+  display: block;
+  background: var(--admin-blue-bright);
+  opacity: .35;
+}
+
+.scatter-median-x {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.scatter-median-y {
+  right: 0;
+  left: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.scatter-axis {
+  position: absolute;
+  color: var(--admin-muted);
+  font: 9px/1 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.scatter-axis-x {
+  right: 0;
+  bottom: -22px;
+}
+
+.scatter-axis-y {
+  top: 0;
+  left: -31px;
+  transform: rotate(-90deg) translateX(-100%);
+  transform-origin: left top;
+}
+
+.chart-caption {
+  margin: 0;
+}
+
+.concentration-bars,
+.calibration-list,
+.dormant-stock-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 24px;
+}
+
+.concentration-row,
+.calibration-row,
+.dormant-stock-row {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  color: var(--admin-slate);
+  font-size: 12px;
+}
+
+.concentration-row,
+.calibration-row {
+  grid-template-columns: 110px minmax(0, 1fr) 42px;
+}
+
+.concentration-row strong,
+.calibration-row strong {
+  color: var(--admin-ink);
+  font: 11px 'IBM Plex Mono', ui-monospace, monospace;
+  text-align: right;
+}
+
+.calibration-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f4d8c6 0 50%, #d4edf7 50% 100%);
+}
+
+.calibration-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--admin-orange);
+}
+
+.calibration-track b {
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  height: 18px;
+  background: var(--admin-ink);
+  content: '';
+}
+
+.dormant-stock-row {
+  grid-template-columns: minmax(100px, 1fr) 50px 88px 65px;
+  min-height: 28px;
+}
+
+.dormant-stock-row strong {
+  color: var(--admin-orange-dark);
+  font: 500 18px 'Newsreader', Georgia, serif;
+  text-align: right;
+}
+
+.dormant-stock-row span:nth-child(3),
+.dormant-stock-row em {
+  color: var(--admin-muted);
+  font: 10px 'IBM Plex Mono', ui-monospace, monospace;
+  font-style: normal;
+}
+
+.dormant-stock-row em {
+  color: #2f8b58;
+  text-align: right;
+}
+
+.heatmap-wrap {
+  overflow-x: auto;
+  margin-top: 22px;
+}
+
+.heatmap-row {
+  display: grid;
+  grid-template-columns: 115px minmax(300px, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 450px;
+  padding: 6px 0;
+}
+
+.heatmap-row > strong {
+  overflow: hidden;
+  color: var(--admin-slate);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.heatmap-cells {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(15px, 1fr));
+  gap: 4px;
+}
+
+.heatmap-cells i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--admin-blue-bright);
+}
+
+.renewal-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 17px;
+  margin-top: 27px;
+  padding-top: 17px;
+  border-top: 1px solid var(--admin-line-soft);
+  color: var(--admin-muted);
+  font: 10px 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.renewal-summary strong {
+  color: var(--admin-ink);
+  font-size: 15px;
+}
+
+.charts-grid,
+.inventory-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
   gap: 20px;
@@ -3101,6 +3457,74 @@ input:disabled {
 
   .correction-footer .button {
     width: 100%;
+  }
+}
+
+@media (max-width: 940px) {
+  .volunteer-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .volunteer-table {
+    min-width: 760px;
+  }
+
+  .statistics-heading .statistics-fair-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-subtabs {
+    gap: 18px;
+    margin-bottom: 30px;
+    overflow-x: auto;
+  }
+
+  .admin-subtabs button {
+    flex: 0 0 auto;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .volunteer-stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .volunteer-stat-grid .stat-card {
+    min-height: 132px;
+    padding: 16px 14px 14px;
+  }
+
+  .volunteer-stat-grid .stat-card:first-child {
+    grid-column: span 2;
+  }
+
+  .volunteer-stat-grid .stat-value {
+    font-size: 30px;
+  }
+
+  .chart-note {
+    display: none;
+  }
+
+  .concentration-row,
+  .calibration-row {
+    grid-template-columns: 92px minmax(0, 1fr) 38px;
+    gap: 8px;
+  }
+
+  .dormant-stock-row {
+    grid-template-columns: minmax(90px, 1fr) 42px 74px;
+  }
+
+  .dormant-stock-row em {
+    display: none;
+  }
+
+  .scatter-plot {
+    min-height: 210px;
   }
 }
 

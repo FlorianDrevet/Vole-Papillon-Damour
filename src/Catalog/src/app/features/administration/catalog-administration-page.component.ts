@@ -33,6 +33,7 @@ import {
   CatalogAdminFair,
   CatalogAdminFairPage,
   CatalogAdminFairStats,
+  CatalogAdminVolunteerStatistics,
   CatalogAdminMemberDetail,
   CatalogAdminMemberFilters,
   CatalogAdminMemberPage,
@@ -58,13 +59,15 @@ export type CatalogAdminSection =
   | 'dead-stock'
   | 'inventory'
   | 'catalogue'
-  | 'fairs'
+  | 'statistics'
   | 'alerts'
   | 'members'
   | 'accounts'
   | 'settings';
 
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
+export type CatalogAdminStatisticsTab = 'fairs' | 'volunteers';
+export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
 
 type CatalogAdminNavIcon =
   | 'dashboard'
@@ -72,7 +75,7 @@ type CatalogAdminNavIcon =
   | 'dead-stock'
   | 'catalogue'
   | 'inventory'
-  | 'fairs'
+  | 'statistics'
   | 'accounts'
   | 'settings';
 
@@ -133,7 +136,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
       items: [
         {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
         {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
-        {id: 'fairs', label: 'Statistiques par bourse', icon: 'fairs'},
+        {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
       ],
     },
     {
@@ -168,6 +171,8 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
   readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
   readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
+  readonly statisticsTab = signal<CatalogAdminStatisticsTab>('fairs');
+  readonly volunteerStatistics = signal<CatalogAdminVolunteerStatistics | null>(null);
   readonly sessionsPage = signal<CatalogAdminScanSessionPage | null>(null);
   readonly selectedSession = signal<CatalogAdminScanSession | null>(null);
   readonly alertsPage = signal<CatalogAdminAlertPage | null>(null);
@@ -213,6 +218,8 @@ export class CatalogAdministrationPageComponent implements OnInit {
   sessionFairId = '';
   sessionPreset: 'correctable' | 'all' | 'open' | 'alerts' = 'correctable';
   overviewPeriod: CatalogAdminOverviewPeriod = '30-days';
+  statisticsPeriod: CatalogAdminStatisticsPeriod = '30-days';
+  statisticsFairId = '';
 
   alertStatus = '';
   alertPage = 1;
@@ -350,8 +357,8 @@ export class CatalogAdministrationPageComponent implements OnInit {
       case 'catalogue':
         await this.loadBooks();
         break;
-      case 'fairs':
-        await this.loadFairs();
+      case 'statistics':
+        await this.loadStatisticsTab();
         break;
       case 'alerts':
         await this.loadAlerts();
@@ -752,6 +759,51 @@ export class CatalogAdministrationPageComponent implements OnInit {
     });
   }
 
+  async loadStatisticsTab(): Promise<void> {
+    if (this.statisticsTab() === 'volunteers') {
+      await this.loadVolunteerStatistics();
+      return;
+    }
+
+    await this.loadFairs();
+  }
+
+  async selectStatisticsTab(tab: CatalogAdminStatisticsTab): Promise<void> {
+    this.statisticsTab.set(tab);
+    if (!this.auth.isAuthenticated()) {
+      return;
+    }
+
+    await this.loadStatisticsTab();
+  }
+
+  setStatisticsPeriod(period: CatalogAdminStatisticsPeriod): void {
+    this.statisticsPeriod = period;
+    if (this.auth.isAuthenticated() && this.statisticsTab() === 'volunteers') {
+      void this.loadVolunteerStatistics();
+    }
+  }
+
+  async selectStatisticsFair(fairId: string): Promise<void> {
+    this.statisticsFairId = fairId;
+    this.statisticsPeriod = fairId ? 'fair' : '30-days';
+    if (this.auth.isAuthenticated() && this.statisticsTab() === 'volunteers') {
+      await this.loadVolunteerStatistics();
+    }
+  }
+
+  async loadVolunteerStatistics(): Promise<void> {
+    const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
+    await this.run('volunteer-statistics', async token => {
+      this.volunteerStatistics.set(await firstValueFrom(this.api.getVolunteerStatistics(
+        token,
+        from,
+        to,
+        this.statisticsFairId || undefined,
+      )));
+    });
+  }
+
   async openFairStats(fair: CatalogAdminFair): Promise<void> {
     await this.run('fair-stats', async token => {
       const stats = await firstValueFrom(this.api.getFairStats(token, fair.id));
@@ -814,6 +866,22 @@ export class CatalogAdministrationPageComponent implements OnInit {
       from.setUTCDate(from.getUTCDate() - 30);
     } else if (period === '3-months') {
       this.subtractCalendarMonths(from, 3);
+    } else {
+      this.subtractCalendarYears(from, 1);
+    }
+
+    return [from.toISOString(), to.toISOString()];
+  }
+
+  private statisticsPeriodBounds(period: CatalogAdminStatisticsPeriod): [string | undefined, string | undefined] {
+    if (period === 'all' || period === 'fair') {
+      return [undefined, undefined];
+    }
+
+    const to = new Date();
+    const from = new Date(to);
+    if (period === '30-days') {
+      from.setUTCDate(from.getUTCDate() - 30);
     } else {
       this.subtractCalendarYears(from, 1);
     }
@@ -1317,6 +1385,60 @@ export class CatalogAdministrationPageComponent implements OnInit {
     const hours = Math.floor(value / 60);
     const minutes = value % 60;
     return hours > 0 ? `${hours} h ${String(minutes).padStart(2, '0')}` : `${minutes} min`;
+  }
+
+  formatPercent(value: number | null | undefined): string {
+    return value === null || value === undefined ? '—' : `${this.formatNumber(value)} %`;
+  }
+
+  formatDecimal(value: number | null | undefined): string {
+    return value === null || value === undefined ? '—' : value.toFixed(1).replace('.', ',');
+  }
+
+  rolesLabel(roles: string[] | null | undefined): string {
+    return roles?.join(' · ') || '—';
+  }
+
+  isRecentVolunteer(firstActivityAt: string | null | undefined): boolean {
+    return Boolean(firstActivityAt) && Date.now() - new Date(firstActivityAt!).getTime() < 90 * 86_400_000;
+  }
+
+  scatterLeft(
+    volunteer: CatalogAdminVolunteerStatistics['volunteers'][number],
+    volunteers: CatalogAdminVolunteerStatistics['volunteers'],
+  ): string {
+    const maximum = Math.max(...volunteers.map(item => item.totalDurationMinutes), 1);
+    return `${Math.min(96, Math.max(4, Math.round((volunteer.totalDurationMinutes / maximum) * 92) + 4))}%`;
+  }
+
+  scatterBottom(
+    volunteer: CatalogAdminVolunteerStatistics['volunteers'][number],
+    volunteers: CatalogAdminVolunteerStatistics['volunteers'],
+  ): string {
+    const maximum = Math.max(...volunteers.map(item => item.scannedCount), 1);
+    return `${Math.min(92, Math.max(8, Math.round((volunteer.scannedCount / maximum) * 84) + 8))}%`;
+  }
+
+  scatterSize(volunteer: CatalogAdminVolunteerStatistics['volunteers'][number]): number {
+    return Math.min(30, 12 + volunteer.sessionCount / 3);
+  }
+
+  contributionShare(value: number, total: number): string {
+    return total > 0 ? `${Math.round((value / total) * 100)} %` : '—';
+  }
+
+  topVolunteerShare(stats: CatalogAdminVolunteerStatistics, count: number): string {
+    const total = stats.team.scannedCount;
+    const volume = stats.volunteers.slice(0, count).reduce((sum, volunteer) => sum + volunteer.scannedCount, 0);
+    return this.contributionShare(volume, total);
+  }
+
+  maxMonthlySessions(rows: CatalogAdminVolunteerStatistics['monthlyActivity']): number {
+    return Math.max(...rows.flatMap(row => row.months.map(month => month.sessionCount)), 1);
+  }
+
+  heatmapOpacity(value: number, maximum: number): number {
+    return value === 0 ? 0.08 : 0.18 + (value / Math.max(1, maximum)) * 0.82;
   }
 
   formatCountdown(value: string | null | undefined): string {
