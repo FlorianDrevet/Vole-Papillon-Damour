@@ -20,8 +20,8 @@
 | **Lot en cours** | `P2/P3` — transparence RGPD du compte Catalog : page publique des droits, information avant inscription et cohérence de la suppression de compte. |
 | **Prochaine action** | Faire relire la page et valider par l'association les bases, durées, DPO éventuel, contrats fournisseurs et transferts ; après merge, déployer puis contrôler les routes publiques. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-rgpd` |
-| **Dernière mise à jour** | 2026-09-12 — page `/donnees-personnelles`, liens footer/compte, étude RGPD et documentation ajoutées ; PR à ouvrir, aucun déploiement |
-| **Branche** | `feat/website-rgpd-account-rights` — dédiée depuis `origin/main`, PR à ouvrir |
+| **Dernière mise à jour** | 2026-09-12 — page `/donnees-personnelles`, liens footer/compte, étude RGPD et documentation ajoutées ; [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156) ouverte, aucun déploiement |
+| **Branche** | `feat/website-rgpd-account-rights` — dédiée depuis `origin/main`, [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156) ouverte |
 
 ---
 
@@ -43,10 +43,11 @@ il faut la décider, l'implémenter et la tester avant de l'annoncer.
 
 Validation locale : TDD rouge puis vert, 179 tests Catalog ChromeHeadless, build SSR et
 browser, `graphify update .`, `git diff --check`, contrôle Chrome desktop de la page RGPD,
-du footer et de la carte de création de compte. Les warnings de budget Angular et de
-dépendances npm restent ceux du dépôt ; aucun déploiement ni changement Azure, Entra,
-compte ou API n'a été effectué. `rtk` n'est pas installé sur cette machine ; les commandes
-Git/npm natives équivalentes ont été utilisées.
+du footer et de la carte de création de compte. La [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156)
+est ouverte pour relecture ; les warnings de budget Angular et de dépendances npm restent
+ceux du dépôt. Aucun déploiement ni changement Azure, Entra, compte ou API n'a été effectué.
+`rtk` n'est pas installé sur cette machine ; les commandes Git/npm natives équivalentes ont
+été utilisées.
 
 ## Décisions prises
 
