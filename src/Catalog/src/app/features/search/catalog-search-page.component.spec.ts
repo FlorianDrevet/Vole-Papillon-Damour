@@ -78,6 +78,13 @@ describe('CatalogSearchPageComponent', () => {
     publicationYear: 2015,
   };
 
+  const otherWorkReference: CatalogBookReference = {
+    ...secondEditionReference,
+    isbn13: '9782070612760',
+    workId: 'OL99W',
+    title: 'Un autre titre',
+  };
+
   beforeEach(async () => {
     sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
     response$ = new Subject<CatalogSearchResponse>();
@@ -157,7 +164,31 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
   });
 
-  it('does not offer a work follow action when the reference search is empty', () => {
+  it('keeps one disabled title follow action before unrelated reference results', () => {
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [reference, otherWorkReference],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    const callout = fixture.nativeElement.querySelector('.external-follow-callout') as HTMLElement;
+    const referenceList = fixture.nativeElement.querySelector('.reference-list') as HTMLElement;
+    const button = callout.querySelector('.reference-follow--work') as HTMLButtonElement;
+
+    expect(callout).not.toBeNull();
+    expect(button.disabled).toBeTrue();
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    expect(Array.from(callout.parentElement!.children).indexOf(callout))
+      .toBeLessThan(Array.from(callout.parentElement!.children).indexOf(referenceList));
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
+  });
+
+  it('shows a disabled title follow action when the reference search is empty', () => {
     api.searchReferences.and.returnValue(of({
       generatedAt: '',
       query: 'saint-exupéry',
@@ -168,8 +199,15 @@ describe('CatalogSearchPageComponent', () => {
 
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.external-follow-callout')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.reference-follow--work')).toBeNull();
+    const callout = fixture.nativeElement.querySelector('.external-follow-callout') as HTMLElement;
+    const button = callout.querySelector('.reference-follow--work') as HTMLButtonElement;
+
+    expect(callout).not.toBeNull();
+    expect(callout.textContent).toContain('Suivez toutes les éditions');
+    expect(button.disabled).toBeTrue();
+    expect(button.getAttribute('aria-disabled')).toBe('true');
+    button.click();
+    expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Aucun autre titre ne correspond à cette recherche.');
   });
 

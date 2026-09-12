@@ -275,6 +275,23 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     return workIds.size === 1 ? referencesWithWork[0] : null;
   }
 
+  workFollowKey(): string | null {
+    const reference = this.workReference();
+    return reference ? this.referenceFollowKey(reference, 'Work') : null;
+  }
+
+  workFollowPending(): boolean {
+    const key = this.workFollowKey();
+    return key !== null && this.referenceFollowPending === key;
+  }
+
+  followWork(): void {
+    const reference = this.workReference();
+    if (reference) {
+      void this.followReference(reference, 'Work');
+    }
+  }
+
   private async submitReferenceFollow(
     item: CatalogBookReference,
     scope: CatalogWatchlistScope,
