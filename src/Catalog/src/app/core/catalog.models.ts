@@ -100,6 +100,10 @@ export interface CatalogWatchlistItemRequest {
   scope: CatalogWatchlistScope;
   workId: string | null;
   isbn13: string | null;
+  title?: string | null;
+  authors?: string | null;
+  publisher?: string | null;
+  publicationYear?: number | null;
 }
 
 export interface CatalogAddedWatchlistItem {
@@ -115,6 +119,10 @@ export interface CatalogWatchlistItem {
   scope: CatalogWatchlistScope;
   workId: string | null;
   isbn13: string | null;
+  title?: string | null;
+  authors?: string | null;
+  publisher?: string | null;
+  publicationYear?: number | null;
   book: CatalogBook | null;
   addedAt: string;
   lastAlertAt: string | null;

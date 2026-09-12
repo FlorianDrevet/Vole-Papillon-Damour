@@ -341,6 +341,42 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Retirer de ma liste');
   });
 
+  it('renders saved reference metadata when an edition is not yet in the catalogue', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    const current = structuredClone(watchlist);
+    current.items[0].book = null;
+    Object.assign(current.items[0], {
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+    });
+    api.getWatchlist.and.returnValue(of(current));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.watchlist-item') as HTMLElement;
+
+    expect(card.querySelector('.watchlist-title')?.textContent?.trim()).toBe('Le Petit Prince');
+    expect(card.querySelector('.watchlist-isbn')?.textContent).toContain('9782070363735');
+    expect(card.querySelector('.watchlist-author')?.textContent).toContain('Antoine de Saint-Exupéry');
+    expect(card.querySelector('.watchlist-publisher')?.textContent).toContain('Gallimard');
+    expect(card.textContent).not.toContain('Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.');
+  });
+
+  it('uses a smaller account heading for the watchlist page', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.account-heading-title')).not.toBeNull();
+  });
+
   it('exposes the administration workspace to an administrator', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);

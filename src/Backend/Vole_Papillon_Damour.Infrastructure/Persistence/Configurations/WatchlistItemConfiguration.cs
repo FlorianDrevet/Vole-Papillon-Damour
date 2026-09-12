@@ -31,6 +31,14 @@ public sealed class WatchlistItemConfiguration : IEntityTypeConfiguration<Watchl
             .HasConversion(
                 isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
                 value => BookPersistenceConversions.ParseNullableIsbn13(value));
+        builder.Property(item => item.Title)
+            .HasMaxLength(500)
+            .UseCollation("Latin1_General_100_CI_AI");
+        builder.Property(item => item.Authors)
+            .HasMaxLength(500)
+            .UseCollation("Latin1_General_100_CI_AI");
+        builder.Property(item => item.Publisher).HasMaxLength(200);
+        builder.Property(item => item.PublicationYear);
         builder.Property(item => item.AddedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)

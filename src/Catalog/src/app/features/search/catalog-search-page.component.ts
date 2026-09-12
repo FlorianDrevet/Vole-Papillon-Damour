@@ -511,13 +511,33 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     scope: CatalogWatchlistScope;
     workId: string | null;
     isbn13: string | null;
+    title: string | null;
+    authors: string | null;
+    publisher: string | null;
+    publicationYear: number | null;
   } | null {
     if (scope === 'Work' && item.workId) {
-      return {scope: 'Work', workId: item.workId, isbn13: null};
+      return {
+        scope: 'Work',
+        workId: item.workId,
+        isbn13: null,
+        title: item.title,
+        authors: item.authors,
+        publisher: item.publisher,
+        publicationYear: item.publicationYear,
+      };
     }
 
     if (scope === 'Edition' && item.isbn13) {
-      return {scope: 'Edition', workId: null, isbn13: item.isbn13};
+      return {
+        scope: 'Edition',
+        workId: null,
+        isbn13: item.isbn13,
+        title: item.title,
+        authors: item.authors,
+        publisher: item.publisher,
+        publicationYear: item.publicationYear,
+      };
     }
 
     return null;

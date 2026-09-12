@@ -185,7 +185,16 @@ compte` contains alert suspension, the authenticated identity, administration ha
 account deletion. The header account trigger uses the full cached MSAL display name and a
 filled navy treatment when connected, while anonymous visitors keep an outlined trigger
 with a person icon. The Catalog account component owns the tab state locally and continues
-to use the existing bearer-protected member API without changing its contracts.
+to use the existing bearer-protected member API and endpoint lifecycle.
+
+As of 2026-09-12, Catalog watchlist follow requests preserve the bibliographic title,
+authors, publisher and publication year returned by search and book detail. The API stores
+that snapshot on `WatchlistItem` and returns it alongside the live book projection, so an
+edition not yet received by the association can still render its title and metadata. The
+account card now uses the live book values first, then the saved snapshot, displays the ISBN
+as compact secondary information, and removes the repeated alert sentence. Legacy watchlist
+rows created before this snapshot was introduced continue to fall back to their ISBN until
+they are followed again or otherwise receive metadata; no backfill or deployment was made.
 
 As of 2026-09-09, `/prochaines-dates` keeps the next Books event in a prominent card and
 renders the complete future Books schedule below it. The Catalog client reads the public

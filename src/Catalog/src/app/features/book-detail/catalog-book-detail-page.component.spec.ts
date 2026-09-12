@@ -130,10 +130,15 @@ describe('CatalogBookDetailPageComponent', () => {
     notifyButton.click();
     await fixture.whenStable();
 
-    expect(memberApi.addWatchlistItem).toHaveBeenCalledWith('member-token', {
+    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
+    expect(request).toEqual({
       scope: 'Work',
       workId: 'work-42',
       isbn13: null,
+      title: 'Livre à surveiller',
+      authors: 'Une autrice',
+      publisher: 'Un éditeur',
+      publicationYear: 2020,
     });
     expect(fixture.nativeElement.textContent).toContain('ajouté à votre liste');
   });

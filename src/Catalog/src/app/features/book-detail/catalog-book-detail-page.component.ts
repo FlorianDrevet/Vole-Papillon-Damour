@@ -126,8 +126,24 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
       ? this.notificationScope()
       : 'Edition';
     const request = scope === 'Work'
-      ? {scope, workId: item.workId, isbn13: null}
-      : {scope, workId: null, isbn13: item.isbn13};
+      ? {
+        scope,
+        workId: item.workId,
+        isbn13: null,
+        title: item.title,
+        authors: item.authors,
+        publisher: item.publisher,
+        publicationYear: item.publicationYear,
+      }
+      : {
+        scope,
+        workId: null,
+        isbn13: item.isbn13,
+        title: item.title,
+        authors: item.authors,
+        publisher: item.publisher,
+        publicationYear: item.publicationYear,
+      };
 
     this.notifyPending.set(true);
     try {

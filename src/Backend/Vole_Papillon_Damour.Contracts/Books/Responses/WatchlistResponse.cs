@@ -18,6 +18,10 @@ public sealed record WatchlistItemResponse(
     string Scope,
     string? WorkId,
     string? Isbn13,
+    string? Title,
+    string? Authors,
+    string? Publisher,
+    int? PublicationYear,
     PublicCatalogBookResponse? Book,
     DateTimeOffset AddedAt,
     DateTimeOffset? LastAlertAt);

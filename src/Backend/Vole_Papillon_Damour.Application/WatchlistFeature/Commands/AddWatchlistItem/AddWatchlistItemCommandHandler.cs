@@ -81,8 +81,24 @@ public sealed class AddWatchlistItemCommandHandler(
         }
 
         var item = command.Scope == WatchlistItemScope.Work
-            ? WatchlistItem.CreateWork(Guid.NewGuid(), user.Id, workId!, addedAt)
-            : WatchlistItem.CreateEdition(Guid.NewGuid(), user.Id, isbn13!.Value, addedAt);
+            ? WatchlistItem.CreateWork(
+                Guid.NewGuid(),
+                user.Id,
+                workId!,
+                addedAt,
+                command.Title,
+                command.Authors,
+                command.Publisher,
+                command.PublicationYear)
+            : WatchlistItem.CreateEdition(
+                Guid.NewGuid(),
+                user.Id,
+                isbn13!.Value,
+                addedAt,
+                command.Title,
+                command.Authors,
+                command.Publisher,
+                command.PublicationYear);
         dbContext.WatchlistItems.Add(item);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

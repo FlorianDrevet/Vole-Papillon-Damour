@@ -81,7 +81,7 @@
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title">{{ activeTab() === 'contribution' ? 'Ma contribution.' : 'Ma liste de recherche.' }}</h1>
+      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'contribution' ? 'Ma contribution.' : 'Ma liste de recherche.' }}</h1>
       <p class="account-lead">{{ activeTab() === 'contribution' ? contributionIntro() : watchlistIntro() }}</p>
     </div>
 
@@ -165,11 +165,20 @@
                     }
                   </div>
                   <div class="watchlist-item-copy">
-                    <h2>{{ itemLabel(item) }}</h2>
-                    @if (item.book?.authors) {
-                      <p class="watchlist-author">{{ item.book?.authors }}</p>
-                    } @else if (!item.book) {
-                      <p class="watchlist-author">Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.</p>
+                    <h2 class="watchlist-title">{{ itemLabel(item) }}</h2>
+                    @if (item.isbn13) {
+                      <p class="watchlist-isbn">ISBN {{ item.isbn13 }}</p>
+                    }
+                    @if (itemAuthors(item); as authors) {
+                      <p class="watchlist-author"><span class="watchlist-label">Auteur</span> {{ authors }}</p>
+                    }
+                    @if (itemPublisher(item); as publisher) {
+                      <p class="watchlist-publisher">
+                        <span class="watchlist-label">Éditeur</span> {{ publisher }}
+                        @if (itemPublicationYear(item); as publicationYear) {
+                          <span> · {{ publicationYear }}</span>
+                        }
+                      </p>
                     }
                     <div class="watchlist-meta">
                       <span class="watchlist-edition">{{ editionLabel(item) }}</span>

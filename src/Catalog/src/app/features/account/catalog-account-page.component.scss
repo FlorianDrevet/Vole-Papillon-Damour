@@ -61,6 +61,10 @@ h3 {
   padding-bottom: 0;
 }
 
+.account-heading-title {
+  font-size: clamp(2.75rem, 5vw, 4.6rem);
+}
+
 .account-heading .eyebrow {
   margin-bottom: 15px;
 }
@@ -475,14 +479,35 @@ h3 {
 }
 
 .watchlist-item-copy h2 {
-  margin-bottom: 7px;
-  font-size: clamp(1.35rem, 2vw, 1.55rem);
+  margin-bottom: 5px;
+  font-size: clamp(1.15rem, 1.7vw, 1.4rem);
+  line-height: 1.08;
+}
+
+.watchlist-isbn {
+  margin-bottom: 11px;
+  color: var(--catalog-slate-3);
+  font: 500 .62rem/1.2 var(--catalog-mono);
+  letter-spacing: .08em;
+}
+
+.watchlist-label {
+  color: var(--catalog-slate-3);
+  font: 500 .58rem/1 var(--catalog-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
 .watchlist-author {
-  margin-bottom: 0;
+  margin-bottom: 4px;
   color: var(--catalog-slate-2);
   font-size: .84rem;
+}
+
+.watchlist-publisher {
+  margin-bottom: 0;
+  color: var(--catalog-slate-2);
+  font-size: .76rem;
 }
 
 .watchlist-meta {
@@ -1341,6 +1366,10 @@ h3 {
 
   .watchlist-item-copy h2 {
     font-size: 1.35rem;
+  }
+
+  .account-heading-title {
+    font-size: clamp(2.7rem, 13vw, 4rem);
   }
 
   .watchlist-item-details {
