@@ -17,13 +17,37 @@
 
 | | |
 |---|---|
-| **Lot en cours** | `P2/P3` — suivi de l’app Scan après les statistiques bénévoles : accueil authentifié et scroll interne de la page privée ; la PR #149 reste ouverte et la PR [#152](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/152) porte ce suivi. |
-| **Prochaine action** | Relire la PR [#152](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/152); après merge, vérifier le parcours authentifié sur navigateur/appareil et déployer le Scan. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-statistics-ui` |
-| **Dernière mise à jour** | 2026-09-12 — actions secondaires de l’accueil Scan améliorées et scroll des statistiques limité à leur page ; PR [#152](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/152) ouverte, aucun déploiement |
-| **Branche** | `fix/scan-statistics-ui` — dédiée depuis `origin/main`, PR [#152](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/152) ouverte |
+| **Lot en cours** | `P2/P3` — transparence RGPD du compte Catalog : page publique des droits, information avant inscription et cohérence de la suppression de compte. |
+| **Prochaine action** | Faire relire la page et valider par l'association les bases, durées, DPO éventuel, contrats fournisseurs et transferts ; après merge, déployer puis contrôler les routes publiques. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-rgpd` |
+| **Dernière mise à jour** | 2026-09-12 — page `/donnees-personnelles`, liens footer/compte, étude RGPD et documentation ajoutées ; [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156) ouverte, aucun déploiement |
+| **Branche** | `feat/website-rgpd-account-rights` — dédiée depuis `origin/main`, [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156) ouverte |
 
 ---
+
+### État actualisé — 2026-09-12 — RGPD du compte Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-rgpd`, le Catalog expose `/donnees-personnelles`, une page publique
+avec le responsable du traitement, les données du compte, les droits RGPD, le parcours de
+demande par e-mail, les délais et le recours CNIL. Le footer et la carte déconnectée de
+`/compte` y renvoient ; la route est couverte par le routage, les robots et le titre SSR.
+Le libellé de suppression du compte correspond maintenant au nettoyage local durable et
+à la demande de suppression de l'identité Entra pouvant se terminer en arrière-plan.
+
+La documentation fonctionnelle et technique corrige aussi les anciennes affirmations
+« aucun nom », « aucune adresse e-mail transmise » et « mesure sans consentement ». Le
+point de conformité restant est explicite : `LastSeenAt` existe, mais la purge automatique
+des comptes inactifs après trois ans et relance n'a pas été trouvée dans le worker actuel ;
+il faut la décider, l'implémenter et la tester avant de l'annoncer.
+
+Validation locale : TDD rouge puis vert, 179 tests Catalog ChromeHeadless, build SSR et
+browser, `graphify update .`, `git diff --check`, contrôle Chrome desktop de la page RGPD,
+du footer et de la carte de création de compte. La [PR #156](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/156)
+est ouverte pour relecture ; les warnings de budget Angular et de dépendances npm restent
+ceux du dépôt. Aucun déploiement ni changement Azure, Entra, compte ou API n'a été effectué.
+`rtk` n'est pas installé sur cette machine ; les commandes Git/npm natives équivalentes ont
+été utilisées.
 
 ## Décisions prises
 
@@ -35,7 +59,7 @@ plus de réponse ; ceci est un rappel, le détail est dans les documents cités.
 | Caisse | **Android seul**, téléphones et tablettes. iOS, Mac Catalyst et Windows retirés du `.csproj`. APK signé, posé à la main sur chaque appareil (`L0-10`) |
 | Authentification BackOffice | **MSAL Angular `5.3.1` avec MSAL Browser `5.20.0`**, dernière ligne compatible avec Angular 21. Les routes utilisent `MsalGuard`, la connexion passe par le redirect Entra et Axios acquiert silencieusement la portée API via un adaptateur dédié ; `MsalInterceptor` n'est pas utilisé car le BackOffice utilise Axios (`L0-11`) |
 | Authentification caisse | **MSAL.NET `4.88.0`**, sans broker pour cette première livraison. `MauiCashApp` acquiert silencieusement la portée API puis utilise le parcours interactif Android avec `msal<clientId>://auth` (`L0-11`) |
-| Suppression du compte dans le locataire | **Au préalable d'identité** (`L0-11`, étape 8), pendant qu'il n'y a encore personne à supprimer |
+| Suppression du compte dans le locataire | **Demande coordonnée via Microsoft Graph et outbox durable** : Graph avant finalisation locale, `404` idempotent ; purge automatique d'inactivité encore à livrer (`ENF-13`) |
 | Genres et classement | **Depuis les sources bibliographiques**, et le site n'indique **jamais** où se trouve un livre dans le local (`Q-07`) |
 | Repli d'exploitation | **Aucun.** Une panne fait vendre sans enregistrer, rien n'est rattrapé. Le hors-ligne de la caisse devient la seule protection (`ENF-21`, `P1-10`) |
 | Fuseau horaire du module livres | **Instants UTC ; calendrier et minuit métier en `Europe/Paris`**, conversion centralisée dans Application (`DT-17`) |

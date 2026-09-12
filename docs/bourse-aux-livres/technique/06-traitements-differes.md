@@ -120,7 +120,7 @@ modifiée sans mouvement tracé.
 | Rattraper les fiches `Pending` et `NotFound` | `RG-03`, `DT-05` | horaire, débit limité |
 | Vérifier et compléter les URLs de couverture | `DT-24` | horaire, débit limité |
 | Enrichir le `WorkId` via Open Library | `RG-46` | horaire, débit limité |
-| Supprimer les comptes inactifs depuis 3 ans | `ENF-13` | quotidien |
+| Préparer puis supprimer les comptes inactifs depuis 3 ans | `ENF-13` | à implémenter et valider |
 
 **Deux traitements, pas neuf** : un balayage court et fréquent, un enrichissement lent
 et espacé. Neuf déploiements distincts contreviendraient à `ENF-24`.
@@ -128,11 +128,16 @@ et espacé. Neuf déploiements distincts contreviendraient à `ENF-24`.
 | Nom | Cadence | Contenu |
 |---|---|---|
 | `sweep` | toutes les 5 min | Les cinq premières lignes ci-dessus |
-| `enrich` | horaire | Rattrapage, URLs de couverture, `WorkId`, purge quotidienne |
+| `enrich` | horaire | Rattrapage, URLs de couverture, `WorkId` |
 
 **C'est dans `enrich`, et nulle part ailleurs, que l'étalement des appels externes
 s'applique** : N fiches par exécution, une requête à la fois. Personne n'attend de
 résultat de ce côté.
+
+La purge automatique des comptes inactifs n'est pas encore fournie par le worker actuel.
+Elle ne doit être activée ni annoncée avant que la durée, la relance, le délai après
+relance, la suppression Entra et la rejouabilité soient validés avec l'association (voir
+[`../09-rgpd-compte-et-droits.md`](../09-rgpd-compte-et-droits.md)).
 
 ## 4. La table d'outbox
 

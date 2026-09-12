@@ -194,6 +194,20 @@ describe('CatalogAccountPageComponent', () => {
     expect(api.getWatchlist).not.toHaveBeenCalled();
   });
 
+  it('informs people about account data before registration and links to their rights', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const privacyLink = fixture.nativeElement.querySelector(
+      '[data-testid="account-privacy-link"]',
+    ) as HTMLAnchorElement | null;
+    const content = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+
+    expect(content).toContain('adresse e-mail, votre prénom et votre nom');
+    expect(privacyLink?.getAttribute('href')).toBe('/donnees-personnelles');
+  });
+
   it('starts registration from the member-register action', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
@@ -412,6 +426,8 @@ describe('CatalogAccountPageComponent', () => {
     deleteButton.click();
     fixture.detectChanges();
     expect(api.deleteAccount).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('demande aussi la suppression');
+    expect(fixture.nativeElement.textContent).toContain('en arrière-plan');
 
     const confirmButton = fixture.nativeElement.querySelector('[data-testid="confirm-delete-account"]') as HTMLButtonElement;
     confirmButton.click();

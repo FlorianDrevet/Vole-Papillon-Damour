@@ -282,7 +282,9 @@ Index : `WorkId` et `Isbn13` — ce sont eux qui rendent `RG-13` instantané au 
 
 ### Suppression et anonymisation
 
-`ENF-13` (suppression après trois ans d'inactivité) s'appuie sur `Users.LastSeenAt`.
+`Users.LastSeenAt` est disponible pour la politique de conservation. La purge automatique
+après trois ans d'inactivité et relance reste à implémenter ; la suppression explicite du
+compte, elle, passe par l'outbox durable décrite dans la section technique dédiée.
 
 `ENF-12` impose que la suppression efface la liste **et** l'historique d'alertes : cascade
 explicite depuis `Watchlists`. Mais la ligne de personne elle-même n'est pas toujours
@@ -295,8 +297,9 @@ produit, et `ENF-12` conserve explicitement les mouvements de vente. Deux cas :
 | Des mouvements y pointent — une bénévole | **Anonymisation** : `Email`, `Name` et `ExternalId` effacés, `AnonymizedAt` horodaté, cascade identique. Les mouvements pointent vers une ligne qui n'identifie plus personne |
 
 Dans les deux cas, **le compte doit aussi disparaître du locataire** : effacer nos données
-en laissant l'identité vivante n'est pas une suppression. Ce volet-là n'est pas conçu —
-c'est le constat `R-06` de [`revue.md`](revue.md), et il reste ouvert.
+en laissant l'identité vivante n'est pas une suppression. Le chemin explicite est
+désormais assuré par l'API et le worker via Microsoft Graph et l'outbox ; la purge
+automatique d'inactivité reste le point à livrer et à valider.
 
 ### `UserAlertHistory`
 

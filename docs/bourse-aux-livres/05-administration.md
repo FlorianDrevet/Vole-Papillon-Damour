@@ -189,7 +189,7 @@ capacité physique que le domaine ne possède pas (`RG-34`, `RG-35`).
 | Lister et rechercher les membres | |
 | Consulter une liste de recherche | Pour du support, jamais pour de l'exploitation commerciale |
 | Bloquer un compte | Suspend les alertes, conserve les données |
-| Supprimer un compte | Suppression effective, y compris liste de recherche et historique d'alertes (`ENF-12`) |
+| Supprimer un compte | Demande de suppression durable de l'identité Entra et suppression locale de la liste, de l'historique et des données membre (`ENF-12`) |
 | Consulter les alertes envoyées | Diagnostic « je n'ai rien reçu » |
 
 Les comptes sont créés en autonomie via Entra External ID ; il n'y a pas de création

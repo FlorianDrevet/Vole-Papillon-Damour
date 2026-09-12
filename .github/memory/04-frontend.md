@@ -37,7 +37,8 @@ The public catalog is intentionally separate from the association Website. It us
 `CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
 the next books fair, and the dynamic sitemap; the home calendar also consumes the existing
 public `/asso-events` schedule and keeps only future Books events. Its public routes are `/`, `/recherche`,
-`/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, and the legal, privacy, cookie and accessibility pages. The UI keeps
+`/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, `/donnees-personnelles`, and the legal,
+privacy, cookie and accessibility pages. The UI keeps
 available quantities separate from future announcements, leaves exhausted books visible,
 and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
@@ -83,6 +84,15 @@ hover, and focus styles. The administration Settings navigation icon uses a bala
 SVG so it remains legible at the responsive sidebar sizes.
 The external bibliographic result block is kept separate from local results. DEV ACS email
 delivery is enabled after domain verification; a real authorized-recipient test remains open.
+
+As of 2026-09-12, Catalog `/donnees-personnelles` explains the account data categories,
+Entra/ACS recipients, six GDPR rights, the secure e-mail request path, the one-month
+response target and CNIL escalation. It is linked from the Catalog footer and from the
+signed-out account card before login/registration; the public route remains indexable while
+`/compte`, `/administration` and `/desinscription` stay private. The account deletion copy
+now reflects the durable local cleanup plus the asynchronous Entra identity deletion. Exact
+retention durations and the automatic three-year inactivity purge still require association
+validation; the page deliberately does not promise an unimplemented purge.
 
 As of 2026-09-11, the Catalog home places an API-driven `Par genres` browser and an
 account-following callout after the rare-books section; the former `Votre sélection` block

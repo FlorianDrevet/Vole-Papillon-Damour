@@ -42,6 +42,20 @@
         <a [href]="publicWebsiteUrl" target="_blank" rel="noopener noreferrer">le site de l’association</a>.
       </p>
     }
+
+    @if (page === 'rights') {
+      <div class="legal-page__actions" aria-label="Actions relatives à vos données">
+        <a
+          class="legal-page__action legal-page__action--primary"
+          data-testid="rights-request"
+          [href]="rightsRequestHref">
+          Préparer une demande par e-mail <span aria-hidden="true">→</span>
+        </a>
+        <a class="legal-page__action" href="/compte">
+          Gérer mon compte <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    }
   </div>
 
   <div class="legal-page__content" aria-label="Contenu de la page légale">
@@ -63,6 +77,20 @@
 
         @if (section.note) {
           <p class="legal-page__note">{{ section.note }}</p>
+        }
+
+        @if (section.links?.length) {
+          <div class="legal-page__links">
+            @for (link of section.links; track link.href) {
+              <a
+                [attr.data-testid]="link.testId || null"
+                [href]="link.href"
+                [target]="link.external ? '_blank' : null"
+                [rel]="link.external ? 'noopener noreferrer' : null">
+                {{ link.label }} <span aria-hidden="true">→</span>
+              </a>
+            }
+          </div>
         }
       </article>
     }

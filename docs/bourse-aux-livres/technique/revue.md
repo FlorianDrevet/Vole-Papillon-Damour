@@ -18,7 +18,7 @@ sur ce qui manque autour d'eux.
 
 | Gravité | Constats |
 |---|---|
-| 🔴 **Bloquant** — la conception est fausse ou absente, et ça se paie en refonte | ~~`R-01`~~ ~~`R-02`~~ ~~`R-03`~~ ~~`R-04`~~ `R-06` ~~`R-08`~~ ~~`R-11`~~ |
+| 🔴 **Bloquant** — la conception est fausse ou absente, et ça se paie en refonte | ~~`R-01`~~ ~~`R-02`~~ ~~`R-03`~~ ~~`R-04`~~ ~~`R-06`~~ ~~`R-08`~~ ~~`R-11`~~ |
 | 🟠 **Sérieux** — la conception manque, mais s'ajoute sans casser | ~~`R-05`~~ ~~`R-07`~~ `R-09` ~~`R-10`~~ ~~`R-12`~~ `R-13` `R-14` `R-15` ~~`R-16`~~ `R-17` `R-18` |
 | 🟡 **Factuel** — le document décrit un dépôt qui n'existe plus | `R-19` `R-20` `R-21` `R-22` |
 | ⚪ **Mineur** — à corriger au passage | `R-23` ~~`R-24`~~ `R-25` à `R-30` |
@@ -29,7 +29,7 @@ compte, parce que « ouvert » sans étape veut dire « oublié ».
 
 | Constat | Porté par |
 |---|---|
-| `R-06` | `L0-11`, étape 8 — **arbitré en faveur de la recommandation de cette revue** : la suppression Graph se fait au préalable d'identité, pendant qu'il n'y a personne à supprimer |
+| ~~`R-06`~~ | Traité pour la suppression explicite : l'API et le worker demandent la suppression Graph via une outbox durable ; la purge automatique d'inactivité reste à implémenter (`09`) |
 | `R-09` | `plan/03`, palier 2 — le sort des fiches épuisées reste à trancher avant la première indexation |
 | ~~`R-10`~~ ~~`R-11`~~ ~~`R-12`~~ ~~`R-16`~~ | `P1-2` — **traités par `DT-17` à `DT-20`** |
 | `R-13` `R-14` | ❌ **Aucune étape.** Le filigrane de synchronisation et le décompte des demandeurs dans la projection embarquée relèvent de `P1-5` et n'y sont pas nommés |
@@ -172,7 +172,13 @@ Il faut trancher : une seule table de personnes portant les deux rôles (bénév
 `RG-41`, membre via la liste de recherche), ou deux tables avec une clé commune explicite
 (`oid` partout) et une règle de rapprochement écrite.
 
-### `R-06` — La suppression du compte chez le fournisseur d'identité n'est conçue nulle part
+### `R-06` — La suppression du compte chez le fournisseur d'identité n'est conçue nulle part (constat initial)
+
+> **État au 12 septembre 2026 : traité pour la suppression explicite.** Le parcours
+> `DELETE /catalog/me` et le worker appellent Microsoft Graph avant la finalisation locale,
+> avec reprise durable et `404` idempotent. La purge automatique des comptes inactifs prévue
+> par `ENF-13` n'est pas encore livrée ; voir
+> [`09-rgpd-compte-et-droits.md`](../09-rgpd-compte-et-droits.md).
 
 `ENF-12` (effacement en deux clics) et `ENF-13` (purge après trois ans) exigent que le
 compte disparaisse **aussi d'Entra**. `QT-04` le signale comme « le point le plus facile

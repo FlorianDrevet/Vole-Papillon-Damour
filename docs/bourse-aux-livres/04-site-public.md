@@ -21,7 +21,7 @@ s'interposer entre le visiteur et cette réponse.
 | Fiche livre | public | Détail d'un titre et disponibilité |
 | Mon compte | connecté | Liste de recherche, préférences, suppression du compte |
 | Administration | administrateur | Voir `05-administration.md` |
-| Mentions légales, confidentialité | public | Obligations RGPD (`ENF-10`) |
+| Mentions légales, confidentialité, données personnelles | public | Transparence et exercice des droits (`ENF-10` à `ENF-14`) |
 
 ## 3. Accueil
 
@@ -136,6 +136,10 @@ Via **Microsoft Entra External ID** (décision arrêtée, `DT-10`). L'associatio
 et ne stocke aucun mot de passe — c'est le même fournisseur d'identité que celui des
 bénévoles et des administrateurs, le site public étant la **seule** application où
 l'inscription en libre-service est ouverte.
+
+Avant la création, le parcours indique en premier niveau les données utilisées (adresse
+e-mail, prénom et nom lorsqu'ils sont renseignés), la finalité du compte et des alertes,
+ainsi qu'un lien vers la page publique [`Vos données et le RGPD`](09-rgpd-compte-et-droits.md).
 
 L'inscription n'est proposée qu'au moment où elle sert : au clic sur
 « Me prévenir quand il y en aura ». Aucun mur d'inscription à l'entrée du site.
@@ -254,12 +258,14 @@ mail, pour que l'ajout d'un canal ne soit pas une réécriture.
 ## 8. Données personnelles
 
 Le détail des obligations est en `07-exigences-non-fonctionnelles.md` (`ENF-10` à
-`ENF-13`). Côté parcours visible :
+`ENF-14`) et l'étude opérationnelle est en [`09-rgpd-compte-et-droits.md`](09-rgpd-compte-et-droits.md).
+Côté parcours visible :
 
 - La finalité est annoncée au moment de l'inscription, pas seulement dans les mentions
   légales.
 - La suppression du compte est accessible depuis « Mon compte », en deux clics, et
-  supprime effectivement la liste de recherche et l'historique d'alertes.
+  supprime effectivement le profil local, la liste de recherche et l'historique d'alertes ;
+  la suppression de l'identité Entra est demandée dans le même traitement différé.
 - Aucune donnée n'est nécessaire pour consulter le catalogue.
 
 ## 9. Ce que le site public ne fait pas
