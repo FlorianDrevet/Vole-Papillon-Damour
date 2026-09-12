@@ -88,11 +88,13 @@ public sealed class InstagramFeedClient(
                 .Trim();
         }
 
+        normalized = string.Concat(normalized.Where(character =>
+            !char.IsWhiteSpace(character) &&
+            !char.IsControl(character) &&
+            CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.Format));
+
         if (normalized.Length == 0 ||
-            normalized.Any(character =>
-                character > 0x7F ||
-                char.IsControl(character) ||
-                char.IsWhiteSpace(character)))
+            normalized.Any(character => character > 0x7F))
         {
             throw new SocialFeedAuthenticationException(
                 "The Instagram access token contains invalid characters; configure the raw token without formatting.");

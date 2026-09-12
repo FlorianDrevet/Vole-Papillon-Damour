@@ -102,7 +102,7 @@ public sealed class InstagramFeedClientTests
     }
 
     [Fact]
-    public async Task GetRecentPostsAsync_RejectsAnAccessTokenWithInternalNonAsciiCharacters()
+    public async Task GetRecentPostsAsync_RemovesInternalCopyFormattingBeforeSendingRequest()
     {
         var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -117,6 +117,31 @@ public sealed class InstagramFeedClientTests
             GraphApiVersion = "v22.0",
             UserId = "account-123",
             AccessToken = "secret-\u200B-token"
+        });
+        var client = new InstagramFeedClient(httpClient, options);
+
+        await client.GetRecentPostsAsync(CancellationToken.None);
+
+        handler.LastRequest!.Headers.Authorization.Should().Be(
+            new AuthenticationHeaderValue("Bearer", "secret--token"));
+    }
+
+    [Fact]
+    public async Task GetRecentPostsAsync_RejectsAnAccessTokenWithVisibleNonAsciiCharacters()
+    {
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"data\":[]}")
+        });
+        using var httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://graph.instagram.com/")
+        };
+        var options = Options.Create(new InstagramOptions
+        {
+            GraphApiVersion = "v22.0",
+            UserId = "account-123",
+            AccessToken = "secret-é-token"
         });
         var client = new InstagramFeedClient(httpClient, options);
 
