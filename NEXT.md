@@ -126,7 +126,8 @@ SSR/navigateur, 22 tests Watchlist Application, 21 tests BookAlertOutbox Infrast
 12 tests d’autorisation API, `python -m graphify update .` et `git diff --check`. Le shell
 local a été ouvert dans Chrome ; l’API publique n’autorise pas l’origine locale utilisée
 pour le rendu de données, donc le smoke visuel connecté avec résultats externes reste à
-refaire après déploiement. Aucun déploiement ni merge n’a été effectué. La PR reste à ouvrir.
+refaire après déploiement. Aucun déploiement ni merge n’a été effectué. La [PR #158](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/158)
+est ouverte pour relecture.
 `rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été
 utilisées.
 
