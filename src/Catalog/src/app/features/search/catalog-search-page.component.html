@@ -194,74 +194,80 @@
                 detail="Quelques secondes"></vpd-loader>
             } @else if (externalError) {
               <p class="state-message error-message" role="alert">La recherche de titres à ajouter est momentanément indisponible. La recherche dans la bourse aux livres reste utilisable.</p>
-            } @else if (externalResponse?.items?.length) {
-              @if (workReference(); as workReference) {
-                <div class="external-follow-callout">
-                  <div class="external-follow-copy">
-                    <p class="external-follow-kicker">Suivre le titre</p>
-                    <p>Suivez toutes les éditions liées à ce titre, ou choisissez une édition précise dans la liste ci-dessous.</p>
-                  </div>
-                  <button
-                    type="button"
-                    class="reference-follow reference-follow--work"
-                    [disabled]="referenceFollowPending === referenceFollowKey(workReference, 'Work')"
-                    (click)="followReference(workReference, 'Work')">
-                    @if (referenceFollowPending === referenceFollowKey(workReference, 'Work')) {
-                      <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
-                    }
-                    {{ referenceFollowPending === referenceFollowKey(workReference, 'Work') ? 'Ajout…' : 'Suivre toutes les éditions' }}
-                  </button>
+            } @else if (externalResponse) {
+              <div class="external-follow-callout">
+                <div class="external-follow-copy">
+                  <p class="external-follow-kicker">Suivre toutes les éditions</p>
+                  @if (workReference(); as reference) {
+                    <p id="external-follow-description">Suivez toutes les éditions liées à « {{ reference.title || query.trim() }} », ou choisissez une édition précise dans la liste ci-dessous.</p>
+                  } @else {
+                    <p id="external-follow-description">Suivez toutes les éditions quand la recherche identifie un même titre. Choisissez une édition précise dans la liste ci-dessous si le titre ne peut pas être identifié.</p>
+                  }
                 </div>
-              }
-              <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Choisissez une édition précise ci-dessous pour être prévenu si elle arrive un jour.</p>
-              <div class="reference-list">
-                @for (reference of externalResponse?.items || []; track trackReference($index, reference)) {
-                  <article class="reference-card">
-                    <div class="reference-cover">
-                      @if (reference.coverUrl) {
-                        <img [src]="reference.coverUrl" [alt]="reference.title ? 'Couverture de ' + reference.title : 'Couverture indicative'" loading="lazy">
-                      } @else {
-                        <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
-                      }
-                    </div>
-                    <div class="reference-copy">
-                      <h3 [attr.title]="reference.title || 'Titre à compléter'">{{ reference.title || 'Titre à compléter' }}</h3>
-                      @if (reference.authors) { <p [attr.title]="reference.authors">{{ reference.authors }}</p> }
-                      <small [attr.title]="referenceEditionLabel(reference)">{{ referenceEditionLabel(reference) }}</small>
-                      @if (reference.isbn13) { <small>ISBN {{ reference.isbn13 }}</small> }
-                    </div>
-                    <div class="reference-actions">
-                      @if (reference.isbn13) {
-                        <button
-                          type="button"
-                          class="reference-follow reference-follow--edition"
-                          [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Edition')"
-                          (click)="followReference(reference)">
-                          @if (referenceFollowPending === referenceFollowKey(reference, 'Edition')) {
-                            <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
-                          }
-                          {{ referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'Ajout…' : 'Suivre cette édition' }}
-                        </button>
-                      }
-                    </div>
-                  </article>
-                }
+                <button
+                  type="button"
+                  class="reference-follow reference-follow--work"
+                  aria-describedby="external-follow-description"
+                  [disabled]="!workReference() || referenceFollowPending !== null"
+                  [attr.aria-disabled]="workReference() ? null : 'true'"
+                  (click)="followWork()">
+                  @if (workFollowPending()) {
+                    <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                  }
+                  {{ workFollowPending() ? 'Ajout…' : 'Suivre toutes les éditions' }}
+                </button>
               </div>
-              @if (referenceFollowMessage) {
-                <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir ma liste de recherche</a></p>
+              @if (externalResponse.items.length) {
+                <p class="external-intro">Ces titres ne sont pas encore dans la bourse aux livres : l'association n'en a jamais reçu d'exemplaire. Choisissez une édition précise ci-dessous pour être prévenu si elle arrive un jour.</p>
+                <div class="reference-list">
+                  @for (reference of externalResponse.items; track trackReference($index, reference)) {
+                    <article class="reference-card">
+                      <div class="reference-cover">
+                        @if (reference.coverUrl) {
+                          <img [src]="reference.coverUrl" [alt]="reference.title ? 'Couverture de ' + reference.title : 'Couverture indicative'" loading="lazy">
+                        } @else {
+                          <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
+                        }
+                      </div>
+                      <div class="reference-copy">
+                        <h3 [attr.title]="reference.title || 'Titre à compléter'">{{ reference.title || 'Titre à compléter' }}</h3>
+                        @if (reference.authors) { <p [attr.title]="reference.authors">{{ reference.authors }}</p> }
+                        <small [attr.title]="referenceEditionLabel(reference)">{{ referenceEditionLabel(reference) }}</small>
+                        @if (reference.isbn13) { <small>ISBN {{ reference.isbn13 }}</small> }
+                      </div>
+                      <div class="reference-actions">
+                        @if (reference.isbn13) {
+                          <button
+                            type="button"
+                            class="reference-follow reference-follow--edition"
+                            [disabled]="referenceFollowPending === referenceFollowKey(reference, 'Edition')"
+                            (click)="followReference(reference)">
+                            @if (referenceFollowPending === referenceFollowKey(reference, 'Edition')) {
+                              <vpd-loader variant="ring" size="small" label="Ajout en cours"></vpd-loader>
+                            }
+                            {{ referenceFollowPending === referenceFollowKey(reference, 'Edition') ? 'Ajout…' : 'Suivre cette édition' }}
+                          </button>
+                        }
+                      </div>
+                    </article>
+                  }
+                </div>
+                @if (referenceFollowMessage) {
+                  <p class="reference-feedback success" role="status">{{ referenceFollowMessage }} <a routerLink="/compte">Voir ma liste de recherche</a></p>
+                }
+                @if (referenceFollowError) {
+                  <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
+                }
+                @if (externalResponse.items.length === externalResponse.pageSize) {
+                  <nav class="pagination external-pagination" aria-label="Pages des titres à rechercher">
+                    <button type="button" [disabled]="externalResponse.page === 1" (click)="goToExternalPage(externalResponse.page - 1)">← Précédente</button>
+                    <span>Page {{ externalResponse.page }}</span>
+                    <button type="button" (click)="goToExternalPage(externalResponse.page + 1)">Suivante →</button>
+                  </nav>
+                }
+              } @else {
+                <p class="external-empty">Aucun autre titre ne correspond à cette recherche.</p>
               }
-              @if (referenceFollowError) {
-                <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
-              }
-              @if ((externalResponse?.items?.length || 0) === (externalResponse?.pageSize || 0)) {
-                <nav class="pagination external-pagination" aria-label="Pages des titres à rechercher">
-                  <button type="button" [disabled]="externalResponse?.page === 1" (click)="goToExternalPage((externalResponse?.page || 1) - 1)">← Précédente</button>
-                  <span>Page {{ externalResponse?.page }}</span>
-                  <button type="button" (click)="goToExternalPage((externalResponse?.page || 1) + 1)">Suivante →</button>
-                </nav>
-              }
-            } @else {
-              <p class="external-empty">Aucun autre titre ne correspond à cette recherche.</p>
             }
           </section>
 

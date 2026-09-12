@@ -106,6 +106,30 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-12 — callout de suivi global dans la recherche Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-title-watch-all`, la recherche Catalog rend maintenant un
+unique callout de suivi au-dessus des références bibliographiques. Il explique le suivi de
+toutes les éditions d’un même titre, conserve les boutons de suivi d’édition dans chaque
+carte et reste présent lorsque la réponse externe est vide. Le bouton est désactivé avec un
+état visuel neutre et `disabled` natif lorsqu’aucun `WorkId` unique n’est identifiable
+(réponse vide ou résultats correspondant à plusieurs œuvres), afin de ne jamais suivre par
+erreur la première réponse d’une recherche large. Lorsqu’un même `WorkId` est confirmé, le
+POST `Work` existant est conservé avec le snapshot titre/auteur/éditeur/année.
+
+Le contrat API, la persistance `WatchlistItem`, le matching des alertes par `WorkId` et la
+restitution des métadonnées dans `/compte` ont été vérifiés par les suites existantes : aucun
+changement de contrat ni migration n’est nécessaire pour cette correction d’interface.
+Validation locale : TDD rouge puis vert, 182 tests Catalog ChromeHeadless, build Catalog
+SSR/navigateur, 22 tests Watchlist Application, 21 tests BookAlertOutbox Infrastructure,
+12 tests d’autorisation API, `python -m graphify update .` et `git diff --check`. Le shell
+local a été ouvert dans Chrome ; l’API publique n’autorise pas l’origine locale utilisée
+pour le rendu de données, donc le smoke visuel connecté avec résultats externes reste à
+refaire après déploiement. Aucun déploiement ni merge n’a été effectué. La PR reste à ouvrir.
+`rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été
+utilisées.
+
 ### État actualisé — 2026-09-12 — incident 500 de la liste de recherche Catalog
 
 Après le déploiement du commit `0443c5d` contenant les métadonnées bibliographiques des

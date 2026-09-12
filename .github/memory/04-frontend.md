@@ -108,7 +108,9 @@ availability into compact colored pill tags. The browser shell initializes cache
 on arrival, keeps connected member/admin account controls at the same width, and the search
 page exposes direct typed `Work`/`Edition` follow buttons: references that identify one
 common work get a single section-level all-editions action above the list, while each precise
-edition remains independently followable and empty reference results expose no follow action.
+edition remains independently followable. After every completed reference search, the
+section-level callout remains visible; its native button is disabled when the response is
+empty or does not identify one unambiguous `WorkId`, avoiding an arbitrary follow target.
 The old scope-selection modal is removed; a pending follow survives the sign-in redirect and
 submits directly after the cached session is restored. The administrator header uses the
 clickable `Administration` tag as the sole header entry to `/administration`; the mobile drawer
