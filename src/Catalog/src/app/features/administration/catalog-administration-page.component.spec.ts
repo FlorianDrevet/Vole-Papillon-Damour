@@ -474,10 +474,9 @@ describe('CatalogAdministrationPageComponent', () => {
       changed: true,
       movementId: 'movement-id',
     }));
-    spyOn(window, 'confirm').and.returnValue(true);
-
     fixture.detectChanges();
     await fixture.componentInstance.selectSection('inventory');
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const amount = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
@@ -497,12 +496,63 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.componentInstance.inventoryAdjustmentNote = 'Don reçu';
     fixture.detectChanges();
     await fixture.componentInstance.adjustInventoryQuantity(book, 'increase');
+    fixture.detectChanges();
 
-    expect(window.confirm).toHaveBeenCalled();
+    const confirm = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-confirmation-confirm"]',
+    );
+    expect(confirm).not.toBeNull();
+    confirm!.click();
+    await fixture.whenStable();
+
     expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
       quantityAvailable: 6,
       note: 'Don reçu',
     });
+  });
+
+  it('opens a styled confirmation modal before changing inventory quantity', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = inventoryBook({quantityAvailable: 4});
+    api.getBooks.and.returnValue(of({
+      generatedAt: '',
+      books: [book],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    }));
+    const nativeConfirm = spyOn(window, 'confirm').and.returnValue(false);
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    await fixture.whenStable();
+    fixture.componentInstance.inventoryAdjustmentQuantity = 1;
+    fixture.componentInstance.inventoryAdjustmentNote = 'Exemplaire retiré';
+    fixture.detectChanges();
+
+    const decrease = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      `[data-testid="inventory-decrease-${book.isbn13}"]`,
+    );
+    expect(decrease).not.toBeNull();
+    decrease!.click();
+    fixture.detectChanges();
+
+    const dialog = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '[data-testid="inventory-confirmation"]',
+    );
+    expect(dialog).not.toBeNull();
+    expect(dialog?.getAttribute('role')).toBe('dialog');
+    expect(dialog?.getAttribute('aria-modal')).toBe('true');
+    expect(dialog?.textContent).toContain('Retirer 1 exemplaire');
+    expect((fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="inventory-confirmation-cancel"]',
+    )).not.toBeNull();
+    expect(nativeConfirm).not.toHaveBeenCalled();
+    expect(api.correctQuantity).not.toHaveBeenCalled();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="inventory-confirmation"]')).toBeNull();
   });
 
   it('removes a requested quantity without allowing a negative stock', async () => {
@@ -524,14 +574,21 @@ describe('CatalogAdministrationPageComponent', () => {
       changed: true,
       movementId: 'movement-id',
     }));
-    spyOn(window, 'confirm').and.returnValue(true);
-
     fixture.detectChanges();
     await fixture.componentInstance.selectSection('inventory');
+    await fixture.whenStable();
     fixture.componentInstance.inventoryAdjustmentQuantity = 2;
     fixture.componentInstance.inventoryAdjustmentNote = 'Livre retiré';
 
     await fixture.componentInstance.adjustInventoryQuantity(book, 'decrease');
+    fixture.detectChanges();
+
+    const confirm = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-confirmation-confirm"]',
+    );
+    expect(confirm).not.toBeNull();
+    confirm!.click();
+    await fixture.whenStable();
 
     expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
       quantityAvailable: 2,

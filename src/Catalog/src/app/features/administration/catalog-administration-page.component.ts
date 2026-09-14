@@ -2,6 +2,7 @@ import {isPlatformBrowser} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnInit,
   PLATFORM_ID,
   Signal,
@@ -104,6 +105,14 @@ interface CatalogInventoryCandidate {
 
 type CatalogInventoryAdjustmentDirection = 'increase' | 'decrease';
 
+interface CatalogInventoryConfirmation {
+  book: CatalogAdminBook;
+  direction: CatalogInventoryAdjustmentDirection;
+  amount: number;
+  nextQuantity: number;
+  note: string;
+}
+
 @Component({
   selector: 'app-catalog-administration-page',
   standalone: false,
@@ -168,6 +177,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly inventoryAddCandidate = signal<CatalogInventoryCandidate | null>(null);
   readonly inventoryLookupLoading = signal(false);
   readonly inventoryLookupError = signal<string | null>(null);
+  readonly inventoryConfirmation = signal<CatalogInventoryConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
   readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
   readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
@@ -537,19 +547,35 @@ export class CatalogAdministrationPageComponent implements OnInit {
       return;
     }
 
-    const actionLabel = direction === 'increase' ? 'Ajouter' : 'Retirer';
-    if (!this.confirmAction(`${actionLabel} ${amount} exemplaire(s) de « ${book.title || book.isbn13} » ?`)) {
+    this.inventoryConfirmation.set({book, direction, amount, nextQuantity, note});
+  }
+
+  async confirmInventoryAdjustment(): Promise<void> {
+    const confirmation = this.inventoryConfirmation();
+    if (!confirmation || this.loading()) {
       return;
     }
 
+    this.inventoryConfirmation.set(null);
     await this.run('inventory-quantity', async token => {
-      await firstValueFrom(this.api.correctQuantity(token, book.isbn13, {
-        quantityAvailable: nextQuantity,
-        note,
+      await firstValueFrom(this.api.correctQuantity(token, confirmation.book.isbn13, {
+        quantityAvailable: confirmation.nextQuantity,
+        note: confirmation.note,
       }));
-      this.showSuccess(`Le stock de « ${book.title || book.isbn13} » est maintenant de ${nextQuantity} exemplaire(s).`);
+      this.showSuccess(`Le stock de « ${confirmation.book.title || confirmation.book.isbn13} » est maintenant de ${confirmation.nextQuantity} exemplaire(s).`);
       await this.loadInventoryPage(token);
     });
+  }
+
+  cancelInventoryAdjustment(): void {
+    this.inventoryConfirmation.set(null);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeInventoryConfirmationOnEscape(): void {
+    if (this.inventoryConfirmation()) {
+      this.cancelInventoryAdjustment();
+    }
   }
 
   async openBook(isbn13: string): Promise<void> {

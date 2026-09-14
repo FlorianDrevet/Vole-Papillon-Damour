@@ -3012,6 +3012,231 @@ input:disabled {
   border-top: 1px solid var(--admin-line);
 }
 
+.inventory-confirmation-overlay {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: rgba(4, 29, 48, .58);
+  backdrop-filter: blur(2px);
+  overscroll-behavior: contain;
+}
+
+.inventory-confirmation-dialog {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid var(--admin-line);
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--admin-blue-bright), var(--admin-cyan) 50%, var(--admin-orange)) 1;
+  background: var(--admin-white);
+  box-shadow: 0 24px 80px rgba(4, 29, 48, .32);
+}
+
+.inventory-confirmation-header {
+  padding: 24px 32px 20px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.inventory-confirmation-kicker-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.inventory-confirmation-close {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  margin: -7px -8px 0 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--admin-slate);
+  cursor: pointer;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.inventory-confirmation-close:hover {
+  border-color: var(--admin-line);
+  background: var(--admin-paper-2);
+  color: var(--admin-ink);
+}
+
+.inventory-confirmation-close:focus-visible {
+  outline: 3px solid rgba(20, 151, 214, .3);
+  outline-offset: 2px;
+}
+
+.inventory-confirmation-header h2 {
+  max-width: 420px;
+  margin: 10px 0 8px;
+  color: var(--admin-ink);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.inventory-confirmation-header p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--admin-slate);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.inventory-confirmation-body {
+  padding: 22px 32px 26px;
+}
+
+.inventory-confirmation-book {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-left: 3px solid var(--admin-orange);
+  background: var(--admin-paper);
+}
+
+.inventory-confirmation-cover {
+  width: 42px;
+  height: 58px;
+  object-fit: cover;
+}
+
+.inventory-confirmation-book > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inventory-confirmation-book strong {
+  color: var(--admin-ink);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.inventory-confirmation-book > div > span:not(.isbn-label) {
+  overflow: hidden;
+  color: var(--admin-slate);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inventory-confirmation-action {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 22px 0 14px;
+  color: var(--admin-slate);
+  font-size: 13px;
+}
+
+.inventory-confirmation-action strong {
+  color: var(--admin-ink);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.inventory-confirmation-quantities {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-white);
+}
+
+.inventory-confirmation-quantities > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inventory-confirmation-quantities span {
+  color: var(--admin-muted);
+  font: 9.5px/1.3 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.inventory-confirmation-quantities strong {
+  color: var(--admin-blue);
+  font: 500 30px/.95 'Newsreader', Georgia, serif;
+}
+
+.inventory-confirmation-arrow {
+  color: var(--admin-orange);
+  font-size: 22px;
+}
+
+.inventory-confirmation-decrease .inventory-confirmation-next strong {
+  color: var(--admin-red);
+}
+
+.inventory-confirmation-details {
+  margin: 18px 0 0;
+}
+
+.inventory-confirmation-details > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--admin-line-soft);
+}
+
+.inventory-confirmation-details dt {
+  color: var(--admin-muted);
+  font: 9.5px/1.3 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.inventory-confirmation-details dd {
+  max-width: 65%;
+  margin: 0;
+  color: var(--admin-ink);
+  font-size: 13px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.inventory-confirmation-note {
+  margin: 18px 0 0;
+  color: var(--admin-muted);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.inventory-confirmation-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 17px 32px 22px;
+  border-top: 1px solid var(--admin-line);
+}
+
+.inventory-confirmation-footer .button {
+  min-height: 44px;
+}
+
 .alert-admin-list {
   margin-top: 30px;
 }
@@ -3525,6 +3750,52 @@ input:disabled {
 
   .scatter-plot {
     min-height: 210px;
+  }
+
+  .inventory-confirmation-overlay {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .inventory-confirmation-dialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .inventory-confirmation-header,
+  .inventory-confirmation-body,
+  .inventory-confirmation-footer {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .inventory-confirmation-quantities {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-confirmation-arrow {
+    transform: rotate(90deg);
+    justify-self: start;
+    margin-left: 12px;
+  }
+
+  .inventory-confirmation-details > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .inventory-confirmation-details dd {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .inventory-confirmation-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .inventory-confirmation-footer .button {
+    width: 100%;
   }
 }
 
