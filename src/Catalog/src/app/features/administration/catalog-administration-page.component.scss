@@ -2530,7 +2530,6 @@ input:disabled {
 
 .inventory-lookup-card label,
 .inventory-candidate-fields label,
-.inventory-adjustment-fields label,
 .inventory-search-toolbar label {
   display: flex;
   min-width: 0;
@@ -2545,7 +2544,6 @@ input:disabled {
 
 .inventory-lookup-card label span,
 .inventory-candidate-fields label span,
-.inventory-adjustment-fields label span,
 .inventory-search-toolbar label span {
   color: var(--admin-muted);
   font: 9.5px/1.2 'IBM Plex Mono', ui-monospace, monospace;
@@ -2684,6 +2682,19 @@ input:disabled {
   margin-top: 0;
 }
 
+.inventory-refresh-button {
+  display: inline-flex;
+  min-width: 94px;
+  min-height: 36px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.inventory-refresh-button vpd-loader {
+  display: inline-flex;
+}
+
 .inventory-search-toolbar {
   display: flex;
   align-items: flex-end;
@@ -2696,30 +2707,6 @@ input:disabled {
 
 .inventory-search-toolbar .search-field {
   flex: 1 1 320px;
-}
-
-.inventory-adjustment-bar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  margin-top: 20px;
-  padding: 18px 20px;
-  border-left: 3px solid var(--admin-blue-bright);
-  background: var(--admin-paper-2);
-}
-
-.inventory-adjustment-bar p {
-  margin: 5px 0 0;
-  color: var(--admin-slate);
-  font-size: 13px;
-}
-
-.inventory-adjustment-fields {
-  display: grid;
-  grid-template-columns: 130px minmax(220px, 1fr);
-  flex: 0 1 500px;
-  gap: 12px;
 }
 
 .inventory-book-list {
@@ -3609,8 +3596,7 @@ input:disabled {
 
   .inventory-zone-heading,
   .inventory-reference-heading,
-  .inventory-search-toolbar,
-  .inventory-adjustment-bar {
+  .inventory-search-toolbar {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -3619,8 +3605,7 @@ input:disabled {
     align-self: flex-start;
   }
 
-  .inventory-search-toolbar,
-  .inventory-adjustment-bar {
+  .inventory-search-toolbar {
     width: 100%;
   }
 
@@ -3629,12 +3614,10 @@ input:disabled {
     flex-basis: auto;
   }
 
-  .inventory-search-toolbar .button,
-  .inventory-search-toolbar .text-link {
+  .inventory-search-toolbar .button {
     align-self: flex-start;
   }
 
-  .inventory-adjustment-fields,
   .inventory-candidate-fields {
     width: 100%;
     grid-template-columns: 1fr;

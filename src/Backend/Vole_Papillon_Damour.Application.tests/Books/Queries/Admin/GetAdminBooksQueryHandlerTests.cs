@@ -13,6 +13,28 @@ namespace Vole_Papillon_Damour.Application.tests.Books.Queries.Admin;
 public sealed class GetAdminBooksQueryHandlerTests
 {
     [Fact]
+    public async Task Handle_WhenPageIsRequested_ReturnsOnlyThatPageAndKeepsTheTotalCount()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        await fixture.AddBookAsync("9782070408504", quantityAvailable: 0);
+        await fixture.AddBookAsync("9783140464079", quantityAvailable: 0);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetAdminBooksQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetAdminBooksQuery(null, null, null, null, 2, 1),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(3);
+        result.Value.Page.Should().Be(2);
+        result.Value.PageSize.Should().Be(1);
+        result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be("9782070408504");
+    }
+
+    [Fact]
     public async Task Handle_WhenUndatedFilterIsEnabled_ReturnsOnlyBooksWithUndatedAnnouncements()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

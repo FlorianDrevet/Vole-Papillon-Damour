@@ -217,6 +217,24 @@ branche `fix/catalog-inventory-confirm-modal`.
 `rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été
 utilisées.
 
+### État actualisé — 2026-09-15 — inventaire Catalog : pagination API et recherche différée
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-inventory-ux`, l'inventaire de l'administration Catalog ne rend plus
+les encarts d'aide et d'historique devenus inutiles, ni l'action « Afficher toutes les fiches ».
+La liste reste chargée par page via `GET /books/admin/books` : la recherche et la pagination
+transmettent leurs paramètres à l'API et le navigateur ne reçoit que la page demandée. La
+recherche se lance automatiquement deux secondes après la dernière frappe, en revenant à la
+première page ; le bouton « Actualiser » affiche le loader annulaire partagé pendant le
+chargement. Les boutons de ligne conservent la correction confirmée d'une unité avec la note
+d'audit existante.
+
+Validation locale : TDD rouge puis vert, 198 tests ChromeHeadless Catalog et build
+SSR/navigateur passants ; les avertissements de budget Angular existants restent présents.
+`graphify update .` et `git diff --check` passent après la dernière mise à jour de la branche.
+Aucun déploiement, changement Azure/Entra, compte, donnée ou API distante n'a été effectué ; le
+contrôle authentifié avec API joignable reste à faire.
+
 ### État actualisé — 2026-09-12 — callout de suivi global dans la recherche Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
@@ -1452,6 +1470,11 @@ Le correctif du retour OAuth Catalog est également limité au dépôt : aucun d
 Catalog, compte ou changement du locataire Entra n’a été effectué. Le contrôle public après
 mise en ligne reste à faire.
 
+La simplification de l'inventaire Catalog est limitée au dépôt et à la branche
+`fix/catalog-inventory-ux`. Aucun déploiement Catalog, changement Azure/Entra, compte, donnée
+de catalogue ou appel API distant n'a été effectué ; le contrôle authentifié et le smoke avec
+une API joignable restent à faire après la PR et le déploiement.
+
 ### Azure
 
 | Ressource | État | Depuis |
@@ -1599,6 +1622,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-15 | Windows | **Catalog — simplification de l'inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-ux`, suppression des encarts d'ajustement/historique et du bouton « Afficher toutes les fiches », conservation du chargement paginé côté API, loader annulaire pendant l'actualisation et recherche automatique après 2 secondes d'inactivité. Validation : TDD rouge puis vert, 198 tests Catalog, test de pagination Application, build SSR/navigateur, Graphify et `git diff --check` passants ; la PR reste à finaliser. Aucun déploiement ni changement hors dépôt. |
 | 2026-09-12 | Windows | **Catalog — centrage du loader de recherche.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-loader-centered`, ajout d'une zone de chargement de 150 px centrée sous l'en-tête de « Pas encore dans la bourse aux livres », sans toucher au loader partagé ni aux contrats. Validation : TDD rouge puis vert, 183 tests ChromeHeadless Catalog, build SSR/navigateur, Graphify et smoke Chrome avec API mockée à la taille par défaut, 390×844 et 320×740 sans débordement. Aucun déploiement ni changement hors dépôt ; PR [#160](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/160) ouverte. |
 | 2026-09-12 | Windows | **Scan — accueil authentifié et statistiques.** Les deux actions secondaires deviennent des cartes tactiles équilibrées, avec une icône de graphique pour « Mes statistiques » et une icône de changement de compte. La route `/statistiques` possède son propre viewport fixe et son conteneur de scroll tactile ; les autres écrans conservent le verrouillage global. Validation : 186 tests ChromeHeadless et build de production Scan ; contrôle authentifié appareil/navigateur à faire, aucun déploiement. PR [#152](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/152) ouverte. |
 | 2026-09-11 | Windows | **Catalog — toasts de validation de l’administration.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, regroupement des succès et erreurs dans un toast fixe, accessible et fermable, avec remplacement atomique des états de feedback pour éviter les messages périmés. Validation : TDD rouge puis vert, 165 tests Catalog ChromeHeadless, build SSR/navigateur avec l’avertissement de budget initial connu, `graphify update .` et `git diff --check` ; smoke connecté à refaire, aucun déploiement ni changement hors dépôt. PR [#146](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/146) ouverte. |

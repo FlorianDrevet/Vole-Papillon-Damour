@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  OnDestroy,
   OnInit,
   PLATFORM_ID,
   Signal,
@@ -55,6 +56,9 @@ const DEFAULT_MIN_AGE_MONTHS = 6;
 const DEFAULT_MIN_QUANTITY = 3;
 const MAX_MIN_AGE_MONTHS = 120_000;
 const MAX_BOOK_QUANTITY = 100_000;
+const INVENTORY_SEARCH_DEBOUNCE_MS = 2_000;
+const INVENTORY_ADJUSTMENT_QUANTITY = 1;
+const INVENTORY_ADJUSTMENT_NOTE = 'Correction depuis l’inventaire';
 
 export type CatalogAdminSection =
   | 'overview'
@@ -122,7 +126,7 @@ interface CatalogInventoryConfirmation {
   styleUrls: ['./catalog-administration-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogAdministrationPageComponent implements OnInit {
+export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
   readonly isAdministrator: Signal<boolean>;
@@ -219,8 +223,6 @@ export class CatalogAdministrationPageComponent implements OnInit {
   inventoryReferenceQuery = '';
   inventoryPage = 1;
   readonly inventoryPageSize = 25;
-  inventoryAdjustmentQuantity = 1;
-  inventoryAdjustmentNote = 'Correction depuis l’inventaire';
   inventoryAddQuantity = 1;
   inventoryAddNote = 'Ajout depuis l’inventaire';
 
@@ -310,6 +312,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   alertDelayHours = 2;
 
   private readonly platformId = inject(PLATFORM_ID);
+  private inventorySearchTimer: number | null = null;
 
   constructor(
     private readonly auth: CatalogAuthService,
@@ -326,6 +329,10 @@ export class CatalogAdministrationPageComponent implements OnInit {
   ngOnInit(): void {
     this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
     void this.initialize();
+  }
+
+  ngOnDestroy(): void {
+    this.cancelInventorySearch();
   }
 
   async initialize(): Promise<void> {
@@ -424,9 +431,36 @@ export class CatalogAdministrationPageComponent implements OnInit {
   }
 
   async loadInventory(): Promise<void> {
+    this.cancelInventorySearch();
     await this.run('inventory', async token => {
       await this.loadInventoryPage(token);
     });
+  }
+
+  submitInventorySearch(): void {
+    this.cancelInventorySearch();
+    this.inventoryPage = 1;
+    void this.loadInventory();
+  }
+
+  scheduleInventorySearch(event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      this.inventorySearch = event.target.value;
+    }
+    this.cancelInventorySearch();
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.inventorySearchTimer = window.setTimeout(() => {
+      this.inventorySearchTimer = null;
+      this.inventoryPage = 1;
+      void this.loadInventory();
+    }, INVENTORY_SEARCH_DEBOUNCE_MS);
+  }
+
+  inventoryLoading(): boolean {
+    return this.loading() && this.actionPending() === 'inventory';
   }
 
   async lookupInventoryIsbn(): Promise<void> {
@@ -527,17 +561,8 @@ export class CatalogAdministrationPageComponent implements OnInit {
     book: CatalogAdminBook,
     direction: CatalogInventoryAdjustmentDirection,
   ): Promise<void> {
-    const amount = Number(this.inventoryAdjustmentQuantity);
-    const note = this.inventoryAdjustmentNote.trim();
-    if (!Number.isInteger(amount) || amount <= 0 || amount > MAX_BOOK_QUANTITY || !note) {
-      this.showError('La quantité d’ajustement doit être un entier positif et le motif est obligatoire.');
-      return;
-    }
-
-    if (note.length > 500) {
-      this.showError('Le motif ne peut pas dépasser 500 caractères.');
-      return;
-    }
+    const amount = INVENTORY_ADJUSTMENT_QUANTITY;
+    const note = INVENTORY_ADJUSTMENT_NOTE;
 
     const nextQuantity = direction === 'increase'
       ? book.quantityAvailable + amount
@@ -1695,6 +1720,13 @@ export class CatalogAdministrationPageComponent implements OnInit {
       page: this.inventoryPage,
       pageSize: this.inventoryPageSize,
     })));
+  }
+
+  private cancelInventorySearch(): void {
+    if (this.inventorySearchTimer !== null && isPlatformBrowser(this.platformId)) {
+      window.clearTimeout(this.inventorySearchTimer);
+    }
+    this.inventorySearchTimer = null;
   }
 
   private async runInventoryLookup(operation: () => Promise<void>): Promise<void> {

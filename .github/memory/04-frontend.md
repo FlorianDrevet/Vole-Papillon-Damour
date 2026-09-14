@@ -175,6 +175,14 @@ confirmed `+`/`−` corrections through the typed quantity endpoint, while annou
 remains visibly separate and redirected fiches are read-only for stock actions. The view does
 not invent carton/rayon counts or a bulk physical-count workflow.
 
+As of 2026-09-15, the Catalog administration inventory keeps the same API-side contract for
+the local fiche list: `GET /books/admin/books` receives the search, page and page size, and the
+screen renders only that returned page. The inventory search resets to page 1 and starts
+automatically after 2 seconds without typing; refresh and pagination reload the API and expose
+the shared ring loader while the request is pending. The obsolete stock-adjustment instruction
+card, “Afficher toutes les fiches” action and inventory history notice are no longer rendered;
+the row `+`/`−` controls keep a confirmed one-unit correction with the existing audit note.
+
 The Catalog auth service reads the `roles` claim from the API access token after silent
 acquisition, exposes an `isAdministrator` signal for navigation affordances, and accepts
 the API's `Administration`/legacy `Admin` role names. If silent acquisition requires an
