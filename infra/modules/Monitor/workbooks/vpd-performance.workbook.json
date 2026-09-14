@@ -1,0 +1,585 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# Vole Papillon d'Amour — performance et santé\nToutes les requêtes portent sur l'espace Log Analytics commun. Pour une requête lente, copier son `OperationId` et suivre la procédure « Diagnostiquer une latence API » de `11-observabilite.md`."
+      },
+      "name": "text-1"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "c1f3a7d2-5d2e-4b8f-9a61-1d2b3c4d5e6f",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "label": "Période",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 86400000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 2592000000
+                }
+              ],
+              "allowCustom": true
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "links": [
+          {
+            "id": "tab-link-api",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "API",
+            "subTarget": "api",
+            "style": "link"
+          },
+          {
+            "id": "tab-link-latency",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Où passe le temps",
+            "subTarget": "latency",
+            "style": "link"
+          },
+          {
+            "id": "tab-link-errors",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Erreurs",
+            "subTarget": "errors",
+            "style": "link"
+          },
+          {
+            "id": "tab-link-worker",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Worker",
+            "subTarget": "worker",
+            "style": "link"
+          },
+          {
+            "id": "tab-link-clients",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Front-ends et disponibilité",
+            "subTarget": "clients",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "tabs"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize Requetes = count(), Echecs = countif(Success == false) by bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Débit et échecs",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-2"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize P50 = percentile(DurationMs, 50), P95 = percentile(DurationMs, 95), P99 = percentile(DurationMs, 99) by bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Latence (ms) — P50 / P95 / P99",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize Requetes = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)), P99 = round(percentile(DurationMs, 99)), Max = round(max(DurationMs)) by Name\n| extend TauxEchec = round(100.0 * Echecs / Requetes, 1)\n| order by P95 desc",
+              "size": 0,
+              "title": "Opérations, triées par P95",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-4"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| top 50 by DurationMs desc\n| project TimeGenerated, Name, DurationMs = round(DurationMs), ResultCode, OperationId",
+              "size": 0,
+              "title": "Les 50 requêtes les plus lentes",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "customWidth": "50",
+            "name": "query-5"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize Requetes = count() by ResultCode, bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Codes de réponse",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "barchart"
+            },
+            "customWidth": "50",
+            "name": "query-6"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "api"
+      },
+      "name": "tab-api"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Temps passé dans chaque type de dépendance par opération. Une opération dont le temps SQL ou HTTP est proche de sa durée totale attend sa dépendance ; sinon le temps est dans le code API."
+            },
+            "name": "text-7"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let requests = AppRequests | where AppRoleName == \"vpd-api\"\n    | project OperationId, Operation = Name, RequestMs = DurationMs;\nAppDependencies\n| where AppRoleName == \"vpd-api\"\n| summarize DependencyMs = sum(DurationMs), Calls = count() by OperationId, DependencyType\n| join kind=inner requests on OperationId\n| summarize Requetes = dcount(OperationId), DureeMoyenneMs = round(avg(RequestMs)), DependanceMoyenneMs = round(avg(DependencyMs)), AppelsMoyens = round(avg(Calls), 1) by Operation, DependencyType\n| extend PartDependance = round(100.0 * DependanceMoyenneMs / DureeMoyenneMs, 1)\n| order by DependanceMoyenneMs desc",
+              "size": 0,
+              "title": "Décomposition moyenne par opération",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-8"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where AppRoleName == \"vpd-api\" and DependencyType =~ \"SQL\"\n| summarize SqlCalls = count() by OperationId\n| join kind=inner (AppRequests | where AppRoleName == \"vpd-api\" | project OperationId, Name) on OperationId\n| summarize AppelsSqlMoyens = round(avg(SqlCalls), 1), AppelsSqlMax = max(SqlCalls), Requetes = count() by Name\n| order by AppelsSqlMax desc\n| take 20",
+              "size": 0,
+              "title": "Requêtes SQL par opération (détection N+1)",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "customWidth": "50",
+            "name": "query-9"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where DependencyType =~ \"SQL\"\n| summarize Appels = count(), P95 = round(percentile(DurationMs, 95)), Max = round(max(DurationMs)) by AppRoleName, Instruction = substring(Data, 0, 300)\n| order by P95 desc\n| take 30",
+              "size": 0,
+              "title": "Instructions SQL les plus lentes",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "customWidth": "50",
+            "name": "query-10"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where AppRoleName in (\"vpd-api\", \"vpd-worker\", \"vpd-catalog\")\n| summarize Appels = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)) by AppRoleName, DependencyType, Target\n| order by P95 desc",
+              "size": 0,
+              "title": "Dépendances par cible",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-11"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where Name == \"books.metadata.provider\"\n| extend Fournisseur = tostring(Properties[\"book.metadata.provider\"]), Issue = tostring(Properties[\"book.metadata.outcome\"])\n| summarize Appels = count(), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)) by AppRoleName, Fournisseur, Issue\n| order by Appels desc",
+              "size": 0,
+              "title": "Fournisseurs bibliographiques",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-12"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "latency"
+      },
+      "name": "tab-latency"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppExceptions\n| where ClientType != \"Browser\"\n| summarize Exceptions = count() by AppRoleName, bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Exceptions serveur par service",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-13"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where Success == false\n| summarize Echecs = count(), Dernier = max(TimeGenerated) by AppRoleName, Name, ResultCode\n| order by Echecs desc",
+              "size": 0,
+              "title": "Requêtes en échec",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "customWidth": "50",
+            "name": "query-14"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppExceptions\n| summarize Occurrences = count(), Derniere = max(TimeGenerated), Exemple = take_any(OuterMessage), OperationId = take_any(OperationId) by AppRoleName, ClientType, ProblemId\n| order by Occurrences desc",
+              "size": 0,
+              "title": "Exceptions regroupées",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-15"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where SeverityLevel >= 2\n| summarize Occurrences = count(), Dernier = max(TimeGenerated), Exemple = take_any(Message) by AppRoleName, SeverityLevel, Modele = tostring(Properties[\"{OriginalFormat}\"])\n| order by Occurrences desc\n| take 50",
+              "size": 0,
+              "title": "Journaux Warning et Error",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-16"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "errors"
+      },
+      "name": "tab-errors"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName has \"worker\"\n| summarize Executions = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)), Derniere = max(TimeGenerated) by Name\n| order by Name asc",
+              "size": 0,
+              "title": "Exécutions des fonctions",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-17"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where Message startswith \"Worker sweep completed\"\n| summarize Balayages = count(), AlertesEnvoyees = sum(toint(Properties.AlertSent)), AlertesEnEchec = sum(toint(Properties.AlertFailed)), AnnoncesBasculees = sum(toint(Properties.ReleasedAnnouncements)) by bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Balayages et alertes e-mail",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-18"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName has \"worker\"\n| summarize P95 = percentile(DurationMs, 95) by Name, bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Durée des exécutions (ms)",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-19"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "worker"
+      },
+      "name": "tab-worker"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppAvailabilityResults\n| summarize Disponibilite = round(100.0 * countif(Success == true) / count(), 2) by Name, bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Disponibilité (%)",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-20"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName == \"vpd-catalog\"\n| summarize Requetes = count(), P95 = percentile(DurationMs, 95), Echecs = countif(Success == false) by bin(TimeGenerated, {TimeRange:grain})",
+              "size": 0,
+              "title": "Rendu SSR du catalogue",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-21"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppPageViews\n| extend App = tostring(split(_ResourceId, \"/\")[-1])\n| summarize Vues = count(), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)) by App, Name\n| order by Vues desc\n| take 50",
+              "size": 0,
+              "title": "Chargement des pages navigateur",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-22"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where ClientType == \"Browser\"\n| extend App = tostring(split(_ResourceId, \"/\")[-1])\n| summarize Appels = count(), Echecs = countif(Success == false), P95 = round(percentile(DurationMs, 95)) by App, Name\n| order by P95 desc\n| take 30",
+              "size": 0,
+              "title": "Appels API vus du navigateur",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "customWidth": "50",
+            "name": "query-23"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppExceptions\n| where ClientType == \"Browser\"\n| extend App = tostring(split(_ResourceId, \"/\")[-1])\n| summarize Occurrences = count(), Exemple = take_any(OuterMessage), Derniere = max(TimeGenerated) by App, ProblemId\n| order by Occurrences desc",
+              "size": 0,
+              "title": "Erreurs navigateur",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "customWidth": "50",
+            "name": "query-24"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "clients"
+      },
+      "name": "tab-clients"
+    }
+  ],
+  "fallbackResourceIds": [
+    "__WORKSPACE_ID__"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

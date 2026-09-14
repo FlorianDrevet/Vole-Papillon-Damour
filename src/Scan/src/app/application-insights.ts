@@ -21,14 +21,17 @@ export async function initApplicationInsights(): Promise<ApplicationInsights | n
   }
 
   const {ApplicationInsights} = await import('@microsoft/applicationinsights-web');
+  const apiHost = hostOf(environment.apiUrl);
   const applicationInsights = new ApplicationInsights({
     config: {
       connectionString,
       enableAutoRouteTracking: true,
       // Keep API dependency timing and W3C trace headers explicit for the
       // cross-origin Scan -> API call. Ajax/Fetch auto-collection is enabled by default;
-      // the API CORS policy allows the correlation headers.
-      enableCorsCorrelation: true,
+      // the API CORS policy allows the correlation headers. Headers are restricted to
+      // the API host: sent to Entra or any third party they would fail CORS preflight.
+      enableCorsCorrelation: apiHost !== null,
+      correlationHeaderDomains: apiHost === null ? undefined : [apiHost],
     },
   });
 
@@ -37,4 +40,12 @@ export async function initApplicationInsights(): Promise<ApplicationInsights | n
   applicationInsightsClient = applicationInsights;
 
   return applicationInsights;
+}
+
+function hostOf(url: string): string | null {
+  try {
+    return new URL(url).host;
+  } catch {
+    return null;
+  }
 }

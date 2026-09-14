@@ -1,4 +1,4 @@
-import {inject, NgModule, provideAppInitializer, provideZonelessChangeDetection} from '@angular/core';
+import {ErrorHandler, inject, NgModule, provideAppInitializer, provideZonelessChangeDetection} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 
 import {AppRoutingModule} from './app-routing.module';
@@ -13,6 +13,7 @@ import {
   msalInstanceFactory,
   msalInterceptorConfig,
 } from './shared/auth/msal-config';
+import {ApplicationInsightsErrorHandler} from './shared/services/application-insights-error-handler';
 
 @NgModule({
   declarations: [
@@ -35,7 +36,8 @@ import {
     // root component (AppComponent or MsalRedirectComponent) is created.
     provideAppInitializer(() => inject(MsalService).initialize()),
     provideAnimationsAsync(),
-    provideZonelessChangeDetection()
+    provideZonelessChangeDetection(),
+    {provide: ErrorHandler, useFactory: () => new ApplicationInsightsErrorHandler()}
   ],
   bootstrap: [AppComponent, MsalRedirectComponent]
 })

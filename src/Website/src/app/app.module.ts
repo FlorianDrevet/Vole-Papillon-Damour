@@ -1,4 +1,4 @@
-import {LOCALE_ID, NgModule, provideZonelessChangeDetection} from '@angular/core';
+import {ErrorHandler, LOCALE_ID, NgModule, provideZonelessChangeDetection} from '@angular/core';
 import { BrowserModule, provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
@@ -9,6 +9,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import {CoreModule} from "./core/core.module";
 import {SharedModule} from "./shared/shared.module";
 import {FeatureModule} from "./feature/feature.module";
+import {ApplicationInsightsErrorHandler} from "./shared/services/application-insights-error-handler";
 
 registerLocaleData(localeFr);
 
@@ -25,6 +26,7 @@ registerLocaleData(localeFr);
   ],
   providers: [
     { provide: LOCALE_ID, useValue: 'fr-FR' },
+    { provide: ErrorHandler, useFactory: () => new ApplicationInsightsErrorHandler() },
     provideAnimationsAsync(),
     provideZonelessChangeDetection(),
     provideClientHydration(withEventReplay())

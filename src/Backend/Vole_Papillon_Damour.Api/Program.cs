@@ -4,6 +4,7 @@ using Vole_Papillon_Damour.Application.Common.Observability;
 using Vole_Papillon_Damour.Api;
 using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Common.Mapping;
+using Vole_Papillon_Damour.Api.Common.Observability;
 using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Controllers;
 using Vole_Papillon_Damour.Api.Controllers.AssoEventsController;
@@ -62,7 +63,7 @@ if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
 {
     builder.Services
         .AddOpenTelemetry()
-        .UseAzureMonitor()
+        .UseAzureMonitor(AzureMonitorTelemetry.ConfigureSampling)
         .WithTracing(tracing => tracing.AddSource(BookScanTelemetry.ActivitySourceName))
         .WithMetrics(metrics => metrics.AddMeter(BookScanTelemetry.MeterName));
 }

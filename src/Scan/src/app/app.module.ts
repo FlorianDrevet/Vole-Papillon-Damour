@@ -1,4 +1,4 @@
-import {inject, NgModule, provideAppInitializer, provideZonelessChangeDetection} from '@angular/core';
+import {ErrorHandler, inject, NgModule, provideAppInitializer, provideZonelessChangeDetection} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {BrowserModule} from '@angular/platform-browser';
 import {FormsModule} from '@angular/forms';
@@ -9,6 +9,7 @@ import {MsalInterceptor, MsalModule, MsalRedirectComponent, MsalService} from '@
 
 import {DesignSystemModule} from '@vpd/ui';
 import {AppComponent} from './app.component';
+import {ApplicationInsightsErrorHandler} from './application-insights-error-handler';
 import {ScanLoginComponent} from './auth/scan-login.component';
 import {ScannerComponent} from './scanner/scanner.component';
 import {ScanDiagnosticComponent} from './offline/scan-diagnostic.component';
@@ -63,6 +64,7 @@ import {environment} from '../environments/environment';
     provideAppInitializer(() => inject(MsalService).initialize()),
     provideZonelessChangeDetection(),
     {provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true},
+    {provide: ErrorHandler, useFactory: () => new ApplicationInsightsErrorHandler()},
   ],
   bootstrap: [AppComponent, MsalRedirectComponent],
 })

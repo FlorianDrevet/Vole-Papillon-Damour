@@ -207,7 +207,9 @@ param storageAccountSku = 'Standard_LRS'
 param communicationEmailServiceName = 'vpd-acs-email-dev'
 param communicationEmailDataLocation = 'France'
 param communicationEmailSendingDomain = 'mail.volepapillondamour.fr'
-param monitoringAlertEmail = 'volepapillondamour@sfr.fr'
+// Azure infrastructure alerts go to the maintainer only. The association mailbox
+// (volepapillondamour@sfr.fr) is a public contact address and must not receive them.
+param monitoringAlertEmail = 'afdrevet@outlook.com'
 param corsAllowedOrigins = [
   'https://volepapillondamour.fr'
   'https://www.volepapillondamour.fr'
