@@ -8,6 +8,15 @@
       <p>{{ authError() }}</p>
       <button type="button" class="account-button secondary" (click)="initialize()">Réessayer</button>
     </div>
+  } @else if (requiresReauthentication()) {
+    <div class="account-state" role="alert">
+      <p class="eyebrow">Session à renouveler</p>
+      <h1 id="account-title">Mon compte</h1>
+      <p>Votre session n’est plus active. Reconnectez-vous pour retrouver votre liste de recherche.</p>
+      <button type="button" class="account-button secondary" data-testid="member-reconnect" (click)="reconnect()">
+        Se reconnecter
+      </button>
+    </div>
   } @else if (!isAuthenticated()) {
     <div class="account-auth-hero">
       <div class="account-auth-copy">

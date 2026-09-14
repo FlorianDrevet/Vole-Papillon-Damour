@@ -20,6 +20,7 @@ describe('CatalogAccountPageComponent', () => {
     account: WritableSignal<AccountInfo | null>;
     initialized: WritableSignal<boolean>;
     isAuthenticated: WritableSignal<boolean>;
+    requiresReauthentication: WritableSignal<boolean>;
     isAdministrator: WritableSignal<boolean>;
     isVolunteer: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
@@ -145,6 +146,7 @@ describe('CatalogAccountPageComponent', () => {
       account: signal<AccountInfo | null>(null),
       initialized: signal(true),
       isAuthenticated: signal(false),
+      requiresReauthentication: signal(false),
       isAdministrator: signal(false),
       isVolunteer: signal(false),
       error: signal<string | null>(null),
@@ -194,6 +196,27 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="member-login"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="member-register"]')).not.toBeNull();
     expect(api.getWatchlist).not.toHaveBeenCalled();
+  });
+
+  it('shows a generic reauthentication state when the cached session is no longer usable', async () => {
+    auth.account.set(account('Florian Drevet'));
+    auth.isAuthenticated.set(false);
+    auth.requiresReauthentication.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Session à renouveler');
+    expect(fixture.nativeElement.textContent).toContain('Votre session n’est plus active');
+    expect(fixture.nativeElement.textContent).not.toContain('Florian Drevet');
+
+    const reconnectButton = fixture.nativeElement.querySelector(
+      '[data-testid="member-reconnect"]',
+    ) as HTMLButtonElement | null;
+    reconnectButton?.click();
+    await fixture.whenStable();
+
+    expect(auth.login).toHaveBeenCalledWith('/compte');
   });
 
   it('informs people about account data before registration and links to their rights', async () => {

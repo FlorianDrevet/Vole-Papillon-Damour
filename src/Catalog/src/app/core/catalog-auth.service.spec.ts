@@ -71,7 +71,23 @@ describe('CatalogAuthService', () => {
     expect(loader).toHaveBeenCalledTimes(1);
     expect(client.initialize).toHaveBeenCalledTimes(1);
     expect(service.account()).toBe(account);
+    expect(service.state()).toBe('authenticated');
     expect(service.isAuthenticated()).toBeTrue();
+  });
+
+  it('marks a cached account as requiring reauthentication when silent hydration needs interaction', async () => {
+    const interactionRequiredError = new msalModule.InteractionRequiredAuthError(
+      'interaction_required',
+      'correlation-id',
+    );
+    client.acquireTokenSilent.and.rejectWith(interactionRequiredError);
+
+    await service.initialize();
+
+    expect(service.state()).toBe('reauthentication-required');
+    expect(service.requiresReauthentication()).toBeTrue();
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.account()).toBe(account);
   });
 
   it('restores separate name claims from a cached account token', async () => {
@@ -130,10 +146,26 @@ describe('CatalogAuthService', () => {
     const token = await service.getApiAccessToken();
 
     expect(token).toBe('api-access-token');
+    expect(service.state()).toBe('authenticated');
     expect(client.acquireTokenSilent).toHaveBeenCalledWith({
       account,
       scopes: [environment.entra.apiScope],
     });
+  });
+
+  it('force refreshes an API token after a protected request rejects the cached token', async () => {
+    await service.initialize();
+    client.acquireTokenSilent.calls.reset();
+
+    const token = await service.refreshApiAccessToken();
+
+    expect(token).toBe('api-access-token');
+    expect(client.acquireTokenSilent).toHaveBeenCalledWith({
+      account,
+      scopes: [environment.entra.apiScope],
+      forceRefresh: true,
+    });
+    expect(service.state()).toBe('authenticated');
   });
 
   it('does not start an interactive token request for passive token checks', async () => {
