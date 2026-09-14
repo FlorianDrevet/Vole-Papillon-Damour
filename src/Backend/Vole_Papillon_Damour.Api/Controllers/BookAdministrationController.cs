@@ -434,6 +434,42 @@ public static class BookAdministrationController
                 .WithName("GetAdminVolunteerStatistics")
                 .RequireAuthorization("Administration");
 
+            endpoints.MapGet(
+                    "/books/admin/fairs/evolution",
+                    async (
+                        DateTimeOffset? from,
+                        DateTimeOffset? to,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetAdminFairsEvolutionQuery(from, to),
+                            cancellationToken);
+                        return result.Match(
+                            evolution => Results.Ok(ToResponse(evolution)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminFairsEvolution")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/catalogue/flow-stats",
+                    async (
+                        DateTimeOffset? from,
+                        DateTimeOffset? to,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetAdminCatalogueFlowStatsQuery(from, to),
+                            cancellationToken);
+                        return result.Match(
+                            stats => Results.Ok(ToResponse(stats)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminCatalogueFlowStats")
+                .RequireAuthorization("Administration");
+
             endpoints.MapPut(
                     "/books/admin/fairs/{fairId:guid}/revenue",
                     async (
@@ -1093,6 +1129,40 @@ public static class BookAdministrationController
                 result.Renewal.WithdrawingCount,
                 result.Renewal.WindowDays),
             result.DominantGenres.Select(item => new AdminVolunteerGenreResponse(item.Name, item.Quantity)).ToArray());
+
+    private static AdminFairsEvolutionResponse ToResponse(AdminFairsEvolutionResult result) =>
+        new(
+            result.GeneratedAt,
+            result.From,
+            result.To,
+            result.FairCount,
+            result.TotalSoldQuantity,
+            result.TotalRevenue,
+            result.AverageBasket,
+            result.GrowthSinceFirstPercent,
+            result.Seasons.Select(item => new AdminFairEvolutionSeasonResponse(
+                item.Season, item.AverageSoldQuantity, item.FairCount)).ToArray(),
+            result.Fairs.Select(item => new AdminFairEvolutionEntryResponse(
+                item.FairId, item.Name, item.DateStart, item.DateEnd, item.SoldQuantity,
+                item.Revenue, item.AverageBasket, item.VariationPercent, item.DaysOpen)).ToArray());
+
+    private static AdminCatalogueFlowStatsResponse ToResponse(AdminCatalogueFlowStatsResult result) =>
+        new(
+            result.GeneratedAt,
+            result.From,
+            result.To,
+            new AdminCatalogueFunnelResponse(
+                result.Funnel.ScannedCount,
+                result.Funnel.KeptCount,
+                result.Funnel.KeptRatePercent,
+                result.Funnel.SoldCount,
+                result.Funnel.SoldRatePercent,
+                result.Funnel.DormantCount,
+                result.Funnel.DormantOverYearCount),
+            result.FlowRateByGenre.Select(item => new AdminCatalogueGenreFlowResponse(
+                item.Genre, item.KeptQuantity, item.SoldQuantity, item.FlowRatePercent)).ToArray(),
+            result.TimeToSellDistribution.Select(item => new AdminCatalogueTimeToSellBucketResponse(
+                item.Bucket, item.Quantity, item.SharePercent)).ToArray());
 
     private static AdminScanSessionPageResponse ToResponse(AdminScanSessionPageResult result) =>
         new(result.GeneratedAt, result.Sessions.Select(ToResponse).ToArray(), result.TotalCount,

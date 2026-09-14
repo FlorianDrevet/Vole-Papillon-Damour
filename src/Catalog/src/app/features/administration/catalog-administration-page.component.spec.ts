@@ -19,6 +19,8 @@ import {
   CatalogAdminBook,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
+  CatalogAdminFairsEvolution,
+  CatalogAdminCatalogueFlowStats,
   CatalogAdminMemberPage,
   CatalogAdminOverview,
   CatalogAdminScanSessionPage,
@@ -143,7 +145,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'getOverview', 'getBooks', 'getBook', 'addBook', 'updateMetadata', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setRare', 'setVisibility', 'merge', 'deleteBook',
       'getFairs', 'getFairStats', 'setFairRevenue', 'getSessions', 'getSession',
-      'getVolunteerStatistics',
+      'getVolunteerStatistics', 'getFairsEvolution', 'getCatalogueFlowStats',
       'removeMovement', 'reassignSession', 'cancelSession', 'cancelSessionAlerts',
       'forceSessionAlerts', 'getAlerts', 'cancelAlert', 'forceAlert', 'getMembers',
       'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
@@ -197,6 +199,34 @@ describe('CatalogAdministrationPageComponent', () => {
       renewal: {newCount: 0, regularCount: 0, withdrawingCount: 0, windowDays: 90},
       dominantGenres: [],
     } as CatalogAdminVolunteerStatistics));
+    api.getFairsEvolution.and.returnValue(of({
+      generatedAt: '',
+      from: null,
+      to: null,
+      fairCount: 0,
+      totalSoldQuantity: 0,
+      totalRevenue: null,
+      averageBasket: null,
+      growthSinceFirstPercent: null,
+      seasons: [],
+      fairs: [],
+    } as CatalogAdminFairsEvolution));
+    api.getCatalogueFlowStats.and.returnValue(of({
+      generatedAt: '',
+      from: null,
+      to: null,
+      funnel: {
+        scannedCount: 0,
+        keptCount: 0,
+        keptRatePercent: null,
+        soldCount: 0,
+        soldRatePercent: null,
+        dormantCount: 0,
+        dormantOverYearCount: 0,
+      },
+      flowRateByGenre: [],
+      timeToSellDistribution: [],
+    } as CatalogAdminCatalogueFlowStats));
     api.getSessions.and.returnValue(of({generatedAt: '', sessions: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminScanSessionPage));
     api.getAlerts.and.returnValue(of({generatedAt: '', alerts: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminAlertPage));
     api.getMembers.and.returnValue(of({generatedAt: '', members: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminMemberPage));
@@ -797,6 +827,181 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(Array.from(page.querySelectorAll('.admin-nav-item')).map(item => item.textContent?.trim()))
       .not.toContain('Bénévoles');
     expect(api.getVolunteerStatistics).toHaveBeenCalled();
+  });
+
+  it('renders the fairs evolution tab with real cross-fair data', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getFairsEvolution.and.returnValue(of({
+      generatedAt: '2026-09-12T12:00:00Z',
+      from: null,
+      to: null,
+      fairCount: 2,
+      totalSoldQuantity: 250,
+      totalRevenue: 1500,
+      averageBasket: 6,
+      growthSinceFirstPercent: 50,
+      seasons: [{season: 'Printemps', averageSoldQuantity: 100, fairCount: 1}],
+      fairs: [
+        {
+          fairId: 'fair-1',
+          name: 'Bourse de mars',
+          dateStart: '2025-03-01T00:00:00Z',
+          dateEnd: '2025-03-01T00:00:00Z',
+          soldQuantity: 100,
+          revenue: 500,
+          averageBasket: 5,
+          variationPercent: null,
+          daysOpen: 1,
+        },
+        {
+          fairId: 'fair-2',
+          name: 'Bourse de septembre',
+          dateStart: '2025-09-01T00:00:00Z',
+          dateEnd: '2025-09-01T00:00:00Z',
+          soldQuantity: 150,
+          revenue: 1000,
+          averageBasket: 6.67,
+          variationPercent: 50,
+          daysOpen: 1,
+        },
+      ],
+    } as CatalogAdminFairsEvolution));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('statistics');
+    await fixture.componentInstance.selectStatisticsTab('evolution');
+    fixture.detectChanges();
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.textContent).toContain('Évolution');
+    expect(page.textContent).toContain('Bourse de mars');
+    expect(page.textContent).toContain('Bourse de septembre');
+    expect(page.textContent).toContain('Printemps');
+    expect(api.getFairsEvolution).toHaveBeenCalled();
+  });
+
+  it('renders the books (catalogue flow) tab with real funnel data', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getCatalogueFlowStats.and.returnValue(of({
+      generatedAt: '2026-09-12T12:00:00Z',
+      from: null,
+      to: null,
+      funnel: {
+        scannedCount: 100,
+        keptCount: 80,
+        keptRatePercent: 80,
+        soldCount: 60,
+        soldRatePercent: 75,
+        dormantCount: 20,
+        dormantOverYearCount: 5,
+      },
+      flowRateByGenre: [{genre: 'Romans', keptQuantity: 40, soldQuantity: 30, flowRatePercent: 75}],
+      timeToSellDistribution: [{bucket: '< 1 mois', quantity: 30, sharePercent: 50}],
+    } as CatalogAdminCatalogueFlowStats));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('statistics');
+    await fixture.componentInstance.selectStatisticsTab('books');
+    fixture.detectChanges();
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.textContent).toContain('Les livres');
+    expect(page.textContent).toContain('Romans');
+    expect(page.textContent).toContain('< 1 mois');
+    expect(api.getCatalogueFlowStats).toHaveBeenCalled();
+  });
+
+  it('splits "Qui a porté quoi" into a Tri view and a Caisse view', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getVolunteerStatistics.and.returnValue(of({
+      generatedAt: '2026-09-12T12:00:00Z',
+      from: null,
+      to: null,
+      fairId: null,
+      team: {
+        activeVolunteerCount: 2,
+        scannedCount: 10,
+        keptCount: 8,
+        rejectedCount: 2,
+        keptRatePercent: 80,
+        soldQuantity: 5,
+        soldOfKeptRatePercent: 62.5,
+        sessionCount: 10,
+        scanDurationMinutes: 100,
+        cashDurationMinutes: 50,
+        totalDurationMinutes: 150,
+        averageSessionsPerVolunteer: 5,
+      },
+      volunteers: [
+        {
+          volunteerId: 'sorter-id',
+          displayName: 'Sylvie Rousseau',
+          roles: ['Tri'],
+          sessionCount: 5,
+          scanDurationMinutes: 100,
+          cashDurationMinutes: 0,
+          totalDurationMinutes: 100,
+          scannedCount: 10,
+          keptCount: 8,
+          keptRatePercent: 80,
+          soldQuantity: 5,
+          waitingQuantity: 3,
+          waitingOverYearQuantity: 0,
+          flowRatePercent: 62.5,
+          firstActivityAt: null,
+          lastActivityAt: null,
+          dominantGenre: null,
+        },
+        {
+          volunteerId: 'cashier-id',
+          displayName: 'Patrick Noël',
+          roles: ['Caisse'],
+          sessionCount: 4,
+          scanDurationMinutes: 0,
+          cashDurationMinutes: 50,
+          totalDurationMinutes: 50,
+          scannedCount: 0,
+          keptCount: 0,
+          keptRatePercent: null,
+          soldQuantity: 0,
+          waitingQuantity: 0,
+          waitingOverYearQuantity: 0,
+          flowRatePercent: null,
+          firstActivityAt: null,
+          lastActivityAt: null,
+          dominantGenre: null,
+        },
+      ],
+      monthlyActivity: [],
+      renewal: {newCount: 0, regularCount: 0, withdrawingCount: 0, windowDays: 90},
+      dominantGenres: [],
+    } as CatalogAdminVolunteerStatistics));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('statistics');
+    await fixture.componentInstance.selectStatisticsTab('volunteers');
+    fixture.detectChanges();
+
+    const page = fixture.nativeElement as HTMLElement;
+    const tableText = () => page.querySelector('.volunteer-table')?.textContent ?? '';
+    expect(tableText()).toContain('Sylvie Rousseau');
+    expect(tableText()).not.toContain('Patrick Noël');
+
+    fixture.componentInstance.setVolunteerTableView('caisse');
+    fixture.detectChanges();
+
+    expect(tableText()).toContain('Patrick Noël');
+    expect(tableText()).not.toContain('Sylvie Rousseau');
+
+    const scatterLabels = Array.from(page.querySelectorAll('.scatter-label')).map(el => el.textContent);
+    expect(scatterLabels).toContain('Sylvie Rousseau');
+    expect(scatterLabels).toContain('Patrick Noël');
   });
 
   it('distinguishes fairs with the same name by their dates in the statistics selector', () => {

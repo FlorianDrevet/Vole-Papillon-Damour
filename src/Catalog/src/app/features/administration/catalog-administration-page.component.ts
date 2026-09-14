@@ -34,6 +34,8 @@ import {
   CatalogAdminFair,
   CatalogAdminFairPage,
   CatalogAdminFairStats,
+  CatalogAdminFairsEvolution,
+  CatalogAdminCatalogueFlowStats,
   CatalogAdminVolunteerStatistics,
   CatalogAdminMemberDetail,
   CatalogAdminMemberFilters,
@@ -67,7 +69,7 @@ export type CatalogAdminSection =
   | 'settings';
 
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
-export type CatalogAdminStatisticsTab = 'fairs' | 'volunteers';
+export type CatalogAdminStatisticsTab = 'fairs' | 'evolution' | 'books' | 'volunteers';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
 
 type CatalogAdminNavIcon =
@@ -182,7 +184,10 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
   readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
   readonly statisticsTab = signal<CatalogAdminStatisticsTab>('fairs');
+  readonly fairsEvolution = signal<CatalogAdminFairsEvolution | null>(null);
+  readonly catalogueFlowStats = signal<CatalogAdminCatalogueFlowStats | null>(null);
   readonly volunteerStatistics = signal<CatalogAdminVolunteerStatistics | null>(null);
+  readonly volunteerTableView = signal<'tri' | 'caisse'>('tri');
   readonly sessionsPage = signal<CatalogAdminScanSessionPage | null>(null);
   readonly selectedSession = signal<CatalogAdminScanSession | null>(null);
   readonly alertsPage = signal<CatalogAdminAlertPage | null>(null);
@@ -790,6 +795,14 @@ export class CatalogAdministrationPageComponent implements OnInit {
       await this.loadVolunteerStatistics();
       return;
     }
+    if (this.statisticsTab() === 'evolution') {
+      await this.loadFairsEvolution();
+      return;
+    }
+    if (this.statisticsTab() === 'books') {
+      await this.loadCatalogueFlowStats();
+      return;
+    }
 
     await this.loadFairs();
   }
@@ -805,17 +818,21 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   setStatisticsPeriod(period: CatalogAdminStatisticsPeriod): void {
     this.statisticsPeriod = period;
-    if (this.auth.isAuthenticated() && this.statisticsTab() === 'volunteers') {
-      void this.loadVolunteerStatistics();
+    if (this.auth.isAuthenticated() && this.statisticsTab() !== 'fairs') {
+      void this.loadStatisticsTab();
     }
   }
 
   async selectStatisticsFair(fairId: string): Promise<void> {
     this.statisticsFairId = fairId;
     this.statisticsPeriod = fairId ? 'fair' : '30-days';
-    if (this.auth.isAuthenticated() && this.statisticsTab() === 'volunteers') {
-      await this.loadVolunteerStatistics();
+    if (this.auth.isAuthenticated() && this.statisticsTab() !== 'fairs') {
+      await this.loadStatisticsTab();
     }
+  }
+
+  setVolunteerTableView(view: 'tri' | 'caisse'): void {
+    this.volunteerTableView.set(view);
   }
 
   async loadVolunteerStatistics(): Promise<void> {
@@ -828,6 +845,32 @@ export class CatalogAdministrationPageComponent implements OnInit {
         this.statisticsFairId || undefined,
       )));
     });
+  }
+
+  async loadFairsEvolution(): Promise<void> {
+    const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
+    await this.run('fairs-evolution', async token => {
+      this.fairsEvolution.set(await firstValueFrom(this.api.getFairsEvolution(token, from, to)));
+    });
+  }
+
+  async loadCatalogueFlowStats(): Promise<void> {
+    const [from, to] = this.statisticsPeriodBounds(this.statisticsPeriod);
+    await this.run('catalogue-flow-stats', async token => {
+      this.catalogueFlowStats.set(await firstValueFrom(this.api.getCatalogueFlowStats(token, from, to)));
+    });
+  }
+
+  triVolunteers(
+    stats: CatalogAdminVolunteerStatistics,
+  ): CatalogAdminVolunteerStatistics['volunteers'] {
+    return stats.volunteers.filter(volunteer => volunteer.roles.includes('Tri'));
+  }
+
+  caisseVolunteers(
+    stats: CatalogAdminVolunteerStatistics,
+  ): CatalogAdminVolunteerStatistics['volunteers'] {
+    return stats.volunteers.filter(volunteer => volunteer.roles.includes('Caisse'));
   }
 
   async openFairStats(fair: CatalogAdminFair): Promise<void> {
@@ -1527,6 +1570,38 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   maxTopBookSales(): number {
     return Math.max(...(this.selectedFairStats()?.topBooks.map(item => item.quantity) ?? [0]));
+  }
+
+  reversed<T>(items: readonly T[]): T[] {
+    return [...items].reverse();
+  }
+
+  maxEvolutionSales(): number {
+    return Math.max(...(this.fairsEvolution()?.fairs.map(item => item.soldQuantity) ?? [0]), 1);
+  }
+
+  maxSeasonSales(): number {
+    return Math.max(...(this.fairsEvolution()?.seasons.map(item => item.averageSoldQuantity ?? 0) ?? [0]), 1);
+  }
+
+  formatSignedPercent(value: number | null | undefined): string {
+    if (value === null || value === undefined) {
+      return '—';
+    }
+    const formatted = this.formatPercent(Math.abs(value));
+    return value > 0 ? `+ ${formatted}` : value < 0 ? `− ${formatted}` : formatted;
+  }
+
+  maxFunnelCount(): number {
+    return Math.max(this.catalogueFlowStats()?.funnel.scannedCount ?? 0, 1);
+  }
+
+  maxGenreFlowQuantity(): number {
+    return Math.max(...(this.catalogueFlowStats()?.flowRateByGenre.map(item => item.keptQuantity) ?? [0]), 1);
+  }
+
+  maxTimeToSellQuantity(): number {
+    return Math.max(...(this.catalogueFlowStats()?.timeToSellDistribution.map(item => item.quantity) ?? [0]), 1);
   }
 
   fairOpenDays(fair: CatalogAdminFair | CatalogAdminFairStats['fair'] | null | undefined): string {
