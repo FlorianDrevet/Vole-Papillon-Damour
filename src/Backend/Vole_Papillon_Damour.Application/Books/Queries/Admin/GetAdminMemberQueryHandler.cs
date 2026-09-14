@@ -53,9 +53,37 @@ public sealed class GetAdminMemberQueryHandler(
             .Where(history => history.UserId == userId)
             .OrderByDescending(history => history.SentAt)
             .ToListAsync(cancellationToken);
-        var books = await dbContext.Books.AsNoTracking().ToListAsync(cancellationToken);
-        var announcements = await dbContext.BookAnnouncements.AsNoTracking().ToListAsync(cancellationToken);
-        var fairs = await dbContext.AssoEvents.AsNoTracking().ToListAsync(cancellationToken);
+        // Load only the fiches this member follows or was alerted about, instead of the
+        // whole catalog, then their announcements and the fairs they reference.
+        var isbn13s = items
+            .Where(item => item.Isbn13 is not null)
+            .Select(item => item.Isbn13!.Value)
+            .Concat(histories.Select(history => history.Isbn13))
+            .Distinct()
+            .ToArray();
+        var workIds = items
+            .Where(item => item.WorkId is not null)
+            .Select(item => item.WorkId!)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var books = isbn13s.Length == 0 && workIds.Length == 0
+            ? []
+            : await dbContext.Books
+                .AsNoTracking()
+                .Where(book =>
+                    isbn13s.Contains(book.Id) ||
+                    (book.WorkId != null && workIds.Contains(book.WorkId)))
+                .ToListAsync(cancellationToken);
+        var bookIsbn13s = books.Select(book => book.Id).ToArray();
+        var announcements = bookIsbn13s.Length == 0
+            ? []
+            : await dbContext.BookAnnouncements
+                .AsNoTracking()
+                .Where(announcement => bookIsbn13s.Contains(announcement.Isbn13))
+                .ToListAsync(cancellationToken);
+        var fairs = await dbContext.AssoEvents
+            .AsNoTracking()
+            .ToReferencedFairListAsync(announcements, cancellationToken);
         var publicBooks = PublicCatalogProjector.Project(books, announcements, fairs, generatedAt);
 
         var summary = GetAdminMembersQueryHandler.BuildSummary(

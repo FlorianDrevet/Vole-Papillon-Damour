@@ -5,12 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Common.Persistence;
 using Vole_Papillon_Damour.Domain.BookAggregate;
-using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
-using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
 
@@ -43,11 +41,10 @@ public sealed class GetCatalogDeltaQueryHandler(
 
         var upcomingBookFairs = await dbContext.AssoEvents
             .AsNoTracking()
-            .Where(assoEvent => !assoEvent.IsCancelled)
+            .WhereActiveBookFair()
             .ToListAsync(cancellationToken);
         var nextFair = upcomingBookFairs
             .Where(assoEvent =>
-                assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
                 (assoEvent.DateEnd ?? assoEvent.DateStart) > new DateTimeOffset(generatedAt, TimeSpan.Zero))
             .OrderBy(assoEvent => assoEvent.DateStart)
             .ThenBy(assoEvent => assoEvent.Id.Value)
@@ -57,21 +54,17 @@ public sealed class GetCatalogDeltaQueryHandler(
             since,
             generatedAt,
             cancellationToken);
-        var activeWatchlistIds = await dbContext.Watchlists
-            .AsNoTracking()
-            .Where(watchlist => watchlist.AlertStatus == WatchlistAlertStatus.Active)
-            .Select(watchlist => watchlist.Id)
-            .ToListAsync(cancellationToken);
-        var activeWatchlistItems = activeWatchlistIds.Count == 0
-            ? []
-            : await dbContext.WatchlistItems
-                .AsNoTracking()
-                .Where(item => activeWatchlistIds.Contains(item.UserId))
-                .ToListAsync(cancellationToken);
-        var announcements = await dbContext.BookAnnouncements
+        var wantedTargets = await GetWantedTargetsAsync(cancellationToken);
+        var announcedQuantities = await dbContext.BookAnnouncements
             .AsNoTracking()
             .Where(announcement => announcement.Status == BookAnnouncementStatus.Announced)
-            .ToListAsync(cancellationToken);
+            .GroupBy(announcement => announcement.Isbn13)
+            .Select(group => new
+            {
+                Isbn13 = group.Key,
+                Quantity = group.Sum(announcement => announcement.Quantity)
+            })
+            .ToDictionaryAsync(row => row.Isbn13, row => row.Quantity, cancellationToken);
         var settings = await dbContext.AssociationSettings
             .AsNoTracking()
             .SingleOrDefaultAsync(
@@ -82,18 +75,16 @@ public sealed class GetCatalogDeltaQueryHandler(
             DefaultSettingsUpdatedAt);
 
         var books = selectedBooks.Books
-            .OrderBy(book => book.Id.Value, StringComparer.Ordinal)
+            .OrderBy(book => book.Isbn13.Value, StringComparer.Ordinal)
             .Select(book => new ScanCatalogBookResult(
-                book.Id.Value,
+                book.Isbn13.Value,
                 book.Title,
                 book.Authors,
                 book.WorkId,
                 book.QuantityAvailable,
-                announcements
-                    .Where(announcement => announcement.Isbn13 == book.Id)
-                    .Sum(announcement => announcement.Quantity),
+                announcedQuantities.GetValueOrDefault(book.Isbn13),
                 book.SalesCount,
-                activeWatchlistItems.Any(item => Matches(item, book)),
+                wantedTargets.Matches(book),
                 book.IsRare,
                 book.IsHiddenFromCatalog,
                 book.UpdatedAt))
@@ -120,14 +111,27 @@ public sealed class GetCatalogDeltaQueryHandler(
         DateTime generatedAt,
         CancellationToken cancellationToken)
     {
-        var allBooks = await dbContext.Books
+        // On SQL Server every row below MIN_ACTIVE_ROWVERSION() is committed. Bounding
+        // the read there, and serving that bound as the next watermark, keeps a write
+        // still in flight with a lower rowversion from being skipped by every device.
+        var committedUpperBound = await RowVersionQueries.GetMinActiveRowVersionAsync(
+            dbContext.Database,
+            cancellationToken);
+        var catalog = dbContext.Books
             .AsNoTracking()
-            .Where(book => book.UpdatedAt <= generatedAt)
+            .Where(book => book.UpdatedAt <= generatedAt);
+        if (committedUpperBound is not null)
+        {
+            catalog = catalog.Where(book =>
+                RowVersionQueries.IsGreaterThan(committedUpperBound, book.RowVersion));
+        }
+
+        var changedBooks = await SelectRows(
+                FilterChangedBooks(catalog, since, committedUpperBound is not null))
             .ToListAsync(cancellationToken);
-        var changedBooks = since is null
-            ? allBooks.ToArray()
-            : allBooks.Where(book => HasChanged(book, since)).ToArray();
-        var rowVersion = HighestRowVersion(allBooks, since?.RowVersion);
+        var rowVersion = committedUpperBound is not null
+            ? Latest(DecrementRowVersion(committedUpperBound), since?.RowVersion ?? [])
+            : HighestRowVersion(changedBooks, since?.RowVersion);
 
         if (since is null)
         {
@@ -139,6 +143,7 @@ public sealed class GetCatalogDeltaQueryHandler(
         var recentWatchlistItems = await dbContext.WatchlistItems
             .AsNoTracking()
             .Where(item => item.AddedAt > since.AsOf && item.AddedAt <= generatedAt)
+            .Select(item => new WatchlistTarget(item.Scope, item.Isbn13, item.WorkId))
             .ToListAsync(cancellationToken);
         var watchlistStateChanged = await dbContext.Watchlists
             .AsNoTracking()
@@ -150,16 +155,93 @@ public sealed class GetCatalogDeltaQueryHandler(
             return new CatalogBookSelection(changedBooks, rowVersion);
         }
 
+        var visibleCatalog = catalog.Where(book => !book.IsHiddenFromCatalog);
+        if (!watchlistStateChanged)
+        {
+            // Only the fiches targeted by the newly added items can change their flag.
+            // A suspended, reactivated or removed item cannot be traced back to its
+            // fiches, so that case still re-projects the visible catalog.
+            var targets = WantedTargets.From(recentWatchlistItems);
+            var isbn13s = targets.Isbn13s.ToArray();
+            var workIds = targets.WorkIds.ToArray();
+            visibleCatalog = visibleCatalog.Where(book =>
+                isbn13s.Contains(book.Id) ||
+                (book.WorkId != null && workIds.Contains(book.WorkId)));
+        }
+
+        var reprojectedBooks = await SelectRows(visibleCatalog).ToListAsync(cancellationToken);
         var selected = changedBooks
-            .Concat(watchlistStateChanged
-                ? allBooks.Where(book => !book.IsHiddenFromCatalog)
-                : allBooks.Where(book =>
-                    !book.IsHiddenFromCatalog &&
-                    recentWatchlistItems.Any(item => Matches(item, book))))
-            .GroupBy(book => book.Id.Value, StringComparer.Ordinal)
+            .Concat(reprojectedBooks)
+            .GroupBy(book => book.Isbn13.Value, StringComparer.Ordinal)
             .Select(group => group.First())
             .ToArray();
         return new CatalogBookSelection(selected, rowVersion);
+    }
+
+    private static IQueryable<Book> FilterChangedBooks(
+        IQueryable<Book> catalog,
+        CatalogWatermark? since,
+        bool rowVersionsAreServerAssigned)
+    {
+        if (since is null)
+        {
+            return catalog;
+        }
+
+        var sinceAsOf = since.AsOf;
+        if (since.RowVersion.Length == 0)
+        {
+            return catalog.Where(book => book.UpdatedAt > sinceAsOf);
+        }
+
+        var sinceRowVersion = since.RowVersion;
+        if (rowVersionsAreServerAssigned)
+        {
+            // Kept as a single range predicate so SQL Server can seek IX_Books_RowVersion.
+            return catalog.Where(book => RowVersionQueries.IsGreaterThan(book.RowVersion, sinceRowVersion));
+        }
+
+        // Providers without server-assigned rowversions can hold empty values, so the
+        // business timestamp is also accepted. Re-sending an unchanged fiche is harmless:
+        // devices deduplicate the delta by ISBN.
+        return catalog.Where(book =>
+            RowVersionQueries.IsGreaterThan(book.RowVersion, sinceRowVersion) ||
+            book.UpdatedAt > sinceAsOf);
+    }
+
+    private static IQueryable<CatalogBookRow> SelectRows(IQueryable<Book> books)
+    {
+        return books.Select(book => new CatalogBookRow(
+            book.Id,
+            book.Title,
+            book.Authors,
+            book.WorkId,
+            book.QuantityAvailable,
+            book.SalesCount,
+            book.IsRare,
+            book.IsHiddenFromCatalog,
+            book.UpdatedAt,
+            book.RowVersion));
+    }
+
+    private async Task<WantedTargets> GetWantedTargetsAsync(CancellationToken cancellationToken)
+    {
+        var activeWatchlistIds = await dbContext.Watchlists
+            .AsNoTracking()
+            .Where(watchlist => watchlist.AlertStatus == WatchlistAlertStatus.Active)
+            .Select(watchlist => watchlist.Id)
+            .ToListAsync(cancellationToken);
+        if (activeWatchlistIds.Count == 0)
+        {
+            return WantedTargets.From([]);
+        }
+
+        var items = await dbContext.WatchlistItems
+            .AsNoTracking()
+            .Where(item => activeWatchlistIds.Contains(item.UserId))
+            .Select(item => new WatchlistTarget(item.Scope, item.Isbn13, item.WorkId))
+            .ToListAsync(cancellationToken);
+        return WantedTargets.From(items);
     }
 
     private static bool TryParseWatermark(
@@ -252,30 +334,40 @@ public sealed class GetCatalogDeltaQueryHandler(
         return $"v2.{encodedRowVersion}.{generatedAt.Ticks.ToString(CultureInfo.InvariantCulture)}";
     }
 
-    private static bool HasChanged(Book book, CatalogWatermark since)
-    {
-        if (book.RowVersion.Length > 0 && since.RowVersion.Length > 0)
-        {
-            return CompareRowVersions(book.RowVersion, since.RowVersion) > 0;
-        }
-
-        return book.UpdatedAt > since.AsOf;
-    }
-
     private static byte[] HighestRowVersion(
-        IEnumerable<Book> books,
+        IEnumerable<CatalogBookRow> books,
         byte[]? previousRowVersion)
     {
         var highest = previousRowVersion ?? [];
         foreach (var book in books)
         {
-            if (CompareRowVersions(book.RowVersion, highest) > 0)
-            {
-                highest = book.RowVersion;
-            }
+            highest = Latest(book.RowVersion, highest);
         }
 
         return highest.ToArray();
+    }
+
+    private static byte[] DecrementRowVersion(byte[] rowVersion)
+    {
+        var result = rowVersion.ToArray();
+        for (var index = result.Length - 1; index >= 0; index--)
+        {
+            if (result[index] > 0)
+            {
+                result[index]--;
+                return result;
+            }
+
+            result[index] = byte.MaxValue;
+        }
+
+        // An all-zero value has no predecessor.
+        return rowVersion.ToArray();
+    }
+
+    private static byte[] Latest(byte[] left, byte[] right)
+    {
+        return CompareRowVersions(left, right) >= 0 ? left : right;
     }
 
     private static int CompareRowVersions(byte[] left, byte[] right)
@@ -293,19 +385,61 @@ public sealed class GetCatalogDeltaQueryHandler(
         return left.Length.CompareTo(right.Length);
     }
 
-    private static bool Matches(WatchlistItem item, Book book)
-    {
-        return item.Scope switch
-        {
-            WatchlistItemScope.Edition => item.Isbn13 == book.Id,
-            WatchlistItemScope.Work => item.WorkId is not null && item.WorkId == book.WorkId,
-            _ => false,
-        };
-    }
-
     private sealed record CatalogWatermark(byte[] RowVersion, DateTime AsOf);
 
     private sealed record CatalogBookSelection(
-        IReadOnlyList<Book> Books,
+        IReadOnlyList<CatalogBookRow> Books,
         byte[] RowVersion);
+
+    private sealed record CatalogBookRow(
+        Isbn13 Isbn13,
+        string? Title,
+        string? Authors,
+        string? WorkId,
+        int QuantityAvailable,
+        int SalesCount,
+        bool IsRare,
+        bool IsHiddenFromCatalog,
+        DateTime UpdatedAt,
+        byte[] RowVersion);
+
+    private sealed record WatchlistTarget(
+        WatchlistItemScope Scope,
+        Isbn13? Isbn13,
+        string? WorkId);
+
+    private sealed class WantedTargets
+    {
+        private readonly HashSet<Isbn13> isbn13s;
+        private readonly HashSet<string> workIds;
+
+        private WantedTargets(HashSet<Isbn13> isbn13s, HashSet<string> workIds)
+        {
+            this.isbn13s = isbn13s;
+            this.workIds = workIds;
+        }
+
+        public IReadOnlyCollection<Isbn13> Isbn13s => isbn13s;
+
+        public IReadOnlyCollection<string> WorkIds => workIds;
+
+        public static WantedTargets From(IReadOnlyCollection<WatchlistTarget> items)
+        {
+            return new WantedTargets(
+                items
+                    .Where(item => item.Scope == WatchlistItemScope.Edition && item.Isbn13 is not null)
+                    .Select(item => item.Isbn13!.Value)
+                    .ToHashSet(),
+                items
+                    .Where(item => item.Scope == WatchlistItemScope.Work && item.WorkId is not null)
+                    .Select(item => item.WorkId!)
+                    .ToHashSet(StringComparer.Ordinal));
+        }
+
+        public bool Matches(CatalogBookRow book)
+        {
+            return isbn13s.Contains(book.Isbn13) ||
+                   (book.WorkId is not null && workIds.Contains(book.WorkId));
+        }
+    }
 }

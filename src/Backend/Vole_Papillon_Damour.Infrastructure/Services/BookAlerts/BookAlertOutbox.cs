@@ -92,11 +92,9 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
 
         var bookFairs = await dbContext.AssoEvents
             .AsNoTracking()
+            .WhereActiveBookFair()
             .ToListAsync(cancellationToken);
         var activeBookFairOpenings = bookFairs
-            .Where(assoEvent =>
-                !assoEvent.IsCancelled &&
-                assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books)
             .ToDictionary(
                 assoEvent => assoEvent.Id.Value,
                 GetOpeningInstant);
@@ -405,15 +403,16 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         HashSet<Guid> activeBookFairIds = [];
         if (payloadFairIds.Count > 0)
         {
-            var fairs = await dbContext.AssoEvents
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
-            activeBookFairIds = fairs
-                .Where(fair =>
-                    !fair.IsCancelled &&
-                    fair.EventsType.Value == EventsType.EventsTypeEnum.Books &&
-                    payloadFairIds.Contains(fair.Id.Value))
-                .Select(fair => fair.Id.Value)
+            var payloadFairEventIds = payloadFairIds
+                .Select(AssoEventsId.Create)
+                .ToArray();
+            activeBookFairIds = (await dbContext.AssoEvents
+                    .AsNoTracking()
+                    .WhereActiveBookFair()
+                    .Where(fair => payloadFairEventIds.Contains(fair.Id))
+                    .Select(fair => fair.Id)
+                    .ToListAsync(cancellationToken))
+                .Select(fairId => fairId.Value)
                 .ToHashSet();
         }
 
@@ -704,6 +703,50 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         }
 
         return itemCount;
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, BookAlertSessionSummary>> GetSessionAlertSummariesAsync(
+        IReadOnlyCollection<Guid> scanSessionIds,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(scanSessionIds);
+
+        var ids = scanSessionIds
+            .Distinct()
+            .Select(id => (Guid?)id)
+            .ToArray();
+        if (ids.Length == 0)
+        {
+            return new Dictionary<Guid, BookAlertSessionSummary>();
+        }
+
+        var rows = await dbContext.OutboxMessages
+            .AsNoTracking()
+            .Where(message =>
+                message.Kind == OutboxMessageKind.AlertEmail &&
+                ids.Contains(message.ScanSessionId))
+            .GroupBy(message => message.ScanSessionId)
+            .Select(group => new
+            {
+                ScanSessionId = group.Key,
+                TotalCount = group.Count(),
+                PendingCount = group.Count(message => message.Status == OutboxMessageStatus.Pending),
+                NextPendingDueAt = group
+                    .Where(message => message.Status == OutboxMessageStatus.Pending)
+                    .Min(message => (DateTime?)message.DueAt)
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .Where(row => row.ScanSessionId is not null)
+            .ToDictionary(
+                row => row.ScanSessionId!.Value,
+                row => new BookAlertSessionSummary(
+                    row.TotalCount,
+                    row.PendingCount,
+                    row.NextPendingDueAt is { } dueAt
+                        ? DateTime.SpecifyKind(dueAt, DateTimeKind.Utc)
+                        : null));
     }
 
     public async Task<int> CancelPendingAsync(

@@ -78,7 +78,7 @@ public sealed class GetMyWatchlistQueryHandler(
             .ToListAsync(cancellationToken);
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .ToReferencedFairListAsync(announcements, cancellationToken);
         var publicBooks = PublicCatalogProjector.Project(
             books,
             announcements,

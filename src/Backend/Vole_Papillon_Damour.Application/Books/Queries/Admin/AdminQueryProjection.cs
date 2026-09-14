@@ -89,14 +89,18 @@ internal static class AdminQueryProjection
             movement.ReversalOfMovementId?.Value);
     }
 
-    public static bool AffectsAvailableQuantity(BookMovement movement)
-    {
-        return movement.Type is
-            Domain.BookMovementAggregate.ValueObjects.BookMovementType.DirectEntry or
-            Domain.BookMovementAggregate.ValueObjects.BookMovementType.FairRelease or
-            Domain.BookMovementAggregate.ValueObjects.BookMovementType.Sale or
-            Domain.BookMovementAggregate.ValueObjects.BookMovementType.Withdrawal ||
+    private const string AnnouncementCorrectionNotePrefix = "Announcement.Correction";
+
+    /// <summary>
+    /// Movements that change the available stock. A correction only counts when it is
+    /// not an announcement correction. Kept as an expression so aggregates run in SQL.
+    /// </summary>
+    public static readonly System.Linq.Expressions.Expression<Func<BookMovement, bool>> AffectsAvailableQuantity =
+        movement =>
+            movement.Type == Domain.BookMovementAggregate.ValueObjects.BookMovementType.DirectEntry ||
+            movement.Type == Domain.BookMovementAggregate.ValueObjects.BookMovementType.FairRelease ||
+            movement.Type == Domain.BookMovementAggregate.ValueObjects.BookMovementType.Sale ||
+            movement.Type == Domain.BookMovementAggregate.ValueObjects.BookMovementType.Withdrawal ||
             (movement.Type == Domain.BookMovementAggregate.ValueObjects.BookMovementType.Correction &&
-             movement.Note?.StartsWith("Announcement.Correction", StringComparison.Ordinal) != true);
-    }
+             (movement.Note == null || !movement.Note.StartsWith(AnnouncementCorrectionNotePrefix)));
 }

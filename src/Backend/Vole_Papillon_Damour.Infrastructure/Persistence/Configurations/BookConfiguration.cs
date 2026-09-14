@@ -100,7 +100,26 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
 
         builder.HasIndex(book => book.WorkId);
         builder.HasIndex(book => new { book.MetadataStatus, book.LastAttemptAt });
+        // Scanette catalog delta: RowVersion > @since AND RowVersion < MIN_ACTIVE_ROWVERSION().
+        builder.HasIndex(book => book.RowVersion);
         builder.HasIndex(book => book.UpdatedAt);
+
+        // Public catalog pages only read visible canonical fiches and fetch a
+        // small TOP N in these orders. Keying on (date, Title) — Isbn13 being the
+        // clustered key — matches the full ORDER BY, so SQL Server seeks the
+        // first rows instead of scanning and sorting the whole catalog.
+        const string publicCatalogFilter = "[IsHiddenFromCatalog] = 0 AND [RedirectedToIsbn13] IS NULL";
+        builder.HasIndex(book => new { book.FirstSeenAt, book.Title })
+            .IsDescending(true, false)
+            .HasFilter(publicCatalogFilter)
+            .HasDatabaseName("IX_Books_PublicCatalog_FirstSeenAt");
+        builder.HasIndex(book => new { book.UpdatedAt, book.Title })
+            .IsDescending(true, false)
+            .HasFilter(publicCatalogFilter)
+            .HasDatabaseName("IX_Books_PublicCatalog_UpdatedAt");
+        builder.HasIndex(book => book.Genre)
+            .HasFilter(publicCatalogFilter)
+            .HasDatabaseName("IX_Books_PublicCatalog_Genre");
 
         builder.HasOne<Book>()
             .WithMany()

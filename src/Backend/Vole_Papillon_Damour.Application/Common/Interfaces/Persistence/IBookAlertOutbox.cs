@@ -32,6 +32,10 @@ public interface IBookAlertOutbox
         IReadOnlyCollection<Guid> scanSessionIds,
         CancellationToken cancellationToken);
 
+    Task<IReadOnlyDictionary<Guid, BookAlertSessionSummary>> GetSessionAlertSummariesAsync(
+        IReadOnlyCollection<Guid> scanSessionIds,
+        CancellationToken cancellationToken);
+
     Task<int> CancelPendingAsync(
         Guid messageId,
         CancellationToken cancellationToken);

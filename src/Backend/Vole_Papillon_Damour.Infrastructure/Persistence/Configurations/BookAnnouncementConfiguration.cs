@@ -71,6 +71,10 @@ public sealed class BookAnnouncementConfiguration : IEntityTypeConfiguration<Boo
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(announcement => new { announcement.AssoEventsId, announcement.Status });
+        // Covers the per-scan SUM(Quantity) and the sale-time EXISTS checks, and
+        // replaces the convention FK index on Isbn13.
+        builder.HasIndex(announcement => new { announcement.Isbn13, announcement.Status })
+            .IncludeProperties(announcement => new { announcement.Quantity, announcement.AssoEventsId });
         builder.HasIndex(announcement => announcement.AssoEventsId)
             .HasFilter("[AssoEventsId] IS NULL");
     }

@@ -45,7 +45,7 @@ public sealed class GetPublicBookQueryHandler(
             .ToListAsync(cancellationToken);
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .ToReferencedFairListAsync(announcements, cancellationToken);
 
         return PublicCatalogProjector
             .Project([book], announcements, fairs, nowUtc)

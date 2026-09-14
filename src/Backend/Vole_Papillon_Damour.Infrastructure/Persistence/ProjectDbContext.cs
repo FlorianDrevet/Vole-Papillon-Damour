@@ -39,6 +39,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     {
         modelBuilder
             .ApplyConfigurationsFromAssembly(typeof(ProjectDbContext).Assembly);
+        Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
