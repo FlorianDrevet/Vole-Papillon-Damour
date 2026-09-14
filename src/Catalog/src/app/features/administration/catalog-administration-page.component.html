@@ -558,4 +558,68 @@
       </section>
     </div>
   }
+
+  @if (inventoryConfirmation(); as confirmation) {
+    <div class="inventory-confirmation-overlay" role="presentation" (click)="cancelInventoryAdjustment()">
+      <section
+        class="inventory-confirmation-dialog"
+        data-testid="inventory-confirmation"
+        [class.inventory-confirmation-decrease]="confirmation.direction === 'decrease'"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="inventory-confirmation-title"
+        aria-describedby="inventory-confirmation-description"
+        tabindex="-1"
+        (click)="$event.stopPropagation()">
+        <header class="inventory-confirmation-header">
+          <div class="inventory-confirmation-kicker-row">
+            <span class="admin-kicker">Inventaire · Confirmation</span>
+            <button class="inventory-confirmation-close" type="button" aria-label="Annuler l’ajustement" (click)="cancelInventoryAdjustment()">×</button>
+          </div>
+          <h2 id="inventory-confirmation-title">Confirmer l’ajustement</h2>
+          <p id="inventory-confirmation-description">Vérifiez la fiche et le nouveau stock avant d’enregistrer cette correction.</p>
+        </header>
+        <div class="inventory-confirmation-body">
+          <div class="inventory-confirmation-book">
+            @if (confirmation.book.coverUrl) {
+              <img class="inventory-confirmation-cover" [src]="confirmation.book.coverUrl" alt="">
+            } @else {
+              <span class="inventory-confirmation-cover book-cover-placeholder" aria-hidden="true"></span>
+            }
+            <div>
+              <span class="isbn-label">{{ confirmation.book.isbn13 }}</span>
+              <strong>{{ confirmation.book.title || 'Titre inconnu' }}</strong>
+              <span>{{ confirmation.book.authors || 'Auteur non renseigné' }}</span>
+            </div>
+          </div>
+          <p class="inventory-confirmation-action">
+            <strong>{{ confirmation.direction === 'increase' ? 'Ajouter' : 'Retirer' }} {{ confirmation.amount }} {{ confirmation.amount === 1 ? 'exemplaire' : 'exemplaires' }}</strong>
+            <span>du stock disponible.</span>
+          </p>
+          <div class="inventory-confirmation-quantities" aria-label="Évolution du stock">
+            <div>
+              <span>Stock actuel</span>
+              <strong>{{ formatNumber(confirmation.book.quantityAvailable) }}</strong>
+            </div>
+            <span class="inventory-confirmation-arrow" aria-hidden="true">→</span>
+            <div class="inventory-confirmation-next">
+              <span>Après correction</span>
+              <strong>{{ formatNumber(confirmation.nextQuantity) }}</strong>
+            </div>
+          </div>
+          <dl class="inventory-confirmation-details">
+            <div>
+              <dt>Motif enregistré</dt>
+              <dd>{{ confirmation.note }}</dd>
+            </div>
+          </dl>
+          <p class="inventory-confirmation-note">La correction sera attribuée à votre compte et inscrite dans l’historique de la fiche.</p>
+        </div>
+        <footer class="inventory-confirmation-footer">
+          <button class="button button-outline" data-testid="inventory-confirmation-cancel" type="button" autofocus (click)="cancelInventoryAdjustment()">Annuler</button>
+          <button class="button button-primary" data-testid="inventory-confirmation-confirm" type="button" [disabled]="loading()" (click)="confirmInventoryAdjustment()">{{ confirmation.direction === 'increase' ? 'Confirmer l’ajout' : 'Confirmer le retrait' }}</button>
+        </footer>
+      </section>
+    </div>
+  }
 </section>

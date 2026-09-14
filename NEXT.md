@@ -181,6 +181,25 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-inventory-modal`, la section Inventaire de `/administration` ouvre
+désormais une vraie modal Catalog lors d’un clic sur `+` ou `−`. Elle reprend la fiche,
+le motif, le stock actuel et le stock après correction ; aucun appel de correction n’est
+envoyé avant la confirmation. L’annulation, la touche `Échap` et le clic sur le voile
+ferment la modal sans modifier le stock. Les confirmations natives du navigateur restent
+réservées aux autres actions d’administration hors de ce parcours.
+
+Validation locale : TDD rouge puis vert, 26 tests ciblés et 197 tests ChromeHeadless
+Catalog, build de production SSR/navigateur, `graphify update .` et `git diff --check`.
+Le shell local non authentifié a été contrôlé dans Chrome ; le smoke connecté de la modal
+avec Entra et l’API reste à faire. Aucun déploiement ni merge n’a été effectué ; la [PR
+#168](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/168) est ouverte depuis la
+branche `fix/catalog-inventory-confirm-modal`.
+`rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été
+utilisées.
+
 ### État actualisé — 2026-09-12 — callout de suivi global dans la recherche Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

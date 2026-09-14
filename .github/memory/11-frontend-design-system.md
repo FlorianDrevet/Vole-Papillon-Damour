@@ -155,8 +155,11 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   candidate confirmation card, and a complete fiche list with a compact stock stepper. The
   available quantity is adjusted only through confirmed, note-bearing corrections; announced
   quantity remains a distinct value, and redirected fiches keep their detail link while their
-  stock controls are disabled. The layout collapses the lookup fields, adjustment controls
-  and book-row actions at the mobile breakpoint without introducing physical-location data.
+  stock controls are disabled. The `+`/`−` stepper opens a Catalog-styled accessible
+  confirmation modal with the fiche, recorded reason, current quantity and post-correction
+  quantity; cancel, backdrop click and `Escape` leave the stock untouched. The layout
+  collapses the lookup fields, adjustment controls, confirmation quantities and book-row
+  actions at the mobile breakpoint without introducing physical-location data.
 - The September 11 Catalog polish keeps the search section rules on the shared blue-to-orange
   brand gradient, gives the `Disponibilité` legend a visible gap before its options, and
   replaces the external-reference scope modal with one explanatory all-editions callout above
