@@ -68,3 +68,9 @@ resource pricingPlan 'Microsoft.Insights/components/pricingPlans@2017-10-01' = {
 }
 
 output connectionString string = applicationInsights.properties.ConnectionString
+
+@description('Resource ID of the Application Insights component')
+output resourceId string = applicationInsights.id
+
+@description('Name of the Application Insights component')
+output name string = applicationInsights.name

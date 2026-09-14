@@ -29,7 +29,10 @@ RUN npm ci --omit=dev --no-audit --no-fund
 
 COPY --from=build /src/Catalog/dist/vole_papillon_damour_catalog/browser ./browser
 COPY --from=build /src/Catalog/dist/vole_papillon_damour_catalog/server ./server
+COPY Catalog/instrumentation.mjs ./instrumentation.mjs
 
 EXPOSE 8080
 
-CMD ["node", "server/server.mjs"]
+# instrumentation.mjs must load before the server bundle so the HTTP and fetch
+# instrumentations patch Node before Express and Angular SSR import them.
+CMD ["node", "--import", "./instrumentation.mjs", "server/server.mjs"]

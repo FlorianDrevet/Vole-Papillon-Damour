@@ -27,9 +27,17 @@ retard, une profondeur de file.
 
 ## 2. Le socle, et ce qu'on n'ajoute pas
 
-**OpenTelemetry, exporté vers les Application Insights déjà en place.** `Azure.Monitor.OpenTelemetry.AspNetCore`
-est déjà référencé par l'API et branché quand la chaîne de connexion existe. Rien à
-choisir, rien à installer.
+**OpenTelemetry, exporté vers les Application Insights déjà en place.** Chaque hôte serveur
+s'instrumente quand `APPLICATIONINSIGHTS_CONNECTION_STRING` existe, et reste muet sinon :
+
+| Hôte | Mécanisme | Ce qui est collecté |
+|---|---|---|
+| `vpd-api` | `Azure.Monitor.OpenTelemetry.AspNetCore` (`Program.cs`) | Requêtes, dépendances SQL et HTTP, exceptions, journaux, spans et métriques `Vpd.Books` |
+| `vpd-worker` | `host.json` en `telemetryMode: OpenTelemetry` + `Microsoft.Azure.Functions.Worker.OpenTelemetry` et l'exporteur Azure Monitor | Exécutions des fonctions (hôte), dépendances SQL et HTTP, journaux, spans `Vpd.Books`, dans une même trace |
+| `vpd-catalog` (SSR Node) | `@azure/monitor-opentelemetry` chargé par `node --import ./instrumentation.mjs`, plus l'instrumentation `undici` | Requêtes de rendu, appels `fetch` vers l'API, exceptions. Rien n'est envoyé au navigateur (`ENF-14`) |
+
+Le worker n'utilise pas la distribution ASP.NET Core : son instrumentation des requêtes
+doublerait celle que l'hôte Functions émet déjà.
 
 **Aucun second système.** Pas de Grafana, pas de Loki, pas de Sentry, pas d'agent tiers.
 `ENF-24` : chaque brique ajoutée est une brique à maintenir, à mettre à jour et à
@@ -153,6 +161,24 @@ Deux précautions concrètes :
   déclenche seul sous charge, et sa première victime est la rafale de scans d'une session
   de tri — le moment précis où l'on veut tout voir.
 
+**Ce piège s'est réellement produit.** `Azure.Monitor.OpenTelemetry.AspNetCore` 1.5 a changé
+son défaut pour un limiteur à 5 traces par seconde, et le `host.json` du worker activait
+l'échantillonnage adaptatif. Les réglages en place :
+
+| Hôte | Réglage explicite |
+|---|---|
+| API | `AzureMonitorTelemetry.ConfigureSampling` : `SamplingRatio = 1`, `TracesPerSecond = null` (couvert par un test) |
+| Worker | Mêmes options sur `UseAzureMonitorExporter` ; `host.json` en mode OpenTelemetry, sans `samplingSettings` |
+| Catalogue SSR | `samplingRatio: 1` et `tracesPerSecond: 0` — sans ce `0`, la distribution Node limite aussi le débit |
+
+Toute montée de version d'un de ces paquets doit relire son journal des modifications à
+la recherche du mot « sampler ».
+
+**Niveaux de journalisation en production.** L'API tournait avec `Default: Error` : aucun fait
+`Information` n'était ingéré. `appsettings.json` pose désormais `Information` par défaut et
+`Warning` pour `Microsoft.AspNetCore`, `Microsoft.EntityFrameworkCore` (donc pas de SQL),
+`Microsoft.Identity` et `System.Net.Http.HttpClient`, dont les dépendances sont déjà tracées.
+
 **Le levier de coût n'est pas l'échantillonnage, c'est la rétention et le plafond
 journalier** (§8). Ils se règlent sans rien perdre de la fenêtre de diagnostic utile.
 
@@ -266,13 +292,14 @@ AppRequests
 let operationId = "<OperationId>";
 AppDependencies
 | where OperationId == operationId
-| project TimeGenerated, Name, Type, Target, DurationMs, Success, Data, Properties
+| project TimeGenerated, Name, DependencyType, Target, DurationMs, Success, Data, Properties
 | order by TimeGenerated asc
 ```
 
-Les dépendances `Type == "HTTP"` dont la cible contient `bnf.fr` sont les appels BnF ;
+Les dépendances `DependencyType == "HTTP"` dont la cible contient `bnf.fr` sont les appels BnF ;
 `openlibrary.org` et `googleapis.com` identifient les replis correspondants. Une
-dépendance `Type == "SQL"` indique Azure SQL. Pour le POST de synchronisation, les
+dépendance `DependencyType == "SQL"` indique Azure SQL. (La colonne `Type` des tables
+Log Analytics contient le nom de la table, pas le type de dépendance.) Pour le POST de synchronisation, les
 dépendances SQL doivent se trouver sous le même `OperationId` que
 `books.scan.persist`.
 
@@ -312,6 +339,40 @@ AppMetrics
 Les tags de métriques restent volontairement limités au fournisseur et à l'issue ; l'ISBN
 et le `ClientGestureId` sont réservés aux traces pour éviter une cardinalité coûteuse.
 
+### Diagnostiquer une latence API
+
+Le point de départ est le classeur Azure Monitor **« VPD - Performance et santé »**
+(groupe de ressources applicatif, *Classeurs*). Il est déclaré en Bicep
+(`infra/modules/Monitor/workbook.module.bicep`) ; ses requêtes se modifient dans
+`infra/modules/Monitor/workbooks/generate-performance-workbook.mjs`, puis on régénère le JSON.
+
+1. **Quelle opération ?** Onglet *API*, tableau « Opérations, triées par P95 ». On regarde
+   le P95 et le P99, pas la moyenne : une moyenne correcte cache très bien un appel sur vingt
+   à huit secondes.
+2. **Toujours, ou par moments ?** Le graphique P50/P95/P99. Un P50 qui monte avec le P95
+   signale un problème structurel (requête, index, code). Un P95 seul qui décolle signale
+   une contention ou un cas particulier (gros panier, cache froid, fournisseur lent).
+3. **Où passe le temps ?** Onglet *Où passe le temps*, « Décomposition moyenne par
+   opération » :
+
+   | Constat | Cause probable | Suite |
+   |---|---|---|
+   | `PartDependance` SQL proche de 100 % | Requête lente ou index manquant | « Instructions SQL les plus lentes », plan d'exécution dans Azure SQL (*Query Performance Insight*) |
+   | `AppelsMoyens` SQL élevé | N+1 : une requête par élément | « Requêtes SQL par opération » ; projeter en une requête |
+   | `PartDependance` HTTP élevée | Fournisseur externe ou Graph Entra | Tableau « Dépendances par cible », puis `books.metadata.provider` |
+   | Dépendances faibles, durée élevée | Code API, sérialisation, démarrage de réplique | Trace complète de l'`OperationId` ; vérifier un redémarrage de conteneur à la même heure |
+
+4. **Une requête précise.** Copier l'`OperationId` d'une ligne de « Les 50 requêtes les
+   plus lentes » et le coller dans *Recherche de transactions* d'Application Insights : la
+   vue en cascade montre chaque span, SQL compris. Si l'appel vient d'un front-end, la
+   trace commence dans le navigateur (en-têtes de corrélation limités à l'hôte de l'API).
+5. **Vu du navigateur.** Onglet *Front-ends et disponibilité*, « Appels API vus du
+   navigateur ». Un écart important entre la durée navigateur et la durée serveur de la
+   même opération est du réseau ou de la file d'attente, pas du code.
+
+Après correction, le même tableau sert de preuve : P95 avant/après sur une période
+comparable, en tenant compte du rythme d'une bourse par mois.
+
 ### La télémétrie côté navigateur
 
 L'application de scan tourne sur le téléphone personnel d'un bénévole, dans un local mal
@@ -323,6 +384,12 @@ aujourd'hui rien à regarder.
 | `scan` | **Oui** — erreurs et faits de session | Outil interne, utilisé par des bénévoles identifiés |
 | `catalog`, zone d'administration | **Oui** | Idem |
 | `catalog`, pages publiques | **Non, jamais** | `ENF-14` : aucun traceur, et une mesure d'audience doit fonctionner sans consentement |
+
+**Les erreurs Angular doivent être transmises explicitement.** Angular intercepte les erreurs
+de composants et de gabarits avant `window.onerror` : sans intervention, le SDK navigateur
+ne les voit jamais. Scan, Website et BackOffice enregistrent donc
+`ApplicationInsightsErrorHandler`, qui conserve la sortie console et appelle
+`trackException`.
 
 La distinction n'est pas de commodité : `ENF-14` porte sur les visiteurs du site public,
 pas sur les outils de travail de l'association. Elle doit néanmoins être **appliquée par la
@@ -372,6 +439,43 @@ Trois principes, faute de quoi les alertes seront désactivées au bout d'un moi
 - **Une alerte de battement de cœur**, qui se déclenche sur l'**absence** de signal du
   worker. C'est la seule qui détecte le cas de `QT-02`, et c'est le mode de panne le plus
   probable du système.
+
+### Destinataire
+
+Toutes les règles passent par l'unique groupe d'actions `vpd-alerts-<env>`, qui envoie un
+e-mail à **`afdrevet@outlook.com`** (`monitoringAlertEmail` dans `main.dev.bicepparam`).
+**Aucune notification d'infrastructure Azure ne va à `volepapillondamour@sfr.fr`** : c'est
+l'adresse de contact publique de l'association, affichée sur les sites.
+
+Les règles *Failure Anomalies* qu'Azure crée d'office pour l'API, le worker et le catalogue
+sont redéclarées en Bicep sous le même nom, pour qu'elles utilisent ce groupe plutôt que
+le groupe implicite « Application Insights Smart Detection ».
+
+Hors du code, des notifications de niveau abonnement (facturation, Service Health, Defender
+for Cloud, Entra) partent vers les contacts du compte Azure. Elles se vérifient dans le
+portail : *Cost Management > Budgets*, *Service Health > Alertes*, *Defender for Cloud >
+Paramètres d'environnement > Notifications par e-mail*, et les contacts de facturation.
+
+### Règles en place
+
+| Règle | Signal | Sévérité |
+|---|---|---|
+| Heartbeat worker (`Sweep`, `Enrich`) | Absence de « Worker sweep/enrichment completed » | 1 / 2 |
+| Annonces en retard, file d'alertes en retard | Journaux du worker | 2 |
+| **E-mails d'alerte en échec** | `AlertFailed > 0` dans le compte rendu du balayage | 1 |
+| Import social (échecs, authentification, jeton) | Journaux du worker | 0 à 1 |
+| Métadonnées lentes | `/books/{isbn13}/metadata` > 3 s | 2 |
+| **Erreurs serveur API** | ≥ 5 réponses 5xx en 15 min | 1 |
+| **Opération API lente** | P95 > 2 s sur une opération d'au moins 10 appels, sur 30 min | 2 |
+| **SQL lent** | ≥ 10 appels SQL > 1 s en 15 min pour un même service | 2 |
+| **Exceptions serveur répétées** | Même `ProblemId` ≥ 5 fois en 15 min (API, worker, SSR) | 2 |
+| **Failure Anomalies** | Hausse anormale du taux d'échec (apprentissage Azure) | 2 |
+| **Disponibilité** | API `/health`, site, catalogue, scan : au moins 2 régions en échec | 1 |
+
+Les tests de disponibilité sont la seule détection qui fonctionne **sans trafic** : en
+dehors des bourses, une panne totale ne produit aucune requête en échec. Ils sont facturés
+à l'exécution (environ 0,0005 € par région et par passage) : 4 tests, 3 régions, toutes les
+15 minutes, soit de l'ordre de 17 € par mois. `availabilityTestsEnabled = false` les retire.
 
 ### Coût et garde-fous
 

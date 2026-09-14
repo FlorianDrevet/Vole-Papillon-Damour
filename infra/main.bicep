@@ -173,6 +173,9 @@ param communicationEmailSendingDomain string
 @description('Email address receiving operational Azure Monitor alerts')
 param monitoringAlertEmail string
 
+@description('Deploy the synthetic availability tests (billed per execution, about EUR 17 per month with the defaults)')
+param availabilityTestsEnabled bool = true
+
 @description('Browser origins allowed to call the API')
 param corsAllowedOrigins string[]
 
@@ -562,6 +565,206 @@ module socialImportTokenExpiryAlert './modules/Monitor/scheduledQueryRule.module
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 1
+    tags: tags
+  }
+}
+
+module alertDeliveryFailureAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'alertDeliveryFailureAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-book-alert-delivery-failed', 'alert', env)
+    displayName: 'Book alert e-mails failed'
+    ruleDescription: 'A worker sweep moved at least one book alert e-mail to Failed (sending domain, quota or credentials).'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppTraces | where Message startswith "Worker sweep completed" | where toint(Properties.AlertFailed) > 0'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 1
+    tags: tags
+  }
+}
+
+// -----------------------------------------------------------------------
+// Observability - API performance and backend failures
+// -----------------------------------------------------------------------
+
+module apiServerErrorsAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'apiServerErrorsAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-api-server-errors', 'alert', env)
+    displayName: 'API returns server errors'
+    ruleDescription: 'The API answered at least five 5xx responses in the last 15 minutes.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppRequests | where AppRoleName == "vpd-api" | where toint(ResultCode) >= 500 | summarize Failures = count(), Operations = make_set(Name, 10) | where Failures >= 5'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 1
+    tags: tags
+  }
+}
+
+module apiLatencyAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'apiLatencyAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-api-latency', 'alert', env)
+    displayName: 'API operation is slow'
+    ruleDescription: 'An API operation with at least ten calls had a P95 above two seconds over 30 minutes. Metadata lookups have their own rule.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppRequests | where AppRoleName == "vpd-api" | where Name !contains "/health" and Name !contains "/metadata" | summarize Requests = count(), P95 = percentile(DurationMs, 95) by Name | where Requests >= 10 and P95 > 2000'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 2
+    windowSize: 'PT30M'
+    tags: tags
+  }
+}
+
+module slowSqlAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'slowSqlAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-sql-slow', 'alert', env)
+    displayName: 'SQL queries are slow'
+    ruleDescription: 'At least ten SQL calls from one service took more than one second in the last 15 minutes (missing index, lock, or DTU saturation).'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppDependencies | where DependencyType =~ "SQL" | where DurationMs > 1000 | summarize SlowCalls = count(), P95 = percentile(DurationMs, 95) by AppRoleName | where SlowCalls >= 10'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 2
+    tags: tags
+  }
+}
+
+module backendExceptionsAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
+  name: 'backendExceptionsAlert'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-backend-exceptions', 'alert', env)
+    displayName: 'Backend exceptions are repeating'
+    ruleDescription: 'The same server-side exception occurred at least five times in 15 minutes in the API, the worker or the Catalog SSR host.'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    query: 'AppExceptions | where ClientType != "Browser" | summarize Occurrences = count() by AppRoleName, ProblemId | where Occurrences >= 5'
+    operator: 'GreaterThan'
+    threshold: 0
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    severity: 2
+    tags: tags
+  }
+}
+
+// Failure Anomalies is created implicitly by Azure with its own recipients.
+// Declaring it here keeps every notification on the project action group.
+module apiFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' = {
+  name: 'apiFailureAnomalies'
+  scope: applicationResourceGroup
+  params: {
+    applicationInsightsName: applicationInsightsApiModule.outputs.name
+    applicationInsightsId: applicationInsightsApiModule.outputs.resourceId
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    tags: tags
+  }
+}
+
+module workerFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' = {
+  name: 'workerFailureAnomalies'
+  scope: applicationResourceGroup
+  params: {
+    applicationInsightsName: applicationInsightsWorkerModule.outputs.name
+    applicationInsightsId: applicationInsightsWorkerModule.outputs.resourceId
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    tags: tags
+  }
+}
+
+module catalogFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' = {
+  name: 'catalogFailureAnomalies'
+  scope: applicationResourceGroup
+  params: {
+    applicationInsightsName: applicationInsightsCatalogModule.outputs.name
+    applicationInsightsId: applicationInsightsCatalogModule.outputs.resourceId
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    tags: tags
+  }
+}
+
+// -----------------------------------------------------------------------
+// Observability - synthetic availability
+// -----------------------------------------------------------------------
+
+module apiAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+  name: 'apiAvailabilityTest'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-api-health', 'webtest', env)
+    displayName: 'API /health'
+    location: env.location
+    applicationInsightsId: applicationInsightsApiModule.outputs.resourceId
+    url: 'https://${containerAppApiModule.outputs.containerAppFqdn}/health'
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    tags: tags
+  }
+}
+
+module websiteAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+  name: 'websiteAvailabilityTest'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-web-home', 'webtest', env)
+    displayName: 'Website home page'
+    location: env.location
+    applicationInsightsId: applicationInsightsWebsiteModule.outputs.resourceId
+    url: 'https://${empty(websiteCustomDomain) ? containerAppWebsiteModule.outputs.containerAppFqdn : websiteCustomDomain}/'
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    tags: tags
+  }
+}
+
+module catalogAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+  name: 'catalogAvailabilityTest'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-catalog-home', 'webtest', env)
+    displayName: 'Catalog home page'
+    location: env.location
+    applicationInsightsId: applicationInsightsCatalogModule.outputs.resourceId
+    url: 'https://${empty(catalogCustomDomain) ? containerAppCatalogModule.outputs.containerAppFqdn : catalogCustomDomain}/'
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    tags: tags
+  }
+}
+
+module scanAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+  name: 'scanAvailabilityTest'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd-scan-home', 'webtest', env)
+    displayName: 'Scan application shell'
+    location: env.location
+    applicationInsightsId: applicationInsightsScanModule.outputs.resourceId
+    url: 'https://${empty(scanCustomDomain) ? containerAppScanModule.outputs.containerAppFqdn : scanCustomDomain}/'
+    actionGroupId: monitoringActionGroup.outputs.resourceId
+    tags: tags
+  }
+}
+
+// -----------------------------------------------------------------------
+// Observability - shared performance workbook
+// -----------------------------------------------------------------------
+
+module performanceWorkbook './modules/Monitor/workbook.module.bicep' = {
+  name: 'performanceWorkbook'
+  scope: applicationResourceGroup
+  params: {
+    location: env.location
+    displayName: 'VPD - Performance et santé'
+    workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     tags: tags
   }
 }
@@ -1171,11 +1374,15 @@ module containerAppCatalogModule './modules/ContainerApp/containerApp.module.bic
     userAssignedIdentityId: userAssignedIdentityCatalogModule.outputs.resourceId
     envVars: [
       // Catalog pages are public and carry no secrets. This connection string
-      // only enables server-side runtime diagnostics in the same way as the
-      // other frontend Container Apps.
+      // is read only by the Node SSR process (instrumentation.mjs); it is never
+      // shipped to the browser, so public pages stay tracker-free (ENF-14).
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: applicationInsightsCatalogModule.outputs.connectionString
+      }
+      {
+        name: 'OTEL_SERVICE_NAME'
+        value: 'vpd-catalog'
       }
     ]
   }
@@ -1309,6 +1516,10 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: applicationInsightsWorkerModule.outputs.connectionString
+      }
+      {
+        name: 'OTEL_SERVICE_NAME'
+        value: 'vpd-worker'
       }
       {
         name: 'AZURE_CLIENT_ID'

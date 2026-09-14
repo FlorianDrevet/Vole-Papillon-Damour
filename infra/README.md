@@ -34,11 +34,19 @@ réveille sans hôte chaud ; il faut revenir à une réplique minimum si l'obser
 heures échoue.
 
 Les six composants Application Insights ont un plafond de 1 Go/jour via leur
-ressource `pricingPlans`. Les alertes worker (heartbeat absent, annonces dues en
-retard, file d'e-mails en retard) et l'alerte API de métadonnées lentes (> 3 s sur
-`/books/{isbn13}/metadata`) sont envoyées au groupe Azure Monitor `vpd-alerts-dev`,
-vers l'adresse de contact du projet. Le premier déploiement nécessite la confirmation
-du destinataire envoyée par Azure.
+ressource `pricingPlans`. Toutes les alertes Azure Monitor passent par le groupe
+`vpd-alerts-dev`, qui écrit **uniquement à `afdrevet@outlook.com`**
+(`monitoringAlertEmail`) ; aucune notification d'infrastructure ne part vers
+`volepapillondamour@sfr.fr`. Les règles couvrent le worker (heartbeat, annonces et
+file d'e-mails en retard, e-mails en échec), l'import social, les performances de
+l'API (5xx, P95 par opération, métadonnées lentes), le SQL lent, les exceptions
+serveur répétées, les *Failure Anomalies* de l'API, du worker et du catalogue, et
+des tests de disponibilité multi-régions (API `/health`, site, catalogue, scan ;
+`availabilityTestsEnabled`, ~17 €/mois). Le classeur partagé
+« VPD - Performance et santé » regroupe latences, dépendances, erreurs, worker et
+front-ends. La liste détaillée est dans
+`docs/bourse-aux-livres/technique/11-observabilite.md` §8. Un changement de
+destinataire déclenche un e-mail de confirmation d'Azure à accepter.
 
 L'API exporte aussi les spans métier `books.metadata.resolve`,
 `books.metadata.provider` et `books.scan.persist`, ainsi que leurs histogrammes de
