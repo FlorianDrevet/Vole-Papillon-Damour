@@ -41,6 +41,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly account: Signal<AccountInfo | null>;
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
+  readonly requiresReauthentication: Signal<boolean>;
   readonly isAdministrator: Signal<boolean>;
   readonly isVolunteer: Signal<boolean>;
   readonly authError: Signal<string | null>;
@@ -89,6 +90,7 @@ export class CatalogAccountPageComponent implements OnInit {
     this.account = this.auth.account;
     this.initialized = this.auth.initialized;
     this.isAuthenticated = this.auth.isAuthenticated;
+    this.requiresReauthentication = this.auth.requiresReauthentication;
     this.isAdministrator = this.auth.isAdministrator;
     this.isVolunteer = this.auth.isVolunteer;
     this.authError = this.auth.error;

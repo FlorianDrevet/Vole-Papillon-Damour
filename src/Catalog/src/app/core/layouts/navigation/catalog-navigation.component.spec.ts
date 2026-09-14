@@ -160,6 +160,25 @@ describe('CatalogNavigationComponent', () => {
     expect(accountLink.classList.contains('connected')).toBeTrue();
   });
 
+  it('does not show a cached member name when the session is no longer authenticated', () => {
+    auth.account.set({
+      homeAccountId: 'home-account-id',
+      environment: 'volepapillondamour.ciamlogin.com',
+      tenantId: 'tenant-id',
+      username: 'florian@example.test',
+      localAccountId: 'local-account-id',
+      name: 'Florian Drevet',
+    });
+    auth.isAuthenticated.set(false);
+    fixture.detectChanges();
+
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
+
+    expect(accountLink.textContent).toContain('Mon compte');
+    expect(accountLink.textContent).not.toContain('Florian Drevet');
+    expect(accountLink.classList.contains('signed-out')).toBeTrue();
+  });
+
   it('shows the administration workspace with a clear connected label', () => {
     auth.account.set({
       homeAccountId: 'home-account-id',

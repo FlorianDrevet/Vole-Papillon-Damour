@@ -66,12 +66,19 @@ export class CatalogAuthenticationRedirectStartedError extends Error {
   }
 }
 
+export type CatalogAuthState =
+  | 'initializing'
+  | 'authenticated'
+  | 'reauthentication-required'
+  | 'signed-out';
+
 @Injectable({providedIn: 'root'})
 export class CatalogAuthService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly loadMsal = inject(CATALOG_MSAL_LOADER);
   private readonly _account = signal<AccountInfo | null>(null);
   private readonly _initialized = signal(false);
+  private readonly _state = signal<CatalogAuthState>('initializing');
   private readonly _error = signal<string | null>(null);
   private readonly _roles = signal<readonly string[]>([]);
 
@@ -81,7 +88,13 @@ export class CatalogAuthService {
 
   readonly account = this._account.asReadonly();
   readonly initialized = this._initialized.asReadonly();
-  readonly isAuthenticated = computed(() => this._account() !== null);
+  readonly state = this._state.asReadonly();
+  readonly requiresReauthentication = computed(
+    () => this._state() === 'reauthentication-required',
+  );
+  readonly isAuthenticated = computed(
+    () => this._state() === 'authenticated' && this._account() !== null,
+  );
   readonly roles = this._roles.asReadonly();
   // This signal controls navigation affordances only; API policies remain authoritative.
   readonly isAdministrator = computed(() =>
@@ -98,12 +111,14 @@ export class CatalogAuthService {
     }
 
     if (!isPlatformBrowser(this.platformId)) {
+      this._state.set('signed-out');
       this._initialized.set(true);
       this.initialization = Promise.resolve();
       return this.initialization;
     }
 
     this._initialized.set(false);
+    this._state.set('initializing');
     this._error.set(null);
     this.initialization = this.initializeBrowser();
     return this.initialization;
@@ -130,9 +145,14 @@ export class CatalogAuthService {
   async logout(): Promise<void> {
     await this.initialize();
     const client = this.requireClient();
+    const account = this._account();
+
+    this._account.set(null);
+    this._roles.set([]);
+    this._state.set('signed-out');
 
     await client.logoutRedirect({
-      account: this._account() ?? undefined,
+      account: account ?? undefined,
     });
   }
 
@@ -142,6 +162,7 @@ export class CatalogAuthService {
     const account = this._account();
 
     if (!account) {
+      this._state.set('signed-out');
       throw new Error('No active Entra account is available.');
     }
 
@@ -152,9 +173,11 @@ export class CatalogAuthService {
       });
       this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
       this._roles.set(readRoles(result.accessToken));
+      this._state.set('authenticated');
       return result.accessToken;
     } catch (error: unknown) {
       if (isInteractionRequiredError(this.msal, error)) {
+        this.markSessionRequiresReauthentication();
         await client.acquireTokenRedirect({
           ...catalogLoginRequest,
           account,
@@ -165,6 +188,38 @@ export class CatalogAuthService {
 
       throw error;
     }
+  }
+
+  async refreshApiAccessToken(): Promise<string | null> {
+    try {
+      await this.initialize();
+      const account = this._account();
+      if (!account) {
+        this._state.set('signed-out');
+        return null;
+      }
+
+      const result = await this.requireClient().acquireTokenSilent({
+        account,
+        scopes: catalogLoginRequest.scopes,
+        forceRefresh: true,
+      });
+      this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
+      this._roles.set(readRoles(result.accessToken));
+      this._state.set('authenticated');
+      return result.accessToken;
+    } catch (error: unknown) {
+      if (isInteractionRequiredError(this.msal, error)) {
+        this.markSessionRequiresReauthentication();
+      }
+
+      return null;
+    }
+  }
+
+  markSessionRequiresReauthentication(): void {
+    this._roles.set([]);
+    this._state.set(this._account() ? 'reauthentication-required' : 'signed-out');
   }
 
   async tryGetApiAccessToken(): Promise<string | null> {
@@ -181,6 +236,7 @@ export class CatalogAuthService {
       });
       this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
       this._roles.set(readRoles(result.accessToken));
+      this._state.set('authenticated');
       return result.accessToken;
     } catch {
       // Passive checks must never start an interactive redirect or surface an auth failure.
@@ -205,9 +261,15 @@ export class CatalogAuthService {
       this.syncFromCache(result?.idTokenClaims as AccountInfo['idTokenClaims']);
       if (!result?.idTokenClaims) {
         await this.hydrateAccountClaims();
+        if (this._state() === 'initializing') {
+          // A transient failure does not prove that the Entra session is gone;
+          // keep the cached account usable until an API response says otherwise.
+          this._state.set('authenticated');
+        }
       }
-      if (result?.accessToken) {
+      if (result?.accessToken && this._account()) {
         this._roles.set(readRoles(result.accessToken));
+        this._state.set('authenticated');
       }
       succeeded = true;
     } catch {
@@ -215,6 +277,7 @@ export class CatalogAuthService {
       // unavailable. The administration page exposes this fixed, non-sensitive
       // message and allows the user to retry after the deployment is corrected.
       this._error.set('La connexion à l’administration est momentanément indisponible.');
+      this._state.set('signed-out');
     } finally {
       this._initialized.set(true);
       if (!succeeded) {
@@ -236,9 +299,10 @@ export class CatalogAuthService {
       });
       this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
       this._roles.set(readRoles(result.accessToken));
-    } catch {
-      // A cached account remains usable; the member action will handle a
-      // silent-token failure and request interaction only when it is needed.
+    } catch (error: unknown) {
+      if (isInteractionRequiredError(this.msal, error)) {
+        this.markSessionRequiresReauthentication();
+      }
     }
   }
 
@@ -253,6 +317,9 @@ export class CatalogAuthService {
 
     this._account.set(active && idTokenClaims ? {...active, idTokenClaims} : active);
     this._roles.set([]);
+    this._state.set(
+      active ? (idTokenClaims ? 'authenticated' : 'initializing') : 'signed-out',
+    );
   }
 
   private setTokenClaims(idTokenClaims: AccountInfo['idTokenClaims']): void {

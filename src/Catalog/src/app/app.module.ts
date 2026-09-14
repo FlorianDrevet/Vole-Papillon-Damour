@@ -1,5 +1,5 @@
 import {registerLocaleData} from '@angular/common';
-import {provideHttpClient, withFetch} from '@angular/common/http';
+import {provideHttpClient, withFetch, withInterceptors} from '@angular/common/http';
 import {LOCALE_ID, NgModule, provideZonelessChangeDetection} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {BrowserModule, provideClientHydration, withEventReplay} from '@angular/platform-browser';
@@ -22,6 +22,7 @@ import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navi
 import {CatalogCookieBannerComponent} from './shared/components/cookie-banner/catalog-cookie-banner.component';
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
 import {DesignSystemModule} from '@vpd/ui';
+import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
 
 registerLocaleData(localeFr);
 
@@ -50,7 +51,7 @@ registerLocaleData(localeFr);
   ],
   providers: [
     {provide: LOCALE_ID, useValue: 'fr-FR'},
-    provideHttpClient(withFetch()),
+    provideHttpClient(withFetch(), withInterceptors([catalogAuthInterceptor])),
     provideZonelessChangeDetection(),
     provideClientHydration(withEventReplay()),
   ],

@@ -17,13 +17,30 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — afficher l’état déjà suivi et le loader lors du suivi depuis la recherche externe. |
-| **Prochaine action** | Faire relire la [PR #163](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/163), puis déployer depuis `main` et contrôler le parcours recherche avec une session connectée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-search-follow-state` |
-| **Dernière mise à jour** | 2026-09-13 — les conflits de la PR #163 ont été résolus sur `origin/main` à jour ; les éditions déjà présentes sont reconnues via la liste de recherche et le chargement passif du statut n’engage jamais de redirection MSAL. Tests Catalog et build repassants ; contrôle navigateur limité par l’absence de SQL local. |
-| **Branche** | `fix/catalog-search-follow-state` — dédiée depuis `origin/main` fraîchement récupéré, [PR #163](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/163) vers `main` |
+| **Lot en cours** | Catalog — rendre l’état de session fiable après expiration et récupérer silencieusement les jetons API. |
+| **Prochaine action** | Faire relire la PR d’authentification, puis déployer depuis `main` et contrôler dans Chrome une expiration réelle avec une session connectée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-auth-session-ux` |
+| **Dernière mise à jour** | 2026-09-15 — le compte mis en cache n’est plus présenté comme authentifié tant que le jeton n’est pas exploitable ; les `401` protégés déclenchent un seul renouvellement silencieux, puis un état de réauthentification sans redirection automatique sur l’accueil. |
+| **Branche** | `fix/catalog-auth-session-state` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
 
 ---
+
+### État actualisé — 2026-09-15 — état de session Auth Catalog
+
+Le Catalog distingue désormais le compte présent dans le cache MSAL d’une session réellement
+utilisable : l’état passe par `initializing`, `authenticated`, `reauthentication-required` ou
+`signed-out`. Une restauration silencieuse est tentée au démarrage et un `401` sur une requête
+protégée déclenche au plus un renouvellement silencieux forcé. Si Entra demande une interaction,
+le nom du compte et les rôles disparaissent immédiatement du header ; `/compte` affiche un bouton
+« Se reconnecter ». Les requêtes publiques et l’accueil ne déclenchent aucune redirection
+interactive. Le bouton de reconnexion reste explicite ; si la session SSO Entra est encore active,
+le redirect peut revenir directement sans afficher un formulaire, ce qui est normal.
+
+Validation locale : TDD rouge puis vert, 203 tests Catalog ChromeHeadless, build Catalog
+SSR/navigateur, `graphify update .`, `git diff --check`, smoke Chrome desktop de l’accueil et de
+`/compte`. Le scénario d’expiration réel reste à vérifier après déploiement avec un compte de test.
+Aucun déploiement, changement Azure/Entra ou donnée de compte n’a été effectué. `rtk` n’est pas
+installé sur cette machine ; les commandes Git/npm natives équivalentes ont été utilisées.
 
 ### État actualisé — 2026-09-13 — interactions de recherche Catalog
 
