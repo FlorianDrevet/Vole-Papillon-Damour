@@ -46,21 +46,10 @@ public sealed class GetAdminScanSessionQueryHandler(
             .OrderBy(movement => movement.OccurredAt)
             .ThenBy(movement => movement.Id)
             .ToListAsync(cancellationToken);
-        var alerts = await bookAlertOutbox.GetAdminPageAsync(
-            null,
-            session.Id.Value,
-            null,
-            1,
-            200,
+        var alertSummaries = await bookAlertOutbox.GetSessionAlertSummariesAsync(
+            [session.Id.Value],
             cancellationToken);
-        var pendingAlerts = await bookAlertOutbox.GetAdminPageAsync(
-            BookAlertQueueStatus.Pending,
-            session.Id.Value,
-            null,
-            1,
-            1,
-            cancellationToken);
-        var firstPending = pendingAlerts.Items.FirstOrDefault();
+        alertSummaries.TryGetValue(session.Id.Value, out var alerts);
         return new AdminScanSessionResult(
             session.Id.Value,
             session.VolunteerId.Value,
@@ -77,9 +66,11 @@ public sealed class GetAdminScanSessionQueryHandler(
             session.ScannedCount,
             session.KeptCount,
             session.RejectedCount,
-            alerts.TotalCount,
-            pendingAlerts.TotalCount,
-            firstPending is null ? null : new DateTimeOffset(firstPending.DueAt, TimeSpan.Zero),
+            alerts?.TotalCount ?? 0,
+            alerts?.PendingCount ?? 0,
+            alerts?.NextPendingDueAt is { } nextPendingDueAt
+                ? new DateTimeOffset(nextPendingDueAt, TimeSpan.Zero)
+                : null,
             movements.Select(AdminQueryProjection.ToMovementResult).ToArray());
     }
 }

@@ -58,17 +58,19 @@ public sealed class GetAdminScanSessionsQueryHandler(
             status = parsed;
         }
 
-        var sessions = await dbContext.ScanSessions
+        var sessionsQuery = dbContext.ScanSessions
             .AsNoTracking()
             .Where(session => status == null || session.Status == status.Value)
             .Where(session => from == null || session.StartedAt >= from.Value)
             .Where(session => to == null || session.StartedAt < to.Value)
-            .Where(session => staleBefore == null || session.StartedAt < staleBefore.Value)
+            .Where(session => staleBefore == null || session.StartedAt < staleBefore.Value);
+        var totalCount = await sessionsQuery.CountAsync(cancellationToken);
+        var page = await sessionsQuery
             .OrderByDescending(session => session.StartedAt)
             .ThenByDescending(session => session.Id)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
             .ToListAsync(cancellationToken);
-        var totalCount = sessions.Count;
-        var page = sessions.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToArray();
         return new AdminScanSessionPageResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
             await BuildResultsAsync(page, cancellationToken),
@@ -81,6 +83,11 @@ public sealed class GetAdminScanSessionsQueryHandler(
         IReadOnlyCollection<ScanSessionEntity> sessions,
         CancellationToken cancellationToken)
     {
+        if (sessions.Count == 0)
+        {
+            return [];
+        }
+
         var volunteerIds = sessions.Select(session => session.VolunteerId).ToArray();
         var fairIds = sessions
             .Where(session => session.TargetAssoEventsId is not null)
@@ -94,25 +101,15 @@ public sealed class GetAdminScanSessionsQueryHandler(
             .AsNoTracking()
             .Where(fair => fairIds.Contains(fair.Id))
             .ToDictionaryAsync(fair => fair.Id, cancellationToken);
+        // One grouped query for the whole page instead of two queries per session.
+        var alertSummaries = await bookAlertOutbox.GetSessionAlertSummariesAsync(
+            sessions.Select(session => session.Id.Value).ToArray(),
+            cancellationToken);
 
         var results = new List<AdminScanSessionResult>(sessions.Count);
         foreach (var session in sessions)
         {
-            var alerts = await bookAlertOutbox.GetAdminPageAsync(
-                null,
-                session.Id.Value,
-                null,
-                1,
-                1,
-                cancellationToken);
-            var pendingAlerts = await bookAlertOutbox.GetAdminPageAsync(
-                BookAlertQueueStatus.Pending,
-                session.Id.Value,
-                null,
-                1,
-                1,
-                cancellationToken);
-            var firstPending = pendingAlerts.Items.FirstOrDefault();
+            alertSummaries.TryGetValue(session.Id.Value, out var alerts);
             var volunteerName = volunteers.TryGetValue(session.VolunteerId, out var volunteer)
                 ? FormatName(volunteer.Name)
                 : null;
@@ -135,9 +132,11 @@ public sealed class GetAdminScanSessionsQueryHandler(
                 session.ScannedCount,
                 session.KeptCount,
                 session.RejectedCount,
-                alerts.TotalCount,
-                pendingAlerts.TotalCount,
-                firstPending is null ? null : new DateTimeOffset(firstPending.DueAt, TimeSpan.Zero),
+                alerts?.TotalCount ?? 0,
+                alerts?.PendingCount ?? 0,
+                alerts?.NextPendingDueAt is { } nextPendingDueAt
+                    ? new DateTimeOffset(nextPendingDueAt, TimeSpan.Zero)
+                    : null,
                 []));
         }
 

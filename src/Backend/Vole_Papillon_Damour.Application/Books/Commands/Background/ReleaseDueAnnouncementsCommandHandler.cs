@@ -6,7 +6,6 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Background;
 
@@ -25,20 +24,25 @@ public sealed class ReleaseDueAnnouncementsCommandHandler(
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var fairs = await dbContext.AssoEvents
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-        var dueFairs = fairs
-            .Where(assoEvent =>
-                !assoEvent.IsCancelled &&
-                assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
-                GetOpeningInstant(assoEvent) <= nowOffset)
+        var dueFairs = (await dbContext.AssoEvents
+                .AsNoTracking()
+                .WhereActiveBookFair()
+                .ToListAsync(cancellationToken))
+            .Where(assoEvent => GetOpeningInstant(assoEvent) <= nowOffset)
             .ToDictionary(assoEvent => assoEvent.Id);
+        if (dueFairs.Count == 0)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return new ReleaseDueAnnouncementsResult(0, 0);
+        }
 
+        // Only announcements attached to a due fair are loaded and tracked.
+        var dueFairIds = dueFairs.Keys.ToArray();
         var dueAnnouncements = (await dbContext.BookAnnouncements
             .Where(announcement =>
                 announcement.Status == BookAnnouncementStatus.Announced &&
-                announcement.AssoEventsId != null)
+                announcement.AssoEventsId != null &&
+                dueFairIds.Contains(announcement.AssoEventsId!))
             .ToListAsync(cancellationToken))
             .Where(announcement =>
                 announcement.AssoEventsId is { } assoEventsId &&

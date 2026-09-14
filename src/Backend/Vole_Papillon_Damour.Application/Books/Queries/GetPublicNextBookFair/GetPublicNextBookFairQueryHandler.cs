@@ -29,7 +29,7 @@ public sealed class GetPublicNextBookFairQueryHandler(
         var now = new DateTimeOffset(nowUtc, TimeSpan.Zero);
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
-            .Where(assoEvent => !assoEvent.IsCancelled)
+            .WhereActiveBookFair()
             .ToListAsync(cancellationToken);
 
         var fair = fairs

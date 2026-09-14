@@ -47,15 +47,14 @@ public sealed class GetPublicWorkQueryHandler(
                 $"Work not found: {workId}.");
         }
 
-        var isbn13s = books.Select(book => book.Id.Value).ToHashSet(StringComparer.Ordinal);
-        var announcements = (await dbContext.BookAnnouncements
+        var isbn13s = books.Select(book => book.Id).ToArray();
+        var announcements = await dbContext.BookAnnouncements
             .AsNoTracking()
-            .ToListAsync(cancellationToken))
-            .Where(announcement => isbn13s.Contains(announcement.Isbn13.Value))
-            .ToArray();
+            .Where(announcement => isbn13s.Contains(announcement.Isbn13))
+            .ToListAsync(cancellationToken);
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
-            .ToListAsync(cancellationToken);
+            .ToReferencedFairListAsync(announcements, cancellationToken);
 
         var editions = PublicCatalogProjector
             .Project(books, announcements, fairs, nowUtc)

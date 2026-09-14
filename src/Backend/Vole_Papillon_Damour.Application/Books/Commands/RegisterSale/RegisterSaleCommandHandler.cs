@@ -97,7 +97,12 @@ public sealed class RegisterSaleCommandHandler(
         }
 
         var (occurredAt, clockSuspect) = NormalizeClientTimestamp(command.OccurredAt, receivedAt);
-        var fairs = await dbContext.AssoEvents.ToListAsync(cancellationToken);
+        // Only a non-cancelled book fair can own a sale: filtering in SQL keeps the
+        // cashier hot path from loading every event with its bingo parties.
+        var fairs = await dbContext.AssoEvents
+            .AsNoTracking()
+            .WhereActiveBookFair()
+            .ToListAsync(cancellationToken);
         var fairMatch = BookFairResolver.Resolve(fairs, occurredAt);
         var hadUnreleasedAnnouncement = await dbContext.BookAnnouncements
             .AnyAsync(

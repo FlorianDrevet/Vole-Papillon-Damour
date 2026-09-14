@@ -4,7 +4,6 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
-using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Background;
 
@@ -28,41 +27,43 @@ public sealed class AttachUndatedAnnouncementsToNextFairCommandHandler(
         var nowOffset = new DateTimeOffset(now);
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var cancelledBookFairIds = (await dbContext.AssoEvents
-            .ToListAsync(cancellationToken))
-            .Where(assoEvent =>
-                assoEvent.IsCancelled &&
-                assoEvent.EventsType?.Value == EventsType.EventsTypeEnum.Books)
-            .Select(assoEvent => assoEvent.Id)
-            .Select(id => id.Value)
-            .ToHashSet();
-
-        var attachedAnnouncements = await dbContext.BookAnnouncements
-            .Where(announcement =>
-                announcement.Status == BookAnnouncementStatus.Announced &&
-                announcement.AssoEventsId != null)
+        // Book fairs are loaded once and untracked: only their identifiers and
+        // schedule are needed, not the event aggregates.
+        var bookFairs = await dbContext.AssoEvents
+            .AsNoTracking()
+            .WhereBookFair()
             .ToListAsync(cancellationToken);
+        var cancelledBookFairIds = bookFairs
+            .Where(assoEvent => assoEvent.IsCancelled)
+            .Select(assoEvent => assoEvent.Id)
+            .ToArray();
+
         var detachedCount = 0;
-        foreach (var announcement in attachedAnnouncements)
+        if (cancelledBookFairIds.Length > 0)
         {
-            if (announcement.AssoEventsId is { } fairId &&
-                cancelledBookFairIds.Contains(fairId.Value) &&
-                announcement.DetachFromFair())
+            var announcementsOnCancelledFairs = await dbContext.BookAnnouncements
+                .Where(announcement =>
+                    announcement.Status == BookAnnouncementStatus.Announced &&
+                    announcement.AssoEventsId != null &&
+                    cancelledBookFairIds.Contains(announcement.AssoEventsId!))
+                .ToListAsync(cancellationToken);
+            foreach (var announcement in announcementsOnCancelledFairs)
             {
-                detachedCount++;
+                if (announcement.DetachFromFair())
+                {
+                    detachedCount++;
+                }
+            }
+
+            if (detachedCount > 0)
+            {
+                await dbContext.SaveChangesAsync(cancellationToken);
             }
         }
 
-        if (detachedCount > 0)
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-
-        var nextFair = (await dbContext.AssoEvents
-            .ToListAsync(cancellationToken))
+        var nextFair = bookFairs
             .Where(assoEvent =>
                 !assoEvent.IsCancelled &&
-                assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
                 GetOpeningInstant(assoEvent) > nowOffset)
             .OrderBy(GetOpeningInstant)
             .ThenBy(assoEvent => assoEvent.Id)
@@ -70,11 +71,6 @@ public sealed class AttachUndatedAnnouncementsToNextFairCommandHandler(
 
         if (nextFair is null)
         {
-            if (detachedCount > 0)
-            {
-                await dbContext.SaveChangesAsync(cancellationToken);
-            }
-
             await transaction.CommitAsync(cancellationToken);
             return new AttachUndatedAnnouncementsToNextFairResult(null, 0, detachedCount);
         }
@@ -88,7 +84,7 @@ public sealed class AttachUndatedAnnouncementsToNextFairCommandHandler(
             .ToListAsync(cancellationToken);
 
         var attachedCount = announcements.Count(announcement => announcement.AttachTo(nextFair.Id));
-        if (attachedCount > 0 || detachedCount > 0)
+        if (attachedCount > 0)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }

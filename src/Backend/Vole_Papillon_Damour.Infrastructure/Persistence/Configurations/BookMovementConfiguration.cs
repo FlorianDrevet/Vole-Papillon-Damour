@@ -86,8 +86,13 @@ public sealed class BookMovementConfiguration : IEntityTypeConfiguration<BookMov
             .HasForeignKey(movement => movement.AssoEventsId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(movement => new { movement.Isbn13, movement.OccurredAt });
-        builder.HasIndex(movement => new { movement.Isbn13, movement.Type, movement.OccurredAt });
+        // Also serves plain Isbn13 lookups; Quantity is included so the dead-stock
+        // MIN(OccurredAt) WHERE Quantity > 0 subquery stays index-only.
+        builder.HasIndex(movement => new { movement.Isbn13, movement.Type, movement.OccurredAt })
+            .IncludeProperties(movement => movement.Quantity);
+        // Admin dashboard: sales aggregated over a period.
+        builder.HasIndex(movement => new { movement.Type, movement.OccurredAt })
+            .IncludeProperties(movement => new { movement.Quantity, movement.Isbn13 });
         builder.HasIndex(movement => new { movement.AssoEventsId, movement.Type });
         builder.HasIndex(movement => movement.ScanSessionId);
         builder.HasIndex(movement => movement.ClientGestureId)
