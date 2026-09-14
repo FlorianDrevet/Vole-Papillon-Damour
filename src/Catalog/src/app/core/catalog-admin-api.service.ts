@@ -17,6 +17,8 @@ import {
   CatalogAdminBookPage,
   CatalogAdminFairPage,
   CatalogAdminFairStats,
+  CatalogAdminFairsEvolution,
+  CatalogAdminCatalogueFlowStats,
   CatalogAdminMemberDetail,
   CatalogAdminMemberFilters,
   CatalogAdminMemberOperation,
@@ -194,6 +196,20 @@ export class CatalogAdminApiService {
     return this.http.get<CatalogAdminVolunteerStatistics>(
       `${this.apiUrl}/books/admin/volunteers/stats`,
       this.options(accessToken, this.params({from, to, fairId})),
+    );
+  }
+
+  getFairsEvolution(accessToken: string, from?: string, to?: string): Observable<CatalogAdminFairsEvolution> {
+    return this.http.get<CatalogAdminFairsEvolution>(
+      `${this.apiUrl}/books/admin/fairs/evolution`,
+      this.options(accessToken, this.params({from, to})),
+    );
+  }
+
+  getCatalogueFlowStats(accessToken: string, from?: string, to?: string): Observable<CatalogAdminCatalogueFlowStats> {
+    return this.http.get<CatalogAdminCatalogueFlowStats>(
+      `${this.apiUrl}/books/admin/catalogue/flow-stats`,
+      this.options(accessToken, this.params({from, to})),
     );
   }
 

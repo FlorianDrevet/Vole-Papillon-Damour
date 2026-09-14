@@ -524,6 +524,50 @@ export interface CatalogAdminVolunteerGenre {
   quantity: number;
 }
 
+export interface CatalogAdminFairsEvolution {
+  generatedAt: string;
+  from: string | null;
+  to: string | null;
+  fairCount: number;
+  totalSoldQuantity: number;
+  totalRevenue: number | null;
+  averageBasket: number | null;
+  growthSinceFirstPercent: number | null;
+  seasons: {season: string; averageSoldQuantity: number | null; fairCount: number}[];
+  fairs: CatalogAdminFairEvolutionEntry[];
+}
+
+export interface CatalogAdminFairEvolutionEntry {
+  fairId: string;
+  name: string;
+  dateStart: string;
+  dateEnd: string | null;
+  soldQuantity: number;
+  revenue: number | null;
+  averageBasket: number | null;
+  variationPercent: number | null;
+  daysOpen: number | null;
+}
+
+export interface CatalogAdminCatalogueFlowStats {
+  generatedAt: string;
+  from: string | null;
+  to: string | null;
+  funnel: CatalogAdminCatalogueFunnel;
+  flowRateByGenre: {genre: string; keptQuantity: number; soldQuantity: number; flowRatePercent: number | null}[];
+  timeToSellDistribution: {bucket: string; quantity: number; sharePercent: number | null}[];
+}
+
+export interface CatalogAdminCatalogueFunnel {
+  scannedCount: number;
+  keptCount: number;
+  keptRatePercent: number | null;
+  soldCount: number;
+  soldRatePercent: number | null;
+  dormantCount: number;
+  dormantOverYearCount: number;
+}
+
 export interface CatalogAdminScanSession {
   id: string;
   volunteerId: string;
