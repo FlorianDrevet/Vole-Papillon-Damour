@@ -62,8 +62,10 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   referenceFollowPending: string | null = null;
   referenceFollowMessage: string | null = null;
   referenceFollowError: string | null = null;
+  authPromptOpen = false;
 
   private readonly followedReferenceKeys = new Set<string>();
+  private pendingAuthPrompt: {items: readonly CatalogBookReference[]; scope: CatalogWatchlistScope} | null = null;
 
   readonly sortChoices: ReadonlyArray<{
     value: CatalogSort;
@@ -284,14 +286,9 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.referenceFollowError = null;
 
     if (!this.auth.isAuthenticated()) {
-      this.savePendingReferenceFollow([item], scope);
-      try {
-        await this.auth.login(this.referenceReturnUrl());
-      } catch {
-        this.clearPendingReferenceFollow();
-        this.referenceFollowError = 'La connexion n’a pas pu être démarrée. Réessayez.';
-        this.changeDetector.markForCheck();
-      }
+      this.pendingAuthPrompt = {items: [item], scope};
+      this.authPromptOpen = true;
+      this.changeDetector.markForCheck();
       return;
     }
 
@@ -382,18 +379,42 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.referenceFollowError = null;
 
     if (!this.auth.isAuthenticated()) {
-      this.savePendingReferenceFollow(references, 'Work');
-      try {
-        await this.auth.login(this.referenceReturnUrl());
-      } catch {
-        this.clearPendingReferenceFollow();
-        this.referenceFollowError = 'La connexion n’a pas pu être démarrée. Réessayez.';
-        this.changeDetector.markForCheck();
-      }
+      this.pendingAuthPrompt = {items: references, scope: 'Work'};
+      this.authPromptOpen = true;
+      this.changeDetector.markForCheck();
       return;
     }
 
     await this.submitWorkFollow(references, key);
+  }
+
+  closeAuthPrompt(): void {
+    this.authPromptOpen = false;
+    this.pendingAuthPrompt = null;
+    this.changeDetector.markForCheck();
+  }
+
+  async confirmAuthPrompt(mode: 'login' | 'register'): Promise<void> {
+    const pending = this.pendingAuthPrompt;
+    this.authPromptOpen = false;
+    this.pendingAuthPrompt = null;
+    if (!pending) {
+      return;
+    }
+
+    this.savePendingReferenceFollow(pending.items, pending.scope);
+    try {
+      const returnUrl = this.referenceReturnUrl();
+      if (mode === 'register') {
+        await this.auth.register(returnUrl);
+      } else {
+        await this.auth.login(returnUrl);
+      }
+    } catch {
+      this.clearPendingReferenceFollow();
+      this.referenceFollowError = 'La connexion n’a pas pu être démarrée. Réessayez.';
+      this.changeDetector.markForCheck();
+    }
   }
 
   private workFollowKeyFor(items: readonly CatalogBookReference[]): string | null {

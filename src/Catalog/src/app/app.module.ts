@@ -20,6 +20,7 @@ import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubs
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
 import {CatalogCookieBannerComponent} from './shared/components/cookie-banner/catalog-cookie-banner.component';
+import {CatalogAuthPromptComponent} from './shared/components/auth-prompt/catalog-auth-prompt.component';
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
 import {DesignSystemModule} from '@vpd/ui';
 import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
@@ -42,6 +43,7 @@ registerLocaleData(localeFr);
     CatalogFooterComponent,
     CatalogCookieBannerComponent,
     CatalogNotFoundPageComponent,
+    CatalogAuthPromptComponent,
   ],
   imports: [
     BrowserModule,
