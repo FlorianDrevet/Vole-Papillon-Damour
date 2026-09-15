@@ -229,6 +229,19 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-15 — netteté des couvertures des fiches Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-book-cover-resolution`, les fiches livre du Catalog demandent une
+version BnF redimensionnée jusqu’à `660×990` lorsque la donnée persistée est encore la
+miniature `92×150`. Les cartes de recherche et les autres fournisseurs de couverture ne
+changent pas ; aucune API, migration ou donnée distante n’est modifiée.
+
+Validation locale : TDD rouge puis vert, 234 tests Catalog ChromeHeadless, build SSR/navigateur,
+smoke Chrome avec API mockée à 1280×965 et 390×844, couverture BnF réelle contrôlée à
+`604×990`, `graphify update .` et `git diff --check`. Aucun déploiement ni merge n’a été
+effectué ; la PR sera ouverte après le push de `fix/catalog-book-cover-resolution`.
+
 ### État actualisé — 2026-09-15 — décision du livre courant dans le Scan
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

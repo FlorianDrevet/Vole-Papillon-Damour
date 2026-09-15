@@ -109,6 +109,30 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     this.coverFailed = true;
   }
 
+  detailCoverUrl(coverUrl: string | null): string | null {
+    if (!coverUrl) {
+      return null;
+    }
+
+    try {
+      const url = new URL(coverUrl);
+      if (
+        url.hostname !== 'openapi.bnf.fr' ||
+        !url.pathname.endsWith('/recupererImage') ||
+        url.searchParams.get('taille') === 'originale'
+      ) {
+        return coverUrl;
+      }
+
+      url.searchParams.set('taille', 'originale');
+      url.searchParams.set('largeur', '660');
+      url.searchParams.set('hauteur', '990');
+      return url.toString();
+    } catch {
+      return coverUrl;
+    }
+  }
+
   async notify(item: CatalogBook): Promise<void> {
     this.notifyMessage.set(null);
     this.notifyError.set(null);
@@ -211,7 +235,7 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
       ...(book.authors ? {author: { '@type': 'Person', name: book.authors }} : {}),
       ...(book.publisher ? {publisher: { '@type': 'Organization', name: book.publisher }} : {}),
       ...(book.publicationYear ? {datePublished: String(book.publicationYear)} : {}),
-      ...(book.coverUrl ? {image: book.coverUrl} : {}),
+      ...(book.coverUrl ? {image: this.detailCoverUrl(book.coverUrl)} : {}),
       url: `${environment.publicUrl}${publicBookPath(book)}`,
     });
     if (!structuredData.parentNode) {
