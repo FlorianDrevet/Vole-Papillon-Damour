@@ -305,3 +305,9 @@
     </div>
   </div>
 </section>
+
+<app-catalog-auth-prompt
+  [open]="authPromptOpen"
+  (closed)="closeAuthPrompt()"
+  (loginRequested)="confirmAuthPrompt('login')"
+  (registerRequested)="confirmAuthPrompt('register')"></app-catalog-auth-prompt>

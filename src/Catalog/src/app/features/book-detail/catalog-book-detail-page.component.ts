@@ -36,8 +36,10 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
   readonly notifyPending = signal(false);
   readonly notifyMessage = signal<string | null>(null);
   readonly notifyError = signal<string | null>(null);
+  readonly authPromptOpen = signal(false);
 
   private readonly destroyed = new Subject<void>();
+  private pendingAuthPromptBook: CatalogBook | null = null;
   private canonicalElement: HTMLLinkElement | null = null;
   private structuredDataElement: HTMLScriptElement | null = null;
 
@@ -138,11 +140,8 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     this.notifyError.set(null);
 
     if (!this.auth.isAuthenticated()) {
-      try {
-        await this.auth.login(publicBookPath(item));
-      } catch {
-        this.notifyError.set('La connexion n’a pas pu être démarrée. Réessayez.');
-      }
+      this.pendingAuthPromptBook = item;
+      this.authPromptOpen.set(true);
       return;
     }
 
@@ -180,6 +179,30 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
       this.notifyError.set(this.describeNotificationError(error));
     } finally {
       this.notifyPending.set(false);
+    }
+  }
+
+  closeAuthPrompt(): void {
+    this.authPromptOpen.set(false);
+    this.pendingAuthPromptBook = null;
+  }
+
+  async confirmAuthPrompt(mode: 'login' | 'register'): Promise<void> {
+    const item = this.pendingAuthPromptBook;
+    this.authPromptOpen.set(false);
+    this.pendingAuthPromptBook = null;
+    if (!item) {
+      return;
+    }
+
+    try {
+      if (mode === 'register') {
+        await this.auth.register(publicBookPath(item));
+      } else {
+        await this.auth.login(publicBookPath(item));
+      }
+    } catch {
+      this.notifyError.set('La connexion n’a pas pu être démarrée. Réessayez.');
     }
   }
 

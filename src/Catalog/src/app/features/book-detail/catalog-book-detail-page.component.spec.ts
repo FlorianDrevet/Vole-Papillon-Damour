@@ -13,6 +13,7 @@ import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogBook} from '../../core/catalog.models';
 import {CatalogBookDetailPageComponent} from './catalog-book-detail-page.component';
+import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
 
 describe('CatalogBookDetailPageComponent', () => {
   let fixture: ComponentFixture<CatalogBookDetailPageComponent>;
@@ -23,6 +24,7 @@ describe('CatalogBookDetailPageComponent', () => {
     error: WritableSignal<string | null>;
     initialize: jasmine.Spy;
     login: jasmine.Spy;
+    register: jasmine.Spy;
     logout: jasmine.Spy;
     getApiAccessToken: jasmine.Spy;
   };
@@ -66,11 +68,13 @@ describe('CatalogBookDetailPageComponent', () => {
       error: signal<string | null>(null),
       initialize: jasmine.createSpy('initialize'),
       login: jasmine.createSpy('login'),
+      register: jasmine.createSpy('register'),
       logout: jasmine.createSpy('logout'),
       getApiAccessToken: jasmine.createSpy('getApiAccessToken'),
     };
     auth.initialize.and.resolveTo();
     auth.login.and.resolveTo();
+    auth.register.and.resolveTo();
     auth.getApiAccessToken.and.resolveTo('member-token');
 
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['getBook']);
@@ -88,7 +92,7 @@ describe('CatalogBookDetailPageComponent', () => {
     }));
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogBookDetailPageComponent],
+      declarations: [CatalogBookDetailPageComponent, CatalogAuthPromptComponent],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
@@ -164,7 +168,7 @@ describe('CatalogBookDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('communiqué au comptoir');
   });
 
-  it('starts member login instead of sending an anonymous protected request', async () => {
+  it('opens the auth prompt instead of sending an anonymous protected request', async () => {
     auth.isAuthenticated.set(false);
     auth.account.set(null);
     fixture.detectChanges();
@@ -174,9 +178,55 @@ describe('CatalogBookDetailPageComponent', () => {
     const notifyButton = fixture.nativeElement.querySelector('.notify-button') as HTMLButtonElement;
     notifyButton.click();
     await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
+    const dialog = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog).not.toBeNull();
+    expect(dialog.textContent).toContain('liste de suivi');
+  });
+
+  it('starts member login from the auth prompt, keeping the return page', async () => {
+    auth.isAuthenticated.set(false);
+    auth.account.set(null);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.notify-button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-testid="auth-prompt-login"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
     expect(auth.login).toHaveBeenCalledWith('/livres/livre-a-surveiller-une-autrice-9782070363735');
+    expect(auth.register).not.toHaveBeenCalled();
     expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('starts member registration from the auth prompt, keeping the return page', async () => {
+    auth.isAuthenticated.set(false);
+    auth.account.set(null);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('.notify-button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-testid="auth-prompt-register"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(auth.register).toHaveBeenCalledWith('/livres/livre-a-surveiller-une-autrice-9782070363735');
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('renders the generic book cover when the detail has no image', async () => {

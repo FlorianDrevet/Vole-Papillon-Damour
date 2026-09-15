@@ -18,6 +18,7 @@ import {
 } from '../../core/catalog.models';
 import {CatalogSearchPageComponent} from './catalog-search-page.component';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
 
 function emptyWatchlist(items: CatalogWatchlistResponse['items'] = []): CatalogWatchlistResponse {
   return {
@@ -38,6 +39,7 @@ describe('CatalogSearchPageComponent', () => {
     error: WritableSignal<string | null>;
     initialize: jasmine.Spy;
     login: jasmine.Spy;
+    register: jasmine.Spy;
     getApiAccessToken: jasmine.Spy;
     tryGetApiAccessToken: jasmine.Spy;
   };
@@ -118,6 +120,7 @@ describe('CatalogSearchPageComponent', () => {
       error: signal<string | null>(null),
       initialize: jasmine.createSpy('initialize').and.resolveTo(),
       login: jasmine.createSpy('login'),
+      register: jasmine.createSpy('register').and.resolveTo(),
       getApiAccessToken: jasmine.createSpy('getApiAccessToken'),
       tryGetApiAccessToken: jasmine.createSpy('tryGetApiAccessToken').and.resolveTo('member-token'),
     };
@@ -128,7 +131,7 @@ describe('CatalogSearchPageComponent', () => {
     memberApi.getWatchlist.and.returnValue(of(emptyWatchlist()));
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogSearchPageComponent, BookCardComponent],
+      declarations: [CatalogSearchPageComponent, BookCardComponent, CatalogAuthPromptComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
@@ -538,15 +541,59 @@ describe('CatalogSearchPageComponent', () => {
     expect(request['coverUrl']).toBe(reference.coverUrl);
   });
 
+  it('opens the auth prompt instead of redirecting immediately when signed out', async () => {
+    fixture.detectChanges();
+
+    await fixture.componentInstance.followReference(reference);
+    fixture.detectChanges();
+
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.authPromptOpen).toBeTrue();
+    const dialog = fixture.nativeElement.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog).not.toBeNull();
+    expect(dialog.textContent).toContain('liste de suivi');
+  });
+
   it('keeps the direct edition target across the sign-in redirect', async () => {
     fixture.detectChanges();
 
     await fixture.componentInstance.followReference(reference);
+    fixture.detectChanges();
+    await fixture.componentInstance.confirmAuthPrompt('login');
 
     expect(auth.login).toHaveBeenCalled();
+    expect(fixture.componentInstance.authPromptOpen).toBeFalse();
     expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow'))
       .toContain('"scope":"Edition"');
     sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
+  });
+
+  it('starts registration instead of login when creating an account from the prompt', async () => {
+    fixture.detectChanges();
+
+    await fixture.componentInstance.followReference(reference);
+    fixture.detectChanges();
+    await fixture.componentInstance.confirmAuthPrompt('register');
+
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(auth.register).toHaveBeenCalled();
+    expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow'))
+      .toContain('"scope":"Edition"');
+    sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
+  });
+
+  it('closes the auth prompt without starting a sign-in when dismissed', async () => {
+    fixture.detectChanges();
+
+    await fixture.componentInstance.followReference(reference);
+    fixture.detectChanges();
+    fixture.componentInstance.closeAuthPrompt();
+    fixture.detectChanges();
+
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(auth.register).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(sessionStorage.getItem('vpd.catalog.pending-reference-follow')).toBeNull();
   });
 
   it('resumes a pending direct follow after sign-in without opening a modal', async () => {
