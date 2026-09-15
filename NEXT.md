@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — rendre l’ajout de fiches d’Inventaire lisible et inline depuis les références bibliographiques. |
-| **Prochaine action** | Contrôler avec une session administrateur connectée le statut d’une fiche existante et l’affichage responsive de la ligne sélectionnée dans la [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174). |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-inventory-inline-addition` |
-| **Dernière mise à jour** | 2026-09-15 — le fonds apparaît avant le parcours d’ajout ; la fiche sélectionnée s’ouvre sous sa référence, son existence et son stock sont affichés, et la quantité initiale est éditable avec −/+. |
-| **Branche** | `feat/catalog-inventory-inline-addition` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174) ouverte vers `main` |
+| **Lot en cours** | Catalog — comptes & rôles admin, inversion Catalogue/Inventaire et actions de fiche membre. |
+| **Prochaine action** | Faire relire la PR, puis contrôler dans Chrome avec un compte Administration et une API/Graph joignables les changements de statut et la suppression réelle. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-admin-catalog-inventory-account-actions` |
+| **Dernière mise à jour** | 2026-09-15 — les comptes admin ont les sous-onglets Bénévoles/Membres du site ; le statut Entra, la modal membre et le chemin de suppression durable sont câblés et testés localement. |
+| **Branche** | `feat/admin-catalog-inventory-account-actions` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #178](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/178) ouverte vers `main` |
 
 ---
 
@@ -233,6 +233,31 @@ par les tests du composant, du workflow IndexedDB et de la synchronisation. Aucu
 ni merge n’a été effectué ; la [PR #175](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/175)
 est ouverte depuis la branche `fix/scan-current-book-action`.
 `rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes sont utilisées.
+### État actualisé — 2026-09-15 — comptes admin et inversion Catalogue/Inventaire Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-admin-catalog-inventory-account-actions`, la sidebar conserve les deux
+positions du fonds de livres mais affiche désormais `Inventaire` en première position et
+`Catalogue` en seconde, avec les espaces correspondants derrière chaque libellé. La page
+`Comptes & rôles` propose les sous-onglets `Bénévoles` et `Membres du site` comme les
+statistiques. Le bouton `Désactiver`/`Réactiver` des bénévoles appelle un nouvel endpoint
+Administration qui met à jour `accountEnabled` dans Entra Graph et refuse l'auto-désactivation
+de l'administrateur connecté.
+
+`Voir la fiche` ouvre maintenant une modal Catalog avec les informations, la liste de suivi,
+l'historique d'alertes et les actions. Le texte de support/commercialisation a été retiré.
+La suppression est confirmée dans une seconde modal puis utilise le chemin de suppression
+durable déjà prévu : suppression Graph avant nettoyage local, ou mise en file de reprise si
+Graph est temporairement indisponible ; le retour API est affiché dans le toast admin.
+
+Validation locale : TDD rouge puis vert, 212 tests ChromeHeadless Catalog, build Catalog
+SSR/navigateur, 92 tests Domain, 224 Application, 101 Infrastructure et 24 API, `graphify
+update .` et `git diff --check`. Les warnings de budget
+initial Angular, de dépendances npm et de packages NuGet vulnérables sont ceux du dépôt. Le
+smoke connecté avec Entra/Graph et API joignables reste à faire ; aucun compte, secret, Azure
+ou déploiement n'a été modifié. La [PR #178](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/178)
+est ouverte vers `main` et n'est pas fusionnée. `rtk` n'est pas installé sur cette machine ;
+les commandes natives équivalentes sont utilisées.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 

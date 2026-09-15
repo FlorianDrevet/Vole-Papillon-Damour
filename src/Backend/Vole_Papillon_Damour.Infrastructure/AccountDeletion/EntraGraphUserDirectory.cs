@@ -144,6 +144,33 @@ public sealed class EntraGraphUserDirectory(
         return await ApplyRolesAsync(user, roles, accessToken, cancellationToken);
     }
 
+    public async Task<EntraAccount> SetAccountEnabledAsync(
+        string externalId,
+        bool accountEnabled,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(externalId);
+        externalId = externalId.Trim();
+        EnsureAccountManagementConfigured();
+        var accessToken = await GetAccessTokenAsync(cancellationToken, accountManagement: true);
+        var user = await SendJsonAsync<GraphUser>(
+            HttpMethod.Get,
+            new Uri($"{GraphRoot}users/{Uri.EscapeDataString(externalId)}?$select=id,displayName,mail,userPrincipalName,accountEnabled,createdDateTime,identities"),
+            accessToken,
+            payload: null,
+            cancellationToken);
+
+        await SendAsync(
+            HttpMethod.Patch,
+            new Uri($"{GraphRoot}users/{Uri.EscapeDataString(externalId)}"),
+            accessToken,
+            new GraphUpdateAccountEnabledRequest(accountEnabled),
+            cancellationToken);
+
+        var roles = await GetAccountRolesAsync(user.Id, accessToken, cancellationToken);
+        return ToAccount(user with {AccountEnabled = accountEnabled}, roles);
+    }
+
     private async Task<EntraAccount> ApplyRolesAsync(
         GraphUser user,
         IReadOnlyCollection<string> roles,
@@ -198,6 +225,27 @@ public sealed class EntraGraphUserDirectory(
             .OrderBy(role => role, StringComparer.Ordinal)
             .ToArray();
         return ToAccount(user, assignedRoleNames);
+    }
+
+    private async Task<IReadOnlyCollection<string>> GetAccountRolesAsync(
+        string userId,
+        string accessToken,
+        CancellationToken cancellationToken)
+    {
+        var servicePrincipal = await GetApiServicePrincipalAsync(accessToken, cancellationToken);
+        var roleNames = GetSupportedRoleNames(servicePrincipal);
+        var assignments = await GetCollectionAsync<GraphAppRoleAssignment>(
+            new Uri($"{GraphRoot}users/{Uri.EscapeDataString(userId)}/appRoleAssignments?$select=id,appRoleId,resourceId&$top=999"),
+            accessToken,
+            cancellationToken);
+
+        return assignments
+            .Where(assignment => string.Equals(assignment.ResourceId, servicePrincipal.Id, StringComparison.OrdinalIgnoreCase))
+            .Where(assignment => roleNames.ContainsKey(assignment.AppRoleId))
+            .Select(assignment => roleNames[assignment.AppRoleId])
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(role => role, StringComparer.Ordinal)
+            .ToArray();
     }
 
     private async Task<GraphServicePrincipal> GetApiServicePrincipalAsync(
@@ -424,6 +472,9 @@ public sealed class EntraGraphUserDirectory(
 
     private sealed record GraphUpdateUserRequest(
         [property: JsonPropertyName("displayName")] string DisplayName);
+
+    private sealed record GraphUpdateAccountEnabledRequest(
+        [property: JsonPropertyName("accountEnabled")] bool AccountEnabled);
 
     private sealed record GraphPasswordProfile(
         [property: JsonPropertyName("password")] string Password,

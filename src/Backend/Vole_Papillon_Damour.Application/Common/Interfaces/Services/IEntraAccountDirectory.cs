@@ -17,4 +17,9 @@ public interface IEntraAccountDirectory
         string externalId,
         IReadOnlyCollection<string> roles,
         CancellationToken cancellationToken);
+
+    Task<EntraAccount> SetAccountEnabledAsync(
+        string externalId,
+        bool accountEnabled,
+        CancellationToken cancellationToken);
 }

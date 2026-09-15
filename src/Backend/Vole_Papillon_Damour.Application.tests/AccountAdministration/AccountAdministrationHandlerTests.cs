@@ -161,4 +161,56 @@ public sealed class AccountAdministrationHandlerTests
             Arg.Is<IReadOnlyCollection<string>>(roles => roles.SequenceEqual(new[] { AccountRoles.Tri })),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task SetAdminAccountStatusCommand_SendsRequestedEnabledStateToDirectory()
+    {
+        var directory = Substitute.For<IEntraAccountDirectory>();
+        var expected = new EntraAccount(
+            "target-account",
+            "tri@example.test",
+            "Tri",
+            false,
+            Now,
+            [AccountRoles.Tri]);
+        directory.SetAccountEnabledAsync(
+                "target-account",
+                false,
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(expected));
+
+        var handler = new SetAdminAccountStatusCommandHandler(directory);
+
+        var result = await handler.Handle(
+            new SetAdminAccountStatusCommand(
+                "target-account",
+                "admin-account",
+                false),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.AccountEnabled.Should().BeFalse();
+        await directory.Received(1).SetAccountEnabledAsync(
+            "target-account",
+            false,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SetAdminAccountStatusCommand_CannotDisableTheRequestingAdministrator()
+    {
+        var directory = Substitute.For<IEntraAccountDirectory>();
+        var handler = new SetAdminAccountStatusCommandHandler(directory);
+
+        var result = await handler.Handle(
+            new SetAdminAccountStatusCommand(
+                "same-account",
+                "same-account",
+                false),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Account.CannotDisableOwnAccount");
+        await directory.DidNotReceiveWithAnyArgs().SetAccountEnabledAsync(default!, default, default!);
+    }
 }
