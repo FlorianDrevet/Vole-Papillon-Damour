@@ -59,12 +59,12 @@ describe('ScanStatusService', () => {
     });
   });
 
-  it('exposes a transient success message for completed automatic synchronization', () => {
-    service.showSuccess('Synchronisation réussie');
+  it('exposes a transient success message for an explicit local action', () => {
+    service.showSuccess('Données hors ligne protégées');
 
     expect(service.message()).toEqual({
       level: 'success',
-      text: 'Synchronisation réussie',
+      text: 'Données hors ligne protégées',
     });
   });
 });
