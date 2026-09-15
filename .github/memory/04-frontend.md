@@ -39,8 +39,9 @@ the next books fair, and the dynamic sitemap; the home calendar also consumes th
 public `/asso-events` schedule and keeps only future Books events. Its public routes are `/`, `/recherche`,
 `/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, `/donnees-personnelles`, and the legal,
 privacy, cookie and accessibility pages. The UI keeps
-available quantities separate from future announcements, leaves exhausted books visible,
-and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
+available quantities separate from future announcements; `/recherche` opens by default with
+`availability=available`, while `/catalogue` and the explicit `Tout` filter still allow
+exhausted titles to be explored, and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
 calls, exposes alert suspension/reactivation and the durable account-deletion request.
 `/desinscription` is a client-only authenticated opt-out route. The `/administration`
@@ -64,6 +65,13 @@ stored contact data show a neutral missing-name label and require reopening or a
 backfill. The dashboard period chips are typed and reload the overview with UTC bounds for
 30 days, three calendar months, or twelve months; the scan-session navigation badge uses the
 same pending-alert/non-cancelled predicate as the `Encore corrigeables` view.
+
+As of 2026-09-15, Catalog administration uses real child routes for its sidebar:
+`/administration/:section` restores the selected workspace after a refresh, while the
+statistics subtab is persisted in the `tab` query parameter. The sidebar entries are
+router links with an accessible current-page state; valid child routes remain client-only
+and `noindex, nofollow`, and the administrator login keeps the current deep link as its
+return URL.
 
 Administration action feedback is rendered as one fixed, dismissible toast above the content
 flow, with separate accessible success/error tones and live-region semantics. The page keeps

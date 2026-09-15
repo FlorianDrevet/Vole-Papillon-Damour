@@ -19,6 +19,7 @@ const routes: Routes = [
   {path: 'livres/:slug', component: CatalogBookDetailPageComponent},
   {path: 'oeuvre/:workId', component: CatalogWorkPageComponent},
   {path: 'administration', component: CatalogAdministrationPageComponent},
+  {path: 'administration/:section', component: CatalogAdministrationPageComponent},
   {path: 'compte', component: CatalogAccountPageComponent},
   {path: 'desinscription', component: CatalogUnsubscribePageComponent},
   {

@@ -13,13 +13,12 @@
           <span class="admin-nav-label">{{ group.label }}</span>
           <nav>
             @for (item of group.items; track item.id) {
-              <button
+              <a
                 class="admin-nav-item"
-                type="button"
+                [routerLink]="adminSectionUrl(item.id)"
                 [class.active]="activeSection() === item.id"
-                [disabled]="!isAuthenticated()"
                 [attr.aria-current]="activeSection() === item.id ? 'page' : null"
-                (click)="selectSection(item.id)">
+              >
                 <span class="admin-nav-icon" aria-hidden="true">
                   @switch (item.icon) {
                     @case ('dashboard') {
@@ -52,7 +51,7 @@
                 @if (navBadge(item.id); as badge) {
                   <span class="admin-nav-badge">{{ badge }}</span>
                 }
-              </button>
+              </a>
             }
           </nav>
         </div>
