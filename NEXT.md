@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — rendre l’état de session fiable après expiration et récupérer silencieusement les jetons API. |
-| **Prochaine action** | Faire relire la PR d’authentification, puis déployer depuis `main` et contrôler dans Chrome une expiration réelle avec une session connectée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-auth-session-ux` |
-| **Dernière mise à jour** | 2026-09-15 — le compte mis en cache n’est plus présenté comme authentifié tant que le jeton n’est pas exploitable ; les `401` protégés déclenchent un seul renouvellement silencieux, puis un état de réauthentification sans redirection automatique sur l’accueil. |
-| **Branche** | `fix/catalog-auth-session-state` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Lot en cours** | Catalog — rendre l’ajout de fiches d’Inventaire lisible et inline depuis les références bibliographiques. |
+| **Prochaine action** | Ouvrir la PR, puis contrôler avec une session administrateur connectée le statut d’une fiche existante et l’affichage responsive de la ligne sélectionnée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-inventory-inline-addition` |
+| **Dernière mise à jour** | 2026-09-15 — le fonds apparaît avant le parcours d’ajout ; la fiche sélectionnée s’ouvre sous sa référence, son existence et son stock sont affichés, et la quantité initiale est éditable avec −/+. |
+| **Branche** | `feat/catalog-inventory-inline-addition` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
 
 ---
 
@@ -197,6 +197,24 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-15 — ajout inline d’une fiche dans l’Inventaire Catalog
+
+Depuis le worktree `Vole-Papillon-Damour-catalog-inventory-inline-addition`, la page
+`/administration` affiche désormais `Le fonds de livres` / `Toutes les fiches` avant le bloc
+`Ajouter au fonds` / `Trouver une nouvelle fiche`. Quand l’administrateur choisit
+« Utiliser cette fiche » dans les résultats externes, `Fiche prête à ajouter` est rendue juste
+sous la ligne choisie au lieu d’être ajoutée en bas de la page. Le client consulte la fiche
+admin existante : il indique clairement qu’elle n’est pas encore dans le fonds ou affiche le
+nombre d’exemplaires disponibles. La quantité initiale est un champ numérique éditable borné
+entre 0 et 100 000, entouré de boutons − et +. La règle backend qui refuse l’ajout d’un ISBN
+déjà présent n’a pas été modifiée.
+
+Validation locale : TDD rouge puis vert, 30 specs Inventaire ciblées, 208 tests Catalog
+ChromeHeadless, build Catalog SSR/navigateur et `graphify update .`. Le smoke responsive avec
+une session admin réelle reste à faire ; aucun déploiement, changement API/base, compte ou
+fusion n’a été effectué. `rtk` n’est pas installé sur cette machine, les commandes natives
+équivalentes ont été utilisées.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
