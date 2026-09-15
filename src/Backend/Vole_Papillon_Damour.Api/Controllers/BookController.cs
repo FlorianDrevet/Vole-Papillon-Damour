@@ -3,7 +3,10 @@ using System.Globalization;
 using System.Text;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.RateLimiting;
 using Vole_Papillon_Damour.Api.Authentication;
+using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
@@ -145,7 +148,8 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetPublicCatalogSitemap")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(10)));
 
             endpoints.MapGet(
                     "/catalog/me/watchlist",
@@ -333,7 +337,8 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetBookMetadata")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.BibliographicMetadata);
 
             endpoints.MapGet(
                     "/scan/catalog/delta",

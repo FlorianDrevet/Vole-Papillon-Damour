@@ -1,5 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchBibliographicReferences;
@@ -46,7 +48,8 @@ public static class BibliographicReferenceController
                             error => error.Result());
                     })
                 .WithName("SearchExternalBibliographicReferences")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.BibliographicSearch);
         });
     }
 }
