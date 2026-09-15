@@ -1,6 +1,8 @@
 <section class="account-page page-width" aria-labelledby="account-title">
   @if (!initialized()) {
     <div class="account-state" role="status">Préparation de votre espace…</div>
+  } @else if (resumingSession()) {
+    <div class="account-state" role="status">Reconnexion à votre espace…</div>
   } @else if (authError()) {
     <div class="account-state" role="alert">
       <p class="eyebrow">Connexion indisponible</p>

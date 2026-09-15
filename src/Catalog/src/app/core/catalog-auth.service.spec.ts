@@ -4,6 +4,7 @@ import {TestBed} from '@angular/core/testing';
 import {environment} from '../../environments/environment';
 import {
   CATALOG_MSAL_LOADER,
+  CATALOG_SILENT_SESSION_TIMEOUT_MS,
   CatalogAuthenticationRedirectStartedError,
   CatalogMsalModule,
   CatalogAuthService,
@@ -26,6 +27,7 @@ describe('CatalogAuthService', () => {
   let msalModule: CatalogMsalModule;
 
   beforeEach(() => {
+    sessionStorage.clear();
     client = jasmine.createSpyObj<IPublicClientApplication>('PublicClientApplication', [
       'initialize',
       'handleRedirectPromise',
@@ -75,7 +77,7 @@ describe('CatalogAuthService', () => {
     expect(service.isAuthenticated()).toBeTrue();
   });
 
-  it('marks a cached account as requiring reauthentication when silent hydration needs interaction', async () => {
+  it('signs a cached account out on load when its session needs interaction', async () => {
     const interactionRequiredError = new msalModule.InteractionRequiredAuthError(
       'interaction_required',
       'correlation-id',
@@ -84,10 +86,62 @@ describe('CatalogAuthService', () => {
 
     await service.initialize();
 
-    expect(service.state()).toBe('reauthentication-required');
-    expect(service.requiresReauthentication()).toBeTrue();
+    expect(service.state()).toBe('signed-out');
+    expect(service.requiresReauthentication()).toBeFalse();
     expect(service.isAuthenticated()).toBeFalse();
-    expect(service.account()).toBe(account);
+    expect(service.account()).toBeNull();
+    expect(service.recognizedAccount()).toBe(account);
+  });
+
+  it('does not keep an unverified cached session signed in after a non-interactive failure', async () => {
+    client.acquireTokenSilent.and.rejectWith({errorCode: 'monitor_window_timeout'} as never);
+
+    await service.initialize();
+
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.account()).toBeNull();
+    expect(service.recognizedAccount()).toBe(account);
+  });
+
+  it('stops waiting for a silent session restore after the timeout', async () => {
+    client.acquireTokenSilent.and.returnValue(new Promise(() => undefined));
+    jasmine.clock().install();
+    try {
+      const initialization = service.initialize();
+      for (let i = 0; i < 50 && !client.acquireTokenSilent.calls.any(); i++) {
+        await Promise.resolve();
+      }
+      jasmine.clock().tick(CATALOG_SILENT_SESSION_TIMEOUT_MS);
+      await initialization;
+    } finally {
+      jasmine.clock().uninstall();
+    }
+
+    expect(service.initialized()).toBeTrue();
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.recognizedAccount()).toBe(account);
+  });
+
+  it('sends a recognized account to the login page once per browser session', async () => {
+    client.acquireTokenSilent.and.rejectWith({errorCode: 'login_required'} as never);
+    await service.initialize();
+
+    expect(await service.resumeRecognizedSession('/compte')).toBeTrue();
+    expect(await service.resumeRecognizedSession('/compte')).toBeFalse();
+
+    expect(client.loginRedirect).toHaveBeenCalledOnceWith({
+      ...catalogLoginRequest,
+      loginHint: account.username,
+      redirectStartPage: new URL('/compte', window.location.origin).href,
+    });
+  });
+
+  it('does not resume a session for an anonymous visitor', async () => {
+    client.getActiveAccount.and.returnValue(null);
+    client.getAllAccounts.and.returnValue([]);
+
+    expect(await service.resumeRecognizedSession('/compte')).toBeFalse();
+    expect(client.loginRedirect).not.toHaveBeenCalled();
   });
 
   it('restores separate name claims from a cached account token', async () => {
