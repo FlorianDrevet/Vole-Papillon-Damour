@@ -4,6 +4,7 @@ import {
   AuthenticationResult,
   EventMessage,
   EventType,
+  InteractionRequiredAuthError,
   InteractionStatus,
   PublicClientApplication,
 } from '@azure/msal-browser';
@@ -133,6 +134,79 @@ describe('ScanAuthService', () => {
     expect(service.isAuthorized).toBeFalse();
     expect(service.authState.status).toBe('degraded');
     expect(service.canSort).toBeTrue();
+  });
+
+  it('recovers on its own from a transient silent-renewal failure', () => {
+    jasmine.clock().install();
+
+    try {
+      const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+      const instance = createMsalInstance([account]);
+      const broadcast = createBroadcastService();
+      const msal = createMsalService(instance, createAccessToken(['Tri']));
+      msal.acquireTokenSilent.and.returnValues(
+        of({accessToken: createAccessToken(['Tri'])} as AuthenticationResult),
+        of({accessToken: createAccessToken(['Tri'])} as AuthenticationResult),
+      );
+      const service = new ScanAuthService(msal, broadcast.service);
+
+      broadcast.subject.next(
+        {eventType: EventType.ACQUIRE_TOKEN_FAILURE, error: new Error('network offline')} as unknown as EventMessage,
+      );
+      expect(service.authState.status).toBe('degraded');
+
+      jasmine.clock().tick(15_000);
+
+      expect(service.authState.status).toBe('authorized');
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('does not retry a silent renewal failure that requires interaction', () => {
+    jasmine.clock().install();
+
+    try {
+      const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+      const instance = createMsalInstance([account]);
+      const broadcast = createBroadcastService();
+      const msal = createMsalService(instance, createAccessToken(['Tri']));
+      const service = new ScanAuthService(msal, broadcast.service);
+
+      const interactionRequired = new InteractionRequiredAuthError('interaction_required', 'test-correlation-id');
+      broadcast.subject.next(
+        {eventType: EventType.ACQUIRE_TOKEN_FAILURE, error: interactionRequired} as unknown as EventMessage,
+      );
+      expect(service.authState.status).toBe('degraded');
+
+      jasmine.clock().tick(60_000);
+
+      expect(service.authState.status).toBe('degraded');
+      expect(msal.acquireTokenSilent).toHaveBeenCalledTimes(1);
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('retries immediately once the browser reports it is back online', () => {
+    const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+    const instance = createMsalInstance([account]);
+    const broadcast = createBroadcastService();
+    const msal = createMsalService(instance, createAccessToken(['Tri']));
+    msal.acquireTokenSilent.and.returnValues(
+      of({accessToken: createAccessToken(['Tri'])} as AuthenticationResult),
+      of({accessToken: createAccessToken(['Tri'])} as AuthenticationResult),
+    );
+    const service = new ScanAuthService(msal, broadcast.service);
+
+    broadcast.subject.next(
+      {eventType: EventType.ACQUIRE_TOKEN_FAILURE, error: new Error('network offline')} as unknown as EventMessage,
+    );
+    expect(service.authState.status).toBe('degraded');
+
+    window.dispatchEvent(new Event('online'));
+
+    expect(service.authState.status).toBe('authorized');
   });
 
   it('restores the local authorization marker after a fresh service instance', () => {

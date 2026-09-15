@@ -713,6 +713,13 @@
 
       <div class="status-modal-actions">
         <button
+          *ngIf="authDegraded"
+          type="button"
+          class="status-modal-primary"
+          (click)="login()">
+          Se reconnecter
+        </button>
+        <button
           *ngIf="accountSwitchPrompt"
           type="button"
           class="status-modal-primary"
