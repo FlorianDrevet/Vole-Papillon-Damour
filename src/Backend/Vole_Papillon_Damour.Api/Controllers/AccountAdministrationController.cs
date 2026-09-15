@@ -87,6 +87,33 @@ public static class AccountAdministrationController
                     })
                 .WithName("UpdateAdminAccountRoles")
                 .RequireAuthorization("Administration");
+
+            endpoints.MapPatch(
+                    "/accounts/admin/{externalId}/status",
+                    async (
+                        string externalId,
+                        UpdateAdminAccountStatusRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetExternalId(principal, out var requesterExternalId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SetAdminAccountStatusCommand(
+                                externalId,
+                                requesterExternalId,
+                                request.AccountEnabled),
+                            cancellationToken);
+                        return result.Match(
+                            account => Results.Ok(ToResponse(account)),
+                            error => error.Result());
+                    })
+                .WithName("UpdateAdminAccountStatus")
+                .RequireAuthorization("Administration");
         });
     }
 

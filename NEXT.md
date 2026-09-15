@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — rendre l’état de session fiable après expiration et récupérer silencieusement les jetons API. |
-| **Prochaine action** | Faire relire la PR d’authentification, puis déployer depuis `main` et contrôler dans Chrome une expiration réelle avec une session connectée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-auth-session-ux` |
-| **Dernière mise à jour** | 2026-09-15 — le compte mis en cache n’est plus présenté comme authentifié tant que le jeton n’est pas exploitable ; les `401` protégés déclenchent un seul renouvellement silencieux, puis un état de réauthentification sans redirection automatique sur l’accueil. |
-| **Branche** | `fix/catalog-auth-session-state` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Lot en cours** | Catalog — comptes & rôles admin, inversion Catalogue/Inventaire et actions de fiche membre. |
+| **Prochaine action** | Faire relire la PR, puis contrôler dans Chrome avec un compte Administration et une API/Graph joignables les changements de statut et la suppression réelle. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-admin-catalog-inventory-account-actions` |
+| **Dernière mise à jour** | 2026-09-15 — les comptes admin ont les sous-onglets Bénévoles/Membres du site ; le statut Entra, la modal membre et le chemin de suppression durable sont câblés et testés localement. |
+| **Branche** | `feat/admin-catalog-inventory-account-actions` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
 
 ---
 
@@ -197,6 +197,31 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-15 — comptes admin et inversion Catalogue/Inventaire Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-admin-catalog-inventory-account-actions`, la sidebar conserve les deux
+positions du fonds de livres mais affiche désormais `Inventaire` en première position et
+`Catalogue` en seconde, avec les espaces correspondants derrière chaque libellé. La page
+`Comptes & rôles` propose les sous-onglets `Bénévoles` et `Membres du site` comme les
+statistiques. Le bouton `Désactiver`/`Réactiver` des bénévoles appelle un nouvel endpoint
+Administration qui met à jour `accountEnabled` dans Entra Graph et refuse l'auto-désactivation
+de l'administrateur connecté.
+
+`Voir la fiche` ouvre maintenant une modal Catalog avec les informations, la liste de suivi,
+l'historique d'alertes et les actions. Le texte de support/commercialisation a été retiré.
+La suppression est confirmée dans une seconde modal puis utilise le chemin de suppression
+durable déjà prévu : suppression Graph avant nettoyage local, ou mise en file de reprise si
+Graph est temporairement indisponible ; le retour API est affiché dans le toast admin.
+
+Validation locale : TDD rouge puis vert, 212 tests ChromeHeadless Catalog, build Catalog
+SSR/navigateur, 92 tests Domain, 224 Application, 101 Infrastructure et 24 API, `graphify
+update .` et `git diff --check`. Les warnings de budget
+initial Angular, de dépendances npm et de packages NuGet vulnérables sont ceux du dépôt. Le
+smoke connecté avec Entra/Graph et API joignables reste à faire ; aucun compte, secret, Azure
+ou déploiement n'a été modifié. `rtk` n'est pas installé sur cette machine ; les commandes
+natives équivalentes sont utilisées.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 

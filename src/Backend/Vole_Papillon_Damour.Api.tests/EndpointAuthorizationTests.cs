@@ -199,7 +199,7 @@ public class EndpointAuthorizationTests
             .Where(endpoint => RouteOf(endpoint).StartsWith("/accounts/admin", StringComparison.Ordinal))
             .ToList();
 
-        accountEndpoints.Should().HaveCount(3);
+        accountEndpoints.Should().HaveCount(4);
         accountEndpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
         accountEndpoints
             .SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
