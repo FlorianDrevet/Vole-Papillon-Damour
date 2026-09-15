@@ -61,6 +61,58 @@ public sealed class GetAdminFairsEvolutionQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_restricts_to_the_selected_fair_and_keeps_its_variation()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var firstFair = await fixture.AddFairAsync(
+            new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2025, 3, 1, 0, 0, 0, TimeSpan.Zero),
+            null,
+            null);
+        var secondFair = await fixture.AddFairAsync(
+            new DateTimeOffset(2025, 9, 1, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2025, 9, 1, 0, 0, 0, TimeSpan.Zero),
+            null,
+            null);
+        var book = await fixture.AddBookAsync("9782070363735", 0);
+        fixture.Context.BookMovements.Add(AddMovement(
+            book, BookMovementType.Sale, new DateTime(2025, 3, 1, 10, 0, 0, DateTimeKind.Utc), firstFair.Id, quantity: -100));
+        fixture.Context.BookMovements.Add(AddMovement(
+            book, BookMovementType.Sale, new DateTime(2025, 9, 1, 10, 0, 0, DateTimeKind.Utc), secondFair.Id, quantity: -150));
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetAdminFairsEvolutionQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetAdminFairsEvolutionQuery(FairId: secondFair.Id.Value),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.FairCount.Should().Be(1);
+        result.Value.Fairs.Should().ContainSingle(fair => fair.FairId == secondFair.Id.Value);
+        result.Value.Fairs[0].VariationPercent.Should().Be(50m);
+        result.Value.TotalSoldQuantity.Should().Be(150);
+        result.Value.GrowthSinceFirstPercent.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_rejects_an_unknown_fair()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetAdminFairsEvolutionQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetAdminFairsEvolutionQuery(FairId: Guid.NewGuid()),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Handle_rejects_an_invalid_period()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

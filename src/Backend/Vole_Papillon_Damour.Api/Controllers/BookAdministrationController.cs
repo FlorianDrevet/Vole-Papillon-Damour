@@ -439,11 +439,12 @@ public static class BookAdministrationController
                     async (
                         DateTimeOffset? from,
                         DateTimeOffset? to,
+                        Guid? fairId,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
                         var result = await mediator.Send(
-                            new GetAdminFairsEvolutionQuery(from, to),
+                            new GetAdminFairsEvolutionQuery(from, to, fairId),
                             cancellationToken);
                         return result.Match(
                             evolution => Results.Ok(ToResponse(evolution)),
@@ -457,11 +458,12 @@ public static class BookAdministrationController
                     async (
                         DateTimeOffset? from,
                         DateTimeOffset? to,
+                        Guid? fairId,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
                         var result = await mediator.Send(
-                            new GetAdminCatalogueFlowStatsQuery(from, to),
+                            new GetAdminCatalogueFlowStatsQuery(from, to, fairId),
                             cancellationToken);
                         return result.Match(
                             stats => Results.Ok(ToResponse(stats)),

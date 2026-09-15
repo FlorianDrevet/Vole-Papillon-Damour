@@ -63,6 +63,53 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_restricts_the_funnel_to_the_selected_fair()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var fair = await fixture.AddFairAsync(
+            new DateTimeOffset(2026, 6, 20, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 6, 21, 0, 0, 0, TimeSpan.Zero),
+            null,
+            null);
+        var fairSession = await fixture.AddSessionAsync(
+            ScanMode.NextFair,
+            targetFairId: fair.Id,
+            volunteerId: VolunteerId,
+            startedAt: new DateTime(2026, 6, 1, 8, 0, 0, DateTimeKind.Utc));
+        fairSession.RecordScan(true, new DateTime(2026, 6, 1, 8, 5, 0, DateTimeKind.Utc), new DateTime(2026, 6, 1, 8, 6, 0, DateTimeKind.Utc));
+        fairSession.RecordScan(true, new DateTime(2026, 6, 1, 8, 10, 0, DateTimeKind.Utc), new DateTime(2026, 6, 1, 8, 11, 0, DateTimeKind.Utc));
+        var otherSession = await fixture.AddSessionAsync(
+            ScanMode.AvailableNow,
+            volunteerId: VolunteerId,
+            startedAt: new DateTime(2026, 6, 2, 8, 0, 0, DateTimeKind.Utc));
+        otherSession.RecordScan(true, new DateTime(2026, 6, 2, 8, 5, 0, DateTimeKind.Utc), new DateTime(2026, 6, 2, 8, 6, 0, DateTimeKind.Utc));
+
+        var novel = await fixture.AddBookAsync("9782070363735", 0);
+        var comic = await fixture.AddBookAsync("9791036377426", 0);
+        await fixture.Context.SaveChangesAsync();
+
+        fixture.Context.BookMovements.Add(AddMovement(
+            novel, BookMovementType.DirectEntry, new DateTime(2026, 6, 1, 8, 5, 0, DateTimeKind.Utc), fairSession.Id));
+        fixture.Context.BookMovements.Add(AddMovement(
+            novel, BookMovementType.DirectEntry, new DateTime(2026, 6, 1, 8, 10, 0, DateTimeKind.Utc), fairSession.Id));
+        fixture.Context.BookMovements.Add(AddMovement(
+            comic, BookMovementType.DirectEntry, new DateTime(2026, 6, 2, 8, 5, 0, DateTimeKind.Utc), otherSession.Id));
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetAdminCatalogueFlowStatsQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetAdminCatalogueFlowStatsQuery(FairId: fair.Id.Value),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Funnel.ScannedCount.Should().Be(2);
+        result.Value.Funnel.KeptCount.Should().Be(2);
+    }
+
+    [Fact]
     public async Task Handle_rejects_an_invalid_period()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

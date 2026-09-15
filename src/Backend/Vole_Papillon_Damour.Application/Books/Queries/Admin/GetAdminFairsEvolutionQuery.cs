@@ -6,4 +6,5 @@ namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
 
 public sealed record GetAdminFairsEvolutionQuery(
     DateTimeOffset? From = null,
-    DateTimeOffset? To = null) : IRequest<ErrorOr<AdminFairsEvolutionResult>>;
+    DateTimeOffset? To = null,
+    Guid? FairId = null) : IRequest<ErrorOr<AdminFairsEvolutionResult>>;
