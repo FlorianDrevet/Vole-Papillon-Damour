@@ -21,7 +21,7 @@
 | **Prochaine action** | Faire relire la correction, puis intégrer la PR dans `main` après validation. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-sort-dropdown-overlay` |
 | **Dernière mise à jour** | 2026-09-15 — le contrôle « Trier par » de `/recherche` utilise à nouveau un `<select>` natif ; l’overlay est rendu par le navigateur comme celui du filtre « Genre », avec le même habillage du catalogue. |
-| **Branche** | `fix/catalog-sort-dropdown-overlay` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Branche** | `fix/catalog-sort-dropdown-overlay` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #173](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/173) ouverte vers `main` |
 
 ---
 
@@ -210,7 +210,8 @@ pour rester identique au sélecteur de la capture.
 Validation locale : TDD rouge puis vert, 205 tests ChromeHeadless Catalog, build SSR/navigateur,
 `python -m graphify update .`, `git diff --check` et smoke Chrome desktop sur `/recherche`.
 Le smoke connecté et la vérification API restent hors périmètre ; aucun déploiement ni merge
-n'a été effectué ; PR à ouvrir depuis `fix/catalog-sort-dropdown-overlay`.
+n'a été effectué ; la [PR #173](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/173) est ouverte
+depuis `fix/catalog-sort-dropdown-overlay`.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
