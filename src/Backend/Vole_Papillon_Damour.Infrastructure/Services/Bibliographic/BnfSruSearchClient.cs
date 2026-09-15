@@ -62,10 +62,48 @@ public sealed class BnfSruSearchClient(
                 Source));
         }
 
-        return results
+        var deduped = results
             .GroupBy(item => item.Isbn13, StringComparer.Ordinal)
             .Select(group => group.First())
             .ToArray();
+
+        return await AttachCoversAsync(deduped, cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<BookReferenceSearchItem>> AttachCoversAsync(
+        IReadOnlyList<BookReferenceSearchItem> items,
+        CancellationToken cancellationToken)
+    {
+        var covers = await Task.WhenAll(
+            items.Select(item => ResolveCoverAsync(item.Isbn13, cancellationToken)));
+
+        return items
+            .Zip(covers, (item, coverUrl) => coverUrl is null ? item : item with { CoverUrl = coverUrl })
+            .ToArray();
+    }
+
+    private async Task<Uri?> ResolveCoverAsync(string? isbn13Value, CancellationToken cancellationToken)
+    {
+        if (isbn13Value is null || !Isbn13.TryCreate(isbn13Value, out var isbn13))
+        {
+            return null;
+        }
+
+        var coverUri = CreateCoverUri(isbn13);
+        return coverUri is not null &&
+               await CoverImageValidator.IsValidAsync(httpClient, coverUri, cancellationToken)
+            ? coverUri
+            : null;
+    }
+
+    private static Uri? CreateCoverUri(Isbn13 isbn13)
+    {
+        return Uri.TryCreate(
+            $"https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN={isbn13.Value}&couverture=1",
+            UriKind.Absolute,
+            out var coverUri)
+            ? coverUri
+            : null;
     }
 
     private Uri BuildRequestUri(string query, int page, int pageSize)

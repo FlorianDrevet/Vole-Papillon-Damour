@@ -13,6 +13,11 @@ public sealed class BnfSruSearchClientTests
         HttpRequestMessage? capturedRequest = null;
         var client = CreateClient(request =>
         {
+            if (request.RequestUri?.Host == "openapi.bnf.fr")
+            {
+                return CoverResponse();
+            }
+
             capturedRequest = request;
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -29,7 +34,7 @@ public sealed class BnfSruSearchClientTests
         result[0].Authors.Should().Be("Saint-Exupéry, Antoine de");
         result[0].Publisher.Should().Be("Gallimard");
         result[0].PublicationYear.Should().Be(1946);
-        result[0].CoverUrl.Should().BeNull();
+        result[0].CoverUrl.Should().Be("https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782070363735&couverture=1");
         result[0].Source.Should().Be("BnF");
         capturedRequest.Should().NotBeNull();
         var query = Uri.UnescapeDataString(capturedRequest!.RequestUri!.Query);
@@ -40,11 +45,38 @@ public sealed class BnfSruSearchClientTests
     }
 
     [Fact]
+    public async Task SearchAsync_WhenCoverEndpointHasNoImage_LeavesCoverUrlNull()
+    {
+        var client = CreateClient(request =>
+        {
+            if (request.RequestUri?.Host == "openapi.bnf.fr")
+            {
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(RecordedSearchResponse)
+            };
+        });
+
+        var result = await client.SearchAsync("978-2-07-036373-5", 1, 20, CancellationToken.None);
+
+        result.Should().ContainSingle();
+        result[0].CoverUrl.Should().BeNull();
+    }
+
+    [Fact]
     public async Task SearchAsync_WithTextQuery_SearchesAllIndexesWithPagination()
     {
         HttpRequestMessage? capturedRequest = null;
         var client = CreateClient(request =>
         {
+            if (request.RequestUri?.Host == "openapi.bnf.fr")
+            {
+                return CoverResponse();
+            }
+
             capturedRequest = request;
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -69,6 +101,16 @@ public sealed class BnfSruSearchClientTests
         var result = await client.SearchAsync("Petit Prince", 1, 20, CancellationToken.None);
 
         result.Should().BeEmpty();
+    }
+
+    private static HttpResponseMessage CoverResponse()
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent([0xFF, 0xD8, 0xFF])
+        };
+        response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+        return response;
     }
 
     private static BnfSruSearchClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory)
