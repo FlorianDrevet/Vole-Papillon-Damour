@@ -4,12 +4,20 @@ import {
   AccountInfo,
   AuthenticationResult,
   EventType,
+  InteractionRequiredAuthError,
   InteractionStatus,
 } from '@azure/msal-browser';
 import {BehaviorSubject, defer, Observable} from 'rxjs';
 import {filter} from 'rxjs/operators';
 
 import {loginRequest} from './msal-config';
+
+// A degraded session usually self-heals once the network blip that caused the
+// silent renewal to fail is over. Retrying a handful of times before asking
+// the volunteer to reconnect avoids the previous behaviour where the banner
+// stayed up forever until they manually logged out and back in.
+const DEGRADED_RETRY_DELAY_MS = 15_000;
+const DEGRADED_RETRY_MAX_ATTEMPTS = 5;
 
 export const SCAN_REQUIRED_ROLE = 'Tri ou Caisse';
 export const SCAN_TRI_ROLE = 'Tri';
@@ -45,6 +53,7 @@ export class ScanAuthService {
   private authorizationCheck = 0;
   private accountPublicationPending = true;
   private interactionStatus: InteractionStatus = InteractionStatus.Startup;
+  private degradedRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly account$ = this.accountSubject.asObservable();
   readonly authState$ = this.authStateSubject.asObservable();
@@ -91,13 +100,17 @@ export class ScanAuthService {
 
         if (message.eventType === EventType.ACQUIRE_TOKEN_FAILURE) {
           if (this.interactionStatus === InteractionStatus.None) {
-            this.handleSilentTokenFailure();
+            this.handleSilentTokenFailure(message.error);
           }
           return;
         }
 
         this.requestAccountPublication();
       });
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => this.retryDegradedSessionNow());
+    }
   }
 
   get isAuthenticated(): boolean {
@@ -180,6 +193,7 @@ export class ScanAuthService {
 
   private publishAccount(account: AccountInfo | null): void {
     const check = ++this.authorizationCheck;
+    this.clearDegradedRetry();
 
     if (account === null) {
       this.accountSubject.next(null);
@@ -229,25 +243,25 @@ export class ScanAuthService {
           requiredRole: SCAN_REQUIRED_ROLE,
         });
       },
-      error: () => {
+      error: (error: unknown) => {
         if (check === this.authorizationCheck) {
-          this.publishDegradedAccount(account);
+          this.publishDegradedAccount(account, error);
         }
       },
     });
   }
 
-  private handleSilentTokenFailure(): void {
+  private handleSilentTokenFailure(error: unknown): void {
     const account = this.accountSubject.value;
     if (!account) {
       this.publishAccount(null);
       return;
     }
 
-    this.publishDegradedAccount(account);
+    this.publishDegradedAccount(account, error);
   }
 
-  private publishDegradedAccount(account: AccountInfo): void {
+  private publishDegradedAccount(account: AccountInfo, error: unknown): void {
     const roles = this.getLocalAuthorizationRoles(account);
     if (!roles || !hasScanRole(roles)) {
       this.publishAccount(null);
@@ -261,6 +275,91 @@ export class ScanAuthService {
       account,
       roles,
       requiredRole: SCAN_REQUIRED_ROLE,
+    });
+
+    // A real "you must sign in again" error (expired/consumed refresh token,
+    // revoked session…) won't fix itself: retrying would just fail the same
+    // way and delay the moment the volunteer is told to reconnect. Anything
+    // else (network hiccup, momentary MSAL/iframe issue) is worth retrying
+    // silently so the banner clears on its own, the way it does after a
+    // manual logout/login round-trip.
+    if (!(error instanceof InteractionRequiredAuthError)) {
+      this.scheduleDegradedRetry(account, 1);
+    }
+  }
+
+  private scheduleDegradedRetry(account: AccountInfo, attempt: number): void {
+    if (typeof window === 'undefined' || attempt > DEGRADED_RETRY_MAX_ATTEMPTS) {
+      return;
+    }
+
+    this.clearDegradedRetry();
+    this.degradedRetryTimer = setTimeout(
+      () => this.retrySilentRenewal(account, attempt),
+      DEGRADED_RETRY_DELAY_MS,
+    );
+  }
+
+  private retryDegradedSessionNow(): void {
+    const account = this.accountSubject.value;
+    if (!account || this.authStateSubject.value.status !== 'degraded') {
+      return;
+    }
+
+    this.clearDegradedRetry();
+    this.retrySilentRenewal(account, 1);
+  }
+
+  private clearDegradedRetry(): void {
+    if (this.degradedRetryTimer !== null) {
+      clearTimeout(this.degradedRetryTimer);
+      this.degradedRetryTimer = null;
+    }
+  }
+
+  private retrySilentRenewal(account: AccountInfo, attempt: number): void {
+    const current = this.authStateSubject.value;
+    if (current.status !== 'degraded' || current.account?.homeAccountId !== account.homeAccountId) {
+      return;
+    }
+
+    const check = ++this.authorizationCheck;
+    this.msalService.acquireTokenSilent({
+      account,
+      scopes: loginRequest.scopes,
+    }).subscribe({
+      next: result => {
+        if (check !== this.authorizationCheck) {
+          return;
+        }
+
+        const roles = readRoles(result.accessToken);
+        const status: ScanAuthStatus = hasScanRole(roles) ? 'authorized' : 'unauthorized';
+
+        if (status === 'authorized') {
+          this.rememberLocalAuthorization(account, roles);
+        } else {
+          this.forgetLocalAuthorization(account);
+        }
+
+        this.authStateSubject.next({
+          status,
+          account,
+          roles,
+          requiredRole: SCAN_REQUIRED_ROLE,
+        });
+      },
+      error: (error: unknown) => {
+        if (check !== this.authorizationCheck) {
+          return;
+        }
+
+        if (error instanceof InteractionRequiredAuthError) {
+          return;
+        }
+
+        this.scheduleDegradedRetry(account, attempt + 1);
+      },
     });
   }
 
