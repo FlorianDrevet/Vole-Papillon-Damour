@@ -112,6 +112,7 @@ export interface ScanSessionSnapshot {
   startedAt: string;
   lastScanAt: string;
   lastSyncAt: string;
+  counts?: ScanSessionCounts;
   closeRequested?: boolean;
   closeReason?: LocalScanCloseReason | null;
 }

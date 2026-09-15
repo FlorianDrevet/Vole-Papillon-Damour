@@ -383,6 +383,7 @@ export class ScanWorkflowService {
         );
       }
 
+      const counts = await this.store.getSessionCounts(session.clientSessionId);
       const catalogBook = await this.store.getCatalogBook(isbn13);
       const settings = await this.store.getSettings();
       const verdict = this.verdictService.calculate(catalogBook, settings);
@@ -408,6 +409,11 @@ export class ScanWorkflowService {
       await this.store.addOutboxEntry(entry);
       await this.store.saveSession({
         ...session,
+        counts: {
+          scannedCount: counts.scannedCount + 1,
+          keptCount: counts.keptCount + previousPendingEntries.length,
+          rejectedCount: counts.rejectedCount,
+        },
         lastScanAt: timestamp,
       });
 
@@ -440,6 +446,22 @@ export class ScanWorkflowService {
         kept,
         session.mode,
       );
+
+      if (existing.status === 'Pending' || existing.status === 'NeedsDecision') {
+        const currentSession = await this.store.getSession();
+        if (currentSession?.clientSessionId === session.clientSessionId) {
+          const counts = await this.store.getSessionCounts(session.clientSessionId);
+          const movedFromAnotherSession = existing.clientSessionId !== session.clientSessionId;
+          await this.store.saveSession({
+            ...currentSession,
+            counts: {
+              scannedCount: counts.scannedCount + (movedFromAnotherSession ? 1 : 0),
+              keptCount: counts.keptCount + (kept ? 1 : 0),
+              rejectedCount: counts.rejectedCount + (kept ? 0 : 1),
+            },
+          });
+        }
+      }
 
       return decided;
     });

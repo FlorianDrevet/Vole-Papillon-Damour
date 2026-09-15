@@ -122,6 +122,23 @@ describe('ScanSyncService', () => {
     expect(await store.listOutboxEntries()).toEqual([]);
   });
 
+  it('keeps local session counters when automatic synchronization clears sent gestures', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    const session = await workflow.getSession();
+
+    await service.flushOutbox();
+
+    expect(await workflow.getSessionCounts(session!.clientSessionId)).toEqual({
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+    });
+  });
+
   it('rebinds offline gestures when the server resumes an existing session', async () => {
     const scan = await workflow.recordScan(
       '9782070363735',

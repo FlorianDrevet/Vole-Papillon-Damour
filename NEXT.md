@@ -198,6 +198,24 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-15 — décision du livre courant dans le Scan
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-scan-current-book-action`, le bandeau d’action global du Scan ne
+compte plus le livre actuellement affiché comme une action séparée : il reste réservé aux
+décisions antérieures encore à traiter. Les compteurs de session sont maintenant persistés
+dans IndexedDB ; la synchronisation peut donc supprimer le geste de l’outbox sans faire
+revenir « trié » à zéro ni remplacer le parcours par « Retour » juste après « Garder ».
+Les anciennes sessions sans compteurs gardent leur repli de calcul depuis l’outbox.
+
+Validation locale : TDD rouge puis vert, 193 tests Scan ChromeHeadless, build Scan,
+bootstrap des contrats, `graphify update .`, `git diff --check` et smoke Chrome du shell
+local à la taille desktop puis à 390×844 sans débordement. Le parcours connecté réel n’a pas
+été modifié pendant le smoke afin de ne pas changer une session bénévole ; il reste couvert
+par les tests du composant, du workflow IndexedDB et de la synchronisation. Aucun déploiement
+ni merge n’a été effectué ; la PR de la branche `fix/scan-current-book-action` reste à ouvrir.
+`rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes sont utilisées.
+
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

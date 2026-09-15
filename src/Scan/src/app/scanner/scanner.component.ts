@@ -358,12 +358,17 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.priorityAlerts.length > 0 || this.infoAlerts.length > 0;
   }
 
+  get actionablePendingDecisionCount(): number {
+    const currentScanNeedsDecision = this.localScan?.entry.status === 'Pending' ? 1 : 0;
+    return Math.max(0, this.pendingDecisionCount - currentScanNeedsDecision);
+  }
+
   get hasActionableStatus(): boolean {
     return !this.isOnline
       || this.authDegraded
       || this.accountSwitchPrompt !== null
       || this.syncStatus === 'error'
-      || this.pendingDecisionCount > 0
+      || this.actionablePendingDecisionCount > 0
       || this.pendingTransmissionCount > 0
       || this.setAsideCount > 0
       || this.visibleStorageCapabilityAlert !== null
@@ -379,7 +384,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       && this.syncStatus !== 'error'
       && this.storageAlert === null
       && this.syncAlert === null
-      && this.pendingDecisionCount === 0
+      && this.actionablePendingDecisionCount === 0
       && this.pendingTransmissionCount === 0
       && this.setAsideCount === 0;
   }
@@ -404,8 +409,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return this.syncAlert?.message ?? 'La dernière synchronisation doit être vérifiée.';
     }
 
-    if (this.pendingDecisionCount > 0) {
-      return `${this.bookCountLabel(this.pendingDecisionCount)} attend${this.pendingDecisionCount > 1 ? 'ent' : ''} une décision.`;
+    if (this.actionablePendingDecisionCount > 0) {
+      const count = this.actionablePendingDecisionCount;
+      return `${this.bookCountLabel(count)} attend${count > 1 ? 'ent' : ''} une décision.`;
     }
 
     if (this.setAsideCount > 0) {
@@ -468,7 +474,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       && this.accountSwitchPrompt === null
       && this.syncStatus !== 'syncing'
       && (this.syncStatus === 'error'
-        || this.pendingDecisionCount > 0
+        || this.actionablePendingDecisionCount > 0
         || this.pendingTransmissionCount > 0
         || this.session?.closeRequested === true);
   }
@@ -1730,8 +1736,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       });
     }
 
-    if (this.pendingDecisionCount > 0) {
-      const count = this.pendingDecisionCount;
+    if (this.actionablePendingDecisionCount > 0) {
+      const count = this.actionablePendingDecisionCount;
       alerts.push({
         id: 'pending-decisions',
         level: 'info',

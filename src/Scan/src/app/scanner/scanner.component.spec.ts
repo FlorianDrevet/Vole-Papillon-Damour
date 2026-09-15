@@ -1071,6 +1071,35 @@ describe('ScannerComponent', () => {
       .toContain('10 ou 13');
   });
 
+  it('does not label the current pending scan as a separate status action', () => {
+    const screenFixture = TestBed.createComponent(ScannerComponent);
+    const screenComponent = screenFixture.componentInstance;
+    screenComponent.screen = 'tri';
+    screenComponent.localScan = createLocalScanResult();
+    screenComponent.pendingDecisionCount = 1;
+    screenFixture.detectChanges();
+
+    expect(screenComponent.hasActionableStatus).toBeFalse();
+    expect(screenFixture.nativeElement.querySelector('.status-strip')).toBeNull();
+
+    screenFixture.destroy();
+  });
+
+  it('keeps earlier pending decisions visible while the current scan awaits a decision', () => {
+    const screenFixture = TestBed.createComponent(ScannerComponent);
+    const screenComponent = screenFixture.componentInstance;
+    screenComponent.screen = 'tri';
+    screenComponent.localScan = createLocalScanResult();
+    screenComponent.pendingDecisionCount = 2;
+    screenFixture.detectChanges();
+
+    expect(screenComponent.hasActionableStatus).toBeTrue();
+    expect(screenComponent.statusSummary).toContain('1 livre');
+    expect(screenFixture.nativeElement.querySelector('.status-strip')).not.toBeNull();
+
+    screenFixture.destroy();
+  });
+
   it('keeps status feedback below the session bar and opens actions from the compact strip', () => {
     for (const screen of ['tri', 'cash', 'consultation'] as const) {
       const screenFixture = TestBed.createComponent(ScannerComponent);

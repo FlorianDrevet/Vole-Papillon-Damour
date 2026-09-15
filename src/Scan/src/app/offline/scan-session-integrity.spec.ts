@@ -44,7 +44,7 @@ describe('scan session integrity', () => {
     expect(await workflow.getSession()).toBeNull();
   });
 
-  it('derives session counters from the current client session outbox', async () => {
+  it('persists session counters alongside the active session', async () => {
     const first = await workflow.recordScan('9782070363735');
     await workflow.decide(first.entry.clientGestureId, true);
     await workflow.recordScan('9780306406157');
@@ -53,7 +53,26 @@ describe('scan session integrity', () => {
     const counts = await workflow.getSessionCounts(session!.clientSessionId);
 
     expect(counts).toEqual({scannedCount: 2, keptCount: 1, rejectedCount: 0});
+    expect((await store.getSession())?.counts).toEqual({
+      scannedCount: 2,
+      keptCount: 1,
+      rejectedCount: 0,
+    });
     expect(Object.prototype.hasOwnProperty.call(await store.getSession(), 'scannedCount')).toBeFalse();
+  });
+
+  it('keeps session counters after a transmitted gesture leaves the outbox', async () => {
+    const scan = await workflow.recordScan('9782070363735');
+    await workflow.decide(scan.entry.clientGestureId, true);
+    const session = await workflow.getSession();
+
+    await store.deleteOutboxEntry(scan.entry.clientGestureId);
+
+    expect(await workflow.getSessionCounts(session!.clientSessionId)).toEqual({
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+    });
   });
 
   function createRemoteSession(

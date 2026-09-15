@@ -397,6 +397,11 @@ export class ScanLocalStoreService {
   }
 
   async getSessionCounts(clientSessionId: string): Promise<ScanSessionCounts> {
+    const session = await this.getSession();
+    if (session?.clientSessionId === clientSessionId && session.counts) {
+      return {...session.counts};
+    }
+
     const entries = await this.listOutboxEntries();
     const sessionEntries = entries.filter(entry => entry.clientSessionId === clientSessionId);
     return {
@@ -1131,6 +1136,7 @@ interface RawScanSessionRecord {
   startedAt: string;
   lastScanAt: string;
   lastSyncAt: string;
+  counts?: ScanSessionCounts;
   closeRequested?: boolean;
   closeReason?: ScanSessionSnapshot['closeReason'] | null;
 }
@@ -1164,6 +1170,7 @@ function normalizeSession(record: RawScanSessionRecord): ScanSessionSnapshot {
     startedAt: record.startedAt,
     lastScanAt: record.lastScanAt,
     lastSyncAt: record.lastSyncAt,
+    ...(record.counts ? {counts: {...record.counts}} : {}),
     closeRequested: record.closeRequested ?? false,
     closeReason: record.closeReason ?? null,
   };
