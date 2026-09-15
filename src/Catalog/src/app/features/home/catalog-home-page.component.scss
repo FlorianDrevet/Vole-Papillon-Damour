@@ -147,7 +147,7 @@ h2 {
   gap: 3px;
 }
 
-.hero-genre-field span {
+.hero-genre-field > span {
   color: var(--catalog-slate-3);
   font: .55rem/1 var(--catalog-mono);
   letter-spacing: .1em;
@@ -155,7 +155,17 @@ h2 {
 }
 
 .hero-genre-select {
+  position: relative;
   min-width: 0;
+}
+
+.hero-genre-select-trigger {
+  display: inline-flex;
+  width: 100%;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   padding: 0 20px 0 0;
   border: 0;
   outline: 0;
@@ -164,9 +174,165 @@ h2 {
   cursor: pointer;
   font-size: .8rem;
   font-weight: 600;
+  text-align: left;
 }
 
-.hero-search button {
+.hero-genre-select-trigger:hover,
+.hero-genre-select-trigger[aria-expanded='true'] {
+  color: var(--catalog-blue);
+}
+
+.hero-genre-select-trigger:focus-visible {
+  border-radius: 3px;
+  box-shadow: 0 0 0 3px rgba(20, 151, 214, .14);
+}
+
+.hero-genre-select-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  letter-spacing: normal;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.hero-genre-select-chevron {
+  position: absolute;
+  right: 3px;
+  width: 11px;
+  height: 8px;
+  fill: none;
+  pointer-events: none;
+  stroke: var(--catalog-blue);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  transition: transform 180ms var(--catalog-ease-out);
+}
+
+.hero-genre-select-chevron--open {
+  transform: rotate(180deg);
+}
+
+.hero-genre-select-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 30;
+  width: min(280px, calc(100vw - 2rem));
+  overflow: hidden;
+  padding: 8px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 16px;
+  background: var(--catalog-white);
+  box-shadow: 0 22px 44px -24px rgba(7, 43, 69, .45);
+  transform-origin: top left;
+  animation: hero-genre-panel-in 160ms var(--catalog-ease-out);
+}
+
+.hero-genre-select-panel::before {
+  display: block;
+  height: 3px;
+  margin: -8px -8px 9px;
+  background: var(--catalog-brand-gradient);
+  content: '';
+}
+
+.hero-genre-panel-kicker {
+  display: block;
+  padding: 0 8px 8px;
+  color: var(--catalog-orange-3);
+  font: 500 .63rem/1.2 var(--catalog-mono);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.hero-genre-panel-options {
+  display: flex;
+  padding-top: 5px;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px solid var(--catalog-line-2);
+}
+
+.hero-genre-option {
+  display: grid;
+  grid-template-columns: 21px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 9px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--catalog-ink-2);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.hero-genre-option:hover,
+.hero-genre-option:focus-visible,
+.hero-genre-option--active {
+  background: var(--catalog-paper-2);
+}
+
+.hero-genre-option--selected .hero-genre-option-copy strong {
+  color: var(--catalog-blue);
+}
+
+.hero-genre-option-mark {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid var(--catalog-line-strong);
+  border-radius: 50%;
+  color: var(--catalog-white);
+}
+
+.hero-genre-option--selected .hero-genre-option-mark {
+  border-color: var(--catalog-blue);
+  background: var(--catalog-blue);
+}
+
+.hero-genre-option-mark svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.hero-genre-option-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hero-genre-option-copy strong {
+  font-size: .79rem;
+  font-weight: 600;
+}
+
+@keyframes hero-genre-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hero-search > button {
   min-height: 48px;
   padding: 0 24px;
   border: 0;
@@ -179,12 +345,12 @@ h2 {
   transition: background 160ms ease, transform 160ms ease;
 }
 
-.hero-search button:hover,
-.hero-search button:focus-visible {
+.hero-search > button:hover,
+.hero-search > button:focus-visible {
   background: var(--catalog-orange-3);
 }
 
-.hero-search button:active {
+.hero-search > button:active {
   transform: scale(.97);
 }
 
@@ -1228,7 +1394,7 @@ h2 {
     border-left: 0;
   }
 
-  .hero-search button {
+  .hero-search > button {
     grid-column: 1 / -1;
     width: 100%;
   }

@@ -188,15 +188,53 @@
         <span class="search-icon" aria-hidden="true"></span>
         <label class="visually-hidden" for="home-search">Rechercher un titre, un auteur ou un ISBN</label>
         <input id="home-search" name="search" [(ngModel)]="search" placeholder="un titre, un auteur, ou le code-barres" autocomplete="off">
-        <label class="hero-genre-field">
+        <div class="hero-genre-field">
           <span>Genre</span>
-          <select class="hero-genre-select" name="genre" [(ngModel)]="heroGenre" aria-label="Filtrer par genre">
-            <option value="">Tous les genres</option>
-            @for (genre of availableGenres(); track genre) {
-              <option [value]="genre">{{ genre }}</option>
+          <div class="hero-genre-select">
+            <button
+              type="button"
+              class="hero-genre-select-trigger"
+              aria-label="Filtrer par genre"
+              aria-haspopup="menu"
+              [attr.aria-expanded]="heroGenreMenuOpen"
+              aria-controls="catalog-home-genre-menu"
+              (click)="toggleHeroGenreMenu()"
+              (keydown)="handleHeroGenreTriggerKeydown($event)">
+              <span>{{ heroGenreLabel() }}</span>
+              <svg class="hero-genre-select-chevron" [class.hero-genre-select-chevron--open]="heroGenreMenuOpen" aria-hidden="true" viewBox="0 0 12 8"><path d="m1 1 5 5 5-5"></path></svg>
+            </button>
+            @if (heroGenreMenuOpen) {
+              <div id="catalog-home-genre-menu" class="hero-genre-select-panel" role="menu" aria-label="Options de genre">
+                <span class="hero-genre-panel-kicker">Filtrer par genre</span>
+                <div class="hero-genre-panel-options">
+                  @for (choice of heroGenreChoices(); track choice.value; let index = $index) {
+                    <button
+                      [id]="'catalog-home-genre-option-' + index"
+                      type="button"
+                      class="hero-genre-option"
+                      [class.hero-genre-option--selected]="heroGenre === choice.value"
+                      [class.hero-genre-option--active]="heroGenreMenuActiveIndex === index"
+                      role="menuitemradio"
+                      [attr.aria-checked]="heroGenre === choice.value"
+                      [attr.tabindex]="heroGenreMenuActiveIndex === index ? 0 : -1"
+                      [attr.data-genre]="choice.value"
+                      (click)="selectHeroGenre(choice.value)"
+                      (keydown)="handleHeroGenreOptionKeydown($event, index)">
+                      <span class="hero-genre-option-mark" aria-hidden="true">
+                        @if (heroGenre === choice.value) {
+                          <svg viewBox="0 0 16 16"><path d="m3.2 8.4 3 3 6.6-6.8"></path></svg>
+                        }
+                      </span>
+                      <span class="hero-genre-option-copy">
+                        <strong>{{ choice.label }}</strong>
+                      </span>
+                    </button>
+                  }
+                </div>
+              </div>
             }
-          </select>
-        </label>
+          </div>
+        </div>
         <button type="submit">Rechercher</button>
       </form>
       <p class="hero-count">
