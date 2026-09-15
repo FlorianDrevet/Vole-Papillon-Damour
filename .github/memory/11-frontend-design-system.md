@@ -111,6 +111,8 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   association butterfly used as the desktop visual mark and a restrained mobile placement.
   Its search owns the genre selector and the API-backed title count; the next-fair block
   may expose a generated `.ics` link. The home
+  genre panel is kept above the next-fair teaser stacking context and uses a viewport-aware
+  maximum height with internal vertical scrolling for long API genre lists.
   `#prochaines-dates` calendar keeps the next Books event prominent with a dark date card
   and a light map/location card inspired by the Website event detail, then uses editorial
   date rows for the remaining future fairs.
