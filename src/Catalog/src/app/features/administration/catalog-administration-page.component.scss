@@ -2604,6 +2604,11 @@ input:disabled {
   border-bottom: 1px solid var(--admin-line-soft);
 }
 
+.inventory-reference-selected {
+  border-bottom-color: #f6c38f;
+  background: #fffaf4;
+}
+
 .inventory-reference-cover {
   width: 38px;
   height: 56px;
@@ -2660,8 +2665,43 @@ input:disabled {
   background: #fffaf4;
 }
 
+.inventory-candidate-inline {
+  margin-top: 0;
+  border-top: 0;
+}
+
 .inventory-candidate-copy h3 {
   margin-top: 6px;
+}
+
+.inventory-candidate-status {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f6c38f;
+  color: var(--admin-slate);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.inventory-quantity-stepper {
+  display: flex;
+  width: 130px;
+  height: 40px;
+  align-items: center;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-white);
+}
+
+.inventory-quantity-stepper input {
+  min-width: 0;
+  flex: 1;
+  height: 38px;
+  padding: 0 4px;
+  border: 0;
+  border-right: 1px solid var(--admin-line-soft);
+  border-left: 1px solid var(--admin-line-soft);
+  border-radius: 0;
+  text-align: center;
 }
 
 .inventory-candidate-fields {

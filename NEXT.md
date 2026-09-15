@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — rendre l’état de session fiable après expiration et récupérer silencieusement les jetons API. |
-| **Prochaine action** | Faire relire la PR d’authentification, puis déployer depuis `main` et contrôler dans Chrome une expiration réelle avec une session connectée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-auth-session-ux` |
-| **Dernière mise à jour** | 2026-09-15 — le compte mis en cache n’est plus présenté comme authentifié tant que le jeton n’est pas exploitable ; les `401` protégés déclenchent un seul renouvellement silencieux, puis un état de réauthentification sans redirection automatique sur l’accueil. |
-| **Branche** | `fix/catalog-auth-session-state` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Lot en cours** | Catalog — rendre l’ajout de fiches d’Inventaire lisible et inline depuis les références bibliographiques. |
+| **Prochaine action** | Contrôler avec une session administrateur connectée le statut d’une fiche existante et l’affichage responsive de la ligne sélectionnée dans la [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174). |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-inventory-inline-addition` |
+| **Dernière mise à jour** | 2026-09-15 — le fonds apparaît avant le parcours d’ajout ; la fiche sélectionnée s’ouvre sous sa référence, son existence et son stock sont affichés, et la quantité initiale est éditable avec −/+. |
+| **Branche** | `feat/catalog-inventory-inline-addition` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174) ouverte vers `main` |
 
 ---
 
