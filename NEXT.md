@@ -215,19 +215,24 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-15 — toast de synchronisation du Scan
+### État actualisé — 2026-09-15 — décision du livre courant dans le Scan
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
-`Vole-Papillon-Damour-scan-success-toast`, le toast de succès « Synchronisation réussie »
-de `src/Scan` est maintenant positionné en haut de la surface, afin de ne plus recouvrir les
-boutons d’action en bas. Il dispose d’une croix accessible qui efface immédiatement le message,
-tout en conservant son expiration automatique.
+`Vole-Papillon-Damour-scan-current-book-action`, le bandeau d’action global du Scan ne
+compte plus le livre actuellement affiché comme une action séparée : il reste réservé aux
+décisions antérieures encore à traiter. Les compteurs de session sont maintenant persistés
+dans IndexedDB ; la synchronisation peut donc supprimer le geste de l’outbox sans faire
+revenir « trié » à zéro ni remplacer le parcours par « Retour » juste après « Garder ».
+Les anciennes sessions sans compteurs gardent leur repli de calcul depuis l’outbox.
 
-Validation locale : TDD rouge puis vert, 190 tests Scan ChromeHeadless, 6 tests de bootstrap,
-build de production, `graphify update .` et `git diff --check`. Le shell local non authentifié
-a été contrôlé dans Chrome ; le smoke connecté avec Entra et l’API reste à faire. Aucun
-déploiement, changement Azure, compte ou donnée API n’a été effectué ; la [PR #172](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/172)
-est ouverte vers `main` et n’a pas été fusionnée.
+Validation locale : TDD rouge puis vert, 193 tests Scan ChromeHeadless, build Scan,
+bootstrap des contrats, `graphify update .`, `git diff --check` et smoke Chrome du shell
+local à la taille desktop puis à 390×844 sans débordement. Le parcours connecté réel n’a pas
+été modifié pendant le smoke afin de ne pas changer une session bénévole ; il reste couvert
+par les tests du composant, du workflow IndexedDB et de la synchronisation. Aucun déploiement
+ni merge n’a été effectué ; la [PR #175](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/175)
+est ouverte depuis la branche `fix/scan-current-book-action`.
+`rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes sont utilisées.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
