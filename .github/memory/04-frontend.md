@@ -377,7 +377,8 @@ The 2026-09-11 Scan synchronization UX pass removes the authenticated shell's gl
 header and legacy synchronization panel, leaving the multicolor rule as the first page chrome.
 Automatic synchronization still runs when local mode becomes ready, after account authorization,
 on reconnection, and on the existing periodic retry. Successful syncs use the transient
-`Synchronisation réussie` toast. Offline, failed, and pending-action states render as one compact
+`Synchronisation réussie` toast, anchored at the top of the Scan surface with an accessible
+dismiss button so it cannot cover the action dock. Offline, failed, and pending-action states render as one compact
 `scan-status-bar` below the active mode/session header; `(hors connexion)` and `(action à faire)`
 are explicit tags, and the strip opens a status modal with typed actions for retry, session
 account-switch recovery, triage, and set-aside recovery. The old expanded alert rail is gone from

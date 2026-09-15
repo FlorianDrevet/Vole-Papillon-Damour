@@ -1146,6 +1146,23 @@ describe('ScannerComponent', () => {
     expect(showSuccess).toHaveBeenCalledTimes(1);
   });
 
+  it('lets the operator dismiss the synchronization success toast', () => {
+    const status = TestBed.inject(ScanStatusService);
+    status.showSuccess('Synchronisation réussie');
+    fixture.detectChanges();
+
+    const dismissButton = fixture.nativeElement.querySelector(
+      '.scan-toast-dismiss',
+    ) as HTMLButtonElement | null;
+    expect(dismissButton).not.toBeNull();
+    expect(dismissButton?.getAttribute('aria-label')).toBe('Fermer la notification');
+
+    dismissButton?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.scan-toast')).toBeNull();
+  });
+
   it('keeps blocking details available from the compact status modal', () => {
     const railFixture = TestBed.createComponent(ScannerComponent);
     const railComponent = railFixture.componentInstance;
