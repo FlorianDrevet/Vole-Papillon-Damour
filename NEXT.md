@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — ajouter l’overlay custom du tri de la recherche au sélecteur « Genre » de l’accueil. |
-| **Prochaine action** | Faire relire la correction puis ouvrir la PR vers `main`; vérifier visuellement l’overlay sur desktop et mobile. |
+| **Prochaine action** | Faire relire la correction, vérifier visuellement l’overlay sur desktop et mobile, puis intégrer la [PR #179](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/179) dans `main`. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-home-genre-overlay` |
 | **Dernière mise à jour** | 2026-09-15 — le sélecteur « Genre » de l’accueil utilise un menu custom avec états sélectionné, focus clavier et fermeture au clic extérieur ; le panneau custom « Trier par » de `/recherche` est conservé. |
-| **Branche** | `fix/catalog-home-genre-overlay` — dédiée depuis `origin/main` fraîchement récupéré ; PR à ouvrir vers `main` |
+| **Branche** | `fix/catalog-home-genre-overlay` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #179](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/179) ouverte vers `main` |
 
 ---
 
@@ -36,7 +36,8 @@ au clic extérieur. La recherche conserve son overlay custom « Trier par ».
 Validation locale : TDD rouge puis vert, 220 tests Catalog ChromeHeadless, build SSR/navigateur,
 `rtk graphify update .` et `git diff --check`. Les avertissements de budget Angular existants
 restent présents. Le smoke visuel desktop/mobile et le contrôle avec API/Entra connectés restent
-à faire ; aucun déploiement ni merge n’a été effectué.
+à faire ; aucun déploiement ni merge n’a été effectué ; la [PR #179](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/179)
+est ouverte pour relecture.
 
 ### État actualisé — 2026-09-15 — état de session Auth Catalog
 
