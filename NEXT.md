@@ -240,7 +240,8 @@ changent pas ; aucune API, migration ou donnée distante n’est modifiée.
 Validation locale : TDD rouge puis vert, 234 tests Catalog ChromeHeadless, build SSR/navigateur,
 smoke Chrome avec API mockée à 1280×965 et 390×844, couverture BnF réelle contrôlée à
 `604×990`, `graphify update .` et `git diff --check`. Aucun déploiement ni merge n’a été
-effectué ; la PR sera ouverte après le push de `fix/catalog-book-cover-resolution`.
+effectué ; la [PR #183](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/183) est
+ouverte vers `main` et n’est pas fusionnée.
 
 ### État actualisé — 2026-09-15 — décision du livre courant dans le Scan
 
