@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — rendre l’état de session fiable après expiration et récupérer silencieusement les jetons API. |
-| **Prochaine action** | Faire relire la PR d’authentification, puis déployer depuis `main` et contrôler dans Chrome une expiration réelle avec une session connectée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-auth-session-ux` |
-| **Dernière mise à jour** | 2026-09-15 — le compte mis en cache n’est plus présenté comme authentifié tant que le jeton n’est pas exploitable ; les `401` protégés déclenchent un seul renouvellement silencieux, puis un état de réauthentification sans redirection automatique sur l’accueil. |
-| **Branche** | `fix/catalog-auth-session-state` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Lot en cours** | Catalog — harmoniser l’overlay du tri de la recherche avec le sélecteur natif du filtre « Genre ». |
+| **Prochaine action** | Faire relire la correction, puis intégrer la PR dans `main` après validation. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-sort-dropdown-overlay` |
+| **Dernière mise à jour** | 2026-09-15 — le contrôle « Trier par » de `/recherche` utilise à nouveau un `<select>` natif ; l’overlay est rendu par le navigateur comme celui du filtre « Genre », avec le même habillage du catalogue. |
+| **Branche** | `fix/catalog-sort-dropdown-overlay` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
 
 ---
 
@@ -197,6 +197,20 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-15 — overlay natif du tri Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-sort-dropdown-overlay`, le contrôle « Trier par » de la page
+`/recherche` ne rend plus son propre panneau ARIA : il utilise un `<select>` natif accessible,
+comme le filtre « Genre » de l'accueil. Le conteneur conserve le style Catalog (bordure,
+pilule, chevron et états hover/focus), tandis que l'overlay des options est laissé au navigateur
+pour rester identique au sélecteur de la capture.
+
+Validation locale : TDD rouge puis vert, 205 tests ChromeHeadless Catalog, build SSR/navigateur,
+`python -m graphify update .`, `git diff --check` et smoke Chrome desktop sur `/recherche`.
+Le smoke connecté et la vérification API restent hors périmètre ; aucun déploiement ni merge
+n'a été effectué ; PR à ouvrir depuis `fix/catalog-sort-dropdown-overlay`.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 

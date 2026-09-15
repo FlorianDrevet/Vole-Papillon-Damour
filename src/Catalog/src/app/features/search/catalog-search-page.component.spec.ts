@@ -560,78 +560,33 @@ describe('CatalogSearchPageComponent', () => {
     expect(options).toEqual(['']);
   });
 
-  it('opens a branded sort menu instead of relying on the native select popup', () => {
+  it('uses the native select popup for the sort options', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    const trigger = element.querySelector('.sort-select-trigger') as HTMLButtonElement;
+    const select = element.querySelector('select[name="sort"]') as HTMLSelectElement;
 
-    expect(element.querySelector('select[name="sort"]')).toBeNull();
-    expect(trigger).not.toBeNull();
-    expect(trigger.getAttribute('aria-label')).toBe('Trier les résultats');
-    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
-    expect(trigger.getAttribute('aria-expanded')).toBe('false');
-
-    trigger.click();
-    fixture.detectChanges();
-
-    const panel = element.querySelector('.sort-select-panel') as HTMLElement;
-    expect(panel.getAttribute('role')).toBe('menu');
-    expect(panel.querySelectorAll('.sort-option')).toHaveSize(2);
-    expect(panel.querySelector('.sort-option--selected')?.textContent).toContain('Pertinence');
+    expect(select).not.toBeNull();
+    expect(select.getAttribute('aria-label')).toBe('Trier les résultats');
+    expect(Array.from(select.options).map(option => option.value)).toEqual(['relevance', 'recent']);
+    expect(element.querySelector('.sort-select-trigger')).toBeNull();
+    expect(element.querySelector('.sort-select-panel')).toBeNull();
     expect(fixture.nativeElement.querySelector('.sort-select-chevron')).not.toBeNull();
   });
 
-  it('updates the sort and closes the branded menu when an option is chosen', async () => {
+  it('applies the selected sort through the native select change event', async () => {
     fixture.detectChanges();
     const applyFilters = spyOn(fixture.componentInstance, 'applyFilters');
     const element = fixture.nativeElement as HTMLElement;
-    const trigger = element.querySelector('.sort-select-trigger') as HTMLButtonElement;
+    const select = element.querySelector('select[name="sort"]') as HTMLSelectElement;
 
-    trigger.click();
-    fixture.detectChanges();
-    (element.querySelector('[data-sort="recent"]') as HTMLButtonElement).click();
+    select.value = 'recent';
+    select.dispatchEvent(new Event('change', {bubbles: true}));
     await fixture.whenStable();
     fixture.detectChanges();
 
     expect(fixture.componentInstance.sort).toBe('recent');
     expect(applyFilters).toHaveBeenCalledOnceWith();
-    expect(element.querySelector('.sort-select-panel')).toBeNull();
-    expect(trigger.textContent).toContain('Arrivée récente');
-  });
-
-  it('supports keyboard opening and selection in the branded sort menu', async () => {
-    fixture.detectChanges();
-    const applyFilters = spyOn(fixture.componentInstance, 'applyFilters');
-    const element = fixture.nativeElement as HTMLElement;
-    const trigger = element.querySelector('.sort-select-trigger') as HTMLButtonElement;
-
-    trigger.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(element.querySelector('.sort-select-panel')).not.toBeNull();
-
-    const recentOption = element.querySelector('[data-sort="recent"]') as HTMLButtonElement;
-    recentOption.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.sort).toBe('recent');
-    expect(applyFilters).toHaveBeenCalledOnceWith();
-    expect(element.querySelector('.sort-select-panel')).toBeNull();
-  });
-
-  it('closes the branded sort menu when focus moves outside it', () => {
-    fixture.detectChanges();
-    const element = fixture.nativeElement as HTMLElement;
-    const trigger = element.querySelector('.sort-select-trigger') as HTMLButtonElement;
-
-    trigger.click();
-    fixture.detectChanges();
-    document.body.dispatchEvent(new MouseEvent('click', {bubbles: true}));
-    fixture.detectChanges();
-
-    expect(element.querySelector('.sort-select-panel')).toBeNull();
   });
 
   it('gives the availability heading breathing room and uses the brand gradient for both sections', () => {
