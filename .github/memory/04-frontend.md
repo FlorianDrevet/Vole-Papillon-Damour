@@ -39,8 +39,9 @@ the next books fair, and the dynamic sitemap; the home calendar also consumes th
 public `/asso-events` schedule and keeps only future Books events. Its public routes are `/`, `/recherche`,
 `/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, `/donnees-personnelles`, and the legal,
 privacy, cookie and accessibility pages. The UI keeps
-available quantities separate from future announcements, leaves exhausted books visible,
-and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
+available quantities separate from future announcements; `/recherche` opens by default with
+`availability=available`, while `/catalogue` and the explicit `Tout` filter still allow
+exhausted titles to be explored, and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
 calls, exposes alert suspension/reactivation and the durable account-deletion request.
 `/desinscription` is a client-only authenticated opt-out route. The `/administration`

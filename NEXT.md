@@ -42,6 +42,23 @@ SSR/navigateur, `graphify update .`, `git diff --check`, smoke Chrome desktop de
 Aucun déploiement, changement Azure/Entra ou donnée de compte n’a été effectué. `rtk` n’est pas
 installé sur cette machine ; les commandes Git/npm natives équivalentes ont été utilisées.
 
+### État actualisé — 2026-09-15 — recherche Catalog limitée aux disponibles
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-search-available-only`, l'onglet `/recherche` envoie désormais
+`availability=available` par défaut et coche « Disponible maintenant » dès son ouverture. La
+réinitialisation des filtres revient au même périmètre. `/catalogue` conserve le catalogue
+complet par défaut et le filtre explicite « Tout » permet toujours de retrouver les titres
+épuisés pour une liste de recherche.
+
+Validation locale : TDD rouge puis vert, 27 tests ciblés, 210 tests Catalog ChromeHeadless, build
+Catalog SSR/navigateur, `python -m graphify update .`, `git diff --check` et smoke Chrome desktop
+sur `/recherche`. L'API locale n'était pas démarrée : le smoke a contrôlé le shell, le filtre
+coché et l'état d'erreur ; les résultats avec données sont couverts par le contrat API et les
+tests. Aucun déploiement, changement API, Azure, Entra ou donnée de compte n'a été effectué ; la
+[PR #176](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/176) est ouverte vers
+`main`. `rtk` n'est pas installé sur cette machine ; les commandes natives ont été utilisées.
+
 ### État actualisé — 2026-09-13 — interactions de recherche Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
@@ -198,20 +215,17 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-15 — navigation réelle de l’administration Catalog
+### État actualisé — 2026-09-15 — recherche Catalog disponible par défaut
 
-Depuis `origin/main` fraîchement récupéré dans le worktree
-`Vole-Papillon-Damour-admin-sidebar-real-navigation`, les entrées de la sidebar de
-`/administration` utilisent désormais les routes enfants `/administration/:section`.
-L’onglet actif est donc encodé dans l’URL et restauré par Angular après un refresh ; la
-sous-section des statistiques est conservée dans le paramètre `?tab=`. Les routes
-administrateur valides restent côté client et `noindex, nofollow`, et une connexion
-Microsoft conserve le deep link courant pour revenir directement à l’espace demandé.
+La branche `fix/catalog-search-available-only` ouvre l'onglet `/recherche` avec le filtre
+« Disponible maintenant » et envoie `availability=available` à l'API ; la réinitialisation
+conserve ce périmètre. Le catalogue par genre garde son défaut complet, et `Tout` reste
+sélectionnable explicitement dans la recherche pour retrouver les titres épuisés.
 
-Validation locale : TDD rouge puis vert, 213 tests ChromeHeadless Catalog, build de
-production SSR/navigateur, `graphify update .`, `git diff --check` et contrôle Chrome
-desktop/mobile. Le smoke connecté avec Entra et l’API reste à faire ; aucun déploiement ni
-merge n’a été effectué.
+Validation : TDD rouge puis vert, 27 tests ciblés, 210 tests Catalog ChromeHeadless, build
+SSR/navigateur, Graphify, `git diff --check` et contrôle Chrome desktop. L'API locale n'était
+pas démarrée pendant le smoke ; aucun déploiement ni changement hors dépôt n'a été effectué,
+et la [PR #176](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/176) est ouverte.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
@@ -1438,6 +1452,13 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-09-15, le filtrage par défaut de l'onglet `/recherche` reste limité au dépôt et à la
+branche `fix/catalog-search-available-only` ; aucune donnée de catalogue, configuration Azure,
+compte, tenant Entra ou déploiement n'a été modifié. Le smoke local a utilisé le shell Catalog
+sans API de données démarrée et a contrôlé que « Disponible maintenant » était coché. La
+[PR #176](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/176) est ouverte vers
+`main`.
+
 Au 2026-09-09, l’amélioration de la page des prochaines bourses est limitée au dépôt et à
 la PR [#110](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/110). Aucun changement
 Azure, DNS, Entra, Search Console, consentement distant ou donnée de bourse n’a été effectué ;
@@ -1614,6 +1635,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-15 | Windows | **Catalog — recherche disponible par défaut.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-available-only`, l'onglet `/recherche` charge avec `availability=available`, coche « Disponible maintenant » et y revient après réinitialisation ; `/catalogue` garde son périmètre complet. Validation : TDD rouge puis vert, 27 tests ciblés, 210 tests Catalog, build SSR/navigateur, Graphify, `git diff --check` et smoke Chrome desktop ; l'API locale n'était pas démarrée, aucun déploiement ni changement hors dépôt, [PR #176](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/176) ouverte. |
 | 2026-09-12 | Windows | **Catalog — centrage du loader de recherche.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-loader-centered`, ajout d'une zone de chargement de 150 px centrée sous l'en-tête de « Pas encore dans la bourse aux livres », sans toucher au loader partagé ni aux contrats. Validation : TDD rouge puis vert, 183 tests ChromeHeadless Catalog, build SSR/navigateur, Graphify et smoke Chrome avec API mockée à la taille par défaut, 390×844 et 320×740 sans débordement. Aucun déploiement ni changement hors dépôt ; PR [#160](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/160) ouverte. |
 | 2026-09-12 | Windows | **Scan — accueil authentifié et statistiques.** Les deux actions secondaires deviennent des cartes tactiles équilibrées, avec une icône de graphique pour « Mes statistiques » et une icône de changement de compte. La route `/statistiques` possède son propre viewport fixe et son conteneur de scroll tactile ; les autres écrans conservent le verrouillage global. Validation : 186 tests ChromeHeadless et build de production Scan ; contrôle authentifié appareil/navigateur à faire, aucun déploiement. PR [#152](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/152) ouverte. |
 | 2026-09-11 | Windows | **Catalog — toasts de validation de l’administration.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-site-validation-toasts`, regroupement des succès et erreurs dans un toast fixe, accessible et fermable, avec remplacement atomique des états de feedback pour éviter les messages périmés. Validation : TDD rouge puis vert, 165 tests Catalog ChromeHeadless, build SSR/navigateur avec l’avertissement de budget initial connu, `graphify update .` et `git diff --check` ; smoke connecté à refaire, aucun déploiement ni changement hors dépôt. PR [#146](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/146) ouverte. |

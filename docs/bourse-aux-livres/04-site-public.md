@@ -80,6 +80,11 @@ de vie :
 | `À la prochaine bourse` | Exemplaires annoncés, pas encore vendables (`RG-22`) |
 | `Tout` | Les deux, plus les titres épuisés |
 
+L'onglet « Rechercher » ouvre par défaut sur « Disponible maintenant » afin de répondre
+d'abord à la question « qu'est-ce qui est disponible aujourd'hui ? ». Le filtre explicite
+« Tout » reste proposé pour retrouver un titre épuisé et l'ajouter à une liste de recherche ;
+le parcours « Catalogue par genre » conserve également l'exploration du catalogue complet.
+
 Un résultat affiche couverture, titre, auteur, et **l'état de disponibilité**, distinct
 selon le cas : « 3 disponibles », « 2 à partir du 14 mars », ou « épuisé ». C'est la
 donnée que les gens viennent chercher ; elle ne doit jamais être masquée derrière un

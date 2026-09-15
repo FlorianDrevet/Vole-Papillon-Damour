@@ -131,7 +131,7 @@
           <span>Uniquement les livres rares</span>
         </label>
 
-        @if (query || genre || rareOnly || availability !== 'all' || sort !== 'relevance') {
+        @if (query || genre || rareOnly || availability !== defaultAvailability() || sort !== 'relevance') {
           <button type="button" class="reset-filters" (click)="clearFilters()">Réinitialiser les filtres</button>
         }
 
@@ -165,7 +165,7 @@
               }
             </div>
           } @else {
-            <p class="state-message">Aucun livre ne correspond à ces critères. Les titres épuisés restent dans le catalogue : élargissez la recherche pour les retrouver.</p>
+            <p class="state-message">Aucun livre ne correspond à ces critères. Modifiez votre recherche ou vos filtres.</p>
           }
 
           @if (!loading && !error && response && response.totalCount > response.pageSize) {
