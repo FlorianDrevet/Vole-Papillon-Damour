@@ -1003,6 +1003,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.refreshView();
   }
 
+  dismissSyncToast(): void {
+    this.scanStatus?.clearMessage();
+    this.refreshView();
+  }
+
   async retrySyncFromStatus(): Promise<void> {
     this.closeStatusModal();
     await this.syncNow();

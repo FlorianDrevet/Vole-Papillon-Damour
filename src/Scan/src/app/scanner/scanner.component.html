@@ -660,10 +660,21 @@
   </div>
 
   <div *ngIf="syncToast as toast" class="scan-toast" role="status" aria-live="polite">
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m5 12.5 4.2 4.2L19 7"></path>
-    </svg>
-    {{ toast }}
+    <span class="scan-toast-message">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m5 12.5 4.2 4.2L19 7"></path>
+      </svg>
+      <span>{{ toast }}</span>
+    </span>
+    <button
+      type="button"
+      class="scan-toast-dismiss"
+      aria-label="Fermer la notification"
+      (click)="dismissSyncToast()">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M6 6 18 18M18 6 6 18"></path>
+      </svg>
+    </button>
   </div>
 
   <section

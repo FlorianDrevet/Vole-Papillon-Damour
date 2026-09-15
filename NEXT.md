@@ -215,24 +215,19 @@ git pull
 
 ## En cours
 
-### État actualisé — 2026-09-15 — ajout inline d’une fiche dans l’Inventaire Catalog
+### État actualisé — 2026-09-15 — toast de synchronisation du Scan
 
-Depuis le worktree `Vole-Papillon-Damour-catalog-inventory-inline-addition`, la page
-`/administration` affiche désormais `Le fonds de livres` / `Toutes les fiches` avant le bloc
-`Ajouter au fonds` / `Trouver une nouvelle fiche`. Quand l’administrateur choisit
-« Utiliser cette fiche » dans les résultats externes, `Fiche prête à ajouter` est rendue juste
-sous la ligne choisie au lieu d’être ajoutée en bas de la page. Le client consulte la fiche
-admin existante : il indique clairement qu’elle n’est pas encore dans le fonds ou affiche le
-nombre d’exemplaires disponibles. La quantité initiale est un champ numérique éditable borné
-entre 0 et 100 000, entouré de boutons − et +. La règle backend qui refuse l’ajout d’un ISBN
-déjà présent n’a pas été modifiée.
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-scan-success-toast`, le toast de succès « Synchronisation réussie »
+de `src/Scan` est maintenant positionné en haut de la surface, afin de ne plus recouvrir les
+boutons d’action en bas. Il dispose d’une croix accessible qui efface immédiatement le message,
+tout en conservant son expiration automatique.
 
-Validation locale : TDD rouge puis vert, 30 specs Inventaire ciblées, 208 tests Catalog
-ChromeHeadless, build Catalog SSR/navigateur et `graphify update .`. Le smoke responsive avec
-une session admin réelle reste à faire ; la [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174)
-est ouverte vers `main`. Aucun déploiement, changement API/base, compte ou fusion n’a été
-effectué. `rtk` n’est pas installé sur cette machine, les commandes natives équivalentes ont
-été utilisées.
+Validation locale : TDD rouge puis vert, 190 tests Scan ChromeHeadless, 6 tests de bootstrap,
+build de production, `graphify update .` et `git diff --check`. Le shell local non authentifié
+a été contrôlé dans Chrome ; le smoke connecté avec Entra et l’API reste à faire. Aucun
+déploiement, changement Azure, compte ou donnée API n’a été effectué ; la [PR #172](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/172)
+est ouverte vers `main` et n’a pas été fusionnée.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
