@@ -65,6 +65,13 @@ backfill. The dashboard period chips are typed and reload the overview with UTC 
 30 days, three calendar months, or twelve months; the scan-session navigation badge uses the
 same pending-alert/non-cancelled predicate as the `Encore corrigeables` view.
 
+As of 2026-09-15, Catalog administration uses real child routes for its sidebar:
+`/administration/:section` restores the selected workspace after a refresh, while the
+statistics subtab is persisted in the `tab` query parameter. The sidebar entries are
+router links with an accessible current-page state; valid child routes remain client-only
+and `noindex, nofollow`, and the administrator login keeps the current deep link as its
+return URL.
+
 Administration action feedback is rendered as one fixed, dismissible toast above the content
 flow, with separate accessible success/error tones and live-region semantics. The page keeps
 only the latest feedback state so a stale success cannot remain visible alongside a validation

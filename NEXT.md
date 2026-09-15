@@ -198,6 +198,21 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-15 — navigation réelle de l’administration Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-admin-sidebar-real-navigation`, les entrées de la sidebar de
+`/administration` utilisent désormais les routes enfants `/administration/:section`.
+L’onglet actif est donc encodé dans l’URL et restauré par Angular après un refresh ; la
+sous-section des statistiques est conservée dans le paramètre `?tab=`. Les routes
+administrateur valides restent côté client et `noindex, nofollow`, et une connexion
+Microsoft conserve le deep link courant pour revenir directement à l’espace demandé.
+
+Validation locale : TDD rouge puis vert, 213 tests ChromeHeadless Catalog, build de
+production SSR/navigateur, `graphify update .`, `git diff --check` et contrôle Chrome
+desktop/mobile. Le smoke connecté avec Entra et l’API reste à faire ; aucun déploiement ni
+merge n’a été effectué.
+
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree

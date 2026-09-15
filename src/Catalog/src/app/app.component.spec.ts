@@ -62,6 +62,15 @@ describe('AppComponent', () => {
       .toContain('catalogue');
   });
 
+  it('keeps the administration shell active for a workspace URL', () => {
+    const component = fixture.componentInstance as unknown as {
+      isAdminUrl: (url: string) => boolean;
+    };
+
+    expect(component.isAdminUrl('/administration/inventory')).toBeTrue();
+    expect(component.isAdminUrl('/administration/statistics?tab=evolution')).toBeTrue();
+  });
+
   it('keeps the mobile menu button label synchronized with its state', () => {
     const menuButton = fixture.nativeElement.querySelector('.menu-toggle') as HTMLButtonElement;
 
