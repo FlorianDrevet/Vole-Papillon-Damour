@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  OnDestroy,
   OnInit,
   PLATFORM_ID,
   Signal,
@@ -12,10 +13,20 @@ import {
 } from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Meta} from '@angular/platform-browser';
-import {firstValueFrom} from 'rxjs';
+import {ActivatedRoute, Router} from '@angular/router';
+import {Subject, combineLatest, firstValueFrom, takeUntil} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
 import {CatalogApiService} from '../../core/catalog-api.service';
+import {isCatalogAdministrationRoute} from '../../core/catalog-route';
+import {
+  catalogAdminSectionFromRoute,
+  catalogAdminSectionPath,
+  catalogAdminStatisticsTabFromRoute,
+  isCatalogAdminSection,
+  type CatalogAdminSection,
+  type CatalogAdminStatisticsTab,
+} from '../../core/catalog-administration-route';
 import {
   CatalogAuthenticationRedirectStartedError,
   CatalogAuthService,
@@ -56,20 +67,7 @@ const DEFAULT_MIN_QUANTITY = 3;
 const MAX_MIN_AGE_MONTHS = 120_000;
 const MAX_BOOK_QUANTITY = 100_000;
 
-export type CatalogAdminSection =
-  | 'overview'
-  | 'sessions'
-  | 'dead-stock'
-  | 'inventory'
-  | 'catalogue'
-  | 'statistics'
-  | 'alerts'
-  | 'members'
-  | 'accounts'
-  | 'settings';
-
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
-export type CatalogAdminStatisticsTab = 'fairs' | 'evolution' | 'books' | 'volunteers';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
 
 type CatalogAdminNavIcon =
@@ -128,7 +126,7 @@ interface CatalogInventoryConfirmation {
   styleUrls: ['./catalog-administration-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogAdministrationPageComponent implements OnInit {
+export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
   readonly isAdministrator: Signal<boolean>;
@@ -317,6 +315,10 @@ export class CatalogAdministrationPageComponent implements OnInit {
   alertDelayHours = 2;
 
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyed = new Subject<void>();
+  private administrationInitialized = false;
 
   constructor(
     private readonly auth: CatalogAuthService,
@@ -332,7 +334,18 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
+    combineLatest([this.route.paramMap, this.route.queryParamMap])
+      .pipe(takeUntil(this.destroyed))
+      .subscribe(([params, queryParams]) => this.applyRouteState(
+        params.get('section'),
+        queryParams.get('tab'),
+      ));
     void this.initialize();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed.next();
+    this.destroyed.complete();
   }
 
   async initialize(): Promise<void> {
@@ -341,13 +354,18 @@ export class CatalogAdministrationPageComponent implements OnInit {
       await this.loadOverview();
       await this.loadSessions();
       await this.loadDeadStock();
+
+      if (!(['overview', 'sessions', 'dead-stock'] as CatalogAdminSection[]).includes(this.activeSection())) {
+        await this.loadSection(this.activeSection());
+      }
     }
+    this.administrationInitialized = true;
   }
 
   async login(): Promise<void> {
     this.clearFeedback();
     try {
-      await this.auth.login('/administration');
+      await this.auth.login(isCatalogAdministrationRoute(this.router.url) ? this.router.url : '/administration');
     } catch {
       this.showError('La connexion n’a pas pu être démarrée. Réessayez.');
     }
@@ -358,11 +376,24 @@ export class CatalogAdministrationPageComponent implements OnInit {
   }
 
   async selectSection(section: CatalogAdminSection): Promise<void> {
+    if (isCatalogAdministrationRoute(this.router.url) && this.activeSection() !== section) {
+      await this.router.navigate(['/administration', section]);
+      return;
+    }
+
     this.activeSection.set(section);
     if (!this.auth.isAuthenticated()) {
       return;
     }
 
+    await this.loadSection(section);
+  }
+
+  adminSectionUrl(section: CatalogAdminSection): string {
+    return catalogAdminSectionPath(section);
+  }
+
+  private async loadSection(section: CatalogAdminSection): Promise<void> {
     switch (section) {
       case 'overview':
         await this.loadOverview();
@@ -391,6 +422,31 @@ export class CatalogAdministrationPageComponent implements OnInit {
       case 'settings':
         await this.loadSettings();
         break;
+    }
+  }
+
+  private applyRouteState(sectionParam: string | null, statisticsTabParam: string | null): void {
+    if (sectionParam && !isCatalogAdminSection(sectionParam)) {
+      void this.router.navigate(['/administration', 'overview'], {replaceUrl: true});
+      return;
+    }
+
+    const section = catalogAdminSectionFromRoute(sectionParam);
+    const statisticsTab = catalogAdminStatisticsTabFromRoute(statisticsTabParam);
+    const sectionChanged = this.activeSection() !== section;
+    const statisticsTabChanged = this.statisticsTab() !== statisticsTab;
+
+    this.activeSection.set(section);
+    this.statisticsTab.set(statisticsTab);
+
+    if (!this.administrationInitialized || !this.auth.isAuthenticated()) {
+      return;
+    }
+
+    if (sectionChanged) {
+      void this.loadSection(section);
+    } else if (statisticsTabChanged && section === 'statistics') {
+      void this.loadStatisticsTab();
     }
   }
 
@@ -837,6 +893,18 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   async selectStatisticsTab(tab: CatalogAdminStatisticsTab): Promise<void> {
     this.statisticsTab.set(tab);
+
+    if (isCatalogAdministrationRoute(this.router.url)) {
+      const routeTab = tab === 'fairs' ? null : tab;
+      if (this.route.snapshot.queryParamMap.get('tab') !== routeTab) {
+        await this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {tab: routeTab},
+          queryParamsHandling: 'merge',
+        });
+      }
+    }
+
     if (!this.auth.isAuthenticated()) {
       return;
     }

@@ -6,6 +6,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'administration/:section',
+    renderMode: RenderMode.Client,
+  },
+  {
     path: 'compte',
     renderMode: RenderMode.Client,
   },

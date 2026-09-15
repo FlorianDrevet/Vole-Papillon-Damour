@@ -3,9 +3,10 @@ import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
 import {Meta} from '@angular/platform-browser';
+import {ActivatedRoute, ParamMap, RouterModule, convertToParamMap} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
-import {of, throwError} from 'rxjs';
+import {BehaviorSubject, of, throwError} from 'rxjs';
 
 import {
   CatalogAuthenticationRedirectStartedError,
@@ -47,6 +48,8 @@ describe('CatalogAdministrationPageComponent', () => {
   };
   let api: jasmine.SpyObj<CatalogAdminApiService>;
   let catalogApi: jasmine.SpyObj<CatalogApiService>;
+  let routeParams: BehaviorSubject<ParamMap>;
+  let routeQueryParams: BehaviorSubject<ParamMap>;
 
   const response: CatalogDeadStockResponse = {
     generatedAt: '2026-09-04T12:00:00Z',
@@ -140,6 +143,8 @@ describe('CatalogAdministrationPageComponent', () => {
     auth.login.and.resolveTo();
     auth.logout.and.resolveTo();
     auth.getApiAccessToken.and.resolveTo('access-token');
+    routeParams = new BehaviorSubject(convertToParamMap({}));
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
       'getOverview', 'getBooks', 'getBook', 'addBook', 'updateMetadata', 'correctQuantity',
@@ -236,13 +241,24 @@ describe('CatalogAdministrationPageComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [CatalogAdministrationPageComponent],
-      imports: [FormsModule],
+      imports: [FormsModule, RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogAdminApiService, useValue: api},
         {provide: CatalogApiService, useValue: catalogApi},
         provideHttpClient(),
         provideHttpClientTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: routeParams,
+            queryParamMap: routeQueryParams,
+            snapshot: {
+              paramMap: routeParams.value,
+              queryParamMap: routeQueryParams.value,
+            },
+          },
+        },
       ],
     }).compileComponents();
 
@@ -337,6 +353,46 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(getComputedStyle(sidebar).backgroundColor).not.toBe('rgb(7, 43, 69)');
   });
 
+  it('renders administration workspaces as real router links', () => {
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+
+    const links = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('.admin-nav-item'),
+    );
+
+    expect(links.map(link => link.getAttribute('href'))).toEqual([
+      '/administration/overview',
+      '/administration/sessions',
+      '/administration/dead-stock',
+      '/administration/catalogue',
+      '/administration/inventory',
+      '/administration/statistics',
+      '/administration/accounts',
+      '/administration/settings',
+    ]);
+  });
+
+  it('restores the selected administration workspace from the current route', () => {
+    fixture.detectChanges();
+
+    routeParams.next(convertToParamMap({section: 'inventory'}));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeSection()).toBe('inventory');
+  });
+
+  it('restores the selected statistics tab from the current query parameters', () => {
+    fixture.detectChanges();
+
+    routeParams.next(convertToParamMap({section: 'statistics'}));
+    routeQueryParams.next(convertToParamMap({tab: 'evolution'}));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeSection()).toBe('statistics');
+    expect(fixture.componentInstance.statisticsTab()).toBe('evolution');
+  });
+
   it('renders the maquette dashboard title and eight data cards', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
@@ -425,7 +481,7 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const sessionButton = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.admin-nav-item'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.admin-nav-item'),
     ).find(button => button.textContent?.includes('Sessions de scan'));
 
     expect(sessionButton).toBeDefined();

@@ -47,7 +47,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   query = '';
   submittedQuery = '';
   genre = '';
-  availability: CatalogAvailability = 'all';
+  availability: CatalogAvailability = 'available';
   rareOnly = false;
   sort: CatalogSort = 'relevance';
   sortMenuOpen = false;
@@ -241,10 +241,14 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.query = '';
     this.genre = '';
-    this.availability = 'all';
+    this.availability = this.defaultAvailability();
     this.rareOnly = false;
     this.sort = 'relevance';
     this.applyFilters();
+  }
+
+  defaultAvailability(): CatalogAvailability {
+    return this.browseMode ? 'all' : 'available';
   }
 
   goToPage(page: number): void {
@@ -633,7 +637,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     const params: Record<string, string | number | boolean> = {};
     if (query.trim()) params['q'] = query.trim();
     if (this.genre.trim()) params['genre'] = this.genre.trim();
-    if (this.availability !== 'all') params['availability'] = this.availability;
+    if (!this.browseMode || this.availability !== 'all') params['availability'] = this.availability;
     if (this.rareOnly) params['rare'] = true;
     if (this.sort !== 'relevance') params['sort'] = this.sort;
     if (includePagination) {
@@ -691,7 +695,11 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   private readAvailability(value: string | null): CatalogAvailability {
-    return value === 'available' || value === 'next' ? value : 'all';
+    if (value === 'available' || value === 'next' || value === 'all') {
+      return value;
+    }
+
+    return this.defaultAvailability();
   }
 
   private readRouteState(params: ParamMap): CatalogSearchRouteState {
