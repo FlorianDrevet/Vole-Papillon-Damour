@@ -209,7 +209,8 @@ tout en conservant son expiration automatique.
 Validation locale : TDD rouge puis vert, 190 tests Scan ChromeHeadless, 6 tests de bootstrap,
 build de production, `graphify update .` et `git diff --check`. Le shell local non authentifié
 a été contrôlé dans Chrome ; le smoke connecté avec Entra et l’API reste à faire. Aucun
-déploiement, changement Azure, compte ou donnée API n’a été effectué.
+déploiement, changement Azure, compte ou donnée API n’a été effectué ; la [PR #172](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/172)
+est ouverte vers `main` et n’a pas été fusionnée.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
