@@ -1,4 +1,12 @@
-import {ChangeDetectionStrategy, Component, OnInit, signal} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  signal,
+} from '@angular/core';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
 import {catchError, forkJoin, of} from 'rxjs';
@@ -18,6 +26,11 @@ const EMPTY_SEARCH: CatalogSearchResponse = {
   genres: [],
 };
 
+interface HeroGenreChoice {
+  value: string;
+  label: string;
+}
+
 @Component({
   selector: 'app-catalog-home-page',
   standalone: false,
@@ -29,6 +42,8 @@ export class CatalogHomePageComponent implements OnInit {
   upcomingOnly = signal(false);
   search = '';
   heroGenre = '';
+  heroGenreMenuOpen = false;
+  heroGenreMenuActiveIndex = 0;
   loading = signal(true);
   hasLoadError = signal(false);
   recent = signal<CatalogBook[]>([]);
@@ -44,6 +59,8 @@ export class CatalogHomePageComponent implements OnInit {
     private readonly api: CatalogApiService,
     private readonly router: Router,
     private readonly sanitizer: DomSanitizer,
+    private readonly changeDetector: ChangeDetectorRef,
+    private readonly elementRef: ElementRef<HTMLElement>,
     public readonly consent: CookieConsentService,
   ) {}
 
@@ -90,6 +107,99 @@ export class CatalogHomePageComponent implements OnInit {
 
   availableGenres(): string[] {
     return mergeCatalogGenres(this.genres());
+  }
+
+  heroGenreChoices(): ReadonlyArray<HeroGenreChoice> {
+    return [
+      {value: '', label: 'Tous les genres'},
+      ...this.availableGenres().map(genre => ({value: genre, label: genre})),
+    ];
+  }
+
+  heroGenreLabel(): string {
+    return this.heroGenre || 'Tous les genres';
+  }
+
+  toggleHeroGenreMenu(): void {
+    if (this.heroGenreMenuOpen) {
+      this.closeHeroGenreMenu();
+      return;
+    }
+
+    this.openHeroGenreMenu();
+  }
+
+  selectHeroGenre(value: string): void {
+    this.heroGenre = value;
+    this.closeHeroGenreMenu(true);
+    this.changeDetector.markForCheck();
+  }
+
+  handleHeroGenreTriggerKeydown(event: KeyboardEvent): void {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.toggleHeroGenreMenu();
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.openHeroGenreMenu();
+        this.moveHeroGenreFocus(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.openHeroGenreMenu();
+        this.moveHeroGenreFocus(-1);
+        break;
+      case 'Escape':
+        if (this.heroGenreMenuOpen) {
+          event.preventDefault();
+          this.closeHeroGenreMenu();
+        }
+        break;
+    }
+  }
+
+  handleHeroGenreOptionKeydown(event: KeyboardEvent, index: number): void {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.selectHeroGenre(this.heroGenreChoices()[index].value);
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.moveHeroGenreFocus(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.moveHeroGenreFocus(-1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        this.focusHeroGenreOption(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        this.focusHeroGenreOption(this.heroGenreChoices().length - 1);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeHeroGenreMenu(true);
+        break;
+      case 'Tab':
+        this.closeHeroGenreMenu();
+        break;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeHeroGenreMenuOnDocumentClick(event: MouseEvent): void {
+    if (this.heroGenreMenuOpen && !this.elementRef.nativeElement.contains(event.target as Node)) {
+      this.closeHeroGenreMenu();
+    }
   }
 
   showAll(): void {
@@ -187,5 +297,51 @@ export class CatalogHomePageComponent implements OnInit {
       new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime());
     this.upcomingFairs.set(sortedFairs);
     this.nextFair.set(sortedFairs[0] ?? null);
+  }
+
+  private openHeroGenreMenu(): void {
+    if (this.heroGenreMenuOpen) {
+      return;
+    }
+
+    this.heroGenreMenuActiveIndex = this.heroGenreIndex();
+    this.heroGenreMenuOpen = true;
+    this.changeDetector.markForCheck();
+  }
+
+  private closeHeroGenreMenu(returnFocus = false): void {
+    if (!this.heroGenreMenuOpen) {
+      return;
+    }
+
+    this.heroGenreMenuOpen = false;
+    this.changeDetector.markForCheck();
+    if (returnFocus) {
+      this.elementRef.nativeElement.querySelector<HTMLButtonElement>('.hero-genre-select-trigger')?.focus();
+    }
+  }
+
+  private heroGenreIndex(): number {
+    const index = this.heroGenreChoices().findIndex(choice => choice.value === this.heroGenre);
+    return index >= 0 ? index : 0;
+  }
+
+  private moveHeroGenreFocus(delta: number): void {
+    const optionCount = this.heroGenreChoices().length;
+    this.focusHeroGenreOption((this.heroGenreMenuActiveIndex + delta + optionCount) % optionCount);
+  }
+
+  private focusHeroGenreOption(index: number): void {
+    const optionCount = this.heroGenreChoices().length;
+    this.heroGenreMenuActiveIndex = (index + optionCount) % optionCount;
+    setTimeout(() => {
+      if (!this.heroGenreMenuOpen) {
+        return;
+      }
+
+      this.elementRef.nativeElement
+        .querySelector<HTMLButtonElement>(`#catalog-home-genre-option-${this.heroGenreMenuActiveIndex}`)
+        ?.focus();
+    });
   }
 }

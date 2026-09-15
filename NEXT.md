@@ -25,6 +25,20 @@
 
 ---
 
+### État actualisé — 2026-09-15 — overlay du genre sur l’accueil Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-home-genre-overlay`, le filtre « Genre » de la recherche héro de
+l’accueil n’utilise plus le popup natif du navigateur : il reprend le panneau custom du tri de
+`/recherche`, avec le style Catalog, le genre sélectionné, la navigation clavier et la fermeture
+au clic extérieur. La recherche conserve son overlay custom « Trier par ».
+
+Validation locale : TDD rouge puis vert, 220 tests Catalog ChromeHeadless, build SSR/navigateur,
+`rtk graphify update .` et `git diff --check`. Les avertissements de budget Angular existants
+restent présents. Le smoke visuel desktop/mobile et le contrôle avec API/Entra connectés restent
+à faire ; aucun déploiement ni merge n’a été effectué ; la [PR #179](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/179)
+est ouverte pour relecture.
+
 ### État actualisé — 2026-09-15 — état de session Auth Catalog
 
 Le Catalog distingue désormais le compte présent dans le cache MSAL d’une session réellement

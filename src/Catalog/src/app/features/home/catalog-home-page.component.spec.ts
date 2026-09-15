@@ -99,7 +99,7 @@ describe('CatalogHomePageComponent', () => {
   });
 
   it('puts the genre selector and availability count in the hero search', () => {
-    expect(fixture.nativeElement.querySelector('.hero-genre-select')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.hero-genre-select-trigger')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('412');
     expect(fixture.nativeElement.querySelector('.hero-count')?.textContent).toContain('titres disponibles en ce moment');
     expect(fixture.nativeElement.querySelector('.home-account-callout')).not.toBeNull();
@@ -108,6 +108,62 @@ describe('CatalogHomePageComponent', () => {
       .toContain('Suivez un livre, on vous prévient quand il arrive.');
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
     expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
+  });
+
+  it('opens a branded genre menu instead of relying on the native select popup', () => {
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector('.hero-genre-select-trigger') as HTMLButtonElement;
+
+    expect(element.querySelector('select[name="genre"]')).toBeNull();
+    expect(trigger).not.toBeNull();
+    expect(trigger.getAttribute('aria-label')).toBe('Filtrer par genre');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    trigger.click();
+    fixture.detectChanges();
+
+    const panel = element.querySelector('.hero-genre-select-panel') as HTMLElement;
+    expect(panel.getAttribute('role')).toBe('menu');
+    expect(panel.querySelectorAll('.hero-genre-option')).toHaveSize(4);
+    expect(panel.querySelector('.hero-genre-option--selected')?.textContent).toContain('Tous les genres');
+  });
+
+  it('updates the selected hero genre and closes the branded menu', async () => {
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector('.hero-genre-select-trigger') as HTMLButtonElement;
+
+    trigger.click();
+    fixture.detectChanges();
+    (element.querySelector('[data-genre="Jeunesse"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.heroGenre).toBe('Jeunesse');
+    expect(element.querySelector('.hero-genre-select-panel')).toBeNull();
+    expect(trigger.textContent).toContain('Jeunesse');
+  });
+
+  it('supports keyboard opening and selection in the branded genre menu', async () => {
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector('.hero-genre-select-trigger') as HTMLButtonElement;
+
+    trigger.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.querySelector('.hero-genre-select-panel')).not.toBeNull();
+
+    const genreOption = element.querySelector('[data-genre="Romans"]') as HTMLButtonElement;
+    genreOption.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.heroGenre).toBe('Romans');
+    expect(element.querySelector('.hero-genre-select-panel')).toBeNull();
   });
 
   it('places the genre browser and account guidance after the rare books section', () => {
@@ -146,7 +202,7 @@ describe('CatalogHomePageComponent', () => {
 
   it('uses the 2a hero composition with the butterfly and a footer fair row', () => {
     const hero = fixture.nativeElement.querySelector('.hero') as HTMLElement;
-    const heroSearchButton = hero.querySelector('.hero-search button') as HTMLButtonElement;
+    const heroSearchButton = hero.querySelector('.hero-search > button[type="submit"]') as HTMLButtonElement;
     const heroVisual = hero.querySelector('.hero-visual') as HTMLElement;
     const butterfly = hero.querySelector('.hero-butterfly') as HTMLImageElement;
 
@@ -283,9 +339,11 @@ describe('CatalogHomePageComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
+    (element.querySelector('.hero-genre-select-trigger') as HTMLButtonElement).click();
+    fixture.detectChanges();
     const options = Array.from(
-      element.querySelectorAll<HTMLOptionElement>('.hero-genre-select option'),
-    ).map(option => option.value);
+      element.querySelectorAll<HTMLButtonElement>('.hero-genre-option'),
+    ).map(option => option.dataset['genre'] ?? '');
 
     expect(options).toEqual(['']);
     expect(element.querySelector('.genres-section')).toBeNull();
