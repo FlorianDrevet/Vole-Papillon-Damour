@@ -17,13 +17,27 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — rendre l’ajout de fiches d’Inventaire lisible et inline depuis les références bibliographiques. |
-| **Prochaine action** | Contrôler avec une session administrateur connectée le statut d’une fiche existante et l’affichage responsive de la ligne sélectionnée dans la [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174). |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-inventory-inline-addition` |
-| **Dernière mise à jour** | 2026-09-15 — le fonds apparaît avant le parcours d’ajout ; la fiche sélectionnée s’ouvre sous sa référence, son existence et son stock sont affichés, et la quantité initiale est éditable avec −/+. |
-| **Branche** | `feat/catalog-inventory-inline-addition` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174) ouverte vers `main` |
+| **Lot en cours** | Catalog — ajouter l’overlay custom du tri de la recherche au sélecteur « Genre » de l’accueil. |
+| **Prochaine action** | Faire relire la correction, vérifier visuellement l’overlay sur desktop et mobile, puis intégrer la [PR #179](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/179) dans `main`. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-home-genre-overlay` |
+| **Dernière mise à jour** | 2026-09-15 — le sélecteur « Genre » de l’accueil utilise un menu custom avec états sélectionné, focus clavier et fermeture au clic extérieur ; le panneau custom « Trier par » de `/recherche` est conservé. |
+| **Branche** | `fix/catalog-home-genre-overlay` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #179](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/179) ouverte vers `main` |
 
 ---
+
+### État actualisé — 2026-09-15 — overlay du genre sur l’accueil Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-home-genre-overlay`, le filtre « Genre » de la recherche héro de
+l’accueil n’utilise plus le popup natif du navigateur : il reprend le panneau custom du tri de
+`/recherche`, avec le style Catalog, le genre sélectionné, la navigation clavier et la fermeture
+au clic extérieur. La recherche conserve son overlay custom « Trier par ».
+
+Validation locale : TDD rouge puis vert, 220 tests Catalog ChromeHeadless, build SSR/navigateur,
+`rtk graphify update .` et `git diff --check`. Les avertissements de budget Angular existants
+restent présents. Le smoke visuel desktop/mobile et le contrôle avec API/Entra connectés restent
+à faire ; aucun déploiement ni merge n’a été effectué ; la [PR #179](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/179)
+est ouverte pour relecture.
 
 ### État actualisé — 2026-09-15 — état de session Auth Catalog
 
