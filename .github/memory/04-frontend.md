@@ -39,8 +39,9 @@ the next books fair, and the dynamic sitemap; the home calendar also consumes th
 public `/asso-events` schedule and keeps only future Books events. Its public routes are `/`, `/recherche`,
 `/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, `/donnees-personnelles`, and the legal,
 privacy, cookie and accessibility pages. The UI keeps
-available quantities separate from future announcements, leaves exhausted books visible,
-and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
+available quantities separate from future announcements; `/recherche` opens by default with
+`availability=available`, while `/catalogue` and the explicit `Tout` filter still allow
+exhausted titles to be explored, and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
 calls, exposes alert suspension/reactivation and the durable account-deletion request.
 `/desinscription` is a client-only authenticated opt-out route. The `/administration`
@@ -64,6 +65,13 @@ stored contact data show a neutral missing-name label and require reopening or a
 backfill. The dashboard period chips are typed and reload the overview with UTC bounds for
 30 days, three calendar months, or twelve months; the scan-session navigation badge uses the
 same pending-alert/non-cancelled predicate as the `Encore corrigeables` view.
+
+As of 2026-09-15, Catalog administration uses real child routes for its sidebar:
+`/administration/:section` restores the selected workspace after a refresh, while the
+statistics subtab is persisted in the `tab` query parameter. The sidebar entries are
+router links with an accessible current-page state; valid child routes remain client-only
+and `noindex, nofollow`, and the administrator login keeps the current deep link as its
+return URL.
 
 Administration action feedback is rendered as one fixed, dismissible toast above the content
 flow, with separate accessible success/error tones and live-region semantics. The page keeps
@@ -174,6 +182,14 @@ available quantity and required note through `POST /books/admin/books`. Each loc
 confirmed `+`/`−` corrections through the typed quantity endpoint, while announced quantity
 remains visibly separate and redirected fiches are read-only for stock actions. The view does
 not invent carton/rayon counts or a bulk physical-count workflow.
+
+As of 2026-09-15, the Inventory workspace presents `Le fonds de livres` / `Toutes les fiches`
+before the external-reference add flow. Selecting `Utiliser cette fiche` renders the candidate
+form immediately below that reference row; the form checks the protected admin book read so it
+can say whether the ISBN is absent or already present with its available quantity. The initial
+quantity remains a typed, editable number field with bounded `−`/`+` controls. The existing
+`AddBookCommand` duplicate guard is unchanged, so an already-present fiche remains visible for
+orientation but is not silently duplicated.
 
 The Catalog auth service reads the `roles` claim from the API access token after silent
 acquisition, exposes an `isAdministrator` signal for navigation affordances, and accepts

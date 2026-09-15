@@ -3,9 +3,10 @@ import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
 import {Meta} from '@angular/platform-browser';
+import {ActivatedRoute, ParamMap, RouterModule, convertToParamMap} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
-import {of, throwError} from 'rxjs';
+import {BehaviorSubject, of, throwError} from 'rxjs';
 
 import {
   CatalogAuthenticationRedirectStartedError,
@@ -47,6 +48,8 @@ describe('CatalogAdministrationPageComponent', () => {
   };
   let api: jasmine.SpyObj<CatalogAdminApiService>;
   let catalogApi: jasmine.SpyObj<CatalogApiService>;
+  let routeParams: BehaviorSubject<ParamMap>;
+  let routeQueryParams: BehaviorSubject<ParamMap>;
 
   const response: CatalogDeadStockResponse = {
     generatedAt: '2026-09-04T12:00:00Z',
@@ -140,6 +143,8 @@ describe('CatalogAdministrationPageComponent', () => {
     auth.login.and.resolveTo();
     auth.logout.and.resolveTo();
     auth.getApiAccessToken.and.resolveTo('access-token');
+    routeParams = new BehaviorSubject(convertToParamMap({}));
+    routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
       'getOverview', 'getBooks', 'getBook', 'addBook', 'updateMetadata', 'correctQuantity',
@@ -236,13 +241,24 @@ describe('CatalogAdministrationPageComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [CatalogAdministrationPageComponent],
-      imports: [FormsModule],
+      imports: [FormsModule, RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogAdminApiService, useValue: api},
         {provide: CatalogApiService, useValue: catalogApi},
         provideHttpClient(),
         provideHttpClientTesting(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: routeParams,
+            queryParamMap: routeQueryParams,
+            snapshot: {
+              paramMap: routeParams.value,
+              queryParamMap: routeQueryParams.value,
+            },
+          },
+        },
       ],
     }).compileComponents();
 
@@ -337,6 +353,46 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(getComputedStyle(sidebar).backgroundColor).not.toBe('rgb(7, 43, 69)');
   });
 
+  it('renders administration workspaces as real router links', () => {
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+
+    const links = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('.admin-nav-item'),
+    );
+
+    expect(links.map(link => link.getAttribute('href'))).toEqual([
+      '/administration/overview',
+      '/administration/sessions',
+      '/administration/dead-stock',
+      '/administration/catalogue',
+      '/administration/inventory',
+      '/administration/statistics',
+      '/administration/accounts',
+      '/administration/settings',
+    ]);
+  });
+
+  it('restores the selected administration workspace from the current route', () => {
+    fixture.detectChanges();
+
+    routeParams.next(convertToParamMap({section: 'inventory'}));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeSection()).toBe('inventory');
+  });
+
+  it('restores the selected statistics tab from the current query parameters', () => {
+    fixture.detectChanges();
+
+    routeParams.next(convertToParamMap({section: 'statistics'}));
+    routeQueryParams.next(convertToParamMap({tab: 'evolution'}));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeSection()).toBe('statistics');
+    expect(fixture.componentInstance.statisticsTab()).toBe('evolution');
+  });
+
   it('renders the maquette dashboard title and eight data cards', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
@@ -425,7 +481,7 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const sessionButton = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.admin-nav-item'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.admin-nav-item'),
     ).find(button => button.textContent?.includes('Sessions de scan'));
 
     expect(sessionButton).toBeDefined();
@@ -483,6 +539,9 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Toutes les fiches');
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).not.toContain('Remise à plat');
+    const booksZone = fixture.nativeElement.querySelector('.inventory-books-zone') as HTMLElement;
+    const addZone = fixture.nativeElement.querySelector('.inventory-add-zone') as HTMLElement;
+    expect(booksZone.compareDocumentPosition(addZone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('adjusts a fiche quantity from the inventory controls with a trace note', async () => {
@@ -699,6 +758,10 @@ describe('CatalogAdministrationPageComponent', () => {
       pageSize: 20,
     }));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 25}));
+    api.getBook.and.returnValue(of(inventoryBook({
+      isbn13: reference.isbn13,
+      quantityAvailable: 4,
+    })));
     api.addBook.and.returnValue(of({changed: true, isbn13: reference.isbn13}));
 
     fixture.detectChanges();
@@ -728,7 +791,14 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(useReference).not.toBeNull();
 
     useReference!.click();
+    await fixture.whenStable();
     fixture.detectChanges();
+    const referenceRow = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '.inventory-reference-row',
+    );
+    expect(referenceRow?.nextElementSibling?.getAttribute('data-testid')).toBe('inventory-candidate-form');
+    expect(fixture.nativeElement.textContent).toContain('Cette fiche est déjà dans le fonds');
+    expect(fixture.nativeElement.textContent).toContain('4 exemplaires disponibles');
     const quantity = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '[data-testid="inventory-add-quantity"]',
     );
@@ -738,19 +808,30 @@ describe('CatalogAdministrationPageComponent', () => {
     const add = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
       '[data-testid="inventory-add-submit"]',
     );
+    const decrease = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-add-quantity-decrease"]',
+    );
+    const increase = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-add-quantity-increase"]',
+    );
     expect(quantity).not.toBeNull();
     expect(note).not.toBeNull();
     expect(add).not.toBeNull();
+    expect(decrease).not.toBeNull();
+    expect(increase).not.toBeNull();
 
-    fixture.componentInstance.inventoryAddQuantity = 3;
+    fixture.componentInstance.inventoryAddQuantity = 2;
     fixture.componentInstance.inventoryAddNote = 'Ajout du don';
     fixture.detectChanges();
+    increase!.click();
+    decrease!.click();
+    expect(fixture.componentInstance.inventoryAddQuantity).toBe(2);
     add!.click();
     await fixture.whenStable();
 
     expect(api.addBook).toHaveBeenCalledWith('access-token', {
       isbn13: reference.isbn13,
-      quantityAvailable: 3,
+      quantityAvailable: 2,
       note: 'Ajout du don',
       title: reference.title,
       authors: reference.authors,
@@ -763,6 +844,43 @@ describe('CatalogAdministrationPageComponent', () => {
       workId: reference.workId,
     });
 
+  });
+
+  it('shows when the selected bibliographic fiche is not yet in the fonds', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const reference = {
+      isbn13: '9782070612758',
+      workId: 'OL42W',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+      coverUrl: null,
+      source: 'OpenLibrary',
+    };
+    catalogApi.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'Le Petit Prince',
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    }));
+    api.getBook.and.returnValue(throwError(() => new HttpErrorResponse({status: 404})));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.componentInstance.inventoryReferenceQuery = 'Le Petit Prince';
+    await fixture.componentInstance.searchInventoryReferences();
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-use-reference"]',
+    )!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Cette fiche n’est pas encore dans le fonds');
   });
 
   it('renders the two statistics tabs and omits the quality-data screen', async () => {

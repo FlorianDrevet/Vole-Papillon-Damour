@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   HostListener,
+  OnDestroy,
   OnInit,
   PLATFORM_ID,
   Signal,
@@ -12,10 +13,20 @@ import {
 } from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Meta} from '@angular/platform-browser';
-import {firstValueFrom} from 'rxjs';
+import {ActivatedRoute, Router} from '@angular/router';
+import {Subject, combineLatest, firstValueFrom, takeUntil} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
 import {CatalogApiService} from '../../core/catalog-api.service';
+import {isCatalogAdministrationRoute} from '../../core/catalog-route';
+import {
+  catalogAdminSectionFromRoute,
+  catalogAdminSectionPath,
+  catalogAdminStatisticsTabFromRoute,
+  isCatalogAdminSection,
+  type CatalogAdminSection,
+  type CatalogAdminStatisticsTab,
+} from '../../core/catalog-administration-route';
 import {
   CatalogAuthenticationRedirectStartedError,
   CatalogAuthService,
@@ -56,20 +67,7 @@ const DEFAULT_MIN_QUANTITY = 3;
 const MAX_MIN_AGE_MONTHS = 120_000;
 const MAX_BOOK_QUANTITY = 100_000;
 
-export type CatalogAdminSection =
-  | 'overview'
-  | 'sessions'
-  | 'dead-stock'
-  | 'inventory'
-  | 'catalogue'
-  | 'statistics'
-  | 'alerts'
-  | 'members'
-  | 'accounts'
-  | 'settings';
-
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
-export type CatalogAdminStatisticsTab = 'fairs' | 'evolution' | 'books' | 'volunteers';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
 
 type CatalogAdminNavIcon =
@@ -105,6 +103,12 @@ interface CatalogInventoryCandidate {
   source: string;
 }
 
+type CatalogInventoryCandidateStatus =
+  | {state: 'loading'}
+  | {state: 'found'; quantityAvailable: number}
+  | {state: 'not-found'}
+  | {state: 'error'};
+
 type CatalogInventoryAdjustmentDirection = 'increase' | 'decrease';
 
 interface CatalogInventoryConfirmation {
@@ -122,7 +126,7 @@ interface CatalogInventoryConfirmation {
   styleUrls: ['./catalog-administration-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CatalogAdministrationPageComponent implements OnInit {
+export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
   readonly isAdministrator: Signal<boolean>;
@@ -177,6 +181,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
   readonly inventoryBooksPage = signal<CatalogAdminBookPage | null>(null);
   readonly inventoryReferenceResults = signal<CatalogBookReference[]>([]);
   readonly inventoryAddCandidate = signal<CatalogInventoryCandidate | null>(null);
+  readonly inventoryCandidateStatus = signal<CatalogInventoryCandidateStatus | null>(null);
   readonly inventoryLookupLoading = signal(false);
   readonly inventoryLookupError = signal<string | null>(null);
   readonly inventoryConfirmation = signal<CatalogInventoryConfirmation | null>(null);
@@ -310,6 +315,10 @@ export class CatalogAdministrationPageComponent implements OnInit {
   alertDelayHours = 2;
 
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly destroyed = new Subject<void>();
+  private administrationInitialized = false;
 
   constructor(
     private readonly auth: CatalogAuthService,
@@ -325,7 +334,18 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
+    combineLatest([this.route.paramMap, this.route.queryParamMap])
+      .pipe(takeUntil(this.destroyed))
+      .subscribe(([params, queryParams]) => this.applyRouteState(
+        params.get('section'),
+        queryParams.get('tab'),
+      ));
     void this.initialize();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed.next();
+    this.destroyed.complete();
   }
 
   async initialize(): Promise<void> {
@@ -334,13 +354,18 @@ export class CatalogAdministrationPageComponent implements OnInit {
       await this.loadOverview();
       await this.loadSessions();
       await this.loadDeadStock();
+
+      if (!(['overview', 'sessions', 'dead-stock'] as CatalogAdminSection[]).includes(this.activeSection())) {
+        await this.loadSection(this.activeSection());
+      }
     }
+    this.administrationInitialized = true;
   }
 
   async login(): Promise<void> {
     this.clearFeedback();
     try {
-      await this.auth.login('/administration');
+      await this.auth.login(isCatalogAdministrationRoute(this.router.url) ? this.router.url : '/administration');
     } catch {
       this.showError('La connexion n’a pas pu être démarrée. Réessayez.');
     }
@@ -351,11 +376,24 @@ export class CatalogAdministrationPageComponent implements OnInit {
   }
 
   async selectSection(section: CatalogAdminSection): Promise<void> {
+    if (isCatalogAdministrationRoute(this.router.url) && this.activeSection() !== section) {
+      await this.router.navigate(['/administration', section]);
+      return;
+    }
+
     this.activeSection.set(section);
     if (!this.auth.isAuthenticated()) {
       return;
     }
 
+    await this.loadSection(section);
+  }
+
+  adminSectionUrl(section: CatalogAdminSection): string {
+    return catalogAdminSectionPath(section);
+  }
+
+  private async loadSection(section: CatalogAdminSection): Promise<void> {
     switch (section) {
       case 'overview':
         await this.loadOverview();
@@ -384,6 +422,31 @@ export class CatalogAdministrationPageComponent implements OnInit {
       case 'settings':
         await this.loadSettings();
         break;
+    }
+  }
+
+  private applyRouteState(sectionParam: string | null, statisticsTabParam: string | null): void {
+    if (sectionParam && !isCatalogAdminSection(sectionParam)) {
+      void this.router.navigate(['/administration', 'overview'], {replaceUrl: true});
+      return;
+    }
+
+    const section = catalogAdminSectionFromRoute(sectionParam);
+    const statisticsTab = catalogAdminStatisticsTabFromRoute(statisticsTabParam);
+    const sectionChanged = this.activeSection() !== section;
+    const statisticsTabChanged = this.statisticsTab() !== statisticsTab;
+
+    this.activeSection.set(section);
+    this.statisticsTab.set(statisticsTab);
+
+    if (!this.administrationInitialized || !this.auth.isAuthenticated()) {
+      return;
+    }
+
+    if (sectionChanged) {
+      void this.loadSection(section);
+    } else if (statisticsTabChanged && section === 'statistics') {
+      void this.loadStatisticsTab();
     }
   }
 
@@ -436,21 +499,23 @@ export class CatalogAdministrationPageComponent implements OnInit {
       this.inventoryLookupError.set('Saisissez un ISBN-10 ou ISBN-13 valide.');
       this.inventoryReferenceResults.set([]);
       this.inventoryAddCandidate.set(null);
+      this.inventoryCandidateStatus.set(null);
       return;
     }
 
     this.inventoryReferenceResults.set([]);
     this.inventoryAddCandidate.set(null);
+    this.inventoryCandidateStatus.set(null);
     await this.runInventoryLookup(async () => {
       const response = await firstValueFrom(this.catalogApi.searchReferences(isbn, 1, 20));
       const isbn13 = this.isbn13Equivalent(isbn);
       const reference = response.items.find(item => this.normalizeIsbn(item.isbn13 || '') === (isbn13 ?? isbn));
       const candidate = reference ? this.toInventoryCandidate(reference) : null;
-      if (!candidate) {
+      if (!reference || !candidate) {
         this.inventoryLookupError.set('Aucune notice bibliographique ne correspond à cet ISBN.');
         return;
       }
-      this.inventoryAddCandidate.set(candidate);
+      await this.selectInventoryCandidate(reference);
     });
   }
 
@@ -460,12 +525,14 @@ export class CatalogAdministrationPageComponent implements OnInit {
       this.inventoryLookupError.set('La recherche doit contenir au moins deux caractères.');
       this.inventoryReferenceResults.set([]);
       this.inventoryAddCandidate.set(null);
+      this.inventoryCandidateStatus.set(null);
       return;
     }
 
     this.inventoryReferenceQuery = query;
     this.inventoryReferenceResults.set([]);
     this.inventoryAddCandidate.set(null);
+    this.inventoryCandidateStatus.set(null);
     await this.runInventoryLookup(async () => {
       const response = await firstValueFrom(this.catalogApi.searchReferences(query, 1, 20));
       this.inventoryReferenceResults.set(response.items);
@@ -475,16 +542,32 @@ export class CatalogAdministrationPageComponent implements OnInit {
     });
   }
 
-  selectInventoryCandidate(reference: CatalogBookReference): void {
+  async selectInventoryCandidate(reference: CatalogBookReference): Promise<void> {
     const candidate = this.toInventoryCandidate(reference);
     if (!candidate) {
       return;
     }
 
     this.inventoryAddCandidate.set(candidate);
+    this.inventoryCandidateStatus.set({state: 'loading'});
     this.inventoryAddQuantity = 1;
     this.inventoryAddNote = 'Ajout depuis l’inventaire';
     this.inventoryLookupError.set(null);
+    await this.loadInventoryCandidateStatus(candidate.isbn13);
+  }
+
+  adjustInventoryAddQuantity(delta: number): void {
+    const quantity = Number(this.inventoryAddQuantity);
+    const current = Number.isFinite(quantity) ? Math.trunc(quantity) : 0;
+    this.inventoryAddQuantity = Math.min(
+      MAX_BOOK_QUANTITY,
+      Math.max(0, current + delta),
+    );
+  }
+
+  inventoryCandidateQuantity(): number {
+    const status = this.inventoryCandidateStatus();
+    return status?.state === 'found' ? status.quantityAvailable : 0;
   }
 
   async addInventoryCandidate(): Promise<void> {
@@ -517,6 +600,7 @@ export class CatalogAdministrationPageComponent implements OnInit {
         workId: candidate.workId,
       }));
       this.inventoryAddCandidate.set(null);
+      this.inventoryCandidateStatus.set(null);
       this.inventoryReferenceResults.set([]);
       this.showSuccess('La fiche a été ajoutée à l’inventaire.');
       await this.loadInventoryPage(token);
@@ -809,6 +893,18 @@ export class CatalogAdministrationPageComponent implements OnInit {
 
   async selectStatisticsTab(tab: CatalogAdminStatisticsTab): Promise<void> {
     this.statisticsTab.set(tab);
+
+    if (isCatalogAdministrationRoute(this.router.url)) {
+      const routeTab = tab === 'fairs' ? null : tab;
+      if (this.route.snapshot.queryParamMap.get('tab') !== routeTab) {
+        await this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {tab: routeTab},
+          queryParamsHandling: 'merge',
+        });
+      }
+    }
+
     if (!this.auth.isAuthenticated()) {
       return;
     }
@@ -1704,6 +1800,34 @@ export class CatalogAdministrationPageComponent implements OnInit {
       await operation();
     } catch (error: unknown) {
       this.inventoryLookupError.set(this.describeInventoryLookupError(error));
+    } finally {
+      this.inventoryLookupLoading.set(false);
+    }
+  }
+
+  private async loadInventoryCandidateStatus(isbn13: string): Promise<void> {
+    this.inventoryLookupLoading.set(true);
+    try {
+      const token = await this.auth.getApiAccessToken();
+      const book = await firstValueFrom(this.api.getBook(token, isbn13));
+      if (this.inventoryAddCandidate()?.isbn13 === isbn13) {
+        this.inventoryCandidateStatus.set({
+          state: 'found',
+          quantityAvailable: book.quantityAvailable,
+        });
+      }
+    } catch (error: unknown) {
+      if (this.inventoryAddCandidate()?.isbn13 !== isbn13) {
+        return;
+      }
+
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.inventoryCandidateStatus.set({state: 'not-found'});
+        return;
+      }
+
+      this.inventoryCandidateStatus.set({state: 'error'});
+      this.inventoryLookupError.set(this.describeError(error));
     } finally {
       this.inventoryLookupLoading.set(false);
     }
