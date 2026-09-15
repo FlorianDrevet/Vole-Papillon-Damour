@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {ChangeDetectorRef, DestroyRef} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {Router} from '@angular/router';
 import {defer, of, Subject, throwError} from 'rxjs';
 
 import {DesignSystemModule} from '@vpd/ui';
@@ -25,6 +26,7 @@ import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
 import {ScanConfirmationService} from '../scan-confirmation.service';
+import {ScanSessionSummaryService} from '../scan-session-summary.service';
 
 describe('ScannerComponent', () => {
   let fixture: ComponentFixture<ScannerComponent>;
@@ -32,6 +34,7 @@ describe('ScannerComponent', () => {
   let metadataService: jasmine.SpyObj<BookMetadataService>;
   let cameraService: jasmine.SpyObj<CameraScannerService>;
   let confirmDialog: jasmine.Spy;
+  let sessionSummary: ScanSessionSummaryService;
 
   beforeEach(async () => {
     metadataService = jasmine.createSpyObj<BookMetadataService>('BookMetadataService', ['getMetadata']);
@@ -54,11 +57,13 @@ describe('ScannerComponent', () => {
         ScanStatusService,
         {provide: ScanWorkflowService, useValue: null},
         {provide: ScanConfirmationService, useValue: confirmation},
+        ScanSessionSummaryService,
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ScannerComponent);
     component = fixture.componentInstance;
+    sessionSummary = TestBed.inject(ScanSessionSummaryService);
     fixture.detectChanges();
   });
 
@@ -964,6 +969,150 @@ describe('ScannerComponent', () => {
     expect(component.completedSession).toBeNull();
   });
 
+  it('keeps the routed session summary screen while restoring a closing session', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'initialize',
+      'getLatestPendingResult',
+      'getSession',
+      'getSessionCounts',
+      'getOutboxCounts',
+      'getSettings',
+      'getCatalogSyncState',
+    ]);
+    const closingSession = createSession({closeRequested: true, closeReason: 'Manual'});
+    workflow.initialize.and.resolveTo({available: true, persisted: true, requestAttempted: false});
+    workflow.getLatestPendingResult.and.resolveTo(null);
+    workflow.getSession.and.resolveTo(closingSession);
+    workflow.getSessionCounts.and.resolveTo({scannedCount: 1, keptCount: 1, rejectedCount: 0});
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+
+    const internals = component as unknown as {
+      initializeLocalMode: () => Promise<void>;
+      scanWorkflow: ScanWorkflowService;
+    };
+    internals.scanWorkflow = workflow;
+    component.routeScreen = 'session-end';
+
+    await internals.initializeLocalMode();
+
+    expect(component.screen).toBe('session-end');
+  });
+
+  it('restores the completed counters when the summary route creates a new scanner', () => {
+    const session = createSession({mode: 'NextFair', closeRequested: true, closeReason: 'Manual'});
+    const counts = {scannedCount: 3, keptCount: 2, rejectedCount: 1};
+    sessionSummary.setSummary(session, counts, '4 min de tri');
+
+    component.routeScreen = 'session-end';
+    component.session = createSession({mode: 'AvailableNow'});
+    component.sessionCounts = {scannedCount: 0, keptCount: 0, rejectedCount: 0};
+
+    expect(component.completedSession).toEqual(session);
+    expect(component.completedSessionCounts).toEqual(counts);
+    expect(component.sessionDurationLabel).toBe('4 min de tri');
+    expect(component.activeMode).toBe(session.mode);
+  });
+
+  it('waits for the summary route before starting close synchronization', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'requestClose',
+      'getSession',
+      'getOutboxCounts',
+      'getSettings',
+      'getCatalogSyncState',
+    ]);
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    const router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl']);
+    const session = createSession();
+    const closingSession = {...session, closeRequested: true, closeReason: 'Manual' as const};
+    let resolveNavigation!: (result: boolean) => void;
+    const navigation = new Promise<boolean>(resolve => {
+      resolveNavigation = resolve;
+    });
+
+    Object.defineProperty(router, 'url', {value: '/tri'});
+    router.navigateByUrl.and.returnValue(navigation);
+    workflow.requestClose.and.resolveTo(closingSession);
+    workflow.getSession.and.resolveTo(closingSession);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    sync.syncAll.and.resolveTo({
+      catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
+      outbox: {sent: 0, remaining: 0, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
+      closed: false,
+    });
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      sync,
+      null,
+      router,
+      null,
+      sessionSummary,
+    );
+    localComponent.routeScreen = 'tri';
+    localComponent.session = session;
+    localComponent.sessionCounts = {scannedCount: 1, keptCount: 1, rejectedCount: 0};
+    localComponent.authAvailable = true;
+    localComponent.isAuthenticated = true;
+    localComponent.isOnline = true;
+    (localComponent as unknown as {localModeReady: boolean}).localModeReady = true;
+
+    const endPromise = localComponent.endSession();
+    for (let attempt = 0; attempt < 20 && router.navigateByUrl.calls.count() === 0; attempt += 1) {
+      await Promise.resolve();
+    }
+
+    try {
+      expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/tri/fin');
+      expect(sync.syncAll).not.toHaveBeenCalled();
+    } finally {
+      resolveNavigation(true);
+      await endPromise;
+    }
+  });
+
+  it('does not report a close retry when another scanner instance already cleared the session', async () => {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>('ScanWorkflowService', [
+      'getSession',
+      'getSettings',
+      'getCatalogSyncState',
+    ]);
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    workflow.getSession.and.resolveTo(null);
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    sync.syncAll.and.resolveTo({
+      catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
+      outbox: {sent: 0, remaining: 0, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
+      closed: false,
+    });
+
+    const internals = component as unknown as {
+      performSync: (scanSync: ScanSyncService, showSuccessToast: boolean) => Promise<void>;
+      scanWorkflow: ScanWorkflowService;
+    };
+    internals.scanWorkflow = workflow;
+    component.session = createSession({closeRequested: true, closeReason: 'Manual'});
+
+    await internals.performSync(sync, false);
+
+    expect(component.syncStatus).toBe('success');
+    expect(component.syncError).toBeNull();
+  });
+
   it('persists the cash batch before clearing the visible list', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(
       'ScanWorkflowService',
@@ -1480,6 +1629,7 @@ describe('ScannerComponent', () => {
     component.isAuthenticated = true;
     component.isOnline = true;
     component.session = session;
+    component.sessionCounts = {scannedCount: 1, keptCount: 1, rejectedCount: 0};
     component.localScan = completedScan;
 
     await component.endSession();
@@ -1488,6 +1638,7 @@ describe('ScannerComponent', () => {
     expect(sync.syncAll).toHaveBeenCalledOnceWith();
     expect(component.session).toBeNull();
     expect(component.screen).toBe('session-end');
+    expect(sessionSummary.summary()?.counts).toEqual({scannedCount: 1, keptCount: 1, rejectedCount: 0});
   });
   it('starts synchronizing after a scan is stored locally', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(

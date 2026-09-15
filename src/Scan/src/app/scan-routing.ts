@@ -5,6 +5,7 @@ import {ScanAuthService} from './auth/scan-auth.service';
 import {ScanWorkflowService} from './offline/scan-workflow.service';
 import {ScanPageComponent} from './scan-page.component';
 import {ScanShellComponent} from './scan-shell.component';
+import {ScanSessionSummaryService} from './scan-session-summary.service';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
 
 export type ScanRequiredRole = 'Tri' | 'Caisse';
@@ -30,14 +31,21 @@ export const scanSessionEndGuard: CanActivateFn = () => {
   const auth = inject(ScanAuthService);
   const router = inject(Router);
   const workflow = inject(ScanWorkflowService);
+  const sessionSummary = inject(ScanSessionSummaryService);
   const authenticated = auth.authState.status === 'authorized' || auth.authState.status === 'degraded';
   if (!authenticated || !auth.canSort) {
     return router.parseUrl('/');
   }
 
-  return workflow.getSession().then(session => session?.closeRequested === true
-    ? true
-    : router.parseUrl('/accueil'));
+  return workflow.getSession().then(session => {
+    const summary = sessionSummary.summary();
+    const summaryBelongsToAccount = summary !== null
+      && (summary.session.volunteerId === null
+        || summary.session.volunteerId === auth.authState.account?.homeAccountId);
+    return session?.closeRequested === true || summaryBelongsToAccount
+      ? true
+      : router.parseUrl('/accueil');
+  });
 };
 
 const triGuard = scanRoleGuard('Tri');

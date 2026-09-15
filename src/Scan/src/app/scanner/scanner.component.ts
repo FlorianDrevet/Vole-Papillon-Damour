@@ -39,6 +39,7 @@ import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
 import {normalizeIsbn} from './isbn.util';
+import {ScanSessionSummaryService} from '../scan-session-summary.service';
 
 export type ScanScreen =
   | 'home'
@@ -176,6 +177,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private cameraFrame: string | null = null;
   private cameraSlotElement: HTMLElement | null = null;
   private cameraClipAncestors: readonly HTMLElement[] = [];
+  private pendingScreenNavigation: Promise<boolean> | null = null;
 
   constructor(
     private readonly metadataService: BookMetadataService,
@@ -188,6 +190,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly scanStatus: ScanStatusService | null = null,
     @Optional() private readonly router: Router | null = null,
     @Optional() private readonly confirmation: ScanConfirmationService | null = null,
+    @Optional() private readonly sessionSummary: ScanSessionSummaryService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -203,6 +206,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     this.routeDriven = true;
     this.currentScreen = value;
+    if (value === 'session-end') {
+      this.restoreCompletedSummary();
+    }
   }
 
   get screen(): ScanScreen {
@@ -216,7 +222,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    void this.router.navigateByUrl(route);
+    const navigation = this.router.navigateByUrl(route);
+    this.pendingScreenNavigation = navigation;
+    void navigation.catch(() => undefined);
   }
 
   ngOnInit(): void {
@@ -263,7 +271,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   get activeMode(): LocalScanMode {
-    return this.session?.mode ?? this.selectedMode;
+    return this.screen === 'session-end' && this.completedSession
+      ? this.completedSession.mode
+      : this.session?.mode ?? this.selectedMode;
   }
 
   get activeModeLabel(): string {
@@ -293,15 +303,21 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   get sessionScannedCount(): number {
-    return this.session ? this.sessionCounts.scannedCount : this.completedSessionCounts.scannedCount;
+    return this.screen === 'session-end' && this.completedSession
+      ? this.completedSessionCounts.scannedCount
+      : this.session?.counts?.scannedCount ?? this.sessionCounts.scannedCount;
   }
 
   get sessionKeptCount(): number {
-    return this.session ? this.sessionCounts.keptCount : this.completedSessionCounts.keptCount;
+    return this.screen === 'session-end' && this.completedSession
+      ? this.completedSessionCounts.keptCount
+      : this.session?.counts?.keptCount ?? this.sessionCounts.keptCount;
   }
 
   get sessionRejectedCount(): number {
-    return this.session ? this.sessionCounts.rejectedCount : this.completedSessionCounts.rejectedCount;
+    return this.screen === 'session-end' && this.completedSession
+      ? this.completedSessionCounts.rejectedCount
+      : this.session?.counts?.rejectedCount ?? this.sessionCounts.rejectedCount;
   }
 
   get manualDigitCount(): number {
@@ -747,6 +763,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       this.completedSessionCounts = emptySessionCounts();
       this.sessionEnded = false;
       this.sessionCloseCompleted = false;
+      this.sessionSummary?.clear();
     }
 
     if (this.session && this.sessionCounts.scannedCount > 0) {
@@ -911,6 +928,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       this.completedSessionCounts = emptySessionCounts();
       this.sessionEnded = false;
       this.sessionCloseCompleted = false;
+      this.sessionSummary?.clear();
       this.screen = 'home';
       await this.refreshLocalState();
     } catch {
@@ -961,6 +979,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.sessionEnded = false;
     this.sessionCloseCompleted = false;
     this.sessionCloseError = null;
+    this.sessionSummary?.clear();
     this.scanAuth?.logout();
     this.screen = 'home';
     this.refreshView();
@@ -1072,7 +1091,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     try {
       const summary = await scanSync.syncAll();
-      const closeRequested = this.session?.closeRequested === true;
       const quarantined = summary.outbox.quarantined ?? 0;
       const orphaned = summary.outbox.orphaned ?? 0;
       const newlySetAside = summary.outbox.newlyOrphaned + summary.outbox.newlyQuarantined;
@@ -1082,6 +1100,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         summary.outbox.remaining,
         summary.outbox.stoppedOnError,
       );
+      await this.refreshLocalState();
+      await this.refreshSaleCancellationState();
+      const closeRequested = this.session?.closeRequested === true;
       if (summary.closed) {
         this.sessionCloseCompleted = true;
         this.sessionCloseError = null;
@@ -1105,8 +1126,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       } else {
         this.syncStatus = 'success';
       }
-      await this.refreshLocalState();
-      await this.refreshSaleCancellationState();
     } catch {
       this.syncStatus = 'error';
       this.scanStatus?.clearMessage();
@@ -1145,6 +1164,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       this.completedSession = completedSession;
       this.completedSessionCounts = {...this.sessionCounts};
       this.sessionDurationLabel = this.formatSessionDuration(completedSession);
+      this.sessionSummary?.setSummary(
+        completedSession,
+        this.completedSessionCounts,
+        this.sessionDurationLabel,
+      );
       this.sessionEnded = true;
       this.sessionCloseCompleted = false;
       this.stopCamera();
@@ -1158,6 +1182,10 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
             error,
             'La demande de fin n’a pas pu être conservée localement.',
           );
+          this.completedSession = null;
+          this.completedSessionCounts = emptySessionCounts();
+          this.sessionEnded = false;
+          this.sessionSummary?.clear();
           this.screen = 'tri';
           return;
         }
@@ -1166,6 +1194,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       this.resetLookupState();
       this.screen = 'session-end';
       this.refreshView();
+      await this.waitForScreenNavigation();
 
       if (!this.scanWorkflow) {
         this.sessionCloseCompleted = true;
@@ -1230,6 +1259,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.resetLookupState();
     this.cashItems = [];
     this.cashMessage = null;
+    this.sessionSummary?.clear();
     this.screen = 'home';
     this.refreshView();
   }
@@ -1505,7 +1535,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       await this.bindCurrentAccountToSession();
 
       if (this.localScan || this.sessionCounts.scannedCount > 0) {
-        this.screen = 'tri';
+        if (this.screen === 'session-end') {
+          this.restoreCompletedSummary();
+        } else {
+          this.screen = 'tri';
+        }
       }
       this.trySync();
       this.refreshView();
@@ -1853,6 +1887,27 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   private confirmAction(request: ScanConfirmationRequest): Promise<boolean> {
     return Promise.resolve(this.confirmation?.confirm(request) ?? true);
+  }
+
+  private async waitForScreenNavigation(): Promise<void> {
+    const navigation = this.pendingScreenNavigation;
+    this.pendingScreenNavigation = null;
+    if (navigation) {
+      await navigation;
+    }
+  }
+
+  private restoreCompletedSummary(): void {
+    const summary = this.sessionSummary?.summary();
+    if (!summary) {
+      return;
+    }
+
+    this.completedSession = {...summary.session};
+    this.completedSessionCounts = {...summary.counts};
+    this.sessionDurationLabel = summary.durationLabel;
+    this.selectedMode = summary.session.mode;
+    this.sessionEnded = true;
   }
 
   private trySync(): void {

@@ -426,6 +426,15 @@ the user-facing layout. Local validation passes 170 Scan ChromeHeadless tests an
 production build; PR [#127](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/127) is open,
 connected production smoke remains pending, and no deployment was made.
 
+The 2026-09-15 Scan session-finish follow-up keeps the explicit `/tri/fin` route authoritative
+when a routed `ScannerComponent` is recreated, carries the completed session counters/mode through
+a root summary signal, and lets the finish navigation settle before close synchronization starts.
+The session-end guard accepts that short-lived summary so a concurrent local cleanup cannot cancel
+the navigation. Synchronization refreshes local state before deciding whether a close retry is still
+needed, preventing a stale `closeRequested` snapshot from displaying the retry banner after another
+scanner instance has already observed the server close. The confirmation is a mobile bottom sheet
+with safe-area padding and stacked 44px actions, while desktop keeps the centered dialog.
+
 The 2026-09-12 Scan storage-capability follow-up keeps the browser-persistence warning out of
 the `home` and `session-mode` choice screens. On operating screens, its modal copy distinguishes local
 browser retention from server synchronization, offers a user-gesture retry through
