@@ -40,6 +40,7 @@
 5. Keep backend changes inside the existing boundaries: API wiring in `Api`, MediatR handlers and validators in `Application`, persistence and adapters in `Infrastructure`, invariants in `Domain`, DTOs in `Contracts`.
 6. Preserve the current frontend split: `BackOffice` for admin surfaces, `Website` for association content, `Catalog` for the public books catalog, and `MauiCashApp` for the cashier client.
 7. Do not assume every mutating HTTP route is admin-protected; check `10-api-endpoints.md` before touching auth-sensitive behavior.
+8. Every paginated or searchable list must query the API: send the filters, page and page size to the backend and render only the returned page; never load the full collection into the browser for client-side pagination or search.
 
 ## Commands To Remember
 
