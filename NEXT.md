@@ -243,6 +243,23 @@ smoke Chrome avec API mockée à 1280×965 et 390×844, couverture BnF réelle c
 effectué ; la [PR #183](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/183) est
 ouverte vers `main` et n’est pas fusionnée.
 
+### État actualisé — 2026-09-15 — fin de session Scan
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-scan-session-fix`, la fin d’une session Scan conserve la route
+`/tri/fin` au lieu de revenir au tri : l’initialisation respecte désormais l’écran de résumé,
+les compteurs et le mode sont transférés lors de la recréation du composant, et le garde de
+route accepte ce résumé transitoire pendant que la fermeture serveur termine. La synchronisation
+recalcule l’état local avant d’afficher une relance de clôture, ce qui évite le faux bandeau
+après une fermeture déjà retournée en `200`. La confirmation est une feuille tactile pleine
+largeur sur mobile, avec zones sûres et actions empilées.
+
+Validation locale : TDD rouge puis vert, 205 tests Scan ChromeHeadless, build de production,
+6 contrats de bootstrap, `python -m graphify update .` et `git diff --check`. Le contrôle
+connecté sur téléphone avec API réelle reste à faire ; aucun déploiement ni merge n’a été
+effectué. La [PR #185](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/185) est
+ouverte vers `main` et n’est pas fusionnée.
+
 ### État actualisé — 2026-09-15 — décision du livre courant dans le Scan
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
@@ -1530,6 +1547,12 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-09-15, le correctif de fin de session Scan est limité au dépôt et à la branche
+`fix/scan-session-completion` ; aucun appareil, compte bénévole, API réelle, session ou donnée
+de bourse n’a été modifié. Le contrôle connecté sur téléphone reste à refaire après ouverture
+de la PR et déploiement éventuel ; la [PR #185](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/185)
+est ouverte vers `main`.
+
 Au 2026-09-15, le filtrage par défaut de l'onglet `/recherche` reste limité au dépôt et à la
 branche `fix/catalog-search-available-only` ; aucune donnée de catalogue, configuration Azure,
 compte, tenant Entra ou déploiement n'a été modifié. Le smoke local a utilisé le shell Catalog
@@ -1719,6 +1742,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-15 | Windows | **Scan — fin de session et confirmation mobile.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-scan-session-fix`, conservation de la route `/tri/fin` et du résumé après recréation du composant, suppression du faux état de fermeture à réessayer après synchronisation concurrente, et feuille de confirmation tactile responsive. Validation : TDD rouge puis vert, 205 tests Scan ChromeHeadless, build de production, 6 contrats bootstrap, Graphify et `git diff --check` ; contrôle connecté téléphone/API réelle restant à faire, aucun déploiement ni merge. [PR #185](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/185) ouverte. |
 | 2026-09-15 | Windows | **Catalog — recherche disponible par défaut.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-available-only`, l'onglet `/recherche` charge avec `availability=available`, coche « Disponible maintenant » et y revient après réinitialisation ; `/catalogue` garde son périmètre complet. Validation : TDD rouge puis vert, 27 tests ciblés, 210 tests Catalog, build SSR/navigateur, Graphify, `git diff --check` et smoke Chrome desktop ; l'API locale n'était pas démarrée, aucun déploiement ni changement hors dépôt, [PR #176](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/176) ouverte. |
 | 2026-09-15 | Windows | **Catalog — simplification de l'inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-ux`, suppression des encarts d'ajustement/historique et du bouton « Afficher toutes les fiches », conservation du chargement paginé côté API, loader annulaire pendant l'actualisation et recherche automatique après 2 secondes d'inactivité. Validation : TDD rouge puis vert, 209 tests Catalog, 223 tests Application, build SSR/navigateur, Graphify et `git diff --check` passants ; la [PR #169](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/169) est ouverte. Aucun déploiement ni changement hors dépôt. |
 | 2026-09-12 | Windows | **Catalog — centrage du loader de recherche.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-loader-centered`, ajout d'une zone de chargement de 150 px centrée sous l'en-tête de « Pas encore dans la bourse aux livres », sans toucher au loader partagé ni aux contrats. Validation : TDD rouge puis vert, 183 tests ChromeHeadless Catalog, build SSR/navigateur, Graphify et smoke Chrome avec API mockée à la taille par défaut, 390×844 et 320×740 sans débordement. Aucun déploiement ni changement hors dépôt ; PR [#160](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/160) ouverte. |
