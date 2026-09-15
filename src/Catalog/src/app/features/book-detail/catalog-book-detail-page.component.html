@@ -25,7 +25,7 @@
       <div class="detail-cover">
         @if (item.coverUrl && !coverFailed) {
           <img
-            [src]="item.coverUrl"
+            [src]="detailCoverUrl(item.coverUrl)"
             [alt]="item.title ? 'Couverture de ' + item.title : 'Couverture du livre'"
             fetchpriority="high"
             (error)="onCoverError()">

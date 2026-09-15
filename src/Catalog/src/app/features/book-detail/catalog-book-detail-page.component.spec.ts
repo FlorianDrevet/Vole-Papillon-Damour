@@ -188,6 +188,20 @@ describe('CatalogBookDetailPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.detail-cover span')).toBeNull();
   });
 
+  it('requests a high-resolution BnF cover for the book detail', async () => {
+    api.getBook.and.returnValue(of({
+      ...book,
+      coverUrl: 'https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1',
+    }));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.detail-cover img')?.getAttribute('src'))
+      .toBe('https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
+  });
+
   it('removes book-specific SEO nodes when the detail page is destroyed', async () => {
     const document = TestBed.inject(DOCUMENT);
 
