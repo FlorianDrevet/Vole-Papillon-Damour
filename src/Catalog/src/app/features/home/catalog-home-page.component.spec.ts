@@ -131,6 +131,39 @@ describe('CatalogHomePageComponent', () => {
     expect(panel.querySelector('.hero-genre-option--selected')?.textContent).toContain('Tous les genres');
   });
 
+  it('keeps the open genre menu above the next-fair teaser', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector('.hero-genre-select-trigger') as HTMLButtonElement;
+
+    trigger.click();
+    fixture.detectChanges();
+
+    const heroInner = element.querySelector('.hero-inner') as HTMLElement;
+    const teaser = element.querySelector('.home-fair-teaser') as HTMLElement;
+    const panel = element.querySelector('.hero-genre-select-panel') as HTMLElement;
+
+    expect(Number.parseInt(getComputedStyle(heroInner).zIndex, 10))
+      .toBeGreaterThan(Number.parseInt(getComputedStyle(teaser).zIndex, 10));
+    expect(getComputedStyle(panel).zIndex).toBe('30');
+  });
+
+  it('limits a long genre menu and makes its options scrollable', () => {
+    fixture.componentInstance.genres.set(
+      Array.from({length: 20}, (_value, index) => `Genre ${index + 1}`),
+    );
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    (element.querySelector('.hero-genre-select-trigger') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const panel = element.querySelector('.hero-genre-select-panel') as HTMLElement;
+    const panelStyle = getComputedStyle(panel);
+
+    expect(panelStyle.maxHeight).not.toBe('none');
+    expect(panelStyle.overflowY).toBe('auto');
+  });
+
   it('updates the selected hero genre and closes the branded menu', async () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
