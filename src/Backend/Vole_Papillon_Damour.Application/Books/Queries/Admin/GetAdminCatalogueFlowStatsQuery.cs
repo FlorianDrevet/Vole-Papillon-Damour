@@ -6,4 +6,5 @@ namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
 
 public sealed record GetAdminCatalogueFlowStatsQuery(
     DateTimeOffset? From = null,
-    DateTimeOffset? To = null) : IRequest<ErrorOr<AdminCatalogueFlowStatsResult>>;
+    DateTimeOffset? To = null,
+    Guid? FairId = null) : IRequest<ErrorOr<AdminCatalogueFlowStatsResult>>;

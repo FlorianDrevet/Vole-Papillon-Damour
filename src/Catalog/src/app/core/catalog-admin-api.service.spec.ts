@@ -111,6 +111,20 @@ describe('CatalogAdminApiService', () => {
     request.flush(response);
   });
 
+  it('scopes the fairs evolution and the catalogue flow to a single fair', () => {
+    service.getFairsEvolution('access-token', undefined, undefined, 'fair-id').subscribe();
+    service.getCatalogueFlowStats('access-token', undefined, undefined, 'fair-id').subscribe();
+
+    const evolution = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/fairs/evolution`);
+    expect(evolution.request.params.get('fairId')).toBe('fair-id');
+    expect(evolution.request.params.has('from')).toBeFalse();
+    evolution.flush({});
+
+    const flow = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/catalogue/flow-stats`);
+    expect(flow.request.params.get('fairId')).toBe('fair-id');
+    flow.flush({});
+  });
+
   it('loads catalogue pages with all administrative filters', () => {
     const response = {generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage;
 

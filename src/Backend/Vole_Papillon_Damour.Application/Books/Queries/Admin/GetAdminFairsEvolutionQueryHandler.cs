@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
@@ -26,14 +27,39 @@ public sealed class GetAdminFairsEvolutionQueryHandler(
             return Error.Validation("Book.InvalidPeriod", "The fairs evolution period must be valid instants.");
         }
 
+        AssoEventsId? selectedFairId = null;
+        if (query.FairId is { } fairId)
+        {
+            if (fairId == Guid.Empty)
+            {
+                return Errors.Book.FairNotFound(fairId);
+            }
+
+            var selectedFair = await dbContext.AssoEvents
+                .AsNoTracking()
+                .SingleOrDefaultAsync(candidate => candidate.Id == AssoEventsId.Create(fairId), cancellationToken);
+            if (selectedFair is null)
+            {
+                return Errors.Book.FairNotFound(fairId);
+            }
+
+            if (selectedFair.EventsType?.Value != EventsType.EventsTypeEnum.Books)
+            {
+                return Errors.Book.TargetFairMustBeBooks();
+            }
+
+            selectedFairId = selectedFair.Id;
+        }
+
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .Where(candidate => candidate.EventsType == new EventsType(EventsType.EventsTypeEnum.Books) &&
                                  !candidate.IsCancelled)
             .ToListAsync(cancellationToken);
         // SQLite cannot translate DateTimeOffset comparisons consistently; compare dates in memory.
+        // A selected fair is compared with every earlier fair, so the period does not apply to it.
         fairs = fairs
-            .Where(fair => IsInPeriod(fair.DateStart, query.From, query.To))
+            .Where(fair => selectedFairId is not null || IsInPeriod(fair.DateStart, query.From, query.To))
             .OrderBy(fair => fair.DateStart)
             .ToList();
 
@@ -79,6 +105,11 @@ public sealed class GetAdminFairsEvolutionQueryHandler(
                 daysOpen);
             entries.Add(entry);
             previous = entry;
+        }
+
+        if (selectedFairId is not null)
+        {
+            entries = entries.Where(entry => entry.FairId == selectedFairId.Value).ToList();
         }
 
         var totalSoldQuantity = entries.Sum(entry => entry.SoldQuantity);

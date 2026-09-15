@@ -1054,6 +1054,14 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(page.textContent).toContain('Michel Bonnet');
     expect(page.textContent).not.toContain('Qualité des données');
     expect(page.textContent).not.toContain('4C');
+    const summary = page.querySelector('[data-testid="volunteer-summary"]');
+    expect(summary?.textContent).toContain('Ensemble, sur trente jours');
+    expect(summary?.textContent).toContain('livres passés sous la douchette par deux personnes.');
+    expect(summary?.textContent).toContain('78 % du scanné');
+    expect(summary?.textContent).toContain('139 h tri · 54 h caisse');
+    expect(summary?.textContent).toContain('14 par personne');
+    expect(page.querySelector('.volunteer-stat-grid')).toBeNull();
+    expect(page.querySelector('[data-testid="statistics-period"]')).not.toBeNull();
     expect(page.querySelectorAll('.admin-nav-item')).not.toHaveSize(0);
     expect(Array.from(page.querySelectorAll('.admin-nav-item')).map(item => item.textContent?.trim()))
       .not.toContain('Bénévoles');
@@ -1110,6 +1118,10 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(page.textContent).toContain('Bourse de mars');
     expect(page.textContent).toContain('Bourse de septembre');
     expect(page.textContent).toContain('Printemps');
+    expect(page.textContent).toContain('Mars 2025 → septembre 2025');
+    expect(page.textContent).toContain('Deux bourses, d’une fois sur l’autre');
+    expect(page.querySelectorAll('[data-testid="evolution-chart"] .evolution-bar').length).toBe(2);
+    expect(page.querySelector('[data-testid="evolution-export"]')).not.toBeNull();
     expect(api.getFairsEvolution).toHaveBeenCalled();
   });
 
@@ -1146,7 +1158,31 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getCatalogueFlowStats).toHaveBeenCalled();
   });
 
-  it('splits "Qui a porté quoi" into a Tri view and a Caisse view', async () => {
+  it('scopes the evolution tab to a single fair from the period picker', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('statistics');
+    await fixture.componentInstance.selectStatisticsTab('evolution');
+    fixture.detectChanges();
+
+    expect(api.getFairsEvolution.calls.mostRecent().args[3]).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('[data-testid="statistics-period-fair"]')).not.toBeNull();
+
+    await fixture.componentInstance.selectStatisticsFair('fair-2');
+
+    expect(fixture.componentInstance.statisticsPeriod).toBe('fair');
+    expect(api.getFairsEvolution.calls.mostRecent().args.slice(1)).toEqual([undefined, undefined, 'fair-2']);
+
+    await fixture.componentInstance.selectStatisticsFair('');
+
+    expect(fixture.componentInstance.statisticsPeriod).toBe('30-days');
+    expect(api.getFairsEvolution.calls.mostRecent().args[3]).toBeUndefined();
+  });
+
+  it('lists every volunteer with their roles in one sortable "Qui a porté quoi" table', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     api.getVolunteerStatistics.and.returnValue(of({
@@ -1220,15 +1256,21 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const page = fixture.nativeElement as HTMLElement;
-    const tableText = () => page.querySelector('.volunteer-table')?.textContent ?? '';
-    expect(tableText()).toContain('Sylvie Rousseau');
-    expect(tableText()).not.toContain('Patrick Noël');
+    const names = () => Array.from(page.querySelectorAll('.volunteer-contribution-table tbody .volunteer-name'))
+      .map(element => element.textContent?.trim());
+    expect(names()).toEqual(['Sylvie Rousseau', 'Patrick Noël']);
+    expect(page.querySelector('.volunteer-contribution-table')?.textContent).toContain('Caisse');
+    expect(page.querySelector('[data-testid="volunteer-contributions"]')?.textContent).toContain('Deux bénévoles actifs');
+    expect(page.querySelector('[data-testid="volunteer-export"]')).not.toBeNull();
 
-    fixture.componentInstance.setVolunteerTableView('caisse');
+    fixture.componentInstance.sortVolunteersBy('sessionCount');
     fixture.detectChanges();
+    expect(names()).toEqual(['Sylvie Rousseau', 'Patrick Noël']);
 
-    expect(tableText()).toContain('Patrick Noël');
-    expect(tableText()).not.toContain('Sylvie Rousseau');
+    fixture.componentInstance.sortVolunteersBy('sessionCount');
+    fixture.detectChanges();
+    expect(names()).toEqual(['Patrick Noël', 'Sylvie Rousseau']);
+    expect(page.querySelector('th[aria-sort="ascending"]')?.textContent).toContain('Sess.');
 
     const scatterLabels = Array.from(page.querySelectorAll('.scatter-label')).map(el => el.textContent);
     expect(scatterLabels).toContain('Sylvie Rousseau');
