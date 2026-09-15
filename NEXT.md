@@ -21,7 +21,7 @@
 | **Prochaine action** | Faire relire la PR, puis contrôler dans Chrome avec un compte Administration et une API/Graph joignables les changements de statut et la suppression réelle. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-admin-catalog-inventory-account-actions` |
 | **Dernière mise à jour** | 2026-09-15 — les comptes admin ont les sous-onglets Bénévoles/Membres du site ; le statut Entra, la modal membre et le chemin de suppression durable sont câblés et testés localement. |
-| **Branche** | `feat/admin-catalog-inventory-account-actions` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Branche** | `feat/admin-catalog-inventory-account-actions` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #178](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/178) ouverte vers `main` |
 
 ---
 
@@ -220,8 +220,9 @@ SSR/navigateur, 92 tests Domain, 224 Application, 101 Infrastructure et 24 API, 
 update .` et `git diff --check`. Les warnings de budget
 initial Angular, de dépendances npm et de packages NuGet vulnérables sont ceux du dépôt. Le
 smoke connecté avec Entra/Graph et API joignables reste à faire ; aucun compte, secret, Azure
-ou déploiement n'a été modifié. `rtk` n'est pas installé sur cette machine ; les commandes
-natives équivalentes sont utilisées.
+ou déploiement n'a été modifié. La [PR #178](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/178)
+est ouverte vers `main` et n'est pas fusionnée. `rtk` n'est pas installé sur cette machine ;
+les commandes natives équivalentes sont utilisées.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
