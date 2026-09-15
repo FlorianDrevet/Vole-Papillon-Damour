@@ -1,3 +1,4 @@
+import {isKnownCatalogRoute} from './catalog-route';
 import {catalogRobotsForUrl} from './catalog-robots';
 
 describe('catalogRobotsForUrl', () => {
@@ -5,6 +6,7 @@ describe('catalogRobotsForUrl', () => {
     expect(catalogRobotsForUrl('/compte')).toBe('noindex, nofollow');
     expect(catalogRobotsForUrl('/compte?returnUrl=%2F')).toBe('noindex, nofollow');
     expect(catalogRobotsForUrl('/administration/')).toBe('noindex, nofollow');
+    expect(catalogRobotsForUrl('/administration/statistics?tab=evolution')).toBe('noindex, nofollow');
     expect(catalogRobotsForUrl('/desinscription')).toBe('noindex, nofollow');
   });
 
@@ -17,5 +19,11 @@ describe('catalogRobotsForUrl', () => {
 
   it('marks unknown routes as non-indexable', () => {
     expect(catalogRobotsForUrl('/une-route-inconnue')).toBe('noindex, nofollow');
+  });
+
+  it('recognizes valid administration workspaces without accepting arbitrary nested paths', () => {
+    expect(isKnownCatalogRoute('/administration/inventory')).toBeTrue();
+    expect(isKnownCatalogRoute('/administration/not-a-workspace')).toBeFalse();
+    expect(isKnownCatalogRoute('/administration/inventory/details')).toBeFalse();
   });
 });

@@ -13,6 +13,7 @@ import {NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Route
 import {Subject, filter, takeUntil} from 'rxjs';
 
 import {CatalogAuthService} from './core/catalog-auth.service';
+import {isCatalogAdministrationRoute} from './core/catalog-route';
 import {catalogRobotsForUrl} from './core/catalog-robots';
 
 @Component({
@@ -91,6 +92,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private isAdminUrl(url: string): boolean {
-    return url.split(/[?#]/, 1)[0].replace(/\/$/, '') === '/administration';
+    return isCatalogAdministrationRoute(url);
   }
 }
