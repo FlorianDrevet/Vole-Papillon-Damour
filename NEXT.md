@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — rendre l’ajout de fiches d’Inventaire lisible et inline depuis les références bibliographiques. |
-| **Prochaine action** | Ouvrir la PR, puis contrôler avec une session administrateur connectée le statut d’une fiche existante et l’affichage responsive de la ligne sélectionnée. |
+| **Prochaine action** | Contrôler avec une session administrateur connectée le statut d’une fiche existante et l’affichage responsive de la ligne sélectionnée dans la [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174). |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-inventory-inline-addition` |
 | **Dernière mise à jour** | 2026-09-15 — le fonds apparaît avant le parcours d’ajout ; la fiche sélectionnée s’ouvre sous sa référence, son existence et son stock sont affichés, et la quantité initiale est éditable avec −/+. |
-| **Branche** | `feat/catalog-inventory-inline-addition` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Branche** | `feat/catalog-inventory-inline-addition` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174) ouverte vers `main` |
 
 ---
 
@@ -212,9 +212,10 @@ déjà présent n’a pas été modifiée.
 
 Validation locale : TDD rouge puis vert, 30 specs Inventaire ciblées, 208 tests Catalog
 ChromeHeadless, build Catalog SSR/navigateur et `graphify update .`. Le smoke responsive avec
-une session admin réelle reste à faire ; aucun déploiement, changement API/base, compte ou
-fusion n’a été effectué. `rtk` n’est pas installé sur cette machine, les commandes natives
-équivalentes ont été utilisées.
+une session admin réelle reste à faire ; la [PR #174](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/174)
+est ouverte vers `main`. Aucun déploiement, changement API/base, compte ou fusion n’a été
+effectué. `rtk` n’est pas installé sur cette machine, les commandes natives équivalentes ont
+été utilisées.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
 
