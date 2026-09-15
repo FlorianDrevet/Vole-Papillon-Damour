@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Azure;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -110,8 +111,17 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMilliseconds(options.GoogleBooksTimeoutMilliseconds);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         });
-        services.AddScoped<IBibliographicMetadataResolver, BibliographicMetadataResolver>();
-        services.AddScoped<IBibliographicSearchService, BibliographicSearchService>();
+        services.AddHybridCache();
+        services.AddScoped<BibliographicMetadataResolver>();
+        services.AddScoped<IBibliographicMetadataResolver>(provider =>
+            new CachedBibliographicMetadataResolver(
+                provider.GetRequiredService<BibliographicMetadataResolver>(),
+                provider.GetRequiredService<HybridCache>()));
+        services.AddScoped<BibliographicSearchService>();
+        services.AddScoped<IBibliographicSearchService>(provider =>
+            new CachedBibliographicSearchService(
+                provider.GetRequiredService<BibliographicSearchService>(),
+                provider.GetRequiredService<HybridCache>()));
         services.AddScoped<IActualityImportStore, ActualityImportStore>();
         AddActualityTitleGeneration(services, builderConfiguration);
         services.AddHttpClient<ISocialFeedClient, InstagramFeedClient>((serviceProvider, client) =>
