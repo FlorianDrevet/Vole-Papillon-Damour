@@ -94,7 +94,7 @@ public sealed class BnfSruClient(
         return new Uri($"{_options.BnfSruEndpoint}?{query}", UriKind.Absolute);
     }
 
-    private static string? ReadAuthors(IEnumerable<XElement> dataFields)
+    internal static string? ReadAuthors(IEnumerable<XElement> dataFields)
     {
         var authors = dataFields
             .Where(field => field.Attribute("tag")?.Value is "700" or "701" or "702")
@@ -114,7 +114,7 @@ public sealed class BnfSruClient(
         return authors.Length == 0 ? null : string.Join(", ", authors);
     }
 
-    private static string? FirstSubfield(
+    internal static string? FirstSubfield(
         IEnumerable<XElement> dataFields,
         IEnumerable<string> tags,
         string code)
@@ -126,7 +126,7 @@ public sealed class BnfSruClient(
             .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
     }
 
-    private static string? Subfield(XElement dataField, string code)
+    internal static string? Subfield(XElement dataField, string code)
     {
         return dataField
             .Elements()
@@ -144,7 +144,7 @@ public sealed class BnfSruClient(
             ?.Value;
     }
 
-    private static int? ParseYear(string? value)
+    internal static int? ParseYear(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -169,7 +169,7 @@ public sealed class BnfSruClient(
         return null;
     }
 
-    private static string? Clean(string? value)
+    internal static string? Clean(string? value)
     {
         return string.IsNullOrWhiteSpace(value)
             ? null
