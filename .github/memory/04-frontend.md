@@ -11,6 +11,12 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
 - `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, cash
   sales, IndexedDB persistence, and volunteer authentication/synchronization
 
+As of 2026-09-15, the Scan PWA keeps successful automatic synchronization silent: it no
+longer opens a success toast. A transmission that is merely queued for the background
+sync no longer raises the top `(action à faire)` status strip; offline state, synchronization
+errors, pending decisions from earlier scans, set-aside gestures, and authentication/storage
+problems remain actionable and visible.
+
 ### Actuality review workflow
 
 `BackOffice/src/app/feature/actualities` requests `GET /actuality/all?includeDrafts=true`

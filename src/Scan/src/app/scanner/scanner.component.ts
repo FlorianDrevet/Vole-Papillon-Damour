@@ -171,7 +171,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private sessionEnded = false;
   private sessionCloseCompleted = false;
   private syncTimer: number | null = null;
-  private automaticSuccessToastShown = false;
   private cameraStartToken = 0;
   private accountSwitchAccountId: string | null = null;
   private cameraFrame: string | null = null;
@@ -364,12 +363,13 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   get hasActionableStatus(): boolean {
+    // A pending transmission is handled automatically; expose it only when
+    // the surrounding offline or synchronization state needs attention.
     return !this.isOnline
       || this.authDegraded
       || this.accountSwitchPrompt !== null
       || this.syncStatus === 'error'
       || this.actionablePendingDecisionCount > 0
-      || this.pendingTransmissionCount > 0
       || this.setAsideCount > 0
       || this.visibleStorageCapabilityAlert !== null
       || this.storageAlert !== null
@@ -923,7 +923,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   async logout(): Promise<void> {
     this.logoutError = null;
-    this.automaticSuccessToastShown = false;
 
     if (this.scanWorkflow) {
       try {
@@ -967,7 +966,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.refreshView();
   }
 
-  async syncNow(showSuccessToast = true): Promise<void> {
+  async syncNow(): Promise<void> {
     if (
       !this.scanSync ||
       this.accountSwitchPrompt ||
@@ -984,7 +983,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    const syncPromise = this.performSync(this.scanSync, showSuccessToast);
+    const syncPromise = this.performSync(this.scanSync);
     this.syncPromise = syncPromise;
     try {
       await syncPromise;
@@ -1066,7 +1065,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     await this.setAsideAccountSwitch();
   }
 
-  private async performSync(scanSync: ScanSyncService, showSuccessToast: boolean): Promise<void> {
+  private async performSync(scanSync: ScanSyncService): Promise<void> {
     this.syncStatus = 'syncing';
     this.syncAlert = null;
     this.refreshView();
@@ -1105,9 +1104,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         this.sessionCloseError = 'La session reste enregistrée localement et sera clôturée dès que la synchronisation aboutira.';
       } else {
         this.syncStatus = 'success';
-        if (showSuccessToast) {
-          this.scanStatus?.showSuccess('Synchronisation réussie');
-        }
       }
       await this.refreshLocalState();
       await this.refreshSaleCancellationState();
@@ -1330,7 +1326,6 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   @HostListener('window:offline')
   onNetworkOffline(): void {
     this.isOnline = false;
-    this.automaticSuccessToastShown = false;
     this.refreshView();
   }
 
@@ -1861,12 +1856,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   private trySync(): void {
-    const announceSuccess = !this.automaticSuccessToastShown;
-    void this.syncNow(announceSuccess).then(() => {
-      if (announceSuccess && this.syncStatus === 'success') {
-        this.automaticSuccessToastShown = true;
-      }
-    });
+    void this.syncNow();
   }
 
   private routeForScreen(screen: ScanScreen): string | null {

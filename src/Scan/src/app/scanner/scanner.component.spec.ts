@@ -1085,6 +1085,40 @@ describe('ScannerComponent', () => {
     screenFixture.destroy();
   });
 
+  it('does not show an action strip for transmissions handled automatically', () => {
+    const screenFixture = TestBed.createComponent(ScannerComponent);
+    const screenComponent = screenFixture.componentInstance;
+    screenComponent.screen = 'tri';
+    screenComponent.isOnline = true;
+    screenComponent.pendingTransmissionCount = 1;
+    screenFixture.detectChanges();
+
+    expect(screenComponent.hasActionableStatus).toBeFalse();
+    expect(screenFixture.nativeElement.querySelector('.status-strip')).toBeNull();
+
+    screenFixture.destroy();
+  });
+
+  it('keeps a failed synchronization visible while transmissions remain pending', () => {
+    const screenFixture = TestBed.createComponent(ScannerComponent);
+    const screenComponent = screenFixture.componentInstance;
+    screenComponent.screen = 'tri';
+    screenComponent.isOnline = true;
+    screenComponent.pendingTransmissionCount = 1;
+    screenComponent.syncStatus = 'error';
+    screenComponent.syncAlert = {
+      id: 'sync',
+      level: 'info',
+      message: 'La synchronisation a échoué ; les gestes restent conservés localement.',
+    };
+    screenFixture.detectChanges();
+
+    expect(screenComponent.hasActionableStatus).toBeTrue();
+    expect(screenFixture.nativeElement.querySelector('.status-strip')).not.toBeNull();
+
+    screenFixture.destroy();
+  });
+
   it('keeps earlier pending decisions visible while the current scan awaits a decision', () => {
     const screenFixture = TestBed.createComponent(ScannerComponent);
     const screenComponent = screenFixture.componentInstance;
@@ -1136,7 +1170,7 @@ describe('ScannerComponent', () => {
     }
   });
 
-  it('announces a successful automatic synchronization with a short toast', async () => {
+  it('does not announce a successful automatic synchronization', async () => {
     const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
     sync.syncAll.and.resolveTo({
       catalog: {booksReceived: 2, booksRemoved: 0, watermark: 'watermark'},
@@ -1170,14 +1204,14 @@ describe('ScannerComponent', () => {
     trySync.call(localComponent);
     await new Promise<void>(resolve => window.setTimeout(resolve, 0));
 
-    expect(localComponent.syncToast).toBe('Synchronisation réussie');
+    expect(localComponent.syncToast).toBeNull();
     expect(sync.syncAll).toHaveBeenCalledTimes(2);
-    expect(showSuccess).toHaveBeenCalledTimes(1);
+    expect(showSuccess).not.toHaveBeenCalled();
   });
 
-  it('lets the operator dismiss the synchronization success toast', () => {
+  it('lets the operator dismiss an explicit success toast', () => {
     const status = TestBed.inject(ScanStatusService);
-    status.showSuccess('Synchronisation réussie');
+    status.showSuccess('Données hors ligne protégées');
     fixture.detectChanges();
 
     const dismissButton = fixture.nativeElement.querySelector(
