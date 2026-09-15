@@ -92,6 +92,12 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromMilliseconds(options.BnfTimeoutMilliseconds);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         });
+        services.AddHttpClient<IBnfSruSearchClient, BnfSruSearchClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(options.BnfSearchTimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
         services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((serviceProvider, client) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;

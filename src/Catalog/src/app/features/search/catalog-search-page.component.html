@@ -289,7 +289,7 @@
               @if (referenceFollowError) {
                 <p class="reference-feedback error" role="alert">{{ referenceFollowError }}</p>
               }
-              @if (externalResponse.items.length === externalResponse.pageSize) {
+              @if (externalResponse.items.length >= externalResponse.pageSize) {
                 <nav class="pagination external-pagination" aria-label="Pages des titres à rechercher">
                   <button type="button" [disabled]="externalResponse.page === 1" (click)="goToExternalPage(externalResponse.page - 1)">← Précédente</button>
                   <span>Page {{ externalResponse.page }}</span>
