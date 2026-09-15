@@ -213,7 +213,8 @@ bootstrap des contrats, `graphify update .`, `git diff --check` et smoke Chrome 
 local à la taille desktop puis à 390×844 sans débordement. Le parcours connecté réel n’a pas
 été modifié pendant le smoke afin de ne pas changer une session bénévole ; il reste couvert
 par les tests du composant, du workflow IndexedDB et de la synchronisation. Aucun déploiement
-ni merge n’a été effectué ; la PR de la branche `fix/scan-current-book-action` reste à ouvrir.
+ni merge n’a été effectué ; la [PR #175](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/175)
+est ouverte depuis la branche `fix/scan-current-book-action`.
 `rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes sont utilisées.
 
 ### État actualisé — 2026-09-15 — modal de confirmation de l’inventaire Catalog
