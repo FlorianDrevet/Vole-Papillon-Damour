@@ -24,7 +24,9 @@ describe('CatalogAccountPageComponent', () => {
     isAdministrator: WritableSignal<boolean>;
     isVolunteer: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
+    recognizedAccount: WritableSignal<AccountInfo | null>;
     initialize: jasmine.Spy;
+    resumeRecognizedSession: jasmine.Spy;
     login: jasmine.Spy;
     register: jasmine.Spy;
     logout: jasmine.Spy;
@@ -150,13 +152,16 @@ describe('CatalogAccountPageComponent', () => {
       isAdministrator: signal(false),
       isVolunteer: signal(false),
       error: signal<string | null>(null),
+      recognizedAccount: signal<AccountInfo | null>(null),
       initialize: jasmine.createSpy('initialize'),
+      resumeRecognizedSession: jasmine.createSpy('resumeRecognizedSession'),
       login: jasmine.createSpy('login'),
       register: jasmine.createSpy('register'),
       logout: jasmine.createSpy('logout'),
       getApiAccessToken: jasmine.createSpy('getApiAccessToken'),
     };
     auth.initialize.and.resolveTo();
+    auth.resumeRecognizedSession.and.resolveTo(false);
     auth.login.and.resolveTo();
     auth.register.and.resolveTo();
     auth.logout.and.resolveTo();
@@ -217,6 +222,29 @@ describe('CatalogAccountPageComponent', () => {
     await fixture.whenStable();
 
     expect(auth.login).toHaveBeenCalledWith('/compte');
+  });
+
+  it('sends a recognized member whose session expired straight to the login page', async () => {
+    auth.recognizedAccount.set(account('Florian Drevet'));
+    auth.resumeRecognizedSession.and.resolveTo(true);
+
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(auth.resumeRecognizedSession).toHaveBeenCalledWith('/compte');
+    expect(fixture.nativeElement.textContent).toContain('Reconnexion à votre espace');
+    expect(fixture.nativeElement.textContent).not.toContain('Session à renouveler');
+    expect(api.getWatchlist).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the login entries when a recognized session cannot be resumed again', async () => {
+    auth.recognizedAccount.set(account('Florian Drevet'));
+    auth.resumeRecognizedSession.and.resolveTo(false);
+
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="member-login"]')).not.toBeNull();
   });
 
   it('informs people about account data before registration and links to their rights', async () => {

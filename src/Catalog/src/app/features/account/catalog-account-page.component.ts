@@ -49,6 +49,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly contribution = signal<CatalogVolunteerStatisticsResponse | null>(null);
   readonly contributionLoading = signal(false);
   readonly loading = signal(false);
+  readonly resumingSession = signal(false);
   readonly removingItemId = signal<string | null>(null);
   readonly alertPending = signal(false);
   readonly deleting = signal(false);
@@ -109,6 +110,24 @@ export class CatalogAccountPageComponent implements OnInit {
       if (this.auth.isVolunteer()) {
         await this.loadContribution();
       }
+      return;
+    }
+
+    if (this.auth.recognizedAccount()) {
+      await this.resumeRecognizedSession();
+    }
+  }
+
+  private async resumeRecognizedSession(): Promise<void> {
+    // A returning member whose session expired goes straight to the login page
+    // instead of landing on an error; the service prevents redirect loops.
+    this.resumingSession.set(true);
+    try {
+      if (!(await this.auth.resumeRecognizedSession('/compte'))) {
+        this.resumingSession.set(false);
+      }
+    } catch {
+      this.resumingSession.set(false);
     }
   }
 

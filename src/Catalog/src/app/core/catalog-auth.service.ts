@@ -36,6 +36,10 @@ export const CATALOG_MSAL_LOADER = new InjectionToken<CatalogMsalLoader>(
 );
 
 const ADMINISTRATION_ROUTE = '/administration';
+// Public pages must not wait on a hidden Entra iframe: past this delay the
+// cached session is treated as gone, like an explicit expiry.
+export const CATALOG_SILENT_SESSION_TIMEOUT_MS = 5000;
+const SESSION_RESUME_ATTEMPT_KEY = 'catalog-auth-session-resume-attempted';
 const ADMINISTRATION_ROLES = new Set(['administration', 'admin']);
 const VOLUNTEER_ROLES = new Set(['tri', 'caisse']);
 const INTERACTION_REQUIRED_ERROR_CODES = new Set([
@@ -81,6 +85,7 @@ export class CatalogAuthService {
   private readonly _state = signal<CatalogAuthState>('initializing');
   private readonly _error = signal<string | null>(null);
   private readonly _roles = signal<readonly string[]>([]);
+  private readonly _recognizedAccount = signal<AccountInfo | null>(null);
 
   private client: IPublicClientApplication | null = null;
   private msal: CatalogMsalModule | null = null;
@@ -104,6 +109,11 @@ export class CatalogAuthService {
     this._roles().some(role => VOLUNTEER_ROLES.has(role.trim().toLowerCase())),
   );
   readonly error = this._error.asReadonly();
+  /**
+   * Account found in the browser cache whose session could not be restored on
+   * load. It is only a login hint: it never grants the signed-in UI.
+   */
+  readonly recognizedAccount = this._recognizedAccount.asReadonly();
 
   initialize(): Promise<void> {
     if (this.initialization) {
@@ -125,7 +135,26 @@ export class CatalogAuthService {
   }
 
   async login(startPage: string = ADMINISTRATION_ROUTE): Promise<void> {
-    await this.startInteractiveLogin(catalogLoginRequest, startPage);
+    const loginHint = this._recognizedAccount()?.username;
+    await this.startInteractiveLogin(
+      loginHint ? {...catalogLoginRequest, loginHint} : catalogLoginRequest,
+      startPage,
+    );
+  }
+
+  /**
+   * Sends a recognized visitor straight to the login page, once per browser
+   * session so a login that does not restore the session cannot loop.
+   */
+  async resumeRecognizedSession(startPage: string): Promise<boolean> {
+    await this.initialize();
+    if (this.isAuthenticated() || !this._recognizedAccount() || readResumeAttempted()) {
+      return false;
+    }
+
+    writeResumeAttempted(true);
+    await this.login(startPage);
+    return true;
   }
 
   async register(startPage: string = '/compte'): Promise<void> {
@@ -148,8 +177,10 @@ export class CatalogAuthService {
     const account = this._account();
 
     this._account.set(null);
+    this._recognizedAccount.set(null);
     this._roles.set([]);
     this._state.set('signed-out');
+    writeResumeAttempted(false);
 
     await client.logoutRedirect({
       account: account ?? undefined,
@@ -260,16 +291,14 @@ export class CatalogAuthService {
 
       this.syncFromCache(result?.idTokenClaims as AccountInfo['idTokenClaims']);
       if (!result?.idTokenClaims) {
-        await this.hydrateAccountClaims();
-        if (this._state() === 'initializing') {
-          // A transient failure does not prove that the Entra session is gone;
-          // keep the cached account usable until an API response says otherwise.
-          this._state.set('authenticated');
-        }
+        await this.restoreCachedSession();
       }
       if (result?.accessToken && this._account()) {
         this._roles.set(readRoles(result.accessToken));
         this._state.set('authenticated');
+      }
+      if (this._state() === 'authenticated') {
+        writeResumeAttempted(false);
       }
       succeeded = true;
     } catch {
@@ -286,23 +315,31 @@ export class CatalogAuthService {
     }
   }
 
-  private async hydrateAccountClaims(): Promise<void> {
+  private async restoreCachedSession(): Promise<void> {
     const account = this._account();
     if (!account) {
       return;
     }
 
     try {
-      const result = await this.requireClient().acquireTokenSilent({
-        account,
-        scopes: catalogLoginRequest.scopes,
-      });
+      const result = await withTimeout(
+        this.requireClient().acquireTokenSilent({
+          account,
+          scopes: catalogLoginRequest.scopes,
+        }),
+        CATALOG_SILENT_SESSION_TIMEOUT_MS,
+      );
       this.setTokenClaims(result.idTokenClaims as AccountInfo['idTokenClaims']);
       this._roles.set(readRoles(result.accessToken));
-    } catch (error: unknown) {
-      if (isInteractionRequiredError(this.msal, error)) {
-        this.markSessionRequiresReauthentication();
-      }
+      this._recognizedAccount.set(null);
+      this._state.set('authenticated');
+    } catch {
+      // Whatever the cause (expired refresh token, blocked iframe, timeout),
+      // an unverified session must not be shown as signed in.
+      this._account.set(null);
+      this._roles.set([]);
+      this._recognizedAccount.set(account);
+      this._state.set('signed-out');
     }
   }
 
@@ -335,6 +372,38 @@ export class CatalogAuthService {
     }
 
     return this.client;
+  }
+}
+
+function withTimeout<T>(operation: Promise<T>, timeoutMs: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error('The silent session restore timed out.')),
+      timeoutMs,
+    );
+  });
+
+  return Promise.race([operation, timeout]).finally(() => clearTimeout(timer));
+}
+
+function readResumeAttempted(): boolean {
+  try {
+    return globalThis.sessionStorage?.getItem(SESSION_RESUME_ATTEMPT_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writeResumeAttempted(attempted: boolean): void {
+  try {
+    if (attempted) {
+      globalThis.sessionStorage?.setItem(SESSION_RESUME_ATTEMPT_KEY, 'true');
+    } else {
+      globalThis.sessionStorage?.removeItem(SESSION_RESUME_ATTEMPT_KEY);
+    }
+  } catch {
+    // Storage can be unavailable (private mode); the guard then simply does not persist.
   }
 }
 
