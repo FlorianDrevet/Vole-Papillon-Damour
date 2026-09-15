@@ -1,6 +1,6 @@
 import {provideZonelessChangeDetection, signal, WritableSignal} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {ActivatedRoute, ParamMap, RouterModule, convertToParamMap} from '@angular/router';
+import {ActivatedRoute, ParamMap, Router, RouterModule, convertToParamMap} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import type {AccountInfo} from '@azure/msal-browser';
 import {BehaviorSubject, Subject, of} from 'rxjs';
@@ -159,6 +159,41 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.reference-follow--work')).not.toBeNull();
     expect((fixture.nativeElement.querySelector('.reference-follow--edition') as HTMLButtonElement).textContent)
       .toContain('Suivre cette édition');
+  });
+
+  it('limits the search tab to available books by default', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({availability: 'available'}));
+    expect((fixture.nativeElement.querySelector(
+      'input[name="availability"][value="available"]',
+    ) as HTMLInputElement).checked).toBeTrue();
+  });
+
+  it('restores the available scope when search filters are reset', () => {
+    fixture.detectChanges();
+    fixture.componentInstance.availability = 'all';
+    const applyFilters = spyOn(fixture.componentInstance, 'applyFilters');
+
+    fixture.componentInstance.clearFilters();
+
+    expect(fixture.componentInstance.availability).toBe('available');
+    expect(applyFilters).toHaveBeenCalledOnceWith();
+  });
+
+  it('keeps an explicit all scope in the search URL', () => {
+    fixture.detectChanges();
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.availability = 'all';
+
+    fixture.componentInstance.applyFilters();
+
+    expect(navigate).toHaveBeenCalledWith(['/recherche'], {
+      queryParams: jasmine.objectContaining({availability: 'all'}),
+    });
   });
 
   it('keeps the result heading on the last submitted query while the draft changes', async () => {
