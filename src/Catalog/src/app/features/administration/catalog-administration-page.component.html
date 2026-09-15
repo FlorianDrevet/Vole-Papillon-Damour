@@ -572,25 +572,26 @@
             </section>
           }
 
-          @case ('members') {
-            <section class="admin-view" aria-labelledby="admin-title">
-              <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes</span><h1 id="admin-title">Membres du site.</h1><p class="admin-intro">Consultez les listes de recherche et protégez la délivrabilité des alertes. Les comptes sont créés en autonomie via Entra External ID.</p></div>
-              <form class="search-toolbar" (ngSubmit)="loadMembers()"><label class="search-field"><span>Nom ou e-mail</span><input name="memberSearch" [(ngModel)]="memberSearch" placeholder="Rechercher…"></label><label><span>Alertes</span><select name="memberAlertStatus" [(ngModel)]="memberAlertStatus"><option value="">Tous</option><option value="Active">Actives</option><option value="Suspended">Suspendues</option><option value="Blocked">Bloquées</option></select></label><button class="button button-primary" type="submit">Rechercher</button></form>
-              @if (membersPage(); as page) {<div class="list-meta"><span>{{ formatNumber(page.totalCount) }} comptes</span></div><div class="member-list">@for (member of page.members; track member.id) {<article class="member-row"><div><strong>{{ member.displayName || 'Nom non renseigné' }}</strong><span>{{ maskedEmail(member.email) }}</span></div><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span><span class="member-last-seen">{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" (click)="openMember(member.id)">Voir la fiche →</button></article>} @empty {<div class="empty-panel"><h2>Aucun membre</h2><p>Aucun compte ne correspond à ces critères.</p></div>}</div><div class="pagination"><button type="button" [disabled]="memberPage <= 1" (click)="goToMembersPage(memberPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToMembersPage(memberPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des membres…</p>}
-              <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Consulter la liste de recherche d’un membre sert au support — jamais à de l’exploitation commerciale.</p></div>
-              @if (selectedMember(); as member) {<section class="member-detail side-detail"><div class="detail-heading"><div><span class="admin-kicker">Fiche membre</span><h2>{{ member.member.displayName || member.member.email || member.member.id }}</h2><p>{{ member.member.email || 'E-mail non renseigné' }} · créé le {{ formatDate(member.member.createdAt) }}</p></div><button class="text-link" type="button" (click)="selectedMember.set(null)">Fermer</button></div><div class="mini-stat-row"><span><strong>{{ formatNumber(member.member.watchlistItemCount) }}</strong> suivis</span><span><strong>{{ formatNumber(member.member.alertHistoryCount) }}</strong> alertes envoyées</span><span><strong>{{ formatNumber(member.member.bounceCount) }}</strong> rebonds</span></div><div class="action-row"><button class="button button-outline" type="button" (click)="toggleMemberBlocked(member)">{{ member.member.alertStatus === 'Blocked' ? 'Réactiver les alertes' : 'Bloquer les alertes' }}</button><button class="button button-danger" type="button" (click)="deleteMember(member)">Supprimer / anonymiser</button></div><h3>Liste de suivi</h3><div class="simple-list">@for (item of member.watchlist; track item.id) {<div><span>{{ item.title || item.isbn13 || item.workId || 'Titre externe' }}</span><small>{{ item.quantityAvailable }} disponibles · ajouté le {{ formatDate(item.addedAt) }}</small></div>} @empty {<p>Aucun titre suivi.</p>}</div></section>}
-            </section>
-          }
-
           @case ('accounts') {
             <section class="admin-view" aria-labelledby="admin-title">
-              <div class="admin-heading admin-heading-split"><div><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes &amp; rôles</span><h1 id="admin-title">Bénévoles.</h1></div><button class="button button-primary" type="button" (click)="showCreateAccount.set(!showCreateAccount())">{{ showCreateAccount() ? 'Fermer le formulaire' : 'Créer un compte bénévole' }}</button></div>
-              @if (showCreateAccount()) {<form class="account-create-card" (ngSubmit)="createAccount()"><div><span class="section-kicker">Nouveau compte Entra</span><h2>Créer un compte bénévole</h2><p>Le mot de passe temporaire est transmis hors de cette interface.</p></div><label><span>Nom affiché</span><input name="accountDisplayName" [(ngModel)]="createAccountForm.displayName" required></label><label><span>E-mail</span><input type="email" name="accountEmail" [(ngModel)]="createAccountForm.email" required></label><label><span>Mot de passe temporaire</span><input type="password" name="accountPassword" [(ngModel)]="createAccountForm.temporaryPassword" minlength="8" required></label><fieldset><legend>Droits</legend>@for (role of accountRoleOptions; track role.value) {<label class="role-checkbox"><input type="checkbox" [checked]="hasCreateRole(role.value)" (change)="toggleCreateRole(role.value)"><span>{{ role.label }}</span></label>}</fieldset><button class="button button-primary" type="submit" [disabled]="loading()">Créer le compte</button></form>}
-              <form class="search-toolbar account-search-toolbar" (ngSubmit)="loadAccounts()"><label class="search-field"><span>Nom ou e-mail</span><input name="accountSearch" [(ngModel)]="accountSearch" placeholder="Rechercher…"></label><button class="button button-outline" type="submit">Rechercher</button></form>
-              @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><small>{{ account.email || account.externalId }}</small><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" disabled title="La désactivation Entra n’est pas encore exposée par l’API">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>} @else if (accountErrorMessage(); as error) {<div class="account-directory-notice" data-testid="account-directory-notice" role="status"><strong>Les comptes et rôles ne sont pas disponibles.</strong><p>{{ error }}</p></div>}
-              <div class="section-heading subsection-heading"><h2>Membres du site</h2><span>{{ membersPage()?.totalCount ?? '—' }} comptes</span><button class="text-link" type="button" (click)="selectSection('members')">Voir tous les membres →</button></div>
-              @if (membersPage(); as page) {<div class="member-list compact-member-list">@for (member of page.members | slice:0:3; track member.id) {<article class="member-row"><div><strong>{{ maskedEmail(member.email) }}</strong><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span></div><span>{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" (click)="openMember(member.id)">{{ member.alertStatus === 'Blocked' ? 'Débloquer' : 'Bloquer' }}</button><button class="danger-link" type="button" (click)="openMember(member.id)">Supprimer</button></article>} @empty {<p class="empty-inline">Aucun membre à afficher.</p>}</div>}
-              <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri, Caisse et Administration sont des rôles d’application Entra. Les comptes sont gérés ici ; les sessions restent la source de vérité pour l’activité.</p></div>
+              <nav class="admin-subtabs accounts-subtabs" aria-label="Comptes et rôles">
+                <button data-testid="accounts-subtab" type="button" [class.active]="accountsTab() === 'volunteers'" [attr.aria-selected]="accountsTab() === 'volunteers'" (click)="selectAccountsTab('volunteers')">Bénévoles</button>
+                <button data-testid="accounts-subtab" type="button" [class.active]="accountsTab() === 'members'" [attr.aria-selected]="accountsTab() === 'members'" (click)="selectAccountsTab('members')">Membres du site</button>
+              </nav>
+
+              @if (accountsTab() === 'volunteers') {
+                <div class="admin-heading admin-heading-split"><div><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes &amp; rôles</span><h1 id="admin-title">Bénévoles.</h1></div><button class="button button-primary" type="button" (click)="showCreateAccount.set(!showCreateAccount())">{{ showCreateAccount() ? 'Fermer le formulaire' : 'Créer un compte bénévole' }}</button></div>
+                @if (showCreateAccount()) {<form class="account-create-card" (ngSubmit)="createAccount()"><div><span class="section-kicker">Nouveau compte Entra</span><h2>Créer un compte bénévole</h2><p>Le mot de passe temporaire est transmis hors de cette interface.</p></div><label><span>Nom affiché</span><input name="accountDisplayName" [(ngModel)]="createAccountForm.displayName" required></label><label><span>E-mail</span><input type="email" name="accountEmail" [(ngModel)]="createAccountForm.email" required></label><label><span>Mot de passe temporaire</span><input type="password" name="accountPassword" [(ngModel)]="createAccountForm.temporaryPassword" minlength="8" required></label><fieldset><legend>Droits</legend>@for (role of accountRoleOptions; track role.value) {<label class="role-checkbox"><input type="checkbox" [checked]="hasCreateRole(role.value)" (change)="toggleCreateRole(role.value)"><span>{{ role.label }}</span></label>}</fieldset><button class="button button-primary" type="submit" [disabled]="loading()">Créer le compte</button></form>}
+                <form class="search-toolbar account-search-toolbar" (ngSubmit)="loadAccounts()"><label class="search-field"><span>Nom ou e-mail</span><input name="accountSearch" [(ngModel)]="accountSearch" placeholder="Rechercher…"></label><button class="button button-outline" type="submit">Rechercher</button></form>
+                @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><small>{{ account.email || account.externalId }}</small><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" [disabled]="loading()" [attr.data-testid]="'account-status-' + account.externalId" (click)="toggleAccountEnabled(account)">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>} @else if (accountErrorMessage(); as error) {<div class="account-directory-notice" data-testid="account-directory-notice" role="status"><strong>Les comptes et rôles ne sont pas disponibles.</strong><p>{{ error }}</p></div>}
+                <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri, Caisse et Administration sont des rôles d’application Entra. Les comptes sont gérés ici ; les sessions restent la source de vérité pour l’activité.</p></div>
+              } @else {
+                <section class="members-workspace" data-testid="members-workspace">
+                  <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes</span><h1 id="admin-title">Membres du site.</h1><p class="admin-intro">Consultez les listes de recherche et protégez la délivrabilité des alertes. Les comptes sont créés en autonomie via Entra External ID.</p></div>
+                  <form class="search-toolbar" (ngSubmit)="loadMembers()"><label class="search-field"><span>Nom ou e-mail</span><input name="memberSearch" [(ngModel)]="memberSearch" placeholder="Rechercher…"></label><label><span>Alertes</span><select name="memberAlertStatus" [(ngModel)]="memberAlertStatus"><option value="">Tous</option><option value="Active">Actives</option><option value="Suspended">Suspendues</option><option value="Blocked">Bloquées</option></select></label><button class="button button-primary" type="submit">Rechercher</button></form>
+                  @if (membersPage(); as page) {<div class="list-meta"><span>{{ formatNumber(page.totalCount) }} comptes</span></div><div class="member-list">@for (member of page.members; track member.id) {<article class="member-row"><div><strong>{{ member.displayName || 'Nom non renseigné' }}</strong><span>{{ maskedEmail(member.email) }}</span></div><span>{{ formatNumber(member.watchlistItemCount) }} titres recherchés</span><span class="member-last-seen">{{ member.alertStatus === 'Blocked' ? 'alertes suspendues' : 'dernière activité : ' + formatDate(member.lastSeenAt) }}</span><button class="text-link" type="button" [attr.data-testid]="'member-detail-' + member.id" (click)="openMember(member.id)">Voir la fiche →</button></article>} @empty {<div class="empty-panel"><h2>Aucun membre</h2><p>Aucun compte ne correspond à ces critères.</p></div>}</div><div class="pagination"><button type="button" [disabled]="memberPage <= 1" (click)="goToMembersPage(memberPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToMembersPage(memberPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des membres…</p>}
+                </section>
+              }
             </section>
           }
 
@@ -679,6 +680,101 @@
         <footer class="inventory-confirmation-footer">
           <button class="button button-outline" data-testid="inventory-confirmation-cancel" type="button" autofocus (click)="cancelInventoryAdjustment()">Annuler</button>
           <button class="button button-primary" data-testid="inventory-confirmation-confirm" type="button" [disabled]="loading()" (click)="confirmInventoryAdjustment()">{{ confirmation.direction === 'increase' ? 'Confirmer l’ajout' : 'Confirmer le retrait' }}</button>
+        </footer>
+      </section>
+    </div>
+  }
+
+  @if (selectedMember(); as member) {
+    <div class="member-dialog-overlay member-detail-overlay" role="presentation" (click)="closeMemberDetail()">
+      <section
+        class="member-dialog member-detail-dialog"
+        data-testid="member-detail-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="member-detail-title"
+        (click)="$event.stopPropagation()">
+        <header class="member-dialog-header member-dialog-inset member-detail-dialog__header">
+          <div class="member-detail-dialog__heading">
+            <span class="admin-kicker">Fiche membre</span>
+            <h2 id="member-detail-title">{{ member.member.displayName || 'Membre du site' }}</h2>
+            <p>{{ member.member.email || 'E-mail non renseigné' }} · créé le {{ formatDate(member.member.createdAt) }}</p>
+          </div>
+          <button class="member-detail-dialog__close" type="button" aria-label="Fermer la fiche membre" (click)="closeMemberDetail()">×</button>
+        </header>
+
+        <div class="member-dialog-inset member-detail-dialog__body">
+          <div class="mini-stat-row" aria-label="Synthèse du membre">
+            <span><strong>{{ formatNumber(member.member.watchlistItemCount) }}</strong>titres suivis</span>
+            <span><strong>{{ formatNumber(member.member.alertHistoryCount) }}</strong>alertes envoyées</span>
+            <span><strong>{{ formatNumber(member.member.bounceCount) }}</strong>rebonds</span>
+          </div>
+
+          <div class="member-detail-dialog__meta">
+            <span>Dernière activité : {{ formatDate(member.member.lastSeenAt, true) }}</span>
+            <span>Alertes : {{ member.member.alertStatus === 'Blocked' ? 'bloquées' : member.member.alertStatus === 'Suspended' ? 'suspendues' : 'actives' }}</span>
+            @if (member.member.externalId) {<span class="mono-note">Entra · {{ member.member.externalId }}</span>}
+          </div>
+
+          <div class="action-row member-detail-dialog__actions">
+            <button class="button button-outline" type="button" (click)="toggleMemberBlocked(member)">{{ member.member.alertStatus === 'Blocked' ? 'Réactiver les alertes' : 'Bloquer les alertes' }}</button>
+            <button class="button button-danger" data-testid="member-delete" type="button" (click)="requestMemberDeletion(member)">Supprimer / anonymiser</button>
+          </div>
+
+          <section class="member-dialog-section member-detail-dialog__section">
+            <div class="section-heading">
+              <div><span class="admin-kicker">Liste de suivi</span><h3>Les titres recherchés</h3></div>
+              <span>{{ formatNumber(member.watchlist.length) }} titre{{ member.watchlist.length > 1 ? 's' : '' }}</span>
+            </div>
+            <div class="simple-list">
+              @for (item of member.watchlist; track item.id) {
+                <div><span><strong>{{ item.title || item.isbn13 || 'Titre non renseigné' }}</strong><small>{{ item.authors || item.isbn13 || 'Auteur non renseigné' }}</small></span><span>{{ formatNumber(item.quantityAvailable) }} disponible{{ item.quantityAvailable > 1 ? 's' : '' }}</span></div>
+              } @empty {
+                <p class="empty-inline">Aucun titre suivi.</p>
+              }
+            </div>
+          </section>
+
+          <section class="member-dialog-section member-detail-dialog__section">
+            <div class="section-heading">
+              <div><span class="admin-kicker">Historique des alertes</span><h3>Les dernières notifications</h3></div>
+              <span>{{ formatNumber(member.alerts.length) }} alerte{{ member.alerts.length > 1 ? 's' : '' }}</span>
+            </div>
+            <div class="simple-list">
+              @for (alert of member.alerts; track alert.id) {
+                <div><span><strong>{{ alert.title || alert.isbn13 }}</strong><small>Envoyée le {{ formatDate(alert.sentAt, true) }}</small></span><span>{{ alert.outboxMessageId ? 'Message journalisé' : 'Notification locale' }}</span></div>
+              } @empty {
+                <p class="empty-inline">Aucune alerte envoyée.</p>
+              }
+            </div>
+          </section>
+        </div>
+
+        <footer class="member-dialog-footer member-dialog-inset member-detail-dialog__footer">
+          <button class="button button-outline" type="button" (click)="closeMemberDetail()">Fermer</button>
+        </footer>
+      </section>
+    </div>
+  }
+
+  @if (memberDeletionConfirmation(); as member) {
+    <div class="member-dialog-overlay member-delete-overlay" role="presentation" (click)="cancelMemberDeletion()">
+      <section
+        class="member-dialog member-delete-dialog"
+        data-testid="member-delete-confirmation"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="member-delete-title"
+        aria-describedby="member-delete-description"
+        (click)="$event.stopPropagation()">
+        <header class="member-dialog-header member-dialog-inset member-delete-dialog__header">
+          <span class="admin-kicker">Suppression du compte</span>
+          <h2 id="member-delete-title">Supprimer {{ member.member.displayName || 'ce membre' }} ?</h2>
+          <p id="member-delete-description">Le compte Entra External ID et les données locales de ce membre seront supprimés. Cette action ne peut pas être annulée.</p>
+        </header>
+        <footer class="member-dialog-footer member-dialog-inset member-delete-dialog__footer">
+          <button class="button button-outline" data-testid="member-delete-cancel" type="button" (click)="cancelMemberDeletion()">Annuler</button>
+          <button class="button button-danger" data-testid="member-delete-confirm" type="button" [disabled]="loading()" (click)="deleteMember()">Supprimer le compte</button>
         </footer>
       </section>
     </div>

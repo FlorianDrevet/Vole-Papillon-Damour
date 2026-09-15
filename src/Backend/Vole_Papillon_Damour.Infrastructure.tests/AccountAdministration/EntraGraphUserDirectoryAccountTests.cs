@@ -126,6 +126,68 @@ public sealed class EntraGraphUserDirectoryAccountTests
         accounts[0].Roles.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task SetAccountEnabledAsync_UpdatesGraphUserAndReturnsTheAccountWithItsRoles()
+    {
+        var requests = new List<HttpRequestMessage>();
+        var statusBodies = new List<string>();
+        using var client = new HttpClient(new RecordingHandler(request =>
+        {
+            requests.Add(request);
+            var path = request.RequestUri!.AbsolutePath;
+            if (request.Method == HttpMethod.Post && path.EndsWith("/token", StringComparison.Ordinal))
+            {
+                return JsonResponse("{\"access_token\":\"access-token\"}");
+            }
+
+            if (request.Method == HttpMethod.Get && path == "/v1.0/users/account-1")
+            {
+                return JsonResponse("""
+                    {"id":"account-1","displayName":"Ada Lovelace","mail":null,"userPrincipalName":"ada@example.test","accountEnabled":true,"createdDateTime":"2026-09-06T12:00:00Z","identities":[]}
+                    """);
+            }
+
+            if (request.Method == HttpMethod.Patch && path == "/v1.0/users/account-1")
+            {
+                statusBodies.Add(request.Content!.ReadAsStringAsync().GetAwaiter().GetResult());
+                return JsonResponse("{}");
+            }
+
+            if (request.Method == HttpMethod.Get && path == "/v1.0/servicePrincipals")
+            {
+                return JsonResponse("""
+                    {"value":[{"id":"api-service-principal","appRoles":[{"id":"6b1f0a54-2c3d-4e5f-9a8b-7c6d5e4f3a21","value":"Tri","isEnabled":true}]}]}
+                    """);
+            }
+
+            if (request.Method == HttpMethod.Get && path == "/v1.0/users/account-1/appRoleAssignments")
+            {
+                return JsonResponse("{\"value\":[{\"id\":\"assignment-1\",\"principalId\":\"account-1\",\"appRoleId\":\"6b1f0a54-2c3d-4e5f-9a8b-7c6d5e4f3a21\",\"resourceId\":\"api-service-principal\"}]}");
+            }
+
+            throw new InvalidOperationException($"Unexpected Graph request: {request.Method} {request.RequestUri}");
+        }));
+        var options = Options.Create(new EntraGraphOptions
+        {
+            TenantId = "tenant-id",
+            TenantDomain = "volepapillondamour.onmicrosoft.com",
+            ApiClientId = "api-client-id",
+            ClientId = "client-id",
+            ClientSecret = "client-secret"
+        });
+        var directory = new EntraGraphUserDirectory(client, options);
+
+        var account = await directory.SetAccountEnabledAsync(
+            "account-1",
+            false,
+            CancellationToken.None);
+
+        account.AccountEnabled.Should().BeFalse();
+        account.Roles.Should().ContainSingle().Which.Should().Be("Tri");
+        statusBodies.Should().ContainSingle().Which.Should().Contain("\"accountEnabled\":false");
+        requests.Should().Contain(request => request.Method == HttpMethod.Patch && request.RequestUri!.AbsolutePath == "/v1.0/users/account-1");
+    }
+
     private static HttpResponseMessage JsonResponse(string json)
     {
         return new HttpResponseMessage(HttpStatusCode.OK)

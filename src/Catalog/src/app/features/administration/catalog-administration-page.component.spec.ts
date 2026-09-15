@@ -16,13 +16,16 @@ import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {
   CatalogAdminAlertPage,
+  CatalogAdminAccount,
   CatalogAdminAccountPage,
   CatalogAdminBook,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
   CatalogAdminFairsEvolution,
   CatalogAdminCatalogueFlowStats,
+  CatalogAdminMemberDetail,
   CatalogAdminMemberPage,
+  CatalogAdminMemberOperation,
   CatalogAdminOverview,
   CatalogAdminScanSessionPage,
   CatalogAdminScanSession,
@@ -127,6 +130,35 @@ describe('CatalogAdministrationPageComponent', () => {
     ...overrides,
   });
 
+  const memberDetail = (): CatalogAdminMemberDetail => ({
+    member: {
+      id: 'member-id',
+      externalId: 'entra-member-id',
+      email: 'member@example.test',
+      displayName: 'Membre Test',
+      createdAt: '2026-09-01T10:00:00Z',
+      lastSeenAt: '2026-09-12T10:00:00Z',
+      anonymizedAt: null,
+      alertStatus: 'Active',
+      bounceCount: 0,
+      watchlistItemCount: 1,
+      alertHistoryCount: 2,
+    },
+    watchlist: [{
+      id: 'watchlist-item-id',
+      scope: 'Edition',
+      workId: null,
+      isbn13: '9782070363735',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      quantityAvailable: 3,
+      quantityAnnounced: 0,
+      addedAt: '2026-09-05T10:00:00Z',
+      lastAlertAt: null,
+    }],
+    alerts: [],
+  });
+
   beforeEach(async () => {
     auth = {
       account: signal<AccountInfo | null>(null),
@@ -155,6 +187,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'forceSessionAlerts', 'getAlerts', 'cancelAlert', 'forceAlert', 'getMembers',
       'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
       'getDeadStock', 'getAdminAccounts', 'createAdminAccount', 'updateAdminAccountRoles',
+      'updateAdminAccountStatus',
     ]);
     catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
     catalogApi.searchReferences.and.returnValue(of({
@@ -339,7 +372,7 @@ describe('CatalogAdministrationPageComponent', () => {
   it('uses the AdminSidebar information architecture from the maquette', () => {
     fixture.detectChanges();
 
-    const sidebar = fixture.nativeElement.querySelector('[data-testid="admin-sidebar"]');
+    const sidebar = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-testid="admin-sidebar"]')!;
     expect(sidebar).not.toBeNull();
     expect(sidebar.textContent).toContain('Pendant la bourse');
     expect(sidebar.textContent).toContain('Le fonds de livres');
@@ -350,6 +383,16 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(sidebar.textContent).toContain('Paramètres');
     expect(sidebar.textContent).not.toContain('Membres du site');
     expect(sidebar.textContent).not.toContain('Bénévoles');
+    expect(Array.from(sidebar.querySelectorAll<HTMLElement>('.admin-nav-item-label')).map(label => label.textContent?.trim())).toEqual([
+      'Tableau de bord',
+      'Sessions de scan',
+      'Désengorgement',
+      'Inventaire',
+      'Catalogue',
+      'Statistiques',
+      'Comptes & rôles',
+      'Paramètres',
+    ]);
     expect(getComputedStyle(sidebar).backgroundColor).not.toBe('rgb(7, 43, 69)');
   });
 
@@ -365,8 +408,8 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/overview',
       '/administration/sessions',
       '/administration/dead-stock',
-      '/administration/catalogue',
       '/administration/inventory',
+      '/administration/catalogue',
       '/administration/statistics',
       '/administration/accounts',
       '/administration/settings',
@@ -1190,6 +1233,129 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Bénévoles.');
     expect(fixture.nativeElement.textContent).toContain('Bénévole Test');
     expect(fixture.nativeElement.textContent).toContain('Tri');
+  });
+
+  it('offers volunteer and site-member subtabs in the accounts workspace', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.detectChanges();
+
+    const tabs = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('[data-testid="accounts-subtab"]'),
+    );
+    expect(tabs.map(tab => tab.textContent?.trim())).toEqual(['Bénévoles', 'Membres du site']);
+    expect(tabs[0].classList.contains('active')).toBeTrue();
+
+    tabs[1].click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.accountsTab()).toBe('members');
+    expect(fixture.nativeElement.querySelector('[data-testid="members-workspace"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Membres du site.');
+  });
+
+  it('opens a member sheet modal with actions and removes the old support notice', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const detail = memberDetail();
+    api.getMembers.and.returnValue(of({
+      generatedAt: '',
+      members: [detail.member],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    } as CatalogAdminMemberPage));
+    api.getMember.and.returnValue(of(detail));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    await fixture.componentInstance.selectAccountsTab('members');
+    fixture.detectChanges();
+
+    const detailButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="member-detail-member-id"]');
+    expect(detailButton).not.toBeNull();
+    detailButton?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const dialog = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-testid="member-detail-modal"]');
+    expect(dialog).not.toBeNull();
+    expect(dialog?.getAttribute('role')).toBe('dialog');
+    expect(dialog?.textContent).toContain('Membre Test');
+    expect(dialog?.textContent).toContain('Le Petit Prince');
+    expect(fixture.nativeElement.textContent).not.toContain('Consulter la liste de recherche d’un membre sert au support');
+  });
+
+  it('deletes the member identity through the admin endpoint after modal confirmation', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const detail = memberDetail();
+    api.getMember.and.returnValue(of(detail));
+    api.deleteMember.and.returnValue(of({
+      memberId: detail.member.id,
+      alertStatus: 'Deleted',
+      changed: true,
+      deletionCompleted: true,
+    } as CatalogAdminMemberOperation));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.openMember(detail.member.id);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="member-delete"]')?.click();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="member-delete-confirmation"]')).not.toBeNull();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="member-delete-confirm"]')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.deleteMember).toHaveBeenCalledWith('access-token', detail.member.id);
+    expect(fixture.componentInstance.successMessage()).toContain('Entra');
+    expect(fixture.componentInstance.selectedMember()).toBeNull();
+  });
+
+  it('enables and disables a volunteer account through the Entra status endpoint', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const volunteer: CatalogAdminAccount = {
+      externalId: 'volunteer-id',
+      email: 'volunteer@example.test',
+      displayName: 'Bénévole Test',
+      accountEnabled: true,
+      createdAt: '2026-09-01T10:00:00Z',
+      roles: ['Tri'],
+    };
+    api.getAdminAccounts.and.returnValue(of({
+      generatedAt: '',
+      accounts: [volunteer],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    } as CatalogAdminAccountPage));
+    api.updateAdminAccountStatus.and.returnValue(of({...volunteer, accountEnabled: false}));
+    spyOn(window, 'confirm').and.returnValue(true);
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.detectChanges();
+
+    const toggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="account-status-volunteer-id"]');
+    expect(toggle).not.toBeNull();
+    expect(toggle?.disabled).toBeFalse();
+    toggle?.click();
+    await fixture.whenStable();
+
+    expect(api.updateAdminAccountStatus).toHaveBeenCalledWith('access-token', 'volunteer-id', false);
+    expect(fixture.componentInstance.successMessage()).toContain('désactivé');
   });
 
   it('keeps the accounts workspace readable when the Entra directory is unavailable', async () => {
