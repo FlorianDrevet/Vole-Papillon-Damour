@@ -200,4 +200,24 @@ describe('CatalogAdminApiService', () => {
     expect(updateRequest.request.body).toEqual({roles: ['Tri', 'Caisse']});
     updateRequest.flush(account);
   });
+
+  it('updates the enabled state of a volunteer account in Entra', () => {
+    const account: CatalogAdminAccount = {
+      externalId: 'account-id',
+      email: 'michel@example.test',
+      displayName: 'Michel Bonnet',
+      accountEnabled: false,
+      createdAt: null,
+      roles: ['Tri'],
+    };
+
+    service.updateAdminAccountStatus('access-token', 'account-id', false)
+      .subscribe(result => expect(result).toEqual(account));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/accounts/admin/account-id/status`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({accountEnabled: false});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(account);
+  });
 });

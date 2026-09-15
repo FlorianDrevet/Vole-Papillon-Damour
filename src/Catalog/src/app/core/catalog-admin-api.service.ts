@@ -84,6 +84,18 @@ export class CatalogAdminApiService {
     );
   }
 
+  updateAdminAccountStatus(
+    accessToken: string,
+    externalId: string,
+    accountEnabled: boolean,
+  ): Observable<CatalogAdminAccount> {
+    return this.http.patch<CatalogAdminAccount>(
+      `${this.apiUrl}/accounts/admin/${encodeURIComponent(externalId)}/status`,
+      {accountEnabled},
+      this.options(accessToken),
+    );
+  }
+
   getBooks(accessToken: string, filters: CatalogAdminBookFilters = {}): Observable<CatalogAdminBookPage> {
     return this.http.get<CatalogAdminBookPage>(
       `${this.apiUrl}/books/admin/books`,

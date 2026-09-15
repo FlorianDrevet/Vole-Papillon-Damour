@@ -8,3 +8,6 @@ public sealed record CreateAdminAccountRequest(
 
 public sealed record UpdateAdminAccountRolesRequest(
     IReadOnlyCollection<string>? Roles);
+
+public sealed record UpdateAdminAccountStatusRequest(
+    bool AccountEnabled);

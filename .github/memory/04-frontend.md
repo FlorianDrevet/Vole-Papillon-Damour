@@ -86,6 +86,17 @@ calibration, waiting-stock, monthly heatmap, renewal and genre views with period
 filters. The quality-data mockup subtab and its 4C screen are intentionally not implemented.
 The UI keeps roles activity-derived (Tri/Caisse) and does not pretend to mirror Entra roles.
 
+As of 2026-09-15, Catalog `/administration` keeps the `Inventaire` and `Catalogue` entries
+in their existing sidebar positions while routing the first to the inventory workspace and
+the second to the catalogue workspace. `Comptes & rôles` now has `Bénévoles` and `Membres du
+site` subtabs. Volunteer status changes use the typed `PATCH /accounts/admin/{externalId}/status`
+contract and Graph `accountEnabled` update, with a guard against disabling the requesting
+administrator. Site-member details open in a Catalog-styled accessible modal; its destructive
+action confirms separately and consumes the existing durable member deletion path, which
+deletes the Entra identity before finalizing local cleanup and reports whether the outbox
+fallback remains. The former support/commercial-use notice is removed. No Entra account,
+Azure resource or deployment was changed during local validation.
+
 The public search sort control keeps a native accessible `<select>` for keyboard and screen
 reader behavior while wrapping it in Catalog design-system spacing, border, pill, chevron,
 hover, and focus styles. The administration Settings navigation icon uses a balanced custom

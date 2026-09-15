@@ -72,6 +72,7 @@ const INVENTORY_ADJUSTMENT_NOTE = 'Correction depuis l’inventaire';
 
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
+export type CatalogAdminAccountsTab = 'volunteers' | 'members';
 
 type CatalogAdminNavIcon =
   | 'dashboard'
@@ -152,8 +153,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     {
       label: 'Le fonds de livres',
       items: [
-        {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
         {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
+        {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
         {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
       ],
     },
@@ -201,8 +202,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly alertsPage = signal<CatalogAdminAlertPage | null>(null);
   readonly membersPage = signal<CatalogAdminMemberPage | null>(null);
   readonly selectedMember = signal<CatalogAdminMemberDetail | null>(null);
+  readonly memberDeletionConfirmation = signal<CatalogAdminMemberDetail | null>(null);
   readonly settings = signal<CatalogAdminSettings | null>(null);
   readonly accountsPage = signal<CatalogAdminAccountPage | null>(null);
+  readonly accountsTab = signal<CatalogAdminAccountsTab>('volunteers');
   readonly accountErrorMessage = signal<string | null>(null);
   readonly editingAccountId = signal<string | null>(null);
   readonly editingAccountRoles = signal<CatalogAdminAccountRole[]>([]);
@@ -379,6 +382,11 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async selectSection(section: CatalogAdminSection): Promise<void> {
+    if (section === 'members') {
+      this.accountsTab.set('members');
+      section = 'accounts';
+    }
+
     if (isCatalogAdministrationRoute(this.router.url) && this.activeSection() !== section) {
       await this.router.navigate(['/administration', section]);
       return;
@@ -682,9 +690,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('document:keydown.escape')
-  closeInventoryConfirmationOnEscape(): void {
+  closeOpenDialogOnEscape(): void {
     if (this.inventoryConfirmation()) {
       this.cancelInventoryAdjustment();
+      return;
+    }
+
+    if (this.memberDeletionConfirmation()) {
+      this.cancelMemberDeletion();
+      return;
+    }
+
+    if (this.selectedMember()) {
+      this.closeMemberDetail();
     }
   }
 
@@ -1262,6 +1280,20 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }, this.accountErrorMessage, error => this.describeAccountError(error));
   }
 
+  async selectAccountsTab(tab: CatalogAdminAccountsTab): Promise<void> {
+    this.accountsTab.set(tab);
+    if (!this.auth.isAuthenticated()) {
+      return;
+    }
+
+    if (tab === 'members') {
+      await this.loadMembers();
+      return;
+    }
+
+    await this.loadAccounts();
+  }
+
   async createAccount(): Promise<void> {
     const form = this.createAccountForm;
     if (!form.email.trim() || !form.displayName.trim() || form.temporaryPassword.length < 8 || form.roles.length === 0) {
@@ -1335,6 +1367,20 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  async toggleAccountEnabled(account: CatalogAdminAccount): Promise<void> {
+    const accountEnabled = !account.accountEnabled;
+    const action = accountEnabled ? 'réactiver' : 'désactiver';
+    if (!this.confirmAction(`Voulez-vous ${action} le compte de ${account.displayName || account.email || 'ce bénévole'} ?`)) {
+      return;
+    }
+
+    await this.run('account-status', async token => {
+      await firstValueFrom(this.api.updateAdminAccountStatus(token, account.externalId, accountEnabled));
+      this.showSuccess(accountEnabled ? 'Le compte bénévole a été réactivé.' : 'Le compte bénévole a été désactivé.');
+      await this.loadAccounts();
+    });
+  }
+
   accountRoleLabel(role: CatalogAdminAccountRole): string {
     return this.accountRoleOptions.find(option => option.value === role)?.label ?? role;
   }
@@ -1370,6 +1416,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  closeMemberDetail(): void {
+    this.memberDeletionConfirmation.set(null);
+    this.selectedMember.set(null);
+  }
+
+  requestMemberDeletion(member: CatalogAdminMemberDetail): void {
+    this.memberDeletionConfirmation.set(member);
+  }
+
+  cancelMemberDeletion(): void {
+    this.memberDeletionConfirmation.set(null);
+  }
+
   async toggleMemberBlocked(member: CatalogAdminMemberDetail): Promise<void> {
     const blocked = member.member.alertStatus === 'Blocked';
     const action = blocked ? 'réactiver' : 'bloquer';
@@ -1385,15 +1444,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  async deleteMember(member: CatalogAdminMemberDetail): Promise<void> {
-    if (!this.confirmAction(`Supprimer le compte de ${member.member.displayName || member.member.email || 'ce membre'} ?`)) {
+  async deleteMember(): Promise<void> {
+    const member = this.memberDeletionConfirmation();
+    if (!member) {
       return;
     }
 
+    this.memberDeletionConfirmation.set(null);
     await this.run('delete-member', async token => {
-      await firstValueFrom(this.api.deleteMember(token, member.member.id));
-      this.showSuccess('La demande de suppression du membre a été enregistrée.');
-      this.selectedMember.set(null);
+      const operation = await firstValueFrom(this.api.deleteMember(token, member.member.id));
+      this.showSuccess(operation.deletionCompleted
+        ? 'Le compte Entra et les données du membre ont été supprimés.'
+        : 'La suppression du compte Entra est en attente de reprise par le service sécurisé.');
+      this.closeMemberDetail();
       await this.loadMembers();
     });
   }
