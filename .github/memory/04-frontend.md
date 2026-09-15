@@ -183,6 +183,14 @@ confirmed `+`/`−` corrections through the typed quantity endpoint, while annou
 remains visibly separate and redirected fiches are read-only for stock actions. The view does
 not invent carton/rayon counts or a bulk physical-count workflow.
 
+As of 2026-09-15, the Inventory workspace presents `Le fonds de livres` / `Toutes les fiches`
+before the external-reference add flow. Selecting `Utiliser cette fiche` renders the candidate
+form immediately below that reference row; the form checks the protected admin book read so it
+can say whether the ISBN is absent or already present with its available quantity. The initial
+quantity remains a typed, editable number field with bounded `−`/`+` controls. The existing
+`AddBookCommand` duplicate guard is unchanged, so an already-present fiche remains visible for
+orientation but is not silently duplicated.
+
 The Catalog auth service reads the `roles` claim from the API access token after silent
 acquisition, exposes an `isAdministrator` signal for navigation affordances, and accepts
 the API's `Administration`/legacy `Admin` role names. If silent acquisition requires an

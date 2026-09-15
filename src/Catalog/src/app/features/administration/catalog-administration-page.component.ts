@@ -103,6 +103,12 @@ interface CatalogInventoryCandidate {
   source: string;
 }
 
+type CatalogInventoryCandidateStatus =
+  | {state: 'loading'}
+  | {state: 'found'; quantityAvailable: number}
+  | {state: 'not-found'}
+  | {state: 'error'};
+
 type CatalogInventoryAdjustmentDirection = 'increase' | 'decrease';
 
 interface CatalogInventoryConfirmation {
@@ -175,6 +181,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly inventoryBooksPage = signal<CatalogAdminBookPage | null>(null);
   readonly inventoryReferenceResults = signal<CatalogBookReference[]>([]);
   readonly inventoryAddCandidate = signal<CatalogInventoryCandidate | null>(null);
+  readonly inventoryCandidateStatus = signal<CatalogInventoryCandidateStatus | null>(null);
   readonly inventoryLookupLoading = signal(false);
   readonly inventoryLookupError = signal<string | null>(null);
   readonly inventoryConfirmation = signal<CatalogInventoryConfirmation | null>(null);
@@ -492,21 +499,23 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.inventoryLookupError.set('Saisissez un ISBN-10 ou ISBN-13 valide.');
       this.inventoryReferenceResults.set([]);
       this.inventoryAddCandidate.set(null);
+      this.inventoryCandidateStatus.set(null);
       return;
     }
 
     this.inventoryReferenceResults.set([]);
     this.inventoryAddCandidate.set(null);
+    this.inventoryCandidateStatus.set(null);
     await this.runInventoryLookup(async () => {
       const response = await firstValueFrom(this.catalogApi.searchReferences(isbn, 1, 20));
       const isbn13 = this.isbn13Equivalent(isbn);
       const reference = response.items.find(item => this.normalizeIsbn(item.isbn13 || '') === (isbn13 ?? isbn));
       const candidate = reference ? this.toInventoryCandidate(reference) : null;
-      if (!candidate) {
+      if (!reference || !candidate) {
         this.inventoryLookupError.set('Aucune notice bibliographique ne correspond à cet ISBN.');
         return;
       }
-      this.inventoryAddCandidate.set(candidate);
+      await this.selectInventoryCandidate(reference);
     });
   }
 
@@ -516,12 +525,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.inventoryLookupError.set('La recherche doit contenir au moins deux caractères.');
       this.inventoryReferenceResults.set([]);
       this.inventoryAddCandidate.set(null);
+      this.inventoryCandidateStatus.set(null);
       return;
     }
 
     this.inventoryReferenceQuery = query;
     this.inventoryReferenceResults.set([]);
     this.inventoryAddCandidate.set(null);
+    this.inventoryCandidateStatus.set(null);
     await this.runInventoryLookup(async () => {
       const response = await firstValueFrom(this.catalogApi.searchReferences(query, 1, 20));
       this.inventoryReferenceResults.set(response.items);
@@ -531,16 +542,32 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  selectInventoryCandidate(reference: CatalogBookReference): void {
+  async selectInventoryCandidate(reference: CatalogBookReference): Promise<void> {
     const candidate = this.toInventoryCandidate(reference);
     if (!candidate) {
       return;
     }
 
     this.inventoryAddCandidate.set(candidate);
+    this.inventoryCandidateStatus.set({state: 'loading'});
     this.inventoryAddQuantity = 1;
     this.inventoryAddNote = 'Ajout depuis l’inventaire';
     this.inventoryLookupError.set(null);
+    await this.loadInventoryCandidateStatus(candidate.isbn13);
+  }
+
+  adjustInventoryAddQuantity(delta: number): void {
+    const quantity = Number(this.inventoryAddQuantity);
+    const current = Number.isFinite(quantity) ? Math.trunc(quantity) : 0;
+    this.inventoryAddQuantity = Math.min(
+      MAX_BOOK_QUANTITY,
+      Math.max(0, current + delta),
+    );
+  }
+
+  inventoryCandidateQuantity(): number {
+    const status = this.inventoryCandidateStatus();
+    return status?.state === 'found' ? status.quantityAvailable : 0;
   }
 
   async addInventoryCandidate(): Promise<void> {
@@ -573,6 +600,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         workId: candidate.workId,
       }));
       this.inventoryAddCandidate.set(null);
+      this.inventoryCandidateStatus.set(null);
       this.inventoryReferenceResults.set([]);
       this.showSuccess('La fiche a été ajoutée à l’inventaire.');
       await this.loadInventoryPage(token);
@@ -1772,6 +1800,34 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       await operation();
     } catch (error: unknown) {
       this.inventoryLookupError.set(this.describeInventoryLookupError(error));
+    } finally {
+      this.inventoryLookupLoading.set(false);
+    }
+  }
+
+  private async loadInventoryCandidateStatus(isbn13: string): Promise<void> {
+    this.inventoryLookupLoading.set(true);
+    try {
+      const token = await this.auth.getApiAccessToken();
+      const book = await firstValueFrom(this.api.getBook(token, isbn13));
+      if (this.inventoryAddCandidate()?.isbn13 === isbn13) {
+        this.inventoryCandidateStatus.set({
+          state: 'found',
+          quantityAvailable: book.quantityAvailable,
+        });
+      }
+    } catch (error: unknown) {
+      if (this.inventoryAddCandidate()?.isbn13 !== isbn13) {
+        return;
+      }
+
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.inventoryCandidateStatus.set({state: 'not-found'});
+        return;
+      }
+
+      this.inventoryCandidateStatus.set({state: 'error'});
+      this.inventoryLookupError.set(this.describeError(error));
     } finally {
       this.inventoryLookupLoading.set(false);
     }

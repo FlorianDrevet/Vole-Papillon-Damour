@@ -539,6 +539,9 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Toutes les fiches');
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).not.toContain('Remise à plat');
+    const booksZone = fixture.nativeElement.querySelector('.inventory-books-zone') as HTMLElement;
+    const addZone = fixture.nativeElement.querySelector('.inventory-add-zone') as HTMLElement;
+    expect(booksZone.compareDocumentPosition(addZone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('adjusts a fiche quantity from the inventory controls with a trace note', async () => {
@@ -755,6 +758,10 @@ describe('CatalogAdministrationPageComponent', () => {
       pageSize: 20,
     }));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 25}));
+    api.getBook.and.returnValue(of(inventoryBook({
+      isbn13: reference.isbn13,
+      quantityAvailable: 4,
+    })));
     api.addBook.and.returnValue(of({changed: true, isbn13: reference.isbn13}));
 
     fixture.detectChanges();
@@ -784,7 +791,14 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(useReference).not.toBeNull();
 
     useReference!.click();
+    await fixture.whenStable();
     fixture.detectChanges();
+    const referenceRow = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '.inventory-reference-row',
+    );
+    expect(referenceRow?.nextElementSibling?.getAttribute('data-testid')).toBe('inventory-candidate-form');
+    expect(fixture.nativeElement.textContent).toContain('Cette fiche est déjà dans le fonds');
+    expect(fixture.nativeElement.textContent).toContain('4 exemplaires disponibles');
     const quantity = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '[data-testid="inventory-add-quantity"]',
     );
@@ -794,19 +808,30 @@ describe('CatalogAdministrationPageComponent', () => {
     const add = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
       '[data-testid="inventory-add-submit"]',
     );
+    const decrease = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-add-quantity-decrease"]',
+    );
+    const increase = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-add-quantity-increase"]',
+    );
     expect(quantity).not.toBeNull();
     expect(note).not.toBeNull();
     expect(add).not.toBeNull();
+    expect(decrease).not.toBeNull();
+    expect(increase).not.toBeNull();
 
-    fixture.componentInstance.inventoryAddQuantity = 3;
+    fixture.componentInstance.inventoryAddQuantity = 2;
     fixture.componentInstance.inventoryAddNote = 'Ajout du don';
     fixture.detectChanges();
+    increase!.click();
+    decrease!.click();
+    expect(fixture.componentInstance.inventoryAddQuantity).toBe(2);
     add!.click();
     await fixture.whenStable();
 
     expect(api.addBook).toHaveBeenCalledWith('access-token', {
       isbn13: reference.isbn13,
-      quantityAvailable: 3,
+      quantityAvailable: 2,
       note: 'Ajout du don',
       title: reference.title,
       authors: reference.authors,
@@ -819,6 +844,43 @@ describe('CatalogAdministrationPageComponent', () => {
       workId: reference.workId,
     });
 
+  });
+
+  it('shows when the selected bibliographic fiche is not yet in the fonds', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const reference = {
+      isbn13: '9782070612758',
+      workId: 'OL42W',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+      coverUrl: null,
+      source: 'OpenLibrary',
+    };
+    catalogApi.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'Le Petit Prince',
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    }));
+    api.getBook.and.returnValue(throwError(() => new HttpErrorResponse({status: 404})));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.componentInstance.inventoryReferenceQuery = 'Le Petit Prince';
+    await fixture.componentInstance.searchInventoryReferences();
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="inventory-use-reference"]',
+    )!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Cette fiche n’est pas encore dans le fonds');
   });
 
   it('renders the two statistics tabs and omits the quality-data screen', async () => {
