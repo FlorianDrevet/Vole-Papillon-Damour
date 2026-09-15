@@ -6,7 +6,8 @@ import {Meta} from '@angular/platform-browser';
 import {ActivatedRoute, ParamMap, RouterModule, convertToParamMap} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
-import {BehaviorSubject, of, throwError} from 'rxjs';
+import {DesignSystemModule} from '@vpd/ui';
+import {BehaviorSubject, of, Subject, throwError} from 'rxjs';
 
 import {
   CatalogAuthenticationRedirectStartedError,
@@ -274,7 +275,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [CatalogAdministrationPageComponent],
-      imports: [FormsModule, RouterModule.forRoot([])],
+      imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogAdminApiService, useValue: api},
@@ -585,9 +586,93 @@ describe('CatalogAdministrationPageComponent', () => {
     const booksZone = fixture.nativeElement.querySelector('.inventory-books-zone') as HTMLElement;
     const addZone = fixture.nativeElement.querySelector('.inventory-add-zone') as HTMLElement;
     expect(booksZone.compareDocumentPosition(addZone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(fixture.nativeElement.textContent).not.toContain('Ajuster le stock disponible');
+    expect(fixture.nativeElement.textContent).not.toContain('Les boutons − et + créent une correction tracée');
+    expect(fixture.nativeElement.textContent).not.toContain('Afficher toutes les fiches');
+    expect(fixture.nativeElement.textContent).not.toContain('Chaque ajout et chaque correction reste attribué');
   });
 
-  it('adjusts a fiche quantity from the inventory controls with a trace note', async () => {
+  it('shows a loader on the inventory refresh action while the server request is pending', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const page: CatalogAdminBookPage = {
+      generatedAt: '',
+      books: [inventoryBook()],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    };
+    api.getBooks.and.returnValue(of(page));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('inventory');
+
+    const pending = new Subject<CatalogAdminBookPage>();
+    api.getBooks.calls.reset();
+    api.getBooks.and.returnValue(pending.asObservable());
+    const refresh = fixture.componentInstance.loadInventory();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="inventory-refresh-loader"]')).not.toBeNull();
+    expect((fixture.nativeElement.querySelector('[data-testid="inventory-refresh"]') as HTMLButtonElement).disabled).toBeTrue();
+
+    pending.next(page);
+    pending.complete();
+    await refresh;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="inventory-refresh-loader"]')).toBeNull();
+  });
+
+  it('starts an inventory search after two seconds of input inactivity and requests the first server page', async () => {
+    jasmine.clock().install();
+    try {
+      auth.account.set(account('Administrator'));
+      auth.isAuthenticated.set(true);
+      api.getBooks.and.returnValue(of({
+        generatedAt: '',
+        books: [],
+        totalCount: 0,
+        page: 1,
+        pageSize: 25,
+      }));
+
+      fixture.detectChanges();
+      await fixture.componentInstance.selectSection('inventory');
+      fixture.detectChanges();
+      api.getBooks.calls.reset();
+      fixture.componentInstance.inventoryPage = 3;
+
+      const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[data-testid="inventory-search"]');
+      expect(input).not.toBeNull();
+      input!.value = 'prince';
+      input!.dispatchEvent(new Event('input', {bubbles: true}));
+      fixture.detectChanges();
+
+      expect(api.getBooks).not.toHaveBeenCalled();
+      jasmine.clock().tick(1_999);
+      expect(api.getBooks).not.toHaveBeenCalled();
+
+      jasmine.clock().tick(1);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.inventoryPage).toBe(1);
+      expect(api.getBooks).toHaveBeenCalledWith('access-token', {
+        search: 'prince',
+        metadataStatus: undefined,
+        rare: undefined,
+        hidden: undefined,
+        undated: undefined,
+        page: 1,
+        pageSize: 25,
+      });
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('adjusts a fiche quantity by one from the compact inventory controls', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     const book = inventoryBook({quantityAvailable: 4});
@@ -601,8 +686,8 @@ describe('CatalogAdministrationPageComponent', () => {
     api.correctQuantity.and.returnValue(of({
       isbn13: book.isbn13,
       previousQuantityAvailable: 4,
-      quantityAvailable: 6,
-      delta: 2,
+      quantityAvailable: 5,
+      delta: 1,
       changed: true,
       movementId: 'movement-id',
     }));
@@ -611,22 +696,11 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const amount = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      '[data-testid="inventory-adjustment-quantity"]',
-    );
-    const note = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      '[data-testid="inventory-adjustment-note"]',
-    );
     const increase = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
       `[data-testid="inventory-increase-${book.isbn13}"]`,
     );
-    expect(amount).not.toBeNull();
-    expect(note).not.toBeNull();
     expect(increase).not.toBeNull();
 
-    fixture.componentInstance.inventoryAdjustmentQuantity = 2;
-    fixture.componentInstance.inventoryAdjustmentNote = 'Don reçu';
-    fixture.detectChanges();
     await fixture.componentInstance.adjustInventoryQuantity(book, 'increase');
     fixture.detectChanges();
 
@@ -638,8 +712,8 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.whenStable();
 
     expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
-      quantityAvailable: 6,
-      note: 'Don reçu',
+      quantityAvailable: 5,
+      note: 'Correction depuis l’inventaire',
     });
   });
 
@@ -658,8 +732,6 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
     await fixture.componentInstance.selectSection('inventory');
     await fixture.whenStable();
-    fixture.componentInstance.inventoryAdjustmentQuantity = 1;
-    fixture.componentInstance.inventoryAdjustmentNote = 'Exemplaire retiré';
     fixture.detectChanges();
 
     const decrease = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
@@ -687,7 +759,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="inventory-confirmation"]')).toBeNull();
   });
 
-  it('removes a requested quantity without allowing a negative stock', async () => {
+  it('removes one unit without allowing a negative stock', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     const book = inventoryBook({quantityAvailable: 4});
@@ -701,16 +773,14 @@ describe('CatalogAdministrationPageComponent', () => {
     api.correctQuantity.and.returnValue(of({
       isbn13: book.isbn13,
       previousQuantityAvailable: 4,
-      quantityAvailable: 2,
-      delta: -2,
+      quantityAvailable: 3,
+      delta: -1,
       changed: true,
       movementId: 'movement-id',
     }));
     fixture.detectChanges();
     await fixture.componentInstance.selectSection('inventory');
     await fixture.whenStable();
-    fixture.componentInstance.inventoryAdjustmentQuantity = 2;
-    fixture.componentInstance.inventoryAdjustmentNote = 'Livre retiré';
 
     await fixture.componentInstance.adjustInventoryQuantity(book, 'decrease');
     fixture.detectChanges();
@@ -723,8 +793,8 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.whenStable();
 
     expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
-      quantityAvailable: 2,
-      note: 'Livre retiré',
+      quantityAvailable: 3,
+      note: 'Correction depuis l’inventaire',
     });
   });
 

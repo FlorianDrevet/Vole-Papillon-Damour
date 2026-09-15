@@ -201,6 +201,13 @@ can say whether the ISBN is absent or already present with its available quantit
 quantity remains a typed, editable number field with bounded `−`/`+` controls. The existing
 `AddBookCommand` duplicate guard is unchanged, so an already-present fiche remains visible for
 orientation but is not silently duplicated.
+As of 2026-09-15, the Catalog administration inventory keeps the same API-side contract for
+the local fiche list: `GET /books/admin/books` receives the search, page and page size, and the
+screen renders only that returned page. The inventory search resets to page 1 and starts
+automatically after 2 seconds without typing; refresh and pagination reload the API and expose
+the shared ring loader while the request is pending. The obsolete stock-adjustment instruction
+card, “Afficher toutes les fiches” action and inventory history notice are no longer rendered;
+the row `+`/`−` controls keep a confirmed one-unit correction with the existing audit note.
 
 The Catalog auth service reads the `roles` claim from the API access token after silent
 acquisition, exposes an `isAdministrator` signal for navigation affordances, and accepts
