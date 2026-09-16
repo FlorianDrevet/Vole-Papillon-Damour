@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Scan — confirmation de fin de session et compacité de la caisse. |
-| **Prochaine action** | Faire relire la PR, puis déployer depuis `main` et contrôler les deux parcours sur téléphone avec une session bénévole authentifiée. |
+| **Prochaine action** | Faire relire la [PR #201](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/201), puis déployer depuis `main` et contrôler les deux parcours sur téléphone avec une session bénévole authentifiée. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-confirm-cash-ui` |
 | **Dernière mise à jour** | 2026-09-16 — la feuille de confirmation passe au-dessus du cadre caméra ; les deux boutons caisse passent à 52 px et le texte d’aide est retiré. 213 tests Scan, le build de production et les contrats de bootstrap passent. |
-| **Branche** | `fix/scan-confirmation-cash-ui` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Branche** | `fix/scan-confirmation-cash-ui` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #201](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/201) vers `main`, non fusionnée |
 
 ---
 
@@ -39,7 +39,8 @@ Validation locale : TDD rouge puis vert, 213 tests Scan ChromeHeadless, build de
 le graphe mais échoue encore lors de la visualisation HTML au-delà de la limite de 5 100 nœuds.
 Le shell local atteint l’écran de connexion Entra ; l’accès authentifié à `/tri` et `/caisse`, le
 contrôle manuel mobile et le retest caméra sur appareil réel restent à faire. Aucun déploiement,
-compte, session, API, Azure ou Entra n’a été modifié.
+compte, session, API, Azure ou Entra n’a été modifié. La [PR #201](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/201)
+est ouverte vers `main` et n’est pas fusionnée.
 
 ### État actualisé — 2026-09-16 — retrait du bandeau de persistance du Scan
 
