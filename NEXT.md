@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — suppression complète du workspace d’administration `Inventaire`. |
-| **Prochaine action** | Faire relire la PR de suppression, puis déployer depuis `main` et contrôler le workspace Catalogue avec une session Administration authentifiée. |
+| **Prochaine action** | Faire relire la [PR #195](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/195), puis déployer depuis `main` et contrôler le workspace Catalogue avec une session Administration authentifiée. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-remove-inventory` |
-| **Dernière mise à jour** | 2026-09-16 — le workspace `Inventaire` a été retiré de la navigation, des routes reconnues et du code Catalogue ; la liste, l’ajout, le stock et la fiche détaillée restent dans `Catalogue`. 263 tests Catalog, build SSR/navigateur et smoke Chrome desktop passent ; l’extraction AST Graphify a été lancée mais son rendu HTML dépasse la limite de 5 100 nœuds ; le contrôle mobile et le scénario authentifié API/Entra restent à faire. |
-| **Branche** | `refactor/backoffice-remove-inventory` — dédiée depuis `origin/main` fraîchement récupéré |
+| **Dernière mise à jour** | 2026-09-16 — le workspace `Inventaire` a été retiré de la navigation, des routes reconnues et du code Catalogue ; la liste, l’ajout, le stock et la fiche détaillée restent dans `Catalogue`. 266 tests Catalog, build SSR/navigateur et smoke Chrome desktop passent ; l’extraction AST Graphify a été lancée mais son rendu HTML dépasse la limite de 5 100 nœuds ; le contrôle mobile et le scénario authentifié API/Entra restent à faire. |
+| **Branche** | `refactor/backoffice-remove-inventory` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #195](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/195) vers `main` |
 
 ---
 
