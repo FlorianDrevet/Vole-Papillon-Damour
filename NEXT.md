@@ -35,7 +35,7 @@ l’adaptateur Microsoft Graph renseigne `givenName` et `surname` et reconstruit
 la lecture annuaire. Les réponses et les listes existantes peuvent continuer à afficher le
 display name dérivé.
 
-Validation locale : TDD rouge puis vert, 261 tests Catalog ChromeHeadless, 21 tests BackOffice
+Validation locale : TDD rouge puis vert, 263 tests Catalog ChromeHeadless, 21 tests BackOffice
 ChromeHeadless, 463 tests backend via la solution .NET, builds de production Catalog et
 BackOffice, `git diff --check`. `graphify update .` a bien ré-extrait les fichiers mais son étape
 de visualisation échoue sur la taille actuelle du graphe (5 103 nœuds) ; aucun artefact source
