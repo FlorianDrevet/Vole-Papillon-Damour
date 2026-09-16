@@ -435,7 +435,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     if (this.pendingTransmissionCount > 0) {
-      return `${this.bookCountLabel(this.pendingTransmissionCount)} attend${this.pendingTransmissionCount > 1 ? 'ent' : ''} l’envoi.`;
+      const count = this.pendingTransmissionCount;
+      return `${count} opération${count > 1 ? 's' : ''} enregistrée${count > 1 ? 's' : ''} attend${count > 1 ? 'ent' : ''} la synchronisation.`;
     }
 
     return this.priorityAlerts[0]?.message
@@ -1784,7 +1785,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       alerts.push({
         id: 'pending-transmissions',
         level: 'info',
-        message: `${count} geste${count > 1 ? 's' : ''} à transmettre`,
+        message: `${count} opération${count > 1 ? 's' : ''} enregistrée${count > 1 ? 's' : ''} à synchroniser`,
       });
     }
 
