@@ -1453,6 +1453,11 @@ pour ne pas réinitialiser ses vérifications DNS. La PR doit encore être fusio
 déployée ; après cela, refaire un test réel à un destinataire autorisé et vérifier le
 passage de l'outbox à `Sent`.
 
+Le premier déploiement de la PR a révélé que l'ancien workflow avait déjà créé le rôle ACS
+avec un GUID différent de celui calculé par le nouveau module. `main.dev.bicepparam` fournit
+désormais ce GUID existant pour que Bicep adopte l'affectation au lieu de tenter un doublon ;
+les nouveaux environnements gardent le nom déterministe par défaut.
+
 ### État actualisé — 2026-09-06 (worktree couvertures)
 
 La branche `feat/book-cover-direct-urls`, dans le worktree

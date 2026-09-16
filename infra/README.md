@@ -32,6 +32,9 @@ Chaque Container App tourne sous sa propre identité managée. Les six ont
 Le Worker possède aussi `Communication and Email Service Owner` sur le service ACS.
 Le secret `email-bounce-webhook-secret` est écrit dans Key Vault par Bicep et n'est
 jamais exposé dans les outputs.
+Pour DEV, `main.dev.bicepparam` reprend l'identifiant de l'affectation ACS créée par
+l'ancien workflow afin que Bicep l'adopte sans créer de doublon ; un nouvel environnement
+laisse ce paramètre vide et reçoit un identifiant déterministe.
 L'API et le worker ont chacun `Monitoring Metrics Publisher` sur leur Application
 Insights. Le worker est une Azure Function native (`kind=functionapp`). La configuration
 de mesure `P1-1` vise `minReplicas: 0` et `maxReplicas: 1` pour vérifier que le timer se
