@@ -1,0 +1,91 @@
+<section class="rare-admin-view" aria-labelledby="rare-admin-title">
+  @if (!facade.editorOpen()) {
+    <header class="rare-admin-heading">
+      <div>
+        <span class="rare-admin-kicker">Catalogue · Livres rares</span>
+        <h1 id="rare-admin-title">Livres rares.</h1>
+        <p>Des fiches autonomes pour les exemplaires expertisés : prix ferme, photos de l’exemplaire et description honnête. Le prix est lu par la caisse, jamais additionné par l’application.</p>
+      </div>
+      <button class="rare-admin-button rare-admin-button-primary" data-testid="rare-create" type="button" (click)="startCreate()">+ Nouvelle fiche rare</button>
+    </header>
+
+    @if (facade.error(); as message) {<p class="rare-admin-feedback rare-admin-feedback-error" role="alert">{{ message }}</p>}
+    @if (facade.success(); as message) {<p class="rare-admin-feedback rare-admin-feedback-success" role="status">{{ message }}</p>}
+
+    <form class="rare-filter-card" (ngSubmit)="applyFilters()" novalidate>
+      <div class="rare-filter-heading"><div><span class="rare-admin-kicker">File de travail</span><h2>Fiches rares</h2></div><span>{{ facade.publishedCount() }} publiée{{ facade.publishedCount() > 1 ? 's' : '' }} au total</span></div>
+      <div class="rare-filter-grid">
+        <label class="rare-filter-search"><span>Rechercher</span><input name="rareSearch" data-testid="rare-search" [(ngModel)]="search" placeholder="Titre, auteur, ISBN ou rayon…"></label>
+        <label><span>Statut</span><select name="rareStatus" data-testid="rare-status-filter" [(ngModel)]="statusFilter"><option value="all">Tous les statuts</option><option value="Draft">Brouillons</option><option value="Published">Publiées</option></select></label>
+        <label><span>Disponibilité</span><select name="rareAvailability" [(ngModel)]="availabilityFilter"><option value="all">Toutes</option><option value="available">Encore disponibles</option><option value="sold">Vendues</option></select></label>
+        <label><span>ISBN</span><select name="rareIsbn" [(ngModel)]="isbnFilter"><option value="all">Avec ou sans ISBN</option><option value="with">Avec ISBN</option><option value="without">Sans ISBN</option></select></label>
+        <label><span>Prix minimum</span><input type="number" name="rareMinPrice" [(ngModel)]="minPrice" min="0" step="0.01" placeholder="0 €"></label>
+        <label><span>Prix maximum</span><input type="number" name="rareMaxPrice" [(ngModel)]="maxPrice" min="0" step="0.01" placeholder="—"></label>
+        <label class="rare-filter-check"><input type="checkbox" name="rareWithoutPhoto" [(ngModel)]="withoutPhoto"><span>Sans photo uniquement</span></label>
+        <button class="rare-admin-button rare-admin-button-outline" type="submit" [disabled]="facade.loading()">Appliquer les filtres</button>
+      </div>
+    </form>
+
+    @if (draftCount() > 0) {
+      <div class="rare-queue-banner" data-testid="rare-draft-queue"><span class="rare-queue-number">{{ draftCount() }}</span><div><strong>{{ draftCount() }} fiche{{ draftCount() > 1 ? 's' : '' }} en brouillon attend{{ draftCount() > 1 ? 'ent' : '' }} une relecture</strong><p>Relisez les photos, l’état et le prix avant de publier une fiche dans la vitrine.</p></div></div>
+    }
+    @if (publishedWithoutPhotoCount() > 0) {
+      <div class="rare-photo-warning" data-testid="rare-photo-queue"><strong>{{ publishedWithoutPhotoCount() }} fiche{{ publishedWithoutPhotoCount() > 1 ? 's' : '' }} publiée{{ publishedWithoutPhotoCount() > 1 ? 's' : '' }} sans photo</strong><span>Une vitrine vide doit être complétée.</span></div>
+    }
+
+    @if (facade.page(); as currentPage) {
+      <div class="rare-list-meta"><span>{{ currentPage.totalCount }} fiche{{ currentPage.totalCount > 1 ? 's' : '' }}</span><button class="rare-admin-text-button" type="button" [disabled]="facade.loading()" (click)="load()">Actualiser</button></div>
+      <div class="rare-books-list" data-testid="rare-books-list" role="table" aria-label="Fiches de livres rares">
+        <div class="rare-books-table-head" role="row"><span>Fiche</span><span>Prix</span><span>État</span><span>Photos</span><span>Modifiée par</span><span></span></div>
+        @for (book of currentPage.books; track book.id) {
+          <article class="rare-book-row" [class.rare-book-row-sold]="book.isSold" role="row">
+            <div class="rare-book-main" role="cell">
+              @if (book.photos[0]; as thumbnail) {<img [src]="thumbnail.blobUri" [alt]="'Vignette de ' + book.title">} @else {<span class="rare-book-placeholder" aria-hidden="true">∅</span>}
+              <div><strong>{{ book.title || 'Titre à compléter' }}</strong><span>{{ book.authorMention || 'Auteur ou mention non renseigné' }}</span><small>{{ book.isbn13 || 'sans ISBN' }} · {{ book.shelf }}</small></div>
+            </div>
+            <div class="rare-book-price" role="cell">{{ formatMoney(book.price) }}</div>
+            <div class="rare-book-state" role="cell"><span class="rare-status-pill" [class.rare-status-published]="book.status === 'Published'">{{ statusLabel(book.status) }}</span><small [class.rare-sold-text]="book.isSold">{{ availabilityLabel(book) }}</small></div>
+            <div class="rare-book-photo-count" role="cell"><strong>{{ book.photos.length }}</strong><small>photo{{ book.photos.length > 1 ? 's' : '' }}</small></div>
+            <div class="rare-book-updated" role="cell"><strong>{{ formatActor(book.updatedBy) }}</strong><small>{{ formatDate(book.updatedAt) }}</small></div>
+            <button class="rare-admin-button rare-admin-button-outline rare-open-button" type="button" (click)="open(book)">Ouvrir</button>
+          </article>
+        } @empty {
+          <div class="rare-empty-panel"><h2>Aucune fiche rare</h2><p>Créez une fiche ou modifiez les filtres pour retrouver un exemplaire expertisé.</p></div>
+        }
+      </div>
+      <nav class="rare-pagination" aria-label="Pagination des livres rares"><button type="button" [disabled]="currentPage.page <= 1" (click)="goToPage(currentPage.page - 1)">←</button><span>Page {{ currentPage.page }} / {{ pageCount() }}</span><button type="button" [disabled]="currentPage.page >= pageCount()" (click)="goToPage(currentPage.page + 1)">→</button></nav>
+    } @else if (facade.loading()) {
+      <p class="rare-admin-status" role="status">Chargement des fiches rares…</p>
+    }
+  } @else {
+    @if (facade.error(); as message) {<p class="rare-admin-feedback rare-admin-feedback-error" role="alert">{{ message }}</p>}
+    @if (facade.success(); as message) {<p class="rare-admin-feedback rare-admin-feedback-success" role="status">{{ message }}</p>}
+    <header class="rare-editor-heading">
+      <div><button class="rare-breadcrumb" type="button" (click)="cancelEditor()">Catalogue · Livres rares</button><span class="rare-admin-kicker">{{ facade.selectedBook() ? 'Fiche rare' : 'Nouvelle fiche rare' }}</span><h1>{{ facade.selectedBook()?.title || 'Nouvelle fiche rare' }}</h1><p>@if (facade.selectedBook(); as book) {<span>/livres-rares/{{ book.slug }} · créée le {{ formatDate(book.createdAt) }}</span>} @else {Renseignez les métadonnées puis enregistrez la fiche en brouillon.}</p></div>
+      <div class="rare-editor-heading-actions"><button class="rare-admin-button rare-admin-button-outline" type="button" (click)="cancelEditor()">Retour à la liste</button>@if (facade.selectedBook(); as book) {@if (book.status === 'Published') {<a class="rare-admin-button rare-admin-button-outline" data-testid="rare-public-link" [href]="'/livres-rares/' + book.slug" target="_blank" rel="noreferrer">Voir la fiche publique →</a>}}<button class="rare-admin-button rare-admin-button-primary" type="button" [disabled]="facade.loading()" (click)="editor.submit()">Enregistrer</button></div>
+    </header>
+
+    @if (facade.selectedBook(); as book) {
+      <div class="rare-status-banner"><span class="rare-status-pill" [class.rare-status-published]="book.status === 'Published'">{{ statusLabel(book.status) }}</span><p>Cette fiche est ce qui rend le livre rare : le livre ordinaire n’a plus de case « livre rare ». Tant que la fiche est en brouillon, elle reste invisible côté public et n’est pas signalée en caisse.</p></div>
+    } @else {
+      <div class="rare-status-banner"><span class="rare-status-pill">Brouillon</span><p>Cette fiche est ce qui rend le livre rare : le livre ordinaire n’a plus de case « livre rare ». Enregistrez-la puis relisez-la avant publication.</p></div>
+    }
+
+    <div class="rare-editor-layout">
+      <main class="rare-editor-main">
+        <app-admin-rare-book-photos [photos]="facade.selectedBook()?.photos || []" [disabled]="facade.loading()" (action)="handlePhotoAction($event)"></app-admin-rare-book-photos>
+        <app-admin-rare-book-form #editor [book]="facade.selectedBook()" [initialValue]="facade.draft()" [disabled]="facade.loading()" (submitted)="save($event)" (cancelled)="cancelEditor()"></app-admin-rare-book-form>
+      </main>
+      <aside class="rare-editor-aside">
+        @if (facade.selectedBook(); as book) {
+          <section class="rare-side-card"><span class="rare-admin-kicker">Publication</span><h2>Visibilité</h2><div class="rare-publication-toggle"><button type="button" [class.active]="book.status === 'Draft'" [disabled]="facade.loading() || book.status === 'Draft'" (click)="unpublish()">Brouillon</button><button type="button" [class.active]="book.status === 'Published'" [disabled]="facade.loading() || book.status === 'Published'" (click)="publish()">Publiée</button></div><label class="rare-availability-row"><span><strong>Encore disponible</strong><small>{{ book.isSold ? 'Basculé automatiquement par la caisse à la vente.' : 'Disponible dans la vitrine et pour la caisse.' }}</small></span><input type="checkbox" [checked]="!book.isSold" disabled></label></section>
+          <section class="rare-side-card"><span class="rare-admin-kicker">En caisse</span><h2>Un prix à lire</h2><p>Le bénévole lit le prix ferme sur la fiche. La caisse enregistre seulement la sortie du livre : aucun panier, aucun total et aucun montant de vente ne sont calculés.</p></section>
+          <section class="rare-side-card rare-traceability-card"><span class="rare-admin-kicker">Traçabilité</span><dl><div><dt>Créée</dt><dd>{{ formatDate(book.createdAt) }}</dd></div><div><dt>Modifiée</dt><dd>{{ formatDate(book.updatedAt) }}</dd></div><div><dt>Prix fixé par</dt><dd>{{ book.priceSetBy || 'Non renseigné' }}</dd></div><div><dt>État</dt><dd>{{ conditionLabel(book.condition) }}</dd></div></dl><button class="rare-danger-link" type="button" [disabled]="facade.loading()" (click)="deleteSelected()">Supprimer la fiche rare</button><small>Le livre quitte les livres rares. S’il a un ISBN, la fiche catalogue et son historique restent intacts.</small></section>
+          @if (facade.publishWarnings().length > 0) {<div class="rare-warning-card" role="status"><strong>À vérifier avant la vitrine</strong><ul>@for (warning of facade.publishWarnings(); track warning) {<li>{{ warning }}</li>}</ul></div>}
+        } @else {
+          <section class="rare-side-card"><span class="rare-admin-kicker">Publication</span><h2>Commencer en brouillon</h2><p>Une fiche créée ici reste invisible tant qu’elle n’est pas publiée. Ajoutez les photos de l’exemplaire avant de la mettre en vitrine.</p></section>
+        }
+      </aside>
+    </div>
+  }
+</section>

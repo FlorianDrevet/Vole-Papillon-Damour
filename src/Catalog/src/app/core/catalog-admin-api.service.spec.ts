@@ -9,6 +9,9 @@ import {
   CatalogAdminAccountPage,
   CatalogAdminBookPage,
   CatalogAdminOverview,
+  CatalogAdminRareBook,
+  CatalogAdminRareBookPage,
+  CatalogAdminRareBookRequest,
   CatalogAdminVolunteerStatistics,
   CatalogDeadStockResponse,
 } from './catalog.models';
@@ -139,6 +142,104 @@ describe('CatalogAdminApiService', () => {
     expect(request.request.params.get('page')).toBe('2');
     expect(request.request.params.get('pageSize')).toBe('25');
     request.flush(response);
+  });
+
+  it('loads rare-book pages with the complete administration filter set', () => {
+    const response = {
+      generatedAt: '2026-09-16T12:00:00Z',
+      books: [],
+      totalCount: 0,
+      page: 2,
+      pageSize: 25,
+    } as CatalogAdminRareBookPage;
+
+    service.getRareBooks('access-token', {
+      search: 'doré',
+      status: 'Published',
+      availability: 'available',
+      hasIsbn: false,
+      minPrice: 12.5,
+      maxPrice: 85,
+      withoutPhoto: true,
+      page: 2,
+      pageSize: 25,
+    }).subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('search')).toBe('doré');
+    expect(request.request.params.get('status')).toBe('Published');
+    expect(request.request.params.get('availability')).toBe('available');
+    expect(request.request.params.get('hasIsbn')).toBe('false');
+    expect(request.request.params.get('minPrice')).toBe('12.5');
+    expect(request.request.params.get('maxPrice')).toBe('85');
+    expect(request.request.params.get('withoutPhoto')).toBe('true');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(request.request.params.get('pageSize')).toBe('25');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('sends rare-book lifecycle and photo mutations to their typed endpoints', () => {
+    const requestBody: CatalogAdminRareBookRequest = {
+      title: 'Les fleurs du mal',
+      authorMention: 'Charles Baudelaire',
+      publisher: 'Poulet-Malassis',
+      publicationYear: 1857,
+      shelf: 'Éditions anciennes',
+      price: 40,
+      condition: 'GoodWithFlaws',
+      publicDescription: 'Quelques rousseurs.',
+      binding: 'Demi-chagrin',
+      dimensions: '18 × 12 cm',
+      pageCount: 320,
+      shelfLocation: 'Table rares',
+      priceSetBy: 'Conseil du 5 mars',
+      isbn13: '9782070363735',
+    };
+    const response = {} as CatalogAdminRareBook;
+
+    service.createRareBook('access-token', requestBody).subscribe(result => expect(result).toBe(response));
+    const create = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin`);
+    expect(create.request.method).toBe('POST');
+    expect(create.request.body).toEqual(requestBody);
+    create.flush(response);
+
+    service.updateRareBook('access-token', 'rare-id', {...requestBody, rowVersion: 'version'}).subscribe();
+    const update = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin/rare-id`);
+    expect(update.request.method).toBe('PUT');
+    update.flush(response);
+
+    service.publishRareBook('access-token', 'rare-id').subscribe();
+    const publish = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin/rare-id/publish`);
+    expect(publish.request.method).toBe('POST');
+    publish.flush({rareBook: response, changed: true, warnings: []});
+
+    const file = new File(['photo'], 'photo.jpg', {type: 'image/jpeg'});
+    service.addRareBookPhoto('access-token', 'rare-id', file, 'Couverture').subscribe();
+    const photo = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin/rare-id/photos`);
+    expect(photo.request.method).toBe('POST');
+    expect(photo.request.headers.get('Authorization')).toBe('Bearer access-token');
+    expect(photo.request.body).toEqual(jasmine.any(FormData));
+    expect((photo.request.body as FormData).get('file')).toEqual(jasmine.objectContaining({name: 'photo.jpg', type: 'image/jpeg'}));
+    expect((photo.request.body as FormData).get('caption')).toBe('Couverture');
+    photo.flush(response);
+
+    service.reorderRareBookPhotos('access-token', 'rare-id', ['photo-1', 'photo-2']).subscribe();
+    const reorder = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin/rare-id/photos/order`);
+    expect(reorder.request.method).toBe('PUT');
+    expect(reorder.request.body).toEqual({photoIds: ['photo-1', 'photo-2']});
+    reorder.flush(response);
+
+    service.deleteRareBookPhoto('access-token', 'photo-1').subscribe();
+    const removePhoto = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin/photos/photo-1`);
+    expect(removePhoto.request.method).toBe('DELETE');
+    removePhoto.flush(null);
+
+    service.deleteRareBook('access-token', 'rare-id').subscribe();
+    const removeBook = http.expectOne(request => request.url === `${environment.apiUrl}/rare-books/admin/rare-id`);
+    expect(removeBook.request.method).toBe('DELETE');
+    removeBook.flush(null);
   });
 
   it('uses the typed mutation endpoints and keeps the bearer token on every action', () => {

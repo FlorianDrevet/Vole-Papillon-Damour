@@ -682,6 +682,99 @@ export interface CatalogAdminSettings {
   updatedBy: string;
 }
 
+export type CatalogAdminRareBookStatus = 'Draft' | 'Published';
+export type CatalogAdminRareBookAvailability = 'all' | 'available' | 'sold';
+export type CatalogAdminRareBookCondition = 'AsNew' | 'GoodWithFlaws' | 'Worn' | 'Damaged';
+
+export interface CatalogAdminRareBookPhoto {
+  id: string;
+  blobUri: string;
+  blobName: string;
+  caption: string | null;
+  position: number;
+  contentType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+export interface CatalogAdminRareBook {
+  id: string;
+  slug: string;
+  isbn13: string | null;
+  title: string;
+  authorMention: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  shelf: string;
+  price: number;
+  condition: CatalogAdminRareBookCondition;
+  publicDescription: string | null;
+  binding: string | null;
+  dimensions: string | null;
+  pageCount: number | null;
+  shelfLocation: string | null;
+  status: CatalogAdminRareBookStatus;
+  isSold: boolean;
+  soldAt: string | null;
+  soldAtFairId: string | null;
+  soldInSessionId: string | null;
+  priceSetBy: string | null;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+  rowVersion: string;
+  photos: CatalogAdminRareBookPhoto[];
+}
+
+export interface CatalogAdminRareBookPage {
+  generatedAt: string;
+  books: CatalogAdminRareBook[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogAdminRareBookPublishResult {
+  rareBook: CatalogAdminRareBook;
+  changed: boolean;
+  warnings: string[];
+}
+
+export interface CatalogAdminRareBookRequest {
+  title: string;
+  authorMention: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  shelf: string;
+  price: number;
+  condition: CatalogAdminRareBookCondition;
+  publicDescription: string | null;
+  binding: string | null;
+  dimensions: string | null;
+  pageCount: number | null;
+  shelfLocation: string | null;
+  priceSetBy: string | null;
+  isbn13: string | null;
+}
+
+export interface CatalogAdminUpdateRareBookRequest extends CatalogAdminRareBookRequest {
+  rowVersion: string;
+}
+
+export interface CatalogAdminRareBookFilters {
+  search?: string;
+  status?: CatalogAdminRareBookStatus;
+  availability?: CatalogAdminRareBookAvailability;
+  hasIsbn?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+  withoutPhoto?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 export type CatalogAdminAccountRole = 'Tri' | 'Caisse' | 'Administration' | 'LivresRares';
 
 export interface CatalogAdminAccount {

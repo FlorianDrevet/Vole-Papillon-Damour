@@ -1,0 +1,744 @@
+:host {
+  display: block;
+  min-height: 100%;
+  color: var(--admin-ink, #072b45);
+  font-family: 'Libre Franklin', system-ui, sans-serif;
+}
+
+.rare-admin-view {
+  display: grid;
+  gap: 24px;
+  padding: 34px 42px 70px;
+}
+
+.rare-admin-heading,
+.rare-editor-heading,
+.rare-filter-heading,
+.rare-list-meta,
+.rare-editor-heading-actions,
+.rare-status-banner,
+.rare-queue-banner,
+.rare-photo-warning,
+.rare-book-row,
+.rare-books-table-head,
+.rare-pagination {
+  display: flex;
+  align-items: center;
+}
+
+.rare-admin-heading,
+.rare-editor-heading {
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.rare-admin-kicker,
+.rare-section-kicker {
+  color: var(--admin-blue, #0c6ea6);
+  font: 500 10px/1.2 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.rare-admin-heading h1,
+.rare-editor-heading h1 {
+  margin-top: 8px;
+  color: var(--admin-ink, #072b45);
+  font: 500 38px/1 var(--admin-display, 'Newsreader'), Georgia, serif;
+  letter-spacing: -.035em;
+}
+
+.rare-admin-heading p {
+  max-width: 700px;
+  margin-top: 12px;
+  color: var(--admin-slate, #4e6c84);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.rare-admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 17px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  font: 600 12px/1 'Libre Franklin', system-ui, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rare-admin-button:disabled,
+.rare-admin-text-button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.rare-admin-button-primary {
+  background: var(--admin-orange, #f0801c);
+  color: #fff;
+}
+
+.rare-admin-button-outline {
+  border-color: var(--admin-mist, #9dc2da);
+  background: #fff;
+  color: var(--admin-blue, #0c6ea6);
+}
+
+.rare-admin-feedback {
+  padding: 13px 16px;
+  border-left: 3px solid;
+  font-size: 13px;
+}
+
+.rare-admin-feedback-error {
+  border-color: var(--admin-red, #b02a33);
+  background: #fff3f3;
+  color: var(--admin-red, #b02a33);
+}
+
+.rare-admin-feedback-success {
+  border-color: #18703a;
+  background: #f2fbf5;
+  color: #18703a;
+}
+
+.rare-filter-card {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--admin-line, #d9e9f4);
+  background: #fff;
+}
+
+.rare-filter-heading {
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.rare-filter-heading h2 {
+  margin-top: 5px;
+  color: var(--admin-ink, #072b45);
+  font: 500 24px/1 var(--admin-display, 'Newsreader'), Georgia, serif;
+}
+
+.rare-filter-heading > span,
+.rare-list-meta {
+  color: var(--admin-muted, #6d8ba2);
+  font: 500 10px/1.4 'IBM Plex Mono', ui-monospace, monospace;
+  text-transform: uppercase;
+}
+
+.rare-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(130px, 1fr)) repeat(2, minmax(110px, 1fr)) auto auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.rare-filter-grid label {
+  display: grid;
+  gap: 6px;
+  color: var(--admin-ink, #072b45);
+  font: 500 9px/1.2 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.rare-filter-grid input,
+.rare-filter-grid select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 9px;
+  border: 1px solid var(--admin-line, #d9e9f4);
+  border-radius: 2px;
+  background: #fff;
+  color: var(--admin-ink, #072b45);
+  font: 12px/1.2 'Libre Franklin', system-ui, sans-serif;
+  text-transform: none;
+}
+
+.rare-filter-grid input:focus,
+.rare-filter-grid select:focus,
+.rare-admin-button:focus-visible,
+.rare-admin-text-button:focus-visible,
+.rare-breadcrumb:focus-visible,
+.rare-book-row button:focus-visible {
+  outline: 2px solid var(--admin-blue-bright, #1497d6);
+  outline-offset: 2px;
+}
+
+.rare-filter-check {
+  display: flex !important;
+  min-height: 40px;
+  align-items: center;
+  grid-column: span 2;
+  gap: 8px !important;
+  font-family: 'Libre Franklin', system-ui, sans-serif !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.rare-filter-check input {
+  width: 16px;
+  min-height: 16px;
+  accent-color: var(--admin-purple, #5f3a86);
+}
+
+.rare-queue-banner {
+  gap: 14px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--admin-purple, #5f3a86);
+  background: #f3edf9;
+}
+
+.rare-queue-number {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--admin-purple, #5f3a86);
+  color: #fff;
+  font: 500 16px/1 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.rare-queue-banner strong,
+.rare-photo-warning strong {
+  color: var(--admin-purple, #5f3a86);
+  font-size: 13px;
+}
+
+.rare-queue-banner p,
+.rare-photo-warning span {
+  margin-top: 3px;
+  color: var(--admin-slate, #4e6c84);
+  font-size: 12px;
+}
+
+.rare-photo-warning {
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 16px;
+  border: 1px solid #ead8b9;
+  background: #fffaf2;
+}
+
+.rare-photo-warning strong {
+  color: #985f0b;
+}
+
+.rare-list-meta {
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--admin-line, #d9e9f4);
+}
+
+.rare-admin-text-button,
+.rare-breadcrumb {
+  border: 0;
+  background: transparent;
+  color: var(--admin-blue, #0c6ea6);
+  cursor: pointer;
+  font: 600 11px/1.2 'Libre Franklin', system-ui, sans-serif;
+}
+
+.rare-books-list {
+  overflow: hidden;
+  border: 1px solid var(--admin-line, #d9e9f4);
+  background: #fff;
+}
+
+.rare-books-table-head {
+  display: grid;
+  grid-template-columns: minmax(250px, 2.2fr) minmax(92px, .75fr) minmax(120px, .9fr) 70px minmax(135px, 1fr) 82px;
+  gap: 14px;
+  padding: 10px 14px;
+  background: #f7fbfe;
+  color: var(--admin-muted, #6d8ba2);
+  font: 500 9px/1.2 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.rare-book-row {
+  display: grid;
+  grid-template-columns: minmax(250px, 2.2fr) minmax(92px, .75fr) minmax(120px, .9fr) 70px minmax(135px, 1fr) 82px;
+  gap: 14px;
+  min-height: 90px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--admin-line-soft, #e2eef7);
+}
+
+.rare-book-row-sold {
+  background: #fcfcfc;
+}
+
+.rare-book-main {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.rare-book-main img,
+.rare-book-placeholder {
+  display: grid;
+  width: 48px;
+  height: 64px;
+  place-items: center;
+  object-fit: cover;
+  background: #e9f4fb;
+  color: var(--admin-mist, #9dc2da);
+  font: 20px/1 'Newsreader', Georgia, serif;
+}
+
+.rare-book-main > div,
+.rare-book-state,
+.rare-book-photo-count,
+.rare-book-updated {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.rare-book-main strong,
+.rare-book-main span,
+.rare-book-main small,
+.rare-book-updated strong,
+.rare-book-updated small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rare-book-main strong {
+  color: var(--admin-ink, #072b45);
+  font: 600 14px/1.2 'Libre Franklin', system-ui, sans-serif;
+}
+
+.rare-book-main span,
+.rare-book-main small,
+.rare-book-state small,
+.rare-book-photo-count small,
+.rare-book-updated small {
+  color: var(--admin-slate, #4e6c84);
+  font-size: 11px;
+}
+
+.rare-book-main small,
+.rare-book-updated small {
+  color: var(--admin-muted, #6d8ba2);
+  font: 10px/1.2 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.rare-book-price {
+  color: var(--admin-purple, #5f3a86);
+  font: 500 15px/1.2 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.rare-status-pill {
+  display: inline-flex;
+  width: max-content;
+  min-height: 23px;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid #d9c8ea;
+  background: #f3edf9;
+  color: var(--admin-purple, #5f3a86);
+  font: 600 9px/1 'IBM Plex Mono', ui-monospace, monospace;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.rare-status-published {
+  border-color: #b9ddc6;
+  background: #f2fbf5;
+  color: #18703a;
+}
+
+.rare-sold-text {
+  color: var(--admin-red, #b02a33) !important;
+}
+
+.rare-book-photo-count strong {
+  font: 500 16px/1 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.rare-book-updated strong {
+  color: var(--admin-slate, #4e6c84);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.rare-open-button {
+  align-self: center;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.rare-empty-panel,
+.rare-admin-status {
+  padding: 40px 22px;
+  text-align: center;
+}
+
+.rare-empty-panel h2 {
+  color: var(--admin-ink, #072b45);
+  font: 500 25px/1 var(--admin-display, 'Newsreader'), Georgia, serif;
+}
+
+.rare-empty-panel p,
+.rare-admin-status {
+  margin-top: 8px;
+  color: var(--admin-slate, #4e6c84);
+  font-size: 13px;
+}
+
+.rare-pagination {
+  justify-content: center;
+  gap: 18px;
+  color: var(--admin-muted, #6d8ba2);
+  font: 500 10px/1 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.rare-pagination button {
+  width: 32px;
+  height: 30px;
+  border: 1px solid var(--admin-line, #d9e9f4);
+  background: #fff;
+  color: var(--admin-blue, #0c6ea6);
+  cursor: pointer;
+}
+
+.rare-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: .4;
+}
+
+.rare-editor-heading {
+  align-items: flex-start;
+}
+
+.rare-editor-heading h1 {
+  max-width: 760px;
+}
+
+.rare-editor-heading p {
+  margin-top: 10px;
+  color: var(--admin-muted, #6d8ba2);
+  font: 500 10px/1.4 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.rare-editor-heading-actions {
+  align-items: flex-end;
+  flex: none;
+  gap: 10px;
+}
+
+.rare-status-banner {
+  align-items: flex-start;
+  gap: 14px;
+  padding: 15px 18px;
+  border-left: 3px solid var(--admin-purple, #5f3a86);
+  background: #f3edf9;
+}
+
+.rare-status-banner p {
+  max-width: 900px;
+  color: #4e3d61;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.rare-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 32px;
+}
+
+.rare-editor-main,
+.rare-editor-aside {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.rare-side-card,
+.rare-warning-card {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--admin-line, #d9e9f4);
+  background: #fff;
+}
+
+.rare-side-card h2 {
+  margin-top: -5px;
+  color: var(--admin-ink, #072b45);
+  font: 500 24px/1 var(--admin-display, 'Newsreader'), Georgia, serif;
+}
+
+.rare-side-card p,
+.rare-side-card small {
+  color: var(--admin-slate, #4e6c84);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.rare-publication-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.rare-publication-toggle button {
+  min-height: 42px;
+  border: 1px solid var(--admin-line, #d9e9f4);
+  background: #fff;
+  color: var(--admin-slate, #4e6c84);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.rare-publication-toggle button.active {
+  border-color: var(--admin-purple, #5f3a86);
+  background: var(--admin-purple, #5f3a86);
+  color: #fff;
+  font-weight: 700;
+}
+
+.rare-availability-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding-top: 8px;
+  border-top: 1px solid var(--admin-line-soft, #e2eef7);
+}
+
+.rare-availability-row span {
+  display: grid;
+  gap: 5px;
+}
+
+.rare-availability-row strong {
+  color: #18703a;
+  font-size: 12px;
+}
+
+.rare-availability-row small {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.rare-availability-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: #18703a;
+}
+
+.rare-traceability-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.rare-traceability-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--admin-line-soft, #e2eef7);
+}
+
+.rare-traceability-card dt,
+.rare-traceability-card dd {
+  margin: 0;
+  font-size: 11px;
+}
+
+.rare-traceability-card dt {
+  color: var(--admin-muted, #6d8ba2);
+}
+
+.rare-traceability-card dd {
+  color: var(--admin-ink, #072b45);
+  font-weight: 600;
+  text-align: right;
+}
+
+.rare-danger-link {
+  border: 0;
+  background: none;
+  color: var(--admin-red, #b02a33);
+  cursor: pointer;
+  font: 600 12px/1.3 'Libre Franklin', system-ui, sans-serif;
+  text-align: left;
+}
+
+.rare-danger-link:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.rare-warning-card {
+  border-color: #ead8b9;
+  background: #fffaf2;
+  color: #985f0b;
+  font-size: 12px;
+}
+
+.rare-warning-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 1200px) {
+  .rare-filter-grid {
+    grid-template-columns: repeat(4, minmax(130px, 1fr));
+  }
+
+  .rare-filter-search,
+  .rare-filter-check {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1000px) {
+  .rare-admin-view {
+    padding-inline: 24px;
+  }
+
+  .rare-editor-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rare-editor-aside {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .rare-admin-heading,
+  .rare-editor-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rare-admin-heading .rare-admin-button,
+  .rare-editor-heading-actions,
+  .rare-editor-heading-actions .rare-admin-button {
+    width: 100%;
+  }
+
+  .rare-editor-heading-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .rare-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rare-filter-search,
+  .rare-filter-check {
+    grid-column: 1 / -1;
+  }
+
+  .rare-books-list {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .rare-books-table-head {
+    display: none;
+  }
+
+  .rare-book-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    margin-bottom: 10px;
+    border: 1px solid var(--admin-line, #d9e9f4);
+    background: #fff;
+  }
+
+  .rare-book-main {
+    grid-column: 1 / -1;
+  }
+
+  .rare-book-price {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .rare-book-state {
+    grid-column: 2;
+    grid-row: 2;
+    justify-items: end;
+  }
+
+  .rare-book-photo-count,
+  .rare-book-updated {
+    grid-column: 1;
+  }
+
+  .rare-open-button {
+    grid-column: 2;
+    grid-row: 3 / span 2;
+    align-self: center;
+  }
+
+  .rare-editor-aside {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .rare-admin-view {
+    gap: 18px;
+    padding: 24px 14px 50px;
+  }
+
+  .rare-admin-heading h1,
+  .rare-editor-heading h1 {
+    font-size: 32px;
+  }
+
+  .rare-filter-card {
+    padding: 16px;
+  }
+
+  .rare-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rare-filter-search,
+  .rare-filter-check {
+    grid-column: auto;
+  }
+
+  .rare-filter-heading,
+  .rare-photo-warning {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rare-status-banner {
+    flex-direction: column;
+  }
+}

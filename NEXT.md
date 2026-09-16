@@ -17,10 +17,10 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lot 4, rôle `LivresRares`, sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
-| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 5 (portail d'administration) sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) est appliqué. |
+| **Lot en cours** | Livres rares — lot 5, portail d'administration, sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
+| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis préparer le lot 6 ; exporter d'abord dans la note de PR la liste des ISBN encore marqués rares avant de supprimer `Books.IsRare`. Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) est appliqué. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
-| **Dernière mise à jour** | 2026-09-16 — le lot 4 ajoute le rôle Entra `LivresRares`, la politique API `RareBooks`, sa reconnaissance dans Catalog et le garde d'accès Scan ; le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
+| **Dernière mise à jour** | 2026-09-16 — le lot 5 ajoute le portail Catalog des fiches rares, sa galerie photo, ses filtres et son éditeur, avec une navigation limitée au rôle `LivresRares` ; le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
@@ -114,6 +114,31 @@ routes rares (4), le script Entra (2), les suites Catalog (276), Scan (214) et B
 backend (523) et les 23 tests Pester Entra passent. Les avertissements de budget et de
 vulnérabilités existants restent présents. Aucun compte Entra, jeton réel, appel API,
 déploiement Azure ou contrôle responsive authentifié n'a été effectué. La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203)
+reste ouverte vers `main` et n'est pas fusionnée.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 5
+
+Le portail Catalog autonome `Livres rares` est livré : liste filtrable et paginée,
+compteurs de brouillons et de fiches publiées sans photo, création depuis une fiche
+catalogue ordinaire avec préremplissage bibliographique, formulaire de fiche rare,
+publication/dépublication, suppression avec confirmation et galerie de photos. Les
+photos acceptent JPEG/WebP/PNG jusqu'à 8 Mo côté interface, la première reste la
+vignette, et les actions de légende, ordre et suppression passent par les endpoints
+typés protégés par `RareBooks`. Le prix est affiché comme prix ferme à lire en caisse ;
+aucun panier, total ou recette n'est introduit. La fiche catalogue ordinaire ne porte
+plus l'interrupteur de marquage : elle propose de créer ou consulter sa fiche rare.
+
+Le shell d'administration réserve ce workspace au rôle `LivresRares` seul : les autres
+sections ne sont pas affichées et les routes directes sont redirigées. La documentation
+métier §4 est amendée ; Q4 reste appliqué, Q2 (`mailto:`) reste réservé au lot 8, et la
+tuile/les routes Scan restent le lot 7. Les anciens marquages `Books.IsRare` restent
+volontairement présents jusqu'au lot 6, sans conversion.
+
+Validation locale : TDD rouge puis vert, 297 tests Catalog ChromeHeadless et build SSR/
+navigateur passés ; les avertissements de budget Angular existants restent présents.
+`graphify update .` a ré-extrait l'AST, mais sa visualisation HTML reste bloquée par la
+limite actuelle du graphe. Le contrôle responsive authentifié à 1280 et 390×844, l'appel API
+réel et le déploiement restent à faire. La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203)
 reste ouverte vers `main` et n'est pas fusionnée.
 
 ---

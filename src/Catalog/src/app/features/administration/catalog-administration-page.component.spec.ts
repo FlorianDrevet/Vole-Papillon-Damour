@@ -3,7 +3,7 @@ import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormsModule} from '@angular/forms';
 import {Meta} from '@angular/platform-browser';
-import {ActivatedRoute, ParamMap, RouterModule, convertToParamMap} from '@angular/router';
+import {ActivatedRoute, ParamMap, Router, RouterModule, convertToParamMap} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
 import {DesignSystemModule} from '@vpd/ui';
@@ -29,6 +29,9 @@ import {
   CatalogAdminMemberPage,
   CatalogAdminMemberOperation,
   CatalogAdminOverview,
+  CatalogAdminRareBookPage,
+  CatalogAdminRareBook,
+  CatalogAdminRareBookPublishResult,
   CatalogAdminScanSessionPage,
   CatalogAdminScanSession,
   CatalogAdminSettings,
@@ -37,6 +40,9 @@ import {
 } from '../../core/catalog.models';
 import {CatalogAdministrationPageComponent} from './catalog-administration-page.component';
 import {toDeadStockCsv} from './dead-stock-export';
+import {AdminRareBookFormComponent} from './rare-books/admin-rare-book-form.component';
+import {AdminRareBookPhotosComponent} from './rare-books/admin-rare-book-photos.component';
+import {AdminRareBooksComponent} from './rare-books/admin-rare-books.component';
 
 describe('CatalogAdministrationPageComponent', () => {
   let fixture: ComponentFixture<CatalogAdministrationPageComponent>;
@@ -45,6 +51,7 @@ describe('CatalogAdministrationPageComponent', () => {
     initialized: WritableSignal<boolean>;
     isAuthenticated: WritableSignal<boolean>;
     isAdministrator: WritableSignal<boolean>;
+    isRareBookManager: WritableSignal<boolean>;
     error: WritableSignal<string | null>;
     initialize: jasmine.Spy;
     login: jasmine.Spy;
@@ -191,7 +198,8 @@ describe('CatalogAdministrationPageComponent', () => {
       account: signal<AccountInfo | null>(null),
       initialized: signal(true),
       isAuthenticated: signal(false),
-      isAdministrator: signal(false),
+      isAdministrator: signal(true),
+      isRareBookManager: signal(false),
       error: signal<string | null>(null),
       initialize: jasmine.createSpy('initialize'),
       login: jasmine.createSpy('login'),
@@ -214,7 +222,10 @@ describe('CatalogAdministrationPageComponent', () => {
       'forceSessionAlerts', 'getAlerts', 'cancelAlert', 'forceAlert', 'getMembers',
       'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
       'getDeadStock', 'getAdminAccounts', 'createAdminAccount', 'updateAdminAccountRoles',
-      'updateAdminAccountStatus',
+      'updateAdminAccountStatus', 'getRareBooks', 'getRareBook', 'createRareBook',
+      'updateRareBook', 'publishRareBook', 'unpublishRareBook', 'deleteRareBook',
+      'addRareBookPhoto', 'reorderRareBookPhotos', 'updateRareBookPhotoCaption',
+      'deleteRareBookPhoto',
     ]);
     catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
     catalogApi.searchReferences.and.returnValue(of({
@@ -298,9 +309,25 @@ describe('CatalogAdministrationPageComponent', () => {
     api.getAdminAccounts.and.returnValue(of({generatedAt: '', accounts: [], totalCount: 0, page: 1, pageSize: 25} as CatalogAdminAccountPage));
     api.getSettings.and.returnValue(of({} as CatalogAdminSettings));
     api.getDeadStock.and.returnValue(of(response));
+    api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminRareBookPage));
+    api.getRareBook.and.returnValue(of({} as CatalogAdminRareBook));
+    api.createRareBook.and.returnValue(of({} as CatalogAdminRareBook));
+    api.updateRareBook.and.returnValue(of({} as CatalogAdminRareBook));
+    api.publishRareBook.and.returnValue(of({} as CatalogAdminRareBookPublishResult));
+    api.unpublishRareBook.and.returnValue(of({} as CatalogAdminRareBook));
+    api.deleteRareBook.and.returnValue(of(undefined));
+    api.addRareBookPhoto.and.returnValue(of({} as CatalogAdminRareBook));
+    api.reorderRareBookPhotos.and.returnValue(of({} as CatalogAdminRareBook));
+    api.updateRareBookPhotoCaption.and.returnValue(of({} as CatalogAdminRareBook));
+    api.deleteRareBookPhoto.and.returnValue(of(undefined));
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogAdministrationPageComponent],
+      declarations: [
+        CatalogAdministrationPageComponent,
+        AdminRareBooksComponent,
+        AdminRareBookFormComponent,
+        AdminRareBookPhotosComponent,
+      ],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
@@ -400,6 +427,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'Sessions de scan',
       'Désengorgement',
       'Catalogue',
+      'Livres rares',
       'Statistiques',
       'Comptes & rôles',
       'Paramètres',
@@ -430,10 +458,60 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/sessions',
       '/administration/dead-stock',
       '/administration/catalogue',
+      '/administration/rare-books',
       '/administration/statistics',
       '/administration/accounts',
       '/administration/settings',
     ]);
+  });
+
+  it('restricts the rare-book role to its single workspace and redirects the bare administration route', async () => {
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
+    auth.isAdministrator.set(false);
+    auth.isRareBookManager.set(true);
+    auth.isAuthenticated.set(true);
+
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.navItems).toEqual([
+      {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
+    ]);
+    expect(router.navigate).toHaveBeenCalledWith(
+      ['/administration', 'rare-books'],
+      {replaceUrl: true},
+    );
+    expect(api.getOverview).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Livres rares');
+    expect(fixture.nativeElement.textContent).toContain('Accès limité à la gestion des livres rares');
+  });
+
+  it('shows the reserved-access state to an authenticated account without an administration role', async () => {
+    auth.isAdministrator.set(false);
+    auth.isRareBookManager.set(false);
+    auth.isAuthenticated.set(true);
+
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(api.getOverview).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('ne possède pas les droits d’administration');
+    expect(fixture.nativeElement.querySelector('[data-testid="admin-sidebar"]')?.textContent)
+      .not.toContain('Tableau de bord');
+  });
+
+  it('does not load administrator workspaces for a rare-book manager already on the rare route', async () => {
+    auth.isAdministrator.set(false);
+    auth.isRareBookManager.set(true);
+    auth.isAuthenticated.set(true);
+    fixture.componentInstance.activeSection.set('rare-books');
+
+    await fixture.componentInstance.initialize();
+
+    expect(api.getOverview).not.toHaveBeenCalled();
+    expect(api.getSessions).not.toHaveBeenCalled();
+    expect(api.getDeadStock).not.toHaveBeenCalled();
   });
 
   it('keeps the catalogue workspace as the only book-management entry', () => {
@@ -1741,6 +1819,8 @@ describe('CatalogAdministrationPageComponent', () => {
 
   it('explains when the signed-in account lacks the administration role', async () => {
     auth.account.set(account('Volunteer'));
+    auth.isAdministrator.set(false);
+    auth.isRareBookManager.set(false);
     auth.isAuthenticated.set(true);
     api.getDeadStock.and.returnValue(throwError(() => new HttpErrorResponse({status: 403})));
     fixture.detectChanges();

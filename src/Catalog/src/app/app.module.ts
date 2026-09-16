@@ -15,6 +15,9 @@ import {CatalogSearchPageComponent} from './features/search/catalog-search-page.
 import {CatalogWorkPageComponent} from './features/work/catalog-work-page.component';
 import {BookCardComponent} from './shared/book-card/book-card.component';
 import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
+import {AdminRareBookFormComponent} from './features/administration/rare-books/admin-rare-book-form.component';
+import {AdminRareBookPhotosComponent} from './features/administration/rare-books/admin-rare-book-photos.component';
+import {AdminRareBooksComponent} from './features/administration/rare-books/admin-rare-books.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
@@ -37,6 +40,9 @@ registerLocaleData(localeFr);
     LegalPageComponent,
     BookCardComponent,
     CatalogAdministrationPageComponent,
+    AdminRareBooksComponent,
+    AdminRareBookFormComponent,
+    AdminRareBookPhotosComponent,
     CatalogAccountPageComponent,
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,

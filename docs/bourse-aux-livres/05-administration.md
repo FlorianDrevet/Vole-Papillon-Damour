@@ -67,9 +67,23 @@ qu'il se vend ? ».
 | Retirer des livres | Mouvement `RETRAIT` : désherbage, don à une autre structure, mise au rebut |
 | Masquer une fiche du catalogue public | Sans la supprimer ni perdre son historique |
 | Supprimer une fiche | Réservé aux fiches créées par erreur. Refusé si des ventes y sont rattachées (`RG-06`) |
-| Marquer ou démarquer « rare » | Déclenche le signalement en caisse (`03` §5). **Aucun prix n'est saisi** : il est porté physiquement sur le livre (`RG-50`) |
+| Gérer un livre rare | Depuis l'espace **Livres rares**, créer, compléter, publier ou supprimer une fiche autonome liée éventuellement à un ISBN. Le prix ferme y est stocké et affiché pour lecture en caisse ; il n'est jamais saisi sur un livre ordinaire, totalisé ou transformé en recette (`RG-50`) |
 | Saisir la recette d'une bourse | Un montant unique à la clôture, facultatif (`RG-51`) |
 | Fusionner deux fiches | Cas des ISBN-10 et ISBN-13 d'une même édition mal normalisés (`RG-07`) |
+
+### Espace Livres rares
+
+Le marquage n'est plus une case de la fiche catalogue : une fiche rare autonome porte
+les métadonnées de l'exemplaire, son état, sa description honnête, son prix ferme et
+ses photos. Un bénévole habilité peut la créer depuis une fiche ordinaire préremplie,
+la modifier, la publier ou la supprimer. Une fiche publiée sans photo reste repérable
+dans la file de travail afin d'être complétée ; le prix n'est affiché que pour être lu
+par le bénévole de caisse, jamais additionné par l'application.
+
+Pendant la transition vers cette fiche autonome, les anciens indicateurs `Books.IsRare`
+restent uniquement une donnée à exporter avant leur suppression au lot 6. Ils ne sont
+pas convertis en fiches rares et ne modifient pas le prix, le panier, le total ou la
+recette (`RG-51` reste inchangée).
 
 ### Espace Inventaire
 
@@ -89,10 +103,9 @@ reste consultable, mais ses actions de stock sont désactivées.
 Des listes de travail concrètes, plutôt que des écrans de recherche :
 
 - **Fiches sans métadonnées** — à compléter à la main.
-- **Livres marqués rares** — à expertiser, et à étiqueter physiquement d'un prix
-  puisque le système n'en porte aucun (`RG-50`). Alimentée à la main en v1 ; elle
-  recevra les résultats de l'estimation asynchrone si celle-ci est un jour implémentée
-  (`RG-14`).
+- **Fiches rares en brouillon** — à relire avant publication : photos, état, description
+  et prix ferme doivent être vérifiés. Le prix est affiché pour la caisse mais aucun
+  total n'est calculé (`RG-50`).
 - **Annonces sans date** — exemplaires annoncés alors qu'aucune bourse n'était
   programmée (`RG-24`). Ils se rattachent automatiquement dès qu'une bourse est créée,
   mais **leurs alertes restent en attente d'ici là**. Une file qui s'allonge est le

@@ -164,6 +164,12 @@ Rare-book administration routes under `/rare-books/admin*` require the `RareBook
 anonymous and `/rare-books/cash/search` remains `ScanVolunteer`-protected. The API does
 not add a price, total, or revenue field to ordinary book or sale contracts.
 
+The Catalog client mirrors the rare administration routes with typed models and an
+`AdminRareBooksFacade`. Its ISBN relation lookup searches the protected rare-book list;
+an exact match opens the existing fiche, while a miss creates a draft prefilled only with
+ordinary bibliographic metadata. Photo upload uses multipart form data and keeps the
+backend's ordering/caption/delete operations separate from fiche publication.
+
 No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 
 ## Current Auth Asymmetries To Recheck Before Editing
