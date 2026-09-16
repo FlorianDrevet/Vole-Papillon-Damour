@@ -68,3 +68,16 @@ Describe 'Merge-OptionalNameClaims' {
         @($result | Where-Object { $_ -eq 'https://new.example' }).Count | Should Be 1
     }
 }
+
+Describe 'Permissions Graph de gestion des comptes' {
+    It 'déclare et prépare User.EnableDisableAccount.All pour le changement de statut' {
+        $script = Get-Content -LiteralPath $scriptPath -Raw
+
+        $script | Should Match '\$GraphApplicationPermissions\s*=\s*@\('
+        $script | Should Match "AppRoleId\s*=\s*'3011c876-62b7-4ada-afa2-506cbbecc68c'"
+        $script | Should Match "Name\s*=\s*'User.EnableDisableAccount.All'"
+        $script | Should Match 'ResourceAccess\s*=\s*@\(\s*\$GraphApplicationPermissions'
+        $script | Should Match 'RequiredResourceAccess\s*=\s*\$graphRequiredResourceAccess'
+        $script | Should Match 'Grant-GraphApplicationPermission[\s\S]*\$permission\.AppRoleId'
+    }
+}
