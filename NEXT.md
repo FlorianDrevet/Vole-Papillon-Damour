@@ -17,8 +17,8 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lot 5, portail d'administration, sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
-| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis préparer le lot 6 ; exporter d'abord dans la note de PR la liste des ISBN encore marqués rares avant de supprimer `Books.IsRare`. Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) est appliqué. |
+| **Lot en cours** | Livres rares — lot 6, retrait du marquage historique, sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
+| **Prochaine action** | Terminer la revue de la PR #203 puis préparer le lot 7, la gestion Livres rares hors ligne dans la Scanette. Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) est appliqué. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
 | **Dernière mise à jour** | 2026-09-16 — le lot 5 ajoute le portail Catalog des fiches rares, sa galerie photo, ses filtres et son éditeur, avec une navigation limitée au rôle `LivresRares` ; le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
@@ -131,8 +131,8 @@ plus l'interrupteur de marquage : elle propose de créer ou consulter sa fiche r
 Le shell d'administration réserve ce workspace au rôle `LivresRares` seul : les autres
 sections ne sont pas affichées et les routes directes sont redirigées. La documentation
 métier §4 est amendée ; Q4 reste appliqué, Q2 (`mailto:`) reste réservé au lot 8, et la
-tuile/les routes Scan restent le lot 7. Les anciens marquages `Books.IsRare` restent
-volontairement présents jusqu'au lot 6, sans conversion.
+tuile/les routes Scan restent le lot 7. Les anciens marquages `Books.IsRare` sont
+supprimés au lot 6 après export dans la note de la PR, sans conversion.
 
 Validation locale : TDD rouge puis vert, 297 tests Catalog ChromeHeadless et build SSR/
 navigateur passés ; les avertissements de budget Angular existants restent présents.
@@ -140,6 +140,28 @@ navigateur passés ; les avertissements de budget Angular existants restent pré
 limite actuelle du graphe. Le contrôle responsive authentifié à 1280 et 390×844, l'appel API
 réel et le déploiement restent à faire. La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203)
 reste ouverte vers `main` et n'est pas fusionnée.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 6
+
+Le marquage historique `Book.IsRare` est supprimé du domaine, de la persistance et des
+deux portails d'administration. Les filtres, projections publiques/admin, verdict de tri,
+statistiques bénévoles et signal caisse reposent désormais sur une fiche `RareBook` liée,
+publiée et disponible ; la fiche rare reste l'unique source de son prix ferme. Le delta de
+la Scanette transporte les fiches rares publiées, leur prix, leur description courte et leur
+vignette, ainsi que les tombstones des changements incrémentaux.
+
+La migration `20260916220924_RemoveLegacyRareBookFlag` supprime `Books.IsRare` sans
+conversion ; son `Down` recrée la colonne à `false`. L'export des ISBN a été demandé et
+documenté dans la PR avant le code et la migration, mais aucune base runtime autorisée
+n'était accessible sur cette machine : la migration doit rester bloquée au déploiement
+tant que l'opération DBA n'a pas ajouté la liste réelle à la note. `RG-51` reste inchangée.
+
+Validation locale : tests rouges puis verts, 257 tests Application, 121 tests Infrastructure,
+297 tests Catalog et 22 tests BackOffice ; builds API/Infrastructure et frontends concernés
+passés. `graphify update .` ré-extrait l'AST, mais la visualisation HTML reste bloquée par la
+limite actuelle du graphe. Aucun déploiement ni contrôle responsive authentifié n'a été effectué.
+La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) reste ouverte
+vers `main` et n'est pas fusionnée.
 
 ---
 

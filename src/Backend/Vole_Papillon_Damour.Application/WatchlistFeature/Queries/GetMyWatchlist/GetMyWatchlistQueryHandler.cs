@@ -79,10 +79,18 @@ public sealed class GetMyWatchlistQueryHandler(
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToReferencedFairListAsync(announcements, cancellationToken);
+        var publishedAvailableRareIsbns = (await dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Where(rareBook => bookIsbnValues.Contains(rareBook.Isbn13!.Value))
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
         var publicBooks = PublicCatalogProjector.Project(
             books,
             announcements,
             fairs,
+            publishedAvailableRareIsbns,
             generatedAt);
 
         var histories = await dbContext.UserAlertHistories

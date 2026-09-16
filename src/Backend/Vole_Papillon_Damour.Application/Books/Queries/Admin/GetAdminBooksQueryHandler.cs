@@ -33,7 +33,9 @@ public sealed class GetAdminBooksQueryHandler(
 
         var booksQuery = dbContext.Books
             .AsNoTracking()
-            .Where(book => query.Rare == null || book.IsRare == query.Rare)
+            .Where(book => query.Rare == null || dbContext.RareBooks
+                .AsNoTracking()
+                .Any(rareBook => rareBook.Isbn13 == book.Id) == query.Rare)
             .Where(book => query.Hidden == null || book.IsHiddenFromCatalog == query.Hidden)
             .Where(book => string.IsNullOrWhiteSpace(query.MetadataStatus) ||
                            book.MetadataStatus.ToString() == query.MetadataStatus)
@@ -64,6 +66,14 @@ public sealed class GetAdminBooksQueryHandler(
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
         var ids = pageBooks.Select(book => book.Id).ToArray();
+        var rareIsbns = ids.Length == 0
+            ? []
+            : (await dbContext.RareBooks
+                .AsNoTracking()
+                .Where(rareBook => ids.Contains(rareBook.Isbn13!.Value))
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+                .ToHashSet(StringComparer.Ordinal);
         var announcements = ids.Length == 0
             ? []
             : await dbContext.BookAnnouncements
@@ -75,7 +85,12 @@ public sealed class GetAdminBooksQueryHandler(
         return new AdminBookPageResult(
             new DateTimeOffset(generatedAt, TimeSpan.Zero),
             pageBooks
-                .Select(book => AdminQueryProjection.ToBookResult(book, announcements, [], false))
+                .Select(book => AdminQueryProjection.ToBookResult(
+                    book,
+                    announcements,
+                    [],
+                    rareIsbns.Contains(book.Id.Value),
+                    false))
                 .ToArray(),
             totalCount,
             query.Page,

@@ -145,7 +145,7 @@ public sealed class ProjectDbContextModelTests
     }
 
     [Fact]
-    public void Model_MapsRareBooksAndPhotosWithoutRemovingTheLegacyBookFlag()
+    public void Model_MapsRareBooksAndPhotosWithoutTheLegacyBookFlag()
     {
         using var context = CreateContext();
         var model = context.GetService<IDesignTimeModel>().Model;
@@ -199,8 +199,8 @@ public sealed class ProjectDbContextModelTests
             .Should().Be(DeleteBehavior.Cascade);
 
         model.FindEntityType(typeof(Book))!
-            .FindProperty(nameof(Book.IsRare))
-            .Should().NotBeNull();
+            .FindProperty("IsRare")
+            .Should().BeNull();
     }
 
     [Fact]

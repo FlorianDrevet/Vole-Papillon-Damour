@@ -17,7 +17,7 @@ Vue d'ouverture, en chiffres, sur la période en cours et la précédente pour c
 | Livres triés sur la période, gardés / écartés | Mesure de l'activité de tri et du taux de rejet |
 | Ventes sur la dernière bourse : **nombre de livres** | Résultat de l'événement. Le système ne connaît aucun prix (`RG-50`) : la recette n'apparaît que si elle a été saisie à la main (`RG-51`) |
 | Titres disponibles jamais vendus depuis leur première mise à disposition | **Le principal levier de désengorgement.** Ce sont les candidats au retrait. |
-| Livres marqués rares en attente d'expertise | File de travail |
+| Fiches rares en brouillon ou sans photo | File de travail |
 | Alertes en attente d'envoi | Sessions dont les e-mails ne sont pas encore partis, avec le temps restant. **Fenêtre de rattrapage** (`RG-44`) |
 | Fiches sans métadonnées | File de travail |
 | Écart d'inventaire estimé | Signal de dérive du compteur (`RG-34`) |
@@ -80,9 +80,9 @@ la modifier, la publier ou la supprimer. Une fiche publiée sans photo reste rep
 dans la file de travail afin d'être complétée ; le prix n'est affiché que pour être lu
 par le bénévole de caisse, jamais additionné par l'application.
 
-Pendant la transition vers cette fiche autonome, les anciens indicateurs `Books.IsRare`
-restent uniquement une donnée à exporter avant leur suppression au lot 6. Ils ne sont
-pas convertis en fiches rares et ne modifient pas le prix, le panier, le total ou la
+Les anciens indicateurs `Books.IsRare` ont été supprimés au lot 6 après export dans la
+note de la PR. Ils n'ont pas été convertis en fiches rares : les bénévoles peuvent recréer
+les fiches utiles depuis l'espace dédié, sans modifier le prix, le panier, le total ou la
 recette (`RG-51` reste inchangée).
 
 ### Espace Inventaire

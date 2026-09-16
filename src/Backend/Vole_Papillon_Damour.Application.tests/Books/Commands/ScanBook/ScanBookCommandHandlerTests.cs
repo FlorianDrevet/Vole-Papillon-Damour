@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
@@ -27,6 +28,7 @@ using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
@@ -396,6 +398,32 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         return book;
     }
 
+    public async Task<RareBook> AddRareBookAsync(
+        Book book,
+        UserId? createdBy = null,
+        bool published = true)
+    {
+        var userId = createdBy ?? UserId.Create(
+            Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        var rareBook = RareBook.Create(
+            book.Title ?? "Livre rare",
+            25m,
+            ScanBookCommandHandlerTests.SessionStartedAt,
+            userId,
+            authorMention: book.Authors,
+            shelf: RareBookShelf.AncientEditions,
+            condition: RareBookCondition.AsNew,
+            isbn13: book.Id);
+        if (published)
+        {
+            rareBook.Publish(userId, ScanBookCommandHandlerTests.ClientScanAt);
+        }
+
+        Context.RareBooks.Add(rareBook);
+        await Context.SaveChangesAsync();
+        return rareBook;
+    }
+
     public async Task<AssoEvents> AddFairAsync(
         DateTimeOffset dateStart,
         DateTimeOffset? dateEnd,
@@ -485,13 +513,6 @@ internal sealed class ScanBookFixture : IAsyncDisposable
         return new AttachUndatedAnnouncementsCommandHandler(Context);
     }
 
-    public MarkBookRareCommandHandler CreateMarkBookRareHandler()
-    {
-        var clock = Substitute.For<IDateTimeProvider>();
-        clock.UtcNow.Returns(_receivedAt);
-        return new MarkBookRareCommandHandler(Context, clock);
-    }
-
     public HideBookCommandHandler CreateHideBookHandler()
     {
         var clock = Substitute.For<IDateTimeProvider>();
@@ -547,10 +568,12 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<UserAlertHistory> UserAlertHistories => Set<UserAlertHistory>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<RareBook> RareBooks => Set<RareBook>();
+    public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
 
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
-    DbSet<RareBook> IProjectDbContext.RareBooks => throw new NotSupportedException();
-    DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => throw new NotSupportedException();
+    DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
+    DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => Users;
@@ -559,8 +582,6 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Ignore<RareBook>();
-        modelBuilder.Ignore<RareBookPhoto>();
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();
@@ -683,6 +704,60 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         {
             builder.HasKey(settings => settings.Id);
             builder.Property(settings => settings.UpdatedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+        });
+
+        modelBuilder.Entity<RareBook>(builder =>
+        {
+            builder.HasKey(book => book.Id);
+            builder.Property(book => book.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(book => book.Slug)
+                .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(book => book.Shelf)
+                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
+            builder.Property(book => book.Condition)
+                .HasConversion(
+                    condition => (byte)condition.Value,
+                    value => new RareBookCondition((RareBookCondition.RareBookConditionEnum)value));
+            builder.Property(book => book.Status).HasConversion<byte>();
+            builder.Property(book => book.SoldAtFairId)
+                .HasConversion(new ValueConverter<AssoEventsId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? AssoEventsId.Create(value.Value) : null));
+            builder.Property(book => book.SoldInSessionId)
+                .HasConversion(new ValueConverter<ScanSessionId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? ScanSessionId.Create(value.Value) : null));
+            builder.Property(book => book.CreatedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Property(book => book.UpdatedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Property(book => book.RowVersion).IsConcurrencyToken();
+            builder.HasMany(book => book.Photos)
+                .WithOne()
+                .HasForeignKey(photo => photo.RareBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Metadata.FindNavigation(nameof(RareBook.Photos))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<RareBookPhoto>(builder =>
+        {
+            builder.HasKey(photo => photo.Id);
+            builder.Property(photo => photo.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => RareBookPhotoId.Create(value));
+            builder.Property(photo => photo.RareBookId)
+                .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(photo => photo.BlobUri)
+                .HasConversion(uri => uri.ToString(), value => new Uri(value, UriKind.Absolute));
+            builder.Property(photo => photo.UploadedBy)
                 .HasConversion(id => id.Value, value => UserId.Create(value));
         });
     }

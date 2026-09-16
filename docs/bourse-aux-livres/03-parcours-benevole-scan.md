@@ -160,9 +160,10 @@ Le verdict occupe le haut de l'écran, en couleur, lisible sans lire le détail.
 │ ╚═══════════════════════════════════╝ │
 ```
 
-**Cas « livre déjà marqué rare »** — marquage manuel par un administrateur (`05` §4).
-L'estimation automatique de valeur, elle, n'existe pas en v1 et n'apparaîtra jamais sur
-cet écran : son calcul est trop lent pour tenir le délai de scan (`RG-14`, `ENF-01`).
+**Cas « fiche livre rare liée »** — le signal provient de la présence d'une fiche rare
+publiée pour cet ISBN (`05` §4). L'estimation automatique de valeur, elle, n'existe pas
+en v1 et n'apparaîtra jamais sur cet écran : son calcul est trop lent pour tenir le délai
+de scan (`RG-14`, `ENF-01`).
 
 ```
 │ ╔═══════════════════════════════════╗ │

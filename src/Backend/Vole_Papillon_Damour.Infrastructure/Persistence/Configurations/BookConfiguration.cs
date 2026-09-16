@@ -58,9 +58,6 @@ public sealed class BookConfiguration : IEntityTypeConfiguration<Book>
         builder.Property(book => book.RejectionCount)
             .HasDefaultValue(0)
             .IsRequired();
-        builder.Property(book => book.IsRare)
-            .HasDefaultValue(false)
-            .IsRequired();
         builder.Property(book => book.IsHiddenFromCatalog)
             .HasDefaultValue(false)
             .IsRequired();

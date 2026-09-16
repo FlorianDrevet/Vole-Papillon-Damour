@@ -64,7 +64,10 @@ public sealed class GetCatalogAdminOverviewQueryHandler(
             book => book.QuantityAvailable > 0,
             cancellationToken);
         var rareTitleCount = await canonicalBooks.CountAsync(
-            book => book.IsRare,
+            book => dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Any(rareBook => rareBook.Isbn13 == book.Id),
             cancellationToken);
         var metadataToReviewCount = await canonicalBooks.CountAsync(
             book => book.MetadataStatus == BookMetadataStatus.Pending ||

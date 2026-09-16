@@ -273,14 +273,6 @@ export class CatalogAdminApiService {
     );
   }
 
-  setRare(accessToken: string, isbn13: string, isRare: boolean): Observable<object> {
-    return this.http.post<object>(
-      `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/rare`,
-      null,
-      this.options(accessToken, this.params({isRare})),
-    );
-  }
-
   setVisibility(accessToken: string, isbn13: string, hidden: boolean): Observable<object> {
     return this.http.post<object>(
       `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/visibility`,

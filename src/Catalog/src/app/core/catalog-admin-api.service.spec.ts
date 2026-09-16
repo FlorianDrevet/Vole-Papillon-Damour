@@ -243,13 +243,6 @@ describe('CatalogAdminApiService', () => {
   });
 
   it('uses the typed mutation endpoints and keeps the bearer token on every action', () => {
-    service.setRare('access-token', '9782070363735', true).subscribe();
-    const rareRequest = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/books/9782070363735/rare`);
-    expect(rareRequest.request.method).toBe('POST');
-    expect(rareRequest.request.params.get('isRare')).toBe('true');
-    expect(rareRequest.request.headers.get('Authorization')).toBe('Bearer access-token');
-    rareRequest.flush({});
-
     service.setAlertStatus('access-token', 'member-id', false).subscribe();
     const memberRequest = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/members/member-id/block`);
     expect(memberRequest.request.method).toBe('POST');

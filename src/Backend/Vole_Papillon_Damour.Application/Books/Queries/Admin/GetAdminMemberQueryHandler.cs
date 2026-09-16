@@ -84,7 +84,19 @@ public sealed class GetAdminMemberQueryHandler(
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToReferencedFairListAsync(announcements, cancellationToken);
-        var publicBooks = PublicCatalogProjector.Project(books, announcements, fairs, generatedAt);
+        var publishedAvailableRareIsbns = (await dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Where(rareBook => bookIsbn13s.Contains(rareBook.Isbn13!.Value))
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
+        var publicBooks = PublicCatalogProjector.Project(
+            books,
+            announcements,
+            fairs,
+            publishedAvailableRareIsbns,
+            generatedAt);
 
         var summary = GetAdminMembersQueryHandler.BuildSummary(
             user,

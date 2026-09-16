@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
@@ -85,15 +86,33 @@ public sealed class GetCatalogDeltaQueryHandler(
                 announcedQuantities.GetValueOrDefault(book.Isbn13),
                 book.SalesCount,
                 wantedTargets.Matches(book),
-                book.IsRare,
+                false,
                 book.IsHiddenFromCatalog,
                 book.UpdatedAt))
+            .ToArray();
+
+        var rareBooks = await GetRareBooksToProjectAsync(
+            since,
+            generatedAt,
+            cancellationToken);
+        // The rare-book delta contains changed fiches and tombstones only. The
+        // ordinary projection still needs the current membership for every book
+        // returned in this response, otherwise an unchanged rare fiche would
+        // incorrectly clear IsRare on an incremental sync.
+        var currentRareIsbns = await dbContext.RareBooks
+            .AsNoTracking()
+            .PublishedAvailable()
+            .Select(book => book.Isbn13!.Value.Value)
+            .ToHashSetAsync(cancellationToken);
+        books = books
+            .Select(book => book with { IsRare = currentRareIsbns.Contains(book.Isbn13) })
             .ToArray();
 
         return new ScanCatalogDeltaResult(
             generatedAt,
             SerializeWatermark(selectedBooks.RowVersion, generatedAt),
             books,
+            rareBooks,
             AssociationSettingsResult.From(settings),
             nextFair is null
                 ? null
@@ -104,6 +123,51 @@ public sealed class GetCatalogDeltaQueryHandler(
                     nextFair.DateEnd,
                     BookFairSchedule.GetOpeningInstant(nextFair),
                     BookFairSchedule.GetClosingInstant(nextFair)));
+    }
+
+    private async Task<IReadOnlyList<ScanCatalogRareBookResult>> GetRareBooksToProjectAsync(
+        CatalogWatermark? since,
+        DateTime generatedAt,
+        CancellationToken cancellationToken)
+    {
+        var rareBooksQuery = dbContext.RareBooks
+            .AsNoTracking()
+            .Include(book => book.Photos)
+            .Where(book =>
+                book.Isbn13 != null &&
+                book.UpdatedAt <= generatedAt);
+        if (since is null)
+        {
+            rareBooksQuery = rareBooksQuery.Where(book =>
+                book.Status == RareBookStatus.Published && !book.IsSold);
+        }
+        else
+        {
+            rareBooksQuery = rareBooksQuery.Where(book => book.UpdatedAt > since.AsOf);
+        }
+
+        var rareBooks = await rareBooksQuery
+            .OrderBy(book => book.UpdatedAt)
+            .ThenBy(book => book.Id)
+            .ToListAsync(cancellationToken);
+
+        return rareBooks
+            .Select(book => new ScanCatalogRareBookResult(
+                book.Id.Value,
+                book.Isbn13!.Value.Value,
+                book.Title,
+                book.AuthorMention,
+                book.Price,
+                book.Shelf.Value,
+                book.Condition.Value.ToString(),
+                book.PublicDescription,
+                book.Photos
+                    .OrderBy(photo => photo.Position)
+                    .Select(photo => (Uri?)photo.BlobUri)
+                    .FirstOrDefault(),
+                book.Status == RareBookStatus.Published && !book.IsSold,
+                book.UpdatedAt))
+            .ToArray();
     }
 
     private async Task<CatalogBookSelection> GetBooksToProjectAsync(
@@ -218,7 +282,6 @@ public sealed class GetCatalogDeltaQueryHandler(
             book.WorkId,
             book.QuantityAvailable,
             book.SalesCount,
-            book.IsRare,
             book.IsHiddenFromCatalog,
             book.UpdatedAt,
             book.RowVersion));
@@ -398,7 +461,6 @@ public sealed class GetCatalogDeltaQueryHandler(
         string? WorkId,
         int QuantityAvailable,
         int SalesCount,
-        bool IsRare,
         bool IsHiddenFromCatalog,
         DateTime UpdatedAt,
         byte[] RowVersion);

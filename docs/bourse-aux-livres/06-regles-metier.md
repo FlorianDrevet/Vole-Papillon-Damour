@@ -95,8 +95,9 @@ ordinaire et devra être retiré physiquement une fois signalé. Le repérage à
 les bénévoles expérimentés reste donc le seul filet en v1. L'objectif `O4` n'est pas
 couvert par la v1.
 
-Le marquage manuel « rare » par un administrateur, lui, existe dès la v1 (`05` §4) :
-c'est ce qui alimente la section « livres rares » et le signalement en caisse.
+La fiche autonome « livre rare » créée par un bénévole habilité existe dès la v1 (`05` §4) :
+c'est elle qui alimente la section « livres rares » et le signalement en caisse lorsqu'elle
+est publiée et encore disponible.
 
 ### `RG-15` — Priorité des verdicts
 Un livre peut relever de plusieurs règles à la fois. Un seul verdict principal est
@@ -107,8 +108,8 @@ affiché, dans cet ordre :
 3. Inutile d'en garder (`RG-10`)
 4. Premier exemplaire (`RG-11`)
 
-Un livre déjà marqué « rare » à la main affiche ce signalement en complément du verdict,
-sans le remplacer. Quand `RG-14` sera implémentée, elle n'entrera pas non plus dans
+Un livre lié à une fiche rare publiée et disponible affiche ce signalement en complément
+du verdict, sans le remplacer. Quand `RG-14` sera implémentée, elle n'entrera pas non plus dans
 cette liste : son résultat arrive après le scan, pas pendant.
 
 **« Recherché » et « ça se vend » l'emportent délibérément sur « trop d'exemplaires ».**

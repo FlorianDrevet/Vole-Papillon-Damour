@@ -132,7 +132,6 @@ Identifiée par son ISBN-13.
 | Ventes cumulées | compteur | scans de vente |
 | Refus cumulés | compteur | scans de tri écartés |
 | Valeur estimée + date d'estimation | métadonnée | source de prix, voir `Q-02` |
-| Marquée « rare » | indicateur | automatique par seuil, ou manuel |
 | Date de première entrée, date de dernière mise à disposition | horodatage | mouvements |
 | Masquée du catalogue public | indicateur | administrateur |
 

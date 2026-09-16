@@ -61,7 +61,7 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
             BookMetadataSource.OpenLibrary,
             SessionStartedAt,
             rawPayload: null);
-        roman.UpdateRareStatus(isRare: true, SessionStartedAt);
+        await fixture.AddRareBookAsync(roman, VolunteerId);
 
         var youth = await fixture.AddBookAsync("9791036377426", quantityAvailable: 0);
         youth.ApplyAutomaticMetadata(

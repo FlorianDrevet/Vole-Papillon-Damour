@@ -902,15 +902,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.announcementQuantities[announcementId] = Number(value);
   }
 
-  async toggleRare(book: CatalogAdminBook): Promise<void> {
-    await this.run('rare', async token => {
-      await firstValueFrom(this.api.setRare(token, book.isbn13, !book.isRare));
-      this.showSuccess(book.isRare ? 'Le signal rare a été retiré.' : 'Le livre est marqué comme rare.');
-      await this.openBook(book.isbn13);
-      await this.loadCatalogue();
-    });
-  }
-
   async toggleVisibility(book: CatalogAdminBook): Promise<void> {
     await this.run('visibility', async token => {
       await firstValueFrom(this.api.setVisibility(token, book.isbn13, !book.isHidden));

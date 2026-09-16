@@ -80,10 +80,6 @@ export class CatalogAdminFacadeService {
     return this.request(MethodEnum.PATCH, `/books/admin/announcements/${announcementId}/quantity`, request);
   }
 
-  setRare(isbn13: string, isRare: boolean): Promise<object> {
-    return this.request(MethodEnum.POST, `/books/admin/books/${encodeURIComponent(isbn13)}/rare?isRare=${isRare}`);
-  }
-
   setVisibility(isbn13: string, hidden: boolean): Promise<object> {
     return this.request(MethodEnum.POST, `/books/admin/books/${encodeURIComponent(isbn13)}/visibility?hidden=${hidden}`);
   }

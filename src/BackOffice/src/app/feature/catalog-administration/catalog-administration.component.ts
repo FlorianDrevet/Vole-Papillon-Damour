@@ -244,12 +244,6 @@ export class CatalogAdministrationComponent implements OnInit {
     });
   }
 
-  protected toggleRare(): void {
-    const book = this.selectedBook();
-    if (!book) { return; }
-    this.save(() => this.facade.setRare(book.isbn13, !book.isRare), 'Le marquage rare a été mis à jour.', () => this.selectBook(book.isbn13));
-  }
-
   protected toggleVisibility(): void {
     const book = this.selectedBook();
     if (!book) { return; }

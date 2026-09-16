@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.GetVolunteerStatistics;
 
@@ -72,6 +73,14 @@ public sealed class GetVolunteerStatisticsQueryHandler(
         var books = await dbContext.Books
             .AsNoTracking()
             .ToDictionaryAsync(book => book.Id.Value, cancellationToken);
+        var rareBookIsbns = (await dbContext.RareBooks
+                .AsNoTracking()
+                .Where(rareBook =>
+                    rareBook.CreatedBy == volunteerId &&
+                    rareBook.Isbn13 != null)
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToDictionaryAsync(fair => fair.Id.Value, cancellationToken);
@@ -123,6 +132,7 @@ public sealed class GetVolunteerStatisticsQueryHandler(
             allEntryMovements,
             allSalesAndCorrections,
             books,
+            rareBookIsbns,
             alertItemCount);
         var cash = BuildCashStatistics(
             generatedAt,
@@ -150,6 +160,7 @@ public sealed class GetVolunteerStatisticsQueryHandler(
         IReadOnlyCollection<BookMovement> allEntryMovements,
         IReadOnlyCollection<BookMovement> allSalesAndCorrections,
         IReadOnlyDictionary<string, Book> books,
+        IReadOnlySet<string> rareBookIsbns,
         int alertItemCount)
     {
         var monthly = BuildMonthlyStatistics(
@@ -189,7 +200,7 @@ public sealed class GetVolunteerStatisticsQueryHandler(
             .Distinct(StringComparer.Ordinal)
             .Count();
         var rareCount = keptMovements
-            .Where(movement => books.TryGetValue(movement.Isbn13.Value, out var book) && book.IsRare)
+            .Where(movement => rareBookIsbns.Contains(movement.Isbn13.Value))
             .Select(movement => movement.Isbn13.Value)
             .Distinct(StringComparer.Ordinal)
             .Count();

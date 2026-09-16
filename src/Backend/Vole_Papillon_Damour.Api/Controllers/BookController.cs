@@ -569,7 +569,7 @@ public static class BookController
         return new ScanCatalogDeltaResponse(
             result.GeneratedAt,
             result.NextWatermark,
-            result.Books
+                result.Books
                 .Select(book => new ScanCatalogBookResponse(
                     book.Isbn13,
                     book.Title,
@@ -581,6 +581,20 @@ public static class BookController
                     book.IsWanted,
                     book.IsRare,
                     book.IsHidden,
+                    book.UpdatedAt))
+                .ToArray(),
+            result.RareBooks
+                .Select(book => new ScanCatalogRareBookResponse(
+                    book.Id,
+                    book.Isbn13,
+                    book.Title,
+                    book.AuthorMention,
+                    book.Price,
+                    book.Shelf,
+                    book.Condition,
+                    book.ShortDescription,
+                    book.Thumbnail,
+                    book.IsAvailable,
                     book.UpdatedAt))
                 .ToArray(),
             new ScanAssociationSettingsResponse(

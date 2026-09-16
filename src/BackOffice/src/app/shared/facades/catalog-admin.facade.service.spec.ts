@@ -88,15 +88,9 @@ describe('CatalogAdminFacadeService', () => {
     );
   });
 
-  it('uses explicit query flags for rare and visibility actions', async () => {
-    await service.setRare('9782070612758', true);
+  it('uses explicit query flags for visibility actions', async () => {
     await service.setVisibility('9782070612758', false);
 
-    expect(axiosService.request$).toHaveBeenCalledWith(
-      MethodEnum.POST,
-      '/books/admin/books/9782070612758/rare?isRare=true',
-      null,
-    );
     expect(axiosService.request$).toHaveBeenCalledWith(
       MethodEnum.POST,
       '/books/admin/books/9782070612758/visibility?hidden=false',

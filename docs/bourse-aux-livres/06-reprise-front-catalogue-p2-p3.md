@@ -144,7 +144,6 @@ destructives et affiche les états `401`/`403` sans simuler une autorisation.
 | `PATCH /books/admin/books/{isbn13}/quantity` | `{ quantityAvailable, note }` |
 | `POST /books/admin/books/{isbn13}/withdrawals` | `{ quantity, note }` |
 | `PATCH /books/admin/announcements/{announcementId}/quantity` | `{ quantity, note }` |
-| `POST /books/admin/books/{isbn13}/rare?isRare=true\|false` | aucun corps |
 | `POST /books/admin/books/{isbn13}/visibility?hidden=true\|false` | aucun corps |
 | `POST /books/admin/books/{sourceIsbn13}/merge` | `{ targetIsbn13, note }` |
 | `DELETE /books/admin/books/{isbn13}` | suppression uniquement d'une fiche sans historique interdit |

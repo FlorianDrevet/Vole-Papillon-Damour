@@ -215,7 +215,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
       'getOverview', 'getBooks', 'getBook', 'addBook', 'updateMetadata', 'correctQuantity',
-      'withdraw', 'correctAnnouncement', 'setRare', 'setVisibility', 'merge', 'deleteBook',
+      'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook',
       'getFairs', 'getFairStats', 'setFairRevenue', 'getSessions', 'getSession',
       'getVolunteerStatistics', 'getFairsEvolution', 'getCatalogueFlowStats',
       'removeMovement', 'reassignSession', 'cancelSession', 'cancelSessionAlerts',
