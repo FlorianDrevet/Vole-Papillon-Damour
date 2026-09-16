@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — retrait des éditions déjà présentes dans la recherche « Pas encore dans la bourse aux livres ». |
-| **Prochaine action** | Faire relire la PR de correction, puis déployer depuis `main` et contrôler la recherche avec les données réelles. |
+| **Prochaine action** | Faire relire la [PR #199](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/199), puis déployer depuis `main` et contrôler la recherche avec les données réelles. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-search-filter-external-duplicates` |
 | **Dernière mise à jour** | 2026-09-16 — les références externes dont l’ISBN correspond à une édition du catalogue local sont masquées, tandis que les autres éditions restent visibles. 269 tests Catalog, build SSR/navigateur et smoke Chrome du shell passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
-| **Branche** | `fix/catalog-search-filter-external-duplicates` — dédiée depuis `origin/main` fraîchement récupéré ; PR à ouvrir vers `main` |
+| **Branche** | `fix/catalog-search-filter-external-duplicates` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #199](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/199) vers `main`, non fusionnée |
 
 ---
 
@@ -288,14 +288,15 @@ Depuis `origin/main` fraîchement récupéré dans le worktree
 `Vole-Papillon-Damour-catalog-search-filter-external-duplicates`, la page `/recherche`
 retire de « Pas encore dans la bourse aux livres » les références dont l’ISBN correspond à
 une édition déjà renvoyée par le catalogue local. Les autres éditions du même titre restent
-visibles ; le endpoint bibliographique partagé avec l’administration n’est pas modifié.
+visibles ; l’endpoint bibliographique partagé avec l’administration n’est pas modifié.
 
 Validation locale : TDD rouge puis vert, 269 tests Catalog ChromeHeadless, build
 SSR/navigateur, `git diff --check` et smoke Chrome desktop passent. L’API bibliographique
 externe a renvoyé une erreur pendant le smoke, donc le rendu avec données est couvert par la
 régression de composant. `graphify update .` a ré-extrait le graphe mais l’export HTML reste
-bloqué par la limite de 5 115 nœuds. Aucun déploiement, changement API/Entra ou donnée de
-catalogue n’a été effectué ; la PR reste à ouvrir.
+bloqué par la limite de 5 116 nœuds. Aucun déploiement, changement API/Entra ou donnée de
+catalogue n’a été effectué ; la [PR #199](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/199)
+est ouverte vers `main` et n’est pas fusionnée.
 
 ### État actualisé — 2026-09-16 — affichage opt-in des livres épuisés dans la recherche Catalog
 
