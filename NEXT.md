@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — permutation des espaces d’administration Catalogue et Inventaire. |
-| **Prochaine action** | Faire relire la [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190), puis déployer depuis `main` et contrôler les deux espaces avec une session Administration authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-inventory-catalogue-labels` |
-| **Dernière mise à jour** | 2026-09-16 — les libellés, icônes, routes d’administration, chargements et titres Catalogue/Inventaire ont été permutés ; le public `/catalogue` reste inchangé. 262 tests Catalog, build SSR/navigateur et smoke Chrome desktop/mobile passants ; le contrôle métier authentifié avec API/Entra reste à faire. |
-| **Branche** | `fix/backoffice-inventory-catalogue-labels` — dédiée depuis `origin/main` fraîchement récupéré, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) vers `main` |
+| **Lot en cours** | Entra — correction de la bascule `accountEnabled` des bénévoles et rafraîchissement du branding des écrans d'authentification. |
+| **Prochaine action** | Faire relire la [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193), puis exécuter les commandes Entra documentées et contrôler le parcours avec un compte de test. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-entra-status-branding` |
+| **Dernière mise à jour** | 2026-09-16 — la permission Graph `User.EnableDisableAccount.All` est ajoutée à l'application app-only de gestion des comptes ; le CSS External ID applique un dégradé bleu papier commun à la connexion et à la création de compte. 21 tests Pester Entra, parse PowerShell et Graphify AST passants ; consentement, rôle d'annuaire et smoke connecté restent à faire. |
+| **Branche** | `fix/entra-account-status-and-branding` — dédiée depuis `origin/main` fraîchement récupéré, [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193) vers `main` |
 
 ---
 
@@ -43,7 +43,8 @@ la même commande sans `-WhatIf`, exécuter le branding, attendre la propagation
 le statut d'un compte de test. Le backend applique le PATCH avant de relire les rôles : vérifier
 l'état réel du compte avant de cliquer une seconde fois après un 503 ambigu. Si Graph renvoie
 encore `Authorization_RequestDenied`, le principal applicatif devra aussi être contrôlé pour
-un rôle d'annuaire autorisé à cette action sensible.
+un rôle d'annuaire autorisé à cette action sensible. La [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193)
+est ouverte vers `main` ; aucun merge ni déploiement n'a été effectué.
 
 ### État actualisé — 2026-09-15 — overlay du genre sur l’accueil Catalog
 
