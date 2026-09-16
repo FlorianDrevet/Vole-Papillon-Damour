@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — correction des couvertures BnF sur les cartes de l’accueil. |
-| **Prochaine action** | Ouvrir puis faire relire la PR `fix/catalog-book-cover-frame` ; aucun déploiement ni contrôle authentifié n’est engagé à ce stade. |
+| **Prochaine action** | Faire relire la [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197), puis déployer depuis `main` et contrôler la couverture avec les données réelles. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-cover-frame` |
 | **Dernière mise à jour** | 2026-09-16 — les anciennes miniatures BnF sont normalisées vers une image originale redimensionnée et la carte récente affiche sa couverture sans padding, en remplissant la tuile. 267 tests Catalog, build SSR/navigateur et smoke Chrome desktop/mobile avec API mockée passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
-| **Branche** | `fix/catalog-book-cover-frame` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir après validation |
+| **Branche** | `fix/catalog-book-cover-frame` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197) vers `main` |
 
 ---
 
@@ -39,7 +39,8 @@ Validation locale : TDD rouge puis vert, 267 tests Catalog ChromeHeadless, build
 smoke Chrome desktop et mobile à 390 px avec API mockée, et `git diff --check` passent.
 `graphify update .` a bien ré-extrait les fichiers mais son étape de visualisation
 échoue sur la taille actuelle du graphe (5 113 nœuds). L’API locale réelle n’était pas démarrée ;
-aucun déploiement, changement Azure/Entra ou merge n’a été effectué.
+aucun déploiement, changement Azure/Entra ou merge n’a été effectué. La [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197)
+est ouverte vers `main` et n’a pas été fusionnée.
 
 ### État actualisé — 2026-09-16 — création de compte bénévole avec prénom et nom
 
