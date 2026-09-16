@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Scan — retrait du bandeau de persistance hors ligne non garantie. |
-| **Prochaine action** | Faire relire la [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198), puis déployer depuis `main` et contrôler l’écran Scan avec une session bénévole authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-remove-scan-offline-warning` |
-| **Dernière mise à jour** | 2026-09-16 — le bandeau compact n’est plus affiché lorsque la seule alerte concerne la persistance navigateur ; les alertes critiques et les autres états restent visibles. 211 tests Scan et le build de production passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
-| **Branche** | `fix/scan-remove-offline-warning` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198) vers `main`, non fusionnée |
+| **Lot en cours** | Catalog — retrait des éditions déjà présentes dans la recherche « Pas encore dans la bourse aux livres ». |
+| **Prochaine action** | Faire relire la PR de correction, puis déployer depuis `main` et contrôler la recherche avec les données réelles. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-search-filter-external-duplicates` |
+| **Dernière mise à jour** | 2026-09-16 — les références externes dont l’ISBN correspond à une édition du catalogue local sont masquées, tandis que les autres éditions restent visibles. 269 tests Catalog, build SSR/navigateur et smoke Chrome du shell passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Branche** | `fix/catalog-search-filter-external-duplicates` — dédiée depuis `origin/main` fraîchement récupéré ; PR à ouvrir vers `main` |
 
 ---
 
@@ -281,6 +281,21 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-16 — retrait des doublons de la recherche externe Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-search-filter-external-duplicates`, la page `/recherche`
+retire de « Pas encore dans la bourse aux livres » les références dont l’ISBN correspond à
+une édition déjà renvoyée par le catalogue local. Les autres éditions du même titre restent
+visibles ; le endpoint bibliographique partagé avec l’administration n’est pas modifié.
+
+Validation locale : TDD rouge puis vert, 269 tests Catalog ChromeHeadless, build
+SSR/navigateur, `git diff --check` et smoke Chrome desktop passent. L’API bibliographique
+externe a renvoyé une erreur pendant le smoke, donc le rendu avec données est couvert par la
+régression de composant. `graphify update .` a ré-extrait le graphe mais l’export HTML reste
+bloqué par la limite de 5 115 nœuds. Aucun déploiement, changement API/Entra ou donnée de
+catalogue n’a été effectué ; la PR reste à ouvrir.
 
 ### État actualisé — 2026-09-16 — affichage opt-in des livres épuisés dans la recherche Catalog
 
