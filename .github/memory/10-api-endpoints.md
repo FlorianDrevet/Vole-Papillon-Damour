@@ -62,7 +62,10 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
 
 - `GET /catalog/search` - anonymous typed search over visible canonical books, with title,
   author, publisher and ISBN matching, accent normalization, genre/availability/rare
-  filters, relevance or recent sorting, and paging. Exhausted books remain in `all`.
+  filters, relevance or recent sorting, and paging. `includeExhausted=true` is an explicit
+  opt-in; without it, books with neither available quantity nor an active announcement are
+  excluded from every availability scope. When enabled, exhausted books are added to the
+  selected scope rather than replacing it.
 - `GET /catalog/books/{isbn13}` - anonymous canonical book projection with available and
   announced quantities kept separate, next-fair date, freshness fields and work identifier.
 - `GET /catalog/fairs/next` - anonymous next non-cancelled Books event with schedule and
@@ -145,8 +148,11 @@ client-only/private.
 
 The Graph runtime configuration uses `EntraGraph__TenantDomain` and
 `EntraGraph__ApiClientId` alongside the existing app-only client credentials. The
-provisioning script must grant `User.ReadWrite.All`, `Application.Read.All`, and
-`AppRoleAssignment.ReadWrite.All` to that app-only registration.
+provisioning script must grant `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
+`Application.Read.All`, and `AppRoleAssignment.ReadWrite.All` to that app-only
+registration. `accountEnabled` is a sensitive Graph operation; if the app-only PATCH
+remains denied after consent, the service principal also needs an Entra directory role
+authorized for the action.
 
 All `/books/admin/*` routes require the `Administration` policy (`Administration` or `Admin`
 app role). All admin mutation responses expose an explicit `changed` flag where an operation

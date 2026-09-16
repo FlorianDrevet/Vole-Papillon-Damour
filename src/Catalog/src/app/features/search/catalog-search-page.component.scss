@@ -434,6 +434,38 @@
   background: transparent;
 }
 
+.exhausted-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.exhausted-option {
+  color: var(--catalog-ink-soft);
+}
+
+.exhausted-option input:checked + .filter-control {
+  border-color: var(--catalog-orange-3);
+  background: var(--catalog-orange-3);
+}
+
+.exhausted-option input:checked + .filter-control::after {
+  width: 7px;
+  height: 4px;
+  transform: rotate(-45deg) translate(1px, -1px);
+  border-bottom: 1.5px solid white;
+  border-left: 1.5px solid white;
+  border-radius: 0;
+  background: transparent;
+}
+
+.filter-help {
+  margin: 0 0 0 28px;
+  color: var(--catalog-slate-3);
+  font-size: .7rem;
+  line-height: 1.45;
+}
+
 .filter-divider {
   width: 100%;
   height: 1px;

@@ -9,9 +9,10 @@ restent manuels.
 
 `Configure-EntraApps.ps1` cree aussi `vpd-account-deletion-<environment>`. Cette
 application n'est pas un client interactif : elle recoit les permissions applicatives
-Microsoft Graph `User.ReadWrite.All`, `Application.Read.All` et
-`AppRoleAssignment.ReadWrite.All`. L'API l'utilise pour creer les comptes internes,
-lister les roles et gerer les attributions ; l'API et le worker l'utilisent aussi pour
+Microsoft Graph `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
+`Application.Read.All` et `AppRoleAssignment.ReadWrite.All`. L'API l'utilise pour creer
+les comptes internes, lister les roles et gerer les attributions ; l'API et le worker
+l'utilisent aussi pour
 supprimer un objet utilisateur apres une demande d'effacement. Son secret est cree une seule fois,
 ecrit dans un fichier explicitement choisi **hors du depot**, puis transmis au secret
 GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette valeur.
@@ -20,7 +21,7 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 |---|---|---|
 | `Configure-EntraApps.ps1` | Enregistrements d'application, portée exposée, rôles applicatifs, consentements | À chaque évolution de la configuration |
 | `Configure-EntraUserFlow.ps1` | User flow External ID d'inscription publique, attaché au catalogue uniquement | À l'activation ou à l'évolution du parcours membre |
-| `Configure-EntraBranding.ps1` | Marque française, canvas uni et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
+| `Configure-EntraBranding.ps1` | Marque française, dégradé bleu et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
 | `Sync-EntraDisplayNames.ps1` | Corrige les `displayName` restés à `unknown` depuis `givenName` et `surname` | Migration des comptes existants |
 | `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `Administration` à un compte | Au fil de l'eau |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle | Contrôle |
@@ -55,6 +56,15 @@ disponible si le navigateur interactif ne peut pas être utilisé :
 ./Configure-EntraApps.ps1 -TenantId 'b23c80b3-9776-4840-8255-fcbf3b3500fd' `
     -UseDeviceCode -WhatIf
 ```
+
+L'application `vpd-account-deletion-<environment>` reçoit aussi
+`User.EnableDisableAccount.All`, explicitement nécessaire au changement sensible de
+`accountEnabled` utilisé pour désactiver ou réactiver un bénévole. Le script met à jour
+la déclaration de permissions et l'attribution applicative au principal de service ; il
+ne renouvelle pas le secret existant. Si Graph répond encore
+`Authorization_RequestDenied` après cette exécution, contrôler dans Entra que le principal
+de service possède également un rôle d'annuaire autorisé à effectuer cette action sensible
+(par exemple `User Administrator`).
 
 ## Ce qui reste manuel
 
@@ -195,17 +205,15 @@ locataire qui contient déjà quelque chose.
 
 Le Catalog utilise le parcours **browser-delegated** : le mot de passe est saisi dans la
 page External ID hébergée par Microsoft et n'est jamais envoyé au Catalog ni à l'API.
-`Configure-EntraBranding.ps1` applique le CSS du design system et un canvas bleu pâle uni,
-Le formulaire d'inscription collecte l'adresse e-mail, le `givenName` (« Prénom ») et le
-`surname` (« Nom ») comme attributs intégrés External ID ; les deux champs de nom restent
-facultatifs et sont limités à 64 caractères chacun.
-`Configure-EntraBranding.ps1` applique le CSS du design system, un fond de repli léger,
-les textes français et la locale `fr-FR` demandée par le Catalog (`ui_locales` et `mkt`).
-La variante actuelle reprend la maquette 1a : canvas bleu papier uni, carte centrée, ligne
-supérieure Catalog, papillon près du titre, boutons orange, focus/erreurs accessibles et
-footer clair. Le même CSS est utilisé par l'inscription et la connexion ; il supprime aussi
-`background-image` sur les conteneurs External ID afin qu'un ancien asset du tenant ne
-réapparaisse pas derrière la carte. Cette solution
+`Configure-EntraBranding.ps1` applique le CSS du design system et un dégradé bleu papier à
+deux couches (halo blanc discret puis fondu `#dcecf7` → `#f7fbfe` → `#c6e0f1`). Le formulaire
+d'inscription collecte l'adresse e-mail, le `givenName` (« Prénom ») et le `surname` (« Nom »)
+comme attributs intégrés External ID ; les deux champs de nom restent facultatifs et sont
+limités à 64 caractères chacun. La variante actuelle reprend la maquette 1a : carte blanche
+opaque centrée, ligne supérieure Catalog, papillon près du titre, boutons orange, focus/erreurs
+accessibles et footer clair. Le même CSS est utilisé par l'inscription et la connexion ; il
+remplace aussi `background-image` sur les conteneurs External ID afin qu'un ancien asset du
+tenant ne réapparaisse pas derrière la carte. Cette solution
 conserve la sécurité et les écrans de récupération de compte du parcours géré ; le domaine
 d'authentification reste toutefois celui d'External ID : ce n'est pas un formulaire HTML
 servi par notre domaine.
@@ -230,11 +238,13 @@ Cette évolution modifie le Catalog, l'API et la configuration des applications/
 External ID :
 
 - rejouer `Configure-EntraApps.ps1` après le merge (d'abord `-WhatIf`, puis sans cette
-  option) pour ajouter les claims `given_name` et `family_name` aux jetons attendus ;
+  option) pour ajouter les claims `given_name` et `family_name` aux jetons attendus et
+  `User.EnableDisableAccount.All` à l'application Graph de gestion des comptes ;
 - rejouer `Configure-EntraUserFlow.ps1` (d'abord `-WhatIf`, puis sans cette option) pour
   conserver dans le tenant le formulaire `givenName`/`surname` ;
-- exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS et les textes
-  français ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
+- exécuter `Configure-EntraBranding.ps1` de la même façon pour publier le CSS dégradé et les
+  textes français ; omettre `-BackgroundImagePath`, car le dégradé remplace volontairement
+  l'ancien asset ; le CSS et la marque sont stockés dans External ID, pas dans l'image runtime ;
 - lancer **Catalog - deploy** et le déploiement de l'API après validation des simulations ;
 - vérifier que le secret et le consentement de l'application Graph de gestion des comptes
   sont présents, puis lancer `Sync-EntraDisplayNames.ps1` avec `-WhatIf` et sans

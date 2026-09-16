@@ -46,8 +46,11 @@ public `/asso-events` schedule and keeps only future Books events. Its public ro
 `/catalogue`, `/livres/:slug`, `/oeuvre/:workId`, `/donnees-personnelles`, and the legal,
 privacy, cookie and accessibility pages. The UI keeps
 available quantities separate from future announcements; `/recherche` opens by default with
-`availability=available`, while `/catalogue` and the explicit `Tout` filter still allow
-exhausted titles to be explored, and gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
+`availability=available`, and both `/recherche` and `/catalogue` hide exhausted titles by
+default. The explicit `includeExhausted=true` URL option, exposed by « Afficher les livres
+épuisés », adds them without dropping the selected availability, genre or rare filters. Direct
+book/work pages still keep exhausted fiches visible for alerts and discovery from indexed URLs,
+and the application gates Microsoft Clarity, Google Analytics 4 and the Google Maps embed behind explicit consent choices. The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
 calls, exposes alert suspension/reactivation and the durable account-deletion request.
 `/desinscription` is a client-only authenticated opt-out route. The `/administration`

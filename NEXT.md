@@ -250,6 +250,26 @@ git pull
 
 ## En cours
 
+### État actualisé — 2026-09-16 — affichage opt-in des livres épuisés dans la recherche Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-search-exhausted-toggle`, la recherche publique porte désormais
+`includeExhausted=true` pour la case « Afficher les livres épuisés », décochée par défaut. La
+règle distingue une fiche réellement épuisée (zéro exemplaire disponible et aucune annonce active)
+d'une fiche annoncée pour une prochaine bourse : cette dernière reste visible avec son état
+« annoncé prochainement ». Le backend applique la règle sur `/catalog/search`, et le Catalog la
+conserve sur `/recherche`, `/catalogue`, les listes de l'accueil, les genres, la disponibilité, le
+tri et la pagination. La case ajoute les épuisés au périmètre choisi sans remplacer les autres
+filtres ; les fiches et œuvres directes restent accessibles pour les alertes et les liens indexés.
+
+Validation locale : TDD rouge puis vert, 234 tests Application, 92 Domain, 116 Infrastructure et
+24 API (466 backend), 264 tests Catalog, builds de la solution backend et du Catalog, `git diff
+--check`, et smoke Chrome local du filtre et de la conservation de l'URL. `python -m graphify
+update .` a rafraîchi l'AST et le rapport ; la visualisation HTML reste bloquée par la limite du
+graphe (5 106 nœuds). L'API/SQL locale n'était pas disponible, donc le rendu avec données réelles
+reste à contrôler après déploiement. Aucun changement Azure/Entra, déploiement ou merge n'a été
+effectué ; la [PR #192](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/192) est ouverte.
+
 ### État actualisé — 2026-09-16 — permutation Catalogue/Inventaire de l’administration Catalog
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
@@ -266,6 +286,27 @@ smoke Chrome desktop et mobile à 390×844 sans débordement horizontal, `git di
 erreur lors de la génération HTML car le graphe compte 5 103 nœuds, au-delà de la limite de
 visualisation. Aucun déploiement, changement API/Entra ou donnée de compte n’a été effectué ;
 la vérification authentifiée avec données métier reste à faire ; la [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) est ouverte vers `main`.
+
+### État actualisé — 2026-09-16 — reprise d’une session serveur fermée dans le Scan
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-fix-scan-closed-session`, la synchronisation détecte désormais une
+session serveur déjà clôturée avant d’envoyer une décision. Elle crée une nouvelle identité
+de session locale, déplace atomiquement les décisions `Kept`/`Rejected` et la demande de
+fermeture, remet leur retry à zéro, puis synchronise et clôture la session de remplacement.
+Une course de fermeture entre l’ouverture et l’envoi est également rejouée sur une nouvelle
+session. Si le serveur a déjà fermé une session sans geste restant, la demande locale est
+finalisée au lieu de rester dans un état d’alerte. Le résumé indique explicitement qu’une
+« décision enregistrée » attend la synchronisation ; un geste déjà effectué n’est plus
+présenté comme une décision à prendre.
+
+Validation locale : TDD rouge puis vert, tests ciblés des workflows, 210 tests Scan
+ChromeHeadless, build de production, 6 contrats de bootstrap et smoke Chrome du shell local
+à la largeur mobile sans débordement. `git diff --check` passe.
+`graphify update .` a ré-extrait le graphe, mais l’export HTML est refusé par la limite de
+visualisation du dépôt (5 110 nœuds). Aucun appareil, compte, session réelle, API, Azure,
+Entra ou déploiement n’a été modifié ; la [PR #194](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/194)
+est ouverte vers `main` et n’est pas fusionnée.
 
 ### État actualisé — 2026-09-15 — netteté des couvertures des fiches Catalog
 
@@ -1585,6 +1626,11 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-09-16, la reprise des sessions Scan déjà clôturées est limitée au dépôt et à la
+branche `fix/scan-closed-session-recovery` ; aucun appareil, compte bénévole, session réelle,
+API, donnée de bourse, configuration Azure/Entra ou déploiement n’a été modifié. Le contrôle
+connecté après publication reste à faire.
+
 Au 2026-09-15, le correctif de fin de session Scan est limité au dépôt et à la branche
 `fix/scan-session-completion` ; aucun appareil, compte bénévole, API réelle, session ou donnée
 de bourse n’a été modifié. Le contrôle connecté sur téléphone reste à refaire après ouverture
@@ -1643,7 +1689,7 @@ distant n'a été effectué ; le contrôle authentifié et le smoke avec une API
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
-| Application Graph — gestion des comptes | Le code exige désormais les permissions `User.ReadWrite.All`, `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ; la mise à jour du consentement et le rollout restent à faire | `2026-09-06` |
+| Application Graph — gestion des comptes | Le code et le script exigent désormais `User.ReadWrite.All`, `User.EnableDisableAccount.All`, `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ; le consentement/attribution de la nouvelle permission et le retest `accountEnabled` restent à faire | `2026-09-16` |
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | `vpd-acs-email-dev` dans `rg-vpd-dev`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur `DoNotReply@mail.volepapillondamour.fr` ; propriété, SPF, DKIM et DKIM2 vérifiés, DMARC ACS `NotStarted` | `2026-09-06` |
 | ACS Communication Service | `vpd-acs-comm-dev`, lié au domaine Email vérifié, endpoint `https://vpd-acs-comm-dev.communication.azure.com` | `2026-09-06` |
@@ -1781,6 +1827,7 @@ Une ligne par session de travail. Le plus récent en haut.
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
 | 2026-09-16 | Windows | **Catalog — permutation des espaces Catalogue/Inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-catalogue-labels`, `Catalogue` est désormais le lien `/administration/catalogue` avec l’icône livre et le workspace fiche/stock ; `Inventaire` devient `/administration/inventory` avec l’icône boîte et la file de correction des métadonnées. Les badges, chargeurs et titres suivent la permutation ; le `/catalogue` public reste inchangé. Validation : TDD rouge/vert, 262 tests Catalog, build SSR/navigateur, smoke Chrome desktop/mobile à 390×844 et `git diff --check`. Graphify a mis à jour le code graph mais ne génère pas la visualisation HTML au-delà de 5 000 nœuds ; aucun déploiement ni merge, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) ouverte. |
+| 2026-09-16 | Windows | **Scan — reprise après fermeture serveur.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-fix-scan-closed-session`, détection d’une session `Completed` ou d’un `409 Book.ScanSessionClosed`, création d’une nouvelle session client et déplacement atomique des décisions déjà prises avec la demande de fermeture ; une session déjà fermée sans outbox restant est maintenant considérée comme clôturée. Le résumé distingue « décision enregistrée » et « décision à prendre ». Validation : TDD rouge puis vert, 210 tests Scan ChromeHeadless, build production, 6 contrats bootstrap, smoke Chrome du shell local à la largeur mobile sans débordement et `git diff --check` ; `graphify update .` a ré-extrait le graphe mais l’export HTML dépasse la limite de 5 110 nœuds. Aucun déploiement ni contrôle connecté réel ; [PR #194](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/194) ouverte vers `main`, non fusionnée. |
 | 2026-09-15 | Windows | **Scan — fin de session et confirmation mobile.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-scan-session-fix`, conservation de la route `/tri/fin` et du résumé après recréation du composant, suppression du faux état de fermeture à réessayer après synchronisation concurrente, et feuille de confirmation tactile responsive. Validation : TDD rouge puis vert, 205 tests Scan ChromeHeadless, build de production, 6 contrats bootstrap, Graphify et `git diff --check` ; contrôle connecté téléphone/API réelle restant à faire, aucun déploiement ni merge. [PR #185](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/185) ouverte. |
 | 2026-09-15 | Windows | **Catalog — recherche disponible par défaut.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-available-only`, l'onglet `/recherche` charge avec `availability=available`, coche « Disponible maintenant » et y revient après réinitialisation ; `/catalogue` garde son périmètre complet. Validation : TDD rouge puis vert, 27 tests ciblés, 210 tests Catalog, build SSR/navigateur, Graphify, `git diff --check` et smoke Chrome desktop ; l'API locale n'était pas démarrée, aucun déploiement ni changement hors dépôt, [PR #176](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/176) ouverte. |
 | 2026-09-15 | Windows | **Catalog — simplification de l'inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-ux`, suppression des encarts d'ajustement/historique et du bouton « Afficher toutes les fiches », conservation du chargement paginé côté API, loader annulaire pendant l'actualisation et recherche automatique après 2 secondes d'inactivité. Validation : TDD rouge puis vert, 209 tests Catalog, 223 tests Application, build SSR/navigateur, Graphify et `git diff --check` passants ; la [PR #169](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/169) est ouverte. Aucun déploiement ni changement hors dépôt. |

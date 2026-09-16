@@ -106,7 +106,8 @@ public sealed class PublicCatalogQueryHandlerTests
 
         var result = await fixture.CreateSearchHandler().Handle(
             new SearchCatalogQuery("petit", null, PublicCatalogAvailabilityFilter.All,
-                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20),
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -128,7 +129,8 @@ public sealed class PublicCatalogQueryHandlerTests
 
         var result = await fixture.CreateSearchHandler().Handle(
             new SearchCatalogQuery("petit", null, PublicCatalogAvailabilityFilter.All,
-                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20),
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -159,10 +161,35 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
-    public async Task SearchCatalog_WhenAvailabilityIsAll_KeepsExhaustedBooksVisible()
+    public async Task SearchCatalog_WhenIncludeExhaustedIsRequested_KeepsExhaustedBooksVisible()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
         fixture.AddBook("9782070408504", "Le Petit Prince", "Antoine de Saint-Exupéry");
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle();
+        result.Value.Books[0].QuantityAvailable.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenExhaustedIsNotIncluded_HidesExhaustedBooksButKeepsAnnouncedBooks()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Livre disponible", "Auteur", quantityAvailable: 1);
+        var announcedBook = fixture.AddBook("9782070363735", "Livre annoncé", "Auteur");
+        fixture.AddBook("9782253006329", "Livre épuisé", "Auteur");
+        var fair = fixture.AddFair(
+            "Bourse à venir",
+            fixture.NowOffset.AddDays(3),
+            fixture.NowOffset.AddDays(4));
+        fixture.AddAnnouncement(announcedBook, quantity: 1, assoEventsId: fair.Id);
         await fixture.SaveAsync();
 
         var result = await fixture.CreateSearchHandler().Handle(
@@ -171,8 +198,35 @@ public sealed class PublicCatalogQueryHandlerTests
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.Books.Should().ContainSingle();
-        result.Value.Books[0].QuantityAvailable.Should().Be(0);
+        result.Value.Books.Select(book => book.Title)
+            .Should()
+            .BeEquivalentTo("Livre disponible", "Livre annoncé");
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenIncludeExhaustedIsRequested_AddsExhaustedBooksToTheCurrentAvailabilityScope()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Livre disponible", "Auteur", quantityAvailable: 1);
+        var announcedBook = fixture.AddBook("9782070363735", "Livre annoncé", "Auteur");
+        fixture.AddBook("9782253006329", "Livre épuisé", "Auteur");
+        var fair = fixture.AddFair(
+            "Bourse à venir",
+            fixture.NowOffset.AddDays(3),
+            fixture.NowOffset.AddDays(4));
+        fixture.AddAnnouncement(announcedBook, quantity: 1, assoEventsId: fair.Id);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.AvailableNow,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Select(book => book.Title)
+            .Should()
+            .BeEquivalentTo("Livre disponible", "Livre épuisé");
     }
 
     [Fact]
@@ -193,7 +247,8 @@ public sealed class PublicCatalogQueryHandlerTests
 
         var result = await fixture.CreateSearchHandler().Handle(
             new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
-                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 2, PageSize: 1),
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 2, PageSize: 1,
+                IncludeExhausted: true),
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -262,6 +317,32 @@ public sealed class PublicCatalogQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Books.Should().ContainSingle().Which.Title.Should().Be("Livre annoncé");
+    }
+
+    [Fact]
+    public async Task SearchCatalog_WhenIncludeExhaustedIsRequested_AddsExhaustedBooksToNextFairScope()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        var announcedBook = fixture.AddBook("9782070408504", "Livre annoncé", "Auteur");
+        fixture.AddBook("9782070363735", "Livre disponible", "Auteur", quantityAvailable: 1);
+        fixture.AddBook("9782253006329", "Livre épuisé", "Auteur");
+        var fair = fixture.AddFair(
+            "Bourse à venir",
+            fixture.NowOffset.AddDays(3),
+            fixture.NowOffset.AddDays(4));
+        fixture.AddAnnouncement(announcedBook, quantity: 1, assoEventsId: fair.Id);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.NextBookFair,
+                RareOnly: false, PublicCatalogSortOrder.RecentlyAdded, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Select(book => book.Title)
+            .Should()
+            .BeEquivalentTo("Livre annoncé", "Livre épuisé");
     }
 
     [Fact]

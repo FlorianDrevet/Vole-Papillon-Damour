@@ -308,6 +308,80 @@ describe('ScanSyncService', () => {
     expect(result.newlyQuarantined).toBe(1);
   });
 
+  it('reopens a fresh session before sending when the remote session is already closed', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    const localSession = await workflow.getSession();
+    await workflow.requestClose('Manual');
+    api.openSession.and.returnValues(
+      of({
+        ...createSessionResponse(),
+        scanSessionId: 'closed-session',
+        status: 'Completed',
+        endedAt: '2026-09-03T08:05:00.000Z',
+        closeReason: 'Inactivity',
+      }),
+      of({...createSessionResponse(), scanSessionId: 'fresh-session'}),
+      of({...createSessionResponse(), scanSessionId: 'fresh-session'}),
+    );
+    api.scanBook.and.returnValue(of({...createScanResponse(), scanSessionId: 'fresh-session'}));
+
+    const result = await service.syncAll();
+    const replacementOpen = api.openSession.calls.argsFor(1)[0];
+
+    expect(api.openSession.calls.argsFor(0)[0].clientSessionId)
+      .toBe(localSession!.clientSessionId);
+    expect(replacementOpen.clientSessionId).not.toBe(localSession!.clientSessionId);
+    expect(api.scanBook).toHaveBeenCalledWith(
+      'fresh-session',
+      jasmine.objectContaining({clientGestureId: scan.entry.clientGestureId}),
+    );
+    expect(api.closeSession).toHaveBeenCalledOnceWith(
+      'fresh-session',
+      {closeReason: 'Manual'},
+    );
+    expect(result.closed).toBeTrue();
+    expect(await store.getOutboxEntry(scan.entry.clientGestureId)).toBeNull();
+    expect(await workflow.getSession()).toBeNull();
+  });
+
+  it('reopens a fresh session when it closes between opening and sending a decided gesture', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    const localSession = await workflow.getSession();
+    await workflow.requestClose('Manual');
+    api.openSession.and.returnValues(
+      of(createSessionResponse()),
+      of({...createSessionResponse(), scanSessionId: 'fresh-session'}),
+      of({...createSessionResponse(), scanSessionId: 'fresh-session'}),
+    );
+    api.scanBook.and.returnValues(
+      throwError(() => new HttpErrorResponse({
+        status: 409,
+        error: {detail: 'Scan session is already closed: session-1'},
+      })),
+      of({...createScanResponse(), scanSessionId: 'fresh-session'}),
+    );
+
+    const result = await service.syncAll();
+    const replacementOpen = api.openSession.calls.argsFor(1)[0];
+
+    expect(api.openSession.calls.argsFor(0)[0].clientSessionId)
+      .toBe(localSession!.clientSessionId);
+    expect(replacementOpen.clientSessionId).not.toBe(localSession!.clientSessionId);
+    expect(api.scanBook.calls.argsFor(0)[0]).toBe('session-1');
+    expect(api.scanBook.calls.argsFor(1)[0]).toBe('fresh-session');
+    expect(result.closed).toBeTrue();
+    expect(await store.getOutboxEntry(scan.entry.clientGestureId)).toBeNull();
+    expect(await workflow.getSession()).toBeNull();
+  });
+
   it('keeps a gesture retryable when the resumed session responds with conflict', async () => {
     jasmine.clock().install();
     jasmine.clock().mockDate(new Date('2026-09-07T08:00:00.000Z'));
@@ -404,6 +478,29 @@ describe('ScanSyncService', () => {
     );
     expect(result.closed).toBeTrue();
     expect(await workflow.getSession()).toBeNull();
+  });
+
+  it('clears a close request when the server already closed the session', async () => {
+    const scan = await workflow.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    await workflow.decide(scan.entry.clientGestureId, true);
+    await service.flushOutbox();
+    await workflow.requestClose('Manual');
+    api.openSession.calls.reset();
+    api.closeSession.calls.reset();
+    api.openSession.and.returnValue(of({
+      ...createClosedSessionResponse(),
+      closeReason: 'Inactivity',
+    }));
+
+    const result = await service.syncAll();
+
+    expect(api.closeSession).not.toHaveBeenCalled();
+    expect(await store.listSessionCloseRequests()).toEqual([]);
+    expect(await workflow.getSession()).toBeNull();
+    expect(result.closed).toBeTrue();
   });
 
   function createDelta(): ScanCatalogDeltaResponse {

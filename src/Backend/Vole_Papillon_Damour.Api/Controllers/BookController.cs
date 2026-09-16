@@ -49,6 +49,7 @@ public static class BookController
                         [FromQuery(Name = "q")] string? search,
                         string? genre,
                         string? availability,
+                        bool? includeExhausted,
                         bool? rare,
                         string? sort,
                         int? page,
@@ -80,7 +81,8 @@ public static class BookController
                                 rare == true,
                                 sortOrder,
                                 page ?? 1,
-                                pageSize ?? 24),
+                                pageSize ?? 24,
+                                IncludeExhausted: includeExhausted == true),
                             cancellationToken);
 
                         return result.Match(

@@ -14,7 +14,8 @@
       - les claims `given_name` et `family_name` dans les jetons du Catalog et de l'API ;
       - l'enregistrement applicatif de gestion des comptes avec les permissions
         applicatives Microsoft Graph `User.ReadWrite.All`,
-        `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ;
+        `User.EnableDisableAccount.All`, `Application.Read.All` et
+        `AppRoleAssignment.ReadWrite.All` ;
       - le consentement administrateur du client vers la portee de l'API.
 
     Le script est rejouable : il retrouve les objets par `displayName`, ne recree rien
@@ -134,9 +135,29 @@ $BackOfficeAppName = "vpd-backoffice-$Environment"
 $CashAppName       = "vpd-caisse-$Environment"
 $DeletionAppName   = "vpd-account-deletion-$Environment"
 $GraphResourceAppId = '00000003-0000-0000-c000-000000000000'
-$GraphUserReadWriteAllAppRoleId = '741f803b-c850-494e-b5df-cde7c675a1ca'
-$GraphApplicationReadAllAppRoleId = '9a5d68dd-52b0-4cc2-bd40-abcf44ac3a30'
-$GraphAppRoleAssignmentReadWriteAllAppRoleId = '06b708a9-e830-4db3-a914-8e69da51d44f'
+
+# Le changement de `accountEnabled` est une action sensible dans Microsoft Graph.
+# `User.ReadWrite.All` reste nécessaire pour les créations, mises à jour et
+# suppressions ; la permission dédiée rend explicitement possible l'activation /
+# désactivation d'un compte bénévole.
+$GraphApplicationPermissions = @(
+    @{
+        Name      = 'User.ReadWrite.All'
+        AppRoleId = '741f803b-c850-494e-b5df-cde7c675a1ca'
+    }
+    @{
+        Name      = 'User.EnableDisableAccount.All'
+        AppRoleId = '3011c876-62b7-4ada-afa2-506cbbecc68c'
+    }
+    @{
+        Name      = 'Application.Read.All'
+        AppRoleId = '9a5d68dd-52b0-4cc2-bd40-abcf44ac3a30'
+    }
+    @{
+        Name      = 'AppRoleAssignment.ReadWrite.All'
+        AppRoleId = '06b708a9-e830-4db3-a914-8e69da51d44f'
+    }
+)
 
 # ---------------------------------------------------------------------------
 # Aides
@@ -547,31 +568,26 @@ foreach ($client in $clients) {
 
 Write-Step $DeletionAppName
 
+$graphRequiredResourceAccess = @(
+    @{
+        ResourceAppId = $GraphResourceAppId
+        ResourceAccess = @(
+            $GraphApplicationPermissions | ForEach-Object {
+                @{ Id = $_.AppRoleId; Type = 'Role' }
+            }
+        )
+    }
+)
+
 $deletionApp = Get-OrNewApplication -DisplayName $DeletionAppName -Body @{
-    RequiredResourceAccess = @(
-        @{
-            ResourceAppId  = $GraphResourceAppId
-            ResourceAccess = @(
-                @{ Id = $GraphUserReadWriteAllAppRoleId; Type = 'Role' },
-                @{ Id = $GraphApplicationReadAllAppRoleId; Type = 'Role' },
-                @{ Id = $GraphAppRoleAssignmentReadWriteAllAppRoleId; Type = 'Role' }
-            )
-        }
-    )
+    RequiredResourceAccess = $graphRequiredResourceAccess
 }
 
 if ($deletionApp -and $deletionApp.AppId -ne '<planned>') {
     if ($PSCmdlet.ShouldProcess($DeletionAppName, 'Configurer la permission applicative Microsoft Graph')) {
-        Update-MgApplication -ApplicationId $deletionApp.Id -RequiredResourceAccess @(
-            @{
-                ResourceAppId  = $GraphResourceAppId
-                ResourceAccess = @(
-                    @{ Id = $GraphUserReadWriteAllAppRoleId; Type = 'Role' },
-                    @{ Id = $GraphApplicationReadAllAppRoleId; Type = 'Role' },
-                    @{ Id = $GraphAppRoleAssignmentReadWriteAllAppRoleId; Type = 'Role' }
-                )
-            }
-        )
+        Update-MgApplication `
+            -ApplicationId $deletionApp.Id `
+            -RequiredResourceAccess $graphRequiredResourceAccess
     }
 
     $deletionSp = Get-OrNewServicePrincipal -AppId $deletionApp.AppId
@@ -580,21 +596,13 @@ if ($deletionApp -and $deletionApp.AppId -ne '<planned>') {
         throw 'Le principal de service Microsoft Graph est introuvable dans le locataire.'
     }
     if ($deletionSp) {
-        Grant-GraphApplicationPermission `
-            -ClientServicePrincipal $deletionSp `
-            -GraphServicePrincipal $graphSp `
-            -AppRoleId $GraphUserReadWriteAllAppRoleId `
-            -PermissionName 'User.ReadWrite.All'
-        Grant-GraphApplicationPermission `
-            -ClientServicePrincipal $deletionSp `
-            -GraphServicePrincipal $graphSp `
-            -AppRoleId $GraphApplicationReadAllAppRoleId `
-            -PermissionName 'Application.Read.All'
-        Grant-GraphApplicationPermission `
-            -ClientServicePrincipal $deletionSp `
-            -GraphServicePrincipal $graphSp `
-            -AppRoleId $GraphAppRoleAssignmentReadWriteAllAppRoleId `
-            -PermissionName 'AppRoleAssignment.ReadWrite.All'
+        foreach ($permission in $GraphApplicationPermissions) {
+            Grant-GraphApplicationPermission `
+                -ClientServicePrincipal $deletionSp `
+                -GraphServicePrincipal $graphSp `
+                -AppRoleId $permission.AppRoleId `
+                -PermissionName $permission.Name
+        }
     }
 
     Add-DeletionClientSecret -Application $deletionApp
@@ -625,7 +633,8 @@ foreach ($client in $clients) {
 }
 Write-Host "    scope = api://$($apiApp.AppId)/access_as_user"
 Write-Host "    Graph deletion app clientId = $($deletionApp.AppId)"
-Write-Host "    Graph permissions = User.ReadWrite.All, Application.Read.All, AppRoleAssignment.ReadWrite.All (application)"
+$graphPermissionNames = ($GraphApplicationPermissions | ForEach-Object { $_.Name }) -join ', '
+Write-Host "    Graph permissions = $graphPermissionNames (application)"
 Write-Host ''
 
 if ($OutputFile -and $PSCmdlet.ShouldProcess($OutputFile, 'Ecrire le rapport de configuration')) {
