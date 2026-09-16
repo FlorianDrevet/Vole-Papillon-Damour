@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using Vole_Papillon_Damour.Application.Common.Observability;
 using Vole_Papillon_Damour.Api;
 using Vole_Papillon_Damour.Api.Common;
@@ -18,6 +19,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Container Apps' ingress terminates the client connection and forwards to the
+// app over its internal network, so `HttpContext.Connection.RemoteIpAddress`
+// is otherwise always the ingress's own address. Trusting the forwarded
+// headers unconditionally is safe here: the ingress is the only way to reach
+// this container from outside it.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+builder.Services.AddOutputCache();
 
 builder.Services.AddCors(options =>
 {
@@ -95,6 +110,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
 app.UseWebSockets();
 
 //Middleware
@@ -104,6 +120,7 @@ app.UseErrorHandling();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseRateLimiter(); //After UseRouting
+app.UseOutputCache();
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
