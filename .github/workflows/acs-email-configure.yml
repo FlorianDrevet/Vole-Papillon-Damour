@@ -1,8 +1,8 @@
 name: ACS Email - configure
 
-# Manual or PR-triggered. This workflow is deliberately separate from the image rollout:
-# it owns the Azure-only wiring that cannot be expressed safely by the image
-# pipelines (the Event Grid webhook secret and the ACS sender verification gate).
+# Manual or PR-triggered helper for ACS sender verification and compatibility
+# repair. The normal runtime wiring is owned by infra/main.bicep; this workflow
+# should not be needed after an infrastructure deployment.
 on:
   workflow_dispatch:
     inputs:
@@ -297,6 +297,27 @@ jobs:
           ACS_EMAIL_WEBHOOK_SECRET: ${{ secrets.ACS_EMAIL_WEBHOOK_SECRET }}
         run: |
           set -euo pipefail
+          validation_code='vpd-acs-workflow-readiness'
+          validation_payload='[{"id":"vpd-acs-workflow-readiness","eventType":"Microsoft.EventGrid.SubscriptionValidationEvent","subject":"","data":{"validationCode":"vpd-acs-workflow-readiness"},"eventTime":"2026-01-01T00:00:00Z"}]'
+          for attempt in $(seq 1 60); do
+            response_file=$(mktemp)
+            status=$(curl --silent --show-error --output "$response_file" --write-out "%{http_code}" --max-time 10 --request POST \
+              --header "Content-Type: application/json" \
+              --header "aeg-event-type: SubscriptionValidation" \
+              --header "$WEBHOOK_HEADER_NAME: $ACS_EMAIL_WEBHOOK_SECRET" \
+              --data "$validation_payload" "$API_ENDPOINT" || true)
+            if [ "$status" = "200" ] && grep -Fq "$validation_code" "$response_file"; then
+              rm -f "$response_file"
+              break
+            fi
+            rm -f "$response_file"
+            if [ "$attempt" -eq 60 ]; then
+              echo "The API webhook did not load its secret within 10 minutes." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+
           if az eventgrid event-subscription show \
               --name "$EVENT_SUBSCRIPTION_NAME" \
               --source-resource-id "$ACS_ID" \

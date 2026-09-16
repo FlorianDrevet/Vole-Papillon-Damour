@@ -161,6 +161,12 @@ The API startup wires:
   The guardrail is tracked in [PR #157](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/157).
 - ACS delivery is enabled in DEV after domain verification; the domain is verified but DMARC is
   `NotStarted`, and a real authorized-recipient delivery test remains open.
+- ACS runtime wiring is now declared by `infra/main.bicep`, not only by the manual ACS
+  workflow. Keep `communicationEmailCreateResources=false` after the customer-managed
+  domain is verified, provide `ACS_EMAIL_WEBHOOK_SECRET` to `Infra - deploy`, and enable
+  `bookAlertsEmailEnabled` only after a real API image is running. The deployment script
+  waits for the API's Key Vault secret reference before ARM creates the Event Grid webhook,
+  avoiding the 503 validation race from run `35098468030`.
 - Bibliographic covers now use validated direct HTTPS provider URLs; the dedicated Blob cover
   container/upload path is gone. Migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl`
   is present in the deployed main line; rollout did not rerun EF migrations because DEV was current.
