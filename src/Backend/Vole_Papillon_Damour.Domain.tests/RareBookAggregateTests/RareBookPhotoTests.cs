@@ -51,6 +51,22 @@ public sealed class RareBookPhotoTests
             UploadedBy);
         var unsupportedContentType = () => RareBookPhoto.Create(
             RareBookId,
+            new Uri("https://storage.example.test/cover.gif"),
+            "cover.gif",
+            "image/gif",
+            2048,
+            UploadedAt,
+            UploadedBy);
+
+        httpUri.Should().Throw<ArgumentException>();
+        unsupportedContentType.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_WithPng_IsSupportedForUpload()
+    {
+        var photo = RareBookPhoto.Create(
+            RareBookId,
             new Uri("https://storage.example.test/cover.png"),
             "cover.png",
             "image/png",
@@ -58,7 +74,6 @@ public sealed class RareBookPhotoTests
             UploadedAt,
             UploadedBy);
 
-        httpUri.Should().Throw<ArgumentException>();
-        unsupportedContentType.Should().Throw<ArgumentException>();
+        photo.ContentType.Should().Be("image/png");
     }
 }

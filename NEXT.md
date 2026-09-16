@@ -17,10 +17,10 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lots 0 à 2, conteneur blob, domaine `RareBook` et persistance EF. |
-| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 3 sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) est appliqué. |
+| **Lot en cours** | Livres rares — lot 3, commandes, lectures, contrats et routes API sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
+| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 4 (rôle `LivresRares`) sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) est appliqué. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
-| **Dernière mise à jour** | 2026-09-16 — la persistance EF des fiches rares et des photos est ajoutée avec migration `20260916143408_AddRareBooks`, sans retrait de `Books.IsRare`. 488 tests backend et le build de solution passent ; les scripts SQL `Up`/`Down` sont générés ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Dernière mise à jour** | 2026-09-16 — le lot 3 ajoute les commandes, lectures, contrats et routes API des fiches rares, avec prix ferme d’affichage et suppression des blobs avant les lignes ; RG-50 et Q-05 sont amendées, RG-51 reste inchangée. 520 tests backend, le build de solution et le contrôle EF passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
@@ -68,6 +68,25 @@ Validation locale : tests de modèle rouges puis verts, migration sans changemen
 attente, scripts SQL d’application et d’annulation générés, et 488 tests backend passés. Une
 application réelle sur une base locale reste à faire : cette machine n’a ni LocalDB ni moteur SQL
 Server Docker disponible. Aucun déploiement Azure ni contrôle de production n’a été effectué.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 3
+
+Le lot 3 expose le cycle de vie applicatif des fiches rares : création, modification avec
+concurrence optimiste, publication et dépublication, vente idempotente, restauration dans
+les 30 secondes, suppression, recherche publique/admin/caisse et mutations des photos.
+Les contrats et les routes prévues sont ajoutés dans l’API ; les routes publiques sont
+anonymes, l’administration utilise provisoirement la politique `Administration` et la
+recherche caisse `ScanVolunteer`, en attendant le lot 4 et le rôle dédié. Les photos
+acceptent JPEG/WebP/PNG jusqu’à 8 MiB et la suppression appelle le conteneur dédié avant
+la suppression en base. Le prix ferme est stocké et affiché pour être lu, sans panier,
+total, montant de vente ni recette calculée.
+
+Validation locale : TDD rouge puis vert, 116 tests `Domain.tests`, 253 tests
+`Application.tests`, 121 tests `Infrastructure.tests` et 30 tests `Api.tests` ; build de
+solution et `dotnet ef migrations has-pending-model-changes` passent. Les avertissements
+de vulnérabilités NuGet existants restent présents. `graphify update .` ré-extrait l’AST,
+mais son rendu HTML reste bloqué par la limite de 5 100 nœuds. Aucun déploiement Azure,
+test manuel authentifié ou application réelle sur SQL Server n’a été effectué.
 
 ---
 

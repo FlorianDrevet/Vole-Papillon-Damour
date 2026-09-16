@@ -61,7 +61,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? priceSetBy,
         DateTime createdAt,
         UserId createdBy,
-        Isbn13? isbn13) : base(id)
+        Isbn13? isbn13,
+        int slugCollisionSuffix) : base(id)
     {
         if (id is null || id.Value == Guid.Empty)
         {
@@ -82,7 +83,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         ShelfLocation = NormalizeOptional(shelfLocation, 120, nameof(shelfLocation));
         PriceSetBy = NormalizeOptional(priceSetBy, 120, nameof(priceSetBy));
         Isbn13 = ValidateIsbn(isbn13);
-        Slug = RareBookSlug.Create(Title, AuthorMention, PublicationYear);
+        Slug = RareBookSlug.Create(Title, AuthorMention, PublicationYear, slugCollisionSuffix);
         CreatedAt = DomainTime.RequireUtc(createdAt, nameof(createdAt));
         CreatedBy = EnsureUserId(createdBy);
         UpdatedAt = CreatedAt;
@@ -107,7 +108,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? priceSetBy,
         DateTime createdAt,
         UserId createdBy,
-        Isbn13? isbn13 = null)
+        Isbn13? isbn13 = null,
+        int slugCollisionSuffix = 1)
     {
         return new RareBook(
             RareBookId.CreateUnique(),
@@ -126,7 +128,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             priceSetBy,
             createdAt,
             createdBy,
-            isbn13);
+            isbn13,
+            slugCollisionSuffix);
     }
 
     public static RareBook Create(
@@ -145,7 +148,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         int? pageCount = null,
         string? shelfLocation = null,
         string? priceSetBy = null,
-        Isbn13? isbn13 = null)
+        Isbn13? isbn13 = null,
+        int slugCollisionSuffix = 1)
     {
         return CreateWithDetails(
             title,
@@ -163,7 +167,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             priceSetBy,
             createdAt,
             createdBy,
-            isbn13);
+            isbn13,
+            slugCollisionSuffix);
     }
 
     public bool Update(
@@ -272,6 +277,20 @@ public sealed class RareBook : AggregateRoot<RareBookId>
 
     public bool Publish(DateTime updatedAt, UserId updatedBy) => Publish(updatedBy, updatedAt);
 
+    public bool Unpublish(DateTime updatedAt) => Unpublish(updatedAt, UpdatedBy ?? CreatedBy);
+
+    public bool Unpublish(DateTime updatedAt, UserId updatedBy)
+    {
+        if (Status == RareBookStatus.Draft)
+        {
+            return false;
+        }
+
+        Status = RareBookStatus.Draft;
+        Touch(updatedAt, updatedBy);
+        return true;
+    }
+
     public bool MarkSold(
         DateTime soldAt,
         AssoEventsId? soldAtFairId = null,
@@ -286,6 +305,16 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         ScanSessionId? soldInSessionId,
         UserId updatedBy)
     {
+        return MarkSold(soldAt, soldAtFairId, soldInSessionId, soldAt, updatedBy);
+    }
+
+    public bool MarkSold(
+        DateTime soldAt,
+        AssoEventsId? soldAtFairId,
+        ScanSessionId? soldInSessionId,
+        DateTime updatedAt,
+        UserId updatedBy)
+    {
         if (Status != RareBookStatus.Published)
         {
             throw new InvalidOperationException("A draft rare book cannot be marked sold.");
@@ -297,17 +326,46 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         }
 
         var utcSoldAt = DomainTime.RequireUtc(soldAt, nameof(soldAt));
+        var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
         IsSold = true;
         SoldAt = utcSoldAt;
         SoldAtFairId = soldAtFairId;
         SoldInSessionId = soldInSessionId;
-        Touch(utcSoldAt, updatedBy);
+        Touch(utcUpdatedAt, updatedBy);
         return true;
     }
 
-    public bool AddPhoto(RareBookPhoto photo) => AddPhoto(photo, photo?.UploadedAt ?? UpdatedAt);
+    public bool RestoreAvailability(DateTime restoredAt, UserId updatedBy)
+    {
+        var utcRestoredAt = DomainTime.RequireUtc(restoredAt, nameof(restoredAt));
+        if (!IsSold)
+        {
+            return false;
+        }
 
-    public bool AddPhoto(RareBookPhoto photo, DateTime updatedAt)
+        if (SoldAt is null ||
+            utcRestoredAt < SoldAt.Value ||
+            utcRestoredAt - SoldAt.Value > TimeSpan.FromSeconds(30))
+        {
+            throw new InvalidOperationException(
+                "A rare book can only be restored within thirty seconds of being sold.");
+        }
+
+        IsSold = false;
+        SoldAt = null;
+        SoldAtFairId = null;
+        SoldInSessionId = null;
+        Touch(utcRestoredAt, updatedBy);
+        return true;
+    }
+
+    public bool AddPhoto(RareBookPhoto photo) =>
+        AddPhoto(photo, photo?.UploadedAt ?? UpdatedAt, UpdatedBy ?? CreatedBy);
+
+    public bool AddPhoto(RareBookPhoto photo, DateTime updatedAt) =>
+        AddPhoto(photo, updatedAt, UpdatedBy ?? CreatedBy);
+
+    public bool AddPhoto(RareBookPhoto photo, DateTime updatedAt, UserId updatedBy)
     {
         ArgumentNullException.ThrowIfNull(photo);
         EnsurePhotoBelongsToAggregate(photo);
@@ -320,11 +378,14 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
         photo.SetPosition(_photos.Count);
         _photos.Add(photo);
-        UpdatedAt = utcUpdatedAt;
+        Touch(utcUpdatedAt, updatedBy);
         return true;
     }
 
-    public bool RemovePhoto(RareBookPhotoId photoId, DateTime updatedAt)
+    public bool RemovePhoto(RareBookPhotoId photoId, DateTime updatedAt) =>
+        RemovePhoto(photoId, updatedAt, UpdatedBy ?? CreatedBy);
+
+    public bool RemovePhoto(RareBookPhotoId photoId, DateTime updatedAt, UserId updatedBy)
     {
         ArgumentNullException.ThrowIfNull(photoId);
         var photo = _photos.FirstOrDefault(existing => existing.Id == photoId);
@@ -336,16 +397,44 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
         _photos.Remove(photo);
         NormalizePhotoPositions();
-        UpdatedAt = utcUpdatedAt;
+        Touch(utcUpdatedAt, updatedBy);
+        return true;
+    }
+
+    public bool UpdatePhotoCaption(
+        RareBookPhotoId photoId,
+        string? caption,
+        DateTime updatedAt,
+        UserId updatedBy)
+    {
+        ArgumentNullException.ThrowIfNull(photoId);
+        var photo = _photos.FirstOrDefault(existing => existing.Id == photoId);
+        if (photo is null)
+        {
+            return false;
+        }
+
+        if (!photo.UpdateCaption(caption))
+        {
+            return false;
+        }
+
+        Touch(updatedAt, updatedBy);
         return true;
     }
 
     public bool ReorderPhotos(IReadOnlyList<RareBookPhotoId> orderedPhotoIds)
     {
-        return ReorderPhotos(orderedPhotoIds, UpdatedAt);
+        return ReorderPhotos(orderedPhotoIds, UpdatedAt, UpdatedBy ?? CreatedBy);
     }
 
-    public bool ReorderPhotos(IReadOnlyList<RareBookPhotoId> orderedPhotoIds, DateTime updatedAt)
+    public bool ReorderPhotos(IReadOnlyList<RareBookPhotoId> orderedPhotoIds, DateTime updatedAt) =>
+        ReorderPhotos(orderedPhotoIds, updatedAt, UpdatedBy ?? CreatedBy);
+
+    public bool ReorderPhotos(
+        IReadOnlyList<RareBookPhotoId> orderedPhotoIds,
+        DateTime updatedAt,
+        UserId updatedBy)
     {
         ArgumentNullException.ThrowIfNull(orderedPhotoIds);
         if (orderedPhotoIds.Count != _photos.Count)
@@ -381,7 +470,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
         _photos = orderedPhotoIds.Select(id => photosById[id]).ToList();
         NormalizePhotoPositions();
-        UpdatedAt = utcUpdatedAt;
+        Touch(utcUpdatedAt, updatedBy);
         return true;
     }
 

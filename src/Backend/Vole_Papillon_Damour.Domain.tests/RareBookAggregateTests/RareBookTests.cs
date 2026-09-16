@@ -14,6 +14,7 @@ public sealed class RareBookTests
     private static readonly DateTime UpdatedAt = CreatedAt.AddMinutes(5);
     private static readonly DateTime SoldAt = CreatedAt.AddMinutes(10);
     private static readonly UserId CreatedBy = UserId.Create(Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    private static readonly UserId UpdatedBy = UserId.Create(Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"));
 
     [Fact]
     public void Create_WithValidFields_InitializesDraftWithFixedSlug()
@@ -101,6 +102,20 @@ public sealed class RareBookTests
     }
 
     [Fact]
+    public void Unpublish_RemovesTheBookFromThePublicStatus()
+    {
+        var rareBook = CreateRareBook();
+        rareBook.Publish(UpdatedAt, UpdatedBy).Should().BeTrue();
+
+        rareBook.Unpublish(SoldAt, CreatedBy).Should().BeTrue();
+
+        rareBook.Status.Should().Be(RareBookStatus.Draft);
+        rareBook.UpdatedAt.Should().Be(SoldAt);
+        rareBook.UpdatedBy.Should().Be(CreatedBy);
+        rareBook.Unpublish(SoldAt.AddMinutes(1), CreatedBy).Should().BeFalse();
+    }
+
+    [Fact]
     public void MarkSold_WhenDraft_Throws()
     {
         var rareBook = CreateRareBook();
@@ -128,6 +143,55 @@ public sealed class RareBookTests
         rareBook.SoldAtFairId.Should().Be(fairId);
         rareBook.SoldInSessionId.Should().Be(sessionId);
         rareBook.UpdatedAt.Should().Be(SoldAt);
+    }
+
+    [Fact]
+    public void MarkSold_WithSeparateAuditTime_UsesTheApplicationClockForUpdatedAt()
+    {
+        var rareBook = CreateRareBook();
+        rareBook.Publish(UpdatedAt, UpdatedBy).Should().BeTrue();
+
+        rareBook.MarkSold(
+                SoldAt,
+                null,
+                null,
+                UpdatedAt.AddMinutes(1),
+                CreatedBy)
+            .Should().BeTrue();
+
+        rareBook.SoldAt.Should().Be(SoldAt);
+        rareBook.UpdatedAt.Should().Be(UpdatedAt.AddMinutes(1));
+        rareBook.UpdatedBy.Should().Be(CreatedBy);
+    }
+
+    [Fact]
+    public void RestoreAvailability_WithinThirtySeconds_ClearsSaleTraceability()
+    {
+        var rareBook = CreateRareBook();
+        rareBook.Publish(UpdatedAt, UpdatedBy).Should().BeTrue();
+        rareBook.MarkSold(SoldAt.AddSeconds(-5), null, null, UpdatedBy).Should().BeTrue();
+
+        var restored = rareBook.RestoreAvailability(SoldAt, CreatedBy);
+
+        restored.Should().BeTrue();
+        rareBook.IsSold.Should().BeFalse();
+        rareBook.SoldAt.Should().BeNull();
+        rareBook.SoldAtFairId.Should().BeNull();
+        rareBook.SoldInSessionId.Should().BeNull();
+        rareBook.UpdatedAt.Should().Be(SoldAt);
+        rareBook.UpdatedBy.Should().Be(CreatedBy);
+    }
+
+    [Fact]
+    public void RestoreAvailability_AfterThirtySeconds_Throws()
+    {
+        var rareBook = CreateRareBook();
+        rareBook.Publish(UpdatedAt, UpdatedBy).Should().BeTrue();
+        rareBook.MarkSold(SoldAt.AddSeconds(-31), null, null, UpdatedBy).Should().BeTrue();
+
+        var action = () => rareBook.RestoreAvailability(SoldAt, CreatedBy);
+
+        action.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
@@ -187,6 +251,23 @@ public sealed class RareBookTests
         var action = () => rareBook.AddPhoto(photo, UpdatedAt);
 
         action.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void PhotoMutations_UpdateTheAggregateAuditUser()
+    {
+        var rareBook = CreateRareBook();
+        var photo = CreatePhoto(rareBook, "cover.jpg");
+
+        rareBook.AddPhoto(photo, UpdatedAt, UpdatedBy).Should().BeTrue();
+        rareBook.UpdatedBy.Should().Be(UpdatedBy);
+
+        rareBook.UpdatePhotoCaption(photo.Id, "Page de titre", SoldAt, CreatedBy)
+            .Should().BeTrue();
+
+        photo.Caption.Should().Be("Page de titre");
+        rareBook.UpdatedAt.Should().Be(SoldAt);
+        rareBook.UpdatedBy.Should().Be(CreatedBy);
     }
 
     private static RareBook CreateRareBook(

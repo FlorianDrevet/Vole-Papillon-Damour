@@ -50,6 +50,11 @@ public class BlobService
         return await UploadAsync(fileName, stream, _blobContainerEventImagesClient);
     }
 
+    public async Task<Uri> UploadRareBookPhotoAsync(string fileName, Stream stream)
+    {
+        return await UploadAsync(fileName, stream, _blobContainerRareBookPhotosClient);
+    }
+
     private async Task<Uri> UploadAsync(string fileName, Stream stream, BlobContainerClient blobContainerClient)
     {
         var blobClient = blobContainerClient.GetBlobClient(fileName);

@@ -77,6 +77,31 @@ public sealed class RareBookPhoto : Entity<RareBookPhotoId>
             uploadedBy);
     }
 
+    public static RareBookPhoto CreateWithId(
+        RareBookPhotoId id,
+        RareBookId rareBookId,
+        Uri blobUri,
+        string blobName,
+        string? caption,
+        int position,
+        string contentType,
+        long sizeBytes,
+        DateTime uploadedAt,
+        UserId uploadedBy)
+    {
+        return new RareBookPhoto(
+            id,
+            rareBookId,
+            blobUri,
+            blobName,
+            caption,
+            position,
+            contentType,
+            sizeBytes,
+            uploadedAt,
+            uploadedBy);
+    }
+
     public static RareBookPhoto Create(
         RareBookId rareBookId,
         Uri blobUri,
@@ -154,10 +179,10 @@ public sealed class RareBookPhoto : Entity<RareBookPhotoId>
     private static string NormalizeContentType(string value)
     {
         var normalized = NormalizeRequired(value, 40, nameof(value)).ToLowerInvariant();
-        if (normalized is not "image/jpeg" and not "image/webp")
+        if (normalized is not "image/jpeg" and not "image/webp" and not "image/png")
         {
             throw new ArgumentException(
-                "Rare book photos must use image/jpeg or image/webp.",
+                "Rare book photos must use image/jpeg, image/webp, or image/png.",
                 nameof(value));
         }
 
