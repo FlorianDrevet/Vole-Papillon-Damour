@@ -206,7 +206,12 @@ de toute façon disponibles qu'à la date de la bourse, et les livres rendus dis
 immédiatement ne le sont qu'à la prochaine ouverture du local.
 
 Les alertes en attente sont visibles et actionnables en administration (`05` §4 bis) :
-on peut les annuler, ou forcer leur envoi sans attendre le délai.
+on peut les annuler, ou forcer leur envoi sans attendre le délai. Dans les deux cas,
+la décision passe par une confirmation intégrée à l'interface ; après l'opération, les
+actions ne sont plus proposées pour cette session. Une demande forcée est marquée
+« envoi immédiat demandé » jusqu'à ce que le worker confirme l'envoi effectif, puis
+la session apparaît comme envoyée. Une annulation est marquée comme telle et ne peut
+pas être relancée depuis la session.
 
 ### `RG-45` — Correction d'une session
 Un administrateur peut, depuis l'écran des sessions (`05` §4 bis) :

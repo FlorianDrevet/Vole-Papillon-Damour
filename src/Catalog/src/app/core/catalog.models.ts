@@ -587,6 +587,9 @@ export interface CatalogAdminScanSession {
   rejectedCount: number;
   alertCount: number;
   pendingAlertCount: number;
+  sentAlertCount: number;
+  cancelledAlertCount: number;
+  failedAlertCount: number;
   nextAlertDueAt: string | null;
   movements: CatalogAdminBookMovement[];
 }

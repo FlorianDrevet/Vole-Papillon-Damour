@@ -257,7 +257,7 @@
                         <span class="session-date">{{ formatDate(session.startedAt, true) }} · {{ session.endedAt ? formatDate(session.endedAt, true) : 'session ouverte' }} · {{ sessionCloseLabel(session.closeReason) }}</span>
                       </div>
                       <div class="session-metrics"><span><strong>{{ formatNumber(session.scannedCount) }}</strong>Scannés</span><span><strong>{{ formatNumber(session.keptCount) }}</strong>Gardés</span><span><strong>{{ formatNumber(session.rejectedCount) }}</strong>Écartés</span></div>
-                      <div class="session-alert-state"><strong>{{ session.pendingAlertCount ? formatCountdown(session.nextAlertDueAt) : '—' }}</strong><span>{{ session.pendingAlertCount ? formatNumber(session.pendingAlertCount) + ' e-mails' : (session.alertCount ? 'Envoyés' : 'Aucune alerte') }}</span></div>
+                      <div class="session-alert-state"><strong>{{ sessionAlertMetric(session) }}</strong><span>{{ sessionAlertTitle(session) }}</span></div>
                       <button class="button" [class.button-primary]="sessionNeedsCorrection(session)" [class.button-outline]="!sessionNeedsCorrection(session)" type="button" (click)="openSession(session.id)">{{ sessionNeedsCorrection(session) ? 'Corriger' : 'Ouvrir' }}</button>
                     </article>
                   } @empty {
@@ -663,12 +663,173 @@
   </div>
 
   @if (selectedSession(); as session) {
-    <div class="correction-overlay" role="presentation" (click)="selectedSession.set(null)">
+    <div class="correction-overlay" role="presentation" (click)="closeSessionDialog()">
       <section class="correction-dialog" role="dialog" aria-modal="true" aria-labelledby="correction-title" (click)="$event.stopPropagation()">
-        <header class="correction-header"><span class="admin-kicker">Corriger une session</span><h2 id="correction-title">{{ session.volunteerName || 'Bénévole' }} — {{ formatDate(session.startedAt, true) }} → {{ formatDate(session.endedAt, true) }}</h2><span class="mode-pill">{{ sessionModeLabel(session.mode) }}{{ session.fairName ? ' · ' + session.fairName : '' }}</span><p>{{ formatNumber(session.scannedCount) }} scannés · {{ formatNumber(session.keptCount) }} gardés · {{ formatNumber(session.rejectedCount) }} écartés</p></header>
-        @if (session.pendingAlertCount > 0) {<div class="correction-alert"><div><strong>Alertes encore en attente</strong><p>Cette session peut encore être corrigée avant que les membres ne soient prévenus.</p></div><strong>{{ formatCountdown(session.nextAlertDueAt) }}<small>avant envoi</small></strong></div>}
-        <div class="correction-body"><section><h3>Mode et rattachement</h3><div class="correction-fields"><label><span>Mode de mise à disposition</span><select name="correctionMode" [(ngModel)]="sessionMode"><option value="AvailableNow">Disponible maintenant</option><option value="NextFair">Prochaine bourse</option></select><small>Changer le mode rejoue les mouvements concernés et conserve la trace de la reprise.</small></label><label><span>Bourse de rattachement</span><select name="correctionFair" [(ngModel)]="sessionFairId"><option value="">Aucune bourse</option>@for (fair of fairsPage()?.fairs ?? []; track fair.id) {<option [value]="fair.id">{{ fair.name }}</option>}</select></label></div></section><section><h3>Alertes</h3><div class="correction-actions"><button class="button button-outline" type="button" [disabled]="!session.pendingAlertCount" (click)="cancelSessionAlerts()">Annuler les {{ formatNumber(session.pendingAlertCount) }} alertes en attente</button><button class="button button-outline" type="button" [disabled]="!session.pendingAlertCount" (click)="forceSessionAlerts()">Forcer l’envoi immédiat</button></div><small>Une alerte déjà envoyée ne peut pas être annulée.</small></section><section><h3>Le détail, et le reste</h3><div class="correction-actions"><button class="text-link" type="button" [disabled]="!session.movements.length" (click)="session.movements[0] && removeMovement(session.movements[0].id)">Retirer un mouvement</button><button class="text-link" type="button" (click)="loadSessions()">Voir le journal complet</button><button class="danger-link" type="button" (click)="cancelSession()">Annuler la session</button></div></section><div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Toutes les corrections sont tracées. La session sera marquée REPRISE dans l’historique.</p></div></div>
-        <footer class="correction-footer"><button class="button button-outline" type="button" (click)="selectedSession.set(null)">Fermer</button><button class="button button-primary" type="button" (click)="reassignSession()">Appliquer les corrections</button></footer>
+        <header class="correction-header">
+          <span class="admin-kicker">Corriger une session</span>
+          <h2 id="correction-title">{{ session.volunteerName || 'Bénévole' }} — {{ formatDate(session.startedAt, true) }} → {{ formatDate(session.endedAt, true) }}</h2>
+          <span class="mode-pill">{{ sessionModeLabel(session.mode) }}{{ session.fairName ? ' · ' + session.fairName : '' }}</span>
+          <p>{{ formatNumber(session.scannedCount) }} scannés · {{ formatNumber(session.keptCount) }} gardés · {{ formatNumber(session.rejectedCount) }} écartés</p>
+        </header>
+        @if (sessionAlertState(session) !== 'none') {
+          <div
+            class="correction-alert"
+            [class.correction-alert-complete]="sessionAlertState(session) !== 'pending'"
+            [class.correction-alert-dispatching]="sessionAlertState(session) === 'dispatching'"
+            [class.correction-alert-cancelled]="sessionAlertState(session) === 'cancelled'"
+            [class.correction-alert-failed]="sessionAlertState(session) === 'failed'">
+            <div>
+              <strong>{{ sessionAlertTitle(session) }}</strong>
+              <p>{{ sessionAlertDescription(session) }}</p>
+            </div>
+            <strong>{{ sessionAlertMetric(session) }}<small>{{ sessionAlertMetricLabel(session) }}</small></strong>
+          </div>
+        }
+        <div class="correction-body">
+          <section>
+            <h3>Mode et rattachement</h3>
+            <div class="correction-fields">
+              <label>
+                <span>Mode de mise à disposition</span>
+                <select name="correctionMode" [(ngModel)]="sessionMode">
+                  <option value="AvailableNow">Disponible maintenant</option>
+                  <option value="NextFair">Prochaine bourse</option>
+                </select>
+                <small>Changer le mode rejoue les mouvements concernés et conserve la trace de la reprise.</small>
+              </label>
+              <label>
+                <span>Bourse de rattachement</span>
+                <select name="correctionFair" [(ngModel)]="sessionFairId">
+                  <option value="">Aucune bourse</option>
+                  @for (fair of fairsPage()?.fairs ?? []; track fair.id) {
+                    <option [value]="fair.id">{{ fair.name }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+          </section>
+          <section>
+            <h3>Alertes</h3>
+            <div class="correction-actions">
+              <button
+                class="button button-outline"
+                data-testid="session-cancel-alerts"
+                type="button"
+                [disabled]="!sessionAlertActionsAvailable(session) || loading()"
+                (click)="cancelSessionAlerts()">
+                Annuler les {{ formatNumber(session.pendingAlertCount) }} alertes en attente
+              </button>
+              <button
+                class="button button-outline"
+                data-testid="session-force-alerts"
+                type="button"
+                [disabled]="!sessionAlertActionsAvailable(session) || loading()"
+                (click)="forceSessionAlerts()">
+                Forcer l’envoi immédiat
+              </button>
+            </div>
+            <small class="correction-alert-hint">{{ sessionAlertActionHint(session) }}</small>
+          </section>
+          <section>
+            <h3>Livres scannés</h3>
+            <div class="correction-actions">
+              <button
+                class="text-link"
+                data-testid="session-journal-toggle"
+                type="button"
+                [attr.aria-expanded]="sessionJournalOpen()"
+                aria-controls="session-journal"
+                (click)="toggleSessionJournal()">
+                {{ sessionJournalOpen() ? 'Masquer le journal' : 'Voir le journal complet' }}
+              </button>
+              <button class="danger-link" type="button" (click)="cancelSession()">Annuler la session</button>
+            </div>
+            @if (sessionJournalOpen()) {
+              <div class="session-journal" data-testid="session-journal" role="region" aria-labelledby="session-journal-title">
+                <div class="session-journal-header">
+                  <div>
+                    <span class="admin-kicker">Journal immuable</span>
+                    <h4 id="session-journal-title">{{ formatNumber(session.movements.length) }} mouvement{{ session.movements.length > 1 ? 's' : '' }}</h4>
+                  </div>
+                  <span>Chaque ligne peut être corrigée séparément.</span>
+                </div>
+                @if (session.movements.length) {
+                  <div class="session-journal-list">
+                    @for (movement of session.movements; track movement.id) {
+                      <article class="session-journal-row" [class.session-journal-row-reversed]="movement.reversalOfMovementId">
+                        <div class="session-journal-book">
+                          <span class="isbn-label">{{ movement.isbn13 }}</span>
+                          <strong>{{ movementTypeLabel(movement.type) }}</strong>
+                        </div>
+                        <div class="session-journal-facts">
+                          <span><strong>{{ formatNumber(movement.quantity) }}</strong> quantité</span>
+                          <span>{{ formatDate(movement.occurredAt, true) }}</span>
+                        </div>
+                        <div class="session-journal-note">
+                          @if (movement.note) {
+                            <span>{{ movement.note }}</span>
+                          } @else {
+                            <span>Aucune note</span>
+                          }
+                          @if (movement.clockSuspect) {
+                            <small>Horodatage à vérifier</small>
+                          }
+                        </div>
+                        <div class="session-journal-action">
+                          @if (movement.reversalOfMovementId) {
+                            <span class="session-journal-reversed-label">Mouvement renversé</span>
+                          } @else {
+                            <button
+                              class="text-link"
+                              [attr.data-testid]="'session-remove-movement-' + movement.id"
+                              [attr.aria-label]="'Retirer le mouvement ' + movement.isbn13"
+                              type="button"
+                              [disabled]="loading()"
+                              (click)="removeMovement(movement.id)">
+                              Retirer ce livre
+                            </button>
+                          }
+                        </div>
+                      </article>
+                    }
+                  </div>
+                } @else {
+                  <p class="empty-inline">Aucun mouvement n’est associé à cette session.</p>
+                }
+              </div>
+            }
+          </section>
+          <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Toutes les corrections sont tracées. La session sera marquée REPRISE dans l’historique.</p></div>
+        </div>
+        <footer class="correction-footer"><button class="button button-outline" type="button" (click)="closeSessionDialog()">Fermer</button><button class="button button-primary" type="button" (click)="reassignSession()">Appliquer les corrections</button></footer>
+      </section>
+    </div>
+  }
+
+  @if (sessionConfirmation(); as confirmation) {
+    <div class="session-confirmation-overlay" role="presentation" (click)="cancelSessionConfirmation()">
+      <section
+        class="session-confirmation-dialog"
+        data-testid="session-confirmation"
+        [class.session-confirmation-danger]="confirmation.tone === 'danger'"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-confirmation-title"
+        aria-describedby="session-confirmation-description"
+        tabindex="-1"
+        (click)="$event.stopPropagation()">
+        <header class="session-confirmation-header">
+          <div class="session-confirmation-kicker-row">
+            <span class="admin-kicker">Session de scan · Confirmation</span>
+            <button class="session-confirmation-close" type="button" aria-label="Fermer la confirmation" (click)="cancelSessionConfirmation()">×</button>
+          </div>
+          <h2 id="session-confirmation-title">{{ confirmation.title }}</h2>
+          <p id="session-confirmation-description">{{ confirmation.description }}</p>
+        </header>
+        <footer class="session-confirmation-footer">
+          <button class="button button-outline" data-testid="session-confirmation-cancel" type="button" autofocus (click)="cancelSessionConfirmation()">Annuler</button>
+          <button class="button" [class.button-primary]="confirmation.tone === 'accent'" [class.button-danger]="confirmation.tone === 'danger'" data-testid="session-confirmation-confirm" type="button" [disabled]="loading()" (click)="confirmSessionAction()">{{ confirmation.confirmLabel }}</button>
+        </footer>
       </section>
     </div>
   }

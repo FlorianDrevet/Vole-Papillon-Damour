@@ -20,6 +20,7 @@ import {
   CatalogAdminAccount,
   CatalogAdminAccountPage,
   CatalogAdminBook,
+  CatalogAdminBookMovement,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
   CatalogAdminFairsEvolution,
@@ -80,7 +81,11 @@ describe('CatalogAdministrationPageComponent', () => {
     name,
   });
 
-  const scanSession = (id: string, pendingAlertCount: number): CatalogAdminScanSession => ({
+  const scanSession = (
+    id: string,
+    pendingAlertCount: number,
+    overrides: Partial<CatalogAdminScanSession> = {},
+  ): CatalogAdminScanSession => ({
     id,
     volunteerId: 'volunteer-id',
     volunteerName: 'Ada Lovelace',
@@ -98,8 +103,29 @@ describe('CatalogAdministrationPageComponent', () => {
     rejectedCount: 1,
     alertCount: pendingAlertCount,
     pendingAlertCount,
-    nextAlertDueAt: pendingAlertCount > 0 ? '2026-09-11T09:00:00Z' : null,
+    sentAlertCount: 0,
+    cancelledAlertCount: 0,
+    failedAlertCount: 0,
+    nextAlertDueAt: pendingAlertCount > 0 ? '2099-09-11T09:00:00Z' : null,
     movements: [],
+    ...overrides,
+  });
+
+  const scanMovement = (overrides: Partial<CatalogAdminBookMovement> = {}): CatalogAdminBookMovement => ({
+    id: 'movement-1',
+    isbn13: '9782070363735',
+    type: 'DirectEntry',
+    quantity: 1,
+    occurredAt: '2026-09-11T08:01:00Z',
+    receivedAt: '2026-09-11T08:01:02Z',
+    clockSuspect: false,
+    scanSessionId: 'session-journal',
+    volunteerId: 'volunteer-id',
+    fairId: null,
+    note: null,
+    clientGestureId: 'gesture-1',
+    reversalOfMovementId: null,
+    ...overrides,
   });
 
   const catalogueBook = (overrides: Partial<CatalogAdminBook> = {}): CatalogAdminBook => ({
@@ -542,6 +568,136 @@ describe('CatalogAdministrationPageComponent', () => {
 
     expect(sessionButton).toBeDefined();
     expect(sessionButton?.querySelector('.admin-nav-badge')?.textContent?.trim()).toBe('1');
+  });
+
+  it('confirms session alert actions in the front modal and moves a forced session out of correctable', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-11T08:15:00Z'));
+    try {
+      auth.account.set(account('Administrator'));
+      auth.isAuthenticated.set(true);
+      const pending = scanSession('session-force', 2);
+      const forced = scanSession('session-force', 2, {
+        nextAlertDueAt: '2026-09-11T08:15:00Z',
+      });
+      api.getSession.and.returnValue(of(forced));
+      api.getSessions.and.returnValue(of({
+        generatedAt: '',
+        sessions: [forced],
+        totalCount: 1,
+        page: 1,
+        pageSize: 25,
+      }));
+      api.forceSessionAlerts.and.returnValue(of({
+        scanSessionId: pending.id,
+        affectedMovementCount: 0,
+        affectedAlertCount: 2,
+        changed: true,
+      }));
+      const nativeConfirm = spyOn(window, 'confirm').and.returnValue(false);
+
+      fixture.detectChanges();
+      fixture.componentInstance.selectedSession.set(pending);
+      fixture.detectChanges();
+
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="session-force-alerts"]')?.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('[data-testid="session-confirmation"]')).not.toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('Lancer l’envoi immédiat');
+      expect(nativeConfirm).not.toHaveBeenCalled();
+
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="session-confirmation-confirm"]')?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(api.forceSessionAlerts).toHaveBeenCalledWith('access-token', pending.id);
+      expect(fixture.componentInstance.sessionNeedsCorrection(forced)).toBeFalse();
+      expect(fixture.componentInstance.sessionAlertState(forced)).toBe('dispatching');
+      fixture.componentInstance.setSessionPreset('alerts');
+      expect(fixture.componentInstance.visibleSessions()).toEqual([forced]);
+      expect(fixture.nativeElement.textContent).toContain('Envoi immédiat demandé');
+      expect((fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="session-force-alerts"]')?.disabled).toBeTrue();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('shows an explicit cancelled alert state and keeps both alert actions disabled', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-11T08:15:00Z'));
+    try {
+      auth.account.set(account('Administrator'));
+      auth.isAuthenticated.set(true);
+      const pending = scanSession('session-cancel-alerts', 2);
+      const cancelled = scanSession('session-cancel-alerts', 0, {
+        alertCount: 2,
+        cancelledAlertCount: 2,
+      });
+      api.getSession.and.returnValue(of(cancelled));
+      api.getSessions.and.returnValue(of({
+        generatedAt: '',
+        sessions: [cancelled],
+        totalCount: 1,
+        page: 1,
+        pageSize: 25,
+      }));
+      api.cancelSessionAlerts.and.returnValue(of({
+        scanSessionId: pending.id,
+        affectedMovementCount: 0,
+        affectedAlertCount: 2,
+        changed: true,
+      }));
+      const nativeConfirm = spyOn(window, 'confirm').and.returnValue(false);
+
+      fixture.detectChanges();
+      fixture.componentInstance.selectedSession.set(pending);
+      fixture.detectChanges();
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="session-cancel-alerts"]')?.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('[data-testid="session-confirmation"]')).not.toBeNull();
+      expect(nativeConfirm).not.toHaveBeenCalled();
+      (fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="session-confirmation-confirm"]')?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(api.cancelSessionAlerts).toHaveBeenCalledWith('access-token', pending.id);
+      expect(fixture.componentInstance.sessionAlertState(cancelled)).toBe('cancelled');
+      expect(fixture.nativeElement.textContent).toContain('Alertes annulées');
+      expect((fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="session-cancel-alerts"]')?.disabled).toBeTrue();
+      expect((fixture.nativeElement as HTMLElement)
+        .querySelector<HTMLButtonElement>('[data-testid="session-force-alerts"]')?.disabled).toBeTrue();
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
+  it('opens the complete scan journal with a correction action for each movement', () => {
+    const session = scanSession('session-journal', 0, {
+      movements: [scanMovement()],
+    });
+
+    fixture.detectChanges();
+    fixture.componentInstance.selectedSession.set(session);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="session-journal"]')).toBeNull();
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('[data-testid="session-journal-toggle"]')?.click();
+    fixture.detectChanges();
+
+    const journal = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-testid="session-journal"]');
+    expect(journal).not.toBeNull();
+    expect(journal?.textContent).toContain('9782070363735');
+    expect(journal?.textContent).toContain('Entrée directe');
+    expect(journal?.querySelector('[data-testid="session-remove-movement-movement-1"]')).not.toBeNull();
   });
 
   it('loads the dashboard first and can switch to each connected workspace', async () => {
