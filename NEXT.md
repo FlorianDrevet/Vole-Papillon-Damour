@@ -1437,6 +1437,22 @@ l'abonnement Event Grid `vpd-acs-email-delivery-reports-dev` envoie
 `/integrations/acs/email-delivery-reports` avec le header partagé configuré. Aucun e-mail de
 test n'a été envoyé automatiquement.
 
+### Correction IaC ACS — 2026-09-16
+
+Le diagnostic de la session forcée a confirmé que l'outbox avait bien créé l'alerte,
+mais que le Worker n'avait aucune configuration `BookAlerts:Email` et restait donc
+désactivé. Le run ACS `35098468030` a ensuite échoué pendant la validation Event Grid :
+les cinq appels du webhook API ont répondu `503` pendant que la nouvelle révision
+chargeait la référence Key Vault du secret.
+
+La branche dédiée déplace ce câblage dans Bicep : secret Key Vault, références API/Worker,
+identité et rôle ACS, abonnement Event Grid, plus un deployment script qui attend la
+disponibilité réelle du webhook avant le handshake. Le domaine client ACS est créé
+uniquement avec un flag de bootstrap ; les déploiements suivants le référencent sans PUT
+pour ne pas réinitialiser ses vérifications DNS. La PR doit encore être fusionnée puis
+déployée ; après cela, refaire un test réel à un destinataire autorisé et vérifier le
+passage de l'outbox à `Sent`.
+
 ### État actualisé — 2026-09-06 (worktree couvertures)
 
 La branche `feat/book-cover-direct-urls`, dans le worktree

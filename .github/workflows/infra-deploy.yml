@@ -11,6 +11,16 @@ on:
           - what-if
           - deploy
         default: what-if
+      bootstrap_email_resources:
+        description: Create the ACS Email service and domain for a new environment (one time only)
+        type: boolean
+        required: true
+        default: false
+      enable_book_alert_emails:
+        description: Enable the Worker email path (set false while the API still runs the placeholder image)
+        type: boolean
+        required: true
+        default: true
 
 permissions:
   id-token: write
@@ -42,7 +52,22 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Configure Azure CLI
-        run: az config set extension.use_dynamic_install=yes_without_prompt
+        run: |
+          set -euo pipefail
+          az config set extension.use_dynamic_install=yes_without_prompt
+          for provider in Microsoft.Communication Microsoft.EventGrid Microsoft.ContainerInstance; do
+            az provider register --namespace "$provider" --wait
+          done
+
+      - name: Validate infrastructure secrets
+        env:
+          ACS_EMAIL_WEBHOOK_SECRET: ${{ secrets.ACS_EMAIL_WEBHOOK_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ACS_EMAIL_WEBHOOK_SECRET:-}" ]; then
+            echo "The development secret ACS_EMAIL_WEBHOOK_SECRET is not configured." >&2
+            exit 1
+          fi
 
       # The application pipelines own the image tags. Without this, an infra
       # deployment would reset every app back to the placeholder image.
@@ -70,6 +95,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
           ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
+          ACS_EMAIL_WEBHOOK_SECRET: ${{ secrets.ACS_EMAIL_WEBHOOK_SECRET }}
           GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
@@ -82,7 +108,9 @@ jobs:
           az deployment sub what-if \
             --name "vpd-infra-${{ github.run_number }}" \
             --location "$AZURE_LOCATION" \
-            --parameters "$PARAMETERS_FILE"
+            --parameters "$PARAMETERS_FILE" \
+            communicationEmailCreateResources=${{ inputs.bootstrap_email_resources }} \
+            bookAlertsEmailEnabled=${{ inputs.enable_book_alert_emails }}
 
       - name: Deploy
         id: deploy
@@ -93,6 +121,7 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
           ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
+          ACS_EMAIL_WEBHOOK_SECRET: ${{ secrets.ACS_EMAIL_WEBHOOK_SECRET }}
           GOOGLE_BOOKS_API_KEY: ${{ secrets.GOOGLE_BOOKS_API_KEY }}
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
@@ -107,6 +136,8 @@ jobs:
             --name "vpd-infra-${{ github.run_number }}" \
             --location "$AZURE_LOCATION" \
             --parameters "$PARAMETERS_FILE" \
+            communicationEmailCreateResources=${{ inputs.bootstrap_email_resources }} \
+            bookAlertsEmailEnabled=${{ inputs.enable_book_alert_emails }} \
             --query properties.outputs \
             --output json > outputs.json
           cat outputs.json

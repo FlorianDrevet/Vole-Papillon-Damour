@@ -14,6 +14,12 @@ var RbacRoles = {
       description: 'Read secret contents including the secret portion of a certificate with private key.'
     }
   }
+  communication: {
+    CommunicationAndEmailServiceOwner: {
+      id: '09976791-48a7-449e-bb21-39d1a415f350'
+      description: 'Allows sending emails and managing Communication Services email resources.'
+    }
+  }
   monitor: {
     MonitoringMetricsPublisher: {
       id: '3913510d-42f4-4e42-8a64-420c390055eb'

@@ -38,6 +38,11 @@ param jwtSecret string
 @secure()
 param entraGraphClientSecret string
 
+@description('Shared secret used to authenticate ACS Event Grid delivery reports')
+@secure()
+@minLength(1)
+param acsEmailWebhookSecret string
+
 @description('Optional API key for the Google Books volumes API')
 @secure()
 param googleBooksApiKey string
@@ -50,6 +55,7 @@ var sqlSecretName = 'sql-connectionstring'
 var storageSecretName = 'storage-connectionstring'
 var jwtSecretName = 'jwt-secret'
 var entraGraphClientSecretName = 'entra-graph-client-secret'
+var acsEmailWebhookSecretName = 'email-bounce-webhook-secret'
 var googleBooksApiKeySecretName = 'google-books-api-key'
 var instagramAccessTokenSecretName = 'instagram-access-token'
 
@@ -93,6 +99,14 @@ resource entraGraphClientSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-
   }
 }
 
+resource acsEmailWebhookSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: acsEmailWebhookSecretName
+  properties: {
+    value: acsEmailWebhookSecret
+  }
+}
+
 resource googleBooksApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(googleBooksApiKey)) {
   parent: keyVault
   name: googleBooksApiKeySecretName
@@ -115,6 +129,7 @@ output secretUris object = {
   '${storageSecretName}': '${keyVault.properties.vaultUri}secrets/${storageSecretName}'
   '${jwtSecretName}': '${keyVault.properties.vaultUri}secrets/${jwtSecretName}'
   '${entraGraphClientSecretName}': '${keyVault.properties.vaultUri}secrets/${entraGraphClientSecretName}'
+  '${acsEmailWebhookSecretName}': '${keyVault.properties.vaultUri}secrets/${acsEmailWebhookSecretName}'
   '${googleBooksApiKeySecretName}': '${keyVault.properties.vaultUri}secrets/${googleBooksApiKeySecretName}'
   '${instagramAccessTokenSecretName}': '${keyVault.properties.vaultUri}secrets/${instagramAccessTokenSecretName}'
 }

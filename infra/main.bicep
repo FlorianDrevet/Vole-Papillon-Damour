@@ -170,6 +170,31 @@ param communicationEmailDataLocation string
 @description('Customer-managed domain used for sending email')
 param communicationEmailSendingDomain string
 
+@description('Name of the Azure Communication Service used by the book-alert worker')
+param communicationServiceName string
+
+@description('Create the ACS Email service and customer-managed domain during bootstrap. Keep false after the domain is verified so later deployments do not reset ACS verification state.')
+param communicationEmailCreateResources bool = false
+
+@description('Name of the Event Grid subscription receiving ACS delivery reports')
+param communicationEmailEventSubscriptionName string
+
+@description('Header used to authenticate ACS Event Grid delivery reports')
+param communicationEmailWebhookHeaderName string = 'X-Vpd-EventGrid-Secret'
+
+@description('Shared secret used by Event Grid and the API webhook')
+@secure()
+param acsEmailWebhookSecret string
+
+@description('Association name shown in book-alert emails')
+param bookAlertsEmailAssociationName string = 'Vole Papillon d\'Amour'
+
+@description('Account page URL used by book-alert email unsubscribe links')
+param bookAlertsEmailUnsubscribeUrl string
+
+@description('Enable delivery of book-alert emails from the worker')
+param bookAlertsEmailEnabled bool = true
+
 @description('Email address receiving operational Azure Monitor alerts')
 param monitoringAlertEmail string
 
@@ -282,6 +307,8 @@ var scanManagedCertificateIndex = !empty(catalogCustomDomain) && !empty(catalogC
 
 // Deployed until an application pipeline pushes the first real image.
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+var communicationServiceEndpoint = 'https://${communicationServiceName}.communication.azure.com'
+var bookAlertsEmailFrom = 'DoNotReply@${communicationEmailSendingDomain}'
 
 resource applicationResourceGroup 'Microsoft.Resources/resourceGroups@2024-07-01' = {
   name: BuildResourceGroupName('vpd', 'rg', env)
@@ -344,6 +371,7 @@ module communicationEmailModule './modules/CommunicationEmail/communicationEmail
     name: communicationEmailServiceName
     dataLocation: communicationEmailDataLocation
     sendingDomain: communicationEmailSendingDomain
+    createResources: communicationEmailCreateResources
     tags: tags
   }
 }
@@ -828,6 +856,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
     sqlAdministratorLoginPassword: sqlAdministratorLoginPassword
     jwtSecret: jwtSecret
     entraGraphClientSecret: entraGraphClientSecret
+    acsEmailWebhookSecret: acsEmailWebhookSecret
     googleBooksApiKey: googleBooksApiKey
     instagramAccessToken: instagramAccessToken
   }
@@ -896,6 +925,19 @@ module userAssignedIdentityWorkerModule './modules/UserAssignedIdentity/userAssi
   params: {
     location: env.location
     name: BuildResourceName('vpd-worker', 'id', env)
+    tags: tags
+  }
+}
+
+module communicationServiceModule './modules/CommunicationService/communicationService.module.bicep' = {
+  name: 'communicationService'
+  scope: applicationResourceGroup
+  params: {
+    name: communicationServiceName
+    dataLocation: communicationEmailDataLocation
+    linkedDomainId: communicationEmailModule.outputs.domainResourceId
+    linkEmailDomain: !communicationEmailCreateResources || bookAlertsEmailEnabled
+    workerPrincipalId: userAssignedIdentityWorkerModule.outputs.principalId
     tags: tags
   }
 }
@@ -1105,6 +1147,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         name: 'entra-graph-client-secret'
         keyVaultUrl: appSecretsModule.outputs.secretUris['entra-graph-client-secret']
       }
+      {
+        name: 'email-bounce-webhook-secret'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['email-bounce-webhook-secret']
+      }
     ], empty(googleBooksApiKey) ? [] : [{
       name: 'google-books-api-key'
       keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
@@ -1129,6 +1175,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'JwtSettings__Secret'
         secretRef: 'jwt-secret'
+      }
+      {
+        name: 'EmailBounceWebhook__SharedSecret'
+        secretRef: 'email-bounce-webhook-secret'
       }
       {
         name: 'JwtSettings__Issuer'
@@ -1525,6 +1575,30 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         name: 'AZURE_CLIENT_ID'
         value: userAssignedIdentityWorkerModule.outputs.clientId
       }
+      {
+        name: 'BookAlerts__Email__Enabled'
+        value: string(bookAlertsEmailEnabled)
+      }
+      {
+        name: 'BookAlerts__Email__Endpoint'
+        value: communicationServiceEndpoint
+      }
+      {
+        name: 'BookAlerts__Email__MailFrom'
+        value: bookAlertsEmailFrom
+      }
+      {
+        name: 'BookAlerts__Email__ManagedIdentityClientId'
+        value: userAssignedIdentityWorkerModule.outputs.clientId
+      }
+      {
+        name: 'BookAlerts__Email__AssociationName'
+        value: bookAlertsEmailAssociationName
+      }
+      {
+        name: 'BookAlerts__Email__UnsubscribeUrl'
+        value: bookAlertsEmailUnsubscribeUrl
+      }
     ], empty(socialImportFloorDate) ? [] : [
       {
         name: 'SocialImport__ImportFloorDate'
@@ -1565,6 +1639,36 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
   ]
 }
 
+module webhookReadinessModule './modules/DeploymentScript/webhookReadiness.module.bicep' = if (bookAlertsEmailEnabled) {
+  name: 'acsEmailWebhookReadiness'
+  scope: applicationResourceGroup
+  params: {
+    name: BuildResourceName('vpd', 'acs-webhook-ready', env)
+    location: env.location
+    endpointUrl: 'https://${containerAppApiModule.outputs.containerAppFqdn}/integrations/acs/email-delivery-reports'
+    webhookHeaderName: communicationEmailWebhookHeaderName
+    webhookSecret: acsEmailWebhookSecret
+    forceUpdateTag: deployment().name
+    tags: tags
+  }
+}
+
+module communicationEmailEventSubscriptionModule './modules/EventGrid/communicationEmailEventSubscription.module.bicep' = if (bookAlertsEmailEnabled) {
+  name: 'communicationEmailEventSubscription'
+  scope: applicationResourceGroup
+  params: {
+    name: communicationEmailEventSubscriptionName
+    communicationServiceName: communicationServiceName
+    endpointUrl: 'https://${containerAppApiModule.outputs.containerAppFqdn}/integrations/acs/email-delivery-reports'
+    webhookHeaderName: communicationEmailWebhookHeaderName
+    webhookSecret: acsEmailWebhookSecret
+  }
+  dependsOn: [
+    communicationServiceModule
+    webhookReadinessModule
+  ]
+}
+
 // -----------------------------------------------------------------------
 // Outputs - consumed by the application pipelines
 // -----------------------------------------------------------------------
@@ -1593,3 +1697,5 @@ output storageAccountName string = storageAccountModule.outputs.name
 output keyVaultName string = BuildResourceName('vpd', 'kv', env)
 output communicationEmailServiceName string = communicationEmailModule.outputs.name
 output communicationEmailSendingDomain string = communicationEmailModule.outputs.sendingDomain
+output communicationServiceName string = communicationServiceName
+output communicationEmailEventSubscriptionName string = communicationEmailEventSubscriptionName

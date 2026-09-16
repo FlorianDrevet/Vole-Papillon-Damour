@@ -19,6 +19,8 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | Application Insights | `vpd-api-appi-dev` / `vpd-web-appi-dev` / `vpd-bo-appi-dev` / `vpd-scan-appi-dev` / `vpd-catalog-appi-dev` / `vpd-worker-appi-dev` | Un par application |
 | Log Analytics | `vpd-law-dev` | Workspace commun aux six Application Insights |
 | ACS Email | `vpd-acs-email-dev` / `mail.volepapillondamour.fr` | Service d'envoi, donnees en France |
+| ACS Communication Service | `vpd-acs-comm-dev` | Endpoint d'envoi du Worker, domaine Email lié |
+| Event Grid ACS | `vpd-acs-email-delivery-reports-dev` | Rapports de livraison vers le webhook API |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
 | Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S1` Standard, 20 DTU, 250 Go, sans pause automatique (France Central) |
 | Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images` |
@@ -27,6 +29,9 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 
 Chaque Container App tourne sous sa propre identité managée. Les six ont
 `AcrPull` sur le registry ; l'API et le worker ont en plus `Key Vault Secrets User`.
+Le Worker possède aussi `Communication and Email Service Owner` sur le service ACS.
+Le secret `email-bounce-webhook-secret` est écrit dans Key Vault par Bicep et n'est
+jamais exposé dans les outputs.
 L'API et le worker ont chacun `Monitoring Metrics Publisher` sur leur Application
 Insights. Le worker est une Azure Function native (`kind=functionapp`). La configuration
 de mesure `P1-1` vise `minReplicas: 0` et `maxReplicas: 1` pour vérifier que le timer se
@@ -75,7 +80,8 @@ comme hôte planifié sans réplique chaude. Le réglage est dans
 ```bash
 for provider in Microsoft.App Microsoft.OperationalInsights Microsoft.Insights \
   Microsoft.ContainerRegistry Microsoft.Sql Microsoft.Storage \
-  Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Communication; do
+  Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Communication \
+  Microsoft.EventGrid Microsoft.ContainerInstance; do
   az provider register --namespace "$provider"
 done
 ```
@@ -127,6 +133,7 @@ Dans *Settings → Environments*, créer `development`, puis y ajouter :
 | `SQL_ADMIN_LOGIN` | login administrateur SQL, par exemple `vpdadmin` |
 | `SQL_ADMIN_PASSWORD` | mot de passe SQL (≥ 12 caractères, 3 des 4 classes majuscule/minuscule/chiffre/spécial) |
 | `JWT_SECRET` | clé de signature des tokens de l'API, ≥ 32 caractères aléatoires. **Voué à disparaître** : l'authentification passe à Entra External ID (voir `entra/README.md`) |
+| `ACS_EMAIL_WEBHOOK_SECRET` | secret partagé entre Event Grid et le webhook API, ≥ 1 caractère aléatoire |
 
 C'est aussi l'endroit où activer une *required reviewer* si un déploiement doit
 être approuvé avant de partir.
@@ -157,7 +164,7 @@ Azure sans un lancement manuel.
 
 | Workflow | Ce qu'il fait |
 | --- | --- |
-| `Infra - deploy` | `what-if` (défaut) ou `deploy` de `main.bicep` sur la subscription |
+| `Infra - deploy` | `what-if` (défaut) ou `deploy` de `main.bicep` sur la subscription ; possède aussi l'option ponctuelle de bootstrap ACS Email |
 | `API - deploy` | build + push de l'image API, bascule de `vpd-api-ca-dev`, migrations EF optionnelles |
 | `Website - deploy` | build + push de l'image Website, bascule de `vpd-web-ca-dev` |
 | `BackOffice - deploy` | build + push de l'image BackOffice, bascule de `vpd-bo-ca-dev` |
@@ -165,17 +172,23 @@ Azure sans un lancement manuel.
 | `Catalog - deploy` | build + push de l'image Catalogue avec les URLs API/domaine et les identifiants publics GA4/Clarity, bascule de `vpd-catalog-ca-dev` |
 | `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev` et contrôle du host |
 | `Books runtime - deploy` | build + push coordonné API + Worker, migration EF optionnelle avant rollout, puis bascule des deux Container Apps |
+| `ACS Email - configure` | vérification DNS/amorçage ACS et réparation manuelle de compatibilité ; le câblage normal est dans Bicep |
 
 ### Ordre du premier déploiement
 
-1. `Infra - deploy` en mode `what-if`, pour relire ce qui va être créé.
-2. `Infra - deploy` en mode `deploy`. Les six Container Apps démarrent sur
-   l'image placeholder `containerapps-helloworld` : c'est normal, elles n'ont
-   pas encore d'image applicative.
-3. `Books runtime - deploy` avec `run_migrations` coché : les migrations sont
-   appliquées avant le rollout de l'API et du Worker.
-4. `Scan - deploy`, puis `Worker - deploy`.
-5. `Website - deploy`, puis `BackOffice - deploy` si leurs images doivent aussi être
+1. `Infra - deploy` en mode `what-if`, pour relire ce qui va être créé. Pour un
+   nouvel environnement, cocher `bootstrap_email_resources` et laisser
+   `enable_book_alert_emails` décoché.
+2. `Infra - deploy` en mode `deploy` avec ces mêmes options. Le service ACS Email
+   et son domaine sont créés, mais le handshake Event Grid reste désactivé tant
+   que l'API utilise l'image placeholder.
+3. Publier les valeurs TXT/SPF/CNAME affichées par ACS dans le DNS du domaine,
+   puis lancer `ACS Email - configure` pour initier et contrôler la vérification.
+4. Lancer `Books runtime - deploy` avec `run_migrations` coché afin de publier une
+   vraie API, puis relancer `Infra - deploy` avec les deux options à false/true :
+   le domaine est référencé sans PUT et le câblage Event Grid est activé.
+5. `Scan - deploy`, puis `Worker - deploy`.
+6. `Website - deploy`, puis `BackOffice - deploy` si leurs images doivent aussi être
    reconstruites sur cette branche.
 
 Les fronts doivent être déployés après l'API : le bundle Angular embarque
@@ -206,6 +219,12 @@ que les Container Apps la joignent, leurs IP de sortie n'étant pas fixes.
 En production, l'API ne lance pas les migrations au démarrage ; seul l'environnement
 `Development` conserve cette commodité locale. Le workflow runtime applique donc le
 schéma avant de créer la nouvelle révision.
+
+Le câblage ACS runtime (secret Key Vault, identité Worker, paramètres
+`BookAlerts__Email__*`, Event Grid et attente du handshake webhook) est désormais
+dans `infra/main.bicep`. Le workflow `ACS Email - configure` reste un outil de
+vérification/amorçage DNS ; il ne doit pas être utilisé comme source de vérité
+pour les paramètres des Container Apps.
 
 ## Points à traiter côté application
 

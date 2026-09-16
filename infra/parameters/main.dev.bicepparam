@@ -207,6 +207,17 @@ param storageAccountSku = 'Standard_LRS'
 param communicationEmailServiceName = 'vpd-acs-email-dev'
 param communicationEmailDataLocation = 'France'
 param communicationEmailSendingDomain = 'mail.volepapillondamour.fr'
+// The email service and customer-managed domain already exist and have verified
+// DNS state. Keeping bootstrap disabled prevents a later infra deployment from
+// issuing a domain PUT and resetting that state.
+param communicationEmailCreateResources = false
+param communicationServiceName = 'vpd-acs-comm-dev'
+param communicationEmailEventSubscriptionName = 'vpd-acs-email-delivery-reports-dev'
+param communicationEmailWebhookHeaderName = 'X-Vpd-EventGrid-Secret'
+param bookAlertsEmailAssociationName = 'Vole Papillon d\'Amour'
+param bookAlertsEmailUnsubscribeUrl = 'https://livres.volepapillondamour.fr/compte'
+// Set in the GitHub development environment; never commit the value.
+param acsEmailWebhookSecret = readEnvironmentVariable('ACS_EMAIL_WEBHOOK_SECRET', '')
 // Azure infrastructure alerts go to the maintainer only. The association mailbox
 // (volepapillondamour@sfr.fr) is a public contact address and must not receive them.
 param monitoringAlertEmail = 'afdrevet@outlook.com'

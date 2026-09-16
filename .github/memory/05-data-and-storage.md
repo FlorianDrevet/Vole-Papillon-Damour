@@ -94,11 +94,30 @@ belonging to that container.
   enabled in the DEV Container App.
 - The API reads `email-bounce-webhook-secret` from `vpd-kv-dev` through a Key Vault reference.
   Event Grid subscription `vpd-acs-email-delivery-reports-dev` targets the API delivery-report
-  route and sends the shared header `X-Vpd-EventGrid-Secret`. Workflow
-  `.github/workflows/acs-email-configure.yml` is the reproducible owner of this out-of-band
-  Azure wiring; PR #74 merged the workflow into `origin/main`.
+  route and sends the shared header `X-Vpd-EventGrid-Secret`. The normal owner is now
+  `infra/main.bicep`; `.github/workflows/acs-email-configure.yml` remains only as a
+  verification/compatibility helper.
 - Workflow `34046166674` completed successfully. It does not send a real test message; the
   first end-to-end delivery and bounce check still require an explicitly approved recipient.
+
+## ACS email IaC correction — 2026-09-16
+
+- The force-send path created the expected `AlertEmail` outbox row, but the Worker was
+  disabled because `BookAlerts:Email:Enabled` was absent. The failed ACS workflow run
+  `35098468030` also showed that Event Grid validated the API while its new Key Vault
+  reference was still loading, so the webhook returned 503.
+- `infra/main.bicep` is now the normal source of truth for the full path: the
+  `email-bounce-webhook-secret` Key Vault secret, API secret reference, Worker
+  `BookAlerts__Email__*` settings, Communication Service, Worker ACS role and the ACS
+  Event Grid subscription. The GitHub environment must provide
+  `ACS_EMAIL_WEBHOOK_SECRET` to the infrastructure workflow.
+- The customer-managed Email service/domain module has an explicit one-time bootstrap
+  switch. Development keeps it false after DNS verification; subsequent Bicep runs emit
+  no Email domain PUT and therefore do not reset ACS-managed verification state.
+- A Bicep deployment script sends the same Event Grid subscription-validation request
+  until the API has loaded the Key Vault reference. Event Grid is created only after that
+  readiness gate, and the email runtime can be disabled during the placeholder-image
+  bootstrap with the infrastructure workflow option.
 - Scan cash sales use a dedicated IndexedDB `sales` store and replay to `POST /scan/sales`
   with `ClientGestureId`; the API records the sale against an open Books fair under `Caisse`.
 
