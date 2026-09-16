@@ -27,7 +27,7 @@ Describe 'Configure-EntraBranding.ps1' {
         . $scriptPath -TenantId 'tenant-id' -CustomCssPath $cssPath
         $body = New-VpdBrandingUpdateBody
 
-        $body.backgroundColor | Should Be '#eaf6fb'
+        $body.backgroundColor | Should Be '#e9f4fb'
         $body.headerBackgroundColor | Should Be '#041d30'
         $body.usernameHintText | Should Be 'Votre adresse e-mail'
         $body.customPrivacyAndCookiesText | Should Be 'Confidentialité et cookies'
@@ -135,13 +135,17 @@ Describe 'Configure-EntraBranding.ps1' {
     It 'keeps the hosted stylesheet aligned with the Catalog visual language' {
         $css = Get-Content -LiteralPath $cssPath -Raw
 
-        $css | Should Match '#eaf6fb'
+        $css | Should Match '#e9f4fb'
+        $css | Should Match 'radial-gradient\(circle at 12% 8%'
+        $css | Should Match 'linear-gradient\(135deg,\s*#dcecf7 0%,\s*#f7fbfe 56%,\s*#c6e0f1 100%\)'
+        $css | Should Match 'background-repeat: no-repeat !important'
+        $css | Should Match 'background-size: cover !important'
         $css | Should Match 'border-radius: 18px'
         $css | Should Match 'https://livres.volepapillondamour.fr/images/papillon_without_back.png'
         $css | Should Match 'z-index: 0'
         $css | Should Match 'background: transparent'
-        $css | Should Match 'background: #eaf6fb !important'
-        $css | Should Match 'background-image: none !important'
+        $css | Should Match 'background-color: #e9f4fb !important'
+        $css | Should Match 'background-image:\s*radial-gradient'
         $css | Should Match 'align-items: center'
         $css | Should Match 'justify-content: center'
         $css | Should Match 'max-width: 520px'

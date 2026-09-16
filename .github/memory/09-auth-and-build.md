@@ -26,13 +26,17 @@
   uses the Administration-protected `/accounts/admin` endpoints; the API Graph adapter
   creates External ID local identities with `passwordPolicies=DisablePasswordExpiration`
   and synchronizes `Tri`, `Caisse`, and `Administration` assignments. The app-only Graph
-  registration needs `User.ReadWrite.All`, `Application.Read.All`, and
-  `AppRoleAssignment.ReadWrite.All`; the API receives its tenant domain and API client ID
-  through `EntraGraph__TenantDomain` and `EntraGraph__ApiClientId`, plus the app-only
-  credential through `EntraGraph__ClientId` and `EntraGraph__ClientSecret`. If the Graph
+  registration needs `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
+  `Application.Read.All`, and `AppRoleAssignment.ReadWrite.All`; the dedicated
+  `User.EnableDisableAccount.All` grant is used by the sensitive `accountEnabled` toggle.
+  The API receives its tenant domain and API client ID through `EntraGraph__TenantDomain`
+  and `EntraGraph__ApiClientId`, plus the app-only credential through
+  `EntraGraph__ClientId` and `EntraGraph__ClientSecret`. If the Graph
   directory cannot authenticate or lacks permissions, Catalog now keeps the accounts
   workspace readable with a contextual dependency notice instead of the generic red error;
-  the runtime secret/permission fix remains an external deployment check.
+  the runtime secret/permission fix remains an external deployment check. An app-only
+  `accountEnabled` call may also require an Entra directory role authorized for this
+  sensitive action; the provisioning script does not grant that broader role implicitly.
 - The member identity projection accepts the separate Entra name claims and asks the
   app-only Graph directory to set `displayName` to `givenName + surname`. The
   synchronization is best-effort for the site: a Graph failure is logged without blocking

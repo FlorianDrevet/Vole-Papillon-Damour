@@ -17,13 +17,34 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — permutation des espaces d’administration Catalogue et Inventaire. |
-| **Prochaine action** | Faire relire la [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190), puis déployer depuis `main` et contrôler les deux espaces avec une session Administration authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-inventory-catalogue-labels` |
-| **Dernière mise à jour** | 2026-09-16 — les libellés, icônes, routes d’administration, chargements et titres Catalogue/Inventaire ont été permutés ; le public `/catalogue` reste inchangé. 262 tests Catalog, build SSR/navigateur et smoke Chrome desktop/mobile passants ; le contrôle métier authentifié avec API/Entra reste à faire. |
-| **Branche** | `fix/backoffice-inventory-catalogue-labels` — dédiée depuis `origin/main` fraîchement récupéré, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) vers `main` |
+| **Lot en cours** | Entra — correction de la bascule `accountEnabled` des bénévoles et rafraîchissement du branding des écrans d'authentification. |
+| **Prochaine action** | Faire relire la [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193), puis exécuter les commandes Entra documentées et contrôler le parcours avec un compte de test. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-entra-status-branding` |
+| **Dernière mise à jour** | 2026-09-16 — la permission Graph `User.EnableDisableAccount.All` est ajoutée à l'application app-only de gestion des comptes ; le CSS External ID applique un dégradé bleu papier commun à la connexion et à la création de compte. 21 tests Pester Entra, parse PowerShell et Graphify AST passants ; consentement, rôle d'annuaire et smoke connecté restent à faire. |
+| **Branche** | `fix/entra-account-status-and-branding` — dédiée depuis `origin/main` fraîchement récupéré, [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193) vers `main` |
 
 ---
+
+### État actualisé — 2026-09-16 — permission de statut bénévole et fond Entra
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-entra-status-branding`, `Configure-EntraApps.ps1` centralise les
+permissions de `vpd-account-deletion-<environment>` et ajoute `User.EnableDisableAccount.All`
+à la déclaration de l'application ainsi qu'à l'attribution de son principal de service. Le
+CSS partagé des pages External ID de connexion et de création de compte remplace l'ancien
+fond par un dégradé bleu papier statique, avec halo léger, carte blanche opaque et priorité
+CSS sur un éventuel ancien asset du tenant. Le script de branding conserve la possibilité
+d'envoyer un asset historique, mais la commande recommandée l'omet.
+
+Validation locale : test Pester rouge puis vert, 3 tests Apps, 9 tests Branding, parse des deux
+scripts PowerShell et contrôles CSS statiques. Aucun tenant Entra, compte, secret ou déploiement
+n'a été modifié. Après merge, il faudra exécuter d'abord `Configure-EntraApps.ps1 -WhatIf`, puis
+la même commande sans `-WhatIf`, exécuter le branding, attendre la propagation Graph et retester
+le statut d'un compte de test. Le backend applique le PATCH avant de relire les rôles : vérifier
+l'état réel du compte avant de cliquer une seconde fois après un 503 ambigu. Si Graph renvoie
+encore `Authorization_RequestDenied`, le principal applicatif devra aussi être contrôlé pour
+un rôle d'annuaire autorisé à cette action sensible. La [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193)
+est ouverte vers `main` ; aucun merge ni déploiement n'a été effectué.
 
 ### État actualisé — 2026-09-15 — overlay du genre sur l’accueil Catalog
 
@@ -1648,7 +1669,7 @@ distant n'a été effectué ; le contrôle authentifié et le smoke avec une API
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
-| Application Graph — gestion des comptes | Le code exige désormais les permissions `User.ReadWrite.All`, `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ; la mise à jour du consentement et le rollout restent à faire | `2026-09-06` |
+| Application Graph — gestion des comptes | Le code et le script exigent désormais `User.ReadWrite.All`, `User.EnableDisableAccount.All`, `Application.Read.All` et `AppRoleAssignment.ReadWrite.All` ; le consentement/attribution de la nouvelle permission et le retest `accountEnabled` restent à faire | `2026-09-16` |
 | Secret Graph dans Key Vault | Renseigné hors dépôt pour le worker dev ; les noms des secrets GitHub sont conservés sans leurs valeurs | `2026-09-02` |
 | ACS Email | `vpd-acs-email-dev` dans `rg-vpd-dev`, données en France, domaine `mail.volepapillondamour.fr`, expéditeur `DoNotReply@mail.volepapillondamour.fr` ; propriété, SPF, DKIM et DKIM2 vérifiés, DMARC ACS `NotStarted` | `2026-09-06` |
 | ACS Communication Service | `vpd-acs-comm-dev`, lié au domaine Email vérifié, endpoint `https://vpd-acs-comm-dev.communication.azure.com` | `2026-09-06` |
