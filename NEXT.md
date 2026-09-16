@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — permutation des espaces d’administration Catalogue et Inventaire. |
-| **Prochaine action** | Faire relire la PR de permutation, puis déployer depuis `main` et contrôler les deux espaces avec une session Administration authentifiée. |
+| **Prochaine action** | Faire relire la [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190), puis déployer depuis `main` et contrôler les deux espaces avec une session Administration authentifiée. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-inventory-catalogue-labels` |
 | **Dernière mise à jour** | 2026-09-16 — les libellés, icônes, routes d’administration, chargements et titres Catalogue/Inventaire ont été permutés ; le public `/catalogue` reste inchangé. 262 tests Catalog, build SSR/navigateur et smoke Chrome desktop/mobile passants ; le contrôle métier authentifié avec API/Entra reste à faire. |
-| **Branche** | `fix/backoffice-inventory-catalogue-labels` — dédiée depuis `origin/main` fraîchement récupéré, PR à ouvrir vers `main` |
+| **Branche** | `fix/backoffice-inventory-catalogue-labels` — dédiée depuis `origin/main` fraîchement récupéré, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) vers `main` |
 
 ---
 
@@ -244,7 +244,7 @@ smoke Chrome desktop et mobile à 390×844 sans débordement horizontal, `git di
 `python -m graphify update .` a relu le code et écrit le graphe/rapport, mais retourne une
 erreur lors de la génération HTML car le graphe compte 5 103 nœuds, au-delà de la limite de
 visualisation. Aucun déploiement, changement API/Entra ou donnée de compte n’a été effectué ;
-la vérification authentifiée avec données métier reste à faire et la PR est à ouvrir.
+la vérification authentifiée avec données métier reste à faire ; la [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) est ouverte vers `main`.
 
 ### État actualisé — 2026-09-15 — netteté des couvertures des fiches Catalog
 
@@ -1759,7 +1759,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-16 | Windows | **Catalog — permutation des espaces Catalogue/Inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-catalogue-labels`, `Catalogue` est désormais le lien `/administration/catalogue` avec l’icône livre et le workspace fiche/stock ; `Inventaire` devient `/administration/inventory` avec l’icône boîte et la file de correction des métadonnées. Les badges, chargeurs et titres suivent la permutation ; le `/catalogue` public reste inchangé. Validation : TDD rouge/vert, 262 tests Catalog, build SSR/navigateur, smoke Chrome desktop/mobile à 390×844 et `git diff --check`. Graphify a mis à jour le code graph mais ne génère pas la visualisation HTML au-delà de 5 000 nœuds ; aucun déploiement ni merge, PR à ouvrir. |
+| 2026-09-16 | Windows | **Catalog — permutation des espaces Catalogue/Inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-catalogue-labels`, `Catalogue` est désormais le lien `/administration/catalogue` avec l’icône livre et le workspace fiche/stock ; `Inventaire` devient `/administration/inventory` avec l’icône boîte et la file de correction des métadonnées. Les badges, chargeurs et titres suivent la permutation ; le `/catalogue` public reste inchangé. Validation : TDD rouge/vert, 262 tests Catalog, build SSR/navigateur, smoke Chrome desktop/mobile à 390×844 et `git diff --check`. Graphify a mis à jour le code graph mais ne génère pas la visualisation HTML au-delà de 5 000 nœuds ; aucun déploiement ni merge, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) ouverte. |
 | 2026-09-15 | Windows | **Scan — fin de session et confirmation mobile.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-scan-session-fix`, conservation de la route `/tri/fin` et du résumé après recréation du composant, suppression du faux état de fermeture à réessayer après synchronisation concurrente, et feuille de confirmation tactile responsive. Validation : TDD rouge puis vert, 205 tests Scan ChromeHeadless, build de production, 6 contrats bootstrap, Graphify et `git diff --check` ; contrôle connecté téléphone/API réelle restant à faire, aucun déploiement ni merge. [PR #185](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/185) ouverte. |
 | 2026-09-15 | Windows | **Catalog — recherche disponible par défaut.** Depuis `origin/main` fraîchement récupéré dans le worktree `Vole-Papillon-Damour-catalog-search-available-only`, l'onglet `/recherche` charge avec `availability=available`, coche « Disponible maintenant » et y revient après réinitialisation ; `/catalogue` garde son périmètre complet. Validation : TDD rouge puis vert, 27 tests ciblés, 210 tests Catalog, build SSR/navigateur, Graphify, `git diff --check` et smoke Chrome desktop ; l'API locale n'était pas démarrée, aucun déploiement ni changement hors dépôt, [PR #176](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/176) ouverte. |
 | 2026-09-15 | Windows | **Catalog — simplification de l'inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-ux`, suppression des encarts d'ajustement/historique et du bouton « Afficher toutes les fiches », conservation du chargement paginé côté API, loader annulaire pendant l'actualisation et recherche automatique après 2 secondes d'inactivité. Validation : TDD rouge puis vert, 209 tests Catalog, 223 tests Application, build SSR/navigateur, Graphify et `git diff --check` passants ; la [PR #169](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/169) est ouverte. Aucun déploiement ni changement hors dépôt. |
