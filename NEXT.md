@@ -17,11 +17,25 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Diagnostic de délivrabilité des alertes ACS / iCloud. |
-| **Prochaine action** | Faire relire la [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205), puis lancer `Infra - deploy` en `what-if` et en `deploy` depuis `main`. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-acs-email-diagnostics` |
-| **Dernière mise à jour** | 2026-09-16 — les journaux opérationnels ACS d'envoi et de statut sont déclarés en Bicep vers le workspace Log Analytics partagé ; la PR et le déploiement restent à faire. |
-| **Branche** | `fix/iac-acs-email-diagnostics` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205) vers `main`, non fusionnée |
+| **Lot en cours** | Livres rares — lot 0, correction de la suppression de blob et préparation du conteneur `livres-rares`. |
+| **Prochaine action** | Faire relire la PR du lot 0, puis démarrer le lot 1 depuis `origin/main` après fusion ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) reste retenu. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
+| **Dernière mise à jour** | 2026-09-16 — `DeleteFileAsync` reçoit désormais le conteneur cible et les appelants actualités sont explicitement câblés sur `actuality-images`; le conteneur public `livres-rares` est préparé dans l’API, Aspire et Bicep. 468 tests backend et le build de solution passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+
+### État actualisé — 2026-09-16 — Livres rares, lot 0
+
+Le lot 0 est implémenté dans le worktree `Vole-Papillon-Damour-livres-rares-lot0`. La
+suppression de blob ne déduit plus le conteneur depuis l’URL : le contrat reçoit un
+`BlobContainer` explicite, conserve le garde-fou qui refuse une URL d’un autre conteneur et
+retourne le nom du blob supprimé. Les deux appelants existants d’actualités ont été adaptés.
+Le conteneur `livres-rares` est déclaré dans les paramètres API, Aspire et Bicep ; aucune
+photo rare ni donnée métier n’a encore été créée.
+
+Validation locale : test d’infrastructure rouge puis vert couvrant la suppression dans un
+conteneur non-actualités, 468 tests backend via la solution, build de solution et compilation
+Bicep. `graphify update .` a ré-extrait l’AST, mais son étape de visualisation reste bloquée par
+la limite de 5 100 nœuds. Aucun déploiement Azure ni contrôle de production n’a été effectué.
 
 ---
 
