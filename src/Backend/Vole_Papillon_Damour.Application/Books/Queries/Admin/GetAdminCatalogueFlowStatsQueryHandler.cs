@@ -4,10 +4,15 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
+using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.Admin;
 
@@ -39,13 +44,38 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
             return Error.Validation("Book.InvalidPeriod", "The catalogue flow statistics period must be valid UTC instants.");
         }
 
+        AssoEvents? selectedFair = null;
+        if (query.FairId is { } fairId)
+        {
+            if (fairId == Guid.Empty)
+            {
+                return Errors.Book.FairNotFound(fairId);
+            }
+
+            selectedFair = await dbContext.AssoEvents
+                .AsNoTracking()
+                .SingleOrDefaultAsync(candidate => candidate.Id == AssoEventsId.Create(fairId), cancellationToken);
+            if (selectedFair is null)
+            {
+                return Errors.Book.FairNotFound(fairId);
+            }
+
+            if (selectedFair.EventsType?.Value != EventsType.EventsTypeEnum.Books)
+            {
+                return Errors.Book.TargetFairMustBeBooks();
+            }
+        }
+
         var sessions = await dbContext.ScanSessions
             .AsNoTracking()
             .Where(session => session.ScannedCount > 0)
             .ToListAsync(cancellationToken);
-        var scannedCount = sessions
+        sessions = sessions
             .Where(session => IsInPeriod(session.StartedAt, from, to))
-            .Sum(session => session.ScannedCount);
+            .Where(session => selectedFair is null || session.TargetAssoEventsId == selectedFair.Id)
+            .ToList();
+        var sessionsById = sessions.ToDictionary(session => session.Id, session => session);
+        var scannedCount = sessions.Sum(session => session.ScannedCount);
 
         var relevantMovements = await dbContext.BookMovements
             .AsNoTracking()
@@ -57,6 +87,7 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
             .ToListAsync(cancellationToken);
         var movements = relevantMovements
             .Where(movement => IsInPeriod(movement.OccurredAt, from, to))
+            .Where(movement => IsInSelectedFair(movement, sessionsById, selectedFair?.Id))
             .ToArray();
 
         var books = await dbContext.Books.AsNoTracking().ToDictionaryAsync(book => book.Id, cancellationToken);
@@ -182,6 +213,21 @@ public sealed class GetAdminCatalogueFlowStatsQueryHandler(
 
     private static bool IsInPeriod(DateTime value, DateTime? from, DateTime? to) =>
         (from is null || value >= from.Value) && (to is null || value < to.Value);
+
+    private static bool IsInSelectedFair(
+        BookMovement movement,
+        IReadOnlyDictionary<ScanSessionId, ScanSession> sessions,
+        AssoEventsId? fairId)
+    {
+        if (fairId is null || movement.AssoEventsId == fairId)
+        {
+            return true;
+        }
+
+        return movement.ScanSessionId is { } sessionId &&
+               sessions.TryGetValue(sessionId, out var session) &&
+               session.TargetAssoEventsId == fairId;
+    }
 
     private static decimal? Percent(int numerator, int denominator) =>
         denominator == 0 ? null : decimal.Round(numerator * 100m / denominator, 1, MidpointRounding.AwayFromZero);

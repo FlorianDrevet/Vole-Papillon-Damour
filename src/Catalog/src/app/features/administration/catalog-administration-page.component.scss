@@ -342,12 +342,6 @@
   color: #ffffff;
 }
 
-.volunteer-view-toggle {
-  display: flex;
-  gap: 8px;
-  margin: 4px 0 18px;
-}
-
 .session-chips,
 .admin-heading + .session-chips {
   margin-top: 30px;
@@ -2171,32 +2165,6 @@ input:disabled {
   background: var(--admin-orange);
 }
 
-.statistics-period-chips {
-  margin-top: 14px;
-}
-
-.statistics-fair-select {
-  width: min(100%, 390px);
-  margin-top: 4px;
-}
-
-.statistics-fair-select select {
-  min-height: 42px;
-}
-
-.volunteer-stat-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.volunteer-stat-grid .stat-card {
-  min-height: 154px;
-  padding: 19px 18px 16px;
-}
-
-.volunteer-stat-grid .stat-value {
-  font-size: clamp(29px, 2.5vw, 38px);
-}
-
 .volunteer-contribution-card {
   margin-top: 20px;
 }
@@ -3921,16 +3889,8 @@ input:disabled {
 }
 
 @media (max-width: 940px) {
-  .volunteer-stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .volunteer-table {
     min-width: 760px;
-  }
-
-  .statistics-heading .statistics-fair-select {
-    width: 100%;
   }
 }
 
@@ -3945,24 +3905,6 @@ input:disabled {
     flex: 0 0 auto;
     font-size: 10px;
     white-space: nowrap;
-  }
-
-  .volunteer-stat-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .volunteer-stat-grid .stat-card {
-    min-height: 132px;
-    padding: 16px 14px 14px;
-  }
-
-  .volunteer-stat-grid .stat-card:first-child {
-    grid-column: span 2;
-  }
-
-  .volunteer-stat-grid .stat-value {
-    font-size: 30px;
   }
 
   .chart-note {

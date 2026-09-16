@@ -211,17 +211,27 @@ export class CatalogAdminApiService {
     );
   }
 
-  getFairsEvolution(accessToken: string, from?: string, to?: string): Observable<CatalogAdminFairsEvolution> {
+  getFairsEvolution(
+    accessToken: string,
+    from?: string,
+    to?: string,
+    fairId?: string,
+  ): Observable<CatalogAdminFairsEvolution> {
     return this.http.get<CatalogAdminFairsEvolution>(
       `${this.apiUrl}/books/admin/fairs/evolution`,
-      this.options(accessToken, this.params({from, to})),
+      this.options(accessToken, this.params({from, to, fairId})),
     );
   }
 
-  getCatalogueFlowStats(accessToken: string, from?: string, to?: string): Observable<CatalogAdminCatalogueFlowStats> {
+  getCatalogueFlowStats(
+    accessToken: string,
+    from?: string,
+    to?: string,
+    fairId?: string,
+  ): Observable<CatalogAdminCatalogueFlowStats> {
     return this.http.get<CatalogAdminCatalogueFlowStats>(
       `${this.apiUrl}/books/admin/catalogue/flow-stats`,
-      this.options(accessToken, this.params({from, to})),
+      this.options(accessToken, this.params({from, to, fairId})),
     );
   }
 
