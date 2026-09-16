@@ -42,4 +42,21 @@ describe('ScanConfirmationComponent', () => {
     confirmation.resolve(false);
     await request;
   });
+
+  it('keeps the confirmation sheet above the live camera frame', async () => {
+    const request = confirmation.confirm({
+      title: 'Terminer cette session de tri ?',
+      message: 'La clôture sera synchronisée avec le serveur.',
+      confirmLabel: 'Terminer la session',
+      cancelLabel: 'Poursuivre le tri',
+    });
+    fixture.detectChanges();
+
+    const backdrop = fixture.nativeElement.querySelector('.scan-confirmation-backdrop') as HTMLElement;
+
+    expect(getComputedStyle(backdrop).zIndex).toBe('70');
+
+    confirmation.resolve(false);
+    await request;
+  });
 });

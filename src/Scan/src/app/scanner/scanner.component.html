@@ -539,7 +539,6 @@
         <p *ngIf="storageError" class="cash-storage-error" role="alert">{{ storageError }}</p>
 
         <footer class="action-dock cash-dock">
-          <span class="dock-hint">Aucun prix, aucun total — l’encaissement reste manuel</span>
           <div class="cash-buttons">
             <button type="button" class="decision-reject" [disabled]="cashItems.length === 0" (click)="undoLastCashItem()">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
