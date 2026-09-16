@@ -1371,6 +1371,53 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Tri');
   });
 
+  it('creates a volunteer account with separate first and last names', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.createAdminAccount.and.returnValue(of({
+      externalId: 'created-account-id',
+      email: 'marie@example.test',
+      displayName: 'Marie Tri',
+      accountEnabled: true,
+      createdAt: '2026-09-16T10:00:00Z',
+      roles: ['Tri'],
+    }));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.componentInstance.showCreateAccount.set(true);
+    fixture.detectChanges();
+
+    const form = (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('.account-create-card');
+    expect(form).not.toBeNull();
+    expect(form?.textContent).toContain('Prénom');
+    expect(form?.textContent).toContain('Nom');
+    expect(form?.textContent).not.toContain('Nom affiché');
+
+    expect(form?.querySelector<HTMLInputElement>('[name="accountFirstName"]')).not.toBeNull();
+    expect(form?.querySelector<HTMLInputElement>('[name="accountLastName"]')).not.toBeNull();
+    Object.assign(fixture.componentInstance.createAccountForm, {
+      firstName: 'Marie',
+      lastName: 'Tri',
+      email: 'marie@example.test',
+      temporaryPassword: 'Temporaire1!',
+    });
+    fixture.componentInstance.toggleCreateRole('Tri');
+    await fixture.whenStable();
+
+    await fixture.componentInstance.createAccount();
+
+    expect(api.createAdminAccount).toHaveBeenCalledWith('access-token', {
+      email: 'marie@example.test',
+      firstName: 'Marie',
+      lastName: 'Tri',
+      temporaryPassword: 'Temporaire1!',
+      roles: ['Tri'],
+    });
+    expect(fixture.componentInstance.showCreateAccount()).toBeFalse();
+  });
+
   it('offers volunteer and site-member subtabs in the accounts workspace', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);

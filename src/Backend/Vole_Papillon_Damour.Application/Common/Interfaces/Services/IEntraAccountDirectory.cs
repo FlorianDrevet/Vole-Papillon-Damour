@@ -8,7 +8,8 @@ public interface IEntraAccountDirectory
 
     Task<EntraAccount> CreateAsync(
         string email,
-        string displayName,
+        string firstName,
+        string lastName,
         string temporaryPassword,
         IReadOnlyCollection<string> roles,
         CancellationToken cancellationToken);

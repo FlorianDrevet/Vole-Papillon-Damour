@@ -48,7 +48,8 @@ public static class AccountAdministrationController
                         var result = await mediator.Send(
                             new CreateAdminAccountCommand(
                                 request.Email,
-                                request.DisplayName,
+                                request.FirstName,
+                                request.LastName,
                                 request.TemporaryPassword,
                                 request.Roles),
                             cancellationToken);

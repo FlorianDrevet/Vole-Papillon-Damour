@@ -104,11 +104,15 @@ public sealed class EntraGraphUserDirectory(
 
     public async Task<EntraAccount> CreateAsync(
         string email,
-        string displayName,
+        string firstName,
+        string lastName,
         string temporaryPassword,
         IReadOnlyCollection<string> roles,
         CancellationToken cancellationToken)
     {
+        firstName = firstName.Trim();
+        lastName = lastName.Trim();
+        var displayName = $"{firstName} {lastName}".Trim();
         EnsureAccountManagementConfigured();
         var accessToken = await GetAccessTokenAsync(cancellationToken, accountManagement: true);
         var user = await SendJsonAsync<GraphUser>(
@@ -118,6 +122,8 @@ public sealed class EntraGraphUserDirectory(
             new GraphCreateUserRequest(
                 true,
                 displayName,
+                firstName,
+                lastName,
                 email,
                 new GraphPasswordProfile(temporaryPassword, true),
                 "DisablePasswordExpiration",
@@ -465,6 +471,8 @@ public sealed class EntraGraphUserDirectory(
     private sealed record GraphCreateUserRequest(
         [property: JsonPropertyName("accountEnabled")] bool AccountEnabled,
         [property: JsonPropertyName("displayName")] string DisplayName,
+        [property: JsonPropertyName("givenName")] string GivenName,
+        [property: JsonPropertyName("surname")] string Surname,
         [property: JsonPropertyName("mail")] string Mail,
         [property: JsonPropertyName("passwordProfile")] GraphPasswordProfile PasswordProfile,
         [property: JsonPropertyName("passwordPolicies")] string PasswordPolicies,

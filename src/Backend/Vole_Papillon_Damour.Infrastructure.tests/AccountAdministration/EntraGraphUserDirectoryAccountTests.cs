@@ -61,7 +61,8 @@ public sealed class EntraGraphUserDirectoryAccountTests
 
         var account = await directory.CreateAsync(
             "marie@example.test",
-            "Marie Tri",
+            "Marie",
+            "Tri",
             "Temporaire1!",
             ["Tri"],
             CancellationToken.None);
@@ -72,6 +73,9 @@ public sealed class EntraGraphUserDirectoryAccountTests
             request.Method == HttpMethod.Post &&
             request.RequestUri!.AbsolutePath == "/v1.0/users/account-1/appRoleAssignments");
         var createBody = createBodies.Single();
+        createBody.Should().Contain("\"displayName\":\"Marie Tri\"");
+        createBody.Should().Contain("\"givenName\":\"Marie\"");
+        createBody.Should().Contain("\"surname\":\"Tri\"");
         createBody.Should().Contain("\"issuer\":\"volepapillondamour.onmicrosoft.com\"");
         createBody.Should().Contain("\"issuerAssignedId\":\"marie@example.test\"");
         createBody.Should().Contain("\"forceChangePasswordNextSignIn\":true");

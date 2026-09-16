@@ -303,7 +303,8 @@ export interface AdminAccountFilters {
 
 export interface CreateAdminAccountRequest {
   email: string;
-  displayName: string;
+  firstName: string;
+  lastName: string;
   temporaryPassword: string;
   roles: AdminAccountRole[];
 }

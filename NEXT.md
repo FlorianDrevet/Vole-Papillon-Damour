@@ -17,34 +17,34 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — uniformisation de l’affichage des livres épuisés dans toutes les recherches publiques. |
-| **Prochaine action** | Faire relire la [PR #192](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/192), puis déployer depuis `main` et contrôler les recherches avec des données réelles. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-search-exhausted-toggle` |
-| **Dernière mise à jour** | 2026-09-16 — les listes publiques masquent par défaut les fiches réellement épuisées, la case `Afficher les livres épuisés` persiste dans l’URL et le backend conserve les autres périmètres de filtre. Tests Catalog/Application, builds et smoke local passants ; l’API/SQL locale n’était pas disponible. |
-| **Branche** | `feat/catalog-search-exhausted-toggle` — dédiée depuis `origin/main` fraîchement récupéré, [PR #192](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/192) vers `main` |
+| **Lot en cours** | Catalog — création de comptes bénévoles avec prénom et nom séparés. |
+| **Prochaine action** | Faire relire la [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191), puis contrôler le parcours authentifié avec Entra et l’API avant déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-registration-name-fields-fix` |
+| **Dernière mise à jour** | 2026-09-16 — le formulaire admin n’expose plus `Nom affiché` : les deux clients, l’API et Graph utilisent désormais prénom/nom séparés. Suites Catalog, BackOffice et backend passantes ; le smoke local s’arrête à la connexion Microsoft. |
+| **Branche** | `fix/account-registration-name-fields-20260916` — dédiée depuis `origin/main` fraîchement récupéré, [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191) vers `main` |
 
 ---
 
-### État actualisé — 2026-09-16 — permission de statut bénévole et fond Entra
+### État actualisé — 2026-09-16 — création de compte bénévole avec prénom et nom
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
-`Vole-Papillon-Damour-entra-status-branding`, `Configure-EntraApps.ps1` centralise les
-permissions de `vpd-account-deletion-<environment>` et ajoute `User.EnableDisableAccount.All`
-à la déclaration de l'application ainsi qu'à l'attribution de son principal de service. Le
-CSS partagé des pages External ID de connexion et de création de compte remplace l'ancien
-fond par un dégradé bleu papier statique, avec halo léger, carte blanche opaque et priorité
-CSS sur un éventuel ancien asset du tenant. Le script de branding conserve la possibilité
-d'envoyer un asset historique, mais la commande recommandée l'omet.
+`Vole-Papillon-Damour-account-registration-name-fields-fix`, les écrans Catalog et BackOffice
+remplacent le champ « Nom affiché » par « Prénom » et « Nom ». Le contrat `POST /accounts/admin`
+transporte `firstName` et `lastName`; l’application les nettoie et les valide séparément, puis
+l’adaptateur Microsoft Graph renseigne `givenName` et `surname` et reconstruit `displayName` pour
+la lecture annuaire. Les réponses et les listes existantes peuvent continuer à afficher le
+display name dérivé.
 
-Validation locale : test Pester rouge puis vert, 3 tests Apps, 9 tests Branding, parse des deux
-scripts PowerShell et contrôles CSS statiques. Aucun tenant Entra, compte, secret ou déploiement
-n'a été modifié. Après merge, il faudra exécuter d'abord `Configure-EntraApps.ps1 -WhatIf`, puis
-la même commande sans `-WhatIf`, exécuter le branding, attendre la propagation Graph et retester
-le statut d'un compte de test. Le backend applique le PATCH avant de relire les rôles : vérifier
-l'état réel du compte avant de cliquer une seconde fois après un 503 ambigu. Si Graph renvoie
-encore `Authorization_RequestDenied`, le principal applicatif devra aussi être contrôlé pour
-un rôle d'annuaire autorisé à cette action sensible. La [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193)
-est ouverte vers `main` ; aucun merge ni déploiement n'a été effectué.
+Validation locale : TDD rouge puis vert, 263 tests Catalog ChromeHeadless, 21 tests BackOffice
+ChromeHeadless, 463 tests backend via la solution .NET, builds de production Catalog et
+BackOffice, `git diff --check`. `graphify update .` a bien ré-extrait les fichiers mais son étape
+de visualisation échoue sur la taille actuelle du graphe (5 103 nœuds) ; aucun artefact source
+n’a été modifié. Le smoke Chrome desktop du serveur local atteint correctement la route
+`/administration/accounts` et son shell responsive, mais la page demande une connexion Microsoft;
+aucune authentification, création de compte, modification Entra ou déploiement n’a été effectué.
+`rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été utilisées.
+La [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191) est ouverte vers
+`main` et n’a pas été fusionnée.
 
 ### État actualisé — 2026-09-15 — overlay du genre sur l’accueil Catalog
 

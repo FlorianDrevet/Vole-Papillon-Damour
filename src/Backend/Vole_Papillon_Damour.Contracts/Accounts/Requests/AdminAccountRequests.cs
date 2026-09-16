@@ -2,7 +2,8 @@ namespace Vole_Papillon_Damour.Contracts.Accounts.Requests;
 
 public sealed record CreateAdminAccountRequest(
     string Email,
-    string DisplayName,
+    string FirstName,
+    string LastName,
     string TemporaryPassword,
     IReadOnlyCollection<string>? Roles);
 

@@ -197,13 +197,21 @@ describe('CatalogAdminApiService', () => {
 
     service.createAdminAccount('access-token', {
       email: 'michel@example.test',
-      displayName: 'Michel Bonnet',
+      firstName: 'Michel',
+      lastName: 'Bonnet',
       temporaryPassword: 'temporary-password',
       roles: ['Tri'],
     }).subscribe(result => expect(result).toEqual(account));
 
     const createRequest = http.expectOne(request => request.url === `${environment.apiUrl}/accounts/admin`);
     expect(createRequest.request.method).toBe('POST');
+    expect(createRequest.request.body).toEqual({
+      email: 'michel@example.test',
+      firstName: 'Michel',
+      lastName: 'Bonnet',
+      temporaryPassword: 'temporary-password',
+      roles: ['Tri'],
+    });
     expect(createRequest.request.body.roles).toEqual(['Tri']);
     createRequest.flush(account);
 

@@ -173,7 +173,8 @@
         <form class="admin-panel grid gap-4 sm:grid-cols-2 lg:grid-cols-4" [formGroup]="createAccountForm" (ngSubmit)="createAccount()">
           <div class="sm:col-span-2 lg:col-span-4"><h2>Nouveau compte</h2><p class="mt-2 text-sm text-slate-2">Le mot de passe temporaire sera demandé à la première connexion.</p></div>
           <label class="admin-field"><span>Adresse e-mail *</span><input formControlName="email" type="email" autocomplete="email"></label>
-          <label class="admin-field"><span>Nom affiché *</span><input formControlName="displayName" autocomplete="name"></label>
+          <label class="admin-field"><span>Prénom *</span><input formControlName="firstName" autocomplete="given-name" maxlength="64"></label>
+          <label class="admin-field"><span>Nom *</span><input formControlName="lastName" autocomplete="family-name" maxlength="64"></label>
           <label class="admin-field sm:col-span-2"><span>Mot de passe temporaire *</span><input formControlName="temporaryPassword" type="password" autocomplete="new-password" minlength="8"></label>
           <fieldset class="sm:col-span-2 lg:col-span-4" [attr.aria-describedby]="createAccountForm.controls.roles.invalid && createAccountForm.controls.roles.touched ? 'create-account-role-error' : null">
             <legend class="mb-2 text-sm font-semibold text-ink-2">Rôles *</legend>

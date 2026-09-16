@@ -43,7 +43,8 @@ describe('CatalogAdminFacadeService', () => {
   it('creates an account and updates its roles through the admin routes', async () => {
     await service.createAccount({
       email: 'marie@example.test',
-      displayName: 'Marie Tri',
+      firstName: 'Marie',
+      lastName: 'Tri',
       temporaryPassword: 'Temporaire1!',
       roles: ['Tri'],
     });
@@ -54,7 +55,8 @@ describe('CatalogAdminFacadeService', () => {
       '/accounts/admin',
       {
         email: 'marie@example.test',
-        displayName: 'Marie Tri',
+        firstName: 'Marie',
+        lastName: 'Tri',
         temporaryPassword: 'Temporaire1!',
         roles: ['Tri'],
       },

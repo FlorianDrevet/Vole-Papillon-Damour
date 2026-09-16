@@ -139,9 +139,10 @@ client-only/private.
   `Caisse`, and `Administration` app-role assignments. Graph transport or malformed-payload
   failures are returned as a typed `Account.DirectoryUnavailable` `503` rather than an
   unhandled `500`; omitted Graph collections are treated as empty.
-- `POST /accounts/admin` - Administration-policy account creation with `email`,
-  `displayName`, `temporaryPassword`, and at least one selected role. The app-only Graph
-  directory creates the External ID local identity and assigns the requested API roles.
+- `POST /accounts/admin` - Administration-policy account creation with `email`, `firstName`,
+  `lastName`, `temporaryPassword`, and at least one selected role. The app-only Graph
+  directory writes `givenName`/`surname`, derives the directory `displayName`, creates the
+  External ID local identity and assigns the requested API roles.
 - `PUT /accounts/admin/{externalId}/roles` - Administration-policy replacement of the
   selected API roles. An administrator cannot remove their own `Administration` role.
 
