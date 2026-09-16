@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — états d’alertes et journal des sessions de scan. |
-| **Prochaine action** | Faire relire la PR dédiée, puis déployer depuis `main` et contrôler le parcours avec une session Administration authentifiée. |
+| **Prochaine action** | Faire relire la [PR #200](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/200), puis déployer depuis `main` et contrôler le parcours avec une session Administration authentifiée. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-alerts-journal` |
 | **Dernière mise à jour** | 2026-09-16 — les demandes d’envoi immédiat quittent la file « Encore corrigeables », les statuts envoyés/annulés/échoués sont distingués, les confirmations sont des modales Catalog et le journal de mouvements est actionnable. 270 tests Catalog, 92 Domain, 234 Application, 117 Infrastructure, 24 API et les builds locaux passent ; Graphify ré-extrait mais ne peut pas visualiser le graphe de 5 133 nœuds ; le contrôle authentifié API/Entra reste à faire. |
-| **Branche** | `fix/backoffice-scan-alerts-journal` — worktree dédié depuis `origin/main` fraîchement récupéré ; PR à ouvrir vers `main` |
+| **Branche** | `fix/backoffice-scan-alerts-journal` — worktree dédié depuis `origin/main` fraîchement récupéré ; [PR #200](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/200) vers `main`, non fusionnée |
 
 ---
 
@@ -44,7 +44,8 @@ solution backend, `git diff --check`. Le serveur local a rendu le shell administ
 Chrome desktop ; la route demande une connexion Microsoft, donc le scénario authentifié
 avec données API et le contrôle mobile final restent à faire. Aucun déploiement, changement
 Azure/Entra ou donnée de compte n’a été effectué. `rtk` n’est pas installé ; les commandes
-natives équivalentes ont été utilisées. La PR reste à ouvrir.
+natives équivalentes ont été utilisées. La [PR #200](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/200)
+est ouverte vers `main` et n’est pas fusionnée.
 
 
 ---
