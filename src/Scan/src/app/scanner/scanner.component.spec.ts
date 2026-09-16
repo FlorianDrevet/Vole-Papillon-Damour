@@ -550,6 +550,21 @@ describe('ScannerComponent', () => {
     cashFixture.destroy();
   });
 
+  it('keeps the cash actions compact and leaves the list without helper copy', () => {
+    const cashFixture = TestBed.createComponent(ScannerComponent);
+    cashFixture.componentInstance.screen = 'cash';
+    cashFixture.detectChanges();
+
+    const dock = cashFixture.nativeElement.querySelector('.cash-dock') as HTMLElement;
+    const buttons = Array.from(dock.querySelectorAll('.cash-buttons > button')) as HTMLButtonElement[];
+
+    expect(dock.querySelector('.dock-hint')).toBeNull();
+    expect(buttons).toHaveSize(2);
+    expect(buttons.map(button => getComputedStyle(button).minHeight)).toEqual(['52px', '52px']);
+
+    cashFixture.destroy();
+  });
+
   it('keeps a valid h1 label target for every operating screen and triage state', () => {
     const screens = [
       ['tri', '.tri-screen'],

@@ -1660,12 +1660,15 @@ input:focus-visible {
   flex: 1 1 0;
 }
 
+.cash-buttons > button {
+  min-height: 52px;
+}
+
 .cash-buttons .decision-reject {
   font-size: 13px;
 }
 
 .cash-buttons .dock-primary {
-  min-height: 60px;
   font-size: 17px;
 }
 

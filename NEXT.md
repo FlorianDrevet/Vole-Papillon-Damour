@@ -17,13 +17,29 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Scan — retrait du bandeau de persistance hors ligne non garantie. |
-| **Prochaine action** | Faire relire la [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198), puis déployer depuis `main` et contrôler l’écran Scan avec une session bénévole authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-remove-scan-offline-warning` |
-| **Dernière mise à jour** | 2026-09-16 — le bandeau compact n’est plus affiché lorsque la seule alerte concerne la persistance navigateur ; les alertes critiques et les autres états restent visibles. 211 tests Scan et le build de production passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
-| **Branche** | `fix/scan-remove-offline-warning` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198) vers `main`, non fusionnée |
+| **Lot en cours** | Scan — confirmation de fin de session et compacité de la caisse. |
+| **Prochaine action** | Faire relire la PR, puis déployer depuis `main` et contrôler les deux parcours sur téléphone avec une session bénévole authentifiée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-confirm-cash-ui` |
+| **Dernière mise à jour** | 2026-09-16 — la feuille de confirmation passe au-dessus du cadre caméra ; les deux boutons caisse passent à 52 px et le texte d’aide est retiré. 213 tests Scan, le build de production et les contrats de bootstrap passent. |
+| **Branche** | `fix/scan-confirmation-cash-ui` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
 
 ---
+
+### État actualisé — 2026-09-16 — feuille de confirmation et actions caisse Scan
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-scan-confirm-cash-ui`, la feuille tactile de confirmation de fin de session
+est désormais au-dessus de l’aperçu caméra, qui ne masque plus ses titres ni ses actions. En mode
+Caisse, le texte d’aide « Aucun prix, aucun total — l’encaissement reste manuel » est retiré et
+les boutons « Annuler dernier » et « Valider » passent de 60 à 52 px pour rendre davantage de
+place à la liste des livres.
+
+Validation locale : TDD rouge puis vert, 213 tests Scan ChromeHeadless, build de production,
+6 contrats de bootstrap et `git diff --check` passent. `python -m graphify update .` ré-extrait
+le graphe mais échoue encore lors de la visualisation HTML au-delà de la limite de 5 100 nœuds.
+Le shell local atteint l’écran de connexion Entra ; l’accès authentifié à `/tri` et `/caisse`, le
+contrôle manuel mobile et le retest caméra sur appareil réel restent à faire. Aucun déploiement,
+compte, session, API, Azure ou Entra n’a été modifié.
 
 ### État actualisé — 2026-09-16 — retrait du bandeau de persistance du Scan
 
