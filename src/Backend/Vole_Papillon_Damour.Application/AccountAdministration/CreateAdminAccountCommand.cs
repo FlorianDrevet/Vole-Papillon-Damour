@@ -7,7 +7,8 @@ namespace Vole_Papillon_Damour.Application.AccountAdministration;
 
 public sealed record CreateAdminAccountCommand(
     string Email,
-    string DisplayName,
+    string FirstName,
+    string LastName,
     string TemporaryPassword,
     IReadOnlyCollection<string>? Roles) : IRequest<ErrorOr<AdminAccountResult>>;
 
@@ -19,9 +20,12 @@ public sealed class CreateAdminAccountCommandValidator : AbstractValidator<Creat
             .NotEmpty()
             .EmailAddress()
             .MaximumLength(320);
-        RuleFor(command => command.DisplayName)
+        RuleFor(command => command.FirstName)
             .NotEmpty()
-            .MaximumLength(200);
+            .MaximumLength(64);
+        RuleFor(command => command.LastName)
+            .NotEmpty()
+            .MaximumLength(64);
         RuleFor(command => command.TemporaryPassword)
             .NotEmpty()
             .MinimumLength(8)
@@ -53,7 +57,8 @@ public sealed class CreateAdminAccountCommandHandler(IEntraAccountDirectory dire
         {
             var account = await directory.CreateAsync(
                 command.Email.Trim().ToLowerInvariant(),
-                command.DisplayName.Trim(),
+                command.FirstName.Trim(),
+                command.LastName.Trim(),
                 command.TemporaryPassword,
                 roles,
                 cancellationToken);

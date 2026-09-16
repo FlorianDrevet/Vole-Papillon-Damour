@@ -52,7 +52,7 @@ public sealed class AccountAdministrationHandlerTests
     }
 
     [Fact]
-    public async Task CreateAdminAccountCommand_NormalizesRolesBeforeCreatingDirectoryAccount()
+    public async Task CreateAdminAccountCommand_NormalizesNamesAndRolesBeforeCreatingDirectoryAccount()
     {
         var directory = Substitute.For<IEntraAccountDirectory>();
         var expected = new EntraAccount(
@@ -64,7 +64,8 @@ public sealed class AccountAdministrationHandlerTests
             [AccountRoles.Administration, AccountRoles.Tri]);
         directory.CreateAsync(
                 "marie@example.test",
-                "Marie Tri",
+                "Marie",
+                "Tri",
                 "Temporaire1!",
                 Arg.Any<IReadOnlyCollection<string>>(),
                 Arg.Any<CancellationToken>())
@@ -75,7 +76,8 @@ public sealed class AccountAdministrationHandlerTests
         var result = await handler.Handle(
             new CreateAdminAccountCommand(
                 " Marie@example.test ",
-                " Marie Tri ",
+                " Marie ",
+                " Tri ",
                 "Temporaire1!",
                 [AccountRoles.Tri, AccountRoles.Administration, AccountRoles.Tri]),
             CancellationToken.None);
@@ -84,7 +86,8 @@ public sealed class AccountAdministrationHandlerTests
         result.Value.Email.Should().Be("marie@example.test");
         await directory.Received(1).CreateAsync(
             "marie@example.test",
-            "Marie Tri",
+            "Marie",
+            "Tri",
             "Temporaire1!",
             Arg.Is<IReadOnlyCollection<string>>(roles =>
                 roles.SequenceEqual(new[] { AccountRoles.Tri, AccountRoles.Administration })),
@@ -100,14 +103,15 @@ public sealed class AccountAdministrationHandlerTests
         var result = await handler.Handle(
             new CreateAdminAccountCommand(
                 "marie@example.test",
-                "Marie Tri",
+                "Marie",
+                "Tri",
                 "Temporaire1!",
                 []),
             CancellationToken.None);
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("Account.RoleRequired");
-        await directory.DidNotReceiveWithAnyArgs().CreateAsync(default!, default!, default!, default!, default!);
+        await directory.DidNotReceiveWithAnyArgs().CreateAsync(default!, default!, default!, default!, default!, default!);
     }
 
     [Fact]

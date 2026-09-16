@@ -138,7 +138,8 @@ export class CatalogAdministrationComponent implements OnInit {
 
   protected readonly createAccountForm = this.formBuilder.nonNullable.group({
     email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
-    displayName: ['', [Validators.required, Validators.maxLength(200)]],
+    firstName: ['', [Validators.required, Validators.maxLength(64)]],
+    lastName: ['', [Validators.required, Validators.maxLength(64)]],
     temporaryPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(256)]],
     roles: this.formBuilder.nonNullable.control<AdminAccountRole[]>([], Validators.required),
   });
@@ -447,7 +448,7 @@ export class CatalogAdministrationComponent implements OnInit {
       () => this.facade.createAccount(this.createAccountForm.getRawValue()),
       'Le compte a été créé.',
       () => {
-        this.createAccountForm.reset({email: '', displayName: '', temporaryPassword: '', roles: []});
+        this.createAccountForm.reset({email: '', firstName: '', lastName: '', temporaryPassword: '', roles: []});
         this.showCreateAccount.set(false);
         this.loadAccounts();
       },

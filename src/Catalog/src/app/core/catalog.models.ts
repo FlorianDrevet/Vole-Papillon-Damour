@@ -705,7 +705,8 @@ export interface CatalogAdminAccountFilters {
 
 export interface CatalogAdminCreateAccountRequest {
   email: string;
-  displayName: string;
+  firstName: string;
+  lastName: string;
   temporaryPassword: string;
   roles: CatalogAdminAccountRole[];
 }

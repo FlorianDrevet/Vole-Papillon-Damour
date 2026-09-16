@@ -293,7 +293,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   ];
   readonly createAccountForm: CatalogAdminCreateAccountRequest = {
     email: '',
-    displayName: '',
+    firstName: '',
+    lastName: '',
     temporaryPassword: '',
     roles: [],
   };
@@ -1342,21 +1343,23 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async createAccount(): Promise<void> {
     const form = this.createAccountForm;
-    if (!form.email.trim() || !form.displayName.trim() || form.temporaryPassword.length < 8 || form.roles.length === 0) {
-      this.showError('E-mail, nom, mot de passe temporaire et au moins un droit sont obligatoires.');
+    if (!form.email.trim() || !form.firstName.trim() || !form.lastName.trim() || form.temporaryPassword.length < 8 || form.roles.length === 0) {
+      this.showError('E-mail, prénom, nom, mot de passe temporaire et au moins un droit sont obligatoires.');
       return;
     }
 
     await this.run('create-account', async token => {
       await firstValueFrom(this.api.createAdminAccount(token, {
         email: form.email.trim(),
-        displayName: form.displayName.trim(),
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
         temporaryPassword: form.temporaryPassword,
         roles: [...form.roles],
       }));
       this.showSuccess('Le compte bénévole a été créé.');
       form.email = '';
-      form.displayName = '';
+      form.firstName = '';
+      form.lastName = '';
       form.temporaryPassword = '';
       form.roles = [];
       this.showCreateAccount.set(false);

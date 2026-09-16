@@ -107,6 +107,12 @@ deletes the Entra identity before finalizing local cleanup and reports whether t
 fallback remains. The former support/commercial-use notice is removed. No Entra account,
 Azure resource or deployment was changed during local validation.
 
+As of 2026-09-16, the Catalog and BackOffice volunteer-account forms collect separate
+`Prénom` and `Nom` fields instead of the obsolete `Nom affiché` field. Both clients send the
+typed `firstName`/`lastName` create contract; the API trims and validates each value, and the
+Graph adapter maps them to `givenName`/`surname` while deriving the display name. No real
+Entra account was created during local validation.
+
 The public search sort control keeps a native accessible `<select>` for keyboard and screen
 reader behavior while wrapping it in Catalog design-system spacing, border, pill, chevron,
 hover, and focus styles. The administration Settings navigation icon uses a balanced custom

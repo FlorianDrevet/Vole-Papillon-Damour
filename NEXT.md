@@ -17,13 +17,32 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — permutation des espaces d’administration Catalogue et Inventaire. |
-| **Prochaine action** | Faire relire la [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190), puis déployer depuis `main` et contrôler les deux espaces avec une session Administration authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-inventory-catalogue-labels` |
-| **Dernière mise à jour** | 2026-09-16 — les libellés, icônes, routes d’administration, chargements et titres Catalogue/Inventaire ont été permutés ; le public `/catalogue` reste inchangé. 262 tests Catalog, build SSR/navigateur et smoke Chrome desktop/mobile passants ; le contrôle métier authentifié avec API/Entra reste à faire. |
-| **Branche** | `fix/backoffice-inventory-catalogue-labels` — dédiée depuis `origin/main` fraîchement récupéré, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) vers `main` |
+| **Lot en cours** | Catalog — création de comptes bénévoles avec prénom et nom séparés. |
+| **Prochaine action** | Faire relire la PR de correction, puis contrôler le parcours authentifié avec Entra et l’API avant déploiement. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-registration-name-fields-fix` |
+| **Dernière mise à jour** | 2026-09-16 — le formulaire admin n’expose plus `Nom affiché` : les deux clients, l’API et Graph utilisent désormais prénom/nom séparés. Suites Catalog, BackOffice et backend passantes ; le smoke local s’arrête à la connexion Microsoft. |
+| **Branche** | `fix/account-registration-name-fields-20260916` — dédiée depuis `origin/main` fraîchement récupéré |
 
 ---
+
+### État actualisé — 2026-09-16 — création de compte bénévole avec prénom et nom
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-account-registration-name-fields-fix`, les écrans Catalog et BackOffice
+remplacent le champ « Nom affiché » par « Prénom » et « Nom ». Le contrat `POST /accounts/admin`
+transporte `firstName` et `lastName`; l’application les nettoie et les valide séparément, puis
+l’adaptateur Microsoft Graph renseigne `givenName` et `surname` et reconstruit `displayName` pour
+la lecture annuaire. Les réponses et les listes existantes peuvent continuer à afficher le
+display name dérivé.
+
+Validation locale : TDD rouge puis vert, 261 tests Catalog ChromeHeadless, 21 tests BackOffice
+ChromeHeadless, 463 tests backend via la solution .NET, builds de production Catalog et
+BackOffice, `git diff --check`. `graphify update .` a bien ré-extrait les fichiers mais son étape
+de visualisation échoue sur la taille actuelle du graphe (5 103 nœuds) ; aucun artefact source
+n’a été modifié. Le smoke Chrome desktop du serveur local atteint correctement la route
+`/administration/accounts` et son shell responsive, mais la page demande une connexion Microsoft;
+aucune authentification, création de compte, modification Entra ou déploiement n’a été effectué.
+`rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été utilisées.
 
 ### État actualisé — 2026-09-15 — overlay du genre sur l’accueil Catalog
 
