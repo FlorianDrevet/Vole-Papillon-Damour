@@ -1418,7 +1418,7 @@ describe('ScannerComponent', () => {
     railFixture.destroy();
   });
 
-  it('ranks an unusable local store above a browser that only refuses persistence', () => {
+  it('keeps an unusable local store critical without showing a persistence warning banner', () => {
     const unusable = TestBed.createComponent(ScannerComponent);
     unusable.componentInstance.persistenceStatus =
       {available: false, persisted: false, requestAttempted: true};
@@ -1426,6 +1426,7 @@ describe('ScannerComponent', () => {
 
     expect(unusable.componentInstance.priorityAlerts[0].level).toBe('critical');
     expect(unusable.componentInstance.priorityAlerts[0].message).toContain('IndexedDB');
+    expect(unusable.nativeElement.querySelector('.status-strip')).not.toBeNull();
     unusable.destroy();
 
     const fragile = TestBed.createComponent(ScannerComponent);
@@ -1433,9 +1434,11 @@ describe('ScannerComponent', () => {
       {available: true, persisted: false, requestAttempted: true};
     fragile.detectChanges();
 
+    expect(fragile.componentInstance.storageCapabilityAlert?.level).toBe('warning');
     expect(fragile.componentInstance.priorityAlerts[0].level).toBe('warning');
     expect(fragile.componentInstance.priorityAlerts[0].message)
       .toContain('Données hors ligne non protégées');
+    expect(fragile.nativeElement.querySelector('.status-strip')).toBeNull();
     fragile.destroy();
 
     const healthy = TestBed.createComponent(ScannerComponent);
@@ -1445,6 +1448,22 @@ describe('ScannerComponent', () => {
 
     expect(healthy.componentInstance.hasAlerts).toBeFalse();
     healthy.destroy();
+  });
+
+  it('does not let the persistence warning replace another status in the strip', () => {
+    const statusFixture = TestBed.createComponent(ScannerComponent);
+    const statusComponent = statusFixture.componentInstance;
+    statusComponent.persistenceStatus =
+      {available: true, persisted: false, requestAttempted: true};
+    statusComponent.authDegraded = true;
+    statusFixture.detectChanges();
+
+    const strip = statusFixture.nativeElement.querySelector('.status-strip') as HTMLElement | null;
+    expect(strip).not.toBeNull();
+    expect(strip?.textContent).toContain('Reconnectez-vous');
+    expect(strip?.textContent).not.toContain('Données hors ligne non protégées');
+
+    statusFixture.destroy();
   });
 
   it('does not show the persistence warning on either pre-scan choice screen', () => {
