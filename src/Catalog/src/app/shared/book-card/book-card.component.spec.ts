@@ -213,4 +213,34 @@ describe('BookCardComponent', () => {
     expect(card.querySelector('.availability-list')).toBeNull();
     expect(card.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
   });
+
+  it('uses a high-resolution BnF cover that fills the home cover tile', () => {
+    fixture.componentInstance.book = {
+      isbn13: '9782266339568',
+      title: 'Mille battements de cœur',
+      authors: 'Cass, Kiera, Nasalik, Madeleine',
+      publisher: 'Pocket jeunesse-PKJ',
+      publicationYear: 2024,
+      physicalFormat: null,
+      language: null,
+      genre: null,
+      workId: null,
+      coverUrl: 'https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1',
+      quantityAvailable: 1,
+      quantityAnnounced: 0,
+      nextFairAt: null,
+      lastAvailableAt: '2026-09-16T10:42:53.493+00:00',
+      firstSeenAt: '2026-09-15T10:55:49.3205958+00:00',
+      updatedAt: '2026-09-16T10:42:53.493+00:00',
+      isRare: false,
+    };
+    fixture.componentInstance.variant = 'home';
+    fixture.detectChanges();
+
+    const image = fixture.nativeElement.querySelector('.book-card--home .cover-frame img') as HTMLImageElement;
+    expect(image.getAttribute('src'))
+      .toBe('https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
+    expect(getComputedStyle(image).objectFit).toBe('cover');
+    expect(getComputedStyle(image).padding).toBe('0px');
+  });
 });

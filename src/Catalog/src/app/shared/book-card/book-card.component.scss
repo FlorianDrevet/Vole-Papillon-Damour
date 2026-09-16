@@ -278,7 +278,9 @@
 }
 
 .book-card--home .cover-frame img {
-  padding: 20px;
+  padding: 0;
+  object-fit: cover;
+  mix-blend-mode: normal;
 }
 
 .book-card-status {

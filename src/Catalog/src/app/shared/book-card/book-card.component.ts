@@ -2,6 +2,7 @@ import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 
 import {CatalogBook} from '../../core/catalog.models';
 import {publicBookPath} from '../catalog-url';
+import {catalogCoverUrl} from '../catalog-cover-url';
 
 export type BookCardVariant = 'default' | 'grid' | 'list' | 'home';
 
@@ -20,6 +21,10 @@ export class BookCardComponent {
 
   bookPath(): string {
     return publicBookPath(this.book);
+  }
+
+  displayCoverUrl(): string | null {
+    return catalogCoverUrl(this.book.coverUrl);
   }
 
   availabilityLabel(): string {
