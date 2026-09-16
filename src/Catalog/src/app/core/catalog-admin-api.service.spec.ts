@@ -125,25 +125,17 @@ describe('CatalogAdminApiService', () => {
     flow.flush({});
   });
 
-  it('loads catalogue pages with all administrative filters', () => {
+  it('loads catalogue pages with search and pagination', () => {
     const response = {generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage;
 
     service.getBooks('access-token', {
       search: 'prince',
-      metadataStatus: 'Missing',
-      rare: true,
-      hidden: false,
-      undated: true,
       page: 2,
       pageSize: 25,
     }).subscribe(result => expect(result).toBe(response));
 
     const request = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/books`);
     expect(request.request.params.get('search')).toBe('prince');
-    expect(request.request.params.get('metadataStatus')).toBe('Missing');
-    expect(request.request.params.get('rare')).toBe('true');
-    expect(request.request.params.get('hidden')).toBe('false');
-    expect(request.request.params.get('undated')).toBe('true');
     expect(request.request.params.get('page')).toBe('2');
     expect(request.request.params.get('pageSize')).toBe('25');
     request.flush(response);

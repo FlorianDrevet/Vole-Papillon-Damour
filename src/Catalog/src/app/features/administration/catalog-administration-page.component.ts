@@ -41,7 +41,6 @@ import {
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
   CatalogAdminBook,
-  CatalogAdminBookFilters,
   CatalogAdminBookPage,
   CatalogAdminFair,
   CatalogAdminFairPage,
@@ -82,9 +81,9 @@ const DEFAULT_MIN_AGE_MONTHS = 6;
 const DEFAULT_MIN_QUANTITY = 3;
 const MAX_MIN_AGE_MONTHS = 120_000;
 const MAX_BOOK_QUANTITY = 100_000;
-const INVENTORY_SEARCH_DEBOUNCE_MS = 2_000;
-const INVENTORY_ADJUSTMENT_QUANTITY = 1;
-const INVENTORY_ADJUSTMENT_NOTE = 'Correction depuis l’inventaire';
+const CATALOGUE_SEARCH_DEBOUNCE_MS = 2_000;
+const CATALOGUE_ADJUSTMENT_QUANTITY = 1;
+const CATALOGUE_ADJUSTMENT_NOTE = 'Correction depuis le catalogue';
 
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
@@ -95,7 +94,6 @@ type CatalogAdminNavIcon =
   | 'scan'
   | 'dead-stock'
   | 'catalogue'
-  | 'inventory'
   | 'statistics'
   | 'accounts'
   | 'settings';
@@ -111,7 +109,7 @@ interface CatalogAdminNavGroup {
   items: CatalogAdminNavItem[];
 }
 
-interface CatalogInventoryCandidate {
+interface CatalogBookCandidate {
   isbn13: string;
   workId: string | null;
   title: string | null;
@@ -123,17 +121,17 @@ interface CatalogInventoryCandidate {
   source: string;
 }
 
-type CatalogInventoryCandidateStatus =
+type CatalogBookCandidateStatus =
   | {state: 'loading'}
   | {state: 'found'; quantityAvailable: number}
   | {state: 'not-found'}
   | {state: 'error'};
 
-type CatalogInventoryAdjustmentDirection = 'increase' | 'decrease';
+type CatalogQuantityAdjustmentDirection = 'increase' | 'decrease';
 
-interface CatalogInventoryConfirmation {
+interface CatalogQuantityConfirmation {
   book: CatalogAdminBook;
-  direction: CatalogInventoryAdjustmentDirection;
+  direction: CatalogQuantityAdjustmentDirection;
   amount: number;
   nextQuantity: number;
   note: string;
@@ -170,7 +168,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       label: 'Le fonds de livres',
       items: [
         {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
-        {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
         {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
       ],
     },
@@ -188,23 +185,20 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     const totalCount = section === 'sessions'
       ? this.sessionsPage() ? this.correctableSessionCount() : undefined
       : section === 'catalogue'
-        ? this.inventoryBooksPage()?.totalCount
-        : section === 'inventory'
-          ? this.booksPage()?.totalCount
+        ? this.catalogueBooksPage()?.totalCount
         : undefined;
 
     return totalCount === undefined ? null : this.formatNumber(totalCount);
   }
 
   readonly overview = signal<CatalogAdminOverview | null>(null);
-  readonly booksPage = signal<CatalogAdminBookPage | null>(null);
-  readonly inventoryBooksPage = signal<CatalogAdminBookPage | null>(null);
-  readonly inventoryReferenceResults = signal<CatalogBookReference[]>([]);
-  readonly inventoryAddCandidate = signal<CatalogInventoryCandidate | null>(null);
-  readonly inventoryCandidateStatus = signal<CatalogInventoryCandidateStatus | null>(null);
-  readonly inventoryLookupLoading = signal(false);
-  readonly inventoryLookupError = signal<string | null>(null);
-  readonly inventoryConfirmation = signal<CatalogInventoryConfirmation | null>(null);
+  readonly catalogueBooksPage = signal<CatalogAdminBookPage | null>(null);
+  readonly catalogueReferenceResults = signal<CatalogBookReference[]>([]);
+  readonly catalogueAddCandidate = signal<CatalogBookCandidate | null>(null);
+  readonly catalogueCandidateStatus = signal<CatalogBookCandidateStatus | null>(null);
+  readonly catalogueLookupLoading = signal(false);
+  readonly catalogueLookupError = signal<string | null>(null);
+  readonly catalogueConfirmation = signal<CatalogQuantityConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
   readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
   readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
@@ -246,21 +240,13 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   minAgeMonths = DEFAULT_MIN_AGE_MONTHS;
   minQuantity = DEFAULT_MIN_QUANTITY;
 
-  bookSearch = '';
-  bookMetadataStatus = 'Missing';
-  bookRareOnly = false;
-  bookHiddenOnly = false;
-  bookUndatedOnly = false;
-  bookPage = 1;
-  readonly bookPageSize = 25;
-
-  inventorySearch = '';
-  inventoryIsbn = '';
-  inventoryReferenceQuery = '';
-  inventoryPage = 1;
-  readonly inventoryPageSize = 25;
-  inventoryAddQuantity = 1;
-  inventoryAddNote = 'Ajout depuis l’inventaire';
+  catalogueSearch = '';
+  catalogueIsbn = '';
+  catalogueReferenceQuery = '';
+  cataloguePage = 1;
+  readonly cataloguePageSize = 25;
+  catalogueAddQuantity = 1;
+  catalogueAddNote = 'Ajout depuis le catalogue';
 
   sessionStatus = '';
   sessionFrom = '';
@@ -299,19 +285,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     roles: [],
   };
 
-  readonly addBookForm = {
-    isbn13: '',
-    quantityAvailable: 1,
-    note: 'Ajout manuel depuis le catalogue',
-    title: '',
-    authors: '',
-    publisher: '',
-    publicationYear: null as number | null,
-    physicalFormat: '',
-    language: '',
-    genre: '',
-    workId: '',
-  };
   readonly metadataForm = {
     title: '',
     authors: '',
@@ -353,7 +326,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly destroyed = new Subject<void>();
   private administrationInitialized = false;
-  private inventorySearchTimer: number | null = null;
+  private catalogueSearchTimer: number | null = null;
 
   constructor(
     private readonly auth: CatalogAuthService,
@@ -381,7 +354,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroyed.next();
     this.destroyed.complete();
-    this.cancelInventorySearch();
+    this.cancelCatalogueSearch();
   }
 
   async initialize(): Promise<void> {
@@ -446,10 +419,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         await this.loadDeadStock();
         break;
       case 'catalogue':
-        await this.loadInventory();
-        break;
-      case 'inventory':
-        await this.loadBooks();
+        await this.loadCatalogue();
         break;
       case 'statistics':
         await this.loadStatisticsTab();
@@ -511,148 +481,132 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loadBooks(): Promise<void> {
-    const filters: CatalogAdminBookFilters = {
-      search: this.bookSearch.trim() || undefined,
-      metadataStatus: this.bookMetadataStatus || undefined,
-      rare: this.bookRareOnly ? true : undefined,
-      hidden: this.bookHiddenOnly ? true : undefined,
-      undated: this.bookUndatedOnly ? true : undefined,
-      page: this.bookPage,
-      pageSize: this.bookPageSize,
-    };
-
-    await this.run('books', async token => {
-      this.booksPage.set(await firstValueFrom(this.api.getBooks(token, filters)));
+  async loadCatalogue(): Promise<void> {
+    this.cancelCatalogueSearch();
+    await this.run('catalogue', async token => {
+      await this.loadCataloguePage(token);
     });
   }
 
-  async loadInventory(): Promise<void> {
-    this.cancelInventorySearch();
-    await this.run('inventory', async token => {
-      await this.loadInventoryPage(token);
-    });
+  submitCatalogueSearch(): void {
+    this.cancelCatalogueSearch();
+    this.cataloguePage = 1;
+    void this.loadCatalogue();
   }
 
-  submitInventorySearch(): void {
-    this.cancelInventorySearch();
-    this.inventoryPage = 1;
-    void this.loadInventory();
-  }
-
-  scheduleInventorySearch(event: Event): void {
+  scheduleCatalogueSearch(event: Event): void {
     if (event.target instanceof HTMLInputElement) {
-      this.inventorySearch = event.target.value;
+      this.catalogueSearch = event.target.value;
     }
-    this.cancelInventorySearch();
+    this.cancelCatalogueSearch();
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
 
-    this.inventorySearchTimer = window.setTimeout(() => {
-      this.inventorySearchTimer = null;
-      this.inventoryPage = 1;
-      void this.loadInventory();
-    }, INVENTORY_SEARCH_DEBOUNCE_MS);
+    this.catalogueSearchTimer = window.setTimeout(() => {
+      this.catalogueSearchTimer = null;
+      this.cataloguePage = 1;
+      void this.loadCatalogue();
+    }, CATALOGUE_SEARCH_DEBOUNCE_MS);
   }
 
-  inventoryLoading(): boolean {
-    return this.loading() && this.actionPending() === 'inventory';
+  catalogueLoading(): boolean {
+    return this.loading() && this.actionPending() === 'catalogue';
   }
 
-  async lookupInventoryIsbn(): Promise<void> {
-    const isbn = this.normalizeIsbn(this.inventoryIsbn);
-    this.inventoryIsbn = isbn;
+  async lookupCatalogueIsbn(): Promise<void> {
+    const isbn = this.normalizeIsbn(this.catalogueIsbn);
+    this.catalogueIsbn = isbn;
     if (!this.isValidIsbn(isbn)) {
-      this.inventoryLookupError.set('Saisissez un ISBN-10 ou ISBN-13 valide.');
-      this.inventoryReferenceResults.set([]);
-      this.inventoryAddCandidate.set(null);
-      this.inventoryCandidateStatus.set(null);
+      this.catalogueLookupError.set('Saisissez un ISBN-10 ou ISBN-13 valide.');
+      this.catalogueReferenceResults.set([]);
+      this.catalogueAddCandidate.set(null);
+      this.catalogueCandidateStatus.set(null);
       return;
     }
 
-    this.inventoryReferenceResults.set([]);
-    this.inventoryAddCandidate.set(null);
-    this.inventoryCandidateStatus.set(null);
-    await this.runInventoryLookup(async () => {
+    this.catalogueReferenceResults.set([]);
+    this.catalogueAddCandidate.set(null);
+    this.catalogueCandidateStatus.set(null);
+    await this.runCatalogueLookup(async () => {
       const response = await firstValueFrom(this.catalogApi.searchReferences(isbn, 1, 20));
       const isbn13 = this.isbn13Equivalent(isbn);
       const reference = response.items.find(item => this.normalizeIsbn(item.isbn13 || '') === (isbn13 ?? isbn));
-      const candidate = reference ? this.toInventoryCandidate(reference) : null;
+      const candidate = reference ? this.toCatalogueCandidate(reference) : null;
       if (!reference || !candidate) {
-        this.inventoryLookupError.set('Aucune notice bibliographique ne correspond à cet ISBN.');
+        this.catalogueLookupError.set('Aucune notice bibliographique ne correspond à cet ISBN.');
         return;
       }
-      await this.selectInventoryCandidate(reference);
+      await this.selectCatalogueCandidate(reference);
     });
   }
 
-  async searchInventoryReferences(): Promise<void> {
-    const query = this.inventoryReferenceQuery.trim();
+  async searchCatalogueReferences(): Promise<void> {
+    const query = this.catalogueReferenceQuery.trim();
     if (query.length < 2) {
-      this.inventoryLookupError.set('La recherche doit contenir au moins deux caractères.');
-      this.inventoryReferenceResults.set([]);
-      this.inventoryAddCandidate.set(null);
-      this.inventoryCandidateStatus.set(null);
+      this.catalogueLookupError.set('La recherche doit contenir au moins deux caractères.');
+      this.catalogueReferenceResults.set([]);
+      this.catalogueAddCandidate.set(null);
+      this.catalogueCandidateStatus.set(null);
       return;
     }
 
-    this.inventoryReferenceQuery = query;
-    this.inventoryReferenceResults.set([]);
-    this.inventoryAddCandidate.set(null);
-    this.inventoryCandidateStatus.set(null);
-    await this.runInventoryLookup(async () => {
+    this.catalogueReferenceQuery = query;
+    this.catalogueReferenceResults.set([]);
+    this.catalogueAddCandidate.set(null);
+    this.catalogueCandidateStatus.set(null);
+    await this.runCatalogueLookup(async () => {
       const response = await firstValueFrom(this.catalogApi.searchReferences(query, 1, 20));
-      this.inventoryReferenceResults.set(response.items);
+      this.catalogueReferenceResults.set(response.items);
       if (response.items.length === 0) {
-        this.inventoryLookupError.set('Aucune référence ne correspond à cette recherche.');
+        this.catalogueLookupError.set('Aucune référence ne correspond à cette recherche.');
       }
     });
   }
 
-  async selectInventoryCandidate(reference: CatalogBookReference): Promise<void> {
-    const candidate = this.toInventoryCandidate(reference);
+  async selectCatalogueCandidate(reference: CatalogBookReference): Promise<void> {
+    const candidate = this.toCatalogueCandidate(reference);
     if (!candidate) {
       return;
     }
 
-    this.inventoryAddCandidate.set(candidate);
-    this.inventoryCandidateStatus.set({state: 'loading'});
-    this.inventoryAddQuantity = 1;
-    this.inventoryAddNote = 'Ajout depuis l’inventaire';
-    this.inventoryLookupError.set(null);
-    await this.loadInventoryCandidateStatus(candidate.isbn13);
+    this.catalogueAddCandidate.set(candidate);
+    this.catalogueCandidateStatus.set({state: 'loading'});
+    this.catalogueAddQuantity = 1;
+    this.catalogueAddNote = 'Ajout depuis le catalogue';
+    this.catalogueLookupError.set(null);
+    await this.loadCatalogueCandidateStatus(candidate.isbn13);
   }
 
-  adjustInventoryAddQuantity(delta: number): void {
-    const quantity = Number(this.inventoryAddQuantity);
+  adjustCatalogueAddQuantity(delta: number): void {
+    const quantity = Number(this.catalogueAddQuantity);
     const current = Number.isFinite(quantity) ? Math.trunc(quantity) : 0;
-    this.inventoryAddQuantity = Math.min(
+    this.catalogueAddQuantity = Math.min(
       MAX_BOOK_QUANTITY,
       Math.max(0, current + delta),
     );
   }
 
-  inventoryCandidateQuantity(): number {
-    const status = this.inventoryCandidateStatus();
+  catalogueCandidateQuantity(): number {
+    const status = this.catalogueCandidateStatus();
     return status?.state === 'found' ? status.quantityAvailable : 0;
   }
 
-  async addInventoryCandidate(): Promise<void> {
-    const candidate = this.inventoryAddCandidate();
-    const quantity = Number(this.inventoryAddQuantity);
-    const note = this.inventoryAddNote.trim();
+  async addCatalogueCandidate(): Promise<void> {
+    const candidate = this.catalogueAddCandidate();
+    const quantity = Number(this.catalogueAddQuantity);
+    const note = this.catalogueAddNote.trim();
     if (!candidate || !Number.isInteger(quantity) || quantity < 0 || quantity > MAX_BOOK_QUANTITY || !note) {
-      this.inventoryLookupError.set('La quantité doit être un entier positif ou nul et la note est obligatoire.');
+      this.catalogueLookupError.set('La quantité doit être un entier positif ou nul et la note est obligatoire.');
       return;
     }
 
     if (note.length > 500) {
-      this.inventoryLookupError.set('La note ne peut pas dépasser 500 caractères.');
+      this.catalogueLookupError.set('La note ne peut pas dépasser 500 caractères.');
       return;
     }
 
-    await this.run('add-inventory-book', async token => {
+    await this.run('add-catalogue-book', async token => {
       await firstValueFrom(this.api.addBook(token, {
         isbn13: candidate.isbn13,
         quantityAvailable: quantity,
@@ -667,20 +621,20 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         coverUrl: candidate.coverUrl,
         workId: candidate.workId,
       }));
-      this.inventoryAddCandidate.set(null);
-      this.inventoryCandidateStatus.set(null);
-      this.inventoryReferenceResults.set([]);
-      this.showSuccess('La fiche a été ajoutée à l’inventaire.');
-      await this.loadInventoryPage(token);
+      this.catalogueAddCandidate.set(null);
+      this.catalogueCandidateStatus.set(null);
+      this.catalogueReferenceResults.set([]);
+      this.showSuccess('La fiche a été ajoutée au catalogue.');
+      await this.loadCataloguePage(token);
     });
   }
 
-  async adjustInventoryQuantity(
+  async adjustCatalogueQuantity(
     book: CatalogAdminBook,
-    direction: CatalogInventoryAdjustmentDirection,
+    direction: CatalogQuantityAdjustmentDirection,
   ): Promise<void> {
-    const amount = INVENTORY_ADJUSTMENT_QUANTITY;
-    const note = INVENTORY_ADJUSTMENT_NOTE;
+    const amount = CATALOGUE_ADJUSTMENT_QUANTITY;
+    const note = CATALOGUE_ADJUSTMENT_NOTE;
 
     const nextQuantity = direction === 'increase'
       ? book.quantityAvailable + amount
@@ -695,34 +649,34 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.inventoryConfirmation.set({book, direction, amount, nextQuantity, note});
+    this.catalogueConfirmation.set({book, direction, amount, nextQuantity, note});
   }
 
-  async confirmInventoryAdjustment(): Promise<void> {
-    const confirmation = this.inventoryConfirmation();
+  async confirmCatalogueAdjustment(): Promise<void> {
+    const confirmation = this.catalogueConfirmation();
     if (!confirmation || this.loading()) {
       return;
     }
 
-    this.inventoryConfirmation.set(null);
-    await this.run('inventory-quantity', async token => {
+    this.catalogueConfirmation.set(null);
+    await this.run('catalogue-quantity', async token => {
       await firstValueFrom(this.api.correctQuantity(token, confirmation.book.isbn13, {
         quantityAvailable: confirmation.nextQuantity,
         note: confirmation.note,
       }));
       this.showSuccess(`Le stock de « ${confirmation.book.title || confirmation.book.isbn13} » est maintenant de ${confirmation.nextQuantity} exemplaire(s).`);
-      await this.loadInventoryPage(token);
+      await this.loadCataloguePage(token);
     });
   }
 
-  cancelInventoryAdjustment(): void {
-    this.inventoryConfirmation.set(null);
+  cancelCatalogueAdjustment(): void {
+    this.catalogueConfirmation.set(null);
   }
 
   @HostListener('document:keydown.escape')
   closeOpenDialogOnEscape(): void {
-    if (this.inventoryConfirmation()) {
-      this.cancelInventoryAdjustment();
+    if (this.catalogueConfirmation()) {
+      this.cancelCatalogueAdjustment();
       return;
     }
 
@@ -737,7 +691,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async openBook(isbn13: string): Promise<void> {
-    this.activeSection.set('inventory');
+    this.activeSection.set('catalogue');
     await this.run('book-detail', async token => {
       const book = await firstValueFrom(this.api.getBook(token, isbn13));
       this.selectedBook.set(book);
@@ -763,31 +717,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  async addBook(): Promise<void> {
-    if (!this.addBookForm.isbn13.trim() || !this.addBookForm.note.trim()) {
-      this.showError('ISBN et note d’ajout sont obligatoires.');
-      return;
-    }
-
-    await this.run('add-book', async token => {
-      await firstValueFrom(this.api.addBook(token, {
-        isbn13: this.addBookForm.isbn13.trim(),
-        quantityAvailable: Number(this.addBookForm.quantityAvailable),
-        note: this.addBookForm.note.trim(),
-        title: this.optional(this.addBookForm.title),
-        authors: this.optional(this.addBookForm.authors),
-        publisher: this.optional(this.addBookForm.publisher),
-        publicationYear: this.addBookForm.publicationYear,
-        physicalFormat: this.optional(this.addBookForm.physicalFormat),
-        language: this.optional(this.addBookForm.language),
-        genre: this.optional(this.addBookForm.genre),
-        workId: this.optional(this.addBookForm.workId),
-      }));
-      this.showSuccess('La fiche a été ajoutée au catalogue.');
-      await this.loadBooks();
-    });
-  }
-
   async updateMetadata(book: CatalogAdminBook): Promise<void> {
     await this.run('metadata', async token => {
       await firstValueFrom(this.api.updateMetadata(token, book.isbn13, {
@@ -804,7 +733,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       }));
       this.showSuccess('Les métadonnées ont été enregistrées.');
       await this.openBook(book.isbn13);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -826,7 +755,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       }));
       this.showSuccess('La correction de stock a été journalisée.');
       await this.openBook(book.isbn13);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -848,7 +777,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       }));
       this.showSuccess('Le retrait a été journalisé.');
       await this.openBook(book.isbn13);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -870,7 +799,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       }));
       this.showSuccess('La correction de l’annonce a été journalisée.');
       await this.openBook(book.isbn13);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -883,7 +812,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.api.setRare(token, book.isbn13, !book.isRare));
       this.showSuccess(book.isRare ? 'Le signal rare a été retiré.' : 'Le livre est marqué comme rare.');
       await this.openBook(book.isbn13);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -892,7 +821,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.api.setVisibility(token, book.isbn13, !book.isHidden));
       this.showSuccess(book.isHidden ? 'La fiche est à nouveau visible.' : 'La fiche est masquée du catalogue public.');
       await this.openBook(book.isbn13);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -914,7 +843,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       }));
       this.showSuccess('La fiche source est redirigée vers la fiche canonique.');
       this.selectedBook.set(null);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -927,7 +856,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.api.deleteBook(token, book.isbn13));
       this.showSuccess('La fiche a été supprimée.');
       this.selectedBook.set(null);
-      await this.loadBooks();
+      await this.loadCatalogue();
     });
   }
 
@@ -1620,17 +1549,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
-  goToBooksPage(page: number): void {
-    if (this.validPage(page, this.booksPage())) {
-      this.bookPage = page;
-      void this.loadBooks();
-    }
-  }
-
-  goToInventoryPage(page: number): void {
-    if (this.validPage(page, this.inventoryBooksPage())) {
-      this.inventoryPage = page;
-      void this.loadInventory();
+  goToCataloguePage(page: number): void {
+    if (this.validPage(page, this.catalogueBooksPage())) {
+      this.cataloguePage = page;
+      void this.loadCatalogue();
     }
   }
 
@@ -1963,66 +1885,62 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     return {minAgeMonths, minQuantity};
   }
 
-  private async loadInventoryPage(token: string): Promise<void> {
-    this.inventoryBooksPage.set(await firstValueFrom(this.api.getBooks(token, {
-      search: this.inventorySearch.trim() || undefined,
-      metadataStatus: undefined,
-      rare: undefined,
-      hidden: undefined,
-      undated: undefined,
-      page: this.inventoryPage,
-      pageSize: this.inventoryPageSize,
+  private async loadCataloguePage(token: string): Promise<void> {
+    this.catalogueBooksPage.set(await firstValueFrom(this.api.getBooks(token, {
+      search: this.catalogueSearch.trim() || undefined,
+      page: this.cataloguePage,
+      pageSize: this.cataloguePageSize,
     })));
   }
 
-  private cancelInventorySearch(): void {
-    if (this.inventorySearchTimer !== null && isPlatformBrowser(this.platformId)) {
-      window.clearTimeout(this.inventorySearchTimer);
+  private cancelCatalogueSearch(): void {
+    if (this.catalogueSearchTimer !== null && isPlatformBrowser(this.platformId)) {
+      window.clearTimeout(this.catalogueSearchTimer);
     }
-    this.inventorySearchTimer = null;
+    this.catalogueSearchTimer = null;
   }
 
-  private async runInventoryLookup(operation: () => Promise<void>): Promise<void> {
-    this.inventoryLookupLoading.set(true);
-    this.inventoryLookupError.set(null);
+  private async runCatalogueLookup(operation: () => Promise<void>): Promise<void> {
+    this.catalogueLookupLoading.set(true);
+    this.catalogueLookupError.set(null);
     try {
       await operation();
     } catch (error: unknown) {
-      this.inventoryLookupError.set(this.describeInventoryLookupError(error));
+      this.catalogueLookupError.set(this.describeCatalogueLookupError(error));
     } finally {
-      this.inventoryLookupLoading.set(false);
+      this.catalogueLookupLoading.set(false);
     }
   }
 
-  private async loadInventoryCandidateStatus(isbn13: string): Promise<void> {
-    this.inventoryLookupLoading.set(true);
+  private async loadCatalogueCandidateStatus(isbn13: string): Promise<void> {
+    this.catalogueLookupLoading.set(true);
     try {
       const token = await this.auth.getApiAccessToken();
       const book = await firstValueFrom(this.api.getBook(token, isbn13));
-      if (this.inventoryAddCandidate()?.isbn13 === isbn13) {
-        this.inventoryCandidateStatus.set({
+      if (this.catalogueAddCandidate()?.isbn13 === isbn13) {
+        this.catalogueCandidateStatus.set({
           state: 'found',
           quantityAvailable: book.quantityAvailable,
         });
       }
     } catch (error: unknown) {
-      if (this.inventoryAddCandidate()?.isbn13 !== isbn13) {
+      if (this.catalogueAddCandidate()?.isbn13 !== isbn13) {
         return;
       }
 
       if (error instanceof HttpErrorResponse && error.status === 404) {
-        this.inventoryCandidateStatus.set({state: 'not-found'});
+        this.catalogueCandidateStatus.set({state: 'not-found'});
         return;
       }
 
-      this.inventoryCandidateStatus.set({state: 'error'});
-      this.inventoryLookupError.set(this.describeError(error));
+      this.catalogueCandidateStatus.set({state: 'error'});
+      this.catalogueLookupError.set(this.describeError(error));
     } finally {
-      this.inventoryLookupLoading.set(false);
+      this.catalogueLookupLoading.set(false);
     }
   }
 
-  private toInventoryCandidate(reference: CatalogBookReference): CatalogInventoryCandidate | null {
+  private toCatalogueCandidate(reference: CatalogBookReference): CatalogBookCandidate | null {
     const isbn13 = this.normalizeIsbn(reference.isbn13 || '');
     if (!isbn13) {
       return null;
@@ -2081,7 +1999,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     return `${body}${(10 - (checksum % 10)) % 10}`;
   }
 
-  private describeInventoryLookupError(error: unknown): string {
+  private describeCatalogueLookupError(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 404) {
         return 'Aucune notice bibliographique ne correspond à cette recherche.';

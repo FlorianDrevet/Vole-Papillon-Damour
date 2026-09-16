@@ -712,12 +712,8 @@ export interface CatalogAdminCreateAccountRequest {
   roles: CatalogAdminAccountRole[];
 }
 
-export interface CatalogAdminBookFilters {
+export interface CatalogAdminCatalogueFilters {
   search?: string;
-  metadataStatus?: string;
-  rare?: boolean;
-  hidden?: boolean;
-  undated?: boolean;
   page?: number;
   pageSize?: number;
 }

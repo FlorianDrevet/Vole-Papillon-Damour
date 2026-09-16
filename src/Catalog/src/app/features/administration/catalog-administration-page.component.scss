@@ -684,7 +684,6 @@
 .pending-alert-list,
 .session-list,
 .dead-stock-list,
-.book-queue-list,
 .account-list,
 .member-list {
   display: flex;
@@ -1033,7 +1032,6 @@ input:disabled {
 }
 
 .dead-stock-row,
-.book-queue-row,
 .member-row,
 .account-row {
   gap: 20px;
@@ -1051,7 +1049,6 @@ input:disabled {
 }
 
 .dead-stock-book > div,
-.book-queue-primary,
 .account-identity,
 .member-row > div {
   display: flex;
@@ -1061,7 +1058,6 @@ input:disabled {
 }
 
 .dead-stock-book strong,
-.book-queue-primary strong,
 .account-identity strong,
 .member-row strong {
   overflow: hidden;
@@ -1073,7 +1069,6 @@ input:disabled {
 }
 
 .dead-stock-book span:not(.book-cover-placeholder),
-.book-queue-primary > span:last-child,
 .account-identity small,
 .member-row > div > span {
   overflow: hidden;
@@ -1093,7 +1088,6 @@ input:disabled {
 }
 
 .age-label,
-.book-queue-quantity,
 .account-activity,
 .member-last-seen {
   flex: 0 0 155px;
@@ -1112,144 +1106,10 @@ input:disabled {
   text-align: right;
 }
 
-.queue-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.queue-card {
-  display: flex;
-  min-height: 195px;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 22px;
-  border: 1px solid var(--admin-line);
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.queue-card strong {
-  font-family: 'Newsreader', Georgia, serif;
-  font-size: 42px;
-  font-weight: 500;
-  line-height: .95;
-}
-
-.queue-card span {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.queue-card small,
-.queue-card em {
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.queue-card em {
-  margin-top: auto;
-  font-style: normal;
-  font-weight: 600;
-}
-
-.queue-card-dark {
-  border-color: var(--admin-ink);
-  background: var(--admin-ink);
-  color: #ffffff;
-}
-
-.queue-card-dark strong,
-.queue-card-dark em {
-  color: var(--admin-cyan);
-}
-
-.queue-card-dark small {
-  color: var(--admin-mist);
-}
-
-.queue-card-purple {
-  border-color: #bda8d2;
-  background: #f8f3fc;
-  color: var(--admin-purple);
-}
-
-.queue-card-purple small {
-  color: var(--admin-slate);
-}
-
-.queue-card-orange {
-  border-color: #f6c38f;
-  background: #fff7ed;
-  color: var(--admin-orange-dark);
-}
-
-.queue-card-orange small {
-  color: var(--admin-slate);
-}
-
-.catalogue-heading {
-  align-items: center;
-  margin-top: 42px;
-}
-
-.search-pill {
-  display: flex;
-  align-items: center;
-  width: min(280px, 100%);
-  height: 44px;
-  border: 1px solid var(--admin-mist);
-  border-radius: 999px;
-  background: var(--admin-white);
-}
-
-.search-pill input {
-  width: 100%;
-  min-height: 40px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-}
-
-.search-pill button {
-  width: 44px;
-  height: 42px;
-  border: 0;
-  background: transparent;
-  color: var(--admin-blue);
-  cursor: pointer;
-  font-size: 21px;
-}
-
-.book-queue-row {
-  min-height: 90px;
-}
-
-.book-cover-small {
-  width: 34px;
-  height: 50px;
-}
-
-.book-queue-primary {
-  flex: 1 1 auto;
-}
-
 .isbn-label {
   color: var(--admin-muted);
   font-size: 10px;
   letter-spacing: .08em;
-}
-
-.book-queue-quantity {
-  flex-basis: 110px;
-  text-align: right;
-}
-
-.book-queue-quantity small {
-  color: var(--admin-muted);
 }
 
 .breadcrumb {
@@ -1448,57 +1308,6 @@ input:disabled {
   color: var(--admin-blue);
   cursor: pointer;
   font-weight: 600;
-}
-
-.add-book-panel {
-  margin-top: 26px;
-  border: 1px solid var(--admin-line);
-  background: var(--admin-white);
-}
-
-.add-book-panel summary {
-  padding: 17px 20px;
-}
-
-.add-book-panel summary span {
-  float: right;
-  color: var(--admin-orange);
-  font-size: 18px;
-  line-height: 1;
-}
-
-.add-book-form {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  padding: 4px 20px 20px;
-}
-
-.add-book-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.add-book-form label > span {
-  color: var(--admin-muted);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 9.5px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.add-book-form .add-book-note {
-  grid-column: span 3;
-}
-
-.add-book-form textarea {
-  min-height: 42px;
-}
-
-.add-book-form .button {
-  align-self: end;
-  min-height: 42px;
 }
 
 .announcement-editor {
@@ -2466,7 +2275,7 @@ input:disabled {
 }
 
 .charts-grid,
-.inventory-grid {
+.catalogue-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
   gap: 20px;
@@ -2584,28 +2393,28 @@ input:disabled {
   width: 130px;
 }
 
-.inventory-add-zone,
-.inventory-books-zone {
+.catalogue-add-zone,
+.catalogue-books-zone {
   margin-top: 30px;
 }
 
-.inventory-add-zone {
+.catalogue-add-zone {
   padding: 24px;
   border: 1px solid var(--admin-line);
   background: var(--admin-white);
 }
 
-.inventory-zone-heading,
-.inventory-reference-heading {
+.catalogue-zone-heading,
+.catalogue-reference-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
 }
 
-.inventory-zone-heading h2,
-.inventory-reference-heading h3,
-.inventory-candidate-copy h3 {
+.catalogue-zone-heading h2,
+.catalogue-reference-heading h3,
+.catalogue-candidate-copy h3 {
   margin: 7px 0 0;
   color: var(--admin-ink);
   font-family: 'Newsreader', Georgia, serif;
@@ -2614,8 +2423,8 @@ input:disabled {
   line-height: 1.1;
 }
 
-.inventory-zone-heading p,
-.inventory-candidate-copy p {
+.catalogue-zone-heading p,
+.catalogue-candidate-copy p {
   max-width: 700px;
   margin: 8px 0 0;
   color: var(--admin-slate);
@@ -2623,7 +2432,7 @@ input:disabled {
   line-height: 1.5;
 }
 
-.inventory-process {
+.catalogue-process {
   flex: none;
   padding-top: 4px;
   color: var(--admin-muted);
@@ -2632,14 +2441,14 @@ input:disabled {
   text-transform: uppercase;
 }
 
-.inventory-lookup-grid {
+.catalogue-lookup-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin-top: 24px;
 }
 
-.inventory-lookup-card {
+.catalogue-lookup-card {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -2650,30 +2459,30 @@ input:disabled {
   background: var(--admin-paper);
 }
 
-.inventory-lookup-card label,
-.inventory-candidate-fields label,
-.inventory-search-toolbar label {
+.catalogue-lookup-card label,
+.catalogue-candidate-fields label,
+.catalogue-search-toolbar label {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 7px;
 }
 
-.inventory-lookup-card label,
-.inventory-lookup-card p {
+.catalogue-lookup-card label,
+.catalogue-lookup-card p {
   width: 100%;
 }
 
-.inventory-lookup-card label span,
-.inventory-candidate-fields label span,
-.inventory-search-toolbar label span {
+.catalogue-lookup-card label span,
+.catalogue-candidate-fields label span,
+.catalogue-search-toolbar label span {
   color: var(--admin-muted);
   font: 9.5px/1.2 'IBM Plex Mono', ui-monospace, monospace;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
 
-.inventory-lookup-card p {
+.catalogue-lookup-card p {
   flex: 1;
   margin: 0;
   color: var(--admin-slate);
@@ -2681,41 +2490,41 @@ input:disabled {
   line-height: 1.45;
 }
 
-.inventory-lookup-card .button {
+.catalogue-lookup-card .button {
   align-self: flex-start;
 }
 
-.inventory-lookup-status {
+.catalogue-lookup-status {
   margin: 16px 0 0;
   color: var(--admin-blue);
   font-size: 13px;
 }
 
-.inventory-lookup-status-error {
+.catalogue-lookup-status-error {
   color: var(--admin-red);
 }
 
-.inventory-reference-results {
+.catalogue-reference-results {
   margin-top: 24px;
   border-top: 1px solid var(--admin-line);
 }
 
-.inventory-reference-heading {
+.catalogue-reference-heading {
   align-items: baseline;
   padding: 18px 0 10px;
 }
 
-.inventory-reference-heading h3 {
+.catalogue-reference-heading h3 {
   margin-top: 6px;
 }
 
-.inventory-reference-heading > span {
+.catalogue-reference-heading > span {
   color: var(--admin-muted);
   font: 10px/1.4 'IBM Plex Mono', ui-monospace, monospace;
   text-transform: uppercase;
 }
 
-.inventory-reference-row {
+.catalogue-reference-row {
   display: flex;
   align-items: center;
   gap: 15px;
@@ -2723,31 +2532,31 @@ input:disabled {
   border-bottom: 1px solid var(--admin-line-soft);
 }
 
-.inventory-reference-selected {
+.catalogue-reference-selected {
   border-bottom-color: #f6c38f;
   background: #fffaf4;
 }
 
-.inventory-reference-cover {
+.catalogue-reference-cover {
   width: 38px;
   height: 56px;
   object-fit: cover;
 }
 
-.inventory-reference-copy,
-.inventory-candidate-copy,
-.inventory-book-identity {
+.catalogue-reference-copy,
+.catalogue-candidate-copy,
+.catalogue-book-identity {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 4px;
 }
 
-.inventory-reference-copy {
+.catalogue-reference-copy {
   flex: 1;
 }
 
-.inventory-reference-copy strong {
+.catalogue-reference-copy strong {
   overflow: hidden;
   color: var(--admin-ink);
   font-size: 14px;
@@ -2756,7 +2565,7 @@ input:disabled {
   white-space: nowrap;
 }
 
-.inventory-reference-copy > span {
+.catalogue-reference-copy > span {
   overflow: hidden;
   color: var(--admin-slate);
   font-size: 12.5px;
@@ -2764,17 +2573,17 @@ input:disabled {
   white-space: nowrap;
 }
 
-.inventory-reference-copy small,
-.inventory-candidate-copy small {
+.catalogue-reference-copy small,
+.catalogue-candidate-copy small {
   color: var(--admin-muted);
   font: 10px/1.4 'IBM Plex Mono', ui-monospace, monospace;
 }
 
-.inventory-reference-row .button {
+.catalogue-reference-row .button {
   flex: none;
 }
 
-.inventory-candidate {
+.catalogue-candidate {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 1fr);
   gap: 20px;
@@ -2784,16 +2593,16 @@ input:disabled {
   background: #fffaf4;
 }
 
-.inventory-candidate-inline {
+.catalogue-candidate-inline {
   margin-top: 0;
   border-top: 0;
 }
 
-.inventory-candidate-copy h3 {
+.catalogue-candidate-copy h3 {
   margin-top: 6px;
 }
 
-.inventory-candidate-status {
+.catalogue-candidate-status {
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid #f6c38f;
@@ -2802,7 +2611,7 @@ input:disabled {
   line-height: 1.45;
 }
 
-.inventory-quantity-stepper {
+.catalogue-quantity-stepper {
   display: flex;
   width: 130px;
   height: 40px;
@@ -2811,7 +2620,7 @@ input:disabled {
   background: var(--admin-white);
 }
 
-.inventory-quantity-stepper input {
+.catalogue-quantity-stepper input {
   min-width: 0;
   flex: 1;
   height: 38px;
@@ -2823,28 +2632,28 @@ input:disabled {
   text-align: center;
 }
 
-.inventory-candidate-fields {
+.catalogue-candidate-fields {
   display: grid;
   grid-template-columns: 130px minmax(0, 1fr);
   align-items: end;
   gap: 14px;
 }
 
-.inventory-candidate-fields .button {
+.catalogue-candidate-fields .button {
   grid-column: 1 / -1;
   justify-self: start;
 }
 
-.inventory-books-zone {
+.catalogue-books-zone {
   margin-top: 42px;
 }
 
-.inventory-heading {
+.catalogue-heading {
   align-items: center;
   margin-top: 0;
 }
 
-.inventory-refresh-button {
+.catalogue-refresh-button {
   display: inline-flex;
   min-width: 94px;
   min-height: 36px;
@@ -2853,11 +2662,11 @@ input:disabled {
   gap: 8px;
 }
 
-.inventory-refresh-button vpd-loader {
+.catalogue-refresh-button vpd-loader {
   display: inline-flex;
 }
 
-.inventory-search-toolbar {
+.catalogue-search-toolbar {
   display: flex;
   align-items: flex-end;
   gap: 16px;
@@ -2867,16 +2676,16 @@ input:disabled {
   background: var(--admin-white);
 }
 
-.inventory-search-toolbar .search-field {
+.catalogue-search-toolbar .search-field {
   flex: 1 1 320px;
 }
 
-.inventory-book-list {
+.catalogue-book-list {
   margin-top: 20px;
   border-top: 1px solid var(--admin-line);
 }
 
-.inventory-book-row {
+.catalogue-book-row {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) 104px 190px;
   align-items: center;
@@ -2885,21 +2694,21 @@ input:disabled {
   border-bottom: 1px solid var(--admin-line-soft);
 }
 
-.inventory-book-hidden {
+.catalogue-book-hidden {
   opacity: .7;
 }
 
-.inventory-book-redirected {
+.catalogue-book-redirected {
   background: rgba(233, 244, 251, .45);
 }
 
-.inventory-book-cover {
+.catalogue-book-cover {
   width: 42px;
   height: 58px;
   object-fit: cover;
 }
 
-.inventory-book-identity strong {
+.catalogue-book-identity strong {
   overflow: hidden;
   color: var(--admin-ink);
   font-size: 15px;
@@ -2908,7 +2717,7 @@ input:disabled {
   white-space: nowrap;
 }
 
-.inventory-book-identity > span:not(.isbn-label) {
+.catalogue-book-identity > span:not(.isbn-label) {
   overflow: hidden;
   color: var(--admin-slate);
   font-size: 12.5px;
@@ -2916,14 +2725,14 @@ input:disabled {
   white-space: nowrap;
 }
 
-.inventory-book-tags {
+.catalogue-book-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 3px;
 }
 
-.inventory-book-tags span {
+.catalogue-book-tags span {
   padding: 3px 6px;
   border: 1px solid var(--admin-line);
   color: var(--admin-muted);
@@ -2931,33 +2740,33 @@ input:disabled {
   text-transform: uppercase;
 }
 
-.inventory-book-stock {
+.catalogue-book-stock {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
 }
 
-.inventory-book-stock span,
-.inventory-book-stock small {
+.catalogue-book-stock span,
+.catalogue-book-stock small {
   color: var(--admin-muted);
   font: 9.5px/1.3 'IBM Plex Mono', ui-monospace, monospace;
   text-transform: uppercase;
 }
 
-.inventory-book-stock strong {
+.catalogue-book-stock strong {
   color: var(--admin-blue);
   font: 500 28px/.95 'Newsreader', Georgia, serif;
 }
 
-.inventory-book-actions {
+.catalogue-book-actions {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 9px;
 }
 
-.inventory-stepper {
+.catalogue-stepper {
   display: flex;
   align-items: center;
   height: 40px;
@@ -2965,14 +2774,14 @@ input:disabled {
   background: var(--admin-white);
 }
 
-.inventory-stepper output {
+.catalogue-stepper output {
   min-width: 48px;
   color: var(--admin-ink);
   font: 500 15px/1 'IBM Plex Mono', ui-monospace, monospace;
   text-align: center;
 }
 
-.inventory-stepper-button {
+.catalogue-stepper-button {
   width: 38px;
   height: 38px;
   border: 0;
@@ -2983,22 +2792,22 @@ input:disabled {
   line-height: 1;
 }
 
-.inventory-stepper-button:hover:not(:disabled) {
+.catalogue-stepper-button:hover:not(:disabled) {
   background: var(--admin-paper-2);
   color: var(--admin-ink);
 }
 
-.inventory-stepper-button:focus-visible {
+.catalogue-stepper-button:focus-visible {
   outline: 3px solid rgba(20, 151, 214, .25);
   outline-offset: -2px;
 }
 
-.inventory-stepper-button:disabled {
+.catalogue-stepper-button:disabled {
   color: var(--admin-mist);
   cursor: not-allowed;
 }
 
-.inventory-book-detail {
+.catalogue-book-detail {
   min-height: 36px;
   padding: 0 14px;
   font-size: 12px;
@@ -3177,7 +2986,7 @@ input:disabled {
   border-top: 1px solid var(--admin-line);
 }
 
-.inventory-confirmation-overlay {
+.catalogue-confirmation-overlay {
   position: fixed;
   z-index: 30;
   inset: 0;
@@ -3191,7 +3000,7 @@ input:disabled {
   overscroll-behavior: contain;
 }
 
-.inventory-confirmation-dialog {
+.catalogue-confirmation-dialog {
   width: min(520px, 100%);
   max-height: calc(100vh - 48px);
   overflow: auto;
@@ -3202,19 +3011,19 @@ input:disabled {
   box-shadow: 0 24px 80px rgba(4, 29, 48, .32);
 }
 
-.inventory-confirmation-header {
+.catalogue-confirmation-header {
   padding: 24px 32px 20px;
   border-bottom: 1px solid var(--admin-line);
 }
 
-.inventory-confirmation-kicker-row {
+.catalogue-confirmation-kicker-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
 
-.inventory-confirmation-close {
+.catalogue-confirmation-close {
   width: 32px;
   height: 32px;
   flex: none;
@@ -3228,18 +3037,18 @@ input:disabled {
   line-height: 1;
 }
 
-.inventory-confirmation-close:hover {
+.catalogue-confirmation-close:hover {
   border-color: var(--admin-line);
   background: var(--admin-paper-2);
   color: var(--admin-ink);
 }
 
-.inventory-confirmation-close:focus-visible {
+.catalogue-confirmation-close:focus-visible {
   outline: 3px solid rgba(20, 151, 214, .3);
   outline-offset: 2px;
 }
 
-.inventory-confirmation-header h2 {
+.catalogue-confirmation-header h2 {
   max-width: 420px;
   margin: 10px 0 8px;
   color: var(--admin-ink);
@@ -3249,7 +3058,7 @@ input:disabled {
   line-height: 1.05;
 }
 
-.inventory-confirmation-header p {
+.catalogue-confirmation-header p {
   max-width: 420px;
   margin: 0;
   color: var(--admin-slate);
@@ -3257,11 +3066,11 @@ input:disabled {
   line-height: 1.45;
 }
 
-.inventory-confirmation-body {
+.catalogue-confirmation-body {
   padding: 22px 32px 26px;
 }
 
-.inventory-confirmation-book {
+.catalogue-confirmation-book {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
@@ -3271,26 +3080,26 @@ input:disabled {
   background: var(--admin-paper);
 }
 
-.inventory-confirmation-cover {
+.catalogue-confirmation-cover {
   width: 42px;
   height: 58px;
   object-fit: cover;
 }
 
-.inventory-confirmation-book > div {
+.catalogue-confirmation-book > div {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 4px;
 }
 
-.inventory-confirmation-book strong {
+.catalogue-confirmation-book strong {
   color: var(--admin-ink);
   font-size: 15px;
   line-height: 1.25;
 }
 
-.inventory-confirmation-book > div > span:not(.isbn-label) {
+.catalogue-confirmation-book > div > span:not(.isbn-label) {
   overflow: hidden;
   color: var(--admin-slate);
   font-size: 12px;
@@ -3298,7 +3107,7 @@ input:disabled {
   white-space: nowrap;
 }
 
-.inventory-confirmation-action {
+.catalogue-confirmation-action {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
@@ -3308,14 +3117,14 @@ input:disabled {
   font-size: 13px;
 }
 
-.inventory-confirmation-action strong {
+.catalogue-confirmation-action strong {
   color: var(--admin-ink);
   font-family: 'Newsreader', Georgia, serif;
   font-size: 22px;
   font-weight: 500;
 }
 
-.inventory-confirmation-quantities {
+.catalogue-confirmation-quantities {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
@@ -3325,39 +3134,39 @@ input:disabled {
   background: var(--admin-white);
 }
 
-.inventory-confirmation-quantities > div {
+.catalogue-confirmation-quantities > div {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 4px;
 }
 
-.inventory-confirmation-quantities span {
+.catalogue-confirmation-quantities span {
   color: var(--admin-muted);
   font: 9.5px/1.3 'IBM Plex Mono', ui-monospace, monospace;
   letter-spacing: .05em;
   text-transform: uppercase;
 }
 
-.inventory-confirmation-quantities strong {
+.catalogue-confirmation-quantities strong {
   color: var(--admin-blue);
   font: 500 30px/.95 'Newsreader', Georgia, serif;
 }
 
-.inventory-confirmation-arrow {
+.catalogue-confirmation-arrow {
   color: var(--admin-orange);
   font-size: 22px;
 }
 
-.inventory-confirmation-decrease .inventory-confirmation-next strong {
+.catalogue-confirmation-decrease .catalogue-confirmation-next strong {
   color: var(--admin-red);
 }
 
-.inventory-confirmation-details {
+.catalogue-confirmation-details {
   margin: 18px 0 0;
 }
 
-.inventory-confirmation-details > div {
+.catalogue-confirmation-details > div {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -3366,14 +3175,14 @@ input:disabled {
   border-top: 1px solid var(--admin-line-soft);
 }
 
-.inventory-confirmation-details dt {
+.catalogue-confirmation-details dt {
   color: var(--admin-muted);
   font: 9.5px/1.3 'IBM Plex Mono', ui-monospace, monospace;
   letter-spacing: .05em;
   text-transform: uppercase;
 }
 
-.inventory-confirmation-details dd {
+.catalogue-confirmation-details dd {
   max-width: 65%;
   margin: 0;
   color: var(--admin-ink);
@@ -3382,14 +3191,14 @@ input:disabled {
   overflow-wrap: anywhere;
 }
 
-.inventory-confirmation-note {
+.catalogue-confirmation-note {
   margin: 18px 0 0;
   color: var(--admin-muted);
   font-size: 11.5px;
   line-height: 1.45;
 }
 
-.inventory-confirmation-footer {
+.catalogue-confirmation-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -3398,7 +3207,7 @@ input:disabled {
   border-top: 1px solid var(--admin-line);
 }
 
-.inventory-confirmation-footer .button {
+.catalogue-confirmation-footer .button {
   min-height: 44px;
 }
 
@@ -3489,19 +3298,13 @@ input:disabled {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .queue-grid,
-  .charts-grid,
-  .add-book-form {
+  .charts-grid {
     grid-template-columns: 1fr;
   }
 
-  .inventory-lookup-grid,
-  .inventory-candidate {
+  .catalogue-lookup-grid,
+  .catalogue-candidate {
     grid-template-columns: 1fr;
-  }
-
-  .add-book-form .add-book-note {
-    grid-column: auto;
   }
 
   .account-table-head {
@@ -3658,7 +3461,6 @@ input:disabled {
   .pending-alert-row,
   .session-card,
   .dead-stock-row,
-  .book-queue-row,
   .member-row {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -3666,7 +3468,6 @@ input:disabled {
 
   .pending-alert-countdown,
   .age-label,
-  .book-queue-quantity,
   .member-row > span:not(.member-last-seen),
   .member-last-seen {
     flex: 1 1 130px;
@@ -3756,57 +3557,57 @@ input:disabled {
     flex-basis: auto;
   }
 
-  .inventory-zone-heading,
-  .inventory-reference-heading,
-  .inventory-search-toolbar {
+  .catalogue-zone-heading,
+  .catalogue-reference-heading,
+  .catalogue-search-toolbar {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .inventory-process {
+  .catalogue-process {
     align-self: flex-start;
   }
 
-  .inventory-search-toolbar {
+  .catalogue-search-toolbar {
     width: 100%;
   }
 
-  .inventory-search-toolbar .search-field {
+  .catalogue-search-toolbar .search-field {
     width: 100%;
     flex-basis: auto;
   }
 
-  .inventory-search-toolbar .button {
+  .catalogue-search-toolbar .button {
     align-self: flex-start;
   }
 
-  .inventory-candidate-fields {
+  .catalogue-candidate-fields {
     width: 100%;
     grid-template-columns: 1fr;
     flex-basis: auto;
   }
 
-  .inventory-reference-row {
+  .catalogue-reference-row {
     align-items: flex-start;
     flex-wrap: wrap;
   }
 
-  .inventory-reference-row .button {
+  .catalogue-reference-row .button {
     margin-left: 53px;
   }
 
-  .inventory-book-row {
+  .catalogue-book-row {
     grid-template-columns: 42px minmax(0, 1fr);
     align-items: start;
     gap: 12px;
   }
 
-  .inventory-book-stock {
+  .catalogue-book-stock {
     grid-column: 2;
     align-items: flex-start;
   }
 
-  .inventory-book-actions {
+  .catalogue-book-actions {
     grid-column: 1 / -1;
     flex-direction: row;
     align-items: center;
@@ -3929,49 +3730,49 @@ input:disabled {
     min-height: 210px;
   }
 
-  .inventory-confirmation-overlay {
+  .catalogue-confirmation-overlay {
     align-items: flex-start;
     padding: 12px;
   }
 
-  .inventory-confirmation-dialog {
+  .catalogue-confirmation-dialog {
     max-height: calc(100vh - 24px);
   }
 
-  .inventory-confirmation-header,
-  .inventory-confirmation-body,
-  .inventory-confirmation-footer {
+  .catalogue-confirmation-header,
+  .catalogue-confirmation-body,
+  .catalogue-confirmation-footer {
     padding-right: 18px;
     padding-left: 18px;
   }
 
-  .inventory-confirmation-quantities {
+  .catalogue-confirmation-quantities {
     grid-template-columns: 1fr;
   }
 
-  .inventory-confirmation-arrow {
+  .catalogue-confirmation-arrow {
     transform: rotate(90deg);
     justify-self: start;
     margin-left: 12px;
   }
 
-  .inventory-confirmation-details > div {
+  .catalogue-confirmation-details > div {
     align-items: flex-start;
     flex-direction: column;
     gap: 6px;
   }
 
-  .inventory-confirmation-details dd {
+  .catalogue-confirmation-details dd {
     max-width: 100%;
     text-align: left;
   }
 
-  .inventory-confirmation-footer {
+  .catalogue-confirmation-footer {
     align-items: stretch;
     flex-direction: column-reverse;
   }
 
-  .inventory-confirmation-footer .button {
+  .catalogue-confirmation-footer .button {
     width: 100%;
   }
 }

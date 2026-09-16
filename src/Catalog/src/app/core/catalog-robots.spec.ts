@@ -22,7 +22,8 @@ describe('catalogRobotsForUrl', () => {
   });
 
   it('recognizes valid administration workspaces without accepting arbitrary nested paths', () => {
-    expect(isKnownCatalogRoute('/administration/inventory')).toBeTrue();
+    expect(isKnownCatalogRoute('/administration/catalogue')).toBeTrue();
+    expect(isKnownCatalogRoute('/administration/inventory')).toBeFalse();
     expect(isKnownCatalogRoute('/administration/not-a-workspace')).toBeFalse();
     expect(isKnownCatalogRoute('/administration/inventory/details')).toBeFalse();
   });

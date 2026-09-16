@@ -95,7 +95,7 @@ calibration, waiting-stock, monthly heatmap, renewal and genre views with period
 filters. The quality-data mockup subtab and its 4C screen are intentionally not implemented.
 The UI keeps roles activity-derived (Tri/Caisse) and does not pretend to mirror Entra roles.
 
-As of 2026-09-16, Catalog `/administration` exposes `Catalogue` first at
+Historique de la permutation — 2026-09-16 : Catalog `/administration` exposed `Catalogue` first at
 `/administration/catalogue`, using the catalogue/book icon while rendering the fiche and
 stock workspace formerly served by the inventory section. `Inventaire` follows at
 `/administration/inventory`, using the inventory/box icon while rendering the metadata work
@@ -115,6 +115,17 @@ As of 2026-09-16, the Catalog and BackOffice volunteer-account forms collect sep
 typed `firstName`/`lastName` create contract; the API trims and validates each value, and the
 Graph adapter maps them to `givenName`/`surname` while deriving the display name. No real
 Entra account was created during local validation.
+
+As of 2026-09-16, the Catalog administration `Inventaire` workspace is removed. It is no
+longer a sidebar item or a valid administration section, and the old queue/manual-add state,
+template branch, API filters and dead styles were deleted. The single `Catalogue` workspace
+now owns the complete book list, external-reference addition, stock corrections and fiche
+detail editor; opening a fiche from that list keeps the user in `/administration/catalogue`.
+The former `/administration/inventory` URL is treated as an invalid administration section and
+redirects to the dashboard. The public `/catalogue` route and the overview's inventory-drift
+indicator are unchanged. Local validation passes 263 Catalog ChromeHeadless tests, the Catalog
+SSR/browser build and the desktop Chrome shell smoke; authenticated API/Entra and mobile
+viewport checks remain deployment/manual gates.
 
 The public search sort control keeps a native accessible `<select>` for keyboard and screen
 reader behavior while wrapping it in Catalog design-system spacing, border, pill, chevron,

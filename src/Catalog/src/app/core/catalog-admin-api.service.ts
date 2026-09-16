@@ -13,7 +13,7 @@ import {
   CatalogAdminAlertOperation,
   CatalogAdminAddBookRequest,
   CatalogAdminBook,
-  CatalogAdminBookFilters,
+  CatalogAdminCatalogueFilters,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
   CatalogAdminFairStats,
@@ -96,7 +96,7 @@ export class CatalogAdminApiService {
     );
   }
 
-  getBooks(accessToken: string, filters: CatalogAdminBookFilters = {}): Observable<CatalogAdminBookPage> {
+  getBooks(accessToken: string, filters: CatalogAdminCatalogueFilters = {}): Observable<CatalogAdminBookPage> {
     return this.http.get<CatalogAdminBookPage>(
       `${this.apiUrl}/books/admin/books`,
       this.options(accessToken, this.params(filters)),
