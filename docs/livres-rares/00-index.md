@@ -31,6 +31,7 @@ lui-même et renvoie aux fichiers réels du dépôt, jamais à une conversation.
 | [`06-portail-administration.md`](06-portail-administration.md) | Section admin, liste, fiche d'édition, gestion des photos, vue restreinte |
 | [`07-scanette.md`](07-scanette.md) | Onglet de gestion, caisse enrichie, recherche hors ligne, synchronisation |
 | [`08-lots-et-sequencement.md`](08-lots-et-sequencement.md) | L'ordre d'exécution : 11 lots, leurs dépendances, leurs critères de sortie |
+| [`maquettes/`](maquettes/README.md) | Les artboards de la scanette, en HTML lisible hors de Claude Design, et comment récupérer les autres |
 
 ## Comment l'exécuter
 
