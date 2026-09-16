@@ -31,11 +31,16 @@ belonging to that container.
 - The API endpoint `POST /integrations/acs/email-delivery-reports` accepts the standard Event Grid array, responds synchronously to `SubscriptionValidationEvent`, and authenticates deliveries with the configured `EmailBounceWebhook:SharedSecret` sent as `X-Vpd-EventGrid-Secret`. Typed ACS delivery reports with a non-success status are resolved by recipient email and delegated to the application handler; delivered/expanded reports and unknown recipients are acknowledged without a write. DEV routes the `Microsoft.Communication.EmailDeliveryReportReceived` event from `vpd-acs-comm-dev` to this endpoint through `vpd-acs-email-delivery-reports-dev`.
 - Application tests use an in-memory SQLite connection with real EF transactions to verify scan/session/cash/correction/reassignment atomicity and idempotent gesture behavior; this provider is test-only.
 
+### Rare books persistence
+
+- `ProjectDbContext` and `IProjectDbContext` expose `RareBooks` and `RareBookPhotos`. `RareBookConfiguration` and `RareBookPhotoConfiguration` convert the aggregate value objects, persist the firm price as SQL Server `decimal(10,2)`, use `RowVersion` for optimistic concurrency, keep slug and non-null ISBN unique, index `(Status, IsSold, Price)`, and enforce unique `(RareBookId, Position)` photo ordering.
+- Migration `20260916143408_AddRareBooks` creates `RareBooks` and `RareBookPhotos`, cascades only the photo rows when a rare-book row is deleted, and deliberately leaves `Books.IsRare` in place. Its removal and the non-converting ISBN export belong to lot 6; a rare-book application handler must delete blobs explicitly before deleting rows.
+
 ## External Services
 
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
-- Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, and `product-images`.
+- Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, `product-images`, and `rare-book-photos`.
 - The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books third; it validates provider image URLs before returning them. The anonymous metadata probe does not persist books; authenticated Scan sessions and cash sales persist through the Books endpoints.
 
 ## Authentication

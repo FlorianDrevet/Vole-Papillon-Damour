@@ -144,9 +144,13 @@ internal sealed class WatchlistFeatureTestDbContext(
     DbSet<Watchlist> IProjectDbContext.Watchlists => Watchlists;
     DbSet<WatchlistItem> IProjectDbContext.WatchlistItems => WatchlistItems;
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => UserAlertHistories;
+    DbSet<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook> IProjectDbContext.RareBooks => throw new NotSupportedException();
+    DbSet<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto> IProjectDbContext.RareBookPhotos => throw new NotSupportedException();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook>();
+        modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto>();
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<BookMovement>();

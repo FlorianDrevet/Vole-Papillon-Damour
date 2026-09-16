@@ -7,6 +7,8 @@ using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
@@ -32,4 +34,6 @@ public interface IProjectDbContext
     DbSet<WatchlistItem> WatchlistItems { get; }
     DbSet<UserAlertHistory> UserAlertHistories { get; }
     DbSet<EmailBounceEvent> EmailBounceEvents { get; }
+    DbSet<RareBook> RareBooks { get; }
+    DbSet<RareBookPhoto> RareBookPhotos { get; }
 }

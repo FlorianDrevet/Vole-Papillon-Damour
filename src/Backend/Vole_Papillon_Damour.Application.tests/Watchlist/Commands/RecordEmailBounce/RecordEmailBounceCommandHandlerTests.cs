@@ -185,9 +185,13 @@ public sealed class RecordEmailBounceCommandHandlerTests
         DbSet<AssociationSettings> IProjectDbContext.AssociationSettings => throw new NotSupportedException();
         DbSet<WatchlistItem> IProjectDbContext.WatchlistItems => throw new NotSupportedException();
         DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
+        DbSet<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook> IProjectDbContext.RareBooks => throw new NotSupportedException();
+        DbSet<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto> IProjectDbContext.RareBookPhotos => throw new NotSupportedException();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook>();
+            modelBuilder.Ignore<Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto>();
             modelBuilder.Ignore<Product>();
             modelBuilder.Ignore<User>();
             modelBuilder.Ignore<Order>();

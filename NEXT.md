@@ -17,10 +17,10 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lots 0 et 1, conteneur blob et domaine `RareBook`. |
-| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 2 sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) est appliqué. |
+| **Lot en cours** | Livres rares — lots 0 à 2, conteneur blob, domaine `RareBook` et persistance EF. |
+| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 3 sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) est appliqué. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
-| **Dernière mise à jour** | 2026-09-16 — le domaine `RareBook` est ajouté avec slug figé, prix décimal, publication/vente idempotentes et photos ordonnées ; le conteneur public `livres-rares` reste préparé par le lot 0. 486 tests backend et le build de solution passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Dernière mise à jour** | 2026-09-16 — la persistance EF des fiches rares et des photos est ajoutée avec migration `20260916143408_AddRareBooks`, sans retrait de `Books.IsRare`. 488 tests backend et le build de solution passent ; les scripts SQL `Up`/`Down` sont générés ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
@@ -53,6 +53,21 @@ Validation locale : test rouge puis vert, 18 tests ciblés et 110 tests `Domain.
 La suite backend complète et le build de solution passent ; `graphify update .` a ré-extrait
 l’AST, mais sa visualisation HTML reste bloquée par la limite de 5 100 nœuds. Aucun changement
 de persistance, migration, API, front, Azure ou donnée métier n’a été effectué dans ce lot.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 2
+
+La persistance EF expose désormais `RareBooks` et `RareBookPhotos` dans `IProjectDbContext` et
+`ProjectDbContext`. Les deux configurations convertissent les value objects, imposent le prix en
+`decimal(10,2)`, la concurrence par `RowVersion`, le slug et l’ISBN uniques filtré, l’index de
+liste `(Status, IsSold, Price)` et l’ordre unique des photos ; la suppression d’une fiche cascade
+sur ses lignes photo, sans supprimer elle-même les blobs. La migration
+`20260916143408_AddRareBooks` crée les deux tables et conserve volontairement `Books.IsRare` :
+son retrait et l’export des ISBN marqués restent le lot 6.
+
+Validation locale : tests de modèle rouges puis verts, migration sans changement de modèle en
+attente, scripts SQL d’application et d’annulation générés, et 488 tests backend passés. Une
+application réelle sur une base locale reste à faire : cette machine n’a ni LocalDB ni moteur SQL
+Server Docker disponible. Aucun déploiement Azure ni contrôle de production n’a été effectué.
 
 ---
 
