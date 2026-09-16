@@ -164,6 +164,68 @@ describe('CatalogSearchPageComponent', () => {
       .toContain('Suivre cette édition');
   });
 
+  it('does not render an external edition that is already in the catalogue', () => {
+    api.search.and.returnValue(of({
+      ...response,
+      books: [{
+        ...response.books[0],
+        isbn13: reference.isbn13!,
+        title: reference.title,
+        authors: reference.authors,
+        publisher: reference.publisher,
+        publicationYear: reference.publicationYear,
+        workId: reference.workId,
+      }],
+    }));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [reference, secondEditionReference],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    const externalBlock = fixture.nativeElement.querySelector('.external-block') as HTMLElement;
+    const cards = externalBlock.querySelectorAll('.reference-card');
+
+    expect(cards).toHaveSize(1);
+    expect(cards[0].textContent).toContain('Folio');
+    expect(cards[0].textContent).not.toContain('Gallimard');
+    expect(externalBlock.querySelector('.section-count')?.textContent).toContain('1 édition');
+  });
+
+  it('removes an external duplicate when the local response arrives afterwards', async () => {
+    const localResults$ = new Subject<CatalogSearchResponse>();
+    const externalResults$ = new Subject<CatalogReferenceSearchResponse>();
+    api.search.and.returnValue(localResults$.asObservable());
+    api.searchReferences.and.returnValue(externalResults$.asObservable());
+
+    fixture.detectChanges();
+    externalResults$.next({
+      generatedAt: '',
+      query: 'saint-exupéry',
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.reference-card')).toHaveSize(1);
+
+    localResults$.next({
+      ...response,
+      books: [{
+        ...response.books[0],
+        isbn13: reference.isbn13!,
+      }],
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.reference-card')).toHaveSize(0);
+  });
+
   it('limits the search tab to available books by default', async () => {
     fixture.detectChanges();
     await fixture.whenStable();

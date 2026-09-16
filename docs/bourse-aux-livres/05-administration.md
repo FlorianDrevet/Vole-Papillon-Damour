@@ -115,7 +115,7 @@ détermine l'effet public de deux cents scans, et sa clôture déclenche les e-m
 | Bourse de rattachement | Pour les sessions annoncées |
 | Livres scannés | Total |
 | Gardés / écartés | Répartition de la décision de tri |
-| Alertes | Nombre d'e-mails, et leur état : `EN_ATTENTE` avec l'heure d'envoi prévue, ou `ENVOYES` |
+| Alertes | Nombre d'e-mails, et leur état : `EN_ATTENTE` avec l'heure d'envoi prévue, `ENVOI_IMMEDIAT` pendant le traitement d'une demande forcée, `ENVOYES`, `ANNULEES` ou `ECHEC` |
 | Statut | `EN_COURS`, `TERMINEE`, `REPRISE` |
 
 **Les sessions encore corrigeables sont mises en évidence** : celles qui sont ouvertes,
@@ -124,6 +124,11 @@ seules où une erreur se répare sans que personne n'ait été prévenu à tort.
 
 Un compte à rebours affiche le temps restant avant l'envoi. C'est l'information utile
 quand quelqu'un signale une erreur au téléphone : sait-on encore la rattraper ?
+
+Après une demande d'envoi immédiat, la session quitte immédiatement la vue « Encore
+corrigeables » et rejoint « Alertes envoyées ». Tant que le worker n'a pas terminé,
+l'interface indique « Envoi immédiat demandé » et désactive les deux actions d'alerte ;
+elle n'annonce « Alertes envoyées » qu'après la confirmation du statut de chaque message.
 
 ### Corrections possibles (`RG-45`)
 
@@ -135,10 +140,15 @@ quand quelqu'un signale une erreur au téléphone : sait-on encore la rattraper 
 | Annuler la session entière | Annule tous ses mouvements |
 | Annuler les alertes en attente | Sans toucher aux quantités : cas d'une annonce correcte qu'on ne souhaite pas diffuser |
 | Forcer l'envoi immédiat | Sans attendre la fin du délai, quand la session est vérifiée et qu'on veut prévenir les gens tout de suite |
-| Consulter le détail des mouvements | Diagnostic d'un écart de stock |
+| Consulter le détail des mouvements | Journal complet des livres scannés, avec correction mouvement par mouvement |
 
 Toute correction produit des mouvements tracés et attribués (`RG-35`) ; rien n'est
 effacé, la session est marquée `REPRISE`.
+
+La confirmation des actions de session est une modal intégrée au Catalog : elle décrit
+l'effet de l'action et propose explicitement d'annuler l'action. Le journal complet
+reste consultable depuis le détail de la session ; un mouvement déjà renversé reste
+visible comme tel et ne peut pas être corrigé une seconde fois.
 
 **Le moment de la correction change tout :**
 

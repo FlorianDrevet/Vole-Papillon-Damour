@@ -93,6 +93,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   private currentReferencePage = 1;
   private localLoadVersion = 0;
   private externalLoadVersion = 0;
+  private localCatalogueIsbns = new Set<string>();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -314,7 +315,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   private workReferences(): CatalogBookReference[] {
-    const items = this.externalResponse?.items ?? [];
+    const items = this.visibleExternalReferences();
     if (!items.length) {
       return [];
     }
@@ -439,6 +440,11 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       .replace(/\s+/g, ' ');
   }
 
+  private normalizeIsbn(value: string | null | undefined): string | null {
+    const normalized = value?.replace(/[\s-]/g, '').trim().toLowerCase();
+    return normalized || null;
+  }
+
   private async submitReferenceFollow(
     item: CatalogBookReference,
     scope: CatalogWatchlistScope,
@@ -534,8 +540,16 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   externalCountLabel(): string {
-    const total = this.externalResponse?.items.length || 0;
+    const total = this.visibleExternalReferences().length;
     return `${total} ${total === 1 ? 'édition' : 'éditions'}`;
+  }
+
+  // The reference search is shared with administration, so exclude exact local editions here.
+  visibleExternalReferences(): CatalogBookReference[] {
+    return (this.externalResponse?.items ?? []).filter(reference => {
+      const isbn13 = this.normalizeIsbn(reference.isbn13);
+      return !isbn13 || !this.localCatalogueIsbns.has(isbn13);
+    });
   }
 
   totalPages(): number {
@@ -584,6 +598,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   private loadLocalResults(): void {
     const loadVersion = ++this.localLoadVersion;
+    this.localCatalogueIsbns.clear();
     this.loading = true;
     this.error = false;
     this.changeDetector.markForCheck();
@@ -603,6 +618,11 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         }
 
         this.response = response;
+        this.localCatalogueIsbns = new Set(
+          (response?.books ?? [])
+            .map(book => this.normalizeIsbn(book.isbn13))
+            .filter((isbn13): isbn13 is string => Boolean(isbn13)),
+        );
         this.loading = false;
         this.changeDetector.markForCheck();
       });
