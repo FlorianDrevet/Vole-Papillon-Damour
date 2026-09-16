@@ -26,6 +26,9 @@ param workerPrincipalId string
 @description('Existing role-assignment resource name to adopt, or empty for a deterministic name')
 param roleAssignmentName string = ''
 
+@description('Resource ID of the Log Analytics workspace receiving ACS email operational logs')
+param logAnalyticsWorkspaceId string = ''
+
 @description('Resource tags')
 param tags object = {}
 
@@ -50,6 +53,24 @@ resource workerEmailRoleAssignment 'Microsoft.Authorization/roleAssignments@2022
       RbacRoles.communication.CommunicationAndEmailServiceOwner.id)
     principalId: workerPrincipalId
     principalType: 'ServicePrincipal'
+  }
+}
+
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(logAnalyticsWorkspaceId)) {
+  scope: communicationService
+  name: 'emailOperationalLogs'
+  properties: {
+    workspaceId: logAnalyticsWorkspaceId
+    logs: [
+      {
+        category: 'EmailSendMailOperational'
+        enabled: true
+      }
+      {
+        category: 'EmailStatusUpdateOperational'
+        enabled: true
+      }
+    ]
   }
 }
 
