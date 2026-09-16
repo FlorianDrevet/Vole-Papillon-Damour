@@ -102,7 +102,7 @@ describe('CatalogAdministrationPageComponent', () => {
     movements: [],
   });
 
-  const inventoryBook = (overrides: Partial<CatalogAdminBook> = {}): CatalogAdminBook => ({
+  const catalogueBook = (overrides: Partial<CatalogAdminBook> = {}): CatalogAdminBook => ({
     isbn13: '9782070363735',
     workId: 'OL42W',
     title: 'Le Petit Prince',
@@ -341,21 +341,6 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="admin-feedback-toast"]')).toBeNull();
   });
 
-  it('replaces a previous success toast with a validation error', async () => {
-    auth.isAuthenticated.set(true);
-    fixture.componentInstance.successMessage.set('Une ancienne action a réussi.');
-    fixture.componentInstance.addBookForm.isbn13 = '';
-    fixture.componentInstance.addBookForm.note = '';
-
-    await fixture.componentInstance.addBook();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.errorMessage()).toBe('ISBN et note d’ajout sont obligatoires.');
-    expect(fixture.componentInstance.successMessage()).toBeNull();
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="admin-feedback-toast"]').length).toBe(1);
-    expect(fixture.nativeElement.querySelector('.admin-toast-error')).not.toBeNull();
-  });
-
   it('loads and renders the dead-stock list for an authenticated administrator', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
@@ -389,12 +374,21 @@ describe('CatalogAdministrationPageComponent', () => {
       'Sessions de scan',
       'Désengorgement',
       'Catalogue',
-      'Inventaire',
       'Statistiques',
       'Comptes & rôles',
       'Paramètres',
     ]);
     expect(getComputedStyle(sidebar).backgroundColor).not.toBe('rgb(7, 43, 69)');
+  });
+
+  it('does not expose the removed inventory workspace', () => {
+    fixture.detectChanges();
+
+    const sidebar = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-testid="admin-sidebar"]')!;
+
+    expect(sidebar.textContent).not.toContain('Inventaire');
+    expect(Array.from(sidebar.querySelectorAll<HTMLElement>('.admin-nav-item-label'))
+      .map(label => label.textContent?.trim())).not.toContain('Inventaire');
   });
 
   it('renders administration workspaces as real router links', () => {
@@ -410,23 +404,21 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/sessions',
       '/administration/dead-stock',
       '/administration/catalogue',
-      '/administration/inventory',
       '/administration/statistics',
       '/administration/accounts',
       '/administration/settings',
     ]);
   });
 
-  it('keeps the catalogue and inventory workspaces aligned with their renamed routes and icons', () => {
+  it('keeps the catalogue workspace as the only book-management entry', () => {
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.navItems.slice(3, 5)).toEqual([
+    expect(fixture.componentInstance.navItems.filter(item => item.id === 'catalogue')).toEqual([
       {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
-      {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
     ]);
   });
 
-  it('renders the renamed page title for each swapped workspace route', async () => {
+  it('renders the catalogue page title for the book-management workspace', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     fixture.detectChanges();
@@ -435,19 +427,15 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.componentInstance.selectSection('catalogue');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Catalogue.');
-
-    await fixture.componentInstance.selectSection('inventory');
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Inventaire.');
   });
 
-  it('restores the selected administration workspace from the current route', () => {
+  it('redirects the removed inventory route to the administration dashboard', () => {
     fixture.detectChanges();
 
     routeParams.next(convertToParamMap({section: 'inventory'}));
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.activeSection()).toBe('inventory');
+    expect(fixture.componentInstance.activeSection()).toBe('overview');
   });
 
   it('restores the selected statistics tab from the current query parameters', () => {
@@ -584,7 +572,7 @@ describe('CatalogAdministrationPageComponent', () => {
     auth.isAuthenticated.set(true);
     api.getBooks.and.returnValue(of({
       generatedAt: '2026-09-12T10:00:00Z',
-      books: [inventoryBook()],
+      books: [catalogueBook()],
       totalCount: 1,
       page: 1,
       pageSize: 25,
@@ -596,19 +584,15 @@ describe('CatalogAdministrationPageComponent', () => {
 
     expect(api.getBooks).toHaveBeenCalledWith('access-token', {
       search: undefined,
-      metadataStatus: undefined,
-      rare: undefined,
-      hidden: undefined,
-      undated: undefined,
       page: 1,
       pageSize: 25,
     });
-    expect(fixture.nativeElement.querySelector('[data-testid="inventory-book-list"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="catalogue-book-list"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Toutes les fiches');
     expect(fixture.nativeElement.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).not.toContain('Remise à plat');
-    const booksZone = fixture.nativeElement.querySelector('.inventory-books-zone') as HTMLElement;
-    const addZone = fixture.nativeElement.querySelector('.inventory-add-zone') as HTMLElement;
+    const booksZone = fixture.nativeElement.querySelector('.catalogue-books-zone') as HTMLElement;
+    const addZone = fixture.nativeElement.querySelector('.catalogue-add-zone') as HTMLElement;
     expect(booksZone.compareDocumentPosition(addZone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(fixture.nativeElement.textContent).not.toContain('Ajuster le stock disponible');
     expect(fixture.nativeElement.textContent).not.toContain('Les boutons − et + créent une correction tracée');
@@ -616,12 +600,45 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Chaque ajout et chaque correction reste attribué');
   });
 
-  it('shows a loader on the inventory refresh action while the server request is pending', async () => {
+  it('opens a book fiche inside the catalogue workspace', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = catalogueBook();
+    api.getBooks.and.returnValue(of({
+      generatedAt: '',
+      books: [book],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    }));
+    api.getBook.and.returnValue(of(book));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('catalogue');
+    fixture.detectChanges();
+
+    const detailButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.catalogue-book-detail',
+    );
+    expect(detailButton).not.toBeNull();
+
+    detailButton!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getBook).toHaveBeenCalledWith('access-token', book.isbn13);
+    expect(fixture.componentInstance.activeSection()).toBe('catalogue');
+    expect(fixture.nativeElement.querySelector('.detail-screen')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Le Petit Prince');
+    expect(fixture.nativeElement.textContent).not.toContain('Inventaire.');
+  });
+
+  it('shows a loader on the catalogue refresh action while the server request is pending', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     const page: CatalogAdminBookPage = {
       generatedAt: '',
-      books: [inventoryBook()],
+      books: [catalogueBook()],
       totalCount: 1,
       page: 1,
       pageSize: 25,
@@ -634,21 +651,21 @@ describe('CatalogAdministrationPageComponent', () => {
     const pending = new Subject<CatalogAdminBookPage>();
     api.getBooks.calls.reset();
     api.getBooks.and.returnValue(pending.asObservable());
-    const refresh = fixture.componentInstance.loadInventory();
+    const refresh = fixture.componentInstance.loadCatalogue();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="inventory-refresh-loader"]')).not.toBeNull();
-    expect((fixture.nativeElement.querySelector('[data-testid="inventory-refresh"]') as HTMLButtonElement).disabled).toBeTrue();
+    expect(fixture.nativeElement.querySelector('[data-testid="catalogue-refresh-loader"]')).not.toBeNull();
+    expect((fixture.nativeElement.querySelector('[data-testid="catalogue-refresh"]') as HTMLButtonElement).disabled).toBeTrue();
 
     pending.next(page);
     pending.complete();
     await refresh;
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-testid="inventory-refresh-loader"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="catalogue-refresh-loader"]')).toBeNull();
   });
 
-  it('starts an inventory search after two seconds of input inactivity and requests the first server page', async () => {
+  it('starts a catalogue search after two seconds of input inactivity and requests the first server page', async () => {
     jasmine.clock().install();
     try {
       auth.account.set(account('Administrator'));
@@ -665,9 +682,9 @@ describe('CatalogAdministrationPageComponent', () => {
       await fixture.componentInstance.selectSection('catalogue');
       fixture.detectChanges();
       api.getBooks.calls.reset();
-      fixture.componentInstance.inventoryPage = 3;
+      fixture.componentInstance.cataloguePage = 3;
 
-      const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[data-testid="inventory-search"]');
+      const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[data-testid="catalogue-search"]');
       expect(input).not.toBeNull();
       input!.value = 'prince';
       input!.dispatchEvent(new Event('input', {bubbles: true}));
@@ -681,13 +698,9 @@ describe('CatalogAdministrationPageComponent', () => {
       await fixture.whenStable();
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.inventoryPage).toBe(1);
+      expect(fixture.componentInstance.cataloguePage).toBe(1);
       expect(api.getBooks).toHaveBeenCalledWith('access-token', {
         search: 'prince',
-        metadataStatus: undefined,
-        rare: undefined,
-        hidden: undefined,
-        undated: undefined,
         page: 1,
         pageSize: 25,
       });
@@ -696,10 +709,10 @@ describe('CatalogAdministrationPageComponent', () => {
     }
   });
 
-  it('adjusts a fiche quantity by one from the compact inventory controls', async () => {
+  it('adjusts a fiche quantity by one from the compact catalogue controls', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    const book = inventoryBook({quantityAvailable: 4});
+    const book = catalogueBook({quantityAvailable: 4});
     api.getBooks.and.returnValue(of({
       generatedAt: '',
       books: [book],
@@ -721,15 +734,15 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const increase = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      `[data-testid="inventory-increase-${book.isbn13}"]`,
+      `[data-testid="catalogue-increase-${book.isbn13}"]`,
     );
     expect(increase).not.toBeNull();
 
-    await fixture.componentInstance.adjustInventoryQuantity(book, 'increase');
+    await fixture.componentInstance.adjustCatalogueQuantity(book, 'increase');
     fixture.detectChanges();
 
     const confirm = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-confirmation-confirm"]',
+      '[data-testid="catalogue-confirmation-confirm"]',
     );
     expect(confirm).not.toBeNull();
     confirm!.click();
@@ -737,14 +750,14 @@ describe('CatalogAdministrationPageComponent', () => {
 
     expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
       quantityAvailable: 5,
-      note: 'Correction depuis l’inventaire',
+      note: 'Correction depuis le catalogue',
     });
   });
 
-  it('opens a styled confirmation modal before changing inventory quantity', async () => {
+  it('opens a styled confirmation modal before changing catalogue quantity', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    const book = inventoryBook({quantityAvailable: 4});
+    const book = catalogueBook({quantityAvailable: 4});
     api.getBooks.and.returnValue(of({
       generatedAt: '',
       books: [book],
@@ -759,34 +772,34 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const decrease = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      `[data-testid="inventory-decrease-${book.isbn13}"]`,
+      `[data-testid="catalogue-decrease-${book.isbn13}"]`,
     );
     expect(decrease).not.toBeNull();
     decrease!.click();
     fixture.detectChanges();
 
     const dialog = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '[data-testid="inventory-confirmation"]',
+      '[data-testid="catalogue-confirmation"]',
     );
     expect(dialog).not.toBeNull();
     expect(dialog?.getAttribute('role')).toBe('dialog');
     expect(dialog?.getAttribute('aria-modal')).toBe('true');
     expect(dialog?.textContent).toContain('Retirer 1 exemplaire');
     expect((fixture.nativeElement as HTMLElement).querySelector(
-      '[data-testid="inventory-confirmation-cancel"]',
+      '[data-testid="catalogue-confirmation-cancel"]',
     )).not.toBeNull();
     expect(nativeConfirm).not.toHaveBeenCalled();
     expect(api.correctQuantity).not.toHaveBeenCalled();
 
     document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="inventory-confirmation"]')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid="catalogue-confirmation"]')).toBeNull();
   });
 
   it('removes one unit without allowing a negative stock', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    const book = inventoryBook({quantityAvailable: 4});
+    const book = catalogueBook({quantityAvailable: 4});
     api.getBooks.and.returnValue(of({
       generatedAt: '',
       books: [book],
@@ -806,11 +819,11 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.componentInstance.selectSection('catalogue');
     await fixture.whenStable();
 
-    await fixture.componentInstance.adjustInventoryQuantity(book, 'decrease');
+    await fixture.componentInstance.adjustCatalogueQuantity(book, 'decrease');
     fixture.detectChanges();
 
     const confirm = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-confirmation-confirm"]',
+      '[data-testid="catalogue-confirmation-confirm"]',
     );
     expect(confirm).not.toBeNull();
     confirm!.click();
@@ -818,7 +831,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
     expect(api.correctQuantity).toHaveBeenCalledWith('access-token', book.isbn13, {
       quantityAvailable: 3,
-      note: 'Correction depuis l’inventaire',
+      note: 'Correction depuis le catalogue',
     });
   });
 
@@ -845,17 +858,17 @@ describe('CatalogAdministrationPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.selectSection('catalogue');
-    fixture.componentInstance.inventoryIsbn = '978-207-061-2758';
-    await fixture.componentInstance.lookupInventoryIsbn();
+    fixture.componentInstance.catalogueIsbn = '978-207-061-2758';
+    await fixture.componentInstance.lookupCatalogueIsbn();
 
     expect(catalogApi.searchReferences).toHaveBeenCalledWith(reference.isbn13, 1, 20);
-    expect(fixture.componentInstance.inventoryAddCandidate()?.isbn13).toBe(reference.isbn13);
+    expect(fixture.componentInstance.catalogueAddCandidate()?.isbn13).toBe(reference.isbn13);
   });
 
   it('clears stale external references when the ISBN is invalid', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
-    fixture.componentInstance.inventoryReferenceResults.set([{
+    fixture.componentInstance.catalogueReferenceResults.set([{
       isbn13: '9782070612758',
       workId: null,
       title: 'Ancienne notice',
@@ -865,13 +878,13 @@ describe('CatalogAdministrationPageComponent', () => {
       coverUrl: null,
       source: 'OpenLibrary',
     }]);
-    fixture.componentInstance.inventoryIsbn = '9782070612759';
+    fixture.componentInstance.catalogueIsbn = '9782070612759';
 
-    await fixture.componentInstance.lookupInventoryIsbn();
+    await fixture.componentInstance.lookupCatalogueIsbn();
 
     expect(catalogApi.searchReferences).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.inventoryReferenceResults()).toEqual([]);
-    expect(fixture.componentInstance.inventoryLookupError()).toBe('Saisissez un ISBN-10 ou ISBN-13 valide.');
+    expect(fixture.componentInstance.catalogueReferenceResults()).toEqual([]);
+    expect(fixture.componentInstance.catalogueLookupError()).toBe('Saisissez un ISBN-10 ou ISBN-13 valide.');
   });
 
   it('keeps external references separate and lets an administrator add the selected fiche', async () => {
@@ -895,7 +908,7 @@ describe('CatalogAdministrationPageComponent', () => {
       pageSize: 20,
     }));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 25}));
-    api.getBook.and.returnValue(of(inventoryBook({
+    api.getBook.and.returnValue(of(catalogueBook({
       isbn13: reference.isbn13,
       quantityAvailable: 4,
     })));
@@ -906,15 +919,15 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     const query = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      '[data-testid="inventory-reference-query"]',
+      '[data-testid="catalogue-reference-query"]',
     );
     const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-reference-search"]',
+      '[data-testid="catalogue-reference-search"]',
     );
     expect(query).not.toBeNull();
     expect(search).not.toBeNull();
 
-    fixture.componentInstance.inventoryReferenceQuery = 'Le Petit Prince';
+    fixture.componentInstance.catalogueReferenceQuery = 'Le Petit Prince';
     fixture.detectChanges();
     search!.click();
     await fixture.whenStable();
@@ -923,7 +936,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(catalogApi.searchReferences).toHaveBeenCalledWith('Le Petit Prince', 1, 20);
     expect(fixture.nativeElement.textContent).toContain('Référentiel externe');
     const useReference = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-use-reference"]',
+      '[data-testid="catalogue-use-reference"]',
     );
     expect(useReference).not.toBeNull();
 
@@ -931,25 +944,25 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const referenceRow = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
-      '.inventory-reference-row',
+      '.catalogue-reference-row',
     );
-    expect(referenceRow?.nextElementSibling?.getAttribute('data-testid')).toBe('inventory-candidate-form');
+    expect(referenceRow?.nextElementSibling?.getAttribute('data-testid')).toBe('catalogue-candidate-form');
     expect(fixture.nativeElement.textContent).toContain('Cette fiche est déjà dans le fonds');
     expect(fixture.nativeElement.textContent).toContain('4 exemplaires disponibles');
     const quantity = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      '[data-testid="inventory-add-quantity"]',
+      '[data-testid="catalogue-add-quantity"]',
     );
     const note = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
-      '[data-testid="inventory-add-note"]',
+      '[data-testid="catalogue-add-note"]',
     );
     const add = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-add-submit"]',
+      '[data-testid="catalogue-add-submit"]',
     );
     const decrease = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-add-quantity-decrease"]',
+      '[data-testid="catalogue-add-quantity-decrease"]',
     );
     const increase = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-add-quantity-increase"]',
+      '[data-testid="catalogue-add-quantity-increase"]',
     );
     expect(quantity).not.toBeNull();
     expect(note).not.toBeNull();
@@ -957,12 +970,12 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(decrease).not.toBeNull();
     expect(increase).not.toBeNull();
 
-    fixture.componentInstance.inventoryAddQuantity = 2;
-    fixture.componentInstance.inventoryAddNote = 'Ajout du don';
+    fixture.componentInstance.catalogueAddQuantity = 2;
+    fixture.componentInstance.catalogueAddNote = 'Ajout du don';
     fixture.detectChanges();
     increase!.click();
     decrease!.click();
-    expect(fixture.componentInstance.inventoryAddQuantity).toBe(2);
+    expect(fixture.componentInstance.catalogueAddQuantity).toBe(2);
     add!.click();
     await fixture.whenStable();
 
@@ -1007,12 +1020,12 @@ describe('CatalogAdministrationPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.selectSection('catalogue');
-    fixture.componentInstance.inventoryReferenceQuery = 'Le Petit Prince';
-    await fixture.componentInstance.searchInventoryReferences();
+    fixture.componentInstance.catalogueReferenceQuery = 'Le Petit Prince';
+    await fixture.componentInstance.searchCatalogueReferences();
     fixture.detectChanges();
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '[data-testid="inventory-use-reference"]',
+      '[data-testid="catalogue-use-reference"]',
     )!.click();
     await fixture.whenStable();
     fixture.detectChanges();

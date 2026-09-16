@@ -62,12 +62,12 @@ describe('AppComponent', () => {
       .toContain('catalogue');
   });
 
-  it('keeps the administration shell active for a workspace URL', () => {
+  it('keeps the administration shell active for a valid workspace URL', () => {
     const component = fixture.componentInstance as unknown as {
       isAdminUrl: (url: string) => boolean;
     };
 
-    expect(component.isAdminUrl('/administration/inventory')).toBeTrue();
+    expect(component.isAdminUrl('/administration/inventory')).toBeFalse();
     expect(component.isAdminUrl('/administration/statistics?tab=evolution')).toBeTrue();
   });
 

@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — création de comptes bénévoles avec prénom et nom séparés. |
-| **Prochaine action** | Faire relire la [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191), puis contrôler le parcours authentifié avec Entra et l’API avant déploiement. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-registration-name-fields-fix` |
-| **Dernière mise à jour** | 2026-09-16 — le formulaire admin n’expose plus `Nom affiché` : les deux clients, l’API et Graph utilisent désormais prénom/nom séparés. Suites Catalog, BackOffice et backend passantes ; le smoke local s’arrête à la connexion Microsoft. |
-| **Branche** | `fix/account-registration-name-fields-20260916` — dédiée depuis `origin/main` fraîchement récupéré, [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191) vers `main` |
+| **Lot en cours** | Catalog — suppression complète du workspace d’administration `Inventaire`. |
+| **Prochaine action** | Faire relire la PR de suppression, puis déployer depuis `main` et contrôler le workspace Catalogue avec une session Administration authentifiée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-remove-inventory` |
+| **Dernière mise à jour** | 2026-09-16 — le workspace `Inventaire` a été retiré de la navigation, des routes reconnues et du code Catalogue ; la liste, l’ajout, le stock et la fiche détaillée restent dans `Catalogue`. 263 tests Catalog, build SSR/navigateur et smoke Chrome desktop passent ; l’extraction AST Graphify a été lancée mais son rendu HTML dépasse la limite de 5 100 nœuds ; le contrôle mobile et le scénario authentifié API/Entra restent à faire. |
+| **Branche** | `refactor/backoffice-remove-inventory` — dédiée depuis `origin/main` fraîchement récupéré |
 
 ---
 
