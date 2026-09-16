@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Catalog — création de comptes bénévoles avec prénom et nom séparés. |
-| **Prochaine action** | Faire relire la PR de correction, puis contrôler le parcours authentifié avec Entra et l’API avant déploiement. |
+| **Prochaine action** | Faire relire la [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191), puis contrôler le parcours authentifié avec Entra et l’API avant déploiement. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-account-registration-name-fields-fix` |
 | **Dernière mise à jour** | 2026-09-16 — le formulaire admin n’expose plus `Nom affiché` : les deux clients, l’API et Graph utilisent désormais prénom/nom séparés. Suites Catalog, BackOffice et backend passantes ; le smoke local s’arrête à la connexion Microsoft. |
-| **Branche** | `fix/account-registration-name-fields-20260916` — dédiée depuis `origin/main` fraîchement récupéré |
+| **Branche** | `fix/account-registration-name-fields-20260916` — dédiée depuis `origin/main` fraîchement récupéré, [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191) vers `main` |
 
 ---
 
@@ -43,6 +43,8 @@ n’a été modifié. Le smoke Chrome desktop du serveur local atteint correctem
 `/administration/accounts` et son shell responsive, mais la page demande une connexion Microsoft;
 aucune authentification, création de compte, modification Entra ou déploiement n’a été effectué.
 `rtk` n’est pas installé sur cette machine ; les commandes natives équivalentes ont été utilisées.
+La [PR #191](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/191) est ouverte vers
+`main` et n’a pas été fusionnée.
 
 ### État actualisé — 2026-09-15 — overlay du genre sur l’accueil Catalog
 
