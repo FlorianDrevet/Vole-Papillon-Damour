@@ -17,13 +17,27 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — correction des couvertures BnF sur les cartes de l’accueil. |
-| **Prochaine action** | Faire relire la [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197), puis déployer depuis `main` et contrôler la couverture avec les données réelles. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-cover-frame` |
-| **Dernière mise à jour** | 2026-09-16 — les anciennes miniatures BnF sont normalisées vers une image originale redimensionnée et la carte récente affiche sa couverture sans padding, en remplissant la tuile. 267 tests Catalog, build SSR/navigateur et smoke Chrome desktop/mobile avec API mockée passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
-| **Branche** | `fix/catalog-book-cover-frame` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197) vers `main` |
+| **Lot en cours** | Scan — retrait du bandeau de persistance hors ligne non garantie. |
+| **Prochaine action** | Relire la PR de retrait du bandeau, puis déployer depuis `main` et contrôler l’écran Scan avec une session bénévole authentifiée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-remove-scan-offline-warning` |
+| **Dernière mise à jour** | 2026-09-16 — le bandeau compact n’est plus affiché lorsque la seule alerte concerne la persistance navigateur ; les alertes critiques et les autres états restent visibles. 211 tests Scan et le build de production passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Branche** | `fix/scan-remove-offline-warning` — dédiée depuis `origin/main` fraîchement récupéré ; PR à ouvrir vers `main` |
 
 ---
+
+### État actualisé — 2026-09-16 — retrait du bandeau de persistance du Scan
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-remove-scan-offline-warning`, le bandeau compact du Scan est masqué
+lorsque la seule alerte est « Données hors ligne non protégées ». Une autre alerte d’état
+conserve son propre message dans le bandeau ; l’absence totale d’IndexedDB reste une alerte
+critique. La modal et la demande explicite de protection du stockage ne sont pas supprimées.
+
+Validation locale : TDD rouge puis vert, 75 tests ciblés puis 211 tests Scan ChromeHeadless,
+build de production et `git diff --check`. `graphify update .` a ré-extrait l’AST, mais la
+visualisation HTML reste bloquée par la limite du graphe (5 114 nœuds). Le serveur local a
+répondu dans Chrome, mais `/tri` redirige vers la connexion Entra ; aucun login, test
+authentifié, appareil réel, déploiement ou changement Azure n’a été effectué. PR à ouvrir.
 
 ### État actualisé — 2026-09-16 — couvertures nettes sur l’accueil Catalog
 
@@ -1843,6 +1857,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-09-16 | Windows | **Scan — retrait du bandeau de persistance hors ligne.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-remove-scan-offline-warning`, le bandeau compact ne s’affiche plus lorsque la seule alerte est « Données hors ligne non protégées » ; les alertes critiques et les autres états restent visibles, et la modal de protection est conservée. Validation : TDD rouge puis vert, 75 tests ciblés, 211 tests Scan ChromeHeadless, build de production et `git diff --check`. Graphify ré-extrait l’AST mais l’export HTML dépasse la limite de 5 114 nœuds ; le smoke Chrome local redirige `/tri` vers la connexion Entra, donc aucun contrôle authentifié, déploiement ou changement Azure. PR à ouvrir. |
 | 2026-09-16 | Windows | **Catalog — permutation des espaces Catalogue/Inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-catalogue-labels`, `Catalogue` est désormais le lien `/administration/catalogue` avec l’icône livre et le workspace fiche/stock ; `Inventaire` devient `/administration/inventory` avec l’icône boîte et la file de correction des métadonnées. Les badges, chargeurs et titres suivent la permutation ; le `/catalogue` public reste inchangé. Validation : TDD rouge/vert, 262 tests Catalog, build SSR/navigateur, smoke Chrome desktop/mobile à 390×844 et `git diff --check`. Graphify a mis à jour le code graph mais ne génère pas la visualisation HTML au-delà de 5 000 nœuds ; aucun déploiement ni merge, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) ouverte. |
 | 2026-09-16 | Windows | **Scan — reprise après fermeture serveur.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-fix-scan-closed-session`, détection d’une session `Completed` ou d’un `409 Book.ScanSessionClosed`, création d’une nouvelle session client et déplacement atomique des décisions déjà prises avec la demande de fermeture ; une session déjà fermée sans outbox restant est maintenant considérée comme clôturée. Le résumé distingue « décision enregistrée » et « décision à prendre ». Validation : TDD rouge puis vert, 210 tests Scan ChromeHeadless, build production, 6 contrats bootstrap, smoke Chrome du shell local à la largeur mobile sans débordement et `git diff --check` ; `graphify update .` a ré-extrait le graphe mais l’export HTML dépasse la limite de 5 110 nœuds. Aucun déploiement ni contrôle connecté réel ; [PR #194](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/194) ouverte vers `main`, non fusionnée. |
 | 2026-09-15 | Windows | **Scan — fin de session et confirmation mobile.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-scan-session-fix`, conservation de la route `/tri/fin` et du résumé après recréation du composant, suppression du faux état de fermeture à réessayer après synchronisation concurrente, et feuille de confirmation tactile responsive. Validation : TDD rouge puis vert, 205 tests Scan ChromeHeadless, build de production, 6 contrats bootstrap, Graphify et `git diff --check` ; contrôle connecté téléphone/API réelle restant à faire, aucun déploiement ni merge. [PR #185](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/185) ouverte. |

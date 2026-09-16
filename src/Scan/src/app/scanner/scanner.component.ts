@@ -392,6 +392,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       || this.syncAlert !== null;
   }
 
+  get shouldShowStatusStrip(): boolean {
+    return this.hasActionableStatus
+      && !(this.isStorageOnlyStatus && this.visibleStorageCapabilityAlert?.level === 'warning');
+  }
+
   get isStorageOnlyStatus(): boolean {
     return this.visibleStorageCapabilityAlert !== null
       && this.accountSwitchPrompt === null
@@ -439,7 +444,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return `${count} opération${count > 1 ? 's' : ''} enregistrée${count > 1 ? 's' : ''} attend${count > 1 ? 'ent' : ''} la synchronisation.`;
     }
 
-    return this.priorityAlerts[0]?.message
+    return this.priorityAlerts.find(alert => alert.id !== 'storage-capability' || alert.level === 'critical')?.message
       ?? this.storageAlert?.message
       ?? 'Vérifiez les actions en attente.';
   }
@@ -473,7 +478,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   get statusDetails(): readonly ScanAlert[] {
     const summary = this.statusSummary;
     return [...this.priorityAlerts, ...this.infoAlerts]
-      .filter(alert => alert.message !== summary);
+      .filter(alert => alert.message !== summary)
+      .filter(alert => !(this.isStorageOnlyStatus && alert.id === 'storage-capability'));
   }
 
   get canRequestPersistentStorage(): boolean {

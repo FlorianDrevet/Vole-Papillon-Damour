@@ -17,7 +17,7 @@
   <ng-template #statusStrip>
     <scan-status-bar
       [offline]="!isOnline"
-      [actionRequired]="hasActionableStatus"
+      [actionRequired]="shouldShowStatusStrip"
       [detail]="statusSummary"
       (statusRequested)="openStatusModal()"></scan-status-bar>
   </ng-template>
