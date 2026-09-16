@@ -17,10 +17,10 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lot 0, correction de la suppression de blob et préparation du conteneur `livres-rares`. |
-| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis démarrer le lot 1 depuis `origin/main` après fusion ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) reste retenu. |
+| **Lot en cours** | Livres rares — lots 0 et 1, conteneur blob et domaine `RareBook`. |
+| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 2 sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) est appliqué. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
-| **Dernière mise à jour** | 2026-09-16 — `DeleteFileAsync` reçoit désormais le conteneur cible et les appelants actualités sont explicitement câblés sur `actuality-images`; le conteneur public `livres-rares` est préparé dans l’API, Aspire et Bicep. 468 tests backend et le build de solution passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Dernière mise à jour** | 2026-09-16 — le domaine `RareBook` est ajouté avec slug figé, prix décimal, publication/vente idempotentes et photos ordonnées ; le conteneur public `livres-rares` reste préparé par le lot 0. 486 tests backend et le build de solution passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
@@ -38,6 +38,21 @@ Bicep. `graphify update .` a ré-extrait l’AST, mais son étape de visualisati
 la limite de 5 100 nœuds. Aucun déploiement Azure ni contrôle de production n’a été effectué. La
 [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) est ouverte vers
 `main` et n’est pas fusionnée.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 1
+
+Le domaine `RareBook` est ajouté sous `Domain/RareBookAggregate`. L’agrégat porte ses
+métadonnées, son ISBN facultatif, son prix ferme en `decimal`, son état brouillon/publié, la
+traçabilité de sortie et une collection de photos protégée. Le slug est calculé une seule fois,
+normalisé sans accents et limité à 120 caractères ; la liste de rayons reste une valeur texte
+validée afin de pouvoir être fermée et éditée par `AssociationSettings` selon Q4. La publication
+autorise l’absence de photo comme avertissement non bloquant, tandis que la vente exige une fiche
+publiée et reste idempotente. Aucune logique de panier, de total ou de recette n’est introduite.
+
+Validation locale : test rouge puis vert, 18 tests ciblés et 110 tests `Domain.tests` passés.
+La suite backend complète et le build de solution passent ; `graphify update .` a ré-extrait
+l’AST, mais sa visualisation HTML reste bloquée par la limite de 5 100 nœuds. Aucun changement
+de persistance, migration, API, front, Azure ou donnée métier n’a été effectué dans ce lot.
 
 ---
 
