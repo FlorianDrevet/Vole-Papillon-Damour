@@ -108,6 +108,12 @@ describe('CatalogHomePageComponent', () => {
       .toContain('Suivez un livre, on vous prévient quand il arrive.');
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
     expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
+    expect(api.search).toHaveBeenCalledWith({
+      availability: 'all',
+      rareOnly: true,
+      sort: 'recent',
+      pageSize: 4,
+    });
   });
 
   it('opens a branded genre menu instead of relying on the native select popup', () => {
@@ -266,6 +272,14 @@ describe('CatalogHomePageComponent', () => {
 
     expect(router.navigate).toHaveBeenCalledWith(['/catalogue'], {
       queryParams: {availability: 'available'},
+    });
+  });
+
+  it('opens the rare catalogue with all non-exhausted availability scopes', () => {
+    fixture.componentInstance.showRare();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/recherche'], {
+      queryParams: {rare: true, availability: 'all'},
     });
   });
 

@@ -62,7 +62,10 @@ Live bingo mutations broadcast the updated `EventResponse` only to SSE clients r
 
 - `GET /catalog/search` - anonymous typed search over visible canonical books, with title,
   author, publisher and ISBN matching, accent normalization, genre/availability/rare
-  filters, relevance or recent sorting, and paging. Exhausted books remain in `all`.
+  filters, relevance or recent sorting, and paging. `includeExhausted=true` is an explicit
+  opt-in; without it, books with neither available quantity nor an active announcement are
+  excluded from every availability scope. When enabled, exhausted books are added to the
+  selected scope rather than replacing it.
 - `GET /catalog/books/{isbn13}` - anonymous canonical book projection with available and
   announced quantities kept separate, next-fair date, freshness fields and work identifier.
 - `GET /catalog/fairs/next` - anonymous next non-cancelled Books event with schedule and

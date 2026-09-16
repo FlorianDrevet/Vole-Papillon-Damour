@@ -98,9 +98,25 @@
           <label class="filter-option">
             <input type="radio" name="availability" value="all" [(ngModel)]="availability" (ngModelChange)="applyFilters()">
             <span class="filter-control radio-control" aria-hidden="true"></span>
-            <span>Tout</span>
+            <span>Toutes les disponibilités</span>
           </label>
         </fieldset>
+
+        <div class="exhausted-filter">
+          <label class="filter-option filter-option--checkbox exhausted-option">
+            <input
+              type="checkbox"
+              name="includeExhausted"
+              [(ngModel)]="includeExhausted"
+              aria-describedby="exhausted-filter-help"
+              (ngModelChange)="applyFilters()">
+            <span class="filter-control checkbox-control" aria-hidden="true"></span>
+            <span>Afficher les livres épuisés</span>
+          </label>
+          <p id="exhausted-filter-help" class="filter-help">
+            Masqués par défaut ; les autres filtres restent appliqués.
+          </p>
+        </div>
 
         <div class="filter-divider" aria-hidden="true"></div>
 
@@ -131,7 +147,7 @@
           <span>Uniquement les livres rares</span>
         </label>
 
-        @if (query || genre || rareOnly || availability !== defaultAvailability() || sort !== 'relevance') {
+        @if (query || genre || rareOnly || includeExhausted || availability !== defaultAvailability() || sort !== 'relevance') {
           <button type="button" class="reset-filters" (click)="clearFilters()">Réinitialiser les filtres</button>
         }
 

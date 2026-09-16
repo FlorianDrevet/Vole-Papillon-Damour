@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Entra — correction de la bascule `accountEnabled` des bénévoles et rafraîchissement du branding des écrans d'authentification. |
-| **Prochaine action** | Faire relire la [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193), puis exécuter les commandes Entra documentées et contrôler le parcours avec un compte de test. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-entra-status-branding` |
-| **Dernière mise à jour** | 2026-09-16 — la permission Graph `User.EnableDisableAccount.All` est ajoutée à l'application app-only de gestion des comptes ; le CSS External ID applique un dégradé bleu papier commun à la connexion et à la création de compte. 21 tests Pester Entra, parse PowerShell et Graphify AST passants ; consentement, rôle d'annuaire et smoke connecté restent à faire. |
-| **Branche** | `fix/entra-account-status-and-branding` — dédiée depuis `origin/main` fraîchement récupéré, [PR #193](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/193) vers `main` |
+| **Lot en cours** | Catalog — uniformisation de l’affichage des livres épuisés dans toutes les recherches publiques. |
+| **Prochaine action** | Faire relire la [PR #192](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/192), puis déployer depuis `main` et contrôler les recherches avec des données réelles. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-search-exhausted-toggle` |
+| **Dernière mise à jour** | 2026-09-16 — les listes publiques masquent par défaut les fiches réellement épuisées, la case `Afficher les livres épuisés` persiste dans l’URL et le backend conserve les autres périmètres de filtre. Tests Catalog/Application, builds et smoke local passants ; l’API/SQL locale n’était pas disponible. |
+| **Branche** | `feat/catalog-search-exhausted-toggle` — dédiée depuis `origin/main` fraîchement récupéré, [PR #192](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/192) vers `main` |
 
 ---
 
@@ -249,6 +249,26 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-16 — affichage opt-in des livres épuisés dans la recherche Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-search-exhausted-toggle`, la recherche publique porte désormais
+`includeExhausted=true` pour la case « Afficher les livres épuisés », décochée par défaut. La
+règle distingue une fiche réellement épuisée (zéro exemplaire disponible et aucune annonce active)
+d'une fiche annoncée pour une prochaine bourse : cette dernière reste visible avec son état
+« annoncé prochainement ». Le backend applique la règle sur `/catalog/search`, et le Catalog la
+conserve sur `/recherche`, `/catalogue`, les listes de l'accueil, les genres, la disponibilité, le
+tri et la pagination. La case ajoute les épuisés au périmètre choisi sans remplacer les autres
+filtres ; les fiches et œuvres directes restent accessibles pour les alertes et les liens indexés.
+
+Validation locale : TDD rouge puis vert, 234 tests Application, 92 Domain, 116 Infrastructure et
+24 API (466 backend), 264 tests Catalog, builds de la solution backend et du Catalog, `git diff
+--check`, et smoke Chrome local du filtre et de la conservation de l'URL. `python -m graphify
+update .` a rafraîchi l'AST et le rapport ; la visualisation HTML reste bloquée par la limite du
+graphe (5 106 nœuds). L'API/SQL locale n'était pas disponible, donc le rendu avec données réelles
+reste à contrôler après déploiement. Aucun changement Azure/Entra, déploiement ou merge n'a été
+effectué ; la [PR #192](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/192) est ouverte.
 
 ### État actualisé — 2026-09-16 — permutation Catalogue/Inventaire de l’administration Catalog
 

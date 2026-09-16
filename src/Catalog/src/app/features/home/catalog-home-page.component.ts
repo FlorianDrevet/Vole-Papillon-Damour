@@ -76,7 +76,7 @@ export class CatalogHomePageComponent implements OnInit {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
-      rare: this.api.search({rareOnly: true, sort: 'recent', pageSize: 4}).pipe(catchError(() => {
+      rare: this.api.search({availability: 'all', rareOnly: true, sort: 'recent', pageSize: 4}).pipe(catchError(() => {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
@@ -207,7 +207,7 @@ export class CatalogHomePageComponent implements OnInit {
   }
 
   showRare(): void {
-    void this.router.navigate(['/recherche'], {queryParams: {rare: true}});
+    void this.router.navigate(['/recherche'], {queryParams: {rare: true, availability: 'all'}});
   }
 
   trackBook(_index: number, book: CatalogBook): string {

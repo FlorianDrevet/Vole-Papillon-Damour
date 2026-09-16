@@ -69,6 +69,13 @@ d'acquisition :
 n'est pas une préférence esthétique : mélanger les deux ferait croire à des
 disponibilités inexistantes.
 
+Les fiches épuisées suivent une règle distincte de la disponibilité. Elles restent accessibles
+par leur URL et dans les projections d'œuvre afin de préserver les alertes et les liens indexés,
+mais les listes publiques de recherche les masquent par défaut. Le filtre optionnel
+`includeExhausted=true` (« Afficher les livres épuisés ») les ajoute au périmètre de disponibilité
+sélectionné ; il est porté par l'URL pour que chaque changement de filtre ou de page conserve le
+choix du visiteur.
+
 | Bloc | Source | Cache |
 |---|---|---|
 | À la bourse | Catalogue en base, plein texte SQL (`DT-07`) | Aucun |
