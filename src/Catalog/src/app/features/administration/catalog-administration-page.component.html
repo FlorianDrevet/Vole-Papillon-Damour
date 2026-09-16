@@ -313,12 +313,12 @@
             </section>
           }
 
-          @case ('inventory') {
+          @case ('catalogue') {
             <section class="admin-view" aria-labelledby="admin-title">
               <div class="admin-heading">
                 <span class="admin-accent" aria-hidden="true"></span>
                 <span class="admin-kicker">Travail</span>
-                <h1 id="admin-title">Inventaire.</h1>
+                <h1 id="admin-title">Catalogue.</h1>
                 <p class="admin-intro">Retrouvez toutes les fiches du fonds, ajustez les exemplaires disponibles et ajoutez une nouvelle fiche à partir d’un ISBN ou du référentiel bibliographique.</p>
               </div>
               <section class="inventory-books-zone" aria-labelledby="inventory-books-title">
@@ -393,7 +393,7 @@
             </section>
           }
 
-          @case ('catalogue') {
+          @case ('inventory') {
             <section class="admin-view" aria-labelledby="admin-title">
               @if (selectedBook(); as book) {
                 <div class="detail-screen">
@@ -417,7 +417,7 @@
                 <div class="admin-heading">
                   <span class="admin-accent" aria-hidden="true"></span>
                   <span class="admin-kicker">Travail</span>
-                  <h1 id="admin-title">Catalogue.</h1>
+                  <h1 id="admin-title">Inventaire.</h1>
                   <p class="admin-intro">Trois files de travail concrètes, plutôt qu’un écran de recherche.</p>
                 </div>
                 <details class="secondary-detail add-book-panel">
