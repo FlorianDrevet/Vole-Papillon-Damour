@@ -129,6 +129,23 @@ type CatalogBookCandidateStatus =
 
 type CatalogQuantityAdjustmentDirection = 'increase' | 'decrease';
 
+type CatalogAdminSessionAlertState = 'none' | 'pending' | 'dispatching' | 'sent' | 'cancelled' | 'failed';
+
+type CatalogAdminSessionConfirmationAction =
+  | {kind: 'remove-movement'; sessionId: string; movementId: string}
+  | {kind: 'reassign-session'; sessionId: string}
+  | {kind: 'cancel-session'; sessionId: string}
+  | {kind: 'cancel-session-alerts'; sessionId: string}
+  | {kind: 'force-session-alerts'; sessionId: string};
+
+interface CatalogAdminSessionConfirmation {
+  action: CatalogAdminSessionConfirmationAction;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  tone: 'accent' | 'danger';
+}
+
 interface CatalogQuantityConfirmation {
   book: CatalogAdminBook;
   direction: CatalogQuantityAdjustmentDirection;
@@ -199,6 +216,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly catalogueLookupLoading = signal(false);
   readonly catalogueLookupError = signal<string | null>(null);
   readonly catalogueConfirmation = signal<CatalogQuantityConfirmation | null>(null);
+  readonly sessionConfirmation = signal<CatalogAdminSessionConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
   readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
   readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
@@ -222,6 +240,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     Math.max(0, ...(this.volunteerStatistics()?.volunteers.map(volunteer => volunteer.soldQuantity) ?? [])));
   readonly sessionsPage = signal<CatalogAdminScanSessionPage | null>(null);
   readonly selectedSession = signal<CatalogAdminScanSession | null>(null);
+  readonly sessionJournalOpen = signal(false);
   readonly alertsPage = signal<CatalogAdminAlertPage | null>(null);
   readonly membersPage = signal<CatalogAdminMemberPage | null>(null);
   readonly selectedMember = signal<CatalogAdminMemberDetail | null>(null);
@@ -675,6 +694,11 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   closeOpenDialogOnEscape(): void {
+    if (this.sessionConfirmation()) {
+      this.cancelSessionConfirmation();
+      return;
+    }
+
     if (this.catalogueConfirmation()) {
       this.cancelCatalogueAdjustment();
       return;
@@ -687,7 +711,18 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
     if (this.selectedMember()) {
       this.closeMemberDetail();
+      return;
     }
+
+    if (this.selectedSession()) {
+      this.closeSessionDialog();
+    }
+  }
+
+  closeSessionDialog(): void {
+    this.cancelSessionConfirmation();
+    this.sessionJournalOpen.set(false);
+    this.selectedSession.set(null);
   }
 
   async openBook(isbn13: string): Promise<void> {
@@ -1095,7 +1130,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'open':
         return sessions.filter(session => session.status === 'Open');
       case 'alerts':
-        return sessions.filter(session => session.pendingAlertCount === 0 && session.alertCount > 0);
+        return sessions.filter(session => {
+          const state = this.sessionAlertState(session);
+          return state === 'sent' || state === 'dispatching';
+        });
       default:
         return sessions;
     }
@@ -1106,16 +1144,23 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   alertSessionCount(): number {
-    return (this.sessionsPage()?.sessions ?? []).filter(session => session.pendingAlertCount === 0 && session.alertCount > 0).length;
+    return (this.sessionsPage()?.sessions ?? []).filter(session => {
+      const state = this.sessionAlertState(session);
+      return state === 'sent' || state === 'dispatching';
+    }).length;
   }
 
   pendingAlertSessions(): CatalogAdminScanSession[] {
     return (this.sessionsPage()?.sessions ?? [])
-      .filter(session => session.pendingAlertCount > 0)
+      .filter(session => this.sessionNeedsCorrection(session))
       .slice(0, 2);
   }
 
-  async openSession(sessionId: string): Promise<void> {
+  async openSession(sessionId: string, keepJournalOpen = false): Promise<void> {
+    this.sessionConfirmation.set(null);
+    if (!keepJournalOpen) {
+      this.sessionJournalOpen.set(false);
+    }
     await this.run('session-detail', async token => {
       const session = await firstValueFrom(this.api.getSession(token, sessionId));
       this.selectedSession.set(session);
@@ -1129,24 +1174,128 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async removeMovement(movementId: string): Promise<void> {
     const session = this.selectedSession();
-    if (!session || !this.confirmAction('Retirer ce mouvement du stock ? Une correction sera tracée.')) {
+    const movement = session?.movements.find(candidate => candidate.id === movementId);
+    if (!session || !movement || movement.reversalOfMovementId) {
       return;
     }
 
-    await this.run('remove-movement', async token => {
-      await firstValueFrom(this.api.removeMovement(token, session.id, movementId));
-      this.showSuccess('Le mouvement a été renversé et reste visible dans le ledger.');
-      await this.openSession(session.id);
-      await this.loadSessions();
+    this.sessionConfirmation.set({
+      action: {kind: 'remove-movement', sessionId: session.id, movementId},
+      title: 'Retirer ce livre du stock ?',
+      description: 'Le mouvement sera renversé et restera visible dans le journal de la session pour garder une trace complète de la correction.',
+      confirmLabel: 'Retirer le mouvement',
+      tone: 'danger',
     });
   }
 
   async reassignSession(): Promise<void> {
     const session = this.selectedSession();
-    if (!session || !this.confirmAction('Rejouer cette session avec une autre destination ?')) {
+    if (!session) {
       return;
     }
 
+    this.sessionConfirmation.set({
+      action: {kind: 'reassign-session', sessionId: session.id},
+      title: 'Appliquer les corrections ?',
+      description: 'Les mouvements de cette session seront rejoués avec le mode et la bourse sélectionnés. L’historique initial restera conservé.',
+      confirmLabel: 'Appliquer les corrections',
+      tone: 'accent',
+    });
+  }
+
+  async cancelSession(): Promise<void> {
+    const session = this.selectedSession();
+    if (!session) {
+      return;
+    }
+
+    this.sessionConfirmation.set({
+      action: {kind: 'cancel-session', sessionId: session.id},
+      title: 'Annuler cette session ?',
+      description: 'Tous les mouvements de la session seront renversés et l’annulation sera inscrite dans l’historique.',
+      confirmLabel: 'Annuler la session',
+      tone: 'danger',
+    });
+  }
+
+  async cancelSessionAlerts(): Promise<void> {
+    const session = this.selectedSession();
+    if (!session || !this.sessionAlertActionsAvailable(session)) {
+      return;
+    }
+
+    this.sessionConfirmation.set({
+      action: {kind: 'cancel-session-alerts', sessionId: session.id},
+      title: 'Annuler les alertes en attente ?',
+      description: `Les ${this.formatNumber(session.pendingAlertCount)} alertes ne seront pas envoyées aux membres. Cette décision restera visible dans le journal.`,
+      confirmLabel: 'Annuler les alertes',
+      tone: 'danger',
+    });
+  }
+
+  async forceSessionAlerts(): Promise<void> {
+    const session = this.selectedSession();
+    if (!session || !this.sessionAlertActionsAvailable(session)) {
+      return;
+    }
+
+    this.sessionConfirmation.set({
+      action: {kind: 'force-session-alerts', sessionId: session.id},
+      title: 'Lancer l’envoi immédiat ?',
+      description: `Les ${this.formatNumber(session.pendingAlertCount)} alertes seront remises à la file d’envoi maintenant. La session ne sera plus corrigeable pendant leur traitement.`,
+      confirmLabel: 'Lancer l’envoi immédiat',
+      tone: 'accent',
+    });
+  }
+
+  cancelSessionConfirmation(): void {
+    this.sessionConfirmation.set(null);
+  }
+
+  async confirmSessionAction(): Promise<void> {
+    const confirmation = this.sessionConfirmation();
+    const session = this.selectedSession();
+    if (!confirmation || !session || confirmation.action.sessionId !== session.id || this.loading()) {
+      return;
+    }
+
+    this.sessionConfirmation.set(null);
+    switch (confirmation.action.kind) {
+      case 'remove-movement':
+        await this.executeRemoveMovement(session, confirmation.action.movementId);
+        return;
+      case 'reassign-session':
+        await this.executeReassignSession(session);
+        return;
+      case 'cancel-session':
+        await this.executeCancelSession(session);
+        return;
+      case 'cancel-session-alerts':
+        await this.executeCancelSessionAlerts(session);
+        return;
+      case 'force-session-alerts':
+        await this.executeForceSessionAlerts(session);
+        return;
+    }
+  }
+
+  toggleSessionJournal(): void {
+    this.sessionJournalOpen.update(open => !open);
+  }
+
+  private async executeRemoveMovement(
+    session: CatalogAdminScanSession,
+    movementId: string,
+  ): Promise<void> {
+    await this.run('remove-movement', async token => {
+      await firstValueFrom(this.api.removeMovement(token, session.id, movementId));
+      this.showSuccess('Le mouvement a été renversé et reste visible dans le journal.');
+      await this.openSession(session.id, true);
+      await this.loadSessions();
+    });
+  }
+
+  private async executeReassignSession(session: CatalogAdminScanSession): Promise<void> {
     await this.run('reassign-session', async token => {
       await firstValueFrom(this.api.reassignSession(token, session.id, {
         mode: this.sessionMode,
@@ -1158,12 +1307,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  async cancelSession(): Promise<void> {
-    const session = this.selectedSession();
-    if (!session || !this.confirmAction('Annuler cette session et renverser ses mouvements ?')) {
-      return;
-    }
-
+  private async executeCancelSession(session: CatalogAdminScanSession): Promise<void> {
     await this.run('cancel-session', async token => {
       await firstValueFrom(this.api.cancelSession(token, session.id));
       this.showSuccess('La session a été annulée avec une correction tracée.');
@@ -1172,29 +1316,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  async cancelSessionAlerts(): Promise<void> {
-    const session = this.selectedSession();
-    if (!session || !this.confirmAction('Annuler les alertes encore en attente de cette session ?')) {
-      return;
-    }
-
+  private async executeCancelSessionAlerts(session: CatalogAdminScanSession): Promise<void> {
     await this.run('cancel-session-alerts', async token => {
-      await firstValueFrom(this.api.cancelSessionAlerts(token, session.id));
-      this.showSuccess('Les alertes non envoyées ont été annulées.');
+      const operation = await firstValueFrom(this.api.cancelSessionAlerts(token, session.id));
+      this.showSuccess(`${this.formatNumber(operation.affectedAlertCount)} alerte(s) ont été annulée(s) et ne seront pas envoyée(s).`);
       await this.openSession(session.id);
       await this.loadSessions();
     });
   }
 
-  async forceSessionAlerts(): Promise<void> {
-    const session = this.selectedSession();
-    if (!session || !this.confirmAction('Forcer l’envoi des alertes en attente de cette session ?')) {
-      return;
-    }
-
+  private async executeForceSessionAlerts(session: CatalogAdminScanSession): Promise<void> {
     await this.run('force-session-alerts', async token => {
-      await firstValueFrom(this.api.forceSessionAlerts(token, session.id));
-      this.showSuccess('Les alertes en attente ont été forcées.');
+      const operation = await firstValueFrom(this.api.forceSessionAlerts(token, session.id));
+      this.showSuccess(`${this.formatNumber(operation.affectedAlertCount)} alerte(s) sont maintenant en envoi immédiat et la session n’est plus corrigeable.`);
       await this.openSession(session.id);
       await this.loadSessions();
     });
@@ -1735,6 +1869,132 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     return hours > 0 ? `${hours} h ${String(minutes).padStart(2, '0')}` : `${minutes} min`;
   }
 
+  sessionAlertState(session: CatalogAdminScanSession): CatalogAdminSessionAlertState {
+    if (session.pendingAlertCount > 0) {
+      const dueAt = session.nextAlertDueAt ? new Date(session.nextAlertDueAt).getTime() : Number.NaN;
+      return Number.isFinite(dueAt) && dueAt <= Date.now() ? 'dispatching' : 'pending';
+    }
+
+    if ((session.sentAlertCount ?? 0) > 0 || (
+      session.alertCount > 0 &&
+      (session.cancelledAlertCount ?? 0) === 0 &&
+      (session.failedAlertCount ?? 0) === 0
+    )) {
+      return 'sent';
+    }
+
+    if ((session.cancelledAlertCount ?? 0) > 0) {
+      return 'cancelled';
+    }
+
+    if ((session.failedAlertCount ?? 0) > 0) {
+      return 'failed';
+    }
+
+    return 'none';
+  }
+
+  sessionAlertActionsAvailable(session: CatalogAdminScanSession): boolean {
+    return this.sessionAlertState(session) === 'pending';
+  }
+
+  sessionAlertTitle(session: CatalogAdminScanSession): string {
+    switch (this.sessionAlertState(session)) {
+      case 'pending':
+        return 'Alertes encore en attente';
+      case 'dispatching':
+        return 'Envoi immédiat demandé';
+      case 'sent':
+        return 'Alertes envoyées';
+      case 'cancelled':
+        return 'Alertes annulées';
+      case 'failed':
+        return 'Échec d’envoi';
+      default:
+        return 'Aucune alerte';
+    }
+  }
+
+  sessionAlertDescription(session: CatalogAdminScanSession): string {
+    switch (this.sessionAlertState(session)) {
+      case 'pending':
+        return 'Cette session peut encore être corrigée avant que les membres ne soient prévenus.';
+      case 'dispatching':
+        return 'Les alertes ont été remises à la file d’envoi et la session n’est plus corrigeable.';
+      case 'sent':
+        return 'Les membres ont été prévenus. Une alerte déjà envoyée ne peut pas être annulée.';
+      case 'cancelled':
+        return 'Ces alertes n’ont pas été envoyées. Elles ne peuvent plus être relancées depuis cette session.';
+      case 'failed':
+        return 'L’envoi a échoué après plusieurs tentatives. Consultez le journal des alertes pour intervenir.';
+      default:
+        return 'Aucun membre n’a été ciblé par une alerte pour cette session.';
+    }
+  }
+
+  sessionAlertMetric(session: CatalogAdminScanSession): string {
+    switch (this.sessionAlertState(session)) {
+      case 'pending':
+        return this.formatCountdown(session.nextAlertDueAt);
+      case 'dispatching':
+        return this.formatNumber(session.pendingAlertCount);
+      case 'sent':
+        return this.formatNumber(session.sentAlertCount || session.alertCount);
+      case 'cancelled':
+        return this.formatNumber(session.cancelledAlertCount);
+      case 'failed':
+        return this.formatNumber(session.failedAlertCount);
+      default:
+        return '—';
+    }
+  }
+
+  sessionAlertMetricLabel(session: CatalogAdminScanSession): string {
+    switch (this.sessionAlertState(session)) {
+      case 'pending':
+        return 'avant envoi';
+      case 'dispatching':
+        return 'e-mails en cours';
+      case 'sent':
+        return 'e-mails envoyés';
+      case 'cancelled':
+        return 'e-mails annulés';
+      case 'failed':
+        return 'e-mails en échec';
+      default:
+        return 'aucune alerte';
+    }
+  }
+
+  sessionAlertActionHint(session: CatalogAdminScanSession): string {
+    switch (this.sessionAlertState(session)) {
+      case 'pending':
+        return 'Vous pouvez encore corriger la session avant l’envoi.';
+      case 'dispatching':
+        return 'L’envoi est en cours : les actions d’alerte sont désactivées.';
+      case 'sent':
+        return 'Les alertes ont déjà été envoyées : aucune action supplémentaire n’est pertinente.';
+      case 'cancelled':
+        return 'Les alertes ont été annulées : aucune action supplémentaire n’est pertinente.';
+      case 'failed':
+        return 'Les alertes sont en échec : consultez le journal complet pour le détail.';
+      default:
+        return 'Aucune alerte à annuler ou à envoyer pour cette session.';
+    }
+  }
+
+  movementTypeLabel(value: string | null | undefined): string {
+    const labels: Record<string, string> = {
+      DirectEntry: 'Entrée directe',
+      AnnouncementEntry: 'Entrée annoncée',
+      Rejection: 'Refus',
+      Sale: 'Vente',
+      Withdrawal: 'Retrait',
+      Correction: 'Correction',
+    };
+    return value ? labels[value] || value : 'Mouvement';
+  }
+
   sessionModeLabel(value: string | null | undefined): string {
     const labels: Record<string, string> = {
       AvailableNow: 'Disponible maintenant',
@@ -1755,7 +2015,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   sessionNeedsCorrection(session: CatalogAdminScanSession): boolean {
-    return session.pendingAlertCount > 0 && session.status !== 'Cancelled';
+    return this.sessionAlertState(session) === 'pending' && session.status !== 'Cancelled';
   }
 
   barWidth(value: number | null | undefined, maximum: number): string {

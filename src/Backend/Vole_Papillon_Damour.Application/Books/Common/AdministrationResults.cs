@@ -184,6 +184,9 @@ public sealed record AdminScanSessionResult(
     int RejectedCount,
     int AlertCount,
     int PendingAlertCount,
+    int SentAlertCount,
+    int CancelledAlertCount,
+    int FailedAlertCount,
     DateTimeOffset? NextAlertDueAt,
     IReadOnlyList<AdminBookMovementResult> Movements);
 
