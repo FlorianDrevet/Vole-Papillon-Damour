@@ -147,8 +147,11 @@ client-only/private.
 
 The Graph runtime configuration uses `EntraGraph__TenantDomain` and
 `EntraGraph__ApiClientId` alongside the existing app-only client credentials. The
-provisioning script must grant `User.ReadWrite.All`, `Application.Read.All`, and
-`AppRoleAssignment.ReadWrite.All` to that app-only registration.
+provisioning script must grant `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
+`Application.Read.All`, and `AppRoleAssignment.ReadWrite.All` to that app-only
+registration. `accountEnabled` is a sensitive Graph operation; if the app-only PATCH
+remains denied after consent, the service principal also needs an Entra directory role
+authorized for the action.
 
 All `/books/admin/*` routes require the `Administration` policy (`Administration` or `Admin`
 app role). All admin mutation responses expose an explicit `changed` flag where an operation

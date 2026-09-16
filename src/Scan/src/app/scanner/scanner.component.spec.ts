@@ -1248,6 +1248,21 @@ describe('ScannerComponent', () => {
     screenFixture.destroy();
   });
 
+  it('describes a decided book waiting for synchronization instead of another decision', () => {
+    const screenFixture = TestBed.createComponent(ScannerComponent);
+    const screenComponent = screenFixture.componentInstance;
+    screenComponent.screen = 'tri';
+    screenComponent.pendingTransmissionCount = 1;
+    screenFixture.detectChanges();
+
+    expect(screenComponent.statusSummary)
+      .toBe('1 opération enregistrée attend la synchronisation.');
+    expect(screenComponent.infoAlerts.find(alert => alert.id === 'pending-transmissions')?.message)
+      .toBe('1 opération enregistrée à synchroniser');
+
+    screenFixture.destroy();
+  });
+
   it('keeps a failed synchronization visible while transmissions remain pending', () => {
     const screenFixture = TestBed.createComponent(ScannerComponent);
     const screenComponent = screenFixture.componentInstance;
@@ -1313,7 +1328,7 @@ describe('ScannerComponent', () => {
       expect(modal).not.toBeNull();
       expect(modal?.textContent).toContain('Hors connexion');
       expect(modal?.textContent).toContain('2 décisions à prendre');
-      expect(modal?.textContent).toContain('3 gestes à transmettre');
+      expect(modal?.textContent).toContain('3 opérations enregistrées à synchroniser');
 
       screenFixture.destroy();
     }
@@ -1398,7 +1413,7 @@ describe('ScannerComponent', () => {
     const modal = railFixture.nativeElement.querySelector('.status-modal') as HTMLElement;
     expect(modal.textContent).toContain('Hors connexion');
     expect(modal.textContent).toContain('2 entrées ont été mises en quarantaine');
-    expect(modal.textContent).toContain('4 gestes à transmettre');
+    expect(modal.textContent).toContain('4 opérations enregistrées à synchroniser');
 
     railFixture.destroy();
   });

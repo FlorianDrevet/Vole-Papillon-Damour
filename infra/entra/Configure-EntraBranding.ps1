@@ -8,7 +8,10 @@
 .DESCRIPTION
     Configures the tenant-level and fr-FR company branding used by browser-
     delegated External ID sign-in and sign-up pages. The script uploads the
-    catalog CSS and applies French copy without touching application secrets.
+    catalog CSS, including its static blue gradient canvas, and applies French
+    copy without touching application secrets. A legacy background image can
+    still be uploaded with -BackgroundImagePath, but the Catalog CSS deliberately
+    paints over it so the hosted forms keep the gradient design.
 
     Native authentication is not configured here. It is a separate integration
     choice that moves the authentication UI into the Angular application.
@@ -24,8 +27,7 @@
 .EXAMPLE
     ./Configure-EntraBranding.ps1 -TenantId b23c80b3-9776-4840-8255-fcbf3b3500fd `
         -HeaderLogoPath ./branding/header-logo.png `
-        -FaviconPath ./branding/favicon.png `
-        -BackgroundImagePath ./branding/background.png
+        -FaviconPath ./branding/favicon.png
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -54,7 +56,7 @@ $ErrorActionPreference = 'Stop'
 
 function New-VpdBrandingUpdateBody {
     return @{
-        backgroundColor = '#eaf6fb'
+        backgroundColor = '#e9f4fb'
         headerBackgroundColor = '#041d30'
         usernameHintText = 'Votre adresse e-mail'
         signInPageText = "Connexion sécurisée au catalogue Vole Papillon d’Amour."

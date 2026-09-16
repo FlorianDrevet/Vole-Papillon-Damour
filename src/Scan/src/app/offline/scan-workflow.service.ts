@@ -285,6 +285,28 @@ export class ScanWorkflowService {
     });
   }
 
+  async recoverClosedSession(clientSessionId: string): Promise<ScanSessionSnapshot | null> {
+    return await this.enqueue(async () => {
+      const session = await this.store.getSession();
+      if (!session || session.clientSessionId !== clientSessionId) {
+        return null;
+      }
+
+      // ClientSessionId is also the server session id, so a closed server row
+      // cannot be reopened with the same idempotency key.
+      const replacement = {
+        ...session,
+        clientSessionId: createClientId(),
+        remoteSessionId: null,
+      };
+      await this.store.replaceSessionAfterRemoteClosure(
+        session.clientSessionId,
+        replacement,
+      );
+      return replacement;
+    });
+  }
+
   async clearSession(): Promise<void> {
     return await this.enqueue(async () => {
       await this.store.clearSession();
