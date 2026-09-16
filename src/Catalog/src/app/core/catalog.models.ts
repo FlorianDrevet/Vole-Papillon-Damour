@@ -36,6 +36,7 @@ export interface CatalogSearchParams {
   genre?: string;
   availability?: CatalogAvailability;
   rareOnly?: boolean;
+  includeExhausted?: boolean;
   sort?: CatalogSort;
   page?: number;
   pageSize?: number;

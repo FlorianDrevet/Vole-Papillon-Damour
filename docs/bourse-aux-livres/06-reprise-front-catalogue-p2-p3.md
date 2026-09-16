@@ -46,7 +46,7 @@ ne démarrent qu'après l'initialisation MSAL côté navigateur.
 
 | Méthode et route | Paramètres | Utilisation |
 |---|---|---|
-| `GET /catalog/search` | `q`, `genre`, `availability=all\|available\|next-fair`, `rare`, `sort=relevance\|recent`, `page`, `pageSize` | Résultats publics, sans fiches masquées ou redirigées |
+| `GET /catalog/search` | `q`, `genre`, `availability=all\|available\|next-fair`, `includeExhausted=true`, `rare`, `sort=relevance\|recent`, `page`, `pageSize` | Résultats publics, sans fiches masquées ou redirigées ; les épuisés sont exclus par défaut |
 | `GET /catalog/books/{isbn13}` | ISBN-10 ou ISBN-13 accepté | Fiche édition publique |
 | `GET /catalog/works/{workId}` | identifiant d'œuvre | Regroupement des éditions |
 | `GET /catalog/fairs/next` | aucun | Prochaine bourse de livres |
@@ -60,6 +60,12 @@ doivent pas être mélangés à la recherche locale. `BookReferenceSearchRespons
 `generatedAt`, `query`, `items`, `page`, `pageSize`; chaque item contient `isbn13`
 éventuellement nul, `workId`, `title`, `authors`, `publisher`, `publicationYear`,
 `coverUrl` et `source`.
+
+`includeExhausted=true` correspond au filtre « Afficher les livres épuisés ». Il est absent par
+défaut et doit rester dans la query string quand l'utilisateur change de genre, de disponibilité,
+de tri ou de page. Sans cette option, une fiche dont `quantityAvailable` et `quantityAnnounced`
+sont tous deux à zéro reste accessible directement, mais n'apparaît pas dans les listes de
+recherche ; avec l'option, elle est ajoutée au périmètre de disponibilité choisi.
 
 La fiche publique (`PublicCatalogBookResponse`) contient notamment `isbn13`,
 `title`, `authors`, `publisher`, `publicationYear`, `physicalFormat`, `language`,

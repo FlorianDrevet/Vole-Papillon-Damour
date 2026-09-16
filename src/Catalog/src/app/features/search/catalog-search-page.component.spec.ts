@@ -169,21 +169,52 @@ describe('CatalogSearchPageComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({availability: 'available'}));
+    expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({
+      availability: 'available',
+      includeExhausted: false,
+    }));
     expect((fixture.nativeElement.querySelector(
       'input[name="availability"][value="available"]',
     ) as HTMLInputElement).checked).toBeTrue();
+    expect((fixture.nativeElement.querySelector(
+      'input[name="includeExhausted"]',
+    ) as HTMLInputElement).checked).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain('Afficher les livres épuisés');
   });
 
   it('restores the available scope when search filters are reset', () => {
     fixture.detectChanges();
     fixture.componentInstance.availability = 'all';
+    fixture.componentInstance.includeExhausted = true;
     const applyFilters = spyOn(fixture.componentInstance, 'applyFilters');
 
     fixture.componentInstance.clearFilters();
 
     expect(fixture.componentInstance.availability).toBe('available');
+    expect(fixture.componentInstance.includeExhausted).toBeFalse();
     expect(applyFilters).toHaveBeenCalledOnceWith();
+  });
+
+  it('restores exhausted inclusion from the URL and preserves it when another filter changes', async () => {
+    fixture.detectChanges();
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', includeExhausted: 'true'}));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.includeExhausted).toBeTrue();
+    expect((fixture.nativeElement.querySelector(
+      'input[name="includeExhausted"]',
+    ) as HTMLInputElement).checked).toBeTrue();
+    expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({includeExhausted: true}));
+
+    const router = TestBed.inject(Router);
+    const navigate = spyOn(router, 'navigate').and.resolveTo(true);
+    fixture.componentInstance.genre = 'Romans';
+    fixture.componentInstance.applyFilters();
+
+    expect(navigate).toHaveBeenCalledWith(['/recherche'], {
+      queryParams: jasmine.objectContaining({includeExhausted: true}),
+    });
   });
 
   it('keeps an explicit all scope in the search URL', () => {

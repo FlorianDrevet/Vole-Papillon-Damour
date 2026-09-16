@@ -194,15 +194,16 @@ public sealed class SearchCatalogQueryHandler(
                 EF.Functions.Like(book.Genre ?? string.Empty, genre));
         }
 
-        if (query.Availability == PublicCatalogAvailabilityFilter.AvailableNow)
+        var activeAnnouncementIsbns = Array.Empty<Isbn13>();
+        var needsActiveAnnouncementIsbns =
+            query.Availability == PublicCatalogAvailabilityFilter.NextBookFair ||
+            (query.Availability == PublicCatalogAvailabilityFilter.All && !query.IncludeExhausted) ||
+            (query.Availability == PublicCatalogAvailabilityFilter.AvailableNow && query.IncludeExhausted);
+        if (needsActiveAnnouncementIsbns)
         {
-            filteredBooksQuery = filteredBooksQuery.Where(book => book.QuantityAvailable > 0);
-        }
-        else if (query.Availability == PublicCatalogAvailabilityFilter.NextBookFair)
-        {
-            // Keep the availability predicate in SQL while passing only scalar
-            // identifiers between the two queries. Value-object FK comparisons
-            // cannot be translated reliably when correlated across providers.
+            // Keep the availability predicate in SQL while resolving announcement
+            // identifiers separately. Correlating the value-object foreign keys
+            // directly is not translated consistently across providers.
             var bookFairIds = await dbContext.AssoEvents
                 .AsNoTracking()
                 .Where(assoEvent =>
@@ -211,7 +212,7 @@ public sealed class SearchCatalogQueryHandler(
                 .Select(assoEvent => assoEvent.Id)
                 .ToArrayAsync(cancellationToken);
 
-            var nextFairIsbns = await dbContext.BookAnnouncements
+            activeAnnouncementIsbns = await dbContext.BookAnnouncements
                 .AsNoTracking()
                 .Where(announcement =>
                     announcement.Status == BookAnnouncementStatus.Announced &&
@@ -220,9 +221,28 @@ public sealed class SearchCatalogQueryHandler(
                 .Select(announcement => announcement.Isbn13)
                 .Distinct()
                 .ToArrayAsync(cancellationToken);
+        }
 
+        if (query.Availability == PublicCatalogAvailabilityFilter.AvailableNow)
+        {
+            filteredBooksQuery = query.IncludeExhausted
+                ? filteredBooksQuery.Where(book =>
+                    book.QuantityAvailable > 0 ||
+                    (book.QuantityAvailable <= 0 && !activeAnnouncementIsbns.Contains(book.Id)))
+                : filteredBooksQuery.Where(book => book.QuantityAvailable > 0);
+        }
+        else if (query.Availability == PublicCatalogAvailabilityFilter.NextBookFair)
+        {
+            filteredBooksQuery = query.IncludeExhausted
+                ? filteredBooksQuery.Where(book =>
+                    activeAnnouncementIsbns.Contains(book.Id) ||
+                    (book.QuantityAvailable <= 0 && !activeAnnouncementIsbns.Contains(book.Id)))
+                : filteredBooksQuery.Where(book => activeAnnouncementIsbns.Contains(book.Id));
+        }
+        else if (!query.IncludeExhausted)
+        {
             filteredBooksQuery = filteredBooksQuery.Where(book =>
-                nextFairIsbns.Contains(book.Id));
+                book.QuantityAvailable > 0 || activeAnnouncementIsbns.Contains(book.Id));
         }
 
         if (query.RareOnly)

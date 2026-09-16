@@ -31,6 +31,7 @@ interface CatalogSearchRouteState {
   genre: string;
   availability: CatalogAvailability;
   rareOnly: boolean;
+  includeExhausted: boolean;
   sort: CatalogSort;
   page: number;
   referencePage: number;
@@ -49,6 +50,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   genre = '';
   availability: CatalogAvailability = 'available';
   rareOnly = false;
+  includeExhausted = false;
   sort: CatalogSort = 'relevance';
   sortMenuOpen = false;
   sortMenuActiveIndex = 0;
@@ -114,6 +116,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.genre = nextState.genre;
         this.availability = nextState.availability;
         this.rareOnly = nextState.rareOnly;
+        this.includeExhausted = nextState.includeExhausted;
         this.sort = nextState.sort;
         this.currentPage = nextState.page;
         this.currentReferencePage = nextState.referencePage;
@@ -245,6 +248,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.genre = '';
     this.availability = this.defaultAvailability();
     this.rareOnly = false;
+    this.includeExhausted = false;
     this.sort = 'relevance';
     this.applyFilters();
   }
@@ -645,6 +649,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       genre: this.genre,
       availability: this.availability,
       rareOnly: this.rareOnly,
+      includeExhausted: this.includeExhausted,
       sort: this.sort,
       page: this.currentPage,
       pageSize: 24,
@@ -660,6 +665,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     if (this.genre.trim()) params['genre'] = this.genre.trim();
     if (!this.browseMode || this.availability !== 'all') params['availability'] = this.availability;
     if (this.rareOnly) params['rare'] = true;
+    if (this.includeExhausted) params['includeExhausted'] = true;
     if (this.sort !== 'relevance') params['sort'] = this.sort;
     if (includePagination) {
       if (this.currentPage > 1) params['page'] = this.currentPage;
@@ -729,6 +735,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       genre: params.get('genre') || '',
       availability: this.readAvailability(params.get('availability')),
       rareOnly: params.get('rare') === 'true',
+      includeExhausted: params.get('includeExhausted') === 'true',
       sort: params.get('sort') === 'recent' ? 'recent' : 'relevance',
       page: this.readPositivePage(params.get('page')),
       referencePage: this.readPositivePage(params.get('referencePage')),
@@ -748,6 +755,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       previous.genre !== next.genre ||
       previous.availability !== next.availability ||
       previous.rareOnly !== next.rareOnly ||
+      previous.includeExhausted !== next.includeExhausted ||
       previous.sort !== next.sort ||
       previous.page !== next.page;
   }

@@ -11,4 +11,5 @@ public sealed record SearchCatalogQuery(
     bool RareOnly,
     PublicCatalogSortOrder Sort,
     int Page,
-    int PageSize) : IRequest<ErrorOr<PublicCatalogSearchResult>>;
+    int PageSize,
+    bool IncludeExhausted = false) : IRequest<ErrorOr<PublicCatalogSearchResult>>;

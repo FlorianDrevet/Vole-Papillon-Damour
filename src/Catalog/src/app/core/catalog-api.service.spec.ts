@@ -39,6 +39,7 @@ describe('CatalogApiService', () => {
       genre: 'Romans',
       availability: 'available',
       rareOnly: true,
+      includeExhausted: true,
       sort: 'recent',
       page: 2,
       pageSize: 12,
@@ -50,6 +51,7 @@ describe('CatalogApiService', () => {
     expect(request.request.params.get('genre')).toBe('Romans');
     expect(request.request.params.get('availability')).toBe('available');
     expect(request.request.params.get('rare')).toBe('true');
+    expect(request.request.params.get('includeExhausted')).toBe('true');
     expect(request.request.params.get('sort')).toBe('recent');
     expect(request.request.params.get('page')).toBe('2');
     expect(request.request.params.get('pageSize')).toBe('12');

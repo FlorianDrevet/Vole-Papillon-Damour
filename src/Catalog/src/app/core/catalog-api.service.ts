@@ -33,6 +33,9 @@ export class CatalogApiService {
     if (params.rareOnly) {
       httpParams = httpParams.set('rare', 'true');
     }
+    if (params.includeExhausted) {
+      httpParams = httpParams.set('includeExhausted', 'true');
+    }
     if (params.sort && params.sort !== 'relevance') {
       httpParams = httpParams.set('sort', params.sort);
     }
