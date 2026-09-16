@@ -173,6 +173,9 @@ param communicationEmailSendingDomain string
 @description('Name of the Azure Communication Service used by the book-alert worker')
 param communicationServiceName string
 
+@description('Optional existing role-assignment resource name to adopt. Leave empty to generate a deterministic name for a new environment.')
+param communicationServiceRoleAssignmentName string = ''
+
 @description('Create the ACS Email service and customer-managed domain during bootstrap. Keep false after the domain is verified so later deployments do not reset ACS verification state.')
 param communicationEmailCreateResources bool = false
 
@@ -938,6 +941,7 @@ module communicationServiceModule './modules/CommunicationService/communicationS
     linkedDomainId: communicationEmailModule.outputs.domainResourceId
     linkEmailDomain: !communicationEmailCreateResources || bookAlertsEmailEnabled
     workerPrincipalId: userAssignedIdentityWorkerModule.outputs.principalId
+    roleAssignmentName: communicationServiceRoleAssignmentName
     tags: tags
   }
 }

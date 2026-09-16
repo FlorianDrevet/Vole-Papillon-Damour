@@ -114,6 +114,9 @@ belonging to that container.
 - The customer-managed Email service/domain module has an explicit one-time bootstrap
   switch. Development keeps it false after DNS verification; subsequent Bicep runs emit
   no Email domain PUT and therefore do not reset ACS-managed verification state.
+- The DEV parameter file adopts the role-assignment resource name created by the previous
+  ACS workflow. New environments leave that override empty and use the module's
+  deterministic role-assignment name, so repeated Bicep deployments remain idempotent.
 - A Bicep deployment script sends the same Event Grid subscription-validation request
   until the API has loaded the Key Vault reference. Event Grid is created only after that
   readiness gate, and the email runtime can be disabled during the placeholder-image

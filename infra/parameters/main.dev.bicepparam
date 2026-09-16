@@ -212,6 +212,9 @@ param communicationEmailSendingDomain = 'mail.volepapillondamour.fr'
 // issuing a domain PUT and resetting that state.
 param communicationEmailCreateResources = false
 param communicationServiceName = 'vpd-acs-comm-dev'
+// Adopt the role assignment created by the previous ACS configuration workflow.
+// Other environments can leave this empty and use Bicep's deterministic default.
+param communicationServiceRoleAssignmentName = '59682156-3d33-4bc5-b339-abd6f6f799ff'
 param communicationEmailEventSubscriptionName = 'vpd-acs-email-delivery-reports-dev'
 param communicationEmailWebhookHeaderName = 'X-Vpd-EventGrid-Secret'
 param bookAlertsEmailAssociationName = 'Vole Papillon d\'Amour'

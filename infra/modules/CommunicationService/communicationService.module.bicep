@@ -23,6 +23,9 @@ param linkEmailDomain bool = true
 @description('Principal ID of the Worker managed identity')
 param workerPrincipalId string
 
+@description('Existing role-assignment resource name to adopt, or empty for a deterministic name')
+param roleAssignmentName string = ''
+
 @description('Resource tags')
 param tags object = {}
 
@@ -37,7 +40,9 @@ resource communicationService 'Microsoft.Communication/communicationServices@202
 }
 
 resource workerEmailRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(communicationService.id, workerPrincipalId, RbacRoles.communication.CommunicationAndEmailServiceOwner.id)
+  name: !empty(roleAssignmentName)
+    ? roleAssignmentName
+    : guid(communicationService.id, workerPrincipalId, RbacRoles.communication.CommunicationAndEmailServiceOwner.id)
   scope: communicationService
   properties: {
     roleDefinitionId: subscriptionResourceId(
@@ -45,7 +50,6 @@ resource workerEmailRoleAssignment 'Microsoft.Authorization/roleAssignments@2022
       RbacRoles.communication.CommunicationAndEmailServiceOwner.id)
     principalId: workerPrincipalId
     principalType: 'ServicePrincipal'
-    description: RbacRoles.communication.CommunicationAndEmailServiceOwner.description
   }
 }
 
