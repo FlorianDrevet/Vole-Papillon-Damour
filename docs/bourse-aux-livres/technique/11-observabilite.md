@@ -266,6 +266,59 @@ faut avoir écrites d'avance, parce qu'on les veut au moment où l'on est press�
 2. Le cycle de vie complet d'une session — ouverture, scans, clôture, mise en file, envoi.
 3. L'état de la file d'outbox — ce qui est dû, réclamé, envoyé, en échec, et depuis quand.
 
+### Diagnostiquer la livraison des e-mails ACS
+
+Un `202` de `POST /emails:send`, puis une opération ACS `Succeeded`, prouve que le
+message a été accepté par ACS pour traitement ; cela ne prouve pas encore sa remise dans
+la boîte du destinataire. Le module Bicep `CommunicationService` envoie désormais les
+catégories `EmailSendMailOperational` et `EmailStatusUpdateOperational` vers le workspace
+Log Analytics partagé. Après le déploiement, le diagnostic ne dépend donc plus d'un
+journal applicatif ou d'une inspection manuelle du portail.
+
+Pour retrouver l'identifiant ACS d'un envoi récent :
+
+```kusto
+ACSEmailSendMailOperational
+| where TimeGenerated > ago(24h)
+| project TimeGenerated, CorrelationId, ToRecipientsCount, UniqueRecipientsCount
+| order by TimeGenerated desc
+```
+
+Puis rechercher le statut terminal de ce message :
+
+```kusto
+let messageId = "<CorrelationId>";
+ACSEmailStatusUpdateOperational
+| where TimeGenerated > ago(7d)
+| where CorrelationId == messageId
+| project TimeGenerated, CorrelationId, RecipientId, DeliveryStatus,
+          SmtpStatusCode, EnhancedSmtpStatusCode, FailureReason, FailureMessage,
+          RecipientMailServerHostName
+| order by TimeGenerated asc
+```
+
+`Delivered` indique une remise acceptée par le serveur destinataire ; `Failed`,
+`FilteredSpam`, `Quarantined`, `Bounced` ou `Suppressed` orientent vers un rejet ou un
+filtrage en aval. Ces journaux fournisseur peuvent contenir un identifiant de
+destinataire : leur accès reste réservé aux personnes habilitées et les lignes ne sont
+pas copiées dans un ticket ou une trace applicative.
+
+### Cas iCloud
+
+Il n'existe pas de liste blanche iCloud à activer dans Azure ou ACS. iCloud filtre
+automatiquement le courrier ; le domaine expéditeur doit publier SPF, DKIM et une
+politique DMARC, et l'expéditeur doit conserver une réputation et un contenu cohérents.
+Du côté de la boîte iCloud, vérifier *Indésirables*, les règles de filtrage et les
+expéditeurs bloqués ; déplacer un message légitime vers la boîte de réception peut
+améliorer le classement des prochains messages. Voir la documentation
+[Apple Postmaster iCloud Mail](https://support.apple.com/en-gb/102322) et [gestion des
+indésirables iCloud](https://support.apple.com/en-ie/guide/icloud/mm6b1a2ced/icloud), ainsi
+que la référence [Azure Monitor des journaux ACS](https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/acsemailstatusupdateoperational).
+
+Le DNS ACS vérifié (SPF/DKIM) et le DMARC publié sont nécessaires, mais aucune option
+spéciale iCloud ne force une remise. La requête `ACSEmailStatusUpdateOperational` est la
+preuve à consulter après un nouvel envoi autorisé.
+
 ### Diagnostiquer un scan lent
 
 Le pipeline de métadonnées et le pipeline de persistance ne sont pas le même appel. Le

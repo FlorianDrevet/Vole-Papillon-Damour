@@ -121,6 +121,19 @@ belonging to that container.
   until the API has loaded the Key Vault reference. Event Grid is created only after that
   readiness gate, and the email runtime can be disabled during the placeholder-image
   bootstrap with the infrastructure workflow option.
+
+## ACS email delivery diagnostics — 2026-09-16
+
+- `CommunicationService/communicationService.module.bicep` routes ACS
+  `EmailSendMailOperational` and `EmailStatusUpdateOperational` diagnostics to the shared
+  Log Analytics workspace. `EmailStatusUpdateOperational` is the source of recipient-level
+  terminal status and SMTP detail; an ACS `202`/`Succeeded` operation alone proves
+  acceptance for processing, not mailbox delivery.
+- There is no iCloud recipient allow-list or Azure-side switch. The sender domain needs
+  SPF/DKIM/DMARC, while the recipient must be checked for Junk, rules, and blocked senders.
+  Provider-generated status logs must not be copied into application traces or tickets when
+  they contain recipient identifiers.
+
 - Scan cash sales use a dedicated IndexedDB `sales` store and replay to `POST /scan/sales`
   with `ClientGestureId`; the API records the sale against an open Books fair under `Caisse`.
 

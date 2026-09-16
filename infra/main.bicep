@@ -942,6 +942,7 @@ module communicationServiceModule './modules/CommunicationService/communicationS
     linkEmailDomain: !communicationEmailCreateResources || bookAlertsEmailEnabled
     workerPrincipalId: userAssignedIdentityWorkerModule.outputs.principalId
     roleAssignmentName: communicationServiceRoleAssignmentName
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     tags: tags
   }
 }

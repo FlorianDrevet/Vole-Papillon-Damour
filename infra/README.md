@@ -62,6 +62,14 @@ durée. `OTEL_SERVICE_NAME=vpd-api` permet de les distinguer dans le workspace p
 La procédure et les requêtes Kusto de diagnostic sont dans
 [`docs/bourse-aux-livres/technique/11-observabilite.md`](../docs/bourse-aux-livres/technique/11-observabilite.md).
 
+Le module ACS envoie également `EmailSendMailOperational` et
+`EmailStatusUpdateOperational` vers `vpd-law-<env>`. Ces journaux séparent l'acceptation
+par ACS de la livraison au serveur destinataire et exposent, pour un identifiant de
+message, le statut de remise et les codes SMTP. Une fois ce changement d'infrastructure
+déployé, utiliser les requêtes du §7 de la documentation d'observabilité pour vérifier un
+destinataire iCloud. Il n'y a pas de liste blanche iCloud à configurer dans ACS ; côté
+iCloud, vérifier les indésirables, les règles et les expéditeurs bloqués.
+
 Les conteneurs blob restants sont en accès `Blob` (lecture anonyme) : `BlobService`
 renvoie l'URL brute du blob au client, les images doivent donc être lisibles
 sans SAS. Les couvertures de livres ne font plus partie de ce stockage : elles

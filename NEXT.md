@@ -17,13 +17,33 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Scan — confirmation de fin de session et compacité de la caisse. |
-| **Prochaine action** | Faire relire la [PR #201](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/201), puis déployer depuis `main` et contrôler les deux parcours sur téléphone avec une session bénévole authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-confirm-cash-ui` |
-| **Dernière mise à jour** | 2026-09-16 — la feuille de confirmation passe au-dessus du cadre caméra ; les deux boutons caisse passent à 52 px et le texte d’aide est retiré. 213 tests Scan, le build de production et les contrats de bootstrap passent. |
-| **Branche** | `fix/scan-confirmation-cash-ui` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #201](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/201) vers `main`, non fusionnée |
+| **Lot en cours** | Diagnostic de délivrabilité des alertes ACS / iCloud. |
+| **Prochaine action** | Faire relire la [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205), puis lancer `Infra - deploy` en `what-if` et en `deploy` depuis `main`. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-acs-email-diagnostics` |
+| **Dernière mise à jour** | 2026-09-16 — les journaux opérationnels ACS d'envoi et de statut sont déclarés en Bicep vers le workspace Log Analytics partagé ; la PR et le déploiement restent à faire. |
+| **Branche** | `fix/iac-acs-email-diagnostics` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205) vers `main`, non fusionnée |
 
 ---
+
+### État actualisé — 2026-09-16 — diagnostic de délivrabilité ACS et iCloud
+
+L'envoi observé a été accepté par ACS (`202`, puis opération `Succeeded`) ; aucune preuve
+de livraison ou de rejet iCloud n'était disponible dans le workspace. La tentative forcée
+suivante pour le même livre a été annulée par la règle anti-répétition de 30 jours avant un
+nouvel appel ACS : ce n'est pas un échec iCloud.
+
+La [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205) déclare dans
+`CommunicationService` les catégories `EmailSendMailOperational` et
+`EmailStatusUpdateOperational` vers `vpd-law-dev`, et ajoute les requêtes Kusto associées.
+Le DNS observé pour le domaine expéditeur fournit SPF, DKIM/DKIM2 et un DMARC publié en
+`p=none`. iCloud ne propose pas de liste blanche destinataire à configurer dans Azure ou
+ACS ; après déploiement, il faut vérifier les indésirables/règles iCloud et lire le statut
+terminal ACS d'un nouvel envoi éligible.
+
+Aucun déploiement Azure n'a été effectué depuis cette branche. Après fusion : `Infra - deploy`
+en `what-if`, puis `deploy`, vérification de `emailOperationalLogs`, et test avec un nouveau
+livre suivi ou un destinataire explicitement autorisé. La [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205)
+reste ouverte et n'est pas fusionnée.
 
 ### État actualisé — 2026-09-16 — feuille de confirmation et actions caisse Scan
 
