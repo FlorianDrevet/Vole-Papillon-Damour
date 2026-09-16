@@ -459,6 +459,12 @@ needed, preventing a stale `closeRequested` snapshot from displaying the retry b
 scanner instance has already observed the server close. The confirmation is a mobile bottom sheet
 with safe-area padding and stacked 44px actions, while desktop keeps the centered dialog.
 
+The 2026-09-16 Scan UI follow-up raises the confirmation bottom sheet above the fixed live-camera
+host (`z-index: 70` versus the camera's `40`), so the camera frame cannot cover the confirmation
+copy or actions. The cash dock removes its redundant manual-encaissement hint and sets both primary
+cash actions to a compact 52px minimum height, leaving more room for the live book list. Regression
+coverage asserts both the layer order and the cash markup/computed height.
+
 The 2026-09-12 Scan storage-capability follow-up keeps the browser-persistence warning out of
 the `home` and `session-mode` choice screens. On operating screens, its modal copy distinguishes local
 browser retention from server synchronization, offers a user-gesture retry through
