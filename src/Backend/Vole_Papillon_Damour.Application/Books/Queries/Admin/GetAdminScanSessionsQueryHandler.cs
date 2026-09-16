@@ -134,6 +134,9 @@ public sealed class GetAdminScanSessionsQueryHandler(
                 session.RejectedCount,
                 alerts?.TotalCount ?? 0,
                 alerts?.PendingCount ?? 0,
+                alerts?.SentCount ?? 0,
+                alerts?.CancelledCount ?? 0,
+                alerts?.FailedCount ?? 0,
                 alerts?.NextPendingDueAt is { } nextPendingDueAt
                     ? new DateTimeOffset(nextPendingDueAt, TimeSpan.Zero)
                     : null,

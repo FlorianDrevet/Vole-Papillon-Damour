@@ -137,6 +137,18 @@ books/stock, fairs/statistics, sessions, alerts, members, and settings. The Cata
 owns the public member/watchlist flows; role assignment remains an Entra concern and
 physical cartons are not represented by the domain.
 
+## Books administration — scan alert state and journal projection (2026-09-16)
+
+Administrative scan-session reads now expose per-status AlertEmail counts in addition to
+the existing total/pending count: `SentCount`, `CancelledCount` and `FailedCount`. This
+lets the Catalog distinguish an alert that is actually sent from one that was cancelled or
+failed. `ForceBookAlerts` still makes pending outbox rows immediately due for the existing
+worker; the front presents that non-terminal interval as « Envoi immédiat demandé », removes
+the session from the correction queue, and disables further alert actions. No database
+migration is needed. The session detail already returned all append-only `BookMovements`;
+Catalog now renders that journal and calls the existing movement-removal endpoint per row,
+leaving reversal rows visible for audit.
+
 ## Administration volunteer statistics (2026-09-12)
 
 The administrator volunteer projection is a read-only CQRS query at

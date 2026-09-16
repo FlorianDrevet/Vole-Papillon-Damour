@@ -731,6 +731,9 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                 ScanSessionId = group.Key,
                 TotalCount = group.Count(),
                 PendingCount = group.Count(message => message.Status == OutboxMessageStatus.Pending),
+                SentCount = group.Count(message => message.Status == OutboxMessageStatus.Sent),
+                CancelledCount = group.Count(message => message.Status == OutboxMessageStatus.Cancelled),
+                FailedCount = group.Count(message => message.Status == OutboxMessageStatus.Failed),
                 NextPendingDueAt = group
                     .Where(message => message.Status == OutboxMessageStatus.Pending)
                     .Min(message => (DateTime?)message.DueAt)
@@ -744,6 +747,9 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                 row => new BookAlertSessionSummary(
                     row.TotalCount,
                     row.PendingCount,
+                    row.SentCount,
+                    row.CancelledCount,
+                    row.FailedCount,
                     row.NextPendingDueAt is { } dueAt
                         ? DateTime.SpecifyKind(dueAt, DateTimeKind.Utc)
                         : null));

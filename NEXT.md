@@ -17,11 +17,35 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Scan — retrait du bandeau de persistance hors ligne non garantie. |
-| **Prochaine action** | Faire relire la [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198), puis déployer depuis `main` et contrôler l’écran Scan avec une session bénévole authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-remove-scan-offline-warning` |
-| **Dernière mise à jour** | 2026-09-16 — le bandeau compact n’est plus affiché lorsque la seule alerte concerne la persistance navigateur ; les alertes critiques et les autres états restent visibles. 211 tests Scan et le build de production passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
-| **Branche** | `fix/scan-remove-offline-warning` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198) vers `main`, non fusionnée |
+| **Lot en cours** | Catalog — états d’alertes et journal des sessions de scan. |
+| **Prochaine action** | Faire relire la PR dédiée, puis déployer depuis `main` et contrôler le parcours avec une session Administration authentifiée. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-alerts-journal` |
+| **Dernière mise à jour** | 2026-09-16 — les demandes d’envoi immédiat quittent la file « Encore corrigeables », les statuts envoyés/annulés/échoués sont distingués, les confirmations sont des modales Catalog et le journal de mouvements est actionnable. 269 tests Catalog, 92 Domain, 234 Application, 117 Infrastructure, 24 API et les builds locaux passent ; Graphify ré-extrait mais ne peut pas visualiser le graphe de 5 129 nœuds ; le contrôle authentifié API/Entra reste à faire. |
+| **Branche** | `fix/backoffice-scan-alerts-journal` — worktree dédié depuis `origin/main` fraîchement récupéré ; PR à ouvrir vers `main` |
+
+---
+
+### État actualisé — 2026-09-16 — états d’alerte et journal des sessions Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-scan-alerts-journal`, la correction des sessions de scan expose les
+compteurs d’alertes par statut. Après « Forcer l’envoi immédiat », la session quitte
+« Encore corrigeables », rejoint « Alertes envoyées » avec l’état « Envoi immédiat demandé »
+pendant le traitement du worker et désactive les deux actions d’alerte. Une annulation,
+un envoi confirmé ou un échec disposent chacun d’un texte et d’un visuel distincts.
+Toutes les actions de correction de session utilisent désormais une modal intégrée et
+accessible. « Voir le journal complet » ouvre les mouvements réellement renvoyés par l’API,
+avec ISBN, type, quantité, note, horodatage et renversement ; chaque mouvement non renversé
+peut être retiré séparément.
+
+Validation locale : TDD rouge puis vert, 269 tests Catalog ChromeHeadless, 92 Domain,
+234 Application, 117 Infrastructure et 24 API, build Catalog SSR/navigateur, build de la
+solution backend, `git diff --check`. Le serveur local a rendu le shell administration en
+Chrome desktop ; la route demande une connexion Microsoft, donc le scénario authentifié
+avec données API et le contrôle mobile final restent à faire. Aucun déploiement, changement
+Azure/Entra ou donnée de compte n’a été effectué. `rtk` n’est pas installé ; les commandes
+natives équivalentes ont été utilisées. La PR reste à ouvrir.
+
 
 ---
 

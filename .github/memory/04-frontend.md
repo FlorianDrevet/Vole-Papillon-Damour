@@ -127,6 +127,17 @@ indicator are unchanged. Local validation passes 263 Catalog ChromeHeadless test
 SSR/browser build and the desktop Chrome shell smoke; authenticated API/Entra and mobile
 viewport checks remain deployment/manual gates.
 
+As of 2026-09-16, Catalog scan-session correction keeps alert state explicit instead of
+treating every non-pending outbox row as sent. The typed session projection now carries
+sent, cancelled and failed counts; a forced pending queue is shown as « Envoi immédiat
+demandé », leaves `Encore corrigeables`, appears in `Alertes envoyées`, and disables both
+alert actions until the worker reports a terminal state. Cancelled, sent and failed states
+have distinct copy and metrics. Session actions use a Catalog-styled accessible modal
+instead of `window.confirm`, with an explicit cancel action. « Voir le journal complet » expands every returned scan
+movement, shows reversal/clock metadata and exposes a row-level append-only removal action.
+The local authenticated API/Entra journey was not exercised; 269 Catalog tests and the
+SSR/browser build pass.
+
 The public search sort control keeps a native accessible `<select>` for keyboard and screen
 reader behavior while wrapping it in Catalog design-system spacing, border, pill, chevron,
 hover, and focus styles. The administration Settings navigation icon uses a balanced custom

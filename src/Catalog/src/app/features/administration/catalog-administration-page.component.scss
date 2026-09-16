@@ -2941,6 +2941,28 @@ input:disabled {
   font-size: 9px;
 }
 
+.correction-alert-complete {
+  border-color: var(--admin-line);
+  background: var(--admin-paper-2);
+}
+
+.correction-alert-complete > div > strong {
+  color: var(--admin-ink);
+}
+
+.correction-alert-dispatching {
+  border-color: var(--admin-cyan);
+}
+
+.correction-alert-cancelled {
+  border-color: var(--admin-mist);
+}
+
+.correction-alert-failed {
+  border-color: var(--admin-orange);
+  background: #fff8ef;
+}
+
 .correction-body {
   padding: 0 32px 24px;
 }
@@ -2979,6 +3001,103 @@ input:disabled {
   gap: 12px;
 }
 
+.correction-alert-hint {
+  display: block;
+  margin-top: 10px;
+}
+
+.session-journal {
+  margin-top: 16px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-paper);
+}
+
+.session-journal-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.session-journal-header h4 {
+  margin: 7px 0 0;
+  color: var(--admin-ink);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 23px;
+  font-weight: 500;
+}
+
+.session-journal-header > span {
+  color: var(--admin-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.session-journal-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-journal-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.2fr) minmax(130px, .9fr) minmax(120px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--admin-line-soft);
+}
+
+.session-journal-row:last-child {
+  border-bottom: 0;
+}
+
+.session-journal-row-reversed {
+  background: rgba(217, 233, 244, .42);
+}
+
+.session-journal-book,
+.session-journal-facts,
+.session-journal-note,
+.session-journal-action {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.session-journal-book strong,
+.session-journal-facts strong {
+  color: var(--admin-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.session-journal-facts,
+.session-journal-note {
+  color: var(--admin-slate);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.session-journal-note small {
+  color: var(--admin-orange-dark);
+  font-size: 10px;
+}
+
+.session-journal-action {
+  align-items: flex-end;
+}
+
+.session-journal-reversed-label {
+  color: var(--admin-muted);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 9px;
+  text-align: right;
+  text-transform: uppercase;
+}
+
 .correction-footer {
   justify-content: flex-end;
   gap: 12px;
@@ -2986,9 +3105,9 @@ input:disabled {
   border-top: 1px solid var(--admin-line);
 }
 
+.session-confirmation-overlay,
 .catalogue-confirmation-overlay {
   position: fixed;
-  z-index: 30;
   inset: 0;
   display: flex;
   align-items: center;
@@ -2998,6 +3117,82 @@ input:disabled {
   background: rgba(4, 29, 48, .58);
   backdrop-filter: blur(2px);
   overscroll-behavior: contain;
+}
+
+.session-confirmation-overlay {
+  z-index: 40;
+}
+
+.session-confirmation-dialog {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid var(--admin-line);
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--admin-blue-bright), var(--admin-cyan) 50%, var(--admin-orange)) 1;
+  background: var(--admin-white);
+  box-shadow: 0 24px 80px rgba(4, 29, 48, .32);
+}
+
+.session-confirmation-danger {
+  border-top-color: var(--admin-red);
+  border-image: none;
+}
+
+.session-confirmation-header {
+  padding: 24px 32px 20px;
+  border-bottom: 1px solid var(--admin-line);
+}
+
+.session-confirmation-kicker-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.session-confirmation-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--admin-line);
+  background: var(--admin-white);
+  color: var(--admin-slate);
+  cursor: pointer;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.session-confirmation-close:hover {
+  border-color: var(--admin-blue);
+  color: var(--admin-blue);
+}
+
+.session-confirmation-header h2 {
+  margin: 16px 0 9px;
+  color: var(--admin-ink);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.session-confirmation-header p {
+  margin: 0;
+  color: var(--admin-slate);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.session-confirmation-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 17px 32px 22px;
+}
+
+.catalogue-confirmation-overlay {
+  z-index: 30;
 }
 
 .catalogue-confirmation-dialog {
@@ -3486,6 +3681,18 @@ input:disabled {
     flex: 1 1 120px;
   }
 
+  .session-journal-row {
+    grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr);
+  }
+
+  .session-journal-note {
+    grid-column: 1 / -1;
+  }
+
+  .session-journal-action {
+    align-items: flex-start;
+  }
+
   .metadata-editor,
   .detail-layout {
     grid-template-columns: 1fr;
@@ -3643,6 +3850,30 @@ input:disabled {
   }
 
   .correction-footer .button {
+    width: 100%;
+  }
+
+  .session-confirmation-overlay {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .session-confirmation-dialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .session-confirmation-header,
+  .session-confirmation-footer {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .session-confirmation-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .session-confirmation-footer .button {
     width: 100%;
   }
 

@@ -1175,6 +1175,7 @@ public static class BookAdministrationController
             result.FairName, result.StartedAt, result.LastScanAt, result.LastSyncAt,
             result.EndedAt, result.CloseReason, result.Status, result.ScannedCount,
             result.KeptCount, result.RejectedCount, result.AlertCount, result.PendingAlertCount,
+            result.SentAlertCount, result.CancelledAlertCount, result.FailedAlertCount,
             result.NextAlertDueAt, result.Movements.Select(ToResponse).ToArray());
 
     private static AdminScanSessionOperationResponse ToResponse(AdminScanSessionOperationResult result) =>

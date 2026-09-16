@@ -377,6 +377,32 @@ public sealed class BookAlertOutboxTests
     }
 
     [Fact]
+    public async Task GetSessionAlertSummaries_ReturnsTheCountsNeededToExplainTheAlertState()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var session = await fixture.AddSessionAsync(member.Id);
+        fixture.Context.OutboxMessages.AddRange(
+            CreateOutboxMessage(session.Id.Value, OutboxMessageStatus.Pending, null),
+            CreateOutboxMessage(session.Id.Value, OutboxMessageStatus.Sent, null),
+            CreateOutboxMessage(session.Id.Value, OutboxMessageStatus.Cancelled, null),
+            CreateOutboxMessage(session.Id.Value, OutboxMessageStatus.Failed, null));
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+
+        var summaries = await outbox.GetSessionAlertSummariesAsync(
+            [session.Id.Value],
+            CancellationToken.None);
+
+        summaries[session.Id.Value].TotalCount.Should().Be(4);
+        summaries[session.Id.Value].PendingCount.Should().Be(1);
+        summaries[session.Id.Value].SentCount.Should().Be(1);
+        summaries[session.Id.Value].CancelledCount.Should().Be(1);
+        summaries[session.Id.Value].FailedCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task ClaimDue_ReturnsOnlyDuePendingAlertsAndLeasesThem()
     {
         await using var fixture = await BookAlertFixture.CreateAsync();
