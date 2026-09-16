@@ -17,13 +17,30 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — suppression complète du workspace d’administration `Inventaire`. |
-| **Prochaine action** | Faire relire la [PR #195](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/195), puis déployer depuis `main` et contrôler le workspace Catalogue avec une session Administration authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-remove-inventory` |
-| **Dernière mise à jour** | 2026-09-16 — le workspace `Inventaire` a été retiré de la navigation, des routes reconnues et du code Catalogue ; la liste, l’ajout, le stock et la fiche détaillée restent dans `Catalogue`. 266 tests Catalog, build SSR/navigateur et smoke Chrome desktop passent ; l’extraction AST Graphify a été lancée mais son rendu HTML dépasse la limite de 5 100 nœuds ; le contrôle mobile et le scénario authentifié API/Entra restent à faire. |
-| **Branche** | `refactor/backoffice-remove-inventory` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #195](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/195) vers `main` |
+| **Lot en cours** | Catalog — correction des couvertures BnF sur les cartes de l’accueil. |
+| **Prochaine action** | Faire relire la [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197), puis déployer depuis `main` et contrôler la couverture avec les données réelles. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-cover-frame` |
+| **Dernière mise à jour** | 2026-09-16 — les anciennes miniatures BnF sont normalisées vers une image originale redimensionnée et la carte récente affiche sa couverture sans padding, en remplissant la tuile. 267 tests Catalog, build SSR/navigateur et smoke Chrome desktop/mobile avec API mockée passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Branche** | `fix/catalog-book-cover-frame` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197) vers `main` |
 
 ---
+
+### État actualisé — 2026-09-16 — couvertures nettes sur l’accueil Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-cover-frame`, les cartes récentes de l’accueil Catalog
+normalisent désormais les anciennes URLs de miniatures BnF vers la version originale
+redimensionnée à 660×990. La carte `home` supprime son padding d’image et utilise
+`object-fit: cover` afin que la couverture remplisse le cadre carré ; la même fonction
+partagée conserve la netteté sur la fiche livre. Aucun contrat API ni enregistrement de
+catalogue n’a été modifié.
+
+Validation locale : TDD rouge puis vert, 267 tests Catalog ChromeHeadless, build SSR/navigateur,
+smoke Chrome desktop et mobile à 390 px avec API mockée, et `git diff --check` passent.
+`graphify update .` a bien ré-extrait les fichiers mais son étape de visualisation
+échoue sur la taille actuelle du graphe (5 113 nœuds). L’API locale réelle n’était pas démarrée ;
+aucun déploiement, changement Azure/Entra ou merge n’a été effectué. La [PR #197](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/197)
+est ouverte vers `main` et n’a pas été fusionnée.
 
 ### État actualisé — 2026-09-16 — création de compte bénévole avec prénom et nom
 

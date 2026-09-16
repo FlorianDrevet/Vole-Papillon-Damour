@@ -122,7 +122,9 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   counts. The home also places its account-following guidance after the rare-books section.
 - Recent home books use the shared `BookCardComponent` `home` variant: a square paper cover
   treatment, truthful availability status, compact Newsreader metadata and a follow/alert
-  affordance. Search results keep the shared `list` variant with publisher/year/genre
+  affordance. BnF cover URLs are normalized through the shared Catalog cover helper so legacy
+  thumbnails become original 660×990 images; the home tile removes image padding and uses
+  `object-fit: cover` to fill its square frame. Search results keep the shared `list` variant with publisher/year/genre
   metadata and availability rows; default/grid remains the visual contract for rare, work and
   detail entry points, including the shared no-cover placeholder.
 - Public catalogue, search, work, detail, account, legal, and existing administration

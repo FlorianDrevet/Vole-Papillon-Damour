@@ -12,7 +12,7 @@
     }
     @if (book.coverUrl && !coverFailed) {
       <img
-        [src]="book.coverUrl"
+        [src]="displayCoverUrl()"
         [alt]="book.title ? 'Couverture de ' + book.title : 'Couverture du livre'"
         loading="lazy"
         (error)="onCoverError()">
