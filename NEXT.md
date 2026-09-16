@@ -17,36 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Catalog — états d’alertes et journal des sessions de scan. |
-| **Prochaine action** | Faire relire la [PR #200](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/200), puis déployer depuis `main` et contrôler le parcours avec une session Administration authentifiée. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-scan-alerts-journal` |
-| **Dernière mise à jour** | 2026-09-16 — les demandes d’envoi immédiat quittent la file « Encore corrigeables », les statuts envoyés/annulés/échoués sont distingués, les confirmations sont des modales Catalog et le journal de mouvements est actionnable. 270 tests Catalog, 92 Domain, 234 Application, 117 Infrastructure, 24 API et les builds locaux passent ; Graphify ré-extrait mais ne peut pas visualiser le graphe de 5 133 nœuds ; le contrôle authentifié API/Entra reste à faire. |
-| **Branche** | `fix/backoffice-scan-alerts-journal` — worktree dédié depuis `origin/main` fraîchement récupéré ; [PR #200](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/200) vers `main`, non fusionnée |
-
----
-
-### État actualisé — 2026-09-16 — états d’alerte et journal des sessions Catalog
-
-Depuis `origin/main` fraîchement récupéré dans le worktree
-`Vole-Papillon-Damour-scan-alerts-journal`, la correction des sessions de scan expose les
-compteurs d’alertes par statut. Après « Forcer l’envoi immédiat », la session quitte
-« Encore corrigeables », rejoint « Alertes envoyées » avec l’état « Envoi immédiat demandé »
-pendant le traitement du worker et désactive les deux actions d’alerte. Une annulation,
-un envoi confirmé ou un échec disposent chacun d’un texte et d’un visuel distincts.
-Toutes les actions de correction de session utilisent désormais une modal intégrée et
-accessible. « Voir le journal complet » ouvre les mouvements réellement renvoyés par l’API,
-avec ISBN, type, quantité, note, horodatage et renversement ; chaque mouvement non renversé
-peut être retiré séparément.
-
-Validation locale : TDD rouge puis vert, 270 tests Catalog ChromeHeadless, 92 Domain,
-234 Application, 117 Infrastructure et 24 API, build Catalog SSR/navigateur, build de la
-solution backend, `git diff --check`. Le serveur local a rendu le shell administration en
-Chrome desktop ; la route demande une connexion Microsoft, donc le scénario authentifié
-avec données API et le contrôle mobile final restent à faire. Aucun déploiement, changement
-Azure/Entra ou donnée de compte n’a été effectué. `rtk` n’est pas installé ; les commandes
-natives équivalentes ont été utilisées. La [PR #200](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/200)
-est ouverte vers `main` et n’est pas fusionnée.
-
+| **Lot en cours** | Catalog — retrait des éditions déjà présentes dans la recherche « Pas encore dans la bourse aux livres ». |
+| **Prochaine action** | Faire relire la [PR #199](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/199), puis déployer depuis `main` et contrôler la recherche avec les données réelles. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-catalog-search-filter-external-duplicates` |
+| **Dernière mise à jour** | 2026-09-16 — les références externes dont l’ISBN correspond à une édition du catalogue local sont masquées, tandis que les autres éditions restent visibles. 269 tests Catalog, build SSR/navigateur et smoke Chrome du shell passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Branche** | `fix/catalog-search-filter-external-duplicates` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #199](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/199) vers `main`, non fusionnée |
 
 ---
 
@@ -306,6 +281,22 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### État actualisé — 2026-09-16 — retrait des doublons de la recherche externe Catalog
+
+Depuis `origin/main` fraîchement récupéré dans le worktree
+`Vole-Papillon-Damour-catalog-search-filter-external-duplicates`, la page `/recherche`
+retire de « Pas encore dans la bourse aux livres » les références dont l’ISBN correspond à
+une édition déjà renvoyée par le catalogue local. Les autres éditions du même titre restent
+visibles ; l’endpoint bibliographique partagé avec l’administration n’est pas modifié.
+
+Validation locale : TDD rouge puis vert, 269 tests Catalog ChromeHeadless, build
+SSR/navigateur, `git diff --check` et smoke Chrome desktop passent. L’API bibliographique
+externe a renvoyé une erreur pendant le smoke, donc le rendu avec données est couvert par la
+régression de composant. `graphify update .` a ré-extrait le graphe mais l’export HTML reste
+bloqué par la limite de 5 116 nœuds. Aucun déploiement, changement API/Entra ou donnée de
+catalogue n’a été effectué ; la [PR #199](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/199)
+est ouverte vers `main` et n’est pas fusionnée.
 
 ### État actualisé — 2026-09-16 — affichage opt-in des livres épuisés dans la recherche Catalog
 
