@@ -388,8 +388,8 @@ describe('CatalogAdministrationPageComponent', () => {
       'Tableau de bord',
       'Sessions de scan',
       'Désengorgement',
-      'Inventaire',
       'Catalogue',
+      'Inventaire',
       'Statistiques',
       'Comptes & rôles',
       'Paramètres',
@@ -409,12 +409,36 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/overview',
       '/administration/sessions',
       '/administration/dead-stock',
-      '/administration/inventory',
       '/administration/catalogue',
+      '/administration/inventory',
       '/administration/statistics',
       '/administration/accounts',
       '/administration/settings',
     ]);
+  });
+
+  it('keeps the catalogue and inventory workspaces aligned with their renamed routes and icons', () => {
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.navItems.slice(3, 5)).toEqual([
+      {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
+      {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
+    ]);
+  });
+
+  it('renders the renamed page title for each swapped workspace route', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+
+    await fixture.componentInstance.selectSection('catalogue');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Catalogue.');
+
+    await fixture.componentInstance.selectSection('inventory');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Inventaire.');
   });
 
   it('restores the selected administration workspace from the current route', () => {
@@ -555,7 +579,7 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getSettings).toHaveBeenCalled();
   });
 
-  it('loads every book in the inventory workspace without work-queue filters', async () => {
+  it('loads every book in the catalogue workspace without work-queue filters', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
     api.getBooks.and.returnValue(of({
@@ -567,7 +591,7 @@ describe('CatalogAdministrationPageComponent', () => {
     }));
 
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
     fixture.detectChanges();
 
     expect(api.getBooks).toHaveBeenCalledWith('access-token', {
@@ -605,7 +629,7 @@ describe('CatalogAdministrationPageComponent', () => {
     api.getBooks.and.returnValue(of(page));
 
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
 
     const pending = new Subject<CatalogAdminBookPage>();
     api.getBooks.calls.reset();
@@ -638,7 +662,7 @@ describe('CatalogAdministrationPageComponent', () => {
       }));
 
       fixture.detectChanges();
-      await fixture.componentInstance.selectSection('inventory');
+      await fixture.componentInstance.selectSection('catalogue');
       fixture.detectChanges();
       api.getBooks.calls.reset();
       fixture.componentInstance.inventoryPage = 3;
@@ -692,7 +716,7 @@ describe('CatalogAdministrationPageComponent', () => {
       movementId: 'movement-id',
     }));
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -730,7 +754,7 @@ describe('CatalogAdministrationPageComponent', () => {
     }));
     const nativeConfirm = spyOn(window, 'confirm').and.returnValue(false);
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -779,7 +803,7 @@ describe('CatalogAdministrationPageComponent', () => {
       movementId: 'movement-id',
     }));
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
     await fixture.whenStable();
 
     await fixture.componentInstance.adjustInventoryQuantity(book, 'decrease');
@@ -820,7 +844,7 @@ describe('CatalogAdministrationPageComponent', () => {
     }));
 
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
     fixture.componentInstance.inventoryIsbn = '978-207-061-2758';
     await fixture.componentInstance.lookupInventoryIsbn();
 
@@ -878,7 +902,7 @@ describe('CatalogAdministrationPageComponent', () => {
     api.addBook.and.returnValue(of({changed: true, isbn13: reference.isbn13}));
 
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
     fixture.detectChanges();
 
     const query = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
@@ -982,7 +1006,7 @@ describe('CatalogAdministrationPageComponent', () => {
     api.getBook.and.returnValue(throwError(() => new HttpErrorResponse({status: 404})));
 
     fixture.detectChanges();
-    await fixture.componentInstance.selectSection('inventory');
+    await fixture.componentInstance.selectSection('catalogue');
     fixture.componentInstance.inventoryReferenceQuery = 'Le Petit Prince';
     await fixture.componentInstance.searchInventoryReferences();
     fixture.detectChanges();

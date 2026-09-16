@@ -169,8 +169,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     {
       label: 'Le fonds de livres',
       items: [
-        {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
         {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
+        {id: 'inventory', label: 'Inventaire', icon: 'inventory'},
         {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
       ],
     },
@@ -188,9 +188,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     const totalCount = section === 'sessions'
       ? this.sessionsPage() ? this.correctableSessionCount() : undefined
       : section === 'catalogue'
-        ? this.booksPage()?.totalCount
+        ? this.inventoryBooksPage()?.totalCount
         : section === 'inventory'
-          ? this.inventoryBooksPage()?.totalCount
+          ? this.booksPage()?.totalCount
         : undefined;
 
     return totalCount === undefined ? null : this.formatNumber(totalCount);
@@ -444,10 +444,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'dead-stock':
         await this.loadDeadStock();
         break;
-      case 'inventory':
+      case 'catalogue':
         await this.loadInventory();
         break;
-      case 'catalogue':
+      case 'inventory':
         await this.loadBooks();
         break;
       case 'statistics':
@@ -736,7 +736,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   async openBook(isbn13: string): Promise<void> {
-    this.activeSection.set('catalogue');
+    this.activeSection.set('inventory');
     await this.run('book-detail', async token => {
       const book = await firstValueFrom(this.api.getBook(token, isbn13));
       this.selectedBook.set(book);
