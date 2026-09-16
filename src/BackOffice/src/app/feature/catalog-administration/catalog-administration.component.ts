@@ -76,6 +76,7 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly accountRoleOptions: {value: AdminAccountRole; label: string}[] = [
     {value: 'Tri', label: 'Tri'},
     {value: 'Caisse', label: 'Caisse'},
+    {value: 'LivresRares', label: 'Livres rares'},
     {value: 'Administration', label: 'Administrateur'},
   ];
 

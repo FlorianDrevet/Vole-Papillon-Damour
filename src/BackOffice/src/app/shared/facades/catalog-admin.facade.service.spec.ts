@@ -68,6 +68,16 @@ describe('CatalogAdminFacadeService', () => {
     );
   });
 
+  it('passes the rare-books role through account administration', async () => {
+    await service.updateAccountRoles('account/rare', ['LivresRares']);
+
+    expect(axiosService.request$).toHaveBeenCalledWith(
+      MethodEnum.PUT,
+      '/accounts/admin/account%2Frare/roles',
+      {roles: ['LivresRares']},
+    );
+  });
+
   it('uses PATCH for quantity correction and keeps the ISBN in the route', async () => {
     await service.correctQuantity('9782070612758', {quantityAvailable: 4, note: 'Inventaire'});
 

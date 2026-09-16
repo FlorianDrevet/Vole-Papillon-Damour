@@ -17,10 +17,10 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lot 3, commandes, lectures, contrats et routes API sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
-| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 4 (rôle `LivresRares`) sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) est appliqué. |
+| **Lot en cours** | Livres rares — lot 4, rôle `LivresRares`, sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
+| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis poursuivre le lot 5 (portail d'administration) sur cette PR ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) est appliqué. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
-| **Dernière mise à jour** | 2026-09-16 — le lot 3 ajoute les commandes, lectures, contrats et routes API des fiches rares, avec prix ferme d’affichage et suppression des blobs avant les lignes ; RG-50 et Q-05 sont amendées, RG-51 reste inchangée. 520 tests backend, le build de solution et le contrôle EF passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
+| **Dernière mise à jour** | 2026-09-16 — le lot 4 ajoute le rôle Entra `LivresRares`, la politique API `RareBooks`, sa reconnaissance dans Catalog et le garde d'accès Scan ; le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
@@ -87,6 +87,34 @@ solution et `dotnet ef migrations has-pending-model-changes` passent. Les averti
 de vulnérabilités NuGet existants restent présents. `graphify update .` ré-extrait l’AST,
 mais son rendu HTML reste bloqué par la limite de 5 100 nœuds. Aucun déploiement Azure,
 test manuel authentifié ou application réelle sur SQL Server n’a été effectué.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 4
+
+Le rôle Entra `LivresRares` est déclaré avec le GUID fixe
+`84bf89c1-ecae-4951-90d2-03dc6012a1dd`, dans `Configure-EntraApps.ps1` et
+`Set-VpdUserRole.ps1`. `AccountRoles` le normalise et le valide ; la politique API
+`RareBooks` accepte `LivresRares`, `Administration` et le rôle legacy `Admin`, tandis que
+`ScanVolunteer` reste strictement limité à `Tri` et `Caisse`. Les routes d'administration
+des fiches rares utilisent désormais `RareBooks` ; les routes publiques restent anonymes
+et la recherche de caisse reste protégée par `ScanVolunteer`.
+
+Catalog reconnaît le rôle, propose son attribution dans l'espace comptes, ajoute la
+pastille violette et le lien mobile « Livres rares », et enregistre la section
+`/administration/rare-books` ; l'éditeur de comptes historique BackOffice accepte aussi
+la valeur dans son contrat. La Scanette reconnaît un compte ne portant que ce rôle,
+publie son état comme autorisé et réserve les droits tri/caisse : la tuile et les routes
+de gestion elles-mêmes restent le lot 7, conformément au séquencement de `08` ; le
+portail restreint et sa fiche autonome restent le lot 5. Q4 conserve le défaut appliqué
+au lot 1 ; Q2 (contact public par `mailto:`) ne concerne pas ce lot et reste à traiter au
+lot 8.
+
+Validation locale : tests rouges puis verts sur `AccountRoles` (3), l'autorisation des
+routes rares (4), le script Entra (2), les suites Catalog (276), Scan (214) et BackOffice
+(22), ainsi que le bootstrap Scan (6) ; les builds des trois frontends, le build/test
+backend (523) et les 23 tests Pester Entra passent. Les avertissements de budget et de
+vulnérabilités existants restent présents. Aucun compte Entra, jeton réel, appel API,
+déploiement Azure ou contrôle responsive authentifié n'a été effectué. La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203)
+reste ouverte vers `main` et n'est pas fusionnée.
 
 ---
 

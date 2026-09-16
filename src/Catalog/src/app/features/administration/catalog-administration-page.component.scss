@@ -841,6 +841,15 @@
   color: var(--admin-cyan);
 }
 
+.role-chip-rare {
+  color: #5f3a86;
+}
+
+.role-chip-rare.selected {
+  background: #5f3a86;
+  color: #fff;
+}
+
 .status-pill.en-cours,
 .status-pill.open,
 .status-pill.active {

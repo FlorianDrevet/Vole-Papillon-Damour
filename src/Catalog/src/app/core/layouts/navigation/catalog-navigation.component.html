@@ -85,6 +85,9 @@
               @if (isAdministrator()) {
                 <a routerLink="/administration" (click)="closeMenus()">Ouvrir l'administration</a>
               }
+              @if (isRareBookManager()) {
+                <a routerLink="/administration/rare-books" (click)="closeMenus()">Ouvrir les livres rares</a>
+              }
               <button type="button" class="popover-logout" (click)="logout()">Se déconnecter</button>
             } @else {
               <strong>Ajoutez un livre à votre liste de recherche</strong>
@@ -101,6 +104,14 @@
           [class.active]="isAdministration()"
           [attr.aria-current]="isAdministration() ? 'page' : null"
           (click)="closeMenus()">Administration</a>
+      }
+      @if (isAuthenticated() && isRareBookManager()) {
+        <a
+          class="header-rare-pill"
+          routerLink="/administration/rare-books"
+          [class.active]="url().split(/[?#]/, 1)[0] === '/administration/rare-books'"
+          [attr.aria-current]="url().split(/[?#]/, 1)[0] === '/administration/rare-books' ? 'page' : null"
+          (click)="closeMenus()">Livres rares</a>
       }
     </div>
   </div>
@@ -149,6 +160,9 @@
           </div>
         }
         <a class="mobile-account-link" routerLink="/compte" (click)="closeMobileMenu()">{{ accountTriggerLabel() }}</a>
+        @if (isAuthenticated() && isRareBookManager()) {
+          <a class="mobile-rare-books-link" routerLink="/administration/rare-books" (click)="closeMobileMenu()">Livres rares</a>
+        }
         <a class="mobile-site-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">Le site de l’association ↗</a>
       </nav>
       <div class="mobile-socials">

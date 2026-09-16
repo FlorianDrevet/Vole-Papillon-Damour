@@ -1,6 +1,6 @@
 # 05 — Administration
 
-Espace réservé aux administrateurs. La surface est disponible dans le `BackOffice` existant
+Espace réservé aux administrateurs et aux bénévoles livres rares. La surface est disponible dans le `BackOffice` existant
 et dans `src/Catalog`, à l'adresse `/administration`, avec le même contrat HTTP. Le Catalog
 reprend la convention visuelle V2 et charge les espaces de travail à la demande ; le
 backend reste découplé de ces présentations. La surface HTTP et les règles de reprise sont
@@ -211,7 +211,7 @@ c'est ce qui le distingue d'un bénévole dans le même annuaire (`DT-10`).
 | Action | Détail |
 |---|---|
 | Créer, désactiver un compte bénévole | Dans le locataire d'identité, jamais en base |
-| Attribuer les droits | Rôles applicatifs `Tri`, `Caisse`, `Administration` (`RG-40`, `ENF-18`), par script `infra/entra/Set-VpdUserRole.ps1` |
+| Attribuer les droits | Rôles applicatifs `Tri`, `Caisse`, `LivresRares`, `Administration` (`RG-40`, `ENF-18`), par script `infra/entra/Set-VpdUserRole.ps1` |
 | Voir l'activité d'un bénévole | Nombre de scans, sessions de tri et leur mode |
 | Corriger une série de scans erronés | Voir §4 bis. Deux erreurs à rattraper en bloc : une session tenue dans le mauvais mode de mise à disposition, et des livres scannés en caisse alors qu'il s'agissait d'un tri |
 

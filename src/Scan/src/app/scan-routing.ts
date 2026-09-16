@@ -8,14 +8,18 @@ import {ScanShellComponent} from './scan-shell.component';
 import {ScanSessionSummaryService} from './scan-session-summary.service';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
 
-export type ScanRequiredRole = 'Tri' | 'Caisse';
+export type ScanRequiredRole = 'Tri' | 'Caisse' | 'LivresRares';
 
 export function scanRoleGuard(role: ScanRequiredRole): CanActivateFn {
   return () => {
     const auth = inject(ScanAuthService);
     const router = inject(Router);
     const authenticated = auth.authState.status === 'authorized' || auth.authState.status === 'degraded';
-    const allowed = role === 'Tri' ? auth.canSort : auth.canSell;
+    const allowed = {
+      Tri: auth.canSort,
+      Caisse: auth.canSell,
+      LivresRares: auth.canManageRareBooks,
+    }[role];
     return authenticated && allowed ? true : router.parseUrl('/');
   };
 }

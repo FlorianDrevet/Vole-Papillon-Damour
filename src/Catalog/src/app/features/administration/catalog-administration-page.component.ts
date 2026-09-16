@@ -295,6 +295,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     {value: 'Tri', label: 'Tri'},
     {value: 'Caisse', label: 'Caisse'},
     {value: 'Administration', label: 'Administration'},
+    {value: 'LivresRares', label: 'Livres rares'},
   ];
   readonly createAccountForm: CatalogAdminCreateAccountRequest = {
     email: '',

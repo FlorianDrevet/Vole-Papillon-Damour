@@ -682,7 +682,7 @@ export interface CatalogAdminSettings {
   updatedBy: string;
 }
 
-export type CatalogAdminAccountRole = 'Tri' | 'Caisse' | 'Administration';
+export type CatalogAdminAccountRole = 'Tri' | 'Caisse' | 'Administration' | 'LivresRares';
 
 export interface CatalogAdminAccount {
   externalId: string;

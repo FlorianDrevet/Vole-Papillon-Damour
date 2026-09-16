@@ -230,7 +230,8 @@
   flex: none;
 }
 
-.header-admin-pill {
+.header-admin-pill,
+.header-rare-pill {
   display: inline-flex;
   flex: none;
   min-height: 42px;
@@ -258,6 +259,22 @@
 }
 
 .header-admin-pill:active {
+  transform: scale(.98);
+}
+
+.header-rare-pill {
+  background: #5f3a86;
+  color: #fff;
+}
+
+.header-rare-pill:hover,
+.header-rare-pill:focus-visible,
+.header-rare-pill.active {
+  background: #4a2d6a;
+  color: #fff;
+}
+
+.header-rare-pill:active {
   transform: scale(.98);
 }
 
@@ -407,7 +424,8 @@
     font-size: 1rem;
   }
 
-  .header-admin-pill {
+  .header-admin-pill,
+  .header-rare-pill {
     min-width: 112px;
     margin-left: -6px;
     padding-right: 9px;
@@ -547,7 +565,8 @@
   }
 
   .mobile-nav-item > a.active,
-  .mobile-account-link {
+  .mobile-account-link,
+  .mobile-rare-books-link {
     color: var(--catalog-orange-2) !important;
   }
 
@@ -577,6 +596,7 @@
   }
 
   .mobile-account-link,
+  .mobile-rare-books-link,
   .mobile-site-link {
     display: block;
     padding: 17px 0;

@@ -68,6 +68,7 @@ builder.Services.AddAuthorizationBuilder()
     // Entra role is authoritative for new tokens; `Admin` keeps existing JWT
     // sessions usable until the final deployment removes the legacy scheme.
     .AddPolicy("Administration", policy => policy.RequireRole("Administration", "Admin"))
+    .AddPolicy("RareBooks", policy => policy.RequireRole("LivresRares", "Administration", "Admin"))
     .AddPolicy("Tri", policy => policy.RequireRole("Tri"))
     .AddPolicy("Caisse", policy => policy.RequireRole("Caisse"))
     .AddPolicy("ScanVolunteer", policy => policy.RequireRole("Tri", "Caisse"))

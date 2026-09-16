@@ -41,6 +41,7 @@ const ADMINISTRATION_ROUTE = '/administration';
 export const CATALOG_SILENT_SESSION_TIMEOUT_MS = 5000;
 const SESSION_RESUME_ATTEMPT_KEY = 'catalog-auth-session-resume-attempted';
 const ADMINISTRATION_ROLES = new Set(['administration', 'admin']);
+const RARE_BOOKS_ROLES = new Set(['livresrares']);
 const VOLUNTEER_ROLES = new Set(['tri', 'caisse']);
 const INTERACTION_REQUIRED_ERROR_CODES = new Set([
   'interaction_required',
@@ -104,6 +105,9 @@ export class CatalogAuthService {
   // This signal controls navigation affordances only; API policies remain authoritative.
   readonly isAdministrator = computed(() =>
     this._roles().some(role => ADMINISTRATION_ROLES.has(role.trim().toLowerCase())),
+  );
+  readonly isRareBookManager = computed(() =>
+    this._roles().some(role => RARE_BOOKS_ROLES.has(role.trim().toLowerCase())),
   );
   readonly isVolunteer = computed(() =>
     this._roles().some(role => VOLUNTEER_ROLES.has(role.trim().toLowerCase())),

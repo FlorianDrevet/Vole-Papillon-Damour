@@ -1521,7 +1521,7 @@ describe('CatalogAdministrationPageComponent', () => {
         displayName: 'Bénévole Test',
         accountEnabled: true,
         createdAt: '2026-09-01T10:00:00Z',
-        roles: ['Tri'],
+        roles: ['Tri', 'LivresRares'],
       }],
       totalCount: 1,
       page: 1,
@@ -1538,6 +1538,14 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Bénévoles.');
     expect(fixture.nativeElement.textContent).toContain('Bénévole Test');
     expect(fixture.nativeElement.textContent).toContain('Tri');
+    const rareRoleChip = (fixture.nativeElement as HTMLElement).querySelector('.role-chip-rare');
+    expect(rareRoleChip?.textContent).toContain('Livres rares');
+  });
+
+  it('offers Livres rares when assigning account roles', () => {
+    expect(fixture.componentInstance.accountRoleOptions).toEqual(jasmine.arrayContaining([
+      {value: 'LivresRares', label: 'Livres rares'},
+    ]));
   });
 
   it('creates a volunteer account with separate first and last names', async () => {

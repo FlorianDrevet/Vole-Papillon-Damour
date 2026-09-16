@@ -257,6 +257,18 @@ describe('CatalogAuthService', () => {
     expect(service.isVolunteer()).toBeTrue();
   });
 
+  it('recognizes a LivresRares token without granting administration or scan access', async () => {
+    client.acquireTokenSilent.and.resolveTo({
+      accessToken: createAccessToken(['LivresRares']),
+    } as never);
+
+    await service.getApiAccessToken();
+
+    expect(service.isRareBookManager()).toBeTrue();
+    expect(service.isAdministrator()).toBeFalse();
+    expect(service.isVolunteer()).toBeFalse();
+  });
+
   it('keeps the legacy Admin role compatible with the API policy', async () => {
     client.acquireTokenSilent.and.resolveTo({
       accessToken: createAccessToken(['Admin']),

@@ -20,7 +20,7 @@ public sealed class RareBookEndpointAuthorizationTests
     }
 
     [Fact]
-    public void Rare_book_endpoints_are_registered_and_protected_by_the_interim_policies()
+    public void Rare_book_endpoints_are_registered_and_protected_by_the_rare_books_policy()
     {
         var builder = WebApplication.CreateBuilder();
         builder.Services.AddAuthorization();
@@ -45,7 +45,7 @@ public sealed class RareBookEndpointAuthorizationTests
             .Should().NotBeEmpty()
             .And.OnlyContain(endpoint => endpoint.Metadata
                 .GetOrderedMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>()
-                .Any(data => data.Policy == "Administration"));
+                .Any(data => data.Policy == "RareBooks"));
 
         endpoints.Single(endpoint => endpoint.RoutePattern.RawText == "/rare-books/cash/search")
             .Metadata.GetOrderedMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>()

@@ -14,6 +14,7 @@ describe('CatalogNavigationComponent', () => {
     account: WritableSignal<AccountInfo | null>;
     isAuthenticated: WritableSignal<boolean>;
     isAdministrator: WritableSignal<boolean>;
+    isRareBookManager: WritableSignal<boolean>;
   };
   let api: jasmine.SpyObj<CatalogApiService>;
 
@@ -22,6 +23,7 @@ describe('CatalogNavigationComponent', () => {
       account: signal<AccountInfo | null>(null),
       isAuthenticated: signal(false),
       isAdministrator: signal(false),
+      isRareBookManager: signal(false),
     };
     api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search']);
     api.search.and.returnValue(of({
@@ -236,6 +238,36 @@ describe('CatalogNavigationComponent', () => {
     const mobileWorkspaceLink = fixture.nativeElement.querySelector('.mobile-admin-link') as HTMLAnchorElement | null;
     expect(mobileWorkspaceLink).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Espace administrateur');
+  });
+
+  it('shows the violet rare-books entry for a dedicated rare-books manager', () => {
+    auth.account.set({
+      homeAccountId: 'home-account-id',
+      environment: 'volepapillondamour.ciamlogin.com',
+      tenantId: 'tenant-id',
+      username: 'rare@example.test',
+      localAccountId: 'local-account-id',
+      name: 'Bénévole livres rares',
+    });
+    auth.isAuthenticated.set(true);
+    auth.isRareBookManager.set(true);
+    fixture.detectChanges();
+
+    const rarePill = fixture.nativeElement.querySelector('.header-rare-pill') as HTMLAnchorElement | null;
+    expect(rarePill).not.toBeNull();
+    expect(rarePill?.getAttribute('href')).toBe('/administration/rare-books');
+    expect(rarePill?.textContent).toContain('Livres rares');
+    expect(fixture.nativeElement.querySelector('.header-admin-pill')).toBeNull();
+
+    const accountLink = fixture.nativeElement.querySelector('.account-teaser') as HTMLAnchorElement;
+    accountLink.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain("Ouvrir les livres rares");
+
+    const menuButton = fixture.nativeElement.querySelector('.menu-toggle') as HTMLButtonElement;
+    menuButton.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.mobile-rare-books-link')).not.toBeNull();
   });
 
   it('keeps the catalogue brand subtitle when the current route is administrative', () => {

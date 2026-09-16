@@ -35,6 +35,7 @@ export class CatalogNavigationComponent {
   readonly account = this.auth.account;
   readonly isAuthenticated = this.auth.isAuthenticated;
   readonly isAdministrator = this.auth.isAdministrator;
+  readonly isRareBookManager = this.auth.isRareBookManager;
   readonly isAdministration = computed(() => this.url().split(/[?#]/, 1)[0].startsWith('/administration'));
   readonly accountName = computed(() => getCatalogAccountDisplayName(this.account()));
   readonly accountTriggerLabel = computed(() => {

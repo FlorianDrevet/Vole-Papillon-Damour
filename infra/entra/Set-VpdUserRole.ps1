@@ -6,7 +6,7 @@
 
 .DESCRIPTION
     Les droits du projet sont des roles applicatifs portes par l'enregistrement de
-    l'API : `Tri`, `Caisse`, `Administration`. Ce script attribue l'un d'eux a un
+    l'API : `Tri`, `Caisse`, `Administration`, `LivresRares`. Ce script attribue l'un d'eux a un
     utilisateur, ou le lui retire.
 
     Les comptes crees en libre-service par le public n'ont aucun role, et c'est voulu :
@@ -20,7 +20,7 @@
     Compte vise. Accepte l'UPN complet ou l'adresse e-mail de connexion.
 
 .PARAMETER Role
-    `Tri`, `Caisse` ou `Administration`.
+    `Tri`, `Caisse`, `Administration` ou `LivresRares`.
 
 .PARAMETER Remove
     Retire le role au lieu de l'attribuer.
@@ -54,7 +54,7 @@ param(
     [string] $UserPrincipalName,
 
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Tri', 'Caisse', 'Administration')]
+    [ValidateSet('Tri', 'Caisse', 'Administration', 'LivresRares')]
     [string] $Role,
 
     [switch] $Remove,
@@ -72,6 +72,7 @@ $RoleIds = @{
     'Tri'            = '6b1f0a54-2c3d-4e5f-9a8b-7c6d5e4f3a21'
     'Caisse'         = '9d2e8b76-4a1c-4b3d-8e7f-2a1b0c9d8e7f'
     'Administration' = 'c7a5e3d1-8f2b-4c6a-9d0e-3b4c5d6e7f80'
+    'LivresRares'    = '84bf89c1-ecae-4951-90d2-03dc6012a1dd'
 }
 
 $ApiAppName = "vpd-api-$Environment"

@@ -547,8 +547,11 @@ Les annonces suivent leur bourse de rattachement :
 ## Droits et sécurité
 
 ### `RG-40` — Droits par mode
-Le tri et la caisse sont soumis à des droits distincts. Un bénévole ne voit que les
-modes qui lui sont ouverts.
+Les modes de travail sont soumis à des droits distincts. Les rôles bénévoles sont
+`Tri`, `Caisse` et `LivresRares` : un bénévole ne voit que les modes qui lui sont ouverts.
+Le rôle `Administration` ouvre le portail d'administration et l'accès de gestion aux
+trois modes métier ; il n'est pas nécessaire d'ajouter un second rôle à un administrateur
+qui doit gérer les livres rares.
 
 ### `RG-41` — Attribution des gestes
 Tout mouvement porte l'identité du bénévole qui l'a produit et la session dont il

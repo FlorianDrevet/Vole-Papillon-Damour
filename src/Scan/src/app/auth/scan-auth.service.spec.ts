@@ -100,6 +100,23 @@ describe('ScanAuthService', () => {
     expect(service.roles).toEqual(['Caisse']);
   });
 
+  it('authorizes a LivresRares account without granting triage or cash access', () => {
+    const account = createAccount('rare@example.org', 'Livres rares', ['LivresRares']);
+    const instance = createMsalInstance([account]);
+    const service = new ScanAuthService(
+      createMsalService(instance, createAccessToken(['LivresRares'])),
+      createBroadcastService().service,
+    );
+
+    expect(service.isAuthenticated).toBeTrue();
+    expect(service.isAuthorized).toBeTrue();
+    expect(service.canManageRareBooks).toBeTrue();
+    expect(service.canSort).toBeFalse();
+    expect(service.canSell).toBeFalse();
+    expect(service.authState.status).toBe('authorized');
+    expect(service.authState.requiredRole).toBe('Tri, Caisse ou Livres rares');
+  });
+
   it('uses API access-token roles instead of cached ID-token roles', () => {
     const account = createAccount('administrator@example.org', 'Administrateur', ['Administration']);
     const instance = createMsalInstance([account]);

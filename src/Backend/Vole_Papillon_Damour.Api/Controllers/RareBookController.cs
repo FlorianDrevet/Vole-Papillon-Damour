@@ -124,7 +124,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("GetAdminRareBooks")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapGet(
                     "/rare-books/admin/{id:guid}",
@@ -147,7 +147,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("GetAdminRareBook")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapGet(
                     "/rare-books/cash/search",
@@ -209,7 +209,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("CreateRareBook")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapPut(
                     "/rare-books/admin/{id:guid}",
@@ -261,7 +261,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("UpdateRareBook")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapPost(
                     "/rare-books/admin/{id:guid}/publish",
@@ -290,7 +290,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("PublishRareBook")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapPost(
                     "/rare-books/admin/{id:guid}/unpublish",
@@ -319,7 +319,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("UnpublishRareBook")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapPost(
                     "/rare-books/admin/{id:guid}/sold",
@@ -360,7 +360,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("MarkRareBookSold")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapDelete(
                     "/rare-books/admin/{id:guid}",
@@ -389,7 +389,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("DeleteRareBook")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapPost(
                     "/rare-books/admin/{id:guid}/photos",
@@ -433,7 +433,7 @@ public static class RareBookController
                     })
                 .WithName("AddRareBookPhoto")
                 .DisableAntiforgery()
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapPut(
                     "/rare-books/admin/{id:guid}/photos/order",
@@ -472,7 +472,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("ReorderRareBookPhotos")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapPatch(
                     "/rare-books/admin/photos/{photoId:guid}",
@@ -505,7 +505,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("UpdateRareBookPhotoCaption")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
 
             endpoints.MapDelete(
                     "/rare-books/admin/photos/{photoId:guid}",
@@ -534,7 +534,7 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("DeleteRareBookPhoto")
-                .RequireAuthorization("Administration");
+                .RequireAuthorization("RareBooks");
         });
     }
 

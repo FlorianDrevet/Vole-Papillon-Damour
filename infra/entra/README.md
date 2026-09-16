@@ -23,7 +23,7 @@ GitHub `ENTRA_GRAPH_CLIENT_SECRET`. Le rapport JSON ne contient jamais cette val
 | `Configure-EntraUserFlow.ps1` | User flow External ID d'inscription publique, attaché au catalogue uniquement | À l'activation ou à l'évolution du parcours membre |
 | `Configure-EntraBranding.ps1` | Marque française, dégradé bleu et CSS du formulaire hébergé External ID | À l'activation ou à l'évolution du design system |
 | `Sync-EntraDisplayNames.ps1` | Corrige les `displayName` restés à `unknown` depuis `givenName` et `surname` | Migration des comptes existants |
-| `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `Administration` à un compte | Au fil de l'eau |
+| `Set-VpdUserRole.ps1` | Attribue ou retire `Tri`, `Caisse`, `LivresRares`, `Administration` à un compte | Au fil de l'eau |
 | `Get-VpdUserRoles.ps1` | Liste qui détient quel rôle | Contrôle |
 
 ## Prérequis
@@ -256,7 +256,7 @@ jeton. Le premier passage du formulaire doit être vérifié en navigation priv�
 public, avec un compte de test, en contrôlant l'inscription, la connexion, le mot de passe
 oublié, le nom affiché dans le header et l'espace compte, ainsi que le rendu mobile.
 
-## Le modèle de droits en trois lignes
+## Le modèle de droits en quatre lignes
 
 Les droits sont des **rôles applicatifs** déclarés sur l'enregistrement de l'API, et
 attribués directement aux comptes. Ils arrivent dans la revendication `roles` du jeton
@@ -266,6 +266,7 @@ d'accès, que l'API lit sans aucun aller-retour.
 |---|---|---|
 | `Tri` | Sessions de tri, décisions gardé/écarté | `RG-40` |
 | `Caisse` | Mode vente, scan de sortie | `RG-40` |
+| `LivresRares` | Gestion des fiches, prix, photos et état des livres rares | `RG-40` |
 | `Administration` | Back-office et zone d'administration du site | `ENF-18` |
 
 **Un membre du public n'a aucun rôle**, et c'est le point important : « membre inscrit »
