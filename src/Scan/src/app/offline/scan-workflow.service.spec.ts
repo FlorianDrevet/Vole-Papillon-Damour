@@ -207,6 +207,42 @@ describe('ScanWorkflowService', () => {
     ]);
   });
 
+  it('creates a replacement local session and moves decided gestures when the remote session is closed', async () => {
+    const scan = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:05:00.000Z'),
+    );
+    await service.decide(scan.entry.clientGestureId, true);
+    const requested = await service.requestClose('Manual');
+    await store.markOutboxAttempt(
+      scan.entry.clientGestureId,
+      '2026-09-03T08:06:00.000Z',
+      'A previous session was already closed.',
+      'transient',
+    );
+
+    const recovered = await service.recoverClosedSession(requested.clientSessionId);
+
+    expect(recovered).not.toBeNull();
+    expect(recovered!.clientSessionId).not.toBe(requested.clientSessionId);
+    expect(recovered).toEqual(jasmine.objectContaining({
+      remoteSessionId: null,
+      closeRequested: true,
+      closeReason: 'Manual',
+      counts: {scannedCount: 1, keptCount: 1, rejectedCount: 0},
+    }));
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.clientSessionId)
+      .toBe(recovered!.clientSessionId);
+    expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.attemptCount).toBe(0);
+    expect(await store.listSessionCloseRequests()).toEqual([
+      jasmine.objectContaining({
+        clientSessionId: recovered!.clientSessionId,
+        remoteSessionId: null,
+        closeReason: 'Manual',
+      }),
+    ]);
+  });
+
   it('opens a new local session while the previous close request is still pending', async () => {
     const first = await service.recordScan(
       '9782070363735',

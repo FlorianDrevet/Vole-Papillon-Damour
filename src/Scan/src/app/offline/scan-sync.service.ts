@@ -6,6 +6,7 @@ import {ScanAuthService} from '../auth/scan-auth.service';
 import {ScanApiService} from './scan-api.service';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {
+  ScanBookResponse,
   ScanCatalogBook,
   ScanCatalogSyncState,
   ScanFailureKind,
@@ -170,20 +171,23 @@ export class ScanSyncService {
         continue;
       }
 
-      const readyEntries = sessionEntries.filter(entry => isRetryDue(entry));
-      if (readyEntries.length === 0) {
-        continue;
-      }
-
+      let readyEntries = sessionEntries.filter(entry => isRetryDue(entry));
       let remoteSession: ScanSessionResponse;
+
       try {
-        remoteSession = await firstValueFrom(this.api.openSession({
-          mode: session.mode,
-          targetAssoEventsId: session.targetAssoEventsId,
-          clientSessionId: session.clientSessionId,
-          startedAt: session.startedAt,
-        }));
-        await this.workflow.mergeRemoteSession(remoteSession);
+        if (readyEntries.length === 0 && !session.closeRequested) {
+          continue;
+        }
+
+        remoteSession = await this.openRemoteSession(session);
+        if (isClosedRemoteSession(remoteSession)) {
+          remoteSession = await this.recoverClosedRemoteSession(
+            session.clientSessionId,
+          );
+          readyEntries = sessionEntries;
+        } else if (readyEntries.length === 0) {
+          continue;
+        }
       } catch (error: unknown) {
         stoppedOnError = true;
         authorizationFailed = this.handleServerAuthorizationFailure(error);
@@ -191,16 +195,41 @@ export class ScanSyncService {
       }
 
       for (const entry of readyEntries) {
-        try {
-          const response = await firstValueFrom(this.api.scanBook(
-            remoteSession.scanSessionId,
-            {
-              isbn: entry.isbn13,
-              kept: entry.kept === true,
-              occurredAt: entry.occurredAt,
-              clientGestureId: entry.clientGestureId,
-            },
-          ));
+        let response: ScanBookResponse | null = null;
+        let transmissionError: unknown = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            response = await firstValueFrom(this.api.scanBook(
+              remoteSession.scanSessionId,
+              {
+                isbn: entry.isbn13,
+                kept: entry.kept === true,
+                occurredAt: entry.occurredAt,
+                clientGestureId: entry.clientGestureId,
+              },
+            ));
+            break;
+          } catch (error: unknown) {
+            transmissionError = error;
+            if (attempt > 0 || !isClosedScanSessionError(error)) {
+              break;
+            }
+
+            try {
+              // The server may close an idle session while its decided gestures
+              // are still safely stored in the browser. A new client id avoids
+              // replaying the same closed server record from the open endpoint.
+              remoteSession = await this.recoverClosedRemoteSession(
+                session.clientSessionId,
+              );
+            } catch (recoveryError: unknown) {
+              transmissionError = recoveryError;
+              break;
+            }
+          }
+        }
+
+        if (response) {
           await this.store.markOutboxAttempt(
             entry.clientGestureId,
             new Date().toISOString(),
@@ -210,18 +239,18 @@ export class ScanSyncService {
           await this.applyServerProjection(entry.isbn13, entry.isRare, response);
           await this.store.deleteOutboxEntry(entry.clientGestureId);
           sent += 1;
-        } catch (error: unknown) {
+        } else {
           stoppedOnError = true;
-          const failureKind = classifyFailure(error);
+          const failureKind = classifyFailure(transmissionError);
           const attempted = await this.store.markOutboxAttempt(
             entry.clientGestureId,
             new Date().toISOString(),
-            describeError(error),
+            describeError(transmissionError),
             failureKind,
           );
 
           if (failureKind === 'authorization') {
-            authorizationFailed = this.handleServerAuthorizationFailure(error);
+            authorizationFailed = this.handleServerAuthorizationFailure(transmissionError);
             break;
           }
 
@@ -231,7 +260,7 @@ export class ScanSyncService {
           ) {
             await this.store.quarantineOutboxEntry(
               entry.clientGestureId,
-              describeError(error),
+              describeError(transmissionError),
             );
             quarantined += 1;
           }
@@ -330,6 +359,14 @@ export class ScanSyncService {
           clientSessionId: session.clientSessionId,
           startedAt: session.startedAt,
         }));
+        if (isClosedRemoteSession(openedSession)) {
+          activeSessionClosed = await this.clearLocallyClosedSession(
+            session,
+            activeSession,
+          ) || activeSessionClosed;
+          continue;
+        }
+
         const closedSession = await firstValueFrom(this.api.closeSession(
           openedSession.scanSessionId,
           {closeReason: session.closeReason},
@@ -342,6 +379,14 @@ export class ScanSyncService {
           activeSessionClosed = true;
         }
       } catch (error: unknown) {
+        if (isClosedScanSessionError(error)) {
+          activeSessionClosed = await this.clearLocallyClosedSession(
+            session,
+            activeSession,
+          ) || activeSessionClosed;
+          continue;
+        }
+
         if (this.handleServerAuthorizationFailure(error)) {
           break;
         }
@@ -365,6 +410,43 @@ export class ScanSyncService {
     return sessions;
   }
 
+  private async openRemoteSession(session: LocalSessionDescriptor): Promise<ScanSessionResponse> {
+    const remoteSession = await firstValueFrom(this.api.openSession({
+      mode: session.mode,
+      targetAssoEventsId: session.targetAssoEventsId,
+      clientSessionId: session.clientSessionId,
+      startedAt: session.startedAt,
+    }));
+    await this.workflow.mergeRemoteSession(remoteSession);
+    return remoteSession;
+  }
+
+  private async recoverClosedRemoteSession(
+    clientSessionId: string,
+  ): Promise<ScanSessionResponse> {
+    const recoveredSession = await this.workflow.recoverClosedSession(clientSessionId);
+    if (!recoveredSession) {
+      throw new Error(
+        'La session locale n’est plus disponible pour reprendre la synchronisation.',
+      );
+    }
+
+    return await this.openRemoteSession(toSessionDescriptor(recoveredSession));
+  }
+
+  private async clearLocallyClosedSession(
+    session: LocalSessionDescriptor,
+    activeSession: ScanSessionSnapshot | null,
+  ): Promise<boolean> {
+    await this.store.deleteSessionCloseRequest(session.clientSessionId);
+    if (activeSession?.clientSessionId !== session.clientSessionId) {
+      return false;
+    }
+
+    await this.workflow.clearSession();
+    return true;
+  }
+
   private addSessionDescriptor(
     sessions: Map<string, LocalSessionDescriptor>,
     session: ScanSessionSnapshot | ScanSessionCloseRequest,
@@ -374,6 +456,7 @@ export class ScanSyncService {
     sessions.set(descriptor.clientSessionId, {
       ...descriptor,
       volunteerId: existing?.volunteerId ?? descriptor.volunteerId,
+      closeRequested: existing?.closeRequested || descriptor.closeRequested,
     });
   }
 
@@ -465,6 +548,7 @@ interface LocalSessionDescriptor {
   mode: 'AvailableNow' | 'NextFair';
   targetAssoEventsId: string | null;
   closeReason: 'Manual' | 'Inactivity' | 'Disconnect' | 'TokenExpired';
+  closeRequested: boolean;
   startedAt: string;
 }
 
@@ -487,6 +571,7 @@ function toSessionDescriptor(
     mode: session.mode,
     targetAssoEventsId: session.targetAssoEventsId,
     closeReason: session.closeReason ?? 'Manual',
+    closeRequested: 'closeRequested' in session ? session.closeRequested === true : true,
     startedAt,
   };
 }
@@ -537,6 +622,29 @@ function classifyFailure(error: unknown): ScanFailureKind {
 
 function isAuthorizationFailure(error: unknown): boolean {
   return classifyFailure(error) === 'authorization';
+}
+
+function isClosedScanSessionError(error: unknown): boolean {
+  if (getHttpStatus(error) !== 409) {
+    return false;
+  }
+
+  const body = error instanceof HttpErrorResponse ? error.error : error;
+  if (typeof body !== 'object' || body === null) {
+    return typeof body === 'string' && body.includes('Scan session is already closed');
+  }
+
+  const code = (body as {code?: unknown}).code;
+  if (code === 'Book.ScanSessionClosed') {
+    return true;
+  }
+
+  const detail = (body as {detail?: unknown}).detail;
+  return typeof detail === 'string' && detail.includes('Scan session is already closed');
+}
+
+function isClosedRemoteSession(session: Pick<ScanSessionResponse, 'status'>): boolean {
+  return session.status !== 'InProgress';
 }
 
 function getHttpStatus(error: unknown): number | null {

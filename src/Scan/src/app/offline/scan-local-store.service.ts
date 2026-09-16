@@ -293,6 +293,52 @@ export class ScanLocalStoreService {
     );
   }
 
+  async replaceSessionAfterRemoteClosure(
+    previousClientSessionId: string,
+    replacement: ScanSessionSnapshot,
+  ): Promise<void> {
+    const [entries, closeRequests] = await Promise.all([
+      this.listOutboxEntries(),
+      this.listSessionCloseRequests(),
+    ]);
+    // Undecided entries intentionally stay attached to the previous session so
+    // ending a session never turns an absent choice into a published gesture.
+    const decidedEntries = entries.filter(entry =>
+      entry.clientSessionId === previousClientSessionId && isBlockingScanStatus(entry.status));
+    const closeRequest = closeRequests.find(request =>
+      request.clientSessionId === previousClientSessionId);
+
+    await this.runTransaction(
+      [scanStoreNames.outbox, scanStoreNames.session],
+      'readwrite',
+      stores => {
+        for (const entry of decidedEntries) {
+          stores[scanStoreNames.outbox].put({
+            ...entry,
+            clientSessionId: replacement.clientSessionId,
+            attemptCount: 0,
+            lastAttemptAt: null,
+            lastError: null,
+            lastFailureKind: null,
+          } satisfies ScanOutboxEntry);
+        }
+
+        if (closeRequest) {
+          stores[scanStoreNames.session].delete(closeRequest.key);
+          stores[scanStoreNames.session].put({
+            ...closeRequest,
+            key: sessionCloseRequestKey(replacement.clientSessionId),
+            clientSessionId: replacement.clientSessionId,
+            remoteSessionId: null,
+            startedAt: replacement.startedAt,
+          } satisfies ScanSessionCloseRequest);
+        }
+
+        stores[scanStoreNames.session].put(replacement);
+      },
+    );
+  }
+
   async clearSessionCloseRequests(): Promise<void> {
     const requests = await this.listSessionCloseRequests();
     for (const request of requests) {
