@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Livres rares — lot 0, correction de la suppression de blob et préparation du conteneur `livres-rares`. |
-| **Prochaine action** | Faire relire la PR du lot 0, puis démarrer le lot 1 depuis `origin/main` après fusion ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) reste retenu. |
+| **Prochaine action** | Faire relire la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), puis démarrer le lot 1 depuis `origin/main` après fusion ; le défaut Q4 (liste de rayons fermée et modifiable dans les paramètres de l’association) reste retenu. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
 | **Dernière mise à jour** | 2026-09-16 — `DeleteFileAsync` reçoit désormais le conteneur cible et les appelants actualités sont explicitement câblés sur `actuality-images`; le conteneur public `livres-rares` est préparé dans l’API, Aspire et Bicep. 468 tests backend et le build de solution passent ; Graphify ré-extrait le code mais son rendu HTML dépasse la limite de 5 100 nœuds. |
-| **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; PR vers `main` à ouvrir |
+| **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
 
@@ -35,7 +35,9 @@ photo rare ni donnée métier n’a encore été créée.
 Validation locale : test d’infrastructure rouge puis vert couvrant la suppression dans un
 conteneur non-actualités, 468 tests backend via la solution, build de solution et compilation
 Bicep. `graphify update .` a ré-extrait l’AST, mais son étape de visualisation reste bloquée par
-la limite de 5 100 nœuds. Aucun déploiement Azure ni contrôle de production n’a été effectué.
+la limite de 5 100 nœuds. Aucun déploiement Azure ni contrôle de production n’a été effectué. La
+[PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) est ouverte vers
+`main` et n’est pas fusionnée.
 
 ---
 
