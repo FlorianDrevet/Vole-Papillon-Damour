@@ -40,7 +40,8 @@ Contrats dans `Contracts/RareBooks/{Requests,Responses}`.
 | `PublishRareBookCommand` | `RareBookId` | Valide les invariants de publication (`02 §1`). Retourne les avertissements (ex. aucune photo) sans bloquer |
 | `UnpublishRareBookCommand` | `RareBookId` | Retire de la vitrine et du signalement caisse |
 | `DeleteRareBookCommand` | `RareBookId` | **Supprime d'abord les blobs**, puis la ligne. La fiche `Book` liée et son historique restent intacts |
-| `MarkRareBookSoldCommand` | `RareBookId`, `AssoEventsId?`, `occurredAt`, `UserId` | Idempotent. Déclenche les alertes (`D6`). Appelée par la caisse **et** manuellement depuis l'admin |
+| `MarkRareBookSoldCommand` | `RareBookId`, `ScanSessionId?`, `AssoEventsId?`, `occurredAt`, `UserId` | Idempotent. Déclenche les alertes (`D6`). Appelée **à la validation d'une session de caisse** (`D5 bis`) et manuellement depuis l'admin. Elle n'enregistre **aucun montant** : le prix reste sur la fiche, il n'est ni recopié sur la vente ni additionné |
+| `RestoreRareBookAvailabilityCommand` | `RareBookId`, `UserId` | Annulation dans les 30 s (`RG-49`). Remet la fiche disponible **et révoque l'alerte si elle n'est pas encore expédiée** |
 | `AddRareBookPhotoCommand` | `RareBookId`, flux, nom, type MIME, `UserId` | Valide type et taille (≤ 8 Mo, JPEG/WebP/PNG). Téléverse puis ajoute en dernière position |
 | `ReorderRareBookPhotosCommand` | `RareBookId`, liste ordonnée d'ids | Exige une permutation exacte |
 | `DeleteRareBookPhotoCommand` | `RareBookPhotoId` | Supprime le blob puis la ligne, puis **recompacte les positions** |
@@ -56,7 +57,7 @@ et `IDateTimeProvider`, comme le reste du dépôt.
 | `GetPublicRareBookBySlugQuery` | `/livres-rares/:slug` | 404 si `Draft`. Renvoie les photos ordonnées et les 3 autres fiches de la bourse |
 | `GetAdminRareBooksQuery` | Liste admin | Filtres : recherche texte, statut, disponibilité, avec/sans ISBN, fourchette de prix, **sans photo** |
 | `GetAdminRareBookQuery` | Fiche admin | Inclut la traçabilité |
-| `GetRareBookMigrationQueueQuery` | File de migration | Fiches en `Draft` issues de la reprise (`02 §6`) |
+| `SearchRareBooksForCashQuery` | Recherche en caisse par titre | Fiches publiées **et disponibles**. Sert aussi à alimenter le delta embarqué ([`07 §7`](07-scanette.md)) |
 
 ## 4. Endpoints
 
@@ -81,7 +82,7 @@ Style *minimal API*, comme `BookAdministrationController.cs`.
 |---|---|
 | `GET` | `/rare-books/admin` |
 | `GET` | `/rare-books/admin/{id}` |
-| `GET` | `/rare-books/admin/migration-queue` |
+| `GET` | `/rare-books/cash/search` (politique `ScanVolunteer`) |
 | `POST` | `/rare-books/admin` |
 | `PUT` | `/rare-books/admin/{id}` |
 | `POST` | `/rare-books/admin/{id}/publish` |

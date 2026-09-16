@@ -16,7 +16,7 @@ L1 ─ domaine RareBook                (aucune dépendance)
      │                 └── L9 ─ alertes « il est parti »
      └── L6 ─ retrait de Book.IsRare  ← dépend de L3, bloque L8
 L7 ─ scanette : gestion              ← dépend de L4 et L5
-L10 ─ scanette : caisse + recette    ← dépend de L6 et de la réponse à Q1
+L10 ─ scanette : caisse              ← dépend de L3 et L7
 ```
 
 Chemin critique : **L1 → L2 → L3 → L6 → L8**. C'est lui qui livre la valeur publique.
@@ -86,7 +86,7 @@ avec photos, sans voir aucune autre section. Vérification responsive à 1280 et
 ## L6 — Retrait de `Book.IsRare` ⚠️
 
 Le lot le plus risqué. Les neuf points d'appel de
-[`02 §5`](02-modele-de-donnees.md), la seconde migration, la reprise des données.
+[`02 §5`](02-modele-de-donnees.md) et la seconde migration.
 
 **À faire dans cet ordre :**
 
@@ -95,14 +95,14 @@ Le lot le plus risqué. Les neuf points d'appel de
 2. Basculer les neuf lectures.
 3. Supprimer `MarkBookRareCommandHandler`, l'endpoint `/rare`, l'interrupteur du
    gabarit admin.
-4. Migration : reprise des données puis suppression de la colonne.
+4. **Exporter les ISBN marqués rares dans la PR**, puis migration : suppression de la
+   colonne, sans conversion ([`02 §6`](02-modele-de-donnees.md)).
 
-**Sortie** : suite complète verte. Les livres marqués rares apparaissent dans la file de
-migration du portail admin.
+**Sortie** : suite complète verte.
 
 > **Avertir l'association avant le déploiement de ce lot** : la section publique
-> « Livres rares » sera vide jusqu'à ce que les fiches reprises soient complétées et
-> publiées ([`02 §6`](02-modele-de-donnees.md)).
+> « Livres rares » sera vide jusqu'à ce que de vraies fiches soient créées et publiées,
+> et les marquages actuels sont perdus — d'où l'export en note de PR.
 
 ## L7 — Scanette : gestion
 
@@ -132,18 +132,19 @@ gabarit d'e-mail, expédition par le worker.
 **Sortie** : marquer une fiche vendue envoie un e-mail aux suiveurs, une seule fois,
 dans le respect du délai de refroidissement.
 
-## L10 — Caisse, panier et recette ⚠️
+## L10 — Caisse : ajouter un rare à la session
 
-**Bloqué par `Q1`.** Voir [`07 §5-7`](07-scanette.md) et
-[`01 §4`](01-decisions-et-portee.md).
+Voir [`07 §5-7`](07-scanette.md). Plus petit qu'il n'y paraît : **aucun panier, aucun
+total, aucune recette** (`D4`, `D5`).
 
-Écrans de caisse, recherche hors ligne par titre, total du panier, `RegisterSale`
-enrichi, recette calculée en regard de la saisie manuelle de `RG-51`, delta de
-synchronisation élargi.
+Bouton « Ajouter un livre rare » dans le pied de l'écran de caisse, recherche hors ligne
+par titre sur le catalogue embarqué, ligne violette dans la liste de session, sortie des
+rares à la validation de session, annulation à 30 secondes, delta de synchronisation
+élargi aux fiches rares disponibles.
 
-**Sortie** : vente d'un rare hors ligne, rejouée à la synchronisation sans double
-comptage ; annulation dans les 30 secondes qui remet la fiche disponible et annule
-l'alerte.
+**Sortie** : sortie d'un rare hors ligne, rejouée à la synchronisation sans double
+alerte ; annulation dans les 30 secondes qui remet la fiche disponible et révoque
+l'alerte ; aucun montant nulle part dans le circuit de vente.
 
 ---
 
@@ -153,11 +154,11 @@ l'alerte.
 
 | Document | Lot | Modification |
 |---|---|---|
-| `06-regles-metier.md` `RG-50` | L3 | Amender : le prix existe pour les livres rares |
-| `06-regles-metier.md` `RG-51` | L10 | Amender : la recette est calculée, la saisie manuelle prime |
-| `08-questions-ouvertes.md` `Q-05` | L3 | Réouvrir et retrancher |
+| `06-regles-metier.md` `RG-50` | L3 | Amender sur un point : un livre rare a un prix **stocké et affiché**. `calculé` et `totalisé` restent vrais |
+| `06-regles-metier.md` `RG-51` | — | **Inchangée.** La recette reste saisie à la main |
+| `08-questions-ouvertes.md` `Q-05` | L3 | Amender la décision sur le seul volet « livres rares » |
 | `05-administration.md` §4 | L5 | Le marquage devient une fiche |
-| `03-parcours-benevole-scan.md` §5 | L10 | L'écran de caisse retrouve un total |
+| `03-parcours-benevole-scan.md` §5 | L10 | Ajouter le bouton « Ajouter un livre rare ». **Ni panier ni total** : l'écran ne change pas de nature |
 | `02-glossaire-et-cycle-de-vie.md` | L6 | « Livre rare » n'est plus un indicateur |
 | `04-site-public.md` | L8 | La section rare a ses propres pages |
 | `NEXT.md` | chaque lot | Une ligne par lot livré, comme le reste du dépôt |

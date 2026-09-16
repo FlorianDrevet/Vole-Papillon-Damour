@@ -96,7 +96,15 @@ point le plus délicat du lot : le traiter en premier, avec ses tests.
 
 ## 5. Caisse
 
-Maquette `CaisseRare`, trois moments.
+Maquettes : `CaisseAjoutRare` (S3, page « Scanette ») pour le parcours retenu, et
+`CaisseRare` (A12) pour le traitement visuel du bandeau violet — **dont le panier et le
+total sont caducs** (`D4`).
+
+Le geste attendu, dit par l'association : *« rajouter un bouton quelque part pour
+ajouter un livre rare à la session de caisse, le chercher et l'ajouter, et quand je
+valide la sortie de la session cela le sort des livres rares dispo. »*
+
+Trois moments.
 
 ### Moment 1 — le scan tombe sur un rare
 
@@ -113,67 +121,84 @@ Sous le bandeau : la vignette, un rappel « Vérifiez l'exemplaire » avec la de
 des défauts, et « Voir les 5 photos → ». Puis un encart violet pâle : « Exemplaire
 unique. Après validation, il disparaît du catalogue public immédiatement. »
 
-Le bouton principal devient « **Ajouter au panier · 60 €** », et le secondaire
-« Ce n'est pas ce livre ».
+Le bouton principal devient « **Ajouter à la session** ». Aucun montant n'y figure : le
+prix est au-dessus, pour être lu.
 
 Le bloc existant `.cash-rare-item` (`styles.scss:1513`) en est l'ancêtre : il a déjà le
 fond violet et la bonne présence. Il porte aujourd'hui `min-height: 148px` et aucun
 prix ; c'est lui qu'il faut faire grandir, pas un nouveau composant.
 
-### Moment 2 — un rare sans ISBN
+### Moment 2 — ajouter un rare à la main
 
-Rien à scanner. Un champ de recherche bordé violet, arrondi, 54px, avec le compteur de
+C'est le chemin principal, puisqu'un livre rare n'a généralement pas de code-barres.
+
+Un bouton **« Ajouter un livre rare »** dans le pied de l'écran de caisse, au-dessus de
+« Valider la sortie » : contour violet `1.5px #5f3a86`, 54px, icône de marque-page. Il
+n'apparaît que si le catalogue embarqué contient au moins une fiche rare disponible.
+
+Il ouvre une recherche par titre : champ bordé violet, arrondi, 54px, compteur de
 résultats à droite. « La recherche porte sur les fiches rares embarquées dans la
-scanette, prix compris. Elle marche sans réseau. »
+scanette. Elle marche sans réseau. » Les résultats sont les cartes rares compactes,
+photo comprise — c'est elle qui confirme qu'on tient le bon exemplaire ; la sélectionnée
+est bordée `1.5px #5f3a86`.
 
-Les résultats sont les cartes rares compactes ; la sélectionnée est bordée
-`1.5px #5f3a86`.
+Sous les résultats, la phrase qui cadre le rôle de l'outil :
 
-Repli : « Aucune fiche ne correspond ? Encaissez en “livre rare hors catalogue” et
-prévenez l'administration après la bourse. » Voir `Q3`.
+> Le prix est ferme et non négociable. Il s'affiche pour être lu : vous encaissez comme
+> d'habitude, la scanette ne compte pas.
 
-### Moment 3 — vente validée
+Un rare ajouté apparaît dans la liste de session avec une bordure violette, la mention
+`Livre rare · 60 €` et une croix pour le retirer.
 
-Écran sombre `#062a44` avec un halo violet, coche verte, et le montant en `Newsreader`
-44px. Puis un encart « Ce que ça a changé », qui énumère en clair :
+Repli quand rien ne correspond : le livre sort comme un livre ordinaire et
+l'administration est prévenue après la bourse. Aucun écran spécifique.
 
-- le livre est retiré de la page Livres rares ;
-- les personnes qui le suivaient reçoivent un e-mail « il est parti » ;
-- le montant est compté dans les recettes de la bourse.
+### Moment 3 — sortie de session validée
+
+C'est **ici**, et pas à l'ajout, que le livre quitte la vitrine (`D5 bis`).
+
+Écran sombre `#062a44` avec un halo violet, coche verte, et le compte de livres sortis
+en `Newsreader` 42px — **un compte de livres, jamais un montant**. Puis un encart « Ce
+que ça a changé » :
+
+- le livre quitte la page Livres rares ;
+- sa fiche est conservée, marquée vendue, avec sa date et sa bourse ;
+- les personnes qui le suivaient reçoivent un e-mail.
+
+Et, en retrait, la phrase qui évite un malentendu durable :
+
+> Aucun montant n'est enregistré. La recette reste saisie à la main à la clôture de la
+> bourse.
 
 C'est de la pédagogie, pas de la décoration : c'est ce qui rend le geste
 compréhensible.
 
-## 6. Le panier et le total
+## 6. Ce que la caisse ne fait pas
 
-⚠️ **Ce paragraphe dépend de `Q1`** ([`01 §4`](01-decisions-et-portee.md)) et ne doit
-pas être implémenté avant qu'elle soit tranchée.
+Aucun panier, aucun total, aucune recette (`D4`, `D5`). L'écran de caisse garde son
+bouton `VALIDER` et sa nature actuelle : il enregistre quels livres sortent.
 
-La maquette montre « Panier · 3 livres — 3,00 € » puis « Total à encaisser 63,00 € ».
-Sous l'hypothèse par défaut (`D4`) :
+Concrètement, pour l'implémentation :
 
-- les livres ordinaires sont comptés et multipliés par le prix unitaire de la bourse,
-  lu dans `AssociationSettings` ;
-- les livres rares ajoutent leur prix ferme individuel ;
-- le total est **affiché**, jamais encaissé par l'application.
+- **Ne pas** ajouter de champ prix sur `BookMovement`, sur la vente, ni ailleurs dans le
+  circuit de sortie. Le prix vit sur la fiche rare et nulle part ailleurs.
+- **Ne pas** toucher à `RG-51` ni à la saisie manuelle de recette existante
+  (`saveFairRevenue` dans le portail admin).
+- `docs/bourse-aux-livres/03-parcours-benevole-scan.md` §5 n'a **pas** à être amendé :
+  l'écran de caisse ne change pas de nature.
 
-L'écran de caisse actuel a été explicitement réécrit sans colonne prix ni total par la
-décision `Q-05`, et son bouton dit `VALIDER` et non `ENCAISSER`. Le rétablissement d'un
-total revient en arrière sur ce point précis : le signaler dans la PR et amender
-`docs/bourse-aux-livres/03-parcours-benevole-scan.md` §5.
+`RegisterSaleCommandHandler` n'est pas modifié pour les livres ordinaires. Pour un livre
+rare ajouté à une session, la validation de sortie doit :
 
-`RegisterSaleCommandHandler` doit désormais, pour un livre rare :
-
-1. appeler `MarkRareBookSoldCommand` ;
-2. enregistrer le montant sur la vente, pour la recette (`D5`) ;
-3. rester **idempotent** — la caisse fonctionne hors ligne et rejoue ses gestes. Le
+1. appeler `MarkRareBookSoldCommand` avec l'identifiant de session ;
+2. rester **idempotent** — la caisse fonctionne hors ligne et rejoue ses gestes. Le
    mécanisme existe déjà (`ClientGestureId`, inversion de vente) : s'y raccrocher, ne
    pas en inventer un second.
 
-L'annulation de vente dans les 30 secondes (`RG-49`, visible dans la maquette) doit
-**remettre la fiche en disponible** et annuler l'alerte si elle n'est pas encore partie.
-Sans cela, une erreur de caisse envoie un e-mail « il est parti » à des gens pour un
-livre toujours sur la table.
+L'annulation de sortie dans les 30 secondes (`RG-49`) appelle
+`RestoreRareBookAvailabilityCommand` : elle **remet la fiche en disponible** et annule
+l'alerte si elle n'est pas encore partie. Sans cela, une erreur de caisse envoie un
+e-mail « il est parti » à des gens pour un livre toujours sur la table.
 
 ## 7. Delta de synchronisation
 
@@ -191,4 +216,11 @@ Deux conséquences à mesurer avant de coder :
   taille plutôt que la photo pleine résolution.
 - **La fraîcheur du prix.** Une scanette hors ligne depuis deux jours affiche un prix
   périmé si l'administration l'a changé entre-temps. Horodater le delta et afficher la
-  date de dernière synchronisation sur l'écran de caisse rare.
+  date de dernière synchronisation sur l'écran de caisse rare. Le risque est réel mais
+  borné : le prix est lu par un humain qui a le livre en main, pas additionné par la
+  machine.
+- **La disponibilité.** Le delta ne transporte que les fiches **publiées et
+  disponibles**. Un rare vendu sur une autre caisse disparaît des résultats de recherche
+  à la synchronisation suivante — entre-temps, deux caisses peuvent le proposer. Le
+  serveur tranche à la validation : le second `MarkRareBookSold` est idempotent et
+  n'émet pas de seconde alerte.

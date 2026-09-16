@@ -44,7 +44,8 @@ RareBookAggregate/
 | `Status` | `RareBookStatus` | `Draft` \| `Published` |
 | `IsSold` | `bool` | « Encore disponible » inversé |
 | `SoldAt` | `DateTime?` | UTC |
-| `SoldAtFairId` | `AssoEventsId?` | La bourse qui a encaissé, pour `D5` |
+| `SoldAtFairId` | `AssoEventsId?` | La bourse concernée, **pour la traçabilité seule**. Aucun montant n'en est dérivé (`D5`) |
+| `SoldInSessionId` | `ScanSessionId?` | La session de caisse qui l'a sorti (`D5 bis`) |
 | `PriceSetBy` | `string?` | « Prix fixé par », ex. « Conseil du 5 mars », ≤ 120 |
 | `CreatedAt` / `CreatedBy` | `DateTime` / `UserId` | Traçabilité affichée dans la maquette |
 | `UpdatedAt` / `UpdatedBy` | `DateTime` / `UserId` | |
@@ -174,28 +175,24 @@ ISBN ? ».
 `HideBookCommandHandler` et `IsHiddenFromCatalog` **ne sont pas concernés** : ils restent
 tels quels.
 
-## 6. Reprise des données existantes
+## 6. Reprise des données existantes — il n'y en a pas
 
-La migration supprime `Books.IsRare`. Les livres qui le portaient à `true` doivent être
-retrouvables, sinon le travail de marquage déjà fait par les bénévoles est perdu.
+La migration supprime `Books.IsRare` **sans rien convertir**. C'est la décision
+`D2` ([`01 §2`](01-decisions-et-portee.md)), tranchée dans l'annotation `rare-derive` du
+canvas : les marquages actuels n'ont ni photo, ni prix, ni description, et ne
+constituent donc pas des fiches exploitables.
 
-Procédure, dans la migration `AddRareBooks` :
+Ce que la suppression emporte : le drapeau, et lui seul. Les fiches `Book`
+correspondantes, leurs métadonnées, leurs quantités et leur historique de mouvements
+restent intacts.
 
-1. Créer les tables.
-2. Pour chaque `Book` où `IsRare = 1`, insérer un `RareBook` en statut **`Draft`**,
-   reprenant `Isbn13`, `Title`, `Authors` → `AuthorMention`, `Publisher`,
-   `PublicationYear`. `Price = 0`, `Condition = GoodWithFlaws`, aucune photo,
-   `CreatedBy` = un identifiant système documenté.
-3. Supprimer la colonne `IsRare`.
+Avant de lancer la migration, **exporter la liste des ISBN concernés** dans une note de
+la PR (`SELECT Id, Title, Authors FROM Books WHERE IsRare = 1`). C'est la seule trace
+qui restera du travail de repérage déjà fait par les bénévoles, et elle leur permettra
+de refaire les fiches dans l'ordre qu'ils jugent utile.
 
-Ces fiches alimentent la **file de migration** du portail admin décrite en
-[`06`](06-portail-administration.md) : « *N* livres étaient marqués rares sous l'ancien
-système et n'ont pas encore de fiche complète. Tant qu'ils n'en ont pas, ils
-n'apparaissent plus dans la section publique. »
+À dire à l'association avant le déploiement : **la section publique « Livres rares »
+sera vide** jusqu'à ce que de vraies fiches soient créées et publiées.
 
-C'est volontaire et il faut le dire à l'association avant le déploiement : **la section
-publique « Livres rares » sera vide au lendemain de la migration**, jusqu'à ce que les
-fiches soient complétées et publiées.
-
-Prévoir un `Down` qui restaure la colonne et repositionne `IsRare = 1` pour les ISBN
-ayant une fiche.
+Le `Down` restaure la colonne à `0` partout. La valeur d'origine n'est pas
+récupérable : c'est le sens de la décision.

@@ -43,51 +43,63 @@ C'est la décision la plus coûteuse du module. Elle touche neuf points de lectu
 existants — ils sont énumérés en [`02 §5`](02-modele-de-donnees.md) et repris comme lot
 dédié en [`08`](08-lots-et-sequencement.md).
 
-### D3 — Le prix d'un livre rare est stocké, affiché et public
+**Les marquages existants sont supprimés en bloc**, sans être convertis en fiches.
+L'annotation `rare-derive` du canvas le tranche : « les 12 marquages actuels n'ont ni
+photo ni prix, donc ils sont supprimés en bloc. Le marquage seul part, les fiches
+catalogue et l'historique des ventes restent. » Il n'y a donc **pas** de file de
+reprise à construire.
 
-Cela **renverse `RG-50`** (`docs/bourse-aux-livres/06-regles-metier.md`) : « Aucun prix
-n'est stocké, affiché, calculé ni totalisé par l'application, ni pour les livres
-ordinaires ni pour les livres rares », et `Q-05`
-(`docs/bourse-aux-livres/08-questions-ouvertes.md`).
+### D3 — Le prix d'un livre rare est stocké et affiché, jamais compté
 
-Le renversement est **motivé, pas accidentel** : `RG-50` protégeait une caisse à
-1–2 € où le prix n'apportait rien. Elle admettait elle-même que les livres rares sont le
-cas où le prix compte — « c'est la seule protection contre un livre expertisé à 35 €
-vendu 2 € par quelqu'un qui l'ignore » — et repoussait la solution sur un montant écrit
-physiquement sur le livre. Ce module remplace le crayon par la base.
+Cela **amende `RG-50`** (`docs/bourse-aux-livres/06-regles-metier.md`) sur un point
+précis, et un seul : « Aucun prix n'est **stocké, affiché**, calculé ni totalisé par
+l'application, ni pour les livres ordinaires ni pour les livres rares. »
+
+L'amendement est **motivé, pas accidentel** : `RG-50` protégeait une caisse à 1–2 € où
+le prix n'apportait rien. Elle admettait elle-même que les livres rares sont le cas où
+il compte — « c'est la seule protection contre un livre expertisé à 35 € vendu 2 € par
+quelqu'un qui l'ignore » — et repoussait la solution sur un montant écrit physiquement
+sur le livre. Ce module remplace le crayon par la base.
 
 Le prix est un **prix ferme**, non négociable, fixé par l'association et non par le
-bénévole de caisse.
+bénévole de caisse. Il est stocké sur la fiche rare, affiché en vitrine publique et
+affiché en caisse **pour être lu**.
 
-### D4 — La caisse totalise un montant
+Les mots `calculé` et `totalisé` de `RG-50` restent vrais. Voir `D4`.
 
-La maquette `CaisseRare` affiche un panier (« Panier · 3 livres — 3,00 € »), un total
-(« Total à encaisser 63,00 € ») et un écran de confirmation (« 63,00 € encaissés »).
+### D4 — L'application ne compte aucun argent
 
-C'est une extension de `D3` aux livres **ordinaires**, et elle dépend de la question
-ouverte `Q1` (§4). L'hypothèse retenue par défaut dans ce plan, à confirmer :
+Décision de l'association, prise après les maquettes : **aucun panier, aucun total,
+aucune recette calculée**, ni pour les livres rares ni pour les livres ordinaires. La
+caisse reste exactement ce qu'elle est aujourd'hui — elle enregistre quels livres
+sortent, rien d'autre.
 
-> Les livres ordinaires n'ont **pas** de prix par fiche. Le panier applique un **prix
-> unitaire par bourse**, stocké une seule fois dans les paramètres d'association
-> (`AssociationSettings`). `RG-50` reste donc vraie pour les livres ordinaires au
-> niveau de la fiche, et seul le total est calculé.
+Conséquence directe : les livres ordinaires n'ont **aucun prix**, nulle part. Il n'y a
+ni prix par fiche, ni prix unitaire par bourse, ni champ à ajouter dans
+`AssociationSettings`.
 
-Cette hypothèse préserve l'essentiel de `RG-50` et évite d'avoir à tarifer 18 000
-fiches. Si l'association veut un prix par livre ordinaire, le lot 6 change de nature :
-voir `Q1`.
+> La maquette `CaisseRare` (artboard A12) montre un panier et un total « 63,00 €
+> encaissés ». **Cette partie de la maquette est caduque.** Elle est remplacée par
+> l'artboard `CaisseAjoutRare` (S3), page « Scanette » du canvas. Le reste de A12 —
+> le bandeau violet, le prix ferme en grand, la recherche par titre — reste valable.
 
-### D5 — La recette d'une bourse devient calculable
+### D5 — La recette d'une bourse reste saisie à la main
 
-`RG-51` prévoit une saisie manuelle unique à la clôture, « la recette ne pouvant pas
-être déduite des ventes ». Avec `D3` et `D4`, elle le peut en partie.
+`RG-51` est **inchangée**. Un seul montant, saisi par un administrateur à la clôture de
+chaque bourse : celui du comptage de caisse que l'association fait de toute façon.
 
-La maquette `CaisseRare` l'affirme : « 60 € sont comptés dans les recettes de la bourse
-du 14 mars ».
+Rien dans ce module ne calcule, ne pré-remplit ni ne contrôle ce montant. Une fiche rare
+vendue enregistre **la date de la vente et la bourse concernée** pour la traçabilité,
+jamais un montant à additionner.
 
-Décision : la recette affichée devient `somme des prix rares vendus + (nombre de livres
-ordinaires vendus × prix unitaire)`. **La saisie manuelle de `RG-51` est conservée** et
-prime lorsqu'elle existe : c'est le comptage de caisse réel, il reste la vérité. Le
-montant calculé devient une valeur de contrôle affichée à côté.
+### D5 bis — La sortie du catalogue se fait à la clôture de la session
+
+Un livre rare s'ajoute à une session de caisse par un bouton, se cherche par son titre,
+et **c'est la validation de la sortie de session** qui le retire des livres rares
+disponibles — pas son ajout.
+
+Tant que la session est ouverte, le geste est rattrapable sans conséquence publique.
+C'est cohérent avec le fonctionnement actuel des sessions de scan.
 
 ### D6 — « Me prévenir s'il part » réutilise la liste de suivi
 
@@ -140,22 +152,22 @@ pour que l'écart soit un choix, pas un oubli.
 
 | Maquette | Écart | Motif |
 |---|---|---|
-| `AdminSidebar` ne contient pas d'entrée « Livres rares » ; `AdminFicheRare` s'affiche avec `active="catalogue"` et le fil d'Ariane « Catalogue · Livres rares · Fiche » | Le plan ajoute une **entrée dédiée** « Livres rares » dans le groupe « Le fonds de livres » | La demande initiale est explicite (« un nouvel onglet dans le portail admin »), et une section accessible au seul rôle `LivresRares` doit exister comme entrée de navigation pour que la vue restreinte ait du sens |
+| `AdminSidebar` ne contient pas d'entrée « Livres rares » ; `AdminFicheRare` s'affiche avec `active="catalogue"` et le fil d'Ariane « Catalogue · Livres rares · Fiche » | Le plan ajoute une **entrée dédiée** « Livres rares » dans le groupe « Le fonds de livres » | Tranché par l'association : « cette administration des livres rares se fasse bien dans un nouvel onglet dans la sidebar ». Une section accessible au seul rôle `LivresRares` a besoin de sa propre entrée de navigation pour que la vue restreinte ait du sens |
 | `AdminSidebar` montre encore « Inventaire & cartons » | Ignoré | L'onglet a été supprimé sur `main` par le PR #195 ; la maquette est antérieure |
-| Aucune maquette ne couvre la **gestion des fiches depuis la scanette** (l'onglet entre « Trier des livres » et « Caisse ») | Le plan la spécifie depuis la demande initiale, en reprenant les composants des maquettes admin et caisse | La demande est explicite ; `CaisseRare` ne couvre que la consommation d'une fiche, pas sa création |
+| `CaisseRare` (A12) montre un panier et un total | Caduque sur ce point | Voir `D4`. Remplacée par `CaisseAjoutRare` (S3) |
 
 ## 4. Questions ouvertes — à trancher avec l'association
 
 | # | Question | Ce qu'elle bloque | Défaut retenu si non tranchée |
 |---|---|---|---|
-| `Q1` | Les livres **ordinaires** ont-ils un prix par fiche, ou un prix unitaire par bourse ? | **Bloque le lot 6** (caisse et recette). Change le modèle de données. | Prix unitaire par bourse dans `AssociationSettings` (cf. `D4`) |
+| ~~`Q1`~~ | ~~Les livres ordinaires ont-ils un prix ?~~ | — | **Tranchée : non.** L'application ne compte aucun argent (`D4`) |
 | `Q2` | « Poser une question » sur une fiche publique — quel canal ? | Lot 5. Aucun backend de messagerie entrante n'existe. | `mailto:` vers l'adresse de contact de l'association, sans backend |
-| `Q3` | En caisse, « Livre rare hors catalogue » — crée-t-il une fiche, ou enregistre-t-il un montant saisi à la main ? | Lot 6. | Montant saisi à la main, tracé comme vente rare sans fiche, signalé à l'administration après la bourse |
+| ~~`Q3`~~ | ~~« Livre rare hors catalogue » en caisse~~ | — | **Sans objet.** Aucun montant n'est saisi en caisse. Un rare sans fiche sort comme un livre ordinaire, et l'administration est prévenue après la bourse |
 | `Q4` | Le « rayon d'affichage » (Éditions anciennes, Illustrés, Beaux-arts, Régionalisme) est-il une liste fermée ou libre ? | Lot 1 (modèle). | Liste fermée, éditable dans les paramètres d'association |
 | `Q5` | La gestion depuis la scanette est-elle vraiment nécessaire en v1, ou le portail admin sur mobile suffit-il ? | Lot 7 entier — c'est le lot le plus coûteux (hors-ligne, photos, file d'attente). | Nécessaire : c'est le geste du bénévole au tri, debout, sans ordinateur |
 
-`Q1` est la seule qui empêche de démarrer une partie du travail. Les lots 1 à 5 sont
-exécutables sans qu'aucune de ces questions ne soit tranchée.
+Plus aucune question ne bloque un lot. `Q2` et `Q4` ont des défauts raisonnables ; `Q5`
+est une question de priorité, pas de conception.
 
 ## 5. Hors périmètre
 
@@ -163,7 +175,10 @@ exécutables sans qu'aucune de ces questions ne soit tranchée.
   reportée. Le prix est saisi par un humain.
 - **La réservation en ligne.** Les maquettes le disent trois fois : « Aucune
   réservation : le livre part au premier qui se présente en caisse. »
-- **Le paiement en ligne.** La caisse totalise un montant ; elle n'encaisse rien.
+- **Tout ce qui compte de l'argent** : panier, total à encaisser, recette calculée,
+  prix des livres ordinaires, statistiques financières dérivées des ventes. Voir `D4`
+  et `D5`.
+- **Le paiement en ligne.**
 - **`src/BackOffice`.** C'est une application Angular distincte, sans surface livres
   rares. Ne pas y toucher.
 - **`src/MauiCashApp`.** N'est pas référencée par `Vole_Papillon_Damour.slnx`.

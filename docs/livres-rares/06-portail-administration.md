@@ -56,17 +56,17 @@ disponibilité, nombre de photos, dernier bénévole ayant modifié.
 **Le filtre « sans photo » n'est pas un filtre de confort** : une fiche publiée sans
 photo est une vitrine vide. Le compter dans l'en-tête de section.
 
-### File de migration
+### Pas de file de migration
 
-Encart en haut de la liste, au ton explicitement transitoire, alimenté par
-`GetRareBookMigrationQueueQuery` :
+Une version antérieure de ce plan prévoyait un encart de reprise des anciens marquages.
+Il est **supprimé** : `D2` tranche que les marquages existants disparaissent sans être
+convertis ([`02 §6`](02-modele-de-donnees.md)). Il n'y a rien à rattraper dans
+l'interface.
 
-> *N* livres étaient marqués rares sous l'ancien système et n'ont pas encore de fiche
-> complète. Tant qu'ils n'en ont pas, ils n'apparaissent plus dans la section publique.
-
-Chaque ligne : « Compléter la fiche » (ouvre le formulaire prérempli) et « Ce livre
-n'est finalement pas rare » (supprime la fiche brouillon). **L'encart disparaît quand la
-file est vide** — il ne doit pas devenir un meuble.
+En revanche, la file de travail qui compte est celle des **brouillons** : les fiches
+saisies depuis la scanette attendent une relecture avant publication. L'encart en haut
+de la liste les annonce (« 4 fiches en brouillon attendent une relecture ») et disparaît
+quand il n'y en a plus.
 
 ## 4. Fiche d'édition
 

@@ -10,8 +10,11 @@ lui-même et renvoie aux fichiers réels du dépôt, jamais à une conversation.
   d'administration et dans l'application de scan, avec prix, photos multiples, saisie
   possible sans ISBN, et un nouveau rôle bénévole.
 - **Maquettes** : projet Claude Design « Catalogue Livres »
-  (`e18d5045-653e-4cc5-b2c0-f29ab5ba1bd2`), artboards `LivresRares`,
-  `LivresRaresMobile`, `FicheRare`, `AdminFicheRare`, `CaisseRare`.
+  (`e18d5045-653e-4cc5-b2c0-f29ab5ba1bd2`).
+  - Page *Site public* : `LivresRares`, `FicheRare`, `LivresRaresMobile`.
+  - Page *Administration* : `AdminFicheRare`, `CaisseRare` — cette dernière est
+    **caduque sur le panier et le total**, voir `01 §2 D4`.
+  - Page *Scanette* : `ScanLivresRares`, `ScanSaisieRare`, `CaisseAjoutRare`.
 - **Base de code** : `origin/main` à `62a0b4e`
   (*refactor(catalog-admin): remove inventory workspace (#195)*). L'onglet Inventaire
   n'existe plus ; le plan en tient compte.
@@ -31,10 +34,11 @@ lui-même et renvoie aux fichiers réels du dépôt, jamais à une conversation.
 
 ## Comment l'exécuter
 
-1. Lire `01` en entier. Il contient des décisions qui **renversent des règles métier
-   écrites** (`RG-50`, `RG-51`) : ne pas commencer sans les avoir comprises.
-2. Trancher les questions ouvertes de `01` §4 avec l'association. La question `Q1`
-   (prix des livres ordinaires) change le modèle de données : elle bloque le lot 6.
+1. Lire `01` en entier. Il contient une décision qui **amende une règle métier écrite**
+   (`RG-50`) : ne pas commencer sans l'avoir comprise. La règle voisine `RG-51`, elle,
+   est explicitement **inchangée** — l'application ne compte aucun argent.
+2. Les questions ouvertes de `01` §4 ne bloquent plus aucun lot. `Q2` et `Q4` ont des
+   défauts raisonnables ; les trancher quand le lot concerné arrive.
 3. Suivre `08`. Les lots sont ordonnés par dépendance, pas par surface.
 4. Chaque lot suit le cycle TDD du dépôt
    (`.github/skills/tdd-workflow/SKILL.md`) et le workflow de livraison
