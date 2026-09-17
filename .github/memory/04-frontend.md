@@ -401,6 +401,12 @@ heatmap, impact, genres, fair sales, recent sessions and explicit estimated-valu
 The Scan view supports a Tri/Caisse role switch when both roles are present. Connected
 account smoke and post-deploy responsive checks remain required.
 
+As of 2026-09-17, `ScanWorkflowService.initialize()` requests persistent storage without
+opening a scan session. `setSessionMode()` is the session-start boundary; it also
+re-anchors a local-only empty session left by the older bootstrap behavior, while never
+rewriting a remote or already-scanned session. This keeps the session summary from
+including time spent before the volunteer chose a mode.
+
 The 2026-09-12 Scan follow-up presents the authenticated home secondary actions as two
 paired cards: a blue chart icon opens `/statistiques`, and an orange account-switch icon
 starts the existing logout flow. The statistics route now owns a fixed viewport-height

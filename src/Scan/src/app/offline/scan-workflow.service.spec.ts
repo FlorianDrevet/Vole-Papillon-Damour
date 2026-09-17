@@ -37,6 +37,44 @@ describe('ScanWorkflowService', () => {
     expect(await store.getSession()).toBeNull();
   });
 
+  it('does not create a local session while initializing the scanner', async () => {
+    const status = {available: true, persisted: true, requestAttempted: true};
+    spyOn(store, 'requestPersistentStorage').and.resolveTo(status);
+
+    expect(await service.initialize()).toEqual(status);
+    expect(await store.getSession()).toBeNull();
+  });
+
+  it('restarts a legacy empty session when the volunteer chooses its mode', async () => {
+    const legacyTimestamp = '2026-09-01T08:00:00.000Z';
+    await store.saveSession({
+      key: 'active-session',
+      clientSessionId: 'legacy-session',
+      remoteSessionId: null,
+      volunteerId: null,
+      mode: 'AvailableNow',
+      targetAssoEventsId: null,
+      startedAt: legacyTimestamp,
+      lastScanAt: legacyTimestamp,
+      lastSyncAt: legacyTimestamp,
+      closeRequested: false,
+      closeReason: null,
+    });
+
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-17T10:00:00.000Z'));
+    try {
+      const session = await service.setSessionMode('NextFair');
+
+      expect(session.mode).toBe('NextFair');
+      expect(session.startedAt).toBe('2026-09-17T10:00:00.000Z');
+      expect(session.lastScanAt).toBe('2026-09-17T10:00:00.000Z');
+      expect(session.lastSyncAt).toBe('2026-09-17T10:00:00.000Z');
+    } finally {
+      jasmine.clock().uninstall();
+    }
+  });
+
   it('creates a durable pending gesture with an immediate local verdict', async () => {
     await store.saveSettings(createSettings(2, 10));
     await store.putCatalogBooks([createBook({qtyAvailable: 1})]);

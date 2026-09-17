@@ -209,6 +209,35 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
         result.Value.Cash.EstimatedCadencePerHour.Should().BeNull();
     }
 
+    [Fact]
+    public async Task Handle_ignores_personal_sessions_without_scans_in_scan_statistics()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var emptySession = await fixture.AddSessionAsync(
+            ScanMode.AvailableNow,
+            volunteerId: VolunteerId,
+            startedAt: SessionStartedAt);
+        emptySession.Close(ScanCloseReason.Manual, SessionStartedAt.AddHours(3));
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetVolunteerStatisticsQueryHandler(
+            fixture.Context,
+            clock,
+            fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new GetVolunteerStatisticsQuery(VolunteerId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Scan.ScannedCount.Should().Be(0);
+        result.Value.Scan.SessionCount.Should().Be(0);
+        result.Value.Scan.DurationMinutes.Should().Be(0);
+        result.Value.Scan.RecentSessions.Should().BeEmpty();
+    }
+
     private static BookMovement AddMovement(
         Book book,
         BookMovementType type,
