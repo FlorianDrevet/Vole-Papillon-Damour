@@ -43,6 +43,11 @@ param entraGraphClientSecret string
 @minLength(1)
 param acsEmailWebhookSecret string
 
+@description('Signing key for the one-click unsubscribe tokens carried by book alert emails')
+@secure()
+@minLength(1)
+param bookAlertsUnsubscribeSigningKey string
+
 @description('Optional API key for the Google Books volumes API')
 @secure()
 param googleBooksApiKey string
@@ -56,6 +61,7 @@ var storageSecretName = 'storage-connectionstring'
 var jwtSecretName = 'jwt-secret'
 var entraGraphClientSecretName = 'entra-graph-client-secret'
 var acsEmailWebhookSecretName = 'email-bounce-webhook-secret'
+var bookAlertsUnsubscribeSigningKeySecretName = 'book-alerts-unsubscribe-signing-key'
 var googleBooksApiKeySecretName = 'google-books-api-key'
 var instagramAccessTokenSecretName = 'instagram-access-token'
 
@@ -107,6 +113,14 @@ resource acsEmailWebhookSecretResource 'Microsoft.KeyVault/vaults/secrets@2023-0
   }
 }
 
+resource bookAlertsUnsubscribeSigningKeyResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: bookAlertsUnsubscribeSigningKeySecretName
+  properties: {
+    value: bookAlertsUnsubscribeSigningKey
+  }
+}
+
 resource googleBooksApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(googleBooksApiKey)) {
   parent: keyVault
   name: googleBooksApiKeySecretName
@@ -130,6 +144,7 @@ output secretUris object = {
   '${jwtSecretName}': '${keyVault.properties.vaultUri}secrets/${jwtSecretName}'
   '${entraGraphClientSecretName}': '${keyVault.properties.vaultUri}secrets/${entraGraphClientSecretName}'
   '${acsEmailWebhookSecretName}': '${keyVault.properties.vaultUri}secrets/${acsEmailWebhookSecretName}'
+  '${bookAlertsUnsubscribeSigningKeySecretName}': '${keyVault.properties.vaultUri}secrets/${bookAlertsUnsubscribeSigningKeySecretName}'
   '${googleBooksApiKeySecretName}': '${keyVault.properties.vaultUri}secrets/${googleBooksApiKeySecretName}'
   '${instagramAccessTokenSecretName}': '${keyVault.properties.vaultUri}secrets/${instagramAccessTokenSecretName}'
 }

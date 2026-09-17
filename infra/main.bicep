@@ -191,6 +191,11 @@ param communicationEmailWebhookHeaderName string = 'X-Vpd-EventGrid-Secret'
 @secure()
 param acsEmailWebhookSecret string
 
+@description('Signing key for the one-click unsubscribe tokens carried by book alert emails')
+@secure()
+@minLength(1)
+param bookAlertsUnsubscribeSigningKey string
+
 @description('Association name shown in book-alert emails')
 param bookAlertsEmailAssociationName string = 'Vole Papillon d\'Amour'
 
@@ -314,6 +319,7 @@ var scanManagedCertificateIndex = !empty(catalogCustomDomain) && !empty(catalogC
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 var communicationServiceEndpoint = 'https://${communicationServiceName}.communication.azure.com'
 var bookAlertsEmailFrom = 'DoNotReply@${communicationEmailSendingDomain}'
+var bookAlertsUnsubscribeEndpoint = 'https://${containerAppApiModule.outputs.containerAppFqdn}/integrations/email/unsubscribe'
 
 resource applicationResourceGroup 'Microsoft.Resources/resourceGroups@2024-07-01' = {
   name: BuildResourceGroupName('vpd', 'rg', env)
@@ -866,6 +872,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
     jwtSecret: jwtSecret
     entraGraphClientSecret: entraGraphClientSecret
     acsEmailWebhookSecret: acsEmailWebhookSecret
+    bookAlertsUnsubscribeSigningKey: bookAlertsUnsubscribeSigningKey
     googleBooksApiKey: googleBooksApiKey
     instagramAccessToken: instagramAccessToken
   }
@@ -1162,6 +1169,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         name: 'email-bounce-webhook-secret'
         keyVaultUrl: appSecretsModule.outputs.secretUris['email-bounce-webhook-secret']
       }
+      {
+        name: 'book-alerts-unsubscribe-signing-key'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['book-alerts-unsubscribe-signing-key']
+      }
     ], empty(googleBooksApiKey) ? [] : [{
       name: 'google-books-api-key'
       keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
@@ -1190,6 +1201,14 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'EmailBounceWebhook__SharedSecret'
         secretRef: 'email-bounce-webhook-secret'
+      }
+      {
+        name: 'BookAlerts__Unsubscribe__SigningKey'
+        secretRef: 'book-alerts-unsubscribe-signing-key'
+      }
+      {
+        name: 'BookAlerts__Unsubscribe__AccountUrl'
+        value: bookAlertsEmailUnsubscribeUrl
       }
       {
         name: 'JwtSettings__Issuer'
@@ -1482,6 +1501,10 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         name: 'entra-graph-client-secret'
         keyVaultUrl: appSecretsModule.outputs.secretUris['entra-graph-client-secret']
       }
+      {
+        name: 'book-alerts-unsubscribe-signing-key'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['book-alerts-unsubscribe-signing-key']
+      }
     ], empty(googleBooksApiKey) ? [] : [{
       name: 'google-books-api-key'
       keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
@@ -1609,6 +1632,14 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'BookAlerts__Email__ManagedIdentityClientId'
         value: userAssignedIdentityWorkerModule.outputs.clientId
+      }
+      {
+        name: 'BookAlerts__Unsubscribe__SigningKey'
+        secretRef: 'book-alerts-unsubscribe-signing-key'
+      }
+      {
+        name: 'BookAlerts__Unsubscribe__Endpoint'
+        value: bookAlertsUnsubscribeEndpoint
       }
       {
         name: 'BookAlerts__Email__AssociationName'
