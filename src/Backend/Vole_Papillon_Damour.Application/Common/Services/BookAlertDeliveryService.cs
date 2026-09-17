@@ -60,7 +60,8 @@ public sealed class BookAlertDeliveryService(
                     workItem.ClaimedUntil,
                     deliveryNow,
                     cancellationToken);
-                if (delivery is null || delivery.Items.Count == 0)
+                if (delivery is null ||
+                    (delivery.Items.Count == 0 && (delivery.RareItems?.Count ?? 0) == 0))
                 {
                     cancelledCount += await outbox.CancelAsync(
                         workItem.MessageId,
@@ -72,12 +73,21 @@ public sealed class BookAlertDeliveryService(
                 await emailSender.SendAsync(delivery, cancellationToken);
                 var sentAt = dateTimeProvider.UtcNow;
                 EnsureUtc(sentAt);
-                if (!await outbox.MarkSentAsync(
+                var markedSent = (delivery.RareItems?.Count ?? 0) == 0
+                    ? await outbox.MarkSentAsync(
                         workItem.MessageId,
                         workItem.ClaimedUntil,
                         sentAt,
                         delivery.Items.Select(item => item.Isbn13).ToArray(),
-                        cancellationToken))
+                        cancellationToken)
+                    : await outbox.MarkSentAsync(
+                        workItem.MessageId,
+                        workItem.ClaimedUntil,
+                        sentAt,
+                        delivery.Items.Select(item => item.Isbn13).ToArray(),
+                        delivery.RareItems!.Select(item => item.RareBookId).ToArray(),
+                        cancellationToken);
+                if (!markedSent)
                 {
                     logger?.LogWarning(
                         "Book alert email was accepted but its outbox lease was lost before acknowledgement. " +

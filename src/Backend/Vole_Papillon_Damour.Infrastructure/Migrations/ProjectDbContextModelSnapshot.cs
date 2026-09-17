@@ -625,6 +625,21 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("RareBookPhotos", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookTombstone", b =>
+                {
+                    b.Property<Guid>("RareBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RareBookId");
+
+                    b.HasIndex("DeletedAt");
+
+                    b.ToTable("RareBookTombstones", (string)null);
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", b =>
                 {
                     b.Property<Guid>("Id")
@@ -637,6 +652,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<string>("Binding")
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
+
+                    b.Property<Guid?>("ClientGestureId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<byte>("Condition")
                         .HasColumnType("tinyint");
@@ -728,6 +746,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClientGestureId")
+                        .IsUnique()
+                        .HasFilter("[ClientGestureId] IS NOT NULL");
 
                     b.HasIndex("CreatedBy");
 
@@ -889,11 +911,13 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Isbn13")
-                        .IsRequired()
                         .IsUnicode(false)
                         .HasColumnType("char(13)");
 
                     b.Property<Guid?>("OutboxMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RareBookId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("SentAt")
@@ -907,6 +931,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasIndex("OutboxMessageId");
 
                     b.HasIndex("UserId", "Isbn13", "SentAt");
+
+                    b.HasIndex("UserId", "RareBookId", "SentAt");
 
                     b.ToTable("UserAlertHistory", (string)null);
                 });
@@ -966,6 +992,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid?>("RareBookId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<byte>("Scope")
                         .HasColumnType("tinyint");
 
@@ -985,6 +1014,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasIndex("Isbn13");
 
+                    b.HasIndex("RareBookId");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("WorkId");
@@ -993,13 +1024,17 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[Isbn13] IS NOT NULL");
 
+                    b.HasIndex("UserId", "RareBookId")
+                        .IsUnique()
+                        .HasFilter("[RareBookId] IS NOT NULL");
+
                     b.HasIndex("UserId", "WorkId")
                         .IsUnique()
                         .HasFilter("[WorkId] IS NOT NULL");
 
                     b.ToTable("WatchlistItems", null, t =>
                         {
-                            t.HasCheckConstraint("CK_WatchlistItems_ExactlyOneTarget", "(([Scope] = 0 AND [WorkId] IS NOT NULL AND [Isbn13] IS NULL) OR ([Scope] = 1 AND [WorkId] IS NULL AND [Isbn13] IS NOT NULL))");
+                            t.HasCheckConstraint("CK_WatchlistItems_ExactlyOneTarget", "(([Scope] = 0 AND [WorkId] IS NOT NULL AND [Isbn13] IS NULL AND [RareBookId] IS NULL) OR ([Scope] = 1 AND [WorkId] IS NULL AND [Isbn13] IS NOT NULL AND [RareBookId] IS NULL) OR ([Scope] = 2 AND [WorkId] IS NULL AND [Isbn13] IS NULL AND [RareBookId] IS NOT NULL))");
                         });
                 });
 
@@ -1036,6 +1071,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("RareBookId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("ScanSessionId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1048,6 +1086,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDefaultValue((byte)0);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RareBookId");
 
                     b.HasIndex("ScanSessionId");
 
@@ -1419,6 +1459,11 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.WatchlistAggregate.WatchlistItem", b =>
                 {
+                    b.HasOne("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", null)
+                        .WithMany()
+                        .HasForeignKey("RareBookId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Vole_Papillon_Damour.Domain.WatchlistAggregate.Watchlist", null)
                         .WithMany()
                         .HasForeignKey("UserId")

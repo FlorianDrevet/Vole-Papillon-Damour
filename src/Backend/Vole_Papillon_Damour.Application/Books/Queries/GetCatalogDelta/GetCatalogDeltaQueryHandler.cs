@@ -91,10 +91,26 @@ public sealed class GetCatalogDeltaQueryHandler(
                 book.UpdatedAt))
             .ToArray();
 
-        var rareBooks = await GetRareBooksToProjectAsync(
+        var rareBookSelection = await GetRareBooksToProjectAsync(
             since,
             generatedAt,
             cancellationToken);
+        var rareBooks = rareBookSelection.Books;
+        IReadOnlyList<Guid> removedRareBookIds = rareBookSelection.RemovedIds;
+        if (since is not null)
+        {
+            var tombstoneIds = await dbContext.RareBookTombstones
+                .AsNoTracking()
+                .Where(tombstone =>
+                    tombstone.DeletedAt > since.AsOf &&
+                    tombstone.DeletedAt <= generatedAt)
+                .Select(tombstone => tombstone.RareBookId)
+                .ToArrayAsync(cancellationToken);
+            removedRareBookIds = rareBookSelection.RemovedIds
+                .Concat(tombstoneIds)
+                .Distinct()
+                .ToArray();
+        }
         // The rare-book delta contains changed fiches and tombstones only. The
         // ordinary projection still needs the current membership for every book
         // returned in this response, otherwise an unchanged rare fiche would
@@ -102,6 +118,7 @@ public sealed class GetCatalogDeltaQueryHandler(
         var currentRareIsbns = await dbContext.RareBooks
             .AsNoTracking()
             .PublishedAvailable()
+            .Where(book => book.Isbn13 != null)
             .Select(book => book.Isbn13!.Value.Value)
             .ToHashSetAsync(cancellationToken);
         books = books
@@ -113,6 +130,7 @@ public sealed class GetCatalogDeltaQueryHandler(
             SerializeWatermark(selectedBooks.RowVersion, generatedAt),
             books,
             rareBooks,
+            removedRareBookIds,
             AssociationSettingsResult.From(settings),
             nextFair is null
                 ? null
@@ -125,7 +143,7 @@ public sealed class GetCatalogDeltaQueryHandler(
                     BookFairSchedule.GetClosingInstant(nextFair)));
     }
 
-    private async Task<IReadOnlyList<ScanCatalogRareBookResult>> GetRareBooksToProjectAsync(
+    private async Task<RareBookDeltaSelection> GetRareBooksToProjectAsync(
         CatalogWatermark? since,
         DateTime generatedAt,
         CancellationToken cancellationToken)
@@ -134,7 +152,6 @@ public sealed class GetCatalogDeltaQueryHandler(
             .AsNoTracking()
             .Include(book => book.Photos)
             .Where(book =>
-                book.Isbn13 != null &&
                 book.UpdatedAt <= generatedAt);
         if (since is null)
         {
@@ -151,10 +168,11 @@ public sealed class GetCatalogDeltaQueryHandler(
             .ThenBy(book => book.Id)
             .ToListAsync(cancellationToken);
 
-        return rareBooks
+        var publishedBooks = rareBooks
+            .Where(book => book.Status == RareBookStatus.Published)
             .Select(book => new ScanCatalogRareBookResult(
                 book.Id.Value,
-                book.Isbn13!.Value.Value,
+                book.Isbn13 == null ? null : book.Isbn13.Value.Value,
                 book.Title,
                 book.AuthorMention,
                 book.Price,
@@ -168,6 +186,13 @@ public sealed class GetCatalogDeltaQueryHandler(
                 book.Status == RareBookStatus.Published && !book.IsSold,
                 book.UpdatedAt))
             .ToArray();
+
+        var unpublishedIds = rareBooks
+            .Where(book => book.Status != RareBookStatus.Published)
+            .Select(book => book.Id.Value)
+            .ToArray();
+
+        return new RareBookDeltaSelection(publishedBooks, unpublishedIds);
     }
 
     private async Task<CatalogBookSelection> GetBooksToProjectAsync(
@@ -453,6 +478,10 @@ public sealed class GetCatalogDeltaQueryHandler(
     private sealed record CatalogBookSelection(
         IReadOnlyList<CatalogBookRow> Books,
         byte[] RowVersion);
+
+    private sealed record RareBookDeltaSelection(
+        IReadOnlyList<ScanCatalogRareBookResult> Books,
+        IReadOnlyList<Guid> RemovedIds);
 
     private sealed record CatalogBookRow(
         Isbn13 Isbn13,

@@ -4,6 +4,9 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Queries.GetMyWatchlist;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 
@@ -52,6 +55,59 @@ public sealed class GetMyWatchlistQueryHandlerTests
         item.Book.Should().NotBeNull();
         item.Book!.Isbn13.Should().Be(book.Isbn13.Value);
         item.Book.Title.Should().Be("Le livre de test");
+        item.LastAlertAt.Should().Be(WatchlistFeatureTestFixture.Now.AddHours(-1));
+    }
+
+    [Fact]
+    public async Task Handle_ReturnsTheFollowedRareBookAndItsLastDisappearanceAlert()
+    {
+        await using var fixture = await WatchlistFeatureTestFixture.CreateAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(WatchlistFeatureTestFixture.Now);
+        var identity = new MemberIdentityService(fixture.Context, clock);
+        var rareBook = RareBook.Create(
+            "Atlas ancien",
+            45m,
+            WatchlistFeatureTestFixture.Now.AddDays(-1),
+            UserId.Create(MemberId),
+            authorMention: "Auteur",
+            shelf: RareBookShelf.AncientEditions,
+            condition: RareBookCondition.AsNew);
+        rareBook.Publish(UserId.Create(MemberId), WatchlistFeatureTestFixture.Now.AddHours(-12));
+        fixture.Context.RareBooks.Add(rareBook);
+        await fixture.Context.SaveChangesAsync();
+
+        var added = await new AddWatchlistItemCommandHandler(fixture.Context, identity, clock)
+            .Handle(
+                new AddWatchlistItemCommand(
+                    MemberId,
+                    "member@example.test",
+                    WatchlistItemScope.RareBook,
+                    null,
+                    null,
+                    RareBookId: rareBook.Id.Value),
+                CancellationToken.None);
+        fixture.Context.UserAlertHistories.Add(
+            UserAlertHistory.CreateForRareBook(
+                Guid.NewGuid(),
+                UserId.Create(MemberId),
+                rareBook.Id,
+                WatchlistFeatureTestFixture.Now.AddHours(-1)));
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await new GetMyWatchlistQueryHandler(fixture.Context, identity, clock)
+            .Handle(
+                new GetMyWatchlistQuery(MemberId, "member@example.test"),
+                CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        var item = result.Value.Items.Single();
+        item.Id.Should().Be(added.Value.Id);
+        item.RareBookId.Should().Be(rareBook.Id.Value);
+        item.Book.Should().BeNull();
+        item.RareBook.Should().NotBeNull();
+        item.RareBook!.Title.Should().Be("Atlas ancien");
+        item.RareBook.Price.Should().Be(45m);
         item.LastAlertAt.Should().Be(WatchlistFeatureTestFixture.Now.AddHours(-1));
     }
 

@@ -17,10 +17,10 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lot 6, retrait du marquage historique, sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
-| **Prochaine action** | Terminer la revue de la PR #203 puis préparer le lot 7, la gestion Livres rares hors ligne dans la Scanette. Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) est appliqué. |
+| **Lot en cours** | Livres rares — lots 0 à 10 implémentés sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), en revue finale avant livraison. |
+| **Prochaine action** | Faire relire puis valider la PR #203 ; appliquer les migrations et l'export DBA des anciens ISBN rares sur un environnement autorisé avant le déploiement. Q2 (`mailto:`) et Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) sont appliqués. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
-| **Dernière mise à jour** | 2026-09-16 — le lot 5 ajoute le portail Catalog des fiches rares, sa galerie photo, ses filtres et son éditeur, avec une navigation limitée au rôle `LivresRares` ; le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
+| **Dernière mise à jour** | 2026-09-17 — les lots 0 à 10 sont implémentés ; la validation finale couvre 545 tests backend, 313 Catalog, 241 Scan, 6 bootstrap Scan, 5 bootstrap BackOffice, les tests Angular BackOffice et les trois builds Angular. Le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
@@ -162,6 +162,75 @@ passés. `graphify update .` ré-extrait l'AST, mais la visualisation HTML reste
 limite actuelle du graphe. Aucun déploiement ni contrôle responsive authentifié n'a été effectué.
 La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) reste ouverte
 vers `main` et n'est pas fusionnée.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 7
+
+La Scanette reconnaît le rôle `LivresRares`, affiche une tuile dédiée et protège les
+routes `/livres-rares`, `/livres-rares/nouveau` et `/livres-rares/:id`. Le parcours couvre
+la recherche ISBN, la saisie sans ISBN, la proposition de notice BnF/Open Library, la
+création d'une fiche en brouillon, puis les trois écrans d'identification, description/prix
+et photos. Les fiches et la file photo sont persistées dans IndexedDB ; les photos restent
+des `Blob` JPEG compressés, jamais du base64. Le quota est contrôlé avant chaque ajout et
+la reprise en ligne crée la fiche une seule fois grâce à `ClientGestureId`, puis envoie les
+photos séquentiellement avec reprise bornée ; le navigateur réencode en JPEG quand il le
+permet, sinon le PNG/WebP source est conservé comme Blob. Le prix ferme est affiché pour lecture et
+aucun total n'est calculé.
+
+Validation locale : tests rouges puis verts sur le service hors ligne, la synchronisation,
+le formulaire et le routage Scanette ; la compatibilité du delta conserve les fiches rares
+publiées et disponibles, et les suppressions rares sont transmises par tombstones. Aucun
+compte Entra, appareil réel, quota navigateur réel ou appel API authentifié n'a été contrôlé
+manuellement. Q4 reste le défaut des quatre rayons fermés ;
+la gestion Scanette ne modifie pas les livres ordinaires.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 8
+
+Le Catalog public expose `/livres-rares` et `/livres-rares/:slug` avec une liste filtrable
+par rayon, triable par prix ou arrivée, une carte dédiée et une fiche galerie. Les livres
+rares ne sont pas mélangés aux cartes ordinaires ; la fiche affiche le prix ferme comme
+information à lire, sans panier, paiement ni total. L'accueil, l'en-tête, le pied de page,
+les routes SSR et le sitemap dynamique renvoient vers la section dédiée. Q2 est appliqué
+avec le contact par défaut `mailto:volepapillondamour@sfr.fr`.
+
+Validation locale : tests rouges puis verts des contrats API, routes, recherche rare, lien
+ISBN vers la fiche rare, liste, fiche et accueil Catalog ; les builds SSR/navigateur et le
+test de sitemap backend passent. Aucun contrôle responsive authentifié, appel API public
+déployé ou vérification Search Console n'a encore été effectué. La migration de retrait de
+`Books.IsRare` reste bloquée au déploiement jusqu'à l'export DBA réel documenté dans la note
+de la PR.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 9
+
+La liste de suivi accepte désormais une cible `RareBook` distincte de l'œuvre et de
+l'édition. Le compte membre et la vue d'administration affichent cette cible, son prix
+ferme de lecture et son historique sans la transformer en article de panier. Une sortie
+d'un rare publié crée une alerte dédiée dans l'outbox pour chaque suiveur ; le worker
+réutilise le pipeline d'e-mails existant, enregistre l'historique une seule fois et
+respecte le délai de refroidissement. Une restauration annule les alertes encore en
+attente.
+
+Validation locale : tests rouges puis verts sur le domaine, les handlers, les projections
+de compte/admin, l'outbox, le contenu d'e-mail, les routes et l'autorisation. Aucun
+envoi réel ni déploiement n'a été effectué. La migration `Books.IsRare` reste bloquée au
+déploiement jusqu'à l'export DBA réel documenté dans la note de la PR.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 10
+
+Le mode Caisse de la Scanette ajoute le bouton violet « Ajouter un livre rare », la
+recherche locale par titre/auteur/ISBN, la ligne rare avec vignette et prix ferme à lire,
+et la détection d'un rare par scan ISBN. La validation conserve les gestes rares dans
+un magasin IndexedDB séparé, sans prix ni quantité, marque localement l'exemplaire vendu,
+puis rejoue `MarkRareBookSold` de façon sûre et séquentielle. La correction dans les
+30 secondes restaure localement ou appelle la route dédiée ; le serveur révoque alors
+l'alerte non envoyée. Le total et le panier n'existent toujours pas, et `RG-51` reste
+inchangée.
+
+Validation locale : 238 tests Scan ChromeHeadless, 6 tests de bootstrap Scan, 5 tests de
+bootstrap BackOffice, les builds Scan/Catalog/BackOffice et les scénarios Caisse rare passent.
+Les ventes rares n'envoient ni prix ni quantité ; une annulation locale conserve un marqueur
+pour rejouer la restauration si le serveur a déjà traité la vente. Le contrôle sur appareil
+réel, la migration runtime et le déploiement restent à faire. L'export DBA réel des anciens
+ISBN rares reste le prérequis bloquant avant application de la migration.
 
 ---
 

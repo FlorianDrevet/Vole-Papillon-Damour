@@ -183,6 +183,7 @@ describe('CatalogAdministrationPageComponent', () => {
       scope: 'Edition',
       workId: null,
       isbn13: '9782070363735',
+      rareBookId: null,
       title: 'Le Petit Prince',
       authors: 'Antoine de Saint-Exupéry',
       quantityAvailable: 3,
@@ -1728,6 +1729,54 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(dialog?.textContent).toContain('Membre Test');
     expect(dialog?.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).not.toContain('Consulter la liste de recherche d’un membre sert au support');
+  });
+
+  it('labels rare watchlist targets and rare alert history explicitly in the member sheet', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const detail = memberDetail();
+    detail.watchlist = [{
+      id: 'rare-watchlist-item',
+      scope: 'RareBook',
+      workId: null,
+      isbn13: null,
+      title: null,
+      authors: null,
+      quantityAvailable: 1,
+      quantityAnnounced: 0,
+      addedAt: '2026-09-17T09:00:00Z',
+      lastAlertAt: null,
+      rareBookId: 'rare-1',
+    }];
+    detail.alerts = [{
+      id: 'rare-alert',
+      isbn13: null,
+      title: null,
+      sentAt: '2026-09-17T10:00:00Z',
+      outboxMessageId: null,
+      rareBookId: 'rare-1',
+    }] as unknown as typeof detail.alerts;
+    api.getMembers.and.returnValue(of({
+      generatedAt: '',
+      members: [detail.member],
+      totalCount: 1,
+      page: 1,
+      pageSize: 25,
+    } as CatalogAdminMemberPage));
+    api.getMember.and.returnValue(of(detail));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    await fixture.componentInstance.selectAccountsTab('members');
+    fixture.detectChanges();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-testid="member-detail-member-id"]')?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const dialog = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-testid="member-detail-modal"]');
+    expect(dialog?.textContent).toContain('Livre rare suivi');
+    expect(dialog?.textContent).toContain('Alerte livre rare');
   });
 
   it('deletes the member identity through the admin endpoint after modal confirmation', async () => {

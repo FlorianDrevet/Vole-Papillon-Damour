@@ -12,6 +12,8 @@ using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
@@ -236,6 +238,110 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         return messages.Count;
     }
 
+    public async Task QueueRareBookSoldAsync(
+        RareBookId rareBookId,
+        DateTime soldAt,
+        CancellationToken cancellationToken)
+    {
+        ValidateRareBookId(rareBookId);
+        ValidateUtc(soldAt, nameof(soldAt));
+
+        var rareBook = await dbContext.RareBooks
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                book => book.Id == rareBookId &&
+                        book.Status == RareBookStatus.Published &&
+                        book.IsSold,
+                cancellationToken);
+        if (rareBook is null)
+        {
+            return;
+        }
+
+        var settings = await dbContext.AssociationSettings
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                candidate => candidate.Id == AssociationSettings.SingletonId,
+                cancellationToken);
+        var cooldownDays = settings?.AlertCooldownDays ?? 30;
+        var activeMemberIds = await dbContext.Watchlists
+            .AsNoTracking()
+            .Where(watchlist => watchlist.AlertStatus == WatchlistAlertStatus.Active)
+            .Select(watchlist => watchlist.Id)
+            .ToListAsync(cancellationToken);
+        if (activeMemberIds.Count == 0)
+        {
+            return;
+        }
+
+        var followers = await dbContext.WatchlistItems
+            .AsNoTracking()
+            .Where(item => activeMemberIds.Contains(item.UserId) &&
+                           item.Scope == WatchlistItemScope.RareBook &&
+                           item.RareBookId == rareBookId)
+            .Select(item => item.UserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        if (followers.Count == 0)
+        {
+            return;
+        }
+
+        var cooldownStart = soldAt.AddDays(-cooldownDays);
+        var recentlyAlerted = (await dbContext.UserAlertHistories
+                .AsNoTracking()
+                .Where(history => followers.Contains(history.UserId) &&
+                                  history.SentAt >= cooldownStart &&
+                                  history.SentAt <= soldAt)
+                .ToListAsync(cancellationToken))
+            .Where(history => history.RareBookId?.Value == rareBookId.Value)
+            .Select(history => history.UserId)
+            .ToHashSet();
+
+        foreach (var memberId in followers.Where(memberId => !recentlyAlerted.Contains(memberId)))
+        {
+            dbContext.OutboxMessages.Add(new OutboxMessage
+            {
+                Id = Guid.NewGuid(),
+                Kind = OutboxMessageKind.AlertEmail,
+                PayloadJson = JsonSerializer.Serialize(
+                    new AlertEmailPayload(
+                        [],
+                        [new RareAlertItemPayload(
+                            rareBook.Id.Value,
+                            rareBook.Title,
+                            rareBook.AuthorMention,
+                            rareBook.Slug.Value)]),
+                    PayloadSerializerOptions),
+                DueAt = soldAt,
+                Status = OutboxMessageStatus.Pending,
+                Attempts = 0,
+                MemberId = memberId.Value,
+                RareBookId = rareBook.Id.Value,
+                CreatedAt = soldAt
+            });
+        }
+    }
+
+    public async Task<int> CancelPendingForRareBookAsync(
+        RareBookId rareBookId,
+        CancellationToken cancellationToken)
+    {
+        ValidateRareBookId(rareBookId);
+        var messages = await dbContext.OutboxMessages
+            .Where(message => message.Kind == OutboxMessageKind.AlertEmail &&
+                              message.Status == OutboxMessageStatus.Pending &&
+                              message.RareBookId == rareBookId.Value)
+            .ToListAsync(cancellationToken);
+        foreach (var message in messages)
+        {
+            message.Status = OutboxMessageStatus.Cancelled;
+            message.ClaimedUntil = null;
+        }
+
+        return messages.Count;
+    }
+
     public async Task<IReadOnlyList<BookAlertOutboxWorkItem>> ClaimDueAsync(
         DateTime now,
         TimeSpan lease,
@@ -396,6 +502,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         }
 
         var payloadItems = payload.Items ?? [];
+        var payloadRareItems = payload.RareItems ?? [];
         var payloadFairIds = payloadItems
             .Where(item => item.AssoEventsId is not null)
             .Select(item => item.AssoEventsId!.Value)
@@ -419,20 +526,26 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         var itemIsbns = payloadItems
             .Select(item => BookPersistenceConversions.ParseIsbn13(item.Isbn13))
             .ToArray();
+        var rareBookIds = payloadRareItems
+            .Select(item => item.RareBookId)
+            .ToHashSet();
         var settings = await dbContext.AssociationSettings
             .AsNoTracking()
             .SingleOrDefaultAsync(
                 candidate => candidate.Id == AssociationSettings.SingletonId,
                 cancellationToken);
         var cooldownDays = settings?.AlertCooldownDays ?? 30;
-        var recentHistory = await dbContext.UserAlertHistories
-            .AsNoTracking()
+        var recentHistory = (await dbContext.UserAlertHistories
+                .AsNoTracking()
+                .Where(history =>
+                    history.UserId == memberId &&
+                    history.SentAt >= now.AddDays(-cooldownDays) &&
+                    history.SentAt <= now)
+                .ToListAsync(cancellationToken))
             .Where(history =>
-                history.UserId == memberId &&
-                itemIsbns.Contains(history.Isbn13) &&
-                history.SentAt >= now.AddDays(-cooldownDays) &&
-                history.SentAt <= now)
-            .ToListAsync(cancellationToken);
+                (history.Isbn13 is not null && itemIsbns.Contains(history.Isbn13.Value)) ||
+                (history.RareBookId is not null && rareBookIds.Contains(history.RareBookId.Value)))
+            .ToArray();
 
         var eligibleItems = payloadItems
             .Where(item =>
@@ -446,7 +559,17 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             })
             .Select(ToApplicationItem)
             .ToArray();
-        if (eligibleItems.Length == 0)
+        var eligibleRareItems = payloadRareItems
+            .Where(item =>
+                watchlistItems.Any(watchlistItem =>
+                    watchlistItem.Scope == WatchlistItemScope.RareBook &&
+                    watchlistItem.RareBookId != null &&
+                    watchlistItem.RareBookId.Value == item.RareBookId) &&
+                recentHistory.All(history =>
+                    history.RareBookId == null || history.RareBookId.Value != item.RareBookId))
+            .Select(ToApplicationRareItem)
+            .ToArray();
+        if (eligibleItems.Length == 0 && eligibleRareItems.Length == 0)
         {
             return null;
         }
@@ -459,7 +582,8 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             memberId.Value,
             user.Email,
             string.IsNullOrWhiteSpace(recipientName) ? null : recipientName,
-            eligibleItems);
+            eligibleItems,
+            eligibleRareItems);
     }
 
     public async Task<int> CancelAsync(
@@ -496,10 +620,28 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         IReadOnlyCollection<Isbn13> itemIsbn13s,
         CancellationToken cancellationToken)
     {
+        return await MarkSentAsync(
+            messageId,
+            claimedUntil,
+            sentAt,
+            itemIsbn13s,
+            [],
+            cancellationToken);
+    }
+
+    public async Task<bool> MarkSentAsync(
+        Guid messageId,
+        DateTime claimedUntil,
+        DateTime sentAt,
+        IReadOnlyCollection<Isbn13> itemIsbn13s,
+        IReadOnlyCollection<Guid> rareBookIds,
+        CancellationToken cancellationToken)
+    {
         ValidateMessageId(messageId);
         ValidateUtc(claimedUntil, nameof(claimedUntil));
         ValidateUtc(sentAt, nameof(sentAt));
         ArgumentNullException.ThrowIfNull(itemIsbn13s);
+        ArgumentNullException.ThrowIfNull(rareBookIds);
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var message = await dbContext.OutboxMessages
@@ -543,6 +685,22 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                 Guid.NewGuid(),
                 memberId,
                 isbn13,
+                sentAt,
+                message.Id);
+            dbContext.UserAlertHistories.Add(history);
+            existingHistory.Add(history);
+        }
+        foreach (var rareBookId in rareBookIds.Where(id => id != Guid.Empty).Distinct())
+        {
+            if (existingHistory.Any(history => history.RareBookId?.Value == rareBookId))
+            {
+                continue;
+            }
+
+            var history = UserAlertHistory.CreateForRareBook(
+                Guid.NewGuid(),
+                memberId,
+                RareBookId.Create(rareBookId),
                 sentAt,
                 message.Id);
             dbContext.UserAlertHistories.Add(history);
@@ -821,7 +979,8 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         var itemCount = 0;
         try
         {
-            itemCount = DeserializePayload(message.PayloadJson).Items?.Count ?? 0;
+            var payload = DeserializePayload(message.PayloadJson);
+            itemCount = (payload.Items?.Count ?? 0) + (payload.RareItems?.Count ?? 0);
         }
         catch (JsonException)
         {
@@ -930,7 +1089,8 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             memberId,
             (payload.Items ?? []).Select(ToApplicationItem).ToArray(),
             attempts,
-            claimedUntil);
+            claimedUntil,
+            (payload.RareItems ?? []).Select(ToApplicationRareItem).ToArray());
     }
 
     private static AlertEmailPayload DeserializePayload(string payloadJson)
@@ -955,6 +1115,15 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             item.FairOpeningAt);
     }
 
+    private static RareBookAlertOutboxItem ToApplicationRareItem(RareAlertItemPayload item)
+    {
+        return new RareBookAlertOutboxItem(
+            item.RareBookId,
+            item.Title,
+            item.AuthorMention,
+            item.Slug);
+    }
+
     private static bool Matches(
         WatchlistItem item,
         AlertItemPayload candidate,
@@ -965,6 +1134,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             WatchlistItemScope.Edition => item.Isbn13 == isbn13,
             WatchlistItemScope.Work => item.WorkId is not null &&
                                         item.WorkId == candidate.WorkId,
+            WatchlistItemScope.RareBook => false,
             _ => false
         };
     }
@@ -994,6 +1164,14 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         }
     }
 
+    private static void ValidateRareBookId(RareBookId rareBookId)
+    {
+        if (rareBookId is null || rareBookId.Value == Guid.Empty)
+        {
+            throw new ArgumentException("A rare book identifier is required.", nameof(rareBookId));
+        }
+    }
+
     private static bool Matches(WatchlistItem item, AlertCandidate candidate)
     {
         return item.Scope switch
@@ -1001,6 +1179,7 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             WatchlistItemScope.Edition => item.Isbn13 == candidate.Isbn13,
             WatchlistItemScope.Work => item.WorkId is not null &&
                                         item.WorkId == candidate.WorkId,
+            WatchlistItemScope.RareBook => false,
             _ => false
         };
     }
@@ -1018,7 +1197,15 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects.AssoEventsId? AssoEventsId,
         DateTimeOffset? FairOpeningAt);
 
-    private sealed record AlertEmailPayload(IReadOnlyList<AlertItemPayload>? Items);
+    private sealed record AlertEmailPayload(
+        IReadOnlyList<AlertItemPayload>? Items,
+        IReadOnlyList<RareAlertItemPayload>? RareItems = null);
+
+    private sealed record RareAlertItemPayload(
+        Guid RareBookId,
+        string Title,
+        string? AuthorMention,
+        string Slug);
 
     private sealed record AlertItemPayload(
         string Isbn13,

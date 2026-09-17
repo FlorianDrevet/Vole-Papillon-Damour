@@ -5,12 +5,13 @@ public sealed record ScanCatalogDeltaResponse(
     string NextWatermark,
     IReadOnlyList<ScanCatalogBookResponse> Books,
     IReadOnlyList<ScanCatalogRareBookResponse> RareBooks,
+    IReadOnlyList<Guid> RemovedRareBookIds,
     ScanAssociationSettingsResponse Settings,
     ScanNextBookFairResponse? NextFair);
 
 public sealed record ScanCatalogRareBookResponse(
     Guid Id,
-    string Isbn13,
+    string? Isbn13,
     string Title,
     string? AuthorMention,
     decimal Price,

@@ -19,6 +19,8 @@ import {ScanConfirmationComponent} from './scan-confirmation.component';
 import {ScanPageComponent} from './scan-page.component';
 import {ScanShellComponent} from './scan-shell.component';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
+import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.component';
+import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
 import {scanRoutes} from './scan-routing';
 import {
   msalGuardConfig,
@@ -39,6 +41,8 @@ import {environment} from '../environments/environment';
     ScanPageComponent,
     ScanShellComponent,
     ScanStatisticsComponent,
+    ScanRareBookFormComponent,
+    ScanRareBookListComponent,
   ],
   imports: [
     BrowserModule,

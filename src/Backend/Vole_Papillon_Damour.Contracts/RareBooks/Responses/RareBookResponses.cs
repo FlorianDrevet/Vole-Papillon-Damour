@@ -78,7 +78,11 @@ public sealed record PublicRareBookPageResponse(
     int TotalCount,
     int Page,
     int PageSize,
-    IReadOnlyList<string> Shelves);
+    IReadOnlyList<RareBookShelfCountResponse> Shelves);
+
+public sealed record RareBookShelfCountResponse(
+    string Label,
+    int Count);
 
 public sealed record PublicRareBookDetailResponse(
     PublicRareBookResponse RareBook,

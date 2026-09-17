@@ -13,7 +13,7 @@ import {catchError, forkJoin, of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {mergeCatalogGenres} from '../../core/catalog-genres';
-import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
+import {CatalogBook, CatalogFair, CatalogRareBook, CatalogRareBookPage, CatalogSearchResponse} from '../../core/catalog.models';
 import {calendarDataUri, calendarFilename} from '../../core/layouts/catalog-calendar';
 import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 
@@ -24,6 +24,15 @@ const EMPTY_SEARCH: CatalogSearchResponse = {
   page: 1,
   pageSize: 4,
   genres: [],
+};
+
+const EMPTY_RARE: CatalogRareBookPage = {
+  generatedAt: '',
+  books: [],
+  totalCount: 0,
+  page: 1,
+  pageSize: 4,
+  shelves: [],
 };
 
 interface HeroGenreChoice {
@@ -48,7 +57,7 @@ export class CatalogHomePageComponent implements OnInit {
   hasLoadError = signal(false);
   recent = signal<CatalogBook[]>([]);
   recentTotal = signal(0);
-  rare = signal<CatalogBook[]>([]);
+  rare = signal<CatalogRareBook[]>([]);
   genres = signal<string[]>([]);
   nextFair = signal<CatalogFair | null>(null);
   upcomingFairs = signal<CatalogFair[]>([]);
@@ -76,9 +85,9 @@ export class CatalogHomePageComponent implements OnInit {
         this.hasLoadError.set(true);
         return of(EMPTY_SEARCH);
       })),
-      rare: this.api.search({availability: 'all', rareOnly: true, sort: 'recent', pageSize: 4}).pipe(catchError(() => {
+      rare: this.api.getPublicRareBooks({includeSold: false, sort: 'recent', pageSize: 4}).pipe(catchError(() => {
         this.hasLoadError.set(true);
-        return of(EMPTY_SEARCH);
+        return of(EMPTY_RARE);
       })),
       fairs: this.api.getUpcomingFairs().pipe(catchError(() => {
         this.hasLoadError.set(true);
@@ -207,11 +216,15 @@ export class CatalogHomePageComponent implements OnInit {
   }
 
   showRare(): void {
-    void this.router.navigate(['/recherche'], {queryParams: {rare: true, availability: 'all'}});
+    void this.router.navigate(['/livres-rares']);
   }
 
   trackBook(_index: number, book: CatalogBook): string {
     return book.isbn13;
+  }
+
+  trackRareBook(_index: number, book: CatalogRareBook): string {
+    return book.id;
   }
 
   formatDate(value: string, withYear = true): string {

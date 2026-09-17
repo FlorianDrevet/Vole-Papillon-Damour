@@ -16,16 +16,24 @@ public sealed record BookAlertOutboxItem(
     string? PhysicalFormat = null,
     DateTimeOffset? FairOpeningAt = null);
 
+public sealed record RareBookAlertOutboxItem(
+    Guid RareBookId,
+    string Title,
+    string? AuthorMention,
+    string Slug);
+
 public sealed record BookAlertOutboxWorkItem(
     Guid MessageId,
     Guid MemberId,
     IReadOnlyList<BookAlertOutboxItem> Items,
     int Attempts,
-    DateTime ClaimedUntil);
+    DateTime ClaimedUntil,
+    IReadOnlyList<RareBookAlertOutboxItem>? RareItems = null);
 
 public sealed record BookAlertDelivery(
     Guid MessageId,
     Guid MemberId,
     string Email,
     string? RecipientName,
-    IReadOnlyList<BookAlertOutboxItem> Items);
+    IReadOnlyList<BookAlertOutboxItem> Items,
+    IReadOnlyList<RareBookAlertOutboxItem>? RareItems = null);

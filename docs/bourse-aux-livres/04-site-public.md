@@ -63,7 +63,9 @@ une seule raison — permettre d'ajouter à sa liste de recherche un livre que
 l'association n'a jamais reçu — et ne doit jamais donner l'impression que ces livres
 sont disponibles.
 
-**Filtres** : genre, disponibilité, livres rares.
+**Filtres** : genre et disponibilité. Les livres rares ont leur propre catalogue public
+(`/livres-rares`) afin de préserver leur fiche, leur photographie et leur prix ferme sans
+les mélanger aux cartes des livres ordinaires.
 **Tris** : pertinence (défaut), arrivée récente.
 
 Le **genre vient des sources bibliographiques**, normalisé, et de nulle part ailleurs
@@ -132,6 +134,20 @@ dériver (`RG-34`).
 Une mention permanente accompagne la disponibilité : *« Disponibilité indicative,
 mise à jour à chaque vente. Les livres partent vite. »* Mieux vaut cette réserve
 qu'une promesse démentie sur place.
+
+## 5 bis. Catalogue des livres rares
+
+La page publique `/livres-rares` liste uniquement les fiches rares publiées. Elle propose
+les quatre rayons configurés par l'association, l'inclusion explicite des exemplaires
+vendus, et un tri par arrivée ou par prix. Chaque résultat utilise une carte dédiée avec
+photo, état, disponibilité et prix ferme. Ce prix est une information de l'exemplaire,
+visible pour préparer la visite ; le site ne propose ni panier, ni paiement, ni total.
+
+La fiche `/livres-rares/:slug` présente la galerie et les caractéristiques de l'exemplaire,
+avec un lien de contact `mailto:volepapillondamour@sfr.fr` comme défaut de Q2. Un exemplaire
+vendu reste consultable mais est clairement signalé comme indisponible. Le référencement
+comprend les routes dédiées, une URL canonique, les métadonnées `Book` et le sitemap
+dynamique ; aucune fiche brouillon n'est publiée.
 
 ## 6. Compte et liste de recherche
 

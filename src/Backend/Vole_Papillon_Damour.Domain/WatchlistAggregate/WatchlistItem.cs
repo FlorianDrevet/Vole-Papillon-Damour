@@ -1,6 +1,7 @@
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common;
 using Vole_Papillon_Damour.Domain.Common.Models;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 
@@ -12,6 +13,7 @@ public sealed class WatchlistItem : Entity<Guid>
     public WatchlistItemScope Scope { get; private set; }
     public string? WorkId { get; private set; }
     public Isbn13? Isbn13 { get; private set; }
+    public RareBookId? RareBookId { get; private set; }
     public string? Title { get; private set; }
     public string? Authors { get; private set; }
     public string? Publisher { get; private set; }
@@ -25,6 +27,7 @@ public sealed class WatchlistItem : Entity<Guid>
         WatchlistItemScope scope,
         string? workId,
         Isbn13? isbn13,
+        RareBookId? rareBookId,
         DateTime addedAt,
         string? title,
         string? authors,
@@ -44,7 +47,7 @@ public sealed class WatchlistItem : Entity<Guid>
 
         if (scope == WatchlistItemScope.Work)
         {
-            if (string.IsNullOrWhiteSpace(workId) || isbn13 is not null)
+            if (string.IsNullOrWhiteSpace(workId) || isbn13 is not null || rareBookId is not null)
             {
                 throw new ArgumentException(
                     "A work watchlist item requires a work identifier only.",
@@ -53,11 +56,21 @@ public sealed class WatchlistItem : Entity<Guid>
         }
         else if (scope == WatchlistItemScope.Edition)
         {
-            if (isbn13 is null || workId is not null)
+            if (isbn13 is null || workId is not null || rareBookId is not null)
             {
                 throw new ArgumentException(
                     "An edition watchlist item requires an ISBN only.",
                     nameof(isbn13));
+            }
+        }
+        else if (scope == WatchlistItemScope.RareBook)
+        {
+            if (rareBookId is null || rareBookId.Value == Guid.Empty ||
+                workId is not null || isbn13 is not null)
+            {
+                throw new ArgumentException(
+                    "A rare book watchlist item requires a rare book identifier only.",
+                    nameof(rareBookId));
             }
         }
         else
@@ -69,6 +82,7 @@ public sealed class WatchlistItem : Entity<Guid>
         Scope = scope;
         WorkId = string.IsNullOrWhiteSpace(workId) ? null : workId.Trim();
         Isbn13 = isbn13;
+        RareBookId = rareBookId;
         Title = NormalizeText(title, 500, nameof(title));
         Authors = NormalizeText(authors, 500, nameof(authors));
         Publisher = NormalizeText(publisher, 200, nameof(publisher));
@@ -94,6 +108,7 @@ public sealed class WatchlistItem : Entity<Guid>
             WatchlistItemScope.Edition,
             null,
             isbn13,
+            null,
             addedAt,
             title,
             authors,
@@ -119,6 +134,33 @@ public sealed class WatchlistItem : Entity<Guid>
             WatchlistItemScope.Work,
             workId,
             null,
+            null,
+            addedAt,
+            title,
+            authors,
+            publisher,
+            publicationYear,
+            coverUrl);
+    }
+
+    public static WatchlistItem CreateRareBook(
+        Guid id,
+        UserId userId,
+        RareBookId rareBookId,
+        DateTime addedAt,
+        string? title = null,
+        string? authors = null,
+        string? publisher = null,
+        int? publicationYear = null,
+        string? coverUrl = null)
+    {
+        return new WatchlistItem(
+            id,
+            userId,
+            WatchlistItemScope.RareBook,
+            null,
+            null,
+            rareBookId,
             addedAt,
             title,
             authors,

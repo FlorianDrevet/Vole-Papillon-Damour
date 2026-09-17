@@ -110,7 +110,8 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
         string title,
         decimal price = 25m,
         bool published = false,
-        string? isbn13 = null)
+        string? isbn13 = null,
+        string? shelf = null)
     {
         Isbn13? parsedIsbn13 = null;
         if (!string.IsNullOrWhiteSpace(isbn13))
@@ -131,7 +132,7 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
             authorMention: "Un auteur",
             publisher: "Un éditeur",
             publicationYear: 1920,
-            shelf: RareBookShelf.AncientEditions,
+            shelf: RareBookShelf.Create(shelf ?? RareBookShelf.AncientEditions.Value),
             condition: RareBookCondition.GoodWithFlaws,
             isbn13: parsedIsbn13);
         if (published)
@@ -177,6 +178,7 @@ internal sealed class RareBookFeatureTestDbContext(
 {
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
+    public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
@@ -193,6 +195,7 @@ internal sealed class RareBookFeatureTestDbContext(
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
+    DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => RareBookTombstones;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -262,6 +265,12 @@ internal sealed class RareBookFeatureTestDbContext(
                 .HasConversion(uri => uri.ToString(), value => new Uri(value, UriKind.Absolute));
             builder.Property(photo => photo.UploadedBy)
                 .HasConversion(id => id.Value, value => UserId.Create(value));
+        });
+
+        modelBuilder.Entity<RareBookTombstone>(builder =>
+        {
+            builder.HasKey(tombstone => tombstone.RareBookId);
+            builder.Property(tombstone => tombstone.DeletedAt);
         });
     }
 

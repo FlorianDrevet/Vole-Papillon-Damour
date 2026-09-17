@@ -17,6 +17,8 @@ import {
   ScanAssociationSettings,
   ScanLocalStoreError,
   ScanNextBookFair,
+  ScanRareBook,
+  ScanRareSaleOutboxEntry,
   ScanSaleOutboxEntry,
   ScanSessionSnapshot,
 } from '../offline/scan-offline.model';
@@ -25,6 +27,7 @@ import {ScanStatusBarComponent} from '../offline/scan-status-bar.component';
 import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {ScanRareCashService} from '../offline/scan-rare-cash.service';
 import {ScanConfirmationService} from '../scan-confirmation.service';
 import {ScanSessionSummaryService} from '../scan-session-summary.service';
 
@@ -35,6 +38,7 @@ describe('ScannerComponent', () => {
   let cameraService: jasmine.SpyObj<CameraScannerService>;
   let confirmDialog: jasmine.Spy;
   let sessionSummary: ScanSessionSummaryService;
+  let rareCash: jasmine.SpyObj<ScanRareCashService>;
 
   beforeEach(async () => {
     metadataService = jasmine.createSpyObj<BookMetadataService>('BookMetadataService', ['getMetadata']);
@@ -45,6 +49,18 @@ describe('ScannerComponent', () => {
     );
     confirmation.confirm.and.resolveTo(true);
     confirmDialog = confirmation.confirm;
+    rareCash = jasmine.createSpyObj<ScanRareCashService>('ScanRareCashService', [
+      'listAvailable',
+      'findByIsbn',
+      'findAvailableByIsbn',
+      'recordSales',
+      'cancelSale',
+    ]);
+    rareCash.listAvailable.and.resolveTo([]);
+    rareCash.findByIsbn.and.resolveTo(null);
+    rareCash.findAvailableByIsbn.and.resolveTo(null);
+    rareCash.recordSales.and.resolveTo([]);
+    rareCash.cancelSale.and.resolveTo('local');
 
     await TestBed.configureTestingModule({
       declarations: [ScannerComponent, ScanStatusBarComponent, ScanRecoveryComponent],
@@ -56,6 +72,7 @@ describe('ScannerComponent', () => {
         {provide: ScanSyncService, useValue: null},
         ScanStatusService,
         {provide: ScanWorkflowService, useValue: null},
+        {provide: ScanRareCashService, useValue: rareCash},
         {provide: ScanConfirmationService, useValue: confirmation},
         ScanSessionSummaryService,
       ],
@@ -864,6 +881,52 @@ describe('ScannerComponent', () => {
     expect(component.cameraActive).toBeTrue();
   });
 
+  it('adds a rare book from the local picker and displays its firm price without a total', async () => {
+    const rareBook = createRareBook();
+    rareCash.listAvailable.and.resolveTo([rareBook]);
+
+    component.openCash();
+    await component.openRareCashPicker();
+    component.selectRareCashBook(rareBook);
+    component.addSelectedRareCashBook();
+    fixture.detectChanges();
+
+    expect(component.cashItems[0]).toEqual(jasmine.objectContaining({
+      isRare: true,
+      rareBookId: 'rare-server-1',
+      price: 60,
+    }));
+    expect(fixture.nativeElement.querySelector('.cash-add-rare')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Prix ferme');
+    expect(fixture.nativeElement.querySelector('.cash-total')).toBeNull();
+  });
+
+  it('turns a scanned rare ISBN into a dedicated cash line', async () => {
+    const rareBook = createRareBook();
+    rareCash.findByIsbn.and.resolveTo(rareBook);
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+
+    await component.lookup('9782070363735', 'cash');
+
+    expect(component.cashItems).toHaveSize(1);
+    expect(component.cashItems[0]).toEqual(jasmine.objectContaining({
+      isRare: true,
+      rareBookId: 'rare-server-1',
+      price: 60,
+    }));
+  });
+
+  it('does not turn a sold rare ISBN into an ordinary cash line', async () => {
+    const soldRareBook = {...createRareBook(), isSold: true};
+    rareCash.findByIsbn.and.resolveTo(soldRareBook);
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+
+    await component.lookup('9782070363735', 'cash');
+
+    expect(component.cashItems).toEqual([]);
+    expect(component.cashMessage).toContain('n’est plus disponible');
+  });
+
   it('starts the live camera as soon as consultation opens', async () => {
     cameraService.start.and.returnValue(Promise.resolve({resume: () => undefined, refocus: async () => true, stop: async () => undefined}));
     component.authAvailable = true;
@@ -1168,6 +1231,131 @@ describe('ScannerComponent', () => {
     expect(localComponent.cashItems).toEqual([]);
     expect(localComponent.cashMessage).toContain('enregistré localement');
     expect(sync.syncAll).toHaveBeenCalledOnceWith();
+  });
+
+  it('sends ordinary and rare cash lines to separate offline outboxes', async () => {
+    const saleEntry = createSaleOutboxEntry();
+    const rareSaleEntry = createRareSaleOutboxEntry();
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['recordCashSales', 'getOutboxCounts', 'getSession', 'getSettings', 'getCatalogSyncState'],
+    );
+    workflow.recordCashSales.and.resolveTo([saleEntry]);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 2});
+    workflow.getSession.and.resolveTo(createSession({remoteSessionId: 'remote-session-1'}));
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    rareCash.recordSales.and.resolveTo([rareSaleEntry]);
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    sync.syncAll.and.resolveTo({
+      catalog: null,
+      outbox: {sent: 0, remaining: 2, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
+      closed: false,
+    });
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      sync,
+      null,
+      null,
+      null,
+      null,
+      rareCash,
+    );
+    localComponent.authAvailable = true;
+    localComponent.isAuthenticated = true;
+    localComponent.session = createSession({remoteSessionId: 'remote-session-1'});
+    localComponent.cashItems = [
+      createCashItem('ordinary', 'Livre ordinaire'),
+      {
+        ...createCashItem('rare', 'Livre rare'),
+        isRare: true,
+        isbn13: '9782070363735',
+        rareBookId: 'rare-server-1',
+        price: 60,
+      },
+    ];
+
+    await localComponent.validateCash();
+
+    expect(workflow.recordCashSales).toHaveBeenCalledOnceWith(['9782070363735']);
+    expect(rareCash.recordSales).toHaveBeenCalledOnceWith(
+      ['rare-server-1'],
+      jasmine.any(Date),
+      jasmine.anything(),
+    );
+    const rareRequest = rareCash.recordSales.calls.mostRecent().args[0] as readonly string[];
+    expect(rareRequest).not.toContain('60');
+    expect(localComponent.cashItems).toEqual([]);
+  });
+
+  it('keeps unpersisted cash lines visible when the second offline outbox fails', async () => {
+    const saleEntry = createSaleOutboxEntry();
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['recordCashSales', 'getOutboxCounts', 'getSession', 'getSettings', 'getCatalogSyncState'],
+    );
+    workflow.recordCashSales.and.resolveTo([saleEntry]);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 1});
+    workflow.getSession.and.resolveTo(createSession({remoteSessionId: 'remote-session-1'}));
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    rareCash.recordSales.and.rejectWith(new Error('IndexedDB unavailable'));
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    sync.syncAll.and.resolveTo({
+      catalog: null,
+      outbox: {sent: 0, remaining: 1, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
+      closed: false,
+    });
+
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      sync,
+      null,
+      null,
+      null,
+      null,
+      rareCash,
+    );
+    localComponent.authAvailable = true;
+    localComponent.isAuthenticated = true;
+    localComponent.session = createSession({remoteSessionId: 'remote-session-1'});
+    localComponent.cashItems = [
+      createCashItem('ordinary', 'Livre ordinaire'),
+      {
+        ...createCashItem('rare', 'Livre rare'),
+        isRare: true,
+        isbn13: '9782070363735',
+        rareBookId: 'rare-server-1',
+        price: 60,
+      },
+    ];
+
+    await localComponent.validateCash();
+
+    expect(localComponent.cashItems).toHaveSize(1);
+    expect(localComponent.cashItems[0].isRare).toBeTrue();
+    expect((localComponent as unknown as {lastValidatedSaleIds: string[]}).lastValidatedSaleIds)
+      .toEqual([saleEntry.clientGestureId]);
+    expect(localComponent.cashMessage).toContain('partie de la vente');
   });
 
   it('exposes cancellation of the last validated sale while its outbox entries remain pending', async () => {
@@ -1828,6 +2016,51 @@ describe('ScannerComponent', () => {
       createdAt: '2026-09-03T08:01:00.000Z',
       attemptCount: 0,
       lastAttemptAt: null,
+      lastError: null,
+    };
+  }
+
+  function createRareSaleOutboxEntry(): ScanRareSaleOutboxEntry {
+    return {
+      clientGestureId: 'rare-sale-1',
+      clientSessionId: 'session-1',
+      rareBookId: 'rare-server-1',
+      scanSessionId: 'remote-session-1',
+      assoEventsId: null,
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:00.000Z',
+      status: 'Pending',
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+    };
+  }
+
+  function createRareBook(): ScanRareBook {
+    return {
+      clientId: 'rare-client-1',
+      serverId: 'rare-server-1',
+      clientGestureId: 'rare-create-1',
+      isbn13: '9782070363735',
+      title: 'Livre rare',
+      authorMention: 'Auteur',
+      publisher: 'Éditeur',
+      publicationYear: 1900,
+      shelf: 'Éditions anciennes',
+      price: 60,
+      condition: 'Très bon état',
+      publicDescription: null,
+      binding: null,
+      dimensions: null,
+      pageCount: 100,
+      shelfLocation: 'A1',
+      priceSetBy: 'volunteer-1',
+      status: 'Published',
+      isSold: false,
+      thumbnail: null,
+      updatedAt: '2026-09-03T08:00:00.000Z',
+      rowVersion: 'AAAA',
+      syncStatus: 'Synced',
       lastError: null,
     };
   }

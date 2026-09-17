@@ -235,6 +235,7 @@ public sealed record AdminMemberWatchlistItemResponse(
     string Scope,
     string? WorkId,
     string? Isbn13,
+    Guid? RareBookId,
     string? Title,
     string? Authors,
     int QuantityAvailable,
@@ -244,7 +245,8 @@ public sealed record AdminMemberWatchlistItemResponse(
 
 public sealed record AdminMemberAlertHistoryResponse(
     Guid Id,
-    string Isbn13,
+    string? Isbn13,
+    Guid? RareBookId,
     string? Title,
     DateTimeOffset SentAt,
     Guid? OutboxMessageId);

@@ -94,7 +94,11 @@ public sealed record PublicRareBookPageResult(
     int TotalCount,
     int Page,
     int PageSize,
-    IReadOnlyList<string> Shelves);
+    IReadOnlyList<RareBookShelfCountResult> Shelves);
+
+public sealed record RareBookShelfCountResult(
+    string Label,
+    int Count);
 
 public sealed record PublicRareBookDetailResult(
     PublicRareBookResult RareBook,

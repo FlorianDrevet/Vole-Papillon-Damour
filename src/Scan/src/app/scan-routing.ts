@@ -7,6 +7,8 @@ import {ScanPageComponent} from './scan-page.component';
 import {ScanShellComponent} from './scan-shell.component';
 import {ScanSessionSummaryService} from './scan-session-summary.service';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
+import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.component';
+import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
 
 export type ScanRequiredRole = 'Tri' | 'Caisse' | 'LivresRares';
 
@@ -54,6 +56,7 @@ export const scanSessionEndGuard: CanActivateFn = () => {
 
 const triGuard = scanRoleGuard('Tri');
 const cashGuard = scanRoleGuard('Caisse');
+const rareBooksGuard = scanRoleGuard('LivresRares');
 
 export const scanRoutes: Routes = [
   {
@@ -69,6 +72,9 @@ export const scanRoutes: Routes = [
       {path: 'caisse', component: ScanPageComponent, canActivate: [cashGuard], data: {screen: 'cash'}},
       {path: 'consulter', component: ScanPageComponent, data: {screen: 'consultation'}},
       {path: 'statistiques', component: ScanStatisticsComponent, canActivate: [scanVolunteerGuard]},
+      {path: 'livres-rares', component: ScanRareBookListComponent, canActivate: [rareBooksGuard]},
+      {path: 'livres-rares/nouveau', component: ScanRareBookFormComponent, canActivate: [rareBooksGuard]},
+      {path: 'livres-rares/:id', component: ScanRareBookFormComponent, canActivate: [rareBooksGuard]},
       {path: '**', redirectTo: 'accueil'},
     ],
   },

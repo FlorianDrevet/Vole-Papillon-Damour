@@ -1,0 +1,261 @@
+.rare-public-page {
+  min-height: 60vh;
+  background: #fbf9fd;
+  color: #072b45;
+}
+
+.rare-public-hero {
+  padding: clamp(3rem, 9vw, 7rem) 0 clamp(2.5rem, 7vw, 5rem);
+  background:
+    radial-gradient(70% 120% at 88% -10%, rgb(95 58 134 / 55%) 0%, rgb(7 43 69 / 0%) 62%),
+    #072b45;
+  color: #fff;
+}
+
+.rare-public-hero h1 {
+  max-width: 50rem;
+  margin: .35rem 0 1rem;
+  font: 500 clamp(3.4rem, 10vw, 7rem)/.9 Newsreader, Georgia, serif;
+  letter-spacing: -.04em;
+}
+
+.rare-public-hero p:last-child {
+  max-width: 40rem;
+  margin: 0;
+  color: #d9e9f4;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.rare-next-fair {
+  display: grid;
+  gap: .35rem;
+  max-width: 25rem;
+  margin-top: 2rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgb(255 255 255 / 28%);
+  background: rgb(255 255 255 / 8%);
+}
+
+.rare-next-fair-kicker {
+  color: #e7c9ff;
+  font: 600 .66rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.rare-next-fair strong {
+  font: 500 1.45rem/1.1 Newsreader, Georgia, serif;
+}
+
+.rare-next-fair time,
+.rare-next-fair > span:last-child {
+  color: #d9e9f4;
+  font-size: .85rem;
+}
+
+.rare-public-content {
+  padding-top: 2rem;
+  padding-bottom: 5rem;
+}
+
+.rare-public-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem 1rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #d9c8ea;
+}
+
+.rare-public-toolbar label:not(.rare-sold-filter) {
+  display: grid;
+  gap: .3rem;
+  color: #5f3a86;
+  font: 600 .65rem/1.1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.rare-shelf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  flex: 1 1 100%;
+}
+
+.rare-shelf-chips button {
+  padding: .55rem .75rem;
+  border: 1px solid #d9c8ea;
+  border-radius: 999px;
+  background: #fff;
+  color: #5f3a86;
+  cursor: pointer;
+  font: .68rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.rare-shelf-chips button.active {
+  border-color: #5f3a86;
+  background: #5f3a86;
+  color: #fff;
+}
+
+.rare-shelf-chips span {
+  opacity: .75;
+}
+
+.rare-public-toolbar select {
+  min-width: 12rem;
+  padding: .6rem .7rem;
+  border: 1px solid #d9c8ea;
+  border-radius: .25rem;
+  background: #fff;
+  color: #072b45;
+  font: 1rem/1.2 inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.rare-sold-filter {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  min-height: 2.55rem;
+  color: #4e6c84;
+  font-size: .85rem;
+}
+
+.rare-public-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.rare-public-error,
+.rare-public-empty {
+  padding: 2rem;
+  border: 1px dashed #b9a2d0;
+  color: #4e6c84;
+  text-align: center;
+}
+
+.rare-public-error a,
+.rare-public-empty a {
+  color: #5f3a86;
+  font-weight: 700;
+}
+
+.rare-public-empty h2 {
+  margin: 0 0 .4rem;
+  color: #072b45;
+  font: 500 2.2rem/1 Newsreader, Georgia, serif;
+}
+
+.rare-public-empty p {
+  max-width: 34rem;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.rare-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  color: #4e6c84;
+  font: .7rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  text-transform: uppercase;
+}
+
+.rare-pagination button {
+  padding: .6rem .8rem;
+  border: 1px solid #d9c8ea;
+  border-radius: 999px;
+  background: #fff;
+  color: #5f3a86;
+  cursor: pointer;
+  font: inherit;
+}
+
+.rare-pagination button:disabled {
+  cursor: default;
+  opacity: .45;
+}
+
+.rare-donation-callout {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 4rem;
+  padding: 2rem;
+  background: #f4a261;
+  color: #072b45;
+}
+
+.rare-donation-callout .eyebrow {
+  margin: 0;
+  color: #072b45;
+}
+
+.rare-donation-callout h2 {
+  margin: .35rem 0 .5rem;
+  font: 500 clamp(2rem, 5vw, 3.2rem)/1 Newsreader, Georgia, serif;
+}
+
+.rare-donation-callout p:last-child {
+  max-width: 36rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.rare-donation-callout a {
+  flex: none;
+  padding: .8rem 1rem;
+  border: 1px solid #072b45;
+  color: #072b45;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 1000px) {
+  .rare-public-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .rare-public-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+  }
+
+  .rare-public-toolbar {
+    align-items: stretch;
+  }
+
+  .rare-public-toolbar label:not(.rare-sold-filter) {
+    flex: 1 1 12rem;
+  }
+
+  .rare-public-toolbar select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .rare-donation-callout {
+    align-items: start;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 3rem;
+    padding: 1.4rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .rare-public-grid {
+    grid-template-columns: 1fr;
+  }
+}

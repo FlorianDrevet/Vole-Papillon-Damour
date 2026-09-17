@@ -21,6 +21,7 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 using Vole_Papillon_Damour.Application.Books.Queries.GetVolunteerStatistics;
+using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatchlistItem;
@@ -34,6 +35,7 @@ using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
+using PublicRareBookResponse = Vole_Papillon_Damour.Contracts.RareBooks.Responses.PublicRareBookResponse;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
 
@@ -90,7 +92,8 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("SearchPublicCatalog")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 
             endpoints.MapGet(
                     "/catalog/books/{isbn13}",
@@ -108,7 +111,8 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetPublicCatalogBook")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 
             endpoints.MapGet(
                     "/catalog/works/{workId}",
@@ -130,7 +134,8 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetPublicCatalogWork")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 
             endpoints.MapGet(
                     "/catalog/sitemap.xml",
@@ -151,6 +156,7 @@ public static class BookController
                     })
                 .WithName("GetPublicCatalogSitemap")
                 .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog)
                 .CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(10)));
 
             endpoints.MapGet(
@@ -215,7 +221,8 @@ public static class BookController
                                 request.Authors,
                                 request.Publisher,
                                 request.PublicationYear,
-                                request.CoverUrl),
+                                request.CoverUrl,
+                                request.RareBookId),
                             cancellationToken);
 
                         return result.Match(
@@ -597,6 +604,7 @@ public static class BookController
                     book.IsAvailable,
                     book.UpdatedAt))
                 .ToArray(),
+            result.RemovedRareBookIds,
             new ScanAssociationSettingsResponse(
                 result.Settings.DuplicateThreshold,
                 result.Settings.DemandSalesThreshold,
@@ -797,6 +805,7 @@ public static class BookController
             result.Scope.ToString(),
             result.WorkId,
             result.Isbn13,
+            result.RareBookId,
             result.AddedAt);
     }
 
@@ -811,12 +820,14 @@ public static class BookController
                     item.Scope.ToString(),
                     item.WorkId,
                     item.Isbn13,
+                    item.RareBookId,
                     item.Title,
                     item.Authors,
                     item.Publisher,
                     item.PublicationYear,
                     item.CoverUrl,
                     item.Book is null ? null : ToResponse(item.Book),
+                    item.RareBook is null ? null : ToResponse(item.RareBook),
                     item.AddedAt,
                     item.LastAlertAt))
                 .ToArray());
@@ -842,7 +853,40 @@ public static class BookController
             result.FirstSeenAt,
             result.UpdatedAt,
             result.IsRare,
-            result.CoverSource);
+            result.CoverSource,
+            result.RareBookSlug);
+    }
+
+    private static PublicRareBookResponse ToResponse(PublicRareBookResult result)
+    {
+        return new PublicRareBookResponse(
+            result.Id,
+            result.Slug,
+            result.Isbn13,
+            result.Title,
+            result.AuthorMention,
+            result.Publisher,
+            result.PublicationYear,
+            result.Shelf,
+            result.Price,
+            result.Condition,
+            result.PublicDescription,
+            result.Binding,
+            result.Dimensions,
+            result.PageCount,
+            result.Status,
+            result.IsSold,
+            result.SoldAt,
+            result.Photos.Select(photo => new Vole_Papillon_Damour.Contracts.RareBooks.Responses.RareBookPhotoResponse(
+                photo.Id,
+                photo.BlobUri,
+                photo.BlobName,
+                photo.Caption,
+                photo.Position,
+                photo.ContentType,
+                photo.SizeBytes,
+                photo.UploadedAt,
+                photo.UploadedBy)).ToArray());
     }
 
     private static PublicBookFairResponse ToResponse(PublicBookFairResult result)

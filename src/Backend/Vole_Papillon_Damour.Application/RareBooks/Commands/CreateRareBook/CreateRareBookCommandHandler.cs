@@ -23,10 +23,30 @@ public sealed class CreateRareBookCommandHandler(
             return Errors.RareBook.InvalidUser();
         }
 
+        if (command.ClientGestureId == Guid.Empty)
+        {
+            return Errors.RareBook.InvalidData("A client gesture identifier must be non-empty when provided.");
+        }
+
         var clockError = RareBookCommandSupport.ValidateClock(dateTimeProvider, out var nowUtc);
         if (clockError is not null)
         {
             return clockError.Value;
+        }
+
+        if (command.ClientGestureId is { } clientGestureId)
+        {
+            var existing = await dbContext.RareBooks
+                .Include(book => book.Photos)
+                .SingleOrDefaultAsync(
+                    book => book.ClientGestureId == clientGestureId,
+                    cancellationToken);
+            if (existing is not null)
+            {
+                return existing.CreatedBy == command.UserId
+                    ? RareBookProjector.ToResult(existing)
+                    : Errors.RareBook.ClientGestureAlreadyUsed(clientGestureId);
+            }
         }
 
         var parseError = RareBookCommandSupport.ParseDetails(
@@ -70,7 +90,8 @@ public sealed class CreateRareBookCommandHandler(
                     nowUtc,
                     command.UserId,
                     isbn13,
-                    collisionSuffix);
+                    collisionSuffix,
+                    command.ClientGestureId);
             }
             catch (ArgumentException exception)
             {

@@ -50,5 +50,6 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
 
         builder.HasIndex(message => new { message.Status, message.DueAt });
         builder.HasIndex(message => message.ScanSessionId);
+        builder.HasIndex(message => message.RareBookId);
     }
 }

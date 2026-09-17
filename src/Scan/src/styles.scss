@@ -258,6 +258,17 @@ input:focus-visible {
   color: #fff;
 }
 
+.home-mode-rare {
+  border-color: var(--scan-purple);
+  background: var(--scan-purple);
+  box-shadow: 0 20px 36px -28px rgb(95 58 134 / 70%);
+}
+
+.home-mode-rare svg,
+.home-mode-rare > span {
+  color: #fff;
+}
+
 .home-mode-cash svg {
   color: var(--scan-orange);
 }
@@ -1580,6 +1591,26 @@ input:focus-visible {
   line-height: 1.15;
 }
 
+.cash-rare-body {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.cash-rare-body > div {
+  min-width: 0;
+}
+
+.cash-rare-thumbnail {
+  width: 52px;
+  height: 72px;
+  flex: none;
+  border-radius: 2px;
+  object-fit: cover;
+  box-shadow: 0 8px 18px rgb(8 35 66 / 30%);
+}
+
 .cash-rare-item p {
   color: rgb(255 255 255 / 92%);
   font-size: 15.5px;
@@ -1670,6 +1701,216 @@ input:focus-visible {
 
 .cash-buttons .dock-primary {
   font-size: 17px;
+}
+
+.cash-add-rare {
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--scan-purple);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--scan-purple);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cash-add-rare svg {
+  width: 19px;
+  height: 19px;
+  flex: none;
+}
+
+.cash-add-rare:focus-visible,
+.rare-cash-option:focus-visible,
+.rare-cash-picker-actions button:focus-visible {
+  outline: 3px solid var(--scan-orange);
+  outline-offset: 2px;
+}
+
+.rare-cash-picker {
+  position: absolute;
+  z-index: 30;
+  inset: 94px 12px 12px;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid #cfc6e8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 26px 70px rgb(7 43 69 / 30%);
+}
+
+.rare-cash-picker-header,
+.rare-cash-picker-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.rare-cash-eyebrow {
+  color: var(--scan-purple);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.rare-cash-picker h2 {
+  margin: 4px 0 0;
+  color: var(--scan-ink);
+  font-family: Newsreader, Georgia, serif;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.rare-cash-search {
+  display: grid;
+  gap: 6px;
+  color: var(--scan-muted);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.rare-cash-search input {
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--scan-line);
+  border-radius: 10px;
+  color: var(--scan-ink);
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.rare-cash-hint {
+  margin: 0;
+  color: var(--scan-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.rare-cash-results {
+  display: grid;
+  min-height: 0;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.rare-cash-option {
+  display: flex;
+  min-height: 70px;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 10px;
+  border: 1px solid #ddd5ef;
+  border-radius: 12px;
+  color: var(--scan-ink);
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rare-cash-option-selected {
+  border-color: var(--scan-purple);
+  background: #f0ebfa;
+  box-shadow: 0 0 0 2px rgb(126 93 173 / 16%);
+}
+
+.rare-cash-option-thumbnail {
+  width: 38px;
+  height: 52px;
+  flex: none;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.rare-cash-option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.rare-cash-option-copy strong,
+.rare-cash-option-copy span,
+.rare-cash-option-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rare-cash-option-copy strong {
+  font-family: Newsreader, Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rare-cash-option-copy span {
+  color: var(--scan-muted);
+  font-size: 12px;
+}
+
+.rare-cash-option-copy small {
+  color: var(--scan-purple);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.rare-cash-option-check {
+  margin-left: auto;
+  color: var(--scan-purple);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.rare-cash-empty {
+  margin: 16px 0;
+  color: var(--scan-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.rare-cash-picker-actions {
+  margin-top: auto;
+}
+
+.rare-cash-picker-actions button {
+  min-height: 44px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.rare-cash-picker-actions .decision-reject {
+  border: 1px solid var(--scan-line);
+  color: var(--scan-blue);
+  background: #fff;
+}
+
+.rare-cash-picker-actions .dock-primary {
+  border: 1px solid var(--scan-purple);
+  color: #fff;
+  background: var(--scan-purple);
+}
+
+.rare-cash-picker-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
 }
 
 .cash-secondary-actions {

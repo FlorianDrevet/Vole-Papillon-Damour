@@ -42,6 +42,10 @@ public static partial class Errors
             code: "RareBook.DuplicateIsbn",
             description: $"A rare book already uses ISBN {isbn13}.");
 
+        public static Error ClientGestureAlreadyUsed(object clientGestureId) => Error.Conflict(
+            code: "RareBook.ClientGestureAlreadyUsed",
+            description: $"The rare-book client gesture identifier is already used: {clientGestureId}.");
+
         public static Error SlugConflict(string slug) => Error.Conflict(
             code: "RareBook.SlugConflict",
             description: $"A rare book already uses slug '{slug}'.");

@@ -101,6 +101,58 @@ public sealed class GetCatalogDeltaQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenPublishedRareBookHasNoIsbn_ReturnsItForOfflineCashier()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        await fixture.AddRareBookWithoutIsbnAsync();
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.RareBooks.Should().ContainSingle(rareBook =>
+            rareBook.Title == "Livre rare sans ISBN" &&
+            rareBook.Isbn13 == null);
+    }
+
+    [Fact]
+    public async Task Handle_WhenRareBookWasDeleted_ReturnsItsTombstoneForOfflineRemoval()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var deletedId = RareBookId.Create(Guid.Parse("00000000-0000-0000-0000-000000000099"));
+        fixture.Context.RareBookTombstones.Add(
+            RareBookTombstone.Create(deletedId, GeneratedAt.AddMinutes(-1)));
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5).ToString("O")),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.RemovedRareBookIds.Should().Contain(deletedId.Value);
+    }
+
+    [Fact]
+    public async Task Handle_WhenRareBookIsUnpublishedAfterWatermark_ReturnsItAsRemoval()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var rareBook = await fixture.AddRareBookWithoutIsbnAsync();
+        rareBook.Unpublish(
+            GetCatalogDeltaQueryHandlerTests.GeneratedAt,
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")));
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(GeneratedAt.AddMinutes(-5).ToString("O")),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.RareBooks.Should().BeEmpty();
+        result.Value.RemovedRareBookIds.Should().Contain(rareBook.Id.Value);
+    }
+
+    [Fact]
     public async Task Handle_WhenBookIsHiddenAfterWatermark_ReturnsItAsRemoval()
     {
         await using var fixture = await CatalogDeltaFixture.CreateAsync();
@@ -288,6 +340,22 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         return rareBook;
     }
 
+    public async Task<RareBook> AddRareBookWithoutIsbnAsync()
+    {
+        var volunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
+        var rareBook = RareBook.Create(
+            "Livre rare sans ISBN",
+            18.00m,
+            GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1),
+            volunteerId,
+            shelf: RareBookShelf.AncientEditions,
+            condition: RareBookCondition.GoodWithFlaws);
+        rareBook.Publish(volunteerId, GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1));
+        Context.RareBooks.Add(rareBook);
+        await Context.SaveChangesAsync();
+        return rareBook;
+    }
+
     public async Task AddWatchlistAsync(UserId memberId, WatchlistAlertStatus status)
     {
         var watchlist = Watchlist.Create(memberId, GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1));
@@ -361,6 +429,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
+    public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
@@ -372,6 +441,7 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
+    DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => RareBookTombstones;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -430,6 +500,10 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .HasConversion(
                     (Isbn13? isbn) => isbn.HasValue ? isbn.Value.Value : null,
                     (string? value) => value == null ? (Isbn13?)null : ParseIsbn(value));
+            builder.Property(item => item.RareBookId)
+                .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value == null ? null : RareBookId.Create(value.Value)));
             builder.Property(item => item.WorkId);
             builder.Property(item => item.AddedAt);
         });
@@ -521,6 +595,12 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .HasConversion(uri => uri.ToString(), value => new Uri(value, UriKind.Absolute));
             builder.Property(photo => photo.UploadedBy)
                 .HasConversion(id => id.Value, value => UserId.Create(value));
+        });
+
+        modelBuilder.Entity<RareBookTombstone>(builder =>
+        {
+            builder.HasKey(tombstone => tombstone.RareBookId);
+            builder.Property(tombstone => tombstone.DeletedAt);
         });
     }
 

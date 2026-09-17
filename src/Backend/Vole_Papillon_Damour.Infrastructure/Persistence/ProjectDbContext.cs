@@ -39,6 +39,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<EmailBounceEvent> EmailBounceEvents => Set<EmailBounceEvent>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
+    public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder

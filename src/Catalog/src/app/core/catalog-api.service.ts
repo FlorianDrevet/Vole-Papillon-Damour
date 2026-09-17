@@ -8,6 +8,9 @@ import {
   CatalogPublicEventResponse,
   CatalogReferenceSearchResponse,
   CatalogFair,
+  CatalogRareBookDetail,
+  CatalogRareBookFilters,
+  CatalogRareBookPage,
   CatalogSearchParams,
   CatalogSearchResponse,
   CatalogWorkResponse,
@@ -118,6 +121,38 @@ export class CatalogApiService {
     return this.http.get<CatalogReferenceSearchResponse>(
       `${this.apiUrl}/catalog/reference/search`,
       {params: httpParams},
+    );
+  }
+
+  getPublicRareBooks(filters: CatalogRareBookFilters = {}): Observable<CatalogRareBookPage> {
+    let httpParams = new HttpParams();
+    if (filters.search?.trim()) {
+      httpParams = httpParams.set('search', filters.search.trim());
+    }
+    if (filters.shelf?.trim()) {
+      httpParams = httpParams.set('shelf', filters.shelf.trim());
+    }
+    if (filters.includeSold !== undefined) {
+      httpParams = httpParams.set('includeSold', filters.includeSold);
+    }
+    if (filters.sort) {
+      httpParams = httpParams.set('sort', filters.sort);
+    }
+    if (filters.page !== undefined) {
+      httpParams = httpParams.set('page', filters.page);
+    }
+    if (filters.pageSize !== undefined) {
+      httpParams = httpParams.set('pageSize', filters.pageSize);
+    }
+
+    return this.http.get<CatalogRareBookPage>(`${this.apiUrl}/catalog/rare-books`, {
+      params: httpParams,
+    });
+  }
+
+  getPublicRareBook(slug: string): Observable<CatalogRareBookDetail> {
+    return this.http.get<CatalogRareBookDetail>(
+      `${this.apiUrl}/catalog/rare-books/${encodeURIComponent(slug)}`,
     );
   }
 }

@@ -6,6 +6,7 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
 
@@ -46,16 +47,25 @@ public sealed class GetPublicBookQueryHandler(
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToReferencedFairListAsync(announcements, cancellationToken);
-        var rareIsbns = (await dbContext.RareBooks
+        var rareBook = await dbContext.RareBooks
                 .AsNoTracking()
-                .PublishedAvailable()
+                .Where(candidate => candidate.Status == RareBookStatus.Published)
                 .Where(rareBook => rareBook.Isbn13 == isbn13)
-                .Select(rareBook => rareBook.Isbn13!.Value.Value)
-                .ToListAsync(cancellationToken))
-            .ToHashSet(StringComparer.Ordinal);
+                .Select(rareBook => new
+                {
+                    Isbn13 = rareBook.Isbn13!.Value.Value,
+                    rareBook.Slug.Value,
+                    rareBook.IsSold
+                })
+                .SingleOrDefaultAsync(cancellationToken);
+        var rareIsbns = rareBook is null || rareBook.IsSold
+            ? new HashSet<string>(StringComparer.Ordinal)
+            : new HashSet<string>([rareBook.Isbn13], StringComparer.Ordinal);
 
-        return PublicCatalogProjector
+        var result = PublicCatalogProjector
             .Project([book], announcements, fairs, rareIsbns, nowUtc)
             .Single();
+
+        return result with { RareBookSlug = rareBook?.Value };
     }
 }

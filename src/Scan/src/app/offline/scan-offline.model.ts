@@ -1,11 +1,14 @@
 export const scanDatabaseName = 'vpd-scan';
-export const scanDatabaseVersion = 3;
+export const scanDatabaseVersion = 5;
 
 export const scanStoreNames = {
   catalog: 'catalog',
   outbox: 'outbox',
   sales: 'sales',
   session: 'session',
+  rareBooks: 'rareBooks',
+  rarePhotoQueue: 'rarePhotoQueue',
+  rareSales: 'rareSales',
 } as const;
 
 export type ScanStoreName = typeof scanStoreNames[keyof typeof scanStoreNames];
@@ -54,6 +57,7 @@ export type ScanSetAsideReason =
   | 'server-refused';
 
 export type ScanSaleOutboxStatus = 'Pending' | 'Quarantined';
+export type ScanRareSaleOutboxStatus = 'Pending' | 'Cancelled' | 'Quarantined';
 
 export type ScanFailureKind = 'transient' | 'permanent' | 'authorization';
 
@@ -67,6 +71,82 @@ export interface ScanCatalogBook {
   salesCount: number;
   isWanted: boolean;
   isRare: boolean;
+  updatedAt: string;
+}
+
+export type ScanRareBookStatus = 'Draft' | 'Published';
+export type ScanRareBookSyncStatus = 'PendingCreate' | 'PendingUpdate' | 'Synced' | 'Failed';
+
+export interface ScanRareBook {
+  clientId: string;
+  serverId: string | null;
+  clientGestureId: string;
+  isbn13: string | null;
+  title: string;
+  authorMention: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  shelf: string;
+  price: number;
+  condition: string;
+  publicDescription: string | null;
+  binding: string | null;
+  dimensions: string | null;
+  pageCount: number | null;
+  shelfLocation: string | null;
+  priceSetBy: string | null;
+  status: ScanRareBookStatus;
+  isSold: boolean;
+  thumbnail: string | null;
+  updatedAt: string;
+  rowVersion: string | null;
+  syncStatus: ScanRareBookSyncStatus;
+  lastError: string | null;
+}
+
+export interface ScanRareBookPhotoQueueEntry {
+  queueId: string;
+  rareBookClientId: string;
+  rareBookServerId: string | null;
+  blob: Blob;
+  fileName: string;
+  contentType: 'image/jpeg' | 'image/webp' | 'image/png';
+  caption: string | null;
+  position: number;
+  createdAt: string;
+  attemptCount: number;
+  lastAttemptAt: string | null;
+  lastError: string | null;
+}
+
+export interface ScanRareBookDraftInput {
+  title: string;
+  authorMention?: string | null;
+  publisher?: string | null;
+  publicationYear?: number | null;
+  shelf: string;
+  price: number;
+  condition: string;
+  publicDescription?: string | null;
+  binding?: string | null;
+  dimensions?: string | null;
+  pageCount?: number | null;
+  shelfLocation?: string | null;
+  priceSetBy?: string | null;
+  isbn13?: string | null;
+}
+
+export interface ScanCatalogRareBook {
+  id: string;
+  isbn13: string | null;
+  title: string;
+  authorMention: string | null;
+  price: number;
+  shelf: string;
+  condition: string;
+  shortDescription: string | null;
+  thumbnail: string | null;
+  isAvailable: boolean;
   updatedAt: string;
 }
 
@@ -169,6 +249,21 @@ export interface ScanSaleOutboxEntry {
   lastFailureKind?: ScanFailureKind | null;
 }
 
+export interface ScanRareSaleOutboxEntry {
+  clientGestureId: string;
+  clientSessionId: string | null;
+  rareBookId: string;
+  scanSessionId: string | null;
+  assoEventsId: string | null;
+  occurredAt: string;
+  createdAt: string;
+  status?: ScanRareSaleOutboxStatus;
+  attemptCount: number;
+  lastAttemptAt: string | null;
+  lastError: string | null;
+  lastFailureKind?: ScanFailureKind | null;
+}
+
 export interface LocalVerdict {
   verdict: LocalBookVerdict;
   totalKnownQuantity: number;
@@ -201,6 +296,8 @@ export interface ScanCatalogDeltaResponse {
   nextWatermark: string;
   nextFair: ScanNextBookFair | null;
   books: Array<ScanCatalogBook & {isHidden: boolean}>;
+  rareBooks: ScanCatalogRareBook[];
+  removedRareBookIds: string[];
   settings: ScanAssociationSettings;
 }
 

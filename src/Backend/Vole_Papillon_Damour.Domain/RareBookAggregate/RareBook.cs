@@ -36,6 +36,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
     public DateTime UpdatedAt { get; private set; }
     public UserId UpdatedBy { get; private set; } = null!;
     public byte[] RowVersion { get; private set; } = [];
+    public Guid? ClientGestureId { get; private set; }
 
     private List<RareBookPhoto> _photos = [];
     public IReadOnlyList<RareBookPhoto> Photos => _photos.AsReadOnly();
@@ -62,7 +63,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         DateTime createdAt,
         UserId createdBy,
         Isbn13? isbn13,
-        int slugCollisionSuffix) : base(id)
+        int slugCollisionSuffix,
+        Guid? clientGestureId) : base(id)
     {
         if (id is null || id.Value == Guid.Empty)
         {
@@ -83,6 +85,7 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         ShelfLocation = NormalizeOptional(shelfLocation, 120, nameof(shelfLocation));
         PriceSetBy = NormalizeOptional(priceSetBy, 120, nameof(priceSetBy));
         Isbn13 = ValidateIsbn(isbn13);
+        ClientGestureId = ValidateClientGestureId(clientGestureId);
         Slug = RareBookSlug.Create(Title, AuthorMention, PublicationYear, slugCollisionSuffix);
         CreatedAt = DomainTime.RequireUtc(createdAt, nameof(createdAt));
         CreatedBy = EnsureUserId(createdBy);
@@ -109,7 +112,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         DateTime createdAt,
         UserId createdBy,
         Isbn13? isbn13 = null,
-        int slugCollisionSuffix = 1)
+        int slugCollisionSuffix = 1,
+        Guid? clientGestureId = null)
     {
         return new RareBook(
             RareBookId.CreateUnique(),
@@ -129,7 +133,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             createdAt,
             createdBy,
             isbn13,
-            slugCollisionSuffix);
+            slugCollisionSuffix,
+            clientGestureId);
     }
 
     public static RareBook Create(
@@ -149,7 +154,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? shelfLocation = null,
         string? priceSetBy = null,
         Isbn13? isbn13 = null,
-        int slugCollisionSuffix = 1)
+        int slugCollisionSuffix = 1,
+        Guid? clientGestureId = null)
     {
         return CreateWithDetails(
             title,
@@ -168,7 +174,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             createdAt,
             createdBy,
             isbn13,
-            slugCollisionSuffix);
+            slugCollisionSuffix,
+            clientGestureId);
     }
 
     public bool Update(
@@ -506,6 +513,18 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         }
 
         return isbn13;
+    }
+
+    private static Guid? ValidateClientGestureId(Guid? clientGestureId)
+    {
+        if (clientGestureId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "A client gesture identifier must be non-empty when provided.",
+                nameof(clientGestureId));
+        }
+
+        return clientGestureId;
     }
 
     private static UserId EnsureUserId(UserId? userId)

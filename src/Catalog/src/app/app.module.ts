@@ -25,6 +25,9 @@ import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navi
 import {CatalogCookieBannerComponent} from './shared/components/cookie-banner/catalog-cookie-banner.component';
 import {CatalogAuthPromptComponent} from './shared/components/auth-prompt/catalog-auth-prompt.component';
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
+import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
+import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
+import {CatalogRareBookCardComponent} from './shared/rare-book-card/rare-book-card.component';
 import {DesignSystemModule} from '@vpd/ui';
 import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
 
@@ -50,6 +53,9 @@ registerLocaleData(localeFr);
     CatalogCookieBannerComponent,
     CatalogNotFoundPageComponent,
     CatalogAuthPromptComponent,
+    CatalogRareBooksPageComponent,
+    CatalogRareBookDetailPageComponent,
+    CatalogRareBookCardComponent,
   ],
   imports: [
     BrowserModule,

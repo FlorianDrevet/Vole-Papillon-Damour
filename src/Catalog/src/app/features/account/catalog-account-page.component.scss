@@ -493,6 +493,23 @@ h3 {
   min-width: 0;
 }
 
+.watchlist-rare-price {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: var(--catalog-purple, #5f3a86);
+  font: 600 1rem/1.25 var(--catalog-mono);
+}
+
+.watchlist-rare-price span {
+  color: var(--catalog-slate-2);
+  font: 500 .68rem/1.3 var(--catalog-mono);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
 .watchlist-item-copy h2 {
   margin-bottom: 5px;
   font-size: clamp(1.15rem, 1.7vw, 1.4rem);

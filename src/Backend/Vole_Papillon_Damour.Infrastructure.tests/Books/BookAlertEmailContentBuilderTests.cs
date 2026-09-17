@@ -39,6 +39,8 @@ public sealed class BookAlertEmailContentBuilderTests
         content.PlainText.Should().Contain("sera disponible à la bourse du 14 mars 2026");
         content.PlainText.Should().Contain("aucune réservation ni mise de côté");
         content.PlainText.Should().Contain("https://example.org/desinscription");
+        content.PlainText.Should().Contain("Vole Papillon & Co a trouvé :");
+        content.PlainText.Should().NotContain("$Vole Papillon & Co");
         content.Html.Should().Contain("&lt;Titre");
         content.Html.Should().Contain("&amp; Fils");
         content.Html.Should().Contain("aucune réservation ni mise de côté");
@@ -68,6 +70,31 @@ public sealed class BookAlertEmailContentBuilderTests
 
         content.PlainText.Should().Contain("disponible dès à présent");
         content.PlainText.Should().Contain("Prochaine ouverture : 14 septembre 2026");
+    }
+
+    [Fact]
+    public void Build_RareBookSoldAlertAnnouncesDisappearanceWithoutAProductTotal()
+    {
+        var rareBook = new RareBookAlertOutboxItem(
+            Guid.Parse("b7ef1e5e-8f64-4be3-b8d7-82f2d9e8b5fd"),
+            "Atlas ancien",
+            "Auteur",
+            "atlas-ancien");
+        var delivery = new BookAlertDelivery(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "member@example.org",
+            "Prénom Nom",
+            [],
+            [rareBook]);
+
+        var content = BookAlertEmailContentBuilder.Build(delivery, "Association", null);
+
+        content.Subject.Should().Contain("vendu");
+        content.Subject.Should().NotContain("$1");
+        content.PlainText.Should().Contain("n'est plus disponible");
+        content.Html.Should().Contain("n’est plus disponible");
+        content.PlainText.Should().NotContain("total");
     }
 
     private static Isbn13 ParseIsbn(string value)

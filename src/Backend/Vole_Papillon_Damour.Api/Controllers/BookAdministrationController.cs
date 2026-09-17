@@ -1168,10 +1168,10 @@ public static class BookAdministrationController
     private static AdminMemberDetailResponse ToResponse(AdminMemberDetailResult result) =>
         new(ToResponse(result.Member),
             result.Watchlist.Select(item => new AdminMemberWatchlistItemResponse(
-                item.Id, item.Scope, item.WorkId, item.Isbn13, item.Title, item.Authors,
+                item.Id, item.Scope, item.WorkId, item.Isbn13, item.RareBookId, item.Title, item.Authors,
                 item.QuantityAvailable, item.QuantityAnnounced, item.AddedAt, item.LastAlertAt)).ToArray(),
             result.Alerts.Select(item => new AdminMemberAlertHistoryResponse(
-                item.Id, item.Isbn13, item.Title, item.SentAt, item.OutboxMessageId)).ToArray());
+                item.Id, item.Isbn13, item.RareBookId, item.Title, item.SentAt, item.OutboxMessageId)).ToArray());
 
     private static AdminMemberOperationResponse ToResponse(AdminMemberOperationResult result) =>
         new(result.MemberId, result.AlertStatus, result.Changed, result.DeletionCompleted);

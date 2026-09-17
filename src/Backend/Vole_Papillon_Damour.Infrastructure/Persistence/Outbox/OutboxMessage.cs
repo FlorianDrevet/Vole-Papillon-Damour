@@ -11,6 +11,7 @@ public sealed class OutboxMessage
     public DateTime? ClaimedUntil { get; set; }
     public Guid? ScanSessionId { get; set; }
     public Guid? MemberId { get; set; }
+    public Guid? RareBookId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? SentAt { get; set; }
     public string? LastError { get; set; }

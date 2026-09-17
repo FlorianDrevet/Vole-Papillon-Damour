@@ -205,6 +205,10 @@ internal sealed class WatchlistFeatureTestDbContext(
                 .HasConversion(new ValueConverter<Isbn13?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
+            builder.Property(item => item.RareBookId)
+                .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value == null ? null : RareBookId.Create(value.Value)));
             builder.Property(item => item.AddedAt).HasColumnType("datetime2");
             builder.HasOne<Watchlist>()
                 .WithMany()
@@ -219,7 +223,13 @@ internal sealed class WatchlistFeatureTestDbContext(
             builder.Property(history => history.UserId)
                 .HasConversion(id => id.Value, value => UserId.Create(value));
             builder.Property(history => history.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(history => history.RareBookId)
+                .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value == null ? null : RareBookId.Create(value.Value)));
             builder.Property(history => history.SentAt).HasColumnType("datetime2");
         });
 

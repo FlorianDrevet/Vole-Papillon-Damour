@@ -16,7 +16,8 @@ public sealed record CreateRareBookRequest(
     int? PageCount,
     string? ShelfLocation,
     string? PriceSetBy,
-    string? Isbn13);
+    string? Isbn13,
+    Guid? ClientGestureId = null);
 
 public sealed record UpdateRareBookRequest(
     string Title,

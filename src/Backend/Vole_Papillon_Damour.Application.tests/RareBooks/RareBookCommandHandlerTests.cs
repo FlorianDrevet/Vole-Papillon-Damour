@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.AddRareBookPhoto;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.CreateRareBook;
@@ -44,6 +45,23 @@ public sealed class RareBookCommandHandlerTests
 
         result.IsError.Should().BeTrue();
         result.FirstError.Code.Should().Be("RareBook.DuplicateIsbn");
+    }
+
+    [Fact]
+    public async Task Create_with_a_client_gesture_is_idempotent_for_an_offline_retry()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var clientGestureId = Guid.NewGuid();
+        var command = fixture.CreateCommand() with {ClientGestureId = clientGestureId};
+        var handler = new CreateRareBookCommandHandler(fixture.Context, fixture.Clock);
+
+        var first = await handler.Handle(command, CancellationToken.None);
+        var second = await handler.Handle(command, CancellationToken.None);
+
+        first.IsError.Should().BeFalse();
+        second.IsError.Should().BeFalse();
+        second.Value.Id.Should().Be(first.Value.Id);
+        (await fixture.Context.RareBooks.CountAsync()).Should().Be(1);
     }
 
     [Fact]
@@ -104,6 +122,7 @@ public sealed class RareBookCommandHandlerTests
     public async Task Mark_sold_is_idempotent_for_a_published_book_and_refuses_a_draft()
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var outbox = Substitute.For<IBookAlertOutbox>();
         var published = await fixture.AddRareBookAsync("Vendu", published: true);
         var command = new MarkRareBookSoldCommand(
             published.Id,
@@ -112,9 +131,9 @@ public sealed class RareBookCommandHandlerTests
             fixture.Now.AddMinutes(2),
             fixture.UserId);
 
-        var first = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock)
+        var first = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox)
             .Handle(command, CancellationToken.None);
-        var second = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock)
+        var second = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox)
             .Handle(command, CancellationToken.None);
 
         first.IsError.Should().BeFalse();
@@ -123,22 +142,55 @@ public sealed class RareBookCommandHandlerTests
         second.Value.IsSold.Should().BeTrue();
 
         var draft = await fixture.AddRareBookAsync("Brouillon");
-        var refused = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock)
+        var refused = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox)
             .Handle(command with { RareBookId = draft.Id }, CancellationToken.None);
 
         refused.IsError.Should().BeTrue();
         refused.FirstError.Code.Should().Be("RareBook.CannotSellDraft");
+        await outbox.Received(1).QueueRareBookSoldAsync(
+            published.Id,
+            command.OccurredAt,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Mark_sold_rolls_back_when_the_alert_outbox_cannot_be_written()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var outbox = Substitute.For<IBookAlertOutbox>();
+        var published = await fixture.AddRareBookAsync("Alerte atomique", published: true);
+        var command = new MarkRareBookSoldCommand(
+            published.Id,
+            null,
+            null,
+            fixture.Now.AddMinutes(2),
+            fixture.UserId);
+        outbox.QueueRareBookSoldAsync(
+                published.Id,
+                command.OccurredAt,
+                Arg.Any<CancellationToken>())
+            .Returns(_ => throw new InvalidOperationException("outbox unavailable"));
+
+        var handler = new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox);
+
+        await FluentActions.Invoking(() => handler.Handle(command, CancellationToken.None))
+            .Should().ThrowAsync<InvalidOperationException>();
+
+        fixture.Context.ChangeTracker.Clear();
+        (await fixture.Context.RareBooks.SingleAsync(book => book.Id == published.Id))
+            .IsSold.Should().BeFalse();
     }
 
     [Fact]
     public async Task Restore_availability_is_allowed_only_in_the_short_correction_window()
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var outbox = Substitute.For<IBookAlertOutbox>();
         var recent = await fixture.AddRareBookAsync("Correction récente", published: true);
         recent.MarkSold(fixture.Now.AddSeconds(-5), null, null, fixture.UserId);
         await fixture.Context.SaveChangesAsync();
 
-        var restored = await new RestoreRareBookAvailabilityCommandHandler(fixture.Context, fixture.Clock)
+        var restored = await new RestoreRareBookAvailabilityCommandHandler(fixture.Context, fixture.Clock, outbox)
             .Handle(new(recent.Id, fixture.UserId), CancellationToken.None);
 
         restored.IsError.Should().BeFalse();
@@ -148,11 +200,39 @@ public sealed class RareBookCommandHandlerTests
         expired.MarkSold(fixture.Now.AddSeconds(-31), null, null, fixture.UserId);
         await fixture.Context.SaveChangesAsync();
 
-        var refused = await new RestoreRareBookAvailabilityCommandHandler(fixture.Context, fixture.Clock)
+        var refused = await new RestoreRareBookAvailabilityCommandHandler(fixture.Context, fixture.Clock, outbox)
             .Handle(new(expired.Id, fixture.UserId), CancellationToken.None);
 
         refused.IsError.Should().BeTrue();
         refused.FirstError.Code.Should().Be("RareBook.RestoreWindowExpired");
+        await outbox.Received(1).CancelPendingForRareBookAsync(
+            recent.Id,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Restore_availability_rolls_back_when_alert_cancellation_cannot_be_written()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var outbox = Substitute.For<IBookAlertOutbox>();
+        var published = await fixture.AddRareBookAsync("Restauration atomique", published: true);
+        published.MarkSold(fixture.Now.AddSeconds(-5), null, null, fixture.UserId);
+        await fixture.Context.SaveChangesAsync();
+        outbox.CancelPendingForRareBookAsync(
+                published.Id,
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<int>(new InvalidOperationException("outbox unavailable")));
+
+        var handler = new RestoreRareBookAvailabilityCommandHandler(fixture.Context, fixture.Clock, outbox);
+
+        await FluentActions.Invoking(() => handler.Handle(
+                new(published.Id, fixture.UserId),
+                CancellationToken.None))
+            .Should().ThrowAsync<InvalidOperationException>();
+
+        fixture.Context.ChangeTracker.Clear();
+        (await fixture.Context.RareBooks.SingleAsync(book => book.Id == published.Id))
+            .IsSold.Should().BeTrue();
     }
 
     [Fact]
@@ -164,12 +244,13 @@ public sealed class RareBookCommandHandlerTests
         fixture.Blob.DeleteFileAsync(BlobContainer.RareBookPhotos, photo.BlobName)
             .Returns(photo.BlobName);
 
-        var result = await new DeleteRareBookCommandHandler(fixture.Context, fixture.Blob)
+        var result = await new DeleteRareBookCommandHandler(fixture.Context, fixture.Blob, fixture.Clock)
             .Handle(new(book.Id, fixture.UserId), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
         (await fixture.Context.RareBooks.CountAsync()).Should().Be(0);
         (await fixture.Context.RareBookPhotos.CountAsync()).Should().Be(0);
+        (await fixture.Context.RareBookTombstones.SingleAsync()).RareBookId.Should().Be(book.Id.Value);
         await fixture.Blob.Received(1).DeleteFileAsync(
             BlobContainer.RareBookPhotos,
             photo.BlobName);
@@ -184,7 +265,7 @@ public sealed class RareBookCommandHandlerTests
         fixture.Blob.DeleteFileAsync(BlobContainer.RareBookPhotos, photo.BlobName)
             .Returns(string.Empty);
 
-        var result = await new DeleteRareBookCommandHandler(fixture.Context, fixture.Blob)
+        var result = await new DeleteRareBookCommandHandler(fixture.Context, fixture.Blob, fixture.Clock)
             .Handle(new(book.Id, fixture.UserId), CancellationToken.None);
 
         result.IsError.Should().BeTrue();

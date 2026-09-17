@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
@@ -214,6 +216,37 @@ public sealed class ProjectDbContextModelTests
         using var context = CreateContext();
         context.Database.GetMigrations()
             .Should().Contain(migration => migration.EndsWith("_AddRareBooks", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ClientGestureMigrationAddsTheIdempotencyColumnAndIndex()
+    {
+        var migrationBuilder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
+        new ClientGestureMigrationProbe().ApplyUp(migrationBuilder);
+
+        var addColumn = migrationBuilder.Operations
+            .OfType<AddColumnOperation>()
+            .SingleOrDefault(operation =>
+                operation.Table == "RareBooks" &&
+                operation.Name == "ClientGestureId");
+        addColumn.Should().NotBeNull();
+        addColumn!.ClrType.Should().Be(typeof(Guid));
+        addColumn.IsNullable.Should().BeTrue();
+
+        var createIndex = migrationBuilder.Operations
+            .OfType<CreateIndexOperation>()
+            .SingleOrDefault(operation =>
+                operation.Table == "RareBooks" &&
+                operation.Name == "IX_RareBooks_ClientGestureId");
+        createIndex.Should().NotBeNull();
+        createIndex!.IsUnique.Should().BeTrue();
+        createIndex.Filter.Should().Be("[ClientGestureId] IS NOT NULL");
+    }
+
+    private sealed class ClientGestureMigrationProbe :
+        Vole_Papillon_Damour.Infrastructure.Migrations.AddRareBookClientGestureId
+    {
+        public void ApplyUp(MigrationBuilder migrationBuilder) => Up(migrationBuilder);
     }
 
     private static ProjectDbContext CreateContext()

@@ -20,4 +20,5 @@ public sealed record CreateRareBookCommand(
     string? ShelfLocation,
     string? PriceSetBy,
     string? Isbn13,
-    UserId UserId) : IRequest<ErrorOr<RareBookResult>>;
+    UserId UserId,
+    Guid? ClientGestureId = null) : IRequest<ErrorOr<RareBookResult>>;

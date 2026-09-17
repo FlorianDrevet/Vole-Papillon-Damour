@@ -36,4 +36,5 @@ public interface IProjectDbContext
     DbSet<EmailBounceEvent> EmailBounceEvents { get; }
     DbSet<RareBook> RareBooks { get; }
     DbSet<RareBookPhoto> RareBookPhotos { get; }
+    DbSet<RareBookTombstone> RareBookTombstones => throw new NotSupportedException();
 }

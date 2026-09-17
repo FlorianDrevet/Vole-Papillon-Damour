@@ -8,6 +8,8 @@ using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatchlist
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.WatchlistFeature;
 
@@ -69,6 +71,41 @@ public sealed class WatchlistCommandHandlerTests
         item.Publisher.Should().Be("Gallimard");
         item.PublicationYear.Should().Be(1999);
         item.CoverUrl.Should().Be("https://covers.example.test/le-petit-prince.jpg");
+    }
+
+    [Fact]
+    public async Task AddRareBookItem_FollowsThePublishedRareBookAndReturnsItsTarget()
+    {
+        await using var fixture = await WatchlistFeatureTestFixture.CreateAsync();
+        var rareBook = RareBook.Create(
+            "Atlas ancien",
+            45m,
+            WatchlistFeatureTestFixture.Now.AddMinutes(-2),
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            authorMention: "Auteur",
+            shelf: RareBookShelf.AncientEditions,
+            condition: RareBookCondition.AsNew);
+        rareBook.Publish(
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            WatchlistFeatureTestFixture.Now.AddMinutes(-1));
+        fixture.Context.RareBooks.Add(rareBook);
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await CreateAddHandler(fixture).Handle(
+            new AddWatchlistItemCommand(
+                MemberId,
+                "member@example.test",
+                WatchlistItemScope.RareBook,
+                null,
+                null,
+                RareBookId: rareBook.Id.Value,
+                Title: rareBook.Title),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Scope.Should().Be(WatchlistItemScope.RareBook);
+        result.Value.RareBookId.Should().Be(rareBook.Id.Value);
+        (await fixture.Context.WatchlistItems.SingleAsync()).RareBookId.Should().Be(rareBook.Id);
     }
 
     [Fact]

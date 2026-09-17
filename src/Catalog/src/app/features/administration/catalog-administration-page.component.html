@@ -956,7 +956,7 @@
             </div>
             <div class="simple-list">
               @for (item of member.watchlist; track item.id) {
-                <div><span><strong>{{ item.title || item.isbn13 || 'Titre non renseigné' }}</strong><small>{{ item.authors || item.isbn13 || 'Auteur non renseigné' }}</small></span><span>{{ formatNumber(item.quantityAvailable) }} disponible{{ item.quantityAvailable > 1 ? 's' : '' }}</span></div>
+                <div><span><strong>{{ item.title || (item.scope === 'RareBook' ? 'Livre rare suivi' : item.isbn13 || 'Titre non renseigné') }}</strong><small>{{ item.scope === 'RareBook' ? 'Exemplaire rare' : item.authors || item.isbn13 || 'Auteur non renseigné' }}</small></span><span>{{ formatNumber(item.quantityAvailable) }} disponible{{ item.quantityAvailable > 1 ? 's' : '' }}</span></div>
               } @empty {
                 <p class="empty-inline">Aucun titre suivi.</p>
               }
@@ -970,7 +970,7 @@
             </div>
             <div class="simple-list">
               @for (alert of member.alerts; track alert.id) {
-                <div><span><strong>{{ alert.title || alert.isbn13 }}</strong><small>Envoyée le {{ formatDate(alert.sentAt, true) }}</small></span><span>{{ alert.outboxMessageId ? 'Message journalisé' : 'Notification locale' }}</span></div>
+                <div><span><strong>{{ alert.title || (alert.rareBookId ? 'Alerte livre rare' : alert.isbn13 || 'Titre non renseigné') }}</strong><small>Envoyée le {{ formatDate(alert.sentAt, true) }}</small></span><span>{{ alert.outboxMessageId ? 'Message journalisé' : 'Notification locale' }}</span></div>
               } @empty {
                 <p class="empty-inline">Aucune alerte envoyée.</p>
               }

@@ -62,6 +62,16 @@ public sealed class GetPublicRareBooksQueryHandler(
             booksQuery = booksQuery.Where(book => !book.IsSold);
         }
 
+        var search = query.Search?.Trim();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = $"%{search}%";
+            booksQuery = booksQuery.Where(book =>
+                EF.Functions.Like(book.Title, pattern) ||
+                EF.Functions.Like(book.AuthorMention ?? string.Empty, pattern) ||
+                EF.Functions.Like(book.Publisher ?? string.Empty, pattern));
+        }
+
         var totalCount = await booksQuery.CountAsync(cancellationToken);
         var orderedQuery = query.Sort switch
         {
@@ -88,11 +98,11 @@ public sealed class GetPublicRareBooksQueryHandler(
         var shelves = (await dbContext.RareBooks
                 .AsNoTracking()
                 .Where(book => book.Status == publishedStatus)
-                .Select(book => book.Shelf)
-                .ToListAsync(cancellationToken))
-            .Select(value => value.Value)
-            .Distinct(StringComparer.Ordinal)
-            .OrderBy(value => value, StringComparer.CurrentCultureIgnoreCase)
+            .Select(book => book.Shelf)
+            .ToListAsync(cancellationToken))
+            .GroupBy(value => value.Value, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase)
+            .Select(group => new RareBookShelfCountResult(group.Key, group.Count()))
             .ToArray();
 
         return new PublicRareBookPageResult(

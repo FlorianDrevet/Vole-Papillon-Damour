@@ -216,6 +216,12 @@
                         }
                       </p>
                     }
+                    @if (item.rareBook; as rareBook) {
+                      <p class="watchlist-rare-price">
+                        {{ rareBook.price | number:'1.2-2' }} €
+                        <span>Prix ferme — lecture sur place</span>
+                      </p>
+                    }
                     <div class="watchlist-meta">
                       <span class="watchlist-edition">{{ editionLabel(item) }}</span>
                       <span

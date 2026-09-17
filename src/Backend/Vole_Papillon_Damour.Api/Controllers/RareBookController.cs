@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.AddRareBookPhoto;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.CreateRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.DeleteRareBook;
@@ -9,6 +10,7 @@ using Vole_Papillon_Damour.Application.RareBooks.Commands.DeleteRareBookPhoto;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.MarkRareBookSold;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.PublishRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.ReorderRareBookPhotos;
+using Vole_Papillon_Damour.Application.RareBooks.Commands.RestoreRareBookAvailability;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UnpublishRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBookPhotoCaption;
@@ -38,6 +40,7 @@ public static class RareBookController
             endpoints.MapGet(
                     "/catalog/rare-books",
                     async (
+                        string? search,
                         string? shelf,
                         bool? includeSold,
                         string? sort,
@@ -53,11 +56,12 @@ public static class RareBookController
 
                         var result = await mediator.Send(
                             new GetPublicRareBooksQuery(
-                                shelf,
-                                includeSold ?? true,
-                                sortOrder,
-                                page ?? 1,
-                                pageSize ?? 24),
+                                Shelf: shelf,
+                                IncludeSold: includeSold ?? true,
+                                Sort: sortOrder,
+                                Page: page ?? 1,
+                                PageSize: pageSize ?? 24,
+                                Search: search),
                             cancellationToken);
 
                         return result.Match(
@@ -65,7 +69,8 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("GetPublicRareBooks")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 
             endpoints.MapGet(
                     "/catalog/rare-books/{slug}",
@@ -83,7 +88,8 @@ public static class RareBookController
                             error => error.Result());
                     })
                 .WithName("GetPublicRareBookBySlug")
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 
             endpoints.MapGet(
                     "/rare-books/admin",
@@ -201,7 +207,8 @@ public static class RareBookController
                                 request.ShelfLocation,
                                 request.PriceSetBy,
                                 request.Isbn13,
-                                userId),
+                                userId,
+                                request.ClientGestureId),
                             cancellationToken);
 
                         return result.Match(
@@ -361,6 +368,105 @@ public static class RareBookController
                     })
                 .WithName("MarkRareBookSold")
                 .RequireAuthorization("RareBooks");
+
+            endpoints.MapPost(
+                    "/rare-books/admin/{id:guid}/restore",
+                    async (
+                        Guid id,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetRareBookId(id, out var rareBookId))
+                        {
+                            return DomainErrors.RareBook.InvalidId().Result();
+                        }
+
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RestoreRareBookAvailabilityCommand(rareBookId, userId),
+                            cancellationToken);
+
+                        return result.Match(
+                            book => Results.Ok(ToResponse(book)),
+                            error => error.Result());
+                    })
+                .WithName("RestoreRareBookAvailability")
+                .RequireAuthorization("RareBooks");
+
+            endpoints.MapPost(
+                    "/rare-books/cash/{id:guid}/sold",
+                    async (
+                        Guid id,
+                        MarkRareBookSoldRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetRareBookId(id, out var rareBookId))
+                        {
+                            return DomainErrors.RareBook.InvalidId().Result();
+                        }
+
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        if (!TryGetOptionalScanSessionId(request.ScanSessionId, out var scanSessionId) ||
+                            !TryGetOptionalAssoEventsId(request.AssoEventsId, out var assoEventsId))
+                        {
+                            return DomainErrors.RareBook.InvalidData("Related identifiers must be non-empty GUIDs.").Result();
+                        }
+
+                        var result = await mediator.Send(
+                            new MarkRareBookSoldCommand(
+                                rareBookId,
+                                scanSessionId,
+                                assoEventsId,
+                                request.OccurredAt,
+                                userId),
+                            cancellationToken);
+
+                        return result.Match(
+                            book => Results.Ok(ToResponse(book)),
+                            error => error.Result());
+                    })
+                .WithName("MarkRareBookSoldFromCash")
+                .RequireAuthorization("ScanVolunteer");
+
+            endpoints.MapPost(
+                    "/rare-books/cash/{id:guid}/restore",
+                    async (
+                        Guid id,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetRareBookId(id, out var rareBookId))
+                        {
+                            return DomainErrors.RareBook.InvalidId().Result();
+                        }
+
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RestoreRareBookAvailabilityCommand(rareBookId, userId),
+                            cancellationToken);
+
+                        return result.Match(
+                            book => Results.Ok(ToResponse(book)),
+                            error => error.Result());
+                    })
+                .WithName("RestoreRareBookAvailabilityFromCash")
+                .RequireAuthorization("ScanVolunteer");
 
             endpoints.MapDelete(
                     "/rare-books/admin/{id:guid}",
@@ -540,7 +646,7 @@ public static class RareBookController
 
     private static bool TryParseSort(string? value, out RareBookSortOrder sortOrder)
     {
-        sortOrder = RareBookSortOrder.Recent;
+        sortOrder = RareBookSortOrder.PriceDescending;
         if (string.IsNullOrWhiteSpace(value))
         {
             return true;
@@ -679,7 +785,9 @@ public static class RareBookController
             result.TotalCount,
             result.Page,
             result.PageSize,
-            result.Shelves);
+            result.Shelves
+                .Select(shelf => new RareBookShelfCountResponse(shelf.Label, shelf.Count))
+                .ToArray());
 
     private static PublicRareBookDetailResponse ToResponse(PublicRareBookDetailResult result) =>
         new(

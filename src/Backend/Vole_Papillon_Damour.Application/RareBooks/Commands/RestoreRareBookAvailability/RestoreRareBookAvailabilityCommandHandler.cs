@@ -10,7 +10,8 @@ namespace Vole_Papillon_Damour.Application.RareBooks.Commands.RestoreRareBookAva
 
 public sealed class RestoreRareBookAvailabilityCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    IBookAlertOutbox bookAlertOutbox)
     : IRequestHandler<RestoreRareBookAvailabilityCommand, ErrorOr<RareBookResult>>
 {
     public async Task<ErrorOr<RareBookResult>> Handle(
@@ -27,6 +28,8 @@ public sealed class RestoreRareBookAvailabilityCommandHandler(
         {
             return clockError.Value;
         }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var rareBook = await dbContext.RareBooks
             .Include(book => book.Photos)
@@ -49,7 +52,13 @@ public sealed class RestoreRareBookAvailabilityCommandHandler(
         if (changed)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            await bookAlertOutbox.CancelPendingForRareBookAsync(
+                rareBook.Id,
+                cancellationToken);
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        await transaction.CommitAsync(cancellationToken);
 
         return RareBookProjector.ToResult(rareBook);
     }

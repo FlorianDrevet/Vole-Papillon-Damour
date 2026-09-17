@@ -8,6 +8,8 @@ using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
@@ -24,7 +26,7 @@ public sealed class AddWatchlistItemCommandHandler(
         AddWatchlistItemCommand command,
         CancellationToken cancellationToken)
     {
-        if (!TryBuildTarget(command, out var workId, out var isbn13, out var targetError))
+        if (!TryBuildTarget(command, out var workId, out var isbn13, out var rareBookId, out var targetError))
         {
             return targetError;
         }
@@ -41,6 +43,21 @@ public sealed class AddWatchlistItemCommandHandler(
             return Error.Validation(
                 "Watchlist.InvalidClock",
                 "The watchlist clock must be expressed in UTC.");
+        }
+
+        if (command.Scope == WatchlistItemScope.RareBook)
+        {
+            var rareBookExists = await dbContext.RareBooks
+                .AsNoTracking()
+                .AnyAsync(
+                    book => book.Id == rareBookId &&
+                            book.Status == RareBookStatus.Published &&
+                            !book.IsSold,
+                    cancellationToken);
+            if (!rareBookExists)
+            {
+                return Errors.Watchlist.RareBookNotFound(command.RareBookId!.Value);
+            }
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
@@ -67,9 +84,13 @@ public sealed class AddWatchlistItemCommandHandler(
             .ToListAsync(cancellationToken);
         var duplicate = existingItems.Any(item =>
             item.Scope == command.Scope &&
-            (command.Scope == WatchlistItemScope.Work
-                ? item.WorkId == workId
-                : item.Isbn13 == isbn13));
+            (command.Scope switch
+            {
+                WatchlistItemScope.Work => item.WorkId == workId,
+                WatchlistItemScope.Edition => item.Isbn13 == isbn13,
+                WatchlistItemScope.RareBook => item.RareBookId == rareBookId,
+                _ => false
+            }));
         if (duplicate)
         {
             return Errors.Watchlist.DuplicateItem();
@@ -91,10 +112,21 @@ public sealed class AddWatchlistItemCommandHandler(
                 command.Publisher,
                 command.PublicationYear,
                 command.CoverUrl)
-            : WatchlistItem.CreateEdition(
+            : command.Scope == WatchlistItemScope.Edition
+            ? WatchlistItem.CreateEdition(
                 Guid.NewGuid(),
                 user.Id,
                 isbn13!.Value,
+                addedAt,
+                command.Title,
+                command.Authors,
+                command.Publisher,
+                command.PublicationYear,
+                command.CoverUrl)
+            : WatchlistItem.CreateRareBook(
+                Guid.NewGuid(),
+                user.Id,
+                rareBookId!,
                 addedAt,
                 command.Title,
                 command.Authors,
@@ -110,6 +142,7 @@ public sealed class AddWatchlistItemCommandHandler(
             item.Scope,
             item.WorkId,
             item.Isbn13?.Value,
+            item.RareBookId?.Value,
             new DateTimeOffset(item.AddedAt, TimeSpan.Zero));
     }
 
@@ -117,10 +150,12 @@ public sealed class AddWatchlistItemCommandHandler(
         AddWatchlistItemCommand command,
         out string? workId,
         out Isbn13? isbn13,
+        out RareBookId? rareBookId,
         out Error error)
     {
         workId = null;
         isbn13 = null;
+        rareBookId = null;
         error = Errors.Watchlist.InvalidScope();
 
         switch (command.Scope)
@@ -128,7 +163,7 @@ public sealed class AddWatchlistItemCommandHandler(
             case WatchlistItemScope.Work:
                 workId = command.WorkId?.Trim();
                 if (string.IsNullOrWhiteSpace(workId) || workId.Length > 64 ||
-                    !string.IsNullOrWhiteSpace(command.Isbn13))
+                    !string.IsNullOrWhiteSpace(command.Isbn13) || command.RareBookId is not null)
                 {
                     error = Errors.Watchlist.InvalidWorkTarget();
                     return false;
@@ -137,7 +172,7 @@ public sealed class AddWatchlistItemCommandHandler(
                 return true;
 
             case WatchlistItemScope.Edition:
-                if (!string.IsNullOrWhiteSpace(command.WorkId) ||
+                if (!string.IsNullOrWhiteSpace(command.WorkId) || command.RareBookId is not null ||
                     !Isbn13.TryCreate(command.Isbn13, out var parsedIsbn13))
                 {
                     error = Errors.Watchlist.InvalidEditionTarget();
@@ -145,6 +180,18 @@ public sealed class AddWatchlistItemCommandHandler(
                 }
 
                 isbn13 = parsedIsbn13;
+                return true;
+
+            case WatchlistItemScope.RareBook:
+                if (command.RareBookId is null || command.RareBookId == Guid.Empty ||
+                    !string.IsNullOrWhiteSpace(command.WorkId) ||
+                    !string.IsNullOrWhiteSpace(command.Isbn13))
+                {
+                    error = Errors.Watchlist.InvalidRareBookTarget();
+                    return false;
+                }
+
+                rareBookId = RareBookId.Create(command.RareBookId.Value);
                 return true;
 
             default:

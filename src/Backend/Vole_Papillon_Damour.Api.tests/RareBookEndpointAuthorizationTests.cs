@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Vole_Papillon_Damour.Api.Controllers;
@@ -50,6 +51,13 @@ public sealed class RareBookEndpointAuthorizationTests
         endpoints.Single(endpoint => endpoint.RoutePattern.RawText == "/rare-books/cash/search")
             .Metadata.GetOrderedMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>()
             .Should().Contain(data => data.Policy == "ScanVolunteer");
+
+        endpoints
+            .Where(endpoint => endpoint.RoutePattern.RawText?.StartsWith("/rare-books/cash/", StringComparison.Ordinal) == true)
+            .Should().NotBeEmpty()
+            .And.OnlyContain(endpoint => endpoint.Metadata
+                .GetOrderedMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>()
+                .Any(data => data.Policy == "ScanVolunteer"));
     }
 
     [Fact]
@@ -62,11 +70,14 @@ public sealed class RareBookEndpointAuthorizationTests
             ("/rare-books/admin", "GET"),
             ("/rare-books/admin/{id:guid}", "GET"),
             ("/rare-books/cash/search", "GET"),
+            ("/rare-books/cash/{id:guid}/sold", "POST"),
+            ("/rare-books/cash/{id:guid}/restore", "POST"),
             ("/rare-books/admin", "POST"),
             ("/rare-books/admin/{id:guid}", "PUT"),
             ("/rare-books/admin/{id:guid}/publish", "POST"),
             ("/rare-books/admin/{id:guid}/unpublish", "POST"),
             ("/rare-books/admin/{id:guid}/sold", "POST"),
+            ("/rare-books/admin/{id:guid}/restore", "POST"),
             ("/rare-books/admin/{id:guid}", "DELETE"),
             ("/rare-books/admin/{id:guid}/photos", "POST"),
             ("/rare-books/admin/{id:guid}/photos/order", "PUT"),
@@ -94,6 +105,15 @@ public sealed class RareBookEndpointAuthorizationTests
                 .Any());
     }
 
+    [Fact]
+    public void Public_rare_book_reads_use_public_catalog_rate_limiting()
+    {
+        RegisteredEndpoints()
+            .Where(endpoint => RouteOf(endpoint).StartsWith("/catalog/rare-books", StringComparison.Ordinal))
+            .Should()
+            .OnlyContain(endpoint => UsesPublicCatalogRateLimiting(endpoint));
+    }
+
     private static IReadOnlyList<RouteEndpoint> RegisteredEndpoints()
     {
         var builder = WebApplication.CreateBuilder();
@@ -115,4 +135,7 @@ public sealed class RareBookEndpointAuthorizationTests
 
     private static string RouteOf(RouteEndpoint endpoint) =>
         endpoint.RoutePattern.RawText ?? string.Empty;
+
+    private static bool UsesPublicCatalogRateLimiting(RouteEndpoint endpoint) =>
+        endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName == "PublicCatalog";
 }

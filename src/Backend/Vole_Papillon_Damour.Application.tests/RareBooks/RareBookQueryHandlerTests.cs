@@ -5,11 +5,48 @@ using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookBySlug;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.SearchRareBooksForCash;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.RareBooks;
 
 public sealed class RareBookQueryHandlerTests
 {
+    [Fact]
+    public async Task Public_list_defaults_to_price_descending_for_the_public_selection()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        await fixture.AddRareBookAsync("Prix fort", price: 80m, published: true);
+        await fixture.AddRareBookAsync("Petit prix", price: 10m, published: true);
+
+        var result = await new GetPublicRareBooksQueryHandler(fixture.Context, fixture.Clock)
+            .Handle(new GetPublicRareBooksQuery(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Select(book => book.Title)
+            .Should().ContainInOrder("Prix fort", "Petit prix");
+    }
+
+    [Fact]
+    public async Task Public_list_returns_counts_for_each_rare_book_shelf()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        await fixture.AddRareBookAsync("Ancien 1", published: true);
+        await fixture.AddRareBookAsync("Ancien 2", published: true);
+        await fixture.AddRareBookAsync(
+            "Illustré",
+            published: true,
+            shelf: RareBookShelf.Illustrated.Value);
+
+        var result = await new GetPublicRareBooksQueryHandler(fixture.Context, fixture.Clock)
+            .Handle(new GetPublicRareBooksQuery(), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Shelves.Should().ContainSingle(shelf =>
+            shelf.Label == RareBookShelf.AncientEditionsLabel && shelf.Count == 2);
+        result.Value.Shelves.Should().ContainSingle(shelf =>
+            shelf.Label == RareBookShelf.IllustratedLabel && shelf.Count == 1);
+    }
+
     [Fact]
     public async Task Public_list_contains_published_sold_books_by_default_and_orders_by_price()
     {
@@ -56,6 +93,23 @@ public sealed class RareBookQueryHandlerTests
         detailResult.IsError.Should().BeTrue();
         detailResult.FirstError.Code.Should().Be("RareBook.NotFound");
         availableDetail.IsError.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Public_list_filters_published_rare_books_by_search_text()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        await fixture.AddRareBookAsync("Atlas des jardins", published: true);
+        await fixture.AddRareBookAsync("Traité de reliure", published: true);
+        await fixture.AddRareBookAsync("Atlas en brouillon");
+
+        var result = await new GetPublicRareBooksQueryHandler(fixture.Context, fixture.Clock)
+            .Handle(
+                new GetPublicRareBooksQuery(Search: "atlas"),
+                CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Should().ContainSingle(book => book.Title == "Atlas des jardins");
     }
 
     [Fact]

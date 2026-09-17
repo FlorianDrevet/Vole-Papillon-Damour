@@ -62,6 +62,7 @@ describe('ScanDiagnosticComponent', () => {
         createOutboxEntry('Quarantined', 'gesture-2'),
       ],
       sales: [],
+      rareSales: [],
     };
   }
 

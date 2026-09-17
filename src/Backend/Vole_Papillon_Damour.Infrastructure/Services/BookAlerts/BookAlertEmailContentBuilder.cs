@@ -23,14 +23,19 @@ public static class BookAlertEmailContentBuilder
         ArgumentNullException.ThrowIfNull(delivery);
         ArgumentException.ThrowIfNullOrWhiteSpace(associationName);
 
-        var subject = delivery.Items.Count == 1
-            ? "Un livre de votre liste de recherche est disponible"
-            : $"{delivery.Items.Count} livres de votre liste de recherche sont disponibles";
+        var rareItems = delivery.RareItems ?? [];
+        var subject = BuildSubject(delivery.Items.Count, rareItems.Count);
         var greeting = string.IsNullOrWhiteSpace(delivery.RecipientName)
             ? "Bonjour,"
             : $"Bonjour {delivery.RecipientName},";
-        var plainItems = delivery.Items.Select(BuildPlainItem).ToArray();
-        var htmlItems = delivery.Items.Select(BuildHtmlItem).ToArray();
+        var plainItems = delivery.Items
+            .Select(BuildPlainItem)
+            .Concat(rareItems.Select(BuildPlainRareItem))
+            .ToArray();
+        var htmlItems = delivery.Items
+            .Select(BuildHtmlItem)
+            .Concat(rareItems.Select(BuildHtmlRareItem))
+            .ToArray();
         var plainUnsubscribe = string.IsNullOrWhiteSpace(unsubscribeUrl)
             ? string.Empty
             : $"{Environment.NewLine}{Environment.NewLine}Se désabonner : {unsubscribeUrl}";
@@ -43,7 +48,7 @@ public static class BookAlertEmailContentBuilder
             [
                 greeting,
                 string.Empty,
-                $"{associationName} a trouvé :",
+                $"{associationName} a {(rareItems.Count > 0 && delivery.Items.Count == 0 ? "signalé" : "trouvé")} :",
                 string.Join(Environment.NewLine, plainItems),
                 string.Empty,
                 "La disponibilité doit être confirmée sur place ; aucune réservation ni mise de côté n'est effectuée.",
@@ -54,12 +59,34 @@ public static class BookAlertEmailContentBuilder
             : $"Bonjour {WebUtility.HtmlEncode(delivery.RecipientName)},";
         var html =
             $"<p>{htmlGreeting}</p>" +
-            $"<p>{WebUtility.HtmlEncode(associationName)} a trouvé :</p>" +
+            $"<p>{WebUtility.HtmlEncode(associationName)} a {(rareItems.Count > 0 && delivery.Items.Count == 0 ? "signalé" : "trouvé")} :</p>" +
             $"<ul>{string.Join(string.Empty, htmlItems)}</ul>" +
             "<p>La disponibilité doit être confirmée sur place ; aucune réservation ni mise de côté " +
             $"n'est effectuée.</p>{htmlUnsubscribe}";
 
         return new BookAlertEmailContent(subject, plainText, html);
+    }
+
+    private static string BuildSubject(int ordinaryItemCount, int rareItemCount)
+    {
+        if (ordinaryItemCount == 0 && rareItemCount == 1)
+        {
+            return "Un livre rare suivi a été vendu";
+        }
+
+        if (ordinaryItemCount == 0 && rareItemCount > 1)
+        {
+            return $"{rareItemCount} livres rares suivis ont été vendus";
+        }
+
+        if (rareItemCount == 0)
+        {
+            return ordinaryItemCount == 1
+                ? "Un livre de votre liste de recherche est disponible"
+                : $"{ordinaryItemCount} livres de votre liste de recherche sont disponibles";
+        }
+
+        return "Des livres suivis ont changé de disponibilité";
     }
 
     private static string BuildPlainItem(BookAlertOutboxItem item)
@@ -86,6 +113,23 @@ public static class BookAlertEmailContentBuilder
         var availability =
             $" <span>{WebUtility.HtmlEncode(FormatAvailability(item))}.</span>";
         return $"<li>{baseLine}{editionHtml}<br>{availability}</li>";
+    }
+
+    private static string BuildPlainRareItem(RareBookAlertOutboxItem item)
+    {
+        var author = string.IsNullOrWhiteSpace(item.AuthorMention)
+            ? string.Empty
+            : $" — {item.AuthorMention.Trim()}";
+        return $"- {item.Title}{author} : n'est plus disponible.";
+    }
+
+    private static string BuildHtmlRareItem(RareBookAlertOutboxItem item)
+    {
+        var title = WebUtility.HtmlEncode(item.Title);
+        var author = string.IsNullOrWhiteSpace(item.AuthorMention)
+            ? string.Empty
+            : $" — {WebUtility.HtmlEncode(item.AuthorMention.Trim())}";
+        return $"<li><strong>{title}</strong>{author} : n’est plus disponible.</li>";
     }
 
     private static string? FormatEdition(BookAlertOutboxItem item)

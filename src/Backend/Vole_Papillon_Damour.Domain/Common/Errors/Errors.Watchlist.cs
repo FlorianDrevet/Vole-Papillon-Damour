@@ -20,7 +20,7 @@ public static partial class Errors
 
         public static Error InvalidScope() => Error.Validation(
             code: "Watchlist.InvalidScope",
-            description: "A watchlist item scope must be Work or Edition.");
+            description: "A watchlist item scope must be Work, Edition or RareBook.");
 
         public static Error InvalidWorkTarget() => Error.Validation(
             code: "Watchlist.InvalidWorkTarget",
@@ -29,6 +29,14 @@ public static partial class Errors
         public static Error InvalidEditionTarget() => Error.Validation(
             code: "Watchlist.InvalidEditionTarget",
             description: "An edition watchlist item requires a valid ISBN-13 and no work identifier.");
+
+        public static Error InvalidRareBookTarget() => Error.Validation(
+            code: "Watchlist.InvalidRareBookTarget",
+            description: "A rare book watchlist item requires a valid rare book identifier only.");
+
+        public static Error RareBookNotFound(object rareBookId) => Error.NotFound(
+            code: "Watchlist.RareBookNotFound",
+            description: $"The rare book cannot be followed: {rareBookId}.");
 
         public static Error DuplicateItem() => Error.Conflict(
             code: "Watchlist.DuplicateItem",

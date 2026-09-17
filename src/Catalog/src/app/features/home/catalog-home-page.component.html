@@ -308,8 +308,8 @@
         label="Chargement des livres rares"></vpd-loader>
     } @else if (rare().length) {
       <div class="book-grid page-width" aria-label="Livres rares">
-        @for (book of rare(); track trackBook($index, book)) {
-          <app-book-card [book]="book"></app-book-card>
+        @for (book of rare(); track trackRareBook($index, book)) {
+          <app-rare-book-card [book]="book"></app-rare-book-card>
         }
       </div>
     } @else if (!loading()) {

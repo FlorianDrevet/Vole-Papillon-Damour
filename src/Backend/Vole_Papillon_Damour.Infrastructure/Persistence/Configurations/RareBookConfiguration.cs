@@ -105,12 +105,16 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
             .IsRowVersion()
             .IsConcurrencyToken()
             .IsRequired();
+        builder.Property(book => book.ClientGestureId);
 
         builder.HasIndex(book => book.Slug).IsUnique();
         builder.HasIndex(book => book.Isbn13)
             .IsUnique()
             .HasFilter("[Isbn13] IS NOT NULL");
         builder.HasIndex(book => new { book.Status, book.IsSold, book.Price });
+        builder.HasIndex(book => book.ClientGestureId)
+            .IsUnique()
+            .HasFilter("[ClientGestureId] IS NOT NULL");
 
         builder.HasOne<User>()
             .WithMany()
