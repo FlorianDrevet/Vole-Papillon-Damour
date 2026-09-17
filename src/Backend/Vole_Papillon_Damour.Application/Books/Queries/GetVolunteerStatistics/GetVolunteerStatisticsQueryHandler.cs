@@ -44,7 +44,7 @@ public sealed class GetVolunteerStatisticsQueryHandler(
         var volunteerId = query.VolunteerId;
         var sessions = await dbContext.ScanSessions
             .AsNoTracking()
-            .Where(session => session.VolunteerId == volunteerId)
+            .Where(session => session.VolunteerId == volunteerId && session.ScannedCount > 0)
             .OrderByDescending(session => session.StartedAt)
             .ThenByDescending(session => session.Id)
             .ToListAsync(cancellationToken);

@@ -30,7 +30,6 @@ export class ScanWorkflowService {
   async initialize(): Promise<PersistentStorageStatus> {
     return await this.enqueue(async () => {
       const status = await this.store.requestPersistentStorage();
-      await this.ensureSession(new Date());
       return status;
     });
   }
@@ -229,16 +228,23 @@ export class ScanWorkflowService {
 
   async setSessionMode(mode: 'AvailableNow' | 'NextFair'): Promise<ScanSessionSnapshot> {
     return await this.enqueue(async () => {
-      const session = await this.ensureSession(new Date());
+      const now = new Date();
+      const session = await this.ensureSession(now);
 
       if (session.closeRequested) {
-        const nextSession = createSession(new Date(), mode);
+        const nextSession = createSession(now, mode);
         await this.store.orphanPendingOutboxEntriesFromOtherSessions(nextSession.clientSessionId);
         await this.store.saveSession(nextSession);
         return nextSession;
       }
 
-      const updated = {...session, mode};
+      const counts = await this.store.getSessionCounts(session.clientSessionId);
+      const timestamp = now.toISOString();
+      // Older builds created a local session during bootstrap. Re-anchor only
+      // local-only empty sessions; a remote session already has a server-owned start.
+      const updated = counts.scannedCount === 0 && session.remoteSessionId === null
+        ? {...session, mode, startedAt: timestamp, lastScanAt: timestamp, lastSyncAt: timestamp}
+        : {...session, mode};
       await this.store.saveSession(updated);
       return updated;
     });
