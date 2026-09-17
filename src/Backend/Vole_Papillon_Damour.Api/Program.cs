@@ -130,6 +130,7 @@ app.MapHealthChecks("/health");
 
 //Controllers
 app.UseAcsEmailEventGridController();
+app.UseEmailUnsubscribeController();
 app.UseAuthenticationController();
 app.UseAccountController();
 app.UseAccountAdministrationController();

@@ -74,6 +74,9 @@ public static class DependencyInjection
         services.AddScoped<IBookAlertOutbox, BookAlertOutbox>();
         services.Configure<BookAlertEmailOptions>(
             builderConfiguration.GetSection(BookAlertEmailOptions.SectionName));
+        services.Configure<UnsubscribeTokenOptions>(
+            builderConfiguration.GetSection(UnsubscribeTokenOptions.SectionName));
+        services.AddSingleton<IUnsubscribeTokenService, UnsubscribeTokenService>();
         services.AddSingleton<IBookAlertEmailSender, BookAlertEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<EntraGraphUserDirectory>();

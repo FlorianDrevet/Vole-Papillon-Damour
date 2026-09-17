@@ -10,14 +10,20 @@ namespace Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 public sealed class BookAlertEmailSender : IBookAlertEmailSender
 {
     private readonly BookAlertEmailOptions _options;
+    private readonly UnsubscribeTokenOptions _unsubscribeOptions;
+    private readonly IUnsubscribeTokenService _unsubscribeTokenService;
     private readonly EmailClient? _client;
     private readonly ILogger<BookAlertEmailSender> _logger;
 
     public BookAlertEmailSender(
         IOptions<BookAlertEmailOptions> options,
+        IOptions<UnsubscribeTokenOptions> unsubscribeOptions,
+        IUnsubscribeTokenService unsubscribeTokenService,
         ILogger<BookAlertEmailSender> logger)
     {
         _options = options.Value;
+        _unsubscribeOptions = unsubscribeOptions.Value;
+        _unsubscribeTokenService = unsubscribeTokenService;
         _logger = logger;
         if (!_options.Enabled)
         {
@@ -68,6 +74,13 @@ public sealed class BookAlertEmailSender : IBookAlertEmailSender
             Html = emailContent.Html
         };
         var message = new EmailMessage(_options.MailFrom, delivery.Email, content);
+        foreach (var header in BookAlertEmailHeaders.BuildOneClickUnsubscribe(
+                     _unsubscribeOptions.Endpoint,
+                     _unsubscribeTokenService.Create(delivery.MemberId)))
+        {
+            message.Headers.Add(header.Key, header.Value);
+        }
+
         var operation = await _client.SendAsync(
             Azure.WaitUntil.Completed,
             message,
