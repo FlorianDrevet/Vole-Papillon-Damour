@@ -14,6 +14,7 @@ export function createCatalogNavItems(genres: readonly string[] = []): CatalogNa
   return [
     {url: '/', label: 'Accueil'},
     {url: '/recherche', label: 'Rechercher'},
+    {url: '/livres-rares', label: 'Livres rares', hint: 'La sélection des exemplaires singuliers'},
     {
       url: '/catalogue',
       label: 'Catalogue par genre',

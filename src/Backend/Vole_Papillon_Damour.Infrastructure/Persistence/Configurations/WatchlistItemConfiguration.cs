@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 
@@ -13,7 +16,9 @@ public sealed class WatchlistItemConfiguration : IEntityTypeConfiguration<Watchl
     {
         builder.ToTable("WatchlistItems", table => table.HasCheckConstraint(
             "CK_WatchlistItems_ExactlyOneTarget",
-            "(([Scope] = 0 AND [WorkId] IS NOT NULL AND [Isbn13] IS NULL) OR ([Scope] = 1 AND [WorkId] IS NULL AND [Isbn13] IS NOT NULL))"));
+            "(([Scope] = 0 AND [WorkId] IS NOT NULL AND [Isbn13] IS NULL AND [RareBookId] IS NULL) OR " +
+            "([Scope] = 1 AND [WorkId] IS NULL AND [Isbn13] IS NOT NULL AND [RareBookId] IS NULL) OR " +
+            "([Scope] = 2 AND [WorkId] IS NULL AND [Isbn13] IS NULL AND [RareBookId] IS NOT NULL))"));
         builder.HasKey(item => item.Id);
         builder.Property(item => item.Id).ValueGeneratedNever();
         builder.Property(item => item.UserId)
@@ -31,6 +36,10 @@ public sealed class WatchlistItemConfiguration : IEntityTypeConfiguration<Watchl
             .HasConversion(
                 isbn13 => BookPersistenceConversions.SerializeNullableIsbn13(isbn13),
                 value => BookPersistenceConversions.ParseNullableIsbn13(value));
+        builder.Property(item => item.RareBookId)
+            .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                rareBookId => rareBookId == null ? null : rareBookId.Value,
+                value => value == null ? null : RareBookId.Create(value.Value)));
         builder.Property(item => item.Title)
             .HasMaxLength(500)
             .UseCollation("Latin1_General_100_CI_AI");
@@ -49,6 +58,10 @@ public sealed class WatchlistItemConfiguration : IEntityTypeConfiguration<Watchl
             .WithMany()
             .HasForeignKey(item => item.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne<RareBook>()
+            .WithMany()
+            .HasForeignKey(item => item.RareBookId)
+            .OnDelete(DeleteBehavior.Cascade);
         builder.HasIndex(item => item.UserId);
         builder.HasIndex(item => item.WorkId);
         builder.HasIndex(item => item.Isbn13);
@@ -58,5 +71,8 @@ public sealed class WatchlistItemConfiguration : IEntityTypeConfiguration<Watchl
         builder.HasIndex(item => new { item.UserId, item.Isbn13 })
             .IsUnique()
             .HasFilter("[Isbn13] IS NOT NULL");
+        builder.HasIndex(item => new { item.UserId, item.RareBookId })
+            .IsUnique()
+            .HasFilter("[RareBookId] IS NOT NULL");
     }
 }

@@ -1,0 +1,129 @@
+:host {
+  display: block;
+}
+
+.rare-book-card {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d9c8ea;
+  background: #fff;
+  color: #072b45;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.rare-book-card:hover,
+.rare-book-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 28px rgb(95 58 134 / 16%);
+  outline: none;
+}
+
+.rare-book-card-cover {
+  position: relative;
+  display: grid;
+  height: 320px;
+  place-items: center;
+  overflow: hidden;
+  background: repeating-linear-gradient(135deg, #ece3f6 0 10px, #f8f4fc 10px 20px);
+}
+
+.rare-book-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rare-book-card-cover > span:not(.rare-book-card-badge) {
+  color: #5f3a86;
+  font-size: 2rem;
+}
+
+.rare-book-card-badge {
+  position: absolute;
+  top: .7rem;
+  left: .7rem;
+  padding: .3rem .55rem;
+  background: #5f3a86;
+  color: #fff;
+  font: 600 .6rem/1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.rare-book-card-sold-badge {
+  position: absolute;
+  top: .7rem;
+  right: .7rem;
+  padding: .3rem .55rem;
+  background: #6d8ba2;
+  color: #fff;
+  font: 600 .6rem/1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.rare-book-card-photo-count {
+  position: absolute;
+  right: .7rem;
+  bottom: .7rem;
+  padding: .3rem .45rem;
+  background: rgb(7 43 69 / 78%);
+  color: #fff;
+  font: .65rem/1 "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.rare-book-card-copy {
+  display: grid;
+  gap: .35rem;
+  padding: .9rem;
+}
+
+.rare-book-card h3 {
+  margin: 0;
+  font: 500 1.56rem/1.12 Newsreader, Georgia, serif;
+}
+
+.rare-book-card p {
+  margin: 0;
+  color: #4e6c84;
+  line-height: 1.35;
+}
+
+.rare-book-card-technical-line {
+  color: #6d8ba2 !important;
+  font: .68rem/1.35 "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.rare-book-card-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+  margin-top: .45rem;
+}
+
+.rare-book-card-footer strong {
+  color: #5f3a86;
+  font: 500 2rem/1 Newsreader, Georgia, serif;
+}
+
+.rare-book-card-footer span {
+  color: #0c6ea6;
+  font-size: .72rem;
+  text-align: right;
+}
+
+.rare-book-card-price--sold {
+  color: #6d8ba2 !important;
+  text-decoration: line-through;
+}
+
+.rare-book-card--sold .rare-book-card-copy {
+  color: #4e6c84;
+}
+
+.rare-book-card--sold .rare-book-card-action {
+  color: #6d8ba2;
+}

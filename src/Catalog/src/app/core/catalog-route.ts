@@ -5,6 +5,7 @@ const KNOWN_STATIC_ROUTE_PATHS = new Set([
   '/prochaines-dates',
   '/recherche',
   '/catalogue',
+  '/livres-rares',
   '/administration',
   '/compte',
   '/desinscription',
@@ -31,7 +32,11 @@ export function isKnownCatalogRoute(url: string): boolean {
     return segments.length === 2 && isCatalogAdminSection(segments[1]);
   }
 
-  return segments.length === 2 && (segments[0] === 'livres' || segments[0] === 'oeuvre');
+  return segments.length === 2 && (
+    segments[0] === 'livres' ||
+    segments[0] === 'oeuvre' ||
+    segments[0] === 'livres-rares'
+  );
 }
 
 export function isCatalogAdministrationRoute(url: string): boolean {

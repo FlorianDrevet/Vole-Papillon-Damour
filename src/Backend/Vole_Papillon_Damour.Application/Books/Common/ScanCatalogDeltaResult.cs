@@ -4,5 +4,20 @@ public sealed record ScanCatalogDeltaResult(
     DateTime GeneratedAt,
     string NextWatermark,
     IReadOnlyList<ScanCatalogBookResult> Books,
+    IReadOnlyList<ScanCatalogRareBookResult> RareBooks,
+    IReadOnlyList<Guid> RemovedRareBookIds,
     AssociationSettingsResult Settings,
     ScanNextBookFairResult? NextFair);
+
+public sealed record ScanCatalogRareBookResult(
+    Guid Id,
+    string? Isbn13,
+    string Title,
+    string? AuthorMention,
+    decimal Price,
+    string Shelf,
+    string Condition,
+    string? ShortDescription,
+    Uri? Thumbnail,
+    bool IsAvailable,
+    DateTime UpdatedAt);

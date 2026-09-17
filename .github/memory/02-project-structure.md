@@ -32,6 +32,9 @@
 - `BackOffice` is the admin surface and carries auth-related client dependencies.
 - `Website` is the public-facing association/editorial surface.
 - `Catalog` is the public books/catalogue surface, with its own SSR shell and typed API client.
+- Catalog administration's `src/Catalog/src/app/features/administration/rare-books/` owns
+  the autonomous rare-book list, fiche form, photo gallery, and facade; it remains inside
+  the Catalog runtime and shares the typed admin API client.
 - `Scan` is a separate PWA runtime with `Tri`/`Caisse` role boundaries; it should not leak web-only assumptions into MAUI.
 - `MauiCashApp` is a separate client runtime and should not leak web-only assumptions.
 

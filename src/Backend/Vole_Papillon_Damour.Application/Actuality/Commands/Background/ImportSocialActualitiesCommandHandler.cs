@@ -228,7 +228,7 @@ public sealed class ImportSocialActualitiesCommandHandler(
         {
             try
             {
-                await blobService.DeleteFileAsync(imageUri.ToString());
+                await blobService.DeleteFileAsync(BlobContainer.ActualityImages, imageUri.ToString());
             }
             catch (Exception exception)
             {

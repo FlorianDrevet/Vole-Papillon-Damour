@@ -5,6 +5,7 @@ public static class AccountRoles
     public const string Tri = "Tri";
     public const string Caisse = "Caisse";
     public const string Administration = "Administration";
+    public const string LivresRares = "LivresRares";
 
     public static IReadOnlyList<string> Normalize(IEnumerable<string>? roles)
     {
@@ -16,6 +17,7 @@ public static class AccountRoles
                 var value when string.Equals(value, Tri, StringComparison.OrdinalIgnoreCase) => Tri,
                 var value when string.Equals(value, Caisse, StringComparison.OrdinalIgnoreCase) => Caisse,
                 var value when string.Equals(value, Administration, StringComparison.OrdinalIgnoreCase) => Administration,
+                var value when string.Equals(value, LivresRares, StringComparison.OrdinalIgnoreCase) => LivresRares,
                 _ => null
             };
 
@@ -41,6 +43,7 @@ public static class AccountRoles
             var value when string.Equals(value, Tri, StringComparison.OrdinalIgnoreCase) => true,
             var value when string.Equals(value, Caisse, StringComparison.OrdinalIgnoreCase) => true,
             var value when string.Equals(value, Administration, StringComparison.OrdinalIgnoreCase) => true,
+            var value when string.Equals(value, LivresRares, StringComparison.OrdinalIgnoreCase) => true,
             _ => false
         });
     }

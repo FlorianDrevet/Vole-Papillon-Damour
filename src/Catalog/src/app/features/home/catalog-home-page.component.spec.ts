@@ -5,8 +5,9 @@ import {RouterModule, Router} from '@angular/router';
 import {of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
-import {CatalogBook, CatalogFair, CatalogSearchResponse} from '../../core/catalog.models';
+import {CatalogBook, CatalogFair, CatalogRareBook, CatalogRareBookPage, CatalogSearchResponse} from '../../core/catalog.models';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+import {CatalogRareBookCardComponent} from '../../shared/rare-book-card/rare-book-card.component';
 import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 import {DesignSystemModule} from '@vpd/ui';
 import {CatalogHomePageComponent} from './catalog-home-page.component';
@@ -49,6 +50,27 @@ describe('CatalogHomePageComponent', () => {
     genres: ['Jeunesse', 'Romans', 'Policier'],
   };
 
+  const rareBook: CatalogRareBook = {
+    id: 'rare-1',
+    slug: 'les-fables',
+    isbn13: null,
+    title: 'Les Fables',
+    authorMention: 'Jean de La Fontaine',
+    publisher: 'Imprimerie royale',
+    publicationYear: 1770,
+    shelf: 'Éditions anciennes',
+    price: 60,
+    condition: 'GoodWithFlaws',
+    publicDescription: null,
+    binding: null,
+    dimensions: null,
+    pageCount: null,
+    status: 'Published',
+    isSold: false,
+    soldAt: null,
+    photos: [],
+  };
+
   const fair: CatalogFair = {
     id: 'fair-1',
     name: 'Bourse de mars',
@@ -73,15 +95,23 @@ describe('CatalogHomePageComponent', () => {
   };
 
   beforeEach(async () => {
-    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'getUpcomingFairs']);
+    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'getUpcomingFairs', 'getPublicRareBooks']);
     api.search.and.returnValue(of(searchResponse));
     api.getUpcomingFairs.and.returnValue(of([fair, nextFair]));
+    api.getPublicRareBooks.and.returnValue(of({
+      generatedAt: '2026-09-06T08:00:00Z',
+      books: [rareBook],
+      totalCount: 1,
+      page: 1,
+      pageSize: 4,
+      shelves: [{label: 'Éditions anciennes', count: 1}],
+    } satisfies CatalogRareBookPage));
     consent = {
       mapsEnabled: signal(true),
       enableMaps: jasmine.createSpy('enableMaps').and.callFake(() => consent.mapsEnabled.set(true)),
     };
     await TestBed.configureTestingModule({
-      declarations: [CatalogHomePageComponent, BookCardComponent],
+      declarations: [CatalogHomePageComponent, BookCardComponent, CatalogRareBookCardComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogApiService, useValue: api},
@@ -108,12 +138,7 @@ describe('CatalogHomePageComponent', () => {
       .toContain('Suivez un livre, on vous prévient quand il arrive.');
     expect(fixture.nativeElement.querySelector('.home-account-callout')?.textContent).not.toContain('Votre sélection');
     expect(api.search).toHaveBeenCalledWith({availability: 'available', sort: 'recent', pageSize: 4});
-    expect(api.search).toHaveBeenCalledWith({
-      availability: 'all',
-      rareOnly: true,
-      sort: 'recent',
-      pageSize: 4,
-    });
+    expect(api.getPublicRareBooks).toHaveBeenCalledWith({includeSold: false, sort: 'recent', pageSize: 4});
   });
 
   it('opens a branded genre menu instead of relying on the native select popup', () => {
@@ -223,10 +248,10 @@ describe('CatalogHomePageComponent', () => {
   it('uses the mockup card variant only for recent books', () => {
     const element = fixture.nativeElement as HTMLElement;
     const recentCard = element.querySelector('.book-grid[aria-label="Livres arrivés récemment"] app-book-card');
-    const rareCard = element.querySelector('.book-grid[aria-label="Livres rares"] app-book-card');
+    const rareCard = element.querySelector('.book-grid[aria-label="Livres rares"] app-rare-book-card');
 
     expect(recentCard?.getAttribute('variant')).toBe('home');
-    expect(rareCard?.getAttribute('variant')).toBeNull();
+    expect(rareCard).not.toBeNull();
   });
 
   it('renders recent availability as a colored status tag on the cover', () => {
@@ -275,12 +300,10 @@ describe('CatalogHomePageComponent', () => {
     });
   });
 
-  it('opens the rare catalogue with all non-exhausted availability scopes', () => {
+  it('opens the dedicated rare catalogue', () => {
     fixture.componentInstance.showRare();
 
-    expect(router.navigate).toHaveBeenCalledWith(['/recherche'], {
-      queryParams: {rare: true, availability: 'all'},
-    });
+    expect(router.navigate).toHaveBeenCalledWith(['/livres-rares']);
   });
 
   it('shows a compact next fair teaser on the home page without the full schedule', () => {

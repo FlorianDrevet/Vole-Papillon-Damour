@@ -68,6 +68,16 @@ describe('CatalogAdminFacadeService', () => {
     );
   });
 
+  it('passes the rare-books role through account administration', async () => {
+    await service.updateAccountRoles('account/rare', ['LivresRares']);
+
+    expect(axiosService.request$).toHaveBeenCalledWith(
+      MethodEnum.PUT,
+      '/accounts/admin/account%2Frare/roles',
+      {roles: ['LivresRares']},
+    );
+  });
+
   it('uses PATCH for quantity correction and keeps the ISBN in the route', async () => {
     await service.correctQuantity('9782070612758', {quantityAvailable: 4, note: 'Inventaire'});
 
@@ -78,15 +88,9 @@ describe('CatalogAdminFacadeService', () => {
     );
   });
 
-  it('uses explicit query flags for rare and visibility actions', async () => {
-    await service.setRare('9782070612758', true);
+  it('uses explicit query flags for visibility actions', async () => {
     await service.setVisibility('9782070612758', false);
 
-    expect(axiosService.request$).toHaveBeenCalledWith(
-      MethodEnum.POST,
-      '/books/admin/books/9782070612758/rare?isRare=true',
-      null,
-    );
     expect(axiosService.request$).toHaveBeenCalledWith(
       MethodEnum.POST,
       '/books/admin/books/9782070612758/visibility?hidden=false',

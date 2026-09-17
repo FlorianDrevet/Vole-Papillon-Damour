@@ -16,6 +16,9 @@ describe('scan routing', () => {
       'caisse',
       'consulter',
       'statistiques',
+      'livres-rares',
+      'livres-rares/nouveau',
+      'livres-rares/:id',
     ]));
   });
 
@@ -27,5 +30,8 @@ describe('scan routing', () => {
     expect(children.find(route => route.path === 'tri/mode')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'caisse')?.canActivate?.length).toBe(1);
     expect(children.find(route => route.path === 'tri/fin')?.canActivate?.length).toBe(2);
+    expect(children.find(route => route.path === 'livres-rares')?.canActivate?.length).toBe(1);
+    expect(children.find(route => route.path === 'livres-rares/nouveau')?.canActivate?.length).toBe(1);
+    expect(children.find(route => route.path === 'livres-rares/:id')?.canActivate?.length).toBe(1);
   });
 });

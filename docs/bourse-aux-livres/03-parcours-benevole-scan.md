@@ -160,9 +160,10 @@ Le verdict occupe le haut de l'écran, en couleur, lisible sans lire le détail.
 │ ╚═══════════════════════════════════╝ │
 ```
 
-**Cas « livre déjà marqué rare »** — marquage manuel par un administrateur (`05` §4).
-L'estimation automatique de valeur, elle, n'existe pas en v1 et n'apparaîtra jamais sur
-cet écran : son calcul est trop lent pour tenir le délai de scan (`RG-14`, `ENF-01`).
+**Cas « fiche livre rare liée »** — le signal provient de la présence d'une fiche rare
+publiée pour cet ISBN (`05` §4). L'estimation automatique de valeur, elle, n'existe pas
+en v1 et n'apparaîtra jamais sur cet écran : son calcul est trop lent pour tenir le délai
+de scan (`RG-14`, `ENF-01`).
 
 ```
 │ ╔═══════════════════════════════════╗ │
@@ -288,9 +289,10 @@ la disponibilité (`RG-36`).
 Utilisé pendant une session de bourse. L'application se rattache automatiquement à la
 session de bourse ouverte (`RG-33`).
 
-**Le système ne connaît aucun prix** (`RG-50`). Les prix sont décidés au comptoir par le
-bénévole. L'écran ne sert donc qu'à enregistrer *quels* livres sortent, pas *combien*
-ils rapportent.
+**Le système ne compte aucun argent** (`RG-50`). Les livres ordinaires n'ont aucun prix
+dans l'application. Un livre rare conserve un prix ferme parce que le bénévole de caisse
+doit le lire au comptoir ; ce prix est une aide de lecture uniquement. L'écran ne sert
+donc qu'à enregistrer *quels* livres sortent, jamais *combien* la vente rapporte.
 
 ```
 ┌───────────────────────────────────────┐
@@ -302,8 +304,8 @@ ils rapportent.
 │                                       │
 │  ╔═════════════════════════════════╗  │
 │  ║ 🟣 Atlas Larousse 1932          ║  │
-│  ║    LIVRE RARE — voir le prix    ║  │
-│  ║    indiqué sur le livre         ║  │
+│  ║    LIVRE RARE — prix ferme      ║  │
+│  ║    lecture sur place : 60 €     ║  │
 │  ╚═════════════════════════════════╝  │
 │                                       │
 │  ─────────────────────────────────    │
@@ -316,13 +318,14 @@ ils rapportent.
 Points de conception :
 
 - Le scan enchaîne sans confirmation : on scanne les livres d'un client à la suite.
-- **Aucun prix, aucun total.** L'encaissement reste entièrement manuel, comme
-  aujourd'hui. Le bouton s'appelle `VALIDER` et non `ENCAISSER` : il enregistre une
-  sortie de stock, il n'encaisse rien.
+- **Aucun prix ordinaire, aucun total.** L'encaissement reste entièrement manuel, comme
+  aujourd'hui. Le prix ferme d'un livre rare est seulement rappelé pour le lire au
+  comptoir. Le bouton s'appelle `VALIDER` et non `ENCAISSER` : il enregistre une sortie
+  de stock, il n'encaisse rien.
 - **Un livre rare est signalé en grand, au milieu de l'écran, pas par une pastille
   discrète.** C'est le seul garde-fou du système contre un livre à 35 € vendu 2 € par un
-  bénévole qui n'était pas là le jour de l'expertise. Comme le montant n'est écrit nulle
-  part dans l'application, l'écran renvoie au prix porté physiquement sur le livre.
+  bénévole qui n'était pas là le jour de l'expertise. Le prix ferme est affiché pour
+  lecture ; il ne sert à aucun calcul et l'application n'enregistre pas le montant payé.
 - `Annuler dernier` traite le cas fréquent du double scan, avant encaissement.
 - **Une vente déjà encaissée peut être annulée** tant que la bourse est ouverte : le
   client change d'avis, une erreur est constatée après coup. La quantité disponible est
@@ -337,6 +340,28 @@ Points de conception :
 - **Un livre encore annoncé et non basculé est signalé au caissier** — il n'était pas
   censé être en rayon — mais la vente n'est pas bloquée pour autant (`RG-37`). C'est le
   signe que des livres ont été rangés en avance sur leur date d'annonce.
+
+### 5.1. Ajouter un livre rare
+
+Le bouton violet `AJOUTER UN LIVRE RARE`, placé au-dessus de `VALIDER`, n'apparaît que
+si la copie locale contient des fiches rares publiées et disponibles. Le bénévole peut
+alors chercher par titre, auteur ou ISBN, sélectionner une carte compacte et l'ajouter
+à la vente. Un scan d'ISBN suit le même chemin automatiquement lorsqu'il correspond à
+une fiche rare ; un double scan du même exemplaire est ignoré.
+
+La ligne violette affiche le titre, la photo éventuelle et le **prix ferme** avec la
+mention « lecture sur place ». Aucun panier, total, rendu de monnaie, montant de vente
+ou recette n'existe dans ce mode ; la présence du prix ne change pas cette règle. À la
+validation, les livres ordinaires et rares partent dans des files hors ligne distinctes.
+La file rare ne contient que l'identifiant de la fiche, l'heure, la session et la
+référence d'idempotence — jamais un prix ni une quantité — puis synchronise la sortie
+vers l'API.
+
+`Annuler la dernière vente` ouvre une fenêtre de correction de 30 secondes. Pour une
+sortie rare encore locale, la fiche est immédiatement remise disponible ; après
+synchronisation, la caisse appelle la route de restauration dédiée, qui annule aussi
+une alerte de vente rare non encore envoyée. Une correction hors délai est refusée
+localement et doit passer par l'administration.
 
 ## 6. Mode CONSULTATION
 
@@ -363,9 +388,26 @@ avant de réorganiser une étagère, ou lever un doute sans ouvrir une session d
 | Deux bénévoles scannent le même ISBN en même temps | Aucun conflit : chaque scan est un mouvement indépendant |
 | Batterie de la scanette à plat en pleine session | Les gestes non synchronisés doivent survivre à l'extinction (`ENF-05`) |
 
-## 8. Ce que l'application de scan ne fait pas
+## 8. Gestion des fiches rares hors ligne
 
-- Elle ne modifie pas les métadonnées d'un livre : cela relève de l'administration.
+Un compte portant le rôle `LivresRares` voit, depuis l'accueil, une tuile violette
+« Livres rares ». Ce parcours séparé ne crée pas de session de tri et ne modifie jamais
+les métadonnées ni les quantités des livres ordinaires. Il permet de chercher un ISBN ou
+de saisir un exemplaire sans ISBN, de consulter une notice BnF/Open Library, puis de
+créer une fiche rare en brouillon avant sa publication.
+
+La fiche est découpée en identification, description/prix et photos. La saisie reste
+utilisable sans réseau : la fiche est enregistrée localement dans IndexedDB et chaque
+photo est conservée comme `Blob` JPEG compressé, avec un contrôle de quota avant mise en
+file. À la reprise, la fiche est créée une seule fois puis les photos sont envoyées l'une
+après l'autre ; un échec laisse la file visible et reprenable. Le prix ferme est affiché
+pour lecture en caisse, mais aucune somme n'est calculée.
+
+## 9. Ce que l'application de scan ne fait pas
+
+- Elle ne modifie pas les métadonnées d'un livre ordinaire : cela relève de l'administration.
+- Elle ne transforme pas un livre ordinaire en livre rare par une case de marquage ; seule
+  une fiche rare autonome, créée par un bénévole habilité, porte ce statut.
 - Elle n'affiche aucune statistique au-delà du compteur de session.
 - Elle ne gère ni les comptes du public, ni les alertes.
 - Elle n'encaisse pas : elle enregistre des sorties, le paiement reste physique.

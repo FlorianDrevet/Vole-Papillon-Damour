@@ -66,6 +66,14 @@
             <span>Caisse</span>
           </button>
 
+          <button *ngIf="canManageRareBooks" type="button" class="home-mode home-mode-rare" (click)="openRareBooks()">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6.2 4.5h11.6l3.7 5.3L12 20.4 2.5 9.8z"></path>
+              <path d="M2.5 9.8h19M8.6 4.5 12 20.4 15.4 4.5"></path>
+            </svg>
+            <span>Livres rares</span>
+          </button>
+
           <button type="button" class="home-mode home-mode-consultation" (click)="openConsultation()">
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="6.6"></circle>
@@ -523,8 +531,15 @@
                   </svg>
                 </button>
               </div>
-              <h2>{{ item.title || 'Titre non renseigné' }}</h2>
-              <p>Voir le prix indiqué sur le livre.</p>
+              <div class="cash-rare-body">
+                <img *ngIf="item.thumbnail" class="cash-rare-thumbnail" [src]="item.thumbnail" alt="">
+                <div>
+                  <h2>{{ item.title || 'Titre non renseigné' }}</h2>
+                  <p class="cash-rare-price" *ngIf="item.price !== null && item.price !== undefined">
+                    Prix ferme — lecture sur place · {{ item.price | number:'1.0-2' }} €
+                  </p>
+                </div>
+              </div>
             </article>
           </ng-container>
           <p *ngIf="cashItems.length === 0 && !isLoading" class="cash-empty">Scannez les livres de la vente. La gâchette suffit.</p>
@@ -540,6 +555,17 @@
 
         <footer class="action-dock cash-dock">
           <div class="cash-buttons">
+            <button
+              *ngIf="availableRareBooks.length > 0 && !rareCashPickerOpen"
+              type="button"
+              class="cash-add-rare"
+              (click)="openRareCashPicker()">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6.2 4.5h11.6l3.7 5.3L12 20.4 2.5 9.8z"></path>
+                <path d="M2.5 9.8h19M8.6 4.5 12 20.4 15.4 4.5"></path>
+              </svg>
+              Ajouter un livre rare
+            </button>
             <button type="button" class="decision-reject" [disabled]="cashItems.length === 0" (click)="undoLastCashItem()">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 9.5h9.5a5.5 5.5 0 1 1 0 11H8"></path>
@@ -555,6 +581,50 @@
             <button type="button" class="dock-link dock-home-link" (click)="returnHome()">Accueil</button>
           </div>
         </footer>
+
+        <section *ngIf="rareCashPickerOpen" class="rare-cash-picker" aria-labelledby="rare-cash-picker-title">
+          <div class="rare-cash-picker-header">
+            <div>
+              <span class="rare-cash-eyebrow">Catalogue local</span>
+              <h2 id="rare-cash-picker-title">Ajouter un livre rare</h2>
+            </div>
+            <button type="button" class="cash-remove" aria-label="Fermer la sélection des livres rares" (click)="closeRareCashPicker()">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                <path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"></path>
+              </svg>
+            </button>
+          </div>
+          <label class="rare-cash-search">
+            <span>Rechercher par titre, auteur ou ISBN</span>
+            <input
+              type="search"
+              [(ngModel)]="rareCashSearch"
+              (ngModelChange)="refreshRareCashBooks()"
+              placeholder="Titre, auteur ou ISBN">
+          </label>
+          <p class="rare-cash-hint">Le prix affiché aide la lecture du bénévole. Aucun total ni montant n’est calculé.</p>
+          <div class="rare-cash-results" role="list" aria-label="Livres rares disponibles">
+            <button
+              *ngFor="let book of rareCashResults"
+              type="button"
+              class="rare-cash-option"
+              [class.rare-cash-option-selected]="selectedRareBook?.clientId === book.clientId"
+              (click)="selectRareCashBook(book)">
+              <img *ngIf="book.thumbnail" class="rare-cash-option-thumbnail" [src]="book.thumbnail" alt="">
+              <span class="rare-cash-option-copy">
+                <strong>{{ book.title }}</strong>
+                <span>{{ book.authorMention || 'Auteur non renseigné' }}</span>
+                <small>{{ book.price | number:'1.0-2' }} € · {{ book.condition }}</small>
+              </span>
+              <span *ngIf="selectedRareBook?.clientId === book.clientId" class="rare-cash-option-check" aria-label="Sélectionné">✓</span>
+            </button>
+            <p *ngIf="rareCashResults.length === 0" class="rare-cash-empty">Aucun livre rare disponible dans la copie locale.</p>
+          </div>
+          <div class="rare-cash-picker-actions">
+            <button type="button" class="decision-reject" (click)="closeRareCashPicker()">Fermer</button>
+            <button type="button" class="dock-primary" [disabled]="!selectedRareBook" (click)="addSelectedRareCashBook()">Ajouter à la vente</button>
+          </div>
+        </section>
       </section>
 
       <section *ngSwitchCase="'consultation'" class="app-screen consultation-screen" aria-labelledby="consultation-title">

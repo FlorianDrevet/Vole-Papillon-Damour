@@ -1,5 +1,6 @@
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Application.Common.Models;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
@@ -13,6 +14,15 @@ public interface IBookAlertOutbox
 
     Task<int> CancelPendingForSessionAsync(
         ScanSessionId scanSessionId,
+        CancellationToken cancellationToken);
+
+    Task QueueRareBookSoldAsync(
+        RareBookId rareBookId,
+        DateTime soldAt,
+        CancellationToken cancellationToken);
+
+    Task<int> CancelPendingForRareBookAsync(
+        RareBookId rareBookId,
         CancellationToken cancellationToken);
 
     Task<int> ForcePendingForSessionAsync(
@@ -71,6 +81,14 @@ public interface IBookAlertOutbox
         DateTime claimedUntil,
         DateTime sentAt,
         IReadOnlyCollection<Isbn13> itemIsbn13s,
+        CancellationToken cancellationToken);
+
+    Task<bool> MarkSentAsync(
+        Guid messageId,
+        DateTime claimedUntil,
+        DateTime sentAt,
+        IReadOnlyCollection<Isbn13> itemIsbn13s,
+        IReadOnlyCollection<Guid> rareBookIds,
         CancellationToken cancellationToken);
 
     Task RecordFailureAsync(

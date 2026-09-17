@@ -1,0 +1,343 @@
+.rare-detail-page {
+  min-height: 60vh;
+  background: #fbf9fd;
+  color: #072b45;
+}
+
+.rare-detail-loading,
+.rare-detail-not-found {
+  padding-top: 4rem;
+  padding-bottom: 5rem;
+}
+
+.rare-detail-not-found h1 {
+  max-width: 34rem;
+  margin: .5rem 0 1.5rem;
+  font: 500 clamp(2.5rem, 7vw, 5rem)/.95 Newsreader, Georgia, serif;
+}
+
+.rare-detail-not-found a {
+  color: #5f3a86;
+  font-weight: 700;
+}
+
+.rare-detail-hero {
+  padding: clamp(2rem, 6vw, 5rem) 0;
+  background: #f0e9f7;
+}
+
+.rare-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: clamp(2rem, 7vw, 7rem);
+  align-items: start;
+}
+
+.rare-detail-gallery {
+  min-width: 0;
+}
+
+.rare-detail-main-photo {
+  position: relative;
+  display: grid;
+  aspect-ratio: 4 / 5;
+  max-height: 38rem;
+  place-items: center;
+  overflow: hidden;
+  background: repeating-linear-gradient(135deg, #e4d8f0 0 12px, #f8f4fc 12px 24px);
+}
+
+.rare-detail-main-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.rare-detail-main-photo span {
+  color: #5f3a86;
+  font-size: 3rem;
+}
+
+.rare-enlarge-button {
+  position: absolute;
+  right: .8rem;
+  bottom: .8rem;
+  padding: .55rem .75rem;
+  border: 1px solid rgb(255 255 255 / 55%);
+  background: rgb(7 43 69 / 78%);
+  color: #fff;
+  cursor: pointer;
+  font: .68rem/1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.rare-detail-gallery-caption {
+  max-width: 40rem;
+  margin: .9rem 0 0;
+  color: #4e6c84;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.rare-detail-thumbnails {
+  display: flex;
+  gap: .5rem;
+  margin-top: .7rem;
+  overflow-x: auto;
+}
+
+.rare-detail-thumbnails button {
+  width: 4.2rem;
+  height: 4.2rem;
+  flex: none;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  background: #fff;
+}
+
+.rare-detail-thumbnails button.selected {
+  border-color: #5f3a86;
+}
+
+.rare-detail-thumbnails img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rare-detail-copy {
+  padding-top: clamp(.5rem, 4vw, 3rem);
+}
+
+.rare-detail-copy h1 {
+  max-width: 44rem;
+  margin: .4rem 0 .7rem;
+  font: 500 clamp(3rem, 8vw, 6.5rem)/.88 Newsreader, Georgia, serif;
+  letter-spacing: -.04em;
+}
+
+.rare-detail-author {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.rare-detail-edition {
+  margin: .35rem 0 1.7rem;
+  color: #4e6c84;
+}
+
+.rare-detail-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 26rem;
+  padding: 1rem 0;
+  border-top: 1px solid #b9a2d0;
+  border-bottom: 1px solid #b9a2d0;
+  color: #5f3a86;
+}
+
+.rare-detail-price small {
+  flex-basis: 100%;
+  color: #4e6c84;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.rare-detail-price span {
+  font: 600 .68rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.rare-detail-price strong {
+  font: 700 1.7rem/1 "IBM Plex Mono", ui-monospace, monospace;
+}
+
+.rare-detail-availability {
+  margin: .8rem 0 1.4rem;
+  color: #18703a;
+  font-weight: 700;
+}
+
+.rare-detail-availability.sold {
+  color: #7d8790;
+}
+
+.rare-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 30rem;
+  margin: 0;
+  border-top: 1px solid #d9c8ea;
+}
+
+.rare-detail-facts div {
+  padding: .8rem 0;
+  border-bottom: 1px solid #d9c8ea;
+}
+
+.rare-detail-facts dt {
+  color: #5f3a86;
+  font: 600 .62rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.rare-detail-facts dd {
+  margin: .25rem 0 0;
+  color: #4e6c84;
+  font-size: .88rem;
+}
+
+.rare-detail-fact-empty {
+  color: #9dc2da !important;
+}
+
+.rare-detail-note {
+  max-width: 30rem;
+  margin-top: 1.5rem;
+  color: #4e6c84;
+  font-size: .85rem;
+  line-height: 1.5;
+}
+
+.rare-gallery-lightbox {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: rgb(7 43 69 / 92%);
+}
+
+.rare-gallery-lightbox img {
+  max-width: min(90vw, 900px);
+  max-height: 88vh;
+  object-fit: contain;
+}
+
+.rare-gallery-lightbox-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid rgb(255 255 255 / 50%);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.6rem;
+}
+
+.rare-follow-button {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  min-height: 3.25rem;
+  margin-top: 1.5rem;
+  padding: .75rem 1.1rem;
+  border: 1.5px solid #5f3a86;
+  border-radius: 999px;
+  background: #5f3a86;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rare-follow-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.rare-follow-feedback {
+  max-width: 30rem;
+  margin: .75rem 0 0;
+  font-size: .88rem;
+  line-height: 1.45;
+}
+
+.rare-follow-feedback.success {
+  color: #18703a;
+}
+
+.rare-follow-feedback.error {
+  color: #a13737;
+}
+
+.rare-follow-feedback a {
+  color: inherit;
+  font-weight: 700;
+}
+
+.rare-question-link {
+  display: inline-flex;
+  min-height: 3.25rem;
+  align-items: center;
+  margin: 1.5rem 0 0 .65rem;
+  padding: .75rem 1.1rem;
+  border: 1.5px solid #5f3a86;
+  border-radius: 999px;
+  color: #5f3a86;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.rare-detail-description {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.rare-detail-description > p:last-child {
+  max-width: 46rem;
+  margin: .5rem 0 0;
+  font: 1.35rem/1.45 Newsreader, Georgia, serif;
+}
+
+.rare-related {
+  padding-bottom: 5rem;
+}
+
+.rare-related-heading h2 {
+  margin: .35rem 0 1.2rem;
+  font: 500 clamp(2rem, 5vw, 3.5rem)/1 Newsreader, Georgia, serif;
+}
+
+.rare-related-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 760px) {
+  .rare-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rare-detail-copy {
+    padding-top: 0;
+  }
+
+  .rare-detail-main-photo {
+    max-height: none;
+  }
+
+  .rare-related-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rare-question-link {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .rare-related-grid {
+    grid-template-columns: 1fr;
+  }
+}

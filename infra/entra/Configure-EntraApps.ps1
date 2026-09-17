@@ -7,7 +7,8 @@
 .DESCRIPTION
     Cree ou met a jour, de facon idempotente :
       - l'enregistrement d'application de l'API, qui expose la portee `access_as_user`
-        et porte les roles applicatifs du projet (`Tri`, `Caisse`, `Administration`) ;
+        et porte les roles applicatifs du projet (`Tri`, `Caisse`, `Administration`,
+        `LivresRares`) ;
       - les enregistrements des clients : catalogue public, application de scan,
         back-office, application de caisse MAUI ;
       - les principaux de service correspondants ;
@@ -104,8 +105,8 @@ Set-StrictMode -Version Latest
 
 $ApiScopeId = 'a3f4c1e2-5b6d-4a7e-8f90-1c2d3e4f5a6b'
 
-# Un role applicatif par droit metier. `Tri` et `Caisse` viennent de RG-40,
-# `Administration` de ENF-18. L'absence de role vaut « membre du public » :
+# Un role applicatif par droit metier. `Tri`, `Caisse` et `LivresRares` viennent de
+# RG-40, `Administration` de ENF-18. L'absence de role vaut « membre du public » :
 # c'est voulu, aucun role n'est attribue aux comptes crees en libre-service.
 $AppRoles = @(
     @{
@@ -125,6 +126,12 @@ $AppRoles = @(
         Value       = 'Administration'
         DisplayName = 'Administrateur'
         Description = 'Acces au back-office et a la zone d''administration du site (ENF-18).'
+    },
+    @{
+        Id          = '84bf89c1-ecae-4951-90d2-03dc6012a1dd'
+        Value       = 'LivresRares'
+        DisplayName = 'Benevole livres rares'
+        Description = 'Cree et tient a jour les fiches des livres rares : prix, photos, etat.'
     }
 )
 

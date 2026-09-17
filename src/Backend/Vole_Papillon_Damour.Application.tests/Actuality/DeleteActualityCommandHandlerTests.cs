@@ -27,7 +27,7 @@ public sealed class DeleteActualityCommandHandlerTests
         repository.GetByIdAsync(actuality.Id).Returns(actuality);
         repository.DeleteAsync(actuality.Id).Returns(true);
         var blobService = Substitute.For<IBlobService>();
-        blobService.DeleteFileAsync(Arg.Any<string>())
+        blobService.DeleteFileAsync(Arg.Any<BlobContainer>(), Arg.Any<string>())
             .Returns(Task.FromResult(string.Empty));
         var handler = new DeleteActualityCommandHandler(
             repository,
@@ -39,7 +39,7 @@ public sealed class DeleteActualityCommandHandlerTests
             CancellationToken.None);
 
         result.Value.Should().BeTrue();
-        await blobService.Received(1).DeleteFileAsync(principalImage.ToString());
-        await blobService.Received(1).DeleteFileAsync(galleryImage.ToString());
+        await blobService.Received(1).DeleteFileAsync(BlobContainer.ActualityImages, principalImage.ToString());
+        await blobService.Received(1).DeleteFileAsync(BlobContainer.ActualityImages, galleryImage.ToString());
     }
 }

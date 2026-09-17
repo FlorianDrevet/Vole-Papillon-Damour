@@ -1,6 +1,7 @@
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common;
 using Vole_Papillon_Damour.Domain.Common.Models;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Domain.WatchlistAggregate;
@@ -8,14 +9,16 @@ namespace Vole_Papillon_Damour.Domain.WatchlistAggregate;
 public sealed class UserAlertHistory : Entity<Guid>
 {
     public UserId UserId { get; private set; } = null!;
-    public Isbn13 Isbn13 { get; private set; }
+    public Isbn13? Isbn13 { get; private set; }
+    public RareBookId? RareBookId { get; private set; }
     public DateTime SentAt { get; private set; }
     public Guid? OutboxMessageId { get; private set; }
 
     private UserAlertHistory(
         Guid id,
         UserId userId,
-        Isbn13 isbn13,
+        Isbn13? isbn13,
+        RareBookId? rareBookId,
         DateTime sentAt,
         Guid? outboxMessageId) : base(id)
     {
@@ -29,9 +32,13 @@ public sealed class UserAlertHistory : Entity<Guid>
             throw new ArgumentException("A valid user identifier is required.", nameof(userId));
         }
 
-        if (string.IsNullOrWhiteSpace(isbn13.Value))
+        if ((isbn13 is null) == (rareBookId is null) ||
+            (isbn13 is { } isbn && string.IsNullOrWhiteSpace(isbn.Value)) ||
+            (rareBookId is { } rareId && rareId.Value == Guid.Empty))
         {
-            throw new ArgumentException("A valid ISBN-13 is required.", nameof(isbn13));
+            throw new ArgumentException(
+                "An alert history requires exactly one valid book target.",
+                nameof(isbn13));
         }
 
         if (outboxMessageId == Guid.Empty)
@@ -41,6 +48,7 @@ public sealed class UserAlertHistory : Entity<Guid>
 
         UserId = userId;
         Isbn13 = isbn13;
+        RareBookId = rareBookId;
         SentAt = DomainTime.RequireUtc(sentAt, nameof(sentAt));
         OutboxMessageId = outboxMessageId;
     }
@@ -52,7 +60,17 @@ public sealed class UserAlertHistory : Entity<Guid>
         DateTime sentAt,
         Guid? outboxMessageId = null)
     {
-        return new UserAlertHistory(id, userId, isbn13, sentAt, outboxMessageId);
+        return new UserAlertHistory(id, userId, isbn13, null, sentAt, outboxMessageId);
+    }
+
+    public static UserAlertHistory CreateForRareBook(
+        Guid id,
+        UserId userId,
+        RareBookId rareBookId,
+        DateTime sentAt,
+        Guid? outboxMessageId = null)
+    {
+        return new UserAlertHistory(id, userId, null, rareBookId, sentAt, outboxMessageId);
     }
 
     public UserAlertHistory()

@@ -13,6 +13,7 @@ public class BlobService
     private readonly BlobContainerClient _blobContainerActualityImagesClient;
     private readonly BlobContainerClient _blobContainerEventImagesClient;
     private readonly BlobContainerClient _blobContaineProductsImagesClient;
+    private readonly BlobContainerClient _blobContainerRareBookPhotosClient;
 
     public BlobService(
         BlobServiceClient blobServiceClient,
@@ -25,6 +26,8 @@ public class BlobService
             .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerEventImagesClient);
         _blobContaineProductsImagesClient = blobServiceClient
             .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerProductsImagesClient);
+        _blobContainerRareBookPhotosClient = blobServiceClient
+            .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerRareBookPhotosClient);
     }
     
     public async Task<Uri> UploadLotoImagesAsync(string fileName, Stream stream)
@@ -47,6 +50,11 @@ public class BlobService
         return await UploadAsync(fileName, stream, _blobContainerEventImagesClient);
     }
 
+    public async Task<Uri> UploadRareBookPhotoAsync(string fileName, Stream stream)
+    {
+        return await UploadAsync(fileName, stream, _blobContainerRareBookPhotosClient);
+    }
+
     private async Task<Uri> UploadAsync(string fileName, Stream stream, BlobContainerClient blobContainerClient)
     {
         var blobClient = blobContainerClient.GetBlobClient(fileName);
@@ -54,17 +62,18 @@ public class BlobService
         return blobClient.Uri;
     }
 
-    public async Task<string> DeleteFileAsync(string fileName)
+    public async Task<string> DeleteFileAsync(BlobContainer container, string blobNameOrUri)
     {
-        if (string.IsNullOrWhiteSpace(fileName))
+        if (string.IsNullOrWhiteSpace(blobNameOrUri))
         {
             return string.Empty;
         }
 
-        var blobName = fileName;
-        if (Uri.TryCreate(fileName, UriKind.Absolute, out var uri))
+        var blobContainerClient = GetBlobContainerClient(container);
+        var blobName = blobNameOrUri;
+        if (Uri.TryCreate(blobNameOrUri, UriKind.Absolute, out var uri))
         {
-            var containerUri = _blobContainerActualityImagesClient.Uri;
+            var containerUri = blobContainerClient.Uri;
             var containerPath = containerUri.AbsolutePath.TrimEnd('/') + "/";
             if (!string.Equals(uri.Host, containerUri.Host, StringComparison.OrdinalIgnoreCase) ||
                 !uri.AbsolutePath.StartsWith(containerPath, StringComparison.Ordinal))
@@ -80,8 +89,21 @@ public class BlobService
             return string.Empty;
         }
 
-        var blobClient = _blobContainerActualityImagesClient.GetBlobClient(blobName);
+        var blobClient = blobContainerClient.GetBlobClient(blobName);
         await blobClient.DeleteIfExistsAsync();
         return blobName;
+    }
+
+    private BlobContainerClient GetBlobContainerClient(BlobContainer container)
+    {
+        return container switch
+        {
+            BlobContainer.LotoImages => _blobContainerClient,
+            BlobContainer.ActualityImages => _blobContainerActualityImagesClient,
+            BlobContainer.EventImages => _blobContainerEventImagesClient,
+            BlobContainer.ProductsImages => _blobContaineProductsImagesClient,
+            BlobContainer.RareBookPhotos => _blobContainerRareBookPhotosClient,
+            _ => throw new ArgumentOutOfRangeException(nameof(container), container, "Unknown blob container.")
+        };
     }
 }

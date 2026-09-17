@@ -15,6 +15,9 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
@@ -130,6 +133,8 @@ internal sealed class WatchlistFeatureTestDbContext(
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<AssociationSettings> AssociationSettings => Set<AssociationSettings>();
+    public DbSet<RareBook> RareBooks => Set<RareBook>();
+    public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
@@ -144,6 +149,8 @@ internal sealed class WatchlistFeatureTestDbContext(
     DbSet<Watchlist> IProjectDbContext.Watchlists => Watchlists;
     DbSet<WatchlistItem> IProjectDbContext.WatchlistItems => WatchlistItems;
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => UserAlertHistories;
+    DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
+    DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -198,6 +205,10 @@ internal sealed class WatchlistFeatureTestDbContext(
                 .HasConversion(new ValueConverter<Isbn13?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
+            builder.Property(item => item.RareBookId)
+                .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value == null ? null : RareBookId.Create(value.Value)));
             builder.Property(item => item.AddedAt).HasColumnType("datetime2");
             builder.HasOne<Watchlist>()
                 .WithMany()
@@ -212,7 +223,13 @@ internal sealed class WatchlistFeatureTestDbContext(
             builder.Property(history => history.UserId)
                 .HasConversion(id => id.Value, value => UserId.Create(value));
             builder.Property(history => history.Isbn13)
-                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(history => history.RareBookId)
+                .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value == null ? null : RareBookId.Create(value.Value)));
             builder.Property(history => history.SentAt).HasColumnType("datetime2");
         });
 
@@ -274,6 +291,60 @@ internal sealed class WatchlistFeatureTestDbContext(
             builder.Ignore(assoEvent => assoEvent.CurrentPartieIndex);
             builder.Ignore(assoEvent => assoEvent.Parties);
             builder.Ignore(assoEvent => assoEvent.BingoNumeros);
+        });
+
+        modelBuilder.Entity<RareBook>(builder =>
+        {
+            builder.HasKey(book => book.Id);
+            builder.Property(book => book.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(book => book.Slug)
+                .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(book => book.Shelf)
+                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
+            builder.Property(book => book.Condition)
+                .HasConversion(
+                    condition => (byte)condition.Value,
+                    value => new RareBookCondition((RareBookCondition.RareBookConditionEnum)value));
+            builder.Property(book => book.Status).HasConversion<byte>();
+            builder.Property(book => book.SoldAtFairId)
+                .HasConversion(new ValueConverter<AssoEventsId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? AssoEventsId.Create(value.Value) : null));
+            builder.Property(book => book.SoldInSessionId)
+                .HasConversion(new ValueConverter<ScanSessionId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? ScanSessionId.Create(value.Value) : null));
+            builder.Property(book => book.CreatedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Property(book => book.UpdatedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Property(book => book.RowVersion).IsConcurrencyToken();
+            builder.HasMany(book => book.Photos)
+                .WithOne()
+                .HasForeignKey(photo => photo.RareBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Metadata.FindNavigation(nameof(RareBook.Photos))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<RareBookPhoto>(builder =>
+        {
+            builder.HasKey(photo => photo.Id);
+            builder.Property(photo => photo.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => RareBookPhotoId.Create(value));
+            builder.Property(photo => photo.RareBookId)
+                .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(photo => photo.BlobUri)
+                .HasConversion(uri => uri.ToString(), value => new Uri(value, UriKind.Absolute));
+            builder.Property(photo => photo.UploadedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
         });
     }
 

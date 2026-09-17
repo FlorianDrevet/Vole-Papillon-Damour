@@ -1,0 +1,22 @@
+<section class="rare-photos-section" aria-labelledby="rare-photos-title">
+  <div class="rare-photos-heading">
+    <div><span class="rare-section-kicker">Photos de l’exemplaire</span><h2 id="rare-photos-title">Galerie</h2><p>La première photo devient la vignette de la fiche publique.</p></div>
+    <span class="rare-photo-count">{{ photos.length }} photo{{ photos.length > 1 ? 's' : '' }} · {{ formatSize(totalBytes()) }} · conteneur « livres-rares »</span>
+  </div>
+
+  <div class="rare-photo-grid" data-testid="rare-photo-grid">
+    @for (photo of photos; track photo.id; let first = $first; let last = $last; let index = $index) {
+      <article class="rare-photo-card" [class.selected]="selectedPhotoId() === photo.id" [class.thumbnail]="first" draggable="true" [attr.data-testid]="'rare-photo-' + (index + 1)" (click)="selectPhoto(photo.id)" (dragstart)="startDrag(photo.id)" (dragover)="allowDrop($event)" (drop)="dropPhoto(photo.id, $event)">
+        <img [src]="photo.blobUri" [alt]="photo.caption || 'Photo du livre rare'">
+        @if (first) {<span class="rare-photo-badge">Vignette</span>}
+        <span class="rare-photo-drag-handle" aria-hidden="true">⠿</span>
+        <label class="rare-photo-caption"><span>Légende</span><input [value]="photo.caption || ''" [disabled]="disabled" (click)="$event.stopPropagation()" (blur)="updateCaption(photo.id, $event)" placeholder="Décrire la photo"></label>
+        <div class="rare-photo-move-actions"><button type="button" [disabled]="disabled || first" aria-label="Monter la photo" (click)="$event.stopPropagation(); selectPhoto(photo.id); moveSelected(-1)">←</button><button type="button" [disabled]="disabled || last" aria-label="Descendre la photo" (click)="$event.stopPropagation(); selectPhoto(photo.id); moveSelected(1)">→</button></div>
+      </article>
+    }
+    <label class="rare-photo-add" data-testid="rare-photo-add"><input type="file" accept="image/jpeg,image/png,image/webp" [disabled]="disabled" (change)="onFileSelected($event)"><span class="rare-photo-add-icon">+</span><strong>Ajouter</strong><small>JPEG · WebP · PNG<br>8 Mo max</small></label>
+  </div>
+
+  @if (uploadError(); as message) {<p class="rare-photo-error" role="alert">{{ message }}</p>}
+  <div class="rare-photo-footer"><button class="rare-danger-link" type="button" [disabled]="disabled || !selectedPhotoId()" (click)="deleteSelected()">Supprimer la photo sélectionnée</button><span>Sélectionnez une vignette pour la déplacer ou la supprimer.</span></div>
+</section>

@@ -9,6 +9,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 export class ScanStatusBarComponent {
   @Input() offline = false;
   @Input() actionRequired = false;
+  @Input() pendingRarePhotos = 0;
   @Input() detail = '';
   @Output() readonly statusRequested = new EventEmitter<void>();
 

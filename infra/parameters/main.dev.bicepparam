@@ -247,6 +247,7 @@ param blobContainerLotoImages = 'loto-images'
 param blobContainerActualityImages = 'actuality-images'
 param blobContainerEventImages = 'event-images'
 param blobContainerProductImages = 'product-images'
+param blobContainerRareBookPhotos = 'livres-rares'
 
 param jwtIssuer = 'Vole_Papillon_Damour'
 param jwtAudience = 'Vole_Papillon_Damour'

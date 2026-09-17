@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
@@ -15,6 +16,8 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Outbox;
 using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
@@ -67,6 +70,47 @@ public sealed class BookAlertOutboxTests
             .Should().Be("Premier titre");
         firstPayload.GetProperty("items")[1].GetProperty("title").GetString()
             .Should().Be("Deuxième titre");
+    }
+
+    [Fact]
+    public async Task QueueRareBookSold_CreatesOneDisappearanceAlertForEachActiveFollower()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("rare-follower@example.org");
+        var rareBook = RareBook.Create(
+            "Atlas ancien",
+            45m,
+            StartedAt,
+            member.Id,
+            authorMention: "Auteur",
+            shelf: RareBookShelf.AncientEditions,
+            condition: RareBookCondition.AsNew);
+        rareBook.Publish(member.Id, StartedAt.AddMinutes(1));
+        rareBook.MarkSold(ClosedAt, null, null, member.Id);
+        fixture.Context.RareBooks.Add(rareBook);
+        fixture.Context.Entry(rareBook)
+            .Property(book => book.RowVersion)
+            .CurrentValue = [1];
+        fixture.Context.Watchlists.Add(Watchlist.Create(member.Id, StartedAt));
+        fixture.Context.WatchlistItems.Add(WatchlistItem.CreateRareBook(
+            Guid.NewGuid(),
+            member.Id,
+            rareBook.Id,
+            StartedAt));
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+
+        await outbox.QueueRareBookSoldAsync(rareBook.Id, ClosedAt, CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        var message = await fixture.Context.OutboxMessages.SingleAsync();
+        message.RareBookId.Should().Be(rareBook.Id.Value);
+        message.DueAt.Should().Be(ClosedAt);
+        var payload = JsonDocument.Parse(message.PayloadJson).RootElement;
+        payload.GetProperty("rareItems").GetArrayLength().Should().Be(1);
+        payload.GetProperty("rareItems")[0].GetProperty("rareBookId").GetGuid()
+            .Should().Be(rareBook.Id.Value);
     }
 
     [Fact]
@@ -400,6 +444,30 @@ public sealed class BookAlertOutboxTests
         summaries[session.Id.Value].SentCount.Should().Be(1);
         summaries[session.Id.Value].CancelledCount.Should().Be(1);
         summaries[session.Id.Value].FailedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetAdminPage_CountsRareAlertItems()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        fixture.Context.OutboxMessages.Add(CreateOutboxMessage(
+            Guid.NewGuid(),
+            OutboxMessageStatus.Pending,
+            null,
+            payloadJson: "{\"items\":[],\"rareItems\":[{\"rareBookId\":\"00000000-0000-0000-0000-000000000001\",\"title\":\"Atlas ancien\",\"authorMention\":null,\"slug\":\"atlas-ancien\"}]}"));
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+
+        var page = await outbox.GetAdminPageAsync(
+            BookAlertQueueStatus.Pending,
+            null,
+            null,
+            1,
+            20,
+            CancellationToken.None);
+
+        page.Items.Should().ContainSingle().Which.ItemCount.Should().Be(1);
     }
 
     [Fact]
@@ -772,13 +840,14 @@ public sealed class BookAlertOutboxTests
         OutboxMessageStatus status,
         DateTime? claimedUntil,
         DateTime? dueAt = null,
-        Guid? memberId = null)
+        Guid? memberId = null,
+        string? payloadJson = null)
     {
         return new OutboxMessage
         {
             Id = Guid.NewGuid(),
             Kind = OutboxMessageKind.AlertEmail,
-            PayloadJson = "{\"items\":[]}",
+            PayloadJson = payloadJson ?? "{\"items\":[]}",
             DueAt = dueAt ?? ClosedAt,
             Status = status,
             Attempts = 0,
@@ -997,6 +1066,10 @@ public sealed class BookAlertOutboxTests
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Book>()
+                .Property(book => book.RowVersion)
+                .ValueGeneratedNever()
+                .IsConcurrencyToken(false);
+            modelBuilder.Entity<RareBook>()
                 .Property(book => book.RowVersion)
                 .ValueGeneratedNever()
                 .IsConcurrencyToken(false);

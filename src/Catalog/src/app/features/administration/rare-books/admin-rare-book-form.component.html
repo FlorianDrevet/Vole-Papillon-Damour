@@ -1,0 +1,81 @@
+<section class="rare-form-shell" aria-labelledby="rare-form-title">
+  @if (!isEditing()) {
+    <section class="rare-reference-panel" aria-labelledby="rare-reference-title">
+      <div class="rare-reference-heading">
+        <div>
+          <span class="rare-section-kicker">Préremplissage bibliographique</span>
+          <h2 id="rare-reference-title">Trouver une notice</h2>
+          <p>La couverture du référentiel sert uniquement d’illustration provisoire : elle ne devient jamais une photo de l’exemplaire.</p>
+        </div>
+        <span class="rare-step-label">1 · Trouver&nbsp;&nbsp; 2 · Vérifier&nbsp;&nbsp; 3 · Enregistrer</span>
+      </div>
+      <div class="rare-reference-search-grid">
+        <form (ngSubmit)="searchReferences()" novalidate>
+          <label><span>ISBN exact</span><input name="rareIsbnQuery" data-testid="rare-isbn-query" [(ngModel)]="isbnQuery" inputmode="numeric" autocomplete="off" placeholder="978… ou ISBN-10"></label>
+          <button class="rare-button rare-button-outline" type="submit" [disabled]="referenceLoading()">Rechercher l’ISBN</button>
+        </form>
+        <form (ngSubmit)="searchReferences()" novalidate>
+          <label><span>Titre ou auteur</span><input name="rareReferenceQuery" data-testid="rare-reference-query" [(ngModel)]="referenceQuery" autocomplete="off" placeholder="Rechercher dans le référentiel…"></label>
+          <button class="rare-button rare-button-outline" type="submit" [disabled]="referenceLoading()">Rechercher une référence</button>
+        </form>
+      </div>
+      @if (referenceLoading()) {
+        <p class="rare-reference-status" role="status">Recherche bibliographique en cours…</p>
+      }
+      @if (referenceError(); as message) {
+        <p class="rare-reference-status rare-reference-status-error" role="alert">{{ message }}</p>
+      }
+      @if (referenceResults().length > 0) {
+        <div class="rare-reference-results" data-testid="rare-reference-results">
+          <div class="rare-reference-results-heading"><strong>{{ referenceResults().length }} références trouvées</strong><span>À vérifier avant l’enregistrement</span></div>
+          @for (reference of referenceResults(); track reference.isbn13 || reference.workId || reference.title) {
+            <article class="rare-reference-row">
+              @if (reference.coverUrl) {<img [src]="reference.coverUrl" alt="">} @else {<span class="rare-reference-cover" aria-hidden="true"></span>}
+              <div><strong>{{ reference.title || 'Titre à compléter' }}</strong><span>{{ reference.authors || 'Auteur non renseigné' }}{{ reference.publisher ? ' · ' + reference.publisher : '' }}{{ reference.publicationYear ? ' · ' + reference.publicationYear : '' }}</span><small>{{ reference.isbn13 ? 'ISBN ' + reference.isbn13 : 'ISBN non renseigné' }} · {{ reference.source }}</small></div>
+              <button class="rare-button rare-button-outline" type="button" [disabled]="!reference.isbn13" (click)="useReference(reference)">{{ reference.isbn13 ? 'Utiliser cette notice' : 'ISBN manquant' }}</button>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <form class="rare-editor-form" (ngSubmit)="submit()" novalidate>
+    <div class="rare-form-heading">
+      <div><span class="rare-section-kicker">{{ isEditing() ? 'Fiche rare' : 'Nouvelle fiche' }}</span><h2 id="rare-form-title">{{ isEditing() ? 'Modifier la fiche rare' : 'Identité du livre' }}</h2></div>
+      @if (isEditing()) {<span class="rare-form-slug">/livres-rares/{{ book?.slug }}</span>}
+    </div>
+
+    <div class="rare-field-grid">
+      <label class="rare-field rare-field-wide"><span>Titre <em>obligatoire</em></span><input name="rareTitle" data-testid="rare-title" [(ngModel)]="form.title" maxlength="300" required></label>
+      <label class="rare-field"><span>Auteur ou mention</span><input name="rareAuthor" data-testid="rare-author" [(ngModel)]="form.authorMention" maxlength="300" placeholder="Illustré par…"></label>
+      <label class="rare-field"><span>Éditeur</span><input name="rarePublisher" [(ngModel)]="form.publisher" maxlength="200"></label>
+      <label class="rare-field"><span>Année</span><input type="number" name="rareYear" [(ngModel)]="form.publicationYear" min="1" max="9999" step="1"></label>
+      <label class="rare-field"><span>Rayon d’affichage <em>obligatoire</em></span><select name="rareShelf" data-testid="rare-shelf" [(ngModel)]="form.shelf" required>@for (shelf of shelves; track shelf) {<option [value]="shelf">{{ shelf }}</option>}</select></label>
+      <label class="rare-field"><span>ISBN <small>facultatif</small></span><input name="rareIsbn" [(ngModel)]="form.isbn13" inputmode="numeric" placeholder="Aucun ISBN"></label>
+    </div>
+    <p class="rare-field-note">Sans ISBN, la fiche vit seule : elle n’est reliée à aucune fiche catalogue et n’a ni quantité ni historique de mouvements. Avec un ISBN, elle se rattache à la fiche existante et la caisse la reconnaîtra au scan.</p>
+
+    <section class="rare-form-section" aria-labelledby="rare-price-title">
+      <div class="rare-form-section-heading"><div><span class="rare-section-kicker">Lecture caisse</span><h3 id="rare-price-title">Prix et état</h3></div><span class="rare-form-hint">Prix ferme · jamais totalisé par l’application</span></div>
+      <div class="rare-price-condition-row">
+        <label class="rare-price-field"><span>Prix ferme</span><span class="rare-price-input"><input type="number" name="rarePrice" data-testid="rare-price" [(ngModel)]="form.price" min="0" max="1000000" step="0.01" required><strong>€</strong></span></label>
+        <fieldset class="rare-condition-field"><legend>État de l’exemplaire</legend><div class="rare-condition-grid">@for (condition of conditions; track condition.value) {<button type="button" class="rare-condition-option" [attr.data-testid]="'rare-condition-' + condition.value.replace('GoodWithFlaws', 'good')" [class.selected]="form.condition === condition.value" [attr.aria-pressed]="form.condition === condition.value" (click)="setCondition(condition.value)">{{ condition.label }}</button>}</div></fieldset>
+      </div>
+    </section>
+
+    <label class="rare-field rare-description-field"><span>Description publique <small>{{ descriptionLength() }} / 1200</small></span><textarea name="rareDescription" data-testid="rare-description" [(ngModel)]="form.publicDescription" maxlength="1200" rows="5" placeholder="Décrivez l’exemplaire et ses défauts avec honnêteté…"></textarea></label>
+    <p class="rare-description-help">Dites les défauts. Un acheteur déçu en caisse, c’est un don qui revient.</p>
+
+    <div class="rare-field-grid rare-detail-grid">
+      <label class="rare-field"><span>Reliure</span><input name="rareBinding" [(ngModel)]="form.binding" maxlength="120"></label>
+      <label class="rare-field"><span>Format</span><input name="rareDimensions" [(ngModel)]="form.dimensions" maxlength="60" placeholder="32 × 44 cm"></label>
+      <label class="rare-field"><span>Pages</span><input type="number" name="rarePageCount" [(ngModel)]="form.pageCount" min="1" step="1"></label>
+      <label class="rare-field"><span>Emplacement</span><input name="rareShelfLocation" [(ngModel)]="form.shelfLocation" maxlength="120" placeholder="Table rares · caisse 2"></label>
+      <label class="rare-field rare-field-wide"><span>Prix fixé par</span><input name="rarePriceSetBy" [(ngModel)]="form.priceSetBy" maxlength="120" placeholder="Conseil du 5 mars"></label>
+    </div>
+
+    @if (validationError(); as message) {<p class="rare-validation-error" role="alert">{{ message }}</p>}
+    <div class="rare-form-actions"><button class="rare-button rare-button-ghost" type="button" (click)="cancel()">Annuler</button><button class="rare-button rare-button-primary" data-testid="rare-save" type="submit" [disabled]="disabled">{{ isEditing() ? 'Enregistrer les modifications' : 'Créer la fiche rare' }}</button></div>
+  </form>
+</section>

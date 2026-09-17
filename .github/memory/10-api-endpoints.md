@@ -136,7 +136,7 @@ client-only/private.
 
 - `GET /accounts/admin` - Administration-policy paged Entra account list with optional
   `search`, `page`, and `pageSize` filters. The response includes the current `Tri`,
-  `Caisse`, and `Administration` app-role assignments. Graph transport or malformed-payload
+  `Caisse`, `LivresRares`, and `Administration` app-role assignments. Graph transport or malformed-payload
   failures are returned as a typed `Account.DirectoryUnavailable` `503` rather than an
   unhandled `500`; omitted Graph collections are treated as empty.
 - `POST /accounts/admin` - Administration-policy account creation with `email`, `firstName`,
@@ -158,6 +158,17 @@ All `/books/admin/*` routes require the `Administration` policy (`Administration
 app role). All admin mutation responses expose an explicit `changed` flag where an operation
 is idempotent. Details and exact request/response fields are in
 `docs/bourse-aux-livres/06-reprise-front-catalogue-p2-p3.md`.
+
+Rare-book administration routes under `/rare-books/admin*` require the `RareBooks` policy
+(`LivresRares`, `Administration`, or `Admin`); public `/catalog/rare-books*` reads remain
+anonymous and `/rare-books/cash/search` remains `ScanVolunteer`-protected. The API does
+not add a price, total, or revenue field to ordinary book or sale contracts.
+
+The Catalog client mirrors the rare administration routes with typed models and an
+`AdminRareBooksFacade`. Its ISBN relation lookup searches the protected rare-book list;
+an exact match opens the existing fiche, while a miss creates a draft prefilled only with
+ordinary bibliographic metadata. Photo upload uses multipart form data and keeps the
+backend's ordering/caption/delete operations separate from fiche publication.
 
 No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 

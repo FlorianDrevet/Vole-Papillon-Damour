@@ -8,7 +8,7 @@
         <span class="admin-sidebar-status">Espace sécurisé</span>
       </div>
 
-      @for (group of navGroups; track group.label) {
+      @for (group of navGroups(); track group.label) {
         <div class="admin-nav-group">
           <span class="admin-nav-label">{{ group.label }}</span>
           <nav>
@@ -32,6 +32,9 @@
                     }
                     @case ('catalogue') {
                       <svg viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v17H7.5A2.5 2.5 0 0 0 5 21.5z"></path><path d="M5 4.5v17M9 6h6M9 10h6"></path></svg>
+                    }
+                    @case ('rare-books') {
+                      <svg viewBox="0 0 24 24"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v17H7.5A2.5 2.5 0 0 0 5 21.5z"></path><path d="M5 4.5v17M9 7h6M9 11h4"></path><path d="m14.5 15 1.7 1.7 3.3-3.5"></path></svg>
                     }
                     @case ('statistics') {
                       <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>
@@ -57,8 +60,8 @@
       @if (isAuthenticated()) {
         <div class="admin-role-card">
           <span class="admin-role-kicker">Votre rôle</span>
-          <strong>{{ isAdministrator() ? 'Administration' : 'Compte connecté' }}</strong>
-          <p>{{ isAdministrator() ? 'Accès complet, y compris aux comptes et aux paramètres.' : 'Accès limité aux outils autorisés.' }}</p>
+          <strong>{{ isAdministrator() ? 'Administration' : isRareBookManager() ? 'Livres rares' : 'Compte sans droits' }}</strong>
+          <p>{{ isAdministrator() ? 'Accès complet, y compris aux comptes et aux paramètres.' : isRareBookManager() ? 'Accès limité à la gestion des livres rares.' : 'Ce compte ne possède pas les droits d’administration.' }}</p>
         </div>
       }
     </aside>
@@ -92,7 +95,14 @@
           </div>
         </div>
       } @else {
-        @if (errorMessage(); as message) {
+        @if (!hasAdministrationAccess()) {
+          <div class="admin-status admin-status-error" data-testid="admin-access-denied" role="alert">
+            <span class="admin-kicker">Accès refusé</span>
+            <h1 id="admin-title">Espace réservé.</h1>
+            <p>Votre compte ne possède pas les droits d’administration.</p>
+          </div>
+        } @else {
+          @if (errorMessage(); as message) {
           <div
             class="admin-toast admin-toast-error"
             data-testid="admin-feedback-toast"
@@ -130,7 +140,7 @@
           </div>
         }
 
-        @switch (activeSection()) {
+          @switch (activeSection()) {
           @case ('overview') {
             <section class="admin-view" aria-labelledby="admin-title">
               <div class="admin-heading admin-heading-split">
@@ -324,7 +334,7 @@
                       <details class="secondary-detail"><summary>Annonces et corrections avancées</summary><div class="announcement-editor">@for (announcement of book.announcements; track announcement.id) {<div class="announcement-row"><span>{{ announcement.fairId || 'Sans bourse' }}</span><input type="number" [name]="'announcement-' + announcement.id" [value]="announcementQuantities[announcement.id]" (input)="setAnnouncementQuantity(announcement.id, $any($event.target).value)" min="0"><span>{{ statusLabel(announcement.status) }}</span><button class="text-link" type="button" (click)="correctAnnouncement(book, announcement.id)">Corriger</button></div>} @empty {<p>Aucune annonce.</p>}<input class="wide-input" name="announcementNote" [(ngModel)]="announcementNote" placeholder="Note obligatoire pour corriger une annonce"></div></details>
                     </div>
                     <aside class="detail-aside">
-                      <section class="side-card"><span class="section-kicker">État de la fiche</span><label class="switch-row"><span><strong>Livre rare</strong><small>Marquage manuel pour expertise</small></span><input type="checkbox" [checked]="book.isRare" (change)="toggleRare(book)"></label><label class="switch-row"><span><strong>Masquer du public</strong><small>La fiche reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" (change)="toggleVisibility(book)"></label></section>
+                      <section class="side-card"><span class="section-kicker">État de la fiche</span>@if (rareBooksFacade.catalogueRareBook(); as rareBook) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Voir la fiche livre rare</strong><small>{{ rareBook.status === 'Published' ? 'Publiée' : 'Brouillon' }}</small></span><span>→</span></button>} @else if (rareBooksFacade.catalogueRareBook() === null) {<button class="side-action" data-testid="catalogue-rare-book-link" type="button" [disabled]="loading()" (click)="openRareBookFromCatalogue(book)"><span><strong>Créer la fiche livre rare</strong><small>Préremplir depuis cette fiche</small></span><span>→</span></button>} @else {<p class="detail-help">Vérification de la fiche livre rare…</p>}<label class="switch-row"><span><strong>Masquer du public</strong><small>La fiche reste dans l’historique</small></span><input type="checkbox" [checked]="book.isHidden" (change)="toggleVisibility(book)"></label></section>
                       <section class="side-card"><span class="section-kicker">Actions</span><button class="side-action" type="button" (click)="withdrawalNote = ''; openBook(book.isbn13)">Retirer des exemplaires <span>→</span></button><label class="side-field"><span>Fusionner avec une autre fiche</span><input name="mergeTarget" [(ngModel)]="mergeTargetIsbn13" placeholder="ISBN cible"></label><input class="wide-input" name="mergeNote" [(ngModel)]="mergeNote" placeholder="Note de fusion"><button class="button button-outline" type="button" [disabled]="loading()" (click)="mergeBook(book)">Rediriger la fiche</button><button class="danger-link" type="button" [disabled]="loading() || !!book.movements.length || !!book.redirectedToIsbn13" (click)="deleteBook(book)">Supprimer la fiche</button><small>Impossible si des mouvements existent.</small></section>
                       <section class="side-card withdrawal-card"><span class="section-kicker">Retrait physique</span><label><span>Quantité</span><input type="number" name="withdrawalQuantity" [(ngModel)]="withdrawalQuantity" min="1"></label><input class="wide-input" name="withdrawalNote" [(ngModel)]="withdrawalNote" placeholder="Note obligatoire"><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="withdrawBook(book)">Journaliser le retrait</button></section>
                     </aside>
@@ -408,6 +418,10 @@
                 </section>
               }
             </section>
+          }
+
+          @case ('rare-books') {
+            <app-admin-rare-books></app-admin-rare-books>
           }
 
           @case ('statistics') {
@@ -635,8 +649,8 @@
                 <div class="admin-heading admin-heading-split"><div><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes &amp; rôles</span><h1 id="admin-title">Bénévoles.</h1></div><button class="button button-primary" type="button" (click)="showCreateAccount.set(!showCreateAccount())">{{ showCreateAccount() ? 'Fermer le formulaire' : 'Créer un compte bénévole' }}</button></div>
                 @if (showCreateAccount()) {<form class="account-create-card" (ngSubmit)="createAccount()"><div><span class="section-kicker">Nouveau compte Entra</span><h2>Créer un compte bénévole</h2><p>Le mot de passe temporaire est transmis hors de cette interface.</p></div><label><span>Prénom</span><input name="accountFirstName" [(ngModel)]="createAccountForm.firstName" autocomplete="given-name" required></label><label><span>Nom</span><input name="accountLastName" [(ngModel)]="createAccountForm.lastName" autocomplete="family-name" required></label><label><span>E-mail</span><input type="email" name="accountEmail" [(ngModel)]="createAccountForm.email" autocomplete="email" required></label><label><span>Mot de passe temporaire</span><input type="password" name="accountPassword" [(ngModel)]="createAccountForm.temporaryPassword" autocomplete="new-password" minlength="8" required></label><fieldset><legend>Droits</legend>@for (role of accountRoleOptions; track role.value) {<label class="role-checkbox"><input type="checkbox" [checked]="hasCreateRole(role.value)" (change)="toggleCreateRole(role.value)"><span>{{ role.label }}</span></label>}</fieldset><button class="button button-primary" type="submit" [disabled]="loading()">Créer le compte</button></form>}
                 <form class="search-toolbar account-search-toolbar" (ngSubmit)="loadAccounts()"><label class="search-field"><span>Nom ou e-mail</span><input name="accountSearch" [(ngModel)]="accountSearch" placeholder="Rechercher…"></label><button class="button button-outline" type="submit">Rechercher</button></form>
-                @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><small>{{ account.email || account.externalId }}</small><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" [disabled]="loading()" [attr.data-testid]="'account-status-' + account.externalId" (click)="toggleAccountEnabled(account)">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>} @else if (accountErrorMessage(); as error) {<div class="account-directory-notice" data-testid="account-directory-notice" role="status"><strong>Les comptes et rôles ne sont pas disponibles.</strong><p>{{ error }}</p></div>}
-                <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri, Caisse et Administration sont des rôles d’application Entra. Les comptes sont gérés ici ; les sessions restent la source de vérité pour l’activité.</p></div>
+                @if (accountsPage(); as page) {<div class="account-table-head"><span>Bénévole</span><span>Droits</span><span>Activité</span><span></span></div><div class="account-list">@for (account of page.accounts; track account.externalId) {<article class="account-row" [class.account-disabled]="!account.accountEnabled"><div class="account-identity"><strong>{{ account.displayName || account.email || account.externalId }}</strong><small>{{ account.email || account.externalId }}</small><span class="status-tag" [class.status-tag-muted]="!account.accountEnabled">{{ account.accountEnabled ? 'Actif' : 'Désactivé' }}</span></div>@if (editingAccountId() === account.externalId) {<div class="role-editor">@for (role of accountRoleOptions; track role.value) {<button class="role-chip" [class.role-chip-rare]="role.value === 'LivresRares'" [class.selected]="hasEditingRole(role.value)" type="button" (click)="toggleEditingRole(role.value)">{{ role.label }}</button>}<button class="text-link" type="button" (click)="saveAccountRoles(account)">Enregistrer</button><button class="text-link muted-link" type="button" (click)="cancelAccountRoleEdit()">Annuler</button></div>} @else {<div class="role-list">@for (role of account.roles; track role) {<span class="role-chip selected" [class.role-chip-rare]="role === 'LivresRares'">{{ accountRoleLabel(role) }}</span>} @empty {<span class="muted-note">Aucun droit</span>}</div>}<span class="account-activity">{{ accountActivity(account) }}</span><div class="account-actions"><button class="text-link" type="button" (click)="startAccountRoleEdit(account)">Droits</button><button class="text-link muted-link" type="button" [disabled]="loading()" [attr.data-testid]="'account-status-' + account.externalId" (click)="toggleAccountEnabled(account)">{{ account.accountEnabled ? 'Désactiver' : 'Réactiver' }}</button></div></article>} @empty {<div class="empty-panel"><h2>Aucun bénévole</h2><p>La liste Entra ne contient aucun compte pour cette recherche.</p></div>}</div><div class="pagination"><button type="button" [disabled]="accountPage <= 1" (click)="goToAccountsPage(accountPage - 1)">←</button><span>Page {{ page.page }} / {{ pageCount(page) }}</span><button type="button" [disabled]="page.page >= pageCount(page)" (click)="goToAccountsPage(accountPage + 1)">→</button></div>} @else if (loading()) {<p class="admin-status">Chargement des comptes bénévoles…</p>} @else if (accountErrorMessage(); as error) {<div class="account-directory-notice" data-testid="account-directory-notice" role="status"><strong>Les comptes et rôles ne sont pas disponibles.</strong><p>{{ error }}</p></div>}
+                <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>Les rôles Tri, Caisse, Livres rares et Administration sont des rôles d’application Entra. Les comptes sont gérés ici ; les sessions restent la source de vérité pour l’activité.</p></div>
               } @else {
                 <section class="members-workspace" data-testid="members-workspace">
                   <div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Comptes</span><h1 id="admin-title">Membres du site.</h1><p class="admin-intro">Consultez les listes de recherche et protégez la délivrabilité des alertes. Les comptes sont créés en autonomie via Entra External ID.</p></div>
@@ -656,6 +670,7 @@
 
           @case ('alerts') {
             <section class="admin-view" aria-labelledby="admin-title"><div class="admin-heading"><span class="admin-accent" aria-hidden="true"></span><span class="admin-kicker">Fenêtre de rattrapage</span><h1 id="admin-title">Alertes.</h1><p class="admin-intro">Cette file reste accessible depuis les sessions : une alerte envoyée ne peut pas être rappelée.</p></div>@if (alertsPage(); as page) {<div class="simple-list alert-admin-list">@for (alert of page.alerts; track alert.id) {<div><span class="status-pill" [class]="statusClass(alert.status)">{{ statusLabel(alert.status) }}</span><strong>{{ formatNumber(alert.itemCount) }} livres · échéance {{ formatDate(alert.dueAt, true) }}</strong><span>{{ alert.memberId || 'Membre non renseigné' }}</span><button class="text-link" type="button" [disabled]="alert.status !== 'Pending'" (click)="cancelAlert(alert)">Annuler</button><button class="text-link" type="button" [disabled]="alert.status !== 'Pending'" (click)="forceAlert(alert)">Forcer</button></div>} @empty {<p class="empty-inline">Aucune alerte.</p>}</div>} @else if (loading()) {<p class="admin-status">Chargement des alertes…</p>}</section>
+          }
           }
         }
       }
@@ -941,7 +956,7 @@
             </div>
             <div class="simple-list">
               @for (item of member.watchlist; track item.id) {
-                <div><span><strong>{{ item.title || item.isbn13 || 'Titre non renseigné' }}</strong><small>{{ item.authors || item.isbn13 || 'Auteur non renseigné' }}</small></span><span>{{ formatNumber(item.quantityAvailable) }} disponible{{ item.quantityAvailable > 1 ? 's' : '' }}</span></div>
+                <div><span><strong>{{ item.title || (item.scope === 'RareBook' ? 'Livre rare suivi' : item.isbn13 || 'Titre non renseigné') }}</strong><small>{{ item.scope === 'RareBook' ? 'Exemplaire rare' : item.authors || item.isbn13 || 'Auteur non renseigné' }}</small></span><span>{{ formatNumber(item.quantityAvailable) }} disponible{{ item.quantityAvailable > 1 ? 's' : '' }}</span></div>
               } @empty {
                 <p class="empty-inline">Aucun titre suivi.</p>
               }
@@ -955,7 +970,7 @@
             </div>
             <div class="simple-list">
               @for (alert of member.alerts; track alert.id) {
-                <div><span><strong>{{ alert.title || alert.isbn13 }}</strong><small>Envoyée le {{ formatDate(alert.sentAt, true) }}</small></span><span>{{ alert.outboxMessageId ? 'Message journalisé' : 'Notification locale' }}</span></div>
+                <div><span><strong>{{ alert.title || (alert.rareBookId ? 'Alerte livre rare' : alert.isbn13 || 'Titre non renseigné') }}</strong><small>Envoyée le {{ formatDate(alert.sentAt, true) }}</small></span><span>{{ alert.outboxMessageId ? 'Message journalisé' : 'Notification locale' }}</span></div>
               } @empty {
                 <p class="empty-inline">Aucune alerte envoyée.</p>
               }

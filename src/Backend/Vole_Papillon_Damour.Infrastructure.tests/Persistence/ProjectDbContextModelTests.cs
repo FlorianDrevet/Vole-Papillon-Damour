@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
@@ -8,8 +10,12 @@ using Vole_Papillon_Damour.Domain.ActualityAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 
 namespace Vole_Papillon_Damour.Infrastructure.tests.Persistence;
@@ -138,6 +144,109 @@ public sealed class ProjectDbContextModelTests
                     nameof(SocialPostImport.Source),
                     nameof(SocialPostImport.ExternalId),
                 }));
+    }
+
+    [Fact]
+    public void Model_MapsRareBooksAndPhotosWithoutTheLegacyBookFlag()
+    {
+        using var context = CreateContext();
+        var model = context.GetService<IDesignTimeModel>().Model;
+
+        var rareBooks = model.FindEntityType(typeof(RareBook));
+        rareBooks.Should().NotBeNull();
+        rareBooks!.GetTableName().Should().Be("RareBooks");
+        rareBooks.FindProperty(nameof(RareBook.Slug))!.GetMaxLength().Should().Be(RareBookSlug.MaxLength);
+        rareBooks.FindProperty(nameof(RareBook.Price))!.GetPrecision().Should().Be(10);
+        rareBooks.FindProperty(nameof(RareBook.Price))!.GetScale().Should().Be(2);
+        rareBooks.FindProperty(nameof(RareBook.RowVersion))!.IsConcurrencyToken.Should().BeTrue();
+        rareBooks.FindProperty(nameof(RareBook.RowVersion))!.ValueGenerated
+            .Should().Be(ValueGenerated.OnAddOrUpdate);
+
+        var rareBookIndexes = rareBooks.GetIndexes();
+        rareBookIndexes.Should().ContainSingle(index =>
+            index.IsUnique &&
+            index.Properties.Select(property => property.Name)
+                .SequenceEqual(new[] { nameof(RareBook.Slug) }));
+        rareBookIndexes.Should().ContainSingle(index =>
+            index.IsUnique &&
+            index.GetFilter() == "[Isbn13] IS NOT NULL" &&
+            index.Properties.Select(property => property.Name)
+                .SequenceEqual(new[] { nameof(RareBook.Isbn13) }));
+        rareBookIndexes.Should().ContainSingle(index =>
+            index.Properties.Select(property => property.Name)
+                .SequenceEqual(new[]
+                {
+                    nameof(RareBook.Status),
+                    nameof(RareBook.IsSold),
+                    nameof(RareBook.Price)
+                }));
+
+        var photos = model.FindEntityType(typeof(RareBookPhoto));
+        photos.Should().NotBeNull();
+        photos!.GetTableName().Should().Be("RareBookPhotos");
+        photos.FindProperty(nameof(RareBookPhoto.BlobName))!.GetMaxLength().Should().Be(1024);
+        photos.FindProperty(nameof(RareBookPhoto.Caption))!.GetMaxLength().Should().Be(80);
+        photos.FindProperty(nameof(RareBookPhoto.ContentType))!.GetMaxLength().Should().Be(40);
+        photos.GetIndexes().Should().ContainSingle(index =>
+            index.IsUnique &&
+            index.Properties.Select(property => property.Name)
+                .SequenceEqual(new[]
+                {
+                    nameof(RareBookPhoto.RareBookId),
+                    nameof(RareBookPhoto.Position)
+                }));
+        photos.GetForeignKeys()
+            .Single(foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(RareBook))
+            .DeleteBehavior
+            .Should().Be(DeleteBehavior.Cascade);
+
+        model.FindEntityType(typeof(Book))!
+            .FindProperty("IsRare")
+            .Should().BeNull();
+    }
+
+    [Fact]
+    public void PersistenceContractAndMigrationsExposeRareBookStorage()
+    {
+        typeof(IProjectDbContext).GetProperty("RareBooks").Should().NotBeNull();
+        typeof(IProjectDbContext).GetProperty("RareBookPhotos").Should().NotBeNull();
+        typeof(ProjectDbContext).GetProperty("RareBooks").Should().NotBeNull();
+        typeof(ProjectDbContext).GetProperty("RareBookPhotos").Should().NotBeNull();
+
+        using var context = CreateContext();
+        context.Database.GetMigrations()
+            .Should().Contain(migration => migration.EndsWith("_AddRareBooks", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ClientGestureMigrationAddsTheIdempotencyColumnAndIndex()
+    {
+        var migrationBuilder = new MigrationBuilder("Microsoft.EntityFrameworkCore.SqlServer");
+        new ClientGestureMigrationProbe().ApplyUp(migrationBuilder);
+
+        var addColumn = migrationBuilder.Operations
+            .OfType<AddColumnOperation>()
+            .SingleOrDefault(operation =>
+                operation.Table == "RareBooks" &&
+                operation.Name == "ClientGestureId");
+        addColumn.Should().NotBeNull();
+        addColumn!.ClrType.Should().Be(typeof(Guid));
+        addColumn.IsNullable.Should().BeTrue();
+
+        var createIndex = migrationBuilder.Operations
+            .OfType<CreateIndexOperation>()
+            .SingleOrDefault(operation =>
+                operation.Table == "RareBooks" &&
+                operation.Name == "IX_RareBooks_ClientGestureId");
+        createIndex.Should().NotBeNull();
+        createIndex!.IsUnique.Should().BeTrue();
+        createIndex.Filter.Should().Be("[ClientGestureId] IS NOT NULL");
+    }
+
+    private sealed class ClientGestureMigrationProbe :
+        Vole_Papillon_Damour.Infrastructure.Migrations.AddRareBookClientGestureId
+    {
+        public void ApplyUp(MigrationBuilder migrationBuilder) => Up(migrationBuilder);
     }
 
     private static ProjectDbContext CreateContext()

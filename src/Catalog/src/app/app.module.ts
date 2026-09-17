@@ -15,6 +15,9 @@ import {CatalogSearchPageComponent} from './features/search/catalog-search-page.
 import {CatalogWorkPageComponent} from './features/work/catalog-work-page.component';
 import {BookCardComponent} from './shared/book-card/book-card.component';
 import {CatalogAdministrationPageComponent} from './features/administration/catalog-administration-page.component';
+import {AdminRareBookFormComponent} from './features/administration/rare-books/admin-rare-book-form.component';
+import {AdminRareBookPhotosComponent} from './features/administration/rare-books/admin-rare-book-photos.component';
+import {AdminRareBooksComponent} from './features/administration/rare-books/admin-rare-books.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
@@ -22,6 +25,9 @@ import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navi
 import {CatalogCookieBannerComponent} from './shared/components/cookie-banner/catalog-cookie-banner.component';
 import {CatalogAuthPromptComponent} from './shared/components/auth-prompt/catalog-auth-prompt.component';
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
+import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
+import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
+import {CatalogRareBookCardComponent} from './shared/rare-book-card/rare-book-card.component';
 import {DesignSystemModule} from '@vpd/ui';
 import {catalogAuthInterceptor} from './core/catalog-auth.interceptor';
 
@@ -37,6 +43,9 @@ registerLocaleData(localeFr);
     LegalPageComponent,
     BookCardComponent,
     CatalogAdministrationPageComponent,
+    AdminRareBooksComponent,
+    AdminRareBookFormComponent,
+    AdminRareBookPhotosComponent,
     CatalogAccountPageComponent,
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,
@@ -44,6 +53,9 @@ registerLocaleData(localeFr);
     CatalogCookieBannerComponent,
     CatalogNotFoundPageComponent,
     CatalogAuthPromptComponent,
+    CatalogRareBooksPageComponent,
+    CatalogRareBookDetailPageComponent,
+    CatalogRareBookCardComponent,
   ],
   imports: [
     BrowserModule,

@@ -11,7 +11,7 @@ import {
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
-import {CatalogVolunteerStatisticsResponse, CatalogWatchlistResponse} from '../../core/catalog.models';
+import {CatalogRareBook, CatalogVolunteerStatisticsResponse, CatalogWatchlistResponse} from '../../core/catalog.models';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 
 describe('CatalogAccountPageComponent', () => {
@@ -392,6 +392,71 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('3 disponibles');
     expect(fixture.nativeElement.textContent).toContain('Dernière alerte');
     expect(fixture.nativeElement.textContent).toContain('Retirer de ma liste');
+  });
+
+  it('renders a followed rare copy from its own record, including its display-only firm price', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    const rareBook: CatalogRareBook = {
+      id: 'rare-1',
+      slug: 'les-fables',
+      isbn13: null,
+      title: 'Les Fables',
+      authorMention: 'Jean de La Fontaine',
+      publisher: 'Imprimerie royale',
+      publicationYear: 1770,
+      shelf: 'Éditions anciennes',
+      price: 60,
+      condition: 'GoodWithFlaws',
+      publicDescription: null,
+      binding: 'Demi-reliure',
+      dimensions: null,
+      pageCount: 240,
+      status: 'Published',
+      isSold: false,
+      soldAt: null,
+      photos: [{
+        id: 'photo-1',
+        blobUri: 'https://images.example.test/rare-1.jpg',
+        blobName: 'rare-1.jpg',
+        caption: null,
+        position: 0,
+        contentType: 'image/jpeg',
+        sizeBytes: 1200,
+        uploadedAt: '2026-09-04T20:00:00Z',
+      }],
+    };
+    const current: CatalogWatchlistResponse = {
+      ...watchlist,
+      items: [{
+        id: 'rare-watch-1',
+        scope: 'RareBook',
+        workId: null,
+        isbn13: null,
+        rareBookId: rareBook.id,
+        title: rareBook.title,
+        authors: rareBook.authorMention,
+        publisher: rareBook.publisher,
+        publicationYear: rareBook.publicationYear,
+        coverUrl: null,
+        book: null,
+        rareBook,
+        addedAt: '2026-09-17T09:00:00Z',
+        lastAlertAt: null,
+      }],
+    };
+    api.getWatchlist.and.returnValue(of(current));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.watchlist-item') as HTMLElement;
+    expect(card.querySelector('.watchlist-title')?.textContent?.trim()).toBe('Les Fables');
+    expect(card.querySelector('.watchlist-cover img')?.getAttribute('src')).toBe('https://images.example.test/rare-1.jpg');
+    expect(card.querySelector('.watchlist-edition')?.textContent?.trim()).toBe('Exemplaire rare');
+    expect(card.textContent).toContain('60.00 €');
+    expect(card.textContent).toContain('prix ferme affiché pour lecture sur place');
   });
 
   it('renders saved reference metadata when an edition is not yet in the catalogue', async () => {

@@ -276,7 +276,7 @@ export interface AdminSettings {
   updatedBy: string;
 }
 
-export type AdminAccountRole = 'Tri' | 'Caisse' | 'Administration';
+export type AdminAccountRole = 'Tri' | 'Caisse' | 'Administration' | 'LivresRares';
 
 export interface AdminAccount {
   externalId: string;

@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
+using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 
@@ -63,6 +64,10 @@ public sealed class GetMyWatchlistQueryHandler(
             .Where(item => item.WorkId is not null)
             .Select(item => item.WorkId!)
             .ToHashSet(StringComparer.Ordinal);
+        var rareBookIds = items
+            .Where(item => item.Scope == WatchlistItemScope.RareBook && item.RareBookId is not null)
+            .Select(item => item.RareBookId!)
+            .ToHashSet();
 
         var books = await dbContext.Books
             .AsNoTracking()
@@ -79,11 +84,26 @@ public sealed class GetMyWatchlistQueryHandler(
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToReferencedFairListAsync(announcements, cancellationToken);
+        var publishedAvailableRareIsbns = (await dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Where(rareBook => bookIsbnValues.Contains(rareBook.Isbn13!.Value))
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
         var publicBooks = PublicCatalogProjector.Project(
             books,
             announcements,
             fairs,
+            publishedAvailableRareIsbns,
             generatedAt);
+        var rareBooks = rareBookIds.Count == 0
+            ? []
+            : await dbContext.RareBooks
+                .AsNoTracking()
+                .Include(book => book.Photos)
+                .Where(book => rareBookIds.Contains(book.Id))
+                .ToListAsync(cancellationToken);
 
         var histories = await dbContext.UserAlertHistories
             .AsNoTracking()
@@ -96,7 +116,7 @@ public sealed class GetMyWatchlistQueryHandler(
                 var matchingBooks = publicBooks
                     .Where(book => item.Scope == WatchlistItemScope.Edition
                         ? book.Isbn13 == item.Isbn13!.Value.Value
-                        : book.WorkId == item.WorkId)
+                        : item.Scope == WatchlistItemScope.Work && book.WorkId == item.WorkId)
                     .OrderByDescending(book => book.QuantityAvailable > 0)
                     .ThenBy(book => book.PublicationYear)
                     .ThenBy(book => book.Isbn13, StringComparer.Ordinal)
@@ -106,25 +126,34 @@ public sealed class GetMyWatchlistQueryHandler(
                     .Select(book => book.Isbn13)
                     .ToHashSet(StringComparer.Ordinal);
                 var lastAlertAt = histories
-                    .Where(history =>
-                        item.Scope == WatchlistItemScope.Edition
-                            ? history.Isbn13.Value == item.Isbn13!.Value.Value
-                            : matchingIsbns.Contains(history.Isbn13.Value))
+                    .Where(history => item.Scope == WatchlistItemScope.RareBook
+                        ? history.RareBookId == item.RareBookId
+                        : history.Isbn13 is not null &&
+                          (item.Scope == WatchlistItemScope.Edition
+                            ? history.Isbn13.Value.Value == item.Isbn13!.Value.Value
+                            : matchingIsbns.Contains(history.Isbn13.Value.Value)))
                     .Select(history => (DateTimeOffset?)new DateTimeOffset(history.SentAt, TimeSpan.Zero))
                     .OrderByDescending(value => value)
                     .FirstOrDefault();
+                var matchingRareBook = item.Scope == WatchlistItemScope.RareBook
+                    ? rareBooks.SingleOrDefault(book => book.Id == item.RareBookId)
+                    : null;
 
                 return new MyWatchlistItemResult(
                     item.Id,
                     item.Scope,
                     item.WorkId,
                     item.Isbn13?.Value,
+                    item.RareBookId?.Value,
                     item.Title,
                     item.Authors,
                     item.Publisher,
                     item.PublicationYear,
                     item.CoverUrl,
                     selectedBook,
+                    matchingRareBook is null
+                        ? null
+                        : RareBookProjector.ToPublicResult(matchingRareBook),
                     new DateTimeOffset(item.AddedAt, TimeSpan.Zero),
                     lastAlertAt);
             })

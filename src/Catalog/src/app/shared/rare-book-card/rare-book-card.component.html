@@ -1,0 +1,18 @@
+<a class="rare-book-card" [class.rare-book-card--sold]="book.isSold" [routerLink]="['/livres-rares', book.slug]" [attr.aria-label]="'Voir le livre rare ' + book.title">
+  <div class="rare-book-card-cover">
+    <img *ngIf="thumbnail(); else rareCoverPlaceholder" [src]="thumbnail()" [alt]="'Photo de ' + book.title" loading="lazy">
+    <ng-template #rareCoverPlaceholder><span aria-hidden="true">✦</span></ng-template>
+    <span class="rare-book-card-badge">Rare</span>
+    <span *ngIf="book.isSold" class="rare-book-card-sold-badge">Parti</span>
+    <span *ngIf="book.photos.length" class="rare-book-card-photo-count">{{ book.photos.length }} photo{{ book.photos.length > 1 ? 's' : '' }}</span>
+  </div>
+  <div class="rare-book-card-copy">
+    <h3>{{ book.title }}</h3>
+    <p *ngIf="book.authorMention">{{ book.authorMention }}</p>
+    <p class="rare-book-card-technical-line">{{ technicalLine() }}</p>
+    <div class="rare-book-card-footer">
+      <strong class="rare-book-card-price" [class.rare-book-card-price--sold]="book.isSold">{{ book.price | number:'1.2-2' }} €</strong>
+      <span class="rare-book-card-action">{{ book.isSold ? soldLabel() : 'Voir la fiche →' }}</span>
+    </div>
+  </div>
+</a>

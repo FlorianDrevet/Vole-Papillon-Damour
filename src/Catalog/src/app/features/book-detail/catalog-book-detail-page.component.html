@@ -55,6 +55,11 @@
           {{ item.publicationYear || '' }}
         </p>
       }
+      @if (item.rareBookSlug) {
+        <a class="rare-book-link" [routerLink]="['/livres-rares', item.rareBookSlug]">
+          Voir la fiche du livre rare →
+        </a>
+      }
 
       <p class="availability-heading">Disponibilité à la bourse aux livres</p>
       <div class="availability-lines">

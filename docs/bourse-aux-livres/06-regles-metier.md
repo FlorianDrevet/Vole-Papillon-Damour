@@ -95,8 +95,9 @@ ordinaire et devra être retiré physiquement une fois signalé. Le repérage à
 les bénévoles expérimentés reste donc le seul filet en v1. L'objectif `O4` n'est pas
 couvert par la v1.
 
-Le marquage manuel « rare » par un administrateur, lui, existe dès la v1 (`05` §4) :
-c'est ce qui alimente la section « livres rares » et le signalement en caisse.
+La fiche autonome « livre rare » créée par un bénévole habilité existe dès la v1 (`05` §4) :
+c'est elle qui alimente la section « livres rares » et le signalement en caisse lorsqu'elle
+est publiée et encore disponible.
 
 ### `RG-15` — Priorité des verdicts
 Un livre peut relever de plusieurs règles à la fois. Un seul verdict principal est
@@ -107,8 +108,8 @@ affiché, dans cet ordre :
 3. Inutile d'en garder (`RG-10`)
 4. Premier exemplaire (`RG-11`)
 
-Un livre déjà marqué « rare » à la main affiche ce signalement en complément du verdict,
-sans le remplacer. Quand `RG-14` sera implémentée, elle n'entrera pas non plus dans
+Un livre lié à une fiche rare publiée et disponible affiche ce signalement en complément
+du verdict, sans le remplacer. Quand `RG-14` sera implémentée, elle n'entrera pas non plus dans
 cette liste : son résultat arrive après le scan, pas pendant.
 
 **« Recherché » et « ça se vend » l'emportent délibérément sur « trop d'exemplaires ».**
@@ -492,23 +493,25 @@ Deux moyens d'accélérer, ni l'un ni l'autre obligatoire :
   menées sur les rayons déjà remplis ;
 - la priorité donnée aux rayons les plus denses, où le doublon est le plus coûteux.
 
-### `RG-50` — Le système ne connaît aucun prix
-Les prix sont décidés au comptoir par le bénévole, livre en main. **Aucun prix n'est
-stocké, affiché, calculé ni totalisé par l'application**, ni pour les livres ordinaires
-ni pour les livres rares.
+### `RG-50` — Le système ne compte aucun argent
+Pour les livres ordinaires, aucun prix n'est stocké, affiché, calculé ni totalisé par
+l'application. Pour les livres rares, l'association fixe un **prix ferme** qui est
+stocké sur la fiche et affiché en vitrine et en caisse pour être lu. Ce prix rare n'est
+jamais calculé, totalisé ou utilisé pour enregistrer un montant.
 
 Conséquences directes :
 
 | Domaine | Effet |
 |---|---|
-| Écran de caisse | Ni colonne prix, ni total. Il enregistre quels livres sortent, rien d'autre (`03` §5) |
+| Écran de caisse | Aucun panier ni total. Pour un livre ordinaire, aucun prix n'est affiché ; pour un livre rare, le prix ferme est visible pour être lu. La caisse enregistre quels livres sortent, rien d'autre (`03` §5) |
 | Statistiques | On connaît le **nombre** de livres vendus, jamais la recette qui en découle |
-| Livres rares | Le système signale qu'un livre est rare ; **le montant est porté physiquement sur le livre**, pas dans l'application |
-| Fiche livre | Aucun champ de prix. La valeur estimée de `RG-14`, si elle existe un jour, est une aide au tri — jamais un prix de vente |
+| Livres rares | Le système signale le livre et affiche son prix ferme stocké ; ce prix est aussi porté physiquement sur le livre et n'est jamais additionné |
+| Livres ordinaires | Aucun champ de prix. La valeur estimée de `RG-14`, si elle existe un jour, est une aide au tri — jamais un prix de vente |
 
 **Le signalement des livres rares en caisse devient donc critique** (`03` §5). C'est la
 seule protection contre un livre expertisé à 35 € vendu 2 € par un bénévole qui ignore
-son histoire. Il est affiché en grand et renvoie au prix inscrit sur le livre.
+son histoire. Le prix ferme est affiché en grand et renvoie au prix inscrit sur le livre ;
+il reste une information à lire, jamais un montant encaissé par l'application.
 
 ### `RG-51` — Recette d'une bourse
 La recette ne pouvant pas être déduite des ventes (`RG-50`), elle est **saisie à la main
@@ -545,8 +548,11 @@ Les annonces suivent leur bourse de rattachement :
 ## Droits et sécurité
 
 ### `RG-40` — Droits par mode
-Le tri et la caisse sont soumis à des droits distincts. Un bénévole ne voit que les
-modes qui lui sont ouverts.
+Les modes de travail sont soumis à des droits distincts. Les rôles bénévoles sont
+`Tri`, `Caisse` et `LivresRares` : un bénévole ne voit que les modes qui lui sont ouverts.
+Le rôle `Administration` ouvre le portail d'administration et l'accès de gestion aux
+trois modes métier ; il n'est pas nécessaire d'ajouter un second rôle à un administrateur
+qui doit gérer les livres rares.
 
 ### `RG-41` — Attribution des gestes
 Tout mouvement porte l'identité du bénévole qui l'a produit et la session dont il

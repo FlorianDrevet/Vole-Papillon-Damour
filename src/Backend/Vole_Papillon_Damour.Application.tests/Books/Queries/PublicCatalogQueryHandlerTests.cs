@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicBook;
@@ -22,6 +23,9 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
@@ -376,6 +380,49 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task GetPublicBook_WhenPublishedRareBookSharesIsbn_ReturnsRareBookSlug()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook(
+            "9782070408504",
+            "Le Petit Prince",
+            "Antoine de Saint-Exupéry",
+            rare: true);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreatePublicBookHandler().Handle(
+            new GetPublicBookQuery("9782070408504"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.RareBookSlug.Should().Be("le-petit-prince-antoine-de-saint-exupery");
+    }
+
+    [Fact]
+    public async Task GetPublicBook_WhenPublishedRareBookIsSold_StillReturnsRareBookSlug()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook(
+            "9782070408504",
+            "Le Petit Prince",
+            "Antoine de Saint-Exupéry",
+            rare: true);
+        fixture.Context.RareBooks.Local.Single().MarkSold(
+            Now,
+            null,
+            null,
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")));
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreatePublicBookHandler().Handle(
+            new GetPublicBookQuery("9782070408504"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.RareBookSlug.Should().Be("le-petit-prince-antoine-de-saint-exupery");
+    }
+
+    [Fact]
     public async Task GetPublicBook_WhenBookIsHidden_ReturnsNotFound()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -514,7 +561,8 @@ public sealed class PublicCatalogQueryHandlerTests
         fixture.AddBook(
             "9782070408504",
             "Le Petit Prince",
-            "Antoine de Saint-Exupéry");
+            "Antoine de Saint-Exupéry",
+            rare: true);
         var redirected = fixture.AddBook(
             "9782253006329",
             "Une édition absorbée",
@@ -533,9 +581,11 @@ public sealed class PublicCatalogQueryHandlerTests
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.Entries.Should().ContainSingle();
-        result.Value.Entries[0].UrlPath.Should().Be(
+        result.Value.Entries.Should().HaveCount(2);
+        result.Value.Entries.Should().Contain(entry => entry.UrlPath ==
             "/livres/le-petit-prince-antoine-de-saint-exupery-9782070408504");
+        result.Value.Entries.Should().Contain(entry => entry.UrlPath ==
+            "/livres-rares/le-petit-prince-antoine-de-saint-exupery");
     }
 }
 
@@ -613,9 +663,26 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
                 ],
                 workId),
             now.AddMinutes(-5));
-        book.UpdateRareStatus(rare, now.AddMinutes(-4));
         book.UpdateCatalogVisibility(hidden, now.AddMinutes(-3));
         Context.Books.Add(book);
+        if (rare)
+        {
+            var rareBook = RareBook.Create(
+                title,
+                25m,
+                now.AddMinutes(-4),
+                UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+                authorMention: authors,
+                publisher: publisher,
+                publicationYear: publicationYear,
+                shelf: RareBookShelf.AncientEditions,
+                condition: RareBookCondition.AsNew,
+                isbn13: isbn13);
+            rareBook.Publish(
+                UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+                now.AddMinutes(-3));
+            Context.RareBooks.Add(rareBook);
+        }
         return book;
     }
 
@@ -730,6 +797,8 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
+    public DbSet<RareBook> RareBooks => Set<RareBook>();
+    public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
@@ -741,6 +810,8 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     DbSet<WatchlistItem> IProjectDbContext.WatchlistItems => throw new NotSupportedException();
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
+    DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
+    DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -805,6 +876,60 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
         modelBuilder.Ignore<WatchlistItem>();
         modelBuilder.Ignore<UserAlertHistory>();
         modelBuilder.Ignore<EmailBounceEvent>();
+
+        modelBuilder.Entity<RareBook>(builder =>
+        {
+            builder.HasKey(book => book.Id);
+            builder.Property(book => book.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(book => book.Slug)
+                .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(book => book.Shelf)
+                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
+            builder.Property(book => book.Condition)
+                .HasConversion(
+                    condition => (byte)condition.Value,
+                    value => new RareBookCondition((RareBookCondition.RareBookConditionEnum)value));
+            builder.Property(book => book.Status).HasConversion<byte>();
+            builder.Property(book => book.SoldAtFairId)
+                .HasConversion(new ValueConverter<AssoEventsId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? AssoEventsId.Create(value.Value) : null));
+            builder.Property(book => book.SoldInSessionId)
+                .HasConversion(new ValueConverter<ScanSessionId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? ScanSessionId.Create(value.Value) : null));
+            builder.Property(book => book.CreatedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Property(book => book.UpdatedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Property(book => book.RowVersion).IsConcurrencyToken();
+            builder.HasMany(book => book.Photos)
+                .WithOne()
+                .HasForeignKey(photo => photo.RareBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Metadata.FindNavigation(nameof(RareBook.Photos))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<RareBookPhoto>(builder =>
+        {
+            builder.HasKey(photo => photo.Id);
+            builder.Property(photo => photo.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => RareBookPhotoId.Create(value));
+            builder.Property(photo => photo.RareBookId)
+                .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(photo => photo.BlobUri)
+                .HasConversion(uri => uri.ToString(), value => new Uri(value, UriKind.Absolute));
+            builder.Property(photo => photo.UploadedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+        });
     }
 
     private static Isbn13 ParseIsbn(string value)
@@ -812,4 +937,5 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
         return isbn;
     }
+
 }

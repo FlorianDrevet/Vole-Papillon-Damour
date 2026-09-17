@@ -19,9 +19,10 @@ import {loginRequest} from './msal-config';
 const DEGRADED_RETRY_DELAY_MS = 15_000;
 const DEGRADED_RETRY_MAX_ATTEMPTS = 5;
 
-export const SCAN_REQUIRED_ROLE = 'Tri ou Caisse';
+export const SCAN_REQUIRED_ROLE = 'Tri, Caisse ou Livres rares';
 export const SCAN_TRI_ROLE = 'Tri';
 export const SCAN_CASH_ROLE = 'Caisse';
+export const SCAN_RARE_ROLE = 'LivresRares';
 
 export type ScanAuthStatus =
   | 'checking'
@@ -129,6 +130,10 @@ export class ScanAuthService {
     return hasRole(this.roles, SCAN_CASH_ROLE);
   }
 
+  get canManageRareBooks(): boolean {
+    return hasRole(this.roles, SCAN_RARE_ROLE);
+  }
+
   get authState(): ScanAuthState {
     return this.authStateSubject.value;
   }
@@ -224,11 +229,7 @@ export class ScanAuthService {
         }
 
         const roles = readRoles(result.accessToken);
-        const status: ScanAuthStatus = roles.some(role =>
-          role.toLowerCase() === SCAN_TRI_ROLE.toLowerCase() ||
-          role.toLowerCase() === SCAN_CASH_ROLE.toLowerCase())
-          ? 'authorized'
-          : 'unauthorized';
+        const status: ScanAuthStatus = hasScanRole(roles) ? 'authorized' : 'unauthorized';
 
         if (status === 'authorized') {
           this.rememberLocalAuthorization(account, roles);
@@ -443,7 +444,9 @@ function hasRole(roles: readonly string[], expectedRole: string): boolean {
 }
 
 function hasScanRole(roles: readonly string[]): boolean {
-  return hasRole(roles, SCAN_TRI_ROLE) || hasRole(roles, SCAN_CASH_ROLE);
+  return hasRole(roles, SCAN_TRI_ROLE)
+    || hasRole(roles, SCAN_CASH_ROLE)
+    || hasRole(roles, SCAN_RARE_ROLE);
 }
 
 function readRoles(accessToken: string): string[] {

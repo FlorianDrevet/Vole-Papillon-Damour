@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
 
@@ -32,10 +33,19 @@ public sealed class GetPublicCatalogSitemapQueryHandler(
             .OrderBy(book => book.Id)
             .ToListAsync(cancellationToken);
 
+        var rareBooks = await dbContext.RareBooks
+            .AsNoTracking()
+            .Where(book => book.Status == RareBookStatus.Published)
+            .OrderBy(book => book.Id)
+            .ToListAsync(cancellationToken);
+
         return new PublicCatalogSitemapResult(
             books.Select(book => new PublicCatalogSitemapEntry(
                     $"/livres/{Slugify(book.Title, book.Authors)}-{book.Id.Value}",
                     new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero)))
+                .Concat(rareBooks.Select(book => new PublicCatalogSitemapEntry(
+                    $"/livres-rares/{book.Slug.Value}",
+                    new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero))))
                 .ToArray());
     }
 

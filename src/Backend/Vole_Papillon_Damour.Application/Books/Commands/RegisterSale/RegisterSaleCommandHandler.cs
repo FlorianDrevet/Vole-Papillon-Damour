@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 
@@ -132,6 +133,8 @@ public sealed class RegisterSaleCommandHandler(
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        var isRare = await IsRareBookAsync(isbn13, cancellationToken);
+
         return new RegisterSaleResult(
             isbn13.Value,
             movement.Id,
@@ -142,7 +145,7 @@ public sealed class RegisterSaleCommandHandler(
             fairMatch.Status,
             hadNoAvailableStock,
             hadUnreleasedAnnouncement,
-            book.IsRare,
+            isRare,
             clockSuspect,
             AlreadyProcessed: false);
     }
@@ -161,6 +164,8 @@ public sealed class RegisterSaleCommandHandler(
                 "The idempotent sale points to a missing book.");
         }
 
+        var isRare = await IsRareBookAsync(movement.Isbn13, cancellationToken);
+
         return new RegisterSaleResult(
             movement.Isbn13.Value,
             movement.Id,
@@ -171,9 +176,22 @@ public sealed class RegisterSaleCommandHandler(
             BookFairResolver.FromNote(movement.Note),
             HadNoAvailableStock: false,
             HadUnreleasedAnnouncement: false,
-            book.IsRare,
+            isRare,
             movement.ClockSuspect,
             AlreadyProcessed: true);
+    }
+
+    private Task<bool> IsRareBookAsync(
+        Isbn13 isbn13,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.RareBooks
+            .AsNoTracking()
+            .AnyAsync(rareBook =>
+                rareBook.Isbn13 == isbn13 &&
+                rareBook.Status == RareBookStatus.Published &&
+                !rareBook.IsSold,
+                cancellationToken);
     }
 
     private static (DateTime OccurredAt, bool ClockSuspect) NormalizeClientTimestamp(

@@ -163,7 +163,11 @@ public sealed class ScanBookCommandHandler(
 
             var settings = await GetOrCreateSettingsAsync(session, receivedAt, cancellationToken);
             var quantityAnnounced = await GetQuantityAnnouncedAsync(isbn13, cancellationToken);
-            var decision = CalculateVerdict(book, quantityAnnounced, settings);
+            var decision = CalculateVerdict(
+                book,
+                quantityAnnounced,
+                settings,
+                await IsRareBookAsync(isbn13, cancellationToken));
             var (occurredAt, clockSuspect) = NormalizeClientTimestamp(
                 command.OccurredAt,
                 session.StartedAt,
@@ -280,7 +284,8 @@ public sealed class ScanBookCommandHandler(
         var decision = CalculateVerdict(
             book,
             quantityAnnounced,
-            settings ?? CreateDefaultSettingsForCalculation());
+            settings ?? CreateDefaultSettingsForCalculation(),
+            await IsRareBookAsync(movement.Isbn13, cancellationToken));
         var sessionId = movement.ScanSessionId ?? ScanSessionId.Create(Guid.Empty);
 
         return new ScanBookResult(
@@ -326,10 +331,20 @@ public sealed class ScanBookCommandHandler(
             .SumAsync(cancellationToken) ?? 0;
     }
 
+    private Task<bool> IsRareBookAsync(
+        Isbn13 isbn13,
+        CancellationToken cancellationToken)
+    {
+        return dbContext.RareBooks
+            .AsNoTracking()
+            .AnyAsync(rareBook => rareBook.Isbn13 == isbn13, cancellationToken);
+    }
+
     private static BookVerdictDecision CalculateVerdict(
         Book book,
         int quantityAnnounced,
-        AssociationSettingsEntity settings)
+        AssociationSettingsEntity settings,
+        bool isRare)
     {
         return BookVerdictCalculator.Calculate(
             new BookVerdictFacts(
@@ -337,7 +352,7 @@ public sealed class ScanBookCommandHandler(
                 quantityAnnounced,
                 book.SalesCount,
                 ActiveRequesterCount: 0,
-                book.IsRare),
+                isRare),
             settings.DuplicateThreshold,
             settings.DemandSalesThreshold);
     }

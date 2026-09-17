@@ -36,6 +36,9 @@ public sealed class GetAdminBookQueryHandler(IProjectDbContext dbContext)
             .AsNoTracking()
             .Where(movement => movement.Isbn13 == isbn13)
             .ToListAsync(cancellationToken);
-        return AdminQueryProjection.ToBookResult(book, announcements, movements);
+        var isRare = await dbContext.RareBooks
+            .AsNoTracking()
+            .AnyAsync(rareBook => rareBook.Isbn13 == isbn13, cancellationToken);
+        return AdminQueryProjection.ToBookResult(book, announcements, movements, isRare);
     }
 }

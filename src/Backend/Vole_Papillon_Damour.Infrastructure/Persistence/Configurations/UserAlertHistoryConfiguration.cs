@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Infrastructure.Persistence.Outbox;
 
@@ -22,10 +24,13 @@ public sealed class UserAlertHistoryConfiguration : IEntityTypeConfiguration<Use
         builder.Property(history => history.Isbn13)
             .HasColumnType("char(13)")
             .IsUnicode(false)
-            .IsRequired()
             .HasConversion(
-                isbn13 => isbn13.Value,
-                value => BookPersistenceConversions.ParseIsbn13(value));
+                isbn13 => isbn13 == null ? null : isbn13.Value.Value,
+                value => value == null ? null : BookPersistenceConversions.ParseIsbn13(value));
+        builder.Property(history => history.RareBookId)
+            .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                rareBookId => rareBookId == null ? null : rareBookId.Value,
+                value => value == null ? null : RareBookId.Create(value.Value)));
         builder.Property(history => history.SentAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)
@@ -40,5 +45,6 @@ public sealed class UserAlertHistoryConfiguration : IEntityTypeConfiguration<Use
             .HasForeignKey(history => history.OutboxMessageId)
             .OnDelete(DeleteBehavior.SetNull);
         builder.HasIndex(history => new { history.UserId, history.Isbn13, history.SentAt });
+        builder.HasIndex(history => new { history.UserId, history.RareBookId, history.SentAt });
     }
 }

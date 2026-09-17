@@ -47,12 +47,13 @@ describe('scan diagnostic export', () => {
         createOutboxEntry('Quarantined', 'gesture-quarantined'),
       ],
       sales: [],
+      rareSales: [],
     };
 
     const serialized = serializeScanDiagnosticExport(state, '2026-09-09T09:43:00.000Z');
     const exported = JSON.parse(serialized) as ReturnType<typeof createScanDiagnosticExport>;
 
-    expect(exported.databaseVersion).toBe(3);
+    expect(exported.databaseVersion).toBe(5);
     expect(exported.session?.hasVolunteerId).toBeTrue();
     expect(exported.outbox.map(entry => entry.status)).toEqual(['Orphaned', 'Quarantined']);
     expect(serialized).not.toContain('volunteerId');

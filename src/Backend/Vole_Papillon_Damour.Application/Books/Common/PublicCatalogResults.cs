@@ -31,7 +31,8 @@ public sealed record PublicCatalogBookResult(
     DateTimeOffset FirstSeenAt,
     DateTimeOffset UpdatedAt,
     bool IsRare,
-    string? CoverSource = null);
+    string? CoverSource = null,
+    string? RareBookSlug = null);
 
 public sealed record PublicCatalogSearchResult(
     DateTime GeneratedAt,

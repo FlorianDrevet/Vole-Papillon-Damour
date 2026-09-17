@@ -13,11 +13,14 @@ import {
   CatalogAddedWatchlistItem,
   CatalogBookReference,
   CatalogReferenceSearchResponse,
+  CatalogRareBook,
+  CatalogRareBookPage,
   CatalogSearchResponse,
   CatalogWatchlistResponse,
 } from '../../core/catalog.models';
 import {CatalogSearchPageComponent} from './catalog-search-page.component';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+import {CatalogRareBookCardComponent} from '../../shared/rare-book-card/rare-book-card.component';
 import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
 
 function emptyWatchlist(items: CatalogWatchlistResponse['items'] = []): CatalogWatchlistResponse {
@@ -103,8 +106,19 @@ describe('CatalogSearchPageComponent', () => {
     sessionStorage.removeItem('vpd.catalog.pending-reference-follow');
     response$ = new Subject<CatalogSearchResponse>();
     routeParams = new BehaviorSubject<ParamMap>(convertToParamMap({q: 'saint-exupéry'}));
-    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['search', 'searchReferences']);
+    api = jasmine.createSpyObj<CatalogApiService>(
+      'CatalogApiService',
+      ['search', 'getPublicRareBooks', 'searchReferences'],
+    );
     api.search.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 24, genres: []}));
+    api.getPublicRareBooks.and.returnValue(of({
+      generatedAt: '',
+      books: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 24,
+      shelves: [],
+    }));
     api.searchReferences.and.returnValue(of({
       generatedAt: '',
       query: 'saint-exupéry',
@@ -131,7 +145,12 @@ describe('CatalogSearchPageComponent', () => {
     memberApi.getWatchlist.and.returnValue(of(emptyWatchlist()));
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogSearchPageComponent, BookCardComponent, CatalogAuthPromptComponent],
+      declarations: [
+        CatalogSearchPageComponent,
+        BookCardComponent,
+        CatalogRareBookCardComponent,
+        CatalogAuthPromptComponent,
+      ],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
@@ -143,6 +162,54 @@ describe('CatalogSearchPageComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(CatalogSearchPageComponent);
+  });
+
+  it('uses the dedicated rare-book endpoint and cards when the rare filter is active', async () => {
+    const rareBook: CatalogRareBook = {
+      id: 'rare-1',
+      slug: 'atlas-des-jardins',
+      isbn13: '9782070408504',
+      title: 'Atlas des jardins',
+      authorMention: 'Un auteur',
+      publisher: 'Un éditeur',
+      publicationYear: 1920,
+      shelf: 'Éditions anciennes',
+      price: 60,
+      condition: 'GoodWithFlaws',
+      publicDescription: null,
+      binding: null,
+      dimensions: null,
+      pageCount: null,
+      status: 'Published',
+      isSold: false,
+      soldAt: null,
+      photos: [],
+    };
+    const rarePage: CatalogRareBookPage = {
+      generatedAt: '2026-09-17T10:00:00Z',
+      books: [rareBook],
+      totalCount: 1,
+      page: 1,
+      pageSize: 24,
+      shelves: [{label: 'Éditions anciennes', count: 1}],
+    };
+    api.getPublicRareBooks.and.returnValue(of(rarePage));
+    routeParams.next(convertToParamMap({q: 'atlas', rare: 'true'}));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.getPublicRareBooks).toHaveBeenCalledWith(jasmine.objectContaining({
+      search: 'atlas',
+      includeSold: false,
+      sort: 'price-desc',
+      page: 1,
+      pageSize: 24,
+    }));
+    expect(fixture.nativeElement.querySelector('.rare-book-card')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.book-card')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Atlas des jardins');
   });
 
   it('explains the two catalogue scopes without exposing the reference provider', () => {

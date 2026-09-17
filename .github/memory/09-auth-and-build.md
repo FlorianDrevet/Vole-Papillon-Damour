@@ -5,9 +5,11 @@
 - L0-11 deployment 1 adds `Microsoft.Identity.Web` 4.14.2 and a composite `Bearer`
   policy scheme. It forwards Entra External ID tokens (the `*.ciamlogin.com` issuer) to
   the `Entra` scheme and existing tokens from `/auth/login` to `LegacyJwt`.
-- Entra role claims are read from `roles`; the staged policies are `Tri`, `Caisse`, and
-  `Administration`. `IsAdmin` remains a compatibility alias accepting `Administration`
-  and the legacy `Admin` role until deployment 3.
+- Entra role claims are read from `roles`; the staged policies are `Tri`, `Caisse`,
+  `Administration`, and `RareBooks`. `RareBooks` accepts the dedicated `LivresRares`
+  role plus `Administration` and the legacy `Admin` role. `IsAdmin` remains a
+  compatibility alias accepting `Administration` and the legacy `Admin` role until
+  deployment 3; `LivresRares` is intentionally not part of `ScanVolunteer`.
 - `JwtSettings`, `IJwtGenerator`, and `/auth/login` intentionally remain during deployment
   1 so the deployed BackOffice and unredistributed MAUI devices continue to work.
 - Entra runtime values are supplied by `AzureAd__Instance`, `AzureAd__TenantId`,
@@ -25,7 +27,7 @@
 - Account administration keeps Entra app roles as the source of truth. The BackOffice
   uses the Administration-protected `/accounts/admin` endpoints; the API Graph adapter
   creates External ID local identities with `passwordPolicies=DisablePasswordExpiration`
-  and synchronizes `Tri`, `Caisse`, and `Administration` assignments. The app-only Graph
+  and synchronizes `Tri`, `Caisse`, `Administration`, and `LivresRares` assignments. The app-only Graph
   registration needs `User.ReadWrite.All`, `User.EnableDisableAccount.All`,
   `Application.Read.All`, and `AppRoleAssignment.ReadWrite.All`; the dedicated
   `User.EnableDisableAccount.All` grant is used by the sensitive `accountEnabled` toggle.
@@ -73,7 +75,9 @@
 - `Catalog` uses a dynamic SSR-safe MSAL Browser loader. Its member/admin pages acquire the
   API scope silently and read `roles` from that API access token (not from the cached ID
   token); `Administration` and the compatibility `Admin` role expose the administration
-  navigation affordance, while API policies still enforce every admin request. When silent
+  navigation affordance, while `LivresRares` exposes the dedicated rare-books affordance.
+  Catalog and the legacy BackOffice account editors both expose the role for account
+  assignment. API policies still enforce every admin request. When silent
   acquisition needs user interaction, `acquireTokenRedirect` keeps the current private URL
   as `redirectStartPage` and the pages render a specific renewal state.
 - Public Catalog registration keeps the MSAL `prompt=create` request and `/compte` return

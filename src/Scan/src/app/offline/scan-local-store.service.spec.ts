@@ -3,6 +3,8 @@ import {
   ScanCatalogBook,
   ScanOutboxEntry,
   ScanOutboxStatus,
+  ScanRareBook,
+  ScanRareSaleOutboxEntry,
   ScanSaleOutboxEntry,
   ScanVolunteerStatisticsRecord,
 } from './scan-offline.model';
@@ -24,6 +26,7 @@ describe('ScanLocalStoreService', () => {
     });
     service = TestBed.inject(ScanLocalStoreService);
     await clearScanCatalogForTest(service);
+    await service.clearRareBookState();
     await service.clearSession();
     await service.clearSessionCloseRequests();
 
@@ -257,6 +260,44 @@ describe('ScanLocalStoreService', () => {
     });
   });
 
+  it('stores a rare cash sale without a price and its optimistic availability atomically', async () => {
+    const entry = createRareSaleOutboxEntry();
+    const rareBook = createRareBook();
+
+    await service.addRareSaleOutboxEntries([entry], [{...rareBook, isSold: true, updatedAt: entry.occurredAt}]);
+
+    expect(await service.getRareSaleOutboxEntry(entry.clientGestureId)).toEqual(entry);
+    expect(await service.getRareBook(rareBook.clientId)).toEqual(
+      jasmine.objectContaining({isSold: true, updatedAt: entry.occurredAt}),
+    );
+    expect(entry).not.toEqual(jasmine.objectContaining({price: jasmine.anything()}));
+    expect(await service.countBlockingOutboxEntries()).toBe(1);
+  });
+
+  it('tracks rare cash attempts and clears rare cash state with the account outbox', async () => {
+    const entry = createRareSaleOutboxEntry();
+    await service.addRareSaleOutboxEntries([entry], []);
+
+    const attempted = await service.markRareSaleAttempt(
+      entry.clientGestureId,
+      '2026-09-03T08:02:00.000Z',
+      'offline',
+      'transient',
+    );
+    expect(attempted.attemptCount).toBe(1);
+    expect(attempted.lastFailureKind).toBe('transient');
+
+    const quarantined = await service.quarantineRareSaleOutboxEntry(
+      entry.clientGestureId,
+      'permanent',
+    );
+    expect(quarantined.status).toBe('Quarantined');
+    expect(await service.countQuarantinedOutboxEntries()).toBe(1);
+
+    await service.clearAccountState();
+    expect(await service.listRareSaleOutboxEntries()).toEqual([]);
+  });
+
   it('clears account-owned state without removing the catalog synchronization state', async () => {
     const book = createCatalogBook();
     const syncState = {
@@ -318,7 +359,7 @@ describe('ScanLocalStoreService', () => {
 
     await service.getCatalogBooks();
 
-    expect(open).toHaveBeenCalledOnceWith('vpd-scan', 3);
+    expect(open).toHaveBeenCalledOnceWith('vpd-scan', 5);
   });
 
   it('can retry opening IndexedDB after an upgrade was blocked by another instance', async () => {
@@ -403,6 +444,53 @@ describe('ScanLocalStoreService', () => {
       status,
       occurredAt: '2026-09-03T08:01:00.000Z',
       createdAt: '2026-09-03T08:01:00.000Z',
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+    };
+  }
+
+  function createRareBook(): ScanRareBook {
+    return {
+      clientId: 'rare-client-1',
+      serverId: 'rare-server-1',
+      clientGestureId: 'rare-create-1',
+      isbn13: '9782070363735',
+      title: 'Le Petit Prince, édition ancienne',
+      authorMention: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1946,
+      shelf: 'Éditions anciennes',
+      price: 60,
+      condition: 'Très bon état',
+      publicDescription: null,
+      binding: null,
+      dimensions: null,
+      pageCount: 96,
+      shelfLocation: 'A1',
+      priceSetBy: 'volunteer-1',
+      status: 'Published',
+      isSold: false,
+      thumbnail: null,
+      updatedAt: '2026-09-03T08:00:00.000Z',
+      rowVersion: 'AAAA',
+      syncStatus: 'Synced',
+      lastError: null,
+    };
+  }
+
+  function createRareSaleOutboxEntry(
+    clientGestureId = 'rare-sale-1',
+  ): ScanRareSaleOutboxEntry {
+    return {
+      clientGestureId,
+      clientSessionId: 'session-1',
+      rareBookId: 'rare-server-1',
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:00.000Z',
+      scanSessionId: 'remote-session-1',
+      assoEventsId: null,
+      status: 'Pending',
       attemptCount: 0,
       lastAttemptAt: null,
       lastError: null,

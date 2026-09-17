@@ -171,21 +171,24 @@ l'organisation de la caisse, et non ajouter des fonctionnalités.
 
 ## `Q-05` — Prix de vente et section « livres rares »
 
-> ✅ **Tranchée.** Le prix est décidé au comptoir par le bénévole. Le système n'en
-> connaît aucun.
+> ✅ **Tranchée.** Pour les livres ordinaires, le prix est décidé au comptoir par le
+> bénévole et le système n'en connaît aucun. Pour les livres rares, l'association fixe
+> un prix ferme afin qu'il soit lu en vitrine et en caisse.
 
-**La décision.** Aucun prix n'est stocké, affiché, calculé ni totalisé par l'application
-(`RG-50`). La caisse enregistre *quels* livres sortent, jamais *combien* ils rapportent.
-L'encaissement reste entièrement manuel, comme aujourd'hui.
+**La décision.** Aucun prix de livre ordinaire n'est stocké ni affiché. Le prix ferme
+d'un livre rare est stocké sur sa fiche et affiché pour être lu ; il n'est jamais calculé,
+totalisé ni recopié dans une vente. La caisse enregistre *quels* livres sortent, jamais
+*combien* ils rapportent. L'encaissement et toute recette restent entièrement manuels,
+comme aujourd'hui.
 
 ### Ce que cela change
 
 | | |
 |---|---|
 | **Écran de caisse** | Réécrit (`03` §5) : ni colonne prix, ni total. Le bouton devient `VALIDER` et non `ENCAISSER` — il enregistre une sortie de stock, il n'encaisse rien |
-| **Livres rares** | Le signalement en caisse devient **critique** et passe d'une pastille discrète à un encadré en pleine largeur. C'est la seule protection contre un livre expertisé à 35 € vendu 2 € par quelqu'un qui l'ignore. Le montant est porté **physiquement sur le livre** |
+| **Livres rares** | Le signalement en caisse devient **critique** et passe d'une pastille discrète à un encadré en pleine largeur. Le prix ferme est affiché en grand pour être lu et reste porté **physiquement sur le livre** ; l'application ne l'additionne pas |
 | **Statistiques** | Le nombre de livres vendus reste connu ; la recette, non |
-| **Fiche livre** | Aucun champ de prix, nulle part |
+| **Fiche livre ordinaire** | Aucun champ de prix |
 
 ### Ce que l'on perd, et comment on le récupère
 
@@ -197,7 +200,7 @@ façon.
 Rapproché du nombre de livres vendus, ce montant donne le panier moyen et permet de
 comparer les bourses entre elles. Une bourse à 800 livres pour 1 100 € et une autre à
 800 livres pour 700 € ne racontent pas la même histoire — et l'on obtient cette
-comparaison avec un champ, sans jamais tarifer un seul livre.
+comparaison avec un champ, sans jamais additionner les prix fermes des livres rares.
 
 ### Ce que cela ne remet pas en cause
 
@@ -393,7 +396,7 @@ cher, et là que l'outil devient crédible le plus vite.
 | 2026-09-01 | Granularité d'une demande | **Œuvre par défaut** (toutes éditions), édition précise en option — `RG-46` |
 | 2026-09-01 | Amorçage du catalogue | Progressif, sans reprise préalable de l'existant — `Q-11`, `RG-48` |
 | 2026-09-01 | Périmètre de la session | Le tri seul. La caisse et la consultation n'ouvrent pas de session — `RG-43` |
-| 2026-09-01 | Prix de vente | **Décidés au comptoir. Le système n'en connaît aucun** — `Q-05`, `RG-50` |
+| 2026-09-16 | Prix de vente | **Aucun prix pour les ordinaires ; prix ferme stocké et affiché pour les rares, sans panier ni total** — `Q-05`, `RG-50` |
 | 2026-09-01 | Recette d'une bourse | Saisie manuelle d'un montant unique à la clôture, facultative — `RG-51` |
 | 2026-09-02 | Écran de remise à plat de l'inventaire | **Reporté.** Non construit avec le reste de l'administration ; la correction fiche par fiche (`05` §4) tient lieu d'interim — `05` §6 |
 | 2026-09-02 | Fournisseur d'identité | **Entra External ID pour tous les publics** — membres, bénévoles, administrateurs. L'authentification maison du backend est supprimée, pas conservée en parallèle — `DT-10` |

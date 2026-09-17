@@ -116,6 +116,17 @@ typed `firstName`/`lastName` create contract; the API trims and validates each v
 Graph adapter maps them to `givenName`/`surname` while deriving the display name. No real
 Entra account was created during local validation.
 
+As of 2026-09-16, Catalog administration has an autonomous `Livres rares` workspace.
+It uses typed rare-book API contracts and a facade for the filtered/paginated list,
+draft/publication lifecycle, photo gallery, and the relation from an ordinary catalogue
+book. Creating from that relation pre-fills bibliographic metadata without copying a
+cover; an existing ISBN opens the rare fiche. The workspace is visible to `LivresRares`
+and administrator roles, while a rare-only account is redirected away from the other
+administration sections. Its firm price is display/storage for caisse reading only:
+there is no basket, total or revenue calculation, and ordinary books keep no price.
+Local validation for the lot is 297 Catalog ChromeHeadless tests and the SSR/browser build;
+authenticated role, real API/blob and responsive checks remain manual gates.
+
 As of 2026-09-16, the Catalog administration `Inventaire` workspace is removed. It is no
 longer a sidebar item or a valid administration section, and the old queue/manual-add state,
 template branch, API filters and dead styles were deleted. The single `Catalogue` workspace

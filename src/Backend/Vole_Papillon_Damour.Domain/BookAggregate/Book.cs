@@ -23,7 +23,6 @@ public sealed class Book : AggregateRoot<Isbn13>
     public int SalesCount { get; private set; }
     public int RejectionCount { get; private set; }
 
-    public bool IsRare { get; private set; }
     public bool IsHiddenFromCatalog { get; private set; }
     public string? CoverUrl { get; private set; }
     public BookCoverSource? CoverSource { get; private set; }
@@ -140,15 +139,6 @@ public sealed class Book : AggregateRoot<Isbn13>
         QuantityAvailable = quantityAvailable;
         UpdatedAt = utcOccurredAt;
         return delta;
-    }
-
-    public bool UpdateRareStatus(bool isRare, DateTime updatedAt)
-    {
-        var utcUpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
-        var changed = IsRare != isRare;
-        IsRare = isRare;
-        UpdatedAt = utcUpdatedAt;
-        return changed;
     }
 
     public bool UpdateCatalogVisibility(bool isHidden, DateTime updatedAt)

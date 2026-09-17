@@ -282,11 +282,6 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<bool>("IsRare")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("Language")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
@@ -581,6 +576,201 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("Products", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobName")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("BlobUri")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RareBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadedBy");
+
+                    b.HasIndex("RareBookId", "Position")
+                        .IsUnique();
+
+                    b.ToTable("RareBookPhotos", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookTombstone", b =>
+                {
+                    b.Property<Guid>("RareBookId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RareBookId");
+
+                    b.HasIndex("DeletedAt");
+
+                    b.ToTable("RareBookTombstones", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorMention")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Binding")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<Guid?>("ClientGestureId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("Condition")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Dimensions")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<bool>("IsSold")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Isbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<int?>("PageCount")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("PriceSetBy")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("PublicDescription")
+                        .HasMaxLength(1200)
+                        .HasColumnType("nvarchar(1200)");
+
+                    b.Property<int?>("PublicationYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Publisher")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Shelf")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("ShelfLocation")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime?>("SoldAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("SoldAtFairId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SoldInSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)0);
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientGestureId")
+                        .IsUnique()
+                        .HasFilter("[ClientGestureId] IS NOT NULL");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("Isbn13")
+                        .IsUnique()
+                        .HasFilter("[Isbn13] IS NOT NULL");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("SoldAtFairId");
+
+                    b.HasIndex("SoldInSessionId");
+
+                    b.HasIndex("UpdatedBy");
+
+                    b.HasIndex("Status", "IsSold", "Price");
+
+                    b.ToTable("RareBooks", (string)null);
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -721,11 +911,13 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Isbn13")
-                        .IsRequired()
                         .IsUnicode(false)
                         .HasColumnType("char(13)");
 
                     b.Property<Guid?>("OutboxMessageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RareBookId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("SentAt")
@@ -739,6 +931,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.HasIndex("OutboxMessageId");
 
                     b.HasIndex("UserId", "Isbn13", "SentAt");
+
+                    b.HasIndex("UserId", "RareBookId", "SentAt");
 
                     b.ToTable("UserAlertHistory", (string)null);
                 });
@@ -798,6 +992,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid?>("RareBookId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<byte>("Scope")
                         .HasColumnType("tinyint");
 
@@ -817,6 +1014,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
                     b.HasIndex("Isbn13");
 
+                    b.HasIndex("RareBookId");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("WorkId");
@@ -825,13 +1024,17 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[Isbn13] IS NOT NULL");
 
+                    b.HasIndex("UserId", "RareBookId")
+                        .IsUnique()
+                        .HasFilter("[RareBookId] IS NOT NULL");
+
                     b.HasIndex("UserId", "WorkId")
                         .IsUnique()
                         .HasFilter("[WorkId] IS NOT NULL");
 
                     b.ToTable("WatchlistItems", null, t =>
                         {
-                            t.HasCheckConstraint("CK_WatchlistItems_ExactlyOneTarget", "(([Scope] = 0 AND [WorkId] IS NOT NULL AND [Isbn13] IS NULL) OR ([Scope] = 1 AND [WorkId] IS NULL AND [Isbn13] IS NOT NULL))");
+                            t.HasCheckConstraint("CK_WatchlistItems_ExactlyOneTarget", "(([Scope] = 0 AND [WorkId] IS NOT NULL AND [Isbn13] IS NULL AND [RareBookId] IS NULL) OR ([Scope] = 1 AND [WorkId] IS NULL AND [Isbn13] IS NOT NULL AND [RareBookId] IS NULL) OR ([Scope] = 2 AND [WorkId] IS NULL AND [Isbn13] IS NULL AND [RareBookId] IS NOT NULL))");
                         });
                 });
 
@@ -868,6 +1071,9 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("RareBookId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("ScanSessionId")
                         .HasColumnType("uniqueidentifier");
 
@@ -880,6 +1086,8 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasDefaultValue((byte)0);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RareBookId");
 
                     b.HasIndex("ScanSessionId");
 
@@ -1163,6 +1371,46 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Navigation("Promotions");
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.Entities.RareBookPhoto", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", null)
+                        .WithMany("Photos")
+                        .HasForeignKey("RareBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UploadedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", null)
+                        .WithMany()
+                        .HasForeignKey("SoldAtFairId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession", null)
+                        .WithMany()
+                        .HasForeignKey("SoldInSessionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession", b =>
                 {
                     b.HasOne("Vole_Papillon_Damour.Domain.AssoEventsAggregate.AssoEvents", null)
@@ -1211,11 +1459,21 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.WatchlistAggregate.WatchlistItem", b =>
                 {
+                    b.HasOne("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", null)
+                        .WithMany()
+                        .HasForeignKey("RareBookId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Vole_Papillon_Damour.Domain.WatchlistAggregate.Watchlist", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RareBookAggregate.RareBook", b =>
+                {
+                    b.Navigation("Photos");
                 });
 #pragma warning restore 612, 618
         }

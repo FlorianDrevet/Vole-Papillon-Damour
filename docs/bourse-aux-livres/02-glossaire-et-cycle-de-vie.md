@@ -23,7 +23,7 @@ documents et le code.
 | **Bascule** | Passage automatique d'annoncé à disponible, à la date d'ouverture de la bourse de rattachement. Aucun geste humain. |
 | **Session de bourse** | Période de vente ouverte au public. Correspond à un `AssoEvents` de type `Books` existant. |
 | **Vente** | Sortie d'un exemplaire, enregistrée par un scan à la caisse. Décrémente la quantité disponible. |
-| **Livre rare** | Fiche dont la valeur estimée dépasse le seuil de l'association. Vendue hors du tarif 1–2 €, dans une section dédiée. |
+| **Livre rare** | Fiche autonome d'un livre dont l'association veut préserver et afficher l'exemplaire réel, avec son état, ses photos et un prix ferme. Elle vit dans la section dédiée, indépendamment du tarif des livres ordinaires ; ce prix est lu par le bénévole en caisse et n'est jamais additionné par l'application. |
 | **Liste de recherche** | Ensemble des ISBN qu'un membre inscrit déclare rechercher. |
 | **Alerte** | E-mail envoyé à un membre quand un livre de sa liste devient disponible ou est annoncé pour une bourse datée. |
 | **Remise à plat** | Correction périodique des quantités pour absorber les ventes non scannées. Voir `RG-31`. |
@@ -132,7 +132,6 @@ Identifiée par son ISBN-13.
 | Ventes cumulées | compteur | scans de vente |
 | Refus cumulés | compteur | scans de tri écartés |
 | Valeur estimée + date d'estimation | métadonnée | source de prix, voir `Q-02` |
-| Marquée « rare » | indicateur | automatique par seuil, ou manuel |
 | Date de première entrée, date de dernière mise à disposition | horodatage | mouvements |
 | Masquée du catalogue public | indicateur | administrateur |
 

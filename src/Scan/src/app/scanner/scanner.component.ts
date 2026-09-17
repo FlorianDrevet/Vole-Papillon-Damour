@@ -27,6 +27,7 @@ import {
   ScanCatalogBook,
   ScanLocalStoreError,
   ScanNextBookFair,
+  ScanRareBook,
   ScanSessionClosePendingError,
   ScanSessionCounts,
   ScanSessionSnapshot,
@@ -34,6 +35,10 @@ import {
 import {ScanSyncService} from '../offline/scan-sync.service';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {
+  ScanRareCashService,
+  ScanRareSaleReference,
+} from '../offline/scan-rare-cash.service';
 import {ScanConfirmationRequest, ScanConfirmationService} from '../scan-confirmation.service';
 import {BookMetadata} from './book-metadata.model';
 import {BookMetadataService} from './book-metadata.service';
@@ -69,7 +74,10 @@ type ManualKey = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0' | 'X'
 
 interface CashScanItem {
   id: string;
-  isbn13: string;
+  isbn13: string | null;
+  rareBookId?: string | null;
+  price?: number | null;
+  thumbnail?: string | null;
   title: string | null;
   authors: string | null;
   publisher: string | null;
@@ -131,6 +139,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   localScan: LocalScanResult | null = null;
   consultationResult: LocalCatalogResult | null = null;
   cashItems: CashScanItem[] = [];
+  availableRareBooks: ScanRareBook[] = [];
+  rareCashResults: ScanRareBook[] = [];
+  rareCashSearch = '';
+  rareCashPickerOpen = false;
+  selectedRareBook: ScanRareBook | null = null;
   pendingDecisionCount = 0;
   pendingTransmissionCount = 0;
   setAsideCount = 0;
@@ -168,6 +181,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private canSynchronize = true;
   private syncPromise: Promise<void> | null = null;
   private lastValidatedSaleIds: string[] = [];
+  private lastValidatedRareSales: ScanRareSaleReference[] = [];
   private sessionEnding = false;
   private sessionEnded = false;
   private sessionCloseCompleted = false;
@@ -191,6 +205,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly router: Router | null = null,
     @Optional() private readonly confirmation: ScanConfirmationService | null = null,
     @Optional() private readonly sessionSummary: ScanSessionSummaryService | null = null,
+    @Optional() private readonly scanRareCash: ScanRareCashService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -268,6 +283,10 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
   get canSell(): boolean {
     return !this.authAvailable || this.scanAuth === null || this.scanAuth.canSell;
+  }
+
+  get canManageRareBooks(): boolean {
+    return !this.authAvailable || this.scanAuth === null || this.scanAuth.canManageRareBooks;
   }
 
   get activeMode(): LocalScanMode {
@@ -509,7 +528,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   get canCancelLastSale(): boolean {
-    return this.lastValidatedSaleIds.length > 0;
+    return this.lastValidatedSaleIds.length > 0 || this.lastValidatedRareSales.length > 0;
   }
 
   get activeBook(): ScanCatalogBook | null {
@@ -691,10 +710,14 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       : (destination === 'cash' || destination === 'consultation') && this.scanWorkflow
         ? this.scanWorkflow.lookupCatalog(normalizedIsbn)
         : Promise.resolve(null);
+    const rarePromise = destination === 'cash' && this.scanRareCash
+      ? this.scanRareCash.findByIsbn(normalizedIsbn)
+      : Promise.resolve<ScanRareBook | null>(null);
 
-    const [localOutcome, metadataOutcome] = await Promise.allSettled([
+    const [localOutcome, metadataOutcome, rareOutcome] = await Promise.allSettled([
       localPromise,
       metadataPromise,
+      rarePromise,
     ]);
 
     if (lookupVersion !== this.lookupVersion) {
@@ -749,8 +772,30 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     if (destination === 'cash' && localOutcome.status === 'fulfilled') {
-      this.cashItems = [...this.cashItems, this.createCashItem(normalizedIsbn, metadata)];
-      this.cashMessage = null;
+      if (rareOutcome.status === 'rejected') {
+        this.setStorageError(
+          'warning',
+          'La fiche rare associée n’a pas pu être vérifiée. Aucune ligne de caisse n’a été créée.',
+        );
+      } else {
+        const rareBook = rareOutcome.value;
+        if (rareBook) {
+          if (
+            rareBook.serverId &&
+            rareBook.status === 'Published' &&
+            !rareBook.isSold &&
+            !this.cashItems.some(item => item.rareBookId === rareBook.serverId)
+          ) {
+            this.cashItems = [...this.cashItems, this.createRareCashItem(rareBook)];
+          } else if (rareBook.serverId && this.cashItems.some(item => item.rareBookId === rareBook.serverId)) {
+            this.cashMessage = 'Ce livre rare est déjà dans la vente.';
+          } else {
+            this.cashMessage = 'Ce livre rare n’est plus disponible.';
+          }
+        } else {
+          this.cashItems = [...this.cashItems, this.createCashItem(normalizedIsbn, metadata)];
+        }
+      }
     }
 
     this.isLoading = false;
@@ -819,8 +864,94 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.screen = 'cash';
     this.resetLookupState();
     this.cashMessage = null;
+    this.rareCashPickerOpen = false;
+    this.selectedRareBook = null;
+    void this.refreshRareCashBooks();
     this.refreshView();
     this.startCameraIfNeeded(true);
+  }
+
+  async openRareCashPicker(): Promise<void> {
+    if (this.authAvailable && !this.canSell) {
+      return;
+    }
+
+    this.rareCashPickerOpen = true;
+    this.selectedRareBook = null;
+    this.rareCashSearch = '';
+    await this.refreshRareCashBooks();
+    this.refreshView();
+  }
+
+  closeRareCashPicker(): void {
+    this.rareCashPickerOpen = false;
+    this.selectedRareBook = null;
+    this.refreshView();
+  }
+
+  async refreshRareCashBooks(): Promise<void> {
+    if (!this.scanRareCash) {
+      this.availableRareBooks = [];
+      this.rareCashResults = [];
+      return;
+    }
+
+    try {
+      const books = await this.scanRareCash.listAvailable(this.rareCashSearch);
+      this.availableRareBooks = books;
+      this.rareCashResults = books;
+    } catch (error: unknown) {
+      this.setStorageError('warning', this.describeStorageError(
+        error,
+        'Le catalogue local des livres rares n’a pas pu être chargé.',
+      ));
+      this.availableRareBooks = [];
+      this.rareCashResults = [];
+    }
+    this.refreshView();
+  }
+
+  selectRareCashBook(book: ScanRareBook): void {
+    if (book.serverId && this.cashItems.some(item => item.rareBookId === book.serverId)) {
+      this.cashMessage = 'Ce livre rare est déjà dans la vente.';
+      return;
+    }
+
+    this.selectedRareBook = book;
+    this.cashMessage = null;
+    this.refreshView();
+  }
+
+  addSelectedRareCashBook(): void {
+    const book = this.selectedRareBook;
+    if (!book?.serverId || book.status !== 'Published' || book.isSold) {
+      return;
+    }
+    if (this.cashItems.some(item => item.rareBookId === book.serverId)) {
+      this.cashMessage = 'Ce livre rare est déjà dans la vente.';
+      return;
+    }
+
+    this.cashItems = [...this.cashItems, this.createRareCashItem(book)];
+    this.rareCashPickerOpen = false;
+    this.selectedRareBook = null;
+    this.cashMessage = null;
+    this.refreshView();
+  }
+
+  openRareBooks(): void {
+    if (this.authAvailable && !this.canManageRareBooks) {
+      return;
+    }
+
+    this.stopCamera();
+    if (this.router) {
+      void this.router.navigateByUrl('/livres-rares');
+      return;
+    }
+
+    this.screen = 'home';
+    this.refreshView();
   }
 
   openConsultation(): void {
@@ -1298,50 +1429,128 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     const items = [...this.cashItems];
     const count = items.length;
+    const ordinaryIsbns = items
+      .filter(item => !item.isRare)
+      .map(item => item.isbn13)
+      .filter((isbn13): isbn13 is string => isbn13 !== null && isbn13.length > 0);
+    const rareItems = items.filter(item => item.isRare);
+    const rareBookIds = rareItems
+      .map(item => item.rareBookId)
+      .filter((id): id is string => id !== null && id !== undefined && id.length > 0);
 
-    if (!this.scanWorkflow) {
+    if (!this.scanWorkflow && !this.scanRareCash) {
       this.cashMessage = `${count} livre${count > 1 ? 's' : ''} dans la vente.`;
       this.cashItems = [];
       this.refreshView();
       return;
     }
 
+    if (ordinaryIsbns.length !== items.filter(item => !item.isRare).length || (
+      rareBookIds.length !== rareItems.length && rareItems.length > 0
+    )) {
+      this.cashMessage = 'Une ligne de caisse ne possède pas l’identifiant attendu. Retirez-la puis rescanez le livre.';
+      this.refreshView();
+      return;
+    }
+
+    this.lastValidatedSaleIds = [];
+    this.lastValidatedRareSales = [];
+
+    let saleEntries: Awaited<ReturnType<ScanWorkflowService['recordCashSales']>> = [];
+    let rareSaleEntries: Awaited<ReturnType<ScanRareCashService['recordSales']>> = [];
+
     try {
-      const saleEntries = await this.scanWorkflow.recordCashSales(items.map(item => item.isbn13));
+      if (ordinaryIsbns.length > 0 && !this.scanWorkflow) {
+        throw new Error('La caisse des livres ordinaires n’est pas disponible sur cet appareil.');
+      }
+      if (rareBookIds.length > 0 && !this.scanRareCash) {
+        throw new Error('La caisse des livres rares n’est pas disponible sur cet appareil.');
+      }
+
+      saleEntries = ordinaryIsbns.length > 0
+        ? await this.scanWorkflow!.recordCashSales(ordinaryIsbns)
+        : [];
       this.lastValidatedSaleIds = saleEntries
         .filter(entry => (entry.status ?? 'Pending') === 'Pending')
         .map(entry => entry.clientGestureId);
+
+      rareSaleEntries = rareBookIds.length > 0
+        ? await this.scanRareCash!.recordSales(rareBookIds, new Date(), this.session)
+        : [];
+      this.lastValidatedRareSales = rareSaleEntries
+        .filter(entry => (entry.status ?? 'Pending') === 'Pending')
+        .map(entry => ({
+          clientGestureId: entry.clientGestureId,
+          rareBookId: entry.rareBookId,
+          occurredAt: entry.occurredAt,
+        }));
       this.cashItems = [];
       this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''} localement. Synchronisation automatique en cours.`;
       await this.refreshLocalState();
       this.trySync();
     } catch (error: unknown) {
-      this.cashMessage = this.describeStorageError(
-        error,
-        'La vente n’a pas pu être conservée localement. Réessayez sans quitter cet écran.',
-      );
+      const ordinaryItemsPersisted = saleEntries.length > 0;
+      const rareItemsPersisted = rareSaleEntries.length > 0;
+      if (ordinaryItemsPersisted || rareItemsPersisted) {
+        this.cashItems = items.filter(item => item.isRare
+          ? !rareItemsPersisted
+          : !ordinaryItemsPersisted);
+        this.cashMessage = 'Une partie de la vente a été enregistrée localement ; les lignes restantes sont conservées à l’écran.';
+        try {
+          await this.refreshLocalState();
+        } catch {
+          // The successful outbox write remains durable even if the status refresh fails.
+        }
+        this.trySync();
+      } else {
+        this.cashMessage = this.describeStorageError(
+          error,
+          'La vente n’a pas pu être conservée localement. Réessayez sans quitter cet écran.',
+        );
+      }
     }
 
     this.refreshView();
   }
 
   async cancelLastSale(): Promise<void> {
-    if (!this.scanWorkflow || !this.canCancelLastSale) {
+    if ((!this.scanWorkflow && !this.scanRareCash) || !this.canCancelLastSale) {
       return;
     }
 
     const saleIds = [...this.lastValidatedSaleIds];
+    const rareSales = [...this.lastValidatedRareSales];
     let cancelledCount = 0;
+    let remoteCancelledCount = 0;
+    let expiredCount = 0;
     try {
-      for (const saleId of saleIds) {
-        if (await this.scanWorkflow.deleteSaleOutboxEntry(saleId)) {
-          cancelledCount += 1;
+      if (this.scanWorkflow) {
+        for (const saleId of saleIds) {
+          if (await this.scanWorkflow.deleteSaleOutboxEntry(saleId)) {
+            cancelledCount += 1;
+          }
+        }
+      }
+      if (this.scanRareCash) {
+        for (const rareSale of rareSales) {
+          const result = await this.scanRareCash.cancelSale(rareSale);
+          if (result === 'local') {
+            cancelledCount += 1;
+          } else if (result === 'remote') {
+            remoteCancelledCount += 1;
+          } else if (result === 'expired') {
+            expiredCount += 1;
+          }
         }
       }
       this.lastValidatedSaleIds = [];
-      this.cashMessage = cancelledCount > 0
-        ? `${cancelledCount} vente${cancelledCount > 1 ? 's' : ''} annulée${cancelledCount > 1 ? 's' : ''} localement.`
-        : 'Cette vente a déjà été transmise et ne peut plus être annulée ici.';
+      this.lastValidatedRareSales = [];
+      const totalCancelled = cancelledCount + remoteCancelledCount;
+      this.cashMessage = totalCancelled > 0
+        ? `${totalCancelled} vente${totalCancelled > 1 ? 's' : ''} ${remoteCancelledCount > 0 ? 'corrigée' : 'annulée'}${totalCancelled > 1 ? 's' : ''}${remoteCancelledCount > 0 ? ' dans la file locale ou sur le serveur.' : ' localement.'}`
+        : expiredCount > 0
+          ? 'La fenêtre de correction de cette vente est passée.'
+          : 'Cette vente a déjà été transmise et ne peut plus être annulée ici.';
       await this.refreshLocalState();
     } catch (error: unknown) {
       this.cashMessage = this.describeStorageError(
@@ -1655,6 +1864,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   private async refreshSaleCancellationState(): Promise<void> {
+    this.lastValidatedRareSales = this.lastValidatedRareSales
+      .filter(reference => isWithinRareSaleCorrectionWindow(reference.occurredAt));
+
     if (!this.scanWorkflow || this.lastValidatedSaleIds.length === 0) {
       return;
     }
@@ -1995,6 +2207,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return {
       id: `${isbn13}-${Date.now()}-${this.cashItems.length}`,
       isbn13,
+      rareBookId: null,
+      price: null,
+      thumbnail: null,
       title: metadata?.title ?? book?.title ?? null,
       authors: metadata?.authors ?? book?.authors ?? null,
       publisher: metadata?.publisher ?? null,
@@ -2002,6 +2217,23 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       isRare: this.activeVerdict?.isRare ?? book?.isRare ?? false,
       quantityAvailable: book?.qtyAvailable ?? 0,
       quantityAnnounced: book?.qtyAnnounced ?? 0,
+    };
+  }
+
+  private createRareCashItem(book: ScanRareBook): CashScanItem {
+    return {
+      id: `rare-${book.serverId}-${Date.now()}-${this.cashItems.length}`,
+      isbn13: book.isbn13,
+      rareBookId: book.serverId,
+      price: book.price,
+      thumbnail: book.thumbnail,
+      title: book.title,
+      authors: book.authorMention,
+      publisher: book.publisher,
+      publicationYear: book.publicationYear,
+      isRare: true,
+      quantityAvailable: 1,
+      quantityAnnounced: 0,
     };
   }
 
@@ -2063,4 +2295,11 @@ function formatDuration(minutes: number): string {
   return remainingMinutes === 0
     ? `${hours} h`
     : `${hours} h ${remainingMinutes}`;
+}
+
+function isWithinRareSaleCorrectionWindow(occurredAt: string, now = Date.now()): boolean {
+  const occurred = Date.parse(occurredAt);
+  return Number.isFinite(occurred) &&
+    now >= occurred &&
+    now - occurred <= 30_000;
 }

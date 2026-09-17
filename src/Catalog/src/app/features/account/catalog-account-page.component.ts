@@ -336,30 +336,34 @@ export class CatalogAccountPageComponent implements OnInit {
   }
 
   itemLabel(item: CatalogWatchlistItem): string {
-    return this.itemTitle(item) || item.isbn13 || item.workId || 'Titre de la liste de recherche';
+    return this.itemTitle(item) || item.isbn13 || item.workId || item.rareBookId || 'Titre de la liste de recherche';
   }
 
   itemTitle(item: CatalogWatchlistItem): string | null {
-    return item.book?.title || item.title || null;
+    return item.rareBook?.title || item.book?.title || item.title || null;
   }
 
   itemAuthors(item: CatalogWatchlistItem): string | null {
-    return item.book?.authors || item.authors || null;
+    return item.rareBook?.authorMention || item.book?.authors || item.authors || null;
   }
 
   itemPublisher(item: CatalogWatchlistItem): string | null {
-    return item.book?.publisher || item.publisher || null;
+    return item.rareBook?.publisher || item.book?.publisher || item.publisher || null;
   }
 
   itemPublicationYear(item: CatalogWatchlistItem): number | null {
-    return item.book?.publicationYear || item.publicationYear || null;
+    return item.rareBook?.publicationYear || item.book?.publicationYear || item.publicationYear || null;
   }
 
   itemCoverUrl(item: CatalogWatchlistItem): string | null {
-    return item.book?.coverUrl || item.coverUrl || null;
+    return item.rareBook?.photos[0]?.blobUri || item.book?.coverUrl || item.coverUrl || null;
   }
 
   editionLabel(item: CatalogWatchlistItem): string {
+    if (item.scope === 'RareBook') {
+      return 'Exemplaire rare';
+    }
+
     if (item.scope === 'Work') {
       return 'Toutes éditions';
     }
@@ -368,6 +372,10 @@ export class CatalogAccountPageComponent implements OnInit {
   }
 
   availabilityClass(item: CatalogWatchlistItem): 'available' | 'next' | 'pending' {
+    if (item.scope === 'RareBook') {
+      return item.rareBook && !item.rareBook.isSold ? 'available' : 'pending';
+    }
+
     if (item.book?.quantityAvailable && item.book.quantityAvailable > 0) {
       return 'available';
     }
@@ -380,6 +388,12 @@ export class CatalogAccountPageComponent implements OnInit {
   }
 
   availabilityLabel(item: CatalogWatchlistItem): string {
+    if (item.scope === 'RareBook') {
+      return item.rareBook && !item.rareBook.isSold
+        ? 'Disponible — prix ferme affiché pour lecture sur place'
+        : 'Exemplaire déjà parti';
+    }
+
     const book = item.book;
     if (!book) {
       return 'Pas encore reçu par l’association';

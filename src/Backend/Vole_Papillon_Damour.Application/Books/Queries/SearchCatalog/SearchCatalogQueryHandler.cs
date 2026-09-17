@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 
@@ -247,7 +248,10 @@ public sealed class SearchCatalogQueryHandler(
 
         if (query.RareOnly)
         {
-            filteredBooksQuery = filteredBooksQuery.Where(book => book.IsRare);
+            filteredBooksQuery = filteredBooksQuery.Where(book => dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Any(rareBook => rareBook.Isbn13 == book.Id));
         }
 
         var genres = (await catalogBooksQuery
@@ -270,6 +274,15 @@ public sealed class SearchCatalogQueryHandler(
             .ToListAsync(cancellationToken);
 
         var pageIsbns = pageBooks.Select(book => book.Id).ToArray();
+        var publishedAvailableRareIsbns = pageIsbns.Length == 0
+            ? []
+            : (await dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Where(rareBook => pageIsbns.Contains(rareBook.Isbn13!.Value))
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+                .ToHashSet(StringComparer.Ordinal);
         var announcements = pageIsbns.Length == 0
             ? []
             : await dbContext.BookAnnouncements
@@ -288,7 +301,12 @@ public sealed class SearchCatalogQueryHandler(
                 .Where(assoEvent => fairIds.Contains(assoEvent.Id))
                 .ToListAsync(cancellationToken);
 
-        var page = PublicCatalogProjector.Project(pageBooks, announcements, fairs, nowUtc);
+        var page = PublicCatalogProjector.Project(
+            pageBooks,
+            announcements,
+            fairs,
+            publishedAvailableRareIsbns,
+            nowUtc);
 
         return new PublicCatalogSearchResult(
             nowUtc,

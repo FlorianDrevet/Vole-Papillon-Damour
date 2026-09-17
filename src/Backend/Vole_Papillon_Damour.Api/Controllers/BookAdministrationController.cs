@@ -266,36 +266,6 @@ public static class BookAdministrationController
                 .RequireAuthorization("Administration");
 
             endpoints.MapPost(
-                    "/books/admin/books/{isbn13}/rare",
-                    async (
-                        string isbn13,
-                        bool isRare,
-                        ClaimsPrincipal principal,
-                        IMediator mediator,
-                        CancellationToken cancellationToken) =>
-                    {
-                        if (!TryGetUserId(principal, out var userId))
-                        {
-                            return Results.Unauthorized();
-                        }
-
-                        var result = await mediator.Send(
-                            new MarkBookRareCommand(isbn13, isRare, userId),
-                            cancellationToken);
-                        return result.Match(
-                            operation => Results.Ok(new
-                            {
-                                operation.Isbn13,
-                                operation.IsRare,
-                                operation.IsHiddenFromCatalog,
-                                operation.Changed
-                            }),
-                            error => error.Result());
-                    })
-                .WithName("SetAdminBookRare")
-                .RequireAuthorization("Administration");
-
-            endpoints.MapPost(
                     "/books/admin/books/{isbn13}/visibility",
                     async (
                         string isbn13,
@@ -316,7 +286,6 @@ public static class BookAdministrationController
                             operation => Results.Ok(new
                             {
                                 operation.Isbn13,
-                                operation.IsRare,
                                 operation.IsHiddenFromCatalog,
                                 operation.Changed
                             }),
@@ -1199,10 +1168,10 @@ public static class BookAdministrationController
     private static AdminMemberDetailResponse ToResponse(AdminMemberDetailResult result) =>
         new(ToResponse(result.Member),
             result.Watchlist.Select(item => new AdminMemberWatchlistItemResponse(
-                item.Id, item.Scope, item.WorkId, item.Isbn13, item.Title, item.Authors,
+                item.Id, item.Scope, item.WorkId, item.Isbn13, item.RareBookId, item.Title, item.Authors,
                 item.QuantityAvailable, item.QuantityAnnounced, item.AddedAt, item.LastAlertAt)).ToArray(),
             result.Alerts.Select(item => new AdminMemberAlertHistoryResponse(
-                item.Id, item.Isbn13, item.Title, item.SentAt, item.OutboxMessageId)).ToArray());
+                item.Id, item.Isbn13, item.RareBookId, item.Title, item.SentAt, item.OutboxMessageId)).ToArray());
 
     private static AdminMemberOperationResponse ToResponse(AdminMemberOperationResult result) =>
         new(result.MemberId, result.AlertStatus, result.Changed, result.DeletionCompleted);

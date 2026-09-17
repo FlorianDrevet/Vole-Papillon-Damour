@@ -11,6 +11,7 @@ internal static class AdminQueryProjection
         Book book,
         IEnumerable<BookAnnouncement> announcements,
         IEnumerable<BookMovement> movements,
+        bool isRare,
         bool includeMovements = true)
     {
         var announcementRows = announcements
@@ -58,7 +59,7 @@ internal static class AdminQueryProjection
                 .Sum(announcement => announcement.Quantity),
             book.SalesCount,
             book.RejectionCount,
-            book.IsRare,
+            isRare,
             book.IsHiddenFromCatalog,
             book.RedirectedToIsbn13?.Value,
             book.CoverUrl,

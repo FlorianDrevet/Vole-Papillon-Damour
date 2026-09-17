@@ -76,6 +76,7 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly accountRoleOptions: {value: AdminAccountRole; label: string}[] = [
     {value: 'Tri', label: 'Tri'},
     {value: 'Caisse', label: 'Caisse'},
+    {value: 'LivresRares', label: 'Livres rares'},
     {value: 'Administration', label: 'Administrateur'},
   ];
 
@@ -241,12 +242,6 @@ export class CatalogAdministrationComponent implements OnInit {
       this.announcementToCorrect.set(null);
       this.selectBook(book.isbn13);
     });
-  }
-
-  protected toggleRare(): void {
-    const book = this.selectedBook();
-    if (!book) { return; }
-    this.save(() => this.facade.setRare(book.isbn13, !book.isRare), 'Le marquage rare a été mis à jour.', () => this.selectBook(book.isbn13));
   }
 
   protected toggleVisibility(): void {

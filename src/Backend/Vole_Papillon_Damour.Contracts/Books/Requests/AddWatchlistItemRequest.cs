@@ -8,4 +8,5 @@ public sealed record AddWatchlistItemRequest(
     string? Authors = null,
     string? Publisher = null,
     int? PublicationYear = null,
-    string? CoverUrl = null);
+    string? CoverUrl = null,
+    Guid? RareBookId = null);

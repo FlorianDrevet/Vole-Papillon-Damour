@@ -18,6 +18,17 @@ public static class DependencyInjection
                 opt.PermitLimit = 3;
             });
 
+            options.AddPolicy(RateLimitingPolicies.PublicCatalog, httpContext =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    ClientPartitionKey(httpContext),
+                    _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit = 100,
+                        Window = TimeSpan.FromMinutes(1),
+                        SegmentsPerWindow = 4,
+                        QueueLimit = 0,
+                    }));
+
             // Both endpoints below are anonymous and each scan or search can
             // trigger up to three outbound calls to BnF / Open Library / Google
             // Books. A per-client window keeps a single misbehaving client (bot,

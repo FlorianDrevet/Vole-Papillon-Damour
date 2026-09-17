@@ -32,6 +32,7 @@ import {
   CatalogAuthenticationRedirectStartedError,
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
+import {AdminRareBooksFacade} from './rare-books/admin-rare-books.facade';
 import {
   CatalogAdminAccount,
   CatalogAdminAccountFilters,
@@ -94,6 +95,7 @@ type CatalogAdminNavIcon =
   | 'scan'
   | 'dead-stock'
   | 'catalogue'
+  | 'rare-books'
   | 'statistics'
   | 'accounts'
   | 'settings';
@@ -108,6 +110,39 @@ interface CatalogAdminNavGroup {
   label: string;
   items: CatalogAdminNavItem[];
 }
+
+const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
+  {
+    label: 'Pendant la bourse',
+    items: [
+      {id: 'overview', label: 'Tableau de bord', icon: 'dashboard'},
+      {id: 'sessions', label: 'Sessions de scan', icon: 'scan'},
+      {id: 'dead-stock', label: 'Désengorgement', icon: 'dead-stock'},
+    ],
+  },
+  {
+    label: 'Le fonds de livres',
+    items: [
+      {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
+      {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
+      {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
+    ],
+  },
+  {
+    label: "Réservé à l'administration",
+    items: [
+      {id: 'accounts', label: 'Comptes & rôles', icon: 'accounts'},
+      {id: 'settings', label: 'Paramètres', icon: 'settings'},
+    ],
+  },
+];
+
+const RARE_ONLY_NAV_GROUPS: CatalogAdminNavGroup[] = [
+  {
+    label: 'Le fonds de livres',
+    items: [{id: 'rare-books', label: 'Livres rares', icon: 'rare-books'}],
+  },
+];
 
 interface CatalogBookCandidate {
   isbn13: string;
@@ -165,6 +200,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly initialized: Signal<boolean>;
   readonly isAuthenticated: Signal<boolean>;
   readonly isAdministrator: Signal<boolean>;
+  readonly isRareBookManager: Signal<boolean>;
+  readonly hasAdministrationAccess = computed(() => this.isAdministrator() || this.isRareBookManager());
   readonly authError: Signal<string | null>;
   readonly activeSection = signal<CatalogAdminSection>('overview');
   readonly loading = signal(false);
@@ -172,37 +209,24 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
-  readonly navGroups: CatalogAdminNavGroup[] = [
-    {
-      label: 'Pendant la bourse',
-      items: [
-        {id: 'overview', label: 'Tableau de bord', icon: 'dashboard'},
-        {id: 'sessions', label: 'Sessions de scan', icon: 'scan'},
-        {id: 'dead-stock', label: 'Désengorgement', icon: 'dead-stock'},
-      ],
-    },
-    {
-      label: 'Le fonds de livres',
-      items: [
-        {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
-        {id: 'statistics', label: 'Statistiques', icon: 'statistics'},
-      ],
-    },
-    {
-      label: "Réservé à l'administration",
-      items: [
-        {id: 'accounts', label: 'Comptes & rôles', icon: 'accounts'},
-        {id: 'settings', label: 'Paramètres', icon: 'settings'},
-      ],
-    },
-  ];
-  readonly navItems: CatalogAdminNavItem[] = this.navGroups.flatMap(group => group.items);
+  readonly navGroups = computed<CatalogAdminNavGroup[]>(() => {
+    if (this.isAdministrator()) {
+      return FULL_NAV_GROUPS;
+    }
+    return this.isRareBookManager() ? RARE_ONLY_NAV_GROUPS : [];
+  });
+
+  get navItems(): CatalogAdminNavItem[] {
+    return this.navGroups().flatMap(group => group.items);
+  }
 
   navBadge(section: CatalogAdminSection): string | null {
     const totalCount = section === 'sessions'
       ? this.sessionsPage() ? this.correctableSessionCount() : undefined
       : section === 'catalogue'
         ? this.catalogueBooksPage()?.totalCount
+        : section === 'rare-books'
+          ? this.rareBooksFacade.page() ? this.rareBooksFacade.publishedCount() : undefined
         : undefined;
 
     return totalCount === undefined ? null : this.formatNumber(totalCount);
@@ -295,6 +319,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     {value: 'Tri', label: 'Tri'},
     {value: 'Caisse', label: 'Caisse'},
     {value: 'Administration', label: 'Administration'},
+    {value: 'LivresRares', label: 'Livres rares'},
   ];
   readonly createAccountForm: CatalogAdminCreateAccountRequest = {
     email: '',
@@ -352,10 +377,12 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     private readonly api: CatalogAdminApiService,
     private readonly catalogApi: CatalogApiService,
     private readonly meta: Meta,
+    readonly rareBooksFacade: AdminRareBooksFacade,
   ) {
     this.initialized = this.auth.initialized;
     this.isAuthenticated = this.auth.isAuthenticated;
     this.isAdministrator = this.auth.isAdministrator;
+    this.isRareBookManager = this.auth.isRareBookManager;
     this.authError = this.auth.error;
   }
 
@@ -378,13 +405,20 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async initialize(): Promise<void> {
     await this.auth.initialize();
-    if (this.auth.isAuthenticated()) {
-      await this.loadOverview();
-      await this.loadSessions();
-      await this.loadDeadStock();
+    if (this.auth.isAuthenticated() && this.hasAdministrationAccess()) {
+      if (!this.isAdministrator() && this.isRareBookManager()) {
+        if (this.activeSection() !== 'rare-books') {
+          this.activeSection.set('rare-books');
+          await this.router.navigate(['/administration', 'rare-books'], {replaceUrl: true});
+        }
+      } else {
+        await this.loadOverview();
+        await this.loadSessions();
+        await this.loadDeadStock();
 
-      if (!(['overview', 'sessions', 'dead-stock'] as CatalogAdminSection[]).includes(this.activeSection())) {
-        await this.loadSection(this.activeSection());
+        if (!(['overview', 'sessions', 'dead-stock'] as CatalogAdminSection[]).includes(this.activeSection())) {
+          await this.loadSection(this.activeSection());
+        }
       }
     }
     this.administrationInitialized = true;
@@ -407,6 +441,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     if (section === 'members') {
       this.accountsTab.set('members');
       section = 'accounts';
+    }
+
+    if (!this.isAdministrator() && this.isRareBookManager() && section !== 'rare-books') {
+      section = 'rare-books';
+    }
+
+    if (!this.hasAdministrationAccess()) {
+      return;
     }
 
     if (isCatalogAdministrationRoute(this.router.url) && this.activeSection() !== section) {
@@ -440,6 +482,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'catalogue':
         await this.loadCatalogue();
         break;
+      case 'rare-books':
+        break;
       case 'statistics':
         await this.loadStatisticsTab();
         break;
@@ -470,6 +514,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.statisticsTab.set(statisticsTab);
 
     if (!this.administrationInitialized || !this.auth.isAuthenticated()) {
+      return;
+    }
+
+    if (!this.hasAdministrationAccess()) {
+      return;
+    }
+
+    if (!this.isAdministrator() && this.isRareBookManager() && section !== 'rare-books') {
+      void this.router.navigate(['/administration', 'rare-books'], {replaceUrl: true});
       return;
     }
 
@@ -749,7 +802,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         genre: book.genre || '',
         workId: book.workId || '',
       });
+      await this.rareBooksFacade.resolveCatalogRelation(book.isbn13);
     });
+  }
+
+  async openRareBookFromCatalogue(book: CatalogAdminBook): Promise<void> {
+    if (await this.rareBooksFacade.openOrCreateFromCatalogBook(book)) {
+      await this.selectSection('rare-books');
+    }
   }
 
   async updateMetadata(book: CatalogAdminBook): Promise<void> {
@@ -840,15 +900,6 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   setAnnouncementQuantity(announcementId: string, value: number | string): void {
     this.announcementQuantities[announcementId] = Number(value);
-  }
-
-  async toggleRare(book: CatalogAdminBook): Promise<void> {
-    await this.run('rare', async token => {
-      await firstValueFrom(this.api.setRare(token, book.isbn13, !book.isRare));
-      this.showSuccess(book.isRare ? 'Le signal rare a été retiré.' : 'Le livre est marqué comme rare.');
-      await this.openBook(book.isbn13);
-      await this.loadCatalogue();
-    });
   }
 
   async toggleVisibility(book: CatalogAdminBook): Promise<void> {

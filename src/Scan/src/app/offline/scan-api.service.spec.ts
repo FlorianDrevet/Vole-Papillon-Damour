@@ -83,6 +83,31 @@ describe('ScanApiService', () => {
     request.flush({});
   });
 
+  it('sends a rare cash sale without any price or ordinary sale fields', () => {
+    const sale = {
+      occurredAt: '2026-09-03T08:00:00.000Z',
+      scanSessionId: 'session-1',
+      assoEventsId: null,
+    };
+    service.markRareBookSold('rare-1', sale).subscribe();
+
+    const request = http.expectOne(environment.apiUrl + '/rare-books/cash/rare-1/sold');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(sale);
+    expect(request.request.body.price).toBeUndefined();
+    expect(request.request.body.quantity).toBeUndefined();
+    request.flush({});
+  });
+
+  it('restores a rare cash sale through the dedicated correction endpoint', () => {
+    service.restoreRareBookAvailability('rare-1').subscribe();
+
+    const request = http.expectOne(environment.apiUrl + '/rare-books/cash/rare-1/restore');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toBeNull();
+    request.flush({});
+  });
+
   it('opens a session with the local client id for idempotent replay', () => {
     const response = createSessionResponse();
     const openRequest = {
@@ -115,6 +140,8 @@ describe('ScanApiService', () => {
       nextWatermark: '2026-09-03T08:00:00.000Z',
       nextFair: null,
       books: [],
+      rareBooks: [],
+      removedRareBookIds: [],
       settings: {
         duplicateThreshold: 5,
         demandSalesThreshold: 1,

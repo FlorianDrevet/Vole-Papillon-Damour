@@ -55,9 +55,16 @@ public sealed class GetPublicWorkQueryHandler(
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToReferencedFairListAsync(announcements, cancellationToken);
+        var rareIsbns = (await dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Where(rareBook => isbn13s.Contains(rareBook.Isbn13!.Value))
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
 
         var editions = PublicCatalogProjector
-            .Project(books, announcements, fairs, nowUtc)
+            .Project(books, announcements, fairs, rareIsbns, nowUtc)
             .OrderByDescending(book => book.QuantityAvailable > 0)
             .ThenBy(book => book.PublicationYear)
             .ThenBy(book => book.Title, StringComparer.CurrentCultureIgnoreCase)

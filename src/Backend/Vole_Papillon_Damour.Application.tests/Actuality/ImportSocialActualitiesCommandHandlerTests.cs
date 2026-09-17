@@ -270,6 +270,7 @@ public sealed class ImportSocialActualitiesCommandHandlerTests
         result.FailedCount.Should().Be(1);
         fixture.ImportedActualities.Should().BeEmpty();
         await fixture.Blob.Received(1).DeleteFileAsync(
+            BlobContainer.ActualityImages,
             Arg.Is<string>(uri => uri.Contains("-0.jpg", StringComparison.Ordinal)));
         await fixture.Store.DidNotReceive().PersistAsync(
             Arg.Any<ActualityAggregate>(),

@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {ActivatedRoute, ParamMap, Router} from '@angular/router';
-import {Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
+import {Observable, Subject, catchError, firstValueFrom, of, takeUntil} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {mergeCatalogGenres} from '../../core/catalog-genres';
@@ -20,6 +20,7 @@ import {
   CatalogSearchResponse,
   CatalogSort,
   CatalogReferenceSearchResponse,
+  CatalogRareBookPage,
   CatalogWatchlistItem,
   CatalogWatchlistScope,
 } from '../../core/catalog.models';
@@ -58,6 +59,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   loading = true;
   error = false;
   response: CatalogSearchResponse | null = null;
+  rareResponse: CatalogRareBookPage | null = null;
   externalLoading = false;
   externalError = false;
   externalResponse: CatalogReferenceSearchResponse | null = null;
@@ -83,6 +85,16 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       value: 'recent',
       label: 'Arrivée récente',
       description: 'Titres ajoutés récemment',
+    },
+    {
+      value: 'price-desc',
+      label: 'Prix décroissant',
+      description: 'Les exemplaires rares les plus chers en premier',
+    },
+    {
+      value: 'price-asc',
+      label: 'Prix croissant',
+      description: 'Les exemplaires rares les moins chers en premier',
     },
   ];
 
@@ -155,7 +167,8 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   sortLabel(): string {
-    return this.sortChoices.find(choice => choice.value === this.sort)?.label ?? 'Pertinence';
+    return this.availableSortChoices().find(choice => choice.value === this.sort)?.label
+      ?? (this.rareOnly ? 'Prix décroissant' : 'Pertinence');
   }
 
   toggleSortMenu(): void {
@@ -169,7 +182,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
 
   selectSort(value: CatalogSort): void {
     this.sort = value;
-    this.sortMenuActiveIndex = this.sortChoices.findIndex(choice => choice.value === value);
+    this.sortMenuActiveIndex = this.availableSortChoices().findIndex(choice => choice.value === value);
     this.closeSortMenu(true);
     this.applyFilters();
     this.changeDetector.markForCheck();
@@ -206,7 +219,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       case 'Enter':
       case ' ':
         event.preventDefault();
-        this.selectSort(this.sortChoices[index].value);
+        this.selectSort(this.availableSortChoices()[index].value);
         break;
       case 'ArrowDown':
         event.preventDefault();
@@ -223,7 +236,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         break;
       case 'End':
         event.preventDefault();
-        this.sortMenuActiveIndex = this.sortChoices.length - 1;
+        this.sortMenuActiveIndex = this.availableSortChoices().length - 1;
         this.focusSortOption(this.sortMenuActiveIndex);
         break;
       case 'Escape':
@@ -528,14 +541,22 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   resultHeading(): string {
     const trimmedQuery = this.submittedQuery.trim();
     if (trimmedQuery) {
-      return `Résultats pour « ${trimmedQuery} »`;
+      return this.rareOnly
+        ? `Livres rares pour « ${trimmedQuery} »`
+        : `Résultats pour « ${trimmedQuery} »`;
     }
 
-    return this.browseMode ? 'Le catalogue complet' : 'Tous les livres du catalogue';
+    return this.rareOnly
+      ? 'Tous les livres rares'
+      : this.browseMode ? 'Le catalogue complet' : 'Tous les livres du catalogue';
   }
 
   localCountLabel(): string {
-    const total = this.response?.totalCount || 0;
+    const total = this.rareResponse?.totalCount ?? this.response?.totalCount ?? 0;
+    if (this.rareOnly) {
+      return `${total} ${total === 1 ? 'livre rare' : 'livres rares'}`;
+    }
+
     return `${total} ${total === 1 ? 'édition' : 'éditions'}`;
   }
 
@@ -568,14 +589,22 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   resultSummary(): string {
-    const total = this.response?.totalCount || 0;
+    const total = this.rareResponse?.totalCount ?? this.response?.totalCount ?? 0;
     if (total === 0) {
-      return 'Aucun titre trouvé dans la bourse aux livres';
+      return this.rareOnly
+        ? 'Aucun livre rare trouvé dans la bourse aux livres'
+        : 'Aucun titre trouvé dans la bourse aux livres';
     }
-    return `${total} ${total === 1 ? 'titre trouvé' : 'titres trouvés'} dans la bourse aux livres`;
+    return this.rareOnly
+      ? `${total} ${total === 1 ? 'livre rare trouvé' : 'livres rares trouvés'} dans la bourse aux livres`
+      : `${total} ${total === 1 ? 'titre trouvé' : 'titres trouvés'} dans la bourse aux livres`;
   }
 
   availableGenres(): string[] {
+    if (this.rareOnly) {
+      return [];
+    }
+
     return mergeCatalogGenres(this.response?.genres, this.genre);
   }
 
@@ -602,7 +631,16 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = false;
     this.changeDetector.markForCheck();
-    this.api.search(this.searchParams())
+    const result$: Observable<CatalogSearchResponse | CatalogRareBookPage> = this.rareOnly
+      ? this.api.getPublicRareBooks({
+        search: this.submittedQuery,
+        includeSold: this.includeExhausted,
+        sort: this.rareSort(),
+        page: this.currentPage,
+        pageSize: 24,
+      })
+      : this.api.search(this.searchParams());
+    result$
       .pipe(
         catchError(() => {
           if (loadVersion === this.localLoadVersion) {
@@ -617,12 +655,34 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.response = response;
-        this.localCatalogueIsbns = new Set(
-          (response?.books ?? [])
-            .map(book => this.normalizeIsbn(book.isbn13))
-            .filter((isbn13): isbn13 is string => Boolean(isbn13)),
-        );
+        if (this.rareOnly) {
+          const rareResponse = response as CatalogRareBookPage | null;
+          this.rareResponse = rareResponse;
+          this.response = rareResponse
+            ? {
+              generatedAt: rareResponse.generatedAt,
+              books: [],
+              totalCount: rareResponse.totalCount,
+              page: rareResponse.page,
+              pageSize: rareResponse.pageSize,
+              genres: [],
+            }
+            : null;
+          this.localCatalogueIsbns = new Set(
+            (rareResponse?.books ?? [])
+              .map(book => this.normalizeIsbn(book.isbn13))
+              .filter((isbn13): isbn13 is string => Boolean(isbn13)),
+          );
+        } else {
+          const catalogResponse = response as CatalogSearchResponse | null;
+          this.rareResponse = null;
+          this.response = catalogResponse;
+          this.localCatalogueIsbns = new Set(
+            (catalogResponse?.books ?? [])
+              .map(book => this.normalizeIsbn(book.isbn13))
+              .filter((isbn13): isbn13 is string => Boolean(isbn13)),
+          );
+        }
         this.loading = false;
         this.changeDetector.markForCheck();
       });
@@ -682,11 +742,13 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   ): Record<string, string | number | boolean> {
     const params: Record<string, string | number | boolean> = {};
     if (query.trim()) params['q'] = query.trim();
-    if (this.genre.trim()) params['genre'] = this.genre.trim();
-    if (!this.browseMode || this.availability !== 'all') params['availability'] = this.availability;
+    if (!this.rareOnly && this.genre.trim()) params['genre'] = this.genre.trim();
+    if (!this.rareOnly && (!this.browseMode || this.availability !== 'all')) {
+      params['availability'] = this.availability;
+    }
     if (this.rareOnly) params['rare'] = true;
     if (this.includeExhausted) params['includeExhausted'] = true;
-    if (this.sort !== 'relevance') params['sort'] = this.sort;
+    if (this.sort !== (this.rareOnly ? 'price-desc' : 'relevance')) params['sort'] = this.sort;
     if (includePagination) {
       if (this.currentPage > 1) params['page'] = this.currentPage;
       if (this.currentReferencePage > 1) params['referencePage'] = this.currentReferencePage;
@@ -717,18 +779,18 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   private sortIndex(): number {
-    const index = this.sortChoices.findIndex(choice => choice.value === this.sort);
+    const index = this.availableSortChoices().findIndex(choice => choice.value === this.sort);
     return index >= 0 ? index : 0;
   }
 
   private moveSortMenuFocus(delta: number): void {
-    const optionCount = this.sortChoices.length;
+    const optionCount = this.availableSortChoices().length;
     this.sortMenuActiveIndex = (this.sortMenuActiveIndex + delta + optionCount) % optionCount;
     this.focusSortOption(this.sortMenuActiveIndex);
   }
 
   private focusSortOption(index: number): void {
-    const optionCount = this.sortChoices.length;
+    const optionCount = this.availableSortChoices().length;
     this.sortMenuActiveIndex = (index + optionCount) % optionCount;
     setTimeout(() => {
       if (!this.sortMenuOpen) {
@@ -750,13 +812,19 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   }
 
   private readRouteState(params: ParamMap): CatalogSearchRouteState {
+    const rareOnly = params.get('rare') === 'true';
+    const rawSort = params.get('sort');
     return {
       query: params.get('q') || '',
       genre: params.get('genre') || '',
       availability: this.readAvailability(params.get('availability')),
-      rareOnly: params.get('rare') === 'true',
+      rareOnly,
       includeExhausted: params.get('includeExhausted') === 'true',
-      sort: params.get('sort') === 'recent' ? 'recent' : 'relevance',
+      sort: rareOnly
+        ? rawSort === 'price-asc' || rawSort === 'price-desc' || rawSort === 'recent'
+          ? rawSort
+          : 'price-desc'
+        : rawSort === 'recent' ? 'recent' : 'relevance',
       page: this.readPositivePage(params.get('page')),
       referencePage: this.readPositivePage(params.get('referencePage')),
     };
@@ -785,6 +853,22 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     next: CatalogSearchRouteState,
   ): boolean {
     return previous.query !== next.query || previous.referencePage !== next.referencePage;
+  }
+
+  availableSortChoices(): ReadonlyArray<{
+    value: CatalogSort;
+    label: string;
+    description: string;
+  }> {
+    return this.rareOnly
+      ? this.sortChoices.filter(choice => choice.value !== 'relevance')
+      : this.sortChoices.filter(choice => choice.value === 'relevance' || choice.value === 'recent');
+  }
+
+  private rareSort(): 'recent' | 'price-asc' | 'price-desc' {
+    return this.sort === 'price-asc' || this.sort === 'price-desc' || this.sort === 'recent'
+      ? this.sort
+      : 'price-desc';
   }
 
   private referenceReturnUrl(): string {

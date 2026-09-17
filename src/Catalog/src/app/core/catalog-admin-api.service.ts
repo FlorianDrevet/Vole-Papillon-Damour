@@ -25,6 +25,12 @@ import {
   CatalogAdminMemberPage,
   CatalogAdminOperation,
   CatalogAdminOverview,
+  CatalogAdminRareBook,
+  CatalogAdminRareBookFilters,
+  CatalogAdminRareBookPage,
+  CatalogAdminRareBookPublishResult,
+  CatalogAdminRareBookRequest,
+  CatalogAdminUpdateRareBookRequest,
   CatalogAdminVolunteerStatistics,
   CatalogAdminCreateAccountRequest,
   CatalogAdminQuantityCorrectionRequest,
@@ -103,6 +109,119 @@ export class CatalogAdminApiService {
     );
   }
 
+  getRareBooks(
+    accessToken: string,
+    filters: CatalogAdminRareBookFilters = {},
+  ): Observable<CatalogAdminRareBookPage> {
+    return this.http.get<CatalogAdminRareBookPage>(
+      `${this.apiUrl}/rare-books/admin`,
+      this.options(accessToken, this.params(filters)),
+    );
+  }
+
+  getRareBook(accessToken: string, id: string): Observable<CatalogAdminRareBook> {
+    return this.http.get<CatalogAdminRareBook>(
+      `${this.apiUrl}/rare-books/admin/${encodeURIComponent(id)}`,
+      this.options(accessToken),
+    );
+  }
+
+  createRareBook(
+    accessToken: string,
+    request: CatalogAdminRareBookRequest,
+  ): Observable<CatalogAdminRareBook> {
+    return this.http.post<CatalogAdminRareBook>(
+      `${this.apiUrl}/rare-books/admin`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  updateRareBook(
+    accessToken: string,
+    id: string,
+    request: CatalogAdminUpdateRareBookRequest,
+  ): Observable<CatalogAdminRareBook> {
+    return this.http.put<CatalogAdminRareBook>(
+      `${this.apiUrl}/rare-books/admin/${encodeURIComponent(id)}`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  publishRareBook(accessToken: string, id: string): Observable<CatalogAdminRareBookPublishResult> {
+    return this.http.post<CatalogAdminRareBookPublishResult>(
+      `${this.apiUrl}/rare-books/admin/${encodeURIComponent(id)}/publish`,
+      null,
+      this.options(accessToken),
+    );
+  }
+
+  unpublishRareBook(accessToken: string, id: string): Observable<CatalogAdminRareBook> {
+    return this.http.post<CatalogAdminRareBook>(
+      `${this.apiUrl}/rare-books/admin/${encodeURIComponent(id)}/unpublish`,
+      null,
+      this.options(accessToken),
+    );
+  }
+
+  deleteRareBook(accessToken: string, id: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/rare-books/admin/${encodeURIComponent(id)}`,
+      this.options(accessToken),
+    );
+  }
+
+  addRareBookPhoto(
+    accessToken: string,
+    id: string,
+    file: File,
+    caption?: string,
+  ): Observable<CatalogAdminRareBook> {
+    const body = new FormData();
+    body.append('file', file, file.name);
+    if (caption?.trim()) {
+      body.append('caption', caption.trim());
+    }
+
+    return this.http.post<CatalogAdminRareBook>(
+      `${this.apiUrl}/rare-books/admin/${encodeURIComponent(id)}/photos`,
+      body,
+      this.options(accessToken),
+    );
+  }
+
+  reorderRareBookPhotos(
+    accessToken: string,
+    id: string,
+    photoIds: string[],
+  ): Observable<CatalogAdminRareBook> {
+    return this.http.put<CatalogAdminRareBook>(
+      `${this.apiUrl}/rare-books/admin/${encodeURIComponent(id)}/photos/order`,
+      {photoIds},
+      this.options(accessToken),
+    );
+  }
+
+  updateRareBookPhotoCaption(
+    accessToken: string,
+    photoId: string,
+    caption: string | null,
+  ): Observable<CatalogAdminRareBook> {
+    return this.http.patch<CatalogAdminRareBook>(
+      `${this.apiUrl}/rare-books/admin/photos/${encodeURIComponent(photoId)}`,
+      {caption},
+      this.options(accessToken),
+    );
+  }
+
+  deleteRareBookPhoto(accessToken: string, photoId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/rare-books/admin/photos/${encodeURIComponent(photoId)}`,
+      this.options(accessToken),
+    );
+  }
+
   getBook(accessToken: string, isbn13: string): Observable<CatalogAdminBook> {
     return this.http.get<CatalogAdminBook>(
       `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}`,
@@ -151,14 +270,6 @@ export class CatalogAdminApiService {
       `${this.apiUrl}/books/admin/announcements/${encodeURIComponent(announcementId)}/quantity`,
       request,
       this.options(accessToken),
-    );
-  }
-
-  setRare(accessToken: string, isbn13: string, isRare: boolean): Observable<object> {
-    return this.http.post<object>(
-      `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/rare`,
-      null,
-      this.options(accessToken, this.params({isRare})),
     );
   }
 

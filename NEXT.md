@@ -17,11 +17,220 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Diagnostic de délivrabilité des alertes ACS / iCloud. |
-| **Prochaine action** | Faire relire la [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205), puis lancer `Infra - deploy` en `what-if` et en `deploy` depuis `main`. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-acs-email-diagnostics` |
-| **Dernière mise à jour** | 2026-09-16 — les journaux opérationnels ACS d'envoi et de statut sont déclarés en Bicep vers le workspace Log Analytics partagé ; la PR et le déploiement restent à faire. |
-| **Branche** | `fix/iac-acs-email-diagnostics` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205) vers `main`, non fusionnée |
+| **Lot en cours** | Livres rares — lots 0 à 10 implémentés sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), en revue finale avant livraison. |
+| **Prochaine action** | Faire relire puis valider la PR #203 ; appliquer les migrations et l'export DBA des anciens ISBN rares sur un environnement autorisé avant le déploiement. Q2 (`mailto:`) et Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) sont appliqués. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
+| **Dernière mise à jour** | 2026-09-17 — les lots 0 à 10 sont implémentés ; la validation finale couvre 545 tests backend, 313 Catalog, 241 Scan, 6 bootstrap Scan, 5 bootstrap BackOffice, les tests Angular BackOffice et les trois builds Angular. Le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
+| **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
+
+### État actualisé — 2026-09-16 — Livres rares, lot 0
+
+Le lot 0 est implémenté dans le worktree `Vole-Papillon-Damour-livres-rares-lot0`. La
+suppression de blob ne déduit plus le conteneur depuis l’URL : le contrat reçoit un
+`BlobContainer` explicite, conserve le garde-fou qui refuse une URL d’un autre conteneur et
+retourne le nom du blob supprimé. Les deux appelants existants d’actualités ont été adaptés.
+Le conteneur `livres-rares` est déclaré dans les paramètres API, Aspire et Bicep ; aucune
+photo rare ni donnée métier n’a encore été créée.
+
+Validation locale : test d’infrastructure rouge puis vert couvrant la suppression dans un
+conteneur non-actualités, 468 tests backend via la solution, build de solution et compilation
+Bicep. `graphify update .` a ré-extrait l’AST, mais son étape de visualisation reste bloquée par
+la limite de 5 100 nœuds. Aucun déploiement Azure ni contrôle de production n’a été effectué. La
+[PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) est ouverte vers
+`main` et n’est pas fusionnée.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 1
+
+Le domaine `RareBook` est ajouté sous `Domain/RareBookAggregate`. L’agrégat porte ses
+métadonnées, son ISBN facultatif, son prix ferme en `decimal`, son état brouillon/publié, la
+traçabilité de sortie et une collection de photos protégée. Le slug est calculé une seule fois,
+normalisé sans accents et limité à 120 caractères ; la liste de rayons reste une valeur texte
+validée afin de pouvoir être fermée et éditée par `AssociationSettings` selon Q4. La publication
+autorise l’absence de photo comme avertissement non bloquant, tandis que la vente exige une fiche
+publiée et reste idempotente. Aucune logique de panier, de total ou de recette n’est introduite.
+
+Validation locale : test rouge puis vert, 18 tests ciblés et 110 tests `Domain.tests` passés.
+La suite backend complète et le build de solution passent ; `graphify update .` a ré-extrait
+l’AST, mais sa visualisation HTML reste bloquée par la limite de 5 100 nœuds. Aucun changement
+de persistance, migration, API, front, Azure ou donnée métier n’a été effectué dans ce lot.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 2
+
+La persistance EF expose désormais `RareBooks` et `RareBookPhotos` dans `IProjectDbContext` et
+`ProjectDbContext`. Les deux configurations convertissent les value objects, imposent le prix en
+`decimal(10,2)`, la concurrence par `RowVersion`, le slug et l’ISBN uniques filtré, l’index de
+liste `(Status, IsSold, Price)` et l’ordre unique des photos ; la suppression d’une fiche cascade
+sur ses lignes photo, sans supprimer elle-même les blobs. La migration
+`20260916143408_AddRareBooks` crée les deux tables et conserve volontairement `Books.IsRare` :
+son retrait et l’export des ISBN marqués restent le lot 6.
+
+Validation locale : tests de modèle rouges puis verts, migration sans changement de modèle en
+attente, scripts SQL d’application et d’annulation générés, et 488 tests backend passés. Une
+application réelle sur une base locale reste à faire : cette machine n’a ni LocalDB ni moteur SQL
+Server Docker disponible. Aucun déploiement Azure ni contrôle de production n’a été effectué.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 3
+
+Le lot 3 expose le cycle de vie applicatif des fiches rares : création, modification avec
+concurrence optimiste, publication et dépublication, vente idempotente, restauration dans
+les 30 secondes, suppression, recherche publique/admin/caisse et mutations des photos.
+Les contrats et les routes prévues sont ajoutés dans l’API ; les routes publiques sont
+anonymes, l’administration utilise provisoirement la politique `Administration` et la
+recherche caisse `ScanVolunteer`, en attendant le lot 4 et le rôle dédié. Les photos
+acceptent JPEG/WebP/PNG jusqu’à 8 MiB et la suppression appelle le conteneur dédié avant
+la suppression en base. Le prix ferme est stocké et affiché pour être lu, sans panier,
+total, montant de vente ni recette calculée.
+
+Validation locale : TDD rouge puis vert, 116 tests `Domain.tests`, 253 tests
+`Application.tests`, 121 tests `Infrastructure.tests` et 30 tests `Api.tests` ; build de
+solution et `dotnet ef migrations has-pending-model-changes` passent. Les avertissements
+de vulnérabilités NuGet existants restent présents. `graphify update .` ré-extrait l’AST,
+mais son rendu HTML reste bloqué par la limite de 5 100 nœuds. Aucun déploiement Azure,
+test manuel authentifié ou application réelle sur SQL Server n’a été effectué.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 4
+
+Le rôle Entra `LivresRares` est déclaré avec le GUID fixe
+`84bf89c1-ecae-4951-90d2-03dc6012a1dd`, dans `Configure-EntraApps.ps1` et
+`Set-VpdUserRole.ps1`. `AccountRoles` le normalise et le valide ; la politique API
+`RareBooks` accepte `LivresRares`, `Administration` et le rôle legacy `Admin`, tandis que
+`ScanVolunteer` reste strictement limité à `Tri` et `Caisse`. Les routes d'administration
+des fiches rares utilisent désormais `RareBooks` ; les routes publiques restent anonymes
+et la recherche de caisse reste protégée par `ScanVolunteer`.
+
+Catalog reconnaît le rôle, propose son attribution dans l'espace comptes, ajoute la
+pastille violette et le lien mobile « Livres rares », et enregistre la section
+`/administration/rare-books` ; l'éditeur de comptes historique BackOffice accepte aussi
+la valeur dans son contrat. La Scanette reconnaît un compte ne portant que ce rôle,
+publie son état comme autorisé et réserve les droits tri/caisse : la tuile et les routes
+de gestion elles-mêmes restent le lot 7, conformément au séquencement de `08` ; le
+portail restreint et sa fiche autonome restent le lot 5. Q4 conserve le défaut appliqué
+au lot 1 ; Q2 (contact public par `mailto:`) ne concerne pas ce lot et reste à traiter au
+lot 8.
+
+Validation locale : tests rouges puis verts sur `AccountRoles` (3), l'autorisation des
+routes rares (4), le script Entra (2), les suites Catalog (276), Scan (214) et BackOffice
+(22), ainsi que le bootstrap Scan (6) ; les builds des trois frontends, le build/test
+backend (523) et les 23 tests Pester Entra passent. Les avertissements de budget et de
+vulnérabilités existants restent présents. Aucun compte Entra, jeton réel, appel API,
+déploiement Azure ou contrôle responsive authentifié n'a été effectué. La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203)
+reste ouverte vers `main` et n'est pas fusionnée.
+
+### État actualisé — 2026-09-16 — Livres rares, lot 5
+
+Le portail Catalog autonome `Livres rares` est livré : liste filtrable et paginée,
+compteurs de brouillons et de fiches publiées sans photo, création depuis une fiche
+catalogue ordinaire avec préremplissage bibliographique, formulaire de fiche rare,
+publication/dépublication, suppression avec confirmation et galerie de photos. Les
+photos acceptent JPEG/WebP/PNG jusqu'à 8 Mo côté interface, la première reste la
+vignette, et les actions de légende, ordre et suppression passent par les endpoints
+typés protégés par `RareBooks`. Le prix est affiché comme prix ferme à lire en caisse ;
+aucun panier, total ou recette n'est introduit. La fiche catalogue ordinaire ne porte
+plus l'interrupteur de marquage : elle propose de créer ou consulter sa fiche rare.
+
+Le shell d'administration réserve ce workspace au rôle `LivresRares` seul : les autres
+sections ne sont pas affichées et les routes directes sont redirigées. La documentation
+métier §4 est amendée ; Q4 reste appliqué, Q2 (`mailto:`) reste réservé au lot 8, et la
+tuile/les routes Scan restent le lot 7. Les anciens marquages `Books.IsRare` sont
+supprimés au lot 6 après export dans la note de la PR, sans conversion.
+
+Validation locale : TDD rouge puis vert, 297 tests Catalog ChromeHeadless et build SSR/
+navigateur passés ; les avertissements de budget Angular existants restent présents.
+`graphify update .` a ré-extrait l'AST, mais sa visualisation HTML reste bloquée par la
+limite actuelle du graphe. Le contrôle responsive authentifié à 1280 et 390×844, l'appel API
+réel et le déploiement restent à faire. La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203)
+reste ouverte vers `main` et n'est pas fusionnée.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 6
+
+Le marquage historique `Book.IsRare` est supprimé du domaine, de la persistance et des
+deux portails d'administration. Les filtres, projections publiques/admin, verdict de tri,
+statistiques bénévoles et signal caisse reposent désormais sur une fiche `RareBook` liée,
+publiée et disponible ; la fiche rare reste l'unique source de son prix ferme. Le delta de
+la Scanette transporte les fiches rares publiées, leur prix, leur description courte et leur
+vignette, ainsi que les tombstones des changements incrémentaux.
+
+La migration `20260916220924_RemoveLegacyRareBookFlag` supprime `Books.IsRare` sans
+conversion ; son `Down` recrée la colonne à `false`. L'export des ISBN a été demandé et
+documenté dans la PR avant le code et la migration, mais aucune base runtime autorisée
+n'était accessible sur cette machine : la migration doit rester bloquée au déploiement
+tant que l'opération DBA n'a pas ajouté la liste réelle à la note. `RG-51` reste inchangée.
+
+Validation locale : tests rouges puis verts, 257 tests Application, 121 tests Infrastructure,
+297 tests Catalog et 22 tests BackOffice ; builds API/Infrastructure et frontends concernés
+passés. `graphify update .` ré-extrait l'AST, mais la visualisation HTML reste bloquée par la
+limite actuelle du graphe. Aucun déploiement ni contrôle responsive authentifié n'a été effectué.
+La [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) reste ouverte
+vers `main` et n'est pas fusionnée.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 7
+
+La Scanette reconnaît le rôle `LivresRares`, affiche une tuile dédiée et protège les
+routes `/livres-rares`, `/livres-rares/nouveau` et `/livres-rares/:id`. Le parcours couvre
+la recherche ISBN, la saisie sans ISBN, la proposition de notice BnF/Open Library, la
+création d'une fiche en brouillon, puis les trois écrans d'identification, description/prix
+et photos. Les fiches et la file photo sont persistées dans IndexedDB ; les photos restent
+des `Blob` JPEG compressés, jamais du base64. Le quota est contrôlé avant chaque ajout et
+la reprise en ligne crée la fiche une seule fois grâce à `ClientGestureId`, puis envoie les
+photos séquentiellement avec reprise bornée ; le navigateur réencode en JPEG quand il le
+permet, sinon le PNG/WebP source est conservé comme Blob. Le prix ferme est affiché pour lecture et
+aucun total n'est calculé.
+
+Validation locale : tests rouges puis verts sur le service hors ligne, la synchronisation,
+le formulaire et le routage Scanette ; la compatibilité du delta conserve les fiches rares
+publiées et disponibles, et les suppressions rares sont transmises par tombstones. Aucun
+compte Entra, appareil réel, quota navigateur réel ou appel API authentifié n'a été contrôlé
+manuellement. Q4 reste le défaut des quatre rayons fermés ;
+la gestion Scanette ne modifie pas les livres ordinaires.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 8
+
+Le Catalog public expose `/livres-rares` et `/livres-rares/:slug` avec une liste filtrable
+par rayon, triable par prix ou arrivée, une carte dédiée et une fiche galerie. Les livres
+rares ne sont pas mélangés aux cartes ordinaires ; la fiche affiche le prix ferme comme
+information à lire, sans panier, paiement ni total. L'accueil, l'en-tête, le pied de page,
+les routes SSR et le sitemap dynamique renvoient vers la section dédiée. Q2 est appliqué
+avec le contact par défaut `mailto:volepapillondamour@sfr.fr`.
+
+Validation locale : tests rouges puis verts des contrats API, routes, recherche rare, lien
+ISBN vers la fiche rare, liste, fiche et accueil Catalog ; les builds SSR/navigateur et le
+test de sitemap backend passent. Aucun contrôle responsive authentifié, appel API public
+déployé ou vérification Search Console n'a encore été effectué. La migration de retrait de
+`Books.IsRare` reste bloquée au déploiement jusqu'à l'export DBA réel documenté dans la note
+de la PR.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 9
+
+La liste de suivi accepte désormais une cible `RareBook` distincte de l'œuvre et de
+l'édition. Le compte membre et la vue d'administration affichent cette cible, son prix
+ferme de lecture et son historique sans la transformer en article de panier. Une sortie
+d'un rare publié crée une alerte dédiée dans l'outbox pour chaque suiveur ; le worker
+réutilise le pipeline d'e-mails existant, enregistre l'historique une seule fois et
+respecte le délai de refroidissement. Une restauration annule les alertes encore en
+attente.
+
+Validation locale : tests rouges puis verts sur le domaine, les handlers, les projections
+de compte/admin, l'outbox, le contenu d'e-mail, les routes et l'autorisation. Aucun
+envoi réel ni déploiement n'a été effectué. La migration `Books.IsRare` reste bloquée au
+déploiement jusqu'à l'export DBA réel documenté dans la note de la PR.
+
+### État actualisé — 2026-09-17 — Livres rares, lot 10
+
+Le mode Caisse de la Scanette ajoute le bouton violet « Ajouter un livre rare », la
+recherche locale par titre/auteur/ISBN, la ligne rare avec vignette et prix ferme à lire,
+et la détection d'un rare par scan ISBN. La validation conserve les gestes rares dans
+un magasin IndexedDB séparé, sans prix ni quantité, marque localement l'exemplaire vendu,
+puis rejoue `MarkRareBookSold` de façon sûre et séquentielle. La correction dans les
+30 secondes restaure localement ou appelle la route dédiée ; le serveur révoque alors
+l'alerte non envoyée. Le total et le panier n'existent toujours pas, et `RG-51` reste
+inchangée.
+
+Validation locale : 238 tests Scan ChromeHeadless, 6 tests de bootstrap Scan, 5 tests de
+bootstrap BackOffice, les builds Scan/Catalog/BackOffice et les scénarios Caisse rare passent.
+Les ventes rares n'envoient ni prix ni quantité ; une annulation locale conserve un marqueur
+pour rejouer la restauration si le serveur a déjà traité la vente. Le contrôle sur appareil
+réel, la migration runtime et le déploiement restent à faire. L'export DBA réel des anciens
+ISBN rares reste le prérequis bloquant avant application de la migration.
 
 ---
 

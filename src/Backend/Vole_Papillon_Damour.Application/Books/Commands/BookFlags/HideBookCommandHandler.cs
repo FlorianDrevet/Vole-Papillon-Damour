@@ -52,6 +52,6 @@ public sealed class HideBookCommandHandler(
         var changed = book.UpdateCatalogVisibility(command.Hidden, updatedAt);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        return new BookFlagResult(book.Isbn13.Value, book.IsRare, book.IsHiddenFromCatalog, changed);
+        return new BookFlagResult(book.Isbn13.Value, book.IsHiddenFromCatalog, changed);
     }
 }

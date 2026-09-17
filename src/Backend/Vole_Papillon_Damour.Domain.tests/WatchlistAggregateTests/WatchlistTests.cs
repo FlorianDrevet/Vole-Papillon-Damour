@@ -3,6 +3,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Domain.tests.WatchlistAggregateTests;
 
@@ -145,6 +146,37 @@ public sealed class WatchlistTests
         item.Scope.Should().Be(WatchlistItemScope.Work);
         item.WorkId.Should().Be("work-42");
         item.Isbn13.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateRareBookItem_StoresOnlyTheRareBookTarget()
+    {
+        var rareBookId = RareBookId.CreateUnique();
+        var item = WatchlistItem.CreateRareBook(
+            Guid.NewGuid(),
+            UserId.CreateUnique(),
+            rareBookId,
+            CreatedAt);
+
+        item.Scope.Should().Be(WatchlistItemScope.RareBook);
+        item.RareBookId.Should().Be(rareBookId);
+        item.WorkId.Should().BeNull();
+        item.Isbn13.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateRareBookAlertHistory_RequiresItsRareBookTarget()
+    {
+        var rareBookId = RareBookId.CreateUnique();
+        var history = UserAlertHistory.CreateForRareBook(
+            Guid.NewGuid(),
+            UserId.CreateUnique(),
+            rareBookId,
+            CreatedAt,
+            Guid.NewGuid());
+
+        history.RareBookId.Should().Be(rareBookId);
+        history.Isbn13.Should().BeNull();
     }
 
     [Fact]

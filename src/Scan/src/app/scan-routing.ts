@@ -7,15 +7,21 @@ import {ScanPageComponent} from './scan-page.component';
 import {ScanShellComponent} from './scan-shell.component';
 import {ScanSessionSummaryService} from './scan-session-summary.service';
 import {ScanStatisticsComponent} from './statistics/scan-statistics.component';
+import {ScanRareBookFormComponent} from './rare-books/scan-rare-book-form.component';
+import {ScanRareBookListComponent} from './rare-books/scan-rare-book-list.component';
 
-export type ScanRequiredRole = 'Tri' | 'Caisse';
+export type ScanRequiredRole = 'Tri' | 'Caisse' | 'LivresRares';
 
 export function scanRoleGuard(role: ScanRequiredRole): CanActivateFn {
   return () => {
     const auth = inject(ScanAuthService);
     const router = inject(Router);
     const authenticated = auth.authState.status === 'authorized' || auth.authState.status === 'degraded';
-    const allowed = role === 'Tri' ? auth.canSort : auth.canSell;
+    const allowed = {
+      Tri: auth.canSort,
+      Caisse: auth.canSell,
+      LivresRares: auth.canManageRareBooks,
+    }[role];
     return authenticated && allowed ? true : router.parseUrl('/');
   };
 }
@@ -50,6 +56,7 @@ export const scanSessionEndGuard: CanActivateFn = () => {
 
 const triGuard = scanRoleGuard('Tri');
 const cashGuard = scanRoleGuard('Caisse');
+const rareBooksGuard = scanRoleGuard('LivresRares');
 
 export const scanRoutes: Routes = [
   {
@@ -65,6 +72,9 @@ export const scanRoutes: Routes = [
       {path: 'caisse', component: ScanPageComponent, canActivate: [cashGuard], data: {screen: 'cash'}},
       {path: 'consulter', component: ScanPageComponent, data: {screen: 'consultation'}},
       {path: 'statistiques', component: ScanStatisticsComponent, canActivate: [scanVolunteerGuard]},
+      {path: 'livres-rares', component: ScanRareBookListComponent, canActivate: [rareBooksGuard]},
+      {path: 'livres-rares/nouveau', component: ScanRareBookFormComponent, canActivate: [rareBooksGuard]},
+      {path: 'livres-rares/:id', component: ScanRareBookFormComponent, canActivate: [rareBooksGuard]},
       {path: '**', redirectTo: 'accueil'},
     ],
   },

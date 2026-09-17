@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
@@ -58,13 +59,23 @@ public sealed class GetAdminMemberQueryHandler(
         var isbn13s = items
             .Where(item => item.Isbn13 is not null)
             .Select(item => item.Isbn13!.Value)
-            .Concat(histories.Select(history => history.Isbn13))
+            .Concat(histories
+                .Where(history => history.Isbn13 is not null)
+                .Select(history => history.Isbn13!.Value))
             .Distinct()
             .ToArray();
         var workIds = items
             .Where(item => item.WorkId is not null)
             .Select(item => item.WorkId!)
             .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var rareBookIds = items
+            .Where(item => item.Scope == WatchlistItemScope.RareBook && item.RareBookId is not null)
+            .Select(item => item.RareBookId!)
+            .Concat(histories
+                .Where(history => history.RareBookId is not null)
+                .Select(history => history.RareBookId!))
+            .Distinct()
             .ToArray();
         var books = isbn13s.Length == 0 && workIds.Length == 0
             ? []
@@ -84,7 +95,25 @@ public sealed class GetAdminMemberQueryHandler(
         var fairs = await dbContext.AssoEvents
             .AsNoTracking()
             .ToReferencedFairListAsync(announcements, cancellationToken);
-        var publicBooks = PublicCatalogProjector.Project(books, announcements, fairs, generatedAt);
+        var publishedAvailableRareIsbns = (await dbContext.RareBooks
+                .AsNoTracking()
+                .PublishedAvailable()
+                .Where(rareBook => bookIsbn13s.Contains(rareBook.Isbn13!.Value))
+                .Select(rareBook => rareBook.Isbn13!.Value.Value)
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.Ordinal);
+        var publicBooks = PublicCatalogProjector.Project(
+            books,
+            announcements,
+            fairs,
+            publishedAvailableRareIsbns,
+            generatedAt);
+        var rareBooks = rareBookIds.Length == 0
+            ? []
+            : await dbContext.RareBooks
+                .AsNoTracking()
+                .Where(book => rareBookIds.Contains(book.Id))
+                .ToListAsync(cancellationToken);
 
         var summary = GetAdminMembersQueryHandler.BuildSummary(
             user,
@@ -93,19 +122,32 @@ public sealed class GetAdminMemberQueryHandler(
             histories);
         var watchlistRows = items.Select(item =>
         {
-            var matchingBooks = publicBooks
-                .Where(book => item.Scope == WatchlistItemScope.Edition
-                    ? book.Isbn13 == item.Isbn13!.Value.Value
-                    : book.WorkId == item.WorkId)
-                .OrderByDescending(book => book.QuantityAvailable > 0)
-                .ThenBy(book => book.Isbn13, StringComparer.Ordinal)
-                .ToArray();
+            var matchingBooks = item.Scope switch
+            {
+                WatchlistItemScope.Edition => publicBooks
+                    .Where(book => book.Isbn13 == item.Isbn13!.Value.Value)
+                    .OrderByDescending(book => book.QuantityAvailable > 0)
+                    .ThenBy(book => book.Isbn13, StringComparer.Ordinal)
+                    .ToArray(),
+                WatchlistItemScope.Work => publicBooks
+                    .Where(book => book.WorkId == item.WorkId)
+                    .OrderByDescending(book => book.QuantityAvailable > 0)
+                    .ThenBy(book => book.Isbn13, StringComparer.Ordinal)
+                    .ToArray(),
+                _ => []
+            };
             var selected = matchingBooks.FirstOrDefault();
             var matchingIsbns = matchingBooks.Select(book => book.Isbn13).ToHashSet(StringComparer.Ordinal);
+            var rareBook = item.Scope == WatchlistItemScope.RareBook
+                ? rareBooks.SingleOrDefault(book => book.Id == item.RareBookId)
+                : null;
             var lastAlertAt = histories
-                .Where(history => item.Scope == WatchlistItemScope.Edition
-                    ? history.Isbn13.Value == item.Isbn13!.Value.Value
-                    : matchingIsbns.Contains(history.Isbn13.Value))
+                .Where(history => item.Scope == WatchlistItemScope.RareBook
+                    ? history.RareBookId == item.RareBookId
+                    : history.Isbn13 is not null &&
+                      (item.Scope == WatchlistItemScope.Edition
+                        ? history.Isbn13.Value.Value == item.Isbn13!.Value.Value
+                        : matchingIsbns.Contains(history.Isbn13.Value.Value)))
                 .Select(history => (DateTimeOffset?)new DateTimeOffset(history.SentAt, TimeSpan.Zero))
                 .FirstOrDefault();
             return new AdminMemberWatchlistItemResult(
@@ -113,22 +155,32 @@ public sealed class GetAdminMemberQueryHandler(
                 item.Scope.ToString(),
                 item.WorkId,
                 item.Isbn13?.Value,
-                selected?.Title,
-                selected?.Authors,
-                selected?.QuantityAvailable ?? 0,
-                selected?.QuantityAnnounced ?? 0,
+                item.RareBookId?.Value,
+                rareBook?.Title ?? selected?.Title ?? item.Title,
+                rareBook?.AuthorMention ?? selected?.Authors ?? item.Authors,
+                rareBook is null ? selected?.QuantityAvailable ?? 0 : rareBook.IsSold ? 0 : 1,
+                rareBook is null ? selected?.QuantityAnnounced ?? 0 : 0,
                 new DateTimeOffset(item.AddedAt, TimeSpan.Zero),
                 lastAlertAt);
         }).ToArray();
 
-        var historyIsbns = histories.Select(history => history.Isbn13).ToArray();
+        var historyIsbns = histories
+            .Where(history => history.Isbn13 is not null)
+            .Select(history => history.Isbn13!.Value)
+            .ToArray();
         var historyBooks = books
             .Where(book => historyIsbns.Contains(book.Id))
             .ToDictionary(book => book.Id, book => book.Title);
+        var historyRareBooks = rareBooks.ToDictionary(book => book.Id, book => book.Title);
         var alertRows = histories.Select(history => new AdminMemberAlertHistoryResult(
             history.Id,
-            history.Isbn13.Value,
-            historyBooks.GetValueOrDefault(history.Isbn13),
+            history.Isbn13?.Value,
+            history.RareBookId?.Value,
+            history.Isbn13 is { } historyIsbn
+                ? historyBooks.GetValueOrDefault(historyIsbn)
+                : history.RareBookId is { } historyRareBookId
+                    ? historyRareBooks.GetValueOrDefault(historyRareBookId)
+                    : null,
             new DateTimeOffset(history.SentAt, TimeSpan.Zero),
             history.OutboxMessageId)).ToArray();
 

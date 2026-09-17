@@ -3,7 +3,7 @@ import {Injectable, Optional} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {ScanAuthService} from '../auth/scan-auth.service';
-import {ScanApiService} from './scan-api.service';
+import {ScanApiService, ScanRareBookResponse} from './scan-api.service';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {
   ScanBookResponse,
@@ -11,12 +11,15 @@ import {
   ScanCatalogSyncState,
   ScanFailureKind,
   ScanOutboxEntry,
+  ScanRareSaleOutboxEntry,
   ScanSaleOutboxEntry,
   ScanSessionCloseRequest,
   ScanSessionSnapshot,
   ScanSessionResponse,
 } from './scan-offline.model';
 import {ScanWorkflowService} from './scan-workflow.service';
+import {ScanRareBookService} from '../rare-books/scan-rare-book.service';
+import {ScanCatalogRareBook, ScanRareBook} from './scan-offline.model';
 
 export interface CatalogSyncSummary {
   booksReceived: number;
@@ -50,6 +53,7 @@ export class ScanSyncService {
     private readonly store: ScanLocalStoreService,
     private readonly workflow: ScanWorkflowService,
     @Optional() private readonly scanAuth: ScanAuthService | null,
+    @Optional() private readonly rareBookService: ScanRareBookService | null,
   ) {}
 
   async syncCatalog(): Promise<CatalogSyncSummary> {
@@ -92,9 +96,10 @@ export class ScanSyncService {
   private async syncCatalogInternal(): Promise<CatalogSyncSummary> {
     const state = await this.store.getCatalogSyncState();
     const session = await this.workflow.getSession();
-    const [optimisticEntries, optimisticSales] = await Promise.all([
+    const [optimisticEntries, optimisticSales, optimisticRareSales] = await Promise.all([
       this.store.listOutboxEntries(),
       this.store.listSaleOutboxEntries(),
+      this.store.listRareSaleOutboxEntries(),
     ]);
     const response = await firstValueFrom(this.api.getCatalogDelta(state?.watermark ?? null));
     const visibleBooks = response.books
@@ -105,6 +110,9 @@ export class ScanSyncService {
         optimisticSales,
         session?.mode ?? 'AvailableNow',
       ));
+    const localRareBooks = await this.store.listRareBooks();
+    const rareBooks = (response.rareBooks ?? []).map(book =>
+      toLocalRareBook(book, localRareBooks, optimisticRareSales));
     const removedIsbn13s = response.books
       .filter(book => book.isHidden)
       .map(book => book.isbn13);
@@ -120,7 +128,10 @@ export class ScanSyncService {
       response.settings,
       syncState,
       removedIsbn13s,
+      rareBooks,
+      response.removedRareBookIds ?? [],
     );
+    await this.rareBookService?.syncPending();
     await this.workflow.recordSync(new Date(response.generatedAt));
 
     return {
@@ -136,7 +147,12 @@ export class ScanSyncService {
     const entries = await this.store.listTransmittableOutboxEntries();
     const sales = (await this.store.listSaleOutboxEntries())
       .filter(entry => (entry.status ?? 'Pending') === 'Pending');
-    if (entries.length === 0 && sales.length === 0) {
+    const rareSales = (await this.store.listRareSaleOutboxEntries())
+      .filter(entry => {
+        const status = entry.status ?? 'Pending';
+        return status === 'Pending' || status === 'Cancelled';
+      });
+    if (entries.length === 0 && sales.length === 0 && rareSales.length === 0) {
       return await this.createOutboxSummary(0, false, reattached);
     }
 
@@ -306,6 +322,81 @@ export class ScanSyncService {
             attempted.attemptCount >= MAX_PERMANENT_ATTEMPTS
           ) {
             await this.store.quarantineSaleOutboxEntry(
+              sale.clientGestureId,
+              describeError(error),
+            );
+            quarantined += 1;
+          }
+        }
+      }
+    }
+
+    if (!authorizationFailed) {
+      for (const sale of rareSales.filter(entry => isRetryDue(entry))) {
+        try {
+          if ((sale.status ?? 'Pending') === 'Cancelled') {
+            const response = await firstValueFrom(
+              this.api.restoreRareBookAvailability(sale.rareBookId),
+            );
+            const localBook = await this.store.getRareBookByServerId(sale.rareBookId);
+            if (localBook) {
+              await this.store.putRareBooks([toLocalRareBookAfterSale(response, localBook)]);
+            }
+            await this.store.deleteRareSaleOutboxEntry(sale.clientGestureId);
+            sent += 1;
+            continue;
+          }
+
+          const response = await firstValueFrom(this.api.markRareBookSold(
+            sale.rareBookId,
+            {
+              occurredAt: sale.occurredAt,
+              scanSessionId: sale.scanSessionId,
+              assoEventsId: sale.assoEventsId,
+            },
+          ));
+          await this.store.markRareSaleAttempt(
+            sale.clientGestureId,
+            new Date().toISOString(),
+            null,
+            null,
+          );
+          const localBook = await this.store.getRareBookByServerId(sale.rareBookId);
+          if (localBook) {
+            await this.store.putRareBooks([toLocalRareBookAfterSale(response, localBook)]);
+          }
+          const completion = await this.store.completeRareSaleOutboxEntry(sale.clientGestureId);
+          if (completion === 'cancelled') {
+            const restoredResponse = await firstValueFrom(
+              this.api.restoreRareBookAvailability(sale.rareBookId),
+            );
+            const soldBook = await this.store.getRareBookByServerId(sale.rareBookId);
+            if (soldBook) {
+              await this.store.putRareBooks([toLocalRareBookAfterSale(restoredResponse, soldBook)]);
+            }
+            await this.store.deleteRareSaleOutboxEntry(sale.clientGestureId);
+          }
+          sent += 1;
+        } catch (error: unknown) {
+          stoppedOnError = true;
+          const failureKind = classifyFailure(error);
+          const attempted = await this.store.markRareSaleAttempt(
+            sale.clientGestureId,
+            new Date().toISOString(),
+            describeError(error),
+            failureKind,
+          );
+
+          if (failureKind === 'authorization') {
+            authorizationFailed = this.handleServerAuthorizationFailure(error);
+            break;
+          }
+
+          if (
+            failureKind === 'permanent' &&
+            attempted.attemptCount >= MAX_PERMANENT_ATTEMPTS
+          ) {
+            await this.store.quarantineRareSaleOutboxEntry(
               sale.clientGestureId,
               describeError(error),
             );
@@ -690,4 +781,72 @@ function describeError(error: unknown): string {
     return error.message || `HTTP ${error.status}`;
   }
   return error instanceof Error ? error.message : 'Network request failed.';
+}
+
+function toLocalRareBook(
+  book: ScanCatalogRareBook,
+  existingBooks: readonly ScanRareBook[],
+  optimisticRareSales: readonly ScanRareSaleOutboxEntry[] = [],
+): ScanRareBook {
+  const existing = existingBooks.find(candidate => candidate.serverId === book.id);
+  const hasPendingSale = optimisticRareSales.some(candidate =>
+    candidate.rareBookId === book.id &&
+    (candidate.status ?? 'Pending') === 'Pending');
+  return {
+    clientId: existing?.clientId ?? book.id,
+    serverId: book.id,
+    clientGestureId: existing?.clientGestureId ?? book.id,
+    isbn13: book.isbn13,
+    title: book.title,
+    authorMention: book.authorMention,
+    publisher: existing?.publisher ?? null,
+    publicationYear: existing?.publicationYear ?? null,
+    shelf: book.shelf,
+    price: book.price,
+    condition: book.condition,
+    publicDescription: book.shortDescription,
+    binding: existing?.binding ?? null,
+    dimensions: existing?.dimensions ?? null,
+    pageCount: existing?.pageCount ?? null,
+    shelfLocation: existing?.shelfLocation ?? null,
+    priceSetBy: existing?.priceSetBy ?? null,
+    status: existing?.status ?? 'Published',
+    isSold: hasPendingSale || !book.isAvailable,
+    thumbnail: book.thumbnail,
+    updatedAt: book.updatedAt,
+    rowVersion: existing?.rowVersion ?? null,
+    syncStatus: 'Synced',
+    lastError: null,
+  };
+}
+
+function toLocalRareBookAfterSale(
+  response: ScanRareBookResponse,
+  existing: ScanRareBook,
+): ScanRareBook {
+  return {
+    ...existing,
+    serverId: response.id,
+    isbn13: response.isbn13,
+    title: response.title,
+    authorMention: response.authorMention,
+    publisher: response.publisher,
+    publicationYear: response.publicationYear,
+    shelf: response.shelf,
+    price: response.price,
+    condition: response.condition,
+    publicDescription: response.publicDescription,
+    binding: response.binding,
+    dimensions: response.dimensions,
+    pageCount: response.pageCount,
+    shelfLocation: response.shelfLocation,
+    priceSetBy: response.priceSetBy,
+    status: response.status,
+    isSold: response.isSold,
+    thumbnail: response.photos?.find(photo => photo.position === 0)?.blobUri ?? existing.thumbnail,
+    updatedAt: response.updatedAt,
+    rowVersion: response.rowVersion,
+    syncStatus: 'Synced',
+    lastError: null,
+  };
 }

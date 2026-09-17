@@ -31,11 +31,19 @@ belonging to that container.
 - The API endpoint `POST /integrations/acs/email-delivery-reports` accepts the standard Event Grid array, responds synchronously to `SubscriptionValidationEvent`, and authenticates deliveries with the configured `EmailBounceWebhook:SharedSecret` sent as `X-Vpd-EventGrid-Secret`. Typed ACS delivery reports with a non-success status are resolved by recipient email and delegated to the application handler; delivered/expanded reports and unknown recipients are acknowledged without a write. DEV routes the `Microsoft.Communication.EmailDeliveryReportReceived` event from `vpd-acs-comm-dev` to this endpoint through `vpd-acs-email-delivery-reports-dev`.
 - Application tests use an in-memory SQLite connection with real EF transactions to verify scan/session/cash/correction/reassignment atomicity and idempotent gesture behavior; this provider is test-only.
 
+### Rare books persistence
+
+- `ProjectDbContext` and `IProjectDbContext` expose `RareBooks` and `RareBookPhotos`. `RareBookConfiguration` and `RareBookPhotoConfiguration` convert the aggregate value objects, persist the firm price as SQL Server `decimal(10,2)`, use `RowVersion` for optimistic concurrency, keep slug and non-null ISBN unique, index `(Status, IsSold, Price)`, and enforce unique `(RareBookId, Position)` photo ordering.
+- Migration `20260916143408_AddRareBooks` creates `RareBooks` and `RareBookPhotos`, cascades only the photo rows when a rare-book row is deleted, and deliberately leaves `Books.IsRare` in place. Its removal and the non-converting ISBN export belong to lot 6; a rare-book application handler must delete blobs explicitly before deleting rows.
+- The rare-book application slice provides create/update/publish/unpublish/delete/sell commands, photo upload/reorder/caption/delete commands, public/admin/cash queries, and contracts under `Application/RareBooks`, `Contracts/RareBooks`, and `Api/Controllers/RareBookController.cs`. Administration routes use the `RareBooks` policy (`LivresRares`, `Administration`, or legacy `Admin`); cash search uses `ScanVolunteer`.
+- Rare-book prices are firm display data only: they are stored on `RareBooks` and returned by the public, administration, and cash read models, but no basket, total, receipt amount, or sale-line price is persisted. The existing manual fair-revenue rule `RG-51` is unchanged.
+- Rare-book photos are validated as JPEG, WebP, or PNG up to 8 MiB and stored in the dedicated `rare-book-photos` Blob container. Photo deletion and rare-book deletion call the container-aware Blob service before removing database rows; failed blob deletion leaves the row intact.
+
 ## External Services
 
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
-- Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, and `product-images`.
+- Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, `product-images`, and `rare-book-photos`.
 - The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books third; it validates provider image URLs before returning them. The anonymous metadata probe does not persist books; authenticated Scan sessions and cash sales persist through the Books endpoints.
 
 ## Authentication

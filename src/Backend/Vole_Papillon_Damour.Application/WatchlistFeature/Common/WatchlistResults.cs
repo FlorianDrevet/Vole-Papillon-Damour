@@ -1,4 +1,5 @@
 using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.WatchlistFeature.Common;
@@ -8,6 +9,7 @@ public sealed record AddedWatchlistItemResult(
     WatchlistItemScope Scope,
     string? WorkId,
     string? Isbn13,
+    Guid? RareBookId,
     DateTimeOffset AddedAt);
 
 public sealed record MyWatchlistResult(
@@ -26,11 +28,13 @@ public sealed record MyWatchlistItemResult(
     WatchlistItemScope Scope,
     string? WorkId,
     string? Isbn13,
+    Guid? RareBookId,
     string? Title,
     string? Authors,
     string? Publisher,
     int? PublicationYear,
     string? CoverUrl,
     PublicCatalogBookResult? Book,
+    PublicRareBookResult? RareBook,
     DateTimeOffset AddedAt,
     DateTimeOffset? LastAlertAt);

@@ -11,6 +11,9 @@
     <span class="status-strip-tags">
       <span *ngIf="offline" class="status-tag status-tag-offline">(hors connexion)</span>
       <span *ngIf="actionRequired" class="status-tag status-tag-action">(action à faire)</span>
+      <span *ngIf="pendingRarePhotos > 0" class="status-tag status-tag-rare-photos">
+        {{ pendingRarePhotos }} photo{{ pendingRarePhotos > 1 ? 's' : '' }} en attente d’envoi
+      </span>
     </span>
     <span class="status-strip-detail">{{ detail }}</span>
   </span>

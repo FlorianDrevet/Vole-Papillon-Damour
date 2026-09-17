@@ -1,14 +1,17 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {TestBed} from '@angular/core/testing';
-import {of, throwError} from 'rxjs';
+import {of, Subject, throwError} from 'rxjs';
 
-import {ScanApiService} from './scan-api.service';
+import {ScanApiService, ScanRareBookResponse} from './scan-api.service';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {
   ScanAssociationSettings,
   ScanCatalogBook,
+  ScanCatalogRareBook,
   ScanCatalogDeltaResponse,
   ScanBookResponse,
+  ScanRareBook,
+  ScanRareSaleOutboxEntry,
   ScanSaleResponse,
   ScanSessionResponse,
 } from './scan-offline.model';
@@ -29,6 +32,8 @@ describe('ScanSyncService', () => {
       'openSession',
       'scanBook',
       'registerSale',
+      'markRareBookSold',
+      'restoreRareBookAvailability',
       'closeSession',
     ]);
     api.getCatalogDelta.and.returnValue(of(createDelta()));
@@ -58,6 +63,7 @@ describe('ScanSyncService', () => {
     for (const entry of await store.listSaleOutboxEntries()) {
       await store.deleteSaleOutboxEntry(entry.clientGestureId);
     }
+    await store.clearRareBookState();
   });
 
   it('applies a delta, stores its watermark and removes hidden books', async () => {
@@ -75,6 +81,18 @@ describe('ScanSyncService', () => {
       id: 'fair-1',
       name: 'Bourse de septembre',
     }));
+  });
+
+  it('removes a locally cached rare copy when the delta carries its deletion tombstone', async () => {
+    await store.putRareBooks([createRareBook()]);
+    api.getCatalogDelta.and.returnValue(of({
+      ...createDelta(),
+      removedRareBookIds: ['rare-server-1'],
+    }));
+
+    await service.syncCatalog();
+
+    expect(await store.getRareBook('rare-client-1')).toBeNull();
   });
 
   it('preserves a local kept quantity when a catalog refresh precedes outbox replay', async () => {
@@ -218,6 +236,98 @@ describe('ScanSyncService', () => {
     expect(result.remaining).toBe(1);
     expect(durableSale.attemptCount).toBe(1);
     expect(durableSale.lastError).toBe('network down');
+  });
+
+  it('sends rare cash sales through the rare endpoint without ordinary sale fields', async () => {
+    const rareBook = createRareBook();
+    const entry = createRareSaleOutboxEntry();
+    await store.putRareBooks([{...rareBook, isSold: true}]);
+    await store.addRareSaleOutboxEntries([entry], []);
+    api.markRareBookSold.and.returnValue(of(createRareBookResponse()));
+
+    const result = await service.flushOutbox();
+
+    expect(api.registerSale).not.toHaveBeenCalled();
+    expect(api.markRareBookSold).toHaveBeenCalledOnceWith(
+      'rare-server-1',
+      jasmine.objectContaining({
+        occurredAt: entry.occurredAt,
+        scanSessionId: 'remote-session-1',
+        assoEventsId: null,
+      }),
+    );
+    const request = api.markRareBookSold.calls.mostRecent().args[1] as unknown as {
+      price?: unknown;
+      quantity?: unknown;
+    };
+    expect(request.price).toBeUndefined();
+    expect(request.quantity).toBeUndefined();
+    expect(result.sent).toBe(1);
+    expect(await store.listRareSaleOutboxEntries()).toEqual([]);
+  });
+
+  it('restores a rare sale when cancellation races with the in-flight sale request', async () => {
+    const rareBook = createRareBook();
+    const entry = createRareSaleOutboxEntry();
+    const response$ = new Subject<ScanRareBookResponse>();
+    await store.putRareBooks([{...rareBook, isSold: true}]);
+    await store.addRareSaleOutboxEntries([entry], []);
+    api.markRareBookSold.and.returnValue(response$.asObservable());
+    api.restoreRareBookAvailability.and.returnValue(of({
+      ...createRareBookResponse(),
+      isSold: false,
+    }));
+
+    const flushing = service.flushOutbox();
+    while (api.markRareBookSold.calls.count() === 0) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    await store.restoreRareBookAfterPendingSale(entry, {
+      ...rareBook,
+      isSold: false,
+      updatedAt: '2026-09-03T08:01:10.000Z',
+    });
+    response$.next(createRareBookResponse());
+    response$.complete();
+    await flushing;
+
+    expect(api.restoreRareBookAvailability).toHaveBeenCalledOnceWith('rare-server-1');
+    expect(await store.listRareSaleOutboxEntries()).toEqual([]);
+    expect((await store.getRareBook('rare-client-1'))?.isSold).toBeFalse();
+  });
+
+  it('replays a cancelled rare sale through the correction endpoint before clearing it', async () => {
+    const rareBook = createRareBook();
+    const entry = {...createRareSaleOutboxEntry(), status: 'Cancelled' as const};
+    await store.putRareBooks([rareBook]);
+    await store.addRareSaleOutboxEntries([entry], []);
+    api.restoreRareBookAvailability.and.returnValue(of({
+      ...createRareBookResponse(),
+      isSold: false,
+    }));
+
+    const result = await service.flushOutbox();
+
+    expect(api.markRareBookSold).not.toHaveBeenCalled();
+    expect(api.restoreRareBookAvailability).toHaveBeenCalledOnceWith('rare-server-1');
+    expect(result.sent).toBe(1);
+    expect(await store.listRareSaleOutboxEntries()).toEqual([]);
+    expect((await store.getRareBook('rare-client-1'))?.isSold).toBeFalse();
+  });
+
+  it('keeps a locally cancelled rare sale available during a catalogue refresh', async () => {
+    const entry = {...createRareSaleOutboxEntry(), status: 'Cancelled' as const};
+    await store.putRareBooks([createRareBook()]);
+    await store.addRareSaleOutboxEntries([entry], []);
+    api.getCatalogDelta.and.returnValue(of({
+      ...createDelta(),
+      rareBooks: [createCatalogRareBook()],
+    }));
+
+    await service.syncCatalog();
+
+    expect((await store.getRareBook('rare-client-1'))?.isSold).toBeFalse();
   });
 
   it('does not create a tri session when a caisse-only catalog sync runs', async () => {
@@ -515,6 +625,8 @@ describe('ScanSyncService', () => {
         openAt: '2026-09-14T09:00:00+02:00',
         closeAt: '2026-09-14T18:00:00+02:00',
       },
+      rareBooks: [],
+      removedRareBookIds: [],
       books: [
         {
           ...createBook('9782070363735'),
@@ -617,6 +729,99 @@ describe('ScanSyncService', () => {
       isRare: false,
       clockSuspect: false,
       alreadyProcessed: false,
+    };
+  }
+
+  function createRareBook(): ScanRareBook {
+    return {
+      clientId: 'rare-client-1',
+      serverId: 'rare-server-1',
+      clientGestureId: 'rare-create-1',
+      isbn13: '9780000000001',
+      title: 'Livre rare',
+      authorMention: 'Auteur',
+      publisher: 'Éditeur',
+      publicationYear: 1900,
+      shelf: 'Éditions anciennes',
+      price: 60,
+      condition: 'Très bon état',
+      publicDescription: null,
+      binding: null,
+      dimensions: null,
+      pageCount: 100,
+      shelfLocation: 'A1',
+      priceSetBy: 'volunteer-1',
+      status: 'Published',
+      isSold: false,
+      thumbnail: null,
+      updatedAt: '2026-09-03T08:00:00.000Z',
+      rowVersion: 'AAAA',
+      syncStatus: 'Synced',
+      lastError: null,
+    };
+  }
+
+  function createRareBookResponse() {
+    return {
+      id: 'rare-server-1',
+      slug: 'livre-rare',
+      isbn13: '9780000000001',
+      title: 'Livre rare',
+      authorMention: 'Auteur',
+      publisher: 'Éditeur',
+      publicationYear: 1900,
+      shelf: 'Éditions anciennes',
+      price: 60,
+      condition: 'Très bon état',
+      publicDescription: null,
+      binding: null,
+      dimensions: null,
+      pageCount: 100,
+      shelfLocation: 'A1',
+      status: 'Published' as const,
+      isSold: true,
+      soldAt: '2026-09-03T08:01:00.000Z',
+      soldAtFairId: null,
+      soldInSessionId: null,
+      priceSetBy: 'volunteer-1',
+      createdAt: '2026-09-03T08:00:00.000Z',
+      createdBy: 'volunteer-1',
+      updatedAt: '2026-09-03T08:01:00.000Z',
+      updatedBy: 'volunteer-1',
+      rowVersion: 'BBBB',
+      photos: [],
+    };
+  }
+
+  function createCatalogRareBook(): ScanCatalogRareBook {
+    return {
+      id: 'rare-server-1',
+      isbn13: '9780000000001',
+      title: 'Livre rare',
+      authorMention: 'Auteur',
+      price: 60,
+      shelf: 'Éditions anciennes',
+      condition: 'GoodWithFlaws',
+      shortDescription: null,
+      thumbnail: null,
+      isAvailable: true,
+      updatedAt: '2026-09-03T08:00:00.000Z',
+    };
+  }
+
+  function createRareSaleOutboxEntry(): ScanRareSaleOutboxEntry {
+    return {
+      clientGestureId: 'rare-sale-1',
+      clientSessionId: 'session-1',
+      rareBookId: 'rare-server-1',
+      scanSessionId: 'remote-session-1',
+      assoEventsId: null,
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:00.000Z',
+      status: 'Pending',
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
     };
   }
 });

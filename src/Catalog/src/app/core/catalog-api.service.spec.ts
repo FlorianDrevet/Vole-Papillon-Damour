@@ -4,7 +4,7 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogApiService} from './catalog-api.service';
-import {CatalogSearchResponse} from './catalog.models';
+import {CatalogRareBookDetail, CatalogRareBookPage, CatalogSearchResponse} from './catalog.models';
 
 describe('CatalogApiService', () => {
   let service: CatalogApiService;
@@ -176,5 +176,40 @@ describe('CatalogApiService', () => {
 
   it('does not expose the removed legacy next-fair request', () => {
     expect((service as unknown as {getNextFair?: unknown}).getNextFair).toBeUndefined();
+  });
+
+  it('builds dedicated public rare-book list and detail requests', () => {
+    const page = {
+      generatedAt: '2026-09-17T10:00:00Z',
+      books: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 24,
+      shelves: [],
+    } satisfies CatalogRareBookPage;
+    service.getPublicRareBooks({
+      search: 'atlas',
+      shelf: 'Illustrés',
+      includeSold: false,
+      sort: 'price-desc',
+      page: 2,
+      pageSize: 12,
+    }).subscribe(result => expect(result).toEqual(page));
+    const listRequest = http.expectOne(request => request.url === `${environment.apiUrl}/catalog/rare-books`);
+    expect(listRequest.request.params.get('search')).toBe('atlas');
+    expect(listRequest.request.params.get('shelf')).toBe('Illustrés');
+    expect(listRequest.request.params.get('includeSold')).toBe('false');
+    expect(listRequest.request.params.get('sort')).toBe('price-desc');
+    expect(listRequest.request.params.get('page')).toBe('2');
+    expect(listRequest.request.params.get('pageSize')).toBe('12');
+    listRequest.flush(page);
+
+    const detail = {rareBook: {} as unknown as CatalogRareBookDetail['rareBook'], relatedBooks: []} as CatalogRareBookDetail;
+    service.getPublicRareBook('les-fables').subscribe(result => expect(result).toEqual(detail));
+    const detailRequest = http.expectOne(
+      request => request.url === `${environment.apiUrl}/catalog/rare-books/les-fables`,
+    );
+    expect(detailRequest.request.method).toBe('GET');
+    detailRequest.flush(detail);
   });
 });

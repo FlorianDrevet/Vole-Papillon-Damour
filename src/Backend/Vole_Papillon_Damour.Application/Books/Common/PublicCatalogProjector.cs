@@ -12,6 +12,7 @@ public static class PublicCatalogProjector
         IEnumerable<Book> books,
         IEnumerable<BookAnnouncement> announcements,
         IEnumerable<AssoEvents> fairs,
+        IReadOnlySet<string> publishedAvailableRareIsbns,
         DateTime nowUtc)
     {
         var fairsById = fairs
@@ -58,7 +59,7 @@ public static class PublicCatalogProjector
                     ToOffset(book.LastAvailableAt),
                     new DateTimeOffset(book.FirstSeenAt, TimeSpan.Zero),
                     new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero),
-                    book.IsRare,
+                    publishedAvailableRareIsbns.Contains(book.Id.Value),
                     book.CoverSource?.ToString());
             })
             .ToArray();

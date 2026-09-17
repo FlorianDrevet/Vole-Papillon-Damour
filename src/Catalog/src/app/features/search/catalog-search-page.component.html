@@ -47,7 +47,7 @@
             <div id="catalog-sort-menu" class="sort-select-panel" role="menu" aria-label="Options de tri">
               <span class="sort-panel-kicker">Ordre d’affichage</span>
               <div class="sort-panel-options">
-                @for (choice of sortChoices; track choice.value; let index = $index) {
+                @for (choice of availableSortChoices(); track choice.value; let index = $index) {
                   <button
                     #sortOption
                     [id]="'catalog-sort-option-' + index"
@@ -174,7 +174,13 @@
             <vpd-loader variant="skeleton" layout="list" [count]="5" label="Chargement du catalogue"></vpd-loader>
           } @else if (error) {
             <p class="state-message error-message" role="alert">Le catalogue est momentanément indisponible. Réessayez dans un instant.</p>
-          } @else if (response?.books?.length) {
+          } @else if (rareOnly && rareResponse?.books?.length) {
+            <div class="rare-book-search-list">
+              @for (book of rareResponse?.books || []; track book.id) {
+                <app-rare-book-card [book]="book"></app-rare-book-card>
+              }
+            </div>
+          } @else if (!rareOnly && response?.books?.length) {
             <div class="book-list">
               @for (book of response?.books || []; track trackBook($index, book.isbn13)) {
                 <app-book-card [book]="book" variant="list"></app-book-card>

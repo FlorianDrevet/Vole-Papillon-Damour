@@ -1,6 +1,6 @@
 # 05 — Administration
 
-Espace réservé aux administrateurs. La surface est disponible dans le `BackOffice` existant
+Espace réservé aux administrateurs et aux bénévoles livres rares. La surface est disponible dans le `BackOffice` existant
 et dans `src/Catalog`, à l'adresse `/administration`, avec le même contrat HTTP. Le Catalog
 reprend la convention visuelle V2 et charge les espaces de travail à la demande ; le
 backend reste découplé de ces présentations. La surface HTTP et les règles de reprise sont
@@ -17,7 +17,7 @@ Vue d'ouverture, en chiffres, sur la période en cours et la précédente pour c
 | Livres triés sur la période, gardés / écartés | Mesure de l'activité de tri et du taux de rejet |
 | Ventes sur la dernière bourse : **nombre de livres** | Résultat de l'événement. Le système ne connaît aucun prix (`RG-50`) : la recette n'apparaît que si elle a été saisie à la main (`RG-51`) |
 | Titres disponibles jamais vendus depuis leur première mise à disposition | **Le principal levier de désengorgement.** Ce sont les candidats au retrait. |
-| Livres marqués rares en attente d'expertise | File de travail |
+| Fiches rares en brouillon ou sans photo | File de travail |
 | Alertes en attente d'envoi | Sessions dont les e-mails ne sont pas encore partis, avec le temps restant. **Fenêtre de rattrapage** (`RG-44`) |
 | Fiches sans métadonnées | File de travail |
 | Écart d'inventaire estimé | Signal de dérive du compteur (`RG-34`) |
@@ -67,9 +67,23 @@ qu'il se vend ? ».
 | Retirer des livres | Mouvement `RETRAIT` : désherbage, don à une autre structure, mise au rebut |
 | Masquer une fiche du catalogue public | Sans la supprimer ni perdre son historique |
 | Supprimer une fiche | Réservé aux fiches créées par erreur. Refusé si des ventes y sont rattachées (`RG-06`) |
-| Marquer ou démarquer « rare » | Déclenche le signalement en caisse (`03` §5). **Aucun prix n'est saisi** : il est porté physiquement sur le livre (`RG-50`) |
+| Gérer un livre rare | Depuis l'espace **Livres rares**, créer, compléter, publier ou supprimer une fiche autonome liée éventuellement à un ISBN. Le prix ferme y est stocké et affiché pour lecture en caisse ; il n'est jamais saisi sur un livre ordinaire, totalisé ou transformé en recette (`RG-50`) |
 | Saisir la recette d'une bourse | Un montant unique à la clôture, facultatif (`RG-51`) |
 | Fusionner deux fiches | Cas des ISBN-10 et ISBN-13 d'une même édition mal normalisés (`RG-07`) |
+
+### Espace Livres rares
+
+Le marquage n'est plus une case de la fiche catalogue : une fiche rare autonome porte
+les métadonnées de l'exemplaire, son état, sa description honnête, son prix ferme et
+ses photos. Un bénévole habilité peut la créer depuis une fiche ordinaire préremplie,
+la modifier, la publier ou la supprimer. Une fiche publiée sans photo reste repérable
+dans la file de travail afin d'être complétée ; le prix n'est affiché que pour être lu
+par le bénévole de caisse, jamais additionné par l'application.
+
+Les anciens indicateurs `Books.IsRare` ont été supprimés au lot 6 après export dans la
+note de la PR. Ils n'ont pas été convertis en fiches rares : les bénévoles peuvent recréer
+les fiches utiles depuis l'espace dédié, sans modifier le prix, le panier, le total ou la
+recette (`RG-51` reste inchangée).
 
 ### Espace Inventaire
 
@@ -89,10 +103,9 @@ reste consultable, mais ses actions de stock sont désactivées.
 Des listes de travail concrètes, plutôt que des écrans de recherche :
 
 - **Fiches sans métadonnées** — à compléter à la main.
-- **Livres marqués rares** — à expertiser, et à étiqueter physiquement d'un prix
-  puisque le système n'en porte aucun (`RG-50`). Alimentée à la main en v1 ; elle
-  recevra les résultats de l'estimation asynchrone si celle-ci est un jour implémentée
-  (`RG-14`).
+- **Fiches rares en brouillon** — à relire avant publication : photos, état, description
+  et prix ferme doivent être vérifiés. Le prix est affiché pour la caisse mais aucun
+  total n'est calculé (`RG-50`).
 - **Annonces sans date** — exemplaires annoncés alors qu'aucune bourse n'était
   programmée (`RG-24`). Ils se rattachent automatiquement dès qu'une bourse est créée,
   mais **leurs alertes restent en attente d'ici là**. Une file qui s'allonge est le
@@ -211,7 +224,7 @@ c'est ce qui le distingue d'un bénévole dans le même annuaire (`DT-10`).
 | Action | Détail |
 |---|---|
 | Créer, désactiver un compte bénévole | Dans le locataire d'identité, jamais en base |
-| Attribuer les droits | Rôles applicatifs `Tri`, `Caisse`, `Administration` (`RG-40`, `ENF-18`), par script `infra/entra/Set-VpdUserRole.ps1` |
+| Attribuer les droits | Rôles applicatifs `Tri`, `Caisse`, `LivresRares`, `Administration` (`RG-40`, `ENF-18`), par script `infra/entra/Set-VpdUserRole.ps1` |
 | Voir l'activité d'un bénévole | Nombre de scans, sessions de tri et leur mode |
 | Corriger une série de scans erronés | Voir §4 bis. Deux erreurs à rattraper en bloc : une session tenue dans le mauvais mode de mise à disposition, et des livres scannés en caisse alors qu'il s'agissait d'un tri |
 

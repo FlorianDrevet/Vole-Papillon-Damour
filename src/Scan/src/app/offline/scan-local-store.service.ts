@@ -9,6 +9,9 @@ import {
   ScanFailureKind,
   ScanLocalStoreError,
   ScanOutboxEntry,
+  ScanRareBook,
+  ScanRareBookPhotoQueueEntry,
+  ScanRareSaleOutboxEntry,
   ScanSaleOutboxEntry,
   ScanSetAsideReason,
   ScanSessionCloseRequest,
@@ -111,6 +114,117 @@ export class ScanLocalStoreService {
     );
   }
 
+  async getRareBook(clientId: string): Promise<ScanRareBook | null> {
+    return await this.runRequest<ScanRareBook | undefined>(
+      scanStoreNames.rareBooks,
+      'readonly',
+      store => store.get(clientId),
+    ) ?? null;
+  }
+
+  async getRareBookByServerId(serverId: string): Promise<ScanRareBook | null> {
+    const books = await this.listRareBooks();
+    return books.find(book => book.serverId === serverId) ?? null;
+  }
+
+  async listRareBooks(): Promise<ScanRareBook[]> {
+    const books = await this.runRequest<ScanRareBook[]>(
+      scanStoreNames.rareBooks,
+      'readonly',
+      store => store.getAll(),
+    ) ?? [];
+    return books.sort((left, right) =>
+      right.updatedAt.localeCompare(left.updatedAt) ||
+      left.clientId.localeCompare(right.clientId));
+  }
+
+  async putRareBooks(books: readonly ScanRareBook[]): Promise<void> {
+    if (books.length === 0) {
+      return;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.rareBooks],
+      'readwrite',
+      stores => {
+        for (const book of books) {
+          stores[scanStoreNames.rareBooks].put(book);
+        }
+      },
+    );
+  }
+
+  async deleteRareBook(clientId: string): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.rareBooks,
+      'readwrite',
+      store => store.delete(clientId),
+    );
+  }
+
+  async getRareBookPhotoQueueEntry(queueId: string): Promise<ScanRareBookPhotoQueueEntry | null> {
+    return await this.runRequest<ScanRareBookPhotoQueueEntry | undefined>(
+      scanStoreNames.rarePhotoQueue,
+      'readonly',
+      store => store.get(queueId),
+    ) ?? null;
+  }
+
+  async listRareBookPhotoQueue(): Promise<ScanRareBookPhotoQueueEntry[]> {
+    const entries = await this.runRequest<ScanRareBookPhotoQueueEntry[]>(
+      scanStoreNames.rarePhotoQueue,
+      'readonly',
+      store => store.getAll(),
+    ) ?? [];
+    return entries.sort((left, right) =>
+      left.createdAt.localeCompare(right.createdAt) ||
+      left.queueId.localeCompare(right.queueId));
+  }
+
+  async addRareBookPhotoQueueEntry(entry: ScanRareBookPhotoQueueEntry): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.rarePhotoQueue,
+      'readwrite',
+      store => store.add(entry),
+    );
+  }
+
+  async putRareBookPhotoQueueEntry(entry: ScanRareBookPhotoQueueEntry): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.rarePhotoQueue,
+      'readwrite',
+      store => store.put(entry),
+    );
+  }
+
+  async deleteRareBookPhotoQueueEntry(queueId: string): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.rarePhotoQueue,
+      'readwrite',
+      store => store.delete(queueId),
+    );
+  }
+
+  async countRareBookPhotoQueue(): Promise<number> {
+    return await this.runRequest<number>(
+      scanStoreNames.rarePhotoQueue,
+      'readonly',
+      store => store.count(),
+    ) ?? 0;
+  }
+
+  async clearRareBookState(): Promise<void> {
+    await this.runTransaction(
+      [scanStoreNames.rareBooks, scanStoreNames.rarePhotoQueue, scanStoreNames.rareSales],
+      'readwrite',
+      stores => {
+        stores[scanStoreNames.rareBooks].clear();
+        stores[scanStoreNames.rarePhotoQueue].clear();
+        stores[scanStoreNames.rareSales].clear();
+      },
+    );
+  }
+
   async getSettings(): Promise<ScanAssociationSettings | null> {
     const record = await this.runRequest<ScanAssociationSettingsRecord | undefined>(
       scanStoreNames.session,
@@ -174,9 +288,11 @@ export class ScanLocalStoreService {
     settings: ScanAssociationSettings,
     syncState: ScanCatalogSyncState,
     removedIsbn13s: readonly string[] = [],
+    rareBooks: readonly ScanRareBook[] = [],
+    removedRareBookIds: readonly string[] = [],
   ): Promise<void> {
     await this.runTransaction(
-      [scanStoreNames.catalog, scanStoreNames.session],
+      [scanStoreNames.catalog, scanStoreNames.session, scanStoreNames.rareBooks],
       'readwrite',
       stores => {
         for (const book of books) {
@@ -184,6 +300,25 @@ export class ScanLocalStoreService {
         }
         for (const isbn13 of removedIsbn13s) {
           stores[scanStoreNames.catalog].delete(isbn13);
+        }
+        for (const rareBook of rareBooks) {
+          stores[scanStoreNames.rareBooks].put(rareBook);
+        }
+        if (removedRareBookIds.length > 0) {
+          const removed = new Set(removedRareBookIds);
+          const request = stores[scanStoreNames.rareBooks].openCursor();
+          request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) {
+              return;
+            }
+
+            const rareBook = cursor.value as ScanRareBook;
+            if (rareBook.serverId && removed.has(rareBook.serverId)) {
+              cursor.delete();
+            }
+            cursor.continue();
+          };
         }
 
         stores[scanStoreNames.session].put({
@@ -218,11 +353,12 @@ export class ScanLocalStoreService {
 
   async clearAccountState(): Promise<void> {
     await this.runTransaction(
-      [scanStoreNames.outbox, scanStoreNames.sales, scanStoreNames.session],
+      [scanStoreNames.outbox, scanStoreNames.sales, scanStoreNames.rareSales, scanStoreNames.session],
       'readwrite',
       stores => {
         stores[scanStoreNames.outbox].clear();
         stores[scanStoreNames.sales].clear();
+        stores[scanStoreNames.rareSales].clear();
         stores[scanStoreNames.session].delete('active-session');
         stores[scanStoreNames.session].delete('volunteer-statistics');
 
@@ -266,12 +402,13 @@ export class ScanLocalStoreService {
 
   async getDiagnosticState(): Promise<ScanDiagnosticStoreState> {
     const session = await this.getSession();
-    const [catalog, sessionCounts, closeRequests, outbox, sales] = await Promise.all([
+    const [catalog, sessionCounts, closeRequests, outbox, sales, rareSales] = await Promise.all([
       this.getCatalogDiagnosticSummary(),
       session ? this.getSessionCounts(session.clientSessionId) : Promise.resolve(null),
       this.listSessionCloseRequests(),
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
+      this.listRareSaleOutboxEntries(),
     ]);
 
     return {
@@ -282,6 +419,7 @@ export class ScanLocalStoreService {
       closeRequests,
       outbox,
       sales,
+      rareSales,
     };
   }
 
@@ -376,6 +514,28 @@ export class ScanLocalStoreService {
     );
   }
 
+  async addRareSaleOutboxEntries(
+    entries: readonly ScanRareSaleOutboxEntry[],
+    books: readonly ScanRareBook[],
+  ): Promise<void> {
+    if (entries.length === 0) {
+      return;
+    }
+
+    await this.runTransaction(
+      [scanStoreNames.rareSales, scanStoreNames.rareBooks],
+      'readwrite',
+      stores => {
+        for (const entry of entries) {
+          stores[scanStoreNames.rareSales].add(entry);
+        }
+        for (const book of books) {
+          stores[scanStoreNames.rareBooks].put(book);
+        }
+      },
+    );
+  }
+
   async getOutboxEntry(clientGestureId: string): Promise<ScanOutboxEntry | null> {
     const entry = await this.runRequest<LegacyScanOutboxEntry | undefined>(
       scanStoreNames.outbox,
@@ -409,6 +569,18 @@ export class ScanLocalStoreService {
       left.clientGestureId.localeCompare(right.clientGestureId));
   }
 
+  async listRareSaleOutboxEntries(): Promise<ScanRareSaleOutboxEntry[]> {
+    const entries = await this.runRequest<ScanRareSaleOutboxEntry[]>(
+      scanStoreNames.rareSales,
+      'readonly',
+      store => store.getAll(),
+    ) ?? [];
+
+    return entries.sort((left, right) =>
+      left.createdAt.localeCompare(right.createdAt) ||
+      left.clientGestureId.localeCompare(right.clientGestureId));
+  }
+
   async listTransmittableOutboxEntries(): Promise<ScanOutboxEntry[]> {
     const entries = await this.listOutboxEntries();
     return entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected');
@@ -426,9 +598,10 @@ export class ScanLocalStoreService {
     pendingDecisionCount: number;
     pendingTransmissionCount: number;
   }> {
-    const [entries, sales] = await Promise.all([
+    const [entries, sales, rareSales] = await Promise.all([
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
+      this.listRareSaleOutboxEntries(),
     ]);
     return {
       pendingDecisionCount: entries.filter(entry =>
@@ -438,7 +611,8 @@ export class ScanLocalStoreService {
         entries.filter(entry =>
           entry.clientSessionId === clientSessionId &&
           (entry.status === 'Kept' || entry.status === 'Rejected')).length +
-        sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length,
+        sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
+        rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length,
     };
   }
 
@@ -458,27 +632,37 @@ export class ScanLocalStoreService {
   }
 
   async countBlockingOutboxEntries(): Promise<number> {
-    const [entries, sales] = await Promise.all([
+    const [entries, sales, rareSales] = await Promise.all([
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
+      this.listRareSaleOutboxEntries(),
     ]);
     return entries.filter(entry => isBlockingScanStatus(entry.status)).length +
-      sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length;
+      sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
+      rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length;
   }
 
   async countBlockingOutboxEntriesForSession(clientSessionId: string): Promise<number> {
-    const entries = await this.listOutboxEntries();
+    const [entries, rareSales] = await Promise.all([
+      this.listOutboxEntries(),
+      this.listRareSaleOutboxEntries(),
+    ]);
     return entries.filter(entry =>
-      entry.clientSessionId === clientSessionId && isBlockingScanStatus(entry.status)).length;
+      entry.clientSessionId === clientSessionId && isBlockingScanStatus(entry.status)).length +
+      rareSales.filter(entry =>
+        entry.clientSessionId === clientSessionId &&
+        (entry.status ?? 'Pending') !== 'Quarantined').length;
   }
 
   async countQuarantinedOutboxEntries(): Promise<number> {
-    const [entries, sales] = await Promise.all([
+    const [entries, sales, rareSales] = await Promise.all([
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
+      this.listRareSaleOutboxEntries(),
     ]);
     return entries.filter(entry => entry.status === 'RejectedByServer').length +
-      sales.filter(entry => entry.status === 'Quarantined').length;
+      sales.filter(entry => entry.status === 'Quarantined').length +
+      rareSales.filter(entry => entry.status === 'Quarantined').length;
   }
 
   async orphanPendingOutboxEntriesFromOtherSessions(clientSessionId: string): Promise<number> {
@@ -886,6 +1070,54 @@ export class ScanLocalStoreService {
     return updated;
   }
 
+  async getRareSaleOutboxEntry(clientGestureId: string): Promise<ScanRareSaleOutboxEntry | null> {
+    return await this.runRequest<ScanRareSaleOutboxEntry | undefined>(
+      scanStoreNames.rareSales,
+      'readonly',
+      store => store.get(clientGestureId),
+    ) ?? null;
+  }
+
+  async markRareSaleAttempt(
+    clientGestureId: string,
+    attemptedAt: string,
+    errorMessage: string | null,
+    failureKind: ScanFailureKind | null = null,
+  ): Promise<ScanRareSaleOutboxEntry> {
+    const entry = await this.getRareSaleOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown rare sale gesture: ${clientGestureId}`);
+    }
+
+    const updated: ScanRareSaleOutboxEntry = {
+      ...entry,
+      attemptCount: entry.attemptCount + 1,
+      lastAttemptAt: attemptedAt,
+      lastError: errorMessage,
+      lastFailureKind: failureKind,
+    };
+    await this.putRareSaleOutboxEntry(updated);
+    return updated;
+  }
+
+  async quarantineRareSaleOutboxEntry(
+    clientGestureId: string,
+    errorMessage: string,
+  ): Promise<ScanRareSaleOutboxEntry> {
+    const entry = await this.getRareSaleOutboxEntry(clientGestureId);
+    if (!entry) {
+      throw new Error(`Unknown rare sale gesture: ${clientGestureId}`);
+    }
+
+    const updated: ScanRareSaleOutboxEntry = {
+      ...entry,
+      status: 'Quarantined',
+      lastError: errorMessage,
+    };
+    await this.putRareSaleOutboxEntry(updated);
+    return updated;
+  }
+
   async getSaleOutboxEntry(clientGestureId: string): Promise<ScanSaleOutboxEntry | null> {
     return await this.runRequest<ScanSaleOutboxEntry | undefined>(
       scanStoreNames.sales,
@@ -910,6 +1142,84 @@ export class ScanLocalStoreService {
     );
   }
 
+  async deleteRareSaleOutboxEntry(clientGestureId: string): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.rareSales,
+      'readwrite',
+      store => store.delete(clientGestureId),
+    );
+  }
+
+  async completeRareSaleOutboxEntry(
+    clientGestureId: string,
+  ): Promise<'completed' | 'cancelled' | 'missing'> {
+    const database = await this.getDatabase();
+
+    return await new Promise((resolve, reject) => {
+      let transaction: IDBTransaction;
+      try {
+        transaction = database.transaction(scanStoreNames.rareSales, 'readwrite');
+      } catch (error: unknown) {
+        reject(this.handleClosedDatabase(database, error));
+        return;
+      }
+
+      const store = transaction.objectStore(scanStoreNames.rareSales);
+      let outcome: 'completed' | 'cancelled' | 'missing' = 'missing';
+      let settled = false;
+      const fail = (error: unknown): void => {
+        if (!settled) {
+          settled = true;
+          reject(error);
+        }
+      };
+
+      const request = store.get(clientGestureId);
+      request.onsuccess = () => {
+        const entry = request.result as ScanRareSaleOutboxEntry | undefined;
+        if (!entry) {
+          outcome = 'missing';
+        } else if ((entry.status ?? 'Pending') === 'Cancelled') {
+          outcome = 'cancelled';
+        } else {
+          store.delete(clientGestureId);
+          outcome = 'completed';
+        }
+      };
+      request.onerror = () => fail(request.error ?? new Error('IndexedDB request failed.'));
+      transaction.oncomplete = () => {
+        if (!settled) {
+          settled = true;
+          resolve(outcome);
+        }
+      };
+      transaction.onerror = () => fail(
+        transaction.error ?? new Error('IndexedDB transaction failed.'),
+      );
+      transaction.onabort = () => fail(
+        transaction.error ?? new Error('IndexedDB transaction aborted.'),
+      );
+    });
+  }
+
+  async restoreRareBookAfterPendingSale(
+    entry: ScanRareSaleOutboxEntry,
+    book: ScanRareBook,
+  ): Promise<void> {
+    await this.runTransaction(
+      [scanStoreNames.rareSales, scanStoreNames.rareBooks],
+      'readwrite',
+      stores => {
+        stores[scanStoreNames.rareSales].put({
+          ...entry,
+          status: 'Cancelled',
+          lastError: null,
+          lastFailureKind: null,
+        });
+        stores[scanStoreNames.rareBooks].put(book);
+      },
+    );
+  }
   private async putSessionRecord(record: object & {key: string}): Promise<void> {
     await this.runRequest(
       scanStoreNames.session,
@@ -929,6 +1239,14 @@ export class ScanLocalStoreService {
   private async putSaleOutboxEntry(entry: ScanSaleOutboxEntry): Promise<void> {
     await this.runRequest(
       scanStoreNames.sales,
+      'readwrite',
+      store => store.put(entry),
+    );
+  }
+
+  private async putRareSaleOutboxEntry(entry: ScanRareSaleOutboxEntry): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.rareSales,
       'readwrite',
       store => store.put(entry),
     );
@@ -988,6 +1306,15 @@ export class ScanLocalStoreService {
         }
         if (!database.objectStoreNames.contains(scanStoreNames.session)) {
           database.createObjectStore(scanStoreNames.session, {keyPath: 'key'});
+        }
+        if (!database.objectStoreNames.contains(scanStoreNames.rareBooks)) {
+          database.createObjectStore(scanStoreNames.rareBooks, {keyPath: 'clientId'});
+        }
+        if (!database.objectStoreNames.contains(scanStoreNames.rarePhotoQueue)) {
+          database.createObjectStore(scanStoreNames.rarePhotoQueue, {keyPath: 'queueId'});
+        }
+        if (!database.objectStoreNames.contains(scanStoreNames.rareSales)) {
+          database.createObjectStore(scanStoreNames.rareSales, {keyPath: 'clientGestureId'});
         }
 
         if (event.oldVersion < 3 && database.objectStoreNames.contains(scanStoreNames.outbox)) {

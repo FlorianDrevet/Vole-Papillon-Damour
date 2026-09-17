@@ -1,0 +1,68 @@
+<main class="rare-public-page" aria-labelledby="rare-page-title">
+  <section class="rare-public-hero">
+    <div class="page-width">
+      <p class="eyebrow">La sélection de l’association</p>
+      <h1 id="rare-page-title">Livres rares.</h1>
+      <p>Des exemplaires singuliers, décrits et photographiés par les bénévoles. Ils sont proposés sur place, pendant la bourse aux livres.</p>
+      <aside *ngIf="nextFair" class="rare-next-fair" aria-label="Prochaine bourse aux livres">
+        <span class="rare-next-fair-kicker">Prochaine bourse</span>
+        <strong>{{ nextFair.name }}</strong>
+        <time [attr.datetime]="nextFair.dateStart">{{ formatFairDateRange(nextFair) }}</time>
+        <span>{{ formatFairTime(nextFair.openAt) }} · {{ fairAddress(nextFair) }}</span>
+      </aside>
+    </div>
+  </section>
+
+  <section class="rare-public-content page-width">
+    <div class="rare-public-toolbar" aria-label="Filtres des livres rares">
+      <div class="rare-shelf-chips" role="group" aria-label="Rayons">
+        <button type="button" [class.active]="!selectedShelf" (click)="selectShelf('')">Tous <span>{{ shelfCount() }}</span></button>
+        <button *ngFor="let shelf of shelves" type="button" [class.active]="selectedShelf === shelf.label" (click)="selectShelf(shelf.label)">
+          {{ shelf.label }} <span>{{ shelf.count }}</span>
+        </button>
+      </div>
+      <label>
+        <span>Trier</span>
+        <select [(ngModel)]="sort" (change)="page = 1; applyFilters()">
+          <option value="recent">Ajouts récents</option>
+          <option value="price-asc">Prix croissant</option>
+          <option value="price-desc">Prix décroissant</option>
+        </select>
+      </label>
+      <label class="rare-sold-filter">
+        <input type="checkbox" [(ngModel)]="includeSold" (change)="page = 1; applyFilters()">
+        <span>Voir les exemplaires partis</span>
+      </label>
+    </div>
+
+    <p *ngIf="error" class="rare-public-error" role="alert">
+      La sélection ne peut pas être chargée. <a href="mailto:volepapillondamour@sfr.fr">Écrivez-nous</a> si le problème persiste.
+    </p>
+
+    <vpd-loader *ngIf="loading" variant="skeleton" [count]="4" label="Chargement des livres rares"></vpd-loader>
+
+    <div *ngIf="!loading && !error && books.length" class="rare-public-grid" aria-label="Livres rares">
+      <app-rare-book-card *ngFor="let book of books; trackBy: trackBook" [book]="book"></app-rare-book-card>
+    </div>
+
+    <div *ngIf="!loading && !error && !books.length" class="rare-public-empty">
+      <h2>La sélection se prépare.</h2>
+      <p>Aucun exemplaire ne correspond à ce filtre. Revenez avant la prochaine bourse ou <a href="mailto:volepapillondamour@sfr.fr">contactez l’association</a>.</p>
+    </div>
+
+    <nav *ngIf="!loading && totalCount > pageSize" class="rare-pagination" aria-label="Pagination des livres rares">
+      <button type="button" (click)="previousPage()" [disabled]="page === 1">Précédent</button>
+      <span>Page {{ page }} / {{ pageCount() }}</span>
+      <button type="button" (click)="nextPage()" [disabled]="page === pageCount()">Suivant</button>
+    </nav>
+
+    <aside class="rare-donation-callout">
+      <div>
+        <p class="eyebrow">Une histoire à partager</p>
+        <h2>Vous avez un livre ancien à donner&nbsp;?</h2>
+        <p>Écrivez-nous : les bénévoles vous indiqueront comment lui offrir une seconde vie sur nos tables.</p>
+      </div>
+      <a href="mailto:volepapillondamour@sfr.fr?subject=Don%20d%E2%80%99un%20livre%20ancien">Nous écrire <span aria-hidden="true">→</span></a>
+    </aside>
+  </section>
+</main>

@@ -168,6 +168,21 @@ describe('CatalogBookDetailPageComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('communiqué au comptoir');
   });
 
+  it('links an ordinary book to its published rare-book detail when the ISBN is shared', async () => {
+    api.getBook.and.returnValue(of({
+      ...book,
+      rareBookSlug: 'atlas-des-jardins',
+    } as CatalogBook));
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector('.rare-book-link') as HTMLAnchorElement;
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('/livres-rares/atlas-des-jardins');
+  });
+
   it('opens the auth prompt instead of sending an anonymous protected request', async () => {
     auth.isAuthenticated.set(false);
     auth.account.set(null);

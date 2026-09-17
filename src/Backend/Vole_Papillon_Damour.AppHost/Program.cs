@@ -7,6 +7,7 @@ const string BlobContainerActualityImagesEnvironmentName = "BlobSettings__Contai
 const string BlobContainerEventImagesEnvironmentName = "BlobSettings__BlobContainerEventImagesClient";
 const string BlobContainerLotoImagesEnvironmentName = "BlobSettings__ContainerName";
 const string BlobContainerProductsImagesEnvironmentName = "BlobSettings__BlobContainerProductsImagesClient";
+const string BlobContainerRareBookPhotosEnvironmentName = "BlobSettings__BlobContainerRareBookPhotosClient";
 const string BackOfficeResourceName = "backoffice";
 const string CatalogResourceName = "catalog";
 const string DefaultHttpEndpointName = "http";
@@ -45,6 +46,7 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithEnvironment(BlobContainerActualityImagesEnvironmentName, "actuality-images")
     .WithEnvironment(BlobContainerEventImagesEnvironmentName, "event-images")
     .WithEnvironment(BlobContainerProductsImagesEnvironmentName, "product-images")
+    .WithEnvironment(BlobContainerRareBookPhotosEnvironmentName, "livres-rares")
     .WithExternalHttpEndpoints();
 
 builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
@@ -56,6 +58,7 @@ builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
     .WithEnvironment(BlobContainerActualityImagesEnvironmentName, "actuality-images")
     .WithEnvironment(BlobContainerEventImagesEnvironmentName, "event-images")
     .WithEnvironment(BlobContainerProductsImagesEnvironmentName, "product-images")
+    .WithEnvironment(BlobContainerRareBookPhotosEnvironmentName, "livres-rares")
     .WaitFor(projectDatabase)
     .WaitFor(storage);
 
