@@ -16,6 +16,19 @@ Cette image est visible dans le message lorsque le client autorise l'affichage d
 images distantes. Elle ne contrôle pas l'avatar affiché à gauche dans la liste de
 réception.
 
+Une version vectorisée carrée destinée à BIMI est également livrée dans
+`src/Website/public/icons/vpd_bimi.svg`. Après déploiement du Website, elle sera
+accessible à l'adresse :
+
+```text
+https://volepapillondamour.fr/icons/vpd_bimi.svg
+```
+
+La vectorisation est dérivée du PNG existant et a été contrôlée localement : XML
+valide, `baseProfile="tiny-ps"`, moins de 32 Ko, sans balise `image`, script ni
+référence externe. Une validation par un fournisseur BIMI reste recommandée avant
+publication DNS.
+
 ## Logo à côté de l'expéditeur — BIMI
 
 Le logo de la liste de réception dépend du fournisseur de boîte mail. La procédure
@@ -26,14 +39,15 @@ est la suivante :
    script, sans ressource externe et servie avec `image/svg+xml`.
 2. Héberger ce SVG sur une URL HTTPS stable du domaine de l'association.
 3. Vérifier que SPF et DKIM sont alignés avec `mail.volepapillondamour.fr`.
-4. Faire évoluer progressivement `_dmarc.mail.volepapillondamour.fr`, actuellement
-   en `p=none`, vers `p=quarantine` puis `p=reject` après contrôle des rapports DMARC.
+4. Le DNS observé le 2026-09-18 publie déjà `_dmarc.mail.volepapillondamour.fr`
+   en `p=quarantine`. Après contrôle des rapports DMARC, le passage à `p=reject`
+   pourra être décidé séparément.
 5. Publier ensuite le TXT BIMI suivant, en remplaçant les URL par les fichiers réels :
 
    ```text
    Nom : default._bimi.mail
    Type : TXT
-   Valeur : v=BIMI1; l=https://<domaine-public>/chemin/vpd-bimi.svg; a=https://<domaine-public>/chemin/vpd-bimi.pem
+   Valeur : v=BIMI1; l=https://volepapillondamour.fr/icons/vpd_bimi.svg; a=https://<domaine-public>/chemin/vpd-bimi.pem
    ```
 
 Le fichier `.pem` est le certificat VMC/CMC lorsqu'il est requis par le fournisseur.
