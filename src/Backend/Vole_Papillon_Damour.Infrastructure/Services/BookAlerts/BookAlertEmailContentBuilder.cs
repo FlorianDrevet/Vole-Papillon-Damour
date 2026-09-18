@@ -18,7 +18,8 @@ public static class BookAlertEmailContentBuilder
     public static BookAlertEmailContent Build(
         BookAlertDelivery delivery,
         string associationName,
-        string? unsubscribeUrl)
+        string? unsubscribeUrl,
+        string? logoUrl = null)
     {
         ArgumentNullException.ThrowIfNull(delivery);
         ArgumentException.ThrowIfNullOrWhiteSpace(associationName);
@@ -42,6 +43,7 @@ public static class BookAlertEmailContentBuilder
         var htmlUnsubscribe = string.IsNullOrWhiteSpace(unsubscribeUrl)
             ? string.Empty
             : $"<p><a href=\"{WebUtility.HtmlEncode(unsubscribeUrl)}\">Se désabonner</a></p>";
+        var htmlHeader = BuildHtmlHeader(associationName, logoUrl);
 
         var plainText = string.Join(
             Environment.NewLine,
@@ -58,6 +60,7 @@ public static class BookAlertEmailContentBuilder
             ? "Bonjour,"
             : $"Bonjour {WebUtility.HtmlEncode(delivery.RecipientName)},";
         var html =
+            htmlHeader +
             $"<p>{htmlGreeting}</p>" +
             $"<p>{WebUtility.HtmlEncode(associationName)} a {(rareItems.Count > 0 && delivery.Items.Count == 0 ? "signalé" : "trouvé")} :</p>" +
             $"<ul>{string.Join(string.Empty, htmlItems)}</ul>" +
@@ -65,6 +68,28 @@ public static class BookAlertEmailContentBuilder
             $"n'est effectuée.</p>{htmlUnsubscribe}";
 
         return new BookAlertEmailContent(subject, plainText, html);
+    }
+
+    private static string BuildHtmlHeader(string associationName, string? logoUrl)
+    {
+        if (string.IsNullOrWhiteSpace(logoUrl) ||
+            !Uri.TryCreate(logoUrl, UriKind.Absolute, out var parsedLogoUrl) ||
+            parsedLogoUrl.Scheme != Uri.UriSchemeHttps)
+        {
+            return string.Empty;
+        }
+
+        var encodedAssociationName = WebUtility.HtmlEncode(associationName);
+        var encodedLogoUrl = WebUtility.HtmlEncode(parsedLogoUrl.AbsoluteUri);
+        return
+            "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" " +
+            "style=\"margin:0 0 24px 0;\"><tr>" +
+            $"<td style=\"padding:0 16px 0 0; vertical-align:middle;\"><img " +
+            $"src=\"{encodedLogoUrl}\" alt=\"{encodedAssociationName}\" width=\"56\" height=\"56\" " +
+            "style=\"display:block; width:56px; height:56px; border:0;\"></td>" +
+            $"<td style=\"vertical-align:middle;\"><strong style=\"font-size:18px; " +
+            $"line-height:1.25; color:#072b45;\">{encodedAssociationName}</strong></td>" +
+            "</tr></table>";
     }
 
     private static string BuildSubject(int ordinaryItemCount, int rareItemCount)

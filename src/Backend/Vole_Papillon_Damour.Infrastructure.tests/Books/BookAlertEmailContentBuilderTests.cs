@@ -48,6 +48,29 @@ public sealed class BookAlertEmailContentBuilderTests
     }
 
     [Fact]
+    public void Build_WithLogoUrl_RendersAnEmailCompatibleAssociationHeader()
+    {
+        var delivery = new BookAlertDelivery(
+            Guid.Parse("f6f52d65-1525-41c2-8b11-53d8eb2c3e29"),
+            Guid.Parse("2a8c5d9d-7f12-4cd2-8460-a4a458711d76"),
+            "member@example.org",
+            null,
+            []);
+
+        var content = BookAlertEmailContentBuilder.Build(
+            delivery,
+            "Vole Papillon d'Amour",
+            null,
+            "https://volepapillondamour.fr/icons/vpd_icon.png");
+
+        content.Html.Should().Contain("role=\"presentation\"");
+        content.Html.Should().Contain(
+            "src=\"https://volepapillondamour.fr/icons/vpd_icon.png\"");
+        content.Html.Should().Contain("alt=\"Vole Papillon d");
+        content.Html.Should().Contain("vertical-align:middle");
+    }
+
+    [Fact]
     public void Build_ForAvailableNowIncludesTheNextFairOpeningWhenKnown()
     {
         var item = new BookAlertOutboxItem(

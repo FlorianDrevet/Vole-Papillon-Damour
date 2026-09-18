@@ -9,5 +9,6 @@ public sealed class BookAlertEmailOptions
     public string MailFrom { get; set; } = "DoNotReply@mail.volepapillondamour.fr";
     public string? ManagedIdentityClientId { get; set; }
     public string AssociationName { get; set; } = "Vole Papillon d'Amour";
+    public string? LogoUrl { get; set; } = "https://volepapillondamour.fr/icons/vpd_icon.png";
     public string? UnsubscribeUrl { get; set; }
 }

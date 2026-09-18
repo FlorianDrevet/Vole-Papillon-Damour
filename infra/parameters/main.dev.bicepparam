@@ -218,6 +218,7 @@ param communicationServiceRoleAssignmentName = '59682156-3d33-4bc5-b339-abd6f6f7
 param communicationEmailEventSubscriptionName = 'vpd-acs-email-delivery-reports-dev'
 param communicationEmailWebhookHeaderName = 'X-Vpd-EventGrid-Secret'
 param bookAlertsEmailAssociationName = 'Vole Papillon d\'Amour'
+param bookAlertsEmailLogoUrl = 'https://volepapillondamour.fr/icons/vpd_icon.png'
 param bookAlertsEmailUnsubscribeUrl = 'https://livres.volepapillondamour.fr/compte'
 // Set in the GitHub development environment; never commit the value.
 param acsEmailWebhookSecret = readEnvironmentVariable('ACS_EMAIL_WEBHOOK_SECRET', '')

@@ -254,6 +254,21 @@ en `what-if`, puis `deploy`, vérification de `emailOperationalLogs`, et test av
 livre suivi ou un destinataire explicitement autorisé. La [PR #205](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/205)
 reste ouverte et n'est pas fusionnée.
 
+### État actualisé — 2026-09-18 — habillage du mail d'alerte
+
+La branche `feat/email-bimi-branding` ajoute le logo public de l'association dans
+l'en-tête HTML des alertes envoyées par le Worker, via le paramètre configurable
+`BookAlerts:Email:LogoUrl` et l'injection Bicep correspondante. La partie BIMI est
+documentée dans [`docs/email-branding.md`](docs/email-branding.md), mais reste à
+activer hors dépôt : le SVG Tiny P/S officiel, le certificat VMC/CMC éventuel et la
+publication TXT `default._bimi.mail` nécessitent une action dans la zone DNS OVH.
+Une lecture DNS publique du 2026-09-18 confirme SPF et DKIM/DKIM2, ainsi que DMARC
+en `p=quarantine`, mais aucun enregistrement BIMI. La zone n'a pas été modifiée :
+un SVG vectorisé `src/Website/public/icons/vpd_bimi.svg` est maintenant présent dans
+la branche, mais doit encore être déployé et validé par un fournisseur BIMI ; aucun
+certificat VMC/CMC n'est disponible. Le passage éventuel de DMARC à `p=reject` reste
+une décision séparée.
+
 ### État actualisé — 2026-09-16 — feuille de confirmation et actions caisse Scan
 
 Depuis `origin/main` fraîchement récupéré dans le worktree
