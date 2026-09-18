@@ -199,6 +199,9 @@ param bookAlertsUnsubscribeSigningKey string
 @description('Association name shown in book-alert emails')
 param bookAlertsEmailAssociationName string = 'Vole Papillon d\'Amour'
 
+@description('Public HTTPS logo URL shown in book-alert emails')
+param bookAlertsEmailLogoUrl string = 'https://volepapillondamour.fr/icons/vpd_icon.png'
+
 @description('Account page URL used by book-alert email unsubscribe links')
 param bookAlertsEmailUnsubscribeUrl string
 
@@ -1644,6 +1647,10 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'BookAlerts__Email__AssociationName'
         value: bookAlertsEmailAssociationName
+      }
+      {
+        name: 'BookAlerts__Email__LogoUrl'
+        value: bookAlertsEmailLogoUrl
       }
       {
         name: 'BookAlerts__Email__UnsubscribeUrl'
