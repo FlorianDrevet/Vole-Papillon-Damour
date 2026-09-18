@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Libre+Franklin:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&amp;display=swap">
+  <style>
+    body { margin: 0; background: #eef5fa; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</helmet>
+
+<section style="display: flex; flex-direction: column; gap: 40px; padding: 64px 64px 56px; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="display: flex; flex-direction: column; gap: 14px; max-width: 900px;">
+    <span style="width: 56px; height: 3px; border-radius: 999px; background-image: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .18em; color: #dc6412;">Scanette · créer une fiche</span>
+    <span style="font-family: 'Newsreader', Georgia, serif; font-size: 42px; font-weight: 500; line-height: 1.06; text-wrap: pretty;">Trois temps, jamais un mur de vingt champs.</span>
+    <span style="font-size: 16px; line-height: 1.6; color: #33536e; max-width: 78ch; text-wrap: pretty;">Identifier, décrire, photographier. La fiche part en brouillon : elle n'apparaît en vitrine qu'après relecture depuis le portail. C'est ce qui rend la saisie debout acceptable.</span>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 56px;">
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 7px; max-width: 390px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 2px; background: #5f3a86; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .1em; color: #ffffff;">1</span>
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 25px;">Ce que la BnF propose</span>
+        </div>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #6d8ba2;">Branche ISBN uniquement. La source est nommée : le bénévole sait d'où vient l'information.</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; border: 1px solid #d9e9f4; background: #f7fbfe; box-shadow: 0 40px 80px -50px rgba(4, 29, 48, .5);">
+        <span style="flex: none; height: 3px; background-image: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+
+        <div style="flex: none; display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-bottom: 1px solid #e2eef7; background: #ffffff;">
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #5f3a86;">Référence trouvée</span>
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .06em; color: #6d8ba2;">9782070360024</span>
+        </div>
+
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 18px; padding: 24px 22px;">
+
+          <div style="display: flex; gap: 16px; padding: 18px; border: 1.5px solid #5f3a86; background: #ffffff;">
+            <div style="flex: none; width: 96px; height: 132px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #e9f4fb 0 8px, #f7fbfe 8px 16px);">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: #9dc2da;">Couverture</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0;">
+              <span style="font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500; line-height: 1.12; color: #072b45; text-wrap: pretty;">Les Fables</span>
+              <span style="font-size: 13.5px; color: #4e6c84;">Jean de La Fontaine</span>
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; line-height: 1.5; color: #6d8ba2;">Gallimard · 1991</span>
+              <span style="margin-top: auto; display: inline-flex; align-self: flex-start; align-items: center; padding: 3px 9px; border-radius: 999px; background: #e9f4fb; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #0c6ea6;">Source BnF</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 11px; padding: 14px 16px; background: #fff5e8;">
+            <span style="flex: none; margin-top: 2px; width: 8px; height: 8px; border-radius: 999px; background: #dc6412;"></span>
+            <span style="font-size: 13.5px; line-height: 1.55; color: #33536e;">Cette couverture est celle de l'éditeur, pas de votre exemplaire. Vous prendrez vos propres photos à l'étape 3.</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: auto;">
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 60px; border-radius: 999px; background: #f0801c;">
+              <span style="font-size: 17px; font-weight: 600; color: #ffffff;">Utiliser ces informations</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; min-height: 52px; border: 1.5px solid #9dc2da; border-radius: 999px;">
+              <span style="font-size: 15.5px; font-weight: 600; color: #0c6ea6;">Corriger avant de continuer</span>
+            </div>
+            <span style="text-align: center; font-size: 13px; color: #6d8ba2;">Ce n'est pas le bon livre ? Saisir à la main</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 7px; max-width: 390px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 2px; background: #5f3a86; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .1em; color: #ffffff;">2</span>
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 25px;">Identifier</span>
+        </div>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #6d8ba2;">Six champs, pas un de plus. « Auteur ou mention » accepte « Illustrées par Doré ».</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; border: 1px solid #d9e9f4; background: #f7fbfe; box-shadow: 0 40px 80px -50px rgba(4, 29, 48, .5);">
+        <span style="flex: none; height: 3px; background-image: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+
+        <div style="flex: none; display: flex; flex-direction: column; gap: 12px; padding: 18px 22px 16px; border-bottom: 1px solid #e2eef7; background: #ffffff;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #5f3a86;">Étape 1 sur 3</span>
+            <span style="font-size: 13.5px; color: #6d8ba2;">Identifier</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #5f3a86;"></span>
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #e2eef7;"></span>
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #e2eef7;"></span>
+          </div>
+        </div>
+
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 16px; padding: 22px;">
+
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Titre</span>
+            <div style="display: flex; align-items: center; min-height: 52px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-size: 16px; color: #072b45;">Le Forez pittoresque</div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Auteur ou mention</span>
+            <div style="display: flex; align-items: center; min-height: 52px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-size: 16px; color: #072b45;">Louis Bréchignac</div>
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 7px;">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Éditeur</span>
+              <div style="display: flex; align-items: center; min-height: 52px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-size: 16px; color: #072b45;">Saint-Étienne</div>
+            </div>
+            <div style="flex: none; width: 110px; display: flex; flex-direction: column; gap: 7px;">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Année</span>
+              <div style="display: flex; align-items: center; min-height: 52px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 16px; color: #072b45;">1932</div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Rayon d'affichage</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+              <span style="font-size: 16px; color: #072b45;">Régionalisme</span>
+              <svg width="13" height="9" viewBox="0 0 10 6" fill="none" stroke="#6d8ba2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l4 4 4-4"></path></svg>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">ISBN — facultatif</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 16px; border: 1px dashed #9dc2da; border-radius: 4px; background: #f7fbfe;">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; color: #9dc2da;">aucun</span>
+              <span style="font-size: 13.5px; font-weight: 600; color: #0c6ea6;">Scanner</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex: none; padding: 18px 22px 28px; border-top: 1px solid #e2eef7; background: #ffffff;">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 60px; border-radius: 999px; background: #f0801c;">
+            <span style="font-size: 17px; font-weight: 600; color: #ffffff;">Continuer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 7px; max-width: 390px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 2px; background: #5f3a86; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .1em; color: #ffffff;">3</span>
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 25px;">Décrire &amp; prix</span>
+        </div>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #6d8ba2;">Le prix domine l'écran, et la consigne sur les défauts est écrite là où elle sert.</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; border: 1px solid #d9e9f4; background: #f7fbfe; box-shadow: 0 40px 80px -50px rgba(4, 29, 48, .5);">
+        <span style="flex: none; height: 3px; background-image: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+
+        <div style="flex: none; display: flex; flex-direction: column; gap: 12px; padding: 18px 22px 16px; border-bottom: 1px solid #e2eef7; background: #ffffff;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #5f3a86;">Étape 2 sur 3</span>
+            <span style="font-size: 13.5px; color: #6d8ba2;">Décrire &amp; prix</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #5f3a86;"></span>
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #5f3a86;"></span>
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #e2eef7;"></span>
+          </div>
+        </div>
+
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 18px; padding: 22px;">
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #5f3a86;">Prix ferme</span>
+            <div style="display: flex; align-items: center; gap: 10px; min-height: 76px; padding: 0 20px; border: 1.5px solid #d9c8ea; border-radius: 4px; background: #ffffff;">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 34px; font-weight: 600; color: #5f3a86;">24</span>
+              <span style="font-family: 'Newsreader', Georgia, serif; font-size: 30px; color: #8a6fae;">€</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">État</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; min-height: 46px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-size: 14.5px; color: #4e6c84;">Comme neuf</span>
+              <span style="display: inline-flex; align-items: center; min-height: 46px; padding: 0 16px; border: 1.5px solid #5f3a86; border-radius: 4px; background: #f3edf9; font-size: 14.5px; font-weight: 600; color: #5f3a86;">Bon, défauts signalés</span>
+              <span style="display: inline-flex; align-items: center; min-height: 46px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-size: 14.5px; color: #4e6c84;">Usé</span>
+              <span style="display: inline-flex; align-items: center; min-height: 46px; padding: 0 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-size: 14.5px; color: #4e6c84;">Abîmé</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Description publique</span>
+            <div style="min-height: 116px; padding: 14px 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff; font-size: 15px; line-height: 1.6; color: #072b45;">Couverture cartonnée d'époque, coiffes frottées. Les 32 planches hors-texte sont présentes.</div>
+            <span style="font-size: 13px; line-height: 1.5; color: #6d8ba2;">Dites les défauts. Un acheteur déçu en caisse, c'est un don qui revient.</span>
+          </div>
+
+          <div style="display: flex; gap: 11px; padding: 13px 15px; background: #f3edf9;">
+            <span style="flex: none; margin-top: 2px; width: 8px; height: 8px; border-radius: 999px; background: #5f3a86;"></span>
+            <span style="font-size: 13px; line-height: 1.55; color: #33536e;">Ces informations seront visibles publiquement une fois la fiche relue et publiée.</span>
+          </div>
+        </div>
+
+        <div style="flex: none; padding: 18px 22px 28px; border-top: 1px solid #e2eef7; background: #ffffff;">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 60px; border-radius: 999px; background: #f0801c;">
+            <span style="font-size: 17px; font-weight: 600; color: #ffffff;">Continuer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 7px; max-width: 390px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 2px; background: #5f3a86; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .1em; color: #ffffff;">4</span>
+          <span style="font-family: 'Newsreader', Georgia, serif; font-size: 25px;">Photographier</span>
+        </div>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #6d8ba2;">Hors réseau, les photos attendent dans le téléphone. Le bandeau le dit sans dramatiser.</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; width: 390px; height: 844px; overflow: hidden; border: 1px solid #d9e9f4; background: #f7fbfe; box-shadow: 0 40px 80px -50px rgba(4, 29, 48, .5);">
+        <span style="flex: none; height: 3px; background-image: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+
+        <div style="flex: none; display: flex; flex-direction: column; gap: 12px; padding: 18px 22px 16px; border-bottom: 1px solid #e2eef7; background: #ffffff;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #5f3a86;">Étape 3 sur 3</span>
+            <span style="font-size: 13.5px; color: #6d8ba2;">Photos</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #5f3a86;"></span>
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #5f3a86;"></span>
+            <span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: #5f3a86;"></span>
+          </div>
+        </div>
+
+        <div style="flex: none; display: flex; align-items: center; gap: 10px; margin: 16px 22px 0; padding: 12px 15px; border: 1px solid #f0c897; background: #fff5e8;">
+          <span style="flex: none; width: 8px; height: 8px; border-radius: 999px; background: #dc6412;"></span>
+          <span style="font-size: 13px; line-height: 1.5; color: #33536e;">Hors réseau · 3 photos en attente d'envoi, rien n'est perdu</span>
+        </div>
+
+        <div style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 14px; padding: 18px 22px;">
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <div style="position: relative; height: 168px; display: flex; align-items: center; justify-content: center; border: 1.5px solid #5f3a86; background-image: repeating-linear-gradient(135deg, #ece3f6 0 8px, #f7f3fc 8px 16px);">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #8a6fae;">Livre fermé</span>
+              <span style="position: absolute; left: 8px; top: 8px; padding: 3px 8px; border-radius: 999px; background: #5f3a86; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 8px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #ffffff;">Vignette</span>
+            </div>
+            <div style="position: relative; height: 168px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #e9f4fb 0 8px, #f7fbfe 8px 16px);">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #9dc2da;">Page de titre</span>
+            </div>
+            <div style="position: relative; height: 168px; display: flex; align-items: center; justify-content: center; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #e9f4fb 0 8px, #f7fbfe 8px 16px);">
+              <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: #9dc2da;">Coiffe frottée</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 168px; border: 1.5px dashed #9dc2da; background: #ffffff;">
+              <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; background: #e9f4fb;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3.6 8.4a1.6 1.6 0 0 1 1.6-1.6h2.1l1.2-2h7l1.2 2h2.1a1.6 1.6 0 0 1 1.6 1.6v8.8a1.6 1.6 0 0 1-1.6 1.6H5.2a1.6 1.6 0 0 1-1.6-1.6Z"></path>
+                  <circle cx="12" cy="12.6" r="3.2"></circle>
+                </svg>
+              </span>
+              <span style="font-size: 14px; font-weight: 600; color: #0c6ea6;">Prendre une photo</span>
+            </div>
+          </div>
+          <span style="font-size: 13px; line-height: 1.5; color: #6d8ba2;">Appuyez longuement sur une photo pour la déplacer. La première est celle qui s'affichera dans la liste.</span>
+        </div>
+
+        <div style="flex: none; display: flex; flex-direction: column; gap: 12px; padding: 18px 22px 28px; border-top: 1px solid #e2eef7; background: #ffffff;">
+          <div style="display: flex; align-items: center; justify-content: center; min-height: 60px; border-radius: 999px; background: #f0801c;">
+            <span style="font-size: 17px; font-weight: 600; color: #ffffff;">Enregistrer en brouillon</span>
+          </div>
+          <span style="text-align: center; font-size: 12.5px; line-height: 1.5; color: #6d8ba2;">La fiche sera relue puis publiée depuis le portail.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+</body>
+</html>
