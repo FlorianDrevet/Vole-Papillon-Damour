@@ -207,7 +207,7 @@ worker de `main.bicep`.
 ### Variables d'environnement du Worker
 
 ```
-SocialImport__Schedule            0 */30 * * * *
+SocialImport__Schedule            0 0 0,12 * * *
 SocialImport__GraphApiVersion     v22.0
 SocialImport__UserId              <id du compte professionnel>
 SocialImport__ImportFloorDate     <date de mise en service>

@@ -8,7 +8,7 @@ La présidente publie sur Facebook
         ▼
 Le post apparaît sur instagram.com/vole_papillon_damour
         │
-        │  ≤ 30 min
+        │  ≤ 12 h
         ▼
 [Minuteur]  La fonction d'import se réveille dans le Worker
         │
@@ -43,7 +43,7 @@ comme importé, il sera donc retenté au passage suivant.
 
 | Étape | Comportement en cas d'échec |
 |---|---|
-| Appel à l'API Meta | Le passage s'arrête, sans effet de bord. Retenté dans 30 min. Trois échecs consécutifs déclenchent une alerte (`ENF-ACT-06`) |
+| Appel à l'API Meta | Le passage s'arrête, sans effet de bord. Retenté au passage suivant, au plus tard 12 h plus tard. Trois échecs consécutifs déclenchent une alerte (`ENF-ACT-06`) |
 | Jeton expiré ou révoqué | Idem, avec une alerte distincte et immédiate — c'est une panne humaine, pas un incident réseau (`ENF-ACT-05`) |
 | Téléchargement d'une image | Le média entier est abandonné pour ce passage. Une actualité amputée d'une photo serait pire qu'une actualité en retard |
 | Génération du titre | L'actualité **est créée quand même**, avec le titre de repli et le marqueur « titre à revoir » (`RG-ACT-20`) |
