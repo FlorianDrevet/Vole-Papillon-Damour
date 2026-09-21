@@ -180,28 +180,113 @@ describe('ScanAuthService', () => {
     }
   });
 
-  it('does not retry a silent renewal failure that requires interaction', () => {
-    jasmine.clock().install();
+  describe('when the session can only be restored interactively', () => {
+    const reauthenticationKey = 'vpd-scan-reauthentication-attempt';
 
-    try {
+    beforeEach(() => sessionStorage.removeItem(reauthenticationKey));
+    afterEach(() => sessionStorage.removeItem(reauthenticationKey));
+
+    it('redirects straight to sign-in instead of showing the degraded home screen', () => {
       const account = createAccount('tri@example.org', 'Tri', ['Tri']);
       const instance = createMsalInstance([account]);
       const broadcast = createBroadcastService();
       const msal = createMsalService(instance, createAccessToken(['Tri']));
       const service = new ScanAuthService(msal, broadcast.service);
 
-      const interactionRequired = new InteractionRequiredAuthError('interaction_required', 'test-correlation-id');
       broadcast.subject.next(
-        {eventType: EventType.ACQUIRE_TOKEN_FAILURE, error: interactionRequired} as unknown as EventMessage,
+        {eventType: EventType.ACQUIRE_TOKEN_FAILURE, error: interactionRequired()} as unknown as EventMessage,
       );
-      expect(service.authState.status).toBe('degraded');
 
-      jasmine.clock().tick(60_000);
+      expect(service.authState.status).toBe('reauthenticating');
+      const {pathname, search, hash} = window.location;
+      expect(msal.loginRedirect).toHaveBeenCalledOnceWith({
+        ...loginRequest,
+        loginHint: 'tri@example.org',
+        redirectStartPage: `${window.location.origin}${pathname}${search}${hash}`,
+      });
+    });
+
+    it('redirects on startup when the cached refresh token has expired', () => {
+      const storageKey = 'vpd-scan-local-authorization';
+      const account = createAccount('expired@example.org', 'Tri', ['Tri']);
+      new ScanAuthService(
+        createMsalService(createMsalInstance([account]), createAccessToken(['Tri'])),
+        createBroadcastService().service,
+      );
+
+      const msal = createMsalService(createMsalInstance([account]), createAccessToken(['Tri']));
+      msal.acquireTokenSilent.and.returnValue(throwError(() => interactionRequired()));
+      const service = new ScanAuthService(msal, createBroadcastService().service);
+
+      expect(service.authState.status).toBe('reauthenticating');
+      expect(msal.loginRedirect).toHaveBeenCalledTimes(1);
+      localStorage.removeItem(storageKey);
+    });
+
+    it('keeps the degraded mode while offline and redirects once back online', () => {
+      const onLine = spyOnProperty(navigator, 'onLine').and.returnValue(false);
+      const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+      const instance = createMsalInstance([account]);
+      const broadcast = createBroadcastService();
+      const msal = createMsalService(instance, createAccessToken(['Tri']));
+      const service = new ScanAuthService(msal, broadcast.service);
+
+      broadcast.subject.next(
+        {eventType: EventType.ACQUIRE_TOKEN_FAILURE, error: interactionRequired()} as unknown as EventMessage,
+      );
 
       expect(service.authState.status).toBe('degraded');
-      expect(msal.acquireTokenSilent).toHaveBeenCalledTimes(1);
-    } finally {
-      jasmine.clock().uninstall();
+      expect(service.canSort).toBeTrue();
+      expect(msal.loginRedirect).not.toHaveBeenCalled();
+
+      onLine.and.returnValue(true);
+      msal.acquireTokenSilent.and.returnValue(throwError(() => interactionRequired()));
+      window.dispatchEvent(new Event('online'));
+
+      expect(service.authState.status).toBe('reauthenticating');
+      expect(msal.loginRedirect).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to the reconnect banner right after an unsuccessful redirect', () => {
+      jasmine.clock().install();
+
+      try {
+        const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+        const instance = createMsalInstance([account]);
+        const broadcast = createBroadcastService();
+        const msal = createMsalService(instance, createAccessToken(['Tri']));
+        const service = new ScanAuthService(msal, broadcast.service);
+        sessionStorage.setItem(reauthenticationKey, String(Date.now()));
+
+        broadcast.subject.next(
+          {eventType: EventType.ACQUIRE_TOKEN_FAILURE, error: interactionRequired()} as unknown as EventMessage,
+        );
+
+        expect(service.authState.status).toBe('degraded');
+        expect(msal.loginRedirect).not.toHaveBeenCalled();
+
+        jasmine.clock().tick(60_000);
+
+        expect(msal.acquireTokenSilent).toHaveBeenCalledTimes(1);
+      } finally {
+        jasmine.clock().uninstall();
+      }
+    });
+
+    it('clears the loop guard once a token is acquired again', () => {
+      sessionStorage.setItem(reauthenticationKey, String(Date.now()));
+      const account = createAccount('tri@example.org', 'Tri', ['Tri']);
+
+      new ScanAuthService(
+        createMsalService(createMsalInstance([account]), createAccessToken(['Tri'])),
+        createBroadcastService().service,
+      );
+
+      expect(sessionStorage.getItem(reauthenticationKey)).toBeNull();
+    });
+
+    function interactionRequired(): InteractionRequiredAuthError {
+      return new InteractionRequiredAuthError('interaction_required', 'test-correlation-id');
     }
   });
 

@@ -18,6 +18,12 @@ import {loginRequest} from './msal-config';
 // stayed up forever until they manually logged out and back in.
 const DEGRADED_RETRY_DELAY_MS = 15_000;
 const DEGRADED_RETRY_MAX_ATTEMPTS = 5;
+// When the refresh token itself is no longer usable, the volunteer is sent
+// straight to the sign-in page instead of landing on the home screen with a
+// "reconnect" banner. If a previous automatic redirect came back less than
+// this long ago without a usable token, fall back to the banner rather than
+// bouncing forever between the app and the sign-in page.
+const REAUTHENTICATION_LOOP_GUARD_MS = 120_000;
 
 export const SCAN_REQUIRED_ROLE = 'Tri, Caisse ou Livres rares';
 export const SCAN_TRI_ROLE = 'Tri';
@@ -29,7 +35,8 @@ export type ScanAuthStatus =
   | 'unauthenticated'
   | 'unauthorized'
   | 'authorized'
-  | 'degraded';
+  | 'degraded'
+  | 'reauthenticating';
 
 export interface ScanAuthState {
   status: ScanAuthStatus;
@@ -41,6 +48,7 @@ export interface ScanAuthState {
 @Injectable({providedIn: 'root'})
 export class ScanAuthService {
   private static readonly localAuthorizationStorageKey = 'vpd-scan-local-authorization';
+  private static readonly reauthenticationAttemptStorageKey = 'vpd-scan-reauthentication-attempt';
   private readonly accountSubject = new BehaviorSubject<AccountInfo | null>(null);
   private readonly authStateSubject = new BehaviorSubject<ScanAuthState>({
     status: 'checking',
@@ -233,6 +241,7 @@ export class ScanAuthService {
 
         if (status === 'authorized') {
           this.rememberLocalAuthorization(account, roles);
+          this.forgetReauthenticationAttempt();
         } else {
           this.forgetLocalAuthorization(account);
         }
@@ -266,6 +275,10 @@ export class ScanAuthService {
     const roles = this.getLocalAuthorizationRoles(account);
     if (!roles || !hasScanRole(roles)) {
       this.publishAccount(null);
+      return;
+    }
+
+    if (error instanceof InteractionRequiredAuthError && this.tryReauthenticate(account)) {
       return;
     }
 
@@ -339,6 +352,7 @@ export class ScanAuthService {
 
         if (status === 'authorized') {
           this.rememberLocalAuthorization(account, roles);
+          this.forgetReauthenticationAttempt();
         } else {
           this.forgetLocalAuthorization(account);
         }
@@ -356,12 +370,78 @@ export class ScanAuthService {
         }
 
         if (error instanceof InteractionRequiredAuthError) {
+          this.tryReauthenticate(account);
           return;
         }
 
         this.scheduleDegradedRetry(account, attempt + 1);
       },
     });
+  }
+
+  /**
+   * Sends the volunteer to the sign-in page when the session can only be
+   * restored interactively. Offline devices keep the degraded mode so that
+   * scanning keeps working; the `online` listener retries and lands here once
+   * the network is back. Returns false when the redirect was not started.
+   */
+  private tryReauthenticate(account: AccountInfo): boolean {
+    if (
+      typeof window === 'undefined' ||
+      (typeof navigator !== 'undefined' && navigator.onLine === false) ||
+      this.interactionStatus !== InteractionStatus.None ||
+      this.hasRecentReauthenticationAttempt()
+    ) {
+      return false;
+    }
+
+    this.clearDegradedRetry();
+    this.authorizationCheck += 1;
+    this.rememberReauthenticationAttempt();
+    this.accountSubject.next(account);
+    this.authStateSubject.next({
+      status: 'reauthenticating',
+      account,
+      roles: [],
+      requiredRole: SCAN_REQUIRED_ROLE,
+    });
+
+    const {pathname, search, hash} = window.location;
+    this.msalService.loginRedirect({
+      ...loginRequest,
+      loginHint: account.username || undefined,
+      redirectStartPage: new URL(`${pathname}${search}${hash}`, window.location.origin).href,
+    }).subscribe({
+      error: (redirectError: unknown) => this.publishDegradedAccount(account, redirectError),
+    });
+    return true;
+  }
+
+  private hasRecentReauthenticationAttempt(): boolean {
+    try {
+      const rawAttempt = sessionStorage.getItem(ScanAuthService.reauthenticationAttemptStorageKey);
+      const attemptedAt = rawAttempt === null ? Number.NaN : Number(rawAttempt);
+      return Number.isFinite(attemptedAt)
+        && Date.now() - attemptedAt < REAUTHENTICATION_LOOP_GUARD_MS;
+    } catch {
+      return false;
+    }
+  }
+
+  private rememberReauthenticationAttempt(): void {
+    try {
+      sessionStorage.setItem(ScanAuthService.reauthenticationAttemptStorageKey, String(Date.now()));
+    } catch {
+      // Without storage the loop guard is best effort; MSAL still refuses concurrent interactions.
+    }
+  }
+
+  private forgetReauthenticationAttempt(): void {
+    try {
+      sessionStorage.removeItem(ScanAuthService.reauthenticationAttemptStorageKey);
+    } catch {
+      // Ignore storage failures.
+    }
   }
 
   private rememberLocalAuthorization(account: AccountInfo, roles: readonly string[]): void {
