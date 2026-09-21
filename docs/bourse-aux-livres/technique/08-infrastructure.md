@@ -185,9 +185,11 @@ portail a confirmé `Standard S1` après le déploiement d'infrastructure du dé
 
 ### L'observabilité, et son seul risque financier
 
-`DT-16` retient de **ne pas échantillonner** : les volumes sont trop faibles pour que jeter
-des traces ait un sens, et l'événement qu'on cherchera arrive une fois par mois (`11` §5).
-Le raisonnement tient — mais il retire le garde-fou habituel.
+`DT-16` est maintenant différencié par environnement. En DEV, le sampling d'ingestion est
+à **25 %** pour le Website, le BackOffice et le Catalog public ; l'API, le worker et la
+Scanette restent à 100 % car leurs signaux alimentent le diagnostic et les alertes
+opérationnelles. La production conserve 100 % par défaut. Le réglage réduit donc le
+volume de télémétrie publique sans jeter les erreurs backend utilisées par les alertes.
 
 Le risque n'est donc pas le régime nominal, qui reste très en dessous de ce qui compte. Le
 risque est **une boucle bavarde** : un rattrapage mal réglé, une journalisation SQL laissée
@@ -196,6 +198,8 @@ active, un réessai en cascade. Ça monte vite, et en silence.
 | Garde-fou | Où |
 |---|---|
 | **Plafond journalier** sur chaque Application Insights | En Bicep, dès la création de la ressource — pas après la première facture |
+| **Sampling d'ingestion différencié** | 25 % sur les composants UI/publics du DEV ; 100 % sur les composants opérationnels |
+| **Fréquence des alertes planifiées** | DEV : `PT6H` (quatre évaluations par jour) ; valeur par défaut : `PT5M` |
 | Rétention à la durée incluse | Au-delà, le diagnostic passe par les données métier, conservées par ailleurs (`ENF-22`) |
 | Journalisation SQL désactivée en production | Premier poste d'ingestion inutile, et il contient des valeurs de paramètres |
 

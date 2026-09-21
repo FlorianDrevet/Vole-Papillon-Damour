@@ -141,46 +141,40 @@ tableaux de bord d'infrastructure fournis par défaut sont, ici, une distraction
 
 ## 5. L'échantillonnage
 
-**Aucun échantillonnage en v1.** Et le réglage est explicite, pas subi.
+Le sampling est maintenant **différencié par environnement et par rôle**. En DEV,
+`applicationInsightsUiSamplingPercentage = 25` applique un sampling d'ingestion aux
+composants Website, BackOffice et Catalog, qui portent la télémétrie publique la plus
+susceptible de grossir. L'API, le worker et la Scanette restent à 100 % : leurs traces,
+requêtes et exceptions servent directement au diagnostic et aux alertes opérationnelles.
+La production garde 100 % par défaut.
 
-Les volumes le permettent largement : quelques milliers de scans par bourse, quelques
-dizaines d'e-mails par semaine, 2,5 requêtes par seconde en pointe. L'échantillonnage est
-un outil pour les services à fort trafic, où l'on peut jeter 90 % des traces sans rien
-perdre parce que le millier restant contient déjà tous les cas.
+Il s'agit du `SamplingPercentage` du composant Application Insights, donc d'un filtrage
+à l'ingestion. Le sampling source OpenTelemetry reste explicitement à 100 % dans les
+processus API, worker et Catalog afin de préserver la corrélation et les traces complètes
+avant ce filtrage. Cela ne réduit pas les journaux plateforme Container Apps ou les
+événements système du workspace ; le plafond journalier et la fréquence des alertes restent
+donc nécessaires.
 
-**Ici, il jetterait exactement ce dont on a besoin.** Le bogue qu'on cherchera arrive une
-fois par mois, sur un appareil, dans une session. Une trace échantillonnée à 10 % a neuf
-chances sur dix de l'avoir perdue — et c'est la seule qui comptait.
+Les réglages runtime restent explicites et sans limiteur caché :
 
-Deux précautions concrètes :
-
-- **Fixer le taux à 1.0 explicitement** dans la configuration du distributeur Azure
-  Monitor, et écrire pourquoi à côté. Un réglage laissé par défaut est un réglage que
-  quelqu'un « optimisera » un jour sans savoir ce qu'il jette.
-- **Vérifier qu'aucun échantillonnage adaptatif n'est actif.** C'est le piège : il se
-  déclenche seul sous charge, et sa première victime est la rafale de scans d'une session
-  de tri — le moment précis où l'on veut tout voir.
-
-**Ce piège s'est réellement produit.** `Azure.Monitor.OpenTelemetry.AspNetCore` 1.5 a changé
-son défaut pour un limiteur à 5 traces par seconde, et le `host.json` du worker activait
-l'échantillonnage adaptatif. Les réglages en place :
-
-| Hôte | Réglage explicite |
+| Hôte | Réglage source |
 |---|---|
 | API | `AzureMonitorTelemetry.ConfigureSampling` : `SamplingRatio = 1`, `TracesPerSecond = null` (couvert par un test) |
 | Worker | Mêmes options sur `UseAzureMonitorExporter` ; `host.json` en mode OpenTelemetry, sans `samplingSettings` |
 | Catalogue SSR | `samplingRatio: 1` et `tracesPerSecond: 0` — sans ce `0`, la distribution Node limite aussi le débit |
 
 Toute montée de version d'un de ces paquets doit relire son journal des modifications à
-la recherche du mot « sampler ».
+la recherche du mot « sampler ». Toute modification du taux DEV doit aussi vérifier que
+les requêtes d'alerte continuent de cibler des signaux backend non échantillonnés.
 
 **Niveaux de journalisation en production.** L'API tournait avec `Default: Error` : aucun fait
 `Information` n'était ingéré. `appsettings.json` pose désormais `Information` par défaut et
 `Warning` pour `Microsoft.AspNetCore`, `Microsoft.EntityFrameworkCore` (donc pas de SQL),
 `Microsoft.Identity` et `System.Net.Http.HttpClient`, dont les dépendances sont déjà tracées.
 
-**Le levier de coût n'est pas l'échantillonnage, c'est la rétention et le plafond
-journalier** (§8). Ils se règlent sans rien perdre de la fenêtre de diagnostic utile.
+**Les leviers de coût sont désormais combinés** : sampling public limité en DEV, alertes
+planifiées espacées à quatre évaluations par jour en DEV, rétention incluse et plafond
+journalier (§8). Les signaux backend opérationnels restent complets.
 
 ## 6. La journalisation
 
@@ -518,17 +512,19 @@ Paramètres d'environnement > Notifications par e-mail*, et les contacts de fact
 | **E-mails d'alerte en échec** | `AlertFailed > 0` dans le compte rendu du balayage | 1 |
 | Import social (échecs, authentification, jeton) | Journaux du worker | 0 à 1 |
 | Métadonnées lentes | `/books/{isbn13}/metadata` > 3 s | 2 |
-| **Erreurs serveur API** | ≥ 5 réponses 5xx en 15 min | 1 |
-| **Opération API lente** | P95 > 2 s sur une opération d'au moins 10 appels, sur 30 min | 2 |
-| **SQL lent** | ≥ 10 appels SQL > 1 s en 15 min pour un même service | 2 |
-| **Exceptions serveur répétées** | Même `ProblemId` ≥ 5 fois en 15 min (API, worker, SSR) | 2 |
+| **Erreurs serveur API** | ≥ 5 réponses 5xx dans la fenêtre configurée (DEV : 6 h) | 1 |
+| **Opération API lente** | P95 > 2 s sur une opération d'au moins 10 appels dans la fenêtre configurée | 2 |
+| **SQL lent** | ≥ 10 appels SQL > 1 s dans la fenêtre configurée pour un même service | 2 |
+| **Exceptions serveur répétées** | Même `ProblemId` ≥ 5 fois dans la fenêtre configurée (API, worker, SSR) | 2 |
 | **Failure Anomalies** | Hausse anormale du taux d'échec (apprentissage Azure) | 2 |
 | **Disponibilité** | API `/health`, site, catalogue, scan : au moins 2 régions en échec | 1 |
 
 Les tests de disponibilité sont la seule détection qui fonctionne **sans trafic** : en
 dehors des bourses, une panne totale ne produit aucune requête en échec. Ils sont facturés
 à l'exécution (environ 0,0005 € par région et par passage) : 4 tests, 3 régions, toutes les
-15 minutes, soit de l'ordre de 17 € par mois. `availabilityTestsEnabled = false` les retire.
+15 minutes, soit de l'ordre de 17 € par mois. En DEV, `availabilityTestsEnabled = false`
+les laisse déclarés mais désactive à la fois le test et son alerte ; cette forme est
+volontaire pour qu'un déploiement incrémental mette aussi à jour les ressources existantes.
 
 ### Coût et garde-fous
 
@@ -540,6 +536,8 @@ mal réglé ou une boucle bavarde peut le faire monter vite, et silencieusement.
 |---|---|
 | **Plafond journalier** sur chaque Application Insights | Le filet de sécurité contre la boucle bavarde. À poser dès la création, pas après la facture |
 | **Rétention** | La durée incluse suffit : au-delà, le diagnostic passe par les données métier, qui sont conservées (`ENF-22`) |
+| **Sampling d'ingestion DEV** | 25 % sur Website, BackOffice et Catalog ; API, worker et Scan à 100 % |
+| **Cadence des alertes DEV** | `PT6H`, soit quatre évaluations par jour ; la production garde la valeur par défaut `PT5M` |
 | Journalisation SQL en production | Désactivée |
 
 ## 9. Ce que cela impose au fil du développement

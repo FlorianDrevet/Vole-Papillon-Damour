@@ -226,6 +226,16 @@ param bookAlertsUnsubscribeSigningKey = readEnvironmentVariable('BOOK_ALERTS_UNS
 // Azure infrastructure alerts go to the maintainer only. The association mailbox
 // (volepapillondamour@sfr.fr) is a public contact address and must not receive them.
 param monitoringAlertEmail = 'afdrevet@outlook.com'
+// DEV keeps availability resources deployed but inactive, so an incremental
+// deployment also disables resources that were created by an earlier version.
+param availabilityTestsEnabled = false
+// UI/public telemetry is high-volume and not used for operational alerting.
+// Keep API, worker and scan Application Insights at their module default (100%).
+param applicationInsightsUiSamplingPercentage = 25
+// Four evaluations per day for DEV scheduled-query alerts.
+param monitoringEvaluationFrequency = 'PT6H'
+param monitoringWindowSize = 'PT6H'
+param monitoringQueryLookback = '6h'
 param corsAllowedOrigins = [
   'https://volepapillondamour.fr'
   'https://www.volepapillondamour.fr'

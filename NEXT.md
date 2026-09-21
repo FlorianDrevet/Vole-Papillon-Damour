@@ -23,6 +23,17 @@
 | **Dernière mise à jour** | 2026-09-17 — les lots 0 à 10 sont implémentés ; la validation finale couvre 545 tests backend, 313 Catalog, 241 Scan, 6 bootstrap Scan, 5 bootstrap BackOffice, les tests Angular BackOffice et les trois builds Angular. Le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
+### État actualisé — 2026-09-22 — réduction des coûts de supervision DEV
+
+Le template Bicep prépare la réduction de la facture Azure Monitor du DEV : les quatre
+tests de disponibilité restent déclarés mais sont désactivés par `availabilityTestsEnabled = false`,
+les alertes planifiées et les *Failure Anomalies* passent à quatre évaluations par jour,
+et l'ingestion Application Insights est échantillonnée à 25 % pour Website, BackOffice et
+Catalog. L'API, le worker et la Scanette restent à 100 % pour conserver les signaux
+opérationnels. Aucun déploiement Azure n'a encore été effectué depuis ce worktree ; il faudra
+appliquer la PR puis vérifier dans Cost Management et dans les règles Azure que les tests
+sont inactifs et que la consommation baisse.
+
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 
 La liste Scanette des livres rares protège désormais les appels `/rare-books/*` avec le
