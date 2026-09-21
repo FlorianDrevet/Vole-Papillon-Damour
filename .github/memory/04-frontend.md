@@ -373,11 +373,19 @@ synchronization waits for a fresh token; an explicit logout or server 401/403 cl
 local authorization marker. The tri scan view starts the ZXing camera automatically,
 keeps manual/photo fallback, and no longer renders the former top toast stack. Both Scan environments use the tenant-scoped CIAM
 authority; the login request carries an explicit root return page and surfaces redirect
-failures inline. The MSAL interceptor protects `/scan/*` with the API bearer token; the
-wildcard is required for nested delta/session endpoints. CI validation covers 79
+failures inline. The MSAL interceptor protects `/scan/*` and `/rare-books/*` with the API
+bearer token; the wildcards are required for nested delta/session and rare-book administration
+endpoints. CI validation covers 79
 ChromeHeadless tests, four bootstrap tests, the production build, and deployment workflow
 `33924618301`; the public HTTP smoke is green, while the interactive Tri retest still
 requires a signed-in browser/device.
+
+As of 2026-09-21, the Scan rare-book management list reports online refresh failures instead
+of silently keeping an indefinite loading state, offers an explicit retry action, and uses the
+shared butterflies loader. Its purple surface fills the viewport and scrolls internally, while
+the add-book action stays in the page header. MSAL and component regressions cover the bearer
+map and the loading/error/header states; authenticated production and responsive device checks
+remain manual gates.
 
 The 2026-09-04 Scan follow-up keeps the live camera open on the cash and consultation
 surfaces: it starts on entry and restarts after each decoded book, while the cash list is

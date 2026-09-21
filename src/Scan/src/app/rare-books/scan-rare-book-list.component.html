@@ -6,6 +6,9 @@
       <h1 id="rare-list-title">Livres rares</h1>
       <p>Créez les fiches au tri, puis relisez-les avant publication.</p>
     </div>
+    <button type="button" class="rare-add" (click)="openNew()">
+      <span aria-hidden="true">＋</span> Ajouter un livre rare
+    </button>
   </header>
 
   <scan-status-bar
@@ -20,8 +23,17 @@
     <input type="search" [(ngModel)]="search" placeholder="Titre, auteur, ISBN ou rayon">
   </label>
 
-  <section *ngIf="loading" class="rare-empty" role="status">Chargement des fiches rares…</section>
-  <p *ngIf="error" class="rare-error" role="alert">{{ error }}</p>
+  <div *ngIf="loading" class="rare-loading">
+    <vpd-loader
+      variant="butterflies"
+      logoSrc="assets/papillon_without_back.png"
+      label="Chargement des fiches rares"
+      detail="Récupération des fiches…"></vpd-loader>
+  </div>
+  <div *ngIf="error" class="rare-error" role="alert">
+    <p>{{ error }}</p>
+    <button type="button" class="rare-retry" (click)="reload()">Réessayer</button>
+  </div>
 
   <section *ngIf="!loading && !error" class="rare-list" aria-label="Fiches rares">
     <button
@@ -45,8 +57,4 @@
     </button>
     <p *ngIf="filteredBooks.length === 0" class="rare-empty">Aucune fiche ne correspond à cette recherche.</p>
   </section>
-
-  <button type="button" class="rare-add" (click)="openNew()">
-    <span aria-hidden="true">＋</span> Ajouter un livre rare
-  </button>
 </main>
