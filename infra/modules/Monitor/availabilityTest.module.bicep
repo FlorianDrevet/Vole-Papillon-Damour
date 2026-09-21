@@ -25,6 +25,9 @@ param url string
 @description('Resource ID of the action group notified on failure')
 param actionGroupId string
 
+@description('Whether the synthetic test and its alert are active')
+param enabled bool = true
+
 @description('Seconds between two runs from each location')
 @allowed([
   300
@@ -57,7 +60,7 @@ resource webTest 'Microsoft.Insights/webtests@2022-06-15' = {
   properties: {
     SyntheticMonitorId: name
     Name: displayName
-    Enabled: true
+    Enabled: enabled
     Frequency: frequencySeconds
     Timeout: 30
     Kind: 'standard'
@@ -86,7 +89,7 @@ resource availabilityAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   properties: {
     description: '${displayName}: at least two test locations failed.'
     severity: severity
-    enabled: true
+    enabled: enabled
     scopes: [
       webTest.id
       applicationInsightsId

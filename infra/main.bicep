@@ -211,8 +211,22 @@ param bookAlertsEmailEnabled bool = true
 @description('Email address receiving operational Azure Monitor alerts')
 param monitoringAlertEmail string
 
-@description('Deploy the synthetic availability tests (billed per execution, about EUR 17 per month with the defaults)')
+@description('Enable the synthetic availability tests (billed per execution, about EUR 17 per month with the defaults)')
 param availabilityTestsEnabled bool = true
+
+@description('Ingestion sampling percentage for browser and public SSR telemetry')
+@minValue(0)
+@maxValue(100)
+param applicationInsightsUiSamplingPercentage int = 100
+
+@description('How often Azure evaluates scheduled query alerts')
+param monitoringEvaluationFrequency string = 'PT5M'
+
+@description('Lookback window used by scheduled query alerts')
+param monitoringWindowSize string = 'PT15M'
+
+@description('KQL duration literal used by alerts with an explicit ago() lookback')
+param monitoringQueryLookback string = '15m'
 
 @description('Browser origins allowed to call the API')
 param corsAllowedOrigins string[]
@@ -413,6 +427,7 @@ module applicationInsightsWebsiteModule './modules/ApplicationInsights/applicati
     name: BuildResourceName('vpd-web', 'appi', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    samplingPercentage: applicationInsightsUiSamplingPercentage
   }
 }
 
@@ -424,6 +439,7 @@ module applicationInsightsBackOfficeModule './modules/ApplicationInsights/applic
     name: BuildResourceName('vpd-bo', 'appi', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    samplingPercentage: applicationInsightsUiSamplingPercentage
   }
 }
 
@@ -446,6 +462,7 @@ module applicationInsightsCatalogModule './modules/ApplicationInsights/applicati
     name: BuildResourceName('vpd-catalog', 'appi', env)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    samplingPercentage: applicationInsightsUiSamplingPercentage
   }
 }
 
@@ -480,13 +497,15 @@ module workerHeartbeatAlert './modules/Monitor/scheduledQueryRule.module.bicep' 
   params: {
     name: BuildResourceName('vpd-worker-heartbeat', 'alert', env)
     displayName: 'VPD worker heartbeat missing'
-    ruleDescription: 'The worker has not completed a sweep in the last 15 minutes.'
+    ruleDescription: 'The worker has not completed a sweep in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     query: 'AppTraces | where Message startswith "Worker sweep completed"'
     operator: 'LessThan'
     threshold: 1
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 1
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -497,13 +516,15 @@ module workerEnrichmentHeartbeatAlert './modules/Monitor/scheduledQueryRule.modu
   params: {
     name: BuildResourceName('vpd-worker-enrichment-heartbeat', 'alert', env)
     displayName: 'VPD worker enrichment heartbeat missing'
-    ruleDescription: 'The worker has not completed an enrichment run in the last 65 minutes.'
+    ruleDescription: 'The worker has not completed an enrichment run in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     query: 'AppTraces | where Message startswith "Worker enrichment completed"'
     operator: 'LessThan'
     threshold: 1
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 2
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -521,6 +542,8 @@ module lateAnnouncementAlert './modules/Monitor/scheduledQueryRule.module.bicep'
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 2
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -538,6 +561,8 @@ module lateAlertQueueAlert './modules/Monitor/scheduledQueryRule.module.bicep' =
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 2
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -548,13 +573,15 @@ module slowBookMetadataAlert './modules/Monitor/scheduledQueryRule.module.bicep'
   params: {
     name: BuildResourceName('vpd-book-metadata-slow', 'alert', env)
     displayName: 'Book metadata lookup is slow'
-    ruleDescription: 'At least one API book metadata request exceeded three seconds in the last 15 minutes.'
+    ruleDescription: 'At least one API book metadata request exceeded three seconds in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     query: 'AppRequests | where AppRoleName == "vpd-api" | where Url has "/books/" and Url has "/metadata" | where DurationMs > 3000'
     operator: 'GreaterThan'
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 2
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -565,14 +592,15 @@ module socialImportFailureAlert './modules/Monitor/scheduledQueryRule.module.bic
   params: {
     name: BuildResourceName('vpd-social-import-failures', 'alert', env)
     displayName: 'Social actuality import failed three times'
-    ruleDescription: 'Three consecutive social actuality import passes failed within the two-hour observation window.'
+    ruleDescription: 'Three consecutive social actuality import passes failed within the configured observation window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-    query: 'AppTraces | where TimeGenerated > ago(2h) | where Message startswith "Social actuality import completed." or Message startswith "Social actuality import authentication failed" or Message startswith "Social actuality import was throttled" or Message startswith "Social actuality import failed unexpectedly." | sort by TimeGenerated asc | serialize | extend IsFailure = iff(Message startswith "Social actuality import completed.", 0, 1) | extend FailureSequence = row_cumsum(1 - IsFailure) | summarize FailureCount = countif(IsFailure == 1), LastFailure = maxif(TimeGenerated, IsFailure == 1) by FailureSequence | where FailureCount >= 3 and LastFailure > ago(2h)'
+    query: 'AppTraces | where TimeGenerated > ago(${monitoringQueryLookback}) | where Message startswith "Social actuality import completed." or Message startswith "Social actuality import authentication failed" or Message startswith "Social actuality import was throttled" or Message startswith "Social actuality import failed unexpectedly." | sort by TimeGenerated asc | serialize | extend IsFailure = iff(Message startswith "Social actuality import completed.", 0, 1) | extend FailureSequence = row_cumsum(1 - IsFailure) | summarize FailureCount = countif(IsFailure == 1), LastFailure = maxif(TimeGenerated, IsFailure == 1) by FailureSequence | where FailureCount >= 3 and LastFailure > ago(${monitoringQueryLookback})'
     operator: 'GreaterThan'
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 1
-    windowSize: 'PT2H'
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -590,6 +618,8 @@ module socialImportAuthenticationAlert './modules/Monitor/scheduledQueryRule.mod
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 0
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -607,6 +637,8 @@ module socialImportTokenExpiryAlert './modules/Monitor/scheduledQueryRule.module
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 1
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -624,6 +656,8 @@ module alertDeliveryFailureAlert './modules/Monitor/scheduledQueryRule.module.bi
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 1
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -638,13 +672,15 @@ module apiServerErrorsAlert './modules/Monitor/scheduledQueryRule.module.bicep' 
   params: {
     name: BuildResourceName('vpd-api-server-errors', 'alert', env)
     displayName: 'API returns server errors'
-    ruleDescription: 'The API answered at least five 5xx responses in the last 15 minutes.'
+    ruleDescription: 'The API answered at least five 5xx responses in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     query: 'AppRequests | where AppRoleName == "vpd-api" | where toint(ResultCode) >= 500 | summarize Failures = count(), Operations = make_set(Name, 10) | where Failures >= 5'
     operator: 'GreaterThan'
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 1
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -655,14 +691,15 @@ module apiLatencyAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
   params: {
     name: BuildResourceName('vpd-api-latency', 'alert', env)
     displayName: 'API operation is slow'
-    ruleDescription: 'An API operation with at least ten calls had a P95 above two seconds over 30 minutes. Metadata lookups have their own rule.'
+    ruleDescription: 'An API operation with at least ten calls had a P95 above two seconds in the configured monitoring window. Metadata lookups have their own rule.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     query: 'AppRequests | where AppRoleName == "vpd-api" | where Name !contains "/health" and Name !contains "/metadata" | summarize Requests = count(), P95 = percentile(DurationMs, 95) by Name | where Requests >= 10 and P95 > 2000'
     operator: 'GreaterThan'
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 2
-    windowSize: 'PT30M'
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -673,13 +710,15 @@ module slowSqlAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
   params: {
     name: BuildResourceName('vpd-sql-slow', 'alert', env)
     displayName: 'SQL queries are slow'
-    ruleDescription: 'At least ten SQL calls from one service took more than one second in the last 15 minutes (missing index, lock, or DTU saturation).'
+    ruleDescription: 'At least ten SQL calls from one service took more than one second in the configured monitoring window (missing index, lock, or DTU saturation).'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     query: 'AppDependencies | where DependencyType =~ "SQL" | where DurationMs > 1000 | summarize SlowCalls = count(), P95 = percentile(DurationMs, 95) by AppRoleName | where SlowCalls >= 10'
     operator: 'GreaterThan'
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 2
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -690,13 +729,15 @@ module backendExceptionsAlert './modules/Monitor/scheduledQueryRule.module.bicep
   params: {
     name: BuildResourceName('vpd-backend-exceptions', 'alert', env)
     displayName: 'Backend exceptions are repeating'
-    ruleDescription: 'The same server-side exception occurred at least five times in 15 minutes in the API, the worker or the Catalog SSR host.'
+    ruleDescription: 'The same server-side exception occurred at least five times in the configured monitoring window in the API, the worker or the Catalog SSR host.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     query: 'AppExceptions | where ClientType != "Browser" | summarize Occurrences = count() by AppRoleName, ProblemId | where Occurrences >= 5'
     operator: 'GreaterThan'
     threshold: 0
     actionGroupId: monitoringActionGroup.outputs.resourceId
     severity: 2
+    evaluationFrequency: monitoringEvaluationFrequency
+    windowSize: monitoringWindowSize
     tags: tags
   }
 }
@@ -710,6 +751,7 @@ module apiFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' = {
     applicationInsightsName: applicationInsightsApiModule.outputs.name
     applicationInsightsId: applicationInsightsApiModule.outputs.resourceId
     actionGroupId: monitoringActionGroup.outputs.resourceId
+    frequency: monitoringEvaluationFrequency
     tags: tags
   }
 }
@@ -721,6 +763,7 @@ module workerFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' 
     applicationInsightsName: applicationInsightsWorkerModule.outputs.name
     applicationInsightsId: applicationInsightsWorkerModule.outputs.resourceId
     actionGroupId: monitoringActionGroup.outputs.resourceId
+    frequency: monitoringEvaluationFrequency
     tags: tags
   }
 }
@@ -732,6 +775,7 @@ module catalogFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep'
     applicationInsightsName: applicationInsightsCatalogModule.outputs.name
     applicationInsightsId: applicationInsightsCatalogModule.outputs.resourceId
     actionGroupId: monitoringActionGroup.outputs.resourceId
+    frequency: monitoringEvaluationFrequency
     tags: tags
   }
 }
@@ -740,7 +784,7 @@ module catalogFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep'
 // Observability - synthetic availability
 // -----------------------------------------------------------------------
 
-module apiAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+module apiAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = {
   name: 'apiAvailabilityTest'
   scope: applicationResourceGroup
   params: {
@@ -750,11 +794,12 @@ module apiAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = i
     applicationInsightsId: applicationInsightsApiModule.outputs.resourceId
     url: 'https://${containerAppApiModule.outputs.containerAppFqdn}/health'
     actionGroupId: monitoringActionGroup.outputs.resourceId
+    enabled: availabilityTestsEnabled
     tags: tags
   }
 }
 
-module websiteAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+module websiteAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = {
   name: 'websiteAvailabilityTest'
   scope: applicationResourceGroup
   params: {
@@ -764,11 +809,12 @@ module websiteAvailabilityTest './modules/Monitor/availabilityTest.module.bicep'
     applicationInsightsId: applicationInsightsWebsiteModule.outputs.resourceId
     url: 'https://${empty(websiteCustomDomain) ? containerAppWebsiteModule.outputs.containerAppFqdn : websiteCustomDomain}/'
     actionGroupId: monitoringActionGroup.outputs.resourceId
+    enabled: availabilityTestsEnabled
     tags: tags
   }
 }
 
-module catalogAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+module catalogAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = {
   name: 'catalogAvailabilityTest'
   scope: applicationResourceGroup
   params: {
@@ -778,11 +824,12 @@ module catalogAvailabilityTest './modules/Monitor/availabilityTest.module.bicep'
     applicationInsightsId: applicationInsightsCatalogModule.outputs.resourceId
     url: 'https://${empty(catalogCustomDomain) ? containerAppCatalogModule.outputs.containerAppFqdn : catalogCustomDomain}/'
     actionGroupId: monitoringActionGroup.outputs.resourceId
+    enabled: availabilityTestsEnabled
     tags: tags
   }
 }
 
-module scanAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = if (availabilityTestsEnabled) {
+module scanAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = {
   name: 'scanAvailabilityTest'
   scope: applicationResourceGroup
   params: {
@@ -792,6 +839,7 @@ module scanAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = 
     applicationInsightsId: applicationInsightsScanModule.outputs.resourceId
     url: 'https://${empty(scanCustomDomain) ? containerAppScanModule.outputs.containerAppFqdn : scanCustomDomain}/'
     actionGroupId: monitoringActionGroup.outputs.resourceId
+    enabled: availabilityTestsEnabled
     tags: tags
   }
 }

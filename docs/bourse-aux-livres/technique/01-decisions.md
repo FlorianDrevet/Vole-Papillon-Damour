@@ -843,7 +843,8 @@ Concrètement, quatre règles, détaillées en [`11-observabilite.md`](11-observ
 
 1. **OpenTelemetry**, exporté vers l'Application Insights déjà en place. Aucun second
    système d'observabilité, aucun agent tiers (`ENF-24`).
-2. **Aucun échantillonnage en v1**, et le réglage est explicite plutôt que subi (§5).
+2. **Un échantillonnage explicite et différencié** : 25 % d'ingestion sur les composants
+   UI/publics du DEV, 100 % sur les signaux opérationnels et par défaut en production (§5).
 3. **Les identifiants de corrélation traversent la frontière hors ligne** : le
    `ClientGestureId` de [`02`](02-modele-de-donnees.md) §2 est la clé qui relie un geste
    fait à 14 h sans réseau à sa transmission de 17 h 32 (§3).

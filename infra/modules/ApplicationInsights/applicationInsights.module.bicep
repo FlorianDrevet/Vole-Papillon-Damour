@@ -18,6 +18,8 @@ param name string
 param logAnalyticsWorkspaceId string
 
 @description('Sampling percentage (0-100)')
+@minValue(0)
+@maxValue(100)
 param samplingPercentage int = 100
 
 @description('Number of days to retain data')

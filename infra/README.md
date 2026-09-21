@@ -50,7 +50,12 @@ file d'e-mails en retard, e-mails en échec), l'import social, les performances 
 l'API (5xx, P95 par opération, métadonnées lentes), le SQL lent, les exceptions
 serveur répétées, les *Failure Anomalies* de l'API, du worker et du catalogue, et
 des tests de disponibilité multi-régions (API `/health`, site, catalogue, scan ;
-`availabilityTestsEnabled`, ~17 €/mois). Le classeur partagé
+`availabilityTestsEnabled`, ~17 €/mois). En DEV, ces tests restent déclarés mais
+sont désactivés et les règles d'alerte sont évaluées quatre fois par jour (`PT6H`).
+Les composants Website, BackOffice et Catalog utilisent aussi 25 % de sampling
+d'ingestion en DEV ; l'API, le worker et la Scanette restent à 100 % pour conserver
+les signaux opérationnels. Les valeurs par défaut de production restent à 100 % et
+les tests de disponibilité actifs. Le classeur partagé
 « VPD - Performance et santé » regroupe latences, dépendances, erreurs, worker et
 front-ends. La liste détaillée est dans
 `docs/bourse-aux-livres/technique/11-observabilite.md` §8. Un changement de

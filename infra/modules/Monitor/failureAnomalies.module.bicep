@@ -16,6 +16,9 @@ param applicationInsightsId string
 @description('Resource ID of the action group')
 param actionGroupId string
 
+@description('How often the smart detector evaluates telemetry')
+param frequency string = 'PT5M'
+
 @description('Resource tags')
 param tags object = {}
 
@@ -27,7 +30,7 @@ resource failureAnomalies 'Microsoft.AlertsManagement/smartDetectorAlertRules@20
     description: 'Detects an abnormal rise in failed requests or dependency calls compared with the learned baseline.'
     state: 'Enabled'
     severity: 'Sev2'
-    frequency: 'PT1M'
+    frequency: frequency
     detector: {
       id: 'FailureAnomaliesDetector'
     }

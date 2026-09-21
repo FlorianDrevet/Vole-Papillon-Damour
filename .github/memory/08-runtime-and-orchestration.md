@@ -131,6 +131,20 @@ The API startup wires:
 - Local solution builds on Windows fail on `Azure.Functions.Sdk` resolution for the generated
   `obj/azure_functions` project; this pre-exists on `main`, and the Worker project builds on its own.
 
+## DEV observability cost tuning — 2026-09-22
+
+- The DEV Bicep parameters disable the four synthetic availability tests without removing
+  their resources: `availabilityTestsEnabled = false` is passed into both the web test and
+  its metric alert so an incremental deployment also disables resources created earlier.
+- DEV scheduled query and Failure Anomalies rules use `PT6H`, with a six-hour KQL lookback
+  where a query embeds `ago()`: four evaluations per day instead of the default `PT5M`.
+- Application Insights ingestion sampling is 25% for Website, BackOffice and Catalog in
+  DEV; API, Worker and Scan remain at 100% because their telemetry feeds operational
+  diagnosis and alerts. Runtime OpenTelemetry sampling remains explicitly at 100%.
+- This is prepared in Bicep only; Azure deployment and a post-deployment cost check remain
+  pending. Platform/container diagnostic logs are not reduced by this Application Insights
+  sampling setting.
+
 ## Current DEV runtime — 2026-09-07
 
 - `src/Catalog/` is the public Angular SSR catalog. Its image is built from the `src/` context,
