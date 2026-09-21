@@ -46,15 +46,11 @@ export class ScanRareBookListComponent implements OnInit {
     try {
       this.books = await this.rareBooks.list();
       if (typeof navigator === 'undefined' || navigator.onLine) {
-        try {
-          this.books = await this.rareBooks.refreshFromServer();
-        } catch {
-          // The local list remains usable during a temporary outage.
-        }
+        this.books = await this.rareBooks.refreshFromServer();
       }
       this.pendingPhotoCount = await this.rareBooks.pendingPhotoCount();
     } catch {
-      this.error = 'Les fiches rares locales ne peuvent pas être chargées.';
+      this.error = 'Impossible de charger les fiches rares. Vérifiez votre connexion et réessayez.';
     } finally {
       this.loading = false;
     }

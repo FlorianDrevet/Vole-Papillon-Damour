@@ -1,10 +1,12 @@
 :host {
   display: block;
-  min-height: 100%;
+  min-height: 100dvh;
 }
 
 .rare-management-screen {
-  min-height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow-y: auto;
   padding: 1.25rem 1rem 6rem;
   background: #f7f3fc;
   color: #072b45;
@@ -175,27 +177,75 @@ h1 {
   text-align: center;
 }
 
+.rare-loading {
+  display: grid;
+  max-width: 54rem;
+  min-height: 9rem;
+  margin: 1rem auto;
+  place-items: center;
+  border: 1px solid #d9e9f4;
+  background: rgb(255 255 255 / 68%);
+}
+
 .rare-error {
   border-color: #b02a33;
   color: #8d1d25;
 }
 
+.rare-error p {
+  margin: 0;
+}
+
 .rare-add {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  min-height: 3.4rem;
+  display: inline-flex;
+  min-height: 2.85rem;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
   padding: 0 1rem;
   border: 0;
   border-radius: 999px;
   background: #5f3a86;
   box-shadow: 0 10px 24px rgb(95 58 134 / 30%);
   color: white;
+  cursor: pointer;
+  font: inherit;
   font-weight: 700;
+  white-space: nowrap;
+}
+
+.rare-retry {
+  min-height: 2.7rem;
+  margin-top: .8rem;
+  padding: .5rem 1rem;
+  border: 1px solid #8d1d25;
+  border-radius: 999px;
+  background: white;
+  color: #8d1d25;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.rare-add:focus-visible,
+.rare-retry:focus-visible {
+  outline: 3px solid #dc6412;
+  outline-offset: 3px;
 }
 
 @media (min-width: 700px) {
   .rare-management-screen {
     padding: 2rem 2rem 6rem;
+  }
+}
+
+@media (max-width: 699px) {
+  .rare-management-header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rare-add {
+    grid-column: 2;
+    justify-self: start;
   }
 }

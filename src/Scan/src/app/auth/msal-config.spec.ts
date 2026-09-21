@@ -32,6 +32,31 @@ describe('MSAL scan interceptor configuration', () => {
     expect(forwardedRequest.headers.get('Authorization')).toBe('Bearer api-access-token');
   });
 
+  it('adds the API bearer token to rare-book administration requests', () => {
+    const account = createAccount();
+    const msal = createMsalService(account);
+    const interceptor = new MsalInterceptor(
+      msalInterceptorConfig,
+      msal,
+      {normalize: (url: string) => url} as never,
+      {} as MsalBroadcastService,
+      document,
+    );
+    const request = new HttpRequest('GET', `${environment.apiUrl}/rare-books/admin?page=1`);
+    const next = {
+      handle: jasmine.createSpy('handle').and.returnValue(of(new HttpResponse({status: 200}))),
+    };
+
+    interceptor.intercept(request, next).subscribe();
+
+    expect(msal.acquireTokenSilent).toHaveBeenCalledWith({
+      account,
+      scopes: [environment.entra.apiScope],
+    });
+    const forwardedRequest = next.handle.calls.mostRecent().args[0] as HttpRequest<unknown>;
+    expect(forwardedRequest.headers.get('Authorization')).toBe('Bearer api-access-token');
+  });
+
   function createMsalService(account: AccountInfo): jasmine.SpyObj<MsalService> & {
     instance: PublicClientApplication;
   } {

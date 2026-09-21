@@ -23,6 +23,19 @@
 | **Dernière mise à jour** | 2026-09-17 — les lots 0 à 10 sont implémentés ; la validation finale couvre 545 tests backend, 313 Catalog, 241 Scan, 6 bootstrap Scan, 5 bootstrap BackOffice, les tests Angular BackOffice et les trois builds Angular. Le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
+### État actualisé — 2026-09-21 — correctif de chargement Scanette
+
+La liste Scanette des livres rares protège désormais les appels `/rare-books/*` avec le
+jeton d’accès API MSAL. Un échec de rafraîchissement en ligne n’est plus avalé : l’écran
+affiche un message explicite et « Réessayer ». Le loader partagé est utilisé, le fond violet
+remplit la hauteur de la fenêtre avec un défilement interne, et « Ajouter un livre rare » est
+placé dans l’en-tête au niveau du titre.
+
+Validation locale : 247 tests Scan ChromeHeadless, 6 tests bootstrap Scan, build de production
+Scan, `graphify update .` et `git diff --check` passent. Aucun compte Entra, appel API réel,
+contrôle responsive authentifié ou déploiement n’a été effectué depuis cette branche ; la
+vérification de production et le rafraîchissement du service worker restent à faire.
+
 ### État actualisé — 2026-09-16 — Livres rares, lot 0
 
 Le lot 0 est implémenté dans le worktree `Vole-Papillon-Damour-livres-rares-lot0`. La

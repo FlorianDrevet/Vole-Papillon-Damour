@@ -49,5 +49,6 @@ export const msalInterceptorConfig: MsalInterceptorConfiguration = {
     // MSAL Angular v5 uses strict path matching by default, so nested Scan
     // endpoints need an explicit wildcard to receive the API access token.
     [`${environment.apiUrl}/scan/*`, [environment.entra.apiScope]],
+    [`${environment.apiUrl}/rare-books/*`, [environment.entra.apiScope]],
   ]),
 };
