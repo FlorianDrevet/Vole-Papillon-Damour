@@ -4,6 +4,7 @@ import {test} from 'node:test';
 
 const indexHtml = await readFile(new URL('../src/index.html', import.meta.url), 'utf8');
 const appModule = await readFile(new URL('../src/app/app.module.ts', import.meta.url), 'utf8');
+const mainSource = await readFile(new URL('../src/main.ts', import.meta.url), 'utf8');
 const routingModule = await readFile(new URL('../src/app/app-routing.module.ts', import.meta.url), 'utf8');
 const tsconfig = await readFile(new URL('../tsconfig.json', import.meta.url), 'utf8');
 const environmentSources = await Promise.all([
@@ -77,5 +78,13 @@ test('initializes MSAL before root components read the cached account', () => {
     appModule,
     /provideAppInitializer\(\(\)\s*=>\s*inject\(MsalService\)\.initialize\(\)\)/s,
     'MSAL must be initialized before AuthSessionService reads the account cache',
+  );
+});
+
+test('does not bootstrap Angular inside an MSAL silent-renewal iframe', () => {
+  assert.match(
+    mainSource,
+    /function isAuthenticationFrame\(\): boolean \{[\s\S]*return window\.self !== window\.top;[\s\S]*\}/,
+    'the hidden MSAL iframe must never start the application router',
   );
 });

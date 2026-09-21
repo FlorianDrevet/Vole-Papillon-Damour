@@ -73,6 +73,11 @@
   reject before Axios sends anything. The BackOffice service starts one interactive redirect
   with the current route for interaction-required/iframe-timeout codes, then leaves ordinary
   transport errors to the page retry state.
+- `src/main.ts` must not bootstrap Angular inside any iframe: the BackOffice root is also the
+  MSAL silent-renewal `redirectUri`, and starting the router in that hidden frame can launch
+  a second MSAL flow and make every Axios request fail before reaching the API. The top-level
+  window remains the only Angular bootstrap target; the silent MSAL response is consumed by
+  the parent MSAL instance.
 - The former BackOffice cookie/JWT authentication service, login facade, guard, token
   interface, role enum, `@auth0/angular-jwt`, and `ngx-cookie-service` were removed in the
   MSAL migration. Authorization remains enforced by the API's Entra role policies.

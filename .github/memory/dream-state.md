@@ -5,7 +5,7 @@
 | Gate | Value |
 |------|-------|
 | `lastDreamDate` | 2026-09-07 |
-| `sessionsSinceLastDream` | 5 |
+| `sessionsSinceLastDream` | 6 |
 
 ## Config
 
