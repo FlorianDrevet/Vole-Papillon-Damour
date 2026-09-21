@@ -276,7 +276,7 @@ param googleBooksApiKey string = ''
 param instagramAccessToken string = ''
 
 @description('Timer schedule for the social actuality import Function')
-param socialImportSchedule string = '0 */30 * * * *'
+param socialImportSchedule string = '0 0 0,12 * * *'
 
 @description('Instagram Graph API version used by the social actuality importer')
 param socialImportGraphApiVersion string = 'v22.0'

@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Palier en cours** | Vérification opérationnelle de la v1 sur `development` après configuration externe |
-| **Prochaine action** | Laisser le Worker exécuter son premier tick de 30 minutes, puis vérifier un import réel publié directement avec un titre Foundry ; renouveler le jeton avant son seuil d'alerte |
+| **Prochaine action** | Laisser le Worker exécuter son prochain passage planifié à 00:00 ou 12:00 UTC, puis vérifier un import réel publié directement avec un titre Foundry ; renouveler le jeton avant son seuil d'alerte |
 | **Ce qui est prêt dans le code** | Publication directe des imports Instagram, lectures publiques filtrées, relecture BackOffice, import minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-instagram-activation` |
-| **Dernière mise à jour** | 2026-09-12 — Foundry activé, publication directe fusionnée et API/Worker redéployés ; premier import réel encore à observer |
+| **Dernière mise à jour** | 2026-09-22 — cadences du Worker réduites : Sweep horaire et import social deux fois par jour |
 | **Branche** | `docs/record-instagram-activation-state` — worktree dédié pour documenter l'activation post-PR `#122` |
 
 ---
@@ -56,7 +56,7 @@ Ce que la spécification a déjà tranché, et qui n'attend plus personne.
 | Sujet | Décision |
 |---|---|
 | Source lue en v1 | **Instagram seul.** Le profil Facebook personnel n'est pas lisible par API pour cet usage (`02`, section 2) |
-| Déclencheur | **Minuteur, toutes les 30 minutes.** Aucun webhook Instagram ne couvre les publications du compte lui-même (`DT-ACT-01`) |
+| Déclencheur | **Minuteur, deux fois par jour à 00:00 et 12:00 UTC.** Aucun webhook Instagram ne couvre les publications du compte lui-même (`DT-ACT-01`) |
 | Chemin d'authentification | **Instagram Login**, qui n'exige pas de page Facebook et n'accroche pas le projet au compte d'une personne |
 | Où vit la fonction | Dans **`Vole_Papillon_Damour.Worker`** existant, à côté de `Enrich` et `Sweep` (`DT-ACT-02`) |
 | Publication | **Publication directe après préparation du média, de l'article et du titre.** Aucun brouillon de validation n'est créé par l'import Instagram |
@@ -111,6 +111,13 @@ développeur seul.
 
 ## Journal
 
+### 2026-09-22 — réduction des cadences du Worker
+
+Le `Sweep` du Worker s'exécute désormais toutes les heures (`0 0 * * * *`). L'import
+social reste configurable et s'exécute deux fois par jour, à 00:00 et 12:00 UTC
+(`0 0 0,12 * * *`). Les paramètres Bicep de l'infrastructure de développement et la
+documentation technique sont alignés sur ces valeurs.
+
 ### 2026-09-12 — Foundry activé et publication directe déployée
 
 La PR [`#148`](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/148) a été
@@ -128,7 +135,7 @@ L'API et le Worker ont ensuite été déployés avec le commit `418cc675` :
 La migration a confirmé que la base est à jour et les endpoints publics `/health` et
 `/actuality/latest` renvoient `200`.
 
-Le premier import réel reste à observer sur le prochain tick de 30 minutes. L'application
+Le premier import réel reste à observer sur le prochain passage du minuteur. L'application
 Meta demeure en mode développement ; l'accès live de comptes non testeurs et la revue
 d'application restent hors de cette activation.
 
@@ -163,7 +170,7 @@ La CI du `main` courant est verte
 
 Le smoke test public après rollout renvoie `200` pour l'API `/health`, les lectures
 d'actualités, le Website de développement, le domaine public et le BackOffice public.
-Le Worker utilise le minuteur existant toutes les 30 minutes : le premier import réel,
+Le Worker utilise le minuteur configuré : le premier import réel,
 la qualité des titres et la publication restent à vérifier après un vrai contenu Instagram.
 L'application Meta est encore en mode développement ; l'accès live de comptes non testeurs
 et la revue d'application ne sont pas validés.

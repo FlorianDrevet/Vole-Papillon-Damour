@@ -24,7 +24,7 @@ Trois conséquences observables :
 | # | Objectif | Comment on saura que c'est atteint |
 |---|---|---|
 | O1 | Supprimer la double saisie | Une actualité issue des réseaux est publiable sans qu'aucun texte ni aucune image n'ait été ressaisi |
-| O2 | Réduire le retard du site sur les réseaux | Le brouillon existe moins de 30 minutes après la publication sur le réseau (`ENF-ACT-01`) |
+| O2 | Réduire le retard du site sur les réseaux | Le brouillon existe au plus 12 heures après la publication sur le réseau (`ENF-ACT-01`) |
 | O3 | Ne plus perdre de publications | Toute publication de la source depuis la date plancher a soit une actualité, soit une trace d'échec explicite (`RG-ACT-12`) |
 | O4 | Ne rien perdre du contrôle éditorial | Aucune actualité importée n'est visible publiquement sans validation humaine (`RG-ACT-04`) |
 | O5 | Donner un titre au site là où le réseau n'en a pas | Le titre proposé est retenu tel quel dans la majorité des cas ; il est toujours modifiable (`05`) |
@@ -39,7 +39,7 @@ Trois conséquences observables :
 | **Présidente** | Publie sur les réseaux, comme aujourd'hui | Depuis son téléphone, hors de tout outil de l'association. **Son geste ne change pas** |
 | **Administrateur du site** | Relit, corrige, publie ou écarte le brouillon | Sur ordinateur, dans le BackOffice, quelques minutes par semaine |
 | **Visiteur du site** | Lit les actualités | Ne voit jamais un brouillon, ne sait pas d'où vient l'actualité |
-| **La fonction d'import** | Va chercher les publications, prépare les brouillons | Automatique, toutes les 30 minutes, sans supervision |
+| **La fonction d'import** | Va chercher les publications, prépare les brouillons | Automatique, deux fois par jour à 00:00 et 12:00 UTC, sans supervision |
 
 ## 4. Ce qui est dans le périmètre
 

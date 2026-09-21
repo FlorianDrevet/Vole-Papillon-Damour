@@ -4,7 +4,7 @@
 
 | # | Exigence |
 |---|---|
-| `ENF-ACT-01` | La fonction se réveille **toutes les 30 minutes** (`0 */30 * * * *`). Un brouillon existe donc au plus 30 minutes après la publication sur le réseau, hors validation humaine |
+| `ENF-ACT-01` | La fonction se réveille **deux fois par jour**, à 00:00 et 12:00 UTC (`0 0 0,12 * * *`). Un brouillon existe donc au plus 12 heures après la publication sur le réseau, hors validation humaine |
 | `ENF-ACT-02` | La cadence est un **paramètre de configuration**, pas une constante compilée. La faire passer à 15 minutes ou à 2 heures ne doit pas demander de livraison |
 | `ENF-ACT-03` | Un passage complet, dans le cas nominal (aucune nouvelle publication), tient en **moins de 5 secondes** et consomme deux appels réseau au plus |
 | `ENF-ACT-04` | Le Container App du Worker tourne à `minReplicas: 0`. La fonction doit donc supporter un **démarrage à froid** à chaque réveil et n'entretenir aucun état en mémoire entre deux passages |
@@ -21,7 +21,7 @@
 
 | # | Exigence |
 |---|---|
-| `ENF-ACT-08` | Les quotas de la plateforme Meta se comptent en centaines d'appels par heure. Deux appels toutes les 30 minutes en consomment une fraction négligeable ; aucun mécanisme de limitation propre n'est nécessaire, mais une réponse de type « quota dépassé » doit être **journalisée comme telle** et non confondue avec une panne |
+| `ENF-ACT-08` | Les quotas de la plateforme Meta se comptent en centaines d'appels par heure. Deux appels par passage, deux fois par jour, en consomment une fraction négligeable ; aucun mécanisme de limitation propre n'est nécessaire, mais une réponse de type « quota dépassé » doit être **journalisée comme telle** et non confondue avec une panne |
 | `ENF-ACT-09` | Le plafond de `RG-ACT-17` (5 actualités par passage) borne aussi bien les appels au modèle que le téléversement d'images. C'est le garde-fou de coût du dispositif |
 
 ## Données personnelles et droit à l'image

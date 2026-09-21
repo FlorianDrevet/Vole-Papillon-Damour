@@ -48,7 +48,7 @@ Cinq minutes maintenant, une reconstruction complète plus tard.
 | | Sans page (v1) | Avec page (palier `L5`) |
 |---|---|---|
 | Source lisible | Instagram seul | Instagram **et** Facebook |
-| Déclenchement | Interrogation toutes les 30 min | **Événementiel**, au moment de la publication |
+| Déclenchement | Interrogation deux fois par jour | **Événementiel**, au moment de la publication |
 | Propriété de la présence Facebook | Le profil d'une personne | L'association |
 | Liens du site | Pointent vers un profil personnel | Pointent vers l'association |
 

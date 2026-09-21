@@ -14,7 +14,7 @@ public sealed class BookSweepFunction(
 {
     [Function("Sweep")]
     public async Task Run(
-        [TimerTrigger("0 */5 * * * *")] TimerInfo timer,
+        [TimerTrigger("0 0 * * * *")] TimerInfo timer,
         CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
