@@ -1,7 +1,7 @@
 import {TestBed} from '@angular/core/testing';
 import {MsalService} from '@azure/msal-angular';
 import {AccountInfo, AuthenticationResult} from '@azure/msal-browser';
-import {firstValueFrom, of} from 'rxjs';
+import {firstValueFrom, of, throwError} from 'rxjs';
 
 import {ApiAccessTokenService} from './api-access-token.service';
 
@@ -25,9 +25,13 @@ describe('ApiAccessTokenService', () => {
       setActiveAccount: jasmine.createSpy('setActiveAccount'),
     };
 
-    msalService = jasmine.createSpyObj<MsalService>('MsalService', ['acquireTokenSilent']);
+    msalService = jasmine.createSpyObj<MsalService>('MsalService', [
+      'acquireTokenSilent',
+      'acquireTokenRedirect',
+    ]);
     Object.defineProperty(msalService, 'instance', {value: instance});
     msalService.acquireTokenSilent.and.returnValue(of({accessToken: 'api-access-token'} as AuthenticationResult));
+    msalService.acquireTokenRedirect.and.returnValue(of(undefined));
 
     TestBed.configureTestingModule({
       providers: [
@@ -72,5 +76,24 @@ describe('ApiAccessTokenService', () => {
 
     await expectAsync(firstValueFrom(service.getApiAccessToken$()))
       .toBeRejectedWithError('No active Entra account is available.');
+  });
+
+  it('starts interactive renewal when the silent iframe times out before the API request', async () => {
+    const silentError = {errorCode: 'monitor_window_timeout'};
+    msalService.acquireTokenSilent.and.returnValue(throwError(() => silentError));
+
+    let rejectedError: unknown;
+    try {
+      await firstValueFrom(service.getApiAccessToken$());
+    } catch (error) {
+      rejectedError = error;
+    }
+
+    expect(rejectedError).toBe(silentError);
+    expect(msalService.acquireTokenRedirect).toHaveBeenCalledWith({
+      account,
+      scopes: ['api://ebc68507-2c07-4bab-9448-2d6d489c6112/access_as_user'],
+      redirectStartPage: window.location.href,
+    });
   });
 });

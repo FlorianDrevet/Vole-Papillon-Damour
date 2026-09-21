@@ -68,6 +68,11 @@
 - `ApiAccessTokenService` calls `MsalService.acquireTokenSilent` for the API scope and
   `AxiosService` adds the resulting bearer token to every API request. `MsalInterceptor` is
   intentionally not registered because BackOffice uses Axios rather than Angular `HttpClient`.
+  Silent MSAL failures must be classified by their error code as well as by
+  `InteractionRequiredAuthError`: iframe timeouts and cross-bundle error objects otherwise
+  reject before Axios sends anything. The BackOffice service starts one interactive redirect
+  with the current route for interaction-required/iframe-timeout codes, then leaves ordinary
+  transport errors to the page retry state.
 - The former BackOffice cookie/JWT authentication service, login facade, guard, token
   interface, role enum, `@auth0/angular-jwt`, and `ngx-cookie-service` were removed in the
   MSAL migration. Authorization remains enforced by the API's Entra role policies.
