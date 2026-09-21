@@ -12,15 +12,12 @@ import { initApplicationInsights } from './app/shared/services/application-insig
  * à l'iframe — le renouvellement échoue et l'utilisateur se retrouve déconnecté.
  *
  * L'iframe n'a rien à afficher : MSAL lit seulement son URL depuis la fenêtre
- * parente. On ne démarre donc Angular que dans la fenêtre principale.
+ * parente, y compris quand Entra vient d'y déposer la réponse silencieuse.
+ * On ne démarre donc Angular que dans la fenêtre principale, quel que soit
+ * l'état de l'URL de l'iframe.
  */
 function isAuthenticationFrame(): boolean {
-  if (window.self === window.top) {
-    return false;
-  }
-
-  const response = `${window.location.hash}${window.location.search}`;
-  return /[#&?](code|error|state)=/.test(response);
+  return window.self !== window.top;
 }
 
 if (!isAuthenticationFrame()) {
