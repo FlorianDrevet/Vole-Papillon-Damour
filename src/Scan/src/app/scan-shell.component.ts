@@ -19,7 +19,8 @@ export class ScanShellComponent {
   }
 
   get isBootstrapping(): boolean {
-    return this.authStateSignal().status === 'checking';
+    const state = this.authStateSignal().status;
+    return state === 'checking' || state === 'reauthenticating';
   }
 
   get isAuthenticated(): boolean {
