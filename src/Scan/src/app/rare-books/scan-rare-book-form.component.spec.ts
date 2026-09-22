@@ -102,4 +102,14 @@ describe('ScanRareBookFormComponent', () => {
     expect(component.book?.status).toBe('Draft');
     expect(component.step).toBe('describe');
   });
+
+  it('presents the new-book choice with the two mockup paths', () => {
+    expect(fixture.nativeElement.querySelector('.rare-flow-header')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Ce livre a-t-il un code-barres');
+
+    const choices = fixture.nativeElement.querySelectorAll('.rare-choice');
+    expect(choices.length).toBe(2);
+    expect(choices[0].textContent).toContain('Scanner l’ISBN');
+    expect(choices[1].textContent).toContain('Ce livre n’a pas d’ISBN');
+  });
 });

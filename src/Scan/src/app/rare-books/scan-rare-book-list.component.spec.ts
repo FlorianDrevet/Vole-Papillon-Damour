@@ -65,10 +65,22 @@ describe('ScanRareBookListComponent', () => {
     expect(fixture.nativeElement.querySelector('.rare-error')).toBeNull();
   });
 
-  it('keeps the add action in the page header', () => {
+  it('keeps the add action in the list flow', () => {
+    fixture.componentInstance.loading = false;
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.rare-management-header .rare-add'))
+    expect(fixture.nativeElement.querySelector('.rare-list-footer .rare-add'))
       .not.toBeNull();
+  });
+
+  it('uses the rare-book mockup shell with compact filters', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.rare-flow-header')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('LIVRES RARES');
+    expect(fixture.nativeElement.querySelectorAll('.rare-filter-tab').length).toBe(2);
   });
 });

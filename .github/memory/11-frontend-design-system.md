@@ -35,6 +35,19 @@ Verified Tailwind theme tokens include:
 - `BackOffice` routes concentrate on admin workflows: login, actualities, events, tableau, and cash register.
 - `Website` routes concentrate on public presentation, events, and the `Maxence` informational content tree.
 
+### Scanette rare-books mockup language
+
+The rare-book Scanette flow uses a compact mobile-first shell distinct from the public
+Catalog: pale blue page surface, deep navy editorial labels, thin rules, rounded search and
+filter controls, striped photo placeholders, purple rare-book actions/cards, and orange cash
+confirmation. The list keeps the search and `Toutes`/`Brouillons` filters visible only after
+loading has completed; the creation flow exposes a three-step progress header and equal
+barcode/no-barcode choices; the cash flow keeps rare books visually separate from ordinary
+sale lines. The responsive reference viewport is 390×844, with a centered narrow shell at
+desktop widths. Shared rare-flow rules live in the global Scan stylesheet to stay below
+Angular's component-style budget, and the screens retain keyboard focus states and explicit
+labels.
+
 ## Guardrails For Future UI Work
 
 - Preserve the custom handwritten/association visual identity rather than default enterprise styling.

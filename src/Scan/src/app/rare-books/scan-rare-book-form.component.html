@@ -1,45 +1,76 @@
 <main class="rare-form-screen" aria-labelledby="rare-form-title">
-  <header class="rare-form-header">
-    <button type="button" class="rare-back" (click)="close()" aria-label="Retour aux livres rares">←</button>
-    <div>
-      <p class="rare-eyebrow">Saisie hors ligne</p>
-      <h1 id="rare-form-title">{{ book ? 'Modifier la fiche' : 'Nouveau livre rare' }}</h1>
-      <p *ngIf="book">Le brouillon est conservé sur cet appareil avant sa synchronisation.</p>
-    </div>
+  <header class="rare-flow-header">
+    <button type="button" class="rare-flow-back" (click)="close()" aria-label="Retour aux livres rares">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"></path>
+        <path d="m11 6-6 6 6 6"></path>
+      </svg>
+    </button>
+    <p class="rare-flow-title">{{ step === 'choice' ? 'NOUVEAU LIVRE RARE' : 'LIVRES RARES' }}</p>
   </header>
 
-  <nav class="rare-steps" aria-label="Étapes de la fiche">
-    <span *ngFor="let item of visibleSteps" [class.rare-step-active]="step === item">
-      {{ stepLabel(item) }}
-    </span>
+  <nav *ngIf="step === 'identify' || step === 'describe' || step === 'photos'" class="rare-stepper" aria-label="Étapes de la fiche">
+    <div class="rare-stepper-labels">
+      <span>ÉTAPE {{ step === 'identify' ? '1' : step === 'describe' ? '2' : '3' }} SUR 3</span>
+      <span>{{ stepLabel(step) }}</span>
+    </div>
+    <div class="rare-stepper-bars" aria-hidden="true">
+      <span [class.rare-stepper-bar-active]="step === 'identify' || step === 'describe' || step === 'photos'"></span>
+      <span [class.rare-stepper-bar-active]="step === 'describe' || step === 'photos'"></span>
+      <span [class.rare-stepper-bar-active]="step === 'photos'"></span>
+    </div>
   </nav>
 
   <scan-status-bar
     [actionRequired]="pendingPhotoCount > 0"
     [pendingRarePhotos]="pendingPhotoCount"
-    detail="Le prix est affiché pour lecture par la caisse, jamais additionné."
+    detail="Hors réseau, les photos attendent dans le téléphone."
     (statusRequested)="pendingPhotoCount = pendingPhotoCount"></scan-status-bar>
 
   <p *ngIf="error" class="rare-error" role="alert">{{ error }}</p>
 
-  <section *ngIf="step === 'choice'" class="rare-panel" aria-labelledby="choice-title">
-    <p class="rare-eyebrow">Première étape</p>
-    <h2 id="choice-title">Comment identifier ce livre ?</h2>
+  <section *ngIf="step === 'choice'" class="rare-panel rare-choice-panel" aria-labelledby="rare-form-title">
+    <p class="rare-panel-eyebrow">NOUVEAU LIVRE RARE</p>
+    <h1 id="rare-form-title">Ce livre a-t-il un code-barres&nbsp;?</h1>
+    <p class="rare-panel-intro">Beaucoup de livres anciens n’en ont pas : les ISBN n’existent que depuis 1970. Les deux chemins mènent à la même fiche.</p>
+
     <div class="rare-choice-grid">
       <button type="button" class="rare-choice" (click)="startIsbn()">
-        <strong>J’ai un ISBN</strong>
-        <span>Rechercher une notice bibliographique puis la corriger si besoin.</span>
+        <span class="rare-choice-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 4.5v4M5 15.5v4M19 4.5v4M19 15.5v4"></path>
+            <path d="M4.5 5h4M15.5 5h4M4.5 19h4M15.5 19h4"></path>
+            <path d="M8 9v6M10.5 9v6M13.5 9v6M16 9v6"></path>
+          </svg>
+        </span>
+        <span class="rare-choice-copy">
+          <strong>Scanner l’ISBN</strong>
+          <span>Le titre, l’auteur et l’éditeur sont cherchés à la BnF puis proposés.</span>
+        </span>
       </button>
+
       <button type="button" class="rare-choice" (click)="startNoIsbn()">
-        <strong>Pas d’ISBN</strong>
-        <span>Créer une fiche valorisée à partir de l’exemplaire.</span>
+        <span class="rare-choice-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 4.5h14v15H5z"></path>
+            <path d="M8 8h8M8 12h8M8 16h5"></path>
+          </svg>
+        </span>
+        <span class="rare-choice-copy">
+          <strong>Ce livre n’a pas d’ISBN</strong>
+          <span>Vous saisissez tout à la main. C’est le chemin des éditions d’avant 1970 et des reliures.</span>
+        </span>
       </button>
     </div>
+
+    <button type="button" class="rare-link" (click)="close()">Annuler</button>
   </section>
 
-  <section *ngIf="step === 'candidate'" class="rare-panel" aria-labelledby="candidate-title">
-    <p class="rare-eyebrow">Notice bibliographique</p>
-    <h2 id="candidate-title">Chercher dans la BnF</h2>
+  <section *ngIf="step === 'candidate'" class="rare-panel rare-candidate-panel" aria-labelledby="rare-form-title">
+    <p class="rare-panel-eyebrow">RECHERCHE BIBLIOGRAPHIQUE</p>
+    <h1 id="rare-form-title">Scanner l’ISBN</h1>
+    <p class="rare-panel-intro">Le titre, l’auteur et l’éditeur sont cherchés à la BnF puis proposés. Vous corrigez ce qui ne va pas.</p>
+
     <label class="rare-field">
       <span>ISBN-10 ou ISBN-13</span>
       <input [(ngModel)]="isbn" inputmode="numeric" autocomplete="off" placeholder="978…" (keyup.enter)="lookupCandidate()">
@@ -47,66 +78,133 @@
     <button type="button" class="rare-primary" [disabled]="candidateLoading" (click)="lookupCandidate()">
       {{ candidateLoading ? 'Recherche…' : 'Rechercher la notice' }}
     </button>
+
     <article *ngIf="candidate" class="rare-candidate">
-      <span class="rare-candidate-source">{{ candidate.source }}</span>
-      <h3>{{ candidate.title || 'Titre absent' }}</h3>
-      <p>{{ candidate.authors || 'Auteur absent' }}</p>
-      <p>{{ candidate.publisher || 'Éditeur absent' }}<span *ngIf="candidate.publicationYear"> · {{ candidate.publicationYear }}</span></p>
+      <span class="rare-candidate-source">RÉFÉRENCE TROUVÉE · {{ candidate.source }}</span>
+      <div class="rare-candidate-main">
+        <div class="rare-candidate-cover">
+          <img *ngIf="candidate.coverUrl" [src]="candidate.coverUrl" alt="">
+          <span *ngIf="!candidate.coverUrl">COUVERTURE</span>
+        </div>
+        <div>
+          <h2>{{ candidate.title || 'Titre absent' }}</h2>
+          <p>{{ candidate.authors || 'Auteur absent' }}</p>
+          <p>{{ candidate.publisher || 'Éditeur absent' }}<span *ngIf="candidate.publicationYear"> · {{ candidate.publicationYear }}</span></p>
+        </div>
+      </div>
       <div class="rare-candidate-actions">
-        <button type="button" class="rare-primary" (click)="useCandidate()">Utiliser cette notice</button>
-        <button type="button" class="rare-secondary" (click)="useManualEntry()">Corriger manuellement</button>
+        <button type="button" class="rare-primary" (click)="useCandidate()">Utiliser ces informations</button>
+        <button type="button" class="rare-secondary" (click)="useManualEntry()">Corriger avant de continuer</button>
       </div>
     </article>
-    <button type="button" class="rare-link" (click)="useManualEntry()">Saisir sans notice</button>
+
+    <button type="button" class="rare-link" (click)="useManualEntry()">Saisir à la main</button>
   </section>
 
-  <section *ngIf="step === 'identify'" class="rare-panel" aria-labelledby="identify-title">
-    <p class="rare-eyebrow">1 · Identifier</p>
-    <h2 id="identify-title">Les informations du livre</h2>
+  <section *ngIf="step === 'identify'" class="rare-panel rare-step-panel" aria-labelledby="rare-form-title">
+    <p class="rare-panel-eyebrow">IDENTIFIER</p>
+    <h1 id="rare-form-title">Six champs, pas un de plus.</h1>
+
     <div class="rare-fields">
-      <label class="rare-field"><span>Titre</span><input [(ngModel)]="form.title" autocomplete="off"></label>
-      <label class="rare-field"><span>Auteur / mention</span><input [(ngModel)]="form.authorMention" autocomplete="off"></label>
-      <label class="rare-field"><span>Éditeur</span><input [(ngModel)]="form.publisher" autocomplete="off"></label>
-      <label class="rare-field"><span>Année</span><input [(ngModel)]="form.publicationYear" type="number" inputmode="numeric"></label>
-      <label class="rare-field"><span>ISBN</span><input [(ngModel)]="form.isbn13" inputmode="numeric" autocomplete="off"></label>
-      <label class="rare-field"><span>Rayon</span><select [(ngModel)]="form.shelf"><option *ngFor="let shelf of shelves" [value]="shelf">{{ shelf }}</option></select></label>
+      <label class="rare-field rare-field-wide">
+        <span>Titre</span>
+        <input [(ngModel)]="form.title" autocomplete="off">
+      </label>
+      <label class="rare-field rare-field-wide">
+        <span>Auteur ou mention</span>
+        <input [(ngModel)]="form.authorMention" autocomplete="off" placeholder="Illustrées par Doré">
+      </label>
+      <label class="rare-field">
+        <span>Éditeur</span>
+        <input [(ngModel)]="form.publisher" autocomplete="off">
+      </label>
+      <label class="rare-field">
+        <span>Année</span>
+        <input [(ngModel)]="form.publicationYear" type="number" inputmode="numeric">
+      </label>
+      <label class="rare-field">
+        <span>Rayon d’affichage</span>
+        <select [(ngModel)]="form.shelf">
+          <option *ngFor="let shelf of shelves" [value]="shelf">{{ shelf }}</option>
+        </select>
+      </label>
+      <label class="rare-field">
+        <span>ISBN <em>— facultatif</em></span>
+        <input [(ngModel)]="form.isbn13" inputmode="numeric" autocomplete="off" placeholder="aucun">
+      </label>
     </div>
-    <button type="button" class="rare-primary" [disabled]="saving" (click)="saveAndContinue()">{{ saving ? 'Enregistrement…' : 'Continuer' }}</button>
+
+    <button type="button" class="rare-primary rare-primary-wide" [disabled]="saving" (click)="saveAndContinue()">
+      {{ saving ? 'Enregistrement…' : 'Continuer' }}
+    </button>
   </section>
 
-  <section *ngIf="step === 'describe'" class="rare-panel" aria-labelledby="describe-title">
-    <p class="rare-eyebrow">2 · Décrire & prix</p>
-    <h2 id="describe-title">Ce que le bénévole de caisse doit lire</h2>
-    <p class="rare-help">Le prix ferme est une information de l’exemplaire. L’application ne calcule aucun total.</p>
-    <div class="rare-fields">
-      <label class="rare-field"><span>Prix ferme (€)</span><input [(ngModel)]="form.price" type="number" min="0" step="0.01" inputmode="decimal"></label>
-      <label class="rare-field"><span>État</span><select [(ngModel)]="form.condition"><option *ngFor="let condition of conditions" [value]="condition.value">{{ condition.label }}</option></select></label>
-      <label class="rare-field rare-field-wide"><span>Description publique</span><textarea [(ngModel)]="form.publicDescription" maxlength="1200" rows="4"></textarea></label>
-      <label class="rare-field"><span>Reliure</span><input [(ngModel)]="form.binding"></label>
-      <label class="rare-field"><span>Dimensions</span><input [(ngModel)]="form.dimensions"></label>
-      <label class="rare-field"><span>Pages</span><input [(ngModel)]="form.pageCount" type="number" min="0" inputmode="numeric"></label>
-    </div>
-    <button type="button" class="rare-primary" [disabled]="saving" (click)="saveDescription()">{{ saving ? 'Enregistrement…' : 'Continuer vers les photos' }}</button>
+  <section *ngIf="step === 'describe'" class="rare-panel rare-step-panel" aria-labelledby="rare-form-title">
+    <p class="rare-panel-eyebrow">DÉCRIRE &amp; PRIX</p>
+    <h1 id="rare-form-title">Le prix domine l’écran.</h1>
+    <p class="rare-panel-intro">Le prix est ferme. Il s’affiche pour être lu par la caisse, jamais additionné.</p>
+
+    <label class="rare-price-field">
+      <span>Prix ferme</span>
+      <span class="rare-price-control">
+        <input [(ngModel)]="form.price" type="number" min="0" step="0.01" inputmode="decimal" aria-label="Prix ferme en euros">
+        <span aria-hidden="true">€</span>
+      </span>
+    </label>
+
+    <fieldset class="rare-condition-field">
+      <legend>État</legend>
+      <div class="rare-condition-grid" role="group" aria-label="État du livre">
+        <button
+          *ngFor="let condition of conditions"
+          type="button"
+          class="rare-condition"
+          [class.rare-condition-active]="form.condition === condition.value"
+          [attr.aria-pressed]="form.condition === condition.value"
+          (click)="form.condition = condition.value">
+          {{ condition.label }}
+        </button>
+      </div>
+    </fieldset>
+
+    <label class="rare-field rare-field-wide rare-description-field">
+      <span>Description publique</span>
+      <textarea [(ngModel)]="form.publicDescription" maxlength="1200" rows="4" placeholder="Dites les défauts."></textarea>
+    </label>
+    <p class="rare-help">Un acheteur déçu en caisse, c’est un don qui revient.</p>
+
+    <button type="button" class="rare-primary rare-primary-wide" [disabled]="saving" (click)="saveDescription()">
+      {{ saving ? 'Enregistrement…' : 'Continuer' }}
+    </button>
   </section>
 
-  <section *ngIf="step === 'photos'" class="rare-panel" aria-labelledby="photos-title">
-    <p class="rare-eyebrow">3 · Photos</p>
-    <h2 id="photos-title">Photographier l’exemplaire</h2>
-    <p class="rare-help">Six photos maximum. Elles sont réencodées en JPEG quand le navigateur le permet ; sinon le PNG ou WebP d’origine est conservé comme Blob dans la file hors ligne.</p>
+  <section *ngIf="step === 'photos'" class="rare-panel rare-step-panel" aria-labelledby="rare-form-title">
+    <p class="rare-panel-eyebrow">PHOTOGRAPHIER</p>
+    <h1 id="rare-form-title">Les photos du livre.</h1>
+    <p class="rare-panel-intro">La première photo est celle qui s’affichera dans la liste.</p>
+
+    <div *ngIf="pendingPhotoCount > 0" class="rare-offline-banner" role="status">
+      <span class="rare-offline-dot" aria-hidden="true"></span>
+      <span>Hors réseau · {{ pendingPhotoCount }} photo{{ pendingPhotoCount > 1 ? 's' : '' }} en attente d’envoi, rien n’est perdu</span>
+    </div>
+
     <div class="rare-photo-grid">
       <article *ngFor="let photo of photos" class="rare-photo-card">
         <img [src]="photoPreview(photo)" alt="Photo du livre rare">
         <span *ngIf="photo.position === 0" class="rare-photo-badge">Vignette</span>
+        <span class="rare-photo-label">{{ photoLabel(photo.position) }}</span>
         <button type="button" class="rare-photo-delete" (click)="removePhoto(photo)" [attr.aria-label]="'Supprimer la photo ' + (photo.position + 1)">×</button>
       </article>
       <label *ngIf="photos.length < 6" class="rare-photo-add">
         <input type="file" accept="image/*" capture="environment" (change)="addPhoto($event)">
-        <span aria-hidden="true">＋</span>
-        <strong>Ajouter une photo</strong>
+        <span class="rare-photo-add-icon" aria-hidden="true">＋</span>
+        <strong>Prendre une photo</strong>
       </label>
     </div>
+    <p class="rare-photo-instruction">Appuyez longuement sur une photo pour la déplacer.</p>
     <p class="rare-photo-count">{{ photos.length }} / 6 photos · {{ pendingPhotoCount }} en attente d’envoi</p>
-    <button type="button" class="rare-primary" (click)="close()">Enregistrer le brouillon</button>
+
+    <button type="button" class="rare-primary rare-primary-wide" (click)="close()">Enregistrer en brouillon</button>
   </section>
 
   <footer class="rare-form-footer">

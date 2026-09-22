@@ -11,6 +11,17 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
 - `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, cash
   sales, IndexedDB persistence, and volunteer authentication/synchronization
 
+As of 2026-09-22, the Scan rare-book surfaces follow the supplied Claude mockups: the home
+orders `Trier des livres`, `Livres rares`, `Caisse`, and `Consulter`; the rare-book list has a
+compact search/header, all/draft tabs, editorial cards and a bottom add action; the create
+flow uses a three-step identification/description-prise de prix/photos progression; and the
+cash mode exposes a distinct purple rare-book add action, local picker and rare sale line.
+The implementation keeps the existing offline services and typed contracts, uses the shared
+loader during list loading, and places the larger mockup styling in the global Scan stylesheet
+where Angular component-style budgets require it. Responsive browser checks covered 390×844
+and 1280×900 with a development-only mocked authorized session; real MSAL/API validation and
+physical-device checks remain pending.
+
 As of 2026-09-15, the Scan PWA keeps successful automatic synchronization silent: it no
 longer opens a success toast. A transmission that is merely queued for the background
 sync no longer raises the top `(action à faire)` status strip; offline state, synchronization

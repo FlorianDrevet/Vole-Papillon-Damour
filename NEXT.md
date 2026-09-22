@@ -23,6 +23,20 @@
 | **Dernière mise à jour** | 2026-09-17 — les lots 0 à 10 sont implémentés ; la validation finale couvre 545 tests backend, 313 Catalog, 241 Scan, 6 bootstrap Scan, 5 bootstrap BackOffice, les tests Angular BackOffice et les trois builds Angular. Le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
+### État actualisé — 2026-09-22 — parité des maquettes Scanette livres rares
+
+Le parcours Scanette des livres rares est maintenant aligné sur les trois maquettes Claude
+fournies : accueil avec accès `Livres rares`, liste compacte filtrable, création en trois
+étapes (identification, description/prix, photos), et caisse avec ajout/recherche d'un rare
+et ligne violette dédiée. Les surfaces sont responsives jusqu'à 390×844, conservent les
+actions hors ligne existantes et gardent le prix comme information de lecture, sans total ni
+panier.
+
+Validation locale : 254 tests Scan ChromeHeadless, build de production Scan, `git diff --check`
+et vérification Playwright à 390×844 et 1280×900 avec une session autorisée simulée. Aucun
+compte Entra, appel API réel, contrôle sur appareil physique ou déploiement n'a été effectué ;
+la PR de cette branche reste à ouvrir puis à faire valider avant fusion.
+
 ### État actualisé — 2026-09-22 — réduction des coûts de supervision DEV
 
 Le template Bicep prépare la réduction de la facture Azure Monitor du DEV : les quatre

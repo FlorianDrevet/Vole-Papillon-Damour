@@ -1,14 +1,12 @@
 <main class="rare-management-screen" aria-labelledby="rare-list-title">
-  <header class="rare-management-header">
-    <button type="button" class="rare-back" routerLink="/accueil" aria-label="Retour à l’accueil">←</button>
-    <div>
-      <p class="rare-eyebrow">Gestion hors ligne</p>
-      <h1 id="rare-list-title">Livres rares</h1>
-      <p>Créez les fiches au tri, puis relisez-les avant publication.</p>
-    </div>
-    <button type="button" class="rare-add" (click)="openNew()">
-      <span aria-hidden="true">＋</span> Ajouter un livre rare
+  <header class="rare-flow-header">
+    <button type="button" class="rare-flow-back" routerLink="/accueil" aria-label="Retour à l’accueil">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5"></path>
+        <path d="m11 6-6 6 6 6"></path>
+      </svg>
     </button>
+    <p id="rare-list-title" class="rare-flow-title">LIVRES RARES</p>
   </header>
 
   <scan-status-bar
@@ -18,10 +16,39 @@
     detail="Les fiches et photos restent conservées sur cet appareil."
     (statusRequested)="reload()"></scan-status-bar>
 
-  <label class="rare-search">
-    <span>Rechercher une fiche</span>
-    <input type="search" [(ngModel)]="search" placeholder="Titre, auteur, ISBN ou rayon">
-  </label>
+  <section class="rare-list-toolbar" aria-label="Recherche et filtres">
+    <label class="rare-search">
+      <span class="visually-hidden">Rechercher une fiche</span>
+      <span class="rare-search-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="10.7" cy="10.7" r="6.2"></circle>
+          <path d="m15.3 15.3 4.4 4.4"></path>
+        </svg>
+      </span>
+      <input type="search" [(ngModel)]="search" placeholder="Chercher un titre, un auteur">
+    </label>
+
+    <div *ngIf="!loading" class="rare-filter-tabs" role="tablist" aria-label="Filtrer les fiches">
+      <button
+        type="button"
+        role="tab"
+        class="rare-filter-tab"
+        [class.rare-filter-tab-active]="listFilter === 'all'"
+        [attr.aria-selected]="listFilter === 'all'"
+        (click)="listFilter = 'all'">
+        Toutes · {{ books.length }}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="rare-filter-tab"
+        [class.rare-filter-tab-active]="listFilter === 'drafts'"
+        [attr.aria-selected]="listFilter === 'drafts'"
+        (click)="listFilter = 'drafts'">
+        Brouillons · {{ draftCount }}
+      </button>
+    </div>
+  </section>
 
   <div *ngIf="loading" class="rare-loading">
     <vpd-loader
@@ -44,17 +71,29 @@
       (click)="open(book)">
       <span class="rare-card-photo">
         <img *ngIf="book.thumbnail" [src]="book.thumbnail" [alt]="'Vignette de ' + book.title">
-        <span *ngIf="!book.thumbnail" class="rare-card-photo-placeholder" aria-hidden="true">✦</span>
+        <span *ngIf="!book.thumbnail" class="rare-card-photo-placeholder">PHOTO</span>
       </span>
       <span class="rare-card-copy">
         <span class="rare-card-status">{{ statusLabel(book) }}</span>
         <strong>{{ book.title || 'Titre à renseigner' }}</strong>
         <span *ngIf="book.authorMention" class="rare-card-author">{{ book.authorMention }}</span>
-        <span class="rare-card-meta">{{ book.shelf }} · {{ book.price | number:'1.0-2' }} €</span>
+        <span class="rare-card-meta">{{ book.publicationYear || 'année à préciser' }}</span>
+        <span class="rare-card-price">{{ priceLabel(book) }} · {{ photoLabel(book) }}</span>
         <span *ngIf="book.syncStatus !== 'Synced'" class="rare-card-pending">À synchroniser</span>
       </span>
-      <span class="rare-card-arrow" aria-hidden="true">→</span>
+      <span class="rare-card-arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"></path>
+          <path d="m13 6 6 6-6 6"></path>
+        </svg>
+      </span>
     </button>
     <p *ngIf="filteredBooks.length === 0" class="rare-empty">Aucune fiche ne correspond à cette recherche.</p>
   </section>
+
+  <footer *ngIf="!error" class="rare-list-footer">
+    <button type="button" class="rare-add" (click)="openNew()">
+      <span aria-hidden="true">＋</span> Ajouter un livre rare
+    </button>
+  </footer>
 </main>
