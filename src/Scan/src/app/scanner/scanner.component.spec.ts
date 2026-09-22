@@ -419,6 +419,23 @@ describe('ScannerComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Que faites-vous maintenant ?');
   });
 
+  it('orders the rare-books tile between sorting and cash on the mockup home', () => {
+    component.returnHome();
+    fixture.detectChanges();
+
+    const labels = Array.from(
+      fixture.nativeElement.querySelectorAll('.home-mode'),
+      (button: Element) => button.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+
+    expect(labels).toEqual([
+      'Trier des livres',
+      'Livres rares',
+      'Caisse',
+      'ConsulterN’enregistre rien',
+    ]);
+  });
+
   it('centers the home actions between the header and footer', () => {
     component.returnHome();
     fixture.detectChanges();

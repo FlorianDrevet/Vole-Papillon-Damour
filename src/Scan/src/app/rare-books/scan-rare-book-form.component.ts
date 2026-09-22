@@ -223,6 +223,10 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
     } as Record<ScanRareBookFormStep, string>)[step];
   }
 
+  photoLabel(position: number): string {
+    return ['Livre fermé', 'Page de titre', 'Coiffe frottée'][position] ?? `Photo ${position + 1}`;
+  }
+
   private async saveDraft(): Promise<void> {
     this.saving = true;
     this.error = null;

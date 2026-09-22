@@ -3,246 +3,238 @@
   min-height: 100%;
 }
 
-.rare-form-screen {
-  min-height: 100%;
-  padding: 1.25rem 1rem 2rem;
-  background: #f7f3fc;
-  color: #072b45;
-}
-
-.rare-form-header,
-.rare-panel,
-.rare-steps,
-.rare-form-footer,
-.rare-form-screen > scan-status-bar,
-.rare-form-screen > .rare-error {
-  width: min(100%, 54rem);
-  margin-right: auto;
-  margin-left: auto;
-}
-
-.rare-form-header {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-}
-
-.rare-back {
-  width: 2.5rem;
-  height: 2.5rem;
-  flex: none;
-  border: 1px solid #d9c8ea;
-  border-radius: 50%;
-  background: white;
-  color: #5f3a86;
-  font-size: 1.25rem;
-}
-
-.rare-eyebrow,
-.rare-candidate-source {
-  margin: 0;
-  color: #5f3a86;
-  font: 600 .68rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-}
-
-h1 {
-  margin: .25rem 0;
-  font: 700 clamp(2rem, 7vw, 3.3rem)/1.05 Newsreader, Georgia, serif;
-}
-
-.rare-form-header p:last-child {
-  margin: 0;
-  color: #4e6c84;
-  line-height: 1.45;
-}
-
-.rare-steps {
-  display: flex;
-  gap: .5rem;
-  margin-bottom: 1rem;
-  color: #8aa0b1;
-  font: 600 .68rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.rare-steps span {
-  padding: .5rem .65rem;
-  border-bottom: 2px solid #d9e9f4;
-}
-
-.rare-steps .rare-step-active {
-  border-color: #5f3a86;
-  color: #5f3a86;
-}
-
-.rare-panel {
-  padding: 1.25rem;
-  border: 1px solid #d9e9f4;
-  border-radius: .65rem;
-  background: white;
-  box-shadow: 0 14px 35px rgb(95 58 134 / 7%);
-}
-
-h2 {
-  margin: .35rem 0 1rem;
-  color: #072b45;
-  font: 700 clamp(1.65rem, 5vw, 2.4rem)/1.05 Newsreader, Georgia, serif;
-}
-
 .rare-choice-grid {
   display: grid;
-  gap: .75rem;
+  gap: 10px;
 }
 
 .rare-choice {
-  display: grid;
-  gap: .4rem;
-  padding: 1rem;
-  border: 1px solid #d9c8ea;
-  border-radius: .5rem;
-  background: #fbf9fe;
-  color: #072b45;
+  display: flex;
+  min-height: 116px;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 16px;
+  border: 1px solid #cfc6e8;
+  border-radius: 0;
+  color: var(--scan-ink);
+  background: #fff;
+  cursor: pointer;
   text-align: left;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.rare-choice:hover,
+.rare-choice:focus-visible {
+  border-color: var(--scan-purple);
+  outline: none;
+  box-shadow: 0 10px 24px -20px rgb(95 58 134 / 70%);
+  transform: translateY(-1px);
+}
+
+.rare-choice-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--scan-purple);
+  background: #f1ebf9;
+}
+
+.rare-choice-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.rare-choice-copy {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
 }
 
 .rare-choice strong {
-  color: #5f3a86;
-  font: 700 1.35rem/1.1 Newsreader, Georgia, serif;
+  color: var(--scan-ink);
+  font: 500 22px/1.05 Newsreader, Georgia, serif;
 }
 
-.rare-choice span,
-.rare-help {
-  color: #4e6c84;
-  font-size: .9rem;
+.rare-choice span:last-child {
+  color: var(--scan-slate);
+  font-size: 13px;
   line-height: 1.45;
-}
-
-.rare-field {
-  display: grid;
-  gap: .35rem;
-  color: #4e6c84;
-  font: 600 .68rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
-  letter-spacing: .08em;
-  text-transform: uppercase;
 }
 
 .rare-fields {
   display: grid;
-  gap: .8rem;
-  margin: 1rem 0;
+  gap: 14px;
+  margin: 20px 0;
 }
 
 .rare-field input,
 .rare-field select,
 .rare-field textarea {
-  min-height: 2.9rem;
-  padding: .65rem .75rem;
-  border: 1.5px solid #d9e9f4;
-  border-radius: .35rem;
-  background: white;
-  color: #072b45;
-  font: 1rem/1.2 inherit;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #d5e3eb;
+  border-radius: 0;
+  outline: 0;
+  background: #fff;
+  color: var(--scan-ink);
+  font: 15px/1.25 "Libre Franklin", Arial, sans-serif;
   letter-spacing: normal;
   text-transform: none;
 }
 
+.rare-field input:focus,
+.rare-field select:focus,
+.rare-field textarea:focus,
+.rare-price-control:focus-within {
+  border-color: var(--scan-purple);
+  box-shadow: 0 0 0 3px rgb(95 58 134 / 12%);
+}
+
 .rare-field textarea {
+  min-height: 112px;
   resize: vertical;
-}
-
-.rare-primary,
-.rare-secondary,
-.rare-link {
-  min-height: 2.85rem;
-  padding: .65rem 1rem;
-  border-radius: 999px;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-}
-
-.rare-primary {
-  border: 1px solid #5f3a86;
-  background: #5f3a86;
-  color: white;
-}
-
-.rare-primary:disabled {
-  cursor: wait;
-  opacity: .6;
-}
-
-.rare-secondary,
-.rare-link {
-  border: 1px solid #d9c8ea;
-  background: white;
-  color: #5f3a86;
-}
-
-.rare-link {
-  display: block;
-  margin: .8rem auto 0;
-  border: 0;
 }
 
 .rare-candidate {
   display: grid;
-  gap: .35rem;
-  margin-top: 1rem;
-  padding: 1rem;
-  border-left: 4px solid #5f3a86;
-  background: #f7f3fc;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #cfc6e8;
+  background: #fbf9fe;
 }
 
-.rare-candidate h3 {
-  margin: 0;
-  font: 700 1.4rem/1.1 Newsreader, Georgia, serif;
+.rare-candidate-source {
+  color: var(--scan-orange);
+  font: 600 9px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .12em;
+}
+
+.rare-candidate-main {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+}
+
+.rare-candidate-cover {
+  display: grid;
+  width: 72px;
+  height: 94px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #cfc6e8;
+  background: repeating-linear-gradient(135deg, #eee4f5 0 9px, #f9f5fc 9px 18px);
+  color: #8f73b3;
+  font: 500 8px/1 "IBM Plex Mono", ui-monospace, monospace;
+  text-align: center;
+}
+
+.rare-candidate-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rare-candidate h2 {
+  margin: 0 0 6px;
+  color: var(--scan-ink);
+  font: 500 22px/1.05 Newsreader, Georgia, serif;
 }
 
 .rare-candidate p {
-  margin: 0;
-  color: #4e6c84;
+  margin: 3px 0 0;
+  color: var(--scan-slate);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .rare-candidate-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.rare-price-field {
+  gap: 9px;
+  margin: 20px 0 22px;
+}
+
+.rare-condition-field {
+  margin: 0 0 20px;
+  border: 0;
+  padding: 0;
+}
+
+.rare-condition-field legend {
+  padding: 0;
+}
+
+.rare-condition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rare-condition {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid #d5e3eb;
+  border-radius: 0;
+  color: var(--scan-slate);
+  background: #fff;
+  cursor: pointer;
+  font: 13px/1.25 "Libre Franklin", Arial, sans-serif;
+  text-align: left;
+}
+
+.rare-condition-active {
+  border-color: var(--scan-purple);
+  color: var(--scan-purple);
+  background: #f5effa;
+  box-shadow: inset 0 0 0 1px var(--scan-purple);
+  font-weight: 700;
+}
+
+.rare-offline-banner {
   display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-  margin-top: .5rem;
+  align-items: center;
+  gap: 9px;
+  margin: 18px 0;
+  padding: 12px 13px;
+  background: #fff8e7;
+  color: #765018;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
-.rare-error {
-  margin-top: 1rem;
-  padding: .75rem;
-  border: 1px solid #b02a33;
-  background: #fff5f5;
-  color: #8d1d25;
-}
-
-.rare-help {
-  margin: -.5rem 0 1rem;
+.rare-offline-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: #d6952e;
 }
 
 .rare-photo-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: .7rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .rare-photo-card,
 .rare-photo-add {
   position: relative;
   display: grid;
-  min-height: 9rem;
+  min-height: 116px;
   overflow: hidden;
   place-items: center;
-  border: 1px dashed #b9a2d0;
-  border-radius: .45rem;
-  background: #f7f3fc;
+  border: 1px solid #cfc6e8;
+  border-radius: 0;
+  background: repeating-linear-gradient(135deg, #eee4f5 0 9px, #f9f5fc 9px 18px);
 }
 
 .rare-photo-card img {
@@ -253,8 +245,10 @@ h2 {
 
 .rare-photo-add {
   align-content: center;
-  gap: .3rem;
-  color: #5f3a86;
+  gap: 6px;
+  min-height: 116px;
+  color: var(--scan-purple);
+  cursor: pointer;
   text-align: center;
 }
 
@@ -267,58 +261,99 @@ h2 {
   opacity: 0;
 }
 
-.rare-photo-add span {
-  font-size: 1.8rem;
+.rare-photo-add-icon {
+  font-size: 27px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.rare-photo-add strong {
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.rare-photo-badge,
+.rare-photo-label {
+  position: absolute;
+  right: 5px;
+  left: 5px;
+  padding: 4px 5px;
+  color: #fff;
+  background: rgb(7 43 69 / 78%);
+  font: 500 8px/1.1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .04em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .rare-photo-badge {
-  position: absolute;
-  top: .4rem;
-  left: .4rem;
-  padding: .25rem .4rem;
+  top: 5px;
+  right: auto;
+  left: 5px;
   border-radius: 999px;
-  background: #5f3a86;
-  color: white;
-  font: .6rem/1 "IBM Plex Mono", ui-monospace, monospace;
-  text-transform: uppercase;
+  background: var(--scan-purple);
+}
+
+.rare-photo-label {
+  bottom: 5px;
 }
 
 .rare-photo-delete {
   position: absolute;
-  top: .35rem;
-  right: .35rem;
-  width: 1.8rem;
-  height: 1.8rem;
-  border: 0;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 60%);
   border-radius: 50%;
-  background: rgb(7 43 69 / 75%);
-  color: white;
-  font-size: 1.2rem;
+  color: #fff;
+  background: rgb(7 43 69 / 78%);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
 }
 
+.rare-photo-instruction,
 .rare-photo-count,
 .rare-draft-label {
-  color: #4e6c84;
-  font: .7rem/1.3 "IBM Plex Mono", ui-monospace, monospace;
+  color: var(--scan-muted);
+  font: 10px/1.4 "IBM Plex Mono", ui-monospace, monospace;
   letter-spacing: .05em;
   text-transform: uppercase;
 }
 
-.rare-form-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-top: 1rem;
+.rare-photo-instruction {
+  margin: 13px 0 0;
 }
 
-@media (min-width: 700px) {
+.rare-photo-count {
+  margin: 7px 0 0;
+}
+
+.rare-flow-back:focus-visible,
+.rare-choice:focus-visible,
+.rare-primary:focus-visible,
+.rare-secondary:focus-visible,
+.rare-link:focus-visible,
+.rare-condition:focus-visible,
+.rare-photo-add:focus-within,
+.rare-photo-delete:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--scan-orange) 65%, white);
+  outline-offset: 3px;
+}
+
+@media (min-width: 600px) {
   .rare-form-screen {
-    padding: 2rem 2rem 3rem;
+    padding-right: 24px;
+    padding-left: 24px;
   }
 
-  .rare-choice-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .rare-form-screen::before {
+    margin-right: -24px;
+    margin-left: -24px;
   }
 
   .rare-fields {
@@ -327,9 +362,5 @@ h2 {
 
   .rare-field-wide {
     grid-column: 1 / -1;
-  }
-
-  .rare-photo-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
