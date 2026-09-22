@@ -180,7 +180,7 @@
   `MsalAuthService`. Dockerfiles and OIDC deployment workflows live under each app and `infra/`.
 - Frontend images patch production environment values at build time through `API_URL` and
   `WEBSITE_URL`; Docker builds use the `src/` context so `src/SharedUi/` resolves.
-- ACA probes check `/health` on port `8080`; the dev SQL parameter is Azure SQL `S1`, 20 DTUs,
+- ACA probes check `/health` on port `8080`; the dev SQL parameter is Azure SQL `S0`, 10 DTUs,
   250 GB, with no automatic pause. Azure deployment remains an operational step.
 
 ## Build And Test Commands

@@ -14,25 +14,25 @@ bibliographique toutes les heures. Les files métier sont persistées dans SQL
 côté développement ; le parcours d'envoi reste désactivé tant que le domaine n'est pas
 vérifié et testé.
 
-**La base cible est un `S1` Standard (20 DTU, 250 Go), sans pause automatique**, en
+**La base cible est désormais un `S0` Standard (10 DTU, 250 Go), sans pause automatique**, en
 France Centrale — la seule région où l'abonnement est autorisé à provisionner de l'Azure
-SQL. Le changement est piloté par `main.dev.bicepparam` et `DT-11`.
+SQL. Le changement est piloté par `main.dev.bicepparam` ; `DT-11` reste la décision du
+moteur SQL Server et de la sortie du serverless, tandis que le palier est réversible.
 
 Les applications étaient paramétrées avec `minReplicas: 0` et `maxReplicas: 2`. C'est ce
 réglage qui a d'abord imposé un worker séparé (`DT-04`).
 
-**Ce n'est plus le cas.** Le commit `36b0e50` — *update minimum replicas for container
-apps to ensure availability* — fait passer **les quatre applications HTTP** à
-`minReplicas: 1` dans `infra/parameters/main.dev.bicepparam` : `api`, `website` et
-`backOffice`, ainsi que `scan`. Ce n'est donc pas un changement à prévoir, c'est un état
-de fait.
+**Ce n'est plus le seul cas de référence.** Le commit `36b0e50` avait fait passer les
+quatre applications HTTP à `minReplicas: 1` pour éviter tout démarrage à froid. Le
+paramétrage DEV actuel conserve cette disponibilité pour `api`, `website` et `catalog`,
+mais permet à `backOffice` et `scan` de revenir à zéro après trois heures d'inactivité.
 
 | Application | `minReplicas` | `maxReplicas` | Gabarit |
 |---|---|---|---|
 | `api` | **1** | 2 | 0,5 vCPU, 1 Gio |
 | `website` | **1** | 2 | 0,5 vCPU, 1 Gio |
-| `backOffice` | **1** | 2 | 0,25 vCPU, 0,5 Gio |
-| `scan` | **1** | 2 | 0,25 vCPU, 0,5 Gio |
+| `backOffice` | **0** | 2 | 0,25 vCPU, 0,5 Gio, cooldown 3 h |
+| `scan` | **0** | 2 | 0,25 vCPU, 0,5 Gio, cooldown 3 h |
 
 Le worker reste néanmoins séparé — isolation de la charge de fond, déclencheurs
 planifiés déclaratifs, cycles de vie distincts. Le réexamen est en
@@ -73,11 +73,12 @@ Le module `ContainerApp` existant se réutilise tel quel. Pour le worker, le del
 L'API ne demande **aucun changement de paramétrage** : `containerAppApiScaling` est déjà
 à `minReplicas: 1` depuis `36b0e50`.
 
-**`scan` suit la même convention**, à `minReplicas: 1`. C'est cohérent avec `36b0e50` :
-la sonde est utilisée par salves et une attente en début de session de tri se remarquerait
-immédiatement — c'est précisément ce que `ENF-01` protège.
+**`scan` peut désormais revenir à zéro**. Son ingress HTTP réveille la première réplique
+sur le premier appel ; le `cooldownPeriod` de trois heures limite ensuite les
+démarrages à froid répétés pendant une session de tri. La latence du premier appel après
+une longue inactivité reste un compromis assumé contre le coût d'une réplique permanente.
 
-**Seul le worker reste à zéro**, parce que rien ne l'appelle : il se réveille sur
+Le worker reste à zéro, parce que rien ne l'appelle : il se réveille sur
 minuteur. Le timer historique a été vérifié dans le bon locataire ; le nouveau heartbeat
 `Sweep` devra être relevé après son déploiement.
 
@@ -151,16 +152,17 @@ réel est défendable** — le coût d'un second est surtout en attention, pas e
 
 Si un environnement de test est ajouté, il doit rester à `minReplicas: 0` partout — la
 contrainte de disponibilité ne vaut que pour la production. À noter : le seul jeu de
-paramètres du dépôt s'appelle `main.dev.bicepparam` mais décrit l'environnement réel,
-d'où ses `minReplicas: 1`.
+paramètres du dépôt s'appelle `main.dev.bicepparam` mais décrit l'environnement DEV
+actuellement déployé ; son délai de trois heures peut être réduit ou supprimé si la
+latence de réveil est acceptable.
 
 ## 7. Coûts
 
 | Poste | Coût attendu |
 |---|---|
-| **SQL Server** | **~30 $/mois fixe** en `S1` (`DT-11`) — voir ci-dessous, c'est le poste qui a changé |
-| Container Apps — les trois applications existantes à `minReplicas: 1` | **Déjà engagé, hors module livres.** Voir ci-dessous |
-| Container Apps — `scan` | **Un réplica permanent de plus**, au même tarif que les trois historiques |
+| **SQL Server** | **~15 $/mois fixe** en `S0` — palier choisi pour réduire le coût, à confirmer par la mesure `QT-09` |
+| Container Apps — API, Website, Catalog à `minReplicas: 1` | **Répliques permanentes conservées** pour la disponibilité des surfaces publiques |
+| Container Apps — BackOffice et Scan | **Répliques à zéro après trois heures d'inactivité** ; un réveil HTTP est conservé pendant une session |
 | Container Apps — `worker` | ~21 600 vCPU-s/mois, soit moins d'un euro — sauf si `QT-02` impose `minReplicas: 1` |
 | Entra External ID | Utilisateur actif mensuel, bénévoles compris. **Les 50 000 premiers sont gratuits** (`QT-04`) : sans objet à notre échelle |
 | Envoi d'e-mails — ACS (`DT-12`) | 0,00025 $ par message. À quelques dizaines par semaine : **quelques centimes** |
@@ -176,12 +178,12 @@ moins de 100 Mo ». C'était vrai sur le volume et faux sur la facture.
 
 Le choix serverless avec pause automatique a été écarté : un balayage toutes les cinq
 minutes aurait maintenu la base éveillée et transformé la pause en coût et latence. `DT-11`
-tranche donc pour le palier fixe **`S1`, environ 30 $ par mois**, sans pause et sans
-démarrage à froid. Le paramètre est maintenant celui de `main.dev.bicepparam` ; le
-portail a confirmé `Standard S1` après le déploiement d'infrastructure du développement.
+tranche donc pour un palier fixe sans pause ; le paramètre DEV est maintenant **`S0`,
+10 DTU, environ 15 $ par mois**. Le passage à `S1` reste un changement de paramètre si
+la mesure `QT-09` montre que 10 DTU ne tiennent pas la charge.
 
-`QT-09` mesure au palier 1 si `S1` tient sur son stockage à disque dur ; `S2` (~74 $) est
-à un paramètre de distance.
+`QT-09` mesure au palier 1 si `S0` tient sur son stockage à disque dur et sous les salves
+de scan ; `S1` puis `S2` sont les paliers de repli à un paramètre de distance.
 
 ### L'observabilité, et son seul risque financier
 

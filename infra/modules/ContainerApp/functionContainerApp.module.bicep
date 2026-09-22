@@ -81,10 +81,15 @@ resource functionContainerApp 'Microsoft.App/containerApps@2025-07-01' = {
           env: envVars
         }
       ]
-      scale: {
-        minReplicas: scaling.minReplicas
-        maxReplicas: scaling.maxReplicas
-      }
+      scale: union(
+        {
+          minReplicas: scaling.minReplicas
+          maxReplicas: scaling.maxReplicas
+        },
+        scaling.?cooldownPeriodSeconds != null ? {
+          cooldownPeriod: scaling.?cooldownPeriodSeconds
+        } : {}
+      )
     }
   }
 }
