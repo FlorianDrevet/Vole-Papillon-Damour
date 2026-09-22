@@ -43,6 +43,7 @@ contrats et rôles de chaque fournisseur doivent être vérifiés.
 | Compte et connexion | Adresse e-mail, prénom/nom lorsqu'ils sont renseignés, identifiant externe, dates de compte et de dernière activité ; aucun mot de passe dans le Catalogue/API | Créer et maintenir l'espace membre | Exécution du service demandé / mesures précontractuelles, à confirmer |
 | Liste de recherche | ISBN ou œuvre suivie, dates d'ajout et de dernière alerte | Fournir le suivi choisi | Exécution du service demandé |
 | Alertes | Préférence, historique d'alerte, état de remise et rebonds techniques | Envoyer l'information demandée et éviter les envois en échec | Exécution du service demandé ; absence de prospection, à maintenir |
+| Association de vente à un compte | Identifiant du compte, date, bourse, titres, éditions et quantités d'un passage associé | Afficher l'historique demandé et synchroniser une sélection | Exécution du service demandé ; information claire et association facultative |
 | Audience et carte | Données d'usage ou données techniques transmises au tiers | Mesurer l'usage ou afficher Maps | Consentement préalable et distinct |
 | Effacement | Données locales, identité Entra, éventuel mouvement métier conservé | Répondre à la demande d'effacement tout en préservant une trace légalement nécessaire | Effacement ; obligation légale/intérêt légitime uniquement pour le résiduel nécessaire |
 
@@ -122,6 +123,26 @@ Le parcours `/compte` propose une double confirmation. La demande actuelle :
 La réponse HTTP peut donc être acceptée avant la fin du traitement différé. Le texte du
 compte et la page publique ne doivent pas promettre une suppression instantanée si le
 fournisseur d'identité ou le worker est momentanément indisponible.
+
+## 5 bis. Extension : sélection et historique des achats
+
+La proposition fonctionnelle de
+[10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md)
+ajoute deux catégories de données membre :
+
+- les entrées de Ma sélection, avec leur fiche, leur état personnel et leurs dates ;
+- le lien entre une vente et le compte qui a présenté sa carte à la caisse.
+
+L'association d'une vente doit être explicitement facultative. Une personne qui
+n'affiche pas sa carte continue d'acheter anonymement et ne doit pas être identifiée
+par une recherche approximative d'adresse e-mail.
+
+Lors d'une suppression de compte, l'accès à Ma sélection et Mes achats disparaît.
+Le lien nominatif avec une vente est supprimé ou anonymisé, tandis que le mouvement
+de stock peut rester conservé lorsque la traçabilité ou les statistiques l'exigent.
+Le QR de carte est révoqué ou rendu inutilisable. La page publique doit expliquer
+cette différence entre l'historique personnel supprimé et le registre métier conservé
+sans identité exploitable.
 
 ## 6. Gaps à fermer avant mise en production
 

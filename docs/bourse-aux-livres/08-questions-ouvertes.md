@@ -366,6 +366,28 @@ cher, et là que l'outil devient crédible le plus vite.
 
 ---
 
+## Q-12 — Extension du compte membre
+
+> 🟠 **Proposition fonctionnelle à valider avant implémentation.**
+
+Le document [10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md)
+propose de distinguer la liste de recherche, Ma sélection et Mes achats, puis
+d'associer facultativement un passage de caisse à un compte au moyen d'un QR code.
+
+Les choix suivants restent à confirmer avec l'association :
+
+- le nom public de la sélection et de l'historique ;
+- l'inclusion ou non des livres rares dans Ma sélection ;
+- le rattachement de tout le passage plutôt que de lignes individuelles ;
+- le fonctionnement hors ligne du jeton de carte et son délai de résolution ;
+- l'existence d'un rattachement après validation par e-mail ;
+- la politique applicable aux achats faits pour un proche ou une famille ;
+- les durées de conservation de la sélection et du lien entre vente et compte.
+
+Le parcours recommandé pour un premier lot reste : QR web facultatif, association de
+tout le passage avant validation, vente anonyme toujours possible, et aucune
+réservation ni alerte déclenchée par Ma sélection.
+
 ## Journal des décisions
 
 | Date | Décision | Retenu |

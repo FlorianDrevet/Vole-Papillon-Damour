@@ -45,6 +45,10 @@ The backend and contracts expose features around:
 
 ## Current Constraints
 
+- docs/bourse-aux-livres/10-evolution-compte-selection-achats.md décrit une proposition
+  fonctionnelle non implémentée pour Ma sélection, la carte QR en caisse et Mes achats.
+  Les règles RG-52 à RG-66 documentent l'extension proposée ; elles ne constituent pas
+  encore un comportement runtime.
 - The backend currently enables a permissive CORS policy for all origins.
 - Domain tests exist, but cross-layer automated coverage is still thin.
 - Residual `MailingList` folders still exist in `Application` and `Contracts`, but the API runtime no longer maps mailing-list endpoints.

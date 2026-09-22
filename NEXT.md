@@ -48,6 +48,15 @@ activité rapprochée réinitialise cette fenêtre ; le premier appel après une
 inactivité peut donc subir un démarrage à froid. Après déploiement, vérifier le réveil,
 le retour à zéro et le comportement d'une session de plusieurs heures sur les deux
 domaines.
+### État actualisé — 2026-09-22 — proposition fonctionnelle du compte membre
+
+Le worktree Vole-Papillon-Damour-account-features-doc, sur la branche
+docs/account-features-functional-spec, ajoute
+docs/bourse-aux-livres/10-evolution-compte-selection-achats.md. La proposition sépare
+la liste de recherche existante de Ma sélection, décrit une carte QR facultative pour
+associer un passage de caisse, l'historique Mes achats, le hors-ligne, le RGPD et les
+règles RG-52 à RG-66. Aucun code runtime, compte, jeton ou déploiement n'a été créé ;
+la PR doit être relue et validée avant toute implémentation.
 
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 
