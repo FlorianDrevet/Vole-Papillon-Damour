@@ -34,6 +34,21 @@ opérationnels. Aucun déploiement Azure n'a encore été effectué depuis ce wo
 appliquer la PR puis vérifier dans Cost Management et dans les règles Azure que les tests
 sont inactifs et que la consommation baisse.
 
+### État actualisé — 2026-09-22 — palier SQL et scale-to-zero ACA
+
+Depuis le worktree `fix/azure-cost-scaling`, le paramètre DEV aligne désormais Bicep sur
+le passage demandé de la base Azure SQL `S1` (20 DTU) à `S0` (10 DTU), toujours en
+Standard, 250 Go et sans pause automatique. Le portail Azure a déjà été modifié par
+l'utilisateur ; aucun déploiement depuis ce worktree n'a encore été effectué.
+
+Le BackOffice et la Scanette sont configurés à `minReplicas: 0`, avec ingress HTTP,
+`maxReplicas: 2` et un cooldown de `10 800` secondes (trois heures) avant le passage de
+la dernière réplique à zéro. Un premier appel HTTP réveille l'application et chaque
+activité rapprochée réinitialise cette fenêtre ; le premier appel après une longue
+inactivité peut donc subir un démarrage à froid. Après déploiement, vérifier le réveil,
+le retour à zéro et le comportement d'une session de plusieurs heures sur les deux
+domaines.
+
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 
 La liste Scanette des livres rares protège désormais les appels `/rare-books/*` avec le
@@ -2037,9 +2052,9 @@ distant n'a été effectué ; le contrôle authentifié et le smoke avec une API
 
 | Ressource | État | Depuis |
 |---|---|---|
-| Base SQL | `S1` (`Standard`, 20 DTU, 250 Go), sans pause automatique ; confirmé dans le portail après `Infra - deploy #6` | `2026-09-02 18:27` |
+| Base SQL | `S0` (`Standard`, 10 DTU, 250 Go), sans pause automatique ; passage à 10 DTU rapporté comme déjà effectué dans le portail, alignement Bicep en attente de déploiement | `2026-09-22` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
-| Container Apps | `api`, `website`, `backOffice`, `scan` à `minReplicas: 1`; `worker` à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running`; domaines publics du catalogue et de la Scanette sécurisés | `2026-09-04` |
+| Container Apps | Bicep en cours : `api`, `website`, `catalog` à `minReplicas: 1`, BackOffice et Scan à `minReplicas: 0` avec cooldown 3 h ; Azure à vérifier après déploiement. `worker` reste à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running` | `2026-09-22` |
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
@@ -2132,7 +2147,7 @@ reportées.
 | `QT-07` | Connexion seule, sans inscription | — | — |
 | `QT-08` *(partie jeton, `L0-12`)* | Durée de vie des jetons hors ligne | — | — |
 | `QT-08` *(partie geste, `P1-5`)* | Scan possible hors ligne après 48 h | — | — |
-| `QT-09` | Tenue de `S1` sur disque dur | — | — |
+| `QT-09` | Tenue de `S0` sur disque dur | — | — |
 | `P1-9` | Mesures SQL et traitement sur dataset de développement | Non chiffré : aucun benchmark reproductible n'a été exécuté dans cette reprise ; ne pas inventer de cadence ou de volume | 2026-09-04 |
 | `Catalogue legal/analytics` | Déploiement et consentement vérifiés sur le domaine public ; scripts Clarity/GA4 absents avant accord, présents après accord, retrait fonctionnel | 2026-09-08 |
 | `Catalogue sitemap` | Soumission Search Console acceptée ; état « Opération effectuée », 3 pages découvertes | 2026-09-08 |
@@ -2180,7 +2195,8 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
-| 2026-09-16 | Windows | **Scan — retrait du bandeau de persistance hors ligne.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-remove-scan-offline-warning`, le bandeau compact ne s’affiche plus lorsque la seule alerte est « Données hors ligne non protégées » ; les alertes critiques et les autres états restent visibles, et la modal de protection est conservée. Validation : TDD rouge puis vert, 75 tests ciblés, 211 tests Scan ChromeHeadless, build de production et `git diff --check`. Graphify ré-extrait l’AST mais l’export HTML dépasse la limite de 5 114 nœuds ; le smoke Chrome local redirige `/tri` vers la connexion Entra, donc aucun contrôle authentifié, déploiement ou changement Azure. [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198) ouverte vers `main`, non fusionnée. |
+| 2026-09-22 | Windows | **Infrastructure — réduction SQL/ACA.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-azure-cost-scaling`, alignement de `main.dev.bicepparam` sur Azure SQL `S0`/10 DTU ; BackOffice et Scan passent à `minReplicas: 0` avec réveil HTTP et cooldown de trois heures. Compilation du template et des paramètres Bicep réussie avec une clé de validation locale ; les avertissements ACS préexistants restent présents. `graphify update .` a ré-extrait le graphe ; aucun déploiement Azure n'a été effectué. |
+| 2026-09-16 | Windows | **Scan — retrait du bandeau de persistance hors ligne.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-remove-scan-offline-warning`, le bandeau compact ne s'affiche plus lorsque la seule alerte est « Données hors ligne non protégées » ; les alertes critiques et les autres états restent visibles, et la modal de protection est conservée. Validation : TDD rouge puis vert, 75 tests ciblés, 211 tests Scan ChromeHeadless, build de production et `git diff --check`. Graphify ré-extrait l’AST mais l’export HTML dépasse la limite de 5 114 nœuds ; le smoke Chrome local redirige `/tri` vers la connexion Entra, donc aucun contrôle authentifié, déploiement ou changement Azure. [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198) ouverte vers `main`, non fusionnée. |
 | 2026-09-16 | Windows | **Catalog — permutation des espaces Catalogue/Inventaire.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-inventory-catalogue-labels`, `Catalogue` est désormais le lien `/administration/catalogue` avec l’icône livre et le workspace fiche/stock ; `Inventaire` devient `/administration/inventory` avec l’icône boîte et la file de correction des métadonnées. Les badges, chargeurs et titres suivent la permutation ; le `/catalogue` public reste inchangé. Validation : TDD rouge/vert, 262 tests Catalog, build SSR/navigateur, smoke Chrome desktop/mobile à 390×844 et `git diff --check`. Graphify a mis à jour le code graph mais ne génère pas la visualisation HTML au-delà de 5 000 nœuds ; aucun déploiement ni merge, [PR #190](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/190) ouverte. |
 | 2026-09-16 | Windows | **Scan — reprise après fermeture serveur.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-fix-scan-closed-session`, détection d’une session `Completed` ou d’un `409 Book.ScanSessionClosed`, création d’une nouvelle session client et déplacement atomique des décisions déjà prises avec la demande de fermeture ; une session déjà fermée sans outbox restant est maintenant considérée comme clôturée. Le résumé distingue « décision enregistrée » et « décision à prendre ». Validation : TDD rouge puis vert, 210 tests Scan ChromeHeadless, build production, 6 contrats bootstrap, smoke Chrome du shell local à la largeur mobile sans débordement et `git diff --check` ; `graphify update .` a ré-extrait le graphe mais l’export HTML dépasse la limite de 5 110 nœuds. Aucun déploiement ni contrôle connecté réel ; [PR #194](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/194) ouverte vers `main`, non fusionnée. |
 | 2026-09-15 | Windows | **Scan — fin de session et confirmation mobile.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-scan-session-fix`, conservation de la route `/tri/fin` et du résumé après recréation du composant, suppression du faux état de fermeture à réessayer après synchronisation concurrente, et feuille de confirmation tactile responsive. Validation : TDD rouge puis vert, 205 tests Scan ChromeHeadless, build de production, 6 contrats bootstrap, Graphify et `git diff --check` ; contrôle connecté téléphone/API réelle restant à faire, aucun déploiement ni merge. [PR #185](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/185) ouverte. |

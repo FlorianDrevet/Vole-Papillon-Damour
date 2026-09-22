@@ -18,6 +18,8 @@ type ScalingConfig = {
   minReplicas: int
   @description('Maximum number of replicas')
   maxReplicas: int
+  @description('Optional KEDA cooldown in seconds before scaling the final replica to zero')
+  cooldownPeriodSeconds: int?
 }
 
 @export()

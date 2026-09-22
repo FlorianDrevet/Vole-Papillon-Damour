@@ -117,10 +117,15 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           env: envVars
         }
       ]
-      scale: {
-        minReplicas: scaling.minReplicas
-        maxReplicas: scaling.maxReplicas
-      }
+      scale: union(
+        {
+          minReplicas: scaling.minReplicas
+          maxReplicas: scaling.maxReplicas
+        },
+        scaling.?cooldownPeriodSeconds != null ? {
+          cooldownPeriod: scaling.?cooldownPeriodSeconds
+        } : {}
+      )
     }
   }
 }

@@ -16,7 +16,7 @@ comprendre plus tard pourquoi un choix a été fait avec l'information de l'épo
 | `DT-08` | App de scan en PWA Angular | Prise |
 | `DT-09` | Traitements différés hébergés dans l'API | ⛔ **Écartée** au profit de `DT-04` |
 | `DT-10` | Entra External ID comme fournisseur d'identité unique | Prise |
-| `DT-11` | Base SQL en palier fixe `S1`, sortie du serverless à pause automatique | Prise — sous réserve de `QT-09` |
+| `DT-11` | Base SQL en palier fixe sans pause (`S1` initial, `S0` DEV actuel), sortie du serverless à pause automatique | Prise — `QT-09` reste à mesurer |
 | `DT-12` | Azure Communication Services Email, sur un sous-domaine d'envoi dédié | Prise |
 | `DT-13` | Catalogue sur `livres.volepapillondamour.fr`, URL en slug + ISBN | Prise |
 | `DT-14` | Une seule table de personnes, rapprochée par `oid` | Prise |
@@ -446,7 +446,13 @@ maîtrisé.
 
 ---
 
-## `DT-11` — Base SQL en palier fixe `S1`, sortie du serverless à pause automatique
+## `DT-11` — Base SQL en palier fixe sans pause (`S1` initial, `S0` DEV actuel)
+
+> **Mise à jour opérationnelle — 2026-09-22.** La décision de conserver SQL Server et de
+> sortir du serverless reste inchangée. Pour réduire le coût DEV, le paramètre est passé
+> de `S1`/20 DTU à `S0`/10 DTU, sans pause automatique. `QT-09` doit maintenant mesurer
+> si ce palier tient les salves de scan ; `S1` reste le repli immédiat. Le récit ci-dessous
+> conserve le raisonnement historique qui avait initialement retenu `S1`.
 
 **Contexte.** La base `vole-papillon-damour-db` est un `GP_S_Gen5_1` **serverless avec
 `autoPauseDelayMinutes: 60`**. Ce fait, relevé tardivement (`revue.md` `R-01`), n'était

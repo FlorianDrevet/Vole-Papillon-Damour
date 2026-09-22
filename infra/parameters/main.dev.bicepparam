@@ -85,8 +85,11 @@ param containerAppBackOfficeContainerRuntime = {
   memoryGi: '0.5Gi'
 }
 param containerAppBackOfficeScaling = {
-  minReplicas: 1
+  // HTTP ingress wakes the app from zero. Keep it warm for three hours after
+  // the last request so an administration session does not repeatedly cold-start.
+  minReplicas: 0
   maxReplicas: 2
+  cooldownPeriodSeconds: 10800
 }
 param containerAppBackOfficeIngress = {
   enabled: true
@@ -114,8 +117,11 @@ param containerAppScanContainerRuntime = {
   memoryGi: '0.5Gi'
 }
 param containerAppScanScaling = {
-  minReplicas: 1
+  // HTTP ingress wakes the app from zero. Keep it warm for three hours after
+  // the last request so a scan session does not repeatedly cold-start.
+  minReplicas: 0
   maxReplicas: 2
+  cooldownPeriodSeconds: 10800
 }
 param containerAppScanIngress = {
   enabled: true
@@ -185,16 +191,16 @@ param containerAppWorkerScaling = {
 param keyVaultSku = 'standard'
 param keyVaultEnablePurgeProtection = false
 
-// S1: fixed Standard tier, 20 DTUs and no automatic pause, as decided in DT-11.
+// S0: fixed Standard tier, 10 DTUs and no automatic pause.
 // The subscription is not allowed to provision Azure SQL in West Europe
 // (ProvisioningDisabled), so the database sits in France Central.
 param sqlLocation = 'francecentral'
 
 param sqlDatabaseName = 'vole-papillon-damour-db'
 param sqlDatabaseSku = {
-  name: 'S1'
+  name: 'S0'
   tier: 'Standard'
-  capacity: 20
+  capacity: 10
   maxSizeBytes: 268435456000
   autoPauseDelayMinutes: 0
 }

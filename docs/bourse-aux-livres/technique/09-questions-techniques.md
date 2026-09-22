@@ -13,7 +13,7 @@ une mesure, pas par un avis, et certains peuvent invalider une décision déjà 
 | `QT-06` | Tolérance aux fautes de la recherche | 🟢 Différée | Après le palier 2 |
 | `QT-07` | Inscription en libre-service limitée au catalogue | 🟠 Implémentation scriptée, test live à faire | Au préalable d'identité |
 | `QT-08` | Durée de vie des jetons face au hors ligne | 🔴 **Bloquant** | Avant le palier 1 |
-| `QT-09` | Tenue du palier `S1` sur disque dur | 🟠 À mesurer | Palier 1 |
+| `QT-09` | Tenue du palier `S0` sur disque dur | 🟠 À mesurer | Palier 1 |
 
 ---
 
@@ -250,20 +250,25 @@ native obtenant des sessions bien plus longues qu'une application monopage.
 
 ---
 
-## `QT-09` — Tenue du palier `S1` sur disque dur
+## `QT-09` — Tenue du palier `S0` sur disque dur
+
+> **Mise à jour opérationnelle — 2026-09-22.** Le raisonnement ci-dessous documente le
+> choix initial de `S1`. Le paramètre DEV est maintenant `S0` (10 DTU) pour réduire le
+> coût ; la mesure doit donc valider `S0`, avec `S1` comme repli si la charge le justifie.
 
 > 🟠 À mesurer au palier 1. `DT-11` est prise ; c'est son dimensionnement qui est en jeu,
 > pas son principe.
 
-**Le conflit.** `DT-11` retient `S1` (Standard, 20 DTU) pour sortir du serverless à pause
-automatique. Or `Basic`, `S0` et `S1` stockent les fichiers de base sur du **stockage
+**Le conflit historique.** `DT-11` avait retenu `S1` (Standard, 20 DTU) pour sortir du
+serverless à pause automatique. Le paramètre DEV est maintenant `S0` (10 DTU). Or `Basic`,
+`S0` et `S1` stockent les fichiers de base sur du **stockage
 Standard sur disque dur** ; `S2` et au-delà sont sur SSD. `ENF-08` demande une recherche
 en moins d'une seconde, et `05` §5 abrite la requête la plus lourde du système.
 
 **Pourquoi ce n'est probablement pas un problème.** Le jeu de données est minuscule —
 moins de 100 Mo après cinq ans (`02` §7) —, donc l'essentiel doit résider en mémoire
 tampon et la latence disque ne mordre qu'aux lectures froides. Et contrairement au
-serverless, une base `S1` ne redémarre pas : il n'y a pas de réveil régulier qui viderait
+serverless, une base `S0` ou `S1` ne redémarre pas : il n'y a pas de réveil régulier qui viderait
 ce cache.
 
 **Le test.** Au palier 1, sur un catalogue chargé à quelques milliers de fiches, relever
@@ -271,8 +276,8 @@ trois temps : la recherche plein texte de `DT-07`, la requête de désengorgemen
 `05` §5, et l'écriture d'un lot de scans en transaction (`DT-06`). Refaire la mesure une
 fois le catalogue à quinze mille fiches.
 
-**Ce que le résultat décide.** Le maintien en `S1` (~30 $/mois) ou la montée en `S2`
-(~74 $/mois, SSD). C'est un paramètre dans `main.dev.bicepparam` et une montée en gamme
+**Ce que le résultat décide.** Le maintien en `S0` (~15 $/mois) ou la montée en `S1`
+(puis éventuellement `S2`, SSD). C'est un paramètre dans `main.dev.bicepparam` et une montée en gamme
 en ligne — la question est réversible, ce qui est la raison de commencer par le palier bas.
 
 **Ce que le résultat ne décide pas.** Le retour au serverless, qui reste exclu par
@@ -293,7 +298,7 @@ Pour éviter de rouvrir ce qui est tranché :
 | ISBNdb | Écarté par `DT-01`. Rouvrable si `QT-01` montre un écart significatif |
 | Prix dans le système | `RG-50` — aucun. Décision fonctionnelle, pas technique |
 | Fournisseur d'identité | `DT-10` — Entra External ID pour tous les publics. L'authentification maison est supprimée, pas mise de côté |
-| Moteur de base de données | `DT-11` — SQL Server, palier fixe `S1`. PostgreSQL est instruit et écarté : même prix, migration d'un système en service |
+| Moteur de base de données | `DT-11` — SQL Server, palier fixe sans pause, actuellement `S0`. PostgreSQL est instruit et écarté : même prix, migration d'un système en service |
 | Fournisseur d'e-mail | `DT-12` — Azure Communication Services, sur un sous-domaine d'envoi dédié. Brevo et Mailjet restent le repli documenté |
 | Adresse du catalogue | `DT-13` — `livres.volepapillondamour.fr`. Le chemin sur le domaine principal se rouvre le jour où un CDN se justifie |
 | Une ou deux tables de personnes | `DT-14` — une seule, la table `Users` existante, rapprochée par `oid`. `sub` ne convient pas : il est appairé par application |

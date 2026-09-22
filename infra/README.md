@@ -22,7 +22,7 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | ACS Communication Service | `vpd-acs-comm-dev` | Endpoint d'envoi du Worker, domaine Email lié |
 | Event Grid ACS | `vpd-acs-email-delivery-reports-dev` | Rapports de livraison vers le webhook API |
 | Container Registry | `vpdacrdev` | Images poussées par les pipelines applicatives |
-| Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S1` Standard, 20 DTU, 250 Go, sans pause automatique (France Central) |
+| Azure SQL | `vpd-sql-dev` / base `vole-papillon-damour-db` | `S0` Standard, 10 DTU, 250 Go, sans pause automatique (France Central) |
 | Storage Account | `vpdstdev` | Conteneurs blob `loto-images`, `actuality-images`, `event-images`, `product-images` |
 | Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
 | Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-catalog-id-dev` / `vpd-worker-id-dev` | Une par application |
@@ -83,10 +83,12 @@ Le retrait de `book-covers` du template Bicep ne supprime pas un conteneur déj�
 provisionné en mode incrémental : après application de la migration et smoke test,
 vérifier qu'aucun ancien consommateur ne le lit puis le supprimer explicitement.
 
-Le scaling est à `minReplicas: 1` pour l'API, le Website, le BackOffice et le Scan ; le
-worker reste à `minReplicas: 0`, `maxReplicas: 1` pendant la mesure `P1-1`. Les quatre
-applications HTTP évitent ainsi un démarrage à froid, tandis que le worker est observé
-comme hôte planifié sans réplique chaude. Le réglage est dans
+Le scaling DEV est à `minReplicas: 1` pour l'API, le Website et le Catalog. Le BackOffice
+et le Scan sont à `minReplicas: 0`, `maxReplicas: 2`, avec un `cooldownPeriod` de
+`10 800` secondes (trois heures) avant le retour à zéro après la dernière requête HTTP.
+Le premier appel HTTP réveille une réplique ; les usages rapprochés réinitialisent le délai
+et évitent des démarrages à froid répétés pendant une session. Le worker reste à
+`minReplicas: 0`, `maxReplicas: 1` pendant la mesure `P1-1`. Le réglage est dans
 `parameters/main.dev.bicepparam`.
 
 ## Configuration Azure à faire une seule fois
