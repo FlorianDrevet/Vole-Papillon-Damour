@@ -6,6 +6,12 @@ import {environment} from '../../environments/environment';
 import {
   CatalogAddedWatchlistItem,
   CatalogAlertPreferencesResponse,
+  CatalogAddedSelectionItem,
+  CatalogSelectionMergeEntry,
+  CatalogSelectionMergeResult,
+  CatalogSelectionResponse,
+  CatalogSelectionStatus,
+  CatalogSelectionTargetRequest,
   CatalogWatchlistItemRequest,
   CatalogWatchlistResponse,
   CatalogVolunteerStatisticsResponse,
@@ -16,6 +22,54 @@ export class CatalogMemberApiService {
   private readonly apiUrl = environment.apiUrl.replace(/\/$/, '');
 
   constructor(private readonly http: HttpClient) {}
+
+  getSelection(accessToken: string): Observable<CatalogSelectionResponse> {
+    return this.http.get<CatalogSelectionResponse>(
+      `${this.apiUrl}/catalog/me/selection`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  addSelectionItem(
+    accessToken: string,
+    request: CatalogSelectionTargetRequest,
+  ): Observable<CatalogAddedSelectionItem> {
+    return this.http.post<CatalogAddedSelectionItem>(
+      `${this.apiUrl}/catalog/me/selection`,
+      request,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  removeSelectionItem(accessToken: string, itemId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  setSelectionStatus(
+    accessToken: string,
+    itemId: string,
+    status: CatalogSelectionStatus,
+  ): Observable<void> {
+    return this.http.patch<void>(
+      `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}`,
+      {status},
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  mergeSelection(
+    accessToken: string,
+    entries: readonly CatalogSelectionMergeEntry[],
+  ): Observable<CatalogSelectionMergeResult> {
+    return this.http.post<CatalogSelectionMergeResult>(
+      `${this.apiUrl}/catalog/me/selection/merge`,
+      {entries},
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
 
   getWatchlist(accessToken: string): Observable<CatalogWatchlistResponse> {
     return this.http.get<CatalogWatchlistResponse>(
@@ -75,3 +129,4 @@ export class CatalogMemberApiService {
     return new HttpHeaders({Authorization: `Bearer ${accessToken}`});
   }
 }
+
