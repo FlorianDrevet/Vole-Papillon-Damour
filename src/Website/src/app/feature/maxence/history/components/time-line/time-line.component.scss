@@ -19,7 +19,7 @@
   height: var(--vpd-rail-row);
   border-radius: 2px;
   background: linear-gradient(180deg, #1497d6, #7fd8f5 55%, #f0801c); // $brand-gradient vertical
-  transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: transform 420ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .chapter-rail__item {
