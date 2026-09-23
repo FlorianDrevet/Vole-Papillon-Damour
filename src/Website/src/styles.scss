@@ -38,6 +38,10 @@ $custom-theme: mat.define-theme((
     // gardent leur fond sur toute la largeur, seul leur contenu est borné et centré.
     --vpd-shell-max: 1280px;
     --vpd-shell-gutter: 1.5rem;
+    --vpd-motion-fast: 150ms;
+    --vpd-motion-base: 220ms;
+    --vpd-motion-slow: 320ms;
+    --vpd-ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
   }
 
   @media (min-width: 1024px) {
@@ -71,8 +75,9 @@ $custom-theme: mat.define-theme((
   }
 
   a, button {
-    transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease,
-      box-shadow 180ms ease, transform 180ms ease;
+    transition: color var(--vpd-motion-fast) ease, background-color var(--vpd-motion-fast) ease,
+      border-color var(--vpd-motion-fast) ease, box-shadow var(--vpd-motion-base) var(--vpd-ease-standard),
+      transform var(--vpd-motion-base) var(--vpd-ease-standard);
   }
 
   button {
@@ -122,6 +127,47 @@ $custom-theme: mat.define-theme((
   );
 }
 
+[data-reveal-state] {
+  transition: opacity var(--vpd-motion-slow) var(--vpd-ease-standard),
+    transform var(--vpd-motion-slow) var(--vpd-ease-standard);
+}
+
+[data-reveal-state='pending'] {
+  opacity: 0;
+  transform: translateY(12px);
+  will-change: opacity, transform;
+}
+
+[data-reveal-state='visible'] {
+  opacity: 1;
+  transform: translateY(0);
+  will-change: auto;
+}
+
+app-vpd-events-section[data-reveal-state],
+app-maxence-intro[data-reveal-state],
+app-actuality[data-reveal-state] {
+  display: block;
+}
+
+img[data-image-state] {
+  transition: opacity var(--vpd-motion-base) ease-out;
+}
+
+img[data-image-state='pending'] {
+  opacity: 0;
+}
+
+img[data-image-state='visible'] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active {
+    transform: scale(0.985);
+  }
+}
+
 @keyframes vpd-skeleton {
   from {
     background-position: 200% 0;
@@ -143,5 +189,10 @@ $custom-theme: mat.define-theme((
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  [data-reveal-state='pending'] {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

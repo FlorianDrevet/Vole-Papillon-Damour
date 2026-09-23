@@ -46,10 +46,10 @@
   </div>
 </section>
 
-<app-vpd-events-section></app-vpd-events-section>
-<app-maxence-intro></app-maxence-intro>
+<app-vpd-events-section appRevealOnScroll></app-vpd-events-section>
+<app-maxence-intro appRevealOnScroll></app-maxence-intro>
 
-<section class="flex flex-col gap-11 bg-paper-2 px-shell py-16 lg:py-20">
+<section appRevealOnScroll class="flex flex-col gap-11 bg-paper-2 px-shell py-16 lg:py-20">
   <div class="grid grid-cols-1 items-end gap-6 lg:grid-cols-[1fr_360px]">
     <div class="flex flex-col gap-3.5">
       <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
@@ -69,8 +69,7 @@
       title="Financement de séances d’équithérapie en 2025 pour 12 enfants d’une classe ULIS de Feurs"
       photoSrc="images/actions/equitherapie-ulis-feurs.jpg"
       photoAlt="Séance d’équithérapie pour des enfants d’une classe ULIS de Feurs"
-      photoPosition="center 42%"
-      [rotateDeg]="-1.6">
+      photoPosition="center 42%">
     </app-action-card>
 
     <app-action-card
@@ -78,9 +77,7 @@
       meta="AGIR AU PLUS PRÈS DES BESOINS"
       title="Des actions nées de besoins concrets"
       description="Nous réunissons bénévoles et partenaires pour apporter une aide adaptée, au plus près des enfants et des familles."
-      tone="dark"
-      [rotateDeg]="1.3"
-      [floatDelayS]="0.8">
+      tone="dark">
       <a routerLink="/nos-actions" class="mt-1.5 font-mono text-[11px] tracking-[.12em] text-orange-2">NOTRE MANIÈRE D'AGIR →</a>
     </app-action-card>
 
@@ -89,9 +86,7 @@
       meta="INFORMATIQUE · KIWANIS"
       title="Financement d’ordinateurs portables à de jeunes lycéennes avec le Kiwanis"
       photoSrc="images/actions/ordinateurs-kiwanis.jpg"
-      photoAlt="Remise d’ordinateurs portables à de jeunes lycéennes avec le Kiwanis"
-      [rotateDeg]="-0.9"
-      [floatDelayS]="1.6">
+      photoAlt="Remise d’ordinateurs portables à de jeunes lycéennes avec le Kiwanis">
     </app-action-card>
 
     <app-action-card
@@ -100,9 +95,7 @@
       title="Participation à la récolte de jouets au profit du Père Noël du lundi"
       photoSrc="images/actions/recolte-jouets-pere-noel-du-lundi.jpg"
       photoAlt="Récolte de jouets au profit du Père Noël du lundi"
-      photoPosition="center 54%"
-      [rotateDeg]="1"
-      [floatDelayS]="2.2">
+      photoPosition="center 54%">
     </app-action-card>
 
     <a
@@ -115,9 +108,9 @@
   </div>
 </section>
 
-<app-actuality></app-actuality>
+<app-actuality appRevealOnScroll></app-actuality>
 
-<section class="flex flex-col gap-9 bg-ink px-shell py-16 lg:py-20">
+<section appRevealOnScroll class="flex flex-col gap-9 bg-ink px-shell py-16 lg:py-20">
   <div class="flex flex-col items-start justify-between gap-5 lg:flex-row lg:items-end">
     <div class="flex flex-col gap-3.5">
       <span class="h-[3px] w-16 rounded-full bg-vpd-brand"></span>
@@ -158,7 +151,7 @@
   </div>
 </section>
 
-<section class="flex flex-col gap-5 bg-paper px-shell py-12 lg:py-14">
+<section appRevealOnScroll class="flex flex-col gap-5 bg-paper px-shell py-12 lg:py-14">
   <div class="flex items-center gap-3.5">
     <span class="h-[3px] w-10 rounded-full bg-vpd-brand"></span>
     <span class="font-mono text-[11px] uppercase tracking-[.16em] text-slate-3">Nos partenaires</span>

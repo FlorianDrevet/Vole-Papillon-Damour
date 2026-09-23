@@ -50,6 +50,20 @@ stretch-to-row cards with a flexible copy block and `object-contain`. The Websit
 addition contains 715 source images; local validation passes 72 ChromeHeadless tests and
 the SSR/production build, with no deployment made.
 
+As of 2026-09-23, Website interaction polish centralizes motion timings in
+`src/Website/src/styles.scss` and respects `prefers-reduced-motion`. The mobile menu uses
+short enter/leave motion, Escape closure, focus trapping, and focus restoration. Selected
+home and album sections reveal on intersection; gallery/action/news images fade in after
+load. Event/news cards use small hover/focus responses, while continuous float was removed
+from action, statistic, and upcoming-event cards. The Maxence history transitions are
+shorter. `/association/photos/:albumSlug` now opens a native keyboard-accessible lightbox
+with previous/next keys and buttons, an image count, Escape/backdrop closing, body scroll
+lock, and focus restoration. The back-to-top action appears only after 480px of scroll and
+is omitted from keyboard navigation while hidden. Validation: 87 ChromeHeadless tests,
+SSR/production build, and Playwright visual/interaction checks at 390×844 and 1440×1000;
+the local Website API on port 5257 was unavailable during the home-page smoke check, so
+event and actuality data were not live. No deployment made.
+
 The public catalog is intentionally separate from the association Website. It uses typed
 `CatalogApiService`/models and the `/catalog/*` API reads for search, book details, works,
 the next books fair, and the dynamic sitemap; the home calendar also consumes the existing

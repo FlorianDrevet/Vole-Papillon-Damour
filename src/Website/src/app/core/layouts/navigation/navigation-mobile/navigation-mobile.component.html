@@ -9,8 +9,11 @@
   <span class="flex items-center gap-2.5">
     <app-pill-button routerLink="/association/comment-aider" [small]="true" (click)="close()">Nous aider</app-pill-button>
     <button
+      #menuToggle
+      data-mobile-menu-toggle
       type="button"
       (click)="toggle()"
+      aria-controls="mobile-navigation-panel"
       class="flex flex-col gap-1 p-1"
       [attr.aria-expanded]="isOpen()"
       [attr.aria-label]="isOpen() ? 'Fermer le menu' : 'Ouvrir le menu'">
@@ -26,15 +29,25 @@
 </div>
 
 @if (isOpen()) {
-  <div class="fixed inset-0 z-50 flex flex-col bg-ink px-6 pb-8 pt-4 text-paper">
-    <button type="button" (click)="close()" class="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10" aria-label="Fermer le menu">✕</button>
+  <div
+    #menuPanel
+    id="mobile-navigation-panel"
+    data-mobile-menu-panel
+    role="dialog"
+    aria-modal="true"
+    aria-label="Menu principal"
+    animate.enter="mobile-menu-enter"
+    animate.leave="mobile-menu-leave"
+    (keydown)="onPanelKeydown($event)"
+    class="fixed inset-0 z-50 flex flex-col bg-ink px-6 pb-8 pt-4 text-paper">
+    <button #menuCloseButton data-menu-close type="button" (click)="close(true)" class="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10" aria-label="Fermer le menu">✕</button>
     <nav class="mt-4 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto" aria-label="Navigation mobile">
       @for (item of navItems(); track item.url; let i = $index) {
         <div class="border-b border-white/10">
           <a
             [routerLink]="item.url"
             (click)="close()"
-            class="flex items-center gap-4 py-4"
+            class="flex items-center gap-4 py-4 transition-colors duration-[var(--vpd-motion-fast)]"
             [class]="activeUrl() === item.url ? 'text-orange-2' : 'text-paper'">
             <span class="font-mono text-xs text-mist">{{ i + 1 < 10 ? '0' + (i + 1) : i + 1 }}</span>
             <span class="font-serif text-2xl">{{ item.label }}</span>
@@ -48,7 +61,7 @@
                   <a
                     [routerLink]="child.url"
                     (click)="close()"
-                    class="block py-1.5 text-[15px]"
+                    class="block py-1.5 text-[15px] transition-colors duration-[var(--vpd-motion-fast)] hover:text-white focus-visible:rounded-sm"
                     [class]="isChildActive(child) ? 'font-semibold text-orange-2' : 'text-mist-2'">{{ child.label }}</a>
                 </li>
               }
@@ -58,10 +71,10 @@
       }
     </nav>
     <div class="flex shrink-0 gap-4 pt-8">
-      <a href="https://www.facebook.com/melvin.drevet.1" target="_blank" rel="noopener noreferrer" class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan/[.14]" aria-label="Facebook">
+      <a href="https://www.facebook.com/melvin.drevet.1" target="_blank" rel="noopener noreferrer" class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan/[.14] transition-transform hover:scale-105" aria-label="Facebook">
         <img priority ngSrc="images/facebook.svg" alt="" width="16" height="16">
       </a>
-      <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan/[.14]" aria-label="Instagram">
+      <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan/[.14] transition-transform hover:scale-105" aria-label="Instagram">
         <img priority ngSrc="images/instagram.svg" alt="" width="16" height="16">
       </a>
     </div>
