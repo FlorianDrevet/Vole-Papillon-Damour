@@ -22,6 +22,7 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
     public string? Note { get; private set; }
     public Guid? ClientGestureId { get; private set; }
     public BookMovementId? ReversalOfMovementId { get; private set; }
+    public Guid? CheckoutPassageId { get; private set; }
 
     private BookMovement(
         BookMovementId id,
@@ -36,7 +37,8 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
         AssoEventsId? assoEventsId,
         string? note,
         Guid? clientGestureId,
-        BookMovementId? reversalOfMovementId) : base(id)
+        BookMovementId? reversalOfMovementId,
+        Guid? checkoutPassageId) : base(id)
     {
         EnsureIsbn(isbn13);
         if (quantity == 0)
@@ -56,6 +58,7 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
         Note = note;
         ClientGestureId = clientGestureId;
         ReversalOfMovementId = reversalOfMovementId;
+        CheckoutPassageId = checkoutPassageId;
     }
 
     public static BookMovement Create(
@@ -71,7 +74,8 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
         AssoEventsId? assoEventsId,
         string? note,
         Guid? clientGestureId,
-        BookMovementId? reversalOfMovementId = null)
+        BookMovementId? reversalOfMovementId = null,
+        Guid? checkoutPassageId = null)
     {
         return new BookMovement(
             id,
@@ -86,7 +90,8 @@ public sealed class BookMovement : AggregateRoot<BookMovementId>
             assoEventsId,
             note,
             clientGestureId,
-            reversalOfMovementId);
+            reversalOfMovementId,
+            checkoutPassageId);
     }
 
     public BookMovement()
