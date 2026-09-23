@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
+using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
@@ -70,6 +71,9 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
 
     public RemoveSelectionItemCommandHandler CreateRemoveHandler() =>
         new(Context, CreateMemberIdentityService());
+
+    public MergeSelectionCommandHandler CreateMergeHandler() =>
+        new(Context, CreateMemberIdentityService(), _clock);
 
     public SetSelectionItemStatusCommandHandler CreateSetStatusHandler() =>
         new(Context, CreateMemberIdentityService(), _clock);
