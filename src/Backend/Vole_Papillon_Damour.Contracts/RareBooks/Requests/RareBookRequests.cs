@@ -39,7 +39,8 @@ public sealed record UpdateRareBookRequest(
 public sealed record MarkRareBookSoldRequest(
     DateTime OccurredAt,
     Guid? ScanSessionId,
-    Guid? AssoEventsId);
+    Guid? AssoEventsId,
+    Guid? CheckoutPassageId = null);
 
 public sealed class AddRareBookPhotoRequest
 {

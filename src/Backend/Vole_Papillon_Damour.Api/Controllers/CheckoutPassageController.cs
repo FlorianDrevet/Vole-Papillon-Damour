@@ -1,8 +1,11 @@
+using System.Security.Claims;
 using MediatR;
 using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Commands.AssociateCheckoutPassage;
 using Vole_Papillon_Damour.Application.MemberCards.Queries.ResolveMemberCard;
 using Vole_Papillon_Damour.Contracts.MemberCards;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
 
@@ -12,6 +15,43 @@ public static class CheckoutPassageController
     {
         return builder.UseEndpoints(endpoints =>
         {
+            endpoints.MapPut(
+                    "/scan/passages/{checkoutPassageId:guid}/member",
+                    async (
+                        Guid checkoutPassageId,
+                        AssociateCheckoutPassageRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (string.IsNullOrWhiteSpace(request.Credential))
+                        {
+                            return Results.BadRequest();
+                        }
+
+                        if (!TryGetUserId(principal, out var volunteerId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new AssociateCheckoutPassageCommand(
+                                checkoutPassageId,
+                                request.Credential,
+                                request.OccurredAt.UtcDateTime,
+                                volunteerId),
+                            cancellationToken);
+                        return result.Match(
+                            association => Results.Ok(new AssociateCheckoutPassageResponse(
+                                association.CheckoutPassageId,
+                                association.Status,
+                                association.DisplayLabel,
+                                association.AlreadyProcessed)),
+                            error => error.Result());
+                    })
+                .WithName("AssociateCheckoutPassageMember")
+                .RequireAuthorization("Caisse");
+
             endpoints.MapPost(
                     "/scan/member-cards/resolve",
                     async (
@@ -35,5 +75,20 @@ public static class CheckoutPassageController
                 .RequireAuthorization("Caisse")
                 .RequireRateLimiting(RateLimitingPolicies.MemberCardResolve);
         });
+    }
+
+    private static bool TryGetUserId(ClaimsPrincipal principal, out UserId userId)
+    {
+        var externalId = principal.FindFirst("oid")?.Value
+            ?? principal.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier")?.Value;
+
+        if (Guid.TryParse(externalId, out var value) && value != Guid.Empty)
+        {
+            userId = UserId.Create(value);
+            return true;
+        }
+
+        userId = null!;
+        return false;
     }
 }

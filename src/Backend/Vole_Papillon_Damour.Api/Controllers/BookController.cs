@@ -409,7 +409,10 @@ public static class BookController
                                 request.Quantity,
                                 request.OccurredAt,
                                 volunteerId,
-                                request.ClientGestureId),
+                                request.ClientGestureId,
+                                request.CheckoutPassageId is Guid checkoutPassageId && checkoutPassageId != Guid.Empty
+                                    ? checkoutPassageId
+                                    : null),
                             cancellationToken);
 
                         return result.Match(

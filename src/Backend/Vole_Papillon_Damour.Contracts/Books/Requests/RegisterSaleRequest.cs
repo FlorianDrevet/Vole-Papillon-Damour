@@ -4,4 +4,5 @@ public sealed record RegisterSaleRequest(
     string Isbn,
     int Quantity,
     DateTime OccurredAt,
-    Guid ClientGestureId);
+    Guid ClientGestureId,
+    Guid? CheckoutPassageId = null);
