@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.Configure<UnsubscribeTokenOptions>(
             builderConfiguration.GetSection(UnsubscribeTokenOptions.SectionName));
         services.AddSingleton<IUnsubscribeTokenService, UnsubscribeTokenService>();
+        services.AddSingleton<IRandomIndexSource, CryptographicRandomIndexSource>();
         services.AddOptions<MemberCardTokenOptions>()
             .Bind(builderConfiguration.GetSection(MemberCardTokenOptions.SectionName))
             .Validate(options => MemberCardTokenOptions.TryDecodeSigningKey(options.SigningKey, out _),

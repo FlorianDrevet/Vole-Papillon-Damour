@@ -8,7 +8,10 @@ using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionI
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
 using Vole_Papillon_Damour.Application.MemberSelection.Common;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
+using Vole_Papillon_Damour.Application.MemberCards.Commands.RotateMyCard;
+using Vole_Papillon_Damour.Application.MemberCards.Queries.GetMyCard;
 using Vole_Papillon_Damour.Contracts.MemberSelection;
+using Vole_Papillon_Damour.Contracts.MemberCards;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 
@@ -20,6 +23,60 @@ public static class MemberAccountController
     {
         return builder.UseEndpoints(endpoints =>
         {
+            endpoints.MapGet(
+                    "/catalog/me/card",
+                    async (
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetMyCardQuery(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName),
+                            cancellationToken);
+                        return result.Match(
+                            card => Results.Ok(ToResponse(card)),
+                            error => error.Result());
+                    })
+                .WithName("GetMyMemberCard")
+                .RequireAuthorization();
+
+            endpoints.MapPost(
+                    "/catalog/me/card/rotate",
+                    async (
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RotateMyCardCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName),
+                            cancellationToken);
+                        return result.Match(
+                            card => Results.Ok(ToResponse(card)),
+                            error => error.Result());
+                    })
+                .WithName("RotateMyMemberCard")
+                .RequireAuthorization();
+
             endpoints.MapGet(
                     "/catalog/me/selection",
                     async (
@@ -211,5 +268,8 @@ public static class MemberAccountController
                 item.Status.ToString(),
                 item.AddedAt,
                 item.PurchasedAt)).ToArray());
+
+    private static MemberCardResponse ToResponse(MyCardResult card) =>
+        new(card.QrPayload, card.RecoveryCode, card.DisplayLabel, card.IssuedAt);
 }
 

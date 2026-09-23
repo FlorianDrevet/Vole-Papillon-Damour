@@ -29,6 +29,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Vole_Papillon_Damour.Application\Vole_Papillon_Damour.Application.csproj" />
         <ProjectReference Include="..\Vole_Papillon_Damour.Domain\Vole_Papillon_Damour.Domain.csproj" />
+        <ProjectReference Include="..\Vole_Papillon_Damour.Infrastructure\Vole_Papillon_Damour.Infrastructure.csproj" />
     </ItemGroup>
 
 </Project>
