@@ -12,6 +12,7 @@ using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
@@ -37,4 +38,5 @@ public interface IProjectDbContext
     DbSet<RareBook> RareBooks { get; }
     DbSet<RareBookPhoto> RareBookPhotos { get; }
     DbSet<RareBookTombstone> RareBookTombstones => throw new NotSupportedException();
+    DbSet<MemberSelectionItem> MemberSelectionItems => throw new NotSupportedException();
 }

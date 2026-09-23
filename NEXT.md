@@ -58,6 +58,12 @@ associer un passage de caisse, l'historique Mes achats, le hors-ligne, le RGPD e
 règles RG-52 à RG-66. Aucun code runtime, compte, jeton ou déploiement n'a été créé ;
 la PR doit être relue et validée avant toute implémentation.
 
+### Migration compte membre en attente
+
+Sur la branche `feat/account-selection-pr1`, CS-2 a généré la migration
+`20260923191942_AddMemberSelection`. Elle n'a été appliquée à aucun environnement ;
+elle reste à appliquer en DEV au déploiement autorisé de cette étape.
+
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 
 La liste Scanette des livres rares protège désormais les appels `/rare-books/*` avec le
