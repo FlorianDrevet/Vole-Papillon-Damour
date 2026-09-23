@@ -224,6 +224,58 @@ public sealed class RegisterSaleCommandHandlerTests
     }
 
     [Fact]
+    public async Task VoidSale_MarksAssociatedLineAsVoided()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-03T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-04T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-03T18:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-03T20:00:00+02:00"));
+        var passageId = Guid.NewGuid();
+        var saleCommand = CreateCommand(book.Isbn13.Value) with { CheckoutPassageId = passageId };
+        var sale = await fixture.CreateRegisterSaleHandler().Handle(saleCommand, default);
+
+        await fixture.CreateVoidSaleHandler().Handle(
+            new VoidSaleCommand(
+                sale.Value.SaleMovementId,
+                ScanBookCommandHandlerTests.ClientScanAt,
+                saleCommand.VolunteerId,
+                Guid.NewGuid()),
+            default);
+
+        (await fixture.Context.CheckoutPassageLines.SingleAsync()).VoidedAt.Should().NotBeNull();
+        (await fixture.Context.BookMovements.CountAsync(movement => movement.Type == BookMovementType.Correction))
+            .Should().Be(1);
+    }
+
+    [Fact]
+    public async Task VoidSale_WithoutPassage_BehavesAsBefore()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-03T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-04T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-03T18:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-03T20:00:00+02:00"));
+        var saleCommand = CreateCommand(book.Isbn13.Value);
+        var sale = await fixture.CreateRegisterSaleHandler().Handle(saleCommand, default);
+
+        await fixture.CreateVoidSaleHandler().Handle(
+            new VoidSaleCommand(
+                sale.Value.SaleMovementId,
+                ScanBookCommandHandlerTests.ClientScanAt,
+                saleCommand.VolunteerId,
+                Guid.NewGuid()),
+            default);
+
+        (await fixture.Context.CheckoutPassageLines.CountAsync()).Should().Be(0);
+        (await fixture.Context.BookMovements.CountAsync(movement => movement.Type == BookMovementType.Correction))
+            .Should().Be(1);
+    }
+    [Fact]
     public async Task Handle_WhenSaleIsVoidedWhileFairIsOpen_RecordsInverseMovementAndRestoresQuantity()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

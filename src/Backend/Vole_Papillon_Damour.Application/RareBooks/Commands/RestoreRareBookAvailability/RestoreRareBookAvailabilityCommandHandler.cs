@@ -51,6 +51,13 @@ public sealed class RestoreRareBookAvailabilityCommandHandler(
 
         if (changed)
         {
+            var passageLine = await dbContext.CheckoutPassageLines
+                .Where(line => line.RareBookId == rareBook.Id && line.VoidedAt == null)
+                .OrderByDescending(line => line.OccurredAt)
+                .ThenByDescending(line => line.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            passageLine?.Void(nowUtc);
+
             await dbContext.SaveChangesAsync(cancellationToken);
             await bookAlertOutbox.CancelPendingForRareBookAsync(
                 rareBook.Id,

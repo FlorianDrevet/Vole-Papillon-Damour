@@ -154,6 +154,27 @@ public sealed class RareBookCommandHandlerTests
     }
 
     [Fact]
+    public async Task RestoreRareBook_MarksRareLineAsVoided()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var outbox = Substitute.For<IBookAlertOutbox>();
+        var published = await fixture.AddRareBookAsync("Restauration associée", published: true);
+        var passageId = Guid.NewGuid();
+        var saleCommand = new MarkRareBookSoldCommand(
+            published.Id, null, null, fixture.Now, fixture.UserId) with { CheckoutPassageId = passageId };
+        await new MarkRareBookSoldCommandHandler(
+                fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
+            .Handle(saleCommand, CancellationToken.None);
+
+        var restored = await new RestoreRareBookAvailabilityCommandHandler(fixture.Context, fixture.Clock, outbox)
+            .Handle(new(published.Id, fixture.UserId), CancellationToken.None);
+
+        restored.IsError.Should().BeFalse();
+        var line = await fixture.Context.CheckoutPassageLines.SingleAsync();
+        line.CheckoutPassageId.Should().Be(passageId);
+        line.VoidedAt.Should().NotBeNull();
+    }
+    [Fact]
     public async Task Mark_sold_with_passage_records_one_rare_purchase_line_on_retry()
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
