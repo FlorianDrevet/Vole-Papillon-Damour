@@ -743,7 +743,9 @@ module backendExceptionsAlert './modules/Monitor/scheduledQueryRule.module.bicep
 }
 
 // Failure Anomalies is created implicitly by Azure with its own recipients.
-// Declaring it here keeps every notification on the project action group.
+// Declaring it here keeps every notification on the project action group. Its
+// detector-specific cadence stays at the module default instead of sharing the
+// slower scheduled-query alert frequency.
 module apiFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' = {
   name: 'apiFailureAnomalies'
   scope: applicationResourceGroup
@@ -751,7 +753,6 @@ module apiFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' = {
     applicationInsightsName: applicationInsightsApiModule.outputs.name
     applicationInsightsId: applicationInsightsApiModule.outputs.resourceId
     actionGroupId: monitoringActionGroup.outputs.resourceId
-    frequency: monitoringEvaluationFrequency
     tags: tags
   }
 }
@@ -763,7 +764,6 @@ module workerFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' 
     applicationInsightsName: applicationInsightsWorkerModule.outputs.name
     applicationInsightsId: applicationInsightsWorkerModule.outputs.resourceId
     actionGroupId: monitoringActionGroup.outputs.resourceId
-    frequency: monitoringEvaluationFrequency
     tags: tags
   }
 }
@@ -775,7 +775,6 @@ module catalogFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep'
     applicationInsightsName: applicationInsightsCatalogModule.outputs.name
     applicationInsightsId: applicationInsightsCatalogModule.outputs.resourceId
     actionGroupId: monitoringActionGroup.outputs.resourceId
-    frequency: monitoringEvaluationFrequency
     tags: tags
   }
 }

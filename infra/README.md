@@ -51,7 +51,9 @@ l'API (5xx, P95 par opération, métadonnées lentes), le SQL lent, les exceptio
 serveur répétées, les *Failure Anomalies* de l'API, du worker et du catalogue, et
 des tests de disponibilité multi-régions (API `/health`, site, catalogue, scan ;
 `availabilityTestsEnabled`, ~17 €/mois). En DEV, ces tests restent déclarés mais
-sont désactivés et les règles d'alerte sont évaluées quatre fois par jour (`PT6H`).
+sont désactivés et les alertes planifiées sont évaluées quatre fois par jour (`PT6H`).
+Les *Failure Anomalies* gardent leur fréquence dédiée de `PT5M` : le détecteur Azure
+refuse la cadence `PT6H`.
 Les composants Website, BackOffice et Catalog utilisent aussi 25 % de sampling
 d'ingestion en DEV ; l'API, le worker et la Scanette restent à 100 % pour conserver
 les signaux opérationnels. Les valeurs par défaut de production restent à 100 % et
@@ -86,6 +88,8 @@ vérifier qu'aucun ancien consommateur ne le lit puis le supprimer explicitement
 Le scaling DEV est à `minReplicas: 1` pour l'API, le Website et le Catalog. Le BackOffice
 et le Scan sont à `minReplicas: 0`, `maxReplicas: 2`, avec un `cooldownPeriod` de
 `10 800` secondes (trois heures) avant le retour à zéro après la dernière requête HTTP.
+Le module utilise `Microsoft.App/containerApps@2025-07-01`, qui déclare cette propriété
+dans le contrat ARM.
 Le premier appel HTTP réveille une réplique ; les usages rapprochés réinitialisent le délai
 et évitent des démarrages à froid répétés pendant une session. Le worker reste à
 `minReplicas: 0`, `maxReplicas: 1` pendant la mesure `P1-1`. Le réglage est dans

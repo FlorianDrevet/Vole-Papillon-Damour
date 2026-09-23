@@ -23,6 +23,12 @@
 | **Dernière mise à jour** | 2026-09-17 — les lots 0 à 10 sont implémentés ; la validation finale couvre 545 tests backend, 313 Catalog, 241 Scan, 6 bootstrap Scan, 5 bootstrap BackOffice, les tests Angular BackOffice et les trois builds Angular. Le prix reste uniquement stocké et affiché, sans panier ni total, et RG-51 reste inchangée. |
 | **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
 
+### Incident infra — 2026-09-23
+
+Le déploiement manuel [Infra - deploy #35846830759](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/35846830759), en mode `deploy` sur `main` (`32462e6`), a échoué pendant la validation ARM. Scan et BackOffice ont rejeté `template.scale.cooldownPeriod` parce que le module Container App utilisait encore l'API `2024-03-01`, qui ne déclare pas cette propriété. Les trois modules Failure Anomalies ont reçu `PT6H` (360 minutes) depuis la fréquence des alertes planifiées ; Azure indique que cette fréquence n'est pas prise en charge par `FailureAnomaliesDetector`.
+
+Le correctif en cours met le module Container App à l'API stable `2025-07-01` et laisse les Failure Anomalies à leur fréquence dédiée `PT5M`. Le run ARM était une opération de déploiement réelle, pas un `what-if` ; l'état Azure après son échec n'a pas été vérifié et peut inclure des mises à jour partielles. Avant le prochain `deploy`, relever les opérations/états du déploiement `vpd-infra-65` et lancer un nouveau `what-if`. Le run précédent `35662330783` du 21 septembre était un `what-if` seulement, donc il ne valide pas l'application réelle de ces changements.
+
 ### État actualisé — 2026-09-22 — parité des maquettes Scanette livres rares
 
 Le parcours Scanette des livres rares est maintenant aligné sur les trois maquettes Claude
@@ -2066,9 +2072,9 @@ distant n'a été effectué ; le contrôle authentifié et le smoke avec une API
 
 | Ressource | État | Depuis |
 |---|---|---|
-| Base SQL | `S0` (`Standard`, 10 DTU, 250 Go), sans pause automatique ; passage à 10 DTU rapporté comme déjà effectué dans le portail, alignement Bicep en attente de déploiement | `2026-09-22` |
+| Base SQL | `S0` (`Standard`, 10 DTU, 250 Go), sans pause automatique ; passage à 10 DTU rapporté comme déjà effectué dans le portail ; l'état réel après le déploiement infra échoué du 2026-09-23 reste à vérifier | `2026-09-23` |
 | Sondes de santé | Paramètres API posés dans le dépôt (`/health`, port `8080`, `L0-6`) ; Azure non modifié | — |
-| Container Apps | Bicep en cours : `api`, `website`, `catalog` à `minReplicas: 1`, BackOffice et Scan à `minReplicas: 0` avec cooldown 3 h ; Azure à vérifier après déploiement. `worker` reste à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running` | `2026-09-22` |
+| Container Apps | Bicep : `api`, `website`, `catalog` à `minReplicas: 1`, BackOffice et Scan à `minReplicas: 0` avec cooldown 3 h ; le run du 2026-09-23 a échoué sur le schéma des deux apps et l'état Azure après l'échec n'est pas relevé. `worker` reste à `minReplicas: 0`, `maxReplicas: 1`, privé et `Running` avant ce run | `2026-09-23` |
 | API Entra | `/health` répond 200 et les PUT BackOffice fonctionnent après le déploiement du correctif audience + rôles ; le correctif de page blanche reste côté image BackOffice | `2026-09-03` |
 | Locataire Entra External ID | Créé : `Vole Papillon Damour`, tenant ID `b23c80b3-9776-4840-8255-fcbf3b3500fd`, domaine `volepapillondamour.onmicrosoft.com`, France/Europe, rattaché à l'abonnement `Florian - 15-07-2026` | `2026-09-02` |
 | Application Graph de suppression | Créée par `Configure-EntraApps.ps1` ; permissions/consentements et principal utilisés par le worker dev vérifiés dans le flux de déploiement | `2026-09-02` |
