@@ -5,7 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.AspNetCore.RateLimiting;
-using Vole_Papillon_Damour.Api.Authentication;
+using Vole_Papillon_Damour.Api.Common;
 using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
@@ -166,7 +166,7 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var identity))
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
@@ -194,7 +194,7 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var identity))
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
@@ -240,7 +240,7 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var identity))
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
@@ -269,7 +269,7 @@ public static class BookController
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var identity))
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
@@ -428,7 +428,7 @@ public static class BookController
                         [FromServices] MemberIdentityService memberIdentityService,
                         CancellationToken cancellationToken) =>
                     {
-                        if (!TryGetMemberIdentity(principal, out var identity))
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
                         {
                             return Results.Unauthorized();
                         }
@@ -544,20 +544,6 @@ public static class BookController
         }
 
         userId = null!;
-        return false;
-    }
-
-    private static bool TryGetMemberIdentity(
-        ClaimsPrincipal principal,
-        out EntraMemberIdentityClaims identity)
-    {
-        if (EntraMemberIdentityClaimsReader.TryRead(principal, out var parsed) && parsed is not null)
-        {
-            identity = parsed;
-            return true;
-        }
-
-        identity = null!;
         return false;
     }
 

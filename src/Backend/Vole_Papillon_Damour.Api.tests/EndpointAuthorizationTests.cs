@@ -258,6 +258,7 @@ public class EndpointAuthorizationTests
         application.UseAccountController();
         application.UseAccountAdministrationController();
         application.UseBookController();
+        application.UseMemberAccountController();
         application.UseRareBookController();
         application.UseBibliographicReferenceController();
         application.UseBookAdministrationController();

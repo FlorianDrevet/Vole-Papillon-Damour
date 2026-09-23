@@ -135,6 +135,7 @@ app.UseAuthenticationController();
 app.UseAccountController();
 app.UseAccountAdministrationController();
 app.UseBookController();
+app.UseMemberAccountController();
 app.UseRareBookController();
 app.UseBibliographicReferenceController();
 app.UseBookAdministrationController();
