@@ -17,6 +17,36 @@ namespace Vole_Papillon_Damour.Application.tests.Books.Commands.RegisterSale;
 public sealed class RegisterSaleCommandHandlerTests
 {
     [Fact]
+    public async Task Handle_WithoutPassage_DoesNotCreatePassage()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+
+        await fixture.CreateRegisterSaleHandler().Handle(
+            CreateCommand(book.Isbn13.Value),
+            CancellationToken.None);
+
+        (await fixture.Context.CheckoutPassages.CountAsync()).Should().Be(0);
+        (await fixture.Context.BookMovements.SingleAsync()).CheckoutPassageId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WithPassage_RecordsMovementAndPurchaseLineTogether()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var passageId = Guid.NewGuid();
+        var command = CreateCommand(book.Isbn13.Value) with { CheckoutPassageId = passageId };
+
+        var result = await fixture.CreateRegisterSaleHandler().Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.BookMovements.SingleAsync()).CheckoutPassageId.Should().Be(passageId);
+        (await fixture.Context.CheckoutPassages.CountAsync()).Should().Be(1);
+        (await fixture.Context.CheckoutPassageLines.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
     public async Task Handle_WhenBookIsAvailable_AttachesSaleToTheSingleOpenFair()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

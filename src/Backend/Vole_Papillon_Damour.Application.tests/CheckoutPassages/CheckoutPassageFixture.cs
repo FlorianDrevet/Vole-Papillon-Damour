@@ -2,6 +2,10 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Commands.AssociateCheckoutPassage;
+using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
@@ -32,13 +36,21 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
 {
     private readonly SqliteConnection _connection;
     private readonly DateTime _now;
+    // Public deterministic test key only; never use this value for runtime configuration.
+    private const string TestSigningKey = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
     private readonly Dictionary<string, string> _redirects = new(StringComparer.Ordinal);
+    private readonly Dictionary<Guid, (Book Book, BookMovement Movement)> _salesByGesture = [];
+    private readonly CheckoutPassageTestClock _clock;
+    private readonly IMemberCardTokenService _tokens;
+    public UserId VolunteerId { get; } = UserId.Create(Guid.Parse("00000000-0000-0000-0000-0000000000f1"));
 
     private CheckoutPassageFixture(SqliteConnection connection, CheckoutPassageTestDbContext context, DateTime now)
     {
         _connection = connection;
         Context = context;
         _now = now;
+        _clock = new CheckoutPassageTestClock(now);
+        _tokens = new MemberCardTokenService(Options.Create(new MemberCardTokenOptions { SigningKey = TestSigningKey }));
     }
 
     public CheckoutPassageTestDbContext Context { get; }
@@ -58,6 +70,14 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
     public CheckoutPassageRecorder CreateRecorder() =>
         new(Context, NullLogger<CheckoutPassageRecorder>.Instance);
 
+    public AssociateCheckoutPassageCommandHandler CreateAssociateHandler() => new(
+        Context,
+        _clock,
+        CreateRecorder(),
+        _tokens,
+        NullLogger<AssociateCheckoutPassageCommandHandler>.Instance);
+
+
     public async Task<User> AddMemberAsync()
     {
         var userId = UserId.Create(Guid.NewGuid());
@@ -69,6 +89,30 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         Context.Users.Add(member);
         await Context.SaveChangesAsync();
         return member;
+    }
+
+    public async Task<CheckoutPassageTestMember> AddMemberWithCardAsync(string firstName)
+    {
+        var userId = UserId.Create(Guid.NewGuid());
+        var user = User.CreateFromExternalIdentity(
+            userId,
+            userId.Value.ToString("N"),
+            $"member-{userId.Value:N}@example.test",
+            _now,
+            new Name(firstName, "Durand"));
+        var recoveryCode = $"{MemberCardRecoveryCode.Words[Context.MemberCards.Count()]}-{(4271 + Context.MemberCards.Count()).ToString("D4")}";
+        var card = MemberCard.Issue(Guid.NewGuid(), userId, recoveryCode, _now);
+        Context.Users.Add(user);
+        Context.MemberCards.Add(card);
+        await Context.SaveChangesAsync();
+        return new CheckoutPassageTestMember(user, _tokens.Create(card.Id, card.Version), recoveryCode);
+    }
+
+    public async Task RotateCardAsync(CheckoutPassageTestMember member)
+    {
+        var card = await Context.MemberCards.SingleAsync(candidate => candidate.UserId == member.User.Id);
+        card.Rotate("SABLE-3159", _now.AddMinutes(1));
+        await Context.SaveChangesAsync();
     }
 
     public async Task<MemberSelectionItem> AddSelectionAsync(User member, string isbnValue)
@@ -89,11 +133,32 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         return selection;
     }
 
-    public async Task<(Book Book, BookMovement Movement)> AddSaleAsync(string isbnValue, Guid passageId)
+    public async Task RegisterSaleAsync(string isbnValue, Guid passageId, Guid? gestureId = null)
+    {
+        Book book;
+        BookMovement movement;
+        if (gestureId is { } gesture && _salesByGesture.TryGetValue(gesture, out var recorded))
+        {
+            (book, movement) = recorded;
+        }
+        else
+        {
+            (book, movement) = await AddSaleAsync(isbnValue, passageId, gestureId);
+            if (gestureId is { } newGesture)
+            {
+                _salesByGesture[newGesture] = (book, movement);
+            }
+        }
+
+        await CreateRecorder().RecordOrdinarySaleAsync(passageId, movement, book, isbnValue, default);
+        await Context.SaveChangesAsync();
+    }
+
+    public async Task<(Book Book, BookMovement Movement)> AddSaleAsync(string isbnValue, Guid passageId, Guid? gestureId = null)
     {
         var isbn = ParseIsbn(_redirects.GetValueOrDefault(isbnValue, isbnValue));
         var book = Book.Create(isbn, _now);
-        var movement = CreateMovement(isbn, passageId);
+        var movement = CreateMovement(isbn, passageId, gestureId);
         Context.BookMovements.Add(movement);
         await Context.SaveChangesAsync();
         return (book, movement);
@@ -155,7 +220,7 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    private BookMovement CreateMovement(Isbn13 isbn, Guid passageId) => BookMovement.Create(
+    private BookMovement CreateMovement(Isbn13 isbn, Guid passageId, Guid? gestureId = null) => BookMovement.Create(
         BookMovementId.Create(Guid.NewGuid()),
         isbn,
         BookMovementType.Sale,
@@ -167,7 +232,7 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         volunteerId: null,
         assoEventsId: null,
         note: null,
-        clientGestureId: null,
+        clientGestureId: gestureId,
         checkoutPassageId: passageId);
 
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
@@ -179,6 +244,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     : DbContext(options), IProjectDbContext
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
     public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
@@ -197,7 +263,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
     DbSet<RareBook> IProjectDbContext.RareBooks => throw new NotSupportedException();
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => throw new NotSupportedException();
-    DbSet<MemberCard> IProjectDbContext.MemberCards => throw new NotSupportedException();
+    DbSet<MemberCard> IProjectDbContext.MemberCards => MemberCards;
     DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => throw new NotSupportedException();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -215,7 +281,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
         modelBuilder.Ignore<EmailBounceEvent>();
         modelBuilder.Ignore<RareBook>();
         modelBuilder.Ignore<RareBookPhoto>();
-        modelBuilder.Ignore<MemberCard>();
+        modelBuilder.ApplyConfiguration(new MemberCardConfiguration());
         modelBuilder.Ignore<RareBookTombstone>();
 
         modelBuilder.Entity<User>(builder =>
@@ -269,4 +335,15 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
         ? isbn
         : throw new InvalidOperationException($"Invalid test ISBN: {value}");
+}
+
+
+internal sealed record CheckoutPassageTestMember(User User, string QrPayload, string RecoveryCode)
+{
+    public UserId UserId => User.Id;
+}
+
+internal sealed class CheckoutPassageTestClock(DateTime utcNow) : IDateTimeProvider
+{
+    public DateTime UtcNow { get; } = utcNow;
 }

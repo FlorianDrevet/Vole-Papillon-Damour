@@ -10,4 +10,5 @@ public sealed record RegisterSaleCommand(
     int Quantity,
     DateTime OccurredAt,
     UserId VolunteerId,
-    Guid ClientGestureId) : IRequest<ErrorOr<RegisterSaleResult>>;
+    Guid ClientGestureId,
+    Guid? CheckoutPassageId = null) : IRequest<ErrorOr<RegisterSaleResult>>;

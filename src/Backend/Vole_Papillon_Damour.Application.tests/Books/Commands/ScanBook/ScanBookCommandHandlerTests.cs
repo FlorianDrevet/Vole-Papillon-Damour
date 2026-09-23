@@ -14,6 +14,8 @@ using Vole_Papillon_Damour.Application.Books.Commands.BookFlags;
 using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
+using Microsoft.Extensions.Logging.Abstractions;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
@@ -22,6 +24,9 @@ using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
+using Vole_Papillon_Damour.Domain.MemberCardAggregate;
+using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
@@ -33,6 +38,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 using DomainScanSession = Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession;
 using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
 
@@ -479,7 +485,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     {
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(_receivedAt);
-        return new RegisterSaleCommandHandler(Context, clock);
+        return new RegisterSaleCommandHandler(Context, clock, new CheckoutPassageRecorder(Context, NullLogger<CheckoutPassageRecorder>.Instance));
     }
 
     public VoidSaleCommandHandler CreateVoidSaleHandler()
@@ -570,6 +576,10 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<User> Users => Set<User>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
+    public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
+    public DbSet<MemberCard> MemberCards => Set<MemberCard>();
+    public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
+    public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
 
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
@@ -699,6 +709,11 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
             builder.Property(session => session.CloseReason).HasConversion<byte>();
             builder.Property(session => session.Status).HasConversion<byte>();
         });
+
+        modelBuilder.ApplyConfiguration(new MemberSelectionItemConfiguration());
+        modelBuilder.ApplyConfiguration(new MemberCardConfiguration());
+        modelBuilder.ApplyConfiguration(new CheckoutPassageConfiguration());
+        modelBuilder.ApplyConfiguration(new CheckoutPassageLineConfiguration());
 
         modelBuilder.Entity<AssociationSettingsEntity>(builder =>
         {

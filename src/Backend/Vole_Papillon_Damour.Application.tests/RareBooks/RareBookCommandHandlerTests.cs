@@ -131,9 +131,9 @@ public sealed class RareBookCommandHandlerTests
             fixture.Now.AddMinutes(2),
             fixture.UserId);
 
-        var first = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox)
+        var first = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
             .Handle(command, CancellationToken.None);
-        var second = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox)
+        var second = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
             .Handle(command, CancellationToken.None);
 
         first.IsError.Should().BeFalse();
@@ -142,7 +142,7 @@ public sealed class RareBookCommandHandlerTests
         second.Value.IsSold.Should().BeTrue();
 
         var draft = await fixture.AddRareBookAsync("Brouillon");
-        var refused = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox)
+        var refused = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
             .Handle(command with { RareBookId = draft.Id }, CancellationToken.None);
 
         refused.IsError.Should().BeTrue();
@@ -151,6 +151,32 @@ public sealed class RareBookCommandHandlerTests
             published.Id,
             command.OccurredAt,
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Mark_sold_with_passage_records_one_rare_purchase_line_on_retry()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var outbox = Substitute.For<IBookAlertOutbox>();
+        var published = await fixture.AddRareBookAsync("Vente associée", published: true);
+        var passageId = Guid.NewGuid();
+        var command = new MarkRareBookSoldCommand(
+            published.Id,
+            null,
+            null,
+            fixture.Now.AddMinutes(2),
+            fixture.UserId) with { CheckoutPassageId = passageId };
+        var handler = new MarkRareBookSoldCommandHandler(
+            fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder());
+
+        var first = await handler.Handle(command, CancellationToken.None);
+        var replay = await handler.Handle(command, CancellationToken.None);
+
+        first.IsError.Should().BeFalse();
+        replay.IsError.Should().BeFalse();
+        (await fixture.Context.CheckoutPassages.CountAsync()).Should().Be(1);
+        var line = await fixture.Context.CheckoutPassageLines.SingleAsync();
+        line.RareBookId.Should().Be(published.Id);
     }
 
     [Fact]
@@ -171,7 +197,7 @@ public sealed class RareBookCommandHandlerTests
                 Arg.Any<CancellationToken>())
             .Returns(_ => throw new InvalidOperationException("outbox unavailable"));
 
-        var handler = new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox);
+        var handler = new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder());
 
         await FluentActions.Invoking(() => handler.Handle(command, CancellationToken.None))
             .Should().ThrowAsync<InvalidOperationException>();
