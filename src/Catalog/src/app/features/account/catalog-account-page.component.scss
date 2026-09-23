@@ -326,6 +326,7 @@ h3 {
 .account-tabs {
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
   gap: 28px;
   margin-top: 29px;
   border-bottom: 1px solid var(--catalog-line);
@@ -351,6 +352,12 @@ h3 {
   border-bottom-color: var(--catalog-orange);
   color: var(--catalog-ink);
   font-weight: 700;
+}
+
+.account-tab:disabled {
+  color: var(--catalog-slate-3);
+  cursor: not-allowed;
+  opacity: .72;
 }
 
 .account-button,
@@ -1373,11 +1380,31 @@ h3 {
   }
 
   .account-tabs {
-    gap: 18px;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 0;
   }
 
   .account-tab {
+    display: inline-flex;
+    min-height: 44px;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid var(--catalog-line-strong);
+    border-radius: 999px;
+    background: var(--catalog-white);
     font-size: .72rem;
+  }
+
+  .account-tab.active {
+    border-color: var(--catalog-blue);
+    background: var(--catalog-paper-2);
+  }
+
+  .account-tab:disabled {
+    background: var(--catalog-paper);
   }
 
   .watchlist-panel,

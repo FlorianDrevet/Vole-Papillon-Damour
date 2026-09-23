@@ -85,15 +85,16 @@
         </div>
         <div class="account-reassurance-item">
           <span class="account-reassurance-label">À SAVOIR</span>
-          <p>Une alerte signale une arrivée au catalogue ; elle ne met aucun livre de côté.</p>
+          <p>Une alerte signale une arrivée au catalogue ; sa disponibilité peut évoluer avant votre visite.</p>
         </div>
       </div>
     </div>
+    <app-account-selection></app-account-selection>
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'contribution' ? 'Ma contribution.' : 'Ma liste de recherche.' }}</h1>
-      <p class="account-lead">{{ activeTab() === 'contribution' ? contributionIntro() : watchlistIntro() }}</p>
+      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'watchlist' ? 'Mes recherches.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
+      <p class="account-lead">{{ activeTab() === 'selection' ? selectionIntro : activeTab() === 'watchlist' ? watchlistIntro() : activeTab() === 'contribution' ? contributionIntro() : '' }}</p>
     </div>
 
     @if (errorMessage()) {
@@ -132,13 +133,53 @@
       <button
         type="button"
         role="tab"
+        id="account-selection-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'selection'"
+        [attr.aria-selected]="activeTab() === 'selection'"
+        aria-controls="account-selection-panel"
+        (click)="selectTab('selection')">
+        Ma sélection
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="account-tab"
+        aria-selected="false"
+        aria-disabled="true"
+        disabled>
+        Mes achats
+      </button>
+      <button
+        type="button"
+        role="tab"
         id="account-watchlist-tab"
         class="account-tab"
         [class.active]="activeTab() === 'watchlist'"
         [attr.aria-selected]="activeTab() === 'watchlist'"
         aria-controls="account-watchlist-panel"
         (click)="selectTab('watchlist')">
-        Ma liste de recherche
+        Mes recherches
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="account-tab"
+        aria-selected="false"
+        aria-disabled="true"
+        disabled>
+        Ma carte
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="account-preferences-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'preferences'"
+        [attr.aria-selected]="activeTab() === 'preferences'"
+        aria-controls="account-preferences-panel"
+        (click)="selectTab('preferences')">
+        Compte et données
       </button>
       @if (isVolunteer()) {
         <button
@@ -153,20 +194,18 @@
           Ma contribution
         </button>
       }
-      <button
-        type="button"
-        role="tab"
-        id="account-preferences-tab"
-        class="account-tab"
-        [class.active]="activeTab() === 'preferences'"
-        [attr.aria-selected]="activeTab() === 'preferences'"
-        aria-controls="account-preferences-panel"
-        (click)="selectTab('preferences')">
-        Préférences et compte
-      </button>
     </div>
 
-    @if (activeTab() === 'watchlist') {
+    @if (activeTab() === 'selection') {
+      <app-account-selection
+        id="account-selection-panel"
+        data-testid="account-selection-panel"
+        role="tabpanel"
+        aria-labelledby="account-selection-tab"
+        [selectionLoading]="selectionLoading()"
+        [selectionError]="selectionError()"
+        (retryRequested)="retrySelection()"></app-account-selection>
+    } @else if (activeTab() === 'watchlist') {
       <section
         id="account-watchlist-panel"
         class="watchlist-panel"

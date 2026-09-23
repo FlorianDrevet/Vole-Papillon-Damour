@@ -36,7 +36,7 @@
           <app-book-card [book]="book"></app-book-card>
           <app-selection-button
             [ref]="{kind: 'edition', isbn13: book.isbn13}"
-            [title]="book.title"
+            [title]="book.title || 'Titre à compléter'"
             [helpText]="''"></app-selection-button>
         </div>
       }

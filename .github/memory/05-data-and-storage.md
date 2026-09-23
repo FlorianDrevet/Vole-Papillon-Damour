@@ -31,6 +31,11 @@ belonging to that container.
 - The API endpoint `POST /integrations/acs/email-delivery-reports` accepts the standard Event Grid array, responds synchronously to `SubscriptionValidationEvent`, and authenticates deliveries with the configured `EmailBounceWebhook:SharedSecret` sent as `X-Vpd-EventGrid-Secret`. Typed ACS delivery reports with a non-success status are resolved by recipient email and delegated to the application handler; delivered/expanded reports and unknown recipients are acknowledged without a write. DEV routes the `Microsoft.Communication.EmailDeliveryReportReceived` event from `vpd-acs-comm-dev` to this endpoint through `vpd-acs-email-delivery-reports-dev`.
 - Application tests use an in-memory SQLite connection with real EF transactions to verify scan/session/cash/correction/reassignment atomicity and idempotent gesture behavior; this provider is test-only.
 
+- Member selection persistence adds `ProjectDbContext.MemberSelectionItems` and
+  `MemberSelectionItemConfiguration`; migration `20260923191942_AddMemberSelection`
+  creates the member selection table and index constraints. The migration was generated
+  for PR1 and has not been applied to any environment.
+
 - The private volunteer statistics query filters `ScanSessions` by `ScannedCount > 0` before calculating session count, duration, recent sessions, and scan-derived aggregates, so empty bootstrap/test sessions do not contribute time.
 
 ### Rare books persistence

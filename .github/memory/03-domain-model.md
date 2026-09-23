@@ -72,10 +72,16 @@ Verified aggregate folders in `Domain` include:
 - `ActualityAggregate`
 - `AssoEventsAggregate`
 - `OrderAggregate`
+- `MemberSelectionAggregate`
 - `ProductAggregate`
 - `UserAggregate`
 
 `Product` keeps `Available` separate from `VisibleOnWebsite`: both gate the public product projection, while the full `/product` projection remains available to cash clients and BackOffice.
+
+`MemberSelectionItem` is keyed by `Guid` and belongs to one `UserId`; each row targets
+exactly one edition ISBN-13 or rare-book ID. Its statuses are `ToTake`, `Purchased`,
+`NotFound`, and `ToRevisit`; `PurchasedAt` is set on purchase and cleared if the member
+changes the status away from `Purchased`. The aggregate caps a member at 500 items.
 
 ## Books module — P1-5/P1-10 runtime slice
 

@@ -32,6 +32,7 @@ export class CatalogSelectionService {
     this.auth.isAuthenticated() ? this.currentMode() : 'local',
   );
   readonly pendingMerge = this.currentPendingMerge.asReadonly();
+  readonly snapshot: Signal<CatalogSelectionResponse | null> = this.remoteSelection.asReadonly();
   readonly keys: Signal<ReadonlySet<string>> = computed(() => {
     if (this.mode() === 'synced') {
       return this.remoteKeys();

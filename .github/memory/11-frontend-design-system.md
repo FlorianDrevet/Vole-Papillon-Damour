@@ -214,3 +214,10 @@ Each app keeps thin "smart wrapper" components with the legacy `app-*` selectors
 ### Duplicates removed
 
 Both `src/BackOffice/src/app/shared/components/{title,under-section,vpd-button,vpd-image}/` and `src/Website/src/app/shared/components/{title,under-section,button,vpd-image}/`, plus the per-app `capitalize.pipe.ts` / `line-number-title.pipe.ts` / `price.pipe.ts` are gone - `@vpd/ui` is the single source. SharedModules now only declare app-specific components and pull in `DesignSystemModule`. Dialog components (`CreateUpdateActualityDialog`, `CreateUpdateProductDialog`) remain declared in `FeatureModule` where they already lived; `SharedModule` keeps only `ConfirmationDialogComponent` + `CreateUpdateEventDialogComponent` on the BackOffice side.
+
+## Catalog member account selection
+
+- Keep `Ma sélection` visually and behaviorally separate from the alert watchlist `Mes recherches`.
+- Account tabs wrap as 44px pills below 700px; selection filters switch to a native dropdown below 760px, and the four personal states use a two-column mobile grid.
+- Use the Catalog V2 variables from `src/Catalog/src/styles.scss` (`--catalog-paper`, `--catalog-ink`, `--catalog-blue`, `--catalog-orange`, `--catalog-green`, `--catalog-purple`) instead of copying mockup inline styles.
+- The empty state, device-only banner, freshness line, availability badges, and merge sheet are implemented in `src/Catalog/src/app/features/account/selection/`.

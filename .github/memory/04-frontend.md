@@ -553,6 +553,16 @@ the production build; the current main change still needs a Scan deployment and 
 - Legacy event values are UTC wall-clock components: BackOffice converts picker values through
   `MyDate`, while Website renders UTC and uses `hourOpenDoors` for Books event start times.
 
+## Catalog member selection
+
+`src/Catalog/src/app/features/account/selection/AccountSelectionComponent` renders the
+member's typed `Ma sélection` independently of the alert watchlist (`Mes recherches`).
+It reads the remote snapshot through `CatalogSelectionService`, uses `LocalSelectionStore`
+for anonymous entries, and delegates authenticated status/removal writes to
+`CatalogMemberApiService`. The `/compte` page owns authentication initialization and the
+five-tab order; `Mes achats` and `Ma carte` stay disabled until their planned steps land.
+Selection display contains no price data.
+
 ## Website Rendering Modes
 
 - `src/Website/` uses Angular SSR with `provideClientHydration(withEventReplay())` and

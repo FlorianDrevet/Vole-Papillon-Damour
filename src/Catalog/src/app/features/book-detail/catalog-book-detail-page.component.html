@@ -107,7 +107,7 @@
       <section class="selection-visit" aria-labelledby="selection-visit-title">
         <p id="selection-visit-title" class="selection-visit-title">Préparer ma visite</p>
         <p class="selection-visit-intro">Gardez cette édition sous la main pour la retrouver sur place.</p>
-        <app-selection-button [ref]="{kind: 'edition', isbn13: item.isbn13}" [title]="item.title"></app-selection-button>
+        <app-selection-button [ref]="{kind: 'edition', isbn13: item.isbn13}" [title]="item.title || 'Titre à compléter'"></app-selection-button>
       </section>
 
       @if (item.physicalFormat || item.language) {

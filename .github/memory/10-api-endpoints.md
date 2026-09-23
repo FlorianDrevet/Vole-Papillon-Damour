@@ -96,6 +96,12 @@ client-only/private.
 
 ## Books P2/P3 member and administration endpoints
 
+- `GET /catalog/me/selection` reads the authenticated member's typed selection with
+  current catalogue availability. `POST /catalog/me/selection` adds an edition or rare
+  book, `PATCH /catalog/me/selection/{id}` changes its status,
+  `DELETE /catalog/me/selection/{id}` removes it, and
+  `POST /catalog/me/selection/merge` adds local entries idempotently. All routes require
+  member authorization and derive identity from token claims.
 - `GET /catalog/reference/search` - anonymous external bibliographic search with `q`, `page`,
   and `pageSize`; the Open Library adapter normalizes/deduplicates ISBN-10/ISBN-13 results.
 - `GET/POST /catalog/me/watchlist` and `DELETE /catalog/me/watchlist/{itemId}` - Entra member

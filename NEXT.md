@@ -58,11 +58,25 @@ associer un passage de caisse, l'historique Mes achats, le hors-ligne, le RGPD e
 règles RG-52 à RG-66. Aucun code runtime, compte, jeton ou déploiement n'a été créé ;
 la PR doit être relue et validée avant toute implémentation.
 
-### Migration compte membre en attente
+### PR1 compte membre — 2026-09-23
 
-Sur la branche `feat/account-selection-pr1`, CS-2 a généré la migration
-`20260923191942_AddMemberSelection`. Elle n'a été appliquée à aucun environnement ;
-elle reste à appliquer en DEV au déploiement autorisé de cette étape.
+CS-1 à CS-10 sont implémentés sur `feat/account-selection-pr1`. Le worktree dédié a été
+créé depuis la branche de spécification fonctionnelle, car `origin/design/account-features-mockups`
+n'était pas disponible lors de sa création ; le plan et la maquette à jour ont été lus depuis
+le worktree de design existant, sans le modifier. La migration
+`20260923191942_AddMemberSelection` n'a été appliquée à aucun environnement.
+
+Validation locale : Catalog `npm test -- --watch=false --browsers=ChromeHeadless` (354 tests)
+et `npm run build` passent. `dotnet test src/Backend/Vole_Papillon_Damour.slnx` lance les
+tests Application/Infrastructure/API (477 réussis), puis échoue à la compilation du Worker,
+qui ne résout pas `Azure.Functions.Sdk`. Le rendu `/compte` à 390 px ne déborde pas
+horizontalement ; les états authentifiés n'ont pas été testés avec un compte réel.
+
+Vérifications manuelles restantes : parcours A/B de F-10 §14 à deux appareils, reconnexion
+et fusion avec un compte existant, vérification que « Mes recherches » reste inchangée,
+lecture QR à 20/40 cm et essais hors ligne. Aucun déploiement ni application de migration
+n'a été effectué. Ajouter le secret GitHub `MEMBER_CARD_SIGNING_KEY` avant le déploiement
+de PR2 ; aucune clé n'est stockée dans le dépôt.
 
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 
