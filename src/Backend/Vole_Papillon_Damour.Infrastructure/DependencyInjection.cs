@@ -27,6 +27,7 @@ using Vole_Papillon_Damour.Infrastructure.Services;
 using Vole_Papillon_Damour.Infrastructure.Services.Bibliographic;
 using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
+using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
 using Vole_Papillon_Damour.Infrastructure.Services.Ai;
 using Vole_Papillon_Damour.Infrastructure.Services.Social;
 
@@ -77,6 +78,12 @@ public static class DependencyInjection
         services.Configure<UnsubscribeTokenOptions>(
             builderConfiguration.GetSection(UnsubscribeTokenOptions.SectionName));
         services.AddSingleton<IUnsubscribeTokenService, UnsubscribeTokenService>();
+        services.AddOptions<MemberCardTokenOptions>()
+            .Bind(builderConfiguration.GetSection(MemberCardTokenOptions.SectionName))
+            .Validate(options => MemberCardTokenOptions.TryDecodeSigningKey(options.SigningKey, out _),
+                "MemberCards:SigningKey must be a Base64 key of at least 32 bytes.")
+            .ValidateOnStart();
+        services.AddSingleton<IMemberCardTokenService, MemberCardTokenService>();
         services.AddSingleton<IBookAlertEmailSender, BookAlertEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<EntraGraphUserDirectory>();
