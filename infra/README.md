@@ -52,8 +52,10 @@ serveur répétées, les *Failure Anomalies* de l'API, du worker et du catalogue
 des tests de disponibilité multi-régions (API `/health`, site, catalogue, scan ;
 `availabilityTestsEnabled`, ~17 €/mois). En DEV, ces tests restent déclarés mais
 sont désactivés et les alertes planifiées sont évaluées quatre fois par jour (`PT6H`).
-Les *Failure Anomalies* gardent leur fréquence dédiée de `PT5M` : le détecteur Azure
-refuse la cadence `PT6H`.
+Les *Failure Anomalies* utilisent leur fréquence dédiée de `PT1M`, comme dans
+l'[exemple Bicep Microsoft pour `FailureAnomaliesDetector`](https://learn.microsoft.com/en-us/azure/templates/microsoft.alertsmanagement/2019-03-01/smartdetectoralertrules).
+Le déploiement réel `35858128356` a confirmé que le détecteur refuse `PT5M` dans cet
+environnement ; sa fréquence ne doit donc pas reprendre celle des alertes planifiées.
 Les composants Website, BackOffice et Catalog utilisent aussi 25 % de sampling
 d'ingestion en DEV ; l'API, le worker et la Scanette restent à 100 % pour conserver
 les signaux opérationnels. Les valeurs par défaut de production restent à 100 % et

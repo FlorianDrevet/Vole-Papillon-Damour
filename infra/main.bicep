@@ -744,7 +744,7 @@ module backendExceptionsAlert './modules/Monitor/scheduledQueryRule.module.bicep
 
 // Failure Anomalies is created implicitly by Azure with its own recipients.
 // Declaring it here keeps every notification on the project action group. Its
-// detector-specific cadence stays at the module default instead of sharing the
+// detector-specific cadence is fixed by the module instead of sharing the
 // slower scheduled-query alert frequency.
 module apiFailureAnomalies './modules/Monitor/failureAnomalies.module.bicep' = {
   name: 'apiFailureAnomalies'

@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-23 | Corrigé le second échec de déploiement infra après la fusion de la PR #220 : `FailureAnomaliesDetector` est fixé à `PT1M`, la valeur de l'exemple Bicep Microsoft, car le run réel `35858128356` rejette `PT5M` pour les trois alertes. L'état Azure après les déploiements réels `35846830759` et `35858128356` reste à vérifier ; inspecter les opérations et faire un `what-if` avant la prochaine application. |
 | 2026-09-23 | Corrigé le déploiement infra : Container Apps passe à l'API ARM `2025-07-01` pour accepter `cooldownPeriod`, et les Failure Anomalies conservent `PT5M` au lieu de recevoir le `PT6H` des alertes planifiées. Le run réel `35846830759` avait échoué sur ces deux validations Azure ; état Azure après cet échec à vérifier avant le prochain déploiement. |
 | 2026-09-22 | Aligné l'IaC DEV avec le passage utilisateur d'Azure SQL `S1`/20 DTU à `S0`/10 DTU, et réduit les répliques permanentes ACA : BackOffice et Scan passent à `minReplicas: 0` avec réveil HTTP et cooldown de trois heures (`10 800` s). Compilation Bicep réussie ; aucun déploiement Azure depuis ce worktree. |
 | 2026-09-22 | Préparé la réduction des coûts de supervision DEV dans Bicep : availability tests conservés mais désactivés pour rendre l'état idempotent, règles Log Alert et Failure Anomalies évaluées toutes les 6 h, sampling d'ingestion à 25 % sur Website/BackOffice/Catalog et 100 % sur API/Worker/Scan. Aucun déploiement Azure ; la vérification post-déploiement reste à faire. |

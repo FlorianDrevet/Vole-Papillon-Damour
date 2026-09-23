@@ -138,8 +138,9 @@ The API startup wires:
   their resources: `availabilityTestsEnabled = false` is passed into both the web test and
   its metric alert so an incremental deployment also disables resources created earlier.
 - DEV scheduled-query alerts use `PT6H`, with a six-hour KQL lookback where a query embeds
-  `ago()`: four evaluations per day instead of the default `PT5M`. Failure Anomalies keeps
-  its module default `PT5M`; its detector rejects the scheduled-query cadence `PT6H`.
+  `ago()`: four evaluations per day instead of the default `PT5M`. Failure Anomalies uses a
+  fixed `PT1M` cadence, matching Microsoft's Bicep sample for `FailureAnomaliesDetector`;
+  deployment `35858128356` rejected `PT5M` for all three detector rules.
 - Application Insights ingestion sampling is 25% for Website, BackOffice and Catalog in
   DEV; API, Worker and Scan remain at 100% because their telemetry feeds operational
   diagnosis and alerts. Runtime OpenTelemetry sampling remains explicitly at 100%.
