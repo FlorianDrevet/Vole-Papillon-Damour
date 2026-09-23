@@ -196,6 +196,11 @@ param acsEmailWebhookSecret string
 @minLength(1)
 param bookAlertsUnsubscribeSigningKey string
 
+@description('Signing key for member-card QR and recovery credentials')
+@secure()
+@minLength(1)
+param memberCardSigningKey string
+
 @description('Association name shown in book-alert emails')
 param bookAlertsEmailAssociationName string = 'Vole Papillon d\'Amour'
 
@@ -923,6 +928,7 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
     entraGraphClientSecret: entraGraphClientSecret
     acsEmailWebhookSecret: acsEmailWebhookSecret
     bookAlertsUnsubscribeSigningKey: bookAlertsUnsubscribeSigningKey
+    memberCardSigningKey: memberCardSigningKey
     googleBooksApiKey: googleBooksApiKey
     instagramAccessToken: instagramAccessToken
   }
@@ -1223,6 +1229,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         name: 'book-alerts-unsubscribe-signing-key'
         keyVaultUrl: appSecretsModule.outputs.secretUris['book-alerts-unsubscribe-signing-key']
       }
+      {
+        name: 'member-card-signing-key'
+        keyVaultUrl: appSecretsModule.outputs.secretUris['member-card-signing-key']
+      }
     ], empty(googleBooksApiKey) ? [] : [{
       name: 'google-books-api-key'
       keyVaultUrl: appSecretsModule.outputs.secretUris['google-books-api-key']
@@ -1255,6 +1265,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'BookAlerts__Unsubscribe__SigningKey'
         secretRef: 'book-alerts-unsubscribe-signing-key'
+      }
+      {
+        name: 'MemberCards__SigningKey'
+        secretRef: 'member-card-signing-key'
       }
       {
         name: 'BookAlerts__Unsubscribe__AccountUrl'

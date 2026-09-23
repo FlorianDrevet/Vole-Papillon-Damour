@@ -100,6 +100,13 @@ export type CatalogSelectionStatus = 'ToTake' | 'Purchased' | 'NotFound' | 'ToRe
 export type CatalogSelectionAvailability = 'Available' | 'Announced' | 'OutOfStock' | 'RareSold' | 'Unavailable';
 export type CatalogSelectionKind = 'edition' | 'rare';
 
+export interface CatalogMemberCard {
+  qrPayload: string;
+  recoveryCode: string;
+  displayLabel: string;
+  issuedAt: string;
+}
+
 export interface CatalogSelectionTargetRequest {
   isbn13?: string;
   rareBookId?: string;

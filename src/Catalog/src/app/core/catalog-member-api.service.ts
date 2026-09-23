@@ -6,6 +6,7 @@ import {environment} from '../../environments/environment';
 import {
   CatalogAddedWatchlistItem,
   CatalogAlertPreferencesResponse,
+  CatalogMemberCard,
   CatalogAddedSelectionItem,
   CatalogSelectionMergeEntry,
   CatalogSelectionMergeResult,
@@ -81,6 +82,21 @@ export class CatalogMemberApiService {
   getVolunteerStatistics(accessToken: string): Observable<CatalogVolunteerStatisticsResponse> {
     return this.http.get<CatalogVolunteerStatisticsResponse>(
       `${this.apiUrl}/scan/me/statistics`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  getCard(accessToken: string): Observable<CatalogMemberCard> {
+    return this.http.get<CatalogMemberCard>(
+      `${this.apiUrl}/catalog/me/card`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  rotateCard(accessToken: string): Observable<CatalogMemberCard> {
+    return this.http.post<CatalogMemberCard>(
+      `${this.apiUrl}/catalog/me/card/rotate`,
+      {},
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

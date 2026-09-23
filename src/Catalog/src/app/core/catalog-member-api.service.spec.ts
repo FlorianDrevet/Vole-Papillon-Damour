@@ -4,6 +4,7 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogMemberApiService} from './catalog-member-api.service';
+import {CatalogMemberCard} from './catalog.models';
 
 describe('CatalogMemberApiService', () => {
   let service: CatalogMemberApiService;
@@ -147,4 +148,41 @@ describe('CatalogMemberApiService', () => {
     expect(request.request.body).toEqual({entries});
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
     request.flush({added: 1, alreadyPresent: 0, rejected: []});
-  });});
+  });
+
+  it('loads the member card with a bearer token', () => {
+    const expected: CatalogMemberCard = {
+      qrPayload: 'VPDC1.AAAA.BBBB',
+      recoveryCode: 'LUNE-4271',
+      displayLabel: 'Camille',
+      issuedAt: '2026-09-23T10:00:00Z',
+    };
+    let actual: CatalogMemberCard | undefined;
+
+    service.getCard('member-token').subscribe(result => actual = result);
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/card`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(expected);
+    expect(actual).toEqual(expected);
+  });
+
+  it('rotates the member card with a bearer token', () => {
+    const expected: CatalogMemberCard = {
+      qrPayload: 'VPDC1.CCCC.DDDD',
+      recoveryCode: 'AUBE-5932',
+      displayLabel: 'Camille',
+      issuedAt: '2026-09-24T10:00:00Z',
+    };
+    let actual: CatalogMemberCard | undefined;
+
+    service.rotateCard('member-token').subscribe(result => actual = result);
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/card/rotate`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(expected);
+    expect(actual).toEqual(expected);
+  });
+});

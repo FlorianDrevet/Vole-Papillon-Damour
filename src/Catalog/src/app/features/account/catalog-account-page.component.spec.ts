@@ -14,6 +14,7 @@ import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogRareBook, CatalogSelectionResponse, CatalogVolunteerStatisticsResponse, CatalogWatchlistResponse} from '../../core/catalog.models';
 import {CatalogSelectionService, CatalogSelectionMode} from '../../core/selection/catalog-selection.service';
 import {AccountSelectionComponent} from './selection/account-selection.component';
+import {AccountCardComponent} from './card/account-card.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 
 describe('CatalogAccountPageComponent', () => {
@@ -201,7 +202,7 @@ describe('CatalogAccountPageComponent', () => {
     selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogAccountPageComponent, AccountSelectionComponent],
+      declarations: [CatalogAccountPageComponent, AccountSelectionComponent, AccountCardComponent],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
@@ -369,7 +370,7 @@ describe('CatalogAccountPageComponent', () => {
     ]);
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
     expect(tabs[1]?.disabled).toBeTrue();
-    expect(tabs[3]?.disabled).toBeTrue();
+    expect(tabs[3]?.disabled).toBeFalse();
     expect(fixture.nativeElement.querySelector('.account-heading-title')?.textContent?.trim()).toBe('Ma sélection.');
     expect(fixture.nativeElement.querySelector('[data-testid="account-selection-panel"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).toBeNull();

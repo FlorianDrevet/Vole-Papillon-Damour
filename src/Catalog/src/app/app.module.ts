@@ -20,6 +20,7 @@ import {AdminRareBookPhotosComponent} from './features/administration/rare-books
 import {AdminRareBooksComponent} from './features/administration/rare-books/admin-rare-books.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {AccountSelectionComponent} from './features/account/selection/account-selection.component';
+import {AccountCardComponent} from './features/account/card/account-card.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
@@ -50,6 +51,7 @@ registerLocaleData(localeFr);
     AdminRareBookPhotosComponent,
     CatalogAccountPageComponent,
     AccountSelectionComponent,
+    AccountCardComponent,
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,
     CatalogFooterComponent,

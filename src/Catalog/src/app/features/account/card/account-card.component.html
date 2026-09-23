@@ -1,0 +1,71 @@
+<section class="member-card-panel" aria-labelledby="member-card-title">
+  @if (!isBrowser) {
+    <div class="member-card-placeholder" data-testid="card-qr-placeholder" role="status">
+      Le QR code apparaîtra sur votre appareil.
+    </div>
+  } @else if (loading() && !card()) {
+    <p class="member-card-state" role="status">Chargement de Ma carte…</p>
+  } @else if (card(); as current) {
+    <article class="member-card">
+      <header class="member-card-brand">
+        <span class="member-card-mark" aria-hidden="true">VPD</span>
+        <p>Vole Papillon d'Amour</p>
+      </header>
+      <h2 id="member-card-title">Ma carte de compte</h2>
+      @if (qrSvg(); as svg) {
+        <div
+          class="member-card-qr"
+          role="img"
+          [attr.aria-label]="'QR code de votre carte de compte. Code de secours : ' + current.recoveryCode"
+          [innerHTML]="svg"></div>
+      } @else {
+        <div class="member-card-placeholder" data-testid="card-qr-placeholder" role="status">
+          Le QR code n’est pas disponible sur cet appareil.
+        </div>
+      }
+      <p class="member-card-name">{{ current.displayLabel }}</p>
+      <p class="member-card-recovery">Code de secours : <strong>{{ current.recoveryCode }}</strong></p>
+      <p class="member-card-instruction">Présentez cette carte avant la validation de votre passage.</p>
+      <button
+        type="button"
+        class="member-card-button"
+        data-testid="rotate-card"
+        [disabled]="rotating()"
+        (click)="beginRotation()">
+        Renouveler ma carte
+      </button>
+    </article>
+
+    @if (confirmationPending()) {
+      <section class="member-card-confirmation" role="alertdialog" aria-labelledby="card-rotation-title" aria-describedby="card-rotation-copy">
+        <h3 id="card-rotation-title">Renouveler votre carte ?</h3>
+        <p id="card-rotation-copy">L'ancien QR code et l'ancien code de secours ne fonctionneront plus.</p>
+        <div class="member-card-actions">
+          <button type="button" class="member-card-button secondary" (click)="cancelRotation()">Annuler</button>
+          <button
+            type="button"
+            class="member-card-button"
+            data-testid="confirm-rotate-card"
+            [disabled]="rotating()"
+            (click)="confirmRotation()">
+            {{ rotating() ? 'Renouvellement…' : 'Confirmer le renouvellement' }}
+          </button>
+        </div>
+      </section>
+    }
+  } @else {
+    <div class="member-card-state">
+      <p>{{ errorMessage() ?? 'Votre carte n’a pas encore pu être préparée.' }}</p>
+      <button type="button" class="member-card-button secondary" (click)="loadCard()">Réessayer</button>
+    </div>
+  }
+
+  @if (errorMessage() && card()) {
+    <p class="member-card-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <aside class="member-card-note" aria-label="À savoir sur la carte de compte">
+    <p>Présenter la carte est facultatif : une Vente anonyme reste toujours possible.</p>
+    <p>Le bénévole voit uniquement votre prénom.</p>
+  </aside>
+</section>

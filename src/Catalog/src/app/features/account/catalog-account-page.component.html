@@ -93,7 +93,7 @@
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'watchlist' ? 'Mes recherches.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
+      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'watchlist' ? 'Mes recherches.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
       <p class="account-lead">{{ activeTab() === 'selection' ? selectionIntro : activeTab() === 'watchlist' ? watchlistIntro() : activeTab() === 'contribution' ? contributionIntro() : '' }}</p>
     </div>
 
@@ -164,10 +164,12 @@
       <button
         type="button"
         role="tab"
+        id="account-card-tab"
         class="account-tab"
-        aria-selected="false"
-        aria-disabled="true"
-        disabled>
+        [class.active]="activeTab() === 'card'"
+        [attr.aria-selected]="activeTab() === 'card'"
+        aria-controls="account-card-panel"
+        (click)="selectTab('card')">
         Ma carte
       </button>
       <button
@@ -205,6 +207,12 @@
         [selectionLoading]="selectionLoading()"
         [selectionError]="selectionError()"
         (retryRequested)="retrySelection()"></app-account-selection>
+    } @else if (activeTab() === 'card') {
+      <app-account-card
+        id="account-card-panel"
+        data-testid="account-card-panel"
+        role="tabpanel"
+        aria-labelledby="account-card-tab"></app-account-card>
     } @else if (activeTab() === 'watchlist') {
       <section
         id="account-watchlist-panel"
