@@ -244,9 +244,9 @@ input:focus-visible {
 
 .home-mode-tri {
   min-height: 110px;
-  border-color: var(--scan-ink);
-  background: var(--scan-ink);
-  box-shadow: 0 26px 44px -30px rgb(7 43 69 / 70%);
+  border-color: var(--scan-blue);
+  background: var(--scan-blue);
+  box-shadow: 0 26px 44px -30px rgb(20 151 214 / 70%);
 }
 
 .home-mode-tri svg {
@@ -269,8 +269,18 @@ input:focus-visible {
   color: #fff;
 }
 
+.home-mode-cash {
+  border-color: var(--scan-orange);
+  background: var(--scan-orange);
+  box-shadow: 0 20px 36px -28px rgb(220 100 18 / 70%);
+}
+
 .home-mode-cash svg {
-  color: var(--scan-orange);
+  color: #fff;
+}
+
+.home-mode-cash > span {
+  color: #fff;
 }
 
 .home-mode-consultation svg {
@@ -2186,4 +2196,451 @@ input:focus-visible {
   .manual-key {
     min-height: 56px;
   }
+}
+
+/* Rare-book mockup surfaces: compact headers, editorial cards and explicit cash action. */
+.rare-form-screen {
+  min-height: 100%;
+  overflow-y: auto;
+  padding: 0 20px 30px;
+  background: #f4f9fc;
+  color: var(--scan-ink);
+}
+
+.rare-form-screen::before {
+  display: block;
+  height: 3px;
+  margin: 0 -20px;
+  background: linear-gradient(90deg, var(--scan-blue), var(--scan-sky) 50%, var(--scan-orange));
+  content: "";
+}
+
+.rare-flow-header,
+.rare-stepper,
+.rare-panel,
+.rare-form-footer,
+.rare-form-screen > scan-status-bar,
+.rare-form-screen > .rare-error {
+  width: 100%;
+  max-width: 390px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.rare-flow-header {
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #dfeaf1;
+}
+
+.rare-flow-back {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--scan-blue);
+  background: transparent;
+  cursor: pointer;
+}
+
+.rare-flow-back svg {
+  width: 19px;
+  height: 19px;
+}
+
+.rare-flow-title {
+  margin: 0;
+  color: var(--scan-muted);
+  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .16em;
+}
+
+.rare-stepper {
+  display: grid;
+  gap: 9px;
+  padding: 18px 0 16px;
+}
+
+.rare-stepper-labels {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--scan-muted);
+  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.rare-stepper-labels span:last-child {
+  color: var(--scan-slate);
+  letter-spacing: .04em;
+}
+
+.rare-stepper-bars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.rare-stepper-bars span {
+  height: 4px;
+  border-radius: 999px;
+  background: #dce9f0;
+}
+
+.rare-stepper-bars .rare-stepper-bar-active {
+  background: var(--scan-purple);
+}
+
+.rare-form-screen > scan-status-bar {
+  margin-bottom: 12px;
+}
+
+.rare-panel {
+  padding: 22px 20px 20px;
+  border: 1px solid #d9e7ef;
+  border-top: 3px solid var(--scan-sky);
+  background: #fff;
+  box-shadow: 0 18px 36px -30px rgb(7 43 69 / 35%);
+}
+
+.rare-panel-eyebrow {
+  margin: 0;
+  color: var(--scan-orange);
+  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.rare-panel h1 {
+  margin: 10px 0 12px;
+  color: var(--scan-ink);
+  font: 500 31px/1.03 Newsreader, Georgia, serif;
+  letter-spacing: -.02em;
+}
+
+.rare-panel-intro {
+  margin: 0 0 22px;
+  color: var(--scan-slate);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rare-field,
+.rare-price-field,
+.rare-condition-field {
+  display: grid;
+  gap: 7px;
+  color: var(--scan-muted);
+  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.rare-field em {
+  color: var(--scan-muted);
+  font-style: normal;
+  font-weight: 400;
+}
+
+.rare-error {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e8b5b7;
+  background: #fff5f5;
+  color: #8d1d25;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.rare-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.rare-primary,
+.rare-secondary,
+.rare-link {
+  min-height: 46px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.rare-primary {
+  border: 1px solid var(--scan-purple);
+  color: #fff;
+  background: var(--scan-purple);
+}
+
+.rare-primary:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.rare-secondary,
+.rare-link {
+  border: 1px solid #cfc6e8;
+  color: var(--scan-purple);
+  background: #fff;
+}
+
+.rare-link {
+  display: block;
+  margin: 18px auto 0;
+  border: 0;
+  color: var(--scan-blue);
+  font-size: 13px;
+}
+
+.rare-primary-wide {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.rare-description-field {
+  margin-top: 4px;
+}
+
+.rare-help {
+  margin: 8px 0 0;
+  color: var(--scan-slate);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.rare-price-control {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 78px;
+  align-items: center;
+  border: 1px solid #cfc6e8;
+  color: var(--scan-purple);
+  background: #fff;
+}
+
+.rare-price-control input {
+  min-width: 0;
+  flex: 1 1 auto;
+  height: 76px;
+  padding: 8px 8px 8px 16px;
+  border: 0;
+  outline: 0;
+  color: var(--scan-purple);
+  background: transparent;
+  font: 500 42px/1 Newsreader, Georgia, serif;
+}
+
+.rare-price-control input::-webkit-inner-spin-button,
+.rare-price-control input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.rare-price-control > span {
+  padding: 0 17px 0 0;
+  color: #9b83b5;
+  font: 500 30px/1 Newsreader, Georgia, serif;
+}
+
+.cash-screen {
+  background: #f4f9fc;
+}
+
+.cash-header {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: none;
+  padding: 0 20px;
+  border-bottom: 1px solid #dfeaf1;
+  background: #fff;
+}
+
+.cash-header-label,
+.cash-header-status {
+  color: var(--scan-muted);
+  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.cash-header-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--scan-green);
+}
+
+.cash-header-status > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cash-header-status-offline {
+  color: var(--scan-orange);
+}
+
+.cash-session-summary {
+  display: flex;
+  min-height: 92px;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  flex: none;
+  padding: 18px 22px;
+  background: #fff;
+}
+
+.cash-session-summary span {
+  color: var(--scan-muted);
+  font: 600 10px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.cash-session-summary strong {
+  color: var(--scan-ink);
+  font: 500 30px/1 Newsreader, Georgia, serif;
+}
+
+.cash-items {
+  gap: 10px;
+  padding: 0 20px;
+  background: #f4f9fc;
+}
+
+.cash-item {
+  min-height: 65px;
+  justify-content: initial;
+  padding: 12px 14px;
+  border: 1px solid #d9e7ef;
+  background: #fff;
+}
+
+.cash-rare-item {
+  min-height: 132px;
+  margin: 0;
+  padding: 16px 16px 18px;
+  border-radius: 0;
+  background: var(--scan-purple);
+  box-shadow: none;
+}
+
+.cash-rare-heading strong {
+  font: 600 11px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.cash-rare-item h2 {
+  font-size: 24px;
+}
+
+.cash-rare-item p {
+  font: 11px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .04em;
+}
+
+.cash-rare-action-row {
+  display: flex;
+  flex: none;
+  padding: 12px 20px 4px;
+  background: #f4f9fc;
+}
+
+.cash-add-rare {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 999px;
+  background: var(--scan-purple);
+  box-shadow: 0 18px 30px -24px rgb(95 58 134 / 90%);
+  font-size: 13px;
+}
+
+.cash-dock {
+  gap: 10px;
+  padding: 12px 20px 20px;
+  box-shadow: none;
+}
+
+.cash-buttons {
+  gap: 10px;
+}
+
+.cash-buttons > button {
+  min-height: 52px;
+}
+
+.cash-buttons .dock-primary {
+  font-size: 14px;
+}
+
+.cash-secondary-actions {
+  gap: 8px;
+}
+
+.cash-secondary-actions .dock-link {
+  min-height: 32px;
+  font-size: 11px;
+}
+
+.rare-cash-picker {
+  inset: 70px 12px 12px;
+  border: 1px solid #cfc6e8;
+  border-top: 3px solid var(--scan-purple);
+  border-radius: 0;
+}
+
+.rare-cash-picker-header {
+  align-items: flex-start;
+}
+
+.rare-cash-picker h2 {
+  margin-top: 7px;
+  font-size: 28px;
+}
+
+.rare-cash-eyebrow,
+.rare-cash-offline {
+  color: var(--scan-orange);
+  font: 600 9px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.rare-cash-offline {
+  margin-left: auto;
+  padding-top: 2px;
+  color: var(--scan-orange);
+}
+
+.rare-cash-search input {
+  min-height: 48px;
+  border-color: #cfc6e8;
+  border-radius: 999px;
+}
+
+.rare-cash-option {
+  border-radius: 0;
+}
+
+.rare-cash-picker-actions .dock-primary {
+  min-height: 44px;
+  background: var(--scan-purple);
 }

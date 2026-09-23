@@ -4,6 +4,8 @@ import {Router} from '@angular/router';
 import {ScanRareBook} from '../offline/scan-offline.model';
 import {ScanRareBookService} from './scan-rare-book.service';
 
+type RareBookListFilter = 'all' | 'drafts';
+
 @Component({
   selector: 'app-scan-rare-book-list',
   templateUrl: './scan-rare-book-list.component.html',
@@ -13,6 +15,7 @@ import {ScanRareBookService} from './scan-rare-book.service';
 export class ScanRareBookListComponent implements OnInit {
   books: ScanRareBook[] = [];
   search = '';
+  listFilter: RareBookListFilter = 'all';
   pendingPhotoCount = 0;
   loading = true;
   error: string | null = null;
@@ -24,16 +27,24 @@ export class ScanRareBookListComponent implements OnInit {
 
   get filteredBooks(): ScanRareBook[] {
     const query = this.search.trim().toLocaleLowerCase('fr-FR');
+    const candidates = this.listFilter === 'drafts'
+      ? this.books.filter(book => book.status === 'Draft')
+      : this.books;
+
     if (!query) {
-      return this.books;
+      return candidates;
     }
 
-    return this.books.filter(book => [
+    return candidates.filter(book => [
       book.title,
       book.authorMention ?? '',
       book.isbn13 ?? '',
       book.shelf,
     ].some(value => value.toLocaleLowerCase('fr-FR').includes(query)));
+  }
+
+  get draftCount(): number {
+    return this.books.filter(book => book.status === 'Draft').length;
   }
 
   async ngOnInit(): Promise<void> {
@@ -68,6 +79,14 @@ export class ScanRareBookListComponent implements OnInit {
     if (book.isSold) {
       return 'Parti';
     }
-    return book.status === 'Published' ? 'Publié' : 'Brouillon';
+    return book.status === 'Published' ? 'Photo publiée' : 'Photo brouillon';
+  }
+
+  priceLabel(book: ScanRareBook): string {
+    return book.price > 0 ? `${book.price.toLocaleString('fr-FR')} €` : 'prix à fixer';
+  }
+
+  photoLabel(book: ScanRareBook): string {
+    return book.thumbnail ? 'photo ajoutée' : 'photo à faire';
   }
 }
