@@ -14,6 +14,7 @@ using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
+using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
@@ -41,4 +42,6 @@ public interface IProjectDbContext
     DbSet<RareBookTombstone> RareBookTombstones => throw new NotSupportedException();
     DbSet<MemberSelectionItem> MemberSelectionItems => throw new NotSupportedException();
     DbSet<MemberCard> MemberCards => throw new NotSupportedException();
+    DbSet<CheckoutPassage> CheckoutPassages => throw new NotSupportedException();
+    DbSet<CheckoutPassageLine> CheckoutPassageLines => throw new NotSupportedException();
 }
