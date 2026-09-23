@@ -130,6 +130,33 @@ h1 {
   gap: 9px;
 }
 
+.selection-visit {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .7rem;
+  margin-top: 1.8rem;
+  padding: 1.1rem 1.15rem;
+  border-left: 2px solid var(--catalog-blue-2);
+  background: var(--catalog-paper-2);
+}
+
+.selection-visit-title {
+  margin: 0;
+  color: var(--catalog-ink-2);
+  font: 500 .66rem/1.2 var(--catalog-mono);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+
+.selection-visit-intro {
+  max-width: 34rem;
+  margin: 0;
+  color: var(--catalog-ink-soft);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
 .availability-line {
   display: flex;
   align-items: center;
@@ -438,5 +465,16 @@ h1 {
   .detail-state {
     padding-top: 54px;
     padding-bottom: 80px;
+  }
+}
+
+@media (max-width: 700px) {
+  .selection-visit {
+    margin-top: 1.35rem;
+    padding: .95rem;
+  }
+
+  .selection-visit-intro {
+    display: none;
   }
 }

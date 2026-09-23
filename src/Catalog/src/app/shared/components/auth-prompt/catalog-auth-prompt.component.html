@@ -14,30 +14,32 @@
         <span class="auth-prompt-mark" aria-hidden="true">
           <img src="images/papillon_without_back.png" alt="" width="30" height="30">
         </span>
-        <p class="eyebrow">Compte requis</p>
+        <p class="eyebrow">{{ eyebrow }}</p>
       </div>
 
-      <h2 id="auth-prompt-title">Connectez-vous pour suivre ce livre</h2>
+      <h2 id="auth-prompt-title">{{ title }}</h2>
       <p id="auth-prompt-description" class="auth-prompt-lead">
-        Créez votre espace gratuit pour ajouter ce titre à votre liste de suivi et être prévenu dès qu’il arrive à la bourse aux livres.
+        {{ description }}
       </p>
 
-      <ul class="auth-prompt-benefits">
-        <li>Ajoutez autant de livres que vous voulez à votre liste de suivi</li>
-        <li>Recevez une alerte dès qu’une édition suivie arrive au catalogue</li>
-        <li>Accès en un instant, sans mot de passe à retenir</li>
-      </ul>
+      @if (benefits.length > 0) {
+        <ul class="auth-prompt-benefits">
+          @for (benefit of benefits; track benefit) {
+            <li>{{ benefit }}</li>
+          }
+        </ul>
+      }
 
       <div class="auth-prompt-actions">
         <button type="button" class="auth-prompt-button" data-testid="auth-prompt-login" (click)="requestLogin()">
-          Se connecter <span aria-hidden="true">→</span>
+          {{ primaryLabel }} <span aria-hidden="true">→</span>
         </button>
-        <button type="button" class="auth-prompt-button secondary" data-testid="auth-prompt-register" (click)="requestRegister()">
-          Créer un compte <span aria-hidden="true">↗</span>
+        <button type="button" class="auth-prompt-button secondary" data-testid="auth-prompt-register" (click)="requestSecondaryAction()">
+          {{ secondaryLabel }} <span aria-hidden="true">{{ secondaryAsClose ? '×' : '↗' }}</span>
         </button>
       </div>
 
-      <p class="auth-prompt-hint">Le catalogue reste consultable sans compte : seul l’ajout à votre liste de suivi nécessite une connexion.</p>
+      <p class="auth-prompt-hint">{{ hint }}</p>
     </section>
   </div>
 }

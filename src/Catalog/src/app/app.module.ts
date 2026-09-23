@@ -24,6 +24,7 @@ import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.compo
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
 import {CatalogCookieBannerComponent} from './shared/components/cookie-banner/catalog-cookie-banner.component';
 import {CatalogAuthPromptComponent} from './shared/components/auth-prompt/catalog-auth-prompt.component';
+import {SelectionButtonComponent} from './shared/components/selection-button/selection-button.component';
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
 import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
 import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
@@ -53,6 +54,7 @@ registerLocaleData(localeFr);
     CatalogCookieBannerComponent,
     CatalogNotFoundPageComponent,
     CatalogAuthPromptComponent,
+    SelectionButtonComponent,
     CatalogRareBooksPageComponent,
     CatalogRareBookDetailPageComponent,
     CatalogRareBookCardComponent,

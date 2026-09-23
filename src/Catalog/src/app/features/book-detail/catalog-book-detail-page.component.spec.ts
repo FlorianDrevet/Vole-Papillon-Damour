@@ -2,6 +2,7 @@ import {DOCUMENT} from '@angular/common';
 import {ActivatedRoute, convertToParamMap} from '@angular/router';
 import {provideZonelessChangeDetection} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {By} from '@angular/platform-browser';
 import {RouterModule} from '@angular/router';
 import {signal, WritableSignal} from '@angular/core';
 import type {AccountInfo} from '@azure/msal-browser';
@@ -11,9 +12,11 @@ import {DesignSystemModule} from '@vpd/ui';
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {CatalogBook} from '../../core/catalog.models';
 import {CatalogBookDetailPageComponent} from './catalog-book-detail-page.component';
 import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
+import {SelectionButtonComponent} from '../../shared/components/selection-button/selection-button.component';
 
 describe('CatalogBookDetailPageComponent', () => {
   let fixture: ComponentFixture<CatalogBookDetailPageComponent>;
@@ -30,6 +33,7 @@ describe('CatalogBookDetailPageComponent', () => {
   };
   let api: jasmine.SpyObj<CatalogApiService>;
   let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
+  let selection: jasmine.SpyObj<CatalogSelectionService>;
 
   const book: CatalogBook = {
     isbn13: '9782070363735',
@@ -90,15 +94,23 @@ describe('CatalogBookDetailPageComponent', () => {
       isbn13: null,
       addedAt: '2026-09-04T20:00:00Z',
     }));
+    selection = jasmine.createSpyObj<CatalogSelectionService>(
+      'CatalogSelectionService',
+      ['add', 'remove'],
+      {keys: signal<ReadonlySet<string>>(new Set()), mode: signal<'local' | 'synced' | 'local-unsynced'>('synced')},
+    );
+    selection.add.and.resolveTo();
+    selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogBookDetailPageComponent, CatalogAuthPromptComponent],
+      declarations: [CatalogBookDetailPageComponent, CatalogAuthPromptComponent, SelectionButtonComponent],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),
         {provide: CatalogApiService, useValue: api},
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: memberApi},
+        {provide: CatalogSelectionService, useValue: selection},
         {
           provide: ActivatedRoute,
           useValue: {paramMap: of(convertToParamMap({slug: 'livre-9782070363735'}))},
@@ -156,6 +168,17 @@ describe('CatalogBookDetailPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.notify-button')).toBeNull();
+  });
+
+  it('offers a selection action for this exact edition', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const action = fixture.debugElement.query(By.directive(SelectionButtonComponent));
+    expect(action).not.toBeNull();
+    expect(action.componentInstance.ref()).toEqual({kind: 'edition', isbn13: book.isbn13});
+    expect(action.componentInstance.title()).toBe(book.title);
   });
 
   it('does not show on-site price wording on a book detail', async () => {

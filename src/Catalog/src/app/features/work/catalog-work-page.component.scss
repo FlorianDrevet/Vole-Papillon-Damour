@@ -94,6 +94,21 @@ h2 {
   margin-top: 31px;
 }
 
+.selection-edition-note {
+  max-width: 42rem;
+  margin: 1rem 0 0;
+  color: var(--catalog-slate-2);
+  font-size: .82rem;
+  line-height: 1.5;
+}
+
+.work-edition-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .75rem;
+}
+
 .work-state {
   padding-top: 76px;
   padding-bottom: 110px;

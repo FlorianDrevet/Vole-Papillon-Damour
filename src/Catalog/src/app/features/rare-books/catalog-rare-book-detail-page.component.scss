@@ -341,3 +341,22 @@
     grid-template-columns: 1fr;
   }
 }
+
+.rare-selection-visit {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: .7rem;
+  margin: 1.6rem 0 1.2rem;
+  padding: 1rem 1.1rem;
+  border-left: 2px solid var(--catalog-blue-2);
+  background: var(--catalog-paper-2);
+}
+
+.rare-selection-title {
+  margin: 0;
+  color: var(--catalog-ink-2);
+  font: 500 .66rem/1.2 var(--catalog-mono);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
