@@ -80,5 +80,24 @@
       </ul>
       <p *ngIf="journal.sales.length === 0">Aucune entrée.</p>
     </section>
+
+    <section class="diagnostic-card" aria-labelledby="passage-associations-title">
+      <h2 id="passage-associations-title">Associations de compte ({{ journal.passageAssociations.length }})</h2>
+      <ul *ngIf="journal.passageAssociations.length > 0" class="diagnostic-list">
+        <li
+          *ngFor="let association of journal.passageAssociations"
+          class="diagnostic-passage-association"
+          [attr.data-status]="association.status"
+        >
+          <div class="diagnostic-entry-heading">
+            <strong>{{ association.checkoutPassageId }}</strong>
+            <span class="diagnostic-status">{{ association.status }}</span>
+          </div>
+          <small>{{ association.attemptCount }} tentative(s) · créée le {{ association.createdAt }}</small>
+          <p *ngIf="association.lastError">{{ association.lastError }}</p>
+        </li>
+      </ul>
+      <p *ngIf="journal.passageAssociations.length === 0">Aucune entrée.</p>
+    </section>
   </ng-container>
 </main>

@@ -9,6 +9,7 @@ import {
   ScanFailureKind,
   ScanLocalStoreError,
   ScanOutboxEntry,
+  ScanPassageAssociationEntry,
   ScanRareBook,
   ScanRareBookPhotoQueueEntry,
   ScanRareSaleOutboxEntry,
@@ -353,12 +354,14 @@ export class ScanLocalStoreService {
 
   async clearAccountState(): Promise<void> {
     await this.runTransaction(
-      [scanStoreNames.outbox, scanStoreNames.sales, scanStoreNames.rareSales, scanStoreNames.session],
+      [scanStoreNames.outbox, scanStoreNames.sales, scanStoreNames.rareSales,
+        scanStoreNames.passageAssociations, scanStoreNames.session],
       'readwrite',
       stores => {
         stores[scanStoreNames.outbox].clear();
         stores[scanStoreNames.sales].clear();
         stores[scanStoreNames.rareSales].clear();
+        stores[scanStoreNames.passageAssociations].clear();
         stores[scanStoreNames.session].delete('active-session');
         stores[scanStoreNames.session].delete('volunteer-statistics');
 
@@ -402,13 +405,14 @@ export class ScanLocalStoreService {
 
   async getDiagnosticState(): Promise<ScanDiagnosticStoreState> {
     const session = await this.getSession();
-    const [catalog, sessionCounts, closeRequests, outbox, sales, rareSales] = await Promise.all([
+    const [catalog, sessionCounts, closeRequests, outbox, sales, rareSales, passageAssociations] = await Promise.all([
       this.getCatalogDiagnosticSummary(),
       session ? this.getSessionCounts(session.clientSessionId) : Promise.resolve(null),
       this.listSessionCloseRequests(),
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
       this.listRareSaleOutboxEntries(),
+      this.listPassageAssociations(),
     ]);
 
     return {
@@ -420,6 +424,7 @@ export class ScanLocalStoreService {
       outbox,
       sales,
       rareSales,
+      passageAssociations,
     };
   }
 
@@ -581,6 +586,57 @@ export class ScanLocalStoreService {
       left.clientGestureId.localeCompare(right.clientGestureId));
   }
 
+  async putPassageAssociation(entry: ScanPassageAssociationEntry): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.passageAssociations,
+      'readwrite',
+      store => store.put(entry),
+    );
+  }
+
+  async listPassageAssociations(): Promise<ScanPassageAssociationEntry[]> {
+    const entries = await this.runRequest<ScanPassageAssociationEntry[]>(
+      scanStoreNames.passageAssociations,
+      'readonly',
+      store => store.getAll(),
+    ) ?? [];
+
+    return entries.sort((left, right) =>
+      left.createdAt.localeCompare(right.createdAt) ||
+      left.checkoutPassageId.localeCompare(right.checkoutPassageId));
+  }
+
+  async markPassageAssociationAttempt(
+    checkoutPassageId: string,
+    patch: Partial<Pick<ScanPassageAssociationEntry,
+      'lastAttemptAt' | 'lastError' | 'lastFailureKind' | 'status'>>,
+  ): Promise<ScanPassageAssociationEntry> {
+    const entry = await this.runRequest<ScanPassageAssociationEntry | undefined>(
+      scanStoreNames.passageAssociations,
+      'readonly',
+      store => store.get(checkoutPassageId),
+    );
+    if (!entry) {
+      throw new Error(`Unknown passage association: ${checkoutPassageId}`);
+    }
+
+    const updated: ScanPassageAssociationEntry = {
+      ...entry,
+      ...patch,
+      attemptCount: entry.attemptCount + 1,
+    };
+    await this.putPassageAssociation(updated);
+    return updated;
+  }
+
+  async deletePassageAssociation(checkoutPassageId: string): Promise<void> {
+    await this.runRequest(
+      scanStoreNames.passageAssociations,
+      'readwrite',
+      store => store.delete(checkoutPassageId),
+    );
+  }
+
   async listTransmittableOutboxEntries(): Promise<ScanOutboxEntry[]> {
     const entries = await this.listOutboxEntries();
     return entries.filter(entry => entry.status === 'Kept' || entry.status === 'Rejected');
@@ -598,10 +654,11 @@ export class ScanLocalStoreService {
     pendingDecisionCount: number;
     pendingTransmissionCount: number;
   }> {
-    const [entries, sales, rareSales] = await Promise.all([
+    const [entries, sales, rareSales, passageAssociations] = await Promise.all([
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
       this.listRareSaleOutboxEntries(),
+      this.listPassageAssociations(),
     ]);
     return {
       pendingDecisionCount: entries.filter(entry =>
@@ -612,7 +669,8 @@ export class ScanLocalStoreService {
           entry.clientSessionId === clientSessionId &&
           (entry.status === 'Kept' || entry.status === 'Rejected')).length +
         sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
-        rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length,
+        rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
+        passageAssociations.filter(entry => entry.status === 'Pending').length,
     };
   }
 
@@ -632,14 +690,16 @@ export class ScanLocalStoreService {
   }
 
   async countBlockingOutboxEntries(): Promise<number> {
-    const [entries, sales, rareSales] = await Promise.all([
+    const [entries, sales, rareSales, passageAssociations] = await Promise.all([
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
       this.listRareSaleOutboxEntries(),
+      this.listPassageAssociations(),
     ]);
     return entries.filter(entry => isBlockingScanStatus(entry.status)).length +
       sales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
-      rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length;
+      rareSales.filter(entry => (entry.status ?? 'Pending') !== 'Quarantined').length +
+      passageAssociations.filter(entry => entry.status === 'Pending').length;
   }
 
   async countBlockingOutboxEntriesForSession(clientSessionId: string): Promise<number> {
@@ -655,14 +715,16 @@ export class ScanLocalStoreService {
   }
 
   async countQuarantinedOutboxEntries(): Promise<number> {
-    const [entries, sales, rareSales] = await Promise.all([
+    const [entries, sales, rareSales, passageAssociations] = await Promise.all([
       this.listOutboxEntries(),
       this.listSaleOutboxEntries(),
       this.listRareSaleOutboxEntries(),
+      this.listPassageAssociations(),
     ]);
     return entries.filter(entry => entry.status === 'RejectedByServer').length +
       sales.filter(entry => entry.status === 'Quarantined').length +
-      rareSales.filter(entry => entry.status === 'Quarantined').length;
+      rareSales.filter(entry => entry.status === 'Quarantined').length +
+      passageAssociations.filter(entry => entry.status === 'Quarantined').length;
   }
 
   async orphanPendingOutboxEntriesFromOtherSessions(clientSessionId: string): Promise<number> {
@@ -1315,6 +1377,9 @@ export class ScanLocalStoreService {
         }
         if (!database.objectStoreNames.contains(scanStoreNames.rareSales)) {
           database.createObjectStore(scanStoreNames.rareSales, {keyPath: 'clientGestureId'});
+        }
+        if (!database.objectStoreNames.contains(scanStoreNames.passageAssociations)) {
+          database.createObjectStore(scanStoreNames.passageAssociations, {keyPath: 'checkoutPassageId'});
         }
 
         if (event.oldVersion < 3 && database.objectStoreNames.contains(scanStoreNames.outbox)) {

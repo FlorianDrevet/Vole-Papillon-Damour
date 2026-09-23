@@ -64,6 +64,7 @@ export class ScanRareCashService {
     rareBookIds: readonly string[],
     occurredAt = new Date(),
     session: Pick<ScanSessionSnapshot, 'clientSessionId' | 'remoteSessionId' | 'targetAssoEventsId'> | null = null,
+    checkoutPassageId?: string | null,
   ): Promise<ScanRareSaleOutboxEntry[]> {
     return await this.enqueue(async () => {
       const ids = [...new Set(rareBookIds.filter(id => id.trim().length > 0))];
@@ -92,6 +93,7 @@ export class ScanRareCashService {
           clientGestureId: createScanClientId(),
           clientSessionId: session?.clientSessionId ?? null,
           rareBookId: book.serverId,
+          ...(checkoutPassageId ? {checkoutPassageId} : {}),
           scanSessionId: session?.remoteSessionId ?? null,
           assoEventsId: session?.targetAssoEventsId ?? null,
           occurredAt: timestamp,

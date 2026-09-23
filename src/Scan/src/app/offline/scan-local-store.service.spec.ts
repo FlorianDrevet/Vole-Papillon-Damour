@@ -5,8 +5,12 @@ import {
   ScanOutboxStatus,
   ScanRareBook,
   ScanRareSaleOutboxEntry,
+  ScanPassageAssociationEntry,
   ScanSaleOutboxEntry,
   ScanVolunteerStatisticsRecord,
+  scanDatabaseName,
+  scanDatabaseVersion,
+  scanStoreNames,
 } from './scan-offline.model';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {clearScanCatalogForTest} from './scan-test.utils';
@@ -35,6 +39,9 @@ describe('ScanLocalStoreService', () => {
     }
     for (const entry of await service.listSaleOutboxEntries()) {
       await service.deleteSaleOutboxEntry(entry.clientGestureId);
+    }
+    for (const entry of await service.listPassageAssociations()) {
+      await service.deletePassageAssociation(entry.checkoutPassageId);
     }
   });
 
@@ -298,6 +305,76 @@ describe('ScanLocalStoreService', () => {
     expect(await service.listRareSaleOutboxEntries()).toEqual([]);
   });
 
+  it('persists passage associations, records attempts and counts quarantines', async () => {
+    const entry = createPassageAssociation();
+    await service.putPassageAssociation(entry);
+    expect(await service.countBlockingOutboxEntries()).toBe(1);
+    expect(await service.getOutboxCounts('session-1')).toEqual({
+      pendingDecisionCount: 0,
+      pendingTransmissionCount: 1,
+    });
+
+    const attempted = await service.markPassageAssociationAttempt(entry.checkoutPassageId, {
+      lastAttemptAt: '2026-09-03T08:02:00.000Z',
+      lastError: 'HTTP 409',
+      lastFailureKind: 'permanent',
+      status: 'Quarantined',
+    });
+
+    expect(attempted).toEqual(jasmine.objectContaining({
+      checkoutPassageId: entry.checkoutPassageId,
+      credential: entry.credential,
+      status: 'Quarantined',
+      attemptCount: 1,
+    }));
+    expect(await service.listPassageAssociations()).toEqual([attempted]);
+    expect(await service.countQuarantinedOutboxEntries()).toBe(1);
+
+    await service.deletePassageAssociation(entry.checkoutPassageId);
+    expect(await service.listPassageAssociations()).toEqual([]);
+  });
+
+  it('upgrades a v5 database while keeping its sales and adding the association store', async () => {
+    const serviceState = service as unknown as {
+      databasePromise: Promise<IDBDatabase> | null;
+      database: IDBDatabase | null;
+    };
+    (await serviceState.databasePromise)?.close();
+    serviceState.databasePromise = null;
+    serviceState.database = null;
+    await deleteDatabase();
+
+    const v5Request = indexedDB.open(scanDatabaseName, 5);
+    v5Request.onupgradeneeded = () => {
+      const database = v5Request.result;
+      database.createObjectStore(scanStoreNames.catalog, {keyPath: 'isbn13'});
+      database.createObjectStore(scanStoreNames.outbox, {keyPath: 'clientGestureId'});
+      database.createObjectStore(scanStoreNames.sales, {keyPath: 'clientGestureId'});
+      database.createObjectStore(scanStoreNames.session, {keyPath: 'key'});
+      database.createObjectStore(scanStoreNames.rareBooks, {keyPath: 'clientId'});
+      database.createObjectStore(scanStoreNames.rarePhotoQueue, {keyPath: 'queueId'});
+      database.createObjectStore(scanStoreNames.rareSales, {keyPath: 'clientGestureId'});
+    };
+    const v5Database = await requestResult<IDBDatabase>(v5Request);
+    const sale = createSaleOutboxEntry('v5-sale');
+    await new Promise<void>((resolve, reject) => {
+      const transaction = v5Database.transaction(scanStoreNames.sales, 'readwrite');
+      transaction.objectStore(scanStoreNames.sales).put(sale);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    v5Database.close();
+
+    const upgradedService = new ScanLocalStoreService();
+    expect(await upgradedService.listSaleOutboxEntries()).toEqual([sale]);
+    const upgradedDatabase = await (upgradedService as unknown as {
+      databasePromise: Promise<IDBDatabase>;
+    }).databasePromise;
+    expect(upgradedDatabase.version).toBe(scanDatabaseVersion);
+    expect(upgradedDatabase.objectStoreNames.contains(scanStoreNames.passageAssociations)).toBeTrue();
+    upgradedDatabase.close();
+  });
+
   it('clears account-owned state without removing the catalog synchronization state', async () => {
     const book = createCatalogBook();
     const syncState = {
@@ -331,6 +408,7 @@ describe('ScanLocalStoreService', () => {
     });
     await service.addOutboxEntry(createOutboxEntry('gesture-1', undefined, 'Kept'));
     await service.addSaleOutboxEntries([createSaleOutboxEntry()], []);
+    await service.putPassageAssociation(createPassageAssociation());
 
     await service.clearAccountState();
 
@@ -338,6 +416,7 @@ describe('ScanLocalStoreService', () => {
     expect(await service.listSessionCloseRequests()).toEqual([]);
     expect(await service.listOutboxEntries()).toEqual([]);
     expect(await service.listSaleOutboxEntries()).toEqual([]);
+    expect(await service.listPassageAssociations()).toEqual([]);
     expect(await service.getCatalogBook(book.isbn13)).toEqual(book);
     expect(await service.getCatalogSyncState()).toEqual(syncState);
   });
@@ -359,7 +438,7 @@ describe('ScanLocalStoreService', () => {
 
     await service.getCatalogBooks();
 
-    expect(open).toHaveBeenCalledOnceWith('vpd-scan', 5);
+    expect(open).toHaveBeenCalledOnceWith('vpd-scan', scanDatabaseVersion);
   });
 
   it('can retry opening IndexedDB after an upgrade was blocked by another instance', async () => {
@@ -448,6 +527,35 @@ describe('ScanLocalStoreService', () => {
       lastAttemptAt: null,
       lastError: null,
     };
+  }
+
+  function createPassageAssociation(): ScanPassageAssociationEntry {
+    return {
+      checkoutPassageId: 'passage-1',
+      credential: {kind: 'qr', value: 'VPDC1.AAAA.BBBB'},
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:01.000Z',
+      status: 'Pending',
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+    };
+  }
+
+  function requestResult<T>(request: IDBOpenDBRequest): Promise<T> {
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result as T);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  function deleteDatabase(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(scanDatabaseName);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error('The scan database deletion was blocked.'));
+    });
   }
 
   function createRareBook(): ScanRareBook {

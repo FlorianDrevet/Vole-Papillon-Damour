@@ -2,7 +2,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {TestBed} from '@angular/core/testing';
 import {of, Subject, throwError} from 'rxjs';
 
-import {ScanApiService, ScanRareBookResponse} from './scan-api.service';
+import {ScanApiService, ScanPassageAssociationResponse, ScanRareBookResponse} from './scan-api.service';
 import {ScanLocalStoreService} from './scan-local-store.service';
 import {
   ScanAssociationSettings,
@@ -11,7 +11,9 @@ import {
   ScanCatalogDeltaResponse,
   ScanBookResponse,
   ScanRareBook,
+  ScanPassageAssociationEntry,
   ScanRareSaleOutboxEntry,
+  ScanSaleOutboxEntry,
   ScanSaleResponse,
   ScanSessionResponse,
 } from './scan-offline.model';
@@ -32,6 +34,7 @@ describe('ScanSyncService', () => {
       'openSession',
       'scanBook',
       'registerSale',
+      'associatePassage',
       'markRareBookSold',
       'restoreRareBookAvailability',
       'closeSession',
@@ -40,6 +43,12 @@ describe('ScanSyncService', () => {
     api.openSession.and.returnValue(of(createSessionResponse()));
     api.scanBook.and.returnValue(of(createScanResponse()));
     api.registerSale.and.returnValue(of(createSaleResponse()));
+    api.associatePassage.and.returnValue(of({
+      checkoutPassageId: 'passage-1',
+      status: 'Associated',
+      displayLabel: 'Camille',
+      alreadyProcessed: false,
+    }));
     api.closeSession.and.returnValue(of(createClosedSessionResponse()));
 
     TestBed.configureTestingModule({
@@ -62,6 +71,9 @@ describe('ScanSyncService', () => {
     }
     for (const entry of await store.listSaleOutboxEntries()) {
       await store.deleteSaleOutboxEntry(entry.clientGestureId);
+    }
+    for (const entry of await store.listPassageAssociations()) {
+      await store.deletePassageAssociation(entry.checkoutPassageId);
     }
     await store.clearRareBookState();
   });
@@ -240,7 +252,7 @@ describe('ScanSyncService', () => {
 
   it('sends rare cash sales through the rare endpoint without ordinary sale fields', async () => {
     const rareBook = createRareBook();
-    const entry = createRareSaleOutboxEntry();
+    const entry = {...createRareSaleOutboxEntry(), checkoutPassageId: 'passage-1'};
     await store.putRareBooks([{...rareBook, isSold: true}]);
     await store.addRareSaleOutboxEntries([entry], []);
     api.markRareBookSold.and.returnValue(of(createRareBookResponse()));
@@ -254,14 +266,17 @@ describe('ScanSyncService', () => {
         occurredAt: entry.occurredAt,
         scanSessionId: 'remote-session-1',
         assoEventsId: null,
+        checkoutPassageId: 'passage-1',
       }),
     );
     const request = api.markRareBookSold.calls.mostRecent().args[1] as unknown as {
       price?: unknown;
       quantity?: unknown;
+      checkoutPassageId?: unknown;
     };
     expect(request.price).toBeUndefined();
     expect(request.quantity).toBeUndefined();
+    expect(request.checkoutPassageId).toBe('passage-1');
     expect(result.sent).toBe(1);
     expect(await store.listRareSaleOutboxEntries()).toEqual([]);
   });
@@ -534,6 +549,83 @@ describe('ScanSyncService', () => {
     expect(api.registerSale).not.toHaveBeenCalled();
     expect(result.remaining).toBe(0);
     expect(result.quarantined).toBe(1);
+  });
+
+  it('sends sales before the association of the same passage', async () => {
+    const callOrder: string[] = [];
+    const sale = createSaleOutboxEntry('g1', 'p1');
+    await store.addSaleOutboxEntries([sale], []);
+    await store.putPassageAssociation(createPassageAssociation('p1'));
+    api.registerSale.and.callFake(request => {
+      callOrder.push(`registerSale:${request.clientGestureId}`);
+      return of(createSaleResponse());
+    });
+    api.associatePassage.and.callFake((passageId, _request) => {
+      callOrder.push(`associatePassage:${passageId}`);
+      return of(createPassageAssociationResponse(passageId));
+    });
+
+    await service.flushOutbox();
+
+    expect(callOrder).toEqual(['registerSale:g1', 'associatePassage:p1']);
+    expect(api.registerSale.calls.mostRecent().args[0].checkoutPassageId).toBe('p1');
+  });
+
+  it('removes the association once the server answered Unresolved', async () => {
+    api.associatePassage.and.returnValue(of({
+      checkoutPassageId: 'p1',
+      status: 'Unresolved',
+      displayLabel: null,
+      alreadyProcessed: false,
+    }));
+    await store.putPassageAssociation(createPassageAssociation('p1'));
+
+    await service.flushOutbox();
+
+    expect(await store.listPassageAssociations()).toEqual([]);
+  });
+
+  it('keeps syncing sales when the association call fails', async () => {
+    api.associatePassage.and.returnValue(throwError(() => new HttpErrorResponse({status: 0})));
+    await store.addSaleOutboxEntries([createSaleOutboxEntry('g1', 'p1')], []);
+    await store.putPassageAssociation(createPassageAssociation('p1'));
+
+    await service.flushOutbox();
+
+    expect(await store.listSaleOutboxEntries()).toEqual([]);
+    expect((await store.listPassageAssociations())[0].attemptCount).toBe(1);
+  });
+
+  it('quarantines a 409 passage association conflict', async () => {
+    api.associatePassage.and.returnValue(throwError(() => new HttpErrorResponse({status: 409})));
+    await store.putPassageAssociation(createPassageAssociation('p1'));
+
+    const result = await service.flushOutbox();
+
+    expect((await store.listPassageAssociations())[0].status).toBe('Quarantined');
+    expect(await store.countQuarantinedOutboxEntries()).toBe(1);
+    expect(result.quarantined).toBe(1);
+  });
+
+  it('replays an association with the same passage id after a reconnection', async () => {
+    jasmine.clock().install();
+    jasmine.clock().mockDate(new Date('2026-09-07T08:00:00.000Z'));
+    api.associatePassage.and.returnValues(
+      throwError(() => new HttpErrorResponse({status: 0})),
+      of(createPassageAssociationResponse('p1')),
+    );
+    await store.putPassageAssociation(createPassageAssociation('p1'));
+
+    try {
+      await service.flushOutbox();
+      jasmine.clock().tick(60_000);
+      await service.flushOutbox();
+
+      expect(api.associatePassage.calls.allArgs().map(args => args[0])).toEqual(['p1', 'p1']);
+      expect(await store.listPassageAssociations()).toEqual([]);
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('closes a requested session after its rejected gesture is quarantined', async () => {
@@ -822,6 +914,48 @@ describe('ScanSyncService', () => {
       attemptCount: 0,
       lastAttemptAt: null,
       lastError: null,
+    };
+  }
+
+  function createSaleOutboxEntry(
+    clientGestureId: string,
+    checkoutPassageId: string,
+  ): ScanSaleOutboxEntry {
+    return {
+      clientGestureId,
+      isbn13: '9782070363735',
+      quantity: 1,
+      checkoutPassageId,
+      status: 'Pending',
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:00.100Z',
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+    };
+  }
+
+  function createPassageAssociation(checkoutPassageId: string): ScanPassageAssociationEntry {
+    return {
+      checkoutPassageId,
+      credential: {kind: 'qr', value: 'VPDC1.AAAA.BBBB'},
+      occurredAt: '2026-09-03T08:01:00.000Z',
+      createdAt: '2026-09-03T08:01:00.100Z',
+      status: 'Pending',
+      attemptCount: 0,
+      lastAttemptAt: null,
+      lastError: null,
+    };
+  }
+
+  function createPassageAssociationResponse(
+    checkoutPassageId: string,
+  ): ScanPassageAssociationResponse {
+    return {
+      checkoutPassageId,
+      status: 'Associated',
+      displayLabel: 'Camille',
+      alreadyProcessed: false,
     };
   }
 });

@@ -1,5 +1,5 @@
 export const scanDatabaseName = 'vpd-scan';
-export const scanDatabaseVersion = 5;
+export const scanDatabaseVersion = 6;
 
 export const scanStoreNames = {
   catalog: 'catalog',
@@ -9,6 +9,7 @@ export const scanStoreNames = {
   rareBooks: 'rareBooks',
   rarePhotoQueue: 'rarePhotoQueue',
   rareSales: 'rareSales',
+  passageAssociations: 'passageAssociations',
 } as const;
 
 export type ScanStoreName = typeof scanStoreNames[keyof typeof scanStoreNames];
@@ -60,6 +61,10 @@ export type ScanSaleOutboxStatus = 'Pending' | 'Quarantined';
 export type ScanRareSaleOutboxStatus = 'Pending' | 'Cancelled' | 'Quarantined';
 
 export type ScanFailureKind = 'transient' | 'permanent' | 'authorization';
+
+export type ScanMemberCredential = {kind: 'qr' | 'recovery-code'; value: string};
+
+export type ScanPassageAssociationStatus = 'Pending' | 'Accepted' | 'Unresolved' | 'Quarantined';
 
 export interface ScanCatalogBook {
   isbn13: string;
@@ -240,6 +245,7 @@ export interface ScanSaleOutboxEntry {
   clientGestureId: string;
   isbn13: string;
   quantity: number;
+  checkoutPassageId?: string | null;
   status?: ScanSaleOutboxStatus;
   occurredAt: string;
   createdAt: string;
@@ -253,11 +259,24 @@ export interface ScanRareSaleOutboxEntry {
   clientGestureId: string;
   clientSessionId: string | null;
   rareBookId: string;
+  checkoutPassageId?: string | null;
   scanSessionId: string | null;
   assoEventsId: string | null;
   occurredAt: string;
   createdAt: string;
   status?: ScanRareSaleOutboxStatus;
+  attemptCount: number;
+  lastAttemptAt: string | null;
+  lastError: string | null;
+  lastFailureKind?: ScanFailureKind | null;
+}
+
+export interface ScanPassageAssociationEntry {
+  checkoutPassageId: string;
+  credential: ScanMemberCredential;
+  occurredAt: string;
+  createdAt: string;
+  status: ScanPassageAssociationStatus;
   attemptCount: number;
   lastAttemptAt: string | null;
   lastError: string | null;

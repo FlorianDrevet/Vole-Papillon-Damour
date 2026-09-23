@@ -2,6 +2,7 @@ import {
   scanDatabaseVersion,
   ScanCatalogBook,
   ScanOutboxEntry,
+  ScanPassageAssociationEntry,
   ScanRareSaleOutboxEntry,
   ScanSaleOutboxEntry,
   ScanSessionCloseRequest,
@@ -18,6 +19,7 @@ export interface ScanDiagnosticStoreState {
   outbox: ScanDiagnosticOutboxEntry[];
   sales: ScanSaleOutboxEntry[];
   rareSales: ScanRareSaleOutboxEntry[];
+  passageAssociations: ScanPassageAssociationEntry[];
 }
 
 export type ScanDiagnosticOutboxEntry = Omit<ScanOutboxEntry, 'status'> & {
@@ -101,6 +103,16 @@ export interface ScanDiagnosticExport {
     lastError: string | null;
     lastFailureKind: ScanRareSaleOutboxEntry['lastFailureKind'] | null;
   }>;
+  passageAssociations: Array<{
+    checkoutPassageId: string;
+    occurredAt: string;
+    createdAt: string;
+    status: ScanPassageAssociationEntry['status'];
+    attemptCount: number;
+    lastAttemptAt: string | null;
+    lastError: string | null;
+    lastFailureKind: ScanPassageAssociationEntry['lastFailureKind'] | null;
+  }>;
   catalogCount: number;
 }
 
@@ -180,6 +192,16 @@ export function createScanDiagnosticExport(
       status: entry.status ?? null,
       occurredAt: entry.occurredAt,
       createdAt: entry.createdAt,
+      attemptCount: entry.attemptCount,
+      lastAttemptAt: entry.lastAttemptAt,
+      lastError: entry.lastError,
+      lastFailureKind: entry.lastFailureKind ?? null,
+    })),
+    passageAssociations: state.passageAssociations.map(entry => ({
+      checkoutPassageId: entry.checkoutPassageId,
+      occurredAt: entry.occurredAt,
+      createdAt: entry.createdAt,
+      status: entry.status,
       attemptCount: entry.attemptCount,
       lastAttemptAt: entry.lastAttemptAt,
       lastError: entry.lastError,

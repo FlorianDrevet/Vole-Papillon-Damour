@@ -30,12 +30,26 @@ export interface RegisterSaleRequest {
   quantity: number;
   occurredAt: string;
   clientGestureId: string;
+  checkoutPassageId?: string | null;
+}
+
+export interface AssociateCheckoutPassageRequest {
+  credential: string;
+  occurredAt: string;
+}
+
+export interface ScanPassageAssociationResponse {
+  checkoutPassageId: string;
+  status: 'Associated' | 'Accepted' | 'Unresolved';
+  displayLabel: string | null;
+  alreadyProcessed: boolean;
 }
 
 export interface MarkRareBookSoldRequest {
   occurredAt: string;
   scanSessionId: string | null;
   assoEventsId: string | null;
+  checkoutPassageId?: string | null;
 }
 
 export interface CloseScanSessionRequest {
@@ -142,6 +156,16 @@ export class ScanApiService {
   registerSale(request: RegisterSaleRequest): Observable<ScanSaleResponse> {
     return this.http.post<ScanSaleResponse>(
       `${this.baseUrl}/scan/sales`,
+      request,
+    );
+  }
+
+  associatePassage(
+    checkoutPassageId: string,
+    request: AssociateCheckoutPassageRequest,
+  ): Observable<ScanPassageAssociationResponse> {
+    return this.http.put<ScanPassageAssociationResponse>(
+      `${this.baseUrl}/scan/passages/${encodeURIComponent(checkoutPassageId)}/member`,
       request,
     );
   }

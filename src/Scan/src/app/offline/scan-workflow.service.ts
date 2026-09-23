@@ -168,6 +168,7 @@ export class ScanWorkflowService {
   async recordCashSales(
     isbns13: readonly string[],
     occurredAt = new Date(),
+    checkoutPassageId?: string | null,
   ): Promise<ScanSaleOutboxEntry[]> {
     return await this.enqueue(async () => {
       if (isbns13.length === 0) {
@@ -193,6 +194,7 @@ export class ScanWorkflowService {
           clientGestureId: createClientId(),
           isbn13,
           quantity: 1,
+          ...(checkoutPassageId ? {checkoutPassageId} : {}),
           status: 'Pending',
           occurredAt: timestamp,
           createdAt: new Date().toISOString(),

@@ -48,20 +48,42 @@ describe('scan diagnostic export', () => {
       ],
       sales: [],
       rareSales: [],
+      passageAssociations: [{
+        checkoutPassageId: 'passage-1',
+        credential: {kind: 'qr', value: 'VPDC1.SECRET.CREDENTIAL'},
+        occurredAt: '2026-09-09T09:42:00.000Z',
+        createdAt: '2026-09-09T09:42:01.000Z',
+        status: 'Quarantined',
+        attemptCount: 1,
+        lastAttemptAt: '2026-09-09T09:42:02.000Z',
+        lastError: 'HTTP 409',
+        lastFailureKind: 'permanent',
+      }],
     };
 
     const serialized = serializeScanDiagnosticExport(state, '2026-09-09T09:43:00.000Z');
     const exported = JSON.parse(serialized) as ReturnType<typeof createScanDiagnosticExport>;
 
-    expect(exported.databaseVersion).toBe(5);
+    expect(exported.databaseVersion).toBe(6);
     expect(exported.session?.hasVolunteerId).toBeTrue();
     expect(exported.outbox.map(entry => entry.status)).toEqual(['Orphaned', 'Quarantined']);
+    expect(exported.passageAssociations).toEqual([{
+      checkoutPassageId: 'passage-1',
+      occurredAt: '2026-09-09T09:42:00.000Z',
+      createdAt: '2026-09-09T09:42:01.000Z',
+      status: 'Quarantined',
+      attemptCount: 1,
+      lastAttemptAt: '2026-09-09T09:42:02.000Z',
+      lastError: 'HTTP 409',
+      lastFailureKind: 'permanent',
+    }]);
     expect(serialized).not.toContain('volunteerId');
     expect(serialized).not.toContain('homeAccountId');
     expect(serialized).not.toContain('accessToken');
     expect(serialized).not.toContain('idToken');
     expect(serialized).not.toContain('refreshToken');
     expect(serialized).not.toContain('msal');
+    expect(serialized).not.toContain('VPDC1.SECRET.CREDENTIAL');
   });
 
   function createOutboxEntry(

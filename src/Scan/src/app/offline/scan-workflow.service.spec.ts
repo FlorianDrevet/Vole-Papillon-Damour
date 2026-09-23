@@ -368,6 +368,17 @@ describe('ScanWorkflowService', () => {
     expect(await store.listSaleOutboxEntries()).toHaveSize(1);
   });
 
+  it('attaches the checkout passage to each cash sale outbox entry', async () => {
+    const entries = await service.recordCashSales(
+      ['9782070363735', '9783140464079'],
+      new Date('2026-09-03T08:06:00.000Z'),
+      'passage-1',
+    );
+
+    expect(entries.map(entry => entry.checkoutPassageId)).toEqual(['passage-1', 'passage-1']);
+    expect(await store.listSaleOutboxEntries()).toEqual(jasmine.arrayContaining(entries));
+  });
+
   it('deletes a pending cash sale when it is explicitly cancelled', async () => {
     const entries = await service.recordCashSales(
       ['9782070363735'],
