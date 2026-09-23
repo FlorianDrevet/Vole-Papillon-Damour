@@ -1,7 +1,7 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {ChangeDetectorRef, DestroyRef} from '@angular/core';
+import {ChangeDetectorRef, DestroyRef, signal, WritableSignal} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Router} from '@angular/router';
 import {defer, of, Subject, throwError} from 'rxjs';
@@ -28,6 +28,7 @@ import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
 import {ScanRareCashService} from '../offline/scan-rare-cash.service';
+import {ScanPassageAssociationService, ScanPassageAssociationState} from '../offline/scan-passage-association.service';
 import {ScanConfirmationService} from '../scan-confirmation.service';
 import {ScanSessionSummaryService} from '../scan-session-summary.service';
 
@@ -39,6 +40,9 @@ describe('ScannerComponent', () => {
   let confirmDialog: jasmine.Spy;
   let sessionSummary: ScanSessionSummaryService;
   let rareCash: jasmine.SpyObj<ScanRareCashService>;
+  let passageAssociation: ScanPassageAssociationService;
+  let passageState: WritableSignal<ScanPassageAssociationState>;
+  let commitPassageAssociation: jasmine.Spy;
 
   beforeEach(async () => {
     metadataService = jasmine.createSpyObj<BookMetadataService>('BookMetadataService', ['getMetadata']);
@@ -62,6 +66,21 @@ describe('ScannerComponent', () => {
     rareCash.recordSales.and.resolveTo([]);
     rareCash.cancelSale.and.resolveTo('local');
 
+    passageState = signal<ScanPassageAssociationState>({kind: 'anonymous'});
+    const associationDouble = {
+      state: passageState,
+      startAssociation: jasmine.createSpy('startAssociation').and.callFake(() => {
+        passageState.set({kind: 'resolving'});
+      }),
+      submitCredential: jasmine.createSpy('submitCredential').and.resolveTo(),
+      clear: jasmine.createSpy('clear').and.callFake(() => {
+        passageState.set({kind: 'anonymous'});
+      }),
+      commit: jasmine.createSpy('commit').and.resolveTo(true),
+    };
+    commitPassageAssociation = associationDouble.commit;
+    passageAssociation = associationDouble as unknown as ScanPassageAssociationService;
+
     await TestBed.configureTestingModule({
       declarations: [ScannerComponent, ScanStatusBarComponent, ScanRecoveryComponent],
       imports: [CommonModule, FormsModule, DesignSystemModule],
@@ -73,6 +92,7 @@ describe('ScannerComponent', () => {
         ScanStatusService,
         {provide: ScanWorkflowService, useValue: null},
         {provide: ScanRareCashService, useValue: rareCash},
+        {provide: ScanPassageAssociationService, useValue: passageAssociation},
         {provide: ScanConfirmationService, useValue: confirmation},
         ScanSessionSummaryService,
       ],
@@ -1961,6 +1981,157 @@ describe('ScannerComponent', () => {
     expect(localComponent.screen).toBe('tri');
     expect(localComponent.syncError).toContain('dernier livre');
   });
+
+  it('shows Vente anonyme and validates without an association warning', async () => {
+    component.openCash();
+    (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = createCashWorkflow();
+    component.cashItems = [createCashItem('anonymous', 'Livre vendu')];
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Client : Vente anonyme');
+    expect(fixture.nativeElement.textContent).not.toContain('Association en attente');
+
+    await component.validateCash();
+
+    expect(component.cashItems).toEqual([]);
+    expect(component.cashMessage).toContain('livre enregistré localement');
+    expect(component.cashMessage).not.toContain('Association');
+  });
+
+  it('sends the same checkoutPassageId on every sale of an associated passage', async () => {
+    passageState.set({kind: 'associated', displayLabel: 'Camille'});
+    const workflow = createCashWorkflow();
+    rareCash.recordSales.and.resolveTo([createRareSaleOutboxEntry()]);
+    const localComponent = createCashComponent(workflow);
+    localComponent.session = createSession({remoteSessionId: 'remote-session-1'});
+    localComponent.cashItems = [
+      createCashItem('ordinary', 'Livre ordinaire'),
+      {
+        ...createCashItem('rare', 'Livre rare'),
+        isRare: true,
+        rareBookId: 'rare-server-1',
+      },
+    ];
+
+    await localComponent.validateCash();
+
+    const ordinaryArgs = workflow.recordCashSales.calls.mostRecent().args;
+    const passageId = ordinaryArgs[2];
+    const rareArgs = rareCash.recordSales.calls.mostRecent().args;
+    expect(passageId).toEqual(jasmine.any(String));
+    expect(rareArgs[3]).toBe(passageId);
+    expect(rareArgs[1]).toBe(ordinaryArgs[1]);
+    expect(commitPassageAssociation).toHaveBeenCalledOnceWith(passageId, ordinaryArgs[1]);
+  });
+
+  it('does not create a passage id for an anonymous sale', async () => {
+    passageState.set({kind: 'anonymous'});
+    const workflow = createCashWorkflow();
+    const localComponent = createCashComponent(workflow);
+    localComponent.cashItems = [createCashItem('anonymous', 'Livre vendu')];
+
+    await localComponent.validateCash();
+
+    expect(workflow.recordCashSales).toHaveBeenCalledOnceWith(['9782070363735']);
+    expect(commitPassageAssociation).not.toHaveBeenCalled();
+    expect(passageState()).toEqual({kind: 'anonymous'});
+  });
+
+  it('treats an ISBN scanned while waiting for a card as a book', async () => {
+    passageState.set({kind: 'resolving'});
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+    component.screen = 'cash';
+
+    await component.lookup('9782070363735', 'cash');
+
+    expect(passageAssociation.submitCredential).not.toHaveBeenCalled();
+    expect(component.cashItems).toHaveSize(1);
+    expect(component.cashItems[0].isbn13).toBe('9782070363735');
+  });
+
+  it('never claims visibility in Mes achats while offline', async () => {
+    passageState.set({kind: 'pending-offline'});
+    const workflow = createCashWorkflow();
+    const localComponent = createCashComponent(workflow);
+    localComponent.cashItems = [createCashItem('offline', 'Livre vendu')];
+
+    await localComponent.validateCash();
+
+    expect(localComponent.cashMessage).toContain('Association en attente de synchronisation.');
+    expect(localComponent.cashMessage).not.toContain('visibles dans Mes achats');
+  });
+
+  it('returns to Vente anonyme after validation', async () => {
+    passageState.set({kind: 'associated', displayLabel: 'Camille'});
+    const workflow = createCashWorkflow();
+    const localComponent = createCashComponent(workflow);
+    localComponent.cashItems = [createCashItem('associated', 'Livre vendu')];
+
+    await localComponent.validateCash();
+
+    expect(passageState()).toEqual({kind: 'anonymous'});
+    expect(passageAssociation.clear).toHaveBeenCalled();
+  });
+
+  it('accepts a manually entered recovery code while waiting for a card', async () => {
+    component.openCash();
+    passageState.set({kind: 'resolving'});
+    component.openManualInput();
+    component.manualIsbn = 'LUNE 4271';
+    fixture.detectChanges();
+
+    const recoveryInput = fixture.nativeElement.querySelector('#manual-member-code') as HTMLInputElement;
+    expect(recoveryInput.type).toBe('text');
+    expect(fixture.nativeElement.querySelector('.manual-keypad')).toBeNull();
+
+    await component.validateManualIsbn();
+
+    expect(passageAssociation.submitCredential).toHaveBeenCalledOnceWith('LUNE 4271');
+    expect(component.screen).toBe('cash');
+  });
+
+  function createCashWorkflow(): jasmine.SpyObj<ScanWorkflowService> {
+    const workflow = jasmine.createSpyObj<ScanWorkflowService>(
+      'ScanWorkflowService',
+      ['recordCashSales', 'getOutboxCounts', 'getSession', 'getSettings', 'getCatalogSyncState'],
+    );
+    workflow.recordCashSales.and.resolveTo([createSaleOutboxEntry()]);
+    workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 1});
+    workflow.getSession.and.resolveTo(null);
+    workflow.getSettings.and.resolveTo(null);
+    workflow.getCatalogSyncState.and.resolveTo(null);
+    return workflow;
+  }
+
+  function createCashComponent(workflow: ScanWorkflowService): ScannerComponent {
+    const internals = component as unknown as {
+      changeDetector: ChangeDetectorRef;
+      destroyRef: DestroyRef;
+    };
+    const sync = jasmine.createSpyObj<ScanSyncService>('ScanSyncService', ['syncAll']);
+    sync.syncAll.and.resolveTo({
+      catalog: null,
+      outbox: {sent: 0, remaining: 0, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
+      closed: false,
+    });
+    const localComponent = new ScannerComponent(
+      metadataService,
+      cameraService,
+      internals.changeDetector,
+      internals.destroyRef,
+      workflow,
+      null,
+      sync,
+      null,
+      null,
+      null,
+      null,
+      rareCash,
+      passageAssociation,
+    );
+    localComponent.isOnline = false;
+    return localComponent;
+  }
 
   function createMetadata(title = 'Le Petit Prince'): BookMetadata {
     return {

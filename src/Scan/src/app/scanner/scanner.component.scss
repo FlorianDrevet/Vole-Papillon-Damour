@@ -43,6 +43,87 @@
   justify-self: start;
 }
 
+.cash-member-banner {
+  display: grid;
+  min-width: 0;
+  gap: 0.65rem;
+  flex: 0 0 auto;
+  margin: 0.6rem 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--scan-line);
+  border-radius: 0.75rem;
+  background: #fff;
+  color: var(--scan-ink);
+}
+
+.cash-member-copy {
+  min-width: 0;
+}
+
+.cash-member-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.cash-member-copy p {
+  margin: 0.35rem 0 0;
+  color: var(--scan-slate);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.cash-member-actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cash-member-actions button {
+  min-height: 2.5rem;
+  max-width: 100%;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--scan-blue);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--scan-blue);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.cash-member-actions .cash-member-action {
+  background: var(--scan-blue);
+  color: #fff;
+}
+
+.cash-member-actions button:focus-visible,
+.manual-member-code:focus-visible {
+  outline: 3px solid var(--scan-orange);
+  outline-offset: 2px;
+}
+
+.manual-member-code {
+  display: block;
+  width: 100%;
+  min-height: 3rem;
+  margin-top: 0.4rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--scan-line);
+  border-bottom: 2px solid var(--scan-blue);
+  border-radius: 0.35rem;
+  color: var(--scan-ink);
+  background: #fff;
+  font: 500 1rem/1.4 "IBM Plex Mono", ui-monospace, monospace;
+}
+
 .scan-toast {
   position: fixed;
   z-index: 60;

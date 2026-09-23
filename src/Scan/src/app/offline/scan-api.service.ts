@@ -45,6 +45,10 @@ export interface ScanPassageAssociationResponse {
   alreadyProcessed: boolean;
 }
 
+export interface ResolveMemberCardResponse {
+  displayLabel: string;
+}
+
 export interface MarkRareBookSoldRequest {
   occurredAt: string;
   scanSessionId: string | null;
@@ -167,6 +171,13 @@ export class ScanApiService {
     return this.http.put<ScanPassageAssociationResponse>(
       `${this.baseUrl}/scan/passages/${encodeURIComponent(checkoutPassageId)}/member`,
       request,
+    );
+  }
+
+  resolveMemberCard(credential: string): Observable<ResolveMemberCardResponse> {
+    return this.http.post<ResolveMemberCardResponse>(
+      `${this.baseUrl}/scan/member-cards/resolve`,
+      {credential},
     );
   }
 

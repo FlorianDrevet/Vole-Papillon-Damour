@@ -102,6 +102,15 @@ describe('ScanApiService', () => {
     });
   });
 
+  it('resolves a member card to a display label for cash-desk confirmation', () => {
+    service.resolveMemberCard('VPDC1.AAAA.BBBB').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/scan/member-cards/resolve`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({credential: 'VPDC1.AAAA.BBBB'});
+    request.flush({displayLabel: 'Camille'});
+  });
+
   it('sends a rare cash sale without any price or ordinary sale fields', () => {
     const sale = {
       occurredAt: '2026-09-03T08:00:00.000Z',

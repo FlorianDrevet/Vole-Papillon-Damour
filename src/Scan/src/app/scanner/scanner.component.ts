@@ -35,6 +35,11 @@ import {
 import {ScanSyncService} from '../offline/scan-sync.service';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {createScanClientId} from '../offline/scan-client-id';
+import {
+  ScanPassageAssociationService,
+  ScanPassageAssociationState,
+} from '../offline/scan-passage-association.service';
 import {
   ScanRareCashService,
   ScanRareSaleReference,
@@ -45,6 +50,7 @@ import {BookMetadataService} from './book-metadata.service';
 import {CameraScannerHandle, CameraScannerService} from './camera-scanner.service';
 import {normalizeIsbn} from './isbn.util';
 import {ScanSessionSummaryService} from '../scan-session-summary.service';
+import {parseMemberCredential} from '../offline/scan-member-card';
 
 export type ScanScreen =
   | 'home'
@@ -139,6 +145,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   localScan: LocalScanResult | null = null;
   consultationResult: LocalCatalogResult | null = null;
   cashItems: CashScanItem[] = [];
+  cashAssociationNoticeDismissed = false;
   availableRareBooks: ScanRareBook[] = [];
   rareCashResults: ScanRareBook[] = [];
   rareCashSearch = '';
@@ -170,6 +177,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   private routeDriven = false;
   selectedMode: LocalScanMode = 'AvailableNow';
   manualReturnScreen: ScanDestination = 'tri';
+  manualAssociationCode = false;
   nextFair: ScanNextBookFair | null = null;
   associationSettings: ScanAssociationSettings | null = null;
 
@@ -206,6 +214,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly confirmation: ScanConfirmationService | null = null,
     @Optional() private readonly sessionSummary: ScanSessionSummaryService | null = null,
     @Optional() private readonly scanRareCash: ScanRareCashService | null = null,
+    @Optional() private readonly scanPassageAssociation: ScanPassageAssociationService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -340,7 +349,23 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   get manualDigitCount(): number {
-    return this.manualIsbn.replace(/[^0-9Xx]/g, '').length;
+    return this.manualAssociationCode
+      ? this.manualIsbn.length
+      : this.manualIsbn.replace(/[^0-9Xx]/g, '').length;
+  }
+
+  get cashAssociationState(): ScanPassageAssociationState {
+    return this.scanPassageAssociation?.state() ?? {kind: 'anonymous'};
+  }
+
+  get cashAssociatedDisplayLabel(): string | null {
+    const state = this.cashAssociationState;
+    return state.kind === 'associated' ? state.displayLabel : null;
+  }
+
+  get isAwaitingCashMemberCredential(): boolean {
+    return this.cashAssociationState.kind === 'resolving' ||
+      this.cashAssociationState.kind === 'not-recognised';
   }
 
   get storageError(): string | null {
@@ -689,6 +714,18 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
+    if (
+      destination === 'cash' &&
+      this.isAwaitingCashMemberCredential &&
+      parseMemberCredential(rawInput) !== null &&
+      this.scanPassageAssociation
+    ) {
+      await this.scanPassageAssociation.submitCredential(rawInput);
+      this.cashAssociationNoticeDismissed = false;
+      this.refreshView();
+      return;
+    }
+
     const normalizedIsbn = normalizeIsbn(rawInput);
     const lookupVersion = ++this.lookupVersion;
     this.resetLookupState();
@@ -864,11 +901,37 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.screen = 'cash';
     this.resetLookupState();
     this.cashMessage = null;
+    this.scanPassageAssociation?.clear();
+    this.cashAssociationNoticeDismissed = false;
     this.rareCashPickerOpen = false;
     this.selectedRareBook = null;
     void this.refreshRareCashBooks();
     this.refreshView();
     this.startCameraIfNeeded(true);
+  }
+
+  startCashAssociation(): void {
+    this.scanPassageAssociation?.startAssociation();
+    this.cashAssociationNoticeDismissed = false;
+    this.manualAssociationCode = false;
+    this.refreshView();
+  }
+
+  continueCashAssociation(): void {
+    this.cashAssociationNoticeDismissed = true;
+    this.refreshView();
+  }
+
+  changeCashAssociation(): void {
+    this.scanPassageAssociation?.startAssociation();
+    this.cashAssociationNoticeDismissed = false;
+    this.refreshView();
+  }
+
+  continueCashAnonymously(): void {
+    this.scanPassageAssociation?.clear();
+    this.cashAssociationNoticeDismissed = false;
+    this.refreshView();
   }
 
   async openRareCashPicker(): Promise<void> {
@@ -971,7 +1034,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   openManualInput(): void {
     this.stopCamera();
     this.manualReturnScreen = this.destinationForScreen();
-    this.manualIsbn = this.isbnInput;
+    this.manualAssociationCode = this.manualReturnScreen === 'cash' && this.isAwaitingCashMemberCredential;
+    this.manualIsbn = this.manualAssociationCode ? '' : this.isbnInput;
     this.manualError = null;
     this.screen = 'manual';
     this.refreshView();
@@ -990,6 +1054,42 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   async validateManualIsbn(): Promise<void> {
+    if (this.manualAssociationCode && this.manualReturnScreen === 'cash') {
+      const rawValue = this.manualIsbn.trim();
+      const normalizedIsbn = normalizeIsbn(rawValue);
+      if (normalizedIsbn && parseMemberCredential(rawValue) === null) {
+        const destination = this.manualReturnScreen;
+        this.manualAssociationCode = false;
+        this.screen = destination;
+        try {
+          await this.lookup(normalizedIsbn, destination);
+        } finally {
+          this.restartContinuousCamera(destination);
+        }
+        return;
+      }
+
+      if (!this.scanPassageAssociation) {
+        this.manualError = 'Carte non reconnue. Réessayez, saisissez le code de secours ou continuez en vente anonyme.';
+        this.refreshView();
+        return;
+      }
+
+      await this.scanPassageAssociation.submitCredential(rawValue);
+      if (this.cashAssociationState.kind === 'not-recognised') {
+        this.manualError = 'Carte non reconnue. Réessayez, saisissez le code de secours ou continuez en vente anonyme.';
+        this.refreshView();
+        return;
+      }
+
+      this.manualAssociationCode = false;
+      this.screen = this.manualReturnScreen;
+      this.cashAssociationNoticeDismissed = false;
+      this.refreshView();
+      this.restartContinuousCamera(this.manualReturnScreen);
+      return;
+    }
+
     const normalizedIsbn = normalizeIsbn(this.manualIsbn);
     if (!normalizedIsbn) {
       this.manualError = 'Ce code n’est pas un ISBN valide.';
@@ -1007,6 +1107,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   }
 
   returnToScan(): void {
+    this.manualAssociationCode = false;
     this.screen = this.manualReturnScreen;
     this.manualError = null;
     this.refreshView();
@@ -1441,6 +1542,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     if (!this.scanWorkflow && !this.scanRareCash) {
       this.cashMessage = `${count} livre${count > 1 ? 's' : ''} dans la vente.`;
       this.cashItems = [];
+      this.scanPassageAssociation?.clear();
       this.refreshView();
       return;
     }
@@ -1458,6 +1560,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 
     let saleEntries: Awaited<ReturnType<ScanWorkflowService['recordCashSales']>> = [];
     let rareSaleEntries: Awaited<ReturnType<ScanRareCashService['recordSales']>> = [];
+    const associationState = this.cashAssociationState;
+    const checkoutPassageId = associationState.kind === 'anonymous'
+      ? null
+      : createScanClientId();
+    const occurredAt = new Date();
 
     try {
       if (ordinaryIsbns.length > 0 && !this.scanWorkflow) {
@@ -1468,14 +1575,18 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       }
 
       saleEntries = ordinaryIsbns.length > 0
-        ? await this.scanWorkflow!.recordCashSales(ordinaryIsbns)
+        ? checkoutPassageId
+          ? await this.scanWorkflow!.recordCashSales(ordinaryIsbns, occurredAt, checkoutPassageId)
+          : await this.scanWorkflow!.recordCashSales(ordinaryIsbns)
         : [];
       this.lastValidatedSaleIds = saleEntries
         .filter(entry => (entry.status ?? 'Pending') === 'Pending')
         .map(entry => entry.clientGestureId);
 
       rareSaleEntries = rareBookIds.length > 0
-        ? await this.scanRareCash!.recordSales(rareBookIds, new Date(), this.session)
+        ? checkoutPassageId
+          ? await this.scanRareCash!.recordSales(rareBookIds, occurredAt, this.session, checkoutPassageId)
+          : await this.scanRareCash!.recordSales(rareBookIds, occurredAt, this.session)
         : [];
       this.lastValidatedRareSales = rareSaleEntries
         .filter(entry => (entry.status ?? 'Pending') === 'Pending')
@@ -1484,8 +1595,19 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
           rareBookId: entry.rareBookId,
           occurredAt: entry.occurredAt,
         }));
+      const associationCommitted = checkoutPassageId !== null && this.scanPassageAssociation
+        ? await this.scanPassageAssociation.commit(checkoutPassageId, occurredAt)
+        : false;
       this.cashItems = [];
-      this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''} localement. Synchronisation automatique en cours.`;
+      if (associationCommitted && associationState.kind === 'associated') {
+        this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''}. ${count === 1 ? 'Associé' : 'Associés'} au compte de ${associationState.displayLabel}.`;
+      } else if (associationCommitted && associationState.kind === 'pending-offline') {
+        this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''}. Association en attente de synchronisation.`;
+      } else {
+        this.cashMessage = `${count} livre${count > 1 ? 's' : ''} enregistré${count > 1 ? 's' : ''} localement. Synchronisation automatique en cours.`;
+      }
+      this.scanPassageAssociation?.clear();
+      this.cashAssociationNoticeDismissed = false;
       await this.refreshLocalState();
       this.trySync();
     } catch (error: unknown) {
@@ -1724,7 +1846,12 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       return;
     }
 
-    if (/^[0-9Xx-]$/.test(event.key)) {
+    const keyIsScanCharacter = /^[0-9Xx-]$/.test(event.key) || (
+      this.destinationForScreen() === 'cash' &&
+      this.isAwaitingCashMemberCredential &&
+      /^[A-Za-z0-9._-]$/.test(event.key)
+    );
+    if (keyIsScanCharacter) {
       this.scannerBuffer += event.key;
       this.lastScannerKeyAt = now;
     }
