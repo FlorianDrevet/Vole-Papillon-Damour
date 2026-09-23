@@ -2,6 +2,7 @@
 
 | Date | Change |
 |------|--------|
+| 2026-09-23 | Corrigé le déploiement infra : Container Apps passe à l'API ARM `2025-07-01` pour accepter `cooldownPeriod`, et les Failure Anomalies conservent `PT5M` au lieu de recevoir le `PT6H` des alertes planifiées. Le run réel `35846830759` avait échoué sur ces deux validations Azure ; état Azure après cet échec à vérifier avant le prochain déploiement. |
 | 2026-09-22 | Aligné l'IaC DEV avec le passage utilisateur d'Azure SQL `S1`/20 DTU à `S0`/10 DTU, et réduit les répliques permanentes ACA : BackOffice et Scan passent à `minReplicas: 0` avec réveil HTTP et cooldown de trois heures (`10 800` s). Compilation Bicep réussie ; aucun déploiement Azure depuis ce worktree. |
 | 2026-09-22 | Préparé la réduction des coûts de supervision DEV dans Bicep : availability tests conservés mais désactivés pour rendre l'état idempotent, règles Log Alert et Failure Anomalies évaluées toutes les 6 h, sampling d'ingestion à 25 % sur Website/BackOffice/Catalog et 100 % sur API/Worker/Scan. Aucun déploiement Azure ; la vérification post-déploiement reste à faire. |
 | 2026-09-21 | Corrigé le renouvellement silencieux MSAL du BackOffice : la racine utilisée comme `redirectUri` ne bootstrappe désormais jamais Angular dans une iframe cachée, ce qui empêche le routeur de lancer une seconde interaction et de bloquer les appels Axios. Ajouté un contrat de bootstrap dédié ; validation : 23 tests ChromeHeadless, build de production et `graphify update .`. Le smoke authentifié après déploiement reste à faire. |

@@ -66,7 +66,7 @@ The API startup wires:
 - The Scan image is built from the `src/` context with nginx on port `8080`; `Scan - deploy` injects the public API URL, Application Insights connection string, and canonical browser origin at build time, then rolls `vpd-scan-ca-dev` onto the image. Its secured public hostname is `https://scan.volepapillondamour.fr`; the deployed ACA HTTPS FQDN remains a technical fallback.
 - The worker is deployed as a native Functions-on-Container-Apps resource (`Microsoft.App/containerApps`, `kind=functionapp`) with a dedicated managed identity, ACR pull, Key Vault secret references, Application Insights, and a `P1-1` measurement target of `minReplicas: 0`/`maxReplicas: 1`. It is intentionally private (no ingress); the timer was previously verified in Azure with a successful `AccountDeletionSweepFunction` invocation, and the zero-replica behavior still needs the two-hour observation.
 - The DEV SQL deployment parameter now selects the fixed `S0` Standard tier (10 DTUs, 250 GB, no automatic pause). The user reported that the Azure resource was already scaled to 10 DTUs in the portal on 2026-09-22; this worktree aligns the IaC, but has not deployed it.
-- DEV API, Website, and Catalog keep `minReplicas: 1`; BackOffice and Scan use HTTP ingress with `minReplicas: 0`, `maxReplicas: 2`, and a three-hour (`10,800` seconds) cooldown before the final replica scales to zero. A request wakes them from zero, while continued activity resets the idle window.
+- DEV API, Website, and Catalog keep `minReplicas: 1`; BackOffice and Scan use HTTP ingress with `minReplicas: 0`, `maxReplicas: 2`, and a three-hour (`10,800` seconds) cooldown before the final replica scales to zero. A request wakes them from zero, while continued activity resets the idle window. `infra/modules/ContainerApp/containerApp.module.bicep` must use API `2025-07-01` or newer for `template.scale.cooldownPeriod`; `2024-03-01` does not include that property in its ARM schema.
 - Deployment IaC for Azure Container Apps now lives under `infra/` and targets the API, BackOffice, Website, Scan, Catalog, and Worker surfaces, including SNI bindings for the catalog and Scan custom domains when their managed certificate names are supplied.
 - An Infra Flow Sculptor project named `Vole-Papillon-Damour` was created on 2026-05-18 with `dev` and `prod` environments in `FranceCentral`, a shared `rg-vpd-common`, and a separate `VpdApplications` infrastructure config.
 - The Infra Flow Sculptor run created ACR and Log Analytics in the project, but ACA environment and Container App auto-creation failed server-side with a compile exception, so the repository-local Bicep template completes that missing part.
@@ -137,8 +137,9 @@ The API startup wires:
 - The DEV Bicep parameters disable the four synthetic availability tests without removing
   their resources: `availabilityTestsEnabled = false` is passed into both the web test and
   its metric alert so an incremental deployment also disables resources created earlier.
-- DEV scheduled query and Failure Anomalies rules use `PT6H`, with a six-hour KQL lookback
-  where a query embeds `ago()`: four evaluations per day instead of the default `PT5M`.
+- DEV scheduled-query alerts use `PT6H`, with a six-hour KQL lookback where a query embeds
+  `ago()`: four evaluations per day instead of the default `PT5M`. Failure Anomalies keeps
+  its module default `PT5M`; its detector rejects the scheduled-query cadence `PT6H`.
 - Application Insights ingestion sampling is 25% for Website, BackOffice and Catalog in
   DEV; API, Worker and Scan remain at 100% because their telemetry feeds operational
   diagnosis and alerts. Runtime OpenTelemetry sampling remains explicitly at 100%.

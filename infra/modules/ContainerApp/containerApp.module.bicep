@@ -50,7 +50,7 @@ param customDomains CustomDomainConfig[] = []
 @description('Resource tags')
 param tags object = {}
 
-resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
+resource containerApp 'Microsoft.App/containerApps@2025-07-01' = {
   name: name
   location: location
   tags: tags
