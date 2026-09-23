@@ -19,7 +19,7 @@
       </div>
     </header>
 
-    <section data-photo-gallery class="bg-paper px-shell py-12 lg:py-16" aria-labelledby="photo-gallery-title">
+    <section data-photo-gallery appRevealOnScroll class="bg-paper px-shell py-12 lg:py-16" aria-labelledby="photo-gallery-title">
       <div class="mx-auto flex max-w-[1440px] flex-col gap-8">
         <div class="flex max-w-[62ch] flex-col gap-2">
           <span class="font-mono text-[10px] uppercase tracking-[.16em] text-blue">Album photo</span>
@@ -29,12 +29,21 @@
         <div class="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
           @for (photo of selectedAlbum.photos; track photo; let index = $index) {
             <figure data-photo-card class="mb-4 break-inside-avoid overflow-hidden rounded-sm border border-line-2 bg-white shadow-sm">
-              <img
-                [src]="photo"
-                [alt]="selectedAlbum.title + ', photo ' + (index + 1)"
-                [attr.loading]="index === 0 ? 'eager' : 'lazy'"
-                decoding="async"
-                class="h-auto w-full">
+              <button
+                #photoTrigger
+                data-photo-trigger
+                type="button"
+                (click)="openPhoto(index, photoTrigger)"
+                [attr.aria-label]="'Ouvrir la photo ' + (index + 1) + ' sur ' + selectedAlbum.photos.length"
+                class="group block w-full overflow-hidden focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-blue-2/70">
+                <img
+                  [src]="photo"
+                  appImageFadeIn
+                  [alt]="selectedAlbum.title + ', photo ' + (index + 1)"
+                  [attr.loading]="index === 0 ? 'eager' : 'lazy'"
+                  decoding="async"
+                  class="h-auto w-full transition-transform duration-[var(--vpd-motion-base)] group-hover:scale-[1.025]">
+              </button>
             </figure>
           }
         </div>
@@ -46,6 +55,61 @@
         </a>
       </div>
     </section>
+
+    <dialog
+      #photoDialog
+      data-photo-lightbox
+      aria-labelledby="photo-lightbox-title"
+      class="photo-lightbox"
+      (click)="onPhotoDialogClick($event)"
+      (keydown)="onPhotoDialogKeydown($event)"
+      (close)="onPhotoDialogClosed()">
+      @let currentIndex = selectedPhotoIndex();
+      @if (currentIndex !== null) {
+        <div class="photo-lightbox__panel">
+          <header class="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+            <h2 id="photo-lightbox-title" class="sr-only">Photos de {{ selectedAlbum.title }}</h2>
+            <span data-photo-count aria-live="polite" class="font-mono text-xs uppercase tracking-[.14em] text-mist-2">
+              {{ currentIndex + 1 }} / {{ selectedAlbum.photos.length }}
+            </span>
+            <button data-photo-close type="button" (click)="closePhoto()" aria-label="Fermer la photo"
+              class="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20">×</button>
+          </header>
+
+          <div class="photo-lightbox__stage flex items-center justify-between gap-2 px-2 sm:gap-4 sm:px-4">
+            <button
+              type="button"
+              data-photo-previous
+              aria-label="Photo précédente"
+              [disabled]="currentIndex === 0"
+              (click)="previousPhoto()"
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl text-white transition hover:bg-white/20 disabled:cursor-default disabled:opacity-35">←</button>
+
+            <figure class="m-0 flex min-w-0 flex-1 flex-col items-center gap-3">
+              @let currentPhoto = selectedAlbum.photos[currentIndex];
+              @if (currentPhoto) {
+                <img
+                  [src]="currentPhoto"
+                  appImageFadeIn
+                  [alt]="'Photo ' + (currentIndex + 1) + ' de l’album ' + selectedAlbum.title"
+                  class="photo-lightbox__image">
+              }
+              <figcaption class="pb-3 text-center font-mono text-[10px] uppercase tracking-[.12em] text-mist">
+                {{ selectedAlbum.title }}
+              </figcaption>
+            </figure>
+
+            <button
+              type="button"
+              data-photo-next
+              aria-label="Photo suivante"
+              [disabled]="currentIndex === selectedAlbum.photos.length - 1"
+              (click)="nextPhoto()"
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl text-white transition hover:bg-white/20 disabled:cursor-default disabled:opacity-35">→</button>
+          </div>
+        </div>
+      }
+    </dialog>
   </div>
 } @else {
   <div data-photo-album-not-found class="flex min-h-[50vh] flex-col items-start gap-5 bg-paper px-shell py-16 lg:py-24">

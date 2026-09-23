@@ -28,31 +28,6 @@ export class VpdEventSections implements OnInit {
   }
 
   /**
-   * Inclinaison et cadence du flottement des cartes.
-   * La maquette fige trois cartes (-1.4deg / 1.1deg / -0.7deg, 7s / 7.6s / 8.2s) ; la série
-   * est prolongée au-delà de la troisième en alternant le sens, au cas où le nombre de cartes
-   * augmenterait, pour éviter que les cartes ne montent et descendent en même temps.
-   */
-  private static readonly floatRotationsDeg = [-1.4, 1.1, -0.7];
-
-  protected cardRotationDeg(index: number): number {
-    return VpdEventSections.floatRotationsDeg[index] ?? (index % 2 === 0 ? -0.7 : 1.2);
-  }
-
-  protected cardDurationS(index: number): number {
-    return 7 + index * 0.6;
-  }
-
-  /**
-   * Décalage appliqué en délai *négatif* : l'animation démarre déjà en cours, donc la
-   * carte est inclinée et flotte dès la première frame. Avec un délai positif elle
-   * resterait droite et immobile avant de basculer d'un coup sur son inclinaison.
-   */
-  protected cardDelayS(index: number): number {
-    return -(index * 0.7);
-  }
-
-  /**
    * Reprend la même règle que la fiche événement : une bourse porte sa vraie heure
    * d'ouverture dans `hourOpenDoors`, tandis que les autres événements portent leur
    * heure de début dans `dateStart`.
