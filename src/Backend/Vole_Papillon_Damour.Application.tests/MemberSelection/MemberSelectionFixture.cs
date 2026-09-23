@@ -1,12 +1,12 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using NSubstitute;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
+using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
@@ -34,7 +34,7 @@ namespace Vole_Papillon_Damour.Application.tests.MemberSelection;
 internal sealed class MemberSelectionFixture : IAsyncDisposable
 {
     private readonly SqliteConnection _connection;
-    private readonly IDateTimeProvider _clock;
+    private readonly MemberSelectionTestClock _clock;
     private readonly DateTime _now;
 
     private MemberSelectionFixture(
@@ -45,11 +45,11 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         _connection = connection;
         Context = context;
         _now = now;
-        _clock = Substitute.For<IDateTimeProvider>();
-        _clock.UtcNow.Returns(now);
+        _clock = new MemberSelectionTestClock(now);
     }
 
     public MemberSelectionTestDbContext Context { get; }
+    public MemberSelectionTestClock Clock => _clock;
 
     public static async Task<MemberSelectionFixture> CreateAsync(DateTime now)
     {
@@ -72,6 +72,9 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         new(Context, CreateMemberIdentityService());
 
     public SetSelectionItemStatusCommandHandler CreateSetStatusHandler() =>
+        new(Context, CreateMemberIdentityService(), _clock);
+
+    public GetMySelectionQueryHandler CreateGetMySelectionHandler() =>
         new(Context, CreateMemberIdentityService(), _clock);
 
     public async Task<Book> AddBookAsync(
@@ -98,6 +101,20 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         Context.Books.Add(book);
         await Context.SaveChangesAsync();
         return book;
+    }
+
+    public async Task HideBookAsync(string isbn)
+    {
+        var book = await Context.Books.SingleAsync(candidate => candidate.Id == ParseIsbn(isbn));
+        book.UpdateCatalogVisibility(true, _clock.UtcNow);
+        await Context.SaveChangesAsync();
+    }
+
+    public async Task MarkRareBookSoldAsync(RareBookId rareBookId)
+    {
+        var rareBook = await Context.RareBooks.SingleAsync(candidate => candidate.Id == rareBookId);
+        rareBook.MarkSold(_clock.UtcNow);
+        await Context.SaveChangesAsync();
     }
 
     public async Task<BookAnnouncement> AddAnnouncementAsync(string isbn)
@@ -140,6 +157,26 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         return rareBook;
     }
 
+    public async Task<AssoEvents> AddFairAsync(DateTimeOffset dateStart, DateTimeOffset? dateEnd = null)
+    {
+        var fair = AssoEvents.Create(
+            "Test book fair",
+            null,
+            new EventsType(EventsType.EventsTypeEnum.Books),
+            dateStart,
+            dateEnd,
+            null,
+            null,
+            null,
+            new Adresse(null, "Paris", "Rue de test", 75000),
+            null,
+            [],
+            string.Empty);
+        Context.AssoEvents.Add(fair);
+        await Context.SaveChangesAsync();
+        return fair;
+    }
+
     public async Task<MemberSelectionItem> AddSelectionItemForOtherMemberAsync(string isbn)
     {
         var otherMemberId = UserId.CreateUnique();
@@ -168,6 +205,13 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
     }
 }
 
+internal sealed class MemberSelectionTestClock(DateTime utcNow) : IDateTimeProvider
+{
+    public DateTime UtcNow { get; private set; } = utcNow;
+
+    public void Advance(TimeSpan elapsed) => UtcNow = UtcNow.Add(elapsed);
+}
+
 internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelectionTestDbContext> options)
     : DbContext(options), IProjectDbContext
 {
@@ -175,11 +219,12 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
+    public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
+    public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
-    DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
@@ -187,13 +232,12 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
     DbSet<Watchlist> IProjectDbContext.Watchlists => throw new NotSupportedException();
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
-    DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => throw new NotSupportedException();
+    DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
     DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => throw new NotSupportedException();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<Product>();
-        modelBuilder.Ignore<AssoEvents>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<BookMovement>();
         modelBuilder.Ignore<ScanSession>();
@@ -201,7 +245,6 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
         modelBuilder.Ignore<Watchlist>();
         modelBuilder.Ignore<UserAlertHistory>();
         modelBuilder.Ignore<EmailBounceEvent>();
-        modelBuilder.Ignore<RareBookPhoto>();
         modelBuilder.Ignore<RareBookTombstone>();
 
         modelBuilder.Entity<User>(builder =>
@@ -257,12 +300,13 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
             builder.Property(book => book.Id)
                 .ValueGeneratedNever()
                 .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(book => book.Slug)
+                .HasConversion(slug => slug.Value, value => RareBookSlug.Create(value));
+            builder.Property(book => book.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Status).HasConversion<byte>();
-            builder.Ignore(book => book.Slug);
-            builder.Ignore(book => book.Isbn13);
-            builder.Ignore(book => book.AuthorMention);
-            builder.Ignore(book => book.Publisher);
-            builder.Ignore(book => book.PublicationYear);
             builder.Ignore(book => book.Shelf);
             builder.Ignore(book => book.Price);
             builder.Ignore(book => book.Condition);
@@ -276,9 +320,49 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
             builder.Ignore(book => book.PriceSetBy);
             builder.Ignore(book => book.CreatedBy);
             builder.Ignore(book => book.UpdatedBy);
-            builder.Ignore(book => book.Photos);
             builder.Ignore(book => book.RowVersion);
             builder.Ignore(book => book.ClientGestureId);
+            builder.HasMany(book => book.Photos)
+                .WithOne()
+                .HasForeignKey(photo => photo.RareBookId)
+                .OnDelete(DeleteBehavior.Cascade);
+            builder.Metadata.FindNavigation(nameof(RareBook.Photos))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
+        });
+        modelBuilder.Entity<RareBookPhoto>(builder =>
+        {
+            builder.HasKey(photo => photo.Id);
+            builder.Property(photo => photo.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => RareBookPhotoId.Create(value));
+            builder.Property(photo => photo.RareBookId)
+                .HasConversion(id => id.Value, value => RareBookId.Create(value));
+            builder.Property(photo => photo.BlobUri)
+                .HasConversion(uri => uri.ToString(), value => new Uri(value, UriKind.Absolute));
+            builder.Property(photo => photo.UploadedBy)
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+        });
+
+        modelBuilder.Entity<AssoEvents>(builder =>
+        {
+            builder.HasKey(assoEvent => assoEvent.Id);
+            builder.Property(assoEvent => assoEvent.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => AssoEventsId.Create(value));
+            builder.Property(assoEvent => assoEvent.EventsType)
+                .HasConversion(type => (int)type.Value,
+                    value => new EventsType((EventsType.EventsTypeEnum)value));
+            builder.Ignore(assoEvent => assoEvent.UrlImage);
+            builder.Ignore(assoEvent => assoEvent.UrlRegistration);
+            builder.Ignore(assoEvent => assoEvent.UrlImageMap);
+            builder.Ignore(assoEvent => assoEvent.HourOpenDoors);
+            builder.Ignore(assoEvent => assoEvent.HourCloseDoors);
+            builder.Ignore(assoEvent => assoEvent.Adresse);
+            builder.Ignore(assoEvent => assoEvent.BingoHasBeenWon);
+            builder.Ignore(assoEvent => assoEvent.BookRevenue);
+            builder.Ignore(assoEvent => assoEvent.CurrentPartieIndex);
+            builder.Ignore(assoEvent => assoEvent.Parties);
+            builder.Ignore(assoEvent => assoEvent.BingoNumeros);
         });
 
         modelBuilder.Entity<WatchlistItem>(builder =>

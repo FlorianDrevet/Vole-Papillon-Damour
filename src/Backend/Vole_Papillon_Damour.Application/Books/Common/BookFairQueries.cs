@@ -17,6 +17,18 @@ public static class BookFairQueries
             assoEvent.EventsType == new EventsType(EventsType.EventsTypeEnum.Books));
     }
 
+    public static AssoEvents? FindNextBookFair(IEnumerable<AssoEvents> fairs, DateTimeOffset now)
+    {
+        return fairs
+            .Where(assoEvent =>
+                assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
+                !assoEvent.IsCancelled &&
+                (assoEvent.DateEnd ?? assoEvent.DateStart) > now)
+            .OrderBy(assoEvent => assoEvent.DateStart)
+            .ThenBy(assoEvent => assoEvent.Id.Value)
+            .FirstOrDefault();
+    }
+
     public static IQueryable<AssoEvents> WhereActiveBookFair(this IQueryable<AssoEvents> events)
     {
         return events

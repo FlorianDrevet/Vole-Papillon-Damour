@@ -32,13 +32,7 @@ public sealed class GetPublicNextBookFairQueryHandler(
             .WhereActiveBookFair()
             .ToListAsync(cancellationToken);
 
-        var fair = fairs
-            .Where(assoEvent =>
-                assoEvent.EventsType.Value == EventsType.EventsTypeEnum.Books &&
-                (assoEvent.DateEnd ?? assoEvent.DateStart) > now)
-            .OrderBy(assoEvent => assoEvent.DateStart)
-            .ThenBy(assoEvent => assoEvent.Id.Value)
-            .FirstOrDefault();
+        var fair = BookFairQueries.FindNextBookFair(fairs, now);
 
         if (fair is null)
         {
