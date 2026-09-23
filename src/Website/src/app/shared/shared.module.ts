@@ -19,8 +19,6 @@ import { PhotoPlaceholderComponent } from './components/photo-placeholder/photo-
 import { ActionCardComponent } from './components/action-card/action-card.component';
 import { TitledSectionComponent } from './components/titled-section/titled-section.component';
 import { EventLocationsComponent } from './components/event-locations/event-locations.component';
-import { RevealOnScrollDirective } from './directives/reveal-on-scroll.directive';
-import { ImageFadeInDirective } from './directives/image-fade-in.directive';
 
 @NgModule({
   declarations: [
@@ -39,8 +37,6 @@ import { ImageFadeInDirective } from './directives/image-fade-in.directive';
     TitledSectionComponent,
     EventLocationsComponent,
     CookieBannerComponent,
-    RevealOnScrollDirective,
-    ImageFadeInDirective,
   ],
   exports: [
     PapillonIconComponent,
@@ -58,8 +54,6 @@ import { ImageFadeInDirective } from './directives/image-fade-in.directive';
     TitledSectionComponent,
     EventLocationsComponent,
     CookieBannerComponent,
-    RevealOnScrollDirective,
-    ImageFadeInDirective,
     DesignSystemModule,
   ],
   imports: [CommonModule, RouterLink, DesignSystemModule],

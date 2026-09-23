@@ -102,17 +102,19 @@
   <div class="grid grid-cols-2 items-start gap-5 lg:grid-cols-4">
     <app-stat-card
       value="0" label="Salarié"
-      description="Aucun frais de structure, aucune indemnité de fonction."></app-stat-card>
+      description="Aucun frais de structure, aucune indemnité de fonction."
+      [rotateDeg]="-1.2" [floatDurationS]="7.4"></app-stat-card>
     <app-stat-card
       value="100" unit="%" label="Bénévole"
       description="Une quinzaine de personnes, du tri des cartons de livres à la tenue du stand."
-      tone="dark" class="lg:mt-3.5"></app-stat-card>
+      tone="dark" class="lg:mt-3.5" [rotateDeg]="0.9" [floatDelayS]="0.6"></app-stat-card>
     <app-stat-card
       value="1–3" unit="€" label="Le livre"
-      description="Assez bas pour que la lecture reste possible avec un petit budget."></app-stat-card>
+      description="Assez bas pour que la lecture reste possible avec un petit budget."
+      [rotateDeg]="-0.7" [floatDelayS]="1.2" [floatDurationS]="7.8"></app-stat-card>
     <app-stat-card
       value="40" unit="+" label="Enfants aidés"
       description="Depuis 2010, dans la Loire et bien au-delà."
-      class="lg:mt-2.5"></app-stat-card>
+      class="lg:mt-2.5" [rotateDeg]="1.1" [floatDelayS]="1.8" [floatDurationS]="8.4"></app-stat-card>
   </div>
 </section>
