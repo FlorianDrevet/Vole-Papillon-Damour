@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Vole_Papillon_Damour.Infrastructure.Persistence;
 
@@ -12,9 +13,11 @@ using Vole_Papillon_Damour.Infrastructure.Persistence;
 namespace Vole_Papillon_Damour.Infrastructure.Migrations
 {
     [DbContext(typeof(ProjectDbContext))]
-    partial class ProjectDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924223104_AddBookRecommendations")]
+    partial class AddBookRecommendations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,11 +224,6 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(5);
-
-                    b.Property<int>("NotFoundReportDailyLimit")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(10);
 
                     b.Property<int>("SessionIdleTimeoutMinutes")
                         .ValueGeneratedOnAdd()
@@ -719,77 +717,6 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .HasFilter("[RareBookId] IS NOT NULL");
 
                     b.ToTable("MemberSelectionItems", (string)null);
-                });
-
-            modelBuilder.Entity("Vole_Papillon_Damour.Domain.NotFoundReportAggregate.BookNotFoundReport", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ClosedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ClosureNote")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(280)
-                        .HasColumnType("nvarchar(280)");
-
-                    b.Property<string>("Isbn13")
-                        .IsUnicode(false)
-                        .HasColumnType("char(13)");
-
-                    b.Property<byte?>("Location")
-                        .HasColumnType("tinyint");
-
-                    b.Property<Guid?>("RareBookId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("ReportedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("WithdrawalMovementId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<byte?>("WithdrawalReason")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int?>("WithdrawnQuantity")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Status", "Isbn13")
-                        .HasDatabaseName("IX_BookNotFoundReports_Status_Isbn13");
-
-                    b.HasIndex("Status", "RareBookId")
-                        .HasDatabaseName("IX_BookNotFoundReports_Status_RareBookId");
-
-                    b.HasIndex("UserId", "Isbn13")
-                        .IsUnique()
-                        .HasDatabaseName("UX_BookNotFoundReports_OpenPerMemberEdition")
-                        .HasFilter("[Status] = 0 AND [Isbn13] IS NOT NULL AND [UserId] IS NOT NULL");
-
-                    b.HasIndex("UserId", "RareBookId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_BookNotFoundReports_OpenPerMemberRareBook")
-                        .HasFilter("[Status] = 0 AND [RareBookId] IS NOT NULL AND [UserId] IS NOT NULL");
-
-                    b.HasIndex("UserId", "ReportedAt")
-                        .HasDatabaseName("IX_BookNotFoundReports_UserId_ReportedAt");
-
-                    b.ToTable("BookNotFoundReports", (string)null);
                 });
 
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.OrderAggregate.Order", b =>

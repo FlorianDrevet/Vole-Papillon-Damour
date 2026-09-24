@@ -10,7 +10,11 @@ public sealed class BookSimilarityProfile : Entity<string>
     public const int Dimensions = 512;
     public const int EmbeddingBytes = Dimensions * sizeof(float);
 
-    public string Isbn13 => Id;
+    public string Isbn13
+    {
+        get => Id;
+        private set => Id = value;
+    }
     public string? NoticeJson { get; private set; }
     public bool NoticeFound { get; private set; }
     public DateTime? NoticeFetchedAt { get; private set; }

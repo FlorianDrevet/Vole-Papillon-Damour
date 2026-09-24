@@ -43,7 +43,7 @@ public static class UnimarcNoticeParser
         var forms = dataFields
             .Where(field => field.Attribute("tag")?.Value == "608")
             .Select(field => Clean(BnfSruClient.Subfield(field, "a")))
-            .Where(value => value is not null)
+            .OfType<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         var subjects = dataFields
@@ -53,7 +53,7 @@ public static class UnimarcNoticeParser
                 .Where(element => element.Name.LocalName == "subfield" &&
                                   element.Attribute("code")?.Value is "a" or "x")
                 .Select(element => Clean(element.Value)))
-            .Where(value => value is not null)
+            .OfType<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         var cnljReviewed = dataFields.Any(field => field
@@ -64,7 +64,7 @@ public static class UnimarcNoticeParser
         var languages = dataFields
             .Where(field => field.Attribute("tag")?.Value == "101")
             .Select(field => Clean(BnfSruClient.Subfield(field, "a")))
-            .Where(value => value is not null)
+            .OfType<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
