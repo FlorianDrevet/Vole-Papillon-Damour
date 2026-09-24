@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -56,13 +57,20 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
     public MemberSelectionTestDbContext Context { get; }
     public MemberSelectionTestClock Clock => _clock;
 
-    public static async Task<MemberSelectionFixture> CreateAsync(DateTime now)
+    public static async Task<MemberSelectionFixture> CreateAsync(
+        DateTime now,
+        DbCommandInterceptor? commandInterceptor = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
-        var options = new DbContextOptionsBuilder<MemberSelectionTestDbContext>()
-            .UseSqlite(connection)
-            .Options;
+        var optionsBuilder = new DbContextOptionsBuilder<MemberSelectionTestDbContext>()
+            .UseSqlite(connection);
+        if (commandInterceptor is not null)
+        {
+            optionsBuilder.AddInterceptors(commandInterceptor);
+        }
+
+        var options = optionsBuilder.Options;
         var context = new MemberSelectionTestDbContext(options);
         await context.Database.EnsureCreatedAsync();
         return new MemberSelectionFixture(connection, context, now);

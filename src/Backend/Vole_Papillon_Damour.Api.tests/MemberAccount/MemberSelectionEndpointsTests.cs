@@ -111,7 +111,7 @@ public sealed class MemberSelectionEndpointsTests
                 "/catalog/me/selection", StringComparison.Ordinal) == true)
             .ToArray();
 
-        endpoints.Should().HaveCount(5);
+        endpoints.Should().HaveCount(6);
         endpoints.Should().OnlyContain(endpoint =>
             endpoint.Metadata.GetOrderedMetadata<Microsoft.AspNetCore.Authorization.IAuthorizeData>().Count > 0);
     }

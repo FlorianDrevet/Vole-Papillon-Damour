@@ -1,8 +1,15 @@
 using FluentAssertions;
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Common;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
+using Vole_Papillon_Damour.Application.tests.MemberSelection;
+using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.MemberSelection;
 
@@ -91,6 +98,121 @@ public sealed class GetMySelectionQueryHandlerTests
 
         result.Value.NextFair.Should().BeEquivalentTo(
             new NextFairSummary(nextFair.Id.Value, nextFair.DateStart));
+    }
+
+    [Fact]
+    public async Task Handle_ReturnsOpenReportOnLine()
+    {
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
+        await fixture.AddBookAsync("9782070612758");
+        await fixture.CreateAddHandler().Handle(Add(isbn: "9782070612758"), default);
+        var report = await fixture.AddNotFoundReportAsync(
+            UserId.Create(ExternalId), "9782070612758", Now.AddDays(-2));
+
+        var result = await fixture.CreateGetMySelectionHandler().Handle(Query(), default);
+
+        result.Value.Items.Single().NotFoundReport.Should().BeEquivalentTo(
+            new NotFoundReportSummary(
+                report.Id,
+                "Open",
+                new DateTimeOffset(report.ReportedAt),
+                null));
+    }
+
+    [Fact]
+    public async Task Handle_HidesReportsClosedMoreThan30DaysAgo()
+    {
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
+        await fixture.AddBookAsync("9782070612758");
+        await fixture.CreateAddHandler().Handle(Add(isbn: "9782070612758"), default);
+        var report = await fixture.AddNotFoundReportAsync(
+            UserId.Create(ExternalId), "9782070612758", Now.AddDays(-31));
+        report.MarkFound(UserId.Create(Guid.NewGuid()), "Retrouvé", Now.AddDays(-30).AddHours(-1));
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await fixture.CreateGetMySelectionHandler().Handle(Query(), default);
+
+        result.Value.Items.Single().NotFoundReport.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_NeverReturnsCancelledReports()
+    {
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
+        await fixture.AddBookAsync("9782070612758");
+        await fixture.CreateAddHandler().Handle(Add(isbn: "9782070612758"), default);
+        var report = await fixture.AddNotFoundReportAsync(
+            UserId.Create(ExternalId), "9782070612758", Now.AddDays(-1));
+        report.Cancel(Now.AddHours(-1));
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await fixture.CreateGetMySelectionHandler().Handle(Query(), default);
+
+        result.Value.Items.Single().NotFoundReport.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_UsesSingleQueryForReports()
+    {
+        var queryCounter = new NotFoundReportQueryCounter();
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now, queryCounter);
+        await fixture.AddBookAsync("9782070612758");
+        await fixture.AddBookAsync("9782070584628");
+        await fixture.CreateAddHandler().Handle(Add(isbn: "9782070612758"), default);
+        await fixture.CreateAddHandler().Handle(Add(isbn: "9782070584628"), default);
+        await fixture.AddNotFoundReportAsync(
+            UserId.Create(ExternalId), "9782070612758", Now.AddHours(-1));
+        await fixture.AddNotFoundReportAsync(
+            UserId.Create(ExternalId), "9782070584628", Now.AddHours(-2));
+
+        var result = await fixture.CreateGetMySelectionHandler().Handle(Query(), default);
+
+        result.Value.Items.Should().HaveCount(2);
+        queryCounter.ReportReadCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_UsesCanonicalEditionForReportState()
+    {
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
+        const string redirectedIsbn = "9782070612758";
+        const string canonicalIsbn = "9782070584628";
+        await fixture.AddBookAsync(canonicalIsbn);
+        await fixture.AddBookAsync(redirectedIsbn, redirectTo: canonicalIsbn);
+        var user = await fixture.CreateMemberIdentityService().EnsureAsync(
+            ExternalId, "camille@example.test", "Camille", null, default);
+        Isbn13.TryCreate(redirectedIsbn, out var source).Should().BeTrue();
+        var oldSelectionItem = MemberSelectionItem.CreateForEdition(
+            Guid.NewGuid(), user.Id, source, Now.AddHours(-1));
+        fixture.Context.MemberSelectionItems.Add(oldSelectionItem);
+        await fixture.Context.SaveChangesAsync();
+        var report = await fixture.AddNotFoundReportAsync(user.Id, canonicalIsbn, Now.AddMinutes(-30));
+
+        var result = await fixture.CreateGetMySelectionHandler().Handle(Query(), default);
+
+        result.Value.Items.Single().NotFoundReport!.Id.Should().Be(report.Id);
+    }
+
+    private sealed class NotFoundReportQueryCounter : DbCommandInterceptor
+    {
+        private int _reportReadCount;
+
+        public int ReportReadCount => Volatile.Read(ref _reportReadCount);
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("SELECT", StringComparison.OrdinalIgnoreCase) &&
+                command.CommandText.Contains("BookNotFoundReports", StringComparison.OrdinalIgnoreCase))
+            {
+                Interlocked.Increment(ref _reportReadCount);
+            }
+
+            return ValueTask.FromResult(result);
+        }
     }
 
     private static AddSelectionItemCommand Add(string? isbn = null, Guid? rareBookId = null) =>

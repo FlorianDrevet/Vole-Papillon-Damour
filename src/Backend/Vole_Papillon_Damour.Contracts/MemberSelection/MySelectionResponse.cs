@@ -23,4 +23,16 @@ public sealed record MySelectionItemResponse(
     DateTimeOffset AvailabilityCheckedAt,
     string Status,
     DateTimeOffset AddedAt,
-    DateTimeOffset? PurchasedAt);
+    DateTimeOffset? PurchasedAt,
+    NotFoundReportSummaryResponse? NotFoundReport);
+
+public sealed record NotFoundReportSummaryResponse(
+    Guid Id,
+    string Status,
+    DateTimeOffset ReportedAt,
+    DateTimeOffset? ClosedAt);
+
+public sealed record NotFoundReportCreatedResponse(
+    Guid ReportId,
+    DateTimeOffset ReportedAt,
+    bool AlreadyOpen);

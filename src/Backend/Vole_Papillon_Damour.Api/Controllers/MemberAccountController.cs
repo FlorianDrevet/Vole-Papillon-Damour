@@ -7,6 +7,8 @@ using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Common;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
+using Vole_Papillon_Damour.Application.NotFoundReports.Commands.CancelNotFoundReport;
+using Vole_Papillon_Damour.Application.NotFoundReports.Commands.ReportNotFound;
 using Vole_Papillon_Damour.Application.MemberCards.Commands.RotateMyCard;
 using Vole_Papillon_Damour.Application.MemberCards.Queries.GetMyCard;
 using Vole_Papillon_Damour.Application.Purchases.Queries.GetMyPurchases;
@@ -100,6 +102,71 @@ public static class MemberAccountController
                             error => error.Result());
                     })
                 .WithName("GetMyMemberSelection")
+                .RequireAuthorization();
+
+            endpoints.MapPost(
+                    "/catalog/me/selection/{id:guid}/not-found-report",
+                    async (
+                        Guid id,
+                        ReportNotFoundRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new ReportNotFoundCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                id,
+                                request.Location,
+                                request.Comment),
+                            cancellationToken);
+                        return result.Match(
+                            report => report.AlreadyOpen
+                                ? Results.Ok(new NotFoundReportCreatedResponse(
+                                    report.ReportId, report.ReportedAt, report.AlreadyOpen))
+                                : Results.Json(
+                                    new NotFoundReportCreatedResponse(
+                                        report.ReportId, report.ReportedAt, report.AlreadyOpen),
+                                    statusCode: StatusCodes.Status201Created),
+                            error => error.Result());
+                    })
+                .WithName("ReportNotFoundBookSelection")
+                .RequireAuthorization();
+
+            endpoints.MapDelete(
+                    "/catalog/me/not-found-reports/{reportId:guid}",
+                    async (
+                        Guid reportId,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new CancelNotFoundReportCommand(
+                                identity.ExternalId,
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                reportId),
+                            cancellationToken);
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("CancelNotFoundReport")
                 .RequireAuthorization();
 
             endpoints.MapGet(
@@ -276,7 +343,14 @@ public static class MemberAccountController
                 item.AvailabilityCheckedAt,
                 item.Status.ToString(),
                 item.AddedAt,
-                item.PurchasedAt)).ToArray());
+                item.PurchasedAt,
+                item.NotFoundReport is null
+                    ? null
+                    : new NotFoundReportSummaryResponse(
+                        item.NotFoundReport.Id,
+                        item.NotFoundReport.Status,
+                        item.NotFoundReport.ReportedAt,
+                        item.NotFoundReport.ClosedAt))).ToArray());
 
     private static MemberCardResponse ToResponse(MyCardResult card) =>
         new(card.QrPayload, card.RecoveryCode, card.DisplayLabel, card.IssuedAt);
