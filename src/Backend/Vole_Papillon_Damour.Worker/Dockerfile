@@ -6,6 +6,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0.203 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
+COPY ["global.json", "."]
 COPY ["Directory.Packages.props", "."]
 COPY ["Vole_Papillon_Damour.Worker/Vole_Papillon_Damour.Worker.csproj", "Vole_Papillon_Damour.Worker/"]
 COPY ["Vole_Papillon_Damour.Application/Vole_Papillon_Damour.Application.csproj", "Vole_Papillon_Damour.Application/"]
