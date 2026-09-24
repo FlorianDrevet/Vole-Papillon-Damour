@@ -3,6 +3,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NSubstitute;
+using System.Text.Json;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Recommendations.Commands.RefreshBookSimilarityProfiles;
@@ -204,6 +205,15 @@ internal sealed class RecommendationProfileFixture : IAsyncDisposable
     {
         var profile = BookSimilarityProfile.Create(isbn13);
         profile.RecordNotice("{}", true, fetchedAt);
+        Context.BookSimilarityProfiles.Add(profile);
+        await Context.SaveChangesAsync();
+    }
+
+    public async Task AddEditionAsync(SimilarityEdition edition, DateTime updatedAt)
+    {
+        await AddBookAsync(edition.Isbn13, updatedAt);
+        var profile = BookSimilarityProfile.Create(edition.Isbn13);
+        profile.RecordNotice(JsonSerializer.Serialize(edition), true, updatedAt);
         Context.BookSimilarityProfiles.Add(profile);
         await Context.SaveChangesAsync();
     }
