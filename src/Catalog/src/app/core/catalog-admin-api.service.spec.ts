@@ -15,6 +15,10 @@ import {
   CatalogAdminVolunteerStatistics,
   CatalogAdminCheckoutPassageLookup,
   CatalogDeadStockResponse,
+  CatalogNotFoundQueue,
+  CatalogClosedNotFoundReports,
+  CatalogNotFoundSummary,
+  CatalogNotFoundClosure,
 } from './catalog.models';
 
 describe('CatalogAdminApiService', () => {
@@ -57,6 +61,85 @@ describe('CatalogAdminApiService', () => {
     expect(() => service.getDeadStock('  ', 6, 3)).toThrowError(
       'An administrator access token is required.',
     );
+  });
+
+  it('loads a typed not-found queue with filters and the administrator bearer token', () => {
+    const response = {
+      generatedAt: '2026-09-24T10:00:00Z',
+      openTargetCount: 1,
+      openReportCount: 2,
+      overdueTargetCount: 0,
+      page: 2,
+      pageSize: 20,
+      totalCount: 1,
+      items: [],
+    } as CatalogNotFoundQueue;
+
+    service.getNotFoundQueue('access-token', {
+      kind: 'edition', sort: 'oldest', page: 2, pageSize: 20,
+    }).subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/not-found-reports`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('kind')).toBe('edition');
+    expect(request.request.params.get('sort')).toBe('oldest');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(request.request.params.get('pageSize')).toBe('20');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('loads closed not-found reports with page filters and the administrator bearer token', () => {
+    const response = {
+      generatedAt: '2026-09-24T10:00:00Z', page: 1, pageSize: 25, totalCount: 0, items: [],
+    } as CatalogClosedNotFoundReports;
+
+    service.getClosedNotFoundReports('access-token', 1, 25).subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/not-found-reports/closed`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('page')).toBe('1');
+    expect(request.request.params.get('pageSize')).toBe('25');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('loads a target not-found summary with the administrator bearer token', () => {
+    const response = {
+      openTargetCount: 0,
+      overdueTargetCount: 0,
+      openReportCount: 3,
+      firstReportedAt: '2026-09-20T10:00:00Z',
+      latestComment: null,
+    } as CatalogNotFoundSummary;
+
+    service.getNotFoundSummary('access-token', {rareBookId: 'rare-id'})
+      .subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/not-found-reports/summary`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('rareBookId')).toBe('rare-id');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('posts a typed not-found closure to the edition action endpoint', () => {
+    const response = {
+      closedReportCount: 2, withdrawnQuantity: 1, quantityAvailable: 2, movementId: 'movement-id',
+    } as CatalogNotFoundClosure;
+    const body = {quantityFound: 1, reason: 'Damaged' as const, note: 'Retiré après vérification'};
+
+    service.closeNotFound(
+      'access-token', {kind: 'edition', reference: '9782070612758'}, 'withdrawal', body,
+    ).subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/books/admin/not-found-reports/editions/9782070612758/withdrawal`,
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(body);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
   });
 
   it('loads the dashboard and forwards its optional period', () => {

@@ -45,6 +45,7 @@ describe('AccountSelectionComponent', () => {
     availability,
     availabilityCheckedAt: '2026-09-23T10:00:00Z',
     status,
+    notFoundReport: null,
     addedAt: '2026-09-20T10:00:00Z',
     purchasedAt: status === 'Purchased' ? '2026-09-21T10:00:00Z' : null,
   });

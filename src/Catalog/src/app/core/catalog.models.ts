@@ -96,9 +96,119 @@ export interface CatalogDeadStockResponse {
   books: CatalogDeadStockBook[];
 }
 
+// The four legacy values remain until SIG-13 migrates the selection component
+// and removes the PATCH client in the same type-checkable change.
 export type CatalogSelectionStatus = 'ToTake' | 'Purchased' | 'NotFound' | 'ToRevisit';
 export type CatalogSelectionAvailability = 'Available' | 'Announced' | 'OutOfStock' | 'RareSold' | 'Unavailable';
 export type CatalogSelectionKind = 'edition' | 'rare';
+export type CatalogNotFoundReportStatus = 'Open' | 'Found' | 'Withdrawn' | 'Dismissed' | 'Lapsed';
+export type CatalogNotFoundLocation = 'Fair' | 'Premises';
+export type CatalogNotFoundWithdrawalReason = 'NotFoundOnShelf' | 'Damaged' | 'Other';
+
+export interface CatalogNotFoundReportSummary {
+  id: string;
+  status: CatalogNotFoundReportStatus;
+  reportedAt: string;
+  closedAt: string | null;
+}
+
+export interface CatalogNotFoundReportCreated {
+  reportId: string;
+  reportedAt: string;
+  alreadyOpen: boolean;
+}
+
+export interface CatalogNotFoundReportComment {
+  text: string;
+  location: CatalogNotFoundLocation | null;
+  reportedAt: string;
+}
+
+export type CatalogNotFoundTargetKind = 'edition' | 'rare';
+export type CatalogNotFoundQueueSort = 'most-reported' | 'oldest' | 'newest' | 'genre';
+
+export interface CatalogNotFoundQueueParams {
+  kind: 'all' | CatalogNotFoundTargetKind;
+  sort: CatalogNotFoundQueueSort;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogNotFoundQueueTarget {
+  kind: CatalogNotFoundTargetKind;
+  isbn13: string | null;
+  rareBookId: string | null;
+  title: string;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  coverUrl: string | null;
+  genre: string | null;
+  quantityAvailable: number;
+  reportCount: number;
+  memberCount: number;
+  firstReportedAt: string;
+  lastReportedAt: string;
+  overdue: boolean;
+  comments: CatalogNotFoundReportComment[];
+}
+
+export interface CatalogNotFoundQueue {
+  generatedAt: string;
+  openTargetCount: number;
+  openReportCount: number;
+  overdueTargetCount: number;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  items: CatalogNotFoundQueueTarget[];
+}
+
+export interface CatalogClosedNotFoundReport {
+  closedAt: string;
+  kind: CatalogNotFoundTargetKind;
+  isbn13: string | null;
+  rareBookId: string | null;
+  title: string;
+  outcome: 'Found' | 'Withdrawn' | 'Dismissed' | 'Lapsed' | string;
+  reportCount: number;
+  withdrawnQuantity: number | null;
+  closedByName: string | null;
+  note: string | null;
+}
+
+export interface CatalogClosedNotFoundReports {
+  generatedAt: string;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  items: CatalogClosedNotFoundReport[];
+}
+
+export type CatalogNotFoundSummaryTarget =
+  | {isbn13: string; rareBookId?: never}
+  | {rareBookId: string; isbn13?: never};
+
+export interface CatalogNotFoundSummary {
+  openTargetCount: number;
+  overdueTargetCount: number;
+  openReportCount: number;
+  firstReportedAt: string | null;
+  latestComment: CatalogNotFoundReportComment | null;
+}
+
+export interface CatalogNotFoundClosure {
+  closedReportCount: number;
+  withdrawnQuantity: number | null;
+  quantityAvailable: number | null;
+  movementId: string | null;
+}
+
+export type CatalogNotFoundCloseAction = 'found' | 'withdrawal' | 'dismissal';
+export type CatalogNotFoundCloseRequest =
+  | {note?: string}
+  | {quantityFound: number; reason: CatalogNotFoundWithdrawalReason; note: string}
+  | {reason: CatalogNotFoundWithdrawalReason; note: string};
 
 export interface CatalogMemberCard {
   qrPayload: string;
@@ -138,6 +248,7 @@ export interface CatalogSelectionItem {
   availability: CatalogSelectionAvailability;
   availabilityCheckedAt: string;
   status: CatalogSelectionStatus;
+  notFoundReport: CatalogNotFoundReportSummary | null;
   addedAt: string;
   purchasedAt: string | null;
 }
@@ -781,6 +892,7 @@ export interface CatalogAdminSettings {
   alertCooldownDays: number;
   sessionIdleTimeoutMinutes: number;
   alertDelayMinutes: number;
+  notFoundReportDailyLimit: number;
   updatedAt: string;
   updatedBy: string;
 }

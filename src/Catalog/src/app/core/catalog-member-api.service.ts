@@ -14,6 +14,8 @@ import {
   CatalogSelectionResponse,
   CatalogSelectionStatus,
   CatalogSelectionTargetRequest,
+  CatalogNotFoundLocation,
+  CatalogNotFoundReportCreated,
   CatalogWatchlistItemRequest,
   CatalogWatchlistResponse,
   CatalogVolunteerStatisticsResponse,
@@ -50,6 +52,18 @@ export class CatalogMemberApiService {
     );
   }
 
+  reportNotFound(
+    accessToken: string,
+    itemId: string,
+    request: {location: CatalogNotFoundLocation | null; comment: string | null},
+  ): Observable<CatalogNotFoundReportCreated> {
+    return this.http.post<CatalogNotFoundReportCreated>(
+      `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}/not-found-report`,
+      request,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
   setSelectionStatus(
     accessToken: string,
     itemId: string,
@@ -58,6 +72,13 @@ export class CatalogMemberApiService {
     return this.http.patch<void>(
       `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}`,
       {status},
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  cancelNotFoundReport(accessToken: string, reportId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/catalog/me/not-found-reports/${encodeURIComponent(reportId)}`,
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

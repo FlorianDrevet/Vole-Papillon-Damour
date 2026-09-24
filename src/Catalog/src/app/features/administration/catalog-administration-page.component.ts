@@ -362,6 +362,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     alertCooldownDays: 30,
     sessionIdleTimeoutMinutes: 30,
     alertDelayMinutes: 30,
+    notFoundReportDailyLimit: 10,
     updatedAt: '',
     updatedBy: '',
   };
