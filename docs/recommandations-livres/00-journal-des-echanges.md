@@ -223,3 +223,35 @@ branche et worktree, car le correctif est prioritaire.
 
 - **D4** — Le défaut ISBN-10 est corrigé dans une branche séparée, en priorité, en
   passant à l'index `bib.fuzzyISBN`, hors du chantier des recommandations.
+
+---
+
+## Échange 6 — 24 septembre 2026 : le résumé suffit-il ?
+
+### Demande
+
+« Pour trouver les livres les plus proches, est-ce que le résumé suffira ? Est-ce qu'il
+y a d'autres infos qui pourraient être pertinentes ? »
+
+### Réponse — résumé
+
+Analyse complète : [`04-signaux-de-similarite.md`](04-signaux-de-similarite.md).
+
+- **Non.** Le résumé dit de quoi parle un livre, pas pour qui ni sous quelle forme. Il
+  ignore l'ordre des séries et fait remonter les autres éditions de la même œuvre.
+  Exemple réel : les adaptations BD de *1984* ou des *Misérables* ont presque le résumé
+  du roman.
+- **Les notices BnF contiennent bien plus que le résumé.** Remplissage mesuré sur 138
+  éditions : auteur 91 %, collection 61 %, identifiant d'œuvre (`500`) 41 %, série et
+  tome (`461`) 34 % (71 % des BD), classement 73 %. Public et sujets sont rares.
+- **Chaque information a un rôle** :
+  - des **filtres** : jamais la même œuvre, même public, même langue ;
+  - des **bonus** : tome suivant, même auteur, même forme ;
+  - un **texte d'embedding composé** : titre, auteur, collection, genre, sujets,
+    résumé.
+- Les signaux de comportement (co-sélection, co-achat) viendront avec le trafic.
+
+### Questions ouvertes
+
+- **Q8** — Lancer une sonde de qualité : embedding des 138 éditions, avec et sans champs
+  enrichis, puis lecture des voisins, avant d'écrire la spécification ? *(posée)*
