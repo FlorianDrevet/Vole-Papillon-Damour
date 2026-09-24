@@ -191,6 +191,23 @@ public static class MemberAccountController
                 .WithName("RemoveMemberSelectionItem")
                 .RequireAuthorization();
 
+            endpoints.MapPatch(
+                    "/catalog/me/selection/{id:guid}",
+                    (ClaimsPrincipal principal) =>
+                    {
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out _))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        return Results.Problem(
+                            statusCode: StatusCodes.Status410Gone,
+                            title: "Selection statuses were retired",
+                            detail: "Use POST /catalog/me/selection/{id}/not-found-report.");
+                    })
+                .WithName("SetMemberSelectionItemStatus")
+                .RequireAuthorization();
+
             endpoints.MapPost(
                     "/catalog/me/selection/merge",
                     async (

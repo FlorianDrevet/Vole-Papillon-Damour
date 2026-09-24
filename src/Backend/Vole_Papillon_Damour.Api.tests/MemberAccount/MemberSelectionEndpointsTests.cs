@@ -33,7 +33,7 @@ public sealed class MemberSelectionEndpointsTests
     }
 
     [Fact]
-    public async Task PatchSelection_WithUnknownStatus_Returns400()
+    public async Task PatchSelection_Authenticated_Returns410()
     {
         await using var application = CreateApplication();
         var endpoint = FindEndpoint(application, "PATCH", "/catalog/me/selection/{id:guid}");
@@ -42,11 +42,32 @@ public sealed class MemberSelectionEndpointsTests
             application,
             endpoint,
             "PATCH",
-            "{\"status\":\"Reserved\"}",
+            "{}",
             AuthenticatedPrincipal(),
             new Dictionary<string, object?> { ["id"] = Guid.NewGuid().ToString() });
 
-        response.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
+        response.Response.StatusCode.Should().Be((int)HttpStatusCode.Gone);
+        response.Response.Body.Position = 0;
+        var problem = await new StreamReader(response.Response.Body).ReadToEndAsync();
+        problem.Should().Contain("Selection statuses were retired");
+        problem.Should().Contain("Use POST /catalog/me/selection/{id}/not-found-report.");
+    }
+
+    [Fact]
+    public async Task PatchSelection_WithoutAuthentication_Returns401()
+    {
+        await using var application = CreateApplication();
+        var endpoint = FindEndpoint(application, "PATCH", "/catalog/me/selection/{id:guid}");
+
+        var response = await InvokeAsync(
+            application,
+            endpoint,
+            "PATCH",
+            "{}",
+            new ClaimsPrincipal(),
+            new Dictionary<string, object?> { ["id"] = Guid.NewGuid().ToString() });
+
+        response.Response.StatusCode.Should().Be((int)HttpStatusCode.Unauthorized);
     }
 
     [Fact]
