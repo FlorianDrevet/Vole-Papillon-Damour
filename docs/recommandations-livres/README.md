@@ -27,10 +27,14 @@ maintenance par une personne seule) avant d'écrire une spécification.
 | [`04-signaux-de-similarite.md`](04-signaux-de-similarite.md) | Le résumé ne suffit pas : zones BnF réellement remplies, rôle de chaque signal (filtre, bonus, embedding) |
 | [`05-benchmark.md`](05-benchmark.md) | Benchmark de 11 méthodes sur 165 éditions réelles : protocole, critères de décision, résultats et analyse |
 | [`06-tutoriel-foundry-embeddings.md`](06-tutoriel-foundry-embeddings.md) | Déployer `text-embedding-3-small` sur le compte Foundry existant et lancer le benchmark |
+| [`07-specification.md`](07-specification.md) | **Spécification** : surfaces, méthode de calcul, règles d'affichage, RGPD, architecture, critères d'acceptation |
+| [`08-plan-implementation.md`](08-plan-implementation.md) | **Plan d'implémentation** en 14 tâches, avec tests d'abord et renvois aux zones des maquettes |
+| [`maquettes/index.html`](maquettes/index.html) | Maquettes exportées du canvas [Claude Design](https://claude.ai/artifact/GYWEeUku7qofkTt5pdKtoM) : 8 écrans HTML autonomes, zones `data-zone`, sources `.dc.html`, archive `recommandations-maquettes-html.zip` |
 
 Les documents suivants (spécification retenue, puis plan d'implémentation) seront
 ajoutés ici une fois l'approche validée.
 
 ## Statut
 
-**Exploration — 24 septembre 2026.** Branche `docs/book-recommendations-design`.
+**Conçu — 24 septembre 2026.** Méthode validée par le benchmark, spécification, maquettes
+et plan prêts pour l'implémentation. Branche `docs/book-recommendations-design`.

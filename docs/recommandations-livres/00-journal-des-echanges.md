@@ -379,4 +379,49 @@ dans la conversation.
 
 ### Questions ouvertes
 
-- **Q11** — Activer la clé ISBNdb (abonnement ou essai actif), puis relancer. *(posée)*
+- **Q11** — Activer la clé ISBNdb (abonnement ou essai actif), puis relancer.
+  *(sans objet : ISBNdb abandonné à l'échange 10)*
+
+---
+
+## Échange 10 — 24 septembre 2026 : maquettes, spécification et plan
+
+### Demande
+
+Abandonner ISBNdb. À partir du résultat du benchmark :
+- faire les maquettes avec Claude Design, à partir de la maquette de base ;
+- les exporter en HTML zippé dans le worktree ;
+- écrire le plan d'implémentation, en renvoyant aux pages et zones de la maquette ;
+- fournir le prompt complet pour Codex, qui fera l'implémentation.
+
+### Réponse — résumé
+
+- **Maquettes** : canvas Claude Design
+  [Recommandations de livres](https://claude.ai/artifact/GYWEeUku7qofkTt5pdKtoM), dans la
+  grammaire de la maquette V2 du catalogue (`docs/bourse-aux-livres/maquettes/`). Deux
+  pages et 8 écrans :
+  - « Public — Dans le même esprit » : fiche desktop et mobile, états ;
+  - « Membre — Pour vous » : accueil desktop et mobile, Mes achats, Compte et données,
+    états.
+
+  Les exemples viennent des voisins réellement produits par le benchmark. Chaque zone à
+  implémenter porte un attribut `data-zone` (`R1-carte`…).
+- **Export** : [`maquettes/`](maquettes/index.html) contient 8 pages HTML autonomes, un
+  index des zones, les sources et l'archive `recommandations-maquettes-html.zip`.
+- **Spécification** : [`07-specification.md`](07-specification.md).
+- **Plan** : [`08-plan-implementation.md`](08-plan-implementation.md), en 14 tâches.
+  Le code du cœur de calcul a été compilé et testé à part : 29 tests réussis.
+- **Choix d'architecture** : la fonctionnalité vit dans ses propres tables
+  (`BookSimilarityProfiles`, `BookNeighbors`, `RecommendationGenerations`,
+  `MemberRecommendationPreferences`). Elle ne touche ni à l'agrégat `Book` ni au flux
+  d'enrichissement existant, dont la protection des champs saisis à la main est délicate.
+
+### Décisions
+
+- **D6** — ISBNdb est abandonné.
+- **D7** — La méthode H6 du benchmark est retenue (`05` §7) : texte composé, 512
+  dimensions, exclusion de la même œuvre, pénalité de public, bonus.
+- **D8** — « Pour vous » part des seuls achats associés (réponse implicite à Q2). La
+  liste de recherche et Ma sélection ne servent pas de graines ; Ma sélection sert
+  seulement à exclure.
+- **D9** — La préférence est activée par défaut et désactivable (intérêt légitime).
