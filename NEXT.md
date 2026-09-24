@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Correctif de suivi des livres rares : prévisualisation et envoi différé des photos, suppression des anciens détails et du classement par rayon dans Catalog, Scan, API et persistance. Les lots 0 à 10 restent décrits dans la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
-| **Prochaine action** | Faire relire la PR de suivi puis faire appliquer sa migration par le déploiement backend autorisé. `20260924112034_RemoveRareBookEditorialDetails` supprime les colonnes `Shelf`, `Binding`, `Dimensions`, `PageCount`, `ShelfLocation` et `PriceSetBy` de `RareBooks`; les valeurs existantes seront perdues. La demande du 24 septembre supprime entièrement le classement des livres rares par rayon ; Q2 (`mailto:`) reste inchangée. |
+| **Prochaine action** | Faire relire puis valider la [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228), puis faire appliquer sa migration par le déploiement backend autorisé. `20260924112034_RemoveRareBookEditorialDetails` supprime les colonnes `Shelf`, `Binding`, `Dimensions`, `PageCount`, `ShelfLocation` et `PriceSetBy` de `RareBooks`; les valeurs existantes seront perdues. La demande du 24 septembre supprime entièrement le classement des livres rares par rayon ; Q2 (`mailto:`) reste inchangée. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-rare-book-editor` |
-| **Dernière mise à jour** | 2026-09-24 — correctif Catalog en cours de PR. L'état Azure après les deux déploiements infra réels du 23 septembre reste à vérifier ; aucune opération Azure n'a été effectuée pour ce correctif. |
-| **Branche** | `fix/catalogue-rare-book-editor` — worktree dédié créé depuis `origin/main` ; PR vers `main` à ouvrir, non fusionnée |
+| **Dernière mise à jour** | 2026-09-24 — correctif Catalog dans la [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228), ouverte et non fusionnée. L'état Azure après les deux déploiements infra réels du 23 septembre reste à vérifier ; aucune opération Azure n'a été effectuée pour ce correctif. |
+| **Branche** | `fix/catalogue-rare-book-editor` — worktree dédié créé depuis `origin/main` ; [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228) vers `main`, ouverte et non fusionnée |
 
 ### Correctif livres rares Catalog — 2026-09-24
 
