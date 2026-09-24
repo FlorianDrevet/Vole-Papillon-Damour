@@ -58,7 +58,8 @@ Aucune pour l'instant.
 
 ### Questions ouvertes
 
-- **Q1** — Où et quand le membre voit-il ces suggestions, et dans quel but ? *(posée)*
+- **Q1** — Où et quand le membre voit-il ces suggestions, et dans quel but ?
+  *(répondue à l'échange 2)*
 - **Q2** — Quels signaux utiliser : achats seuls, ou aussi liste de recherche et Ma
   sélection ?
 - **Q3** — Accepte-t-on une sonde de mesure (taux de résumés sur un échantillon d'ISBN
@@ -66,3 +67,66 @@ Aucune pour l'instant.
 - **Q4** — Le compte Azure OpenAI de génération de titres
   (`TITLE_GENERATION_ENABLED`) est-il activé en production ? Il conditionne l'absence
   de nouvelle ressource.
+
+---
+
+## Échange 2 — 24 septembre 2026 : surfaces d'affichage, prix de Cosmos Gremlin, étude SQL ou graphe
+
+### Demande
+
+**Réponse à Q1 — deux surfaces :**
+
+1. **Sous une fiche cliquée dans le catalogue**, pour tout visiteur, **même non
+   connecté** : des livres proches de celui-ci.
+2. **Pour un membre connecté**, sur la page d'accueil et dans son compte : une section
+   de livres susceptibles de lui plaire, **à partir de ses anciennes lectures**.
+
+**Nouvelle demande :** chiffrer Cosmos DB avec Gremlin pour le graphe, et mener une
+**étude d'architecture** « voisins en base relationnelle ou en base graphe », en
+dehors du prix et de la règle du dépôt. Le coût de développement et de maintenance est
+accepté si le graphe est architecturalement meilleur. Il ne s'agit pas de viser le
+graphe à tout prix.
+
+### Réponse — résumé
+
+Étude complète : [`02-etude-stockage-voisins-sql-ou-graphe.md`](02-etude-stockage-voisins-sql-ou-graphe.md).
+
+- Correction de vocabulaire : la base est **Azure SQL Database** (SQL Server, S0), pas
+  PostgreSQL.
+- **Prix de Cosmos Gremlin en serverless** : ≈ 0,25 $ par million de RU, sans minimum.
+  Pour notre volumétrie, entre quasi nul et ~15 $/mois selon la fréquence des
+  reconstructions complètes. En débit provisionné, ≈ 23 $/mois minimum, ou 0 avec
+  l'offre gratuite d'abonnement. **Le prix n'est pas l'argument décisif.**
+- **Verdict architectural : la table relationnelle `BookNeighbors` (S1) est meilleure**,
+  pour des raisons propres au besoin et pas seulement à cause de la règle du dépôt :
+  - la requête est un saut, un agrégat, puis des filtres et jointures sur le stock,
+    la visibilité et les possessions, qui vivent dans SQL et changent à chaque vente ;
+  - avec Cosmos, il faut soit sur-lire puis filtrer dans SQL (deux allers-retours, en
+    boucle un jour de bourse), soit recopier le stock dans le graphe (double écriture
+    sans transaction) ;
+  - SQL permet une reconstruction atomique (table de travail puis échange), pas Cosmos
+    Gremlin ;
+  - l'outillage .NET est très inégal : EF Core typé d'un côté, requêtes Gremlin en
+    chaînes et pilote figé en 3.4.13 de l'autre.
+- Si la sémantique graphe devient un jour utile : **SQL Graph** (tables `NODE`/`EDGE`,
+  `MATCH`) existe **dans la même base Azure SQL**.
+- Conséquence de la réponse à Q1 : la surface 1 (« livres similaires », anonyme) ne
+  relève **pas** du profilage. Elle est utile dès le premier jour, sans attendre les
+  achats, ce qui règle en grande partie le démarrage à froid. Seule la surface 2 relève
+  de la finalité RGPD nouvelle.
+
+### Décisions
+
+- **D1** — Deux surfaces : « livres similaires » sous une fiche (tout public) et « pour
+  vous » sur l'accueil et dans Mon compte (membre connecté).
+- Stockage des voisins : **S1 recommandé, en attente de validation**.
+
+### Questions ouvertes
+
+- **Q2** — Pour « pour vous » : les achats seuls (« anciennes lectures »), ou aussi la
+  liste de recherche et Ma sélection pour les membres sans achat associé ?
+- **Q3** — Sonde de mesure (taux de résumés, comptes avec au moins un signal) avant de
+  choisir entre règles simples et embeddings.
+- **Q4** — Le compte Azure OpenAI (`TITLE_GENERATION_ENABLED`) est-il activé en
+  production ?
+- **Q5** — Validation du stockage S1. *(posée)*

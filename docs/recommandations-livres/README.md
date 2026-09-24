@@ -14,6 +14,7 @@ maintenance par une personne seule) avant d'écrire une spécification.
 |---|---|
 | Suivre la discussion dans l'ordre | [`00-journal-des-echanges.md`](00-journal-des-echanges.md) |
 | Savoir si l'idée « embeddings + base graphe » tient la route, et ce qu'elle coûte | [`01-analyse-critique-idee-initiale.md`](01-analyse-critique-idee-initiale.md) |
+| Comparer SQL et base graphe pour stocker les voisins | [`02-etude-stockage-voisins-sql-ou-graphe.md`](02-etude-stockage-voisins-sql-ou-graphe.md) |
 
 ## Contenu
 
@@ -21,6 +22,7 @@ maintenance par une personne seule) avant d'écrire une spécification.
 |---|---|
 | [`00-journal-des-echanges.md`](00-journal-des-echanges.md) | Journal daté : propositions, réponses, décisions, questions ouvertes |
 | [`01-analyse-critique-idee-initiale.md`](01-analyse-critique-idee-initiale.md) | Critique argumentée de l'idée initiale, faits vérifiés dans le dépôt, chiffrage, alternatives |
+| [`02-etude-stockage-voisins-sql-ou-graphe.md`](02-etude-stockage-voisins-sql-ou-graphe.md) | Étude d'architecture : voisins en table SQL, en SQL Graph ou dans Cosmos DB Gremlin ; prix de Cosmos |
 
 Les documents suivants (spécification retenue, puis plan d'implémentation) seront
 ajoutés ici une fois l'approche validée.
