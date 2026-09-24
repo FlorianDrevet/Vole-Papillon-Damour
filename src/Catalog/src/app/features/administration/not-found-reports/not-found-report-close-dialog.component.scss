@@ -1,0 +1,155 @@
+.not-found-dialog-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--catalog-ink) 58%, transparent);
+}
+
+.not-found-dialog {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: min(90vh, 820px);
+  overflow: auto;
+  padding: 32px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 8px;
+  background: var(--catalog-white);
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--catalog-ink) 24%, transparent);
+  color: var(--catalog-ink);
+}
+
+.not-found-dialog:focus-visible,
+.not-found-dialog button:focus-visible,
+.not-found-dialog input:focus-visible,
+.not-found-dialog select:focus-visible,
+.not-found-dialog textarea:focus-visible {
+  outline: 3px solid var(--catalog-blue-bright);
+  outline-offset: 3px;
+}
+
+.not-found-dialog-kicker {
+  display: block;
+  padding-right: 32px;
+  color: var(--catalog-slate);
+  font: 500 .7rem/1.4 var(--catalog-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.not-found-dialog h2 {
+  margin: 8px 0 10px;
+  font: 500 2rem/1.05 var(--catalog-display);
+}
+
+.not-found-dialog-intro,
+.not-found-consequence {
+  color: var(--catalog-ink-soft);
+  font-size: .95rem;
+  line-height: 1.55;
+}
+
+.not-found-dialog-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 50%;
+  background: var(--catalog-white);
+  color: var(--catalog-ink);
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+.not-found-number-field,
+.not-found-reason-field,
+.not-found-note-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  color: var(--catalog-ink);
+  font-weight: 600;
+}
+
+.not-found-stepper {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  gap: 8px;
+}
+
+.not-found-stepper button {
+  min-width: 44px;
+  min-height: 48px;
+  border: 1px solid var(--catalog-line-strong);
+  border-radius: 6px;
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.not-found-stepper input,
+.not-found-reason-field select,
+.not-found-note-field textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid var(--catalog-line-strong);
+  border-radius: 5px;
+  background: var(--catalog-white);
+  color: var(--catalog-ink);
+  font: inherit;
+}
+
+.not-found-note-field textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.not-found-consequence {
+  padding: 12px 14px;
+  border-left: 3px solid var(--catalog-orange);
+  background: var(--catalog-paper-2);
+}
+
+.not-found-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.not-found-dialog-actions button {
+  min-height: 46px;
+}
+
+@media (max-width: 639px) {
+  .not-found-dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .not-found-dialog {
+    width: 100%;
+    max-height: min(92vh, 820px);
+    padding: 30px 22px 24px;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .not-found-dialog h2 {
+    font-size: 1.8rem;
+  }
+
+  .not-found-dialog-actions {
+    flex-direction: column-reverse;
+  }
+
+  .not-found-dialog-actions button {
+    width: 100%;
+    min-height: 48px;
+  }
+}

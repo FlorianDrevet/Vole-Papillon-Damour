@@ -1,0 +1,225 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-09-24T12:24:29Z"
+  },
+  "title": "Signalement livre introuvable",
+  "launch": {
+    "view": "canvas",
+    "page": "membre"
+  },
+  "pages": [
+    {
+      "id": "membre",
+      "name": "Membre — Ma sélection"
+    },
+    {
+      "id": "admin",
+      "name": "Administration"
+    }
+  ],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 2020,
+      "title": "E1 · Ma sélection — bouton « Je ne l'ai pas trouvé » (desktop)",
+      "page": "membre"
+    },
+    "ConfirmationSignalement.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "E2 · Confirmation du signalement (desktop)",
+      "page": "membre"
+    },
+    "SignalementEnvoye.dc.html": {
+      "x": 1520,
+      "y": 1120,
+      "w": 1440,
+      "h": 560,
+      "title": "E3 · Juste après l'envoi (ligne + toast)",
+      "page": "membre"
+    },
+    "SelectionMobile.dc.html": {
+      "x": 0,
+      "y": 2140,
+      "w": 390,
+      "h": 2150,
+      "title": "E1/E3 · Ma sélection — mobile 390 px",
+      "page": "membre"
+    },
+    "ConfirmationMobile.dc.html": {
+      "x": 470,
+      "y": 2140,
+      "w": 390,
+      "h": 844,
+      "title": "E2 · Confirmation — feuille mobile",
+      "page": "membre"
+    },
+    "ConnexionRequise.dc.html": {
+      "x": 940,
+      "y": 2140,
+      "w": 390,
+      "h": 844,
+      "title": "6.5 · Visiteur non connecté — invitation",
+      "page": "membre"
+    },
+    "AvantApres.dc.html": {
+      "x": 1520,
+      "y": 1800,
+      "w": 1440,
+      "h": 760,
+      "title": "Référence · Avant / après sur une ligne",
+      "page": "membre"
+    },
+    "AdminIntrouvables.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1500,
+      "title": "E4/E5 · Administration — Livres introuvables (à vérifier)",
+      "page": "admin"
+    },
+    "AdminIntrouvablesTraites.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "E5 · Onglet « Traités » (historique)",
+      "page": "admin"
+    },
+    "AdminRetrait.dc.html": {
+      "x": 0,
+      "y": 1620,
+      "w": 1440,
+      "h": 1000,
+      "title": "E6 · Retirer du stock (édition ordinaire)",
+      "page": "admin"
+    },
+    "AdminRetrouve.dc.html": {
+      "x": 1520,
+      "y": 1620,
+      "w": 560,
+      "h": 420,
+      "title": "E6 · Confirmer « Retrouvé »",
+      "page": "admin"
+    },
+    "AdminSansSuite.dc.html": {
+      "x": 2160,
+      "y": 1620,
+      "w": 560,
+      "h": 420,
+      "title": "E6 · Classer sans suite",
+      "page": "admin"
+    },
+    "AdminRetraitRare.dc.html": {
+      "x": 1520,
+      "y": 2160,
+      "w": 560,
+      "h": 460,
+      "title": "E6 · Retirer une fiche rare",
+      "page": "admin"
+    },
+    "AdminTableauDeBord.dc.html": {
+      "x": 0,
+      "y": 2740,
+      "w": 1440,
+      "h": 700,
+      "title": "E7 · Tableau de bord — tuile « À vérifier »",
+      "page": "admin"
+    },
+    "AdminFiche.dc.html": {
+      "x": 1520,
+      "y": 2740,
+      "w": 1440,
+      "h": 760,
+      "title": "E8 · Fiche catalogue — encadré « Signalée introuvable »",
+      "page": "admin"
+    },
+    "AdminIntrouvablesMobile.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 390,
+      "h": 1500,
+      "title": "E5 · Livres introuvables — mobile 390 px",
+      "page": "admin"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "ConfirmationSignalement.dc.html",
+    "SignalementEnvoye.dc.html",
+    "SelectionMobile.dc.html",
+    "ConfirmationMobile.dc.html",
+    "ConnexionRequise.dc.html",
+    "AvantApres.dc.html",
+    "AdminIntrouvables.dc.html",
+    "AdminIntrouvablesTraites.dc.html",
+    "AdminRetrait.dc.html",
+    "AdminRetrouve.dc.html",
+    "AdminSansSuite.dc.html",
+    "AdminRetraitRare.dc.html",
+    "AdminTableauDeBord.dc.html",
+    "AdminFiche.dc.html",
+    "AdminIntrouvablesMobile.dc.html"
+  ],
+  "notes": {
+    "titre-membre": {
+      "x": 0,
+      "y": -320,
+      "text": "Ma sélection : un signalement plutôt que quatre états",
+      "kind": "title1",
+      "maxW": 2960,
+      "page": "membre"
+    },
+    "note-bouton": {
+      "x": 0,
+      "y": -200,
+      "w": 440,
+      "size": "m",
+      "fill": "orange",
+      "page": "membre",
+      "text": "Le bouton « Je ne l'ai pas trouvé » n'apparaît que sur une ligne Disponible et non achetée. Annoncé, épuisé, fiche vendue ou acheté : pas de bouton. Le sélecteur À prendre / Acheté / Pas trouvé / À revoir disparaît (spec §6, RG-76)."
+    },
+    "note-merci": {
+      "x": 520,
+      "y": -200,
+      "w": 440,
+      "size": "m",
+      "fill": "blue",
+      "page": "membre",
+      "text": "Ton de remerciement, jamais de réclamation. Après clôture, la ligne dit ce qui s'est passé : retrouvé en rayon, ou retiré après le signalement."
+    },
+    "titre-admin": {
+      "x": 0,
+      "y": -320,
+      "text": "Administration : une file de vérification",
+      "kind": "title1",
+      "maxW": 3430,
+      "page": "admin"
+    },
+    "note-file": {
+      "x": 0,
+      "y": -200,
+      "w": 460,
+      "size": "m",
+      "fill": "orange",
+      "page": "admin",
+      "text": "Nouvelle entrée « Livres introuvables » dans « Pendant la bourse », juste après Désengorgement. Une ligne = une fiche, signalements regroupés, aucune identité de membre (RG-74)."
+    },
+    "note-retrait": {
+      "x": 540,
+      "y": -200,
+      "w": 460,
+      "size": "m",
+      "fill": "teal",
+      "page": "admin",
+      "text": "On demande combien d'exemplaires sont PRÉSENTS, pas combien retirer : le stock est par ISBN, un signalement ne dit pas quel exemplaire manque. Le retrait réutilise le mouvement RETRAIT existant."
+    }
+  },
+  "designSystems": []
+}

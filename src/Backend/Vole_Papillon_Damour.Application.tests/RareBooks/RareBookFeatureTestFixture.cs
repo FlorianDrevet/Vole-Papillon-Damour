@@ -9,12 +9,14 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.CreateRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBook;
+using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
@@ -56,6 +58,8 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
 
     public CheckoutPassageRecorder CreateCheckoutPassageRecorder() =>
         new(Context, NullLogger<CheckoutPassageRecorder>.Instance);
+
+    public NotFoundReportLapser CreateNotFoundReportLapser() => new(Context);
 
     public static async Task<RareBookFeatureTestFixture> CreateAsync()
     {
@@ -175,6 +179,7 @@ internal sealed class RareBookFeatureTestDbContext(
     public DbSet<User> Users => Set<User>();
     public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
     public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
+    public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => Users;
@@ -192,6 +197,7 @@ internal sealed class RareBookFeatureTestDbContext(
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
     DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => RareBookTombstones;
+    DbSet<BookNotFoundReport> IProjectDbContext.BookNotFoundReports => BookNotFoundReports;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -279,6 +285,7 @@ internal sealed class RareBookFeatureTestDbContext(
         });
         modelBuilder.ApplyConfiguration(new CheckoutPassageConfiguration());
         modelBuilder.ApplyConfiguration(new CheckoutPassageLineConfiguration());
+        modelBuilder.ApplyConfiguration(new BookNotFoundReportConfiguration());
     }
 
 

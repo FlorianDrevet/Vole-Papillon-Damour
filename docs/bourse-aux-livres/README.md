@@ -20,6 +20,7 @@ ces documents.
 | Document | Objet |
 |---|---|
 | [10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md) | Proposition d'évolution du compte membre : sélection, carte de passage et historique des achats |
+| [11-signalement-livre-introuvable.md](11-signalement-livre-introuvable.md) | Proposition : remplacer les états de Ma sélection par un signalement « livre introuvable » et une file de vérification en administration |
 | [`00-note-presidente.md`](00-note-presidente.md) | Présentation non technique destinée à la validation par l'association |
 | [`01-vision-et-perimetre.md`](01-vision-et-perimetre.md) | Objectifs, acteurs, périmètre, paliers de livraison |
 | [`02-glossaire-et-cycle-de-vie.md`](02-glossaire-et-cycle-de-vie.md) | Vocabulaire métier et cycle de vie d'un livre |

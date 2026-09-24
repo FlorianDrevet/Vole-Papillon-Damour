@@ -140,6 +140,7 @@ app.UseCheckoutPassageController();
 app.UseRareBookController();
 app.UseBibliographicReferenceController();
 app.UseBookAdministrationController();
+app.UseNotFoundReportAdministrationController();
 app.UseActualityController();
 app.UseProductController();
 app.UseOrdersController();

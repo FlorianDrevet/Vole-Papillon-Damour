@@ -10,6 +10,8 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 
 namespace Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
@@ -87,6 +89,41 @@ public sealed class GetMySelectionQueryHandler(
                 .ToListAsync(cancellationToken);
         }
 
+        var reportEditionIsbns = selectionItems
+            .Where(item => item.Isbn13 is not null)
+            .Select(item =>
+            {
+                var selectedIsbn = item.Isbn13!.Value;
+                return books.SingleOrDefault(book => book.Id == selectedIsbn)?.RedirectedToIsbn13 ?? selectedIsbn;
+            })
+            .ToHashSet();
+
+        List<BookNotFoundReport> notFoundReports = [];
+        if (reportEditionIsbns.Count > 0 || rareBookIds.Count > 0)
+        {
+            notFoundReports = await dbContext.BookNotFoundReports
+                .AsNoTracking()
+                .Where(report => report.UserId == user.Id &&
+                    ((report.Isbn13 != null && reportEditionIsbns.Contains(report.Isbn13.Value)) ||
+                     (report.RareBookId != null && rareBookIds.Contains(report.RareBookId))))
+                .OrderByDescending(report => report.ReportedAt)
+                .ThenByDescending(report => report.Id)
+                .ToListAsync(cancellationToken);
+        }
+
+        var notFoundReportsByEdition = notFoundReports
+            .Where(report => report.Isbn13 is not null)
+            .GroupBy(report => report.Isbn13!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => ProjectNotFoundReport(group.First(), generatedAt));
+        var notFoundReportsByRareBook = notFoundReports
+            .Where(report => report.RareBookId is not null)
+            .GroupBy(report => report.RareBookId!)
+            .ToDictionary(
+                group => group.Key,
+                group => ProjectNotFoundReport(group.First(), generatedAt));
+
         var activeBookFairs = await dbContext.AssoEvents
             .AsNoTracking()
             .WhereActiveBookFair()
@@ -95,7 +132,14 @@ public sealed class GetMySelectionQueryHandler(
         var announcedIsbnSet = announcedIsbns.ToHashSet();
 
         var resultItems = selectionItems
-            .Select(item => ProjectItem(item, books, announcedIsbnSet, rareBooks, generatedAt))
+            .Select(item => ProjectItem(
+                item,
+                books,
+                announcedIsbnSet,
+                rareBooks,
+                notFoundReportsByEdition,
+                notFoundReportsByRareBook,
+                generatedAt))
             .ToArray();
         var nextFairSummary = nextBookFair is null
             ? null
@@ -109,6 +153,8 @@ public sealed class GetMySelectionQueryHandler(
         IReadOnlyCollection<Book> books,
         IReadOnlySet<Isbn13> announcedIsbns,
         IReadOnlyCollection<RareBook> rareBooks,
+        IReadOnlyDictionary<Isbn13, NotFoundReportSummary?> notFoundReportsByEdition,
+        IReadOnlyDictionary<Domain.RareBookAggregate.ValueObjects.RareBookId, NotFoundReportSummary?> notFoundReportsByRareBook,
         DateTimeOffset generatedAt)
     {
         if (item.Isbn13 is { } editionIsbn)
@@ -117,6 +163,7 @@ public sealed class GetMySelectionQueryHandler(
             var availability = SelectionAvailabilityProjector.ForEdition(
                 book,
                 announcedIsbns.Contains(editionIsbn));
+            var reportIsbn = book?.RedirectedToIsbn13 ?? editionIsbn;
             return new SelectionItemResult(
                 item.Id,
                 "edition",
@@ -135,7 +182,8 @@ public sealed class GetMySelectionQueryHandler(
                 new DateTimeOffset(item.AddedAt, TimeSpan.Zero),
                 item.PurchasedAt is { } editionPurchasedAt
                     ? new DateTimeOffset(editionPurchasedAt, TimeSpan.Zero)
-                    : null);
+                    : null,
+                notFoundReportsByEdition.GetValueOrDefault(reportIsbn));
         }
 
         var rareBook = item.RareBookId is { } rareBookId
@@ -159,6 +207,33 @@ public sealed class GetMySelectionQueryHandler(
             new DateTimeOffset(item.AddedAt, TimeSpan.Zero),
             item.PurchasedAt is { } rarePurchasedAt
                 ? new DateTimeOffset(rarePurchasedAt, TimeSpan.Zero)
+                : null,
+            item.RareBookId is { } selectedRareBookId
+                ? notFoundReportsByRareBook.GetValueOrDefault(selectedRareBookId)
+                : null);
+    }
+
+    private static NotFoundReportSummary? ProjectNotFoundReport(
+        BookNotFoundReport report,
+        DateTimeOffset generatedAt)
+    {
+        if (report.Status == NotFoundReportStatus.Cancelled)
+        {
+            return null;
+        }
+
+        if (report.Status != NotFoundReportStatus.Open &&
+            (report.ClosedAt is not { } closedAt || closedAt <= generatedAt.UtcDateTime.AddDays(-30)))
+        {
+            return null;
+        }
+
+        return new NotFoundReportSummary(
+            report.Id,
+            report.Status.ToString(),
+            new DateTimeOffset(report.ReportedAt, TimeSpan.Zero),
+            report.ClosedAt is { } closed
+                ? new DateTimeOffset(closed, TimeSpan.Zero)
                 : null);
     }
 }

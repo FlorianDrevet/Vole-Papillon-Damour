@@ -1,0 +1,175 @@
+<section class="not-found-admin-view" aria-labelledby="not-found-admin-title">
+  <header class="not-found-admin-heading">
+    <span class="not-found-admin-kicker">Pendant la bourse</span>
+    <h1 id="not-found-admin-title">Livres introuvables.</h1>
+    <p>Des membres ont cherché ces livres en rayon sans les trouver. Allez vérifier, puis retirez-les du stock ou confirmez qu'ils sont bien là. Un signalement ne modifie jamais le stock tout seul.</p>
+  </header>
+
+  <div class="not-found-toolbar">
+    <div class="not-found-tabs" role="tablist" aria-label="État des signalements">
+      <button
+        class="not-found-tab"
+        [class.active]="activeTab() === 'open'"
+        [attr.aria-selected]="activeTab() === 'open'"
+        role="tab"
+        data-testid="not-found-tab-open"
+        type="button"
+        (click)="selectTab('open')">
+        À vérifier <span>{{ queue()?.openTargetCount ?? 0 }}</span>
+      </button>
+      <button
+        class="not-found-tab"
+        [class.active]="activeTab() === 'closed'"
+        [attr.aria-selected]="activeTab() === 'closed'"
+        role="tab"
+        data-testid="not-found-tab-closed"
+        type="button"
+        (click)="selectTab('closed')">
+        Traités <span>{{ closedReports()?.totalCount ?? 0 }}</span>
+      </button>
+    </div>
+    @if (activeTab() === 'open') {
+      <div class="not-found-filters">
+        <label>
+          <span>Type</span>
+          <select [ngModel]="kindFilter()" (ngModelChange)="setKindFilter($event)" [disabled]="!canManageEditions">
+            <option value="all">Tous</option>
+            <option value="edition" [disabled]="!canManageEditions">Éditions</option>
+            <option value="rare" [disabled]="!canManageRareBooks">Livres rares</option>
+          </select>
+        </label>
+        <label>
+          <span>Trier</span>
+          <select [ngModel]="sort()" (ngModelChange)="setSort($event)">
+            <option value="most-reported">Plus signalés</option>
+            <option value="oldest">Plus anciens</option>
+            <option value="newest">Plus récents</option>
+            <option value="genre">Rayon</option>
+          </select>
+        </label>
+      </div>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <div class="not-found-error" role="alert">{{ message }}</div>
+  }
+  @if (success(); as message) {
+    <p class="not-found-success" role="status">{{ message }}</p>
+  }
+
+  @if (activeTab() === 'open') {
+    @if (queue(); as current) {
+      <div class="not-found-list-heading">
+        <div>
+          <h2>{{ current.openTargetCount }} fiches à vérifier</h2>
+          <p>{{ current.openReportCount }} signalements · {{ current.overdueTargetCount }} en attente depuis plus de 7 jours</p>
+        </div>
+        <button class="not-found-export" type="button" [disabled]="current.totalCount === 0 || exporting()" (click)="exportCsv()">
+          <span aria-hidden="true">↓</span> {{ exporting() ? 'Préparation du CSV…' : 'Liste de tournée (CSV)' }}
+        </button>
+      </div>
+
+      <div class="not-found-target-list" data-testid="not-found-target-list">
+        @for (target of filteredTargets(); track target.kind + ':' + (target.isbn13 ?? target.rareBookId)) {
+          <article class="not-found-target-row" data-testid="not-found-report-row">
+            <div class="not-found-target-cover">
+              @if (target.coverUrl) {<img [src]="target.coverUrl" alt="">} @else {<span aria-hidden="true">Livre</span>}
+            </div>
+            <div class="not-found-target-details">
+              <div class="not-found-target-titleline">
+                @if (target.kind === 'rare') {<span class="not-found-rare-badge">Livre rare</span>}
+                <h3>{{ target.title }}</h3>
+              </div>
+              <p class="not-found-target-byline">{{ target.authors || 'Auteur non renseigné' }}</p>
+              <span class="not-found-report-count">{{ target.reportCount }} signalement{{ target.reportCount === 1 ? '' : 's' }} · {{ target.memberCount }} membre{{ target.memberCount === 1 ? '' : 's' }}</span>
+              <div class="not-found-target-facts">
+                @if (target.kind === 'edition') {<span>ISBN {{ target.isbn13 }}</span>} @else {<span>Fiche rare {{ target.rareBookId }}</span>}
+                @if (target.publisher) {<span>{{ target.publisher }}{{ target.publicationYear ? ' · ' + target.publicationYear : '' }}</span>}
+                <span class="not-found-stock">stock : {{ target.kind === 'rare' ? 'exemplaire unique' : target.quantityAvailable + ' dispo.' }}</span>
+                <span>rayon : {{ target.genre || 'Non renseigné' }}</span>
+              </div>
+              <p class="not-found-dates">1er signalement le {{ formatDate(target.firstReportedAt) }} · dernier le {{ formatDate(target.lastReportedAt) }} @if (target.overdue) {<strong> · en attente depuis {{ daysWaiting(target.firstReportedAt) }} jours</strong>}</p>
+              @for (comment of target.comments; track comment.reportedAt + ':' + $index) {
+                <blockquote class="not-found-comment">« {{ comment.text }} » @if (comment.location) {<span>— {{ comment.location === 'Fair' ? 'À la bourse' : 'Au local' }}</span>}</blockquote>
+              }
+            </div>
+            <div class="not-found-row-actions">
+              <button
+                class="not-found-withdraw-button"
+                type="button"
+                data-testid="not-found-withdraw"
+                (click)="openCloseDialog(target, 'withdrawal', $event)">
+                {{ target.kind === 'rare' ? 'Retirer la fiche rare' : 'Retirer du stock…' }}
+              </button>
+              <button
+                class="not-found-found-button"
+                type="button"
+                data-testid="not-found-found"
+                (click)="openCloseDialog(target, 'found', $event)">Retrouvé</button>
+              <button class="not-found-dismiss-button" type="button" (click)="openCloseDialog(target, 'dismissal', $event)">Classer sans suite</button>
+            </div>
+          </article>
+        } @empty {
+          <div class="not-found-empty">Aucun livre introuvable ne correspond à ces filtres.</div>
+        }
+      </div>
+      @if (current.totalCount > current.pageSize) {
+        <nav class="not-found-pagination" aria-label="Pages de la file">
+          <button type="button" [disabled]="current.page <= 1 || loading()" (click)="changeQueuePage(current.page - 1)">Précédent</button>
+          <span>Page {{ current.page }} sur {{ pageCount(current) }}</span>
+          <button type="button" [disabled]="current.page >= pageCount(current) || loading()" (click)="changeQueuePage(current.page + 1)">Suivante</button>
+        </nav>
+      }
+      <p class="not-found-privacy-note">Aucune identité de membre n'est affichée ici. Le retrait produit un mouvement RETRAIT attribué à votre compte, avec la mention « suite à signalement ». Une vente qui épuise le stock clôt automatiquement les signalements de la fiche.</p>
+    } @else if (loading()) {
+      <p class="not-found-loading" role="status">Chargement de la file…</p>
+    }
+  } @else {
+    @if (closedReports(); as history) {
+      <div class="not-found-history-desktop" role="table" aria-label="Signalements traités">
+        <div class="not-found-history-row not-found-history-head" role="row">
+          <span role="columnheader">Clôture</span><span role="columnheader">Fiche</span><span role="columnheader">Décision</span><span role="columnheader">Stock</span><span role="columnheader">Bénévole</span><span role="columnheader">Note</span>
+        </div>
+        @for (item of history.items; track item.closedAt + ':' + item.title + ':' + $index) {
+          <div class="not-found-history-row" role="row">
+            <span role="cell">{{ formatDate(item.closedAt, true) }}</span>
+            <span role="cell"><strong>{{ item.title }}</strong><small>{{ item.kind === 'edition' ? item.isbn13 : 'Fiche rare' }}</small></span>
+            <span role="cell"><span class="not-found-outcome" [class]="outcomeClass(item.outcome)">{{ outcomeLabel(item.outcome) }}</span></span>
+            <span role="cell">{{ item.withdrawnQuantity ?? '—' }}</span>
+            <span role="cell">{{ item.closedByName || 'Bénévole' }}</span>
+            <span role="cell">{{ item.note || '—' }}</span>
+          </div>
+        } @empty {<p class="not-found-empty">Aucun signalement traité.</p>}
+      </div>
+      <div class="not-found-history-mobile">
+        @for (item of history.items; track item.closedAt + ':' + item.title + ':' + $index) {
+          <article class="not-found-history-card">
+            <span class="not-found-outcome" [class]="outcomeClass(item.outcome)">{{ outcomeLabel(item.outcome) }}</span>
+            <h3>{{ item.title }}</h3>
+            <p>{{ formatDate(item.closedAt, true) }} · {{ item.kind === 'edition' ? item.isbn13 : 'Fiche rare' }}</p>
+            <p>{{ item.withdrawnQuantity === null ? 'Stock inchangé' : item.withdrawnQuantity + ' exemplaire(s) retiré(s)' }} · {{ item.closedByName || 'Bénévole' }}</p>
+            @if (item.note) {<blockquote>« {{ item.note }} »</blockquote>}
+          </article>
+        } @empty {<p class="not-found-empty">Aucun signalement traité.</p>}
+      </div>
+      @if (history.totalCount > history.pageSize) {
+        <nav class="not-found-pagination" aria-label="Pages de l'historique">
+          <button type="button" [disabled]="history.page <= 1 || loading()" (click)="changeClosedPage(history.page - 1)">Précédent</button>
+          <span>Page {{ history.page }} sur {{ pageCount(history) }}</span>
+          <button type="button" [disabled]="history.page >= pageCount(history) || loading()" (click)="changeClosedPage(history.page + 1)">Suivante</button>
+        </nav>
+      }
+    } @else if (loading()) {
+      <p class="not-found-loading" role="status">Chargement de l'historique…</p>
+    }
+  }
+</section>
+
+@if (closingTarget(); as target) {
+  <app-not-found-report-close-dialog
+    [target]="target"
+    [action]="closingAction()"
+    (confirmed)="confirmClose($event)"
+    (closed)="closeDialog()"></app-not-found-report-close-dialog>
+}

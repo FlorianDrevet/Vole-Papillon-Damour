@@ -17,7 +17,7 @@ describe('CatalogSelectionService', () => {
   beforeEach(() => {
     localStorage.removeItem('vpd.catalog.selection.v1');
     api = jasmine.createSpyObj('CatalogMemberApiService', [
-      'getSelection', 'addSelectionItem', 'removeSelectionItem', 'setSelectionStatus', 'mergeSelection'
+      'getSelection', 'addSelectionItem', 'removeSelectionItem', 'mergeSelection'
     ]);
     auth = {
       isAuthenticated: signal(false),
@@ -128,6 +128,7 @@ function selectionResponse(isbns: string[]): CatalogSelectionResponse {
       availability: 'Available',
       availabilityCheckedAt: '2026-09-23T10:00:00.000Z',
       status: 'ToTake',
+      notFoundReport: null,
       addedAt: '2026-09-23T10:00:00.000Z',
       purchasedAt: null
     }))

@@ -238,6 +238,14 @@ public sealed class AccountDeletionStore(
             .ToListAsync(cancellationToken);
         dbContext.WatchlistItems.RemoveRange(watchlistItems);
 
+        var notFoundReports = await dbContext.BookNotFoundReports
+            .Where(report => report.UserId == userId)
+            .ToListAsync(cancellationToken);
+        foreach (var report in notFoundReports)
+        {
+            report.DetachMember();
+        }
+
         var selectionItems = await dbContext.MemberSelectionItems
             .Where(item => item.UserId == userId)
             .ToListAsync(cancellationToken);

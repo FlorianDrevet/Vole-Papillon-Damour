@@ -14,4 +14,5 @@ public sealed record UpdateAssociationSettingsCommand(
     int AlertCooldownDays,
     int SessionIdleTimeoutMinutes,
     int AlertDelayMinutes,
-    UserId UpdatedBy) : IRequest<ErrorOr<AssociationSettingsResult>>;
+    UserId UpdatedBy,
+    int NotFoundReportDailyLimit = 10) : IRequest<ErrorOr<AssociationSettingsResult>>;

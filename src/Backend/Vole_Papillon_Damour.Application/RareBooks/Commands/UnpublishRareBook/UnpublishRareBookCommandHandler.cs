@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
@@ -10,7 +11,8 @@ namespace Vole_Papillon_Damour.Application.RareBooks.Commands.UnpublishRareBook;
 
 public sealed class UnpublishRareBookCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    INotFoundReportLapser notFoundReportLapser)
     : IRequestHandler<UnpublishRareBookCommand, ErrorOr<RareBookResult>>
 {
     public async Task<ErrorOr<RareBookResult>> Handle(
@@ -27,6 +29,8 @@ public sealed class UnpublishRareBookCommandHandler(
         {
             return clockError.Value;
         }
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var rareBook = await dbContext.RareBooks
             .Include(book => book.Photos)
@@ -48,8 +52,11 @@ public sealed class UnpublishRareBookCommandHandler(
 
         if (changed)
         {
+            await notFoundReportLapser.LapseRareBookAsync(rareBook.Id, nowUtc, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        await transaction.CommitAsync(cancellationToken);
 
         return RareBookProjector.ToResult(rareBook);
     }

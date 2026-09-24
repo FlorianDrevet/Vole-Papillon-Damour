@@ -284,7 +284,8 @@ public sealed record AdminAssociationSettingsResponse(
     int SessionIdleTimeoutMinutes,
     int AlertDelayMinutes,
     DateTimeOffset UpdatedAt,
-    Guid UpdatedBy);
+    Guid UpdatedBy,
+    int NotFoundReportDailyLimit);
 
 public sealed record BookReferenceSearchItemResponse(
     string? Isbn13,

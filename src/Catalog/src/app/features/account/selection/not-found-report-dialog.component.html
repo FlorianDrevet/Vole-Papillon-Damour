@@ -1,0 +1,107 @@
+<div class="not-found-report-overlay" role="presentation" (click)="requestClose()">
+  <section
+    #dialog
+    class="not-found-report-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="not-found-report-title"
+    [attr.aria-describedby]="mode() === 'report' ? 'not-found-report-description' : 'not-found-login-description'"
+    tabindex="-1"
+    (click)="$event.stopPropagation()">
+    <header class="not-found-report-heading">
+      <div>
+        <span class="not-found-report-eyebrow">{{ mode() === 'report' ? 'Signaler' : 'Compte membre' }}</span>
+        <h2 id="not-found-report-title">
+          {{ mode() === 'report' ? "Vous n'avez pas trouvé ce livre ?" : 'Connectez-vous pour signaler ce livre' }}
+        </h2>
+      </div>
+      <button type="button" class="not-found-report-close" aria-label="Fermer" (click)="requestClose()">
+        <span aria-hidden="true">×</span>
+      </button>
+    </header>
+
+    <article class="not-found-report-book">
+      @if (item().coverUrl; as coverUrl) {
+        <img [src]="coverUrl" alt="" loading="lazy">
+      } @else {
+        <span class="not-found-report-cover-placeholder" aria-hidden="true">Couv.</span>
+      }
+      <div>
+        <strong>{{ item().title }}</strong>
+        @if (metadata(); as details) {
+          <span>{{ details }}</span>
+        }
+      </div>
+    </article>
+
+    @if (mode() === 'report') {
+      <p id="not-found-report-description" class="not-found-report-copy">
+        Un bénévole ira vérifier en rayon. Si le livre a disparu, il sera retiré du catalogue. Merci de nous aider à le garder juste !
+      </p>
+
+      <fieldset class="not-found-report-location">
+        <legend>Où l'avez-vous cherché ? <span>(facultatif)</span></legend>
+        <div class="not-found-report-location-options">
+          <label [class.selected]="location() === 'Fair'">
+            <input
+              type="radio"
+              name="not-found-report-location"
+              value="Fair"
+              [checked]="location() === 'Fair'"
+              (change)="selectLocation('Fair')">
+            À la bourse
+          </label>
+          <label [class.selected]="location() === 'Premises'">
+            <input
+              type="radio"
+              name="not-found-report-location"
+              value="Premises"
+              [checked]="location() === 'Premises'"
+              (change)="selectLocation('Premises')">
+            Au local
+          </label>
+        </div>
+      </fieldset>
+
+      <label class="not-found-report-comment">
+        <span class="not-found-report-comment-title">Un commentaire ?</span>
+        <span class="not-found-report-comment-help">Facultatif · 280 caractères · pas de données personnelles</span>
+        <textarea
+          rows="3"
+          maxlength="280"
+          [value]="comment()"
+          aria-describedby="not-found-report-comment-counter"
+          placeholder="ex. le rayon polar était vide"
+          (input)="updateComment($event)"></textarea>
+        <span id="not-found-report-comment-counter" class="not-found-report-counter" aria-live="polite">
+          {{ comment().length }} / 280 caractères
+        </span>
+      </label>
+
+      <div class="not-found-report-actions">
+        <button type="button" class="not-found-report-cancel" (click)="requestClose()">Annuler</button>
+        <button
+          type="button"
+          class="not-found-report-submit"
+          data-testid="not-found-report-submit"
+          [disabled]="sending()"
+          (click)="submit()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 21V4m0 0h11l-2 4 2 4H5" />
+          </svg>
+          {{ sending() ? 'Envoi…' : 'Envoyer le signalement' }}
+        </button>
+      </div>
+    } @else {
+      <p id="not-found-login-description" class="not-found-report-copy">
+        Un signalement lié à un compte permet au bénévole de savoir qu'il est fiable. Votre sélection de cet appareil sera ajoutée à votre compte.
+      </p>
+      <div class="not-found-report-login-actions">
+        <button type="button" class="not-found-report-login" data-testid="not-found-report-login" (click)="requestLogin()">
+          Se connecter
+        </button>
+        <button type="button" class="not-found-report-cancel" (click)="requestClose()">Plus tard</button>
+      </div>
+    }
+  </section>
+</div>

@@ -7,6 +7,7 @@ dossier et du design system du site (`src/Website`).
 |---|---|---|
 | [Scanette](https://claude.ai/code/artifact/45cfe87a-9e3b-4cc0-9a13-cc6c9c8f34fb) | 12 | `03-parcours-benevole-scan.md` |
 | [Catalogue public + administration](https://claude.ai/code/artifact/0545c05d-4473-45c3-bb22-3d136ec23ca0) | 9 + 10 | `04-site-public.md`, `05-administration.md` |
+| [Signalement livre introuvable](https://claude.ai/artifact/KDX9jHZrcRnb2H6qGccnDZ) — export [`signalement-introuvable/`](signalement-introuvable/README.md), [`.zip`](signalement-introuvable.zip) | 7 + 9 | `11-signalement-livre-introuvable.md` |
 
 Les liens ouvrent le canvas pan/zoom : on y sélectionne un élément, on l'édite, on
 exporte en PNG ou en PDF. Le second canvas a deux pages (« Site public » et

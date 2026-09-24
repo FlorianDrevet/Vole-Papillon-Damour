@@ -1,4 +1,5 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Output, computed, input, signal} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
+import {ChangeDetectionStrategy, Component, EventEmitter, OnDestroy, Output, computed, input, signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
@@ -6,13 +7,14 @@ import {CatalogMemberApiService} from '../../../core/catalog-member-api.service'
 import {
   CatalogSelectionAvailability,
   CatalogSelectionItem,
-  CatalogSelectionStatus,
+  CatalogNotFoundLocation,
 } from '../../../core/catalog.models';
 import {CatalogSelectionService} from '../../../core/selection/catalog-selection.service';
 import {LocalSelectionEntry, SelectionRef, selectionKey} from '../../../core/selection/selection-merge';
 import {LocalSelectionStore} from '../../../core/selection/local-selection.store';
+import {NotFoundReportDialogItem} from './not-found-report-dialog.component';
 
-type SelectionFilter = 'all' | 'next' | 'available' | 'purchased' | 'not-found' | 'unavailable';
+type SelectionFilter = 'all' | 'available' | 'purchased' | 'reported' | 'unavailable';
 
 interface SelectionDisplayItem {
   key: string;
@@ -25,18 +27,10 @@ interface SelectionDisplayItem {
 
 const FILTERS: ReadonlyArray<{id: SelectionFilter; label: string}> = [
   {id: 'all', label: 'Tout'},
-  {id: 'next', label: 'Prochaine visite'},
   {id: 'available', label: 'Encore disponible'},
   {id: 'purchased', label: 'Acheté'},
-  {id: 'not-found', label: 'Pas trouvé'},
+  {id: 'reported', label: 'Signalés'},
   {id: 'unavailable', label: 'Indisponibles'},
-];
-
-const STATUSES: ReadonlyArray<{value: CatalogSelectionStatus; label: string; testId: string}> = [
-  {value: 'ToTake', label: 'À prendre', testId: 'take'},
-  {value: 'Purchased', label: 'Acheté', testId: 'purchased'},
-  {value: 'NotFound', label: 'Pas trouvé', testId: 'not-found'},
-  {value: 'ToRevisit', label: 'À revoir', testId: 'revisit'},
 ];
 
 @Component({
@@ -46,18 +40,21 @@ const STATUSES: ReadonlyArray<{value: CatalogSelectionStatus; label: string; tes
   styleUrls: ['./account-selection.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AccountSelectionComponent {
+export class AccountSelectionComponent implements OnDestroy {
   readonly selectionLoading = input(false);
   readonly selectionError = input<string | null>(null);
   @Output() retryRequested = new EventEmitter<void>();
 
   readonly filters = FILTERS;
-  readonly statuses = STATUSES;
   readonly filter = signal<SelectionFilter>('all');
   readonly busyItemId = signal<string | null>(null);
   readonly busyMerge = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly successMessage = signal<string | null>(null);
+  readonly reportDialogItem = signal<SelectionDisplayItem | null>(null);
+  readonly reportDialogMode = signal<'report' | 'login'>('report');
   private readonly localRevision = signal(0);
+  private successTimer: ReturnType<typeof setTimeout> | null = null;
   readonly pendingMerge = computed(() => this.selection.pendingMerge());
   readonly mode = computed(() => this.selection.mode());
   readonly localEntries = computed(() => {
@@ -213,13 +210,57 @@ export class AccountSelectionComponent {
       : `Ajouté le ${this.formatDate(item.addedAt)}`;
   }
 
-  isSelectedStatus(item: SelectionDisplayItem, status: CatalogSelectionStatus): boolean {
-    return item.remote?.status === status;
+  canReportNotFound(item: SelectionDisplayItem): boolean {
+    const remote = item.remote;
+    if (!remote) {
+      return !this.auth.isAuthenticated();
+    }
+
+    if (remote.availability !== 'Available' || remote.status === 'Purchased') {
+      return false;
+    }
+
+    const report = remote.notFoundReport;
+    return report === null || report.status === 'Found' || report.status === 'Dismissed' || report.status === 'Lapsed';
   }
 
-  async setStatus(item: SelectionDisplayItem, status: CatalogSelectionStatus): Promise<void> {
+  requestNotFoundReport(item: SelectionDisplayItem): void {
+    if (!this.canReportNotFound(item) || this.busyItemId()) {
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.reportDialogMode.set(item.remote ? 'report' : 'login');
+    this.reportDialogItem.set(item);
+  }
+
+  reportDialogDetails(item: SelectionDisplayItem): NotFoundReportDialogItem {
     const remote = item.remote;
-    if (!remote || !this.auth.isAuthenticated() || remote.status === status || this.busyItemId()) {
+    return {
+      title: item.title,
+      authors: remote?.authors ?? null,
+      publisher: remote?.publisher ?? null,
+      publicationYear: remote?.publicationYear ?? null,
+      coverUrl: remote?.coverUrl ?? null,
+    };
+  }
+
+  closeNotFoundReportDialog(): void {
+    this.reportDialogItem.set(null);
+  }
+
+  async submitFromNotFoundReportDialog(
+    item: SelectionDisplayItem,
+    request: {location: CatalogNotFoundLocation | null; comment: string | null},
+  ): Promise<void> {
+    await this.submitNotFoundReport(item, request);
+    this.closeNotFoundReportDialog();
+  }
+
+  async cancelNotFoundReport(item: SelectionDisplayItem): Promise<void> {
+    const remote = item.remote;
+    const report = remote?.notFoundReport;
+    if (!remote || !report || report.status !== 'Open' || !this.auth.isAuthenticated() || this.busyItemId()) {
       return;
     }
 
@@ -227,12 +268,60 @@ export class AccountSelectionComponent {
     this.errorMessage.set(null);
     try {
       const token = await this.auth.getApiAccessToken();
-      await firstValueFrom(this.api.setSelectionStatus(token, remote.id, status));
+      await firstValueFrom(this.api.cancelNotFoundReport(token, report.id));
       await this.selection.refresh();
     } catch {
-      this.errorMessage.set('L’état de Ma sélection n’a pas pu être modifié. Réessayez.');
+      this.errorMessage.set('Le signalement n’a pas pu être annulé. Réessayez.');
     } finally {
       this.busyItemId.set(null);
+    }
+  }
+
+  async submitNotFoundReport(
+    item: SelectionDisplayItem,
+    request: {location: CatalogNotFoundLocation | null; comment: string | null},
+  ): Promise<void> {
+    const remote = item.remote;
+    if (!remote || !this.auth.isAuthenticated() || !this.canReportNotFound(item) || this.busyItemId()) {
+      return;
+    }
+
+    this.busyItemId.set(remote.id);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    try {
+      const token = await this.auth.getApiAccessToken();
+      await firstValueFrom(this.api.reportNotFound(token, remote.id, {
+        location: request.location,
+        comment: request.comment?.trim() || null,
+      }));
+      await this.selection.refresh();
+      this.successMessage.set('Merci, un bénévole va vérifier.');
+      if (this.successTimer !== null) {
+        clearTimeout(this.successTimer);
+      }
+      this.successTimer = setTimeout(() => {
+        this.successMessage.set(null);
+        this.successTimer = null;
+      }, 4000);
+    } catch (error) {
+      const status = error instanceof HttpErrorResponse ? error.status : 0;
+      if (status === 429) {
+        this.errorMessage.set("Vous avez déjà beaucoup signalé aujourd'hui, merci !");
+      } else if (status === 409) {
+        this.errorMessage.set("Ce livre n'est plus signalable : sa disponibilité a changé.");
+        await this.selection.refresh().catch(() => undefined);
+      } else {
+        this.errorMessage.set('Le signalement n’a pas pu être envoyé. Réessayez.');
+      }
+    } finally {
+      this.busyItemId.set(null);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.successTimer !== null) {
+      clearTimeout(this.successTimer);
     }
   }
 
@@ -306,20 +395,18 @@ export class AccountSelectionComponent {
   private matchesFilter(item: SelectionDisplayItem, filter: SelectionFilter): boolean {
     const remote = item.remote;
     if (!remote) {
-      return filter === 'all' || filter === 'next';
+      return filter === 'all';
     }
 
     switch (filter) {
       case 'all':
         return true;
-      case 'next':
-        return remote.status === 'ToTake' || remote.status === 'ToRevisit';
       case 'available':
         return remote.availability === 'Available' || remote.availability === 'Announced';
       case 'purchased':
         return remote.status === 'Purchased';
-      case 'not-found':
-        return remote.status === 'NotFound';
+      case 'reported':
+        return remote.notFoundReport !== null;
       case 'unavailable':
         return remote.availability === 'OutOfStock' ||
           remote.availability === 'RareSold' ||

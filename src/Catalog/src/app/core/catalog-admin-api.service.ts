@@ -41,6 +41,14 @@ import {
   CatalogAdminSessionFilters,
   CatalogAdminSettings,
   CatalogDeadStockResponse,
+  CatalogNotFoundCloseAction,
+  CatalogNotFoundCloseRequest,
+  CatalogNotFoundClosure,
+  CatalogNotFoundQueue,
+  CatalogNotFoundQueueParams,
+  CatalogNotFoundSummary,
+  CatalogNotFoundSummaryTarget,
+  CatalogClosedNotFoundReports,
 } from './catalog.models';
 
 type QueryValue = string | number | boolean | null | undefined;
@@ -496,6 +504,51 @@ export class CatalogAdminApiService {
     return this.http.get<CatalogDeadStockResponse>(
       `${this.apiUrl}/books/admin/dead-stock`,
       this.options(accessToken, this.params({minAgeMonths, minQuantity})),
+    );
+  }
+
+  getNotFoundQueue(
+    accessToken: string,
+    params: CatalogNotFoundQueueParams,
+  ): Observable<CatalogNotFoundQueue> {
+    return this.http.get<CatalogNotFoundQueue>(
+      `${this.apiUrl}/books/admin/not-found-reports`,
+      this.options(accessToken, this.params(params)),
+    );
+  }
+
+  getClosedNotFoundReports(
+    accessToken: string,
+    page: number,
+    pageSize: number,
+  ): Observable<CatalogClosedNotFoundReports> {
+    return this.http.get<CatalogClosedNotFoundReports>(
+      `${this.apiUrl}/books/admin/not-found-reports/closed`,
+      this.options(accessToken, this.params({page, pageSize})),
+    );
+  }
+
+  getNotFoundSummary(
+    accessToken: string,
+    target?: CatalogNotFoundSummaryTarget,
+  ): Observable<CatalogNotFoundSummary> {
+    return this.http.get<CatalogNotFoundSummary>(
+      `${this.apiUrl}/books/admin/not-found-reports/summary`,
+      this.options(accessToken, this.params(target ?? {})),
+    );
+  }
+
+  closeNotFound(
+    accessToken: string,
+    target: {kind: 'edition' | 'rare'; reference: string},
+    action: CatalogNotFoundCloseAction,
+    body: CatalogNotFoundCloseRequest,
+  ): Observable<CatalogNotFoundClosure> {
+    const targetPath = target.kind === 'edition' ? 'editions' : 'rare-books';
+    return this.http.post<CatalogNotFoundClosure>(
+      `${this.apiUrl}/books/admin/not-found-reports/${targetPath}/${encodeURIComponent(target.reference)}/${action}`,
+      body,
+      this.options(accessToken),
     );
   }
 

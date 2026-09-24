@@ -20,7 +20,7 @@ belonging to that container.
 
 ## Books module persistence
 
-- `ProjectDbContext` and `IProjectDbContext` expose `Books`, `BookMovements`, `BookAnnouncements`, `ScanSessions`, the singleton `AssociationSettings`, `Watchlists`, `WatchlistItems`, `UserAlertHistories`, and the `EmailBounceEvents` provider-event ledger sets.
+- `ProjectDbContext` and `IProjectDbContext` expose `Books`, `BookMovements`, `BookAnnouncements`, `BookNotFoundReports`, `ScanSessions`, the singleton `AssociationSettings`, `Watchlists`, `WatchlistItems`, `UserAlertHistories`, and the `EmailBounceEvents` provider-event ledger sets.
 - Configurations live in `Infrastructure/Persistence/Configurations/`: ISBN-13 and strong-ID conversions, SQL Server `datetime2`, UTC read/write converters, `Books.RowVersion`, accent-insensitive `Title`/`Authors`, self-redirect and non-zero/positive quantity checks, and filtered unique indexes for `ClientGestureId` and one open scan session per volunteer.
 - Migrations `20260903173750_AddBookExchangeCore`, `20260903175445_AddClientGestureIdToBookAnnouncements`, `20260903181307_AddSaleReversalLink`, `20260903185500_AddBookWatchlistsAndAlerts`, `20260903192839_AddEmailBounceEventLedger`, `20260903211547_AddWatchlistUpdatedAt`, and `20260903230825_AddCancelledBookFair` create the Books foundation, complete the announcement gesture trace, add a filtered-unique self-link for movement inverses, add the watchlist/alert-history tables with target and cascade constraints, add the provider-event ledger with its unique provider identity, persist a UTC `UpdatedAt` watermark on watchlists (backfilled from `CreatedAt`), and persist cancelled-fair state. `20260904193041_AddDeadStockQueryIndex` adds `Isbn13 + Type + OccurredAt` for the administration dead-stock read, and `20260904213549_AddWatchlistItemUniqueness` protects one equivalent watchlist item. The pending migrations were applied to DEV Azure SQL by `Books runtime - deploy` `33922677695`; later application rollouts did not rerun them.
 - Migration `20260912214304_AddWatchlistItemCoverUrl` adds nullable `WatchlistItems.CoverUrl` (`nvarchar(2048)`). The Catalog follow command validates an absolute HTTPS URL and stores the external reference cover as a snapshot; existing watchlist rows remain null until a new follow supplies one.
@@ -35,6 +35,12 @@ belonging to that container.
   `MemberSelectionItemConfiguration`; migration `20260923191942_AddMemberSelection`
   creates the member selection table and index constraints. The migration was generated
   for PR1 and has not been applied to any environment.
+- `BookNotFoundReports` persists member-originated not-found reports, optional location
+  and comment, target, status, and closure data. Migration
+  `20260924135152_AddBookNotFoundReports` creates the table and filtered unique indexes
+  for one open report per member and target; it is part of `feat/not-found-reports` and
+  has not been applied to an environment. `AssociationSettings.NotFoundReportDailyLimit`
+  defaults to 10 and is validated from 1 to 100.
 
 - The private volunteer statistics query filters `ScanSessions` by `ScannedCount > 0` before calculating session count, duration, recent sessions, and scan-derived aggregates, so empty bootstrap/test sessions do not contribute time.
 
@@ -100,6 +106,7 @@ belonging to that container.
 - The Books schema now includes cancelled-fair state (`AssoEvents.IsCancelled`) and the migration `20260903230825_AddCancelledBookFair`; cancelled Books fairs remain auditable but are excluded from release, opening, next-fair selection, announcements, sales, and alert delivery. Attached announcements are detached when the fair is cancelled.
 - `AccountDeletionStore` claims only `OutboxMessageKind.AccountDeletion`; its SQL Server claim uses update/read-past locks, while the provider query keeps the SQLite test harness executable. `AlertEmail` rows therefore cannot be deserialized by the account-deletion worker.
 - Account-deletion finalization removes member-only projections and pending/sent `AlertEmail` outbox rows for the resolved internal member ID before deleting or anonymizing `Users`. This cleanup is transactional and deliberately leaves retained `BookMovements`/`ScanSessions` available for audit; PR #61 also keeps the SQLite pending lookup free of SQL Server-only `JSON_VALUE`.
+- Account-deletion finalization also detaches all `BookNotFoundReports` for the member in that transaction. Open and closed rows remain, `UserId` and the member's free-text `Comment` are cleared, and closure decisions/notes remain for anonymous history.
 - The Books alert outbox has an exact claim lease token carried through revalidation, cancellation, success, and failure. Sent alerts write `UserAlertHistory` after ACS delivery so a retry cannot deliberately create another alert for the same book/member cooldown window.
 - Bibliographic enrichment is retryable and negative-caches not-found results. Transient provider/cover failures keep the current `Pending`/`NotFound` state, record `LastAttemptAt` without consuming the negative-cache attempt budget, and use a one-hour `Pending` cooldown so failed early rows cannot starve never-attempted books.
 - Azure SQL migrations are applied explicitly by deployment workflows. API startup migrations are limited to `Development`; the production/dev rollout workflow runs migrations before the new API/Worker revisions.

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
+using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
@@ -13,7 +14,8 @@ public sealed class MarkRareBookSoldCommandHandler(
     IProjectDbContext dbContext,
     IDateTimeProvider dateTimeProvider,
     IBookAlertOutbox bookAlertOutbox,
-    CheckoutPassageRecorder checkoutPassageRecorder)
+    CheckoutPassageRecorder checkoutPassageRecorder,
+    INotFoundReportLapser notFoundReportLapser)
     : IRequestHandler<MarkRareBookSoldCommand, ErrorOr<RareBookResult>>
 {
     public async Task<ErrorOr<RareBookResult>> Handle(
@@ -81,6 +83,7 @@ public sealed class MarkRareBookSoldCommandHandler(
 
         if (changed)
         {
+            await notFoundReportLapser.LapseRareBookAsync(rareBook.Id, nowUtc, cancellationToken);
             await dbContext.SaveChangesAsync(cancellationToken);
             await bookAlertOutbox.QueueRareBookSoldAsync(
                 rareBook.Id,

@@ -15,6 +15,9 @@ using Vole_Papillon_Damour.Application.RareBooks.Commands.UnpublishRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBookPhotoCaption;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.RareBooks;
 
@@ -98,7 +101,8 @@ public sealed class RareBookCommandHandlerTests
         publishResult.Value.RareBook.Status.Should().Be(nameof(RareBookStatus.Published));
         publishResult.Value.Warnings.Should().ContainSingle();
 
-        var unpublishResult = await new UnpublishRareBookCommandHandler(fixture.Context, fixture.Clock)
+        var unpublishResult = await new UnpublishRareBookCommandHandler(
+                fixture.Context, fixture.Clock, fixture.CreateNotFoundReportLapser())
             .Handle(new(book.Id, fixture.UserId), CancellationToken.None);
 
         unpublishResult.IsError.Should().BeFalse();
@@ -131,9 +135,11 @@ public sealed class RareBookCommandHandlerTests
             fixture.Now.AddMinutes(2),
             fixture.UserId);
 
-        var first = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
+        var first = await new MarkRareBookSoldCommandHandler(
+                fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder(), fixture.CreateNotFoundReportLapser())
             .Handle(command, CancellationToken.None);
-        var second = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
+        var second = await new MarkRareBookSoldCommandHandler(
+                fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder(), fixture.CreateNotFoundReportLapser())
             .Handle(command, CancellationToken.None);
 
         first.IsError.Should().BeFalse();
@@ -142,7 +148,8 @@ public sealed class RareBookCommandHandlerTests
         second.Value.IsSold.Should().BeTrue();
 
         var draft = await fixture.AddRareBookAsync("Brouillon");
-        var refused = await new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
+        var refused = await new MarkRareBookSoldCommandHandler(
+                fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder(), fixture.CreateNotFoundReportLapser())
             .Handle(command with { RareBookId = draft.Id }, CancellationToken.None);
 
         refused.IsError.Should().BeTrue();
@@ -151,6 +158,28 @@ public sealed class RareBookCommandHandlerTests
             published.Id,
             command.OccurredAt,
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task MarkRareBookSold_LapsesOpenReports()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var rareBook = await fixture.AddRareBookAsync("Signalé rare", published: true);
+        var report = BookNotFoundReport.CreateForRareBook(
+            Guid.NewGuid(), UserId.CreateUnique(), rareBook.Id, null, null, fixture.Now.AddMinutes(-1));
+        fixture.Context.BookNotFoundReports.Add(report);
+        await fixture.Context.SaveChangesAsync();
+
+        var outbox = Substitute.For<IBookAlertOutbox>();
+        var command = new MarkRareBookSoldCommand(
+            rareBook.Id, null, null, fixture.Now.AddMinutes(1), fixture.UserId);
+        var result = await new MarkRareBookSoldCommandHandler(
+                fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder(), fixture.CreateNotFoundReportLapser())
+            .Handle(command, CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.BookNotFoundReports.SingleAsync(candidate => candidate.Id == report.Id))
+            .Status.Should().Be(NotFoundReportStatus.Lapsed);
     }
 
     [Fact]
@@ -163,7 +192,7 @@ public sealed class RareBookCommandHandlerTests
         var saleCommand = new MarkRareBookSoldCommand(
             published.Id, null, null, fixture.Now, fixture.UserId) with { CheckoutPassageId = passageId };
         await new MarkRareBookSoldCommandHandler(
-                fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder())
+                fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder(), fixture.CreateNotFoundReportLapser())
             .Handle(saleCommand, CancellationToken.None);
 
         var restored = await new RestoreRareBookAvailabilityCommandHandler(fixture.Context, fixture.Clock, outbox)
@@ -188,7 +217,7 @@ public sealed class RareBookCommandHandlerTests
             fixture.Now.AddMinutes(2),
             fixture.UserId) with { CheckoutPassageId = passageId };
         var handler = new MarkRareBookSoldCommandHandler(
-            fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder());
+            fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder(), fixture.CreateNotFoundReportLapser());
 
         var first = await handler.Handle(command, CancellationToken.None);
         var replay = await handler.Handle(command, CancellationToken.None);
@@ -218,7 +247,8 @@ public sealed class RareBookCommandHandlerTests
                 Arg.Any<CancellationToken>())
             .Returns(_ => throw new InvalidOperationException("outbox unavailable"));
 
-        var handler = new MarkRareBookSoldCommandHandler(fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder());
+        var handler = new MarkRareBookSoldCommandHandler(
+            fixture.Context, fixture.Clock, outbox, fixture.CreateCheckoutPassageRecorder(), fixture.CreateNotFoundReportLapser());
 
         await FluentActions.Invoking(() => handler.Handle(command, CancellationToken.None))
             .Should().ThrowAsync<InvalidOperationException>();

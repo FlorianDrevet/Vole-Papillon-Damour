@@ -80,38 +80,12 @@ public sealed class MemberSelectionItemTests
     }
 
     [Fact]
-    public void ChangeStatus_AwayFromPurchased_ClearsPurchaseDate()
+    public void MemberSelectionStatus_OnlyDefinesToTakeAndPurchased()
     {
-        Isbn13.TryCreate("9782070612758", out var isbn);
-        var item = MemberSelectionItem.CreateForEdition(Guid.NewGuid(), Member, isbn, AddedAt);
-        item.MarkPurchased(AddedAt.AddDays(1));
-
-        item.ChangeStatus(MemberSelectionStatus.ToRevisit, AddedAt.AddDays(2));
-
-        item.Status.Should().Be(MemberSelectionStatus.ToRevisit);
-        item.PurchasedAt.Should().BeNull();
-        item.StatusChangedAt.Should().Be(AddedAt.AddDays(2));
-    }
-
-    [Fact]
-    public void ChangeStatus_ToPurchasedManually_RecordsDate()
-    {
-        Isbn13.TryCreate("9782070612758", out var isbn);
-        var item = MemberSelectionItem.CreateForEdition(Guid.NewGuid(), Member, isbn, AddedAt);
-
-        item.ChangeStatus(MemberSelectionStatus.Purchased, AddedAt.AddHours(1));
-
-        item.PurchasedAt.Should().Be(AddedAt.AddHours(1));
-    }
-
-    [Fact]
-    public void ChangeStatus_RejectsUndefinedValue()
-    {
-        Isbn13.TryCreate("9782070612758", out var isbn);
-        var item = MemberSelectionItem.CreateForEdition(Guid.NewGuid(), Member, isbn, AddedAt);
-
-        var act = () => item.ChangeStatus((MemberSelectionStatus)42, AddedAt);
-
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Enum.GetNames<MemberSelectionStatus>()
+            .Should()
+            .Equal(nameof(MemberSelectionStatus.ToTake), nameof(MemberSelectionStatus.Purchased));
+        ((byte)MemberSelectionStatus.ToTake).Should().Be(0);
+        ((byte)MemberSelectionStatus.Purchased).Should().Be(1);
     }
 }

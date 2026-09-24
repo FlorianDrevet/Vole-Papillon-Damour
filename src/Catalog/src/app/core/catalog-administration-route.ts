@@ -2,6 +2,7 @@ export const CATALOG_ADMIN_SECTIONS = [
   'overview',
   'sessions',
   'dead-stock',
+  'not-found',
   'catalogue',
   'rare-books',
   'statistics',

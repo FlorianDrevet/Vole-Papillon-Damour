@@ -7,6 +7,11 @@ public static class ErrorOrExtended
 {
     public static int GetStatusCode(this Error errorOr)
     {
+        if (errorOr.Code == "NotFoundReport.DailyLimitReached")
+        {
+            return StatusCodes.Status429TooManyRequests;
+        }
+
         if (errorOr.Code == "Account.DirectoryUnavailable")
         {
             return StatusCodes.Status503ServiceUnavailable;

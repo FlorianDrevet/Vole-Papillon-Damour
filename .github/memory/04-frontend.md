@@ -579,14 +579,27 @@ the production build; the current main change still needs a Scan deployment and 
 `src/Catalog/src/app/features/account/selection/AccountSelectionComponent` renders the
 member's typed `Ma sélection` independently of the alert watchlist (`Mes recherches`).
 It reads the remote snapshot through `CatalogSelectionService`, uses `LocalSelectionStore`
-for anonymous entries, and delegates authenticated status/removal writes to
-`CatalogMemberApiService`. The `/compte` page owns authentication initialization and the
+for anonymous entries, and uses typed member API calls for removals and not-found reports.
+Personal `NotFound` and `ToRevisit` status writes are retired; a report is created from a
+selection row and can be cancelled by its owner while open. The `/compte` page owns
+authentication initialization and the
 five-tab order. The `Ma carte` view and lazily loaded `Mes achats` tab are implemented;
 purchase history pages by fair, contains no amount or price, and shows cancelled lines
 without changing the local sale ledger. `Ma sélection`, the card and purchase tabs are
 responsive; an anonymous `/compte` render measured no horizontal overflow at 390 px.
 Authenticated card and purchase states still need a real-account visual check. Selection
 display contains no price data.
+
+## Catalog not-found report administration
+
+`src/Catalog/src/app/features/administration/not-found-reports/` contains the non-standalone
+queue and close-dialog components declared by `AppModule`, plus the escaped CSV exporter.
+The parent administration page supplies the route, role-aware nav badge, dashboard tile,
+settings limit, book-detail summary box, and withdrawal-movement marker. Queue state uses
+signals and typed `CatalogAdminApiService` responses; rows expose member counts and comments,
+never reporter identities. The close dialog handles edition quantity/motive/note, rare-book
+unpublication, found, and dismissal actions. The visual shell styles use existing
+`--catalog-*` tokens; the manual ten-point F-11 recipe remains a staging check.
 
 ## Website Rendering Modes
 

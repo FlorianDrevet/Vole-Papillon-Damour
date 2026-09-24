@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
-using Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
@@ -133,47 +132,6 @@ public sealed class SelectionCommandHandlerTests
 
         result.FirstError.Code.Should().Be("MemberSelection.NotFound");
         (await fixture.Context.MemberSelectionItems.CountAsync()).Should().Be(1);
-    }
-
-    [Fact]
-    public async Task SetStatus_ChangesOnlyOwnItem()
-    {
-        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
-        await fixture.AddBookAsync("9782070612758");
-        var added = await fixture.CreateAddHandler().Handle(Add(isbn: "9782070612758"), default);
-
-        var result = await fixture.CreateSetStatusHandler().Handle(
-            new SetSelectionItemStatusCommand(
-                ExternalId,
-                "camille@example.test",
-                "Camille",
-                null,
-                added.Value.Id,
-                MemberSelectionStatus.NotFound),
-            default);
-
-        result.IsError.Should().BeFalse();
-        (await fixture.Context.MemberSelectionItems.SingleAsync()).Status.Should().Be(MemberSelectionStatus.NotFound);
-    }
-
-    [Fact]
-    public async Task SetStatus_WhenStatusIsUndefined_ReturnsInvalidStatus()
-    {
-        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
-        await fixture.AddBookAsync("9782070612758");
-        var added = await fixture.CreateAddHandler().Handle(Add(isbn: "9782070612758"), default);
-
-        var result = await fixture.CreateSetStatusHandler().Handle(
-            new SetSelectionItemStatusCommand(
-                ExternalId,
-                "camille@example.test",
-                "Camille",
-                null,
-                added.Value.Id,
-                (MemberSelectionStatus)42),
-            default);
-
-        result.FirstError.Code.Should().Be("MemberSelection.InvalidStatus");
     }
 
     private static AddSelectionItemCommand Add(string? isbn = null, Guid? rareBookId = null) =>
