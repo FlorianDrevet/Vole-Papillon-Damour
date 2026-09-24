@@ -30,6 +30,7 @@ maintenance par une personne seule) avant d'écrire une spécification.
 | [`07-specification.md`](07-specification.md) | **Spécification** : surfaces, méthode de calcul, règles d'affichage, RGPD, architecture, critères d'acceptation |
 | [`08-plan-implementation.md`](08-plan-implementation.md) | **Plan d'implémentation** en 14 tâches, avec tests d'abord et renvois aux zones des maquettes |
 | [`maquettes/index.html`](maquettes/index.html) | Maquettes exportées du canvas [Claude Design](https://claude.ai/artifact/GYWEeUku7qofkTt5pdKtoM) : 8 écrans HTML autonomes, zones `data-zone`, sources `.dc.html`, archive `recommandations-maquettes-html.zip` |
+| [`maquettes/recommandations-de-livres-canvas.html`](maquettes/recommandations-de-livres-canvas.html) | Export officiel du canvas depuis Claude Design (fichier unique, hors ligne) : les deux pages et les notes, tel qu'affiché dans l'éditeur |
 
 Les documents suivants (spécification retenue, puis plan d'implémentation) seront
 ajoutés ici une fois l'approche validée.
