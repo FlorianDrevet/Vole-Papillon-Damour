@@ -150,6 +150,22 @@ lien personnel exploitable. Une demande étant traitée en arrière-plan, cette 
 intervient à la finalisation du travail de suppression, pas nécessairement avant la
 réponse HTTP initiale.
 
+### Signalements de livres introuvables
+
+Le signalement conserve la fiche concernée, la date, un lieu de recherche facultatif
+et un commentaire libre limité à 280 caractères. Le commentaire est facultatif et
+peut contenir une donnée personnelle malgré la consigne donnée au membre de décrire
+uniquement l'emplacement recherché. L'administration ne reçoit ni nom, ni e-mail,
+ni identifiant du membre ; elle voit les compteurs, les dates, le lieu et le commentaire
+nécessaires à la vérification. Aucun e-mail n'est envoyé au membre à la clôture.
+
+À la finalisation de la suppression d'un compte, les signalements ouverts sont
+conservés pour préserver l'information de stock et tous ses signalements, ouverts ou
+clôturés, sont détachés du membre. Le commentaire libre est effacé car il peut contenir
+des données personnelles ; la décision et la note de clôture restent dans l'historique
+administratif anonyme. Cette opération est réalisée dans la même transaction que la
+suppression ou l'anonymisation du profil.
+
 Les parcours manuels de F-10 §14 (notamment deux appareils, lecture QR et suppression
 en DEV) restent à réaliser avant de déclarer le déploiement vérifié.
 

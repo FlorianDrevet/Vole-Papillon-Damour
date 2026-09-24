@@ -73,21 +73,6 @@ public sealed class MemberSelectionItem : Entity<Guid>
     {
     }
 
-    public void ChangeStatus(MemberSelectionStatus status, DateTime changedAt)
-    {
-        if (!Enum.IsDefined(status))
-        {
-            throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown selection status.");
-        }
-
-        var utcChangedAt = DomainTime.RequireUtc(changedAt, nameof(changedAt));
-        PurchasedAt = status == MemberSelectionStatus.Purchased
-            ? PurchasedAt ?? utcChangedAt
-            : null;
-        Status = status;
-        StatusChangedAt = utcChangedAt;
-    }
-
     public bool MarkPurchased(DateTime purchasedAt)
     {
         if (Status == MemberSelectionStatus.Purchased)

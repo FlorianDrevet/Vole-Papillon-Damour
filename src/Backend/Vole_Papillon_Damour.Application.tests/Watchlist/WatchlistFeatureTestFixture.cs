@@ -66,6 +66,7 @@ internal sealed class WatchlistFeatureTestFixture : IAsyncDisposable
             alertCooldownDays: 30,
             sessionIdleTimeoutMinutes: 120,
             alertDelayMinutes: 120,
+            notFoundReportDailyLimit: 10,
             updatedBy: UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
             updatedAt: Now);
         await context.SaveChangesAsync();

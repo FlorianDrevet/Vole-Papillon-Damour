@@ -296,7 +296,7 @@ MemberSelectionItems
   UserId             uniqueidentifier FK Users
   Isbn13             char(13)         NULL       -- exactement une cible ISBN ou fiche rare
   RareBookId         uniqueidentifier NULL
-  Status             tinyint          NOT NULL -- ToTake|Purchased|NotFound|ToRevisit
+  Status             tinyint          NOT NULL -- ToTake|Purchased
   AddedAt            datetime2        NOT NULL
   StatusChangedAt    datetime2        NOT NULL
   PurchasedAt        datetime2        NULL
@@ -310,6 +310,34 @@ MemberCards
   RotatedAt          datetime2        NULL
   RevokedAt          datetime2        NULL
 ```
+
+`MemberSelectionStatus` ne contient plus que `ToTake` et `Purchased`. `Purchased`
+est posé par la caisse quand une vente associée correspond à la fiche ; le membre ne
+peut pas définir cet état. Les signalements sont stockés séparément :
+
+```
+BookNotFoundReports
+  Id                   uniqueidentifier PK
+  UserId               uniqueidentifier NULL       -- NULL après suppression du compte
+  Isbn13               char(13)         NULL       -- exactement une cible ISBN ou fiche rare
+  RareBookId           uniqueidentifier NULL
+  Location             tinyint          NULL       -- Fair|Premises
+  Comment              nvarchar(280)     NULL       -- commentaire libre du membre
+  Status               tinyint          NOT NULL -- Open|Cancelled|Found|Withdrawn|Dismissed|Lapsed
+  ReportedAt           datetime2        NOT NULL
+  ClosedAt             datetime2        NULL
+  ClosedBy             uniqueidentifier NULL       -- auteur administratif de la clôture
+  ClosureNote          nvarchar(500)     NULL
+  WithdrawalReason     tinyint          NULL       -- NotFoundOnShelf|Damaged|Other
+  WithdrawnQuantity    int              NULL
+  WithdrawalMovementId uniqueidentifier NULL       -- mouvement RETRAIT lié, s'il existe
+```
+
+`BookNotFoundReports` est indexée par statut/cible et par membre/date. Deux index
+uniques filtrés assurent un seul signalement ouvert par membre et par édition, ou par
+membre et par fiche rare. La suppression de compte garde les lignes, met `UserId` et
+`Comment` à `NULL`, et conserve les notes et décisions de clôture anonymisées.
+La migration `20260924135152_AddBookNotFoundReports` crée la table et ses index.
 
 `MemberSelectionItems` cascade avec `Users`, sans clé étrangère vers `Books` ni vers les
 fiches rares. Deux index filtrés empêchent les doublons par membre et par cible (`Isbn13`
@@ -426,7 +454,8 @@ d'alertes. C'est nommément cité par l'exigence.
 
 ### `AssociationSettings`
 
-Les huit valeurs de `05` §9, que `ENF-25` exige modifiables **sans redéploiement**.
+Les huit valeurs de `05` §9, plus le plafond `NotFoundReportDailyLimit` (neuf réglages au
+total), sont modifiables **sans redéploiement**.
 
 ```
 Id                        tinyint          PK, CHECK (Id = 1)   -- ligne unique
@@ -438,6 +467,7 @@ WatchlistMaxItems         int              NOT NULL DEFAULT 100  -- RG-27
 AlertCooldownDays         int              NOT NULL DEFAULT 30   -- RG-30
 SessionIdleTimeoutMinutes int              NOT NULL DEFAULT 120  -- RG-43
 AlertDelayMinutes         int              NOT NULL DEFAULT 120  -- RG-44
+NotFoundReportDailyLimit  int              NOT NULL DEFAULT 10   -- RG-70, 1..100
 UpdatedAt                 datetime2        NOT NULL
 UpdatedBy                 uniqueidentifier FK
 ```
@@ -451,10 +481,12 @@ migration — pour une personne seule qui en fait déjà, c'est le moindre des d
 **Pas de seuil de valeur pour `RG-14`** : la règle est hors v1, et `§3` ci-dessous pose
 qu'on n'ajoute pas ses colonnes avant le jour venu.
 
-**Ces valeurs doivent atteindre l'appareil**, sans quoi le verdict calculé hors ligne
-(`04` §5) n'applique pas les seuils réels. La réponse de
-`GET /scan/catalog/delta` porte donc un bloc `settings` accompagné de `UpdatedAt` — neuf
-entiers, le coût est nul et cela évite un second appel qui pourrait échouer seul.
+**Les huit valeurs de scan doivent atteindre l'appareil**, sans quoi le verdict calculé
+hors ligne (`04` §5) n'applique pas les seuils réels. La réponse de
+`GET /scan/catalog/delta` porte donc un bloc `settings` accompagné de `UpdatedAt` — huit
+entiers, ce qui évite un second appel qui pourrait échouer seul. Le plafond
+`NotFoundReportDailyLimit` est utilisé par le backend Catalog et n'est pas transmis à
+Scan.
 
 ### `AssoEventsRevenue`
 

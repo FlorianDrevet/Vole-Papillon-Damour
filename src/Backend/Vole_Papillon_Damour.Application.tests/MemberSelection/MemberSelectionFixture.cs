@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -6,8 +7,9 @@ using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
-using Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
+using Vole_Papillon_Damour.Application.NotFoundReports.Commands.CancelNotFoundReport;
+using Vole_Papillon_Damour.Application.NotFoundReports.Commands.ReportNotFound;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
@@ -16,9 +18,12 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
@@ -29,6 +34,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 
 namespace Vole_Papillon_Damour.Application.tests.MemberSelection;
 
@@ -52,13 +58,20 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
     public MemberSelectionTestDbContext Context { get; }
     public MemberSelectionTestClock Clock => _clock;
 
-    public static async Task<MemberSelectionFixture> CreateAsync(DateTime now)
+    public static async Task<MemberSelectionFixture> CreateAsync(
+        DateTime now,
+        DbCommandInterceptor? commandInterceptor = null)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
-        var options = new DbContextOptionsBuilder<MemberSelectionTestDbContext>()
-            .UseSqlite(connection)
-            .Options;
+        var optionsBuilder = new DbContextOptionsBuilder<MemberSelectionTestDbContext>()
+            .UseSqlite(connection);
+        if (commandInterceptor is not null)
+        {
+            optionsBuilder.AddInterceptors(commandInterceptor);
+        }
+
+        var options = optionsBuilder.Options;
         var context = new MemberSelectionTestDbContext(options);
         await context.Database.EnsureCreatedAsync();
         return new MemberSelectionFixture(connection, context, now);
@@ -75,7 +88,11 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
     public MergeSelectionCommandHandler CreateMergeHandler() =>
         new(Context, CreateMemberIdentityService(), _clock);
 
-    public SetSelectionItemStatusCommandHandler CreateSetStatusHandler() =>
+    public ReportNotFoundCommandHandler CreateReportNotFoundHandler() =>
+        new(Context, CreateMemberIdentityService(), _clock,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<ReportNotFoundCommandHandler>.Instance);
+
+    public CancelNotFoundReportCommandHandler CreateCancelNotFoundReportHandler() =>
         new(Context, CreateMemberIdentityService(), _clock);
 
     public GetMySelectionQueryHandler CreateGetMySelectionHandler() =>
@@ -196,6 +213,42 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         return item;
     }
 
+    public async Task<BookNotFoundReport> AddNotFoundReportAsync(
+        UserId userId,
+        string isbn,
+        DateTime reportedAt)
+    {
+        var report = BookNotFoundReport.CreateForEdition(
+            Guid.NewGuid(),
+            userId,
+            ParseIsbn(isbn),
+            NotFoundReportLocation.Fair,
+            null,
+            reportedAt);
+        Context.BookNotFoundReports.Add(report);
+        await Context.SaveChangesAsync();
+        return report;
+    }
+
+    public async Task SetNotFoundReportDailyLimitAsync(UserId updatedBy, int dailyLimit)
+    {
+        var settings = AssociationSettings.Create(updatedBy, _now);
+        settings.Update(
+            settings.DuplicateThreshold,
+            settings.DemandSalesThreshold,
+            settings.DeadStockMinAgeDays,
+            settings.DeadStockMinQuantity,
+            settings.WatchlistMaxItems,
+            settings.AlertCooldownDays,
+            settings.SessionIdleTimeoutMinutes,
+            settings.AlertDelayMinutes,
+            dailyLimit,
+            updatedBy,
+            _now);
+        Context.AssociationSettings.Add(settings);
+        await Context.SaveChangesAsync();
+    }
+
     private static Isbn13 ParseIsbn(string value) =>
         Isbn13.TryCreate(value, out var isbn)
             ? isbn
@@ -220,18 +273,19 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
+    public DbSet<AssociationSettings> AssociationSettings => Set<AssociationSettings>();
+    public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
-    DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
-    DbSet<AssociationSettings> IProjectDbContext.AssociationSettings => throw new NotSupportedException();
     DbSet<Watchlist> IProjectDbContext.Watchlists => throw new NotSupportedException();
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
@@ -242,13 +296,14 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
     {
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
-        modelBuilder.Ignore<BookMovement>();
         modelBuilder.Ignore<ScanSession>();
-        modelBuilder.Ignore<AssociationSettings>();
         modelBuilder.Ignore<Watchlist>();
         modelBuilder.Ignore<UserAlertHistory>();
         modelBuilder.Ignore<EmailBounceEvent>();
         modelBuilder.Ignore<RareBookTombstone>();
+
+        modelBuilder.ApplyConfiguration(new AssociationSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new BookNotFoundReportConfiguration());
 
         modelBuilder.Entity<User>(builder =>
         {
@@ -278,6 +333,33 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
             builder.Property(book => book.RowVersion)
                 .ValueGeneratedNever()
                 .IsConcurrencyToken(false);
+        });
+
+        modelBuilder.Entity<BookMovement>(builder =>
+        {
+            builder.HasKey(movement => movement.Id);
+            builder.Property(movement => movement.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => BookMovementId.Create(value));
+            builder.Property(movement => movement.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.Property(movement => movement.Type).HasConversion<byte>();
+            builder.Property(movement => movement.ScanSessionId)
+                .HasConversion(new ValueConverter<ScanSessionId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? ScanSessionId.Create(value.Value) : null));
+            builder.Property(movement => movement.VolunteerId)
+                .HasConversion(new ValueConverter<UserId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? UserId.Create(value.Value) : null));
+            builder.Property(movement => movement.AssoEventsId)
+                .HasConversion(new ValueConverter<AssoEventsId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? AssoEventsId.Create(value.Value) : null));
+            builder.Property(movement => movement.ReversalOfMovementId)
+                .HasConversion(new ValueConverter<BookMovementId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? BookMovementId.Create(value.Value) : null));
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>

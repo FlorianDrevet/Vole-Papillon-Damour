@@ -1,7 +1,10 @@
 # 11 — Signaler un livre introuvable et faire le ménage du stock
 
-> **Statut : proposition fonctionnelle à valider.** Rien n'est implémenté. Ce document
-> modifie la section 6.3 à 6.5 de
+> **Statut : implémentation SIG-1 à SIG-16 réalisée dans `feat/not-found-reports`.**
+> La validation locale a été exécutée le 2026-09-24 ; le build de solution reste bloqué
+> par le SDK Worker et deux tests Application existants échouent sous `fr-FR` sur les
+> tris décimaux SQLite. Les autres résultats figurent dans [`NEXT.md`](../../NEXT.md).
+> La recette manuelle de la section 11 reste à dérouler en environnement de recette. Ce document modifie la section 6.3 à 6.5 de
 > [`10-evolution-compte-selection-achats.md`](10-evolution-compte-selection-achats.md)
 > (états personnels de Ma sélection) et ajoute une file de vérification dans
 > l'administration du catalogue.
@@ -372,9 +375,10 @@ peut signaler à nouveau.
 
 ### RG-70 — Plafond anti-abus
 
-Un membre ne peut pas ouvrir plus de **10 signalements par jour** (valeur à régler
-dans Paramètres). Au-delà, le bouton affiche « Vous avez déjà beaucoup signalé
-aujourd'hui, merci ! » et l'envoi est refusé par le serveur.
+Un membre ne peut pas ouvrir plus de **10 signalements au cours des 24 dernières
+heures glissantes** (valeur à régler dans Paramètres). Au-delà, le bouton affiche
+« Vous avez déjà beaucoup signalé aujourd'hui, merci ! » et l'envoi est refusé par
+le serveur (`DT-27`).
 
 ### RG-71 — Le signalement ne modifie jamais le stock
 
@@ -479,37 +483,40 @@ plus modifiable par le membre.
 
 ## 13. Besoins, idées et trous identifiés
 
-### 13.1 Questions à trancher avant implémentation
+### 13.1 Questions résolues pour la v1
 
-| # | Question | Proposition par défaut |
+Les décisions suivent les hypothèses retenues par le plan SIG ; elles sont également
+consignées dans [`08-questions-ouvertes.md`](08-questions-ouvertes.md).
+
+| # | Question | Décision retenue |
 |---|---|---|
-| **Q-SIG-1** | **Qui vérifie ?** L'administration n'est ouverte qu'aux rôles *Administration* et *LivresRares*. Les bénévoles de tri/caisse, qui sont en rayon, n'y ont pas accès. | v1 : administrateurs uniquement + export CSV à donner aux bénévoles. v2 : un mode « Vérification » dans l'application Scan (voir I-1). |
-| **Q-SIG-2** | Que fait-on des lignes PAS TROUVÉ existantes ? | Les convertir en signalements si < 30 jours et fiche encore disponible ; sinon les effacer. |
-| **Q-SIG-3** | Des membres ont pu cocher ACHETÉ **à la main** (achat anonyme). On perd cette possibilité. Garder un « Je l'ai acheté » manuel ? | Non : proposer plutôt « Retirer de ma sélection ». L'historique fiable reste Mes achats. |
-| **Q-SIG-4** | Y a-t-il plusieurs lieux où chercher (bourse ponctuelle vs local/permanence) ? Si oui, le lieu aide beaucoup le bénévole. | Masquer le champ tant que la réponse est « un seul lieu ». |
-| **Q-SIG-5** | Pour une fiche rare introuvable, que signifie « sortir du stock » ? Il n'existe aujourd'hui que *Brouillon* / *Publié* et *Vendu*. | Ajouter un état « Retiré » ou repasser en *Brouillon* avec une note. |
-| **Q-SIG-6** | Le membre doit-il être **prévenu** (e-mail) de l'issue ? | Non en v1 : l'information apparaît dans Ma sélection. Pas de nouvel e-mail = pas de nouveau consentement. |
-| **Q-SIG-7** | Un signalement peut-il venir d'ailleurs que Ma sélection (fiche publique, Mes recherches) ? | Non en v1 (voir I-2). |
-| **Q-SIG-8** | Faut-il un délai de relance : que devient un signalement jamais traité ? | Tuile « signalés depuis plus de 7 jours » ; pas de clôture automatique. |
+| **Q-SIG-1** | **Qui vérifie ?** L'administration n'est ouverte qu'aux rôles *Administration* et *LivresRares*. Les bénévoles de tri/caisse, qui sont en rayon, n'y ont pas accès. | Le rôle *Administration* traite les éditions, *LivresRares* les fiches rares ; l'export CSV est remis aux bénévoles de terrain. Le mode « Vérification » dans Scan reste une piste v2 (voir I-1). |
+| **Q-SIG-2** | Que fait-on des lignes PAS TROUVÉ existantes ? | Convertir celles de moins de 30 jours sur une édition encore disponible ; remettre les autres lignes à l'état neutre. |
+| **Q-SIG-3** | Des membres ont pu cocher ACHETÉ **à la main** (achat anonyme). On perd cette possibilité. Garder un « Je l'ai acheté » manuel ? | Non : proposer plutôt « Retirer de ma sélection ». `Purchased` n'est posé que par la caisse ; l'historique fiable reste Mes achats. |
+| **Q-SIG-4** | Y a-t-il plusieurs lieux où chercher (bourse ponctuelle vs local/permanence) ? Si oui, le lieu aide beaucoup le bénévole. | Le champ « À la bourse / Au local » reste facultatif et accepte `null`. |
+| **Q-SIG-5** | Pour une fiche rare introuvable, que signifie « sortir du stock » ? Il n'existe aujourd'hui que *Brouillon* / *Publié* et *Vendu*. | « Retirer la fiche rare » appelle `RareBook.Unpublish(...)` avec une note. |
+| **Q-SIG-6** | Le membre doit-il être **prévenu** (e-mail) de l'issue ? | Aucun e-mail de résultat en v1. |
+| **Q-SIG-7** | Un signalement peut-il venir d'ailleurs que Ma sélection (fiche publique, Mes recherches) ? | Non : Ma sélection uniquement en v1 (voir I-2). |
+| **Q-SIG-8** | Faut-il un délai de relance : que devient un signalement jamais traité ? | Afficher l'indicateur « en attente depuis plus de 7 jours » ; aucune clôture automatique hors caducité. |
 
 ### 13.2 Trous repérés dans le plan initial
 
 1. **Le stock est par ISBN, pas par exemplaire.** Un signalement ne dit pas *quel*
    exemplaire manque. D'où le choix de demander au bénévole combien il en retrouve
    (7.4) plutôt que de retirer tout le stock.
-2. **Les bénévoles de terrain n'ont pas accès à l'admin** (Q-SIG-1). Sans réponse,
-   la file risque de rester pleine.
+2. **Les bénévoles de terrain n'ont pas accès à l'admin** (Q-SIG-1). Le plan retient
+   l'export CSV comme relais ; le mode de vérification dans Scan reste une piste v2.
 3. **Les ventes rendent les signalements obsolètes** — sans la règle RG-73, la file
    contiendrait des livres déjà partis.
 4. **Abus possible** : un membre malveillant pourrait signaler tout le catalogue.
    Couvert par RG-70 et RG-71 (jamais de retrait automatique).
 5. **Données personnelles** : un commentaire libre peut contenir un nom ou un
-   téléphone. RG-74/RG-75 + mention dans le document RGPD (09) à ajouter.
-6. **Filtre « Prochaine visite »** reposait sur les états supprimés : il faut le
-   retirer ou le redéfinir (6.6).
-7. **API existante** `PATCH /catalog/me/selection/{id}` : à retirer ou à restreindre, sinon
-   un client ancien (cache navigateur) pourrait encore poser des états. Prévoir un
-   refus propre (410 / 400) plutôt qu'une erreur générique.
+   téléphone. RG-74/RG-75 et le document RGPD (09) prévoient son effacement à la
+   suppression du compte.
+6. **Filtre « Prochaine visite »** reposait sur les états supprimés ; il a été retiré
+   avec ces états (6.6).
+7. **API existante** `PATCH /catalog/me/selection/{id}` : l'ancienne route renvoie
+   désormais `410 Gone`, pour qu'un client ancien ne puisse plus poser ces états.
 8. **Statistiques** : le document 10 prévoyait de compter les lignes PAS TROUVÉ. La
    mesure devient « nombre de signalements, taux de *retrouvé* vs *retiré* ».
 9. **Livres retirés puis rescannés** : si le livre réapparaît (retrouvé plus tard dans

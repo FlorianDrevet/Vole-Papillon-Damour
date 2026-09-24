@@ -17,11 +17,42 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Correctif de suivi des livres rares : prévisualisation et envoi différé des photos, suppression des anciens détails et du classement par rayon dans Catalog, Scan, API et persistance. Les lots 0 à 10 restent décrits dans la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
-| **Prochaine action** | Faire relire puis valider la [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228), puis faire appliquer sa migration par le déploiement backend autorisé. `20260924112034_RemoveRareBookEditorialDetails` supprime les colonnes `Shelf`, `Binding`, `Dimensions`, `PageCount`, `ShelfLocation` et `PriceSetBy` de `RareBooks`; les valeurs existantes seront perdues. La demande du 24 septembre supprime entièrement le classement des livres rares par rayon ; Q2 (`mailto:`) reste inchangée. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-rare-book-editor` |
-| **Dernière mise à jour** | 2026-09-24 — correctif Catalog dans la [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228), ouverte et non fusionnée. L'état Azure après les deux déploiements infra réels du 23 septembre reste à vérifier ; aucune opération Azure n'a été effectuée pour ce correctif. |
-| **Branche** | `fix/catalogue-rare-book-editor` — worktree dédié créé depuis `origin/main` ; [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228) vers `main`, ouverte et non fusionnée |
+| **Lot en cours** | F-11 — « Signalement livre introuvable », SIG-1 à SIG-16 implémentées dans le worktree `feat/not-found-reports`, basé sur la branche de documentation `docs/book-not-found-report` (PR #229). |
+| **Prochaine action** | Suivre la revue de la [PR #232](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/232), ouverte vers `docs/book-not-found-report`. Après fusion de la PR #229, réaligner la base sur `main` si nécessaire. La recette manuelle F-11 §11 reste à dérouler en environnement de recette après déploiement. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-reports` |
+| **Dernière mise à jour** | 2026-09-24 — SIG-16 et documentation F-11 terminées ; [PR #232](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/232) ouverte. Aucun déploiement, changement Azure/Entra ni test manuel en environnement de recette n'a été effectué pour cette fonctionnalité. |
+| **Branche** | `feat/not-found-reports`, rebasée sur `origin/docs/book-not-found-report` ; PR #232 cible cette branche tant que la PR #229 reste ouverte. |
+
+### Signalement livre introuvable — F-11 — 2026-09-24
+
+Les tâches SIG-1 à SIG-16 sont implémentées. La suppression de compte conserve les
+signalements ouverts et clôturés, détache le membre et efface le commentaire libre.
+Les décisions techniques appliquées fixent le plafond sur 24 heures glissantes, la
+caducité dans la transaction qui épuise le stock et la clôture groupée par fiche.
+
+Validation locale du 2026-09-24 :
+
+- `dotnet build Vole_Papillon_Damour.slnx` depuis la racine échoue car le fichier est
+  dans `src/Backend/`. Avec `dotnet build src/Backend/Vole_Papillon_Damour.slnx`, les
+  projets backend compilent sauf Worker, bloqué par la résolution de
+  `Azure.Functions.Sdk` dans `obj/azure_functions/azure_functions.g.csproj`.
+- Domain : 164/164 ; Infrastructure : 162/162 ; API : 59/59.
+- Application : 390 réussis, 2 échoués dans les tests existants de tri de livres rares :
+  le comparateur décimal SQLite ne parse pas `10.0`/`80.0` sous la culture Windows
+  `fr-FR`. Le même problème et le blocage SDK Worker sont consignés pour la PR #228 dans
+  `.github/memory/changelog.md`.
+- Catalog : tests ciblés administration 58/58, suite complète 417/417 ; build réussi.
+  Le build garde les avertissements de budget (bundle initial 1,27 Mo, feuille admin
+  59,99 Ko) et les dépendances CommonJS déjà signalées.
+- `graphify update .` a reconstruit le graphe (9 674 nœuds, 14 197 liens).
+
+La validation SIG-16 est donc exécutée mais pas entièrement verte à cause des deux
+limitations backend ci-dessus. Le test RGPD passe 1/1 après son échec attendu avant
+implémentation. La migration `20260924135152_AddBookNotFoundReports` n'a pas été appliquée
+à un environnement. Les dix points de recette et le contrôle authentifié restent manuels.
+
+Le correctif de suivi des livres rares de la PR #228 reste décrit ci-dessous ; aucune
+opération Azure de cette fonctionnalité n'a été effectuée ici.
 
 ### Correctif livres rares Catalog — 2026-09-24
 

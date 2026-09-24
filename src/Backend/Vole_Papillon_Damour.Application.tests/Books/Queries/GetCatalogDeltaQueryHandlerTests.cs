@@ -304,7 +304,7 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         var settings = AssociationSettings.Create(
             UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
             GetCatalogDeltaQueryHandlerTests.GeneratedAt);
-        settings.Update(7, 2, 30, 1, 100, 30, 120, 120, settings.UpdatedBy, GetCatalogDeltaQueryHandlerTests.GeneratedAt);
+        settings.Update(7, 2, 30, 1, 100, 30, 120, 120, 10, settings.UpdatedBy, GetCatalogDeltaQueryHandlerTests.GeneratedAt);
         Context.AssociationSettings.Add(settings);
         await Context.SaveChangesAsync();
     }

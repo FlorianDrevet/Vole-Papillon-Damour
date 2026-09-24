@@ -1,7 +1,8 @@
 import {signal, WritableSignal} from '@angular/core';
+import {HttpErrorResponse} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterModule} from '@angular/router';
-import {of} from 'rxjs';
+import {of, throwError} from 'rxjs';
 
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
@@ -10,10 +11,12 @@ import {
   CatalogSelectionItem,
   CatalogSelectionResponse,
   CatalogSelectionStatus,
+  CatalogNotFoundReportSummary,
 } from '../../../core/catalog.models';
 import {CatalogSelectionService, CatalogSelectionMode} from '../../../core/selection/catalog-selection.service';
 import {LocalSelectionStore} from '../../../core/selection/local-selection.store';
 import {AccountSelectionComponent} from './account-selection.component';
+import {NotFoundReportDialogComponent} from './not-found-report-dialog.component';
 
 describe('AccountSelectionComponent', () => {
   let fixture: ComponentFixture<AccountSelectionComponent>;
@@ -30,6 +33,7 @@ describe('AccountSelectionComponent', () => {
     isbn13: string,
     status: CatalogSelectionStatus,
     availability: CatalogSelectionAvailability,
+    notFoundReport: CatalogNotFoundReportSummary | null = null,
   ): CatalogSelectionItem => ({
     id,
     kind: 'edition',
@@ -45,6 +49,7 @@ describe('AccountSelectionComponent', () => {
     availability,
     availabilityCheckedAt: '2026-09-23T10:00:00Z',
     status,
+    notFoundReport,
     addedAt: '2026-09-20T10:00:00Z',
     purchasedAt: status === 'Purchased' ? '2026-09-21T10:00:00Z' : null,
   });
@@ -66,9 +71,12 @@ describe('AccountSelectionComponent', () => {
     mode = signal<CatalogSelectionMode>('synced');
     pendingMerge = signal<{localCount: number; accountCount: number; mergedCount: number} | null>(null);
     api = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', [
-      'setSelectionStatus', 'removeSelectionItem',
+      'reportNotFound', 'cancelNotFoundReport', 'removeSelectionItem',
     ]);
-    api.setSelectionStatus.and.returnValue(of(void 0));
+    api.reportNotFound.and.returnValue(of({
+      reportId: 'report-1', reportedAt: '2026-09-24T10:00:00Z', alreadyOpen: false,
+    }));
+    api.cancelNotFoundReport.and.returnValue(of(void 0));
     api.removeSelectionItem.and.returnValue(of(void 0));
     selection = jasmine.createSpyObj<CatalogSelectionService>(
       'CatalogSelectionService',
@@ -82,7 +90,7 @@ describe('AccountSelectionComponent', () => {
     selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [AccountSelectionComponent],
+      declarations: [AccountSelectionComponent, NotFoundReportDialogComponent],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
@@ -107,40 +115,186 @@ describe('AccountSelectionComponent', () => {
     expect(page.nativeElement.querySelector('a[href="/recherche"]')).not.toBeNull();
   });
 
-  it('filters Prochaine visite to ToTake and ToRevisit', () => {
+  it('does not render any personal status control', () => {
+    snapshot.set(makeResponse([makeItem('one', '9780000000001', 'ToTake', 'Available')]));
+    const page = render();
+
+    expect(page.nativeElement.querySelector('.selection-status-control')).toBeNull();
+    expect(page.nativeElement.querySelector('.selection-status-button')).toBeNull();
+  });
+
+  it('shows the report button only on available non-purchased lines', () => {
+    const foundReport: CatalogNotFoundReportSummary = {
+      id: 'found-report', status: 'Found', reportedAt: '2026-09-22T10:00:00Z', closedAt: '2026-09-23T10:00:00Z',
+    };
     snapshot.set(makeResponse([
-      makeItem('one', '9780000000001', 'ToTake', 'Available'),
-      makeItem('two', '9780000000002', 'ToRevisit', 'Announced'),
-      makeItem('three', '9780000000003', 'Purchased', 'OutOfStock'),
-      makeItem('four', '9780000000004', 'NotFound', 'Unavailable'),
+      makeItem('available', '9780000000001', 'ToTake', 'Available'),
+      makeItem('purchased', '9780000000002', 'Purchased', 'Available'),
+      makeItem('found', '9780000000003', 'ToTake', 'Available', foundReport),
     ]));
     const page = render();
 
-    (page.nativeElement.querySelector('[data-testid="selection-filter-next"]') as HTMLButtonElement).click();
-    page.detectChanges();
-
-    expect(page.nativeElement.querySelectorAll('.selection-item').length).toBe(2);
-    expect(page.nativeElement.textContent).toContain('Livre 9780000000001');
-    expect(page.nativeElement.textContent).toContain('Livre 9780000000002');
-    expect(page.nativeElement.textContent).not.toContain('Livre 9780000000003');
+    expect(page.nativeElement.querySelector('[data-testid="not-found-report-available"]')).not.toBeNull();
+    expect(page.nativeElement.querySelector('[data-testid="not-found-report-purchased"]')).toBeNull();
+    expect(page.nativeElement.querySelector('[data-testid="not-found-report-found"]')).not.toBeNull();
   });
 
-  it('changes a status through the API and re-renders the selected state', async () => {
-    const item = makeItem('selection-1', '9780000000001', 'ToTake', 'Available');
-    snapshot.set(makeResponse([item]));
-    selection.refresh.and.callFake(async () => {
-      const updated = {...item, status: 'NotFound' as const};
-      snapshot.set(makeResponse([updated]));
-      return snapshot();
+  it('does not offer a report for an authenticated local entry that is not synchronized', () => {
+    local.add({
+      ref: {kind: 'edition', isbn13: '9782070612758'},
+      title: 'Le Petit Prince',
+      addedAt: '2026-09-20T10:00:00.000Z',
     });
     const page = render();
 
-    (page.nativeElement.querySelector('[data-testid="status-not-found"]') as HTMLButtonElement).click();
+    expect(page.nativeElement.querySelector('[data-testid="not-found-report-edition:9782070612758"]')).toBeNull();
+  });
+
+  it('hides the report button on announced, out-of-stock, rare-sold and purchased lines', () => {
+    snapshot.set(makeResponse([
+      makeItem('announced', '9780000000001', 'ToTake', 'Announced'),
+      makeItem('out-of-stock', '9780000000002', 'ToTake', 'OutOfStock'),
+      {...makeItem('rare-sold', '9780000000003', 'ToTake', 'RareSold'), kind: 'rare', isbn13: null, rareBookId: 'rare-sold'},
+      makeItem('purchased', '9780000000004', 'Purchased', 'Available'),
+    ]));
+    const page = render();
+
+    for (const id of ['announced', 'out-of-stock', 'rare-sold', 'purchased']) {
+      expect(page.nativeElement.querySelector(`[data-testid="not-found-report-${id}"]`)).toBeNull();
+    }
+  });
+
+  it('shows the open report notice with a cancel action', () => {
+    snapshot.set(makeResponse([makeItem('reported', '9780000000001', 'ToTake', 'Available', {
+      id: 'report-1', status: 'Open', reportedAt: '2026-09-24T10:00:00Z', closedAt: null,
+    })]));
+    const page = render();
+
+    expect(page.nativeElement.textContent).toContain('Signalé introuvable le');
+    expect(page.nativeElement.textContent).toContain('Un bénévole va vérifier en rayon. Merci pour votre aide.');
+    expect(page.nativeElement.querySelector('[data-testid="cancel-not-found-report-reported"]')).not.toBeNull();
+  });
+
+  it('cancelling a report calls the api and refreshes', async () => {
+    snapshot.set(makeResponse([makeItem('reported', '9780000000001', 'ToTake', 'Available', {
+      id: 'report-1', status: 'Open', reportedAt: '2026-09-24T10:00:00Z', closedAt: null,
+    })]));
+    const page = render();
+
+    (page.nativeElement.querySelector('[data-testid="cancel-not-found-report-reported"]') as HTMLButtonElement).click();
+    await page.whenStable();
+
+    expect(api.cancelNotFoundReport).toHaveBeenCalledWith('member-token', 'report-1');
+    expect(selection.refresh).toHaveBeenCalled();
+  });
+
+  it('shows the found message and the button again when a report was found', () => {
+    snapshot.set(makeResponse([makeItem('found', '9780000000001', 'ToTake', 'Available', {
+      id: 'report-1', status: 'Found', reportedAt: '2026-09-20T10:00:00Z', closedAt: '2026-09-23T10:00:00Z',
+    })]));
+    const page = render();
+
+    expect(page.nativeElement.textContent).toContain('Un bénévole l’a retrouvé en rayon le');
+    expect(page.nativeElement.querySelector('[data-testid="not-found-report-found"]')).not.toBeNull();
+  });
+
+  it('shows the withdrawn thank-you message', () => {
+    snapshot.set(makeResponse([makeItem('withdrawn', '9780000000001', 'ToTake', 'OutOfStock', {
+      id: 'report-1', status: 'Withdrawn', reportedAt: '2026-09-20T10:00:00Z', closedAt: '2026-09-23T10:00:00Z',
+    })]));
+    const page = render();
+
+    expect(page.nativeElement.textContent).toContain('Retiré du catalogue après votre signalement. Merci !');
+  });
+
+  it('filters reported lines with the Signalés filter', () => {
+    snapshot.set(makeResponse([
+      makeItem('reported', '9780000000001', 'ToTake', 'Available', {
+        id: 'report-1', status: 'Open', reportedAt: '2026-09-24T10:00:00Z', closedAt: null,
+      }),
+      makeItem('not-reported', '9780000000002', 'ToTake', 'Available'),
+    ]));
+    const page = render();
+
+    (page.nativeElement.querySelector('[data-testid="selection-filter-reported"]') as HTMLButtonElement).click();
+    page.detectChanges();
+
+    expect(page.nativeElement.querySelectorAll('.selection-item').length).toBe(1);
+    expect(page.nativeElement.textContent).toContain('Livre 9780000000001');
+    expect(page.nativeElement.textContent).not.toContain('Livre 9780000000002');
+  });
+
+  it('no longer offers Prochaine visite or Pas trouvé filters', () => {
+    snapshot.set(makeResponse([makeItem('one', '9780000000001', 'ToTake', 'Available')]));
+    const page = render();
+
+    const filters = Array.from(
+      page.nativeElement.querySelectorAll('.selection-filter-button') as NodeListOf<HTMLButtonElement>,
+    ).map(button => button.textContent);
+    expect(filters.join(' ')).not.toMatch(/Prochaine visite|Pas trouvé/);
+  });
+
+  it('maps a 429 to the daily limit message', async () => {
+    snapshot.set(makeResponse([makeItem('one', '9780000000001', 'ToTake', 'Available')]));
+    api.reportNotFound.and.returnValue(throwError(() => new HttpErrorResponse({status: 429})));
+    const page = render();
+
+    const submitNotFoundReport = Reflect.get(page.componentInstance, 'submitNotFoundReport');
+    expect(typeof submitNotFoundReport).toBe('function');
+    if (typeof submitNotFoundReport !== 'function') {
+      return;
+    }
+
+    await submitNotFoundReport.call(page.componentInstance, page.componentInstance.visibleItems()[0], {
+      location: null,
+      comment: null,
+    });
+    page.detectChanges();
+
+    expect(page.nativeElement.textContent).toContain("Vous avez déjà beaucoup signalé aujourd'hui, merci !");
+  });
+
+  it('submits a report from the dialog and shows the confirmation', async () => {
+    snapshot.set(makeResponse([makeItem('available', '9780000000001', 'ToTake', 'Available')]));
+    const page = render();
+
+    (page.nativeElement.querySelector('[data-testid="not-found-report-available"]') as HTMLButtonElement).click();
+    page.detectChanges();
+    expect(page.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
+
+    const comment = page.nativeElement.querySelector('[role="dialog"] textarea') as HTMLTextAreaElement;
+    comment.value = '  Rayon vide  ';
+    comment.dispatchEvent(new Event('input', {bubbles: true}));
+    (page.nativeElement.querySelector('[data-testid="not-found-report-submit"]') as HTMLButtonElement).click();
     await page.whenStable();
     page.detectChanges();
 
-    expect(api.setSelectionStatus).toHaveBeenCalledWith('member-token', 'selection-1', 'NotFound');
-    expect(page.nativeElement.querySelector('[data-testid="status-not-found"]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(api.reportNotFound).toHaveBeenCalledWith('member-token', 'available', {
+      location: null,
+      comment: 'Rayon vide',
+    });
+    expect(selection.refresh).toHaveBeenCalled();
+    expect(page.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(page.nativeElement.querySelector('.selection-report-toast[role="status"]')?.textContent).toContain('Merci, un bénévole va vérifier.');
+  });
+
+  it('opens the sign-in invitation for a local anonymous entry', async () => {
+    auth.isAuthenticated.set(false);
+    local.add({
+      ref: {kind: 'edition', isbn13: '9782070612758'},
+      title: 'Le Petit Prince',
+      addedAt: '2026-09-20T10:00:00.000Z',
+    });
+    const page = render();
+
+    (page.nativeElement.querySelector('[data-testid="not-found-report-edition:9782070612758"]') as HTMLButtonElement).click();
+    page.detectChanges();
+    expect(page.nativeElement.querySelector('[role="dialog"]')?.textContent).toContain('Connectez-vous pour signaler ce livre');
+
+    (page.nativeElement.querySelector('[data-testid="not-found-report-login"]') as HTMLButtonElement).click();
+    await page.whenStable();
+
+    expect(auth.login).toHaveBeenCalledWith('/compte');
   });
 
   it('asks before merging and keeps local items when the merge is declined', () => {

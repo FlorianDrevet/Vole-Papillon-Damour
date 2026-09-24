@@ -883,7 +883,8 @@ public static class BookAdministrationController
                                 request.AlertCooldownDays,
                                 request.SessionIdleTimeoutMinutes,
                                 request.AlertDelayMinutes,
-                                userId),
+                                userId,
+                                request.NotFoundReportDailyLimit),
                             cancellationToken);
                         return result.Match(
                             settings => Results.Ok(ToResponse(settings)),
@@ -1180,7 +1181,8 @@ public static class BookAdministrationController
         new(result.DuplicateThreshold, result.DemandSalesThreshold, result.DeadStockMinAgeDays,
             result.DeadStockMinQuantity, result.WatchlistMaxItems, result.AlertCooldownDays,
             result.SessionIdleTimeoutMinutes, result.AlertDelayMinutes,
-            new DateTimeOffset(result.UpdatedAt, TimeSpan.Zero), result.UpdatedBy.Value);
+            new DateTimeOffset(result.UpdatedAt, TimeSpan.Zero), result.UpdatedBy.Value,
+            result.NotFoundReportDailyLimit);
 
     private static AdminQuantityCorrectionResponse ToResponse(AdjustQuantityResult result) =>
         new(result.Isbn13, result.PreviousQuantityAvailable, result.QuantityAvailable,

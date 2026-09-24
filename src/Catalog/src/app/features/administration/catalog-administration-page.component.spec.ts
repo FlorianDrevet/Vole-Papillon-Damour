@@ -37,12 +37,15 @@ import {
   CatalogAdminSettings,
   CatalogAdminVolunteerStatistics,
   CatalogDeadStockResponse,
+  CatalogNotFoundSummary,
 } from '../../core/catalog.models';
 import {CatalogAdministrationPageComponent} from './catalog-administration-page.component';
 import {toDeadStockCsv} from './dead-stock-export';
 import {AdminRareBookFormComponent} from './rare-books/admin-rare-book-form.component';
 import {AdminRareBookPhotosComponent} from './rare-books/admin-rare-book-photos.component';
 import {AdminRareBooksComponent} from './rare-books/admin-rare-books.component';
+import {NotFoundReportCloseDialogComponent} from './not-found-reports/not-found-report-close-dialog.component';
+import {NotFoundReportsViewComponent} from './not-found-reports/not-found-reports-view.component';
 
 describe('CatalogAdministrationPageComponent', () => {
   let fixture: ComponentFixture<CatalogAdministrationPageComponent>;
@@ -228,6 +231,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'updateRareBook', 'publishRareBook', 'unpublishRareBook', 'deleteRareBook',
       'addRareBookPhoto', 'reorderRareBookPhotos', 'updateRareBookPhotoCaption',
       'deleteRareBookPhoto',
+      'getNotFoundQueue', 'getClosedNotFoundReports', 'getNotFoundSummary', 'closeNotFound',
     ]);
     catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
     catalogApi.searchReferences.and.returnValue(of({
@@ -317,6 +321,14 @@ describe('CatalogAdministrationPageComponent', () => {
     }));
     api.dissociateCheckoutPassage.and.returnValue(of(undefined));
     api.getSettings.and.returnValue(of({} as CatalogAdminSettings));
+    api.getNotFoundSummary.and.returnValue(of({
+      openTargetCount: 0,
+      overdueTargetCount: 0,
+      openReportCount: 0,
+      firstReportedAt: null,
+      latestComment: null,
+      withdrawalMovementIds: [],
+    } as CatalogNotFoundSummary));
     api.getDeadStock.and.returnValue(of(response));
     api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminRareBookPage));
     api.getRareBook.and.returnValue(of({} as CatalogAdminRareBook));
@@ -336,6 +348,8 @@ describe('CatalogAdministrationPageComponent', () => {
         AdminRareBooksComponent,
         AdminRareBookFormComponent,
         AdminRareBookPhotosComponent,
+        NotFoundReportsViewComponent,
+        NotFoundReportCloseDialogComponent,
       ],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
@@ -435,6 +449,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'Tableau de bord',
       'Sessions de scan',
       'Désengorgement',
+      'Livres introuvables',
       'Catalogue',
       'Livres rares',
       'Statistiques',
@@ -442,6 +457,40 @@ describe('CatalogAdministrationPageComponent', () => {
       'Paramètres',
     ]);
     expect(getComputedStyle(sidebar).backgroundColor).not.toBe('rgb(7, 43, 69)');
+  });
+
+  it('nav lists Livres introuvables right after Désengorgement with its badge', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getNotFoundSummary.and.returnValue(of({
+      openTargetCount: 2,
+      overdueTargetCount: 1,
+      openReportCount: 3,
+      firstReportedAt: null,
+      latestComment: null,
+      withdrawalMovementIds: [],
+    }));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const duringFair = fixture.componentInstance.navGroups()[0].items;
+    const labels = duringFair.map(item => item.label);
+
+    expect(labels.indexOf('Livres introuvables')).toBe(labels.indexOf('Désengorgement') + 1);
+    expect(fixture.componentInstance.navBadge('not-found')).toBe('2');
+    expect(fixture.nativeElement.textContent).toContain('À vérifier en rayon');
+  });
+
+  it('hides the badge and the dashboard tile when nothing is open', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.navBadge('not-found')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="not-found-dashboard-tile"]')).toBeNull();
   });
 
   it('does not expose the removed inventory workspace', () => {
@@ -466,6 +515,7 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/overview',
       '/administration/sessions',
       '/administration/dead-stock',
+      '/administration/not-found',
       '/administration/catalogue',
       '/administration/rare-books',
       '/administration/statistics',
@@ -486,6 +536,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
     expect(fixture.componentInstance.navItems).toEqual([
       {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
+      {id: 'not-found', label: 'Livres introuvables', icon: 'flag'},
     ]);
     expect(router.navigate).toHaveBeenCalledWith(
       ['/administration', 'rare-books'],
@@ -874,6 +925,64 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.detail-screen')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).not.toContain('Inventaire.');
+  });
+
+  it('book detail shows the reported box when summary has open reports', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getBook.and.returnValue(of(catalogueBook()));
+    api.getNotFoundSummary.and.returnValue(of({
+      openTargetCount: 0,
+      overdueTargetCount: 0,
+      openReportCount: 2,
+      firstReportedAt: '2026-09-01T10:00:00Z',
+      latestComment: {text: 'Étagère du fond', location: null, reportedAt: '2026-09-05T10:00:00Z'},
+      withdrawalMovementIds: [],
+    } as CatalogNotFoundSummary));
+    fixture.detectChanges();
+
+    await fixture.componentInstance.openBook('9782070408504');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="not-found-book-alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Signalée introuvable');
+  });
+
+  it('settings saves the daily report limit', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const settings: CatalogAdminSettings = {
+      duplicateThreshold: 5,
+      demandSalesThreshold: 1,
+      deadStockMinAgeDays: 180,
+      deadStockMinQuantity: 3,
+      watchlistMaxItems: 100,
+      alertCooldownDays: 30,
+      sessionIdleTimeoutMinutes: 120,
+      alertDelayMinutes: 120,
+      notFoundReportDailyLimit: 10,
+      updatedAt: '',
+      updatedBy: '',
+    };
+    api.getSettings.and.returnValue(of(settings));
+    api.updateSettings.and.returnValue(of({...settings, notFoundReportDailyLimit: 2}));
+    fixture.detectChanges();
+    await fixture.componentInstance.selectSection('settings');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const input = root.querySelector<HTMLInputElement>('[name="notFoundReportDailyLimit"]')!;
+    expect(fixture.nativeElement.textContent).toContain('Signalements par membre et par 24 h');
+    input.value = '2';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.componentInstance.settingsForm.notFoundReportDailyLimit = 2;
+    await fixture.componentInstance.saveSettings();
+
+    expect(api.updateSettings).toHaveBeenCalledWith('access-token', jasmine.objectContaining({
+      notFoundReportDailyLimit: 2,
+    }));
   });
 
   it('shows a loader on the catalogue refresh action while the server request is pending', async () => {

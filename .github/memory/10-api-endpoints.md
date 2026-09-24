@@ -98,10 +98,13 @@ client-only/private.
 
 - `GET /catalog/me/selection` reads the authenticated member's typed selection with
   current catalogue availability. `POST /catalog/me/selection` adds an edition or rare
-  book, `PATCH /catalog/me/selection/{id}` changes its status,
+  book, `PATCH /catalog/me/selection/{id}` returns `410 Gone` for legacy clients,
   `DELETE /catalog/me/selection/{id}` removes it, and
   `POST /catalog/me/selection/merge` adds local entries idempotently. All routes require
   member authorization and derive identity from token claims.
+- `POST /catalog/me/selection/{id}/not-found-report` reports an available selection item;
+  a replay returns the existing open report. `DELETE /catalog/me/not-found-reports/{reportId}`
+  cancels the authenticated member's own open report.
 - `GET /catalog/reference/search` - anonymous external bibliographic search with `q`, `page`,
   and `pageSize`; the Open Library adapter normalizes/deduplicates ISBN-10/ISBN-13 results.
 - `GET/POST /catalog/me/watchlist` and `DELETE /catalog/me/watchlist/{itemId}` - Entra member
@@ -137,6 +140,13 @@ client-only/private.
 - `GET /books/admin/members` and detail, block/unblock, and deletion routes - member support
   and compliance operations.
 - `GET/PUT /books/admin/settings` - typed association thresholds and alert/session timing.
+- Not-found administration uses `GET /books/admin/not-found-reports` for the open queue,
+  `GET .../closed` for history, and `GET .../summary` for badge, dashboard, and book-detail
+  projections. Edition and rare-book targets have separate `POST` actions for `found`,
+  `withdrawal`, and `dismissal`. Edition routes use `Administration`; rare-book routes
+  accept `LivresRares`, `Administration`, or legacy `Admin`. The summary also identifies
+  withdrawal movement IDs so the Catalog can mark « suite à signalement » in the ledger.
+  `/books/admin/settings` includes `notFoundReportDailyLimit`.
 
 ## Account administration endpoints
 

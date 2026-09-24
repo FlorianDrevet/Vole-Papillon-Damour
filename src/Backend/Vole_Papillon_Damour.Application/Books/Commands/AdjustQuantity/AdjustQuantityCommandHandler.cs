@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
@@ -13,7 +14,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.AdjustQuantity;
 
 public sealed class AdjustQuantityCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    INotFoundReportLapser notFoundReportLapser)
     : IRequestHandler<AdjustQuantityCommand, ErrorOr<AdjustQuantityResult>>
 {
     public async Task<ErrorOr<AdjustQuantityResult>> Handle(
@@ -90,6 +92,11 @@ public sealed class AdjustQuantityCommandHandler(
             command.Note,
             clientGestureId: null);
         dbContext.BookMovements.Add(movement);
+
+        if (book.QuantityAvailable == 0)
+        {
+            await notFoundReportLapser.LapseIfUnavailableAsync(isbn13, correctedAt, cancellationToken);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

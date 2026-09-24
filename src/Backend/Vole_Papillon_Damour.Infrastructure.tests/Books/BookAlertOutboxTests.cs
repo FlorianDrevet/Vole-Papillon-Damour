@@ -1037,6 +1037,7 @@ public sealed class BookAlertOutboxTests
                 settings.AlertCooldownDays,
                 settings.SessionIdleTimeoutMinutes,
                 alertDelayMinutes,
+                AssociationSettings.DefaultNotFoundReportDailyLimit,
                 updatedBy,
                 StartedAt);
             Context.AssociationSettings.Add(settings);

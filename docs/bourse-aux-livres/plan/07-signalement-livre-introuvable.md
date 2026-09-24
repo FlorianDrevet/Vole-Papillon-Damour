@@ -630,7 +630,7 @@ Comportement :
 - Après envoi réussi : toast `role="status"` « Merci, un bénévole va vérifier. » (4 s).
 - Erreurs : `429` → « Vous avez déjà beaucoup signalé aujourd'hui, merci ! » ; `409` → « Ce livre n'est plus signalable : sa disponibilité a changé. » puis `refresh()` ; autre → « Le signalement n'a pas pu être envoyé. Réessayez. ».
 
-- [ ] **Step 1 :** specs rouges —
+- [x] **Step 1 :** specs rouges —
   `does not render any personal status control`,
   `shows the report button only on available non-purchased lines`,
   `hides the report button on announced, out-of-stock, rare-sold and purchased lines`,
@@ -710,10 +710,10 @@ Vue « Livres introuvables » :
   `csv export escapes separators and quotes`,
   `book detail shows the reported box when summary has open reports`,
   `settings saves the daily report limit`.
-- [ ] **Step 2 :** `npm test -- --watch=false --include='src/app/features/administration/**/*.spec.ts' --include='src/app/core/catalog-administration-route.spec.ts'` → FAIL.
-- [ ] **Step 3–4 :** implémenter → PASS ; `npm test -- --watch=false` complet puis `npm run build`.
-- [ ] **Step 5 :** 🧪 comparaison aux neuf maquettes admin (1440 px et 390 px).
-- [ ] **Step 6 :** `git commit -m "feat(catalog): add the not-found reports administration queue"`
+- [x] **Step 2 :** `npm test -- --watch=false --include='src/app/features/administration/**/*.spec.ts' --include='src/app/core/catalog-administration-route.spec.ts'` → FAIL.
+- [x] **Step 3–4 :** implémenter → PASS ; `npm test -- --watch=false` complet puis `npm run build`.
+- [x] **Step 5 :** 🧪 comparaison aux neuf maquettes admin (1440 px et 390 px).
+- [x] **Step 6 :** `git commit -m "feat(catalog): add the not-found reports administration queue"`
 
 ---
 
@@ -732,10 +732,16 @@ Vue « Livres introuvables » :
 - Modify `docs/bourse-aux-livres/plan/README.md` (ligne `07`), `docs/bourse-aux-livres/11-signalement-livre-introuvable.md` (statut), `NEXT.md`, `.github/memory/` + `changelog.md`.
 - Lancer `graphify update .`.
 
-- [ ] **Step 1 :** test rouge RGPD → implémenter → vert.
-- [ ] **Step 2 :** documentation.
+- [x] **Step 1 :** test rouge RGPD → implémenter → vert.
+- [x] **Step 2 :** documentation.
 - [ ] **Step 3 :** `dotnet test` (3 projets) + `cd src/Catalog && npm test -- --watch=false && npm run build`.
-- [ ] **Step 4 :** `git commit -m "docs(not-found): record not-found reports delivery"`
+- [x] **Step 4 :** `git commit -m "docs(not-found): record not-found reports delivery"`
+
+**Validation Step 3 exécutée le 2026-09-24 :** Domain 164/164, Infrastructure 162/162,
+API 59/59 et Catalog 417/417 avec build réussi. Application : 390 réussis et 2 échecs
+préexistants de comparaison décimale SQLite sous `fr-FR`. Le build solution atteint les
+projets backend mais Worker ne résout pas `Azure.Functions.Sdk`. La case reste ouverte
+tant que le résultat attendu (toutes les validations vertes) n'est pas obtenu.
 
 ---
 

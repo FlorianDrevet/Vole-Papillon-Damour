@@ -37,6 +37,9 @@ public sealed class AssociationSettingsConfiguration : IEntityTypeConfiguration<
         builder.Property(settings => settings.AlertDelayMinutes)
             .HasDefaultValue(120)
             .IsRequired();
+        builder.Property(settings => settings.NotFoundReportDailyLimit)
+            .HasDefaultValue(AssociationSettings.DefaultNotFoundReportDailyLimit)
+            .IsRequired();
         builder.Property(settings => settings.UpdatedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)

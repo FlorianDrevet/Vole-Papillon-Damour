@@ -17,6 +17,7 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate;
@@ -27,6 +28,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
@@ -484,7 +486,11 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     {
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(_receivedAt);
-        return new RegisterSaleCommandHandler(Context, clock, new CheckoutPassageRecorder(Context, NullLogger<CheckoutPassageRecorder>.Instance));
+        return new RegisterSaleCommandHandler(
+            Context,
+            clock,
+            new CheckoutPassageRecorder(Context, NullLogger<CheckoutPassageRecorder>.Instance),
+            new NotFoundReportLapser(Context));
     }
 
     public VoidSaleCommandHandler CreateVoidSaleHandler()
@@ -498,7 +504,7 @@ internal sealed class ScanBookFixture : IAsyncDisposable
     {
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(_receivedAt);
-        return new AdjustQuantityCommandHandler(Context, clock);
+        return new AdjustQuantityCommandHandler(Context, clock, new NotFoundReportLapser(Context));
     }
 
     public UpdateAssociationSettingsCommandHandler CreateUpdateAssociationSettingsHandler()
@@ -576,6 +582,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
+    public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
     public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
@@ -713,6 +720,7 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.ApplyConfiguration(new MemberCardConfiguration());
         modelBuilder.ApplyConfiguration(new CheckoutPassageConfiguration());
         modelBuilder.ApplyConfiguration(new CheckoutPassageLineConfiguration());
+        modelBuilder.ApplyConfiguration(new BookNotFoundReportConfiguration());
 
         modelBuilder.Entity<AssociationSettingsEntity>(builder =>
         {

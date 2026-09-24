@@ -13,7 +13,8 @@ public sealed record AssociationSettingsResult(
     int SessionIdleTimeoutMinutes,
     int AlertDelayMinutes,
     DateTime UpdatedAt,
-    UserId UpdatedBy)
+    UserId UpdatedBy,
+    int NotFoundReportDailyLimit)
 {
     public static AssociationSettingsResult From(AssociationSettings settings)
     {
@@ -27,6 +28,7 @@ public sealed record AssociationSettingsResult(
             settings.SessionIdleTimeoutMinutes,
             settings.AlertDelayMinutes,
             settings.UpdatedAt,
-            settings.UpdatedBy);
+            settings.UpdatedBy,
+            settings.NotFoundReportDailyLimit);
     }
 }

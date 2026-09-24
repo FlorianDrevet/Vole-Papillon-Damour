@@ -3,12 +3,38 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Commands.AdjustQuantity;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Commands.AdjustQuantity;
 
 public sealed class AdjustQuantityCommandHandlerTests
 {
+    [Fact]
+    public async Task AdjustQuantity_ToZero_LapsesOpenReports()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var report = BookNotFoundReport.CreateForEdition(
+            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null, null,
+            ScanBookCommandHandlerTests.ClientScanAt);
+        fixture.Context.BookNotFoundReports.Add(report);
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await fixture.CreateAdjustQuantityHandler().Handle(
+            new AdjustQuantityCommand(
+                book.Isbn13.Value,
+                QuantityAvailable: 0,
+                "Comptage après la bourse",
+                UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"))),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.BookNotFoundReports.SingleAsync()).Status
+            .Should().Be(NotFoundReportStatus.Lapsed);
+    }
+
     [Fact]
     public async Task Handle_WhenPhysicalCountDiffers_RecordsSignedCorrection()
     {

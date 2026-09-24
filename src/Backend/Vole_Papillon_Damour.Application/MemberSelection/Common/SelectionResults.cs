@@ -42,4 +42,11 @@ public sealed record SelectionItemResult(
     DateTimeOffset AvailabilityCheckedAt,
     MemberSelectionStatus Status,
     DateTimeOffset AddedAt,
-    DateTimeOffset? PurchasedAt);
+    DateTimeOffset? PurchasedAt,
+    NotFoundReportSummary? NotFoundReport);
+
+public sealed record NotFoundReportSummary(
+    Guid Id,
+    string Status,
+    DateTimeOffset ReportedAt,
+    DateTimeOffset? ClosedAt);

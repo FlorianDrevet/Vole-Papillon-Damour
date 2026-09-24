@@ -7,6 +7,16 @@ namespace Vole_Papillon_Damour.Domain.tests.AssociationSettingsAggregateTests;
 public sealed class AssociationSettingsTests
 {
     [Fact]
+    public void Create_DefaultsNotFoundReportDailyLimitTo10()
+    {
+        var settings = AssociationSettings.Create(
+            UserId.Create(Guid.Parse("11111111-1111-1111-1111-111111111111")),
+            UtcNow());
+
+        settings.NotFoundReportDailyLimit.Should().Be(10);
+    }
+
+    [Fact]
     public void Create_UsesTheDocumentedDefaultsAndSingletonId()
     {
         var settings = AssociationSettings.Create(
@@ -38,6 +48,7 @@ public sealed class AssociationSettingsTests
             alertCooldownDays: 30,
             sessionIdleTimeoutMinutes: 0,
             alertDelayMinutes: 120,
+            notFoundReportDailyLimit: 10,
             updatedBy: settings.UpdatedBy,
             updatedAt: UtcNow().AddMinutes(1));
 

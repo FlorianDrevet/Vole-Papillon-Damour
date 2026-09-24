@@ -6,16 +6,16 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
-namespace Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
+namespace Vole_Papillon_Damour.Application.NotFoundReports.Commands.CancelNotFoundReport;
 
-public sealed class SetSelectionItemStatusCommandHandler(
+public sealed class CancelNotFoundReportCommandHandler(
     IProjectDbContext dbContext,
     MemberIdentityService memberIdentityService,
     IDateTimeProvider dateTimeProvider)
-    : IRequestHandler<SetSelectionItemStatusCommand, ErrorOr<Updated>>
+    : IRequestHandler<CancelNotFoundReportCommand, ErrorOr<Deleted>>
 {
-    public async Task<ErrorOr<Updated>> Handle(
-        SetSelectionItemStatusCommand command,
+    public async Task<ErrorOr<Deleted>> Handle(
+        CancelNotFoundReportCommand command,
         CancellationToken cancellationToken)
     {
         var user = await memberIdentityService.EnsureAsync(
@@ -24,21 +24,21 @@ public sealed class SetSelectionItemStatusCommandHandler(
             command.FirstName,
             command.LastName,
             cancellationToken);
-        var item = await dbContext.MemberSelectionItems.SingleOrDefaultAsync(
-            candidate => candidate.Id == command.ItemId && candidate.UserId == user.Id,
+        var report = await dbContext.BookNotFoundReports.SingleOrDefaultAsync(
+            candidate => candidate.Id == command.ReportId && candidate.UserId == user.Id,
             cancellationToken);
-        if (item is null)
+        if (report is null)
         {
-            return Errors.MemberSelection.NotFound(command.ItemId);
+            return Errors.NotFoundReport.NotFound(command.ReportId);
         }
 
-        if (!Enum.IsDefined(command.Status))
+        if (!report.IsOpen)
         {
-            return Errors.MemberSelection.InvalidStatus();
+            return Errors.NotFoundReport.AlreadyClosed();
         }
 
-        item.ChangeStatus(command.Status, dateTimeProvider.UtcNow);
+        report.Cancel(dateTimeProvider.UtcNow);
         await dbContext.SaveChangesAsync(cancellationToken);
-        return Result.Updated;
+        return Result.Deleted;
     }
 }

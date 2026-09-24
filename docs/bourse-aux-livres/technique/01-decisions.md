@@ -1090,3 +1090,30 @@ tentée. La carte et l'association demeurent facultatives.
 les passages anonymes aurait accru les écritures et l'historique sans servir Mes achats.
 Cela aurait aussi imposé une nouvelle dépendance au chemin de vente ordinaire et
 augmenté le risque de rendre une vente anonyme indisponible sur une ancienne Scanette.
+
+## DT-27 — Le plafond de signalements porte sur 24 heures glissantes
+
+**Contexte.** RG-70 fixe un plafond réglable de signalements par membre et par jour.
+Une journée civile dépendrait du fuseau et laisserait un pic possible autour de minuit.
+
+**Décision.** Calculer la limite sur les 24 heures précédant l'envoi. La valeur est
+`AssociationSettings.NotFoundReportDailyLimit`, avec un défaut de 10 et une plage de
+configuration de 1 à 100. Aucun fuseau horaire n'intervient dans ce calcul.
+
+## DT-28 — Les signalements deviennent caducs dans l'écriture qui épuise le stock
+
+**Contexte.** Un livre épuisé ne doit pas rester dans la file de vérification, et la
+sortie de la file doit être atomique avec l'écriture qui porte la quantité à zéro.
+
+**Décision.** Les handlers qui peuvent ramener la quantité disponible à zéro appellent
+`INotFoundReportLapser` dans la même transaction que l'opération de stock. Il n'y a ni
+job de fond ni filtrage implicite à la lecture de la file.
+
+## DT-29 — Une clôture administrative porte sur tous les signalements de la fiche
+
+**Contexte.** Plusieurs membres peuvent signaler la même fiche ; une seule vérification
+en rayon fournit la décision pour cette fiche.
+
+**Décision.** Une clôture applique la même décision, la même date et le même auteur à
+tous les signalements ouverts de la cible, dans une seule opération atomique. Les
+signalements déjà clôturés ne sont pas modifiés.

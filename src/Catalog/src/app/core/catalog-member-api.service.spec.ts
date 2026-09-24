@@ -127,13 +127,28 @@ describe('CatalogMemberApiService', () => {
     request.flush(null);
   });
 
-  it('sets a member selection status with the access token', () => {
-    service.setSelectionStatus('member-token', 'item-id', 'Purchased').subscribe();
+  it('posts a typed not-found report with location, comment and bearer token', () => {
+    const response = {
+      reportId: 'report-id',
+      reportedAt: '2026-09-24T10:00:00Z',
+      alreadyOpen: false,
+    };
 
-    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection/item-id`);
+    service.reportNotFound('member-token', 'item-id', {location: 'Fair', comment: 'Rayon B'})
+      .subscribe(result => expect(result).toEqual(response));
 
-    expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual({status: 'Purchased'});
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection/item-id/not-found-report`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({location: 'Fair', comment: 'Rayon B'});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(response);
+  });
+
+  it('deletes a not-found report with the member bearer token', () => {
+    service.cancelNotFoundReport('member-token', 'report-id').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/not-found-reports/report-id`);
+    expect(request.request.method).toBe('DELETE');
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
     request.flush(null);
   });
