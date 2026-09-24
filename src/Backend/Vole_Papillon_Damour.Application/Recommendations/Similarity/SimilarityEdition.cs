@@ -21,4 +21,5 @@ public sealed record SimilarityEdition(
     bool CnljReviewed,
     string? Dewey,
     string? EditionSummary,
-    string? OpenLibraryDescription);
+    string? OpenLibraryDescription,
+    IReadOnlyList<string>? Languages = null);

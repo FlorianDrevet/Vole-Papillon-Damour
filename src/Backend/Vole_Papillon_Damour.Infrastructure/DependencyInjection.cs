@@ -29,6 +29,7 @@ using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
 using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
 using Vole_Papillon_Damour.Infrastructure.Services.Ai;
+using Vole_Papillon_Damour.Infrastructure.Services.Recommendations;
 using Vole_Papillon_Damour.Infrastructure.Services.Social;
 
 namespace Vole_Papillon_Damour.Infrastructure;
@@ -102,6 +103,12 @@ public static class DependencyInjection
         {
             var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
             client.Timeout = TimeSpan.FromMilliseconds(options.BnfTimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
+        services.AddHttpClient<IBibliographicNoticeReader, BibliographicNoticeReader>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(Math.Max(options.BnfTimeoutMilliseconds, options.OpenLibraryTimeoutMilliseconds) * 2);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         });
         services.AddHttpClient<IBnfSruSearchClient, BnfSruSearchClient>((serviceProvider, client) =>
