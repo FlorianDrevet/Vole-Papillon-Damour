@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | F-11 — « Signalement livre introuvable », SIG-1 à SIG-16 implémentées dans le worktree `feat/not-found-reports`, basé sur la branche de documentation `docs/book-not-found-report` (PR #229). |
-| **Prochaine action** | Suivre la PR de correction du build et des tests Application vers `docs/book-not-found-report`, puis la PR #229 vers `main`. La recette manuelle F-11 §11 reste à dérouler en environnement de recette après déploiement. |
+| **Prochaine action** | Suivre la [PR #233](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/233), puis la PR #229 vers `main`. La recette manuelle F-11 §11 reste à dérouler en environnement de recette après déploiement. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-reports` |
-| **Dernière mise à jour** | 2026-09-24 — build de solution corrigé et suites backend entièrement vertes ; la correction est en cours de livraison sur `feat/not-found-reports`. PR #232 fusionnée dans `docs/book-not-found-report`, PR #229 toujours ouverte vers `main`. Aucun déploiement, changement Azure/Entra ni test manuel en environnement de recette n'a été effectué pour cette fonctionnalité. |
-| **Branche** | `feat/not-found-reports`, basée sur `origin/docs/book-not-found-report` ; la correction cible cette branche tant que la PR #229 reste ouverte. |
+| **Dernière mise à jour** | 2026-09-24 — build de solution corrigé et suites backend entièrement vertes ; [PR #233](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/233) ouverte vers `docs/book-not-found-report`. PR #232 fusionnée dans cette branche, PR #229 toujours ouverte vers `main`. Aucun déploiement, changement Azure/Entra ni test manuel en environnement de recette n'a été effectué pour cette fonctionnalité. |
+| **Branche** | `feat/not-found-reports`, basée sur `origin/docs/book-not-found-report` ; PR #233 cible cette branche tant que la PR #229 reste ouverte. |
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 
