@@ -255,7 +255,8 @@ public sealed class NotFoundReportClosureCommandHandlerTests
         await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
         await fixture.AddBookAsync(Isbn, quantityAvailable: 2);
 
-        var result = await new WithdrawBookCommandHandler(fixture.Context, fixture.Clock).Handle(
+        var result = await new WithdrawBookCommandHandler(
+            fixture.Context, fixture.Clock, new NotFoundReportLapser(fixture.Context)).Handle(
             new WithdrawBookCommand(Isbn, 1, Note, Author), default);
 
         result.IsError.Should().BeFalse();
@@ -263,6 +264,41 @@ public sealed class NotFoundReportClosureCommandHandlerTests
         result.Value.QuantityAvailable.Should().Be(1);
         result.Value.MovementId.Should().NotBeNull();
         (await fixture.Context.BookMovements.SingleAsync()).Quantity.Should().Be(-1);
+    }
+
+    [Fact]
+    public async Task WithdrawBook_ToZero_LapsesOpenReports()
+    {
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
+        await fixture.AddBookAsync(Isbn, quantityAvailable: 1);
+        var report = await fixture.AddNotFoundReportAsync(UserId.CreateUnique(), Isbn, Now.AddHours(-1));
+
+        var result = await new WithdrawBookCommandHandler(
+            fixture.Context, fixture.Clock, new NotFoundReportLapser(fixture.Context)).Handle(
+            new WithdrawBookCommand(Isbn, 1, Note, Author), default);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.BookNotFoundReports.SingleAsync(candidate => candidate.Id == report.Id))
+            .Status.Should().Be(NotFoundReportStatus.Lapsed);
+    }
+
+    [Fact]
+    public async Task MergeBooks_MovesOpenReportsToCanonicalIsbn()
+    {
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
+        await fixture.AddBookAsync(Isbn, quantityAvailable: 0);
+        await fixture.AddBookAsync(OtherIsbn, quantityAvailable: 0);
+        var report = await fixture.AddNotFoundReportAsync(UserId.CreateUnique(), Isbn, Now.AddHours(-1));
+
+        var result = await new MergeBooksCommandHandler(
+            fixture.Context, fixture.Clock, new NotFoundReportLapser(fixture.Context)).Handle(
+            new MergeBooksCommand(Isbn, OtherIsbn, Note, Author), default);
+
+        result.IsError.Should().BeFalse();
+        var persisted = await fixture.Context.BookNotFoundReports.SingleAsync(candidate => candidate.Id == report.Id);
+        persisted.Isbn13.Should().NotBeNull();
+        persisted.Isbn13!.Value.Value.Should().Be(OtherIsbn);
+        persisted.Status.Should().Be(NotFoundReportStatus.Lapsed);
     }
 
     private static MarkNotFoundTargetFoundCommandHandler MarkFoundHandler(MemberSelectionFixture fixture) =>

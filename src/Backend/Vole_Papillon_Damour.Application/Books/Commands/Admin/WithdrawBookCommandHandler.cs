@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
@@ -11,7 +12,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
 
 public sealed class WithdrawBookCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    INotFoundReportLapser notFoundReportLapser)
     : IRequestHandler<WithdrawBookCommand, ErrorOr<AdminBookOperationResult>>
 {
     public async Task<ErrorOr<AdminBookOperationResult>> Handle(
@@ -57,6 +59,10 @@ public sealed class WithdrawBookCommandHandler(
         {
             return withdrawal.Errors;
         }
+
+        await notFoundReportLapser.LapseIfUnavailableAsync(
+            withdrawal.Value.Isbn13, updatedAt, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
 

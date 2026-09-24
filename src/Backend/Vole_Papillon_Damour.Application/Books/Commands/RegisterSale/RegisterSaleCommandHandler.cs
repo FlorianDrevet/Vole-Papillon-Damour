@@ -5,6 +5,7 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
+using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -18,7 +19,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 public sealed class RegisterSaleCommandHandler(
     IProjectDbContext dbContext,
     IDateTimeProvider dateTimeProvider,
-    CheckoutPassageRecorder checkoutPassageRecorder)
+    CheckoutPassageRecorder checkoutPassageRecorder,
+    INotFoundReportLapser notFoundReportLapser)
     : IRequestHandler<RegisterSaleCommand, ErrorOr<RegisterSaleResult>>
 {
     public async Task<ErrorOr<RegisterSaleResult>> Handle(
@@ -142,6 +144,7 @@ public sealed class RegisterSaleCommandHandler(
                 linkedPassageId, movement, book, command.Isbn, cancellationToken);
         }
 
+        await notFoundReportLapser.LapseIfUnavailableAsync(isbn13, receivedAt, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 

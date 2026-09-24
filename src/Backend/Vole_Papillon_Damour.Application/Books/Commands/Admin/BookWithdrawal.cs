@@ -83,7 +83,6 @@ public static class BookWithdrawal
             note.Trim(),
             clientGestureId: null);
         db.BookMovements.Add(movement);
-        await db.SaveChangesAsync(ct);
 
         return new BookWithdrawalOutcome(isbn13, quantity, book.QuantityAvailable, movement.Id);
     }

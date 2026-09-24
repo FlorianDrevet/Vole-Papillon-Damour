@@ -107,6 +107,22 @@ public sealed class BookNotFoundReport : Entity<Guid>
         Close(NotFoundReportStatus.Cancelled, null, null, at);
     }
 
+    public void RetargetEdition(Isbn13 canonicalIsbn13)
+    {
+        EnsureOpen();
+        if (Isbn13 is null || RareBookId is not null)
+        {
+            throw new InvalidOperationException("Only an open edition report can be retargeted.");
+        }
+
+        if (string.IsNullOrWhiteSpace(canonicalIsbn13.Value))
+        {
+            throw new ArgumentException("A canonical ISBN-13 is required.", nameof(canonicalIsbn13));
+        }
+
+        Isbn13 = canonicalIsbn13;
+    }
+
     public void MarkFound(UserId by, string? note, DateTime at)
     {
         EnsureOpen();

@@ -8,6 +8,8 @@ using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
@@ -16,6 +18,44 @@ namespace Vole_Papillon_Damour.Application.tests.Books.Commands.RegisterSale;
 
 public sealed class RegisterSaleCommandHandlerTests
 {
+    [Fact]
+    public async Task RegisterSale_WhenStockReachesZero_LapsesOpenReports()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var report = BookNotFoundReport.CreateForEdition(
+            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null, null,
+            ScanBookCommandHandlerTests.ClientScanAt);
+        fixture.Context.BookNotFoundReports.Add(report);
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await fixture.CreateRegisterSaleHandler().Handle(
+            CreateCommand(book.Isbn13.Value), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.BookNotFoundReports.SingleAsync()).Status
+            .Should().Be(NotFoundReportStatus.Lapsed);
+    }
+
+    [Fact]
+    public async Task RegisterSale_WhenStockStaysPositive_KeepsReportsOpen()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 2);
+        var report = BookNotFoundReport.CreateForEdition(
+            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null, null,
+            ScanBookCommandHandlerTests.ClientScanAt);
+        fixture.Context.BookNotFoundReports.Add(report);
+        await fixture.Context.SaveChangesAsync();
+
+        var result = await fixture.CreateRegisterSaleHandler().Handle(
+            CreateCommand(book.Isbn13.Value), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.BookNotFoundReports.SingleAsync()).Status
+            .Should().Be(NotFoundReportStatus.Open);
+    }
+
     [Fact]
     public async Task Handle_WithoutPassage_DoesNotCreatePassage()
     {
