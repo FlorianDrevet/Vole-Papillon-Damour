@@ -38,7 +38,8 @@ public sealed class BnfSruSearchClientTests
         result[0].Source.Should().Be("BnF");
         capturedRequest.Should().NotBeNull();
         var query = Uri.UnescapeDataString(capturedRequest!.RequestUri!.Query);
-        query.Should().Contain("bib.isbn all \"9782070363735\"");
+        query.Should().Contain("bib.fuzzyISBN all \"9782070363735\"");
+        query.Should().NotContain("bib.isbn ");
         query.Should().Contain("recordSchema=unimarcXchange");
         query.Should().Contain("maximumRecords=20");
         query.Should().Contain("startRecord=1");
@@ -103,6 +104,50 @@ public sealed class BnfSruSearchClientTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task SearchAsync_WithIsbn10Query_SearchesFuzzyIsbnIndexWithTheNormalizedIsbn13()
+    {
+        HttpRequestMessage? capturedRequest = null;
+        var client = CreateClient(request =>
+        {
+            if (request.RequestUri?.Host == "openapi.bnf.fr")
+            {
+                return CoverResponse();
+            }
+
+            capturedRequest = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(RecordedPre2007SearchResponse)
+            };
+        });
+
+        await client.SearchAsync("2-07-051842-6", 1, 20, CancellationToken.None);
+
+        capturedRequest.Should().NotBeNull();
+        Uri.UnescapeDataString(capturedRequest!.RequestUri!.Query)
+            .Should().Contain("bib.fuzzyISBN all \"9782070518425\"");
+    }
+
+    [Fact]
+    public async Task SearchAsync_WhenNoticeCarriesHyphenatedIsbn10_ReturnsTheIsbn13Edition()
+    {
+        var client = CreateClient(request =>
+            request.RequestUri?.Host == "openapi.bnf.fr"
+                ? CoverResponse()
+                : new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(RecordedPre2007SearchResponse)
+                });
+
+        var result = await client.SearchAsync("9782070518425", 1, 20, CancellationToken.None);
+
+        result.Should().ContainSingle();
+        result[0].Isbn13.Should().Be("9782070518425");
+        result[0].Title.Should().Be("Harry Potter à l'école des sorciers");
+        result[0].PublicationYear.Should().Be(1998);
+    }
+
     private static HttpResponseMessage CoverResponse()
     {
         var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -156,6 +201,31 @@ public sealed class BnfSruSearchClientTests
               <srw:recordData>
                 <mxc:record>
                   <mxc:datafield tag="200"><mxc:subfield code="a">Notice sans ISBN</mxc:subfield></mxc:datafield>
+                </mxc:record>
+              </srw:recordData>
+            </srw:record>
+          </srw:records>
+        </srw:searchRetrieveResponse>
+        """;
+
+    private const string RecordedPre2007SearchResponse = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <srw:searchRetrieveResponse xmlns:srw="http://www.loc.gov/zing/srw/" xmlns:mxc="http://www.bnf.fr/namespaces/marcxchange/">
+          <srw:numberOfRecords>1</srw:numberOfRecords>
+          <srw:records>
+            <srw:record>
+              <srw:recordData>
+                <mxc:record>
+                  <mxc:datafield tag="010"><mxc:subfield code="a">2-07-051842-6</mxc:subfield></mxc:datafield>
+                  <mxc:datafield tag="200"><mxc:subfield code="a">Harry Potter à l'école des sorciers</mxc:subfield></mxc:datafield>
+                  <mxc:datafield tag="700">
+                    <mxc:subfield code="a">Rowling</mxc:subfield>
+                    <mxc:subfield code="b">J. K.</mxc:subfield>
+                  </mxc:datafield>
+                  <mxc:datafield tag="210">
+                    <mxc:subfield code="c">Gallimard</mxc:subfield>
+                    <mxc:subfield code="d">1998</mxc:subfield>
+                  </mxc:datafield>
                 </mxc:record>
               </srw:recordData>
             </srw:record>
