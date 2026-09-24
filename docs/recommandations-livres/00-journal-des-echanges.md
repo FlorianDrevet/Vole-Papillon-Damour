@@ -129,4 +129,27 @@ graphe à tout prix.
   choisir entre règles simples et embeddings.
 - **Q4** — Le compte Azure OpenAI (`TITLE_GENERATION_ENABLED`) est-il activé en
   production ?
-- **Q5** — Validation du stockage S1. *(posée)*
+- **Q5** — Validation du stockage S1. *(répondue à l'échange 3)*
+
+---
+
+## Échange 3 — 24 septembre 2026 : validation du stockage
+
+### Demande
+
+« Je valide le stockage des voisins dans une table SQL `BookNeighbors`. »
+
+### Décisions
+
+- **D2** — Les voisins sont stockés dans une **table relationnelle `BookNeighbors`** de
+  la base Azure SQL existante (option S1 de
+  [`02`](02-etude-stockage-voisins-sql-ou-graphe.md)). Pas de base graphe, pas de
+  Cosmos DB. Elle est reconstruite de façon atomique par le worker (table de travail
+  puis échange), et le stock est filtré à la lecture.
+
+### Questions ouvertes
+
+- **Q2** — Signaux de « pour vous » : achats seuls, ou aussi liste de recherche et Ma
+  sélection ?
+- **Q3** — Sonde de mesure avant de choisir la façon de calculer les voisins. *(posée)*
+- **Q4** — Compte Azure OpenAI activé en production ?
