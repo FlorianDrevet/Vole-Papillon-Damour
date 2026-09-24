@@ -207,7 +207,7 @@ describe('CatalogNavigationComponent', () => {
     expect(fixture.nativeElement.textContent).toContain("Ouvrir l'administration");
   });
 
-  it('uses the administrator tag as the only header entry to the administration workspace', () => {
+  it('offers the administration workspace from desktop and mobile navigation to administrators', () => {
     auth.account.set({
       homeAccountId: 'home-account-id',
       environment: 'volepapillondamour.ciamlogin.com',
@@ -236,8 +236,9 @@ describe('CatalogNavigationComponent', () => {
     fixture.detectChanges();
 
     const mobileWorkspaceLink = fixture.nativeElement.querySelector('.mobile-admin-link') as HTMLAnchorElement | null;
-    expect(mobileWorkspaceLink).toBeNull();
-    expect(fixture.nativeElement.textContent).not.toContain('Espace administrateur');
+    expect(mobileWorkspaceLink).not.toBeNull();
+    expect(mobileWorkspaceLink?.getAttribute('href')).toBe('/administration');
+    expect(mobileWorkspaceLink?.textContent).toContain('Administration');
   });
 
   it('shows the violet rare-books entry for a dedicated rare-books manager', () => {
@@ -268,6 +269,7 @@ describe('CatalogNavigationComponent', () => {
     menuButton.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.mobile-rare-books-link')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.mobile-admin-link')).toBeNull();
   });
 
   it('keeps the catalogue brand subtitle when the current route is administrative', () => {
