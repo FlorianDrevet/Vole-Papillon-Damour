@@ -51,7 +51,13 @@ belonging to that container.
 - Azure Blob Storage is configured from `AzureBlobStorageConnectionString`.
 - Azure Monitor OpenTelemetry is enabled in the API startup.
 - Blob container names are configured as `loto-images`, `actuality-images`, `event-images`, `product-images`, and `rare-book-photos`.
-- The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books third; it validates provider image URLs before returning them. The anonymous metadata probe does not persist books; authenticated Scan sessions and cash sales persist through the Books endpoints.
+- The bibliographic resolver calls BnF SRU first, Open Library second, and Google Books
+  third; it validates provider image URLs before returning them. The anonymous metadata
+  probe does not persist books; authenticated Scan sessions and cash sales persist through
+  the Books endpoints.
+- Both BnF SRU clients call `BnfSruClient.IsbnQuery`, which queries `bib.fuzzyISBN`. This
+  index matches normalized ISBN-13 queries to pre-2007 notices recorded with ISBN-10;
+  reference-search results normalize the notice back to ISBN-13.
 
 ## Authentication
 

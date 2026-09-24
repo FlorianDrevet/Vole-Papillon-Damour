@@ -51,9 +51,11 @@ public sealed class BnfSruClientTests
         result.CoverUrl.Should().Be("https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782070363735&couverture=1");
         result.CoverSource.Should().Be("BnF");
         capturedRequest.Should().NotBeNull();
-        capturedRequest!.RequestUri!.Query.Should().Contain("bib.isbn");
-        capturedRequest.RequestUri.Query.Should().Contain("9782070363735");
-        capturedRequest.RequestUri.Query.Should().Contain("recordSchema=unimarcXchange");
+        var query = Uri.UnescapeDataString(capturedRequest!.RequestUri!.Query);
+        query.Should().Contain("bib.fuzzyISBN all \"9782070363735\"");
+        query.Should().NotContain("bib.isbn ");
+        query.Should().Contain("recordSchema=unimarcXchange");
+        query.Should().Contain("maximumRecords=1");
     }
 
     [Fact]
@@ -113,6 +115,38 @@ public sealed class BnfSruClientTests
         var result = await client.FindAsync(isbn13, CancellationToken.None);
 
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task FindAsync_With979Isbn_QueriesFuzzyIsbnIndexWithTheIsbn13()
+    {
+        Isbn13.TryCreate("9791023504637", out var isbn13).Should().BeTrue();
+        HttpRequestMessage? capturedRequest = null;
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(request =>
+        {
+            if (request.RequestUri?.Host == "openapi.bnf.fr")
+            {
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+            }
+
+            capturedRequest = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("<searchRetrieveResponse><numberOfRecords>0</numberOfRecords></searchRetrieveResponse>")
+            };
+        }));
+        var client = new BnfSruClient(
+            httpClient,
+            Options.Create(new BibliographicOptions
+            {
+                BnfSruEndpoint = "https://bnf.example.test/api/SRU"
+            }));
+
+        await client.FindAsync(isbn13, CancellationToken.None);
+
+        capturedRequest.Should().NotBeNull();
+        Uri.UnescapeDataString(capturedRequest!.RequestUri!.Query)
+            .Should().Contain("bib.fuzzyISBN all \"9791023504637\"");
     }
 
     private const string RecordedNoticeWithCover = """
