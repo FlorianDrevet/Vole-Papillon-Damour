@@ -7,4 +7,5 @@ public sealed record NotFoundReportSummaryResult(
     int OverdueTargetCount,
     int OpenReportCount,
     DateTimeOffset? FirstReportedAt,
-    NotFoundReportCommentResult? LatestComment);
+    NotFoundReportCommentResult? LatestComment,
+    IReadOnlyList<Guid> WithdrawalMovementIds);

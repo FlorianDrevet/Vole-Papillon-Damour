@@ -111,6 +111,7 @@ describe('CatalogAdminApiService', () => {
       openReportCount: 3,
       firstReportedAt: '2026-09-20T10:00:00Z',
       latestComment: null,
+      withdrawalMovementIds: [],
     } as CatalogNotFoundSummary;
 
     service.getNotFoundSummary('access-token', {rareBookId: 'rare-id'})

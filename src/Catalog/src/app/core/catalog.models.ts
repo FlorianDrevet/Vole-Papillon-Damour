@@ -193,6 +193,7 @@ export interface CatalogNotFoundSummary {
   openReportCount: number;
   firstReportedAt: string | null;
   latestComment: CatalogNotFoundReportComment | null;
+  withdrawalMovementIds: string[];
 }
 
 export interface CatalogNotFoundClosure {

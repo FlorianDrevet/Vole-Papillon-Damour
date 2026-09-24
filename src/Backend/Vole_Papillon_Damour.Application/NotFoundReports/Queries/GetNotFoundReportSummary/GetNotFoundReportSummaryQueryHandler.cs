@@ -85,7 +85,8 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
             editionOverdueCount + rareOverdueCount,
             OpenReportCount: 0,
             FirstReportedAt: null,
-            LatestComment: null);
+            LatestComment: null,
+            WithdrawalMovementIds: []);
     }
 
     private async Task<NotFoundReportSummaryResult> ForEditionAsync(
@@ -94,10 +95,14 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
         CancellationToken cancellationToken)
     {
         var targetReports = openReports.Where(report => report.Isbn13 == isbn13);
+        var withdrawalMovementIds = await dbContext.BookNotFoundReports.AsNoTracking()
+            .Where(report => report.Isbn13 == isbn13 && report.WithdrawalMovementId != null)
+            .Select(report => report.WithdrawalMovementId!.Value)
+            .ToArrayAsync(cancellationToken);
         var count = await targetReports.CountAsync(cancellationToken);
         if (count == 0)
         {
-            return EmptyTargetSummary();
+            return new NotFoundReportSummaryResult(0, 0, 0, null, null, withdrawalMovementIds);
         }
 
         var firstReportedAt = await targetReports.MinAsync(report => report.ReportedAt, cancellationToken);
@@ -107,7 +112,8 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
             0,
             count,
             ToOffset(firstReportedAt),
-            latestComment);
+            latestComment,
+            withdrawalMovementIds);
     }
 
     private async Task<NotFoundReportSummaryResult> ForRareBookAsync(
@@ -129,7 +135,8 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
             0,
             count,
             ToOffset(firstReportedAt),
-            latestComment);
+            latestComment,
+            []);
     }
 
     private static async Task<NotFoundReportCommentResult?> LatestCommentAsync(
@@ -155,7 +162,7 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
     }
 
     private static NotFoundReportSummaryResult EmptyTargetSummary() =>
-        new(0, 0, 0, null, null);
+        new(0, 0, 0, null, null, []);
 
     private static DateTimeOffset ToOffset(DateTime value) =>
         new(DateTime.SpecifyKind(value, DateTimeKind.Utc), TimeSpan.Zero);

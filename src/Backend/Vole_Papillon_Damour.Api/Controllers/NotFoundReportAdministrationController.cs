@@ -333,7 +333,8 @@ public static class NotFoundReportAdministrationController
             result.OverdueTargetCount,
             result.OpenReportCount,
             result.FirstReportedAt,
-            result.LatestComment is null ? null : ToResponse(result.LatestComment));
+            result.LatestComment is null ? null : ToResponse(result.LatestComment),
+            result.WithdrawalMovementIds);
 
     private static NotFoundReportCommentResponse ToResponse(NotFoundReportCommentResult result) =>
         new(result.Text, result.Location, result.ReportedAt);

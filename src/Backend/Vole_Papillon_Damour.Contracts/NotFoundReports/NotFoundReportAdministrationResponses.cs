@@ -57,7 +57,8 @@ public sealed record NotFoundReportSummaryResponse(
     int OverdueTargetCount,
     int OpenReportCount,
     DateTimeOffset? FirstReportedAt,
-    NotFoundReportCommentResponse? LatestComment);
+    NotFoundReportCommentResponse? LatestComment,
+    IReadOnlyList<Guid> WithdrawalMovementIds);
 
 public sealed record NotFoundClosureResponse(
     int ClosedReportCount,

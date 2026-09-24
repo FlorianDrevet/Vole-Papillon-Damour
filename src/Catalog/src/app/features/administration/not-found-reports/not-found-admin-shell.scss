@@ -1,0 +1,152 @@
+.admin-nav-badge-not-found {
+  background: var(--catalog-orange);
+  color: var(--catalog-white);
+}
+
+.not-found-dashboard-tile {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 88px;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border: 1px solid var(--catalog-line);
+  border-left: 4px solid var(--catalog-orange);
+  border-radius: 4px;
+  background: var(--catalog-white);
+  color: var(--catalog-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.not-found-dashboard-tile:hover {
+  border-color: var(--catalog-orange);
+}
+
+.not-found-dashboard-tile:focus-visible,
+.not-found-book-alert button:focus-visible {
+  outline: 3px solid var(--catalog-blue-bright);
+  outline-offset: 3px;
+}
+
+.not-found-dashboard-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--catalog-paper-2);
+  color: var(--catalog-orange-dark);
+}
+
+.not-found-dashboard-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.not-found-dashboard-tile > span:nth-child(2) {
+  display: grid;
+  gap: 5px;
+}
+
+.not-found-dashboard-tile strong {
+  font: 500 1.28rem/1.1 var(--catalog-display);
+}
+
+.not-found-dashboard-tile > span:nth-child(2) > span,
+.not-found-dashboard-link {
+  color: var(--catalog-slate-strong);
+  font-size: .8rem;
+  line-height: 1.4;
+}
+
+.not-found-dashboard-link {
+  color: var(--catalog-blue);
+  font-weight: 600;
+}
+
+.not-found-book-alert {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--catalog-orange);
+  border-left-width: 4px;
+  border-radius: 4px;
+  background: var(--catalog-paper-2);
+}
+
+.not-found-book-alert .section-kicker {
+  color: var(--catalog-orange-dark);
+}
+
+.not-found-book-alert h2 {
+  margin: 0;
+  font: 500 1.25rem/1.15 var(--catalog-display);
+}
+
+.not-found-book-alert blockquote {
+  margin: 0;
+  color: var(--catalog-ink-soft);
+  font-size: .82rem;
+  font-style: italic;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.not-found-book-alert-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.not-found-book-alert-actions button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font: 600 .78rem/1.15 var(--catalog-body);
+  cursor: pointer;
+}
+
+.not-found-book-alert-actions .not-found-found-button {
+  border: 1px solid var(--catalog-blue-soft);
+  background: var(--catalog-white);
+  color: var(--catalog-blue);
+}
+
+.not-found-book-alert-actions .not-found-withdraw-button {
+  border: 0;
+  background: var(--catalog-orange);
+  color: var(--catalog-white);
+}
+
+.not-found-movement-tag {
+  flex: none;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--catalog-paper-2);
+  color: var(--catalog-orange-dark);
+  font: 600 .61rem/1.2 var(--catalog-mono);
+  white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+  .not-found-dashboard-tile {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .not-found-dashboard-link {
+    grid-column: 2;
+  }
+
+  .not-found-book-alert-actions button {
+    font-size: .72rem;
+  }
+}

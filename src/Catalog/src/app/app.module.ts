@@ -18,6 +18,8 @@ import {CatalogAdministrationPageComponent} from './features/administration/cata
 import {AdminRareBookFormComponent} from './features/administration/rare-books/admin-rare-book-form.component';
 import {AdminRareBookPhotosComponent} from './features/administration/rare-books/admin-rare-book-photos.component';
 import {AdminRareBooksComponent} from './features/administration/rare-books/admin-rare-books.component';
+import {NotFoundReportCloseDialogComponent} from './features/administration/not-found-reports/not-found-report-close-dialog.component';
+import {NotFoundReportsViewComponent} from './features/administration/not-found-reports/not-found-reports-view.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {AccountSelectionComponent} from './features/account/selection/account-selection.component';
 import {NotFoundReportDialogComponent} from './features/account/selection/not-found-report-dialog.component';
@@ -51,6 +53,8 @@ registerLocaleData(localeFr);
     AdminRareBooksComponent,
     AdminRareBookFormComponent,
     AdminRareBookPhotosComponent,
+    NotFoundReportsViewComponent,
+    NotFoundReportCloseDialogComponent,
     CatalogAccountPageComponent,
     AccountSelectionComponent,
     NotFoundReportDialogComponent,

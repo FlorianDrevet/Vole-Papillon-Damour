@@ -1,4 +1,4 @@
-import {isPlatformBrowser} from '@angular/common';
+import {DOCUMENT, isPlatformBrowser} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -43,6 +43,7 @@ import {
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
   CatalogAdminBook,
+  CatalogAdminBookMovement,
   CatalogAdminBookPage,
   CatalogAdminFair,
   CatalogAdminFairPage,
@@ -61,8 +62,12 @@ import {
   CatalogAdminSettings,
   CatalogBookReference,
   CatalogDeadStockBook,
+  CatalogNotFoundCloseAction,
+  CatalogNotFoundQueueTarget,
+  CatalogNotFoundSummary,
 } from '../../core/catalog.models';
 import {toDeadStockCsv} from './dead-stock-export';
+import {NotFoundCloseConfirmation} from './not-found-reports/not-found-report-close-dialog.component';
 import {buildFairsEvolutionView, toFairsEvolutionCsv} from './fairs-evolution-view';
 import {capitalizeFrench} from './statistics-format';
 import {
@@ -95,6 +100,7 @@ type CatalogAdminNavIcon =
   | 'dashboard'
   | 'scan'
   | 'dead-stock'
+  | 'flag'
   | 'catalogue'
   | 'rare-books'
   | 'statistics'
@@ -119,6 +125,7 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
       {id: 'overview', label: 'Tableau de bord', icon: 'dashboard'},
       {id: 'sessions', label: 'Sessions de scan', icon: 'scan'},
       {id: 'dead-stock', label: 'Désengorgement', icon: 'dead-stock'},
+      {id: 'not-found', label: 'Livres introuvables', icon: 'flag'},
     ],
   },
   {
@@ -141,7 +148,10 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
 const RARE_ONLY_NAV_GROUPS: CatalogAdminNavGroup[] = [
   {
     label: 'Le fonds de livres',
-    items: [{id: 'rare-books', label: 'Livres rares', icon: 'rare-books'}],
+    items: [
+      {id: 'rare-books', label: 'Livres rares', icon: 'rare-books'},
+      {id: 'not-found', label: 'Livres introuvables', icon: 'flag'},
+    ],
   },
 ];
 
@@ -222,6 +232,11 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   navBadge(section: CatalogAdminSection): string | null {
+    if (section === 'not-found') {
+      const count = this.notFoundSummary()?.openTargetCount ?? 0;
+      return count > 0 ? this.formatNumber(count) : null;
+    }
+
     const totalCount = section === 'sessions'
       ? this.sessionsPage() ? this.correctableSessionCount() : undefined
       : section === 'catalogue'
@@ -243,6 +258,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly catalogueConfirmation = signal<CatalogQuantityConfirmation | null>(null);
   readonly sessionConfirmation = signal<CatalogAdminSessionConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
+  readonly notFoundSummary = signal<CatalogNotFoundSummary | null>(null);
+  readonly selectedBookNotFoundSummary = signal<CatalogNotFoundSummary | null>(null);
+  readonly notFoundAccessToken = signal('');
+  readonly bookNotFoundDialog = signal<{target: CatalogNotFoundQueueTarget; action: CatalogNotFoundCloseAction} | null>(null);
   readonly fairsPage = signal<CatalogAdminFairPage | null>(null);
   readonly selectedFairStats = signal<CatalogAdminFairStats | null>(null);
   readonly statisticsTab = signal<CatalogAdminStatisticsTab>('fairs');
@@ -372,11 +391,13 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   alertDelayHours = 2;
 
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly document = inject(DOCUMENT);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyed = new Subject<void>();
   private administrationInitialized = false;
   private catalogueSearchTimer: number | null = null;
+  private bookCloseOpener: HTMLElement | null = null;
 
   constructor(
     private readonly auth: CatalogAuthService,
@@ -413,14 +434,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     await this.auth.initialize();
     if (this.auth.isAuthenticated() && this.hasAdministrationAccess()) {
       if (!this.isAdministrator() && this.isRareBookManager()) {
-        if (this.activeSection() !== 'rare-books') {
+        if (!(['rare-books', 'not-found'] as CatalogAdminSection[]).includes(this.activeSection())) {
           this.activeSection.set('rare-books');
           await this.router.navigate(['/administration', 'rare-books'], {replaceUrl: true});
+        }
+        await this.loadNotFoundSummary();
+        if (this.activeSection() === 'not-found') {
+          await this.loadSection('not-found');
         }
       } else {
         await this.loadOverview();
         await this.loadSessions();
         await this.loadDeadStock();
+        await this.loadNotFoundSummary();
 
         if (!(['overview', 'sessions', 'dead-stock'] as CatalogAdminSection[]).includes(this.activeSection())) {
           await this.loadSection(this.activeSection());
@@ -449,7 +475,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       section = 'accounts';
     }
 
-    if (!this.isAdministrator() && this.isRareBookManager() && section !== 'rare-books') {
+    if (!this.isAdministrator() && this.isRareBookManager() && section !== 'rare-books' && section !== 'not-found') {
       section = 'rare-books';
     }
 
@@ -484,6 +510,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         break;
       case 'dead-stock':
         await this.loadDeadStock();
+        break;
+      case 'not-found':
+        await this.loadNotFoundWorkspace();
         break;
       case 'catalogue':
         await this.loadCatalogue();
@@ -527,7 +556,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.isAdministrator() && this.isRareBookManager() && section !== 'rare-books') {
+    if (!this.isAdministrator() && this.isRareBookManager() && section !== 'rare-books' && section !== 'not-found') {
       void this.router.navigate(['/administration', 'rare-books'], {replaceUrl: true});
       return;
     }
@@ -787,8 +816,12 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   async openBook(isbn13: string): Promise<void> {
     this.activeSection.set('catalogue');
     await this.run('book-detail', async token => {
-      const book = await firstValueFrom(this.api.getBook(token, isbn13));
+      const [book, reportSummary] = await Promise.all([
+        firstValueFrom(this.api.getBook(token, isbn13)),
+        firstValueFrom(this.api.getNotFoundSummary(token, {isbn13})),
+      ]);
       this.selectedBook.set(book);
+      this.selectedBookNotFoundSummary.set(reportSummary);
       this.quantityCorrection = book.quantityAvailable;
       this.quantityNote = '';
       this.withdrawalQuantity = 1;
@@ -809,6 +842,98 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         workId: book.workId || '',
       });
       await this.rareBooksFacade.resolveCatalogRelation(book.isbn13);
+    });
+  }
+
+  openBookNotFoundDialog(book: CatalogAdminBook, action: CatalogNotFoundCloseAction, event: Event): void {
+    const summary = this.selectedBookNotFoundSummary();
+    if (!summary || summary.openReportCount <= 0) {
+      return;
+    }
+    const target: CatalogNotFoundQueueTarget = {
+      kind: 'edition',
+      isbn13: book.isbn13,
+      rareBookId: null,
+      title: book.title || 'Titre inconnu',
+      authors: book.authors,
+      publisher: book.publisher,
+      publicationYear: book.publicationYear,
+      coverUrl: book.coverUrl,
+      genre: book.genre,
+      quantityAvailable: book.quantityAvailable,
+      reportCount: summary.openReportCount,
+      memberCount: summary.openReportCount,
+      firstReportedAt: summary.firstReportedAt || new Date().toISOString(),
+      lastReportedAt: summary.latestComment?.reportedAt || summary.firstReportedAt || new Date().toISOString(),
+      overdue: false,
+      comments: summary.latestComment ? [summary.latestComment] : [],
+    };
+    this.bookCloseOpener = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    this.bookNotFoundDialog.set({target, action});
+  }
+
+  closeBookNotFoundDialog(): void {
+    this.bookNotFoundDialog.set(null);
+    this.bookCloseOpener?.focus();
+    this.bookCloseOpener = null;
+  }
+
+  async closeNotFoundFromBook(confirmation: NotFoundCloseConfirmation): Promise<void> {
+    const dialog = this.bookNotFoundDialog();
+    if (!dialog) {
+      return;
+    }
+
+    await this.run('book-not-found-close', async token => {
+      const reference = dialog.target.isbn13;
+      if (!reference) {
+        return;
+      }
+      await firstValueFrom(this.api.closeNotFound(
+        token,
+        {kind: 'edition', reference},
+        confirmation.action,
+        confirmation.request,
+      ));
+      this.bookNotFoundDialog.set(null);
+      const [book, summary, overviewSummary] = await Promise.all([
+        firstValueFrom(this.api.getBook(token, reference)),
+        firstValueFrom(this.api.getNotFoundSummary(token, {isbn13: reference})),
+        firstValueFrom(this.api.getNotFoundSummary(token)),
+      ]);
+      this.selectedBook.set(book);
+      this.selectedBookNotFoundSummary.set(summary);
+      this.notFoundSummary.set(overviewSummary);
+      if (this.bookCloseOpener?.isConnected) {
+        this.bookCloseOpener.focus();
+      } else {
+        this.document.querySelector<HTMLElement>('.detail-heading h1')?.focus();
+      }
+      this.bookCloseOpener = null;
+    });
+  }
+
+  async loadNotFoundSummary(): Promise<void> {
+    if (!this.auth.isAuthenticated()) {
+      return;
+    }
+
+    try {
+      const token = await this.auth.getApiAccessToken();
+      this.notFoundSummary.set(await firstValueFrom(this.api.getNotFoundSummary(token)));
+    } catch {
+      this.notFoundSummary.set(null);
+    }
+  }
+
+  onNotFoundCountsChanged(summary: CatalogNotFoundSummary): void {
+    this.notFoundSummary.set(summary);
+  }
+
+  private async loadNotFoundWorkspace(): Promise<void> {
+    await this.run('not-found-access', async token => {
+      this.notFoundAccessToken.set(token);
+      this.notFoundSummary.set(await firstValueFrom(this.api.getNotFoundSummary(token)));
     });
   }
 
@@ -1693,12 +1818,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       this.settingsForm.deadStockMinQuantity,
       this.settingsForm.watchlistMaxItems,
       this.settingsForm.alertCooldownDays,
+      this.settingsForm.notFoundReportDailyLimit,
       this.deadStockAgeMonths,
     ];
     const hourFields = [this.sessionIdleHours, this.alertDelayHours];
     if (integerFields.some(value => !Number.isInteger(Number(value)) || Number(value) < 0)
       || hourFields.some(value => !Number.isFinite(Number(value)) || Number(value) < 0)) {
       this.showError('Les seuils doivent être des entiers positifs ou nuls ; les durées peuvent être exprimées par demi-heure.');
+      return;
+    }
+
+    const dailyLimit = Number(this.settingsForm.notFoundReportDailyLimit);
+    if (dailyLimit < 1 || dailyLimit > 100) {
+      this.showError('Le plafond de signalements doit être compris entre 1 et 100 par 24 h.');
       return;
     }
 
@@ -1712,6 +1844,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         alertCooldownDays: Number(this.settingsForm.alertCooldownDays),
         sessionIdleTimeoutMinutes: Math.round(Number(this.sessionIdleHours) * 60),
         alertDelayMinutes: Math.round(Number(this.alertDelayHours) * 60),
+        notFoundReportDailyLimit: dailyLimit,
       }));
       this.settings.set(settings);
       this.settingsForm = {...settings};
@@ -2187,6 +2320,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       Withdrawal: 'Retrait',
     };
     return labels[value] || value;
+  }
+
+  isNotFoundMovement(movement: CatalogAdminBookMovement): boolean {
+    return this.selectedBookNotFoundSummary()?.withdrawalMovementIds.includes(movement.id) ?? false;
   }
 
   movementClass(value: string): string {

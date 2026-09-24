@@ -6,6 +6,7 @@ using Vole_Papillon_Damour.Application.NotFoundReports.Queries.GetClosedNotFound
 using Vole_Papillon_Damour.Application.tests.MemberSelection;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
@@ -249,5 +250,31 @@ public sealed class GetNotFoundReportSummaryQueryHandlerTests
         result.Value.FirstReportedAt.Should().Be(new DateTimeOffset(Now.AddDays(-2), TimeSpan.Zero));
         result.Value.LatestComment.Should().NotBeNull();
         result.Value.LatestComment!.Text.Should().Be("Commentaire récent");
+    }
+
+    [Fact]
+    public async Task Summary_ForIsbnIncludesWithdrawalMovementIds()
+    {
+        await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
+        await fixture.AddBookAsync(Isbn);
+        var withdrawn = await GetNotFoundReportQueueQueryHandlerTests.AddEditionReportAsync(
+            fixture, Isbn, UserId.CreateUnique(), Now.AddDays(-2));
+        var movementId = BookMovementId.CreateUnique();
+        withdrawn.MarkWithdrawn(
+            UserId.CreateUnique(),
+            NotFoundWithdrawalReason.NotFoundOnShelf,
+            1,
+            movementId,
+            "Introuvable en rayon",
+            Now.AddDays(-1));
+        await GetNotFoundReportQueueQueryHandlerTests.AddEditionReportAsync(
+            fixture, Isbn, UserId.CreateUnique(), Now.AddHours(-1));
+
+        var result = await new GetNotFoundReportSummaryQueryHandler(fixture.Context, fixture.Clock)
+            .Handle(new GetNotFoundReportSummaryQuery(Isbn, null, false), default);
+
+        result.IsError.Should().BeFalse();
+        result.Value.OpenReportCount.Should().Be(1);
+        result.Value.WithdrawalMovementIds.Should().Contain(movementId.Value);
     }
 }

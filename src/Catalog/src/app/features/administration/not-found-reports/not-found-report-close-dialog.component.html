@@ -1,0 +1,72 @@
+<div class="not-found-dialog-backdrop" role="presentation" (click)="cancel()">
+  <section
+    #dialog
+    class="not-found-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="not-found-close-title"
+    tabindex="-1"
+    (click)="$event.stopPropagation()">
+    <button class="not-found-dialog-close" type="button" aria-label="Fermer" (click)="cancel()">×</button>
+    <span class="not-found-dialog-kicker">{{ target?.title || 'Livre introuvable' }}</span>
+
+    @if (action === 'withdrawal' && isRare) {
+      <h2 id="not-found-close-title">Retirer la fiche rare</h2>
+      <p class="not-found-dialog-intro">La fiche rare sera dépubliée. Les signalements seront clôturés et une note gardera la trace de la vérification.</p>
+    } @else if (action === 'withdrawal') {
+      <h2 id="not-found-close-title">Retirer du stock</h2>
+      <p class="not-found-dialog-intro">Combien d'exemplaires avez-vous retrouvés en rayon ?</p>
+      <label class="not-found-number-field">
+        <span>Exemplaires retrouvés</span>
+        <span class="not-found-stepper">
+          <button type="button" aria-label="Un exemplaire retrouvé en moins" [disabled]="foundCopies <= 0" (click)="foundCopies = foundCopies - 1">−</button>
+          <input name="foundCopies" type="number" [(ngModel)]="foundCopies" [min]="0" [max]="target?.quantityAvailable ?? 0" step="1">
+          <button type="button" aria-label="Un exemplaire retrouvé en plus" [disabled]="foundCopies >= (target?.quantityAvailable ?? 0)" (click)="foundCopies = foundCopies + 1">+</button>
+        </span>
+      </label>
+      @if (effectiveAction() === 'found') {
+        <p class="not-found-consequence">Tous les exemplaires ont été retrouvés. Le stock ne change pas.</p>
+      } @else {
+        <p class="not-found-consequence">{{ withdrawalQuantity() }} exemplaire{{ withdrawalQuantity() === 1 ? '' : 's' }} seront retiré{{ withdrawalQuantity() === 1 ? '' : 's' }}. @if (withdrawalQuantity() === target?.quantityAvailable) {La fiche passera Épuisée au catalogue.}</p>
+        <label class="not-found-reason-field">
+          <span>Motif du retrait</span>
+          <select name="withdrawalReason" [(ngModel)]="reason">
+            <option value="NotFoundOnShelf">Introuvable en rayon</option>
+            <option value="Damaged">Abîmé</option>
+            <option value="Other">Autre</option>
+          </select>
+        </label>
+      }
+    } @else if (action === 'found') {
+      <h2 id="not-found-close-title">Retrouvé</h2>
+      <p class="not-found-dialog-intro">Confirmer que ce livre est bien présent en rayon ? Le stock reste inchangé.</p>
+    } @else {
+      <h2 id="not-found-close-title">Classer sans suite</h2>
+      <p class="not-found-dialog-intro">Aucun retrait ne sera effectué. Les signalements seront conservés dans l'historique.</p>
+      <label class="not-found-reason-field">
+        <span>Motif</span>
+        <select name="dismissalReason" [(ngModel)]="reason">
+          <option value="NotFoundOnShelf">Introuvable en rayon</option>
+          <option value="Damaged">Abîmé</option>
+          <option value="Other">Autre</option>
+        </select>
+      </label>
+    }
+
+    <label class="not-found-note-field">
+      <span>Note obligatoire</span>
+      <textarea name="closeNote" [(ngModel)]="note" maxlength="500" rows="3" required></textarea>
+    </label>
+    <div class="not-found-dialog-actions">
+      <button class="button button-outline" type="button" (click)="cancel()">Annuler</button>
+      <button
+        class="button button-primary"
+        data-testid="not-found-close-submit"
+        type="button"
+        [disabled]="!isValid()"
+        (click)="submit()">
+        @if (effectiveAction() === 'found') {Confirmer : retrouvé} @else if (effectiveAction() === 'withdrawal' && isRare) {Retirer la fiche rare} @else if (effectiveAction() === 'withdrawal') {Retirer {{ withdrawalQuantity() }} exemplaire{{ withdrawalQuantity() === 1 ? '' : 's' }} } @else {Classer sans suite}
+      </button>
+    </div>
+  </section>
+</div>
