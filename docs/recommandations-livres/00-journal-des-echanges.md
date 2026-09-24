@@ -293,6 +293,62 @@ configurer Foundry avec le modèle, et dire ce qu'il faut pour l'utiliser.
 ### Questions ouvertes
 
 - **Q9** — Déploiement et rôle Azure faits (tutoriel, étapes 2 à 6) ? Chemin du profil
-  CLI, pour que je lance le benchmark et rédige l'analyse. *(posée)*
+  CLI, pour que je lance le benchmark et rédige l'analyse. *(répondue à l'échange 8)*
 - **Q2** — Signaux de « pour vous » : achats seuls, ou aussi liste de recherche et Ma
   sélection ?
+
+---
+
+## Échange 8 — 24 septembre 2026 : déploiement Azure et exécution du benchmark
+
+### Demande
+
+« Je viens de m'az login, est-ce que tu peux faire le déploiement et faire le
+benchmark ? »
+
+### Actions réalisées dans Azure
+
+Session : profil Azure CLI par défaut, abonnement « Florian - 15-07-2026 ».
+
+1. Compte Foundry du projet identifié : **`vpd-actuality-title-dev`** (groupe
+   `rg-vpd-dev`, `francecentral`, clés désactivées). Seul déploiement existant :
+   `actuality-title`.
+2. **Déploiement créé** : `text-embedding-3-small`, version 1, `GlobalStandard`,
+   capacité 50 (50 000 tokens/min ; pas de coût fixe).
+3. **Rôle attribué** : *Cognitive Services OpenAI User* au compte de Florian, sur ce
+   seul compte Foundry. Le rôle *Owner* déjà détenu ne donne pas le droit d'appeler
+   les modèles.
+4. `.env.local` créé localement (endpoint et nom de déploiement, aucun secret, ignoré
+   par git).
+
+**Ces deux changements Azure ne sont pas décrits dans le Bicep.** Ils le seront si
+l'approche est retenue (`06` §10).
+
+### Réponse — résumé
+
+Analyse complète : [`05-benchmark.md`](05-benchmark.md) §6 et §7.
+
+- **Les embeddings gagnent nettement** : 0,586 de nDCG@5 (H6) contre 0,316 pour la
+  meilleure méthode gratuite. L'écart est significatif.
+- **Confirmé** :
+  - le résumé de l'œuvre bat le résumé de l'édition ;
+  - le texte composé bat le résumé seul ;
+  - 512 dimensions suffisent, 256 dégradent ;
+  - le tome suivant est trouvé dans 100 % des cas grâce au bonus ;
+  - la fuite « même œuvre » passe de 100 % à 0 % grâce au filtre.
+- **Découverte** : le filtre **strict** de public, appliqué sur un public déduit faux
+  dans 11 % des cas, fait plus de mal que de bien. Une **pénalité** fait mieux (+0,022,
+  significatif).
+- **Critère non atteint** : précision@5 de 46 % pour 50 % visés. Il faut afficher
+  « jusqu'à 5 voisins au-dessus d'un seuil », seuil à calibrer sur le vrai catalogue.
+- Coût total du benchmark : **0,002 $**.
+
+### Décisions
+
+Aucune ; recommandation de méthode soumise à validation (`05` §7).
+
+### Questions ouvertes
+
+- **Q10** — Valider la méthode recommandée (`05` §7) pour passer à la spécification.
+  *(posée)*
+- **Q2** — Signaux de « pour vous ».

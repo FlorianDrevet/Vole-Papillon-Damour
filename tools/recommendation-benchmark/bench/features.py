@@ -83,11 +83,11 @@ def _series(bnf: dict) -> tuple[str | None, int | None]:
     return None, None
 
 
-def _compose(bnf: dict, work_summary: str | None) -> str:
+def _compose(bnf: dict, work_summary: str | None, with_collection: bool = True) -> str:
     parts = [_title_line(bnf)]
     if bnf.get("authors"):
         parts.append("Auteur : " + ", ".join(bnf["authors"]))
-    if bnf.get("collection"):
+    if with_collection and bnf.get("collection"):
         parts.append("Collection : " + bnf["collection"])
     if bnf.get("series_title"):
         tome = f", tome {bnf['series_number']}" if bnf.get("series_number") else ""
@@ -138,6 +138,7 @@ def build_features(entry: dict) -> Features:
             "resume_edition": entry.get("summary_edition"),
             "resume_oeuvre": entry.get("summary_work"),
             "compose": _compose(bnf, entry.get("summary_work")),
+            "compose_sans_collection": _compose(bnf, entry.get("summary_work"), with_collection=False),
         },
     )
 

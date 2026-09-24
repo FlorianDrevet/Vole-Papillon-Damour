@@ -156,6 +156,28 @@ def hybrid(variant: str):
     return run
 
 
+AUDIENCE_PENALTY = 0.10
+
+
+def _not_same_work(query: Features, candidate: Features) -> bool:
+    return not same_work(query, candidate)
+
+
+def hybrid_soft_audience(variant: str, penalty: float):
+    """Exclut seulement la même œuvre ; le public opposé est pénalisé, pas exclu."""
+    def run(features, vectors):
+        n = len(features)
+        audience = np.zeros((n, n), dtype=np.float32)
+        if penalty:
+            for i, q in enumerate(features):
+                for j, c in enumerate(features):
+                    if not audience_compatible(q, c):
+                        audience[i, j] = -penalty
+        scores = _cosine(vectors, variant) + _bonus_matrix(features) + audience
+        return _rank(features, scores, _not_same_work)
+    return run
+
+
 METHODS: list[Method] = [
     Method("R0", "Règles seules (sans IA)",
            "Même série (+4, tome suivant +1), même auteur (+2), même collection typée (+1), genres, sujets et "
@@ -183,6 +205,24 @@ METHODS: list[Method] = [
     Method("H4", "E4 + filtres + bonus (candidat retenu)",
            "Texte composé, filtres et bonus. C'est la méthode proposée pour la production.", True,
            hybrid("compose")),
+    Method("H5", "E4 + même œuvre exclue + bonus, sans filtre de public (exploratoire)",
+           "Comme H4, mais le public déduit n'intervient pas. Ajoutée après lecture des premiers résultats : "
+           "le public est mal déduit pour 11 % des éditions et le filtre strict amplifie ces erreurs.", True,
+           hybrid_soft_audience("compose", 0.0)),
+    Method("H6", "E4 + même œuvre exclue + bonus + pénalité de public (exploratoire)",
+           f"Comme H5, avec une pénalité de {AUDIENCE_PENALTY:.2f} (au lieu d'une exclusion) quand les publics "
+           "déduits s'opposent (jeunesse / adulte). Ajoutée après lecture des premiers résultats.", True,
+           hybrid_soft_audience("compose", AUDIENCE_PENALTY)),
+    Method("H6-512", "H6 en 512 dimensions (exploratoire)",
+           "H6 avec des vecteurs réduits à 512 dimensions.", True,
+           hybrid_soft_audience("compose@512", AUDIENCE_PENALTY)),
+    Method("H7", "H6 sans la collection dans le texte (exploratoire)",
+           "Comme H6, mais le texte composé ne mentionne pas la collection, qui semblait rapprocher les livres "
+           "d'un même éditeur plutôt que d'un même thème.", True,
+           hybrid_soft_audience("compose_sans_collection", AUDIENCE_PENALTY)),
+    Method("H7-512", "H7 en 512 dimensions (exploratoire)",
+           "H7 avec des vecteurs réduits à 512 dimensions.", True,
+           hybrid_soft_audience("compose_sans_collection@512", AUDIENCE_PENALTY)),
     Method("H4-512", "H4 en 512 dimensions",
            "H4 avec des vecteurs réduits à 512 dimensions (stockage divisé par 3).", True, hybrid("compose@512")),
     Method("H4-256", "H4 en 256 dimensions",

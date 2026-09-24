@@ -4,6 +4,12 @@
 > poste, pour lancer `python -m bench.run --provider azure`. Durée : 15 minutes environ.
 > Coût du benchmark : environ **0,002 $**.
 
+> **État au 24 septembre 2026 : fait.** Sur le compte `vpd-actuality-title-dev` (groupe
+> `rg-vpd-dev`), le déploiement `text-embedding-3-small` a été créé (GlobalStandard,
+> capacité 50). Le rôle *Cognitive Services OpenAI User* a été attribué au compte de
+> Florian, sur ce compte Foundry seulement. Ces deux changements **ne sont pas dans le
+> Bicep** (voir §10).
+
 ## 0. Ce qui existe déjà
 
 D'après `docs/actualites-reseaux-sociaux/NEXT.md` et `infra/modules/AiFoundry/aiFoundry.module.bicep` :

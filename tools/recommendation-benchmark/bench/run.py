@@ -42,11 +42,13 @@ def main() -> None:
             "resume_edition": [f.texts["resume_edition"] or f.texts["titre_auteur"] for f in features],
             "resume_oeuvre": [f.texts["resume_oeuvre"] or f.texts["titre_auteur"] for f in features],
             "compose": [f.texts["compose"] for f in features],
+            "compose_sans_collection": [f.texts["compose_sans_collection"] for f in features],
         }
         print(f"Embeddings ({args.provider})…", flush=True)
         vectors, usage = embed_all(provider, texts)
         vectors["compose@512"] = truncate(vectors["compose"], 512)
         vectors["compose@256"] = truncate(vectors["compose"], 256)
+        vectors["compose_sans_collection@512"] = truncate(vectors["compose_sans_collection"], 512)
 
     scores, rankings, timings = {}, {}, {}
     for method in METHODS:

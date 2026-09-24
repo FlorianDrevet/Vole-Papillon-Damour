@@ -11,7 +11,7 @@ SHOWCASE = [
     "dune#1", "asterix1#1", "onepiece1#1", "clans1#1", "sapiens#1", "deuxiemesexe#1", "jesaiscuisiner#1",
     "herisson#1",
 ]
-SHOWCASE_METHODS = ["R0", "E3", "E4", "H4"]
+SHOWCASE_METHODS = ["E3", "E4", "H4", "H6"]
 MARKS = {3: "★★★", 2: "★★", 1: "★", 0: "✗"}
 PROJECTED_BOOKS = 20_000
 
@@ -142,7 +142,7 @@ def render(provider: str, deployment: str | None, corpus: list[dict], features: 
     add("")
 
     # 4. Par famille -----------------------------------------------------------------
-    focus = [c for c in ("R0", "L1", "E3", "E4", "H4") if c in scores]
+    focus = [c for c in ("R0", "L1", "E3", "E4", "H4", "H6") if c in scores]
     add("## 4. Par famille thématique (nDCG@5)")
     add("")
     add("| Famille | " + " | ".join(focus) + " |")
@@ -177,7 +177,7 @@ def render(provider: str, deployment: str | None, corpus: list[dict], features: 
         add("")
 
     # 6. Échecs du candidat ------------------------------------------------------------
-    candidate = "H4" if "H4" in scores else ordered[0].code
+    candidate = next((c for c in ("H6", "H4") if c in scores), ordered[0].code)
     add(f"## 6. Les dix livres où {candidate} se trompe le plus")
     add("")
     add("| Livre | nDCG@5 | Trois premiers voisins |")

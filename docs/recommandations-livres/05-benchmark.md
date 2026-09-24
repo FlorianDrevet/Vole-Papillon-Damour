@@ -5,10 +5,9 @@
 > (text-embedding-3-small) […] et un vrai rapport que je puisse lire avec tes remarques et
 > conseils. »
 >
-> **Statut : benchmark prêt et exécuté pour les méthodes sans IA. Les méthodes à
-> embeddings attendent l'accès Azure OpenAI** (tutoriel :
-> [`06-tutoriel-foundry-embeddings.md`](06-tutoriel-foundry-embeddings.md)). La section 6
-> sera complétée après l'exécution.
+> **Statut : exécuté le 24 septembre 2026 avec Azure OpenAI** (déploiement
+> `text-embedding-3-small` sur `vpd-actuality-title-dev`). Coût total : **0,002 $**.
+> **Pour la conclusion, lire directement la section 7.**
 
 Outil : `tools/recommendation-benchmark/` (Python, jetable, hors application).
 Rapports générés : `tools/recommendation-benchmark/out/rapport-<fournisseur>.md`.
@@ -160,22 +159,150 @@ Rapport complet : `tools/recommendation-benchmark/out/rapport-none.md`.
    la **série** (tomes 1 et 2 confondus), et la « clé titre + premier auteur » tombait
    sur le **traducteur**. Ce sont deux pièges que l'implémentation réelle devra éviter.
 
-### 6.2 Avec embeddings
+### 6.2 Avec embeddings (exécuté le 24 septembre 2026)
 
-**En attente de l'exécution avec Azure OpenAI.** Coût estimé : environ 58 000 tokens, soit
-**0,0012 $** pour tout le benchmark. En production, **0,07 $** pour vectoriser 20 000
-livres avec le texte composé.
+Rapport complet, avec les exemples côte à côte et les pires cas :
+`tools/recommendation-benchmark/out/rapport-azure.md`.
 
-Après exécution, cette section donnera :
+| Méthode | nDCG@5 | Précision@5 | Tome suivant@5 | Fuite même œuvre | Jeunesse ↔ adulte | Autre forme |
+|---|---|---|---|---|---|---|
+| **H7** H6 sans la collection dans le texte ᵉ | **0,592** | 46 % | 100 % | 0 % | **3 %** | 12 % |
+| **H5** E4 + même œuvre exclue + bonus, public ignoré ᵉ | 0,587 | 45 % | 100 % | 0 % | 5 % | 13 % |
+| **H6** E4 + même œuvre exclue + bonus + **pénalité** de public ᵉ | 0,586 | 46 % | 100 % | 0 % | **3 %** | 13 % |
+| **H6-512** H6 en 512 dimensions ᵉ | 0,579 | 45 % | 100 % | 0 % | 4 % | 12 % |
+| **H4** E4 + filtres stricts + bonus (candidat initial) | 0,563 | 44 % | 100 % | 0 % | 4 % | 13 % |
+| **H4-512** | 0,560 | 43 % | 100 % | 0 % | 5 % | 13 % |
+| **E4** Embedding texte composé | 0,555 | 44 % | 100 % | **100 %** | 5 % | 15 % |
+| **F4** E4 + filtres stricts | 0,553 | 43 % | 100 % | 0 % | 5 % | 17 % |
+| **H3** Résumé d'œuvre + filtres + bonus | 0,541 | 41 % | 100 % | 0 % | 4 % | 18 % |
+| **E3** Embedding résumé de l'œuvre | 0,514 | 41 % | 82 % | 100 % | 5 % | 23 % |
+| **H4-256** | 0,509 | 38 % | 100 % | 0 % | 4 % | 14 % |
+| **E1** Embedding titre + auteur | 0,461 | 36 % | 100 % | 100 % | 9 % | 16 % |
+| **E2** Embedding résumé de l'édition | 0,459 | 36 % | 100 % | 100 % | 7 % | 22 % |
+| **L1** TF-IDF lexical | 0,316 | 22 % | 100 % | 100 % | 12 % | 29 % |
+| **R0** Règles seules | 0,216 | 12 % | 100 % | 0 % | 11 % | 7 % |
 
-- le tableau complet des onze méthodes ;
-- le verdict sur chaque critère de la section 5 ;
-- les familles où les embeddings gagnent et celles où ils échouent ;
-- l'analyse des dix pires cas de H4 ;
-- ma recommandation pour la spécification : texte vectorisé, dimension, poids des
-  bonus, seuil d'affichage.
+ᵉ **Variantes exploratoires**, ajoutées **après** lecture des premiers résultats pour
+vérifier une hypothèse (§6.3). Elles ne faisaient pas partie des critères fixés à
+l'avance, et leur avantage doit être confirmé sur le vrai catalogue.
 
-## 7. Découvertes annexes, utiles à l'implémentation
+**Écarts testés statistiquement** (bootstrap apparié sur les 165 requêtes, 10 000
+tirages, intervalle à 95 %) :
+
+| Comparaison | Écart de nDCG@5 | Intervalle à 95 % | Conclusion |
+|---|---|---|---|
+| E4 (texte composé) − L1 (lexical) | +0,239 | [+0,193 ; +0,283] | **Significatif** |
+| E3 (résumé d'œuvre) − E2 (résumé d'édition) | +0,055 | [+0,010 ; +0,100] | **Significatif** |
+| E4 (texte composé) − E3 (résumé seul) | +0,041 | [+0,005 ; +0,077] | **Significatif** |
+| H4 (filtres + bonus) − E4 | +0,008 | [−0,019 ; +0,036] | Non significatif sur la note, mais fuite de 100 % à 0 % |
+| H6 (pénalité de public) − H4 (exclusion) | +0,022 | [+0,010 ; +0,038] | **Significatif** |
+| H6 − H5 (public ignoré) | −0,002 | [−0,020 ; +0,016] | Non significatif, mais H6 divise par deux les voisins jeunesse ↔ adulte |
+| H7 (sans collection) − H6 | +0,006 | [−0,004 ; +0,016] | Non significatif |
+| H6-512 − H6 | −0,006 | [−0,020 ; +0,007] | Non significatif : **512 dimensions suffisent** |
+| H4-256 − H4 | −0,055 | [−0,077 ; −0,033] | **Significatif : 256 dimensions dégradent** |
+
+### 6.3 Verdict sur les critères fixés à l'avance
+
+| Critère (§5) | Résultat | Verdict |
+|---|---|---|
+| Embeddings > R0 **et** L1 de 0,10 au moins | +0,25 sur L1, +0,35 sur R0 | ✅ **Largement** |
+| Partager le résumé entre éditions : E3 ≥ E2 | 0,514 contre 0,459, significatif | ✅ |
+| Texte composé : E4 > E3 et H4 ≥ H3 | 0,555 > 0,514 et 0,563 ≥ 0,541 | ✅ |
+| Filtres et bonus : H4 > E4, fuite ≈ 0, moins de jeunesse ↔ adulte | Fuite 100 % → 0 % ✅ ; jeunesse ↔ adulte 5 % → 4 % ✅ ; note +0,008, non significatif ⚠️ | ✅ **pour la fuite**, ⚠️ pour le filtre de public (voir ci-dessous) |
+| 512 dimensions : perte < 0,01 | −0,003 (H4), −0,006 (H6), non significatif | ✅ |
+| Publiable : précision@5 ≥ 50 % et tome suivant ≥ 90 % | Tome suivant 100 % ✅ ; précision@5 **46 %** ❌ | ❌ **Ne pas afficher systématiquement 5 voisins** |
+
+**Le filtre strict de public est une fausse bonne idée.** Il est appliqué sur un public
+*déduit* des notices, qui se trompe pour 18 éditions sur 165 (11 %). Chaque erreur exclut
+alors tous les bons voisins :
+
+- *Percy Jackson* (collection « Wiz », Albin Michel) est déduit adulte : tous les
+  *Harry Potter* disparaissent ;
+- *Dragon Ball* est déduit adulte et *One Piece* jeunesse : ils ne se voient plus.
+
+D'où les variantes exploratoires. **Une pénalité (H6) plutôt qu'une exclusion** gagne
++0,022, de façon significative, et divise par deux les voisins de public opposé par
+rapport à l'absence de filtre (H5). *Germinal* montre bien l'écart : H4 lui propose
+*Matilda* et *Belle et Sébastien*, H6 *L'Assommoir*, *Une vie*, *Bel-Ami* et *Les
+Misérables*.
+
+### 6.4 Ce qu'il faut retenir de la lecture des exemples
+
+1. **Les embeddings font ce qu'aucune règle ne fait.** Pour *Les hommes qui n'aimaient
+   pas les femmes*, H6 propose le tome 2, puis *Miséricorde*, *Le Bonhomme de neige*,
+   *La Femme en vert* et *Le Silence des agneaux*. Pour *Dune* : *Hypérion*, *La Horde
+   du contrevent*, *Ravage*. Pour *Je sais cuisiner* : les trois autres livres de
+   cuisine. Pour *L'Étranger* : *La Peste*, *La Nausée*, *Le Procès*.
+2. **Les séries sont parfaites** (tome suivant dans le top 5 : 100 %), mais grâce au
+   **bonus**, pas à l'embedding seul : E3 n'en trouve que 82 %.
+3. **Le résumé compte.** Avec un résumé d'œuvre, H6 obtient 0,601 ; sans, 0,458. Les
+   livres sans résumé sont les pires cas : *Les Rivières pourpres* reçoit *Les Croix de
+   bois*, *Le Grand Troupeau* reçoit des feel-good.
+4. **La note sous-estime un peu la qualité réelle.** La grille est stricte : un voisin
+   hors de la famille annotée vaut 0. Or *Da Vinci Code* pour *Le Nom de la rose*, ou
+   *Le Nom de la rose* pour *Da Vinci Code*, n'ont rien d'absurde pour un lecteur. Le
+   « 48 % hors sujet » du top 5 est donc un **maximum**, pas une mesure exacte.
+5. **Les points faibles restent visibles.**
+   - **BD de gag** (0,19) : un gag n'a pas de résumé, et le texte composé ne dit presque
+     rien de *Kid Paddle* ou de *Cédric*.
+   - **Livres jeunesse entre eux** : *Nos étoiles contraires* (romance ado) reçoit
+     *Journal d'un dégonflé*. *Les Malheurs de Sophie* reçoit *Les Misérables*.
+   - **Titres trompeurs** : *Le Deuxième Sexe* reçoit *Ta deuxième vie commence…* ; le
+     mot du titre pèse.
+6. **Petit corpus, grands effets.** Avec environ cinq livres par famille, le plafond de
+   précision@5 atteignable est de 88 %, et H6 en atteint un peu plus de la moitié. Dans
+   un catalogue de 20 000 livres, chaque livre aura bien plus de vrais voisins proches :
+   les scores absolus monteront. **Les seuils de score calculés ici ne sont pas
+   transposables tels quels.**
+
+### 6.5 Afficher moins, mais mieux
+
+Précision des voisins de H6 selon un seuil minimal de score (score = cosinus + bonus −
+pénalité) :
+
+| Seuil | Voisins affichés | Dont bons (≥ 2) | Dont hors sujet | Livres gardant au moins 3 voisins |
+|---|---|---|---|---|
+| aucun | 825 | 46 % | 48 % | 100 % |
+| 0,50 | 551 | 53 % | 41 % | 66 % |
+| 0,55 | 259 | 67 % | 27 % | 22 % |
+| 0,60 | 118 | 78 % | 10 % | 3 % |
+
+Un seuil améliore nettement la qualité affichée, au prix du nombre de voisins. Sur ce
+petit corpus, le compromis est défavorable. Sur le vrai catalogue, bien plus dense, il le
+sera beaucoup moins. **Le seuil doit être calibré sur le catalogue réel**, pas ici.
+
+## 7. Conclusion et recommandation pour la spécification
+
+**Le benchmark valide l'approche par embeddings**, avec une marge qui ne laisse pas de
+doute (+0,24 de nDCG@5 sur la meilleure méthode gratuite). Voici la méthode que je
+recommande de spécifier :
+
+| Élément | Recommandation | Fondement |
+|---|---|---|
+| Modèle | `text-embedding-3-small`, déjà déployé sur le compte Foundry existant | §6.2 |
+| Texte vectorisé | **Texte composé** : titre, auteurs, série et tome, genres, sujets, public, **résumé de l'œuvre**. Collection facultative (effet non significatif) | E4 > E3 ; H7 ≈ H6 |
+| Résumé | Le plus long parmi toutes les éditions de l'œuvre (BnF 330, sinon Open Library), **nettoyé** | E3 > E2 ; couverture 40 % → 89 % |
+| Dimension | **512** (41 Mo pour 20 000 livres) ; pas 256 | Perte non significative à 512, significative à 256 |
+| Exclusion stricte | **Autres éditions de la même œuvre** (identifiant BnF 500, identifiant Open Library, sinon titre + recoupement d'auteurs, avec garde-fou sur les tomes) | Fuite 100 % → 0 % |
+| Public | **Pénalité** de 0,10, pas d'exclusion. Améliorer la déduction : liste de collections jeunesse (*Wiz*, *Fj poche*…), et public décidé par la majorité des éditions de l'œuvre | H6 > H4, significatif |
+| Bonus | Même série +0,20, tome suivant +0,10, même auteur +0,08, même forme +0,03 | Tome suivant 100 % |
+| Affichage | **Jusqu'à 5 voisins au-dessus d'un seuil**, pas 5 d'office. Seuil calibré sur le vrai catalogue par une relecture de 50 fiches | Précision@5 46 % < 50 % |
+| Coût | ≈ **0,08 $** pour 20 000 livres, puis quelques millièmes par mois | §7 du rapport |
+
+**Deux conditions de réussite, à inscrire dans la spécification :**
+
+1. **Lire les bonnes zones BnF** : résumé 330 partagé par œuvre, série 461, auteurs en
+   702, identifiant d'œuvre 500, avec le garde-fou sur les tomes. Sans cela, on retombe
+   à E1 (0,46) ou pire.
+2. **Traiter le public comme une information incertaine** : pénaliser, ne jamais exclure
+   sur une déduction.
+
+**Ce que le benchmark ne dit pas** : la qualité sur le vrai catalogue d'une bourse
+(livres moins connus, moins de résumés), et l'effet des signaux de comportement, qui
+n'existent pas encore. La première se mesurera avec le seuil d'affichage ; la seconde
+viendra avec le trafic.
+
+## 8. Découvertes annexes, utiles à l'implémentation
 
 | Constat | Conséquence |
 |---|---|
