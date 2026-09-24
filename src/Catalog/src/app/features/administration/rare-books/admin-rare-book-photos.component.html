@@ -1,10 +1,16 @@
 <section class="rare-photos-section" aria-labelledby="rare-photos-title">
   <div class="rare-photos-heading">
     <div><span class="rare-section-kicker">Photos de l’exemplaire</span><h2 id="rare-photos-title">Galerie</h2><p>La première photo devient la vignette de la fiche publique.</p></div>
-    <span class="rare-photo-count">{{ photos.length }} photo{{ photos.length > 1 ? 's' : '' }} · {{ formatSize(totalBytes()) }} · conteneur « livres-rares »</span>
+    <span class="rare-photo-count">{{ photos.length + pendingPhotos.length }} photo{{ photos.length + pendingPhotos.length > 1 ? 's' : '' }}</span>
   </div>
 
   <div class="rare-photo-grid" data-testid="rare-photo-grid">
+    @for (photo of pendingPhotos; track photo.id; let index = $index) {
+      <article class="rare-photo-card rare-photo-card-pending" [attr.data-testid]="'rare-photo-pending-' + (index + 1)">
+        <img [src]="photo.previewUri" alt="Aperçu de la photo sélectionnée">
+        <span class="rare-photo-pending-status" role="status">{{ disabled ? 'Envoi en cours…' : 'À envoyer avec la fiche' }}</span>
+      </article>
+    }
     @for (photo of photos; track photo.id; let first = $first; let last = $last; let index = $index) {
       <article class="rare-photo-card" [class.selected]="selectedPhotoId() === photo.id" [class.thumbnail]="first" draggable="true" [attr.data-testid]="'rare-photo-' + (index + 1)" (click)="selectPhoto(photo.id)" (dragstart)="startDrag(photo.id)" (dragover)="allowDrop($event)" (drop)="dropPhoto(photo.id, $event)">
         <img [src]="photo.blobUri" [alt]="photo.caption || 'Photo du livre rare'">

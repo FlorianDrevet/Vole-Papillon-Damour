@@ -78,15 +78,9 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
             "Un auteur",
             "Un éditeur",
             1920,
-            RareBookShelf.AncientEditions.Value,
             price,
             nameof(RareBookCondition.RareBookConditionEnum.GoodWithFlaws),
             "Description",
-            "Reliure",
-            null,
-            120,
-            "A-01",
-            "Bénévole",
             isbn13,
             UserId);
 
@@ -100,15 +94,9 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
             "Un auteur",
             "Un éditeur",
             1920,
-            RareBookShelf.AncientEditions.Value,
             25m,
             nameof(RareBookCondition.RareBookConditionEnum.GoodWithFlaws),
             "Description",
-            "Reliure",
-            null,
-            120,
-            "A-01",
-            "Bénévole",
             null,
             rowVersion,
             UserId);
@@ -117,8 +105,7 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
         string title,
         decimal price = 25m,
         bool published = false,
-        string? isbn13 = null,
-        string? shelf = null)
+        string? isbn13 = null)
     {
         Isbn13? parsedIsbn13 = null;
         if (!string.IsNullOrWhiteSpace(isbn13))
@@ -139,7 +126,6 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
             authorMention: "Un auteur",
             publisher: "Un éditeur",
             publicationYear: 1920,
-            shelf: RareBookShelf.Create(shelf ?? RareBookShelf.AncientEditions.Value),
             condition: RareBookCondition.GoodWithFlaws,
             isbn13: parsedIsbn13);
         if (published)
@@ -246,8 +232,6 @@ internal sealed class RareBookFeatureTestDbContext(
                 .HasConversion(new ValueConverter<Isbn13?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
-            builder.Property(book => book.Shelf)
-                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,

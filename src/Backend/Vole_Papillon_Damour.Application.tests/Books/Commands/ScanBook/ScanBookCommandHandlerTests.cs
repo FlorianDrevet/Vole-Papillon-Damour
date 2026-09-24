@@ -417,7 +417,6 @@ internal sealed class ScanBookFixture : IAsyncDisposable
             ScanBookCommandHandlerTests.SessionStartedAt,
             userId,
             authorMention: book.Authors,
-            shelf: RareBookShelf.AncientEditions,
             condition: RareBookCondition.AsNew,
             isbn13: book.Id);
         if (published)
@@ -734,8 +733,6 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
                 .HasConversion(new ValueConverter<Isbn13?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
-            builder.Property(book => book.Shelf)
-                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,

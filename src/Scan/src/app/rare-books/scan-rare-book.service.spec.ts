@@ -33,7 +33,6 @@ describe('ScanRareBookService', () => {
   it('creates an offline draft and queues its Blob against the client identifier', async () => {
     const draft = await service.createDraft({
       title: 'Les Fables',
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
     });
@@ -56,7 +55,6 @@ describe('ScanRareBookService', () => {
     try {
       const draft = await service.createDraft({
         title: 'Les Fables',
-        shelf: 'Éditions anciennes',
         price: 60,
         condition: 'GoodWithFlaws',
       });
@@ -75,7 +73,6 @@ describe('ScanRareBookService', () => {
   it('creates the server fiche once, then uploads queued photos sequentially with its id', async () => {
     const draft = await service.createDraft({
       title: 'Les Fables',
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
     });
@@ -101,12 +98,17 @@ describe('ScanRareBookService', () => {
     expect(result.uploadedPhotos).toBe(2);
     expect((await store.getRareBook(draft.clientId))?.serverId).toBe('server-rare-1');
     expect(await store.listRareBookPhotoQueue()).toEqual([]);
+    const createPayloadKeys = Object.keys(
+      api.createRareBook.calls.mostRecent().args[0] as unknown as Record<string, unknown>,
+    );
+    expect(createPayloadKeys.filter(key =>
+      ['shelf', 'binding', 'dimensions', 'pageCount', 'shelfLocation', 'priceSetBy'].includes(key),
+    )).toEqual([]);
   });
 
   it('keeps the queue after a failed upload and retries it on the next synchronization', async () => {
     const draft = await service.createDraft({
       title: 'Les Fables',
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
     });
@@ -134,7 +136,6 @@ describe('ScanRareBookService', () => {
   it('refuses a photo before IndexedDB when storage is already above eighty percent', async () => {
     const draft = await service.createDraft({
       title: 'Les Fables',
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
     });
@@ -152,7 +153,6 @@ describe('ScanRareBookService', () => {
   it('keeps the supported source type when the browser cannot transcode it offline', async () => {
     const draft = await service.createDraft({
       title: 'Les Fables',
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
     });
@@ -197,15 +197,9 @@ describe('ScanRareBookService', () => {
       authorMention: null,
       publisher: null,
       publicationYear: null,
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
       publicDescription: null,
-      binding: null,
-      dimensions: null,
-      pageCount: null,
-      shelfLocation: null,
-      priceSetBy: null,
       status: 'Draft',
       isSold: false,
       soldAt: null,

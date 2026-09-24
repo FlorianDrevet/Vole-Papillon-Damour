@@ -74,15 +74,9 @@ describe('ScanRareBookFormComponent', () => {
       authorMention: null,
       publisher: null,
       publicationYear: null,
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
       publicDescription: null,
-      binding: null,
-      dimensions: null,
-      pageCount: null,
-      shelfLocation: null,
-      priceSetBy: null,
       status: 'Draft' as const,
       isSold: false,
       thumbnail: null,
@@ -111,5 +105,9 @@ describe('ScanRareBookFormComponent', () => {
     expect(choices.length).toBe(2);
     expect(choices[0].textContent).toContain('Scanner l’ISBN');
     expect(choices[1].textContent).toContain('Ce livre n’a pas d’ISBN');
+  });
+
+  it('does not ask volunteers to assign a rare-book display shelf', () => {
+    expect(fixture.nativeElement.textContent).not.toContain('Rayon d’affichage');
   });
 });

@@ -58,13 +58,9 @@ describe('CatalogHomePageComponent', () => {
     authorMention: 'Jean de La Fontaine',
     publisher: 'Imprimerie royale',
     publicationYear: 1770,
-    shelf: 'Éditions anciennes',
     price: 60,
     condition: 'GoodWithFlaws',
     publicDescription: null,
-    binding: null,
-    dimensions: null,
-    pageCount: null,
     status: 'Published',
     isSold: false,
     soldAt: null,
@@ -104,7 +100,6 @@ describe('CatalogHomePageComponent', () => {
       totalCount: 1,
       page: 1,
       pageSize: 4,
-      shelves: [{label: 'Éditions anciennes', count: 1}],
     } satisfies CatalogRareBookPage));
     consent = {
       mapsEnabled: signal(true),

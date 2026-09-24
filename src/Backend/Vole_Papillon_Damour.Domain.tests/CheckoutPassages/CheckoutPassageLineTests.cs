@@ -59,6 +59,7 @@ public sealed class CheckoutPassageLineTests
         line.Authors.Should().Be("Une autrice");
         line.Publisher.Should().Be("Gallimard");
         line.PublicationYear.Should().Be(1922);
+        line.PhysicalFormat.Should().BeNull();
         line.Quantity.Should().Be(1);
         line.AssoEventsId.Should().Be(fairId);
     }

@@ -16,7 +16,6 @@ const EMPTY_PAGE: CatalogRareBookPage = {
   totalCount: 0,
   page: 1,
   pageSize: 24,
-  shelves: [],
 };
 
 @Component({
@@ -29,8 +28,6 @@ const EMPTY_PAGE: CatalogRareBookPage = {
 export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
   books: CatalogRareBook[] = [];
   nextFair: CatalogFair | null = null;
-  shelves: CatalogRareBookPage['shelves'] = [];
-  selectedShelf = '';
   includeSold = true;
   sort: CatalogRareBookFilters['sort'] = 'price-desc';
   page = 1;
@@ -62,7 +59,6 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
     this.route.queryParamMap
       .pipe(
         switchMap(params => {
-          this.selectedShelf = params.get('shelf') ?? '';
           this.includeSold = params.get('includeSold') !== 'false';
           this.sort = parseSort(params.get('sort'));
           this.page = parsePage(params.get('page'));
@@ -92,7 +88,6 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        ...(this.selectedShelf ? {shelf: this.selectedShelf} : {}),
         ...(!this.includeSold ? {includeSold: false} : {}),
         ...(this.sort !== 'recent' ? {sort: this.sort} : {}),
         ...(this.page > 1 ? {page: this.page} : {}),
@@ -120,16 +115,6 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
 
   trackBook(_index: number, book: CatalogRareBook): string {
     return book.id;
-  }
-
-  selectShelf(shelf: string): void {
-    this.selectedShelf = shelf;
-    this.page = 1;
-    this.applyFilters();
-  }
-
-  shelfCount(): number {
-    return this.shelves.reduce((total, shelf) => total + shelf.count, 0);
   }
 
   formatFairDateRange(fair: CatalogFair): string {
@@ -161,13 +146,11 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
       sort: this.sort,
       page: this.page,
       pageSize: this.pageSize,
-      ...(this.selectedShelf ? {shelf: this.selectedShelf} : {}),
     };
   }
 
   private applyPage(page: CatalogRareBookPage): void {
     this.books = page.books;
-    this.shelves = page.shelves;
     this.totalCount = page.totalCount;
     this.pageSize = page.pageSize;
     this.loading = false;

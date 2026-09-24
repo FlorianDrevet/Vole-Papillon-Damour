@@ -78,7 +78,6 @@ public sealed class GetAdminRareBooksQueryHandler(
                 EF.Functions.Like(book.Title, pattern, "\\") ||
                 EF.Functions.Like(book.AuthorMention ?? string.Empty, pattern, "\\") ||
                 EF.Functions.Like(book.Publisher ?? string.Empty, pattern, "\\") ||
-                EF.Functions.Like(book.ShelfLocation ?? string.Empty, pattern, "\\") ||
                 hasIsbnSearch && book.Isbn13 == isbnSearch);
         }
 

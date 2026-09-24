@@ -41,13 +41,9 @@ describe('CatalogRareBooksPageComponent', () => {
     authorMention: 'Jean de La Fontaine',
     publisher: 'Imprimerie royale',
     publicationYear: 1770,
-    shelf: 'Éditions anciennes',
     price: 60,
     condition: 'GoodWithFlaws',
     publicDescription: 'Exemplaire illustré.',
-    binding: 'Demi-reliure',
-    dimensions: null,
-    pageCount: 240,
     status: 'Published',
     isSold: false,
     soldAt: null,
@@ -62,7 +58,6 @@ describe('CatalogRareBooksPageComponent', () => {
       totalCount: 1,
       page: 1,
       pageSize: 24,
-      shelves: [{label: 'Éditions anciennes', count: 1}],
     } satisfies CatalogRareBookPage));
     api.getUpcomingFairs.and.returnValue(of([nextFair]));
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
@@ -110,5 +105,13 @@ describe('CatalogRareBooksPageComponent', () => {
     expect(callout).not.toBeNull();
     expect(callout.textContent).toContain('livre ancien à donner');
     expect(callout.querySelector('a')?.getAttribute('href')).toContain('mailto:');
+  });
+
+  it('does not show public shelf filters for rare books', () => {
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.rare-shelf-chips')).toBeNull();
+    expect(element.textContent).not.toContain('Rayons');
+    expect(element.textContent).not.toContain('Éditions anciennes');
   });
 });

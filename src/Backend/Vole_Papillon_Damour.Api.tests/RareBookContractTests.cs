@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Contracts.RareBooks.Requests;
 using Vole_Papillon_Damour.Contracts.RareBooks.Responses;
 
@@ -24,5 +25,38 @@ public sealed class RareBookContractTests
         typeof(PublicRareBookResponse).GetProperty(nameof(PublicRareBookResponse.Price)).Should().NotBeNull();
         typeof(RareBookResponse).GetProperties().Select(property => property.Name)
             .Should().NotContain("Total");
+    }
+
+    [Fact]
+    public void Rare_book_contracts_do_not_expose_removed_details_or_shelf_classification()
+    {
+        var removedProperties = new[]
+        {
+            "Binding",
+            "Dimensions",
+            "PageCount",
+            "ShelfLocation",
+            "PriceSetBy",
+            "Shelf"
+        };
+        var contracts = new[]
+        {
+            typeof(CreateRareBookRequest),
+            typeof(UpdateRareBookRequest),
+            typeof(RareBookResponse),
+            typeof(PublicRareBookResponse),
+            typeof(CashRareBookResponse),
+            typeof(ScanCatalogRareBookResponse)
+        };
+
+        foreach (var contract in contracts)
+        {
+            contract.GetProperties().Select(property => property.Name)
+                .Should().NotContain(removedProperties);
+        }
+
+        typeof(PublicRareBookPageResponse).GetProperty("Shelves").Should().BeNull();
+        typeof(PublicRareBookPageResponse).Assembly.GetTypes()
+            .Should().NotContain(type => type.Name == "RareBookShelfCountResponse");
     }
 }

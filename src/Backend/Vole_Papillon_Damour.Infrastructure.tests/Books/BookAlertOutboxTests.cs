@@ -83,7 +83,6 @@ public sealed class BookAlertOutboxTests
             StartedAt,
             member.Id,
             authorMention: "Auteur",
-            shelf: RareBookShelf.AncientEditions,
             condition: RareBookCondition.AsNew);
         rareBook.Publish(member.Id, StartedAt.AddMinutes(1));
         rareBook.MarkSold(ClosedAt, null, null, member.Id);

@@ -71,7 +71,6 @@ public sealed class GetMyWatchlistQueryHandlerTests
             WatchlistFeatureTestFixture.Now.AddDays(-1),
             UserId.Create(MemberId),
             authorMention: "Auteur",
-            shelf: RareBookShelf.AncientEditions,
             condition: RareBookCondition.AsNew);
         rareBook.Publish(UserId.Create(MemberId), WatchlistFeatureTestFixture.Now.AddHours(-12));
         fixture.Context.RareBooks.Add(rareBook);

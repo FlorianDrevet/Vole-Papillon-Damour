@@ -206,6 +206,24 @@ public sealed class ProjectDbContextModelTests
     }
 
     [Fact]
+    public void Model_DoesNotPersistRetiredRareBookDetailsOrShelfClassification()
+    {
+        using var context = CreateContext();
+        var rareBooks = context.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(RareBook))!;
+
+        rareBooks.GetProperties().Select(property => property.Name)
+            .Should().NotContain(new[]
+            {
+                "Binding",
+                "Dimensions",
+                "PageCount",
+                "ShelfLocation",
+                "PriceSetBy",
+                "Shelf"
+            });
+    }
+
+    [Fact]
     public void PersistenceContractAndMigrationsExposeRareBookStorage()
     {
         typeof(IProjectDbContext).GetProperty("RareBooks").Should().NotBeNull();

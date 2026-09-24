@@ -339,14 +339,6 @@ button:focus-visible {
   justify-content: space-between;
 }
 
-.rare-detail-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.rare-detail-grid .rare-field-wide {
-  grid-column: auto;
-}
-
 .rare-validation-error {
   font-size: 13px;
 }
@@ -368,13 +360,11 @@ button:focus-visible {
   }
 
   .rare-reference-search-grid,
-  .rare-field-grid,
-  .rare-detail-grid {
+  .rare-field-grid {
     grid-template-columns: 1fr;
   }
 
-  .rare-field-wide,
-  .rare-detail-grid .rare-field-wide {
+  .rare-field-wide {
     grid-column: auto;
   }
 

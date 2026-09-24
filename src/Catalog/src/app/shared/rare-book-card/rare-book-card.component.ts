@@ -31,7 +31,6 @@ export class CatalogRareBookCardComponent {
     return [
       this.book.publisher,
       this.book.publicationYear?.toString(),
-      this.book.binding,
       this.book.isbn13 ?? 'sans ISBN',
     ].filter(Boolean).join(' · ');
   }

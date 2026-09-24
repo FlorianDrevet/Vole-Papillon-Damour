@@ -137,13 +137,14 @@ qu'une promesse démentie sur place.
 
 ## 5 bis. Catalogue des livres rares
 
-La page publique `/livres-rares` liste uniquement les fiches rares publiées. Elle propose
-les quatre rayons configurés par l'association, l'inclusion explicite des exemplaires
-vendus, et un tri par arrivée ou par prix. Chaque résultat utilise une carte dédiée avec
-photo, état, disponibilité et prix ferme. Ce prix est une information de l'exemplaire,
+La page publique `/livres-rares` liste uniquement les fiches rares publiées. Elle permet
+d'inclure explicitement les exemplaires vendus et de trier par arrivée ou par prix ; les
+fiches rares ne sont plus classées par rayon. Chaque résultat utilise une carte dédiée
+avec photo, état, disponibilité et prix ferme. Ce prix est une information de l'exemplaire,
 visible pour préparer la visite ; le site ne propose ni panier, ni paiement, ni total.
 
-La fiche `/livres-rares/:slug` présente la galerie et les caractéristiques de l'exemplaire,
+La fiche `/livres-rares/:slug` présente la galerie, les informations bibliographiques et
+l'état de l'exemplaire sans afficher de format matériel ni d'emplacement,
 avec un lien de contact `mailto:volepapillondamour@sfr.fr` comme défaut de Q2. Un exemplaire
 vendu reste consultable mais est clairement signalé comme indisponible. Le référencement
 comprend les routes dédiées, une URL canonique, les métadonnées `Book` et le sitemap

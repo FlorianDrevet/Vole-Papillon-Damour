@@ -17,11 +17,30 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Livres rares — lots 0 à 10 implémentés sur la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203), en revue finale avant livraison. |
-| **Prochaine action** | Faire relire puis valider la PR #203 ; appliquer les migrations et l'export DBA des anciens ISBN rares sur un environnement autorisé avant le déploiement. Q2 (`mailto:`) et Q4 (liste de rayons fermée et modifiable dans les paramètres de l'association) sont appliqués. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-livres-rares-lot0` |
-| **Dernière mise à jour** | 2026-09-23 — suivi d'un second échec de déploiement infra après la fusion de la PR #220 ; le détecteur Failure Anomalies est fixé à `PT1M`, en attente de validation Azure. L'état Azure après les deux déploiements réels reste à vérifier. |
-| **Branche** | `fix/livres-rares-blob-container` — dédiée depuis `origin/main` fraîchement récupéré ; [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203) vers `main`, non fusionnée |
+| **Lot en cours** | Correctif de suivi des livres rares : prévisualisation et envoi différé des photos, suppression des anciens détails et du classement par rayon dans Catalog, Scan, API et persistance. Les lots 0 à 10 restent décrits dans la [PR #203](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/203). |
+| **Prochaine action** | Faire relire puis valider la [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228), puis faire appliquer sa migration par le déploiement backend autorisé. `20260924112034_RemoveRareBookEditorialDetails` supprime les colonnes `Shelf`, `Binding`, `Dimensions`, `PageCount`, `ShelfLocation` et `PriceSetBy` de `RareBooks`; les valeurs existantes seront perdues. La demande du 24 septembre supprime entièrement le classement des livres rares par rayon ; Q2 (`mailto:`) reste inchangée. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-rare-book-editor` |
+| **Dernière mise à jour** | 2026-09-24 — correctif Catalog dans la [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228), ouverte et non fusionnée. L'état Azure après les deux déploiements infra réels du 23 septembre reste à vérifier ; aucune opération Azure n'a été effectuée pour ce correctif. |
+| **Branche** | `fix/catalogue-rare-book-editor` — worktree dédié créé depuis `origin/main` ; [PR #228](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/228) vers `main`, ouverte et non fusionnée |
+
+### Correctif livres rares Catalog — 2026-09-24
+
+Les photos sélectionnées dans le formulaire de création sont désormais prévisualisées
+immédiatement et mises en attente jusqu'à l'enregistrement de la fiche. Leur envoi commence
+ensuite. Les champs `Reliure`, `Format`, `Pages`, `Emplacement` et `Prix fixé par`, ainsi que
+le classement `Rayon d'affichage`, ont été retirés du Catalog, de Scan, des contrats API et du
+modèle EF. Le filtre et les compteurs de rayons publics disparaissent aussi. Le poids/le nom
+du conteneur dans la galerie et la mention sur la totalisation du prix sont supprimés.
+
+Validation locale : 381 tests Catalog, 283 Scan, 151 Domain, 339 Application (deux tests de
+tri par prix exclus car la collation SQLite locale ne parse pas `10.0` sous la culture
+courante), 156 Infrastructure et 46 API ; builds Catalog et Scan, migration EF sans
+changement de modèle en attente, et `graphify update .`. Le build de solution backend reste
+bloqué par la résolution préexistante de `Azure.Functions.Sdk` dans le Worker. La page publique ne déborde pas à
+320, 375 ou 1440 px. L'éditeur reste à vérifier dans un navigateur connecté à Microsoft Entra.
+Le build solution backend est bloqué par la résolution préexistante de `Azure.Functions.Sdk`
+dans le projet Worker. Aucun déploiement ou application de migration n'a eu lieu. La migration
+supprimera les valeurs des six colonnes au prochain déploiement avec migrations activées.
 
 ### Incident infra — 2026-09-23
 

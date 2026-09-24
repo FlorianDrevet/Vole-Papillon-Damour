@@ -41,22 +41,6 @@ public sealed class GetPublicRareBooksQueryHandler(
             .AsNoTracking()
             .Where(book => book.Status == publishedStatus);
 
-        var shelf = query.Shelf?.Trim();
-        if (!string.IsNullOrWhiteSpace(shelf))
-        {
-            RareBookShelf shelfValue;
-            try
-            {
-                shelfValue = RareBookShelf.Create(shelf);
-            }
-            catch (ArgumentException exception)
-            {
-                return Errors.RareBook.InvalidData(exception.Message);
-            }
-
-            booksQuery = booksQuery.Where(book => book.Shelf == shelfValue);
-        }
-
         if (!query.IncludeSold)
         {
             booksQuery = booksQuery.Where(book => !book.IsSold);
@@ -95,22 +79,11 @@ public sealed class GetPublicRareBooksQueryHandler(
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
-        var shelves = (await dbContext.RareBooks
-                .AsNoTracking()
-                .Where(book => book.Status == publishedStatus)
-            .Select(book => book.Shelf)
-            .ToListAsync(cancellationToken))
-            .GroupBy(value => value.Value, StringComparer.Ordinal)
-            .OrderBy(group => group.Key, StringComparer.CurrentCultureIgnoreCase)
-            .Select(group => new RareBookShelfCountResult(group.Key, group.Count()))
-            .ToArray();
-
         return new PublicRareBookPageResult(
             new DateTimeOffset(nowUtc, TimeSpan.Zero),
             books.Select(RareBookProjector.ToPublicResult).ToArray(),
             totalCount,
             query.Page,
-            query.PageSize,
-            shelves);
+            query.PageSize);
     }
 }

@@ -4,7 +4,7 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogApiService} from './catalog-api.service';
-import {CatalogRareBookDetail, CatalogRareBookPage, CatalogSearchResponse} from './catalog.models';
+import {CatalogRareBookDetail, CatalogRareBookFilters, CatalogRareBookPage, CatalogSearchResponse} from './catalog.models';
 
 describe('CatalogApiService', () => {
   let service: CatalogApiService;
@@ -185,19 +185,19 @@ describe('CatalogApiService', () => {
       totalCount: 0,
       page: 1,
       pageSize: 24,
-      shelves: [],
     } satisfies CatalogRareBookPage;
-    service.getPublicRareBooks({
+    const legacyShelfFilters = {
       search: 'atlas',
       shelf: 'Illustrés',
       includeSold: false,
       sort: 'price-desc',
       page: 2,
       pageSize: 12,
-    }).subscribe(result => expect(result).toEqual(page));
+    } as unknown as CatalogRareBookFilters;
+    service.getPublicRareBooks(legacyShelfFilters).subscribe(result => expect(result).toEqual(page));
     const listRequest = http.expectOne(request => request.url === `${environment.apiUrl}/catalog/rare-books`);
     expect(listRequest.request.params.get('search')).toBe('atlas');
-    expect(listRequest.request.params.get('shelf')).toBe('Illustrés');
+    expect(listRequest.request.params.has('shelf')).toBeFalse();
     expect(listRequest.request.params.get('includeSold')).toBe('false');
     expect(listRequest.request.params.get('sort')).toBe('price-desc');
     expect(listRequest.request.params.get('page')).toBe('2');

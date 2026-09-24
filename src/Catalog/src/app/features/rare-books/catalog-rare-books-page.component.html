@@ -15,12 +15,6 @@
 
   <section class="rare-public-content page-width">
     <div class="rare-public-toolbar" aria-label="Filtres des livres rares">
-      <div class="rare-shelf-chips" role="group" aria-label="Rayons">
-        <button type="button" [class.active]="!selectedShelf" (click)="selectShelf('')">Tous <span>{{ shelfCount() }}</span></button>
-        <button *ngFor="let shelf of shelves" type="button" [class.active]="selectedShelf === shelf.label" (click)="selectShelf(shelf.label)">
-          {{ shelf.label }} <span>{{ shelf.count }}</span>
-        </button>
-      </div>
       <label>
         <span>Trier</span>
         <select [(ngModel)]="sort" (change)="page = 1; applyFilters()">

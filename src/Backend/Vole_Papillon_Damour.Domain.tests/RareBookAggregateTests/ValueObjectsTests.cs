@@ -18,24 +18,6 @@ public sealed class ValueObjectsTests
     }
 
     [Fact]
-    public void RareBookShelf_AcceptsConfiguredAndCustomLabels()
-    {
-        var configured = RareBookShelf.Create("Éditions anciennes");
-        var custom = RareBookShelf.Create("Sciences naturelles");
-
-        configured.Value.Should().Be("Éditions anciennes");
-        custom.Value.Should().Be("Sciences naturelles");
-    }
-
-    [Fact]
-    public void RareBookShelf_WithEmptyLabel_Throws()
-    {
-        var action = () => RareBookShelf.Create(" ");
-
-        action.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
     public void RareBookSlug_NormalizesAccentsAndSupportsCollisionSuffix()
     {
         var slug = RareBookSlug.Create("Les Fables de la Fontaine", "Gustave Doré", 1868);

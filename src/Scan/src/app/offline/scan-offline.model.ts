@@ -91,15 +91,9 @@ export interface ScanRareBook {
   authorMention: string | null;
   publisher: string | null;
   publicationYear: number | null;
-  shelf: string;
   price: number;
   condition: string;
   publicDescription: string | null;
-  binding: string | null;
-  dimensions: string | null;
-  pageCount: number | null;
-  shelfLocation: string | null;
-  priceSetBy: string | null;
   status: ScanRareBookStatus;
   isSold: boolean;
   thumbnail: string | null;
@@ -129,15 +123,9 @@ export interface ScanRareBookDraftInput {
   authorMention?: string | null;
   publisher?: string | null;
   publicationYear?: number | null;
-  shelf: string;
   price: number;
   condition: string;
   publicDescription?: string | null;
-  binding?: string | null;
-  dimensions?: string | null;
-  pageCount?: number | null;
-  shelfLocation?: string | null;
-  priceSetBy?: string | null;
   isbn13?: string | null;
 }
 
@@ -147,7 +135,6 @@ export interface ScanCatalogRareBook {
   title: string;
   authorMention: string | null;
   price: number;
-  shelf: string;
   condition: string;
   shortDescription: string | null;
   thumbnail: string | null;

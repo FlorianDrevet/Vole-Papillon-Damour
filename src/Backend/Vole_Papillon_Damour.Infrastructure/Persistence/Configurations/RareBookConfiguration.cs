@@ -45,12 +45,6 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
         builder.Property(book => book.AuthorMention).HasMaxLength(300);
         builder.Property(book => book.Publisher).HasMaxLength(200);
         builder.Property(book => book.PublicationYear);
-        builder.Property(book => book.Shelf)
-            .HasMaxLength(RareBookShelf.MaxLength)
-            .IsRequired()
-            .HasConversion(
-                shelf => shelf.Value,
-                value => RareBookShelf.Create(value));
         builder.Property(book => book.Price)
             .HasPrecision(10, 2)
             .IsRequired();
@@ -60,10 +54,6 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
                 condition => (byte)condition.Value,
                 value => new RareBookCondition((RareBookCondition.RareBookConditionEnum)value));
         builder.Property(book => book.PublicDescription).HasMaxLength(1200);
-        builder.Property(book => book.Binding).HasMaxLength(120);
-        builder.Property(book => book.Dimensions).HasMaxLength(60);
-        builder.Property(book => book.PageCount);
-        builder.Property(book => book.ShelfLocation).HasMaxLength(120);
         builder.Property(book => book.Status)
             .HasConversion<byte>()
             .HasDefaultValue(RareBookStatus.Draft)
@@ -82,7 +72,6 @@ public sealed class RareBookConfiguration : IEntityTypeConfiguration<RareBook>
             .HasConversion(
                 id => id == null ? (Guid?)null : id.Value,
                 value => value.HasValue ? ScanSessionId.Create(value.Value) : null);
-        builder.Property(book => book.PriceSetBy).HasMaxLength(120);
         builder.Property(book => book.CreatedAt)
             .HasColumnType("datetime2")
             .HasConversion(BookPersistenceConversions.UtcDateTimeConverter)

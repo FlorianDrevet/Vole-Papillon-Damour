@@ -22,20 +22,14 @@ describe('AdminRareBookFormComponent', () => {
     authorMention: 'Auteur',
     publisher: 'Éditeur',
     publicationYear: 1920,
-    shelf: 'Éditions anciennes',
     price: 35,
     condition: 'GoodWithFlaws',
     publicDescription: 'Défauts décrits ici.',
-    binding: 'Reliure',
-    dimensions: '18 × 12 cm',
-    pageCount: 240,
-    shelfLocation: 'Table rares',
     status: 'Draft',
     isSold: false,
     soldAt: null,
     soldAtFairId: null,
     soldInSessionId: null,
-    priceSetBy: 'Association',
     createdAt: '2026-09-16T10:00:00Z',
     createdBy: 'creator-id',
     updatedAt: '2026-09-16T10:00:00Z',
@@ -80,12 +74,37 @@ describe('AdminRareBookFormComponent', () => {
 
     expect(element.querySelector('[data-testid="rare-title"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="rare-author"]')).not.toBeNull();
-    expect(element.querySelector('[data-testid="rare-shelf"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="rare-price"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="rare-condition-good"]')).not.toBeNull();
     expect(element.querySelector('[data-testid="rare-description"]')).not.toBeNull();
     expect(element.textContent).toContain('0 / 1200');
     expect(element.textContent).toContain('Sans ISBN, la fiche vit seule');
+  });
+
+  it('omits the removed rare-book classification and physical detail fields', () => {
+    const element = fixture.nativeElement as HTMLElement;
+
+    for (const name of [
+      'rareShelf',
+      'rareBinding',
+      'rareDimensions',
+      'rarePageCount',
+      'rareShelfLocation',
+      'rarePriceSetBy',
+    ]) {
+      expect(element.querySelector(`[name="${name}"]`)).withContext(name).toBeNull();
+    }
+    for (const removedLabel of [
+      'Rayon d’affichage',
+      'Reliure',
+      'Format',
+      'Pages',
+      'Emplacement',
+      'Prix fixé par',
+      'jamais totalisé par l’application',
+    ]) {
+      expect(element.textContent).not.toContain(removedLabel);
+    }
   });
 
   it('normalizes a valid editor submission and keeps an ISBN optional', () => {
@@ -96,15 +115,9 @@ describe('AdminRareBookFormComponent', () => {
       authorMention: ' Auteur ',
       publisher: '',
       publicationYear: 1900,
-      shelf: 'Illustrés',
       price: 20,
       condition: 'Worn',
       publicDescription: ' Description ',
-      binding: '',
-      dimensions: '18 × 12 cm',
-      pageCount: 200,
-      shelfLocation: '',
-      priceSetBy: 'Conseil',
       isbn13: '',
     };
 
@@ -116,15 +129,9 @@ describe('AdminRareBookFormComponent', () => {
         authorMention: 'Auteur',
         publisher: '',
         publicationYear: 1900,
-        shelf: 'Illustrés',
         price: 20,
         condition: 'Worn',
         publicDescription: 'Description',
-        binding: '',
-        dimensions: '18 × 12 cm',
-        pageCount: 200,
-        shelfLocation: '',
-        priceSetBy: 'Conseil',
         isbn13: '',
       },
       rowVersion: null,

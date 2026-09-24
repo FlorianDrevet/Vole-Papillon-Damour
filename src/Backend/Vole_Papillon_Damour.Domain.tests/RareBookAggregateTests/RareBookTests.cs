@@ -26,15 +26,9 @@ public sealed class RareBookTests
             authorMention: "Gustave Doré",
             publisher: "Hachette",
             publicationYear: 1868,
-            shelf: RareBookShelf.Create("Éditions anciennes"),
             price: 35.00m,
             condition: RareBookCondition.AsNew,
             publicDescription: "Demi-cuir à coins.",
-            binding: "Demi-cuir à coins",
-            dimensions: "32 × 44 cm",
-            pageCount: 300,
-            shelfLocation: "Table rares · caisse 2",
-            priceSetBy: "Conseil du 5 mars",
             createdAt: CreatedAt,
             createdBy: CreatedBy,
             isbn13: isbn);
@@ -281,7 +275,6 @@ public sealed class RareBookTests
             createdBy: CreatedBy,
             authorMention: "Gustave Doré",
             publicationYear: 1868,
-            shelf: RareBookShelf.Create("Éditions anciennes"),
             condition: RareBookCondition.AsNew);
     }
 

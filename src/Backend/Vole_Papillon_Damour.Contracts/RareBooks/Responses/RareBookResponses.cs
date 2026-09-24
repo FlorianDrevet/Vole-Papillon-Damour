@@ -19,20 +19,14 @@ public sealed record RareBookResponse(
     string? AuthorMention,
     string? Publisher,
     int? PublicationYear,
-    string Shelf,
     decimal Price,
     string Condition,
     string? PublicDescription,
-    string? Binding,
-    string? Dimensions,
-    int? PageCount,
-    string? ShelfLocation,
     string Status,
     bool IsSold,
     DateTimeOffset? SoldAt,
     Guid? SoldAtFairId,
     Guid? SoldInSessionId,
-    string? PriceSetBy,
     DateTimeOffset CreatedAt,
     Guid CreatedBy,
     DateTimeOffset UpdatedAt,
@@ -60,13 +54,9 @@ public sealed record PublicRareBookResponse(
     string? AuthorMention,
     string? Publisher,
     int? PublicationYear,
-    string Shelf,
     decimal Price,
     string Condition,
     string? PublicDescription,
-    string? Binding,
-    string? Dimensions,
-    int? PageCount,
     string Status,
     bool IsSold,
     DateTimeOffset? SoldAt,
@@ -77,12 +67,7 @@ public sealed record PublicRareBookPageResponse(
     IReadOnlyList<PublicRareBookResponse> Books,
     int TotalCount,
     int Page,
-    int PageSize,
-    IReadOnlyList<RareBookShelfCountResponse> Shelves);
-
-public sealed record RareBookShelfCountResponse(
-    string Label,
-    int Count);
+    int PageSize);
 
 public sealed record PublicRareBookDetailResponse(
     PublicRareBookResponse RareBook,
@@ -94,7 +79,6 @@ public sealed record CashRareBookResponse(
     string? AuthorMention,
     string? Isbn13,
     decimal Price,
-    string Shelf,
     string Condition,
     Uri? Thumbnail,
     string Slug);

@@ -7,15 +7,9 @@ public sealed record CreateRareBookRequest(
     string? AuthorMention,
     string? Publisher,
     int? PublicationYear,
-    string Shelf,
     decimal Price,
     string Condition,
     string? PublicDescription,
-    string? Binding,
-    string? Dimensions,
-    int? PageCount,
-    string? ShelfLocation,
-    string? PriceSetBy,
     string? Isbn13,
     Guid? ClientGestureId = null);
 
@@ -24,15 +18,9 @@ public sealed record UpdateRareBookRequest(
     string? AuthorMention,
     string? Publisher,
     int? PublicationYear,
-    string Shelf,
     decimal Price,
     string Condition,
     string? PublicDescription,
-    string? Binding,
-    string? Dimensions,
-    int? PageCount,
-    string? ShelfLocation,
-    string? PriceSetBy,
     string? Isbn13,
     string RowVersion);
 

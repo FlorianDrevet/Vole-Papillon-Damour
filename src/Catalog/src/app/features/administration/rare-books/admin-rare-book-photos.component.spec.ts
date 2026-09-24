@@ -40,13 +40,60 @@ describe('AdminRareBookPhotosComponent', () => {
     fixture.detectChanges();
   });
 
-  it('marks the first photo as the thumbnail and exposes the dedicated container', () => {
+  it('marks the first photo as the thumbnail and shows only the photo count', () => {
     const element = fixture.nativeElement as HTMLElement;
 
     expect(element.querySelector('[data-testid="rare-photo-1"]')).not.toBeNull();
     expect(element.textContent).toContain('Vignette');
-    expect(element.textContent).toContain('conteneur « livres-rares »');
+    expect(element.querySelector('.rare-photo-count')?.textContent).toContain('2 photos');
+    expect(element.textContent).not.toContain('conteneur « livres-rares »');
+    expect(element.textContent).not.toContain('3 Ko');
     expect(element.querySelector('[data-testid="rare-photo-add"]')).not.toBeNull();
+  });
+
+  it('does not show storage metadata for an empty photo gallery', () => {
+    fixture.componentRef.setInput('photos', []);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('0 o');
+    expect(text).not.toContain('conteneur « livres-rares »');
+  });
+
+  it('shows an immediate preview while the selected photo is being saved', () => {
+    const file = new File(['photo'], 'photo.jpg', {type: 'image/jpeg'});
+    const actions: RareBookPhotoAction[] = [];
+    component.action.subscribe(action => actions.push(action));
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', {configurable: true, value: [file]});
+    input.dispatchEvent(new Event('change'));
+    expect(component.pendingPhotos.length).toBe(1);
+    fixture.detectChanges();
+
+    const preview = fixture.nativeElement.querySelector('[data-testid="rare-photo-pending-1"] img') as HTMLImageElement;
+    expect(preview).not.toBeNull();
+    expect(preview.src).toContain('blob:');
+    expect(actions).toEqual([{kind: 'add', file, caption: ''}]);
+  });
+
+  it('replaces the preview when the saved photo arrives from the server', () => {
+    const file = new File(['photo'], 'photo.jpg', {type: 'image/jpeg'});
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', {configurable: true, value: [file]});
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('photos', [...component.photos, {
+      ...component.photos[0],
+      id: 'photo-3',
+      blobUri: 'https://blob.example/three.jpg',
+      position: 2,
+    }]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="rare-photo-pending-1"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="rare-photo-3"] img')?.getAttribute('src'))
+      .toBe('https://blob.example/three.jpg');
   });
 
   it('emits add, delete and accessible reorder actions', () => {

@@ -32,7 +32,6 @@ const EMPTY_RARE: CatalogRareBookPage = {
   totalCount: 0,
   page: 1,
   pageSize: 4,
-  shelves: [],
 };
 
 interface HeroGenreChoice {

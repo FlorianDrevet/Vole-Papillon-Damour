@@ -138,6 +138,16 @@ there is no basket, total or revenue calculation, and ordinary books keep no pri
 Local validation for the lot is 297 Catalog ChromeHeadless tests and the SSR/browser build;
 authenticated role, real API/blob and responsive checks remain manual gates.
 
+As of 2026-09-24, the Catalog rare-book editor shows local photo previews immediately and
+queues files chosen for a new draft, uploading them after the fiche is created. The gallery
+then replaces previews with saved photos and revokes its object URLs. The rare-book
+classification and the binding, dimensions, page-count, physical-location, and price-setter
+fields were removed from the Catalog forms and public surfaces; the public list no longer
+offers shelf filters. The gallery reports only its photo count, and the price label no longer
+includes the “never totalled by the application” copy. Scan forms, offline projections, and
+typed API clients use the reduced contract. The follow-up EF migration must be applied during
+an approved backend rollout to remove the retired `RareBooks` columns.
+
 As of 2026-09-16, the Catalog administration `Inventaire` workspace is removed. It is no
 longer a sidebar item or a valid administration section, and the old queue/manual-add state,
 template branch, API filters and dead styles were deleted. The single `Catalogue` workspace

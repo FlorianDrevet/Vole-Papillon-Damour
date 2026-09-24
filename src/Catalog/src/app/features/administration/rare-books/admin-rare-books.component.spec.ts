@@ -48,20 +48,14 @@ describe('AdminRareBooksComponent', () => {
       authorMention: 'Auteur',
       publisher: 'Éditeur',
       publicationYear: 1920,
-      shelf: 'Éditions anciennes',
       price: 35,
       condition: 'GoodWithFlaws',
       publicDescription: null,
-      binding: null,
-      dimensions: null,
-      pageCount: null,
-      shelfLocation: 'Table rares',
       status: 'Draft',
       isSold: false,
       soldAt: null,
       soldAtFairId: null,
       soldInSessionId: null,
-      priceSetBy: 'Association',
       createdAt: '2026-09-16T10:00:00Z',
       createdBy: 'creator-id',
       updatedAt: '2026-09-16T10:00:00Z',
@@ -125,6 +119,8 @@ describe('AdminRareBooksComponent', () => {
     expect(element.textContent).toContain('Le livre rare');
     expect(element.textContent).toContain('sans ISBN');
     expect(element.textContent).toContain('35,00 €');
+    expect(element.textContent).not.toContain('Éditions anciennes');
+    expect((element.querySelector('[data-testid="rare-search"]') as HTMLInputElement).placeholder).not.toContain('rayon');
     expect(element.textContent).not.toContain('panier');
   });
 
@@ -163,5 +159,13 @@ describe('AdminRareBooksComponent', () => {
     expect(link).not.toBeNull();
     expect(link.getAttribute('href')).toBe('/livres-rares/livre-publie');
     expect(link.textContent).toContain('Voir la fiche publique');
+  });
+
+  it('omits the removed price attribution from rare-book traceability', () => {
+    facade.selectedBook.set((facade.page()?.books ?? [])[0]);
+    facade.editorOpen.set(true);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain('Prix fixé par');
   });
 });

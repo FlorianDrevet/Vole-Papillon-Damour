@@ -173,13 +173,9 @@ describe('CatalogSearchPageComponent', () => {
       authorMention: 'Un auteur',
       publisher: 'Un éditeur',
       publicationYear: 1920,
-      shelf: 'Éditions anciennes',
       price: 60,
       condition: 'GoodWithFlaws',
       publicDescription: null,
-      binding: null,
-      dimensions: null,
-      pageCount: null,
       status: 'Published',
       isSold: false,
       soldAt: null,
@@ -191,7 +187,6 @@ describe('CatalogSearchPageComponent', () => {
       totalCount: 1,
       page: 1,
       pageSize: 24,
-      shelves: [{label: 'Éditions anciennes', count: 1}],
     };
     api.getPublicRareBooks.and.returnValue(of(rarePage));
     routeParams.next(convertToParamMap({q: 'atlas', rare: 'true'}));

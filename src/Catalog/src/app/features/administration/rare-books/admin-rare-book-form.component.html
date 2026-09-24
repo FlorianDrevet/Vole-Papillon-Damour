@@ -51,13 +51,12 @@
       <label class="rare-field"><span>Auteur ou mention</span><input name="rareAuthor" data-testid="rare-author" [(ngModel)]="form.authorMention" maxlength="300" placeholder="Illustré par…"></label>
       <label class="rare-field"><span>Éditeur</span><input name="rarePublisher" [(ngModel)]="form.publisher" maxlength="200"></label>
       <label class="rare-field"><span>Année</span><input type="number" name="rareYear" [(ngModel)]="form.publicationYear" min="1" max="9999" step="1"></label>
-      <label class="rare-field"><span>Rayon d’affichage <em>obligatoire</em></span><select name="rareShelf" data-testid="rare-shelf" [(ngModel)]="form.shelf" required>@for (shelf of shelves; track shelf) {<option [value]="shelf">{{ shelf }}</option>}</select></label>
       <label class="rare-field"><span>ISBN <small>facultatif</small></span><input name="rareIsbn" [(ngModel)]="form.isbn13" inputmode="numeric" placeholder="Aucun ISBN"></label>
     </div>
     <p class="rare-field-note">Sans ISBN, la fiche vit seule : elle n’est reliée à aucune fiche catalogue et n’a ni quantité ni historique de mouvements. Avec un ISBN, elle se rattache à la fiche existante et la caisse la reconnaîtra au scan.</p>
 
     <section class="rare-form-section" aria-labelledby="rare-price-title">
-      <div class="rare-form-section-heading"><div><span class="rare-section-kicker">Lecture caisse</span><h3 id="rare-price-title">Prix et état</h3></div><span class="rare-form-hint">Prix ferme · jamais totalisé par l’application</span></div>
+      <div class="rare-form-section-heading"><div><span class="rare-section-kicker">Lecture caisse</span><h3 id="rare-price-title">Prix et état</h3></div><span class="rare-form-hint">Prix ferme</span></div>
       <div class="rare-price-condition-row">
         <label class="rare-price-field"><span>Prix ferme</span><span class="rare-price-input"><input type="number" name="rarePrice" data-testid="rare-price" [(ngModel)]="form.price" min="0" max="1000000" step="0.01" required><strong>€</strong></span></label>
         <fieldset class="rare-condition-field"><legend>État de l’exemplaire</legend><div class="rare-condition-grid">@for (condition of conditions; track condition.value) {<button type="button" class="rare-condition-option" [attr.data-testid]="'rare-condition-' + condition.value.replace('GoodWithFlaws', 'good')" [class.selected]="form.condition === condition.value" [attr.aria-pressed]="form.condition === condition.value" (click)="setCondition(condition.value)">{{ condition.label }}</button>}</div></fieldset>
@@ -66,14 +65,6 @@
 
     <label class="rare-field rare-description-field"><span>Description publique <small>{{ descriptionLength() }} / 1200</small></span><textarea name="rareDescription" data-testid="rare-description" [(ngModel)]="form.publicDescription" maxlength="1200" rows="5" placeholder="Décrivez l’exemplaire et ses défauts avec honnêteté…"></textarea></label>
     <p class="rare-description-help">Dites les défauts. Un acheteur déçu en caisse, c’est un don qui revient.</p>
-
-    <div class="rare-field-grid rare-detail-grid">
-      <label class="rare-field"><span>Reliure</span><input name="rareBinding" [(ngModel)]="form.binding" maxlength="120"></label>
-      <label class="rare-field"><span>Format</span><input name="rareDimensions" [(ngModel)]="form.dimensions" maxlength="60" placeholder="32 × 44 cm"></label>
-      <label class="rare-field"><span>Pages</span><input type="number" name="rarePageCount" [(ngModel)]="form.pageCount" min="1" step="1"></label>
-      <label class="rare-field"><span>Emplacement</span><input name="rareShelfLocation" [(ngModel)]="form.shelfLocation" maxlength="120" placeholder="Table rares · caisse 2"></label>
-      <label class="rare-field rare-field-wide"><span>Prix fixé par</span><input name="rarePriceSetBy" [(ngModel)]="form.priceSetBy" maxlength="120" placeholder="Conseil du 5 mars"></label>
-    </div>
 
     @if (validationError(); as message) {<p class="rare-validation-error" role="alert">{{ message }}</p>}
     <div class="rare-form-actions"><button class="rare-button rare-button-ghost" type="button" (click)="cancel()">Annuler</button><button class="rare-button rare-button-primary" data-testid="rare-save" type="submit" [disabled]="disabled">{{ isEditing() ? 'Enregistrer les modifications' : 'Créer la fiche rare' }}</button></div>
