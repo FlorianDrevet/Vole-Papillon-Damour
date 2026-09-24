@@ -692,10 +692,10 @@ git pull
 Le run manuel [Books runtime - deploy #36054120349](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36054120349)
 a échoué au `dotnet restore` du Worker : le projet utilise `Azure.Functions.Sdk` sans version
 inline, résolue par le `global.json` racine, absent du contexte Docker `src/Backend`. Le correctif
-sur `fix/worker-docker-sdk-resolution` copie ce fichier dans le contexte, puis le Dockerfile
-Worker le place dans `/src` avant le restore. Les builds Docker API et Worker passent localement
-avec ce contexte. Aucun SQL, aucune migration et aucun déploiement ACA n'ont été exécutés ; le
-workflow n'a pas encore été relancé.
+sur `fix/worker-docker-sdk-resolution` prépare le même contexte dans les workflows Books runtime
+et CI ; le Dockerfile Worker place ensuite le fichier dans `/src` avant le restore. Les builds
+Docker API et Worker passent localement avec ce contexte. Aucun SQL, aucune migration et aucun
+déploiement ACA n'ont été exécutés. Le check CI GitHub couvre aussi le build Worker avec ce contexte.
 
 ### État actualisé — 2026-09-16 — retrait des doublons de la recherche externe Catalog
 

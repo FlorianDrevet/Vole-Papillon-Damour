@@ -130,9 +130,9 @@ The API startup wires:
   `volepapillondamour@sfr.fr` (public association contact). Subscription-level notifications
   (billing, Service Health, Defender) are outside Bicep and must be checked in the portal.
 - The Worker project resolves its unversioned `Azure.Functions.Sdk` through the repository-root
-  `global.json`. The manual Books runtime workflow uses `src/Backend` as Docker context, so it
-  copies the root file into that context and the Worker Dockerfile copies it to `/src` before
-  restore. Keep the workflow copy and Dockerfile `COPY` together if the context or SDK mapping changes.
+  `global.json`. Both the manual Books runtime and CI workflows use `src/Backend` as Docker context,
+  so they copy the root file into that context and the Worker Dockerfile copies it to `/src` before
+  restore. Keep both workflow copies and the Dockerfile `COPY` together if the context or SDK mapping changes.
 
 ## DEV observability cost tuning — 2026-09-22
 
