@@ -98,6 +98,9 @@ requête admin expire après 30 secondes et l'écran affiche l'erreur existante 
 résultats après recherche ou filtrage garde un message distinct. Aucun réglage Azure, compte,
 appel API réel ou déploiement n'a été effectué.
 
+La correction est proposée dans la [PR #226](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/226),
+branche `fix/scan-rare-books-empty-state`.
+
 Validation locale : 282 tests Scan ChromeHeadless, build de production et `graphify update .`
 passés. Le contrôle Playwright local de `/livres-rares` a été redirigé vers `/accueil` par la
 protection Entra ; le rendu authentifié sur appareil réel reste à vérifier.
