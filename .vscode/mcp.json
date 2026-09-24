@@ -9,6 +9,21 @@
         "${workspaceFolder}/graphify-out/graph.json"
       ]
     },
+    "analytics-mcp": {
+      "type": "stdio",
+      "command": "pipx",
+      "args": [
+        "run",
+        "--spec",
+        "analytics-mcp==0.7.0",
+        "analytics-mcp"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${input:google_application_credentials}",
+        "GOOGLE_PROJECT_ID": "${input:google_project_id}",
+        "GOOGLE_CLOUD_PROJECT": "${input:google_project_id}"
+      }
+    },
     "infraflowsculptor-mcp": {
 			"type": "http",
 			"url": "http://127.0.0.1:5258/mcp",
@@ -31,6 +46,17 @@
     }
   },
   "inputs": [
+    {
+      "id": "google_application_credentials",
+      "type": "promptString",
+      "description": "Chemin absolu du fichier JSON des identifiants ADC Google Cloud pour Analytics.",
+      "password": true
+    },
+    {
+      "id": "google_project_id",
+      "type": "promptString",
+      "description": "Identifiant du projet Google Cloud utilisé pour les APIs Analytics."
+    },
     {
 			"id": "ifs_pat",
 			"type": "promptString",
