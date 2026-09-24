@@ -18,6 +18,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
@@ -272,6 +273,7 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
@@ -283,7 +285,6 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
-    DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
     DbSet<Watchlist> IProjectDbContext.Watchlists => throw new NotSupportedException();
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
@@ -295,7 +296,6 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
     {
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<Order>();
-        modelBuilder.Ignore<BookMovement>();
         modelBuilder.Ignore<ScanSession>();
         modelBuilder.Ignore<Watchlist>();
         modelBuilder.Ignore<UserAlertHistory>();
@@ -333,6 +333,33 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
             builder.Property(book => book.RowVersion)
                 .ValueGeneratedNever()
                 .IsConcurrencyToken(false);
+        });
+
+        modelBuilder.Entity<BookMovement>(builder =>
+        {
+            builder.HasKey(movement => movement.Id);
+            builder.Property(movement => movement.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => BookMovementId.Create(value));
+            builder.Property(movement => movement.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.Property(movement => movement.Type).HasConversion<byte>();
+            builder.Property(movement => movement.ScanSessionId)
+                .HasConversion(new ValueConverter<ScanSessionId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? ScanSessionId.Create(value.Value) : null));
+            builder.Property(movement => movement.VolunteerId)
+                .HasConversion(new ValueConverter<UserId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? UserId.Create(value.Value) : null));
+            builder.Property(movement => movement.AssoEventsId)
+                .HasConversion(new ValueConverter<AssoEventsId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? AssoEventsId.Create(value.Value) : null));
+            builder.Property(movement => movement.ReversalOfMovementId)
+                .HasConversion(new ValueConverter<BookMovementId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value.HasValue ? BookMovementId.Create(value.Value) : null));
         });
 
         modelBuilder.Entity<BookAnnouncement>(builder =>
