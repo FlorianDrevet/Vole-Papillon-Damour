@@ -33,6 +33,7 @@ import {
   CatalogAdminUpdateRareBookRequest,
   CatalogAdminVolunteerStatistics,
   CatalogAdminCreateAccountRequest,
+  CatalogAdminCheckoutPassageLookup,
   CatalogAdminQuantityCorrectionRequest,
   CatalogAdminQuantityCorrection,
   CatalogAdminScanSession,
@@ -98,6 +99,21 @@ export class CatalogAdminApiService {
     return this.http.patch<CatalogAdminAccount>(
       `${this.apiUrl}/accounts/admin/${encodeURIComponent(externalId)}/status`,
       {accountEnabled},
+      this.options(accessToken),
+    );
+  }
+
+  lookupCheckoutPassage(accessToken: string, reference: string): Observable<CatalogAdminCheckoutPassageLookup> {
+    return this.http.get<CatalogAdminCheckoutPassageLookup>(
+      `${this.apiUrl}/administration/checkout-passages/lookup`,
+      this.options(accessToken, this.params({reference})),
+    );
+  }
+
+  dissociateCheckoutPassage(accessToken: string, id: string, reason: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/administration/checkout-passages/${encodeURIComponent(id)}/dissociate`,
+      {reason},
       this.options(accessToken),
     );
   }

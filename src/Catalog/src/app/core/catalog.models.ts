@@ -940,6 +940,13 @@ export interface CatalogAdminCreateAccountRequest {
   roles: CatalogAdminAccountRole[];
 }
 
+export interface CatalogAdminCheckoutPassageLookup {
+  id: string;
+  occurredAt: string;
+  lineCount: number;
+  displayLabel: string | null;
+}
+
 export interface CatalogAdminCatalogueFilters {
   search?: string;
   page?: number;

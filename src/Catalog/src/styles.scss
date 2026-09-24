@@ -141,3 +141,133 @@ input {
     animation-iteration-count: 1 !important;
   }
 }
+
+app-catalog-administration-page .passage-correction-card {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  margin-top: 28px;
+  padding: 22px;
+  border: 1px solid var(--admin-line);
+  border-left: 3px solid var(--admin-blue);
+  border-radius: 4px;
+  background: var(--admin-white);
+}
+
+app-catalog-administration-page .passage-correction-card h2 {
+  margin: 6px 0;
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+app-catalog-administration-page .passage-correction-card > div:first-child p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--admin-slate);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+app-catalog-administration-page .passage-lookup-form,
+app-catalog-administration-page .passage-dissociation-form {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  gap: 12px;
+}
+
+app-catalog-administration-page .passage-lookup-form label,
+app-catalog-administration-page .passage-dissociation-form label {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 280px;
+  gap: 6px;
+  color: var(--admin-slate);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+app-catalog-administration-page .passage-lookup-form input,
+app-catalog-administration-page .passage-dissociation-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-line);
+  border-radius: 4px;
+  color: var(--admin-ink);
+  background: var(--admin-white);
+  font: inherit;
+}
+
+app-catalog-administration-page .passage-lookup-form input:focus-visible,
+app-catalog-administration-page .passage-dissociation-form textarea:focus-visible {
+  outline: 3px solid var(--admin-cyan);
+  outline-offset: 2px;
+}
+
+app-catalog-administration-page .passage-correction-details {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--admin-line-soft);
+  background: var(--admin-paper);
+}
+
+app-catalog-administration-page .passage-correction-details dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px 20px;
+  margin: 0;
+}
+
+app-catalog-administration-page .passage-correction-details dl > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+app-catalog-administration-page .passage-correction-details dt {
+  color: var(--admin-muted);
+  font: 600 10px/1.3 'IBM Plex Mono', ui-monospace, monospace;
+  text-transform: uppercase;
+}
+
+app-catalog-administration-page .passage-correction-details dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--admin-ink);
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+app-catalog-administration-page .passage-correction-error {
+  margin: 0;
+  color: var(--admin-red);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+app-catalog-administration-page .passage-dissociation-form textarea {
+  resize: vertical;
+}
+
+@media (max-width: 680px) {
+  app-catalog-administration-page .passage-correction-card {
+    padding: 16px;
+  }
+
+  app-catalog-administration-page .passage-lookup-form,
+  app-catalog-administration-page .passage-dissociation-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  app-catalog-administration-page .passage-lookup-form .button,
+  app-catalog-administration-page .passage-dissociation-form .button {
+    width: 100%;
+  }
+
+  app-catalog-administration-page .passage-correction-details dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

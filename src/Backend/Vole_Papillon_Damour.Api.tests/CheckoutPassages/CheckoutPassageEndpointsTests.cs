@@ -20,6 +20,8 @@ using Vole_Papillon_Damour.Api.Controllers;
 using Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Commands.AssociateCheckoutPassage;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Commands.DissociateCheckoutPassage;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Queries.LookupCheckoutPassage;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Api.tests.CheckoutPassages;
@@ -81,6 +83,66 @@ public sealed class CheckoutPassageEndpointsTests
                 command.Credential == "VPDC1.AAAA.BBBB" &&
                 command.OccurredAt == occurredAt.UtcDateTime &&
                 command.VolunteerId.Value == VolunteerId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task PostDissociate_RequiresAdministrationRoleAndForwardsAuditReason()
+    {
+        var mediator = Substitute.For<IMediator>();
+        mediator.Send(Arg.Any<DissociateCheckoutPassageCommand>(), Arg.Any<CancellationToken>())
+            .Returns(Result.Success);
+        await using var application = CreateApplication(mediator);
+        var endpoint = FindEndpoint(application, "POST", "/administration/checkout-passages/{id:guid}/dissociate");
+
+        var forbidden = await InvokeWithAuthorizationAsync(
+            application,
+            endpoint!,
+            "POST",
+            "{\"reason\":\"Correction demandée\"}",
+            AuthenticatedPrincipal(withCaisse: true),
+            new Dictionary<string, object?> { ["id"] = PassageId.ToString() });
+        forbidden.Response.StatusCode.Should().Be((int)HttpStatusCode.Forbidden);
+
+        var response = await InvokeWithAuthorizationAsync(
+            application,
+            endpoint!,
+            "POST",
+            "{\"reason\":\"Correction demandée\"}",
+            AuthenticatedPrincipal(withCaisse: false, withAdministration: true),
+            new Dictionary<string, object?> { ["id"] = PassageId.ToString() });
+
+        response.Response.StatusCode.Should().Be((int)HttpStatusCode.NoContent);
+        await mediator.Received(1).Send(
+            Arg.Is<DissociateCheckoutPassageCommand>(command =>
+                command.CheckoutPassageId == PassageId &&
+                command.AdministratorId.Value == VolunteerId &&
+                command.Reason == "Correction demandée"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetPassageLookup_WithAmbiguousReferenceReturns409()
+    {
+        var mediator = Substitute.For<IMediator>();
+        mediator.Send(Arg.Any<LookupCheckoutPassageQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Error.Conflict("CheckoutPassage.AmbiguousReference", "Use the full identifier."));
+        await using var application = CreateApplication(mediator);
+        var endpoint = FindEndpoint(application, "GET", "/administration/checkout-passages/lookup");
+        var context = CreateContext(
+            application,
+            "GET",
+            string.Empty,
+            AuthenticatedPrincipal(withCaisse: false, withAdministration: true),
+            null);
+        context.Request.QueryString = new QueryString("?reference=3F2A9C1B");
+        context.SetEndpoint(endpoint!);
+
+        await endpoint!.RequestDelegate!(context);
+
+        context.Response.StatusCode.Should().Be((int)HttpStatusCode.Conflict);
+        await mediator.Received(1).Send(
+            Arg.Is<LookupCheckoutPassageQuery>(query => query.Reference == "3F2A9C1B"),
             Arg.Any<CancellationToken>());
     }
 
@@ -151,7 +213,10 @@ public sealed class CheckoutPassageEndpointsTests
         builder.Services.AddAuthentication("CheckoutPassageTest")
             .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>("CheckoutPassageTest", _ => { });
         builder.Services.AddAuthorization(options =>
-            options.AddPolicy("Caisse", policy => policy.RequireRole("Caisse")));
+        {
+            options.AddPolicy("Caisse", policy => policy.RequireRole("Caisse"));
+            options.AddPolicy("Administration", policy => policy.RequireRole("Administration"));
+        });
         builder.Services.AddSingleton(mediator);
 
         var application = builder.Build();
@@ -243,11 +308,11 @@ public sealed class CheckoutPassageEndpointsTests
         return await reader.ReadToEndAsync();
     }
 
-    private static ClaimsPrincipal AuthenticatedPrincipal(bool withCaisse) =>
+    private static ClaimsPrincipal AuthenticatedPrincipal(bool withCaisse, bool withAdministration = false) =>
         new(new ClaimsIdentity(
         [
             new Claim("oid", VolunteerId.ToString()),
-            new Claim(ClaimTypes.Role, withCaisse ? "Caisse" : "Volunteer")
+            new Claim(ClaimTypes.Role, withAdministration ? "Administration" : withCaisse ? "Caisse" : "Volunteer")
         ],
         "Test"));
 

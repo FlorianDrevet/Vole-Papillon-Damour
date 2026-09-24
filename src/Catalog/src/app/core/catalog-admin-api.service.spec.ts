@@ -13,6 +13,7 @@ import {
   CatalogAdminRareBookPage,
   CatalogAdminRareBookRequest,
   CatalogAdminVolunteerStatistics,
+  CatalogAdminCheckoutPassageLookup,
   CatalogDeadStockResponse,
 } from './catalog.models';
 
@@ -327,5 +328,40 @@ describe('CatalogAdminApiService', () => {
     expect(request.request.body).toEqual({accountEnabled: false});
     expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
     request.flush(account);
+  });
+
+  it('looks up a checkout passage by the member reference', () => {
+    const response: CatalogAdminCheckoutPassageLookup = {
+      id: '3f2a9c1b-0000-0000-0000-000000000001',
+      occurredAt: '2026-09-14T15:00:00Z',
+      lineCount: 2,
+      displayLabel: 'Camille',
+    };
+
+    service.lookupCheckoutPassage('access-token', '3F2A9C1B').subscribe(result => {
+      expect(result).toEqual(response);
+    });
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/administration/checkout-passages/lookup`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('reference')).toBe('3F2A9C1B');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('posts an administrator reason when dissociating a checkout passage', () => {
+    service.dissociateCheckoutPassage(
+      'access-token',
+      '3f2a9c1b-0000-0000-0000-000000000001',
+      'Carte associée par erreur',
+    ).subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/administration/checkout-passages/3f2a9c1b-0000-0000-0000-000000000001/dissociate`,
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({reason: 'Carte associée par erreur'});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(null);
   });
 });

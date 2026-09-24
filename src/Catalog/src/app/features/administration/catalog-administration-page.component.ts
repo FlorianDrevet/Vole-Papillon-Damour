@@ -38,6 +38,7 @@ import {
   CatalogAdminAccountFilters,
   CatalogAdminAccountPage,
   CatalogAdminAccountRole,
+  CatalogAdminCheckoutPassageLookup,
   CatalogAdminAlert,
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
@@ -273,6 +274,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly accountsPage = signal<CatalogAdminAccountPage | null>(null);
   readonly accountsTab = signal<CatalogAdminAccountsTab>('volunteers');
   readonly accountErrorMessage = signal<string | null>(null);
+  readonly checkoutPassageLookup = signal<CatalogAdminCheckoutPassageLookup | null>(null);
+  readonly checkoutPassageError = signal<string | null>(null);
   readonly editingAccountId = signal<string | null>(null);
   readonly editingAccountRoles = signal<CatalogAdminAccountRole[]>([]);
   readonly showCreateAccount = signal(false);
@@ -315,6 +318,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   accountSearch = '';
   accountPage = 1;
   readonly accountPageSize = 25;
+  checkoutPassageReference = '';
+  checkoutPassageReason = '';
   readonly accountRoleOptions: {value: CatalogAdminAccountRole; label: string}[] = [
     {value: 'Tri', label: 'Tri'},
     {value: 'Caisse', label: 'Caisse'},
@@ -1441,6 +1446,49 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }, this.accountErrorMessage, error => this.describeAccountError(error));
   }
 
+  async lookupCheckoutPassage(): Promise<void> {
+    const reference = this.checkoutPassageReference.trim();
+    if (!reference) {
+      this.checkoutPassageLookup.set(null);
+      this.checkoutPassageError.set('Saisissez la référence du passage ou son identifiant complet.');
+      return;
+    }
+
+    this.checkoutPassageLookup.set(null);
+    await this.run('checkout-passage-lookup', async token => {
+      this.checkoutPassageLookup.set(await firstValueFrom(
+        this.api.lookupCheckoutPassage(token, reference),
+      ));
+    }, this.checkoutPassageError, error => this.describeCheckoutPassageError(error));
+  }
+
+  async dissociateCheckoutPassage(): Promise<void> {
+    const passage = this.checkoutPassageLookup();
+    const reason = this.checkoutPassageReason.trim();
+    if (!passage) {
+      return;
+    }
+
+    if (reason.length < 3 || reason.length > 500) {
+      this.checkoutPassageError.set('La raison doit contenir entre 3 et 500 caractères.');
+      return;
+    }
+
+    const member = passage.displayLabel || 'ce membre';
+    const confirmation = `Dissocier le passage du ${this.formatDate(passage.occurredAt)} (${passage.lineCount} lignes) associé à ${member} ?`;
+    if (!this.confirmAction(confirmation)) {
+      return;
+    }
+
+    await this.run('checkout-passage-dissociate', async token => {
+      await firstValueFrom(this.api.dissociateCheckoutPassage(token, passage.id, reason));
+      this.checkoutPassageLookup.set(null);
+      this.checkoutPassageReference = '';
+      this.checkoutPassageReason = '';
+      this.showSuccess('L’association du passage a été supprimée. Les lignes de vente et le stock sont inchangés.');
+    }, this.checkoutPassageError, error => this.describeCheckoutPassageError(error));
+  }
+
   async selectAccountsTab(tab: CatalogAdminAccountsTab): Promise<void> {
     this.accountsTab.set(tab);
     if (!this.auth.isAuthenticated()) {
@@ -2324,6 +2372,19 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
 
     return 'La recherche bibliographique n’a pas pu aboutir. Réessayez dans un instant.';
+  }
+
+  private describeCheckoutPassageError(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 404) {
+        return 'Aucun passage associé ne correspond à cette référence.';
+      }
+      if (error.status === 409) {
+        return 'Cette référence correspond à plusieurs passages. Utilisez l’identifiant complet.';
+      }
+    }
+
+    return 'La correction du passage n’a pas abouti. Réessayez dans un instant.';
   }
 
   private async run(

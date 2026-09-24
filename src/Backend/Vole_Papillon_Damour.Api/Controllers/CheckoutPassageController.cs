@@ -3,7 +3,10 @@ using MediatR;
 using Vole_Papillon_Damour.Api.Common.RateLimiting;
 using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Commands.AssociateCheckoutPassage;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Commands.DissociateCheckoutPassage;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Queries.LookupCheckoutPassage;
 using Vole_Papillon_Damour.Application.MemberCards.Queries.ResolveMemberCard;
+using Vole_Papillon_Damour.Contracts.CheckoutPassages;
 using Vole_Papillon_Damour.Contracts.MemberCards;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
@@ -74,6 +77,51 @@ public static class CheckoutPassageController
                 .WithName("ResolveMemberCardForCheckout")
                 .RequireAuthorization("Caisse")
                 .RequireRateLimiting(RateLimitingPolicies.MemberCardResolve);
+
+            endpoints.MapGet(
+                    "/administration/checkout-passages/lookup",
+                    async (
+                        string reference,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new LookupCheckoutPassageQuery(reference),
+                            cancellationToken);
+                        return result.Match(
+                            passage => Results.Ok(new CheckoutPassageLookupResponse(
+                                passage.Id,
+                                new DateTimeOffset(DateTime.SpecifyKind(passage.OccurredAt, DateTimeKind.Utc)),
+                                passage.LineCount,
+                                passage.DisplayLabel)),
+                            error => error.Result());
+                    })
+                .WithName("LookupCheckoutPassageForAdministration")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/administration/checkout-passages/{id:guid}/dissociate",
+                    async (
+                        Guid id,
+                        DissociateCheckoutPassageRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var administratorId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new DissociateCheckoutPassageCommand(id, administratorId, request.Reason),
+                            cancellationToken);
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("DissociateCheckoutPassage")
+                .RequireAuthorization("Administration");
         });
     }
 
