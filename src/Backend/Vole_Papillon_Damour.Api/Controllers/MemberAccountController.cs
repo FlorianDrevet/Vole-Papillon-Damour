@@ -10,8 +10,10 @@ using Vole_Papillon_Damour.Application.MemberSelection.Common;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
 using Vole_Papillon_Damour.Application.MemberCards.Commands.RotateMyCard;
 using Vole_Papillon_Damour.Application.MemberCards.Queries.GetMyCard;
+using Vole_Papillon_Damour.Application.Purchases.Queries.GetMyPurchases;
 using Vole_Papillon_Damour.Contracts.MemberSelection;
 using Vole_Papillon_Damour.Contracts.MemberCards;
+using Vole_Papillon_Damour.Contracts.Purchases;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 
@@ -101,6 +103,38 @@ public static class MemberAccountController
                             error => error.Result());
                     })
                 .WithName("GetMyMemberSelection")
+                .RequireAuthorization();
+
+            endpoints.MapGet(
+                    "/catalog/me/purchases",
+                    async (
+                        string? cursor,
+                        int? limit,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetMyPurchasesQuery(
+                                identity.ExternalId.ToString("D"),
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                cursor,
+                                limit ?? 10),
+                            cancellationToken);
+                        return result.Match(
+                            purchases => Results.Ok(ToResponse(purchases)),
+                            error => error.Result());
+                    })
+                .WithName("GetMyMemberPurchases")
                 .RequireAuthorization();
 
             endpoints.MapPost(
@@ -271,5 +305,29 @@ public static class MemberAccountController
 
     private static MemberCardResponse ToResponse(MyCardResult card) =>
         new(card.QrPayload, card.RecoveryCode, card.DisplayLabel, card.IssuedAt);
+
+    private static MyPurchasesResponse ToResponse(MyPurchasesPage page) =>
+        new(
+            page.Passages.Select(passage => new PurchasePassageResponse(
+                passage.Id,
+                passage.Reference,
+                passage.OccurredAt,
+                passage.FairId,
+                passage.FairLabel,
+                passage.ActiveBookCount,
+                passage.Lines.Select(line => new PurchaseLineResponse(
+                    line.Id,
+                    line.Kind,
+                    line.Isbn13,
+                    line.RareBookId,
+                    line.Title,
+                    line.Authors,
+                    line.Publisher,
+                    line.PublicationYear,
+                    line.PhysicalFormat,
+                    line.Quantity,
+                    line.State,
+                    line.CurrentCoverUrl)).ToArray())).ToArray(),
+            page.NextCursor);
 }
 

@@ -59,6 +59,9 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
     {
         var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
+        connection.CreateCollation(
+            "Latin1_General_100_CI_AI",
+            (left, right) => string.Compare(left, right, StringComparison.OrdinalIgnoreCase));
         var options = new DbContextOptionsBuilder<CheckoutPassageTestDbContext>()
             .UseSqlite(connection)
             .Options;
@@ -83,7 +86,7 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         var userId = UserId.Create(Guid.NewGuid());
         var member = User.CreateFromExternalIdentity(
             userId,
-            userId.Value.ToString("N"),
+            userId.Value.ToString(),
             $"member-{userId.Value:N}@example.test",
             _now);
         Context.Users.Add(member);
@@ -154,11 +157,21 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         await Context.SaveChangesAsync();
     }
 
-    public async Task<(Book Book, BookMovement Movement)> AddSaleAsync(string isbnValue, Guid passageId, Guid? gestureId = null)
+    public async Task<(Book Book, BookMovement Movement)> AddSaleAsync(
+        string isbnValue,
+        Guid passageId,
+        Guid? gestureId = null,
+        DateTime? occurredAt = null)
     {
         var isbn = ParseIsbn(_redirects.GetValueOrDefault(isbnValue, isbnValue));
-        var book = Book.Create(isbn, _now);
-        var movement = CreateMovement(isbn, passageId, gestureId);
+        var book = await Context.Books.SingleOrDefaultAsync(candidate => candidate.Id == isbn)
+            ?? Book.Create(isbn, _now);
+        if (!Context.Books.Local.Contains(book))
+        {
+            Context.Books.Add(book);
+        }
+
+        var movement = CreateMovement(isbn, passageId, gestureId, occurredAt ?? _now);
         Context.BookMovements.Add(movement);
         await Context.SaveChangesAsync();
         return (book, movement);
@@ -166,13 +179,34 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
 
     public async Task<CheckoutPassage> AddAssociatedPassageWithSaleAsync(User member, string requestedIsbn)
     {
+        return await AddAssociatedPassageAsync(member, _now, requestedIsbn);
+    }
+
+    public async Task<CheckoutPassage> AddAssociatedPassageAsync(
+        User member,
+        DateTime occurredAt,
+        params string[] isbns)
+    {
         var passageId = Guid.NewGuid();
-        var (book, movement) = await AddSaleAsync(requestedIsbn, passageId);
-        var passage = CheckoutPassage.OpenFromSale(passageId, _now, _now);
-        passage.Associate(member.Id, member.Id, _now);
+        var passage = CheckoutPassage.OpenFromSale(passageId, occurredAt, _now);
+        passage.Associate(member.Id, VolunteerId, occurredAt);
         Context.CheckoutPassages.Add(passage);
-        Context.CheckoutPassageLines.Add(CheckoutPassageLine.ForOrdinarySale(
-            Guid.NewGuid(), passageId, movement, book, requestedIsbn));
+        foreach (var requestedIsbn in isbns)
+        {
+            var (book, movement) = await AddSaleAsync(requestedIsbn, passageId, occurredAt: occurredAt);
+            Context.CheckoutPassageLines.Add(CheckoutPassageLine.ForOrdinarySale(
+                Guid.NewGuid(), passageId, movement, book, requestedIsbn));
+        }
+
+        await Context.SaveChangesAsync();
+        return passage;
+    }
+
+    public async Task<CheckoutPassage> AddAssociatedPassageWithoutLinesAsync(User member, DateTime occurredAt)
+    {
+        var passage = CheckoutPassage.OpenFromSale(Guid.NewGuid(), occurredAt, _now);
+        passage.Associate(member.Id, VolunteerId, occurredAt);
+        Context.CheckoutPassages.Add(passage);
         await Context.SaveChangesAsync();
         return passage;
     }
@@ -220,12 +254,16 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    private BookMovement CreateMovement(Isbn13 isbn, Guid passageId, Guid? gestureId = null) => BookMovement.Create(
+    private BookMovement CreateMovement(
+        Isbn13 isbn,
+        Guid passageId,
+        Guid? gestureId = null,
+        DateTime? occurredAt = null) => BookMovement.Create(
         BookMovementId.Create(Guid.NewGuid()),
         isbn,
         BookMovementType.Sale,
         -1,
-        _now,
+        occurredAt ?? _now,
         _now,
         clockSuspect: false,
         scanSessionId: null,
@@ -244,6 +282,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     : DbContext(options), IProjectDbContext
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<Book> Books => Set<Book>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
@@ -253,7 +292,7 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
-    DbSet<Book> IProjectDbContext.Books => throw new NotSupportedException();
+    DbSet<Book> IProjectDbContext.Books => Books;
     DbSet<BookAnnouncement> IProjectDbContext.BookAnnouncements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
     DbSet<AssociationSettings> IProjectDbContext.AssociationSettings => throw new NotSupportedException();
@@ -271,7 +310,6 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
         modelBuilder.Ignore<Product>();
         modelBuilder.Ignore<AssoEvents>();
         modelBuilder.Ignore<Order>();
-        modelBuilder.Ignore<Book>();
         modelBuilder.Ignore<BookAnnouncement>();
         modelBuilder.Ignore<ScanSession>();
         modelBuilder.Ignore<AssociationSettings>();
@@ -282,6 +320,12 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
         modelBuilder.Ignore<RareBook>();
         modelBuilder.Ignore<RareBookPhoto>();
         modelBuilder.ApplyConfiguration(new MemberCardConfiguration());
+        modelBuilder.ApplyConfiguration(new BookConfiguration());
+        modelBuilder.Entity<Book>().Property(book => book.RawPayload).HasColumnType("TEXT");
+        modelBuilder.Entity<Book>().Property(book => book.ManuallyEditedFields).HasColumnType("TEXT");
+        modelBuilder.Entity<Book>().Property(book => book.RowVersion)
+            .ValueGeneratedNever()
+            .IsConcurrencyToken(false);
         modelBuilder.Ignore<RareBookTombstone>();
 
         modelBuilder.Entity<User>(builder =>

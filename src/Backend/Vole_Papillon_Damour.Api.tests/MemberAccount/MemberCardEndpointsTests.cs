@@ -20,6 +20,7 @@ using Vole_Papillon_Damour.Api.Controllers;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.MemberCards.Queries.GetMyCard;
 using Vole_Papillon_Damour.Application.MemberCards.Queries.ResolveMemberCard;
+using Vole_Papillon_Damour.Application.Purchases.Queries.GetMyPurchases;
 
 namespace Vole_Papillon_Damour.Api.tests.MemberAccount;
 
@@ -90,6 +91,52 @@ public sealed class MemberCardEndpointsTests
         response.Response.Headers.CacheControl.ToString().Should().Be("no-store");
     }
 
+    [Fact]
+    public async Task GetMyPurchases_ForwardsCursorAndLimitWithoutPriceFields()
+    {
+        var mediator = Substitute.For<IMediator>();
+        mediator.Send(Arg.Any<GetMyPurchasesQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new MyPurchasesPage(
+                [new PurchasePassageResult(
+                    Guid.Parse("a3d29d66-d784-4c02-95cb-e196c8d881c7"),
+                    "A3D29D66",
+                    IssuedAt,
+                    null,
+                    null,
+                    1,
+                    [new PurchaseLineResult(
+                        Guid.NewGuid(), "edition", "9782070612758", null, "Le Petit Prince",
+                        "Antoine de Saint-Exupéry", "Gallimard", 1946, "Broché", 1, "Associated", null)])],
+                "opaque-cursor"));
+        await using var application = CreateApplication(mediator);
+        var endpoint = FindEndpoint(application, "GET", "/catalog/me/purchases");
+
+        var response = await InvokeAsync(
+            application,
+            endpoint,
+            "GET",
+            principal: AuthenticatedPrincipal(),
+            queryString: "?cursor=older-page&limit=3");
+        var json = JsonNode.Parse(await ReadBodyAsync(response))!.AsObject();
+        var jsonText = json.ToJsonString();
+
+        response.Response.StatusCode.Should().Be((int)HttpStatusCode.OK);
+        response.Response.Headers.CacheControl.ToString().Should().Be("no-store");
+        jsonText.ToLowerInvariant().Should().NotContain("price");
+        jsonText.ToLowerInvariant().Should().NotContain("amount");
+        jsonText.ToLowerInvariant().Should().NotContain("total");
+        json["passages"]![0]!["reference"]!.GetValue<string>().Should().Be("A3D29D66");
+        await mediator.Received(1).Send(
+            Arg.Is<GetMyPurchasesQuery>(query =>
+                query.ExternalId == ExternalId.ToString("D") &&
+                query.Email == "camille@example.test" &&
+                query.FirstName == "Camille" &&
+                query.LastName == "Durand" &&
+                query.Cursor == "older-page" &&
+                query.Limit == 3),
+            Arg.Any<CancellationToken>());
+    }
+
     private static WebApplication CreateApplication(IMediator? mediator = null)
     {
         var builder = WebApplication.CreateBuilder();
@@ -123,7 +170,8 @@ public sealed class MemberCardEndpointsTests
         RouteEndpoint? endpoint,
         string method,
         string? body = null,
-        ClaimsPrincipal? principal = null)
+        ClaimsPrincipal? principal = null,
+        string? queryString = null)
     {
         var context = new DefaultHttpContext
         {
@@ -132,6 +180,10 @@ public sealed class MemberCardEndpointsTests
         };
         context.Request.Method = method;
         context.Request.ContentType = "application/json";
+        if (queryString is not null)
+        {
+            context.Request.QueryString = new QueryString(queryString);
+        }
         var bytes = Encoding.UTF8.GetBytes(body ?? string.Empty);
         context.Request.Body = new MemoryStream(bytes);
         context.Request.ContentLength = bytes.Length;
