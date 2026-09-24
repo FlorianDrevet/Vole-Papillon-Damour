@@ -32,6 +32,7 @@ class Method:
     description: str
     needs_embeddings: bool
     run: Callable
+    needs_isbndb: bool = False
 
 
 Rankings = dict[str, list[tuple[str, float]]]
@@ -223,6 +224,20 @@ METHODS: list[Method] = [
     Method("H7-512", "H7 en 512 dimensions (exploratoire)",
            "H7 avec des vecteurs réduits à 512 dimensions.", True,
            hybrid_soft_audience("compose_sans_collection@512", AUDIENCE_PENALTY)),
+    Method("I1", "H6 + ISBNdb en dernier recours",
+           "Comme H6, mais le résumé manquant est pris chez ISBNdb (après BnF et Open Library), et les sujets "
+           "ISBNdb sont ajoutés au texte composé.", True,
+           hybrid_soft_audience("compose_isbndb", AUDIENCE_PENALTY), needs_isbndb=True),
+    Method("I2", "H6 + ISBNdb en priorité",
+           "Comme I1, mais le résumé ISBNdb passe avant celui de la BnF : quelle source résume le mieux ?", True,
+           hybrid_soft_audience("compose_isbndb_prefere", AUDIENCE_PENALTY), needs_isbndb=True),
+    Method("I3", "ISBNdb seul pour le texte",
+           "Titre, auteurs, sujets et résumé ISBNdb, sans résumé BnF ni Open Library ; mêmes filtres et bonus "
+           "que H6. ISBNdb peut-il remplacer les sources gratuites ?", True,
+           hybrid_soft_audience("isbndb_seul", AUDIENCE_PENALTY), needs_isbndb=True),
+    Method("I1-512", "I1 en 512 dimensions",
+           "I1 avec des vecteurs réduits à 512 dimensions.", True,
+           hybrid_soft_audience("compose_isbndb@512", AUDIENCE_PENALTY), needs_isbndb=True),
     Method("H4-512", "H4 en 512 dimensions",
            "H4 avec des vecteurs réduits à 512 dimensions (stockage divisé par 3).", True, hybrid("compose@512")),
     Method("H4-256", "H4 en 256 dimensions",

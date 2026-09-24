@@ -168,6 +168,68 @@ def parse_unimarc(record) -> dict:
     }
 
 
+# ------------------------------------------------------------------------- ISBNdb ---
+# Licence ISBNdb : les données peuvent être mises en cache tant que l'abonnement est
+# actif, et doivent être supprimées s'il s'arrête. Elles restent donc dans cache/isbndb/
+# (ignoré par git) et ne sont jamais recopiées dans data/corpus.json.
+
+ISBNDB_CACHE = ROOT / "cache" / "isbndb"
+ISBNDB_BULK_SIZE = 100  # plan Basic : 100 ISBN par requête groupée
+
+
+class IsbndbError(RuntimeError):
+    pass
+
+
+def _isbndb_request(url: str, key: str, body: bytes | None = None) -> dict:
+    headers = {"Authorization": key, "User-Agent": USER_AGENT, "Accept": "application/json"}
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST" if body else "GET")
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                return json.loads(response.read())
+        except urllib.error.HTTPError as error:
+            payload = error.read()[:300].decode("utf-8", "replace")
+            if error.code == 404:
+                return {}
+            if error.code == 429 and attempt < 3:
+                time.sleep(2 * (attempt + 1))
+                continue
+            raise IsbndbError(f"ISBNdb HTTP {error.code} : {payload}") from error
+    raise IsbndbError("ISBNdb : trop de tentatives")
+
+
+def isbndb_lookup_many(isbns: list[str], key: str) -> dict[str, dict | None]:
+    """Notices ISBNdb par ISBN-13 (None si inconnu), avec cache disque par ISBN."""
+    ISBNDB_CACHE.mkdir(parents=True, exist_ok=True)
+    result, missing = {}, []
+    for isbn in isbns:
+        path = ISBNDB_CACHE / f"{isbn}.json"
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            result[isbn] = data or None
+        else:
+            missing.append(isbn)
+    for start in range(0, len(missing), ISBNDB_BULK_SIZE):
+        batch = missing[start:start + ISBNDB_BULK_SIZE]
+        body = ("isbns=" + ",".join(batch)).encode("utf-8")  # format documenté par ISBNdb
+        payload = _isbndb_request("https://api2.isbndb.com/books", key, body)
+        found = {}
+        for book in payload.get("data", []) if isinstance(payload, dict) else []:
+            for candidate in (book.get("isbn13"), book.get("isbn")):
+                isbn13 = normalize_isbn(candidate or "")
+                if isbn13 in batch:
+                    found[isbn13] = book
+        for isbn in batch:
+            book = found.get(isbn)
+            (ISBNDB_CACHE / f"{isbn}.json").write_text(json.dumps(book or {}, ensure_ascii=False), encoding="utf-8")
+            result[isbn] = book
+        time.sleep(1.1)  # plan Basic : 1 requête par seconde
+    return result
+
+
 # ------------------------------------------------------------------- Open Library ---
 
 def _json(url: str):

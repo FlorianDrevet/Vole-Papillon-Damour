@@ -1,6 +1,6 @@
 # Benchmark des méthodes de livres proches — résultats
 
-Généré le 2026-09-24 18:56 par `python -m bench.run --provider azure`.
+Généré le 2026-09-24 19:11 par `python -m bench.run --provider azure`.
 Embeddings : Azure OpenAI, déploiement `text-embedding-3-small` (text-embedding-3-small).
 
 ## 1. Le corpus
@@ -39,21 +39,21 @@ Classement par nDCG@5. Lecture : plus c'est haut, mieux c'est, sauf pour les tro
 | Méthode | nDCG@5 | Précision@5 | Série@5 | Tome suivant@5 | Fuite même œuvre ↓ | Jeunesse↔adulte ↓ | Autre forme ↓ | Couverture | Auteurs distincts | Calcul |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **H7** H6 sans la collection dans le texte (exploratoire) | 0.592 | 46 % | 100 % | 100 % | 0 % | 3 % | 12 % | 100 % | 4.5 | 0.02 s |
-| **H5** E4 + même œuvre exclue + bonus, sans filtre de public (exploratoire) | 0.587 | 45 % | 100 % | 100 % | 0 % | 5 % | 13 % | 100 % | 4.5 | 0.01 s |
+| **H5** E4 + même œuvre exclue + bonus, sans filtre de public (exploratoire) | 0.587 | 45 % | 100 % | 100 % | 0 % | 5 % | 13 % | 100 % | 4.5 | 0.02 s |
 | **H6** E4 + même œuvre exclue + bonus + pénalité de public (exploratoire) | 0.586 | 46 % | 100 % | 100 % | 0 % | 3 % | 13 % | 100 % | 4.5 | 0.02 s |
 | **H7-512** H7 en 512 dimensions (exploratoire) | 0.580 | 44 % | 100 % | 100 % | 0 % | 4 % | 13 % | 100 % | 4.5 | 0.02 s |
 | **H6-512** H6 en 512 dimensions (exploratoire) | 0.579 | 45 % | 100 % | 100 % | 0 % | 4 % | 12 % | 100 % | 4.5 | 0.02 s |
-| **H4** E4 + filtres + bonus (candidat retenu) | 0.563 | 44 % | 100 % | 100 % | 0 % | 4 % | 13 % | 100 % | 4.6 | 0.02 s |
-| **H4-512** H4 en 512 dimensions | 0.560 | 43 % | 100 % | 100 % | 0 % | 5 % | 13 % | 100 % | 4.6 | 0.02 s |
-| **E4** Embedding texte composé | 0.555 | 44 % | 100 % | 100 % | 100 % | 5 % | 15 % | 100 % | 4.4 | 0.01 s |
-| **F4** E4 + filtres | 0.553 | 43 % | 100 % | 100 % | 0 % | 5 % | 17 % | 100 % | 4.6 | 0.02 s |
-| **H3** E3 + filtres + bonus | 0.541 | 41 % | 100 % | 100 % | 0 % | 4 % | 18 % | 100 % | 4.5 | 0.02 s |
-| **E3** Embedding résumé de l'œuvre | 0.514 | 41 % | 86 % | 82 % | 100 % | 5 % | 23 % | 100 % | 4.5 | 0.01 s |
-| **H4-256** H4 en 256 dimensions | 0.509 | 38 % | 100 % | 100 % | 0 % | 4 % | 14 % | 100 % | 4.6 | 0.02 s |
+| **H4** E4 + filtres + bonus (candidat retenu) | 0.563 | 44 % | 100 % | 100 % | 0 % | 4 % | 13 % | 100 % | 4.6 | 0.01 s |
+| **H4-512** H4 en 512 dimensions | 0.560 | 43 % | 100 % | 100 % | 0 % | 5 % | 13 % | 100 % | 4.6 | 0.01 s |
+| **E4** Embedding texte composé | 0.555 | 44 % | 100 % | 100 % | 100 % | 5 % | 15 % | 100 % | 4.4 | 0.00 s |
+| **F4** E4 + filtres | 0.553 | 43 % | 100 % | 100 % | 0 % | 5 % | 17 % | 100 % | 4.6 | 0.01 s |
+| **H3** E3 + filtres + bonus | 0.541 | 41 % | 100 % | 100 % | 0 % | 4 % | 18 % | 100 % | 4.5 | 0.01 s |
+| **E3** Embedding résumé de l'œuvre | 0.514 | 41 % | 86 % | 82 % | 100 % | 5 % | 23 % | 100 % | 4.5 | 0.00 s |
+| **H4-256** H4 en 256 dimensions | 0.509 | 38 % | 100 % | 100 % | 0 % | 4 % | 14 % | 100 % | 4.6 | 0.01 s |
 | **E1** Embedding titre + auteur | 0.461 | 36 % | 100 % | 100 % | 100 % | 9 % | 16 % | 100 % | 4.5 | 0.00 s |
-| **E2** Embedding résumé de l'édition | 0.459 | 36 % | 100 % | 100 % | 100 % | 7 % | 22 % | 100 % | 4.5 | 0.01 s |
-| **L1** TF-IDF lexical (sans IA) | 0.316 | 22 % | 100 % | 100 % | 100 % | 12 % | 29 % | 100 % | 4.5 | 0.06 s |
-| **R0** Règles seules (sans IA) | 0.216 | 12 % | 100 % | 100 % | 0 % | 11 % | 7 % | 13 % | 1.2 | 0.10 s |
+| **E2** Embedding résumé de l'édition | 0.459 | 36 % | 100 % | 100 % | 100 % | 7 % | 22 % | 100 % | 4.5 | 0.00 s |
+| **L1** TF-IDF lexical (sans IA) | 0.316 | 22 % | 100 % | 100 % | 100 % | 12 % | 29 % | 100 % | 4.5 | 0.03 s |
+| **R0** Règles seules (sans IA) | 0.216 | 12 % | 100 % | 100 % | 0 % | 11 % | 7 % | 13 % | 1.2 | 0.04 s |
 
 <details><summary>Définition des indicateurs</summary>
 
@@ -300,7 +300,7 @@ Notes : ★★★ même série · ★★ proche · ★ lien lâche · ✗ sans r
 
 ## 7. Coût
 
-Tokens envoyés pour ce corpus (compté par l'API) : **82 930**  soit **0.00166 $** à 0.02 $ par million. 1 requête(s)  3.5 s.
+Tokens envoyés pour ce corpus (compté par l'API) : **82 930**  soit **0.00166 $** à 0.02 $ par million. 0 requête(s)  0.0 s.
 
 | Texte vectorisé | Tokens (textes uniques) | Tokens moyens par livre | Projection 20 000 livres |
 |---|---|---|---|

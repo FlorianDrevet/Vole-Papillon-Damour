@@ -352,3 +352,31 @@ Aucune ; recommandation de méthode soumise à validation (`05` §7).
 - **Q10** — Valider la méthode recommandée (`05` §7) pour passer à la spécification.
   *(posée)*
 - **Q2** — Signaux de « pour vous ».
+
+---
+
+## Échange 9 — 24 septembre 2026 : second benchmark avec ISBNdb
+
+### Demande
+
+Faire un second benchmark avec ISBNdb pour voir si les résultats s'améliorent encore, et
+regarder si la source contient d'autres informations utiles. Une clé d'API a été fournie
+dans la conversation.
+
+### Réponse — résumé
+
+- **La clé est refusée** par l'API (`401 Api key is not active`), sur les requêtes
+  individuelles comme groupées, à deux reprises.
+- **Le second benchmark est entièrement prêt** : `python -m bench.isbndb`, puis
+  `python -m bench.run --provider azure --with-isbndb`. Trois méthodes sont ajoutées
+  (ISBNdb en dernier recours, en priorité, ou seul), avec un critère fixé à l'avance
+  ([`05`](05-benchmark.md) §8). La chaîne a été vérifiée sur des données factices,
+  supprimées ensuite.
+- **Licence** : ISBNdb coûte de 14,99 à 299,99 $ par mois, et ses données doivent être
+  supprimées si l'abonnement s'arrête. Elles restent donc en cache local, jamais
+  commitées.
+- La clé est rangée dans `.env.local`, ignoré par git.
+
+### Questions ouvertes
+
+- **Q11** — Activer la clé ISBNdb (abonnement ou essai actif), puis relancer. *(posée)*

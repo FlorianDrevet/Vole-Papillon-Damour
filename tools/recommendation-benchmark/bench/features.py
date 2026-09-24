@@ -83,6 +83,34 @@ def _series(bnf: dict) -> tuple[str | None, int | None]:
     return None, None
 
 
+def _isbndb_subjects(book: dict | None) -> list[str]:
+    subjects = (book or {}).get("subjects") or []
+    return [s for s in dict.fromkeys(str(s).strip() for s in subjects) if s][:8]
+
+
+def _isbndb_texts(entry: dict, bnf: dict, book: dict | None) -> dict[str, str]:
+    """Variantes de texte avec ISBNdb (source payante), pour le second benchmark."""
+    from .isbndb import isbndb_summary
+
+    title = entry["label"]["title"]
+    theirs = isbndb_summary(book, title)
+    subjects = _isbndb_subjects(book)
+    extra = ("Sujets : " + ", ".join(subjects)) if subjects else None
+
+    def with_extra(text: str) -> str:
+        return text + (". " + extra if extra else "")
+
+    head = _title_line(bnf) + (". Auteur : " + ", ".join(bnf["authors"]) if bnf.get("authors") else "")
+    return {
+        # Cascade : BnF, puis Open Library, puis ISBNdb en dernier recours ; sujets ISBNdb ajoutés
+        "compose_isbndb": with_extra(_compose(bnf, entry.get("summary_work") or theirs)),
+        # ISBNdb d'abord : quelle source a les meilleurs résumés ?
+        "compose_isbndb_prefere": with_extra(_compose(bnf, theirs or entry.get("summary_work"))),
+        # ISBNdb seul : titre, auteurs, sujets et résumé ISBNdb, sans BnF ni Open Library pour le texte
+        "isbndb_seul": ". ".join(filter(None, [head, extra, theirs])),
+    }
+
+
 def _compose(bnf: dict, work_summary: str | None, with_collection: bool = True) -> str:
     parts = [_title_line(bnf)]
     if bnf.get("authors"):
@@ -112,7 +140,7 @@ def _title_line(bnf: dict) -> str:
     return title
 
 
-def build_features(entry: dict) -> Features:
+def build_features(entry: dict, isbndb_book: dict | None = None, with_isbndb: bool = False) -> Features:
     bnf = entry["bnf"]
     title_author = _title_line(bnf) + (". " + ", ".join(bnf["authors"]) if bnf.get("authors") else "")
     series_key, tome = _series(bnf)
@@ -139,6 +167,7 @@ def build_features(entry: dict) -> Features:
             "resume_oeuvre": entry.get("summary_work"),
             "compose": _compose(bnf, entry.get("summary_work")),
             "compose_sans_collection": _compose(bnf, entry.get("summary_work"), with_collection=False),
+            **(_isbndb_texts(entry, bnf, isbndb_book) if with_isbndb else {}),
         },
     )
 

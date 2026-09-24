@@ -302,7 +302,36 @@ recommande de spécifier :
 n'existent pas encore. La première se mesurera avec le seuil d'affichage ; la seconde
 viendra avec le trafic.
 
-## 8. Découvertes annexes, utiles à l'implémentation
+## 8. Second benchmark : ISBNdb améliore-t-il encore ?
+
+> **Statut : prêt, en attente d'une clé ISBNdb active.** La clé fournie le 24 septembre
+> est refusée par l'API (`401 Api key is not active`).
+
+**Question.** Une source payante, [ISBNdb](https://isbndb.com/), apporte-t-elle des
+résumés ou des sujets qui améliorent les voisins, au-delà de la BnF et d'Open Library ?
+
+**Méthodes ajoutées**, toutes construites sur H6 pour isoler l'effet de la source :
+
+| Code | Texte vectorisé | Question |
+|---|---|---|
+| **I1** | Résumé BnF, puis Open Library, puis **ISBNdb en dernier recours**, plus les sujets ISBNdb | ISBNdb comble-t-il les trous ? |
+| **I2** | Résumé **ISBNdb en priorité**, plus les sujets ISBNdb | Qui résume le mieux ? |
+| **I3** | **ISBNdb seul** (titre, auteurs, sujets, résumé ISBNdb) | ISBNdb peut-il remplacer les sources gratuites ? |
+| **I1-512** | I1 en 512 dimensions | — |
+
+**Critère fixé à l'avance.** ISBNdb vaut son abonnement si I1 ou I2 dépasse H6 d'un
+écart **significatif** (bootstrap apparié, comme en §6.2), et si les éditions sans résumé
+en gagnent un en nombre.
+
+**Deux points de licence à peser, quel que soit le résultat :**
+
+- ISBNdb est **payant** : de 14,99 $ à 299,99 $ par mois selon le plan.
+- Ses conditions imposent de **supprimer les données si l'abonnement s'arrête**. En
+  production, cela crée une dépendance permanente. La question se pose aussi pour les
+  vecteurs dérivés des résumés ISBNdb. Pour le benchmark, les notices restent dans
+  `cache/` (ignoré par git) : seules des statistiques agrégées sont écrites.
+
+## 9. Découvertes annexes, utiles à l'implémentation
 
 | Constat | Conséquence |
 |---|---|

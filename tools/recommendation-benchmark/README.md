@@ -22,6 +22,8 @@ python -m venv .venv
 | `.\.venv\Scripts\python -m bench.build_corpus` | Interroge la BnF et Open Library, écrit `data/corpus.json` et `data/journal-constitution.md`. Déjà fait : le corpus est versionné | Gratuit, ~5 min la première fois, puis cache |
 | `.\.venv\Scripts\python -m bench.check` | Vérifie l'accès Azure OpenAI | < 0,0001 $ |
 | `.\.venv\Scripts\python -m bench.run --provider azure` | **Le benchmark** : toutes les méthodes, rapport `out/rapport-azure.md` | ≈ 0,002 $ |
+| `.\.venv\Scripts\python -m bench.isbndb` | Second benchmark : récupère les notices ISBNdb (clé `ISBNDB_API_KEY` dans `.env.local`), écrit `out/isbndb-couverture.md` | 2 requêtes groupées sur le quota ISBNdb |
+| `.\.venv\Scripts\python -m bench.run --provider azure --with-isbndb` | Benchmark avec les méthodes ISBNdb (I1 à I3), rapport `out/rapport-azure-isbndb.md` | ≈ 0,001 $ |
 | `.\.venv\Scripts\python -m bench.run --provider none` | Seulement les méthodes sans IA | Gratuit |
 | `.\.venv\Scripts\python -m bench.run --provider fake` | Contrôle de la chaîne sans réseau (chiffres non significatifs) | Gratuit |
 | `.\.venv\Scripts\python -m unittest discover -s tests` | Tests de la grille de notation | Gratuit |
