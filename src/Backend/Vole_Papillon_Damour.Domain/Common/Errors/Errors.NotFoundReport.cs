@@ -6,6 +6,10 @@ public static partial class Errors
 {
     public static class NotFoundReport
     {
+        public static Error NotFound(Guid reportId) => Error.NotFound(
+            code: "NotFoundReport.NotFound",
+            description: $"Not-found report not found: {reportId}.");
+
         public static Error NotReportable() => Error.Conflict(
             code: "NotFoundReport.NotReportable",
             description: "This selection item is no longer available to report.");

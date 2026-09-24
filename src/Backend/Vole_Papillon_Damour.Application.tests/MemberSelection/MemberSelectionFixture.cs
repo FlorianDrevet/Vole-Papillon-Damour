@@ -7,6 +7,8 @@ using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
+using Vole_Papillon_Damour.Application.NotFoundReports.Commands.CancelNotFoundReport;
+using Vole_Papillon_Damour.Application.NotFoundReports.Commands.ReportNotFound;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
@@ -18,6 +20,8 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.Common.Models;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
@@ -28,6 +32,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 
 namespace Vole_Papillon_Damour.Application.tests.MemberSelection;
 
@@ -72,6 +77,13 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         new(Context, CreateMemberIdentityService());
 
     public MergeSelectionCommandHandler CreateMergeHandler() =>
+        new(Context, CreateMemberIdentityService(), _clock);
+
+    public ReportNotFoundCommandHandler CreateReportNotFoundHandler() =>
+        new(Context, CreateMemberIdentityService(), _clock,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<ReportNotFoundCommandHandler>.Instance);
+
+    public CancelNotFoundReportCommandHandler CreateCancelNotFoundReportHandler() =>
         new(Context, CreateMemberIdentityService(), _clock);
 
     public GetMySelectionQueryHandler CreateGetMySelectionHandler() =>
@@ -192,6 +204,42 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         return item;
     }
 
+    public async Task<BookNotFoundReport> AddNotFoundReportAsync(
+        UserId userId,
+        string isbn,
+        DateTime reportedAt)
+    {
+        var report = BookNotFoundReport.CreateForEdition(
+            Guid.NewGuid(),
+            userId,
+            ParseIsbn(isbn),
+            NotFoundReportLocation.Fair,
+            null,
+            reportedAt);
+        Context.BookNotFoundReports.Add(report);
+        await Context.SaveChangesAsync();
+        return report;
+    }
+
+    public async Task SetNotFoundReportDailyLimitAsync(UserId updatedBy, int dailyLimit)
+    {
+        var settings = AssociationSettings.Create(updatedBy, _now);
+        settings.Update(
+            settings.DuplicateThreshold,
+            settings.DemandSalesThreshold,
+            settings.DeadStockMinAgeDays,
+            settings.DeadStockMinQuantity,
+            settings.WatchlistMaxItems,
+            settings.AlertCooldownDays,
+            settings.SessionIdleTimeoutMinutes,
+            settings.AlertDelayMinutes,
+            dailyLimit,
+            updatedBy,
+            _now);
+        Context.AssociationSettings.Add(settings);
+        await Context.SaveChangesAsync();
+    }
+
     private static Isbn13 ParseIsbn(string value) =>
         Isbn13.TryCreate(value, out var isbn)
             ? isbn
@@ -222,12 +270,13 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<WatchlistItem> WatchlistItems => Set<WatchlistItem>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
+    public DbSet<AssociationSettings> AssociationSettings => Set<AssociationSettings>();
+    public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<BookMovement> IProjectDbContext.BookMovements => throw new NotSupportedException();
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
-    DbSet<AssociationSettings> IProjectDbContext.AssociationSettings => throw new NotSupportedException();
     DbSet<Watchlist> IProjectDbContext.Watchlists => throw new NotSupportedException();
     DbSet<UserAlertHistory> IProjectDbContext.UserAlertHistories => throw new NotSupportedException();
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
@@ -240,11 +289,13 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<BookMovement>();
         modelBuilder.Ignore<ScanSession>();
-        modelBuilder.Ignore<AssociationSettings>();
         modelBuilder.Ignore<Watchlist>();
         modelBuilder.Ignore<UserAlertHistory>();
         modelBuilder.Ignore<EmailBounceEvent>();
         modelBuilder.Ignore<RareBookTombstone>();
+
+        modelBuilder.ApplyConfiguration(new AssociationSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new BookNotFoundReportConfiguration());
 
         modelBuilder.Entity<User>(builder =>
         {
