@@ -5,7 +5,6 @@ using Vole_Papillon_Damour.Api.Errors;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
-using Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
 using Vole_Papillon_Damour.Application.MemberSelection.Common;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
 using Vole_Papillon_Damour.Application.MemberCards.Commands.RotateMyCard;
@@ -14,8 +13,6 @@ using Vole_Papillon_Damour.Application.Purchases.Queries.GetMyPurchases;
 using Vole_Papillon_Damour.Contracts.MemberSelection;
 using Vole_Papillon_Damour.Contracts.MemberCards;
 using Vole_Papillon_Damour.Contracts.Purchases;
-using Vole_Papillon_Damour.Domain.MemberSelectionAggregate.ValueObjects;
-using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
 
@@ -192,45 +189,6 @@ public static class MemberAccountController
                             error => error.Result());
                     })
                 .WithName("RemoveMemberSelectionItem")
-                .RequireAuthorization();
-
-            endpoints.MapPatch(
-                    "/catalog/me/selection/{id:guid}",
-                    async (
-                        Guid id,
-                        SetSelectionItemStatusRequest request,
-                        ClaimsPrincipal principal,
-                        IMediator mediator,
-                        CancellationToken cancellationToken) =>
-                    {
-                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
-                        {
-                            return Results.Unauthorized();
-                        }
-
-                        if (!Enum.TryParse<MemberSelectionStatus>(
-                                request.Status,
-                                ignoreCase: true,
-                                out var status) ||
-                            !Enum.IsDefined(status))
-                        {
-                            return DomainErrors.MemberSelection.InvalidStatus().Result();
-                        }
-
-                        var result = await mediator.Send(
-                            new SetSelectionItemStatusCommand(
-                                identity.ExternalId,
-                                identity.Email,
-                                identity.FirstName,
-                                identity.LastName,
-                                id,
-                                status),
-                            cancellationToken);
-                        return result.Match(
-                            _ => Results.NoContent(),
-                            error => error.Result());
-                    })
-                .WithName("SetMemberSelectionItemStatus")
                 .RequireAuthorization();
 
             endpoints.MapPost(

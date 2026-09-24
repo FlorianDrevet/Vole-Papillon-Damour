@@ -6,7 +6,6 @@ using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.MergeSelection;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.RemoveSelectionItem;
-using Vole_Papillon_Damour.Application.MemberSelection.Commands.SetSelectionItemStatus;
 using Vole_Papillon_Damour.Application.MemberSelection.Queries.GetMySelection;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
@@ -73,9 +72,6 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
         new(Context, CreateMemberIdentityService());
 
     public MergeSelectionCommandHandler CreateMergeHandler() =>
-        new(Context, CreateMemberIdentityService(), _clock);
-
-    public SetSelectionItemStatusCommandHandler CreateSetStatusHandler() =>
         new(Context, CreateMemberIdentityService(), _clock);
 
     public GetMySelectionQueryHandler CreateGetMySelectionHandler() =>
