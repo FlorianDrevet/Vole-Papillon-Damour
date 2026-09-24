@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentAssertions;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBook;
@@ -13,6 +14,7 @@ public sealed class RareBookQueryHandlerTests
     [Fact]
     public async Task Public_list_defaults_to_price_descending_for_the_public_selection()
     {
+        using var culture = new InvariantCultureScope();
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         await fixture.AddRareBookAsync("Prix fort", price: 80m, published: true);
         await fixture.AddRareBookAsync("Petit prix", price: 10m, published: true);
@@ -43,6 +45,7 @@ public sealed class RareBookQueryHandlerTests
     [Fact]
     public async Task Public_list_contains_published_sold_books_by_default_and_orders_by_price()
     {
+        using var culture = new InvariantCultureScope();
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         await fixture.AddRareBookAsync("Petit prix", price: 10m, published: true);
         var sold = await fixture.AddRareBookAsync("Prix fort", price: 80m, published: true);
@@ -161,5 +164,24 @@ public sealed class RareBookQueryHandlerTests
         cash.Value.Books.Should().ContainSingle(book => book.Id == published.Id.Value);
         cash.Value.Books.Should().NotContain(book => book.Title == "Recherche vendue");
         cash.Value.Books.Should().NotContain(book => book.Title == "Recherche brouillon");
+    }
+
+    // SQLite's decimal ordering collation parses its stored values with CurrentCulture.
+    private sealed class InvariantCultureScope : IDisposable
+    {
+        private readonly CultureInfo originalCulture = CultureInfo.CurrentCulture;
+        private readonly CultureInfo originalUiCulture = CultureInfo.CurrentUICulture;
+
+        public InvariantCultureScope()
+        {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+        }
+
+        public void Dispose()
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
     }
 }

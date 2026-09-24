@@ -734,14 +734,15 @@ Vue « Livres introuvables » :
 
 - [x] **Step 1 :** test rouge RGPD → implémenter → vert.
 - [x] **Step 2 :** documentation.
-- [ ] **Step 3 :** `dotnet test` (3 projets) + `cd src/Catalog && npm test -- --watch=false && npm run build`.
+- [x] **Step 3 :** `dotnet test` (3 projets) + `cd src/Catalog && npm test -- --watch=false && npm run build`.
 - [x] **Step 4 :** `git commit -m "docs(not-found): record not-found reports delivery"`
 
-**Validation Step 3 exécutée le 2026-09-24 :** Domain 164/164, Infrastructure 162/162,
-API 59/59 et Catalog 417/417 avec build réussi. Application : 390 réussis et 2 échecs
-préexistants de comparaison décimale SQLite sous `fr-FR`. Le build solution atteint les
-projets backend mais Worker ne résout pas `Azure.Functions.Sdk`. La case reste ouverte
-tant que le résultat attendu (toutes les validations vertes) n'est pas obtenu.
+**Validation Step 3 exécutée le 2026-09-24 :** build solution backend, 14 projets, 0 erreur et
+79 avertissements ; build Worker ciblé, 5 projets et 0 erreur ;
+Domain 164/164, Application 392/392, Infrastructure 162/162, API 59/59 et Catalog 417/417
+avec build réussi. `global.json` déclare le SDK Functions utilisé par le projet auxiliaire généré.
+Les deux tests de tri SQLite exécutent leur requête sous culture invariante. Le build conserve
+des avertissements AZFW0108 (fallback de restauration des extensions) et NU1903.
 
 ---
 
