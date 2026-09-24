@@ -7,6 +7,7 @@ namespace Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 public sealed class AssociationSettings : AggregateRoot<byte>
 {
     public const byte SingletonId = 1;
+    public const int DefaultNotFoundReportDailyLimit = 10;
 
     public int DuplicateThreshold { get; private set; }
     public int DemandSalesThreshold { get; private set; }
@@ -16,12 +17,13 @@ public sealed class AssociationSettings : AggregateRoot<byte>
     public int AlertCooldownDays { get; private set; }
     public int SessionIdleTimeoutMinutes { get; private set; }
     public int AlertDelayMinutes { get; private set; }
+    public int NotFoundReportDailyLimit { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public UserId UpdatedBy { get; private set; } = null!;
 
     private AssociationSettings(UserId updatedBy, DateTime updatedAt) : base(SingletonId)
     {
-        SetValues(5, 1, 30, 1, 100, 30, 120, 120, updatedBy, updatedAt);
+        SetValues(5, 1, 30, 1, 100, 30, 120, 120, DefaultNotFoundReportDailyLimit, updatedBy, updatedAt);
     }
 
     public static AssociationSettings Create(UserId updatedBy, DateTime updatedAt)
@@ -42,6 +44,7 @@ public sealed class AssociationSettings : AggregateRoot<byte>
         int alertCooldownDays,
         int sessionIdleTimeoutMinutes,
         int alertDelayMinutes,
+        int notFoundReportDailyLimit,
         UserId updatedBy,
         DateTime updatedAt)
     {
@@ -54,6 +57,7 @@ public sealed class AssociationSettings : AggregateRoot<byte>
             alertCooldownDays,
             sessionIdleTimeoutMinutes,
             alertDelayMinutes,
+            notFoundReportDailyLimit,
             updatedBy,
             updatedAt);
     }
@@ -67,6 +71,7 @@ public sealed class AssociationSettings : AggregateRoot<byte>
         int alertCooldownDays,
         int sessionIdleTimeoutMinutes,
         int alertDelayMinutes,
+        int notFoundReportDailyLimit,
         UserId updatedBy,
         DateTime updatedAt)
     {
@@ -78,6 +83,12 @@ public sealed class AssociationSettings : AggregateRoot<byte>
         ValidateNonNegative(alertCooldownDays, nameof(alertCooldownDays));
         ValidatePositive(sessionIdleTimeoutMinutes, nameof(sessionIdleTimeoutMinutes));
         ValidateNonNegative(alertDelayMinutes, nameof(alertDelayMinutes));
+        if (notFoundReportDailyLimit is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(notFoundReportDailyLimit),
+                "The daily not-found report limit must be between 1 and 100.");
+        }
 
         UpdatedBy = updatedBy ?? throw new ArgumentNullException(nameof(updatedBy));
         UpdatedAt = DomainTime.RequireUtc(updatedAt, nameof(updatedAt));
@@ -89,6 +100,7 @@ public sealed class AssociationSettings : AggregateRoot<byte>
         AlertCooldownDays = alertCooldownDays;
         SessionIdleTimeoutMinutes = sessionIdleTimeoutMinutes;
         AlertDelayMinutes = alertDelayMinutes;
+        NotFoundReportDailyLimit = notFoundReportDailyLimit;
     }
 
     private static void ValidateNonNegative(int value, string parameterName)

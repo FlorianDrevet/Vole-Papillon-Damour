@@ -55,6 +55,7 @@ public sealed class UpdateAssociationSettingsCommandHandler(
             command.AlertCooldownDays,
             command.SessionIdleTimeoutMinutes,
             command.AlertDelayMinutes,
+            command.NotFoundReportDailyLimit,
             command.UpdatedBy,
             updatedAt);
 
@@ -72,6 +73,7 @@ public sealed class UpdateAssociationSettingsCommandHandler(
                command.WatchlistMaxItems > 0 &&
                command.AlertCooldownDays >= 0 &&
                command.SessionIdleTimeoutMinutes > 0 &&
-               command.AlertDelayMinutes >= 0;
+               command.AlertDelayMinutes >= 0 &&
+               command.NotFoundReportDailyLimit is >= 1 and <= 100;
     }
 }

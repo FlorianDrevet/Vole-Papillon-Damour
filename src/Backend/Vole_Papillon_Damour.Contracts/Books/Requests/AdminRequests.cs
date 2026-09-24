@@ -47,4 +47,5 @@ public sealed record UpdateAdminAssociationSettingsRequest(
     int WatchlistMaxItems,
     int AlertCooldownDays,
     int SessionIdleTimeoutMinutes,
-    int AlertDelayMinutes);
+    int AlertDelayMinutes,
+    int NotFoundReportDailyLimit = 10);

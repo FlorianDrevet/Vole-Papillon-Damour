@@ -14,6 +14,7 @@ public sealed class UpdateAssociationSettingsCommandValidator : AbstractValidato
         RuleFor(command => command.AlertCooldownDays).GreaterThanOrEqualTo(0);
         RuleFor(command => command.SessionIdleTimeoutMinutes).GreaterThan(0);
         RuleFor(command => command.AlertDelayMinutes).GreaterThanOrEqualTo(0);
+        RuleFor(command => command.NotFoundReportDailyLimit).InclusiveBetween(1, 100);
         RuleFor(command => command.UpdatedBy).NotNull();
     }
 }

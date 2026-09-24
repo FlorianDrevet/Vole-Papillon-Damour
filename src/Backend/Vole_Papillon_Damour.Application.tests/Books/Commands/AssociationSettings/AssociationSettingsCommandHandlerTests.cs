@@ -9,6 +9,53 @@ namespace Vole_Papillon_Damour.Application.tests.Books.Commands.AssociationSetti
 
 public sealed class AssociationSettingsCommandHandlerTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(101)]
+    public void Validator_RejectsLimitOutside1To100(int limit)
+    {
+        var command = new UpdateAssociationSettingsCommand(
+            5,
+            1,
+            30,
+            1,
+            100,
+            30,
+            120,
+            120,
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002")),
+            NotFoundReportDailyLimit: limit);
+
+        var result = new UpdateAssociationSettingsCommandValidator().Validate(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().ContainSingle(error => error.PropertyName == nameof(command.NotFoundReportDailyLimit));
+    }
+
+    [Fact]
+    public async Task Handle_UpdatesNotFoundReportDailyLimit()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var updatedBy = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002"));
+        var result = await fixture.CreateUpdateAssociationSettingsHandler().Handle(
+            new UpdateAssociationSettingsCommand(
+                5,
+                1,
+                30,
+                1,
+                100,
+                30,
+                120,
+                120,
+                updatedBy,
+                NotFoundReportDailyLimit: 7),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.NotFoundReportDailyLimit.Should().Be(7);
+        (await fixture.Context.AssociationSettings.SingleAsync()).NotFoundReportDailyLimit.Should().Be(7);
+    }
+
     [Fact]
     public async Task Update_WhenSettingsDoNotExist_CreatesTheSingletonWithTypedValues()
     {
