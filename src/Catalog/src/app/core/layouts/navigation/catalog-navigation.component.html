@@ -160,6 +160,14 @@
           </div>
         }
         <a class="mobile-account-link" routerLink="/compte" (click)="closeMobileMenu()">{{ accountTriggerLabel() }}</a>
+        @if (isAuthenticated() && isAdministrator()) {
+          <a
+            class="mobile-admin-link"
+            routerLink="/administration"
+            [class.active]="isAdministration()"
+            [attr.aria-current]="isAdministration() ? 'page' : null"
+            (click)="closeMobileMenu()">Administration</a>
+        }
         @if (isAuthenticated() && isRareBookManager()) {
           <a class="mobile-rare-books-link" routerLink="/administration/rare-books" (click)="closeMobileMenu()">Livres rares</a>
         }

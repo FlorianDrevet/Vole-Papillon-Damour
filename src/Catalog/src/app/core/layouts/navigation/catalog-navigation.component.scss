@@ -566,6 +566,7 @@
 
   .mobile-nav-item > a.active,
   .mobile-account-link,
+  .mobile-admin-link,
   .mobile-rare-books-link {
     color: var(--catalog-orange-2) !important;
   }
@@ -596,6 +597,7 @@
   }
 
   .mobile-account-link,
+  .mobile-admin-link,
   .mobile-rare-books-link,
   .mobile-site-link {
     display: block;
