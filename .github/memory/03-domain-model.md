@@ -73,6 +73,7 @@ Verified aggregate folders in `Domain` include:
 - `AssoEventsAggregate`
 - `OrderAggregate`
 - `MemberSelectionAggregate`
+- `NotFoundReportAggregate`
 - `MemberCardAggregate`
 - `CheckoutPassageAggregate`
 - `ProductAggregate`
@@ -89,8 +90,14 @@ catalogue.
 
 `MemberSelectionItem` is keyed by `Guid` and belongs to one `UserId`; each row targets
 exactly one edition ISBN-13 or rare-book ID. Its statuses are `ToTake`, `Purchased`,
-`NotFound`, and `ToRevisit`; `PurchasedAt` is set on purchase and cleared if the member
-changes the status away from `Purchased`. The aggregate caps a member at 500 items.
+only; `PurchasedAt` is set by an associated sale. The aggregate caps a member at 500
+items. A member cannot set or change `Purchased` manually.
+
+`BookNotFoundReport` targets one edition or one rare-book fiche and records the reporting
+member, optional location, optional comment, report time, status, and optional closure
+metadata. Open reports are grouped by target for the administration queue. `DetachMember()`
+clears the member ID and free-text comment while preserving the report and its closure
+history; account deletion applies it to both open and closed reports.
 
 `MemberCard` belongs to one member and carries a versioned card identifier, recovery
 code, and issue/rotation/revocation timestamps. The QR is HMAC-signed and contains no
@@ -99,7 +106,8 @@ personal information; the API checks the current card state when resolving it.
 book metadata snapshots, contain no price fields, and are attached to sale movements via
 the nullable `BookMovement.CheckoutPassageId`; anonymous sales keep that field null.
 Account deletion removes selection and card rows, anonymizes that member's passage, and
-keeps audit movements and line snapshots without a usable member link.
+keeps audit movements and line snapshots without a usable member link. It also preserves
+not-found reports without their member link or free-text comment.
 
 ## Books module — P1-5/P1-10 runtime slice
 

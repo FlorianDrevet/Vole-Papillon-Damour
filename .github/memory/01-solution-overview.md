@@ -32,6 +32,7 @@ The backend and contracts expose features around:
 - actuality content
 - association events
 - books catalogue, scanning, sales, alerts, and bibliographic metadata lookup
+- member book-not-found reports and Catalog administration queue
 - products
 - orders
 
@@ -49,6 +50,10 @@ The backend and contracts expose features around:
   selection, account cards, checkout association, purchases, and deletion behavior. Code
   CS-1–CS-26 is in PR #224; the F-10 §14 real-device acceptance paths remain pending,
   migrations are unapplied, and the production signing secret still needs to be added.
+- F-11 (`docs/bourse-aux-livres/11-signalement-livre-introuvable.md`) is implemented in
+  `feat/not-found-reports`: member reports, admin queue/actions, closure history, dashboard
+  and book-detail indicators, settings, and deletion anonymization. The ten-point staging
+  recipe remains pending; migration `20260924135152_AddBookNotFoundReports` is not applied.
 - The backend currently enables a permissive CORS policy for all origins.
 - Domain tests exist, but cross-layer automated coverage is still thin.
 - Residual `MailingList` folders still exist in `Application` and `Contracts`, but the API runtime no longer maps mailing-list endpoints.

@@ -398,6 +398,21 @@ validation, garde la vente anonyme toujours possible, et ne déclenche ni réser
 alerte depuis Ma sélection. Les vérifications en deux appareils, à 20/40 cm et les
 parcours de F-10 §14 restent à réaliser avant de considérer la fonctionnalité validée.
 
+## Q-SIG-1 à Q-SIG-8 — Signalement d'un livre introuvable
+
+Les hypothèses retenues par le plan SIG sont maintenant appliquées dans F-11 :
+
+| Question | Décision retenue |
+|---|---|
+| `Q-SIG-1` — Qui vérifie ? | Le rôle `Administration` traite les éditions et le rôle `LivresRares` les fiches rares. L'export CSV est remis aux bénévoles de terrain. |
+| `Q-SIG-2` — Que deviennent les anciens « Pas trouvé » ? | Convertir en signalements ouverts ceux de moins de 30 jours sur une édition encore disponible ; remettre les autres lignes à l'état neutre. |
+| `Q-SIG-3` — Achat manuel ? | Non. `Purchased` est posé uniquement par la caisse ; le membre peut retirer la fiche de sa sélection. |
+| `Q-SIG-4` — Lieu de recherche ? | Garder le champ facultatif « À la bourse / Au local » et accepter `null`. |
+| `Q-SIG-5` — Fiche rare introuvable ? | « Retirer la fiche rare » appelle `RareBook.Unpublish(...)` et conserve une note de vérification. |
+| `Q-SIG-6` — E-mail au membre ? | Aucun e-mail de résultat en v1. |
+| `Q-SIG-7` — Autres points d'entrée ? | Ma sélection uniquement en v1. |
+| `Q-SIG-8` — Relance ? | Afficher l'indicateur « en attente depuis plus de 7 jours » ; aucune clôture automatique hors caducité. |
+
 ## Journal des décisions
 
 | Date | Décision | Retenu |

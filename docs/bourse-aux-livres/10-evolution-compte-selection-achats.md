@@ -203,38 +203,32 @@ Chaque ligne de Ma sélection présente :
 - ISBN si utile pour retrouver rapidement la fiche ;
 - disponibilité actuelle : disponible, annoncé, épuisé ou fiche vendue ;
 - prochaine bourse et date lorsqu'elles sont connues ;
-- date d'ajout à la sélection ;
-- état personnel : à prendre, acheté, pas trouvé ou à revoir.
+- date d'ajout à la sélection.
+
+Pour une fiche disponible, le membre peut envoyer le signalement « Je ne l'ai pas
+trouvé ». Tant qu'il est ouvert, la ligne affiche « Signalé introuvable ». La file,
+les commentaires et les clôtures sont spécifiés dans
+[`11-signalement-livre-introuvable.md`](11-signalement-livre-introuvable.md).
 
 La date de fraîcheur de la disponibilité reste visible. Un livre sélectionné ne
 devient jamais une promesse de présence le jour de la visite.
 
-### 6.4 États personnels
+### 6.4 Signalement et achat
 
-L'état initial est À PRENDRE.
+Ma sélection ne porte plus les états personnels À PRENDRE, PAS TROUVÉ ou À REVOIR.
+Le membre peut signaler une fiche disponible depuis sa sélection ; le signalement
+ne change jamais le stock et ne constitue pas un achat.
 
-Le membre peut ensuite choisir :
-
-| État | Signification |
-|---|---|
-| À PRENDRE | Le membre souhaite encore regarder ce livre |
-| ACHETÉ | Le livre a été retrouvé dans une vente associée au compte |
-| PAS TROUVÉ | Le membre l'a cherché sur place sans le trouver |
-| À REVOIR | Le membre conserve la fiche pour une prochaine visite |
-
-Le système ne doit pas déduire PAS TROUVÉ à partir d'une vente anonyme ou d'une
-absence de consultation. Seul le membre peut poser cet état.
+ACHETÉ reste réservé à une vente associée au compte par la caisse. Le membre ne peut
+pas poser ni modifier cet état manuellement. Voir les règles RG-67 à RG-76 dans
+[`06-regles-metier.md`](06-regles-metier.md) et la spécification F-11.
 
 ### 6.5 Visite et archivage
 
 Après une bourse, les lignes restent consultables. Elles affichent la disponibilité
-actuelle et peuvent être filtrées par :
-
-- prochaine visite ;
-- encore disponible ;
-- acheté ;
-- pas trouvé ;
-- fiches devenues indisponibles.
+actuelle et peuvent être filtrées selon les critères de disponibilité encore
+présents dans l'interface. Les filtres fondés sur les états retirés (PAS TROUVÉ et
+À REVOIR) disparaissent ; les signalements ouverts restent visibles comme tels.
 
 Une sélection n'est pas supprimée automatiquement à la fin d'une bourse. Le membre
 peut la retirer ou la conserver comme historique personnel.
@@ -617,8 +611,9 @@ d'interface, mais produit toujours la correction append-only prévue pour le sto
 
 ### RG-65 — La sélection peut devenir acheté
 
-Une sélection passe automatiquement à ACHETÉ uniquement lorsqu'une ligne associée
-correspond exactement à sa fiche. Elle n'est jamais supprimée automatiquement.
+Cette règle est remplacée par RG-76 de F-11 : ACHETÉ est posé uniquement par la
+caisse et n'est pas modifiable par le membre. Les états personnels de Ma sélection
+sont retirés.
 
 ### RG-66 — La suppression retire le lien personnel
 

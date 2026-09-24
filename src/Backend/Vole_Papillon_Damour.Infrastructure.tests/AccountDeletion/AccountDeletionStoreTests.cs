@@ -10,6 +10,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
@@ -273,6 +274,72 @@ public sealed class AccountDeletionStoreTests
         otherMemberPassage.Status.Should().Be(Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.ValueObjects.CheckoutPassageStatus.Associated);
         (await fixture.Context.CheckoutPassageLines.CountAsync()).Should().Be(1);
         (await fixture.Context.BookMovements.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Delete_KeepsOpenReportsWithoutMemberOrComment()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var userId = UserId.Create(Guid.NewGuid());
+        var requestId = Guid.NewGuid();
+        Isbn13.TryCreate("9782070612758", out var isbn13).Should().BeTrue();
+
+        var openReportId = Guid.NewGuid();
+        var closedReportId = Guid.NewGuid();
+        var openReport = BookNotFoundReport.CreateForEdition(
+            openReportId,
+            userId,
+            isbn13,
+            null,
+            "Mon numéro : 06 12 34 56 78",
+            Now);
+        var closedReport = BookNotFoundReport.CreateForEdition(
+            closedReportId,
+            userId,
+            isbn13,
+            null,
+            "J'ai aussi cherché près de l'accueil",
+            Now);
+        closedReport.MarkFound(UserId.Create(Guid.NewGuid()), "Vérifié en rayon", Now.AddMinutes(1));
+
+        fixture.Context.Users.Add(User.CreateFromExternalIdentity(
+            userId,
+            "member-to-delete",
+            "member@example.com",
+            Now));
+        fixture.Context.BookNotFoundReports.AddRange(openReport, closedReport);
+        fixture.Context.OutboxMessages.Add(new OutboxMessage
+        {
+            Id = requestId,
+            Kind = OutboxMessageKind.AccountDeletion,
+            PayloadJson = $"{{\"userId\":\"{userId.Value}\",\"externalId\":\"member-to-delete\"}}",
+            DueAt = Now,
+            Status = OutboxMessageStatus.Pending,
+            CreatedAt = Now,
+        });
+        await fixture.Context.SaveChangesAsync();
+
+        var store = new AccountDeletionStore(
+            fixture.Context,
+            new NoRetainedSalesMovementsPolicy(fixture.Context));
+        await store.FinalizeAsync(
+            new AccountDeletionWorkItem(requestId, userId.Value, "member-to-delete"),
+            Now.AddMinutes(5),
+            CancellationToken.None);
+
+        var openReportAfterDeletion = await fixture.Context.BookNotFoundReports
+            .AsNoTracking()
+            .SingleAsync(report => report.Id == openReportId);
+        openReportAfterDeletion.UserId.Should().BeNull();
+        openReportAfterDeletion.Comment.Should().BeNull();
+
+        var closedReportAfterDeletion = await fixture.Context.BookNotFoundReports
+            .AsNoTracking()
+            .SingleAsync(report => report.Id == closedReportId);
+        closedReportAfterDeletion.IsOpen.Should().BeFalse();
+        closedReportAfterDeletion.UserId.Should().BeNull();
+        closedReportAfterDeletion.Comment.Should().BeNull();
+        closedReportAfterDeletion.ClosureNote.Should().Be("Vérifié en rayon");
     }
 
     [Fact]

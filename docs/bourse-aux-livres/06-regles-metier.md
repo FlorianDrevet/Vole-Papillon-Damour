@@ -645,3 +645,64 @@ correspond exactement à sa fiche. Elle n'est jamais supprimée automatiquement.
 
 La suppression du compte supprime Ma sélection et l'accès à Mes achats. Les mouvements
 nécessaires à l'audit sont conservés sans identité exploitable.
+
+### RG-67 — Seul un membre connecté signale
+
+Un signalement est toujours rattaché à un compte membre. Un visiteur anonyme est
+invité à se connecter.
+
+### RG-68 — On ne signale que ce qui est censé être en rayon
+
+Le signalement n'est possible que pour une fiche de Ma sélection dont la
+disponibilité est *Disponible* au moment de l'envoi. Le serveur revérifie cette
+condition ; un signalement sur une fiche épuisée est refusé avec un message clair.
+
+### RG-69 — Un signalement ouvert par membre et par fiche
+
+Un membre ne peut avoir qu'un signalement ouvert sur une même fiche. Un second
+appui ne crée pas de doublon. Après clôture *Retrouvé* ou *Sans suite*, le membre
+peut signaler à nouveau.
+
+### RG-70 — Plafond anti-abus
+
+Un membre ne peut pas ouvrir plus de **10 signalements par jour** (valeur à régler
+dans Paramètres). Au-delà, le bouton affiche « Vous avez déjà beaucoup signalé
+aujourd'hui, merci ! » et l'envoi est refusé par le serveur. Le plafond est calculé
+sur les 24 dernières heures glissantes (voir `DT-27`).
+
+### RG-71 — Le signalement ne modifie jamais le stock
+
+Ni le signalement, ni leur nombre ne retirent automatiquement un livre du
+catalogue. Seule la clôture *Retiré du stock*, faite par un bénévole habilité,
+produit un mouvement RETRAIT. (Voir idée I-3 pour un éventuel masquage temporaire.)
+
+### RG-72 — Retrait attribué et motivé
+
+Le retrait issu d'un signalement réutilise le mouvement RETRAIT append-only :
+compte du bénévole, date, quantité, note obligatoire, lien vers les signalements
+clôturés.
+
+### RG-73 — Caducité automatique
+
+Si la quantité disponible d'une fiche tombe à 0 par un autre chemin (vente en caisse,
+retrait via Désengorgement, correction), ses signalements ouverts passent à *CADUC*
+et sortent de la file.
+
+### RG-74 — Anonymat côté administration
+
+La file n'affiche ni nom, ni e-mail, ni identifiant du membre : seulement le nombre
+de membres distincts, les dates et les commentaires. Un administrateur n'a pas
+besoin de savoir *qui* a signalé pour aller vérifier.
+
+### RG-75 — Suppression du compte
+
+À la suppression d'un compte, ses signalements ouverts sont conservés mais détachés
+du membre (anonymes), pour ne pas perdre l'information de stock. Les commentaires
+libres sont supprimés (ils peuvent contenir des données personnelles). Les
+signalements clôturés sont également détachés afin de conserver un historique anonyme.
+
+### RG-76 — Fin des états personnels
+
+Les états À PRENDRE, PAS TROUVÉ et À REVOIR disparaissent de l'interface et de
+l'API. ACHETÉ reste un état **posé uniquement par la caisse** (RG-65) et n'est
+plus modifiable par le membre.
