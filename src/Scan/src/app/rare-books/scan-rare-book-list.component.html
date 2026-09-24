@@ -88,7 +88,10 @@
         </svg>
       </span>
     </button>
-    <p *ngIf="filteredBooks.length === 0" class="rare-empty">Aucune fiche ne correspond à cette recherche.</p>
+    <p *ngIf="books.length === 0" class="rare-empty">Aucune fiche rare pour le moment.</p>
+    <p *ngIf="books.length > 0 && filteredBooks.length === 0" class="rare-empty">
+      Aucune fiche ne correspond à la recherche ou au filtre sélectionné.
+    </p>
   </section>
 
   <footer *ngIf="!error" class="rare-list-footer">
