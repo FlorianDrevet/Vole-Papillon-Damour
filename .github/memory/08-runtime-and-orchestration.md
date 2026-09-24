@@ -129,8 +129,10 @@ The API startup wires:
 - `monitoringAlertEmail` is `afdrevet@outlook.com`; no Azure infrastructure notification may target
   `volepapillondamour@sfr.fr` (public association contact). Subscription-level notifications
   (billing, Service Health, Defender) are outside Bicep and must be checked in the portal.
-- Local solution builds on Windows fail on `Azure.Functions.Sdk` resolution for the generated
-  `obj/azure_functions` project; this pre-exists on `main`, and the Worker project builds on its own.
+- The Worker project resolves its unversioned `Azure.Functions.Sdk` through the repository-root
+  `global.json`. The manual Books runtime workflow uses `src/Backend` as Docker context, so it
+  copies the root file into that context and the Worker Dockerfile copies it to `/src` before
+  restore. Keep the workflow copy and Dockerfile `COPY` together if the context or SDK mapping changes.
 
 ## DEV observability cost tuning — 2026-09-22
 

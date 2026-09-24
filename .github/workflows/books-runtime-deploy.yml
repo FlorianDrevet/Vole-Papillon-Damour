@@ -39,6 +39,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Add the root SDK configuration to the backend Docker context
+        run: |
+          set -euo pipefail
+          test ! -e "$BUILD_CONTEXT/global.json"
+          cp global.json "$BUILD_CONTEXT/global.json"
+
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
