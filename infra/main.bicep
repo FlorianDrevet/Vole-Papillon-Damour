@@ -301,6 +301,12 @@ param socialImportAccessTokenIssuedAt string = ''
 @description('Whether to provision the Azure OpenAI title-generation account')
 param titleGenerationEnabled bool = false
 
+@description('Whether personalized and similar-book recommendations are enabled')
+param recommendationsEnabled bool = false
+
+@description('Name of the Azure OpenAI embedding deployment used for recommendations')
+param recommendationsEmbeddingDeploymentName string = 'text-embedding-3-small'
+
 @description('Name of the Azure OpenAI title-generation account')
 param titleGenerationAccountName string = ''
 
@@ -1026,6 +1032,8 @@ module actualityTitleGenerationModule './modules/AiFoundry/aiFoundry.module.bice
     modelName: titleGenerationModelName
     modelVersion: titleGenerationModelVersion
     workerPrincipalId: userAssignedIdentityWorkerModule.outputs.principalId
+    embeddingDeploymentName: recommendationsEmbeddingDeploymentName
+    embeddingCapacity: 50
     tags: tags
   }
 }
@@ -1245,6 +1253,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
       {
         name: 'ASPNETCORE_URLS'
         value: 'http://+:${containerAppApiIngress.targetPort}'
+      }
+      {
+        name: 'Recommendations__Enabled'
+        value: string(recommendationsEnabled)
       }
       {
         name: 'ConnectionStrings__ProjectDatabase'
@@ -1590,6 +1602,10 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
         value: '~4'
       }
       {
+        name: 'Recommendations__Enabled'
+        value: string(recommendationsEnabled)
+      }
+      {
         name: 'FUNCTIONS_WORKER_RUNTIME_VERSION'
         value: '10.0'
       }
@@ -1747,6 +1763,14 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'TitleGeneration__DeploymentName'
         value: titleGenerationDeploymentName
+      }
+      {
+        name: 'Recommendations__Endpoint'
+        value: actualityTitleGenerationModule!.outputs.endpoint
+      }
+      {
+        name: 'Recommendations__EmbeddingDeploymentName'
+        value: recommendationsEmbeddingDeploymentName
       }
     ] : [])
   }
