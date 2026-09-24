@@ -91,7 +91,13 @@ jobs:
         run: docker build --file src/Scan/Dockerfile --build-arg API_URL=https://api.example.com --tag vpd-scan-ci:latest src
 
       - name: Build Worker container
-        run: docker build --file src/Backend/Vole_Papillon_Damour.Worker/Dockerfile --tag vpd-worker-ci:latest src/Backend
+        run: |
+          set -euo pipefail
+          sdk_context_file=src/Backend/global.json
+          test ! -e "$sdk_context_file"
+          trap 'rm -f "$sdk_context_file"' EXIT
+          cp global.json "$sdk_context_file"
+          docker build --file src/Backend/Vole_Papillon_Damour.Worker/Dockerfile --tag vpd-worker-ci:latest src/Backend
 
       - name: Build Catalog container
         run: docker build --file src/Catalog/Dockerfile --build-arg API_URL=https://api.example.com --tag vpd-catalog-ci:latest src
