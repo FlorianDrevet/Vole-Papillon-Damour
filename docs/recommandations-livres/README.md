@@ -23,6 +23,7 @@ maintenance par une personne seule) avant d'écrire une spécification.
 | [`00-journal-des-echanges.md`](00-journal-des-echanges.md) | Journal daté : propositions, réponses, décisions, questions ouvertes |
 | [`01-analyse-critique-idee-initiale.md`](01-analyse-critique-idee-initiale.md) | Critique argumentée de l'idée initiale, faits vérifiés dans le dépôt, chiffrage, alternatives |
 | [`02-etude-stockage-voisins-sql-ou-graphe.md`](02-etude-stockage-voisins-sql-ou-graphe.md) | Étude d'architecture : voisins en table SQL, en SQL Graph ou dans Cosmos DB Gremlin ; prix de Cosmos |
+| [`03-mesure-couverture-resumes.md`](03-mesure-couverture-resumes.md) | Mesure sur 138 éditions de livres connus : taux de résumés BnF et Open Library (Google Books à venir) ; défaut ISBN-10 découvert |
 
 Les documents suivants (spécification retenue, puis plan d'implémentation) seront
 ajoutés ici une fois l'approche validée.

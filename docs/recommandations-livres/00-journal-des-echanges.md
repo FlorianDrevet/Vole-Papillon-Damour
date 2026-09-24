@@ -151,5 +151,45 @@ graphe à tout prix.
 
 - **Q2** — Signaux de « pour vous » : achats seuls, ou aussi liste de recherche et Ma
   sélection ?
-- **Q3** — Sonde de mesure avant de choisir la façon de calculer les voisins. *(posée)*
+- **Q3** — Sonde de mesure avant de choisir la façon de calculer les voisins.
+  *(répondue à l'échange 4)*
 - **Q4** — Compte Azure OpenAI activé en production ?
+
+---
+
+## Échange 4 — 24 septembre 2026 : mesure des résumés
+
+### Demande
+
+Prendre des livres connus et vérifier si la BnF et Google Books ont des résumés. Ne pas
+compter les membres ayant des achats : le site vient d'être mis en ligne et n'est pas
+encore public, ce chiffre est donc nul et non pertinent.
+
+### Réponse — résumé
+
+Mesure complète : [`03-mesure-couverture-resumes.md`](03-mesure-couverture-resumes.md).
+
+- 46 titres connus, 138 éditions prises dans le catalogue BnF.
+- **Par édition** : résumé BnF 34 % (58 % pour les éditions 2017 et après, 14 % avant
+  2007) ; Open Library 21 % ; **BnF ou Open Library 51 %**.
+- **Par œuvre** (au moins une édition avec résumé) : **BnF ou Open Library 80 %**. Le
+  résumé de l'œuvre suffit pour les recommandations, à condition de savoir regrouper
+  les éditions.
+- **Google Books non mesuré** : l'accès anonyme est refusé (quota à 0). Une clé est
+  nécessaire.
+- **Défaut existant découvert** : `BnfSruClient` ne cherche qu'en ISBN-13 et ne retrouve
+  **aucune édition d'avant 2007** (0/55). Avec un repli ISBN-10, il les retrouve toutes
+  (55/55). À corriger à part des recommandations.
+
+### Décisions
+
+- **D3** — Le nombre de membres ayant des achats n'entre pas dans les critères de
+  décision : le site n'est pas encore public.
+
+### Questions ouvertes
+
+- **Q2** — Signaux de « pour vous » : achats seuls, ou aussi liste de recherche et Ma
+  sélection ?
+- **Q4** — Compte Azure OpenAI activé en production ?
+- **Q6** — Clé Google Books pour terminer la mesure. *(posée)*
+- **Q7** — Le défaut ISBN-10 de la BnF : correctif séparé, dans une autre branche ?
