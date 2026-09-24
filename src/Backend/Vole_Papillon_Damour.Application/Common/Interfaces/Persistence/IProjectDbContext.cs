@@ -15,6 +15,7 @@ using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
@@ -44,4 +45,5 @@ public interface IProjectDbContext
     DbSet<MemberCard> MemberCards => throw new NotSupportedException();
     DbSet<CheckoutPassage> CheckoutPassages => throw new NotSupportedException();
     DbSet<CheckoutPassageLine> CheckoutPassageLines => throw new NotSupportedException();
+    DbSet<BookNotFoundReport> BookNotFoundReports => throw new NotSupportedException();
 }

@@ -12,6 +12,7 @@ using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
+using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
@@ -47,6 +48,7 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
     public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
+    public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
