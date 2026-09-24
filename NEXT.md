@@ -90,6 +90,18 @@ Vérifications manuelles restantes : tous les parcours A–H de F-10 §14 sur un
 
 Le secret GitHub `MEMBER_CARD_SIGNING_KEY` n'est pas créé ; le propriétaire du dépôt doit l'ajouter avant le déploiement de cette livraison. Le dépôt contient uniquement la clé de développement factice explicitement marquée, sans secret de production. À la prochaine bourse, relever les mesures de F-10 §18 : part de passages associés, associations en attente, nombres `Unresolved`/`Dissociated`, sélections passées à `Purchased`, taux de première lecture QR et durée ajoutée. La purge automatique après inactivité et la durée maximale de conservation des mouvements anonymisés restent à décider.
 
+### État actualisé — 2026-09-24 — chargement des livres rares Scanette
+
+La liste des fiches rares termine maintenant le chargement si l'API ne répond pas : la
+requête admin expire après 30 secondes et l'écran affiche l'erreur existante avec son action
+« Réessayer ». Une liste vide indique « Aucune fiche rare pour le moment » ; l'absence de
+résultats après recherche ou filtrage garde un message distinct. Aucun réglage Azure, compte,
+appel API réel ou déploiement n'a été effectué.
+
+Validation locale : 282 tests Scan ChromeHeadless, build de production et `graphify update .`
+passés. Le contrôle Playwright local de `/livres-rares` a été redirigé vers `/accueil` par la
+protection Entra ; le rendu authentifié sur appareil réel reste à vérifier.
+
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 
 La liste Scanette des livres rares protège désormais les appels `/rare-books/*` avec le

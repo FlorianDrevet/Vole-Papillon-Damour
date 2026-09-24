@@ -65,6 +65,16 @@ describe('ScanRareBookListComponent', () => {
     expect(fixture.nativeElement.querySelector('.rare-error')).toBeNull();
   });
 
+  it('shows a dedicated empty state when there are no rare books', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.rare-empty')?.textContent)
+      .toContain('Aucune fiche rare pour le moment.');
+  });
+
   it('keeps the add action in the list flow', () => {
     fixture.componentInstance.loading = false;
     fixture.detectChanges();

@@ -1,6 +1,7 @@
 import {provideHttpClient} from '@angular/common/http';
 import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
 import {TestBed} from '@angular/core/testing';
+import {TimeoutError} from 'rxjs';
 
 import {environment} from '../../environments/environment';
 import {ScanApiService} from './scan-api.service';
@@ -135,6 +136,24 @@ describe('ScanApiService', () => {
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toBeNull();
     request.flush({});
+  });
+
+  it('times out when the rare-book admin list never responds', () => {
+    jasmine.clock().install();
+    try {
+      let receivedError: unknown;
+      service.getRareBooksAdmin().subscribe({error: error => receivedError = error});
+
+      const request = http.expectOne(
+        `${environment.apiUrl}/rare-books/admin?availability=all&page=1&pageSize=200`,
+      );
+      jasmine.clock().tick(30_000);
+
+      expect(receivedError).toEqual(jasmine.any(TimeoutError));
+      expect(request.cancelled).toBeTrue();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('opens a session with the local client id for idempotent replay', () => {

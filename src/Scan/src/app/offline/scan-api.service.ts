@@ -1,6 +1,6 @@
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {Observable, timeout} from 'rxjs';
 
 import {environment} from '../../environments/environment';
 import {
@@ -11,6 +11,8 @@ import {
   ScanVolunteerStatisticsResponse,
 } from './scan-offline.model';
 import {ScanRareBook} from './scan-offline.model';
+
+const RARE_BOOKS_ADMIN_REQUEST_TIMEOUT_MS = 30_000;
 
 export interface OpenScanSessionRequest {
   mode: 'AvailableNow' | 'NextFair';
@@ -226,7 +228,7 @@ export class ScanApiService {
     return this.http.get<ScanRareBookPageResponse>(
       `${this.baseUrl}/rare-books/admin`,
       {params: new HttpParams().set('availability', 'all').set('page', 1).set('pageSize', 200)},
-    );
+    ).pipe(timeout({first: RARE_BOOKS_ADMIN_REQUEST_TIMEOUT_MS}));
   }
 
   addRareBookPhoto(
