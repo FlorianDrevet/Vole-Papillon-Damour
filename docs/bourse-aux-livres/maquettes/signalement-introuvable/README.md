@@ -2,7 +2,7 @@
 
 Maquettes de la feature décrite dans
 [`../../11-signalement-livre-introuvable.md`](../../11-signalement-livre-introuvable.md)
-(plan d'implémentation : [`../../plan/07-signalement-livre-introuvable.md`](../../plan/07-signalement-livre-introuvable.md)).
+(plan d'implémentation : [`../../plan/08-signalement-livre-introuvable.md`](../../plan/08-signalement-livre-introuvable.md)).
 
 - **Canvas Claude Design (source de vérité, éditable)** :
   <https://claude.ai/artifact/KDX9jHZrcRnb2H6qGccnDZ> — deux pages, « Membre — Ma sélection »

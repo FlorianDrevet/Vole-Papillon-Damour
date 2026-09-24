@@ -12,7 +12,7 @@
 > **Maquettes :** canvas Claude Design <https://claude.ai/artifact/KDX9jHZrcRnb2H6qGccnDZ> ;
 > export dans [`maquettes/signalement-introuvable/`](maquettes/signalement-introuvable/README.md)
 > et [`maquettes/signalement-introuvable.zip`](maquettes/signalement-introuvable.zip).
-> **Plan d'implémentation :** [`plan/07-signalement-livre-introuvable.md`](plan/07-signalement-livre-introuvable.md).
+> **Plan d'implémentation :** [`plan/08-signalement-livre-introuvable.md`](plan/08-signalement-livre-introuvable.md).
 
 ## 1. Le problème
 
@@ -549,5 +549,5 @@ consignées dans [`08-questions-ouvertes.md`](08-questions-ouvertes.md).
 1. Validation de ce document (et des réponses Q-SIG-1 à Q-SIG-8).
 2. ✅ Maquettes des écrans E1 à E8, desktop et mobile 390 px :
    [`maquettes/signalement-introuvable/`](maquettes/signalement-introuvable/README.md).
-3. ✅ Plan d'implémentation : [`plan/07-signalement-livre-introuvable.md`](plan/07-signalement-livre-introuvable.md)
+3. ✅ Plan d'implémentation : [`plan/08-signalement-livre-introuvable.md`](plan/08-signalement-livre-introuvable.md)
    (la mise à jour de `06-regles-metier.md`, `10-…` et `09-rgpd-…` y est la tâche SIG-16).

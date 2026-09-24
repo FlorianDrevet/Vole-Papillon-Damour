@@ -30,7 +30,8 @@ s'y réfère par leurs identifiants (`RG-nn`, `ENF-nn`, `DT-nn`, `QT-nn`, `R-nn`
 | [`04`](04-statistiques-benevoles.md) | **Statistiques bénévoles** — contribution privée dans Scan et Catalog | — | Implémenté localement |
 | [`05`](05-statistiques-administration.md) | **Statistiques d'administration** — bourse et équipe bénévole dans Catalog | — | Implémenté localement — PR #154 en attente |
 | [`06`](06-compte-selection-achats.md) | **Compte membre** — Ma sélection, carte de compte QR, association de caisse, Mes achats | `CS-1` à `CS-26` | Code regroupé dans la PR unique #224 sur demande ; validation manuelle de F-10 §14 restante |
-| [`07`](07-signalement-livre-introuvable.md) | **Signalement « livre introuvable »** — bouton dans Ma sélection, file de vérification et retrait en administration | `SIG-1` à `SIG-16` | Implémenté dans `feat/not-found-reports` ; recette manuelle F-11 §11 à faire en environnement de recette |
+| [`07`](07-recherche-bnf-isbn10.md) | **Recherche BnF des éditions à ISBN-10** — index `bib.fuzzyISBN` | — | Fin |
+| [`08`](08-signalement-livre-introuvable.md) | **Signalement « livre introuvable »** — bouton dans Ma sélection, file de vérification et retrait en administration | `SIG-1` à `SIG-16` | Implémenté dans `feat/not-found-reports` ; recette manuelle F-11 §11 à faire en environnement de recette |
 
 **État d'exécution au 2026-09-06.** Le palier 2 est implémenté et déployé. Cette tranche
 complète le palier 3 côté backend/API/CQRS et interfaces : corrections et administration

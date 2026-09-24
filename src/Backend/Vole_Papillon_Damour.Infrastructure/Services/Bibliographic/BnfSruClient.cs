@@ -86,12 +86,19 @@ public sealed class BnfSruClient(
             "&",
             "version=1.2",
             "operation=searchRetrieve",
-            $"query={Uri.EscapeDataString($"bib.isbn all \"{isbn13.Value}\"")}",
+            $"query={Uri.EscapeDataString(IsbnQuery(isbn13))}",
             "recordSchema=unimarcXchange",
             "maximumRecords=1",
             "startRecord=1");
 
         return new Uri($"{_options.BnfSruEndpoint}?{query}", UriKind.Absolute);
+    }
+
+    // bib.isbn misses notices recorded with the ISBN-10 of pre-2007 editions when
+    // queried with the normalized ISBN-13; bib.fuzzyISBN matches both forms.
+    internal static string IsbnQuery(Isbn13 isbn13)
+    {
+        return $"bib.fuzzyISBN all \"{isbn13.Value}\"";
     }
 
     internal static string? ReadAuthors(IEnumerable<XElement> dataFields)

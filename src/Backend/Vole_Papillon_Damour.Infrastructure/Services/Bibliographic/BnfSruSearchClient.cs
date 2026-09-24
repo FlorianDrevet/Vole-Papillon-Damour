@@ -109,7 +109,7 @@ public sealed class BnfSruSearchClient(
     private Uri BuildRequestUri(string query, int page, int pageSize)
     {
         var cql = Isbn13.TryCreate(query, out var isbn13)
-            ? $"bib.isbn all \"{isbn13.Value}\""
+            ? BnfSruClient.IsbnQuery(isbn13)
             : $"bib.anywhere all \"{SanitizeCqlTerm(query)}\"";
         var requestQuery = string.Join(
             "&",

@@ -54,6 +54,13 @@ seconde du scan.
 | Format | SRU, XML MARC (UNIMARC / InterMarc) |
 | Recherche | Par ISBN (`bib.fuzzyISBN`), et par titre ou auteur pour `RG-47` |
 
+**Pourquoi `bib.fuzzyISBN` et pas `bib.isbn`.** Les notices des éditions antérieures à
+2007 portent un ISBN-10. Interrogé avec l'ISBN-13 normalisé (`RG-01`), l'index
+`bib.isbn` ne les retrouve pas ; `bib.fuzzyISBN` rapproche les deux formes. Mesure du
+24 septembre 2026 sur 138 éditions de livres connus : `bib.isbn` retrouvait 0 édition
+d'avant 2007 sur 55, `bib.fuzzyISBN` retrouve les 138. Les deux clients
+(`BnfSruClient`, `BnfSruSearchClient`) passent par `BnfSruClient.IsbnQuery`.
+
 La colonne `MetadataFetchedAt` n'est pas du confort : c'est la condition légale de
 réutilisation.
 
