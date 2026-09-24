@@ -25,6 +25,8 @@ maintenance par une personne seule) avant d'écrire une spécification.
 | [`02-etude-stockage-voisins-sql-ou-graphe.md`](02-etude-stockage-voisins-sql-ou-graphe.md) | Étude d'architecture : voisins en table SQL, en SQL Graph ou dans Cosmos DB Gremlin ; prix de Cosmos |
 | [`03-mesure-couverture-resumes.md`](03-mesure-couverture-resumes.md) | Mesure sur 138 éditions de livres connus : taux de résumés BnF et Open Library (Google Books à venir) ; défaut ISBN-10 découvert |
 | [`04-signaux-de-similarite.md`](04-signaux-de-similarite.md) | Le résumé ne suffit pas : zones BnF réellement remplies, rôle de chaque signal (filtre, bonus, embedding) |
+| [`05-benchmark.md`](05-benchmark.md) | Benchmark de 11 méthodes sur 165 éditions réelles : protocole, critères de décision, résultats et analyse |
+| [`06-tutoriel-foundry-embeddings.md`](06-tutoriel-foundry-embeddings.md) | Déployer `text-embedding-3-small` sur le compte Foundry existant et lancer le benchmark |
 
 Les documents suivants (spécification retenue, puis plan d'implémentation) seront
 ajoutés ici une fois l'approche validée.

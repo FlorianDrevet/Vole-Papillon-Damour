@@ -254,4 +254,45 @@ Analyse complète : [`04-signaux-de-similarite.md`](04-signaux-de-similarite.md)
 ### Questions ouvertes
 
 - **Q8** — Lancer une sonde de qualité : embedding des 138 éditions, avec et sans champs
-  enrichis, puis lecture des voisins, avant d'écrire la spécification ? *(posée)*
+  enrichis, puis lecture des voisins, avant d'écrire la spécification ? *(répondue à
+  l'échange 7 : un benchmark complet)*
+
+---
+
+## Échange 7 — 24 septembre 2026 : benchmark complet et tutoriel Foundry
+
+### Demande
+
+Préparer un vrai benchmark complet de plusieurs méthodes de calcul de livres proches, avec
+le modèle Azure OpenAI `text-embedding-3-small`. Préparer entièrement son exécution, avec
+un vrai rapport lisible contenant remarques et conseils. Fournir un tutoriel pour
+configurer Foundry avec le modèle, et dire ce qu'il faut pour l'utiliser.
+
+### Réponse — résumé
+
+- **Outil** : `tools/recommendation-benchmark/` (Python). Corpus réel de **158 œuvres et
+  165 éditions** lues à la BnF et chez Open Library, annotées en 31 familles, avec des
+  pièges volontaires (doubles éditions, adaptations BD, séries, publics voisins).
+- **Onze méthodes** : règles seules, TF-IDF, quatre variantes d'embedding (titre, résumé
+  d'édition, résumé d'œuvre, texte composé), filtres, bonus, 512 et 256 dimensions.
+- **Critères de décision fixés avant les résultats** : [`05-benchmark.md`](05-benchmark.md) §5.
+- **Premiers résultats, sans IA** :
+  - règles seules : nDCG@5 0,216, parfaites sur les séries, mais **13 %** de couverture ;
+  - TF-IDF : nDCG@5 0,316, mais renvoie l'autre édition du même livre dans 100 % des cas ;
+  - le partage du résumé entre éditions fait passer sa couverture de 40 % à **89 %**.
+- **Q4 résolue** : le compte Azure OpenAI existe (`francecentral`, clés désactivées). Il
+  suffit d'y ajouter un déploiement :
+  [`06-tutoriel-foundry-embeddings.md`](06-tutoriel-foundry-embeddings.md).
+- Coût du benchmark : environ **0,001 $**.
+
+### Décisions
+
+- **D5** — Le choix de la méthode se fera sur le benchmark, selon les critères fixés à
+  l'avance dans `05` §5.
+
+### Questions ouvertes
+
+- **Q9** — Déploiement et rôle Azure faits (tutoriel, étapes 2 à 6) ? Chemin du profil
+  CLI, pour que je lance le benchmark et rédige l'analyse. *(posée)*
+- **Q2** — Signaux de « pour vous » : achats seuls, ou aussi liste de recherche et Ma
+  sélection ?
