@@ -80,25 +80,15 @@ associer un passage de caisse, l'historique Mes achats, le hors-ligne, le RGPD e
 règles RG-52 à RG-66. Aucun code runtime, compte, jeton ou déploiement n'a été créé ;
 la PR doit être relue et validée avant toute implémentation.
 
-### PR1 compte membre — 2026-09-23
+### Compte membre CS-1 à CS-26 — 2026-09-24
 
-CS-1 à CS-10 sont implémentés sur `feat/account-selection-pr1`. Le worktree dédié a été
-créé depuis la branche de spécification fonctionnelle, car `origin/design/account-features-mockups`
-n'était pas disponible lors de sa création ; le plan et la maquette à jour ont été lus depuis
-le worktree de design existant, sans le modifier. La migration
-`20260923191942_AddMemberSelection` n'a été appliquée à aucun environnement.
+Tous les changements de code CS-1 à CS-26 sont dans la PR [#224](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/224), branche `feat/account-selection-pr1`. À la création, la référence distante `origin/design/account-features-mockups` manquait ; avec ton accord, elle a été publiée puis la branche de tâche a été synchronisée avec `origin/main`. La PR documentaire #217 n'est pas fusionnée et ses commits de spécification restent une dépendance visible dans cette PR. Le découpage en cinq PR du plan a été regroupé en une seule PR à ta demande, en gardant un commit par tâche. Les migrations `20260923191942_AddMemberSelection`, `20260923215711_AddMemberCards` et `20260923223323_AddCheckoutPassages` restent non appliquées.
 
-Validation locale : Catalog `npm test -- --watch=false --browsers=ChromeHeadless` (354 tests)
-et `npm run build` passent. `dotnet test src/Backend/Vole_Papillon_Damour.slnx` lance les
-tests Application/Infrastructure/API (477 réussis), puis échoue à la compilation du Worker,
-qui ne résout pas `Azure.Functions.Sdk`. Le rendu `/compte` à 390 px ne déborde pas
-horizontalement ; les états authentifiés n'ont pas été testés avec un compte réel.
+Validation locale : Catalog, 373 tests ChromeHeadless et build de production ; Scan, 280 tests ChromeHeadless et build de production ; Domain/Application/Infrastructure/API, 153/341/155/45 tests réussis. `dotnet test src/Backend/Vole_Papillon_Damour.slnx` termine en échec quand le Worker ne résout pas `Azure.Functions.Sdk` (version absente du projet et de `global.json`). Le rendu public non authentifié de `/compte` à 390×844 mesure 390 px de viewport et 375 px de largeur de document, sans débordement horizontal. Les écrans authentifiés Ma carte et Mes achats n'ont pas été testés avec un compte réel.
 
-Vérifications manuelles restantes : parcours A/B de F-10 §14 à deux appareils, reconnexion
-et fusion avec un compte existant, vérification que « Mes recherches » reste inchangée,
-lecture QR à 20/40 cm et essais hors ligne. Aucun déploiement ni application de migration
-n'a été effectué. Ajouter le secret GitHub `MEMBER_CARD_SIGNING_KEY` avant le déploiement
-de PR2 ; aucune clé n'est stockée dans le dépôt.
+Vérifications manuelles restantes : tous les parcours A–H de F-10 §14 sur une vraie instance, test de rejeu hors ligne et d'idempotence sur deux appareils, lecture du QR à 20 et 40 cm, vente anonyme avec une ancienne Scanette, association/correction/suppression avec carte invalidée. Les écrans m-14a à m-21e ont été lus dans le HTML source ; le plan présent sur ces branches ne contient pas la section de correspondance annoncée et l'ouverture du HTML local dans Chrome était bloquée par sa politique. Le rendu Chrome à 390 px couvre l'état vide anonyme de Ma sélection, sans comparaison visuelle avec le fichier maquette. Aucun déploiement ni application de migration n'a été effectué.
+
+Le secret GitHub `MEMBER_CARD_SIGNING_KEY` n'est pas créé ; le propriétaire du dépôt doit l'ajouter avant le déploiement de cette livraison. Le dépôt contient uniquement la clé de développement factice explicitement marquée, sans secret de production. À la prochaine bourse, relever les mesures de F-10 §18 : part de passages associés, associations en attente, nombres `Unresolved`/`Dissociated`, sélections passées à `Purchased`, taux de première lecture QR et durée ajoutée. La purge automatique après inactivité et la durée maximale de conservation des mouvements anonymisés restent à décider.
 
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 

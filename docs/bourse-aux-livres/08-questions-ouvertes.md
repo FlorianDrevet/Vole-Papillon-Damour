@@ -368,25 +368,35 @@ cher, et là que l'outil devient crédible le plus vite.
 
 ## Q-12 — Extension du compte membre
 
-> 🟠 **Proposition fonctionnelle à valider avant implémentation.**
+> ✅ **Décisions fonctionnelles retenues le 24 septembre 2026.** L'implémentation de
+> code CS-1 à CS-26 est dans la PR #224 ; les parcours manuels de F-10 §14 restent à faire.
 
 Le document [10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md)
-propose de distinguer la liste de recherche, Ma sélection et Mes achats, puis
-d'associer facultativement un passage de caisse à un compte au moyen d'un QR code.
+définit la séparation entre la liste de recherche, Ma sélection et Mes achats, puis
+l'association facultative d'un passage de caisse au compte présenté au moyen d'une
+Carte de compte.
 
-Les choix suivants restent à confirmer avec l'association :
+Les choix retenus sont :
 
-- le nom public de la sélection et de l'historique ;
-- l'inclusion ou non des livres rares dans Ma sélection ;
-- le rattachement de tout le passage plutôt que de lignes individuelles ;
-- le fonctionnement hors ligne du jeton de carte et son délai de résolution ;
-- l'existence d'un rattachement après validation par e-mail ;
-- la politique applicable aux achats faits pour un proche ou une famille ;
-- les durées de conservation de la sélection et du lien entre vente et compte.
+- libellés : **Ma sélection**, **Ma carte / Carte de compte**, **Mes achats** ; la
+  liste de recherche et ses alertes restent séparées ;
+- Ma sélection accepte les éditions et les fiches rares publiées et visibles ;
+- la caisse associe tout le passage avant validation, jamais seulement des lignes ;
+- la Scanette peut mettre l'intention d'association en attente hors ligne et la rejouer
+  de façon idempotente ; le serveur vérifie le jeton HMAC et la version de carte ;
+- aucun rattachement après validation par e-mail n'est livré ; une vente anonyme n'est
+  jamais recherchée automatiquement ;
+- le compte associé est celui de la Carte de compte présentée. Aucun compte famille ou
+  association déléguée au nom d'un proche n'est créé ;
+- Ma sélection et la carte sont supprimées à la finalisation de la suppression du
+  compte, et ses passages sont anonymisés ; les lignes et mouvements nécessaires à la
+  traçabilité restent sans lien personnel exploitable. Les durées maximales des
+  mouvements anonymisés restent à fixer dans le registre de l'association.
 
-Le parcours recommandé pour un premier lot reste : QR web facultatif, association de
-tout le passage avant validation, vente anonyme toujours possible, et aucune
-réservation ni alerte déclenchée par Ma sélection.
+Le parcours implémenté utilise un QR web facultatif, associe tout le passage avant
+validation, garde la vente anonyme toujours possible, et ne déclenche ni réservation ni
+alerte depuis Ma sélection. Les vérifications en deux appareils, à 20/40 cm et les
+parcours de F-10 §14 restent à réaliser avant de considérer la fonctionnalité validée.
 
 ## Journal des décisions
 

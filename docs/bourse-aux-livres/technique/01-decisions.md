@@ -1052,3 +1052,41 @@ l'infrastructure.
 mais dépend de la disponibilité ultérieure des sources. Le contrôle périodique des
 fiches sans couverture (30 jours) et le placeholder générique absorbent cette
 fragilité ; le budget d'images Blob disparaît.
+
+## DT-25 — Carte de compte signée par HMAC
+
+**Contexte.** La carte doit être lisible hors ligne par la Scanette et ne doit contenir
+ni nom, ni e-mail, ni autre identité en clair. Sa révocation et son renouvellement
+doivent invalider immédiatement les anciennes impressions lorsque le serveur reprend
+l'association.
+
+**Décision.** Le QR porte `VPDC1.<base64url(cardId‖version)>.<base64url(HMAC-SHA256)>`.
+La signature est vérifiée en temps constant avec `MEMBER_CARD_SIGNING_KEY`, une clé
+Base64 d'au moins 32 octets injectée dans l'environnement d'exécution. La base ne
+stocke pas un jeton par impression : elle conserve la carte, sa version et son code de
+secours. La lecture valide encore l'état actif de la carte côté serveur. Une rotation
+incrémente la version et rend les anciens QR invalides.
+
+**Alternative écartée.** Un jeton aléatoire opaque dont seule l'empreinte est conservée
+en base éviterait la clé de signature, mais ajouterait un secret par carte et une
+gestion de remplacement/stockage sans bénéfice pour la lecture offline retenue. Le
+secret HMAC de production ne doit jamais être commité ; sa rotation invalide les QR déjà
+émis et doit donc être planifiée. Le fichier de développement ne contient qu'une clé
+factuellement factice, explicitement marquée.
+
+## DT-26 — Créer un passage uniquement pour une association
+
+**Contexte.** Une vente anonyme doit rester valide, y compris sur une Scanette qui n'a
+pas encore reçu la nouvelle version. L'historique membre ne doit contenir que les
+passages où le compte a présenté sa carte.
+
+**Décision.** Le parcours d'association crée un `CheckoutPassage` et relie les
+mouvements et instantanés de ses lignes à ce passage. Une vente sans association garde
+le chemin actuel et `BookMovements.CheckoutPassageId` reste nul. Les Scanettes anciennes
+continuent donc d'envoyer une vente ordinaire ; aucune correspondance par e-mail n'est
+tentée. La carte et l'association demeurent facultatives.
+
+**Alternative écartée.** Créer un `CheckoutPassage` pour chaque vente puis conserver
+les passages anonymes aurait accru les écritures et l'historique sans servir Mes achats.
+Cela aurait aussi imposé une nouvelle dépendance au chemin de vente ordinaire et
+augmenté le risque de rendre une vente anonyme indisponible sur une ancienne Scanette.

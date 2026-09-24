@@ -571,8 +571,12 @@ member's typed `Ma sélection` independently of the alert watchlist (`Mes recher
 It reads the remote snapshot through `CatalogSelectionService`, uses `LocalSelectionStore`
 for anonymous entries, and delegates authenticated status/removal writes to
 `CatalogMemberApiService`. The `/compte` page owns authentication initialization and the
-five-tab order; `Mes achats` and `Ma carte` stay disabled until their planned steps land.
-Selection display contains no price data.
+five-tab order. The `Ma carte` view and lazily loaded `Mes achats` tab are implemented;
+purchase history pages by fair, contains no amount or price, and shows cancelled lines
+without changing the local sale ledger. `Ma sélection`, the card and purchase tabs are
+responsive; an anonymous `/compte` render measured no horizontal overflow at 390 px.
+Authenticated card and purchase states still need a real-account visual check. Selection
+display contains no price data.
 
 ## Website Rendering Modes
 

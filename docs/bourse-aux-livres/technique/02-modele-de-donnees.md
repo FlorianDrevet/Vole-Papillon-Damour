@@ -125,6 +125,7 @@ ClockSuspect   bit              NOT NULL DEFAULT 0
 ScanSessionId  uniqueidentifier FK NULL      -- NULL pour caisse et corrections
 VolunteerId    uniqueidentifier FK NULL      -- RG-41
 AssoEventsId   uniqueidentifier FK NULL      -- RG-33
+CheckoutPassageId uniqueidentifier NULL      -- passage associé ; NULL pour une vente anonyme
 Note           nvarchar(500)    NULL         -- motif d'une correction
 ClientGestureId uniqueidentifier NULL        -- clé d'idempotence, voir ci-dessous
 ```
@@ -170,6 +171,57 @@ incohérente.
 Index : `Isbn13` + `OccurredAt` ; `Isbn13` + `Type` + `OccurredAt` (désengorgement) ;
 `AssoEventsId` + `Type` (statistiques par bourse) ; `ScanSessionId` (reprise en bloc
 `RG-25`) ; **unique filtré sur `ClientGestureId`**.
+
+`CheckoutPassageId` est un lien nullable vers le passage membre décrit ci-dessous. Il a
+un index filtré sur les valeurs non nulles. Les ventes anonymes gardent leur chemin
+actuel et cette colonne reste nulle.
+
+### `CheckoutPassages` et `CheckoutPassageLines`
+
+Un passage n'est créé que lorsqu'une association de compte est demandée. Il regroupe les
+lignes validées pour l'historique `Mes achats` et conserve les instantanés de lecture
+nécessaires si les métadonnées du catalogue changent ensuite.
+
+```
+CheckoutPassages
+  Id                      uniqueidentifier PK
+  UserId                  uniqueidentifier NULL FK Users -- NULL après anonymisation
+  Status                  tinyint          NOT NULL -- PendingAssociation|Associated|Unresolved|Dissociated
+  OccurredAt              datetime2        NOT NULL
+  CreatedAt               datetime2        NOT NULL
+  AssociatedByVolunteerId uniqueidentifier NULL       -- identité du bénévole, si connue
+  AssociatedAt            datetime2        NULL
+  UnresolvedReason        varchar(64)      NULL
+  DissociatedAt           datetime2        NULL
+  DissociatedByUserId     uniqueidentifier NULL
+
+CheckoutPassageLines
+  Id                 uniqueidentifier PK
+  CheckoutPassageId  uniqueidentifier FK CheckoutPassages
+  SaleMovementId     uniqueidentifier NULL       -- mouvement ordinaire associé
+  RareBookId         uniqueidentifier NULL
+  Isbn13             char(13)         NULL
+  RequestedIsbn13    varchar(13)      NULL
+  Quantity           int              NOT NULL
+  Title              nvarchar(500)    NOT NULL   -- instantané historique
+  Authors            nvarchar(500)    NULL
+  Publisher          nvarchar(200)    NULL
+  PublicationYear    int              NULL
+  PhysicalFormat     nvarchar(100)    NULL
+  AssoEventsId       uniqueidentifier NULL
+  OccurredAt         datetime2        NOT NULL
+  VoidedAt           datetime2        NULL
+```
+
+`CheckoutPassages.UserId` référence `Users` avec `SET NULL`, afin que l'historique ne
+retienne pas l'identité du compte supprimé. Les lignes sont supprimées en cascade avec
+leur passage. `CheckoutPassageLines` n'enregistre aucun prix ni montant. Les couvertures
+sont relues depuis le catalogue lorsqu'elles sont disponibles.
+
+Index filtrés uniques : `SaleMovementId IS NOT NULL` et
+(`CheckoutPassageId`, `RareBookId`) lorsque `RareBookId IS NOT NULL`. Index de lecture
+des passages : `UserId` puis `OccurredAt` décroissant. `BookMovements.CheckoutPassageId`
+est un identifiant nullable avec index filtré, sans contrainte de clé étrangère.
 
 ### `ScanSessions`
 
@@ -232,6 +284,39 @@ libère la valeur, et deux anonymisations entreraient sinon en collision.
 Le rapprochement se fait **à la première connexion** (`10` §5) : au premier appel
 authentifié, si aucune ligne ne porte cet `oid`, l'API en crée une. Pas de tâche de fond,
 pas de synchronisation, pas de dérive.
+
+### `MemberSelectionItems` et `MemberCards`
+
+Ces deux tables portent les fonctions de compte membre livrées avec `F-10`. La liste de
+recherche reste portée séparément par `Watchlists`/`WatchlistItems`.
+
+```
+MemberSelectionItems
+  Id                 uniqueidentifier PK
+  UserId             uniqueidentifier FK Users
+  Isbn13             char(13)         NULL       -- exactement une cible ISBN ou fiche rare
+  RareBookId         uniqueidentifier NULL
+  Status             tinyint          NOT NULL -- ToTake|Purchased|NotFound|ToRevisit
+  AddedAt            datetime2        NOT NULL
+  StatusChangedAt    datetime2        NOT NULL
+  PurchasedAt        datetime2        NULL
+
+MemberCards
+  Id                 uniqueidentifier PK
+  UserId             uniqueidentifier FK Users
+  Version            int              NOT NULL
+  RecoveryCode       varchar(11)      NOT NULL
+  IssuedAt           datetime2        NOT NULL
+  RotatedAt          datetime2        NULL
+  RevokedAt          datetime2        NULL
+```
+
+`MemberSelectionItems` cascade avec `Users`, sans clé étrangère vers `Books` ni vers les
+fiches rares. Deux index filtrés empêchent les doublons par membre et par cible (`Isbn13`
+ou `RareBookId`). `MemberCards.UserId` est unique ; sa suppression est contrôlée avant
+celle de `Users`. Le code de secours actif est unique (index filtré sur
+`RevokedAt IS NULL`). Le QR ne contient ni nom ni e-mail : le jeton HMAC porte
+l'identifiant de carte et sa version, et l'API vérifie encore que la carte est active.
 
 ### `Watchlists` et `WatchlistItems`
 

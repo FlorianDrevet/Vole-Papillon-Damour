@@ -73,6 +73,8 @@ Verified aggregate folders in `Domain` include:
 - `AssoEventsAggregate`
 - `OrderAggregate`
 - `MemberSelectionAggregate`
+- `MemberCardAggregate`
+- `CheckoutPassageAggregate`
 - `ProductAggregate`
 - `UserAggregate`
 
@@ -82,6 +84,15 @@ Verified aggregate folders in `Domain` include:
 exactly one edition ISBN-13 or rare-book ID. Its statuses are `ToTake`, `Purchased`,
 `NotFound`, and `ToRevisit`; `PurchasedAt` is set on purchase and cleared if the member
 changes the status away from `Purchased`. The aggregate caps a member at 500 items.
+
+`MemberCard` belongs to one member and carries a versioned card identifier, recovery
+code, and issue/rotation/revocation timestamps. The QR is HMAC-signed and contains no
+personal information; the API checks the current card state when resolving it.
+`CheckoutPassage` and its lines form the member-only purchase projection. Lines preserve
+book metadata snapshots, contain no price fields, and are attached to sale movements via
+the nullable `BookMovement.CheckoutPassageId`; anonymous sales keep that field null.
+Account deletion removes selection and card rows, anonymizes that member's passage, and
+keeps audit movements and line snapshots without a usable member link.
 
 ## Books module — P1-5/P1-10 runtime slice
 
@@ -95,13 +106,12 @@ The first P1-4 application slice is local and tested: `ScanBook` accepts a final
 
 P1-5 is externally deployed for the API/Worker/Scan path, and the metadata queue has retry/backoff fairness through `LastAttemptAt`. The Worker now runs the scheduled sweep/enrichment and alert delivery; ACS delivery is enabled in DEV after domain verification. Bibliographic enrichment now carries a normalized `Genre` from BnF, Open Library or Google Books, merges provider fallbacks when the first source has no genre, and the scheduled Worker sweep backfills resolved books missing a genre without overwriting manually locked fields. A resolved-book refresh records its own failed-attempt cooldown while preserving the existing metadata status. The new `Sweep`/`Enrich` heartbeat, an authorized-recipient email test, `QT-02`, and physical `QT-08` checks remain future work; the 300-book S0-4 campaign was reported successful without detailed sub-metrics.
 
-The account-deletion finalization now matches the privacy model: the pending-message lookup
-uses a provider-neutral SQLite/Aspire path, and member-only projections (`WatchlistItems`,
-`Watchlist`, `UserAlertHistory`, `EmailBounceEvents`) plus `AlertEmail` outbox rows are removed
-in the same transaction before a user is anonymized or deleted. Book movements and scan
-sessions remain available for audit when retention is required. Infrastructure regressions
-cover both the retained-movements and no-retained-movements branches; the backend suite has
-291 tests after PR #61.
+The account-deletion finalization removes member selection items and cards, anonymizes that
+member's checkout passages, and removes the pre-existing watchlist/alert projections in the
+same transaction before the identity is deleted or anonymized. Purchase line snapshots and
+book movements remain for audit without a usable member link. Volunteer attribution is
+cleared when it points at the deleted member; another buyer's association is preserved.
+Infrastructure regressions cover these cases.
 
 ## Books administration — dead-stock query
 

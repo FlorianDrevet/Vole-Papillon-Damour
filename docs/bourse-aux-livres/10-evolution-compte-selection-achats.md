@@ -1,9 +1,9 @@
-# 10 — Évolution du compte membre : sélection, carte de passage et achats
+# 10 — Compte membre : Ma sélection, carte de compte et Mes achats
 
-> **Proposition fonctionnelle — 22 septembre 2026**
+> **Référence fonctionnelle — 22 septembre 2026**
 >
-> **Statut : à valider par l'association.** Ce document décrit une extension du
-> compte membre et ne constitue pas encore une décision d'implémentation.
+> **Statut : code CS-1 à CS-26 implémenté dans la PR #224.** L'acceptation terrain des
+> parcours de F-10 §14 reste à effectuer ; son résultat n'est pas présumé.
 
 Ce document complète les spécifications de la bourse aux livres. Il part de trois
 capacités déjà distinctes :
@@ -705,29 +705,28 @@ nécessaires à l'audit sont conservés sans identité exploitable.
 | Audit | Toute association, correction, annulation et résolution de jeton est journalisée sans journaliser inutilement l'e-mail dans la Scanette. |
 | Compatibilité | Une version de Scanette ne comprenant pas l'association doit continuer à enregistrer une vente anonyme. |
 
-## 16. Décisions à valider avant implémentation
+## 16. Décisions retenues pour l'implémentation CS-1 à CS-26
 
-Les choix suivants doivent être confirmés avec l'association :
+Les choix suivants sont implémentés dans la PR #224 :
 
-| Décision | Recommandation |
+| Décision | Choix retenu |
 |---|---|
-| Nom public | Ma sélection et Mes achats |
-| Portée de la sélection | Édition précise, comme la fiche consultée |
-| Compte obligatoire à la caisse | Non, association facultative |
-| Identification nominale | QR web en premier |
-| Repli | Code court, puis e-mail vérifié en ligne |
-| Portée d'une association | Tout le passage validé |
-| Fonctionnement hors ligne | Enregistrer un jeton opaque en attente, sans bloquer la vente |
-| Association après validation | Pas de parcours public en v1 ; correction encadrée par un bénévole ou un administrateur |
-| Wallet | Version ultérieure, après validation de l'usage du QR web |
-| Alertes de sélection | Aucune en v1 ; les alertes restent attachées à la liste de recherche |
-| Achat offert à un proche | Visible dans le compte présenté ; pas de partage familial en v1 |
-| Livres rares | Inclus seulement si la section rare est confirmée comme faisant partie de Ma sélection |
+| Nom public | Ma sélection, Ma carte / Carte de compte et Mes achats |
+| Portée de la sélection | Édition précise ou fiche rare publiée et visible |
+| Compte obligatoire à la caisse | Non ; l'association reste facultative et la vente anonyme reste valide |
+| Identification | QR web signé par HMAC et code de secours |
+| Portée d'une association | Tout le passage, avant validation |
+| Fonctionnement hors ligne | Intention conservée puis rejouée de façon idempotente ; la vente reste possible |
+| Association après validation | Pas de rattachement public par e-mail ; correction administrative tracée d'une erreur |
+| Wallet | Hors de cette livraison |
+| Alertes de sélection | Aucune ; les alertes restent attachées à la liste de recherche |
+| Achat pour un proche | Visible dans le compte présenté ; pas de partage familial en v1 |
+| Livres rares | Inclus dans Ma sélection |
 
-Le choix le plus sensible est le hors-ligne. Il doit être validé par un test en
-conditions réelles avec deux appareils, une coupure réseau au moment du QR, une
-reprise de synchronisation et une vente annulée. La fonctionnalité ne doit pas être
-présentée comme terminée tant que ce scénario n'est pas maîtrisé.
+Le comportement hors ligne et l'absence d'effet sur la vente anonyme restent à valider
+en conditions réelles avec deux appareils, une coupure réseau au moment du QR, une
+reprise de synchronisation, une vente annulée et une Scanette non mise à jour. La
+fonctionnalité ne doit pas être déclarée acceptée avant ces vérifications.
 
 ## 17. Découpage de livraison recommandé
 
