@@ -41,8 +41,7 @@ public sealed class GetPublicRareBookBySlugQueryHandler(IProjectDbContext dbCont
             .AsNoTracking()
             .Include(book => book.Photos)
             .Where(book => book.Status == RareBookStatus.Published &&
-                           book.Id != rareBook.Id &&
-                           book.Shelf == rareBook.Shelf)
+                           book.Id != rareBook.Id)
             .OrderByDescending(book => book.CreatedAt)
             .ThenBy(book => book.Id)
             .Take(3)

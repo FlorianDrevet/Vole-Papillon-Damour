@@ -24,20 +24,16 @@ internal static class RareBookCommandSupport
     }
 
     public static Error? ParseDetails(
-        string shelfValue,
         string conditionValue,
         string? isbnValue,
-        out RareBookShelf shelf,
         out RareBookCondition condition,
         out Isbn13? isbn13)
     {
-        shelf = null!;
         condition = null!;
         isbn13 = null;
 
         try
         {
-            shelf = RareBookShelf.Create(shelfValue);
             condition = RareBookCondition.CreateFromString(conditionValue);
         }
         catch (ArgumentException exception)

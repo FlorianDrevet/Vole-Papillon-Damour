@@ -39,7 +39,6 @@ export class ScanRareBookListComponent implements OnInit {
       book.title,
       book.authorMention ?? '',
       book.isbn13 ?? '',
-      book.shelf,
     ].some(value => value.toLocaleLowerCase('fr-FR').includes(query)));
   }
 

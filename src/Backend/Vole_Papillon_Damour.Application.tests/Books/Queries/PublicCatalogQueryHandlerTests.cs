@@ -675,7 +675,6 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
                 authorMention: authors,
                 publisher: publisher,
                 publicationYear: publicationYear,
-                shelf: RareBookShelf.AncientEditions,
                 condition: RareBookCondition.AsNew,
                 isbn13: isbn13);
             rareBook.Publish(
@@ -889,8 +888,6 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
                 .HasConversion(new ValueConverter<Isbn13?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
-            builder.Property(book => book.Shelf)
-                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,

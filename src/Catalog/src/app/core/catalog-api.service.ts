@@ -129,9 +129,6 @@ export class CatalogApiService {
     if (filters.search?.trim()) {
       httpParams = httpParams.set('search', filters.search.trim());
     }
-    if (filters.shelf?.trim()) {
-      httpParams = httpParams.set('shelf', filters.shelf.trim());
-    }
     if (filters.includeSold !== undefined) {
       httpParams = httpParams.set('includeSold', filters.includeSold);
     }

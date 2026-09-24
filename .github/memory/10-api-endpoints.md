@@ -176,6 +176,12 @@ an exact match opens the existing fiche, while a miss creates a draft prefilled 
 ordinary bibliographic metadata. Photo upload uses multipart form data and keeps the
 backend's ordering/caption/delete operations separate from fiche publication.
 
+The rare-book API no longer accepts or returns a display shelf, and create/update contracts
+no longer carry binding, dimensions, page count, physical location, or price-setter fields.
+`GET /catalog/rare-books` has no shelf filter or shelf-count projection. Rare-book rows in
+`GET /scan/catalog/delta` also omit the retired shelf classification; ordinary-book shelf
+metadata is a separate contract and remains unchanged.
+
 No dedicated OCR or automatic loto-card analysis endpoint remains in the active API runtime.
 
 ## Current Auth Asymmetries To Recheck Before Editing

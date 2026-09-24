@@ -318,7 +318,6 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
             GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1),
             volunteerId,
             authorMention: book.Authors,
-            shelf: RareBookShelf.AncientEditions,
             condition: RareBookCondition.AsNew,
             isbn13: book.Id);
         rareBook.Publish(volunteerId, GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1));
@@ -348,7 +347,6 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
             18.00m,
             GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1),
             volunteerId,
-            shelf: RareBookShelf.AncientEditions,
             condition: RareBookCondition.GoodWithFlaws);
         rareBook.Publish(volunteerId, GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1));
         Context.RareBooks.Add(rareBook);
@@ -555,8 +553,6 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
                 .HasConversion(new ValueConverter<Isbn13?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
-            builder.Property(book => book.Shelf)
-                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,

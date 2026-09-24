@@ -123,12 +123,6 @@
         <input [(ngModel)]="form.publicationYear" type="number" inputmode="numeric">
       </label>
       <label class="rare-field">
-        <span>Rayon d’affichage</span>
-        <select [(ngModel)]="form.shelf">
-          <option *ngFor="let shelf of shelves" [value]="shelf">{{ shelf }}</option>
-        </select>
-      </label>
-      <label class="rare-field">
         <span>ISBN <em>— facultatif</em></span>
         <input [(ngModel)]="form.isbn13" inputmode="numeric" autocomplete="off" placeholder="aucun">
       </label>

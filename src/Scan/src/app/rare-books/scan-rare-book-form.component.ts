@@ -22,12 +22,6 @@ export type ScanRareBookFormStep = 'choice' | 'candidate' | 'identify' | 'descri
 })
 export class ScanRareBookFormComponent implements OnInit, OnDestroy {
   readonly visibleSteps: readonly ScanRareBookFormStep[] = ['identify', 'describe', 'photos'];
-  readonly shelves = [
-    'Éditions anciennes',
-    'Illustrés',
-    'Beaux-arts',
-    'Régionalisme',
-  ];
   readonly conditions = [
     {value: 'AsNew', label: 'Comme neuf'},
     {value: 'GoodWithFlaws', label: 'Bon état avec défauts'},
@@ -268,10 +262,6 @@ export class ScanRareBookFormComponent implements OnInit, OnDestroy {
       this.error = 'Un titre, même provisoire, est nécessaire.';
       return false;
     }
-    if (!this.form.shelf) {
-      this.error = 'Choisissez un rayon.';
-      return false;
-    }
     return true;
   }
 
@@ -294,15 +284,9 @@ function emptyDraft(): ScanRareBookDraftInput {
     authorMention: null,
     publisher: null,
     publicationYear: null,
-    shelf: 'Éditions anciennes',
     price: 0,
     condition: 'AsNew',
     publicDescription: null,
-    binding: null,
-    dimensions: null,
-    pageCount: null,
-    shelfLocation: null,
-    priceSetBy: null,
     isbn13: null,
   };
 }
@@ -314,14 +298,8 @@ function toDraftInput(book: ScanRareBook): ScanRareBookDraftInput {
     authorMention: book.authorMention,
     publisher: book.publisher,
     publicationYear: book.publicationYear,
-    shelf: book.shelf,
     price: book.price,
     condition: book.condition,
     publicDescription: book.publicDescription,
-    binding: book.binding,
-    dimensions: book.dimensions,
-    pageCount: book.pageCount,
-    shelfLocation: book.shelfLocation,
-    priceSetBy: book.priceSetBy,
   };
 }

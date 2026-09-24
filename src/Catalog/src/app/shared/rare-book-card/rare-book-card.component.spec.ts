@@ -20,13 +20,9 @@ describe('CatalogRareBookCardComponent', () => {
     authorMention: 'Jean de La Fontaine',
     publisher: 'Imprimerie royale',
     publicationYear: 1770,
-    shelf: 'Éditions anciennes',
     price: 60,
     condition: 'GoodWithFlaws',
     publicDescription: 'Exemplaire illustré.',
-    binding: 'Demi-reliure cuir',
-    dimensions: null,
-    pageCount: 240,
     status: 'Published',
     isSold: true,
     soldAt: '2026-02-08T10:00:00Z',
@@ -71,7 +67,7 @@ describe('CatalogRareBookCardComponent', () => {
 
     expect(element.querySelector('.rare-book-card-photo-count')?.textContent).toContain('2 photos');
     expect(element.querySelector('.rare-book-card-technical-line')?.textContent)
-      .toContain('Imprimerie royale · 1770 · Demi-reliure cuir · sans ISBN');
+      .toContain('Imprimerie royale · 1770 · sans ISBN');
     expect(element.querySelector('.rare-book-card-badge')?.textContent).toContain('Rare');
   });
 

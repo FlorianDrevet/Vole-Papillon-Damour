@@ -80,6 +80,13 @@ Verified aggregate folders in `Domain` include:
 
 `Product` keeps `Available` separate from `VisibleOnWebsite`: both gate the public product projection, while the full `/product` projection remains available to cash clients and BackOffice.
 
+`RareBookAggregate.RareBook` is separate from the ordinary ISBN `Book` aggregate. A rare
+book keeps bibliographic data, its firm display price, condition, publication/sale state,
+and photos; it no longer has a display shelf, binding, dimensions, page count, physical
+location, or price-setter field. Rare-book checkout snapshots therefore carry no physical
+format. Ordinary `Book` shelf and physical-format metadata remain part of the regular
+catalogue.
+
 `MemberSelectionItem` is keyed by `Guid` and belongs to one `UserId`; each row targets
 exactly one edition ISBN-13 or rare-book ID. Its statuses are `ToTake`, `Purchased`,
 `NotFound`, and `ToRevisit`; `PurchasedAt` is set on purchase and cleared if the member

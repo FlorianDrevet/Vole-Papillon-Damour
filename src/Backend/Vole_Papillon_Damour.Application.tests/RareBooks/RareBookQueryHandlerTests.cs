@@ -5,7 +5,6 @@ using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookBySlug;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.SearchRareBooksForCash;
-using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.tests.RareBooks;
 
@@ -27,24 +26,18 @@ public sealed class RareBookQueryHandlerTests
     }
 
     [Fact]
-    public async Task Public_list_returns_counts_for_each_rare_book_shelf()
+    public async Task Public_list_returns_books_without_shelf_classification()
     {
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         await fixture.AddRareBookAsync("Ancien 1", published: true);
         await fixture.AddRareBookAsync("Ancien 2", published: true);
-        await fixture.AddRareBookAsync(
-            "Illustré",
-            published: true,
-            shelf: RareBookShelf.Illustrated.Value);
+        await fixture.AddRareBookAsync("Illustré", published: true);
 
         var result = await new GetPublicRareBooksQueryHandler(fixture.Context, fixture.Clock)
-            .Handle(new GetPublicRareBooksQuery(), CancellationToken.None);
+            .Handle(new GetPublicRareBooksQuery(Sort: RareBookSortOrder.Recent), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
-        result.Value.Shelves.Should().ContainSingle(shelf =>
-            shelf.Label == RareBookShelf.AncientEditionsLabel && shelf.Count == 2);
-        result.Value.Shelves.Should().ContainSingle(shelf =>
-            shelf.Label == RareBookShelf.IllustratedLabel && shelf.Count == 1);
+        result.Value.Books.Should().HaveCount(3);
     }
 
     [Fact]

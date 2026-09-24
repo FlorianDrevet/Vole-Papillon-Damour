@@ -78,33 +78,6 @@
   text-transform: uppercase;
 }
 
-.rare-shelf-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .45rem;
-  flex: 1 1 100%;
-}
-
-.rare-shelf-chips button {
-  padding: .55rem .75rem;
-  border: 1px solid #d9c8ea;
-  border-radius: 999px;
-  background: #fff;
-  color: #5f3a86;
-  cursor: pointer;
-  font: .68rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
-}
-
-.rare-shelf-chips button.active {
-  border-color: #5f3a86;
-  background: #5f3a86;
-  color: #fff;
-}
-
-.rare-shelf-chips span {
-  opacity: .75;
-}
-
 .rare-public-toolbar select {
   min-width: 12rem;
   padding: .6rem .7rem;

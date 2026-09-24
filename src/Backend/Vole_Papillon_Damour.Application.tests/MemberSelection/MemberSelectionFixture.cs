@@ -144,7 +144,6 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
             25m,
             _now,
             memberId,
-            shelf: RareBookShelf.AncientEditions,
             condition: RareBookCondition.AsNew);
         if (published)
         {
@@ -311,17 +310,11 @@ internal sealed class MemberSelectionTestDbContext(DbContextOptions<MemberSelect
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
             builder.Property(book => book.Status).HasConversion<byte>();
-            builder.Ignore(book => book.Shelf);
             builder.Ignore(book => book.Price);
             builder.Ignore(book => book.Condition);
             builder.Ignore(book => book.PublicDescription);
-            builder.Ignore(book => book.Binding);
-            builder.Ignore(book => book.Dimensions);
-            builder.Ignore(book => book.PageCount);
-            builder.Ignore(book => book.ShelfLocation);
             builder.Ignore(book => book.SoldAtFairId);
             builder.Ignore(book => book.SoldInSessionId);
-            builder.Ignore(book => book.PriceSetBy);
             builder.Ignore(book => book.CreatedBy);
             builder.Ignore(book => book.UpdatedBy);
             builder.Ignore(book => book.RowVersion);

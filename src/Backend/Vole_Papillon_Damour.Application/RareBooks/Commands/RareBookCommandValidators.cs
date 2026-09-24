@@ -8,7 +8,6 @@ namespace Vole_Papillon_Damour.Application.RareBooks.Commands.CreateRareBook
         public CreateRareBookCommandValidator()
         {
             RuleFor(command => command.Title).NotEmpty().MaximumLength(300);
-            RuleFor(command => command.Shelf).NotEmpty().MaximumLength(80);
             RuleFor(command => command.Condition).NotEmpty();
             RuleFor(command => command.Price)
                 .GreaterThanOrEqualTo(0m)
@@ -25,7 +24,6 @@ namespace Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBook
         public UpdateRareBookCommandValidator()
         {
             RuleFor(command => command.Title).NotEmpty().MaximumLength(300);
-            RuleFor(command => command.Shelf).NotEmpty().MaximumLength(80);
             RuleFor(command => command.Condition).NotEmpty();
             RuleFor(command => command.Price)
                 .GreaterThanOrEqualTo(0m)

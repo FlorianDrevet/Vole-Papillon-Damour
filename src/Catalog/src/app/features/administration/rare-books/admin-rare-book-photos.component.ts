@@ -3,7 +3,10 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnChanges,
+  OnDestroy,
   Output,
+  SimpleChanges,
   signal,
 } from '@angular/core';
 
@@ -15,6 +18,11 @@ export type RareBookPhotoAction =
   | {kind: 'reorder'; photoIds: string[]}
   | {kind: 'caption'; photoId: string; caption: string};
 
+interface PendingRareBookPhoto {
+  id: number;
+  previewUri: string;
+}
+
 @Component({
   selector: 'app-admin-rare-book-photos',
   standalone: false,
@@ -22,15 +30,35 @@ export type RareBookPhotoAction =
   styleUrls: ['./admin-rare-book-photos.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminRareBookPhotosComponent {
+export class AdminRareBookPhotosComponent implements OnChanges, OnDestroy {
   @Input() photos: CatalogAdminRareBookPhoto[] = [];
   @Input() disabled = false;
   @Output() action = new EventEmitter<RareBookPhotoAction>();
 
   readonly uploadError = signal<string | null>(null);
   readonly selectedPhotoId = signal<string | null>(null);
+  readonly pendingPhotos: PendingRareBookPhoto[] = [];
   uploadCaption = '';
   private draggedPhotoId: string | null = null;
+  private nextPendingPhotoId = 0;
+  private knownPhotoCount = 0;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['photos']) {
+      return;
+    }
+
+    const savedPhotoCount = Math.max(0, this.photos.length - this.knownPhotoCount);
+    for (let index = 0; index < savedPhotoCount && this.pendingPhotos.length > 0; index += 1) {
+      const [savedPreview] = this.pendingPhotos.splice(0, 1);
+      URL.revokeObjectURL(savedPreview.previewUri);
+    }
+    this.knownPhotoCount = this.photos.length;
+  }
+
+  ngOnDestroy(): void {
+    this.pendingPhotos.forEach(photo => URL.revokeObjectURL(photo.previewUri));
+  }
 
   selectPhoto(photoId: string): void {
     this.selectedPhotoId.set(photoId);
@@ -53,6 +81,10 @@ export class AdminRareBookPhotosComponent {
     }
 
     this.uploadError.set(null);
+    this.pendingPhotos.push({
+      id: ++this.nextPendingPhotoId,
+      previewUri: URL.createObjectURL(file),
+    });
     this.action.emit({kind: 'add', file, caption: this.uploadCaption.trim()});
     this.uploadCaption = '';
   }
@@ -119,17 +151,4 @@ export class AdminRareBookPhotosComponent {
     this.action.emit({kind: 'reorder', photoIds: ids});
   }
 
-  totalBytes(): number {
-    return this.photos.reduce((total, photo) => total + photo.sizeBytes, 0);
-  }
-
-  formatSize(bytes: number): string {
-    if (bytes < 1024) {
-      return `${bytes} o`;
-    }
-    if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toLocaleString('fr-FR', {maximumFractionDigits: 1})} Ko`;
-    }
-    return `${(bytes / (1024 * 1024)).toLocaleString('fr-FR', {maximumFractionDigits: 1})} Mo`;
-  }
 }

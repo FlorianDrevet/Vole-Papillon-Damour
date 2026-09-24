@@ -83,7 +83,6 @@ public sealed class WatchlistCommandHandlerTests
             WatchlistFeatureTestFixture.Now.AddMinutes(-2),
             UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
             authorMention: "Auteur",
-            shelf: RareBookShelf.AncientEditions,
             condition: RareBookCondition.AsNew);
         rareBook.Publish(
             UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),

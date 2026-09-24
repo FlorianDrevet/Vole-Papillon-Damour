@@ -806,13 +806,9 @@ export interface CatalogRareBook {
   authorMention: string | null;
   publisher: string | null;
   publicationYear: number | null;
-  shelf: string;
   price: number;
   condition: CatalogRareBookCondition;
   publicDescription: string | null;
-  binding: string | null;
-  dimensions: string | null;
-  pageCount: number | null;
   status: 'Draft' | 'Published';
   isSold: boolean;
   soldAt: string | null;
@@ -825,12 +821,6 @@ export interface CatalogRareBookPage {
   totalCount: number;
   page: number;
   pageSize: number;
-  shelves: CatalogRareBookShelf[];
-}
-
-export interface CatalogRareBookShelf {
-  label: string;
-  count: number;
 }
 
 export interface CatalogRareBookDetail {
@@ -840,7 +830,6 @@ export interface CatalogRareBookDetail {
 
 export interface CatalogRareBookFilters {
   search?: string;
-  shelf?: string;
   includeSold?: boolean;
   sort?: 'recent' | 'price-asc' | 'price-desc';
   page?: number;
@@ -871,20 +860,14 @@ export interface CatalogAdminRareBook {
   authorMention: string | null;
   publisher: string | null;
   publicationYear: number | null;
-  shelf: string;
   price: number;
   condition: CatalogAdminRareBookCondition;
   publicDescription: string | null;
-  binding: string | null;
-  dimensions: string | null;
-  pageCount: number | null;
-  shelfLocation: string | null;
   status: CatalogAdminRareBookStatus;
   isSold: boolean;
   soldAt: string | null;
   soldAtFairId: string | null;
   soldInSessionId: string | null;
-  priceSetBy: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
@@ -912,15 +895,9 @@ export interface CatalogAdminRareBookRequest {
   authorMention: string | null;
   publisher: string | null;
   publicationYear: number | null;
-  shelf: string;
   price: number;
   condition: CatalogAdminRareBookCondition;
   publicDescription: string | null;
-  binding: string | null;
-  dimensions: string | null;
-  pageCount: number | null;
-  shelfLocation: string | null;
-  priceSetBy: string | null;
   isbn13: string | null;
 }
 

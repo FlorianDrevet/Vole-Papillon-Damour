@@ -125,7 +125,7 @@ public sealed class CheckoutPassageLine : Entity<Guid>
             rareBook.AuthorMention,
             rareBook.Publisher,
             rareBook.PublicationYear,
-            rareBook.Binding,
+            null,
             fairId,
             occurredAt);
     }

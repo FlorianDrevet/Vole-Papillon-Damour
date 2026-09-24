@@ -176,7 +176,6 @@ public sealed class GetCatalogDeltaQueryHandler(
                 book.Title,
                 book.AuthorMention,
                 book.Price,
-                book.Shelf.Value,
                 book.Condition.Value.ToString(),
                 book.PublicDescription,
                 book.Photos

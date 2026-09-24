@@ -74,11 +74,13 @@ qu'il se vend ? ».
 ### Espace Livres rares
 
 Le marquage n'est plus une case de la fiche catalogue : une fiche rare autonome porte
-les métadonnées de l'exemplaire, son état, sa description honnête, son prix ferme et
-ses photos. Un bénévole habilité peut la créer depuis une fiche ordinaire préremplie,
-la modifier, la publier ou la supprimer. Une fiche publiée sans photo reste repérable
-dans la file de travail afin d'être complétée ; le prix n'est affiché que pour être lu
-par le bénévole de caisse, jamais additionné par l'application.
+les informations bibliographiques de l'exemplaire, son état, sa description honnête, son
+prix ferme et ses photos. Elle n'a pas de classement par rayon, format matériel,
+emplacement ni champ « Prix fixé par ». Un bénévole habilité peut la créer depuis une fiche
+ordinaire préremplie, la modifier, la publier ou la supprimer. Les photos choisies pendant
+la création sont prévisualisées et envoyées après l'enregistrement de la fiche. Une fiche
+publiée sans photo reste repérable dans la file de travail afin d'être complétée ; le prix
+reste une information de lecture pour le bénévole de caisse.
 
 Les anciens indicateurs `Books.IsRare` ont été supprimés au lot 6 après export dans la
 note de la PR. Ils n'ont pas été convertis en fiches rares : les bénévoles peuvent recréer

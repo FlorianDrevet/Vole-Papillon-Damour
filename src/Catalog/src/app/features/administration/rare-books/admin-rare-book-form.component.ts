@@ -35,12 +35,6 @@ export class AdminRareBookFormComponent implements OnChanges {
   }>();
   @Output() cancelled = new EventEmitter<void>();
 
-  readonly shelves = [
-    'Éditions anciennes',
-    'Illustrés',
-    'Beaux-arts',
-    'Régionalisme',
-  ];
   readonly conditions = [
     {value: 'AsNew' as const, label: 'Comme neuf'},
     {value: 'GoodWithFlaws' as const, label: 'Bon, défauts signalés'},
@@ -111,14 +105,9 @@ export class AdminRareBookFormComponent implements OnChanges {
 
   submit(): void {
     const title = this.form.title.trim();
-    const shelf = this.form.shelf.trim();
     const price = Number(this.form.price ?? 0);
     if (!title) {
       this.validationError.set('Le titre est obligatoire.');
-      return;
-    }
-    if (!shelf) {
-      this.validationError.set('Le rayon d’affichage est obligatoire.');
       return;
     }
     if (!Number.isFinite(price) || price < 0) {
@@ -129,14 +118,9 @@ export class AdminRareBookFormComponent implements OnChanges {
     this.form = {
       ...this.form,
       title,
-      shelf,
       authorMention: this.form.authorMention.trim(),
       publisher: this.form.publisher.trim(),
       publicDescription: this.form.publicDescription.trim(),
-      binding: this.form.binding.trim(),
-      dimensions: this.form.dimensions.trim(),
-      shelfLocation: this.form.shelfLocation.trim(),
-      priceSetBy: this.form.priceSetBy.trim(),
       isbn13: this.form.isbn13.trim(),
       price,
     };
@@ -162,15 +146,9 @@ export class AdminRareBookFormComponent implements OnChanges {
         authorMention: this.book.authorMention ?? '',
         publisher: this.book.publisher ?? '',
         publicationYear: this.book.publicationYear,
-        shelf: this.book.shelf,
         price: this.book.price,
         condition: this.book.condition,
         publicDescription: this.book.publicDescription ?? '',
-        binding: this.book.binding ?? '',
-        dimensions: this.book.dimensions ?? '',
-        pageCount: this.book.pageCount,
-        shelfLocation: this.book.shelfLocation ?? '',
-        priceSetBy: this.book.priceSetBy ?? '',
         isbn13: this.book.isbn13 ?? '',
       };
       this.rowVersion.set(this.book.rowVersion);

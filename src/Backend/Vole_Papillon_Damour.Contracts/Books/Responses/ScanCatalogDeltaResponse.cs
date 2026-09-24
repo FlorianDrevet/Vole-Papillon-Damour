@@ -15,7 +15,6 @@ public sealed record ScanCatalogRareBookResponse(
     string Title,
     string? AuthorMention,
     decimal Price,
-    string Shelf,
     string Condition,
     string? ShortDescription,
     Uri? Thumbnail,

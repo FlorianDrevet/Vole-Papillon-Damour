@@ -187,15 +187,9 @@ describe('CatalogAdminApiService', () => {
       authorMention: 'Charles Baudelaire',
       publisher: 'Poulet-Malassis',
       publicationYear: 1857,
-      shelf: 'Éditions anciennes',
       price: 40,
       condition: 'GoodWithFlaws',
       publicDescription: 'Quelques rousseurs.',
-      binding: 'Demi-chagrin',
-      dimensions: '18 × 12 cm',
-      pageCount: 320,
-      shelfLocation: 'Table rares',
-      priceSetBy: 'Conseil du 5 mars',
       isbn13: '9782070363735',
     };
     const response = {} as CatalogAdminRareBook;

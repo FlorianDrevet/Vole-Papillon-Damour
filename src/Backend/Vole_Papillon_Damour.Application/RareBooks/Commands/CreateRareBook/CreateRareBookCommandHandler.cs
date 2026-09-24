@@ -50,10 +50,8 @@ public sealed class CreateRareBookCommandHandler(
         }
 
         var parseError = RareBookCommandSupport.ParseDetails(
-            command.Shelf,
             command.Condition,
             command.Isbn13,
-            out var shelf,
             out var condition,
             out var isbn13);
         if (parseError is not null)
@@ -78,15 +76,9 @@ public sealed class CreateRareBookCommandHandler(
                     command.AuthorMention,
                     command.Publisher,
                     command.PublicationYear,
-                    shelf,
                     command.Price,
                     condition,
                     command.PublicDescription,
-                    command.Binding,
-                    command.Dimensions,
-                    command.PageCount,
-                    command.ShelfLocation,
-                    command.PriceSetBy,
                     nowUtc,
                     command.UserId,
                     isbn13,

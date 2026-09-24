@@ -19,15 +19,9 @@ export interface CatalogAdminRareBookFormValue {
   authorMention: string;
   publisher: string;
   publicationYear: number | null;
-  shelf: string;
   price: number | null;
   condition: 'AsNew' | 'GoodWithFlaws' | 'Worn' | 'Damaged';
   publicDescription: string;
-  binding: string;
-  dimensions: string;
-  pageCount: number | null;
-  shelfLocation: string;
-  priceSetBy: string;
   isbn13: string;
 }
 
@@ -36,15 +30,9 @@ export const EMPTY_RARE_BOOK_FORM: CatalogAdminRareBookFormValue = {
   authorMention: '',
   publisher: '',
   publicationYear: null,
-  shelf: 'Éditions anciennes',
   price: 0,
   condition: 'AsNew',
   publicDescription: '',
-  binding: '',
-  dimensions: '',
-  pageCount: null,
-  shelfLocation: '',
-  priceSetBy: '',
   isbn13: '',
 };
 
@@ -63,6 +51,7 @@ export class AdminRareBooksFacade {
   readonly catalogueRareBook = signal<CatalogAdminRareBook | null | undefined>(undefined);
 
   private lastFilters: CatalogAdminRareBookFilters = {};
+  private readonly pendingPhotoUploads: {file: File; caption?: string}[] = [];
 
   constructor(
     private readonly auth: CatalogAuthService,
@@ -89,6 +78,7 @@ export class AdminRareBooksFacade {
   }
 
   async open(id: string): Promise<void> {
+    this.pendingPhotoUploads.length = 0;
     await this.run('detail', async token => {
       this.selectedBook.set(await firstValueFrom(this.api.getRareBook(token, id)));
       this.draft.set(null);
@@ -112,6 +102,7 @@ export class AdminRareBooksFacade {
   }
 
   async openOrCreateFromCatalogBook(book: CatalogAdminBook): Promise<boolean> {
+    this.pendingPhotoUploads.length = 0;
     let opened = false;
     await this.run('catalogue-rare', async token => {
       const response = await firstValueFrom(this.api.getRareBooks(token, {
@@ -151,6 +142,7 @@ export class AdminRareBooksFacade {
 
   startCreate(prefill: Partial<CatalogAdminRareBookFormValue> = {}): void {
     this.clearFeedback();
+    this.pendingPhotoUploads.length = 0;
     this.selectedBook.set(null);
     this.publishWarnings.set([]);
     this.draft.set({...EMPTY_RARE_BOOK_FORM, ...prefill});
@@ -158,6 +150,7 @@ export class AdminRareBooksFacade {
   }
 
   closeEditor(): void {
+    this.pendingPhotoUploads.length = 0;
     this.editorOpen.set(false);
     this.selectedBook.set(null);
     this.draft.set(null);
@@ -178,6 +171,7 @@ export class AdminRareBooksFacade {
       this.setBook(saved);
       this.draft.set(null);
       this.editorOpen.set(true);
+      await this.flushPendingPhotos(token, saved.id);
       this.success.set('La fiche rare a été enregistrée.');
     });
   }
@@ -226,6 +220,9 @@ export class AdminRareBooksFacade {
   async addPhoto(file: File, caption?: string): Promise<void> {
     const existing = this.selectedBook();
     if (!existing) {
+      if (this.editorOpen()) {
+        this.pendingPhotoUploads.push({file, caption});
+      }
       return;
     }
 
@@ -292,6 +289,17 @@ export class AdminRareBooksFacade {
       : page);
   }
 
+  private async flushPendingPhotos(token: string, rareBookId: string): Promise<void> {
+    while (this.pendingPhotoUploads.length > 0) {
+      const pending = this.pendingPhotoUploads[0];
+      const updated = await firstValueFrom(
+        this.api.addRareBookPhoto(token, rareBookId, pending.file, pending.caption),
+      );
+      this.setBook(updated);
+      this.pendingPhotoUploads.shift();
+    }
+  }
+
   private applyPublishResult(result: CatalogAdminRareBookPublishResult): void {
     this.setBook(result.rareBook);
     this.publishWarnings.set(result.warnings);
@@ -335,15 +343,9 @@ function toRareBookRequest(value: CatalogAdminRareBookFormValue): CatalogAdminRa
     authorMention: optional(value.authorMention),
     publisher: optional(value.publisher),
     publicationYear: integerOrNull(value.publicationYear),
-    shelf: value.shelf.trim(),
     price: Number(value.price ?? 0),
     condition: value.condition,
     publicDescription: optional(value.publicDescription),
-    binding: optional(value.binding),
-    dimensions: optional(value.dimensions),
-    pageCount: integerOrNull(value.pageCount),
-    shelfLocation: optional(value.shelfLocation),
-    priceSetBy: optional(value.priceSetBy),
     isbn13: optional(value.isbn13),
   };
 }

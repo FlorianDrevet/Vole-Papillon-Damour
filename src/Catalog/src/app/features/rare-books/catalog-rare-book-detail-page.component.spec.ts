@@ -35,13 +35,9 @@ describe('CatalogRareBookDetailPageComponent', () => {
     authorMention: 'Jean de La Fontaine',
     publisher: 'Imprimerie royale',
     publicationYear: 1770,
-    shelf: 'Éditions anciennes',
     price: 60,
     condition: 'GoodWithFlaws',
     publicDescription: 'Exemplaire illustré.',
-    binding: 'Demi-reliure',
-    dimensions: null,
-    pageCount: 240,
     status: 'Published',
     isSold: false,
     soldAt: null,
@@ -134,6 +130,15 @@ describe('CatalogRareBookDetailPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.rare-enlarge-button')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Photos prises par les bénévoles');
     expect(fixture.nativeElement.textContent).toContain('aucun (avant 1970)');
+  });
+
+  it('does not show removed rare-book classification or physical details', () => {
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).not.toContain('Éditions anciennes');
+    expect(text).not.toContain('Reliure');
+    expect(text).not.toContain('Dimensions');
+    expect(text).not.toContain('Pages');
   });
 
   it('lets an authenticated member follow the exact rare copy without creating an ordinary edition target', async () => {

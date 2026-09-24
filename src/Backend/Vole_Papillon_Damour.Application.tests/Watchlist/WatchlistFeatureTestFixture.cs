@@ -305,8 +305,6 @@ internal sealed class WatchlistFeatureTestDbContext(
                 .HasConversion(new ValueConverter<Isbn13?, string?>(
                     isbn => isbn == null ? null : isbn.Value.Value,
                     value => value == null ? null : ParseIsbn(value)));
-            builder.Property(book => book.Shelf)
-                .HasConversion(shelf => shelf.Value, value => RareBookShelf.Create(value));
             builder.Property(book => book.Condition)
                 .HasConversion(
                     condition => (byte)condition.Value,

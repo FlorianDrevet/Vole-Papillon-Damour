@@ -17,20 +17,14 @@ public sealed class RareBook : AggregateRoot<RareBookId>
     public string? AuthorMention { get; private set; }
     public string? Publisher { get; private set; }
     public int? PublicationYear { get; private set; }
-    public RareBookShelf Shelf { get; private set; } = null!;
     public decimal Price { get; private set; }
     public RareBookCondition Condition { get; private set; } = null!;
     public string? PublicDescription { get; private set; }
-    public string? Binding { get; private set; }
-    public string? Dimensions { get; private set; }
-    public int? PageCount { get; private set; }
-    public string? ShelfLocation { get; private set; }
     public RareBookStatus Status { get; private set; } = RareBookStatus.Draft;
     public bool IsSold { get; private set; }
     public DateTime? SoldAt { get; private set; }
     public AssoEventsId? SoldAtFairId { get; private set; }
     public ScanSessionId? SoldInSessionId { get; private set; }
-    public string? PriceSetBy { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public UserId CreatedBy { get; private set; } = null!;
     public DateTime UpdatedAt { get; private set; }
@@ -51,15 +45,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? authorMention,
         string? publisher,
         int? publicationYear,
-        RareBookShelf shelf,
         decimal price,
         RareBookCondition condition,
         string? publicDescription,
-        string? binding,
-        string? dimensions,
-        int? pageCount,
-        string? shelfLocation,
-        string? priceSetBy,
         DateTime createdAt,
         UserId createdBy,
         Isbn13? isbn13,
@@ -75,15 +63,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         AuthorMention = NormalizeOptional(authorMention, 300, nameof(authorMention));
         Publisher = NormalizeOptional(publisher, 200, nameof(publisher));
         PublicationYear = NormalizePublicationYear(publicationYear);
-        Shelf = shelf ?? throw new ArgumentNullException(nameof(shelf));
         Price = NormalizePrice(price);
         Condition = condition ?? throw new ArgumentNullException(nameof(condition));
         PublicDescription = NormalizeOptional(publicDescription, 1200, nameof(publicDescription));
-        Binding = NormalizeOptional(binding, 120, nameof(binding));
-        Dimensions = NormalizeOptional(dimensions, 60, nameof(dimensions));
-        PageCount = NormalizePageCount(pageCount);
-        ShelfLocation = NormalizeOptional(shelfLocation, 120, nameof(shelfLocation));
-        PriceSetBy = NormalizeOptional(priceSetBy, 120, nameof(priceSetBy));
         Isbn13 = ValidateIsbn(isbn13);
         ClientGestureId = ValidateClientGestureId(clientGestureId);
         Slug = RareBookSlug.Create(Title, AuthorMention, PublicationYear, slugCollisionSuffix);
@@ -100,15 +82,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? authorMention,
         string? publisher,
         int? publicationYear,
-        RareBookShelf shelf,
         decimal price,
         RareBookCondition condition,
         string? publicDescription,
-        string? binding,
-        string? dimensions,
-        int? pageCount,
-        string? shelfLocation,
-        string? priceSetBy,
         DateTime createdAt,
         UserId createdBy,
         Isbn13? isbn13 = null,
@@ -121,15 +97,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             authorMention,
             publisher,
             publicationYear,
-            shelf,
             price,
             condition,
             publicDescription,
-            binding,
-            dimensions,
-            pageCount,
-            shelfLocation,
-            priceSetBy,
             createdAt,
             createdBy,
             isbn13,
@@ -145,14 +115,8 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? authorMention = null,
         string? publisher = null,
         int? publicationYear = null,
-        RareBookShelf? shelf = null,
         RareBookCondition? condition = null,
         string? publicDescription = null,
-        string? binding = null,
-        string? dimensions = null,
-        int? pageCount = null,
-        string? shelfLocation = null,
-        string? priceSetBy = null,
         Isbn13? isbn13 = null,
         int slugCollisionSuffix = 1,
         Guid? clientGestureId = null)
@@ -162,15 +126,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
             authorMention,
             publisher,
             publicationYear,
-            shelf ?? RareBookShelf.AncientEditions,
             price,
             condition ?? RareBookCondition.AsNew,
             publicDescription,
-            binding,
-            dimensions,
-            pageCount,
-            shelfLocation,
-            priceSetBy,
             createdAt,
             createdBy,
             isbn13,
@@ -183,15 +141,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         string? authorMention,
         string? publisher,
         int? publicationYear,
-        RareBookShelf shelf,
         decimal price,
         RareBookCondition condition,
         string? publicDescription,
-        string? binding,
-        string? dimensions,
-        int? pageCount,
-        string? shelfLocation,
-        string? priceSetBy,
         DateTime updatedAt,
         UserId updatedBy,
         Isbn13? isbn13 = null)
@@ -202,22 +154,12 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         var normalizedPublicationYear = NormalizePublicationYear(publicationYear);
         var normalizedPrice = NormalizePrice(price);
         var normalizedPublicDescription = NormalizeOptional(publicDescription, 1200, nameof(publicDescription));
-        var normalizedBinding = NormalizeOptional(binding, 120, nameof(binding));
-        var normalizedDimensions = NormalizeOptional(dimensions, 60, nameof(dimensions));
-        var normalizedPageCount = NormalizePageCount(pageCount);
-        var normalizedShelfLocation = NormalizeOptional(shelfLocation, 120, nameof(shelfLocation));
-        var normalizedPriceSetBy = NormalizeOptional(priceSetBy, 120, nameof(priceSetBy));
         var normalizedIsbn13 = ValidateIsbn(isbn13);
 
         if (Status == RareBookStatus.Published &&
             (string.IsNullOrWhiteSpace(normalizedTitle) || normalizedPrice <= 0))
         {
             return false;
-        }
-
-        if (shelf is null)
-        {
-            throw new ArgumentNullException(nameof(shelf));
         }
 
         if (condition is null)
@@ -229,15 +171,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
                       AuthorMention != normalizedAuthorMention ||
                       Publisher != normalizedPublisher ||
                       PublicationYear != normalizedPublicationYear ||
-                      Shelf != shelf ||
                       Price != normalizedPrice ||
                       Condition != condition ||
                       PublicDescription != normalizedPublicDescription ||
-                      Binding != normalizedBinding ||
-                      Dimensions != normalizedDimensions ||
-                      PageCount != normalizedPageCount ||
-                      ShelfLocation != normalizedShelfLocation ||
-                      PriceSetBy != normalizedPriceSetBy ||
                       Isbn13 != normalizedIsbn13;
 
         if (!changed)
@@ -249,15 +185,9 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         AuthorMention = normalizedAuthorMention;
         Publisher = normalizedPublisher;
         PublicationYear = normalizedPublicationYear;
-        Shelf = shelf;
         Price = normalizedPrice;
         Condition = condition;
         PublicDescription = normalizedPublicDescription;
-        Binding = normalizedBinding;
-        Dimensions = normalizedDimensions;
-        PageCount = normalizedPageCount;
-        ShelfLocation = normalizedShelfLocation;
-        PriceSetBy = normalizedPriceSetBy;
         Isbn13 = normalizedIsbn13;
         Touch(updatedAt, updatedBy);
         return true;
@@ -535,16 +465,6 @@ public sealed class RareBook : AggregateRoot<RareBookId>
         }
 
         return userId;
-    }
-
-    private static int? NormalizePageCount(int? value)
-    {
-        if (value is <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(value), "The page count must be positive.");
-        }
-
-        return value;
     }
 
     private static int? NormalizePublicationYear(int? value)

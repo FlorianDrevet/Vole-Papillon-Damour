@@ -30,20 +30,14 @@ describe('AdminRareBooksFacade', () => {
     authorMention: 'Charles Baudelaire',
     publisher: 'Poulet-Malassis',
     publicationYear: 1857,
-    shelf: 'Éditions anciennes',
     price: 40,
     condition: 'GoodWithFlaws',
     publicDescription: 'Quelques rousseurs.',
-    binding: 'Demi-chagrin',
-    dimensions: '18 × 12 cm',
-    pageCount: 320,
-    shelfLocation: 'Table rares',
     status: 'Draft',
     isSold: false,
     soldAt: null,
     soldAtFairId: null,
     soldInSessionId: null,
-    priceSetBy: 'Conseil du 5 mars',
     createdAt: '2026-09-16T10:00:00Z',
     createdBy: 'creator-id',
     updatedAt: '2026-09-16T10:00:00Z',
@@ -66,15 +60,9 @@ describe('AdminRareBooksFacade', () => {
     authorMention: ' Auteur ',
     publisher: '',
     publicationYear: 1901,
-    shelf: 'Illustrés',
     price: 22.5,
     condition: 'AsNew',
     publicDescription: ' Description publique ',
-    binding: '',
-    dimensions: '18 × 12 cm',
-    pageCount: 160,
-    shelfLocation: '',
-    priceSetBy: 'Association',
     isbn13: '',
     ...overrides,
   });
@@ -163,15 +151,9 @@ describe('AdminRareBooksFacade', () => {
       authorMention: 'Auteur',
       publisher: null,
       publicationYear: 1901,
-      shelf: 'Illustrés',
       price: 22.5,
       condition: 'AsNew',
       publicDescription: 'Description publique',
-      binding: null,
-      dimensions: '18 × 12 cm',
-      pageCount: 160,
-      shelfLocation: null,
-      priceSetBy: 'Association',
       isbn13: null,
       rowVersion: 'version-1',
     });
@@ -261,5 +243,19 @@ describe('AdminRareBooksFacade', () => {
     api.getRareBook.and.returnValue(throwError(() => ({status: 403})));
     await facade.open(existing.id);
     expect(facade.error()).toBe('Le compte connecté ne possède pas les droits pour gérer les livres rares.');
+  });
+
+  it('queues photos selected before a new rare-book fiche is saved', async () => {
+    facade.startCreate();
+    const file = new File(['photo'], 'photo.jpg', {type: 'image/jpeg'});
+
+    await facade.addPhoto(file, 'Couverture');
+
+    expect(api.addRareBookPhoto).not.toHaveBeenCalled();
+
+    await facade.save(formValue());
+
+    expect(api.createRareBook).toHaveBeenCalled();
+    expect(api.addRareBookPhoto).toHaveBeenCalledWith('access-token', 'rare-book-id', file, 'Couverture');
   });
 });

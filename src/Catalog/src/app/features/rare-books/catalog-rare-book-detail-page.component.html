@@ -32,7 +32,7 @@
         </div>
 
         <article class="rare-detail-copy">
-          <p class="eyebrow">{{ rareBook.shelf }} · Livre rare</p>
+          <p class="eyebrow">Livre rare</p>
           <h1 id="rare-detail-title">{{ rareBook.title }}</h1>
           <p *ngIf="rareBook.authorMention" class="rare-detail-author">{{ rareBook.authorMention }}</p>
           <p class="rare-detail-edition">
@@ -49,9 +49,6 @@
 
           <dl class="rare-detail-facts">
             <div><dt>État</dt><dd>{{ conditionLabel(rareBook) }}</dd></div>
-            <div *ngIf="rareBook.binding"><dt>Reliure</dt><dd>{{ rareBook.binding }}</dd></div>
-            <div *ngIf="rareBook.dimensions"><dt>Dimensions</dt><dd>{{ rareBook.dimensions }}</dd></div>
-            <div *ngIf="rareBook.pageCount"><dt>Pages</dt><dd>{{ rareBook.pageCount }}</dd></div>
             <div><dt>ISBN</dt><dd [class.rare-detail-fact-empty]="!rareBook.isbn13">{{ rareBook.isbn13 || 'aucun (avant 1970)' }}</dd></div>
           </dl>
 
@@ -85,7 +82,7 @@
     </section>
 
     <section *ngIf="relatedBooks.length" class="rare-related page-width" aria-labelledby="rare-related-title">
-      <div class="rare-related-heading"><p class="eyebrow">Dans le même rayon</p><h2 id="rare-related-title">Autres livres rares.</h2></div>
+      <div class="rare-related-heading"><p class="eyebrow">À découvrir aussi</p><h2 id="rare-related-title">Autres livres rares.</h2></div>
       <div class="rare-related-grid"><app-rare-book-card *ngFor="let related of relatedBooks; trackBy: trackBook" [book]="related"></app-rare-book-card></div>
     </section>
   </ng-container>
