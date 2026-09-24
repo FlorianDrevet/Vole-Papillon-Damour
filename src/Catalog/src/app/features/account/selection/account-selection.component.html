@@ -1,0 +1,204 @@
+<section class="account-selection" aria-label="Ma sélection">
+  @if (!isAuthenticated()) {
+    <aside class="selection-device-banner" role="status">
+      <p>Cette sélection est enregistrée sur cet appareil uniquement.</p>
+      <button type="button" class="selection-account-button" (click)="login()">Se connecter pour la retrouver partout</button>
+    </aside>
+  }
+
+  @if (localUnsynced()) {
+    <aside class="selection-unsynced-banner" role="status">
+      <p>Sélection de cet appareil, non synchronisée.</p>
+      <button type="button" class="selection-account-button" (click)="retryMerge()">Ajouter à mon compte</button>
+    </aside>
+  }
+
+  @if (selectionError(); as message) {
+    <div class="selection-feedback error" role="alert">
+      <p>{{ message }}</p>
+      <button type="button" class="selection-account-button" (click)="retryMerge()">Réessayer</button>
+    </div>
+  }
+  @if (errorMessage(); as message) {
+    <p class="selection-feedback error" role="alert">{{ message }}</p>
+  }
+
+  @if (isLoading()) {
+    <p class="selection-state" role="status">Chargement de Ma sélection…</p>
+  } @else if (!hasItems()) {
+    <div class="selection-empty">
+      <span class="selection-empty-mark" aria-hidden="true">⌁</span>
+      <h2>Rien dans Ma sélection pour l'instant.</h2>
+      <p>Ajoutez un livre depuis le catalogue pour le retrouver à la bourse.</p>
+      <a class="selection-account-button" routerLink="/recherche">Parcourir le catalogue</a>
+      <p class="selection-search-note">Pour être prévenu de l'arrivée d'un livre, utilisez <a routerLink="/compte">Mes recherches</a>.</p>
+    </div>
+  } @else {
+    <div class="selection-filter-row">
+      <nav class="selection-filter-buttons" aria-label="Filtrer Ma sélection">
+        @for (option of filters; track option.id) {
+          <button
+            type="button"
+            class="selection-filter-button"
+            [class.active]="filter() === option.id"
+            [attr.aria-pressed]="filter() === option.id"
+            [attr.data-testid]="'selection-filter-' + option.id"
+            (click)="selectFilter(option.id)">
+            {{ option.label }} <span>{{ filterCount(option.id) }}</span>
+          </button>
+        }
+      </nav>
+
+      <label class="selection-mobile-filter">
+        <span>Afficher :</span>
+        <select [value]="filter()" (change)="changeFilter($event)">
+          @for (option of filters; track option.id) {
+            <option [value]="option.id">{{ option.label }} {{ filterCount(option.id) }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (visibleItems().length > 0) {
+      <div class="selection-list">
+        @for (item of visibleItems(); track trackByKey($index, item)) {
+          <article class="selection-item">
+            <div class="selection-cover">
+              @if (item.remote?.coverUrl; as coverUrl) {
+                <img [src]="coverUrl" [alt]="'Couverture de ' + item.title" loading="lazy">
+              } @else {
+                <span aria-hidden="true">Couv.</span>
+              }
+            </div>
+
+            <div class="selection-item-copy">
+              <div class="selection-item-heading">
+                @if (item.remote?.kind === 'rare') {
+                  <span class="selection-rare-badge">Livre rare</span>
+                }
+                <h2>{{ item.title }}</h2>
+              </div>
+
+              @if (item.remote?.authors; as authors) {
+                <p class="selection-author">{{ authors }}</p>
+              }
+              @if (item.remote; as remote) {
+                @if (editionDetails(remote); as details) {
+                  <p class="selection-edition">{{ details }}</p>
+                }
+                @if (remote.isbn13) {
+                  <p class="selection-isbn">ISBN {{ remote.isbn13 }}</p>
+                }
+                <span class="selection-availability" [class]="'selection-availability ' + availabilityClass(remote.availability)">
+                  {{ availabilityLabel(remote.availability) }}
+                </span>
+                @if (remote.availability === 'Announced') {
+                  @if (nextFairLabel(); as nextFair) {
+                    <p class="selection-next-fair">{{ nextFair }}</p>
+                  }
+                }
+                <div class="selection-status-control" role="group" aria-label="Mon état">
+                  @for (status of statuses; track status.value) {
+                    <button
+                      type="button"
+                      class="selection-status-button"
+                      [class.active]="isSelectedStatus(item, status.value)"
+                      [disabled]="busyItemId() === remote.id"
+                      [attr.aria-pressed]="isSelectedStatus(item, status.value)"
+                      [attr.data-testid]="'status-' + status.testId"
+                      (click)="setStatus(item, status.value)">
+                      {{ status.label }}
+                    </button>
+                  }
+                </div>
+              }
+
+              <p class="selection-added-date">{{ addedLabel(item) }}</p>
+              @if (!item.remote) {
+                <p class="selection-local-detail">Enregistré sur cet appareil.</p>
+              }
+              <button
+                type="button"
+                class="selection-remove-item"
+                [disabled]="busyItemId() === (item.id ?? item.key)"
+                (click)="removeItem(item)">
+                <span class="selection-remove-desktop">Retirer de ma sélection</span>
+                <span class="selection-remove-mobile">Retirer</span>
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="selection-filter-empty">Aucun livre ne correspond à ce filtre.</p>
+    }
+
+    @if (freshnessLine(); as freshness) {
+      <p class="selection-freshness">{{ freshness }}</p>
+    }
+    <p class="selection-search-note">Vous voulez être prévenu de l'arrivée d'un livre ? C'est le rôle de <a routerLink="/compte">Mes recherches</a>, une liste distincte.</p>
+  }
+
+  @if (pendingMerge(); as merge) {
+    <div class="selection-merge-backdrop">
+      <section class="selection-merge-dialog" role="dialog" aria-modal="true" aria-label="Fusionner vos deux sélections ?">
+        <p class="selection-merge-eyebrow">Ma sélection</p>
+        <h2>Fusionner vos deux sélections ?</h2>
+        <p class="selection-merge-summary">
+          Cet appareil contient {{ merge.localCount }} livres, votre compte en contient déjà {{ merge.accountCount }}.
+          Après fusion : {{ merge.mergedCount }} livres, sans doublon.
+        </p>
+
+        <div class="selection-merge-groups">
+          <section class="selection-merge-group" aria-labelledby="selection-merge-local-title">
+            <h3 id="selection-merge-local-title">Sur cet appareil</h3>
+            @if (localItemsToAdd().length === 0) {
+              <p>Aucun nouveau livre à ajouter.</p>
+            } @else {
+              <ul>
+                @for (item of localItemsToAdd(); track selectionKeyForLocal(item)) {
+                  <li><span>{{ item.title }}</span><strong>À ajouter</strong></li>
+                }
+              </ul>
+            }
+          </section>
+
+          <section class="selection-merge-group" aria-labelledby="selection-merge-account-title">
+            <h3 id="selection-merge-account-title">Déjà dans votre compte</h3>
+            @if (remoteItems().length === 0) {
+              <p>Aucun livre dans votre compte.</p>
+            } @else {
+              <ul>
+                @for (item of remoteItems(); track item.id) {
+                  <li><span>{{ item.title }}</span><strong>Conservé</strong></li>
+                }
+              </ul>
+            }
+          </section>
+        </div>
+
+        <div class="selection-merge-actions">
+          <button
+            type="button"
+            class="selection-merge-confirm"
+            data-testid="selection-merge-confirm"
+            [disabled]="busyMerge()"
+            (click)="confirmMerge()">
+            {{ busyMerge() ? 'Fusion en cours…' : 'Fusionner · ' + merge.mergedCount + ' livres' }}
+          </button>
+          <button
+            type="button"
+            class="selection-merge-decline"
+            data-testid="selection-merge-decline"
+            [disabled]="busyMerge()"
+            (click)="declineMerge()">
+            Garder les listes séparées
+          </button>
+        </div>
+        <p class="selection-merge-note">
+          Aucun livre de votre compte n'est supprimé. Si vous gardez les listes séparées, celle de cet appareil reste locale et n'est pas synchronisée.
+        </p>
+      </section>
+    </div>
+  }
+</section>

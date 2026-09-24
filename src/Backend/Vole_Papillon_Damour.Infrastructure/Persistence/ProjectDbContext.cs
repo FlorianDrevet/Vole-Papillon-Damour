@@ -9,6 +9,9 @@ using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.EventsAggregate;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
+using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
+using Vole_Papillon_Damour.Domain.MemberCardAggregate;
+using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
@@ -40,6 +43,10 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
+    public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
+    public DbSet<MemberCard> MemberCards => Set<MemberCard>();
+    public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
+    public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder

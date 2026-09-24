@@ -120,11 +120,11 @@ app.UseCors("CorsPolicy");
 app.UseErrorHandling();
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseRateLimiter(); //After UseRouting
 app.UseOutputCache();
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter(); //After authentication so per-member policies can partition by oid.
 
 app.MapHealthChecks("/health");
 
@@ -135,6 +135,8 @@ app.UseAuthenticationController();
 app.UseAccountController();
 app.UseAccountAdministrationController();
 app.UseBookController();
+app.UseMemberAccountController();
+app.UseCheckoutPassageController();
 app.UseRareBookController();
 app.UseBibliographicReferenceController();
 app.UseBookAdministrationController();

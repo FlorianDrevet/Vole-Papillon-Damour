@@ -76,4 +76,29 @@ describe('CatalogAuthPromptComponent', () => {
 
     expect(emitted).toHaveBeenCalled();
   });
+
+  it('supports a selection invitation while keeping the default follow prompt intact', () => {
+    fixture.componentInstance.open = true;
+    fixture.componentInstance.eyebrow = 'Ma sélection';
+    fixture.componentInstance.title = 'Retrouver cette sélection sur tous vos appareils ?';
+    fixture.componentInstance.description = 'Le livre est déjà gardé sur ce téléphone.';
+    fixture.componentInstance.benefits = [];
+    fixture.componentInstance.primaryLabel = 'Se connecter';
+    fixture.componentInstance.secondaryLabel = 'Garder sur cet appareil';
+    fixture.componentInstance.secondaryAsClose = true;
+    fixture.componentInstance.hint = 'Aucun compte n’est créé sans votre accord.';
+    fixture.detectChanges();
+    const emitted = jasmine.createSpy('closed');
+    fixture.componentInstance.closed.subscribe(emitted);
+
+    const content = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+    expect(content).toContain('Ma sélection');
+    expect(content).toContain('Retrouver cette sélection sur tous vos appareils ?');
+    expect(content).toContain('Garder sur cet appareil');
+    expect(fixture.nativeElement.querySelectorAll('.auth-prompt-benefits li').length).toBe(0);
+    (fixture.nativeElement.querySelector('[data-testid="auth-prompt-register"]') as HTMLButtonElement).click();
+
+    expect(emitted).toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).not.toContain('liste de suivi');
+  });
 });

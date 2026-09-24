@@ -152,7 +152,9 @@ export class ScanSyncService {
         const status = entry.status ?? 'Pending';
         return status === 'Pending' || status === 'Cancelled';
       });
-    if (entries.length === 0 && sales.length === 0 && rareSales.length === 0) {
+    const associations = (await this.store.listPassageAssociations())
+      .filter(entry => entry.status === 'Pending');
+    if (entries.length === 0 && sales.length === 0 && rareSales.length === 0 && associations.length === 0) {
       return await this.createOutboxSummary(0, false, reattached);
     }
 
@@ -292,6 +294,7 @@ export class ScanSyncService {
             quantity: sale.quantity,
             occurredAt: sale.occurredAt,
             clientGestureId: sale.clientGestureId,
+            ...(sale.checkoutPassageId ? {checkoutPassageId: sale.checkoutPassageId} : {}),
           }));
           await this.store.markSaleAttempt(
             sale.clientGestureId,
@@ -353,6 +356,7 @@ export class ScanSyncService {
               occurredAt: sale.occurredAt,
               scanSessionId: sale.scanSessionId,
               assoEventsId: sale.assoEventsId,
+              ...(sale.checkoutPassageId ? {checkoutPassageId: sale.checkoutPassageId} : {}),
             },
           ));
           await this.store.markRareSaleAttempt(
@@ -402,6 +406,50 @@ export class ScanSyncService {
             );
             quarantined += 1;
           }
+        }
+      }
+    }
+
+    for (const association of associations.filter(entry => isRetryDue(entry))) {
+      try {
+        const response = await firstValueFrom(this.api.associatePassage(
+          association.checkoutPassageId,
+          {
+            credential: association.credential.value,
+            occurredAt: association.occurredAt,
+          },
+        ));
+        if (
+          response.checkoutPassageId !== association.checkoutPassageId ||
+          !['Associated', 'Accepted', 'Unresolved'].includes(response.status)
+        ) {
+          throw new Error('Invalid passage association response.');
+        }
+
+        await this.store.deletePassageAssociation(association.checkoutPassageId);
+        sent += 1;
+      } catch (error: unknown) {
+        stoppedOnError = true;
+        const status = getHttpStatus(error);
+        const failureKind = classifyFailure(error);
+        const isConflict = status === 409;
+        const nextStatus = isConflict || (
+          failureKind === 'permanent' && association.attemptCount + 1 >= MAX_PERMANENT_ATTEMPTS
+        ) ? 'Quarantined' as const : 'Pending' as const;
+        await this.store.markPassageAssociationAttempt(
+          association.checkoutPassageId,
+          {
+            lastAttemptAt: new Date().toISOString(),
+            lastError: status === null ? 'Network request failed.' : `HTTP ${status}`,
+            lastFailureKind: isConflict ? 'permanent' : failureKind,
+            status: nextStatus,
+          },
+        );
+        if (nextStatus === 'Quarantined') {
+          quarantined += 1;
+        }
+        if (failureKind === 'authorization' && this.handleServerAuthorizationFailure(error)) {
+          break;
         }
       }
     }

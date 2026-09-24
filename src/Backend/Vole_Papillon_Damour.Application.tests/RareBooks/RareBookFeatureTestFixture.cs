@@ -1,6 +1,9 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Logging.Abstractions;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
+using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
@@ -23,6 +26,7 @@ using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 
 namespace Vole_Papillon_Damour.Application.tests.RareBooks;
 
@@ -49,6 +53,9 @@ internal sealed class RareBookFeatureTestFixture : IAsyncDisposable
     public IBlobService Blob { get; }
     public UserId UserId { get; } = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001"));
     public DateTime Now => DefaultNow;
+
+    public CheckoutPassageRecorder CreateCheckoutPassageRecorder() =>
+        new(Context, NullLogger<CheckoutPassageRecorder>.Instance);
 
     public static async Task<RareBookFeatureTestFixture> CreateAsync()
     {
@@ -179,9 +186,12 @@ internal sealed class RareBookFeatureTestDbContext(
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
+    public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
-    DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
+    DbSet<User> IProjectDbContext.Users => Users;
     DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<Book> IProjectDbContext.Books => throw new NotSupportedException();
@@ -200,7 +210,6 @@ internal sealed class RareBookFeatureTestDbContext(
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<Product>();
-        modelBuilder.Ignore<User>();
         modelBuilder.Ignore<AssoEvents>();
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<Book>();
@@ -212,6 +221,18 @@ internal sealed class RareBookFeatureTestDbContext(
         modelBuilder.Ignore<WatchlistItem>();
         modelBuilder.Ignore<UserAlertHistory>();
         modelBuilder.Ignore<EmailBounceEvent>();
+
+        modelBuilder.Entity<User>(builder =>
+        {
+            builder.HasKey(user => user.Id);
+            builder.Property(user => user.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => UserId.Create(value));
+            builder.Ignore(user => user.Password);
+            builder.Ignore(user => user.Salt);
+            builder.Ignore(user => user.Role);
+            builder.ComplexProperty(user => user.Name);
+        });
 
         modelBuilder.Entity<RareBook>(builder =>
         {
@@ -272,7 +293,10 @@ internal sealed class RareBookFeatureTestDbContext(
             builder.HasKey(tombstone => tombstone.RareBookId);
             builder.Property(tombstone => tombstone.DeletedAt);
         });
+        modelBuilder.ApplyConfiguration(new CheckoutPassageConfiguration());
+        modelBuilder.ApplyConfiguration(new CheckoutPassageLineConfiguration());
     }
+
 
     private static Isbn13 ParseIsbn(string value) =>
         Isbn13.TryCreate(value, out var isbn)

@@ -359,7 +359,8 @@ public static class RareBookController
                                 scanSessionId,
                                 assoEventsId,
                                 request.OccurredAt,
-                                userId),
+                                userId,
+                                CheckoutPassageId: null),
                             cancellationToken);
 
                         return result.Match(
@@ -429,7 +430,10 @@ public static class RareBookController
                                 scanSessionId,
                                 assoEventsId,
                                 request.OccurredAt,
-                                userId),
+                                userId,
+                                request.CheckoutPassageId is Guid checkoutPassageId && checkoutPassageId != Guid.Empty
+                                    ? checkoutPassageId
+                                    : null),
                             cancellationToken);
 
                         return result.Match(

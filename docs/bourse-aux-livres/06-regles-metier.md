@@ -561,3 +561,87 @@ relève, afin de permettre la reprise en bloc (`RG-25`).
 ### `RG-42` — Confidentialité des demandeurs
 L'identité des membres qui recherchent un livre n'est jamais exposée dans
 l'application de scan, ni sur le site public. Seul un décompte est affiché.
+
+---
+
+## Compte membre, sélection et achats
+
+Les règles de cette section sont proposées par le document
+[10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md).
+Elles ne décrivent pas encore un comportement disponible en production.
+
+### RG-52 — Les listes ont des finalités distinctes
+
+La liste de recherche sert à suivre une œuvre ou une édition non disponible et peut
+déclencher une alerte. Ma sélection sert à préparer une visite à partir d'une fiche
+publique existante et ne déclenche aucune alerte.
+
+### RG-53 — Ma sélection vise une fiche précise
+
+Une entrée de Ma sélection désigne une édition par son ISBN ou une fiche rare par son
+identifiant. Un ajout depuis une page d'œuvre impose de choisir l'édition concernée.
+
+### RG-54 — Ma sélection ne réserve rien
+
+L'ajout, la consultation ou le partage d'une sélection ne décrémente pas le stock,
+ne met pas un livre de côté et ne bloque pas une vente à un autre visiteur.
+
+### RG-55 — La sélection anonyme reste locale
+
+Avant connexion, la sélection n'est pas une donnée membre. Elle est conservée sur
+l'appareil et n'est synchronisée qu'après une connexion explicite.
+
+### RG-56 — La fusion ne supprime pas silencieusement
+
+La fusion d'une sélection locale et d'une sélection de compte déduplique les mêmes
+fiches, mais ne supprime aucune entrée distante sans confirmation.
+
+### RG-57 — L'association d'une vente est facultative
+
+Une vente anonyme est toujours valide. L'absence de QR, de code ou de réseau ne bloque
+pas l'enregistrement de la sortie.
+
+### RG-58 — Une association couvre le passage validé
+
+Un compte sélectionné avant validation est appliqué à toutes les lignes du passage.
+Le compte peut être changé ou retiré avant validation, mais pas deviné après coup.
+
+### RG-59 — Le QR ne porte pas de donnée personnelle lisible
+
+Le QR utilise un jeton opaque renouvelable ou révocable. Il ne contient pas d'e-mail,
+de nom en clair ou d'identifiant Entra directement exploitable.
+
+### RG-60 — Le hors-ligne ne crée pas d'achat fantôme
+
+Une association hors ligne est une intention en attente jusqu'à l'acceptation serveur.
+Le rejeu idempotent ne peut créer ni une vente ni une ligne d'historique en double.
+
+### RG-61 — Seules les ventes associées sont visibles dans Mes achats
+
+Une vente anonyme ou une vente réalisée avant l'activation de la fonctionnalité ne
+peut pas être retrouvée automatiquement dans le compte.
+
+### RG-62 — L'historique conserve le contexte de la vente
+
+Une ligne d'achat conserve les informations nécessaires à sa lecture historique,
+même si la fiche actuelle est masquée, fusionnée ou enrichie plus tard.
+
+### RG-63 — Aucun prix fictif n'est affiché
+
+Mes achats ne calcule ni prix ordinaire, ni total, ni montant payé à partir des lignes
+de vente.
+
+### RG-64 — Une annulation reste traçable
+
+L'annulation d'une vente retire ou marque l'achat dans la vue membre selon le choix
+d'interface, mais produit toujours la correction append-only prévue pour le stock.
+
+### RG-65 — La sélection peut devenir acheté
+
+Une sélection passe automatiquement à ACHETÉ uniquement lorsqu'une ligne associée
+correspond exactement à sa fiche. Elle n'est jamais supprimée automatiquement.
+
+### RG-66 — La suppression retire le lien personnel
+
+La suppression du compte supprime Ma sélection et l'accès à Mes achats. Les mouvements
+nécessaires à l'audit sont conservés sans identité exploitable.

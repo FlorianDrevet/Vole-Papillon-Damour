@@ -55,6 +55,11 @@
             <div><dt>ISBN</dt><dd [class.rare-detail-fact-empty]="!rareBook.isbn13">{{ rareBook.isbn13 || 'aucun (avant 1970)' }}</dd></div>
           </dl>
 
+          <section class="rare-selection-visit" aria-labelledby="rare-selection-title">
+            <p id="rare-selection-title" class="rare-selection-title">Préparer ma visite</p>
+            <app-selection-button [ref]="{kind: 'rare', rareBookId: rareBook.id}" [title]="rareBook.title"></app-selection-button>
+          </section>
+
           <button
             *ngIf="!rareBook.isSold"
             type="button"

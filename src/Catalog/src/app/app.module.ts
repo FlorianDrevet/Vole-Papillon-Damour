@@ -19,11 +19,15 @@ import {AdminRareBookFormComponent} from './features/administration/rare-books/a
 import {AdminRareBookPhotosComponent} from './features/administration/rare-books/admin-rare-book-photos.component';
 import {AdminRareBooksComponent} from './features/administration/rare-books/admin-rare-books.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
+import {AccountSelectionComponent} from './features/account/selection/account-selection.component';
+import {AccountCardComponent} from './features/account/card/account-card.component';
+import {AccountPurchasesComponent} from './features/account/purchases/account-purchases.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
 import {CatalogCookieBannerComponent} from './shared/components/cookie-banner/catalog-cookie-banner.component';
 import {CatalogAuthPromptComponent} from './shared/components/auth-prompt/catalog-auth-prompt.component';
+import {SelectionButtonComponent} from './shared/components/selection-button/selection-button.component';
 import {CatalogNotFoundPageComponent} from './features/not-found/catalog-not-found-page.component';
 import {CatalogRareBookDetailPageComponent} from './features/rare-books/catalog-rare-book-detail-page.component';
 import {CatalogRareBooksPageComponent} from './features/rare-books/catalog-rare-books-page.component';
@@ -47,12 +51,16 @@ registerLocaleData(localeFr);
     AdminRareBookFormComponent,
     AdminRareBookPhotosComponent,
     CatalogAccountPageComponent,
+    AccountSelectionComponent,
+    AccountCardComponent,
+    AccountPurchasesComponent,
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,
     CatalogFooterComponent,
     CatalogCookieBannerComponent,
     CatalogNotFoundPageComponent,
     CatalogAuthPromptComponent,
+    SelectionButtonComponent,
     CatalogRareBooksPageComponent,
     CatalogRareBookDetailPageComponent,
     CatalogRareBookCardComponent,

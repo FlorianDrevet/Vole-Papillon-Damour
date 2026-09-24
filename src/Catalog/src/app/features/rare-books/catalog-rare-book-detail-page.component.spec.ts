@@ -1,18 +1,21 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {LOCALE_ID} from '@angular/core';
+import {LOCALE_ID, signal} from '@angular/core';
 import {registerLocaleData} from '@angular/common';
 import localeFr from '@angular/common/locales/fr';
 import {ActivatedRoute, convertToParamMap} from '@angular/router';
 import {RouterModule} from '@angular/router';
+import {By} from '@angular/platform-browser';
 import {of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {CatalogRareBook, CatalogRareBookDetail} from '../../core/catalog.models';
 import {CatalogRareBookCardComponent} from '../../shared/rare-book-card/rare-book-card.component';
 import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
 import {CatalogRareBookDetailPageComponent} from './catalog-rare-book-detail-page.component';
+import {SelectionButtonComponent} from '../../shared/components/selection-button/selection-button.component';
 import {DesignSystemModule} from '@vpd/ui';
 
 registerLocaleData(localeFr);
@@ -22,6 +25,7 @@ describe('CatalogRareBookDetailPageComponent', () => {
   let api: jasmine.SpyObj<CatalogApiService>;
   let auth: jasmine.SpyObj<CatalogAuthService>;
   let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
+  let selection: jasmine.SpyObj<CatalogSelectionService>;
 
   const book: CatalogRareBook = {
     id: 'rare-1',
@@ -75,18 +79,27 @@ describe('CatalogRareBookDetailPageComponent', () => {
       rareBookId: book.id,
       addedAt: '2026-09-17T10:00:00Z',
     }));
+    selection = jasmine.createSpyObj<CatalogSelectionService>(
+      'CatalogSelectionService',
+      ['add', 'remove'],
+      {keys: signal<ReadonlySet<string>>(new Set()), mode: signal<'local' | 'synced' | 'local-unsynced'>('synced')},
+    );
+    selection.add.and.resolveTo();
+    selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
       declarations: [
         CatalogRareBookDetailPageComponent,
         CatalogRareBookCardComponent,
         CatalogAuthPromptComponent,
+        SelectionButtonComponent,
       ],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogApiService, useValue: api},
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: memberApi},
+        {provide: CatalogSelectionService, useValue: selection},
         {provide: ActivatedRoute, useValue: {
           paramMap: of(convertToParamMap({slug: 'les-fables'})),
         }},
@@ -146,6 +159,14 @@ describe('CatalogRareBookDetailPageComponent', () => {
       coverUrl: null,
     });
     expect(fixture.nativeElement.textContent).toContain('maintenant suivi');
+  });
+
+  it('offers a selection action for this exact rare book', () => {
+    const action = fixture.debugElement.query(By.directive(SelectionButtonComponent));
+
+    expect(action).not.toBeNull();
+    expect(action.componentInstance.ref()).toEqual({kind: 'rare', rareBookId: book.id});
+    expect(action.componentInstance.title()).toBe(book.title);
   });
 
   it('opens the member prompt before following a rare copy anonymously', async () => {

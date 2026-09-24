@@ -96,6 +96,96 @@ export interface CatalogDeadStockResponse {
   books: CatalogDeadStockBook[];
 }
 
+export type CatalogSelectionStatus = 'ToTake' | 'Purchased' | 'NotFound' | 'ToRevisit';
+export type CatalogSelectionAvailability = 'Available' | 'Announced' | 'OutOfStock' | 'RareSold' | 'Unavailable';
+export type CatalogSelectionKind = 'edition' | 'rare';
+
+export interface CatalogMemberCard {
+  qrPayload: string;
+  recoveryCode: string;
+  displayLabel: string;
+  issuedAt: string;
+}
+
+export interface CatalogSelectionTargetRequest {
+  isbn13?: string;
+  rareBookId?: string;
+}
+
+export interface CatalogSelectionMergeEntry {
+  isbn13?: string;
+  rareBookId?: string;
+  addedAt: string;
+}
+
+export interface CatalogAddedSelectionItem {
+  id: string;
+  alreadyPresent: boolean;
+}
+
+export interface CatalogSelectionItem {
+  id: string;
+  kind: CatalogSelectionKind;
+  isbn13: string | null;
+  rareBookId: string | null;
+  rareBookSlug: string | null;
+  title: string;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  physicalFormat: string | null;
+  coverUrl: string | null;
+  availability: CatalogSelectionAvailability;
+  availabilityCheckedAt: string;
+  status: CatalogSelectionStatus;
+  addedAt: string;
+  purchasedAt: string | null;
+}
+
+export interface CatalogSelectionResponse {
+  generatedAt: string;
+  nextFair: {id: string; startsAt: string} | null;
+  items: CatalogSelectionItem[];
+}
+
+export interface CatalogSelectionMergeResult {
+  added: number;
+  alreadyPresent: number;
+  rejected: string[];
+}
+
+export type CatalogPurchaseLineState = 'Associated' | 'Cancelled';
+
+export interface CatalogPurchaseLine {
+  id: string;
+  kind: 'edition' | 'rare';
+  isbn13: string | null;
+  rareBookId: string | null;
+  title: string;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  physicalFormat: string | null;
+  quantity: number;
+  state: CatalogPurchaseLineState;
+  currentCoverUrl: string | null;
+}
+
+export interface CatalogPurchasePassage {
+  id: string;
+  reference: string;
+  occurredAt: string;
+  fairId: string | null;
+  fairLabel: string | null;
+  activeBookCount: number;
+  lines: CatalogPurchaseLine[];
+}
+
+export interface CatalogPurchasesResponse {
+  passages: CatalogPurchasePassage[];
+  nextCursor: string | null;
+}
+
 export type CatalogWatchlistScope = 'Work' | 'Edition' | 'RareBook';
 
 export interface CatalogWatchlistItemRequest {
@@ -883,6 +973,13 @@ export interface CatalogAdminCreateAccountRequest {
   roles: CatalogAdminAccountRole[];
 }
 
+export interface CatalogAdminCheckoutPassageLookup {
+  id: string;
+  occurredAt: string;
+  lineCount: number;
+  displayLabel: string | null;
+}
+
 export interface CatalogAdminCatalogueFilters {
   search?: string;
   page?: number;
@@ -911,3 +1008,4 @@ export interface CatalogAdminMemberFilters {
   page?: number;
   pageSize?: number;
 }
+

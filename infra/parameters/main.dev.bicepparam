@@ -229,6 +229,8 @@ param bookAlertsEmailUnsubscribeUrl = 'https://livres.volepapillondamour.fr/comp
 // Set in the GitHub development environment; never commit the value.
 param acsEmailWebhookSecret = readEnvironmentVariable('ACS_EMAIL_WEBHOOK_SECRET', '')
 param bookAlertsUnsubscribeSigningKey = readEnvironmentVariable('BOOK_ALERTS_UNSUBSCRIBE_SIGNING_KEY', '')
+// Set the development secret in the GitHub environment; never commit its value.
+param memberCardSigningKey = readEnvironmentVariable('MEMBER_CARD_SIGNING_KEY', '')
 // Azure infrastructure alerts go to the maintainer only. The association mailbox
 // (volepapillondamour@sfr.fr) is a public contact address and must not receive them.
 param monitoringAlertEmail = 'afdrevet@outlook.com'

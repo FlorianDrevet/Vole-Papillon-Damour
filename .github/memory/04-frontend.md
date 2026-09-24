@@ -564,6 +564,20 @@ the production build; the current main change still needs a Scan deployment and 
 - Legacy event values are UTC wall-clock components: BackOffice converts picker values through
   `MyDate`, while Website renders UTC and uses `hourOpenDoors` for Books event start times.
 
+## Catalog member selection
+
+`src/Catalog/src/app/features/account/selection/AccountSelectionComponent` renders the
+member's typed `Ma sélection` independently of the alert watchlist (`Mes recherches`).
+It reads the remote snapshot through `CatalogSelectionService`, uses `LocalSelectionStore`
+for anonymous entries, and delegates authenticated status/removal writes to
+`CatalogMemberApiService`. The `/compte` page owns authentication initialization and the
+five-tab order. The `Ma carte` view and lazily loaded `Mes achats` tab are implemented;
+purchase history pages by fair, contains no amount or price, and shows cancelled lines
+without changing the local sale ledger. `Ma sélection`, the card and purchase tabs are
+responsive; an anonymous `/compte` render measured no horizontal overflow at 390 px.
+Authenticated card and purchase states still need a real-account visual check. Selection
+display contains no price data.
+
 ## Website Rendering Modes
 
 - `src/Website/` uses Angular SSR with `provideClientHydration(withEventReplay())` and

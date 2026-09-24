@@ -85,15 +85,16 @@
         </div>
         <div class="account-reassurance-item">
           <span class="account-reassurance-label">À SAVOIR</span>
-          <p>Une alerte signale une arrivée au catalogue ; elle ne met aucun livre de côté.</p>
+          <p>Une alerte signale une arrivée au catalogue ; sa disponibilité peut évoluer avant votre visite.</p>
         </div>
       </div>
     </div>
+    <app-account-selection></app-account-selection>
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'contribution' ? 'Ma contribution.' : 'Ma liste de recherche.' }}</h1>
-      <p class="account-lead">{{ activeTab() === 'contribution' ? contributionIntro() : watchlistIntro() }}</p>
+      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'purchases' ? 'Mes achats.' : activeTab() === 'watchlist' ? 'Mes recherches.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
+      <p class="account-lead">{{ activeTab() === 'selection' ? selectionIntro : activeTab() === 'watchlist' ? watchlistIntro() : activeTab() === 'contribution' ? contributionIntro() : '' }}</p>
     </div>
 
     @if (errorMessage()) {
@@ -132,13 +133,57 @@
       <button
         type="button"
         role="tab"
+        id="account-selection-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'selection'"
+        [attr.aria-selected]="activeTab() === 'selection'"
+        aria-controls="account-selection-panel"
+        (click)="selectTab('selection')">
+        Ma sélection
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="account-purchases-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'purchases'"
+        [attr.aria-selected]="activeTab() === 'purchases'"
+        aria-controls="account-purchases-panel"
+        (click)="selectTab('purchases')">
+        Mes achats
+      </button>
+      <button
+        type="button"
+        role="tab"
         id="account-watchlist-tab"
         class="account-tab"
         [class.active]="activeTab() === 'watchlist'"
         [attr.aria-selected]="activeTab() === 'watchlist'"
         aria-controls="account-watchlist-panel"
         (click)="selectTab('watchlist')">
-        Ma liste de recherche
+        Mes recherches
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="account-card-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'card'"
+        [attr.aria-selected]="activeTab() === 'card'"
+        aria-controls="account-card-panel"
+        (click)="selectTab('card')">
+        Ma carte
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="account-preferences-tab"
+        class="account-tab"
+        [class.active]="activeTab() === 'preferences'"
+        [attr.aria-selected]="activeTab() === 'preferences'"
+        aria-controls="account-preferences-panel"
+        (click)="selectTab('preferences')">
+        Compte et données
       </button>
       @if (isVolunteer()) {
         <button
@@ -153,20 +198,34 @@
           Ma contribution
         </button>
       }
-      <button
-        type="button"
-        role="tab"
-        id="account-preferences-tab"
-        class="account-tab"
-        [class.active]="activeTab() === 'preferences'"
-        [attr.aria-selected]="activeTab() === 'preferences'"
-        aria-controls="account-preferences-panel"
-        (click)="selectTab('preferences')">
-        Préférences et compte
-      </button>
     </div>
 
-    @if (activeTab() === 'watchlist') {
+    @if (purchasesVisited()) {
+      <app-account-purchases
+        id="account-purchases-panel"
+        data-testid="account-purchases-panel"
+        role="tabpanel"
+        [hidden]="activeTab() !== 'purchases'"
+        [attr.aria-hidden]="activeTab() === 'purchases' ? null : 'true'"
+        aria-labelledby="account-purchases-tab"></app-account-purchases>
+    }
+
+    @if (activeTab() === 'selection') {
+      <app-account-selection
+        id="account-selection-panel"
+        data-testid="account-selection-panel"
+        role="tabpanel"
+        aria-labelledby="account-selection-tab"
+        [selectionLoading]="selectionLoading()"
+        [selectionError]="selectionError()"
+        (retryRequested)="retrySelection()"></app-account-selection>
+    } @else if (activeTab() === 'card') {
+      <app-account-card
+        id="account-card-panel"
+        data-testid="account-card-panel"
+        role="tabpanel"
+        aria-labelledby="account-card-tab"></app-account-card>
+    } @else if (activeTab() === 'watchlist') {
       <section
         id="account-watchlist-panel"
         class="watchlist-panel"
@@ -399,7 +458,7 @@
           <p class="account-state compact">Vos statistiques n’ont pas encore pu être préparées.</p>
         }
       </section>
-    } @else {
+    } @else if (activeTab() === 'preferences') {
       <section
         id="account-preferences-panel"
         class="account-preferences-panel"
@@ -466,7 +525,7 @@
           <div>
             <p class="eyebrow">Données personnelles</p>
             <h2 id="delete-account-title">Supprimer mon compte.</h2>
-            <p>Cette demande supprime votre profil local, votre liste de recherche et l’historique de vos alertes. Elle demande aussi la suppression de votre identité de connexion externe ; la finalisation peut se poursuivre en arrière-plan.</p>
+            <p>Cette demande supprime votre profil local, votre liste de recherche, Ma sélection, Ma carte et l’historique de vos alertes. L’accès à Mes achats disparaît ; la Carte de compte est révoquée et les passages associés sont anonymisés. Les lignes utiles à la traçabilité restent sans identité exploitable. Elle demande aussi la suppression de votre identité de connexion externe ; la finalisation peut se poursuivre en arrière-plan.</p>
           </div>
           @if (!deletionRequested()) {
             <button type="button" class="account-button danger" data-testid="delete-account" (click)="requestAccountDeletion()">

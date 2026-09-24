@@ -101,6 +101,8 @@ public sealed class BookMovementConfiguration : IEntityTypeConfiguration<BookMov
         builder.HasIndex(movement => movement.ReversalOfMovementId)
             .IsUnique()
             .HasFilter("[ReversalOfMovementId] IS NOT NULL");
+        builder.HasIndex(movement => movement.CheckoutPassageId)
+            .HasFilter("[CheckoutPassageId] IS NOT NULL");
 
         builder.HasOne<BookMovement>()
             .WithMany()

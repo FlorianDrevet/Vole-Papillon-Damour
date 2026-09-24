@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
@@ -16,7 +17,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.RegisterSale;
 
 public sealed class RegisterSaleCommandHandler(
     IProjectDbContext dbContext,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    CheckoutPassageRecorder checkoutPassageRecorder)
     : IRequestHandler<RegisterSaleCommand, ErrorOr<RegisterSaleResult>>
 {
     public async Task<ErrorOr<RegisterSaleResult>> Handle(
@@ -45,6 +47,10 @@ public sealed class RegisterSaleCommandHandler(
                 ? Errors.Book.InvalidSaleTimestamp()
                 : Error.Validation("Book.InvalidClientGestureId", "A client gesture identifier is required.");
         }
+
+        var checkoutPassageId = command.CheckoutPassageId is { } requestedPassageId && requestedPassageId != Guid.Empty
+            ? requestedPassageId
+            : (Guid?)null;
 
         var receivedAt = dateTimeProvider.UtcNow;
         if (receivedAt.Kind != DateTimeKind.Utc)
@@ -127,8 +133,14 @@ public sealed class RegisterSaleCommandHandler(
             command.VolunteerId,
             fairMatch.AssoEventsId,
             fairMatch.Note,
-            command.ClientGestureId);
+            command.ClientGestureId,
+            checkoutPassageId: checkoutPassageId);
         dbContext.BookMovements.Add(movement);
+        if (checkoutPassageId is { } linkedPassageId)
+        {
+            await checkoutPassageRecorder.RecordOrdinarySaleAsync(
+                linkedPassageId, movement, book, command.Isbn, cancellationToken);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

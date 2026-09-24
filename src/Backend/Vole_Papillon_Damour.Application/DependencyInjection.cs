@@ -6,6 +6,8 @@ using Vole_Papillon_Damour.Application.Common.Behaviors;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
 using Vole_Papillon_Damour.Application.AccountDeletion;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
+using Vole_Papillon_Damour.Application.MemberCards.Common;
 
 namespace Vole_Papillon_Damour.Application;
 
@@ -16,6 +18,8 @@ public static class DependencyInjection
         services.AddAccountDeletionProcessing();
         services.AddScoped<BookAlertDeliveryService>();
         services.AddScoped<MemberIdentityService>();
+        services.AddScoped<MemberCardIssuer>();
+        services.AddScoped<CheckoutPassageRecorder>();
         // The background inactivity sweep delegates to the same close-session
         // handler as the HTTP path. Registering the concrete handler keeps the
         // shared domain transaction and makes design-time EF tooling able to

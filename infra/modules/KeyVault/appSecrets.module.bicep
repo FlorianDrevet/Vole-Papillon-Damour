@@ -48,6 +48,10 @@ param acsEmailWebhookSecret string
 @minLength(1)
 param bookAlertsUnsubscribeSigningKey string
 
+@secure()
+@minLength(1)
+param memberCardSigningKey string
+
 @description('Optional API key for the Google Books volumes API')
 @secure()
 param googleBooksApiKey string
@@ -62,6 +66,7 @@ var jwtSecretName = 'jwt-secret'
 var entraGraphClientSecretName = 'entra-graph-client-secret'
 var acsEmailWebhookSecretName = 'email-bounce-webhook-secret'
 var bookAlertsUnsubscribeSigningKeySecretName = 'book-alerts-unsubscribe-signing-key'
+var memberCardSigningKeySecretName = 'member-card-signing-key'
 var googleBooksApiKeySecretName = 'google-books-api-key'
 var instagramAccessTokenSecretName = 'instagram-access-token'
 
@@ -121,6 +126,14 @@ resource bookAlertsUnsubscribeSigningKeyResource 'Microsoft.KeyVault/vaults/secr
   }
 }
 
+resource memberCardSigningKeySecretResource 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: memberCardSigningKeySecretName
+  properties: {
+    value: memberCardSigningKey
+  }
+}
+
 resource googleBooksApiKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = if (!empty(googleBooksApiKey)) {
   parent: keyVault
   name: googleBooksApiKeySecretName
@@ -145,6 +158,7 @@ output secretUris object = {
   '${entraGraphClientSecretName}': '${keyVault.properties.vaultUri}secrets/${entraGraphClientSecretName}'
   '${acsEmailWebhookSecretName}': '${keyVault.properties.vaultUri}secrets/${acsEmailWebhookSecretName}'
   '${bookAlertsUnsubscribeSigningKeySecretName}': '${keyVault.properties.vaultUri}secrets/${bookAlertsUnsubscribeSigningKeySecretName}'
+  '${memberCardSigningKeySecretName}': '${keyVault.properties.vaultUri}secrets/${memberCardSigningKeySecretName}'
   '${googleBooksApiKeySecretName}': '${keyVault.properties.vaultUri}secrets/${googleBooksApiKeySecretName}'
   '${instagramAccessTokenSecretName}': '${keyVault.properties.vaultUri}secrets/${instagramAccessTokenSecretName}'
 }

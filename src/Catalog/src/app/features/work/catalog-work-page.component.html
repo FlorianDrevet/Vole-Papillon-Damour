@@ -29,9 +29,16 @@
       <p class="eyebrow">Les éditions à la bourse aux livres</p>
       <h2>Choisir une édition.</h2>
     </div>
+    <p class="selection-edition-note">Ma sélection désigne une édition précise : le bouton est sur chaque édition.</p>
     <div class="book-grid">
       @for (book of item.editions; track trackBook($index, book.isbn13)) {
-        <app-book-card [book]="book"></app-book-card>
+        <div class="work-edition-item">
+          <app-book-card [book]="book"></app-book-card>
+          <app-selection-button
+            [ref]="{kind: 'edition', isbn13: book.isbn13}"
+            [title]="book.title || 'Titre à compléter'"
+            [helpText]="''"></app-selection-button>
+        </div>
       }
     </div>
   </section>

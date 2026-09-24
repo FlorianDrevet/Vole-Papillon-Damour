@@ -43,6 +43,11 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('Azure Communication Services');
     expect(content).toContain('Google Analytics 4');
     expect(content).toContain('Google Maps');
+    expect(content).toContain('Ma sélection');
+    expect(content).toContain('Carte de compte');
+    expect(content).toContain('Mes achats');
+    expect(content).toContain('La Vente anonyme reste toujours possible');
+    expect(content.toLowerCase()).toContain('aucun prix ni montant n’est affiché');
   });
 
   it('explains how members can access, export or delete their data', async () => {
@@ -54,6 +59,9 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('Portabilité');
     expect(content).toContain('un mois');
     expect(content).toContain('Ne joignez pas de pièce d’identité');
+    expect(content).toContain('Ma sélection est supprimée');
+    expect(content).toContain('Le lien personnel avec le passage est anonymisé');
+    expect(content.toLowerCase()).toContain('les mouvements nécessaires à la traçabilité restent conservés sans identité exploitable');
 
     const requestLink = fixture.nativeElement.querySelector(
       '[data-testid="rights-request"]',

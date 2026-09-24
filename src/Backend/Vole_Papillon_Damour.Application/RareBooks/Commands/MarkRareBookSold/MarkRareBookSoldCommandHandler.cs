@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Domain.Common.Errors;
 
@@ -11,7 +12,8 @@ namespace Vole_Papillon_Damour.Application.RareBooks.Commands.MarkRareBookSold;
 public sealed class MarkRareBookSoldCommandHandler(
     IProjectDbContext dbContext,
     IDateTimeProvider dateTimeProvider,
-    IBookAlertOutbox bookAlertOutbox)
+    IBookAlertOutbox bookAlertOutbox,
+    CheckoutPassageRecorder checkoutPassageRecorder)
     : IRequestHandler<MarkRareBookSoldCommand, ErrorOr<RareBookResult>>
 {
     public async Task<ErrorOr<RareBookResult>> Handle(
@@ -61,6 +63,20 @@ public sealed class MarkRareBookSoldCommandHandler(
         catch (ArgumentException exception)
         {
             return Errors.RareBook.InvalidData(exception.Message);
+        }
+
+        var checkoutPassageId = command.CheckoutPassageId is { } requestedPassageId && requestedPassageId != Guid.Empty
+            ? requestedPassageId
+            : (Guid?)null;
+        var passageLineAlreadyExists = !changed && checkoutPassageId is { } existingPassageId
+            && await dbContext.CheckoutPassageLines.AnyAsync(
+                line => line.CheckoutPassageId == existingPassageId && line.RareBookId == rareBook.Id,
+                cancellationToken);
+
+        if (checkoutPassageId is { } passageId && (changed || passageLineAlreadyExists))
+        {
+            await checkoutPassageRecorder.RecordRareSaleAsync(
+                passageId, rareBook, command.OccurredAt, command.AssoEventsId, cancellationToken);
         }
 
         if (changed)

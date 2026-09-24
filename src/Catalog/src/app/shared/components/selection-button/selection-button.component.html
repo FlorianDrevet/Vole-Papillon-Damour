@@ -1,0 +1,53 @@
+<div class="selection-action" [attr.aria-busy]="busy() ? 'true' : null">
+  @if (helpText()) {
+    <p class="selection-helper">{{ helpText() }}</p>
+  }
+
+  <div class="selection-controls">
+    @if (inSelection()) {
+      <span class="selection-present" role="status">Dans Ma sélection</span>
+      <button
+        type="button"
+        class="selection-remove-button"
+        [disabled]="busy()"
+        (click)="remove()">
+        {{ busy() ? 'Retrait en cours…' : 'Retirer' }}
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="selection-add-button"
+        [disabled]="busy()"
+        (click)="add()">
+        <svg class="selection-bookmark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6.5 4.75h11v15l-5.5-3.7-5.5 3.7z"></path>
+        </svg>
+        {{ busy() ? 'Ajout en cours…' : 'Ajouter à Ma sélection' }}
+      </button>
+    }
+  </div>
+
+  @if (inSelection() && localSelection()) {
+    <p class="selection-local-note" role="status">
+      Enregistrée sur cet appareil uniquement.
+      <a class="selection-login-link" href="#connexion" (click)="openSignInPrompt($event)">Se connecter pour la retrouver partout</a>
+    </p>
+  }
+
+  @if (error(); as message) {
+    <p class="selection-error" role="alert">{{ message }}</p>
+  }
+</div>
+
+<app-catalog-auth-prompt
+  [open]="signInPromptOpen()"
+  eyebrow="Ma sélection"
+  title="Retrouver cette sélection sur tous vos appareils ?"
+  description="Le livre est déjà gardé sur ce téléphone. Connectez-vous seulement si vous voulez le synchroniser avec votre compte."
+  [benefits]="noBenefits"
+  primaryLabel="Se connecter"
+  secondaryLabel="Garder sur cet appareil"
+  [secondaryAsClose]="true"
+  hint="Aucun compte n’est créé sans votre accord, et le catalogue reste consultable sans connexion."
+  (closed)="closeSignInPrompt()"
+  (loginRequested)="startSignIn()"></app-catalog-auth-prompt>

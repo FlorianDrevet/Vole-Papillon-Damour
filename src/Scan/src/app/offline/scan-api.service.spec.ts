@@ -74,6 +74,7 @@ describe('ScanApiService', () => {
       quantity: 1,
       occurredAt: '2026-09-03T08:00:00.000Z',
       clientGestureId: 'sale-1',
+      checkoutPassageId: 'passage-1',
     };
     service.registerSale(sale).subscribe();
 
@@ -83,11 +84,39 @@ describe('ScanApiService', () => {
     request.flush({});
   });
 
+  it('associates a checkout passage from the member credential', () => {
+    const association = {
+      credential: 'VPDC1.AAAA.BBBB',
+      occurredAt: '2026-09-03T08:00:00.000Z',
+    };
+    service.associatePassage('passage-1', association).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/scan/passages/passage-1/member`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(association);
+    request.flush({
+      checkoutPassageId: 'passage-1',
+      status: 'Associated',
+      displayLabel: 'Camille',
+      alreadyProcessed: false,
+    });
+  });
+
+  it('resolves a member card to a display label for cash-desk confirmation', () => {
+    service.resolveMemberCard('VPDC1.AAAA.BBBB').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/scan/member-cards/resolve`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({credential: 'VPDC1.AAAA.BBBB'});
+    request.flush({displayLabel: 'Camille'});
+  });
+
   it('sends a rare cash sale without any price or ordinary sale fields', () => {
     const sale = {
       occurredAt: '2026-09-03T08:00:00.000Z',
       scanSessionId: 'session-1',
       assoEventsId: null,
+      checkoutPassageId: 'passage-1',
     };
     service.markRareBookSold('rare-1', sale).subscribe();
 

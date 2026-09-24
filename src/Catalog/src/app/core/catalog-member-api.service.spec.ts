@@ -4,6 +4,7 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogMemberApiService} from './catalog-member-api.service';
+import {CatalogMemberCard} from './catalog.models';
 
 describe('CatalogMemberApiService', () => {
   let service: CatalogMemberApiService;
@@ -93,5 +94,95 @@ describe('CatalogMemberApiService', () => {
   it('rejects an empty token before creating an HTTP request', () => {
     expect(() => service.getWatchlist('  ')).toThrowError('A member access token is required.');
     http.expectNone(() => true);
+  });
+
+  it('gets member selection with the access token', () => {
+    service.getSelection('member-token').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection`);
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({generatedAt: '2026-09-23T10:00:00Z', nextFair: null, items: []});
+  });
+
+  it('adds a member selection target with the access token', () => {
+    service.addSelectionItem('member-token', {isbn13: '9782070612758'}).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection`);
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({isbn13: '9782070612758'});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({id: 'item-id', alreadyPresent: false});
+  });
+
+  it('removes a member selection item with the access token', () => {
+    service.removeSelectionItem('member-token', 'item-id').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection/item-id`);
+
+    expect(request.request.method).toBe('DELETE');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(null);
+  });
+
+  it('sets a member selection status with the access token', () => {
+    service.setSelectionStatus('member-token', 'item-id', 'Purchased').subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection/item-id`);
+
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({status: 'Purchased'});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(null);
+  });
+
+  it('merges local selection entries with the access token', () => {
+    const entries = [{isbn13: '9782070612758', addedAt: '2026-09-20T10:00:00.000Z'}];
+    service.mergeSelection('member-token', entries).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection/merge`);
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({entries});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({added: 1, alreadyPresent: 0, rejected: []});
+  });
+
+  it('loads the member card with a bearer token', () => {
+    const expected: CatalogMemberCard = {
+      qrPayload: 'VPDC1.AAAA.BBBB',
+      recoveryCode: 'LUNE-4271',
+      displayLabel: 'Camille',
+      issuedAt: '2026-09-23T10:00:00Z',
+    };
+    let actual: CatalogMemberCard | undefined;
+
+    service.getCard('member-token').subscribe(result => actual = result);
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/card`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(expected);
+    expect(actual).toEqual(expected);
+  });
+
+  it('rotates the member card with a bearer token', () => {
+    const expected: CatalogMemberCard = {
+      qrPayload: 'VPDC1.CCCC.DDDD',
+      recoveryCode: 'AUBE-5932',
+      displayLabel: 'Camille',
+      issuedAt: '2026-09-24T10:00:00Z',
+    };
+    let actual: CatalogMemberCard | undefined;
+
+    service.rotateCard('member-token').subscribe(result => actual = result);
+
+    const request = http.expectOne(`${environment.apiUrl}/catalog/me/card/rotate`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(expected);
+    expect(actual).toEqual(expected);
   });
 });

@@ -25,6 +25,11 @@ documents et le code.
 | **Vente** | Sortie d'un exemplaire, enregistrée par un scan à la caisse. Décrémente la quantité disponible. |
 | **Livre rare** | Fiche autonome d'un livre dont l'association veut préserver et afficher l'exemplaire réel, avec son état, ses photos et un prix ferme. Elle vit dans la section dédiée, indépendamment du tarif des livres ordinaires ; ce prix est lu par le bénévole en caisse et n'est jamais additionné par l'application. |
 | **Liste de recherche** | Ensemble des ISBN qu'un membre inscrit déclare rechercher. |
+| **Ma sélection** | Ensemble de fiches publiques qu'un membre garde pour préparer une visite. Elle ne déclenche aucune alerte et ne réserve aucun livre. |
+| **Carte de compte** | Écran personnel présentant un QR code ou un code de secours pour rattacher facultativement un passage en caisse à un compte. |
+| **Passage en caisse** | Ensemble des livres scannés entre l'ouverture d'une vente et sa validation. Il peut être anonyme ou associé à un compte. |
+| **Vente associée** | Passage en caisse validé après identification facultative d'un compte membre. |
+| **Mes achats** | Vue personnelle des lignes des ventes associées à un compte, regroupées par passage ou par bourse. |
 | **Alerte** | E-mail envoyé à un membre quand un livre de sa liste devient disponible ou est annoncé pour une bourse datée. |
 | **Remise à plat** | Correction périodique des quantités pour absorber les ventes non scannées. Voir `RG-31`. |
 
@@ -34,6 +39,8 @@ documents et le code.
 |---|---|---|
 | « Produit » | Réservé à la buvette (agrégat `Product` existant). Les livres ne sont pas des produits. | Fiche livre |
 | « Stock » seul | Ambigu entre le local et les quantités d'une fiche | Quantité disponible / annoncée |
+| « Panier » | Suggère une commande, un total ou une réservation | Ma sélection |
+| « Carte de fidélité » | Suggère des points ou une remise | Carte de compte |
 | « Commande » | Réservé à l'agrégat `Order` de la buvette | Vente |
 | « Lot », « carton » | Ces notions ont été écartées (`Q-01`). Il n'existe aucun regroupement physique suivi par le système. | Session de scan |
 | « Mise en rayon » | Suggère un geste humain de publication, qui n'existe pas | Mise à disposition |

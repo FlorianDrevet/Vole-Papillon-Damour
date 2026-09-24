@@ -223,7 +223,8 @@ describe('CatalogAdministrationPageComponent', () => {
       'forceSessionAlerts', 'getAlerts', 'cancelAlert', 'forceAlert', 'getMembers',
       'getMember', 'setAlertStatus', 'deleteMember', 'getSettings', 'updateSettings',
       'getDeadStock', 'getAdminAccounts', 'createAdminAccount', 'updateAdminAccountRoles',
-      'updateAdminAccountStatus', 'getRareBooks', 'getRareBook', 'createRareBook',
+      'updateAdminAccountStatus', 'lookupCheckoutPassage', 'dissociateCheckoutPassage',
+      'getRareBooks', 'getRareBook', 'createRareBook',
       'updateRareBook', 'publishRareBook', 'unpublishRareBook', 'deleteRareBook',
       'addRareBookPhoto', 'reorderRareBookPhotos', 'updateRareBookPhotoCaption',
       'deleteRareBookPhoto',
@@ -308,6 +309,13 @@ describe('CatalogAdministrationPageComponent', () => {
     api.getAlerts.and.returnValue(of({generatedAt: '', alerts: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminAlertPage));
     api.getMembers.and.returnValue(of({generatedAt: '', members: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminMemberPage));
     api.getAdminAccounts.and.returnValue(of({generatedAt: '', accounts: [], totalCount: 0, page: 1, pageSize: 25} as CatalogAdminAccountPage));
+    api.lookupCheckoutPassage.and.returnValue(of({
+      id: '3f2a9c1b-0000-0000-0000-000000000001',
+      occurredAt: '2026-09-14T15:00:00Z',
+      lineCount: 2,
+      displayLabel: 'Camille',
+    }));
+    api.dissociateCheckoutPassage.and.returnValue(of(undefined));
     api.getSettings.and.returnValue(of({} as CatalogAdminSettings));
     api.getDeadStock.and.returnValue(of(response));
     api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminRareBookPage));
@@ -1625,6 +1633,56 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.accountRoleOptions).toEqual(jasmine.arrayContaining([
       {value: 'LivresRares', label: 'Livres rares'},
     ]));
+  });
+
+  it('shows the matching passage details before the administrator confirms', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.lookupCheckoutPassage.and.returnValue(of({
+      id: '3f2a9c1b-0000-0000-0000-000000000001',
+      occurredAt: '2026-09-14T15:00:00Z',
+      lineCount: 2,
+      displayLabel: 'Camille',
+    }));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.componentInstance.checkoutPassageReference = '3F2A9C1B';
+
+    await fixture.componentInstance.lookupCheckoutPassage();
+    fixture.detectChanges();
+
+    expect(api.lookupCheckoutPassage).toHaveBeenCalledWith('access-token', '3F2A9C1B');
+    const details = fixture.nativeElement.querySelector('[data-testid="checkout-passage-details"]') as HTMLElement;
+    expect(details.textContent).toContain('Camille');
+    expect(details.textContent).toContain('2 lignes');
+    expect(details.textContent).toContain(fixture.componentInstance.formatDate('2026-09-14T15:00:00Z'));
+  });
+
+  it('requires a reason and asks before dissociating the selected passage', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.componentInstance.checkoutPassageLookup.set({
+      id: '3f2a9c1b-0000-0000-0000-000000000001',
+      occurredAt: '2026-09-14T15:00:00Z',
+      lineCount: 2,
+      displayLabel: 'Camille',
+    });
+    fixture.componentInstance.checkoutPassageReason = 'Correction de carte';
+    const nativeConfirm = spyOn(window, 'confirm').and.returnValue(true);
+
+    await fixture.componentInstance.dissociateCheckoutPassage();
+
+    expect(nativeConfirm).toHaveBeenCalled();
+    expect(api.dissociateCheckoutPassage).toHaveBeenCalledWith(
+      'access-token',
+      '3f2a9c1b-0000-0000-0000-000000000001',
+      'Correction de carte',
+    );
+    expect(fixture.componentInstance.checkoutPassageLookup()).toBeNull();
   });
 
   it('creates a volunteer account with separate first and last names', async () => {

@@ -3,7 +3,13 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Models;
+using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
+using Vole_Papillon_Damour.Domain.MemberCardAggregate;
+using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
@@ -174,6 +180,99 @@ public sealed class AccountDeletionStoreTests
             message => message.Id == requestId);
         deletionMessage.Status.Should().Be(OutboxMessageStatus.Sent);
         deletionMessage.PayloadJson.Should().Be("{}");
+    }
+
+    [Fact]
+    public async Task FinalizeAsync_RemovesSelectionAndCard_AndAnonymisesPassages()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var userId = UserId.Create(Guid.NewGuid());
+        var volunteerId = UserId.Create(Guid.NewGuid());
+        var otherMemberId = UserId.Create(Guid.NewGuid());
+        var requestId = Guid.NewGuid();
+        var passageId = Guid.NewGuid();
+        var otherPassageId = Guid.NewGuid();
+        Isbn13.TryCreate("9782070612758", out var isbn13).Should().BeTrue();
+        var member = User.CreateFromExternalIdentity(
+            userId,
+            "member-to-delete",
+            "member@example.com",
+            Now);
+        fixture.Context.Users.AddRange(
+            member,
+            User.CreateFromExternalIdentity(
+                volunteerId,
+                "volunteer-id",
+                "volunteer@example.com",
+                Now),
+            User.CreateFromExternalIdentity(
+                otherMemberId,
+                "other-member-id",
+                "other-member@example.com",
+                Now));
+        fixture.Context.MemberSelectionItems.Add(MemberSelectionItem.CreateForEdition(
+            Guid.NewGuid(), userId, isbn13, Now));
+        fixture.Context.MemberCards.Add(MemberCard.Issue(
+            Guid.NewGuid(),
+            userId,
+            $"{MemberCardRecoveryCode.Words[0]}-4271",
+            Now));
+        var passage = CheckoutPassage.OpenFromSale(passageId, Now, Now);
+        passage.Associate(userId, volunteerId, Now);
+        fixture.Context.CheckoutPassages.Add(passage);
+        var otherPassage = CheckoutPassage.OpenFromSale(otherPassageId, Now, Now);
+        otherPassage.Associate(otherMemberId, userId, Now);
+        fixture.Context.CheckoutPassages.Add(otherPassage);
+        var book = Book.Create(isbn13, Now);
+        var movement = BookMovement.Create(
+            BookMovementId.CreateUnique(),
+            isbn13,
+            BookMovementType.Sale,
+            -1,
+            Now,
+            Now,
+            clockSuspect: false,
+            scanSessionId: null,
+            volunteerId: null,
+            assoEventsId: null,
+            note: null,
+            clientGestureId: Guid.NewGuid(),
+            checkoutPassageId: passageId);
+        fixture.Context.Books.Add(book);
+        fixture.Context.BookMovements.Add(movement);
+        fixture.Context.CheckoutPassageLines.Add(CheckoutPassageLine.ForOrdinarySale(
+            Guid.NewGuid(), passageId, movement, book, isbn13.Value));
+        fixture.Context.OutboxMessages.Add(new OutboxMessage
+        {
+            Id = requestId,
+            Kind = OutboxMessageKind.AccountDeletion,
+            PayloadJson = $"{{\"userId\":\"{userId.Value}\",\"externalId\":\"member-to-delete\"}}",
+            DueAt = Now,
+            Status = OutboxMessageStatus.Pending,
+            CreatedAt = Now,
+        });
+        await fixture.Context.SaveChangesAsync();
+
+        var store = new AccountDeletionStore(fixture.Context, new AlwaysRetainPolicy());
+        var completedAt = Now.AddMinutes(5);
+        await store.FinalizeAsync(
+            new AccountDeletionWorkItem(requestId, userId.Value, "member-to-delete"),
+            completedAt,
+            CancellationToken.None);
+
+        (await fixture.Context.MemberSelectionItems.CountAsync()).Should().Be(0);
+        (await fixture.Context.MemberCards.CountAsync()).Should().Be(0);
+        var reloaded = await fixture.Context.CheckoutPassages.SingleAsync(candidate => candidate.Id == passageId);
+        reloaded.UserId.Should().BeNull();
+        reloaded.AssociatedByVolunteerId.Should().BeNull();
+        reloaded.Status.Should().Be(Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.ValueObjects.CheckoutPassageStatus.Dissociated);
+        reloaded.DissociatedAt.Should().Be(completedAt);
+        var otherMemberPassage = await fixture.Context.CheckoutPassages.SingleAsync(candidate => candidate.Id == otherPassageId);
+        otherMemberPassage.UserId.Should().Be(otherMemberId);
+        otherMemberPassage.AssociatedByVolunteerId.Should().BeNull();
+        otherMemberPassage.Status.Should().Be(Vole_Papillon_Damour.Domain.CheckoutPassageAggregate.ValueObjects.CheckoutPassageStatus.Associated);
+        (await fixture.Context.CheckoutPassageLines.CountAsync()).Should().Be(1);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(1);
     }
 
     [Fact]

@@ -13,4 +13,5 @@ public sealed record MarkRareBookSoldCommand(
     ScanSessionId? ScanSessionId,
     AssoEventsId? AssoEventsId,
     DateTime OccurredAt,
-    UserId UserId) : IRequest<ErrorOr<RareBookResult>>;
+    UserId UserId,
+    Guid? CheckoutPassageId = null) : IRequest<ErrorOr<RareBookResult>>;

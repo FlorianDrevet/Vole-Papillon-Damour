@@ -19,6 +19,7 @@ ces documents.
 
 | Document | Objet |
 |---|---|
+| [10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md) | Proposition d'évolution du compte membre : sélection, carte de passage et historique des achats |
 | [`00-note-presidente.md`](00-note-presidente.md) | Présentation non technique destinée à la validation par l'association |
 | [`01-vision-et-perimetre.md`](01-vision-et-perimetre.md) | Objectifs, acteurs, périmètre, paliers de livraison |
 | [`02-glossaire-et-cycle-de-vie.md`](02-glossaire-et-cycle-de-vie.md) | Vocabulaire métier et cycle de vie d'un livre |
@@ -52,6 +53,10 @@ technique :
 Le plan signale par ailleurs quatre arbitrages qui lui sont propres : voir
 [`plan/README.md`](plan/README.md), « Les décisions que le plan n'a pas le droit de prendre
 seul ».
+
+L'extension décrite dans [10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md)
+est une proposition fonctionnelle hors du périmètre actuellement arrêté. Elle ne doit pas
+être interprétée comme une fonctionnalité déjà disponible.
 
 ## Conventions
 

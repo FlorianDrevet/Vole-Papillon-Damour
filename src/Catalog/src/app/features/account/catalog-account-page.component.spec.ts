@@ -11,7 +11,11 @@ import {
   CatalogAuthService,
 } from '../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
-import {CatalogRareBook, CatalogVolunteerStatisticsResponse, CatalogWatchlistResponse} from '../../core/catalog.models';
+import {CatalogRareBook, CatalogSelectionResponse, CatalogVolunteerStatisticsResponse, CatalogWatchlistResponse} from '../../core/catalog.models';
+import {CatalogSelectionService, CatalogSelectionMode} from '../../core/selection/catalog-selection.service';
+import {AccountSelectionComponent} from './selection/account-selection.component';
+import {AccountCardComponent} from './card/account-card.component';
+import {AccountPurchasesComponent} from './purchases/account-purchases.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 
 describe('CatalogAccountPageComponent', () => {
@@ -33,6 +37,7 @@ describe('CatalogAccountPageComponent', () => {
     getApiAccessToken: jasmine.Spy;
   };
   let api: jasmine.SpyObj<CatalogMemberApiService>;
+  let selection: jasmine.SpyObj<CatalogSelectionService>;
 
   const account = (name: string): AccountInfo => ({
     homeAccountId: 'home-account-id',
@@ -144,6 +149,7 @@ describe('CatalogAccountPageComponent', () => {
   };
 
   beforeEach(async () => {
+    localStorage.removeItem('vpd.catalog.selection.v1');
     auth = {
       account: signal<AccountInfo | null>(null),
       initialized: signal(true),
@@ -169,20 +175,41 @@ describe('CatalogAccountPageComponent', () => {
 
     api = jasmine.createSpyObj<CatalogMemberApiService>(
       'CatalogMemberApiService',
-      ['getWatchlist', 'getVolunteerStatistics', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
+      ['getWatchlist', 'getVolunteerStatistics', 'getPurchases', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
     );
     api.getWatchlist.and.returnValue(of(watchlist));
     api.getVolunteerStatistics.and.returnValue(of(volunteerStatistics));
+    api.getPurchases.and.returnValue(of({passages: [], nextCursor: null}));
     api.removeWatchlistItem.and.returnValue(of(void 0));
     api.setAlertStatus.and.returnValue(of({alertStatus: 'Suspended', bounceCount: 0, changed: true}));
     api.deleteAccount.and.returnValue(of(void 0));
+    const snapshot = signal<CatalogSelectionResponse | null>({
+      generatedAt: '2026-09-23T10:00:00Z',
+      nextFair: null,
+      items: [],
+    });
+    selection = jasmine.createSpyObj<CatalogSelectionService>(
+      'CatalogSelectionService',
+      ['onSignedIn', 'refresh', 'confirmMerge', 'declineMerge', 'remove'],
+      {
+        snapshot,
+        mode: signal<CatalogSelectionMode>('local'),
+        pendingMerge: signal<{localCount: number; accountCount: number; mergedCount: number} | null>(null),
+        keys: signal<ReadonlySet<string>>(new Set()),
+      },
+    );
+    selection.onSignedIn.and.resolveTo();
+    selection.refresh.and.callFake(async () => snapshot());
+    selection.confirmMerge.and.resolveTo({added: 0, alreadyPresent: 0, rejected: []});
+    selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogAccountPageComponent],
+      declarations: [CatalogAccountPageComponent, AccountSelectionComponent, AccountCardComponent, AccountPurchasesComponent],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: api},
+        {provide: CatalogSelectionService, useValue: selection},
       ],
     }).compileComponents();
 
@@ -197,10 +224,36 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Mon compte');
     expect(fixture.nativeElement.textContent).toContain('Se connecter');
     expect(fixture.nativeElement.textContent).toContain('Créer un compte');
+    expect(fixture.nativeElement.textContent).not.toContain('met aucun livre de côté');
     expect(fixture.nativeElement.textContent).not.toContain('Microsoft');
     expect(fixture.nativeElement.querySelector('[data-testid="member-login"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="member-register"]')).not.toBeNull();
     expect(api.getWatchlist).not.toHaveBeenCalled();
+  });
+
+  it('loads Mes achats when first selected and keeps it mounted after leaving the tab', async () => {
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(api.getPurchases).not.toHaveBeenCalled();
+    const tab = fixture.nativeElement.querySelector('#account-purchases-tab') as HTMLButtonElement;
+    tab.click();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    expect(api.getPurchases).toHaveBeenCalledTimes(1);
+
+    (fixture.nativeElement.querySelector('#account-selection-tab') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    tab.click();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(api.getPurchases).toHaveBeenCalledTimes(1);
   });
 
   it('shows a generic reauthentication state when the cached session is no longer usable', async () => {
@@ -291,11 +344,12 @@ describe('CatalogAccountPageComponent', () => {
     auth.isAuthenticated.set(true);
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(api.getWatchlist).toHaveBeenCalledWith('member-token');
     expect(fixture.nativeElement.textContent).toContain('Le livre suivi');
-    expect(fixture.nativeElement.textContent).toContain('Ma liste de recherche.');
+    expect(fixture.nativeElement.textContent).toContain('Mes recherches.');
 
     await fixture.componentInstance.removeItem(watchlist.items[0]);
     fixture.detectChanges();
@@ -325,7 +379,7 @@ describe('CatalogAccountPageComponent', () => {
       .toBe('Camille Dupont');
   });
 
-  it('makes the watchlist the default account tab and keeps preferences behind the second tab', async () => {
+  it('makes Ma sélection the default tab and keeps the other spaces in the specified order', async () => {
     auth.account.set(account('Member'));
     auth.isAuthenticated.set(true);
     fixture.detectChanges();
@@ -335,21 +389,46 @@ describe('CatalogAccountPageComponent', () => {
     const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
 
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
-      'Ma liste de recherche',
-      'Préférences et compte',
+      'Ma sélection',
+      'Mes achats',
+      'Mes recherches',
+      'Ma carte',
+      'Compte et données',
     ]);
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+    expect(tabs[1]?.disabled).toBeFalse();
     expect(tabs[1]?.getAttribute('aria-selected')).toBe('false');
-    expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-testid="account-preferences-panel"]')).toBeNull();
+    expect(tabs[3]?.disabled).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.account-heading-title')?.textContent?.trim()).toBe('Ma sélection.');
+    expect(fixture.nativeElement.querySelector('[data-testid="account-selection-panel"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).toBeNull();
 
-    tabs[1]?.click();
+    tabs[4]?.click();
     fixture.detectChanges();
 
-    expect(tabs[1]?.getAttribute('aria-selected')).toBe('true');
-    expect(fixture.nativeElement.querySelector('[data-testid="account-watchlist-panel"]')).toBeNull();
+    expect(tabs[4]?.getAttribute('aria-selected')).toBe('true');
+    expect(fixture.nativeElement.querySelector('[data-testid="account-selection-panel"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="account-preferences-panel"]')).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Mes alertes e-mail.');
+    expect(selection.onSignedIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the synchronization error and retries from Ma sélection', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    selection.onSignedIn.and.returnValues(Promise.reject(new Error('temporary failure')), Promise.resolve());
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Ma sélection n’a pas pu être synchronisée');
+    (fixture.nativeElement.querySelector('.selection-feedback button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(selection.onSignedIn).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.textContent).not.toContain('Ma sélection n’a pas pu être synchronisée');
   });
 
   it('exposes contribution as a third tab only to a volunteer and loads both roles together', async () => {
@@ -362,13 +441,16 @@ describe('CatalogAccountPageComponent', () => {
 
     const tabs = Array.from(fixture.nativeElement.querySelectorAll('[role="tab"]')) as HTMLButtonElement[];
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
-      'Ma liste de recherche',
+      'Ma sélection',
+      'Mes achats',
+      'Mes recherches',
+      'Ma carte',
+      'Compte et données',
       'Ma contribution',
-      'Préférences et compte',
     ]);
     expect(api.getVolunteerStatistics).toHaveBeenCalledWith('member-token');
 
-    tabs[1]?.click();
+    tabs[5]?.click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-testid="account-contribution-panel"]')).not.toBeNull();
@@ -386,6 +468,7 @@ describe('CatalogAccountPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.watchlist-cover')).not.toBeNull();
@@ -449,6 +532,7 @@ describe('CatalogAccountPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     const card = fixture.nativeElement.querySelector('.watchlist-item') as HTMLElement;
@@ -474,6 +558,7 @@ describe('CatalogAccountPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     const card = fixture.nativeElement.querySelector('.watchlist-item') as HTMLElement;
@@ -495,6 +580,7 @@ describe('CatalogAccountPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     const cover = fixture.nativeElement.querySelector('.watchlist-cover img') as HTMLImageElement | null;
@@ -506,6 +592,7 @@ describe('CatalogAccountPageComponent', () => {
     auth.isAuthenticated.set(true);
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.account-heading-title')).not.toBeNull();
@@ -552,6 +639,7 @@ describe('CatalogAccountPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('La session n’a pas pu être renouvelée');
@@ -573,6 +661,7 @@ describe('CatalogAccountPageComponent', () => {
 
     fixture.detectChanges();
     await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Le service de votre liste est momentanément indisponible');

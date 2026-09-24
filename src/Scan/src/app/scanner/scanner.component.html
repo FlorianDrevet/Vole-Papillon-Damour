@@ -400,19 +400,29 @@
             <circle cx="12" cy="12" r="8.5"></circle>
             <path d="M12 7.8v5M12 16.3h.01"></path>
           </svg>
-          <span>Code-barres illisible. Tapez-le à la main.</span>
+          <span>{{ manualAssociationCode ? 'Saisissez le code de secours de la carte de compte.' : 'Code-barres illisible. Tapez-le à la main.' }}</span>
         </div>
 
         <div class="manual-display">
-          <span class="manual-label">ISBN — 10 ou 13 chiffres</span>
-          <div class="manual-value" aria-live="polite">
+          <label *ngIf="manualAssociationCode" class="manual-label" for="manual-member-code">Saisir un code</label>
+          <span *ngIf="!manualAssociationCode" class="manual-label">ISBN — 10 ou 13 chiffres</span>
+          <input
+            *ngIf="manualAssociationCode"
+            id="manual-member-code"
+            class="manual-member-code"
+            type="text"
+            [(ngModel)]="manualIsbn"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false">
+          <div *ngIf="!manualAssociationCode" class="manual-value" aria-live="polite">
             {{ manualIsbn || ' ' }}<span class="manual-caret" aria-hidden="true"></span>
           </div>
-          <span class="manual-count">{{ manualDigitCount }} caractère{{ manualDigitCount > 1 ? 's' : '' }} saisi{{ manualDigitCount > 1 ? 's' : '' }} · 10 ou 13 attendus</span>
+          <span *ngIf="!manualAssociationCode" class="manual-count">{{ manualDigitCount }} caractère{{ manualDigitCount > 1 ? 's' : '' }} saisi{{ manualDigitCount > 1 ? 's' : '' }} · 10 ou 13 attendus</span>
           <p *ngIf="manualError" class="manual-error" role="alert">{{ manualError }}</p>
         </div>
 
-        <div class="manual-keypad" role="group" aria-label="Pavé numérique ISBN">
+        <div *ngIf="!manualAssociationCode" class="manual-keypad" role="group" aria-label="Pavé numérique ISBN">
           <button *ngFor="let key of manualKeys" type="button" class="manual-key" [class.manual-key-command]="key === 'clear' || key === 'backspace'" [attr.aria-label]="key === 'clear' ? 'Vider' : key === 'backspace' ? 'Effacer le dernier chiffre' : key" (click)="appendManualKey(key)">
             <ng-container [ngSwitch]="key">
               <span *ngSwitchCase="'clear'">Vider</span>
@@ -491,6 +501,53 @@
           </span>
         </header>
         <ng-container *ngTemplateOutlet="statusStrip"></ng-container>
+        <section class="cash-member-banner" role="status" aria-live="polite" aria-label="Association du compte client">
+          <div class="cash-member-copy">
+            <span class="cash-member-label">
+              Client :
+              <ng-container [ngSwitch]="cashAssociationState.kind">
+                <span *ngSwitchCase="'associated'">Compte de {{ cashAssociatedDisplayLabel }}</span>
+                <span *ngSwitchCase="'pending-offline'">Association en attente</span>
+                <span *ngSwitchDefault>Vente anonyme</span>
+              </ng-container>
+            </span>
+            <p *ngIf="cashAssociationState.kind === 'resolving'">Scannez la carte de compte ou saisissez le code de secours.</p>
+            <p *ngIf="cashAssociationState.kind === 'associated' && !cashAssociationNoticeDismissed">
+              Compte reconnu : {{ cashAssociatedDisplayLabel }} — Les livres de ce passage seront visibles dans Mes achats.
+            </p>
+            <p *ngIf="cashAssociationState.kind === 'pending-offline'">
+              Association en attente — elle sera transmise au retour du réseau.
+            </p>
+            <p *ngIf="cashAssociationState.kind === 'not-recognised'">
+              Carte non reconnue. Réessayez, saisissez le code de secours ou continuez en vente anonyme.
+            </p>
+          </div>
+          <div class="cash-member-actions">
+            <ng-container [ngSwitch]="cashAssociationState.kind">
+              <button *ngSwitchCase="'anonymous'" type="button" class="cash-member-action" (click)="startCashAssociation()">Associer un compte</button>
+              <ng-container *ngSwitchCase="'resolving'">
+                <button type="button" class="cash-member-action" (click)="openManualInput()">Saisir un code</button>
+                <button type="button" class="cash-member-secondary" (click)="continueCashAnonymously()">Continuer en vente anonyme</button>
+              </ng-container>
+              <ng-container *ngSwitchCase="'associated'">
+                <ng-container *ngIf="!cashAssociationNoticeDismissed; else associatedActions">
+                  <button type="button" class="cash-member-action" (click)="continueCashAssociation()">Continuer</button>
+                  <button type="button" class="cash-member-secondary" (click)="changeCashAssociation()">Changer de compte</button>
+                </ng-container>
+                <ng-template #associatedActions>
+                  <button type="button" class="cash-member-secondary" (click)="changeCashAssociation()">Changer de compte</button>
+                </ng-template>
+              </ng-container>
+              <ng-container *ngSwitchCase="'pending-offline'">
+                <button type="button" class="cash-member-secondary" (click)="changeCashAssociation()">Changer de compte</button>
+              </ng-container>
+              <ng-container *ngSwitchCase="'not-recognised'">
+                <button type="button" class="cash-member-action" (click)="changeCashAssociation()">Réessayer</button>
+                <button type="button" class="cash-member-secondary" (click)="continueCashAnonymously()">Continuer en vente anonyme</button>
+              </ng-container>
+            </ng-container>
+          </div>
+        </section>
         <div *ngIf="cameraActive" #cameraSlot class="camera-slot camera-slot-band"></div>
 
         <div *ngIf="isLoading" class="scan-progress scan-progress-light cash-lookup-progress" role="status" aria-live="polite">

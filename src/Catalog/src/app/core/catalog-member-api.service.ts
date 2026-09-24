@@ -6,6 +6,14 @@ import {environment} from '../../environments/environment';
 import {
   CatalogAddedWatchlistItem,
   CatalogAlertPreferencesResponse,
+  CatalogMemberCard,
+  CatalogPurchasesResponse,
+  CatalogAddedSelectionItem,
+  CatalogSelectionMergeEntry,
+  CatalogSelectionMergeResult,
+  CatalogSelectionResponse,
+  CatalogSelectionStatus,
+  CatalogSelectionTargetRequest,
   CatalogWatchlistItemRequest,
   CatalogWatchlistResponse,
   CatalogVolunteerStatisticsResponse,
@@ -17,6 +25,54 @@ export class CatalogMemberApiService {
 
   constructor(private readonly http: HttpClient) {}
 
+  getSelection(accessToken: string): Observable<CatalogSelectionResponse> {
+    return this.http.get<CatalogSelectionResponse>(
+      `${this.apiUrl}/catalog/me/selection`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  addSelectionItem(
+    accessToken: string,
+    request: CatalogSelectionTargetRequest,
+  ): Observable<CatalogAddedSelectionItem> {
+    return this.http.post<CatalogAddedSelectionItem>(
+      `${this.apiUrl}/catalog/me/selection`,
+      request,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  removeSelectionItem(accessToken: string, itemId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  setSelectionStatus(
+    accessToken: string,
+    itemId: string,
+    status: CatalogSelectionStatus,
+  ): Observable<void> {
+    return this.http.patch<void>(
+      `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}`,
+      {status},
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  mergeSelection(
+    accessToken: string,
+    entries: readonly CatalogSelectionMergeEntry[],
+  ): Observable<CatalogSelectionMergeResult> {
+    return this.http.post<CatalogSelectionMergeResult>(
+      `${this.apiUrl}/catalog/me/selection/merge`,
+      {entries},
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
   getWatchlist(accessToken: string): Observable<CatalogWatchlistResponse> {
     return this.http.get<CatalogWatchlistResponse>(
       `${this.apiUrl}/catalog/me/watchlist`,
@@ -27,6 +83,29 @@ export class CatalogMemberApiService {
   getVolunteerStatistics(accessToken: string): Observable<CatalogVolunteerStatisticsResponse> {
     return this.http.get<CatalogVolunteerStatisticsResponse>(
       `${this.apiUrl}/scan/me/statistics`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  getCard(accessToken: string): Observable<CatalogMemberCard> {
+    return this.http.get<CatalogMemberCard>(
+      `${this.apiUrl}/catalog/me/card`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  getPurchases(accessToken: string, cursor?: string): Observable<CatalogPurchasesResponse> {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return this.http.get<CatalogPurchasesResponse>(
+      `${this.apiUrl}/catalog/me/purchases${query}`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  rotateCard(accessToken: string): Observable<CatalogMemberCard> {
+    return this.http.post<CatalogMemberCard>(
+      `${this.apiUrl}/catalog/me/card/rotate`,
+      {},
       {headers: this.authorizationHeaders(accessToken)},
     );
   }
@@ -75,3 +154,4 @@ export class CatalogMemberApiService {
     return new HttpHeaders({Authorization: `Bearer ${accessToken}`});
   }
 }
+

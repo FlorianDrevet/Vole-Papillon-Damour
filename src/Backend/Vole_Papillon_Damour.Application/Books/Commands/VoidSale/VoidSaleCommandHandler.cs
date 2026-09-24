@@ -126,6 +126,14 @@ public sealed class VoidSaleCommandHandler(
             command.ClientGestureId,
             sale.Id);
         dbContext.BookMovements.Add(reversal);
+        if (sale.CheckoutPassageId is not null)
+        {
+            var passageLine = await dbContext.CheckoutPassageLines
+                .SingleOrDefaultAsync(
+                    line => line.SaleMovementId == sale.Id,
+                    cancellationToken);
+            passageLine?.Void(receivedAt);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

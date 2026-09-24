@@ -71,6 +71,19 @@ describe('ScanRareCashService', () => {
     expect((await store.getRareBook('rare-client-1'))?.isSold).toBeTrue();
   });
 
+  it('attaches the checkout passage to rare cash sale entries', async () => {
+    await store.putRareBooks([createRareBook()]);
+    const entries = await service.recordSales(
+      ['rare-server-1'],
+      new Date('2026-09-03T08:01:00.000Z'),
+      createSession(),
+      'passage-1',
+    );
+
+    expect(entries[0].checkoutPassageId).toBe('passage-1');
+    expect(entries[0]).not.toEqual(jasmine.objectContaining({price: jasmine.anything()}));
+  });
+
   it('cancels a pending rare sale atomically and restores local availability', async () => {
     await store.putRareBooks([createRareBook()]);
     const [entry] = await service.recordSales(

@@ -36,6 +36,14 @@ describe('ScanDiagnosticComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('7');
   });
 
+  it('shows quarantined passage associations without exposing their credentials', () => {
+    const entry = fixture.nativeElement.querySelector('.diagnostic-passage-association');
+
+    expect(entry.getAttribute('data-status')).toBe('Quarantined');
+    expect(entry.textContent).toContain('passage-1');
+    expect(fixture.nativeElement.textContent).not.toContain('VPDC1.SECRET.CREDENTIAL');
+  });
+
   it('shows a visible confirmation after copying the local journal', async () => {
     const writeText = jasmine.createSpy('writeText').and.resolveTo();
     const clipboard = Object.assign({}, navigator.clipboard, {writeText});
@@ -63,6 +71,17 @@ describe('ScanDiagnosticComponent', () => {
       ],
       sales: [],
       rareSales: [],
+      passageAssociations: [{
+        checkoutPassageId: 'passage-1',
+        credential: {kind: 'qr', value: 'VPDC1.SECRET.CREDENTIAL'},
+        occurredAt: '2026-09-09T09:42:00.000Z',
+        createdAt: '2026-09-09T09:42:01.000Z',
+        status: 'Quarantined',
+        attemptCount: 1,
+        lastAttemptAt: '2026-09-09T09:42:02.000Z',
+        lastError: 'HTTP 409',
+        lastFailureKind: 'permanent',
+      }],
     };
   }
 

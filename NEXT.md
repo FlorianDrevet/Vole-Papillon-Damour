@@ -70,6 +70,25 @@ activité rapprochée réinitialise cette fenêtre ; le premier appel après une
 inactivité peut donc subir un démarrage à froid. Après déploiement, vérifier le réveil,
 le retour à zéro et le comportement d'une session de plusieurs heures sur les deux
 domaines.
+### État actualisé — 2026-09-22 — proposition fonctionnelle du compte membre
+
+Le worktree Vole-Papillon-Damour-account-features-doc, sur la branche
+docs/account-features-functional-spec, ajoute
+docs/bourse-aux-livres/10-evolution-compte-selection-achats.md. La proposition sépare
+la liste de recherche existante de Ma sélection, décrit une carte QR facultative pour
+associer un passage de caisse, l'historique Mes achats, le hors-ligne, le RGPD et les
+règles RG-52 à RG-66. Aucun code runtime, compte, jeton ou déploiement n'a été créé ;
+la PR doit être relue et validée avant toute implémentation.
+
+### Compte membre CS-1 à CS-26 — 2026-09-24
+
+Tous les changements de code CS-1 à CS-26 sont dans la PR [#224](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/224), branche `feat/account-selection-pr1`. À la création, la référence distante `origin/design/account-features-mockups` manquait ; avec ton accord, elle a été publiée puis la branche de tâche a été synchronisée avec `origin/main`. La PR documentaire #217 n'est pas fusionnée et ses commits de spécification restent une dépendance visible dans cette PR. Le découpage en cinq PR du plan a été regroupé en une seule PR à ta demande, en gardant un commit par tâche. Les migrations `20260923191942_AddMemberSelection`, `20260923215711_AddMemberCards` et `20260923223323_AddCheckoutPassages` restent non appliquées.
+
+Validation locale : Catalog, 373 tests ChromeHeadless et build de production ; Scan, 280 tests ChromeHeadless et build de production ; Domain/Application/Infrastructure/API, 153/341/155/45 tests réussis. `dotnet test src/Backend/Vole_Papillon_Damour.slnx` termine en échec quand le Worker ne résout pas `Azure.Functions.Sdk` (version absente du projet et de `global.json`). Le rendu public non authentifié de `/compte` à 390×844 mesure 390 px de viewport et 375 px de largeur de document, sans débordement horizontal. Les écrans authentifiés Ma carte et Mes achats n'ont pas été testés avec un compte réel.
+
+Vérifications manuelles restantes : tous les parcours A–H de F-10 §14 sur une vraie instance, test de rejeu hors ligne et d'idempotence sur deux appareils, lecture du QR à 20 et 40 cm, vente anonyme avec une ancienne Scanette, association/correction/suppression avec carte invalidée. Les écrans m-14a à m-21e ont été lus dans le HTML source ; le plan présent sur ces branches ne contient pas la section de correspondance annoncée et l'ouverture du HTML local dans Chrome était bloquée par sa politique. Le rendu Chrome à 390 px couvre l'état vide anonyme de Ma sélection, sans comparaison visuelle avec le fichier maquette. Aucun déploiement ni application de migration n'a été effectué.
+
+Le secret GitHub `MEMBER_CARD_SIGNING_KEY` n'est pas créé ; le propriétaire du dépôt doit l'ajouter avant le déploiement de cette livraison. Le dépôt contient uniquement la clé de développement factice explicitement marquée, sans secret de production. À la prochaine bourse, relever les mesures de F-10 §18 : part de passages associés, associations en attente, nombres `Unresolved`/`Dissociated`, sélections passées à `Purchased`, taux de première lecture QR et durée ajoutée. La purge automatique après inactivité et la durée maximale de conservation des mouvements anonymisés restent à décider.
 
 ### État actualisé — 2026-09-21 — correctif de chargement Scanette
 

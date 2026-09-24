@@ -17,6 +17,7 @@ import {
 } from '../../core/catalog-auth.service';
 import {getCatalogAccountDisplayName} from '../../core/catalog-account-name';
 import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
+import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {
   CatalogVolunteerGenreStatistics,
   CatalogVolunteerMonthlyStatistics,
@@ -26,7 +27,7 @@ import {
   CatalogWatchlistResponse,
 } from '../../core/catalog.models';
 
-type CatalogAccountTab = 'watchlist' | 'contribution' | 'preferences';
+type CatalogAccountTab = 'selection' | 'purchases' | 'watchlist' | 'card' | 'contribution' | 'preferences';
 type WatchlistRecoveryAction = 'retry' | 'reconnect' | null;
 
 @Component({
@@ -48,7 +49,10 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlist = signal<CatalogWatchlistResponse | null>(null);
   readonly contribution = signal<CatalogVolunteerStatisticsResponse | null>(null);
   readonly contributionLoading = signal(false);
+  readonly purchasesVisited = signal(false);
   readonly loading = signal(false);
+  readonly selectionLoading = signal(false);
+  readonly selectionError = signal<string | null>(null);
   readonly resumingSession = signal(false);
   readonly removingItemId = signal<string | null>(null);
   readonly alertPending = signal(false);
@@ -58,7 +62,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlistRecoveryAction = signal<WatchlistRecoveryAction>(null);
   readonly successMessage = signal<string | null>(null);
   readonly accountLabel: Signal<string>;
-  readonly activeTab = signal<CatalogAccountTab>('watchlist');
+  readonly activeTab = signal<CatalogAccountTab>('selection');
   readonly contributionSlots = ['morning', 'afternoon', 'evening'] as const;
   readonly contributionDays = [
     {label: 'Lun', value: 1},
@@ -82,10 +86,13 @@ export class CatalogAccountPageComponent implements OnInit {
     const since = this.contribution()?.memberSince;
     return `Les mêmes chiffres que dans l’application de scan, au calme, depuis ${this.formatMonthYear(since ?? null)}.`;
   });
+  readonly selectionIntro = 'Les livres que vous voulez retrouver à la prochaine bourse. Ma sélection ne déclenche aucune alerte et ne réserve rien : un livre peut être vendu avant votre arrivée.';
+  private selectionSignInHandled = false;
 
   constructor(
     private readonly auth: CatalogAuthService,
     private readonly api: CatalogMemberApiService,
+    private readonly selection: CatalogSelectionService,
     private readonly meta: Meta,
   ) {
     this.account = this.auth.account;
@@ -106,6 +113,18 @@ export class CatalogAccountPageComponent implements OnInit {
   async initialize(): Promise<void> {
     await this.auth.initialize();
     if (this.auth.isAuthenticated()) {
+      if (!this.selectionSignInHandled) {
+        this.selectionSignInHandled = true;
+        this.selectionLoading.set(true);
+        this.selectionError.set(null);
+        try {
+          await this.selection.onSignedIn();
+        } catch {
+          this.selectionError.set('Ma sélection n’a pas pu être synchronisée. Votre sélection sur cet appareil est conservée.');
+        } finally {
+          this.selectionLoading.set(false);
+        }
+      }
       await this.loadWatchlist();
       if (this.auth.isVolunteer()) {
         await this.loadContribution();
@@ -115,6 +134,22 @@ export class CatalogAccountPageComponent implements OnInit {
 
     if (this.auth.recognizedAccount()) {
       await this.resumeRecognizedSession();
+    }
+  }
+
+  async retrySelection(): Promise<void> {
+    if (!this.auth.isAuthenticated() || this.selectionLoading()) {
+      return;
+    }
+
+    this.selectionLoading.set(true);
+    this.selectionError.set(null);
+    try {
+      await this.selection.onSignedIn();
+    } catch {
+      this.selectionError.set('Ma sélection n’a pas pu être synchronisée. Votre sélection sur cet appareil est conservée.');
+    } finally {
+      this.selectionLoading.set(false);
     }
   }
 
@@ -165,6 +200,9 @@ export class CatalogAccountPageComponent implements OnInit {
     }
 
     this.activeTab.set(tab);
+    if (tab === 'purchases') {
+      this.purchasesVisited.set(true);
+    }
     if (tab === 'contribution' && !this.contribution() && !this.contributionLoading()) {
       void this.loadContribution();
     }

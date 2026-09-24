@@ -215,6 +215,9 @@ l'inscription en libre-service sur le catalogue, il ne la construit pas.
 - Notifications push web
 - Application mobile native pour le public
 - Prise en charge des livres sans ISBN
+- **Extension du compte membre** : sélection de livres pour une visite, carte QR
+  facultative en caisse et historique des achats — voir
+  [10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md)
 
 ## 8. Hypothèses de dimensionnement
 

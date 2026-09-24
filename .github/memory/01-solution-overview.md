@@ -45,6 +45,10 @@ The backend and contracts expose features around:
 
 ## Current Constraints
 
+- `docs/bourse-aux-livres/10-evolution-compte-selection-achats.md` now specifies member
+  selection, account cards, checkout association, purchases, and deletion behavior. Code
+  CS-1–CS-26 is in PR #224; the F-10 §14 real-device acceptance paths remain pending,
+  migrations are unapplied, and the production signing secret still needs to be added.
 - The backend currently enables a permissive CORS policy for all origins.
 - Domain tests exist, but cross-layer automated coverage is still thin.
 - Residual `MailingList` folders still exist in `Application` and `Contracts`, but the API runtime no longer maps mailing-list endpoints.
