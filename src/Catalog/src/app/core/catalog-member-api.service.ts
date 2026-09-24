@@ -12,7 +12,6 @@ import {
   CatalogSelectionMergeEntry,
   CatalogSelectionMergeResult,
   CatalogSelectionResponse,
-  CatalogSelectionStatus,
   CatalogSelectionTargetRequest,
   CatalogNotFoundLocation,
   CatalogNotFoundReportCreated,
@@ -60,18 +59,6 @@ export class CatalogMemberApiService {
     return this.http.post<CatalogNotFoundReportCreated>(
       `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}/not-found-report`,
       request,
-      {headers: this.authorizationHeaders(accessToken)},
-    );
-  }
-
-  setSelectionStatus(
-    accessToken: string,
-    itemId: string,
-    status: CatalogSelectionStatus,
-  ): Observable<void> {
-    return this.http.patch<void>(
-      `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}`,
-      {status},
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

@@ -107,10 +107,11 @@
 
 .selection-account-button:focus-visible,
 .selection-filter-button:focus-visible,
-.selection-status-button:focus-visible,
+.selection-report-button:focus-visible,
+.selection-cancel-report:focus-visible,
 .selection-remove-item:focus-visible,
 .selection-merge-actions button:focus-visible {
-  outline: 3px solid rgba(20, 151, 214, .35);
+  outline: 3px solid var(--catalog-blue-pale);
   outline-offset: 3px;
 }
 
@@ -187,7 +188,7 @@
 .selection-item {
   display: grid;
   min-width: 0;
-  grid-template-columns: 74px minmax(0, 1fr);
+  grid-template-columns: 74px minmax(0, 1fr) 250px;
   gap: 1.2rem;
   padding: 1.15rem 0;
   border-bottom: 1px solid var(--catalog-line);
@@ -312,38 +313,123 @@
   font: .61rem/1.35 var(--catalog-mono);
 }
 
-.selection-status-control {
+.selection-report-notice {
   display: flex;
-  flex-wrap: wrap;
-  gap: .3rem;
-  margin-top: .35rem;
-  padding: .2rem;
+  min-width: 0;
+  align-items: flex-start;
+  gap: .75rem;
+  margin: .35rem 0 0;
+  padding: .75rem .85rem;
   border: 1px solid var(--catalog-line);
-  background: var(--catalog-paper);
+  border-radius: 4px;
+  background: var(--catalog-paper-2);
+  color: var(--catalog-ink-2);
+  font-size: .82rem;
+  line-height: 1.45;
 }
 
-.selection-status-button {
-  min-height: 2.6rem;
-  padding: .48rem .67rem;
-  border: 1px solid transparent;
-  background: transparent;
+.selection-report-notice-open {
+  border-color: var(--catalog-orange-2);
+}
+
+.selection-report-notice strong {
+  display: block;
+  color: var(--catalog-ink-2);
+  font-weight: 600;
+}
+
+.selection-report-notice p {
+  margin: .2rem 0 .15rem;
   color: var(--catalog-slate-2);
-  font: 500 .59rem/1.2 var(--catalog-mono);
+}
+
+.selection-report-notice-icon,
+.selection-report-button svg {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  fill: none;
+  stroke: var(--catalog-orange-3);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.selection-report-notice-found,
+.selection-report-notice-withdrawn {
+  align-items: center;
+}
+
+.selection-report-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .55rem 1rem;
+  border: 1px solid var(--catalog-line-strong);
+  border-radius: 999px;
+  background: var(--catalog-white);
+  color: var(--catalog-ink-2);
+  font: 600 .78rem/1.25 var(--catalog-body);
+  text-align: center;
   cursor: pointer;
 }
 
-.selection-status-button.active {
-  border-color: var(--catalog-ink-2);
-  background: var(--catalog-ink-2);
-  color: var(--catalog-paper);
+.selection-report-button:hover,
+.selection-report-button:focus-visible {
+  border-color: var(--catalog-orange-2);
+  background: var(--catalog-paper-2);
 }
 
-.selection-status-button:disabled {
+.selection-report-button:disabled,
+.selection-cancel-report:disabled {
   cursor: wait;
   opacity: .65;
 }
 
+.selection-item-actions {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: .3rem;
+}
+
+.selection-cancel-report {
+  min-height: 2.75rem;
+  padding: .3rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--catalog-blue);
+  font: 600 .78rem/1.3 var(--catalog-body);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: .17em;
+  cursor: pointer;
+}
+
+.selection-report-toast {
+  position: fixed;
+  z-index: 1200;
+  right: 1rem;
+  bottom: 1.5rem;
+  left: 1rem;
+  width: fit-content;
+  max-width: calc(100vw - 2rem);
+  margin-inline: auto;
+  padding: .85rem 1.2rem;
+  border-radius: 6px;
+  background: var(--catalog-ink-2);
+  color: var(--catalog-paper);
+  font-size: .9rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .selection-remove-item {
+  min-height: 2.75rem;
   padding: .15rem 0;
   border: 0;
   background: transparent;
@@ -541,14 +627,14 @@
   }
 
   .selection-item {
-    grid-template-columns: 66px minmax(0, 1fr);
+    grid-template-columns: 58px minmax(0, 1fr);
     gap: .8rem;
     padding: .9rem 0;
   }
 
   .selection-cover {
-    width: 66px;
-    height: 94px;
+    width: 58px;
+    height: 84px;
   }
 
   .selection-item-copy {
@@ -559,17 +645,19 @@
     font-size: 1.23rem;
   }
 
-  .selection-status-control {
-    display: grid;
+  .selection-item-actions {
+    grid-column: 2;
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
     width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .25rem;
+    gap: .35rem .6rem;
   }
 
-  .selection-status-button {
-    min-width: 0;
-    min-height: 2.75rem;
-    padding: .4rem .25rem;
+  .selection-report-button {
+    max-width: 100%;
+    padding-inline: .65rem;
+    font-size: .72rem;
   }
 
   .selection-remove-desktop {
@@ -616,7 +704,8 @@
 @media (prefers-reduced-motion: reduce) {
   .selection-account-button,
   .selection-filter-button,
-  .selection-status-button,
+  .selection-report-button,
+  .selection-cancel-report,
   .selection-merge-actions button {
     transition: none;
   }

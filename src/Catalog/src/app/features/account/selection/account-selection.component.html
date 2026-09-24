@@ -22,6 +22,9 @@
   @if (errorMessage(); as message) {
     <p class="selection-feedback error" role="alert">{{ message }}</p>
   }
+  @if (successMessage(); as message) {
+    <div class="selection-report-toast" role="status">{{ message }}</div>
+  }
 
   @if (isLoading()) {
     <p class="selection-state" role="status">Chargement de Ma sélection…</p>
@@ -97,25 +100,56 @@
                     <p class="selection-next-fair">{{ nextFair }}</p>
                   }
                 }
-                <div class="selection-status-control" role="group" aria-label="Mon état">
-                  @for (status of statuses; track status.value) {
-                    <button
-                      type="button"
-                      class="selection-status-button"
-                      [class.active]="isSelectedStatus(item, status.value)"
-                      [disabled]="busyItemId() === remote.id"
-                      [attr.aria-pressed]="isSelectedStatus(item, status.value)"
-                      [attr.data-testid]="'status-' + status.testId"
-                      (click)="setStatus(item, status.value)">
-                      {{ status.label }}
-                    </button>
+                @if (remote.notFoundReport; as report) {
+                  @if (report.status === 'Open') {
+                    <div class="selection-report-notice selection-report-notice-open">
+                      <svg class="selection-report-notice-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M5 21V4m0 0h11l-2 4 2 4H5" />
+                      </svg>
+                      <div>
+                        <strong>Signalé introuvable le {{ formatShortDate(report.reportedAt) }}</strong>
+                        <p>Un bénévole va vérifier en rayon. Merci pour votre aide.</p>
+                        <button
+                          type="button"
+                          class="selection-cancel-report"
+                          [disabled]="busyItemId() === remote.id"
+                          [attr.data-testid]="'cancel-not-found-report-' + item.id"
+                          (click)="cancelNotFoundReport(item)">
+                          {{ busyItemId() === remote.id ? 'Annulation…' : 'Annuler le signalement' }}
+                        </button>
+                      </div>
+                    </div>
+                  } @else if (report.status === 'Found') {
+                    <p class="selection-report-notice selection-report-notice-found">
+                      Un bénévole l’a retrouvé en rayon le {{ formatShortDate(report.closedAt ?? report.reportedAt) }}.
+                    </p>
+                  } @else if (report.status === 'Withdrawn') {
+                    <p class="selection-report-notice selection-report-notice-withdrawn">
+                      Retiré du catalogue après votre signalement. Merci !
+                    </p>
                   }
-                </div>
+                }
               }
 
               <p class="selection-added-date">{{ addedLabel(item) }}</p>
               @if (!item.remote) {
                 <p class="selection-local-detail">Enregistré sur cet appareil.</p>
+              }
+            </div>
+
+            <div class="selection-item-actions">
+              @if (canReportNotFound(item)) {
+                <button
+                  type="button"
+                  class="selection-report-button"
+                  [disabled]="busyItemId() === (item.id ?? item.key)"
+                  [attr.data-testid]="'not-found-report-' + (item.id ?? item.key)"
+                  (click)="requestNotFoundReport(item)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 21V4m0 0h11l-2 4 2 4H5" />
+                  </svg>
+                  Je ne l'ai pas trouvé
+                </button>
               }
               <button
                 type="button"

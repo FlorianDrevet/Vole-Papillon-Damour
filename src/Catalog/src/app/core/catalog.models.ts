@@ -96,9 +96,7 @@ export interface CatalogDeadStockResponse {
   books: CatalogDeadStockBook[];
 }
 
-// The four legacy values remain until SIG-13 migrates the selection component
-// and removes the PATCH client in the same type-checkable change.
-export type CatalogSelectionStatus = 'ToTake' | 'Purchased' | 'NotFound' | 'ToRevisit';
+export type CatalogSelectionStatus = 'ToTake' | 'Purchased';
 export type CatalogSelectionAvailability = 'Available' | 'Announced' | 'OutOfStock' | 'RareSold' | 'Unavailable';
 export type CatalogSelectionKind = 'edition' | 'rare';
 export type CatalogNotFoundReportStatus = 'Open' | 'Found' | 'Withdrawn' | 'Dismissed' | 'Lapsed';

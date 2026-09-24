@@ -153,16 +153,6 @@ describe('CatalogMemberApiService', () => {
     request.flush(null);
   });
 
-  it('sets a member selection status with the access token until the selection migration', () => {
-    service.setSelectionStatus('member-token', 'item-id', 'Purchased').subscribe();
-
-    const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection/item-id`);
-    expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual({status: 'Purchased'});
-    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
-    request.flush(null);
-  });
-
   it('merges local selection entries with the access token', () => {
     const entries = [{isbn13: '9782070612758', addedAt: '2026-09-20T10:00:00.000Z'}];
     service.mergeSelection('member-token', entries).subscribe();
