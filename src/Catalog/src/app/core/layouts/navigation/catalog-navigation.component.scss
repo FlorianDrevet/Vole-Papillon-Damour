@@ -21,7 +21,6 @@
   border-bottom: 1px solid var(--catalog-line);
 }
 
-.header-inner,
 .mobile-header-row {
   display: flex;
   align-items: center;
@@ -30,7 +29,13 @@
 }
 
 .header-inner {
+  display: grid;
+  width: 100%;
   min-height: 82px;
+  max-width: none;
+  padding-inline: clamp(24px, 3vw, 48px);
+  grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr);
+  gap: clamp(8px, 1.4vw, 20px);
 }
 
 .brand {
@@ -38,6 +43,8 @@
   min-width: 0;
   align-items: center;
   gap: 12px;
+  grid-column: 1;
+  justify-self: start;
   color: var(--catalog-ink-2);
   text-decoration: none;
 }
@@ -77,9 +84,8 @@
   display: flex;
   align-items: center;
   gap: clamp(15px, 1.7vw, 25px);
-  min-width: 0;
-  flex: 1 1 auto;
-  justify-content: flex-end;
+  grid-column: 2;
+  justify-content: center;
   font-size: .84rem;
 }
 
@@ -227,7 +233,19 @@
 
 .account-menu {
   position: relative;
-  flex: none;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  grid-column: 3;
+  gap: 8px;
+}
+
+.header-role-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .header-admin-pill,
@@ -237,8 +255,7 @@
   min-height: 42px;
   align-items: center;
   justify-content: center;
-  min-width: 124px;
-  margin-left: -8px;
+  min-width: 108px;
   padding: 0 11px;
   border-radius: 999px;
   background: var(--catalog-ink-2);
@@ -405,6 +422,78 @@
   display: none;
 }
 
+@media (max-width: 1600px) {
+  .header-inner {
+    gap: 12px;
+  }
+
+  .main-navigation {
+    gap: clamp(8px, .85vw, 14px);
+    font-size: .75rem;
+  }
+
+  .header-admin-pill,
+  .header-rare-pill {
+    min-width: 104px;
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: .52rem;
+    letter-spacing: .13em;
+  }
+
+  .account-teaser.connected {
+    min-width: 164px;
+  }
+}
+
+@media (max-width: 1360px) {
+  .header-inner {
+    gap: 8px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-logo {
+    width: 38px;
+    height: 38px;
+  }
+
+  .brand-name {
+    font-size: .92rem;
+  }
+
+  .brand-subtitle {
+    font-size: .48rem;
+    letter-spacing: .12em;
+  }
+
+  .main-navigation {
+    gap: 8px;
+    font-size: .68rem;
+  }
+
+  .account-teaser {
+    min-width: 132px;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .account-teaser.connected {
+    min-width: 148px;
+  }
+
+  .header-admin-pill,
+  .header-rare-pill {
+    min-width: 0;
+    padding-right: 7px;
+    padding-left: 7px;
+    font-size: .49rem;
+    letter-spacing: .1em;
+  }
+}
+
 @keyframes popover-in {
   from { opacity: 0; transform: translateY(-4px) scale(.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -437,7 +526,7 @@
   }
 }
 
-@media (max-width: 1040px) {
+@media (max-width: 1100px) {
   .desktop-header {
     display: none;
   }
