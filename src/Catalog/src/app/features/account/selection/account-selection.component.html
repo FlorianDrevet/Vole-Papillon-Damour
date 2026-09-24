@@ -235,4 +235,14 @@
       </section>
     </div>
   }
+
+  @if (reportDialogItem(); as reportItem) {
+    <app-not-found-report-dialog
+      [item]="reportDialogDetails(reportItem)"
+      [mode]="reportDialogMode()"
+      [sending]="busyItemId() === reportItem.remote?.id"
+      (submitted)="submitFromNotFoundReportDialog(reportItem, $event)"
+      (closed)="closeNotFoundReportDialog()"
+      (loginRequested)="login()"></app-not-found-report-dialog>
+  }
 </section>

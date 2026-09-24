@@ -16,6 +16,7 @@ import {
 import {CatalogSelectionService, CatalogSelectionMode} from '../../../core/selection/catalog-selection.service';
 import {LocalSelectionStore} from '../../../core/selection/local-selection.store';
 import {AccountSelectionComponent} from './account-selection.component';
+import {NotFoundReportDialogComponent} from './not-found-report-dialog.component';
 
 describe('AccountSelectionComponent', () => {
   let fixture: ComponentFixture<AccountSelectionComponent>;
@@ -89,7 +90,7 @@ describe('AccountSelectionComponent', () => {
     selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [AccountSelectionComponent],
+      declarations: [AccountSelectionComponent, NotFoundReportDialogComponent],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
@@ -251,6 +252,49 @@ describe('AccountSelectionComponent', () => {
     page.detectChanges();
 
     expect(page.nativeElement.textContent).toContain("Vous avez déjà beaucoup signalé aujourd'hui, merci !");
+  });
+
+  it('submits a report from the dialog and shows the confirmation', async () => {
+    snapshot.set(makeResponse([makeItem('available', '9780000000001', 'ToTake', 'Available')]));
+    const page = render();
+
+    (page.nativeElement.querySelector('[data-testid="not-found-report-available"]') as HTMLButtonElement).click();
+    page.detectChanges();
+    expect(page.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
+
+    const comment = page.nativeElement.querySelector('[role="dialog"] textarea') as HTMLTextAreaElement;
+    comment.value = '  Rayon vide  ';
+    comment.dispatchEvent(new Event('input', {bubbles: true}));
+    (page.nativeElement.querySelector('[data-testid="not-found-report-submit"]') as HTMLButtonElement).click();
+    await page.whenStable();
+    page.detectChanges();
+
+    expect(api.reportNotFound).toHaveBeenCalledWith('member-token', 'available', {
+      location: null,
+      comment: 'Rayon vide',
+    });
+    expect(selection.refresh).toHaveBeenCalled();
+    expect(page.nativeElement.querySelector('[role="dialog"]')).toBeNull();
+    expect(page.nativeElement.querySelector('.selection-report-toast[role="status"]')?.textContent).toContain('Merci, un bénévole va vérifier.');
+  });
+
+  it('opens the sign-in invitation for a local anonymous entry', async () => {
+    auth.isAuthenticated.set(false);
+    local.add({
+      ref: {kind: 'edition', isbn13: '9782070612758'},
+      title: 'Le Petit Prince',
+      addedAt: '2026-09-20T10:00:00.000Z',
+    });
+    const page = render();
+
+    (page.nativeElement.querySelector('[data-testid="not-found-report-edition:9782070612758"]') as HTMLButtonElement).click();
+    page.detectChanges();
+    expect(page.nativeElement.querySelector('[role="dialog"]')?.textContent).toContain('Connectez-vous pour signaler ce livre');
+
+    (page.nativeElement.querySelector('[data-testid="not-found-report-login"]') as HTMLButtonElement).click();
+    await page.whenStable();
+
+    expect(auth.login).toHaveBeenCalledWith('/compte');
   });
 
   it('asks before merging and keeps local items when the merge is declined', () => {

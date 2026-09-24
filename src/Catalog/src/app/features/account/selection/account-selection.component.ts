@@ -12,6 +12,7 @@ import {
 import {CatalogSelectionService} from '../../../core/selection/catalog-selection.service';
 import {LocalSelectionEntry, SelectionRef, selectionKey} from '../../../core/selection/selection-merge';
 import {LocalSelectionStore} from '../../../core/selection/local-selection.store';
+import {NotFoundReportDialogItem} from './not-found-report-dialog.component';
 
 type SelectionFilter = 'all' | 'available' | 'purchased' | 'reported' | 'unavailable';
 
@@ -43,7 +44,6 @@ export class AccountSelectionComponent implements OnDestroy {
   readonly selectionLoading = input(false);
   readonly selectionError = input<string | null>(null);
   @Output() retryRequested = new EventEmitter<void>();
-  @Output() notFoundReportRequested = new EventEmitter<SelectionDisplayItem>();
 
   readonly filters = FILTERS;
   readonly filter = signal<SelectionFilter>('all');
@@ -51,6 +51,8 @@ export class AccountSelectionComponent implements OnDestroy {
   readonly busyMerge = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
+  readonly reportDialogItem = signal<SelectionDisplayItem | null>(null);
+  readonly reportDialogMode = signal<'report' | 'login'>('report');
   private readonly localRevision = signal(0);
   private successTimer: ReturnType<typeof setTimeout> | null = null;
   readonly pendingMerge = computed(() => this.selection.pendingMerge());
@@ -228,7 +230,31 @@ export class AccountSelectionComponent implements OnDestroy {
     }
 
     this.errorMessage.set(null);
-    this.notFoundReportRequested.emit(item);
+    this.reportDialogMode.set(item.remote ? 'report' : 'login');
+    this.reportDialogItem.set(item);
+  }
+
+  reportDialogDetails(item: SelectionDisplayItem): NotFoundReportDialogItem {
+    const remote = item.remote;
+    return {
+      title: item.title,
+      authors: remote?.authors ?? null,
+      publisher: remote?.publisher ?? null,
+      publicationYear: remote?.publicationYear ?? null,
+      coverUrl: remote?.coverUrl ?? null,
+    };
+  }
+
+  closeNotFoundReportDialog(): void {
+    this.reportDialogItem.set(null);
+  }
+
+  async submitFromNotFoundReportDialog(
+    item: SelectionDisplayItem,
+    request: {location: CatalogNotFoundLocation | null; comment: string | null},
+  ): Promise<void> {
+    await this.submitNotFoundReport(item, request);
+    this.closeNotFoundReportDialog();
   }
 
   async cancelNotFoundReport(item: SelectionDisplayItem): Promise<void> {
