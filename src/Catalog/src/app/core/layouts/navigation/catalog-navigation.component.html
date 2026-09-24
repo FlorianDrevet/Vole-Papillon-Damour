@@ -1,6 +1,6 @@
 <header class="catalog-header">
   <div class="desktop-header">
-    <div class="header-inner page-width">
+    <div class="header-inner">
       <a class="brand" routerLink="/" (click)="closeMenus()" aria-label="Vole Papillon d'Amour, accueil du catalogue">
         <img class="brand-logo" src="images/papillon_without_back.png" alt="Vole Papillon d'Amour" width="42" height="42">
         <span class="brand-copy">
@@ -96,23 +96,27 @@
             }
           </div>
         }
+        @if (isAuthenticated() && (isAdministrator() || isRareBookManager())) {
+          <div class="header-role-tags">
+            @if (isAdministrator()) {
+              <a
+                class="header-admin-pill"
+                routerLink="/administration"
+                [class.active]="isAdministration()"
+                [attr.aria-current]="isAdministration() ? 'page' : null"
+                (click)="closeMenus()">Administration</a>
+            }
+            @if (isRareBookManager()) {
+              <a
+                class="header-rare-pill"
+                routerLink="/administration/rare-books"
+                [class.active]="url().split(/[?#]/, 1)[0] === '/administration/rare-books'"
+                [attr.aria-current]="url().split(/[?#]/, 1)[0] === '/administration/rare-books' ? 'page' : null"
+                (click)="closeMenus()">Livres rares</a>
+            }
+          </div>
+        }
       </div>
-      @if (isAuthenticated() && isAdministrator()) {
-        <a
-          class="header-admin-pill"
-          routerLink="/administration"
-          [class.active]="isAdministration()"
-          [attr.aria-current]="isAdministration() ? 'page' : null"
-          (click)="closeMenus()">Administration</a>
-      }
-      @if (isAuthenticated() && isRareBookManager()) {
-        <a
-          class="header-rare-pill"
-          routerLink="/administration/rare-books"
-          [class.active]="url().split(/[?#]/, 1)[0] === '/administration/rare-books'"
-          [attr.aria-current]="url().split(/[?#]/, 1)[0] === '/administration/rare-books' ? 'page' : null"
-          (click)="closeMenus()">Livres rares</a>
-      }
     </div>
   </div>
 
