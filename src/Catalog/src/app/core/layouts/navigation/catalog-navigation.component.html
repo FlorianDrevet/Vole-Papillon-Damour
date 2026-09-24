@@ -106,7 +106,7 @@
                 [attr.aria-current]="isAdministration() ? 'page' : null"
                 (click)="closeMenus()">Administration</a>
             }
-            @if (isRareBookManager()) {
+            @if (isRareBookManager() && !isAdministrator()) {
               <a
                 class="header-rare-pill"
                 routerLink="/administration/rare-books"
