@@ -193,3 +193,33 @@ Mesure complète : [`03-mesure-couverture-resumes.md`](03-mesure-couverture-resu
 - **Q4** — Compte Azure OpenAI activé en production ?
 - **Q6** — Clé Google Books pour terminer la mesure. *(posée)*
 - **Q7** — Le défaut ISBN-10 de la BnF : correctif séparé, dans une autre branche ?
+  *(répondue à l'échange 5)*
+
+---
+
+## Échange 5 — 24 septembre 2026 : correctif prioritaire du défaut ISBN-10
+
+### Demande
+
+Écrire le plan d'implémentation du repli ISBN-10 et le prompt à transmettre à Luna, avec
+branche et worktree, car le correctif est prioritaire.
+
+### Réponse — résumé
+
+- Mesure complémentaire : l'index SRU **`bib.fuzzyISBN`**, déjà prévu par
+  `technique/07-integrations-externes.md` §2, retrouve les **138 éditions sur 138** avec
+  l'ISBN-13 seul. Le premier enregistrement porte l'ISBN demandé dans tous les cas.
+  Aucun repli par un second appel n'est donc nécessaire : il suffit de changer d'index.
+- Branche **`fix/bnf-isbn10-lookup`**, depuis `origin/main`, dans le worktree
+  `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-bnf-isbn10-lookup`.
+- Plan commité sur cette branche :
+  `docs/bourse-aux-livres/plan/07-recherche-bnf-isbn10.md`. Trois tâches : client de
+  résolution, client de recherche de référence, puis vérification réelle et
+  documentation.
+- Hors périmètre, à décider : relire les fiches déjà `Resolved` par une autre source,
+  ou `NotFound` après trois tentatives.
+
+### Décisions
+
+- **D4** — Le défaut ISBN-10 est corrigé dans une branche séparée, en priorité, en
+  passant à l'index `bib.fuzzyISBN`, hors du chantier des recommandations.
