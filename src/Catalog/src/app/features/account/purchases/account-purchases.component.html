@@ -1,0 +1,94 @@
+<section class="account-purchases" aria-label="Mes achats associés à ce compte">
+  @if (loading() && !purchases()) {
+    <p class="purchases-state" role="status">Chargement de Mes achats…</p>
+  } @else if (purchases(); as history) {
+    @if (history.passages.length === 0) {
+      <div class="purchases-empty">
+        <span class="purchases-empty-mark" aria-hidden="true">···</span>
+        <h2>Aucun achat n'est encore associé à ce compte.</h2>
+      </div>
+    } @else {
+      <div class="purchase-passages">
+        @for (passage of history.passages; track passage.id) {
+          <article class="purchase-passage" [attr.data-passage-id]="passage.id">
+            <header class="purchase-passage-heading">
+              <div>
+                <p class="purchase-reference">Passage · {{ passage.reference }}</p>
+                <h2>{{ passageHeading(passage) }}</h2>
+              </div>
+              <span class="purchase-count">{{ passageCount(passage) }}</span>
+            </header>
+
+            <ul class="purchase-lines" aria-label="Livres du passage">
+              @for (line of passage.lines; track line.id) {
+                <li class="purchase-line" [class.cancelled]="line.state === 'Cancelled'">
+                  @if (line.currentCoverUrl) {
+                    <img class="purchase-cover" [src]="line.currentCoverUrl" alt="" loading="lazy">
+                  } @else {
+                    <span class="purchase-cover-placeholder" aria-hidden="true">Livre</span>
+                  }
+                  <div class="purchase-line-copy">
+                    <h3>{{ lineHeading(line) }}</h3>
+                    @if (line.authors) {
+                      <p class="purchase-authors">{{ line.authors }}</p>
+                    }
+                    <p class="purchase-details">
+                      @if (line.physicalFormat) { <span>{{ line.physicalFormat }}</span> }
+                      @if (line.isbn13) { <span>ISBN {{ line.isbn13 }}</span> }
+                      @if (line.quantity > 1) { <span>Quantité : {{ line.quantity }}</span> }
+                    </p>
+                  </div>
+                  @if (line.state === 'Cancelled') {
+                    <span class="purchase-cancelled-badge">Annulée</span>
+                  }
+                </li>
+              }
+            </ul>
+
+            <div class="purchase-report">
+              <button
+                type="button"
+                class="purchase-report-link"
+                [attr.aria-expanded]="reportingPassageId() === passage.id"
+                [attr.aria-controls]="'purchase-report-' + passage.id"
+                data-testid="report-passage"
+                (click)="toggleReport(passage.id)">
+                Signaler une erreur
+              </button>
+              @if (reportingPassageId() === passage.id) {
+                <p [id]="'purchase-report-' + passage.id" class="purchase-report-details">
+                  Référence du passage : <strong>{{ passage.reference }}</strong> ·
+                  <a [href]="'mailto:' + contactEmail">{{ contactEmail }}</a>
+                </p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+
+      @if (history.nextCursor) {
+        <button
+          type="button"
+          class="purchase-older-button"
+          data-testid="older-purchases"
+          [disabled]="loadingMore()"
+          (click)="loadOlderPurchases()">
+          {{ loadingMore() ? 'Chargement…' : 'Afficher des achats plus anciens' }}
+        </button>
+      }
+    }
+  } @else if (errorMessage()) {
+    <div class="purchases-state purchases-error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" class="purchase-older-button" (click)="loadPurchases()">Réessayer</button>
+    </div>
+  }
+
+  @if (errorMessage() && purchases()) {
+    <p class="purchases-inline-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <aside class="purchases-notice">
+    Seuls les passages associés à ce compte sont visibles ici. Les ventes anonymes ne peuvent pas être retrouvées automatiquement.
+  </aside>
+</section>

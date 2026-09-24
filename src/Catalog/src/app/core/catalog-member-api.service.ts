@@ -7,6 +7,7 @@ import {
   CatalogAddedWatchlistItem,
   CatalogAlertPreferencesResponse,
   CatalogMemberCard,
+  CatalogPurchasesResponse,
   CatalogAddedSelectionItem,
   CatalogSelectionMergeEntry,
   CatalogSelectionMergeResult,
@@ -89,6 +90,14 @@ export class CatalogMemberApiService {
   getCard(accessToken: string): Observable<CatalogMemberCard> {
     return this.http.get<CatalogMemberCard>(
       `${this.apiUrl}/catalog/me/card`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  getPurchases(accessToken: string, cursor?: string): Observable<CatalogPurchasesResponse> {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return this.http.get<CatalogPurchasesResponse>(
+      `${this.apiUrl}/catalog/me/purchases${query}`,
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

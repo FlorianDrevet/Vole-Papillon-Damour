@@ -49,6 +49,7 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly watchlist = signal<CatalogWatchlistResponse | null>(null);
   readonly contribution = signal<CatalogVolunteerStatisticsResponse | null>(null);
   readonly contributionLoading = signal(false);
+  readonly purchasesVisited = signal(false);
   readonly loading = signal(false);
   readonly selectionLoading = signal(false);
   readonly selectionError = signal<string | null>(null);
@@ -199,6 +200,9 @@ export class CatalogAccountPageComponent implements OnInit {
     }
 
     this.activeTab.set(tab);
+    if (tab === 'purchases') {
+      this.purchasesVisited.set(true);
+    }
     if (tab === 'contribution' && !this.contribution() && !this.contributionLoading()) {
       void this.loadContribution();
     }

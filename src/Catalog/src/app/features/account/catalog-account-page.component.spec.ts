@@ -15,6 +15,7 @@ import {CatalogRareBook, CatalogSelectionResponse, CatalogVolunteerStatisticsRes
 import {CatalogSelectionService, CatalogSelectionMode} from '../../core/selection/catalog-selection.service';
 import {AccountSelectionComponent} from './selection/account-selection.component';
 import {AccountCardComponent} from './card/account-card.component';
+import {AccountPurchasesComponent} from './purchases/account-purchases.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 
 describe('CatalogAccountPageComponent', () => {
@@ -174,10 +175,11 @@ describe('CatalogAccountPageComponent', () => {
 
     api = jasmine.createSpyObj<CatalogMemberApiService>(
       'CatalogMemberApiService',
-      ['getWatchlist', 'getVolunteerStatistics', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
+      ['getWatchlist', 'getVolunteerStatistics', 'getPurchases', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
     );
     api.getWatchlist.and.returnValue(of(watchlist));
     api.getVolunteerStatistics.and.returnValue(of(volunteerStatistics));
+    api.getPurchases.and.returnValue(of({passages: [], nextCursor: null}));
     api.removeWatchlistItem.and.returnValue(of(void 0));
     api.setAlertStatus.and.returnValue(of({alertStatus: 'Suspended', bounceCount: 0, changed: true}));
     api.deleteAccount.and.returnValue(of(void 0));
@@ -202,7 +204,7 @@ describe('CatalogAccountPageComponent', () => {
     selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogAccountPageComponent, AccountSelectionComponent, AccountCardComponent],
+      declarations: [CatalogAccountPageComponent, AccountSelectionComponent, AccountCardComponent, AccountPurchasesComponent],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
@@ -227,6 +229,31 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="member-login"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="member-register"]')).not.toBeNull();
     expect(api.getWatchlist).not.toHaveBeenCalled();
+  });
+
+  it('loads Mes achats when first selected and keeps it mounted after leaving the tab', async () => {
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(api.getPurchases).not.toHaveBeenCalled();
+    const tab = fixture.nativeElement.querySelector('#account-purchases-tab') as HTMLButtonElement;
+    tab.click();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+    expect(api.getPurchases).toHaveBeenCalledTimes(1);
+
+    (fixture.nativeElement.querySelector('#account-selection-tab') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    tab.click();
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(api.getPurchases).toHaveBeenCalledTimes(1);
   });
 
   it('shows a generic reauthentication state when the cached session is no longer usable', async () => {
@@ -369,7 +396,8 @@ describe('CatalogAccountPageComponent', () => {
       'Compte et données',
     ]);
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
-    expect(tabs[1]?.disabled).toBeTrue();
+    expect(tabs[1]?.disabled).toBeFalse();
+    expect(tabs[1]?.getAttribute('aria-selected')).toBe('false');
     expect(tabs[3]?.disabled).toBeFalse();
     expect(fixture.nativeElement.querySelector('.account-heading-title')?.textContent?.trim()).toBe('Ma sélection.');
     expect(fixture.nativeElement.querySelector('[data-testid="account-selection-panel"]')).not.toBeNull();

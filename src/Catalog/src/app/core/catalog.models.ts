@@ -153,6 +153,39 @@ export interface CatalogSelectionMergeResult {
   alreadyPresent: number;
   rejected: string[];
 }
+
+export type CatalogPurchaseLineState = 'Associated' | 'Cancelled';
+
+export interface CatalogPurchaseLine {
+  id: string;
+  kind: 'edition' | 'rare';
+  isbn13: string | null;
+  rareBookId: string | null;
+  title: string;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  physicalFormat: string | null;
+  quantity: number;
+  state: CatalogPurchaseLineState;
+  currentCoverUrl: string | null;
+}
+
+export interface CatalogPurchasePassage {
+  id: string;
+  reference: string;
+  occurredAt: string;
+  fairId: string | null;
+  fairLabel: string | null;
+  activeBookCount: number;
+  lines: CatalogPurchaseLine[];
+}
+
+export interface CatalogPurchasesResponse {
+  passages: CatalogPurchasePassage[];
+  nextCursor: string | null;
+}
+
 export type CatalogWatchlistScope = 'Work' | 'Edition' | 'RareBook';
 
 export interface CatalogWatchlistItemRequest {

@@ -93,7 +93,7 @@
   } @else {
     <div class="account-heading">
       <p class="eyebrow">Mon compte</p>
-      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'watchlist' ? 'Mes recherches.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
+      <h1 id="account-title" class="account-heading-title">{{ activeTab() === 'selection' ? 'Ma sélection.' : activeTab() === 'purchases' ? 'Mes achats.' : activeTab() === 'watchlist' ? 'Mes recherches.' : activeTab() === 'card' ? 'Ma carte.' : activeTab() === 'contribution' ? 'Ma contribution.' : 'Compte et données.' }}</h1>
       <p class="account-lead">{{ activeTab() === 'selection' ? selectionIntro : activeTab() === 'watchlist' ? watchlistIntro() : activeTab() === 'contribution' ? contributionIntro() : '' }}</p>
     </div>
 
@@ -144,10 +144,12 @@
       <button
         type="button"
         role="tab"
+        id="account-purchases-tab"
         class="account-tab"
-        aria-selected="false"
-        aria-disabled="true"
-        disabled>
+        [class.active]="activeTab() === 'purchases'"
+        [attr.aria-selected]="activeTab() === 'purchases'"
+        aria-controls="account-purchases-panel"
+        (click)="selectTab('purchases')">
         Mes achats
       </button>
       <button
@@ -197,6 +199,16 @@
         </button>
       }
     </div>
+
+    @if (purchasesVisited()) {
+      <app-account-purchases
+        id="account-purchases-panel"
+        data-testid="account-purchases-panel"
+        role="tabpanel"
+        [hidden]="activeTab() !== 'purchases'"
+        [attr.aria-hidden]="activeTab() === 'purchases' ? null : 'true'"
+        aria-labelledby="account-purchases-tab"></app-account-purchases>
+    }
 
     @if (activeTab() === 'selection') {
       <app-account-selection
@@ -446,7 +458,7 @@
           <p class="account-state compact">Vos statistiques n’ont pas encore pu être préparées.</p>
         }
       </section>
-    } @else {
+    } @else if (activeTab() === 'preferences') {
       <section
         id="account-preferences-panel"
         class="account-preferences-panel"
