@@ -1,9 +1,9 @@
 # 11 — Signaler un livre introuvable et faire le ménage du stock
 
 > **Statut : implémentation SIG-1 à SIG-16 réalisée dans `feat/not-found-reports`.**
-> La validation locale a été exécutée le 2026-09-24 ; le build de solution reste bloqué
-> par le SDK Worker et deux tests Application existants échouent sous `fr-FR` sur les
-> tris décimaux SQLite. Les autres résultats figurent dans [`NEXT.md`](../../NEXT.md).
+> Validation locale exécutée le 2026-09-24 : build de solution réussi (14 projets, 0 erreur),
+> Domain 164/164, Application 392/392, Infrastructure 162/162, API 59/59 et Catalog 417/417
+> avec build réussi. Les avertissements restants sont listés dans [`NEXT.md`](../../NEXT.md).
 > La recette manuelle de la section 11 reste à dérouler en environnement de recette. Ce document modifie la section 6.3 à 6.5 de
 > [`10-evolution-compte-selection-achats.md`](10-evolution-compte-selection-achats.md)
 > (états personnels de Ma sélection) et ajoute une file de vérification dans
