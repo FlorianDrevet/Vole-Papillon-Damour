@@ -97,6 +97,20 @@ public sealed class CheckoutPassage : Entity<Guid>
         Status = CheckoutPassageStatus.Dissociated;
     }
 
+    public void ForgetVolunteer(UserId volunteerId)
+    {
+        ArgumentNullException.ThrowIfNull(volunteerId);
+        if (AssociatedByVolunteerId == volunteerId)
+        {
+            AssociatedByVolunteerId = null;
+        }
+
+        if (DissociatedByUserId == volunteerId)
+        {
+            DissociatedByUserId = null;
+        }
+    }
+
     private static Guid EnsureId(Guid id)
     {
         return id == Guid.Empty

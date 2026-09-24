@@ -16,6 +16,7 @@ La livraison ajoute :
 
 - la page publique `/donnees-personnelles`, reliée au footer du Catalogue ;
 - un premier niveau d'information dans la carte « Créer un compte » ;
+- l'information sur Ma sélection, la Carte de compte, Mes achats et la vente anonyme ;
 - un parcours e-mail pour demander l'accès, la rectification, l'effacement, la limitation,
   l'opposition ou la portabilité ;
 - le rappel du délai d'un mois, de la vérification d'identité proportionnée et du recours
@@ -41,7 +42,9 @@ contrats et rôles de chaque fournisseur doivent être vérifiés.
 |---|---|---|---|
 | Consultation publique | Données techniques éventuelles des requêtes et journaux | Fonctionnement, sécurité, diagnostic | Intérêt légitime, avec durée et accès documentés |
 | Compte et connexion | Adresse e-mail, prénom/nom lorsqu'ils sont renseignés, identifiant externe, dates de compte et de dernière activité ; aucun mot de passe dans le Catalogue/API | Créer et maintenir l'espace membre | Exécution du service demandé / mesures précontractuelles, à confirmer |
-| Liste de recherche | ISBN ou œuvre suivie, dates d'ajout et de dernière alerte | Fournir le suivi choisi | Exécution du service demandé |
+| Liste de recherche et Ma sélection | ISBN ou fiche rare, état personnel et dates | Fournir le suivi et l'organisation choisis | Exécution du service demandé |
+| Carte de compte | État de la carte, identifiant de QR et code de secours | Associer facultativement un passage au membre | Exécution du service demandé ; présentation facultative |
+| Mes achats | Date, bourse, titres, éditions et quantités des seuls passages associés | Afficher l'historique demandé | Exécution du service demandé ; information claire et association facultative |
 | Alertes | Préférence, historique d'alerte, état de remise et rebonds techniques | Envoyer l'information demandée et éviter les envois en échec | Exécution du service demandé ; absence de prospection, à maintenir |
 | Association de vente à un compte | Identifiant du compte, date, bourse, titres, éditions et quantités d'un passage associé | Afficher l'historique demandé et synchroniser une sélection | Exécution du service demandé ; information claire et association facultative |
 | Audience et carte | Données d'usage ou données techniques transmises au tiers | Mesurer l'usage ou afficher Maps | Consentement préalable et distinct |
@@ -124,33 +127,45 @@ La réponse HTTP peut donc être acceptée avant la fin du traitement différé.
 compte et la page publique ne doivent pas promettre une suppression instantanée si le
 fournisseur d'identité ou le worker est momentanément indisponible.
 
-## 5 bis. Extension : sélection et historique des achats
+## 5 bis. Mise en œuvre : sélection, carte de compte et historique des achats
 
-La proposition fonctionnelle de
+La fonctionnalité de
 [10-evolution-compte-selection-achats.md](10-evolution-compte-selection-achats.md)
-ajoute deux catégories de données membre :
+est maintenant implémentée dans le Catalogue :
 
-- les entrées de Ma sélection, avec leur fiche, leur état personnel et leurs dates ;
-- le lien entre une vente et le compte qui a présenté sa carte à la caisse.
+- Ma sélection contient l'identifiant d'édition ou de fiche rare, l'état choisi par le membre et les dates nécessaires à la liste ;
+- une Carte de compte utilise un QR code et un code de secours pour transmettre une intention d'association ;
+- Mes achats ne présente que les passages associés à l'identité authentifiée, avec date, bourse, instantanés bibliographiques et quantités ;
+- l'interface ne calcule ni n'affiche de prix, de total ou de montant.
 
-L'association d'une vente doit être explicitement facultative. Une personne qui
-n'affiche pas sa carte continue d'acheter anonymement et ne doit pas être identifiée
-par une recherche approximative d'adresse e-mail.
+L'association d'une vente reste explicitement facultative. Une personne qui n'affiche
+pas sa carte continue d'acheter anonymement et n'est pas identifiée par une recherche
+d'adresse e-mail. Les bénévoles ne disposent pas d'un accès à l'historique du membre.
 
-Lors d'une suppression de compte, l'accès à Ma sélection et Mes achats disparaît.
-Le lien nominatif avec une vente est supprimé ou anonymisé, tandis que le mouvement
-de stock peut rester conservé lorsque la traçabilité ou les statistiques l'exigent.
-Le QR de carte est révoqué ou rendu inutilisable. La page publique doit expliquer
-cette différence entre l'historique personnel supprimé et le registre métier conservé
-sans identité exploitable.
+Lors de la finalisation d'une suppression de compte, Ma sélection et la carte sont
+supprimées. Les passages du membre sont anonymisés dans la même transaction : le lien
+vers le membre est retiré et les références au bénévole supprimé sont oubliées. Les
+lignes bibliographiques et les mouvements sont conservés dans le registre métier sans
+lien personnel exploitable. Une demande étant traitée en arrière-plan, cette opération
+intervient à la finalisation du travail de suppression, pas nécessairement avant la
+réponse HTTP initiale.
+
+Les parcours manuels de F-10 §14 (notamment deux appareils, lecture QR et suppression
+en DEV) restent à réaliser avant de déclarer le déploiement vérifié.
 
 ## 6. Gaps à fermer avant mise en production
 
 ### Durées de conservation
 
-La propriété `LastSeenAt` existe et la spécification vise une purge après trois ans
-d'inactivité avec relance, mais aucun parcours automatique de purge d'inactivité n'a été
-constaté dans le worker actuel. Il faut choisir puis documenter :
+Les données de compte, Ma sélection et la carte sont conservées pendant l'utilisation
+du compte ou jusqu'à leur retrait/suppression. Le worker ne purge pas automatiquement
+un compte actif après une durée fixe d'inactivité. À la finalisation d'une suppression,
+les données de Ma sélection et de carte sont supprimées et le lien des passages est
+anonymisé. Les lignes bibliographiques et mouvements métiers suivent leur finalité de
+traçabilité ; aucune durée maximale fixe n'est encore appliquée ou validée pour ces
+enregistrements. La propriété `LastSeenAt` existe et la spécification vise une purge
+après trois ans d'inactivité avec relance, mais ce parcours n'est pas livré. Il faut
+encore choisir puis documenter :
 
 - la durée du compte actif et le point de départ de l'inactivité ;
 - la relance, son contenu et sa preuve d'envoi ;
@@ -159,8 +174,9 @@ constaté dans le worker actuel. Il faut choisir puis documenter :
 - les éventuelles durées imposées par une obligation comptable ou contentieuse.
 
 Tant que ces valeurs ne sont pas décidées et réellement appliquées, la page publique
-reste volontairement sur des critères de conservation et n'annonce pas « trois ans » comme
-un comportement déjà garanti.
+explique les critères présents et n'annonce pas « trois ans » comme un comportement déjà
+garanti. La durée des mouvements et des instantanés anonymisés doit également être
+validée par l'association.
 
 ### Fournisseurs et transferts
 

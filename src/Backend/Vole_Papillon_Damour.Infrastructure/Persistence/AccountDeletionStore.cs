@@ -200,7 +200,7 @@ public sealed class AccountDeletionStore(
                     user.Id.Value,
                     cancellationToken);
 
-                await RemoveMemberDataAsync(user.Id, cancellationToken);
+                await RemoveMemberDataAsync(user.Id, completedAt, cancellationToken);
 
                 if (hasRetainedMovements)
                 {
@@ -226,6 +226,7 @@ public sealed class AccountDeletionStore(
 
     private async Task RemoveMemberDataAsync(
         UserId userId,
+        DateTime completedAt,
         CancellationToken cancellationToken)
     {
         // The retained movement path cannot rely on the database cascade because
@@ -236,6 +237,31 @@ public sealed class AccountDeletionStore(
             .Where(item => item.UserId == userId)
             .ToListAsync(cancellationToken);
         dbContext.WatchlistItems.RemoveRange(watchlistItems);
+
+        var selectionItems = await dbContext.MemberSelectionItems
+            .Where(item => item.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.MemberSelectionItems.RemoveRange(selectionItems);
+
+        var memberCards = await dbContext.MemberCards
+            .Where(card => card.UserId == userId)
+            .ToListAsync(cancellationToken);
+        dbContext.MemberCards.RemoveRange(memberCards);
+
+        var passages = await dbContext.CheckoutPassages
+            .Where(passage => passage.UserId == userId || passage.AssociatedByVolunteerId == userId)
+            .ToListAsync(cancellationToken);
+        foreach (var passage in passages)
+        {
+            if (passage.UserId == userId)
+            {
+                passage.Anonymize(completedAt);
+            }
+            else
+            {
+                passage.ForgetVolunteer(userId);
+            }
+        }
 
         var watchlist = await dbContext.Watchlists
             .SingleOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);

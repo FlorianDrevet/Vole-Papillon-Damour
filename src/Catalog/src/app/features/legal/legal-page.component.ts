@@ -47,7 +47,7 @@ const RIGHTS_REQUEST_HREF = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponen
   'Bonjour,\n\nJe souhaite exercer le droit suivant : accès / rectification / effacement / limitation / opposition / portabilité.\nAdresse e-mail utilisée pour mon compte :\n\nMerci.',
 )}`;
 const CNIL_COMPLAINT_URL = 'https://www.cnil.fr/fr/plaintes';
-const LAST_UPDATED_LABEL = '12 septembre 2026';
+const LAST_UPDATED_LABEL = '24 septembre 2026';
 
 const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
   legal: {
@@ -128,14 +128,17 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         ],
       },
       {
-        title: 'Compte, liste de recherche et alertes',
+        title: 'Compte, Ma sélection, carte de compte, Mes achats et alertes',
         paragraphs: [
-          'Si vous créez un compte, Microsoft Entra External ID peut traiter votre adresse électronique, votre prénom et votre nom lorsqu’ils sont renseignés, ainsi que les éléments nécessaires à l’authentification. Le catalogue associe ensuite à votre compte les livres suivis dans votre liste de recherche et votre préférence d’alertes. Le catalogue et son API ne conservent pas votre mot de passe.',
-          'Ces données servent uniquement à fournir les fonctions de compte, de liste de recherche et d’alerte liées au catalogue. Aucun paiement ni achat en ligne n’est réalisé depuis ce site.',
+          'Si vous créez un compte, Microsoft Entra External ID peut traiter votre adresse électronique, votre prénom et votre nom lorsqu’ils sont renseignés, ainsi que les éléments nécessaires à l’authentification. Le catalogue associe ensuite à votre compte les livres suivis dans votre liste de recherche et dans Ma sélection, ainsi que votre préférence d’alertes. Le catalogue et son API ne conservent pas votre mot de passe.',
+          'La Carte de compte comprend un QR code et un code de secours qui permettent d’associer un passage à votre compte. Si vous la présentez avant la validation de la vente, la date, la bourse, les titres et les quantités du passage peuvent apparaître dans Mes achats. La Vente anonyme reste toujours possible ; une vente sans association ne peut pas être retrouvée automatiquement par adresse e-mail. Les bénévoles ne peuvent pas consulter votre historique. Aucun prix ni montant n’est affiché ou calculé dans Mes achats.',
+          'Ces données servent uniquement à fournir les fonctions de compte, de liste de recherche, de sélection, de carte de compte, d’historique et d’alerte demandées. Aucun paiement ni achat en ligne n’est réalisé depuis ce site.',
         ],
         bullets: [
           'Adresse e-mail, prénom et nom renseignés, identifiant technique de compte et éléments de session nécessaires à l’authentification.',
-          'Identifiants des éditions ou œuvres ajoutées à la liste de recherche.',
+          'Identifiants des éditions ou œuvres ajoutées à la liste de recherche ou à Ma sélection, état personnel et dates associées.',
+          'État de la Carte de compte et données nécessaires à son QR code et à son code de secours.',
+          'Pour les passages associés : date, bourse, titres, éditions, instantanés bibliographiques et quantités.',
           'Préférence d’activation, de suspension ou de désinscription des alertes, ainsi que les éléments techniques de remise nécessaires au service.',
         ],
       },
@@ -164,7 +167,7 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         ],
         bullets: [
           'Fonctionnement, sécurité et maintenance : intérêt légitime de l’association.',
-          'Compte, liste de recherche et alertes : fourniture de la fonctionnalité demandée et exécution des mesures nécessaires à votre demande.',
+          'Compte, liste de recherche, Ma sélection, Carte de compte, Mes achats et alertes : fourniture des fonctionnalités demandées et exécution des mesures nécessaires à votre demande.',
           "Mesure d'audience Clarity et GA4 : consentement, retirable à tout moment depuis « Gérer les cookies ».",
         ],
       },
@@ -184,7 +187,8 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
       {
         title: 'Durées de conservation',
         paragraphs: [
-          'Les données de compte et de liste de recherche sont conservées pendant la durée d’utilisation du compte, puis supprimées ou anonymisées lorsque le compte est supprimé, sous réserve des obligations légales et des contraintes de sécurité.',
+          'Le profil, Ma sélection et la Carte de compte sont conservés pendant l’utilisation du compte ou jusqu’à leur retrait. Une demande de suppression est traitée par une file de travail ; à sa finalisation, Ma sélection et la Carte de compte sont supprimées, et les passages du membre sont anonymisés. Les instantanés bibliographiques et les mouvements nécessaires à la traçabilité peuvent rester dans le registre métier sans lien personnel exploitable.',
+          'Aucune purge automatique après une durée fixe d’inactivité n’est actuellement appliquée. La durée maximale de conservation des mouvements métier et des journaux doit encore être validée et inscrite au registre de l’association.',
           'Les journaux techniques et les données de mesure d’audience sont conservés selon les réglages de l’infrastructure et les politiques des prestataires concernés. L’association doit maintenir ces durées dans son registre de traitements et les réviser si les réglages évoluent.',
         ],
         note: 'Les durées opérationnelles exactes doivent être documentées et validées par l’association avant une collecte à grande échelle.',
@@ -211,12 +215,12 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
   rights: {
     title: 'Vos données et le RGPD.',
     eyebrow: 'Exercer vos droits',
-    intro: 'Vous pouvez demander à consulter, corriger, exporter ou supprimer les données liées à votre compte Catalogue. Cette page vous indique quoi demander et comment le faire.',
+    intro: 'Vous pouvez demander à consulter, corriger, exporter ou supprimer les données liées à votre compte Catalogue, notamment Ma sélection, Ma carte et Mes achats. Cette page vous indique quoi demander et comment le faire.',
     sections: [
       {
         title: 'Responsable du traitement',
         paragraphs: [
-          `Pour le compte, la liste de recherche et les alertes du catalogue ${CATALOG_URL}, le responsable du traitement est l’association ${ASSOCIATION_NAME}, ${POSTAL_ADDRESS}. Le point de contact pour toute demande est ${CONTACT_EMAIL}.`,
+          `Pour le compte, la liste de recherche, Ma sélection, la Carte de compte, Mes achats et les alertes du catalogue ${CATALOG_URL}, le responsable du traitement est l’association ${ASSOCIATION_NAME}, ${POSTAL_ADDRESS}. Le point de contact pour toute demande est ${CONTACT_EMAIL}.`,
           'Cette page complète la politique de confidentialité et la politique de cookies. Elle ne concerne que les données liées au Catalogue ; les éventuels services tiers ouverts depuis un lien restent soumis à leurs propres informations.',
         ],
       },
@@ -232,9 +236,16 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         ],
       },
       {
+        title: 'Ma sélection, carte de compte et Mes achats',
+        paragraphs: [
+          'Ma sélection conserve les éditions ou fiches rares choisies, leur état personnel et leurs dates. La Carte de compte utilise un QR code et un code de secours. Lorsqu’elle est présentée avant la validation d’une vente, Mes achats peut contenir la date, la bourse, les titres, les éditions et les quantités du passage associé.',
+          'Cette association est facultative : la Vente anonyme reste toujours possible, et une vente anonyme ne peut pas être retrouvée automatiquement. Les bénévoles ne peuvent pas rechercher l’historique d’un membre ; la caisse ne leur montre que son prénom. Mes achats n’affiche aucun prix ni montant.',
+        ],
+      },
+      {
         title: 'Demander une copie de mes données',
         paragraphs: [
-          `Écrivez à ${CONTACT_EMAIL} ou utilisez le bouton ci-dessus. Indiquez « Je demande l’accès à mes données au titre de l’article 15 du RGPD », l’adresse e-mail utilisée pour le compte et, si vous le souhaitez, le périmètre demandé : compte, liste de recherche, alertes ou données techniques.`,
+          `Écrivez à ${CONTACT_EMAIL} ou utilisez le bouton ci-dessus. Indiquez « Je demande l’accès à mes données au titre de l’article 15 du RGPD », l’adresse e-mail utilisée pour le compte et, si vous le souhaitez, le périmètre demandé : compte, liste de recherche, Ma sélection, Carte de compte, Mes achats, alertes ou données techniques.`,
           'La réponse est fournie dans un format électronique courant et par un moyen approprié à la confidentialité des informations. Ne joignez pas de pièce d’identité ou de document sensible dans le premier e-mail. Si un doute raisonnable sur votre identité subsiste, l’association peut demander une vérification proportionnée et vous indiquer un canal sécurisé.',
         ],
       },
@@ -255,8 +266,8 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
       {
         title: 'Supprimer mon compte',
         paragraphs: [
-          'Depuis « Mon compte », la demande supprime le profil local, la liste de recherche et l’historique des alertes associés. Elle demande également la suppression de votre identité de connexion Microsoft Entra External ID ; la finalisation peut se poursuivre en arrière-plan si un traitement différé est nécessaire.',
-          'Lorsqu’une donnée doit être conservée pour une trace métier ou une obligation légale, l’association retire les éléments permettant de vous identifier et conserve uniquement ce qui est nécessaire. Les données de membre supprimées ne doivent pas rester dans une file d’envoi d’alerte.',
+          'Depuis « Mon compte », la demande supprime le profil local, la liste de recherche, Ma sélection, la Carte de compte et l’historique des alertes associés. Elle demande également la suppression de votre identité de connexion Microsoft Entra External ID ; la finalisation peut se poursuivre en arrière-plan si un traitement différé est nécessaire.',
+          'Ma sélection est supprimée et le QR code comme le code de secours sont révoqués par la suppression de la carte. Le lien personnel avec le passage est anonymisé ; les lignes bibliographiques et les mouvements nécessaires à la traçabilité restent conservés sans identité exploitable. Les données de membre supprimées ne doivent pas rester dans une file d’envoi d’alerte.',
         ],
         links: [
           {label: 'Ouvrir « Mon compte »', href: '/compte'},
