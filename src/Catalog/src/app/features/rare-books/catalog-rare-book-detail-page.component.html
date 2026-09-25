@@ -13,10 +13,15 @@
     <section class="rare-detail-hero">
       <div class="page-width rare-detail-layout">
         <div class="rare-detail-gallery">
-          <div class="rare-detail-main-photo">
+          <div class="rare-detail-main-photo" [class.rare-detail-main-photo--empty]="!rareBook.photos.length">
             <img *ngIf="photoUrl(rareBook, selectedPhoto); else detailPhotoPlaceholder"
               [src]="photoUrl(rareBook, selectedPhoto)" [alt]="'Photo de ' + rareBook.title">
-            <ng-template #detailPhotoPlaceholder><span aria-hidden="true">✦</span></ng-template>
+            <ng-template #detailPhotoPlaceholder>
+              <div class="rare-detail-photo-placeholder">
+                <span aria-hidden="true">✦</span>
+                <p>Aucune photo disponible pour cet exemplaire.</p>
+              </div>
+            </ng-template>
             <button *ngIf="photoUrl(rareBook, selectedPhoto)" type="button" class="rare-enlarge-button" (click)="openGallery()">
               Agrandir
             </button>
@@ -28,7 +33,7 @@
               <img [src]="photo.blobUri" [alt]="photo.caption || 'Photo ' + (index + 1)">
             </button>
           </div>
-          <p class="rare-detail-gallery-caption">Photos prises par les bénévoles au moment du tri. Elles montrent l’exemplaire réel, défauts compris.</p>
+          <p *ngIf="rareBook.photos.length" class="rare-detail-gallery-caption">Photos prises par les bénévoles au moment du tri. Elles montrent l’exemplaire réel, défauts compris.</p>
         </div>
 
         <article class="rare-detail-copy">

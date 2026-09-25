@@ -624,3 +624,13 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
   redirect `msal427c90de-bf59-4b01-af63-dc0799248496://auth` and an `AuthHandler`.
 - `IVpdApi.GetProductsAsync()` calls `GET /product`; the cash surface intentionally keeps the
   full projection, including products hidden from Website.
+
+## Catalog mobile layout — 2026-09-25
+
+Responsive review of the public Catalog at 320×780 and 390×844 fixed a legal-page grid
+min-content overflow caused by long URLs, raised mobile navigation controls to 44×44 px,
+improved the small brand subtitle, and added safe-area padding to the full-screen drawer.
+Rare-book cards and details now show compact, accurate no-photo states; empty photo frames
+must keep their width constrained by the mobile content column. Browser checks used local
+mock API responses. Public routes fit at both widths after the fixes; authenticated member
+data and administrator workspaces still need a real Entra session.

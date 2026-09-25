@@ -172,17 +172,21 @@
 
 .legal-page__content {
   display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   margin-top: 1.5rem;
 }
 
 .legal-page__section {
+  min-width: 0;
   padding: clamp(1.25rem, 2vw, 1.75rem);
 }
 
 .legal-page__section p {
   margin: 0 0 .85rem;
   color: var(--catalog-ink-soft);
+  overflow-wrap: anywhere;
 }
 
 .legal-page__section p:last-child {
@@ -199,6 +203,7 @@
 
 .legal-page__section li {
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .legal-page__links {
