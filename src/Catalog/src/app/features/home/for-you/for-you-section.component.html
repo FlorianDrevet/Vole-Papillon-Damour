@@ -1,0 +1,58 @@
+@if (state() === 'loading') {
+  <section
+    class="for-you-section for-you-section--loading"
+    data-zone="R8-chargement"
+    aria-busy="true"
+    aria-label="Suggestions en cours de chargement">
+    <div class="for-you-inner">
+      <div class="for-you-loading-heading" aria-hidden="true">
+        <span class="for-you-rule"></span>
+        <span class="for-you-skeleton-line for-you-skeleton-line--eyebrow"></span>
+        <span class="for-you-skeleton-line for-you-skeleton-line--title"></span>
+      </div>
+      <div class="for-you-loading-grid" data-zone="for-you-loading-items" aria-hidden="true">
+        @for (skeleton of skeletons; track skeleton) {
+          <span class="for-you-skeleton-card"></span>
+        }
+      </div>
+    </div>
+  </section>
+} @else if (state() === 'ready') {
+  <section class="for-you-section" data-zone="R4-section" aria-labelledby="for-you-title">
+    <div class="for-you-inner">
+      <div class="for-you-header" data-zone="R4-entete">
+        <div class="for-you-heading">
+          <span class="for-you-rule" aria-hidden="true"></span>
+          <span class="for-you-eyebrow">Pour vous@if (firstName(); as name) {, {{ name }}}</span>
+          <h2 id="for-you-title">D'après vos derniers achats.</h2>
+        </div>
+        <a
+          data-zone="R4-pourquoi"
+          [routerLink]="['/compte']"
+          [queryParams]="{tab: 'preferences'}">
+          Pourquoi ces suggestions&nbsp;? →
+        </a>
+      </div>
+
+      <div class="for-you-grid" data-zone="R4-grille">
+        <div class="for-you-list" data-zone="R5-defilement" role="list" aria-label="Suggestions pour vous">
+          @for (item of items(); track item.isbn13) {
+            <div class="for-you-card" data-zone="R4-carte" role="listitem">
+              <app-book-card
+                class="for-you-book-card"
+                variant="home"
+                [book]="item"></app-book-card>
+              <p class="for-you-reason" data-zone="R4-raison">
+                @if (item.reason === 'NextTome') {
+                  La suite de <em>{{ item.seedTitle }}</em>
+                } @else {
+                  Parce que vous avez aimé <em>{{ item.seedTitle }}</em>
+                }
+              </p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+}

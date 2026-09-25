@@ -258,7 +258,7 @@
 }
 
 .book-card--home {
-  border-color: var(--catalog-line);
+  border: var(--book-card-home-border, 1px solid var(--catalog-line));
   box-shadow: none;
 }
 

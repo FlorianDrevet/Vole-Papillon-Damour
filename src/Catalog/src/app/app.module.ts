@@ -10,6 +10,7 @@ import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {CatalogBookDetailPageComponent} from './features/book-detail/catalog-book-detail-page.component';
 import {SimilarBooksComponent} from './features/book-detail/similar-books/similar-books.component';
+import {ForYouSectionComponent} from './features/home/for-you/for-you-section.component';
 import {CatalogHomePageComponent} from './features/home/catalog-home-page.component';
 import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogSearchPageComponent} from './features/search/catalog-search-page.component';
@@ -48,6 +49,7 @@ registerLocaleData(localeFr);
     CatalogSearchPageComponent,
     CatalogBookDetailPageComponent,
     SimilarBooksComponent,
+    ForYouSectionComponent,
     CatalogWorkPageComponent,
     LegalPageComponent,
     BookCardComponent,

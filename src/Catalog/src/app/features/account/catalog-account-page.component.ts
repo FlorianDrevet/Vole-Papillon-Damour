@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {Meta} from '@angular/platform-browser';
+import {ActivatedRoute} from '@angular/router';
 import type {AccountInfo} from '@azure/msal-browser';
 import {firstValueFrom} from 'rxjs';
 
@@ -94,6 +95,7 @@ export class CatalogAccountPageComponent implements OnInit {
     private readonly api: CatalogMemberApiService,
     private readonly selection: CatalogSelectionService,
     private readonly meta: Meta,
+    private readonly route: ActivatedRoute,
   ) {
     this.account = this.auth.account;
     this.initialized = this.auth.initialized;
@@ -107,6 +109,9 @@ export class CatalogAccountPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
+    if (this.route.snapshot.queryParamMap.get('tab') === 'preferences') {
+      this.activeTab.set('preferences');
+    }
     void this.initialize();
   }
 

@@ -40,6 +40,18 @@ export const neighborReasonLabels: Record<CatalogNeighborReason, string> = {
   Theme: 'Proche par le thème',
 };
 
+export type CatalogRecommendationStatus = 'Enabled' | 'Disabled' | 'NoPurchases';
+
+export interface CatalogPersonalRecommendation extends CatalogBook {
+  reason: CatalogNeighborReason;
+  seedTitle: string;
+}
+
+export interface CatalogRecommendationsResponse {
+  status: CatalogRecommendationStatus;
+  items: CatalogPersonalRecommendation[];
+}
+
 export interface CatalogSearchResponse {
   generatedAt: string;
   books: CatalogBook[];

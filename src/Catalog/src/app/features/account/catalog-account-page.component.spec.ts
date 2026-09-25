@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {HttpErrorResponse} from '@angular/common/http';
 import {signal, WritableSignal} from '@angular/core';
 import {Meta} from '@angular/platform-browser';
-import {RouterModule} from '@angular/router';
+import {ActivatedRoute, RouterModule, convertToParamMap} from '@angular/router';
 import type {AccountInfo} from '@azure/msal-browser';
 import {of, throwError} from 'rxjs';
 
@@ -229,6 +229,22 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="member-login"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="member-register"]')).not.toBeNull();
     expect(api.getWatchlist).not.toHaveBeenCalled();
+  });
+
+  it('opens the preferences tab when the account URL requests it', async () => {
+    const route = TestBed.inject(ActivatedRoute);
+    Object.defineProperty(route, 'snapshot', {
+      configurable: true,
+      value: {
+        ...route.snapshot,
+        queryParamMap: convertToParamMap({tab: 'preferences'}),
+      },
+    });
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.activeTab()).toBe('preferences');
   });
 
   it('loads Mes achats when first selected and keeps it mounted after leaving the tab', async () => {
