@@ -12,9 +12,13 @@ using Vole_Papillon_Damour.Application.NotFoundReports.Commands.ReportNotFound;
 using Vole_Papillon_Damour.Application.MemberCards.Commands.RotateMyCard;
 using Vole_Papillon_Damour.Application.MemberCards.Queries.GetMyCard;
 using Vole_Papillon_Damour.Application.Purchases.Queries.GetMyPurchases;
+using Vole_Papillon_Damour.Application.Recommendations.Commands.SetRecommendationPreference;
+using Vole_Papillon_Damour.Application.Recommendations.Queries.GetMyRecommendations;
+using Vole_Papillon_Damour.Application.Recommendations.Queries.GetRecommendationPreference;
 using Vole_Papillon_Damour.Contracts.MemberSelection;
 using Vole_Papillon_Damour.Contracts.MemberCards;
 using Vole_Papillon_Damour.Contracts.Purchases;
+using Vole_Papillon_Damour.Contracts.Recommendations;
 
 namespace Vole_Papillon_Damour.Api.Controllers;
 
@@ -201,6 +205,96 @@ public static class MemberAccountController
                 .WithName("GetMyMemberPurchases")
                 .RequireAuthorization();
 
+            endpoints.MapGet(
+                    "/catalog/me/recommendations",
+                    async (
+                        int? limit,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetMyRecommendationsQuery(
+                                identity.ExternalId.ToString("D"),
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                limit ?? 4),
+                            cancellationToken);
+                        return result.Match(
+                            recommendations => Results.Ok(new MyRecommendationsResponse(
+                                recommendations.Status.ToString(),
+                                recommendations.Items.Select(ToResponse).ToArray())),
+                            error => error.Result());
+                    })
+                .WithName("GetMyRecommendations")
+                .RequireAuthorization();
+
+            endpoints.MapGet(
+                    "/catalog/me/recommendations/preference",
+                    async (
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new GetRecommendationPreferenceQuery(
+                                identity.ExternalId.ToString("D"),
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName),
+                            cancellationToken);
+                        return result.Match(
+                            preference => Results.Ok(new { enabled = preference.Enabled }),
+                            error => error.Result());
+                    })
+                .WithName("GetMyRecommendationPreference")
+                .RequireAuthorization();
+
+            endpoints.MapPut(
+                    "/catalog/me/recommendations/preference",
+                    async (
+                        RecommendationPreferenceRequest request,
+                        ClaimsPrincipal principal,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        httpContext.Response.Headers.CacheControl = "no-store";
+                        if (!MemberIdentityClaims.TryGetMemberIdentity(principal, out var identity))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new SetRecommendationPreferenceCommand(
+                                identity.ExternalId.ToString("D"),
+                                identity.Email,
+                                identity.FirstName,
+                                identity.LastName,
+                                request.Enabled),
+                            cancellationToken);
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("SetMyRecommendationPreference")
+                .RequireAuthorization();
+
             endpoints.MapPost(
                     "/catalog/me/selection",
                     async (
@@ -354,6 +448,33 @@ public static class MemberAccountController
 
     private static MemberCardResponse ToResponse(MyCardResult card) =>
         new(card.QrPayload, card.RecoveryCode, card.DisplayLabel, card.IssuedAt);
+
+    private static MyRecommendationResponseItem ToResponse(PersonalRecommendation recommendation)
+    {
+        var book = recommendation.Book;
+        return new MyRecommendationResponseItem(
+            book.Isbn13,
+            book.Title,
+            book.Authors,
+            book.Publisher,
+            book.PublicationYear,
+            book.PhysicalFormat,
+            book.Language,
+            book.Genre,
+            book.WorkId,
+            book.CoverUrl,
+            book.QuantityAvailable,
+            book.QuantityAnnounced,
+            book.NextFairAt,
+            book.LastAvailableAt,
+            book.FirstSeenAt,
+            book.UpdatedAt,
+            book.IsRare,
+            book.CoverSource,
+            book.RareBookSlug,
+            recommendation.Reason.ToString(),
+            recommendation.SeedTitle);
+    }
 
     private static MyPurchasesResponse ToResponse(MyPurchasesPage page) =>
         new(

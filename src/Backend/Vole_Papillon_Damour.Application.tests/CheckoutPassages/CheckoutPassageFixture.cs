@@ -17,6 +17,7 @@ using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.Common.Models;
+using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
@@ -55,6 +56,12 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
 
     public CheckoutPassageTestDbContext Context { get; }
 
+    public bool ThrowWhenRecommendationDataIsRead
+    {
+        get => Context.ThrowWhenRecommendationDataIsRead;
+        set => Context.ThrowWhenRecommendationDataIsRead = value;
+    }
+
     public static async Task<CheckoutPassageFixture> CreateAsync(DateTime now)
     {
         var connection = new SqliteConnection("Data Source=:memory:");
@@ -92,6 +99,77 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
         Context.Users.Add(member);
         await Context.SaveChangesAsync();
         return member;
+    }
+
+    public async Task<Book> AddCatalogBookAsync(
+        string isbnValue,
+        string title,
+        bool available = true,
+        string? workId = null)
+    {
+        var isbn = ParseIsbn(isbnValue);
+        var book = Book.Create(isbn, _now.AddMinutes(-10));
+        if (available)
+        {
+            book.RecordAvailableEntry(_now.AddMinutes(-1));
+        }
+
+        var fields = workId is null
+            ? new[] { BookMetadataField.Title, BookMetadataField.Authors }
+            : new[] { BookMetadataField.Title, BookMetadataField.Authors, BookMetadataField.WorkId };
+        book.ApplyManualMetadata(
+            new BookMetadataPatch(
+                title,
+                "Auteur test",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                fields,
+                workId),
+            _now.AddMinutes(-5));
+        Context.Books.Add(book);
+        await Context.SaveChangesAsync();
+        return book;
+    }
+
+    public async Task SetCurrentRecommendationGenerationAsync(Guid generationId)
+    {
+        var generation = await Context.RecommendationGenerations.SingleAsync(candidate => candidate.Id == 1);
+        generation.Switch(generationId, 20, _now);
+        await Context.SaveChangesAsync();
+    }
+
+    public void AddRecommendationNeighbor(
+        Guid generationId,
+        string sourceIsbn,
+        byte rank,
+        string neighborIsbn,
+        float score,
+        Vole_Papillon_Damour.Domain.RecommendationAggregate.ValueObjects.NeighborReason reason) =>
+        Context.BookNeighbors.Add(new Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor(
+            generationId, sourceIsbn, rank, neighborIsbn, score, reason));
+
+    public async Task AddRecommendationAnnouncementAsync(string isbnValue, int quantity = 1)
+    {
+        Context.BookAnnouncements.Add(BookAnnouncement.Create(
+            BookAnnouncementId.CreateUnique(),
+            ParseIsbn(isbnValue),
+            null,
+            quantity,
+            _now,
+            Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects.ScanSessionId.CreateUnique()));
+        await Context.SaveChangesAsync();
+    }
+
+    public async Task SetRecommendationPreferenceAsync(User member, bool enabled, DateTime? updatedAt = null)
+    {
+        Context.MemberRecommendationPreferences.Add(
+            Vole_Papillon_Damour.Domain.RecommendationAggregate.MemberRecommendationPreference.Create(
+                member.Id, enabled, updatedAt ?? _now));
+        await Context.SaveChangesAsync();
     }
 
     public async Task<CheckoutPassageTestMember> AddMemberWithCardAsync(string firstName)
@@ -281,6 +359,8 @@ internal sealed class CheckoutPassageFixture : IAsyncDisposable
 internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPassageTestDbContext> options)
     : DbContext(options), IProjectDbContext
 {
+    public bool ThrowWhenRecommendationDataIsRead { get; set; }
+
     public DbSet<User> Users => Set<User>();
     public DbSet<Book> Books => Set<Book>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
@@ -288,12 +368,20 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
     public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
     public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
+    public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
+    public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
+    public DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor> BookNeighbors =>
+        Set<Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor>();
+    public DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.RecommendationGeneration>
+        RecommendationGenerations => Set<Vole_Papillon_Damour.Domain.RecommendationAggregate.RecommendationGeneration>();
+    public DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.MemberRecommendationPreference>
+        MemberRecommendationPreferences => Set<Vole_Papillon_Damour.Domain.RecommendationAggregate.MemberRecommendationPreference>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
-    DbSet<AssoEvents> IProjectDbContext.AssoEvents => throw new NotSupportedException();
+    DbSet<AssoEvents> IProjectDbContext.AssoEvents => AssoEvents;
     DbSet<Order> IProjectDbContext.Orders => throw new NotSupportedException();
     DbSet<Book> IProjectDbContext.Books => Books;
-    DbSet<BookAnnouncement> IProjectDbContext.BookAnnouncements => throw new NotSupportedException();
+    DbSet<BookAnnouncement> IProjectDbContext.BookAnnouncements => BookAnnouncements;
     DbSet<ScanSession> IProjectDbContext.ScanSessions => throw new NotSupportedException();
     DbSet<AssociationSettings> IProjectDbContext.AssociationSettings => throw new NotSupportedException();
     DbSet<Watchlist> IProjectDbContext.Watchlists => throw new NotSupportedException();
@@ -304,6 +392,16 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => throw new NotSupportedException();
     DbSet<MemberCard> IProjectDbContext.MemberCards => MemberCards;
     DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => throw new NotSupportedException();
+    DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor>
+        IProjectDbContext.BookNeighbors => ThrowWhenRecommendationDataIsRead
+            ? throw new InvalidOperationException("Neighbor data must not be read while recommendations are disabled.")
+            : BookNeighbors;
+    DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.RecommendationGeneration>
+        IProjectDbContext.RecommendationGenerations => ThrowWhenRecommendationDataIsRead
+            ? throw new InvalidOperationException("Generation data must not be read while recommendations are disabled.")
+            : RecommendationGenerations;
+    DbSet<Vole_Papillon_Damour.Domain.RecommendationAggregate.MemberRecommendationPreference>
+        IProjectDbContext.MemberRecommendationPreferences => MemberRecommendationPreferences;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -374,6 +472,46 @@ internal sealed class CheckoutPassageTestDbContext(DbContextOptions<CheckoutPass
         modelBuilder.ApplyConfiguration(new MemberSelectionItemConfiguration());
         modelBuilder.ApplyConfiguration(new CheckoutPassageConfiguration());
         modelBuilder.ApplyConfiguration(new CheckoutPassageLineConfiguration());
+        modelBuilder.ApplyConfiguration(new Vole_Papillon_Damour.Infrastructure.Persistence.Configurations.BookNeighborConfiguration());
+        modelBuilder.ApplyConfiguration(new Vole_Papillon_Damour.Infrastructure.Persistence.Configurations.RecommendationGenerationConfiguration());
+        modelBuilder.ApplyConfiguration(new Vole_Papillon_Damour.Infrastructure.Persistence.Configurations.MemberRecommendationPreferenceConfiguration());
+
+        modelBuilder.Entity<BookAnnouncement>(builder =>
+        {
+            builder.HasKey(announcement => announcement.Id);
+            builder.Property(announcement => announcement.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => BookAnnouncementId.Create(value));
+            builder.Property(announcement => announcement.Isbn13)
+                .HasConversion(isbn => isbn.Value, value => ParseIsbn(value));
+            builder.Property(announcement => announcement.AssoEventsId)
+                .HasConversion(
+                    id => id == null ? (Guid?)null : id.Value,
+                    value => value.HasValue ? AssoEventsId.Create(value.Value) : null);
+            builder.Property(announcement => announcement.Status).HasConversion<byte>();
+            builder.Ignore(announcement => announcement.CreatedAt);
+            builder.Ignore(announcement => announcement.ReleasedAt);
+            builder.Ignore(announcement => announcement.ScanSessionId);
+            builder.Ignore(announcement => announcement.ClientGestureId);
+        });
+
+        modelBuilder.Entity<AssoEvents>(builder =>
+        {
+            builder.HasKey(assoEvent => assoEvent.Id);
+            builder.Property(assoEvent => assoEvent.Id)
+                .ValueGeneratedNever()
+                .HasConversion(id => id.Value, value => AssoEventsId.Create(value));
+            builder.Property(assoEvent => assoEvent.EventsType)
+                .HasConversion(
+                    type => (int)type.Value,
+                    value => new EventsType((EventsType.EventsTypeEnum)value));
+            builder.ComplexProperty(assoEvent => assoEvent.Adresse);
+            builder.Ignore(assoEvent => assoEvent.UrlImage);
+            builder.Ignore(assoEvent => assoEvent.UrlRegistration);
+            builder.Ignore(assoEvent => assoEvent.UrlImageMap);
+            builder.Ignore(assoEvent => assoEvent.Parties);
+            builder.Ignore(assoEvent => assoEvent.BingoNumeros);
+        });
     }
 
     private static Isbn13 ParseIsbn(string value) => Isbn13.TryCreate(value, out var isbn)
