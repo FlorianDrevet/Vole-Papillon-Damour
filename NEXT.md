@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-11 — « Signalement livre introuvable », SIG-1 à SIG-16 implémentées dans le worktree `feat/not-found-reports`, basé sur la branche de documentation `docs/book-not-found-report` (PR #229). |
-| **Prochaine action** | Suivre la [PR #233](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/233), puis la PR #229 vers `main`. La recette manuelle F-11 §11 reste à dérouler en environnement de recette après déploiement. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-reports` |
-| **Dernière mise à jour** | 2026-09-24 — build de solution corrigé et suites backend entièrement vertes ; [PR #233](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/233) ouverte vers `docs/book-not-found-report`. PR #232 fusionnée dans cette branche, PR #229 toujours ouverte vers `main`. Aucun déploiement, changement Azure/Entra ni test manuel en environnement de recette n'a été effectué pour cette fonctionnalité. |
-| **Branche** | `feat/not-found-reports`, basée sur `origin/docs/book-not-found-report` ; PR #233 cible cette branche tant que la PR #229 reste ouverte. |
+| **Lot en cours** | F-11 — « Signalement livre introuvable », livré par les PR #229 et #233 ; le déploiement API/Worker DEV est bloqué par une erreur de migration SQL. |
+| **Prochaine action** | Fusionner le correctif `fix/not-found-report-migration`, puis relancer [Books runtime - deploy](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/workflows/books-runtime-deploy.yml) avec les migrations activées et vérifier les routes admin. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-report-migration` |
+| **Dernière mise à jour** | 2026-09-25 — le run [#36059976334](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36059976334) a échoué dans `RetireSelectionPersonalStatuses` avant le rollout. La jointure de `Books` utilisait `Id` au lieu de sa colonne `Isbn13`; correction préparée dans `fix/not-found-report-migration`. |
+| **Branche** | `fix/not-found-report-migration`, basée sur `origin/main`. |
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 
@@ -29,6 +29,22 @@ Les tâches SIG-1 à SIG-16 sont implémentées. La suppression de compte conser
 signalements ouverts et clôturés, détache le membre et efface le commentaire libre.
 Les décisions techniques appliquées fixent le plafond sur 24 heures glissantes, la
 caducité dans la transaction qui épuise le stock et la clôture groupée par fiche.
+
+### Incident de déploiement DEV — 2026-09-25
+
+Le run `Books runtime - deploy` #36059976334 a construit les images, puis échoué pendant
+l'application de `20260924140025_RetireSelectionPersonalStatuses`. La copie des anciens
+statuts joignait `Books` sur `b.Id`, alors que `BookConfiguration` mappe la clé `Book.Id`
+vers la colonne SQL `Books.Isbn13`. SQL Server a retourné `Invalid column name 'Id'` ;
+le workflow n'a donc pas atteint le rollout de l'API ni du Worker. Le correctif remplace
+la jointure par `b.Isbn13 = s.Isbn13`. Après fusion, relancer le workflow avec
+`run_migrations` activé puis vérifier les endpoints `/books/admin/not-found-reports`
+et `/books/admin/not-found-reports/summary`.
+
+Validation du correctif : builds Release Infrastructure (3 projets) et API (5 projets)
+réussis ; le script SQL EF généré entre `AddBookNotFoundReports` et
+`RetireSelectionPersonalStatuses` contient la jointure `Books.Isbn13`. Aucun test xUnit
+ni accès SQL Azure n'a été exécuté ; le run de déploiement reste à relancer après fusion.
 
 Validation locale du 2026-09-24, après correction du SDK Functions et des tests SQLite :
 
