@@ -4,7 +4,7 @@ import {signal, WritableSignal} from '@angular/core';
 import {Meta} from '@angular/platform-browser';
 import {ActivatedRoute, RouterModule, convertToParamMap} from '@angular/router';
 import type {AccountInfo} from '@azure/msal-browser';
-import {of, throwError} from 'rxjs';
+import {of, Subject, throwError} from 'rxjs';
 
 import {
   CatalogAuthenticationRedirectStartedError,
@@ -16,6 +16,7 @@ import {CatalogSelectionService, CatalogSelectionMode} from '../../core/selectio
 import {AccountSelectionComponent} from './selection/account-selection.component';
 import {AccountCardComponent} from './card/account-card.component';
 import {AccountPurchasesComponent} from './purchases/account-purchases.component';
+import {RecommendationsBandComponent} from './recommendations-band/recommendations-band.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
 
 describe('CatalogAccountPageComponent', () => {
@@ -175,11 +176,18 @@ describe('CatalogAccountPageComponent', () => {
 
     api = jasmine.createSpyObj<CatalogMemberApiService>(
       'CatalogMemberApiService',
-      ['getWatchlist', 'getVolunteerStatistics', 'getPurchases', 'addWatchlistItem', 'removeWatchlistItem', 'setAlertStatus', 'deleteAccount'],
+      [
+        'getWatchlist', 'getVolunteerStatistics', 'getPurchases', 'addWatchlistItem',
+        'removeWatchlistItem', 'setAlertStatus', 'deleteAccount', 'getRecommendations',
+        'getRecommendationPreference', 'setRecommendationPreference',
+      ],
     );
     api.getWatchlist.and.returnValue(of(watchlist));
     api.getVolunteerStatistics.and.returnValue(of(volunteerStatistics));
     api.getPurchases.and.returnValue(of({passages: [], nextCursor: null}));
+    api.getRecommendations.and.returnValue(of({status: 'NoPurchases', items: []}));
+    api.getRecommendationPreference.and.returnValue(of({enabled: true}));
+    api.setRecommendationPreference.and.returnValue(of(void 0));
     api.removeWatchlistItem.and.returnValue(of(void 0));
     api.setAlertStatus.and.returnValue(of({alertStatus: 'Suspended', bounceCount: 0, changed: true}));
     api.deleteAccount.and.returnValue(of(void 0));
@@ -204,7 +212,13 @@ describe('CatalogAccountPageComponent', () => {
     selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogAccountPageComponent, AccountSelectionComponent, AccountCardComponent, AccountPurchasesComponent],
+      declarations: [
+        CatalogAccountPageComponent,
+        AccountSelectionComponent,
+        AccountCardComponent,
+        AccountPurchasesComponent,
+        RecommendationsBandComponent,
+      ],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
@@ -245,6 +259,21 @@ describe('CatalogAccountPageComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.activeTab()).toBe('preferences');
+  });
+
+  it('opens the member card when the account URL requests it', () => {
+    const route = TestBed.inject(ActivatedRoute);
+    Object.defineProperty(route, 'snapshot', {
+      configurable: true,
+      value: {
+        ...route.snapshot,
+        queryParamMap: convertToParamMap({tab: 'card'}),
+      },
+    });
+
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeTab()).toBe('card');
   });
 
   it('loads Mes achats when first selected and keeps it mounted after leaving the tab', async () => {
@@ -733,4 +762,100 @@ describe('CatalogAccountPageComponent', () => {
     expect(fixture.componentInstance.watchlist()?.alertStatus).toBe('Suspended');
     expect(fixture.nativeElement.textContent).toContain('Alertes suspendues');
   });
+
+  it('shows enabled personalized recommendations and the opt-out action in preferences', async () => {
+    const button = await openRecommendationPreferences();
+
+    expect(api.getRecommendationPreference).toHaveBeenCalledWith('member-token');
+    expect(fixture.nativeElement.querySelector('[data-zone="R7-statut"]')?.textContent)
+      .toContain('Activées');
+    expect(button.textContent).toContain('Désactiver les suggestions');
+  });
+
+  it('disables personalized recommendations after the member opts out', async () => {
+    const button = await openRecommendationPreferences();
+    button.click();
+    await settleAccountPage();
+
+    expect(api.setRecommendationPreference).toHaveBeenCalledOnceWith('member-token', false);
+    expect(fixture.nativeElement.querySelector('[data-zone="R7-statut"]')?.textContent)
+      .toContain('Désactivées');
+    expect(fixture.nativeElement.querySelector('[data-zone="R7-bouton"]')?.textContent)
+      .toContain('Réactiver les suggestions');
+    expect(fixture.nativeElement.textContent)
+      .toContain('Les suggestions « Dans le même esprit » des fiches restent visibles');
+  });
+
+  it('disables the preference button while the update is in progress', async () => {
+    const update = new Subject<void>();
+    api.setRecommendationPreference.and.returnValue(update);
+    const button = await openRecommendationPreferences();
+
+    button.click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement.querySelector('[data-zone="R7-bouton"]') as HTMLButtonElement).disabled)
+      .toBeTrue();
+
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    update.next();
+    update.complete();
+    await settleAccountPage();
+  });
+
+  it('removes the already mounted purchases invitation after the member disables recommendations', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const purchasesTab = fixture.nativeElement.querySelector('#account-purchases-tab') as HTMLButtonElement;
+    purchasesTab.click();
+    await settleAccountPage();
+    expect(fixture.nativeElement.querySelector('[data-zone="R8-sans-achat"]')).not.toBeNull();
+
+    (fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement).click();
+    await settleAccountPage();
+    (fixture.nativeElement.querySelector('[data-zone="R7-bouton"]') as HTMLButtonElement).click();
+    await settleAccountPage();
+
+    purchasesTab.click();
+    await settleAccountPage();
+
+    expect(fixture.nativeElement.querySelector('[data-zone="R6-bandeau"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-zone="R8-sans-achat"]')).toBeNull();
+  });
+
+  it('keeps the previous preference state and reports an update failure', async () => {
+    api.setRecommendationPreference.and.returnValue(throwError(() => new Error('offline')));
+    const button = await openRecommendationPreferences();
+
+    button.click();
+    await settleAccountPage();
+
+    expect(fixture.nativeElement.querySelector('[data-zone="R7-statut"]')?.textContent)
+      .toContain('Activées');
+    expect(fixture.nativeElement.querySelector('[data-zone="R7-bouton"]')?.textContent)
+      .toContain('Désactiver les suggestions');
+    expect(fixture.nativeElement.querySelector('[data-testid="recommendation-preference-error"]')?.getAttribute('role'))
+      .toBe('alert');
+  });
+
+  async function openRecommendationPreferences(): Promise<HTMLButtonElement> {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+    const preferencesTab = fixture.nativeElement.querySelector('#account-preferences-tab') as HTMLButtonElement;
+    preferencesTab.click();
+    await settleAccountPage();
+    return fixture.nativeElement.querySelector('[data-zone="R7-bouton"]') as HTMLButtonElement;
+  }
+
+  async function settleAccountPage(): Promise<void> {
+    await fixture.whenStable();
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
 });

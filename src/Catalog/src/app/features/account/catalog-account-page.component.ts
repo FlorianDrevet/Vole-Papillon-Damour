@@ -48,6 +48,10 @@ export class CatalogAccountPageComponent implements OnInit {
   readonly isVolunteer: Signal<boolean>;
   readonly authError: Signal<string | null>;
   readonly watchlist = signal<CatalogWatchlistResponse | null>(null);
+  readonly recommendationsEnabled = signal<boolean | null>(null);
+  readonly recommendationPreferenceLoading = signal(false);
+  readonly recommendationPreferencePending = signal(false);
+  readonly recommendationPreferenceError = signal<string | null>(null);
   readonly contribution = signal<CatalogVolunteerStatisticsResponse | null>(null);
   readonly contributionLoading = signal(false);
   readonly purchasesVisited = signal(false);
@@ -109,8 +113,9 @@ export class CatalogAccountPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.meta.updateTag({name: 'robots', content: 'noindex, nofollow'});
-    if (this.route.snapshot.queryParamMap.get('tab') === 'preferences') {
-      this.activeTab.set('preferences');
+    const requestedTab = this.route.snapshot.queryParamMap.get('tab');
+    if (requestedTab === 'preferences' || requestedTab === 'card') {
+      this.activeTab.set(requestedTab);
     }
     void this.initialize();
   }
@@ -131,6 +136,7 @@ export class CatalogAccountPageComponent implements OnInit {
         }
       }
       await this.loadWatchlist();
+      await this.loadRecommendationPreference();
       if (this.auth.isVolunteer()) {
         await this.loadContribution();
       }
@@ -328,6 +334,51 @@ export class CatalogAccountPageComponent implements OnInit {
       }
     } finally {
       this.alertPending.set(false);
+    }
+  }
+
+  async loadRecommendationPreference(): Promise<void> {
+    if (!this.auth.isAuthenticated() || this.recommendationPreferenceLoading()) {
+      return;
+    }
+
+    this.recommendationPreferenceLoading.set(true);
+    this.recommendationPreferenceError.set(null);
+    try {
+      const token = await this.auth.getApiAccessToken();
+      const preference = await firstValueFrom(this.api.getRecommendationPreference(token));
+      this.recommendationsEnabled.set(preference.enabled);
+    } catch {
+      this.recommendationPreferenceError.set(
+        'Vos préférences de suggestions n’ont pas pu être chargées. Réessayez.',
+      );
+    } finally {
+      this.recommendationPreferenceLoading.set(false);
+    }
+  }
+
+  async setRecommendationPreferenceEnabled(enabled: boolean): Promise<void> {
+    if (
+      !this.auth.isAuthenticated() ||
+      this.recommendationPreferencePending() ||
+      this.recommendationsEnabled() === null ||
+      this.recommendationsEnabled() === enabled
+    ) {
+      return;
+    }
+
+    this.recommendationPreferencePending.set(true);
+    this.recommendationPreferenceError.set(null);
+    try {
+      const token = await this.auth.getApiAccessToken();
+      await firstValueFrom(this.api.setRecommendationPreference(token, enabled));
+      this.recommendationsEnabled.set(enabled);
+    } catch {
+      this.recommendationPreferenceError.set(
+        'Vos préférences de suggestions n’ont pas pu être mises à jour. Réessayez.',
+      );
+    } finally {
+      this.recommendationPreferencePending.set(false);
     }
   }
 

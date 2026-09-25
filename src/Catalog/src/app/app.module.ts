@@ -27,6 +27,7 @@ import {AccountSelectionComponent} from './features/account/selection/account-se
 import {NotFoundReportDialogComponent} from './features/account/selection/not-found-report-dialog.component';
 import {AccountCardComponent} from './features/account/card/account-card.component';
 import {AccountPurchasesComponent} from './features/account/purchases/account-purchases.component';
+import {RecommendationsBandComponent} from './features/account/recommendations-band/recommendations-band.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
@@ -64,6 +65,7 @@ registerLocaleData(localeFr);
     NotFoundReportDialogComponent,
     AccountCardComponent,
     AccountPurchasesComponent,
+    RecommendationsBandComponent,
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,
     CatalogFooterComponent,

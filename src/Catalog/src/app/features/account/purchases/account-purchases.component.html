@@ -1,4 +1,8 @@
 <section class="account-purchases" aria-label="Mes achats associés à ce compte">
+  @if (recommendationPreferenceEnabled !== false) {
+    <app-recommendations-band></app-recommendations-band>
+  }
+
   @if (loading() && !purchases()) {
     <p class="purchases-state" role="status">Chargement de Mes achats…</p>
   } @else if (purchases(); as history) {

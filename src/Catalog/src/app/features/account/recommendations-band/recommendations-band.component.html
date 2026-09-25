@@ -1,0 +1,59 @@
+@if (state() === 'enabled') {
+  <section class="recommendations-band" data-zone="R6-bandeau" aria-labelledby="purchases-for-you-title">
+    <header class="recommendations-band-header">
+      <div>
+        <span class="recommendations-band-eyebrow">Pour prolonger vos lectures</span>
+        <h2 id="purchases-for-you-title">Des livres proches de ceux que vous avez achetés.</h2>
+      </div>
+      <a
+        class="recommendations-band-manage"
+        [routerLink]="['/compte']"
+        [queryParams]="{tab: 'preferences'}">
+        Gérer ces suggestions →
+      </a>
+    </header>
+
+    <div class="recommendations-band-list" data-zone="R6-liste" role="list" aria-label="Suggestions liées à vos achats">
+      @for (item of items(); track item.isbn13) {
+        <a
+          class="recommendations-band-card"
+          [routerLink]="bookPath(item)"
+          [attr.aria-label]="item.title + ', ' + item.authors"
+          data-zone="R6-carte"
+          role="listitem">
+          <span class="recommendations-band-cover" aria-hidden="true">
+            @if (coverUrl(item); as cover) {
+              <img [src]="cover" alt="" loading="lazy">
+            }
+          </span>
+          <span class="recommendations-band-copy">
+            <span class="recommendations-band-title">{{ item.title }}</span>
+            <span class="recommendations-band-author">{{ item.authors }}</span>
+            <span class="recommendations-band-reason">
+              @if (item.reason === 'NextTome') {
+                La suite de votre achat
+              } @else {
+                Proche de <em>{{ item.seedTitle }}</em>
+              }
+            </span>
+            <span class="recommendations-band-availability">{{ availabilityLabel(item) }}</span>
+          </span>
+        </a>
+      }
+    </div>
+  </section>
+} @else if (state() === 'no-purchases') {
+  <section class="recommendations-band-empty" data-zone="R8-sans-achat" aria-labelledby="no-purchase-title">
+    <div>
+      <span class="recommendations-band-eyebrow">Pour prolonger vos lectures</span>
+      <h2 id="no-purchase-title">Présentez votre carte de compte à la caisse.</h2>
+      <p>Vos prochains achats associés nous permettront de vous suggérer des livres proches. Les ventes anonymes ne sont jamais utilisées.</p>
+    </div>
+    <a
+      class="recommendations-band-card-link"
+      [routerLink]="['/compte']"
+      [queryParams]="{tab: 'card'}">
+      Afficher ma carte
+    </a>
+  </section>
+}

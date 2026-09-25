@@ -205,6 +205,7 @@
         id="account-purchases-panel"
         data-testid="account-purchases-panel"
         role="tabpanel"
+        [recommendationPreferenceEnabled]="recommendationsEnabled()"
         [hidden]="activeTab() !== 'purchases'"
         [attr.aria-hidden]="activeTab() === 'purchases' ? null : 'true'"
         aria-labelledby="account-purchases-tab"></app-account-purchases>
@@ -506,6 +507,73 @@
               }
             </div>
           </section>
+        }
+
+        @if (recommendationsEnabled() !== null) {
+          <section
+            class="alert-settings-panel recommendations-preference-panel"
+            data-zone="R7-suggestions"
+            aria-labelledby="recommendations-settings-title"
+            [attr.aria-busy]="recommendationPreferencePending()">
+            <div class="recommendations-preference-copy">
+              <div class="settings-heading recommendation-settings-heading">
+                <div class="recommendation-settings-labels">
+                  <p class="eyebrow">Préférences</p>
+                  <span
+                    class="recommendation-preference-status"
+                    [class.recommendation-preference-status--disabled]="!recommendationsEnabled()"
+                    data-zone="R7-statut">
+                    <span aria-hidden="true"></span>
+                    {{ recommendationsEnabled() ? 'Activées' : 'Désactivées' }}
+                  </span>
+                </div>
+              </div>
+              <h2 id="recommendations-settings-title">Suggestions personnalisées.</h2>
+              @if (recommendationsEnabled()) {
+                <p>Sur l'accueil et dans Mes achats, nous vous proposons des livres proches de ceux que vous avez achetés avec votre carte de compte.</p>
+                <ul class="recommendation-explanation" data-zone="R7-explication">
+                  <li>Seuls vos achats associés servent de point de départ.</li>
+                  <li>Le calcul se fait sur nos serveurs. Aucune donnée vous concernant n'est envoyée à un service extérieur.</li>
+                  <li>Aucun e-mail n'est envoyé à partir de ces suggestions.</li>
+                </ul>
+                <a class="recommendation-privacy-link" routerLink="/donnees-personnelles">
+                  En savoir plus : vos données et le RGPD →
+                </a>
+              } @else {
+                <p>Vos achats ne servent plus à vous proposer des livres. Les suggestions « Dans le même esprit » des fiches restent visibles : elles ne dépendent pas de votre compte.</p>
+              }
+              @if (recommendationPreferenceError(); as preferenceError) {
+                <p class="recommendation-preference-error" data-testid="recommendation-preference-error" role="alert">
+                  {{ preferenceError }}
+                </p>
+              }
+            </div>
+            <div class="alert-settings-actions">
+              @if (recommendationsEnabled()) {
+                <button
+                  type="button"
+                  class="account-button quiet"
+                  data-zone="R7-bouton"
+                  [disabled]="recommendationPreferencePending()"
+                  (click)="setRecommendationPreferenceEnabled(false)">
+                  Désactiver les suggestions
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="account-button secondary"
+                  data-zone="R7-bouton"
+                  [disabled]="recommendationPreferencePending()"
+                  (click)="setRecommendationPreferenceEnabled(true)">
+                  Réactiver les suggestions
+                </button>
+              }
+            </div>
+          </section>
+        } @else if (recommendationPreferenceError()) {
+          <p class="recommendation-preference-error" data-testid="recommendation-preference-error" role="alert">
+            {{ recommendationPreferenceError() }}
+          </p>
         }
 
         @if (isAdministrator()) {

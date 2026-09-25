@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, OnInit, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, Input, OnInit, signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAuthenticationRedirectStartedError, CatalogAuthService} from '../../../core/catalog-auth.service';
@@ -15,6 +15,7 @@ const CONTACT_EMAIL = 'volepapillondamour@sfr.fr';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AccountPurchasesComponent implements OnInit {
+  @Input() recommendationPreferenceEnabled: boolean | null = null;
   readonly purchases = signal<CatalogPurchasesResponse | null>(null);
   readonly loading = signal(false);
   readonly loadingMore = signal(false);
