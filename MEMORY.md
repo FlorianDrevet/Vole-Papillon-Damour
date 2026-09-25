@@ -41,6 +41,7 @@
 6. Preserve the current frontend split: `BackOffice` for admin surfaces, `Website` for association content, `Catalog` for the public books catalog, and `MauiCashApp` for the cashier client.
 7. Do not assume every mutating HTTP route is admin-protected; check `10-api-endpoints.md` before touching auth-sensitive behavior.
 8. Every paginated or searchable list must query the API: send the filters, page and page size to the backend and render only the returned page; never load the full collection into the browser for client-side pagination or search.
+9. Raw SQL against `Books` must use persisted column `Isbn13`; `BookConfiguration` maps the domain key `Book.Id` to that column.
 
 ## Commands To Remember
 
