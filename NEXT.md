@@ -22,6 +22,7 @@
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-report-migration` |
 | **Dernière mise à jour** | 2026-09-25 — le run [#36059976334](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36059976334) a échoué dans `RetireSelectionPersonalStatuses` avant le rollout. La jointure de `Books` utilisait `Id` au lieu de sa colonne `Isbn13`; correction préparée dans `fix/not-found-report-migration`. |
 | **Branche** | `fix/not-found-report-migration`, basée sur `origin/main`. |
+| **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 
@@ -68,6 +69,22 @@ manuels.
 
 Le correctif de suivi des livres rares de la PR #228 reste décrit ci-dessous ; aucune
 opération Azure de cette fonctionnalité n'a été effectuée ici.
+
+### Recommandations de livres — 2026-09-25
+
+Les recommandations sont implémentées sur `feat/book-recommendations` et restent
+désactivées par défaut. « Dans le même esprit » est public ; « Pour vous » utilise les
+achats associés du membre, peut être désactivé depuis ses préférences et exclut toutes
+les œuvres déjà achetées. La page « Vos données et le RGPD » décrit le traitement avec
+l'intérêt légitime comme base proposée ; l'association doit valider cette base avant
+l'ouverture publique.
+
+Avant activation, relire une cinquantaine de fiches réelles et calibrer
+`SimilarMinScore`, puis confirmer qu'un calcul nocturne a réussi. Le déploiement Azure
+`text-embedding-3-small` avait été créé manuellement le 24 septembre avec le même nom ;
+le Bicep reprend son nom, `GlobalStandard` et la capacité 50. Pour cette livraison, le
+Bicep a uniquement été compilé localement : aucun déploiement Azure n'a été exécuté.
+
 
 ### Correctif livres rares Catalog — 2026-09-24
 

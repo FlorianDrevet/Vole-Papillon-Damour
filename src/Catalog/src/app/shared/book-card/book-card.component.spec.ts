@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {RouterModule} from '@angular/router';
 import {DesignSystemModule} from '@vpd/ui';
 
-import {CatalogBook} from '../../core/catalog.models';
+import {CatalogBook, CatalogNeighborReason} from '../../core/catalog.models';
 import {BookCardComponent} from './book-card.component';
 
 describe('BookCardComponent', () => {
@@ -212,6 +212,39 @@ describe('BookCardComponent', () => {
     expect(card.querySelector('.book-card-action')?.textContent?.trim()).toBe('Suivre');
     expect(card.querySelector('.availability-list')).toBeNull();
     expect(card.querySelector('vpd-book-cover-placeholder')).not.toBeNull();
+  });
+
+  it('shows the mapped recommendation reason on the home card only when provided', () => {
+    fixture.componentInstance.book = {
+      isbn13: '9782070408504',
+      title: 'Le Petit Prince',
+      authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard',
+      publicationYear: 1999,
+      physicalFormat: null,
+      language: 'fr',
+      genre: 'Jeunesse',
+      workId: 'work-1',
+      coverUrl: null,
+      quantityAvailable: 3,
+      quantityAnnounced: 0,
+      nextFairAt: null,
+      lastAvailableAt: '2026-09-03T10:00:00Z',
+      firstSeenAt: '2026-09-03T10:00:00Z',
+      updatedAt: '2026-09-04T10:00:00Z',
+      isRare: false,
+    };
+    fixture.componentInstance.variant = 'home';
+    fixture.componentInstance.reason = 'NextTome' satisfies CatalogNeighborReason;
+    fixture.detectChanges();
+
+    const reason = fixture.nativeElement.querySelector('.book-card-reason') as HTMLElement;
+    expect(reason.textContent.trim()).toBe('Tome suivant');
+    expect(reason.classList).toContain('reason-next-tome');
+
+    fixture.componentRef.setInput('reason', null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.book-card-reason')).toBeNull();
   });
 
   it('uses a high-resolution BnF cover that fills the home cover tile', () => {

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R8 · Pour vous — états</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</head>
+<body>
+<div style="position: relative; width: 1440px; height: 1100px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="padding: 36px 80px 0;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #6d8ba2;">État A · Mes achats, aucun achat associé — le bandeau devient une invitation</span>
+  </div>
+  <section data-zone="R8-sans-achat" aria-labelledby="no-purchase-title" style="margin: 16px 80px 0; display: flex; align-items: center; justify-content: space-between; gap: 30px; padding: 26px 30px; border: 1px dashed #9dc2da; border-radius: 2px; background: #ffffff;">
+    <div style="display: flex; flex-direction: column; gap: 8px; max-width: 760px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Pour prolonger vos lectures</span>
+      <h2 id="no-purchase-title" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 24px; font-weight: 500;">Présentez votre carte de compte à la caisse.</h2>
+      <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: #4e6c84;">Vos prochains achats associés nous permettront de vous suggérer des livres proches. Les ventes anonymes ne sont jamais utilisées.</p>
+    </div>
+    <a href="#" style="flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 20px; border: 1px solid #9dc2da; border-radius: 999px; font-size: 14px; font-weight: 600; color: #072b45;">Afficher ma carte</a>
+  </section>
+
+  <div style="padding: 44px 80px 0;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #6d8ba2;">État B · Compte et données, suggestions désactivées — accueil et Mes achats n'affichent plus rien</span>
+  </div>
+  <section data-zone="R8-desactive" aria-labelledby="recommendations-off-title" style="margin: 16px 80px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 30px; padding: 26px 30px; border: 1px solid #d9e9f4; border-radius: 2px; background: #ffffff;">
+    <div style="display: flex; flex-direction: column; gap: 10px; max-width: 660px;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: #6d8ba2;">Préférences</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid #9dc2da; border-radius: 999px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #4e6c84;"><span style="width: 6px; height: 6px; border-radius: 999px; background: #9dc2da;"></span>Désactivées</span>
+      </div>
+      <h2 id="recommendations-off-title" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 24px; font-weight: 500;">Suggestions personnalisées.</h2>
+      <p style="margin: 0; font-size: 14.5px; line-height: 1.55; color: #4e6c84;">Vos achats ne servent plus à vous proposer des livres. Les suggestions « Dans le même esprit » des fiches restent visibles : elles ne dépendent pas de votre compte.</p>
+    </div>
+    <button type="button" style="flex: none; margin: 0; font-family: inherit; cursor: pointer; min-height: 44px; padding: 0 20px; border: 0; border-radius: 999px; background: #072b45; font-size: 14px; font-weight: 600; color: #ffffff;">Réactiver les suggestions</button>
+  </section>
+
+  <div style="padding: 44px 80px 0;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #6d8ba2;">État C · accueil, chargement de « Pour vous »</span>
+  </div>
+  <section data-zone="R8-chargement" aria-busy="true" aria-label="Suggestions en cours de chargement" style="margin-top: 16px; padding: 40px 80px 48px;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <span style="width: 56px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+      <span style="width: 180px; height: 12px; border-radius: 999px; background: #e9f4fb;"></span>
+      <span style="width: 420px; height: 26px; border-radius: 999px; background: #e9f4fb;"></span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin-top: 30px;">
+      <div style="height: 200px; background: #e9f4fb;"></div>
+      <div style="height: 200px; background: #e9f4fb;"></div>
+      <div style="height: 200px; background: #e9f4fb;"></div>
+      <div style="height: 200px; background: #e9f4fb;"></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

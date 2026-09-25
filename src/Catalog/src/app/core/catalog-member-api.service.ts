@@ -1,4 +1,4 @@
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 
@@ -7,6 +7,7 @@ import {
   CatalogAddedWatchlistItem,
   CatalogAlertPreferencesResponse,
   CatalogMemberCard,
+  CatalogRecommendationsResponse,
   CatalogPurchasesResponse,
   CatalogAddedSelectionItem,
   CatalogSelectionMergeEntry,
@@ -106,6 +107,31 @@ export class CatalogMemberApiService {
     const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
     return this.http.get<CatalogPurchasesResponse>(
       `${this.apiUrl}/catalog/me/purchases${query}`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  getRecommendations(accessToken: string, limit = 4): Observable<CatalogRecommendationsResponse> {
+    return this.http.get<CatalogRecommendationsResponse>(
+      `${this.apiUrl}/catalog/me/recommendations`,
+      {
+        headers: this.authorizationHeaders(accessToken),
+        params: new HttpParams().set('limit', limit),
+      },
+    );
+  }
+
+  getRecommendationPreference(accessToken: string): Observable<{enabled: boolean}> {
+    return this.http.get<{enabled: boolean}>(
+      `${this.apiUrl}/catalog/me/recommendations/preference`,
+      {headers: this.authorizationHeaders(accessToken)},
+    );
+  }
+
+  setRecommendationPreference(accessToken: string, enabled: boolean): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/catalog/me/recommendations/preference`,
+      {enabled},
       {headers: this.authorizationHeaders(accessToken)},
     );
   }

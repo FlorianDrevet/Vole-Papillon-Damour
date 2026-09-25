@@ -4,7 +4,7 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogMemberApiService} from './catalog-member-api.service';
-import {CatalogMemberCard} from './catalog.models';
+import {CatalogMemberCard, CatalogRecommendationsResponse} from './catalog.models';
 
 describe('CatalogMemberApiService', () => {
   let service: CatalogMemberApiService;
@@ -33,6 +33,43 @@ describe('CatalogMemberApiService', () => {
     expect(request.request.method).toBe('GET');
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
     request.flush({generatedAt: '2026-09-04T20:00:00Z', alertStatus: 'Active', bounceCount: 0, items: []});
+  });
+
+  it('loads personal recommendations with a bearer token and a limit of four', () => {
+    const response = {status: 'Enabled', items: []} satisfies CatalogRecommendationsResponse;
+    service.getRecommendations('member-token').subscribe(result => expect(result).toEqual(response));
+
+    const request = http.expectOne(
+      request => request.url === `${environment.apiUrl}/catalog/me/recommendations`,
+    );
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('limit')).toBe('4');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(response);
+  });
+
+  it('reads personal recommendation preferences with a bearer token', () => {
+    service.getRecommendationPreference('member-token')
+      .subscribe(result => expect(result).toEqual({enabled: true}));
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/catalog/me/recommendations/preference`,
+    );
+    expect(request.request.method).toBe('GET');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush({enabled: true});
+  });
+
+  it('updates personal recommendation preferences with a bearer token', () => {
+    service.setRecommendationPreference('member-token', false).subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/catalog/me/recommendations/preference`,
+    );
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({enabled: false});
+    expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
+    request.flush(null);
   });
 
   it('sends the member token to the private volunteer statistics endpoint', () => {

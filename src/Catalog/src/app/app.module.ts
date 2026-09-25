@@ -9,6 +9,8 @@ import localeFr from '@angular/common/locales/fr';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {CatalogBookDetailPageComponent} from './features/book-detail/catalog-book-detail-page.component';
+import {SimilarBooksComponent} from './features/book-detail/similar-books/similar-books.component';
+import {ForYouSectionComponent} from './features/home/for-you/for-you-section.component';
 import {CatalogHomePageComponent} from './features/home/catalog-home-page.component';
 import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogSearchPageComponent} from './features/search/catalog-search-page.component';
@@ -25,6 +27,7 @@ import {AccountSelectionComponent} from './features/account/selection/account-se
 import {NotFoundReportDialogComponent} from './features/account/selection/not-found-report-dialog.component';
 import {AccountCardComponent} from './features/account/card/account-card.component';
 import {AccountPurchasesComponent} from './features/account/purchases/account-purchases.component';
+import {RecommendationsBandComponent} from './features/account/recommendations-band/recommendations-band.component';
 import {CatalogUnsubscribePageComponent} from './features/account/catalog-unsubscribe-page.component';
 import {CatalogFooterComponent} from './core/layouts/footer/catalog-footer.component';
 import {CatalogNavigationComponent} from './core/layouts/navigation/catalog-navigation.component';
@@ -46,6 +49,8 @@ registerLocaleData(localeFr);
     CatalogHomePageComponent,
     CatalogSearchPageComponent,
     CatalogBookDetailPageComponent,
+    SimilarBooksComponent,
+    ForYouSectionComponent,
     CatalogWorkPageComponent,
     LegalPageComponent,
     BookCardComponent,
@@ -60,6 +65,7 @@ registerLocaleData(localeFr);
     NotFoundReportDialogComponent,
     AccountCardComponent,
     AccountPurchasesComponent,
+    RecommendationsBandComponent,
     CatalogUnsubscribePageComponent,
     CatalogNavigationComponent,
     CatalogFooterComponent,

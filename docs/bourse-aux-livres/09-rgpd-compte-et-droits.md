@@ -47,6 +47,7 @@ contrats et rôles de chaque fournisseur doivent être vérifiés.
 | Mes achats | Date, bourse, titres, éditions et quantités des seuls passages associés | Afficher l'historique demandé | Exécution du service demandé ; information claire et association facultative |
 | Alertes | Préférence, historique d'alerte, état de remise et rebonds techniques | Envoyer l'information demandée et éviter les envois en échec | Exécution du service demandé ; absence de prospection, à maintenir |
 | Association de vente à un compte | Identifiant du compte, date, bourse, titres, éditions et quantités d'un passage associé | Afficher l'historique demandé et synchroniser une sélection | Exécution du service demandé ; information claire et association facultative |
+| Suggestions personnalisées | Achats associés (titres et éditions) et préférence activée/désactivée ; seul le texte bibliographique public est transmis au fournisseur d'IA, sans donnée personnelle | Proposer des livres proches de ceux des achats associés | Intérêt légitime de l'association ; opposition par désactivation de la préférence (base à valider avant l'ouverture publique) |
 | Audience et carte | Données d'usage ou données techniques transmises au tiers | Mesurer l'usage ou afficher Maps | Consentement préalable et distinct |
 | Effacement | Données locales, identité Entra, éventuel mouvement métier conservé | Répondre à la demande d'effacement tout en préservant une trace légalement nécessaire | Effacement ; obligation légale/intérêt légitime uniquement pour le résiduel nécessaire |
 

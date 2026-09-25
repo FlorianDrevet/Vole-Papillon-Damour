@@ -1,15 +1,18 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {signal, WritableSignal} from '@angular/core';
+import {RouterModule} from '@angular/router';
 import {of} from 'rxjs';
 
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
 import {CatalogPurchasesResponse, CatalogPurchasePassage} from '../../../core/catalog.models';
+import {RecommendationsBandComponent} from '../recommendations-band/recommendations-band.component';
 import {AccountPurchasesComponent} from './account-purchases.component';
 
 describe('AccountPurchasesComponent', () => {
   let fixture: ComponentFixture<AccountPurchasesComponent>;
   let api: jasmine.SpyObj<CatalogMemberApiService>;
-  let auth: {getApiAccessToken: jasmine.Spy};
+  let auth: {getApiAccessToken: jasmine.Spy; isAuthenticated: WritableSignal<boolean>};
 
   const passage = (overrides: Partial<CatalogPurchasePassage> = {}): CatalogPurchasePassage => ({
     id: 'passage-1',
@@ -57,12 +60,16 @@ describe('AccountPurchasesComponent', () => {
   });
 
   beforeEach(async () => {
-    auth = {getApiAccessToken: jasmine.createSpy('getApiAccessToken').and.resolveTo('member-token')};
+    auth = {
+      getApiAccessToken: jasmine.createSpy('getApiAccessToken').and.resolveTo('member-token'),
+      isAuthenticated: signal(false),
+    };
     api = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['getPurchases']);
     api.getPurchases.and.returnValue(of(response([passage()])));
 
     await TestBed.configureTestingModule({
-      declarations: [AccountPurchasesComponent],
+      declarations: [AccountPurchasesComponent, RecommendationsBandComponent],
+      imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
         {provide: CatalogMemberApiService, useValue: api},

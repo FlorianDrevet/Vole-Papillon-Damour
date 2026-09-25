@@ -5,12 +5,15 @@ import {RouterModule, Router} from '@angular/router';
 import {of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
+import {CatalogAuthService} from '../../core/catalog-auth.service';
+import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogBook, CatalogFair, CatalogRareBook, CatalogRareBookPage, CatalogSearchResponse} from '../../core/catalog.models';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
 import {CatalogRareBookCardComponent} from '../../shared/rare-book-card/rare-book-card.component';
 import {CookieConsentService} from '../../shared/services/cookie-consent.service';
 import {DesignSystemModule} from '@vpd/ui';
 import {CatalogHomePageComponent} from './catalog-home-page.component';
+import {ForYouSectionComponent} from './for-you/for-you-section.component';
 
 describe('CatalogHomePageComponent', () => {
   let fixture: ComponentFixture<CatalogHomePageComponent>;
@@ -101,15 +104,28 @@ describe('CatalogHomePageComponent', () => {
       page: 1,
       pageSize: 4,
     } satisfies CatalogRareBookPage));
+    const auth = {
+      account: signal(null),
+      isAuthenticated: signal(false),
+      initialize: jasmine.createSpy('initialize').and.resolveTo(),
+      tryGetApiAccessToken: jasmine.createSpy('tryGetApiAccessToken').and.resolveTo(null),
+    } as unknown as CatalogAuthService;
+    const memberApi = jasmine.createSpyObj<CatalogMemberApiService>(
+      'CatalogMemberApiService',
+      ['getRecommendations'],
+    );
+    memberApi.getRecommendations.and.returnValue(of({status: 'NoPurchases', items: []}));
     consent = {
       mapsEnabled: signal(true),
       enableMaps: jasmine.createSpy('enableMaps').and.callFake(() => consent.mapsEnabled.set(true)),
     };
     await TestBed.configureTestingModule({
-      declarations: [CatalogHomePageComponent, BookCardComponent, CatalogRareBookCardComponent],
+      declarations: [CatalogHomePageComponent, ForYouSectionComponent, BookCardComponent, CatalogRareBookCardComponent],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         {provide: CatalogApiService, useValue: api},
+        {provide: CatalogAuthService, useValue: auth},
+        {provide: CatalogMemberApiService, useValue: memberApi},
         {provide: CookieConsentService, useValue: consent},
       ],
     }).compileComponents();
@@ -238,6 +254,16 @@ describe('CatalogHomePageComponent', () => {
     expect(genresSection.querySelector('.genre-card--all')).not.toBeNull();
     expect(accountSection.querySelectorAll('.home-account-step')).toHaveSize(3);
     expect(accountSection.querySelector('.callout-link')?.textContent).toContain('Créer mon compte');
+  });
+
+  it('places the member recommendation section before recent arrivals', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const recommendations = element.querySelector('app-for-you-section') as HTMLElement;
+    const recent = element.querySelector('.selection-section:not(.rare-section)') as HTMLElement;
+
+    expect(recommendations).not.toBeNull();
+    expect(recent).not.toBeNull();
+    expect(recommendations.compareDocumentPosition(recent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('uses the mockup card variant only for recent books', () => {

@@ -293,6 +293,7 @@ param socialImportAccessTokenIssuedAt = readEnvironmentVariable('INSTAGRAM_ACCES
 param titleGenerationEnabled = readEnvironmentVariable('TITLE_GENERATION_ENABLED', 'false') == 'true'
 param titleGenerationAccountName = readEnvironmentVariable('TITLE_GENERATION_ACCOUNT_NAME', '')
 param titleGenerationDeploymentName = readEnvironmentVariable('TITLE_GENERATION_DEPLOYMENT_NAME', 'actuality-title')
+param recommendationsEnabled = readEnvironmentVariable('RECOMMENDATIONS_ENABLED', 'false') == 'true'
 
 param apiImage = readEnvironmentVariable('API_IMAGE', '')
 param websiteImage = readEnvironmentVariable('WEBSITE_IMAGE', '')

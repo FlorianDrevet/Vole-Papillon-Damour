@@ -23,6 +23,35 @@ export interface CatalogBook {
   rareBookSlug?: string | null;
 }
 
+export type CatalogNeighborReason = 'NextTome' | 'SameSeries' | 'SameAuthor' | 'Theme';
+
+export interface CatalogSimilarBook extends CatalogBook {
+  reason: CatalogNeighborReason;
+}
+
+export interface CatalogSimilarBooksResponse {
+  books: CatalogSimilarBook[];
+}
+
+export const neighborReasonLabels: Record<CatalogNeighborReason, string> = {
+  NextTome: 'Tome suivant',
+  SameSeries: 'Même série',
+  SameAuthor: 'Même auteur',
+  Theme: 'Proche par le thème',
+};
+
+export type CatalogRecommendationStatus = 'Enabled' | 'Disabled' | 'NoPurchases';
+
+export interface CatalogPersonalRecommendation extends CatalogBook {
+  reason: CatalogNeighborReason;
+  seedTitle: string;
+}
+
+export interface CatalogRecommendationsResponse {
+  status: CatalogRecommendationStatus;
+  items: CatalogPersonalRecommendation[];
+}
+
 export interface CatalogSearchResponse {
   generatedAt: string;
   books: CatalogBook[];

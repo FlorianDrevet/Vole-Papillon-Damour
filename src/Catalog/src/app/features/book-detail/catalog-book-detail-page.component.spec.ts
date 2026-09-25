@@ -15,8 +15,10 @@ import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {CatalogBook} from '../../core/catalog.models';
 import {CatalogBookDetailPageComponent} from './catalog-book-detail-page.component';
+import {SimilarBooksComponent} from './similar-books/similar-books.component';
 import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
 import {SelectionButtonComponent} from '../../shared/components/selection-button/selection-button.component';
+import {BookCardComponent} from '../../shared/book-card/book-card.component';
 
 describe('CatalogBookDetailPageComponent', () => {
   let fixture: ComponentFixture<CatalogBookDetailPageComponent>;
@@ -81,8 +83,9 @@ describe('CatalogBookDetailPageComponent', () => {
     auth.register.and.resolveTo();
     auth.getApiAccessToken.and.resolveTo('member-token');
 
-    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['getBook']);
+    api = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['getBook', 'getSimilarBooks']);
     api.getBook.and.returnValue(of(book));
+    api.getSimilarBooks.and.returnValue(of({books: []}));
     memberApi = jasmine.createSpyObj<CatalogMemberApiService>(
       'CatalogMemberApiService',
       ['addWatchlistItem'],
@@ -103,7 +106,13 @@ describe('CatalogBookDetailPageComponent', () => {
     selection.remove.and.resolveTo();
 
     await TestBed.configureTestingModule({
-      declarations: [CatalogBookDetailPageComponent, CatalogAuthPromptComponent, SelectionButtonComponent],
+      declarations: [
+        CatalogBookDetailPageComponent,
+        SimilarBooksComponent,
+        BookCardComponent,
+        CatalogAuthPromptComponent,
+        SelectionButtonComponent,
+      ],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
       providers: [
         provideZonelessChangeDetection(),

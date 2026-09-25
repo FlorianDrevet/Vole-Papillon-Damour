@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R6 · Mon compte, Mes achats — Pour prolonger vos lectures</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</head>
+<body>
+<div style="position: relative; width: 1440px; height: 1480px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; padding: 20px 80px; border-bottom: 1px solid #d9e9f4;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 42px; height: 42px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background-image: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .06em; color: #ffffff;">VPD</span>
+      </div>
+      <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px; line-height: 1; color: #072b45;">Vole Papillon d'Amour</span>
+    </div>
+    <nav aria-label="Navigation principale" style="display: flex; align-items: center; gap: 24px; font-size: 14px;">
+      <a href="#" style="color: #4e6c84;">Rechercher</a>
+      <a href="#" style="color: #4e6c84;">Catalogue par genre</a>
+      <a href="#" style="color: #4e6c84;">La prochaine bourse</a>
+      <a href="#" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px; background: #072b45; font-weight: 600; color: #ffffff;">Camille</a>
+    </nav>
+  </header>
+
+  <div style="padding: 46px 80px 0; background: #ffffff;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <span style="width: 56px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Mon compte</span>
+      <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 44px; font-weight: 500; line-height: 1.05;">Mes achats.</h1>
+    </div>
+    <div role="tablist" aria-label="Espaces du compte" style="display: flex; gap: 28px; margin-top: 30px; font-size: 15px;">
+      <span role="tab" aria-selected="false" style="padding-bottom: 12px; border-bottom: 2px solid transparent; color: #4e6c84;">Ma sélection</span>
+      <span role="tab" aria-selected="true" style="padding-bottom: 12px; border-bottom: 2px solid #f0801c; font-weight: 600; color: #072b45;">Mes achats</span>
+      <span role="tab" aria-selected="false" style="padding-bottom: 12px; border-bottom: 2px solid transparent; color: #4e6c84;">Mes recherches</span>
+      <span role="tab" aria-selected="false" style="padding-bottom: 12px; border-bottom: 2px solid transparent; color: #4e6c84;">Ma carte</span>
+      <span role="tab" aria-selected="false" style="padding-bottom: 12px; border-bottom: 2px solid transparent; color: #4e6c84;">Compte et données</span>
+    </div>
+    <div style="height: 1px; margin-top: -1px; background: #d9e9f4;"></div>
+  </div>
+
+  <div style="padding: 0 80px 60px;">
+    <section data-zone="R6-bandeau" aria-labelledby="purchases-for-you-title" style="margin-top: 32px; padding: 28px 30px 30px; border: 1px solid #d9e9f4; border-radius: 2px; background: #ffffff;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 30px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Pour prolonger vos lectures</span>
+          <h2 id="purchases-for-you-title" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 26px; font-weight: 500; line-height: 1.15;">Des livres proches de ceux que vous avez achetés.</h2>
+        </div>
+        <a href="ComptePreferences.html" style="flex: none; font-size: 14px; font-weight: 500; color: #0c6ea6;">Gérer ces suggestions →</a>
+      </div>
+      <div data-zone="R6-liste" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 22px;">
+        <a data-zone="R6-carte" href="#" style="display: flex; gap: 14px; padding: 12px; border: 1px solid #e2eef7; border-radius: 2px; background: #f7fbfe; color: #072b45;">
+          <div style="flex: none; width: 64px; height: 92px; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px); border: 1px solid #d9e9f4;"></div>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 16px; font-weight: 500; line-height: 1.15;">Hypérion</span>
+            <span style="font-size: 12.5px; color: #4e6c84;">Dan Simmons</span>
+            <span style="font-size: 12px; line-height: 1.35; color: #33536e;">Proche de <em>Dune</em></span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #18703a;"><span style="width: 6px; height: 6px; border-radius: 999px; background: #18703a;"></span>2 dispo.</span>
+          </div>
+        </a>
+        <a data-zone="R6-carte" href="#" style="display: flex; gap: 14px; padding: 12px; border: 1px solid #e2eef7; border-radius: 2px; background: #f7fbfe; color: #072b45;">
+          <div style="flex: none; width: 64px; height: 92px; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px); border: 1px solid #d9e9f4;"></div>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 16px; font-weight: 500; line-height: 1.15;">La Horde du Contrevent</span>
+            <span style="font-size: 12.5px; color: #4e6c84;">Alain Damasio</span>
+            <span style="font-size: 12px; line-height: 1.35; color: #33536e;">Proche de <em>Dune</em></span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #0c6ea6;"><span style="width: 6px; height: 6px; border-radius: 999px; background: #1497d6;"></span>1 dès le 14 mars</span>
+          </div>
+        </a>
+        <a data-zone="R6-carte" href="#" style="display: flex; gap: 14px; padding: 12px; border: 1px solid #e2eef7; border-radius: 2px; background: #f7fbfe; color: #072b45;">
+          <div style="flex: none; width: 64px; height: 92px; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px); border: 1px solid #d9e9f4;"></div>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 16px; font-weight: 500; line-height: 1.15;">La fille qui rêvait d'un bidon d'essence…</span>
+            <span style="font-size: 12.5px; color: #4e6c84;">Stieg Larsson</span>
+            <span style="font-size: 12px; line-height: 1.35; color: #33536e;">La suite de votre achat</span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #18703a;"><span style="width: 6px; height: 6px; border-radius: 999px; background: #18703a;"></span>1 dispo.</span>
+          </div>
+        </a>
+        <a data-zone="R6-carte" href="#" style="display: flex; gap: 14px; padding: 12px; border: 1px solid #e2eef7; border-radius: 2px; background: #f7fbfe; color: #072b45;">
+          <div style="flex: none; width: 64px; height: 92px; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px); border: 1px solid #d9e9f4;"></div>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+            <span style="font-family: 'Newsreader', Georgia, serif; font-size: 16px; font-weight: 500; line-height: 1.15;">Miséricorde</span>
+            <span style="font-size: 12.5px; color: #4e6c84;">Jussi Adler-Olsen</span>
+            <span style="font-size: 12px; line-height: 1.35; color: #33536e;">Proche de <em>Les hommes qui n'aimaient…</em></span>
+            <span style="display: inline-flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: #18703a;"><span style="width: 6px; height: 6px; border-radius: 999px; background: #18703a;"></span>2 dispo.</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <article style="margin-top: 34px; padding: 28px 30px; border: 1px solid #d9e9f4; border-radius: 2px; background: #ffffff;">
+      <header style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; color: #6d8ba2;">Passage · P-2026-0314-018</span>
+          <h2 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 24px; font-weight: 500;">14 mars 2026 · Bourse aux livres</h2>
+        </div>
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; color: #6d8ba2;">2 livres</span>
+      </header>
+      <ul style="margin: 20px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column;">
+        <li style="display: flex; gap: 18px; padding: 16px 0; border-top: 1px solid #e2eef7;">
+          <div style="flex: none; width: 56px; height: 80px; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <h3 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 500;">Dune</h3>
+            <span style="font-size: 13.5px; color: #4e6c84;">Frank Herbert</span>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #6d8ba2;">Pocket · ISBN 9782266233200</span>
+          </div>
+        </li>
+        <li style="display: flex; gap: 18px; padding: 16px 0; border-top: 1px solid #e2eef7;">
+          <div style="flex: none; width: 56px; height: 80px; border: 1px solid #d9e9f4; background-image: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);"></div>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <h3 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 19px; font-weight: 500;">Les hommes qui n'aimaient pas les femmes</h3>
+            <span style="font-size: 13.5px; color: #4e6c84;">Stieg Larsson</span>
+            <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #6d8ba2;">Actes Sud · ISBN 9782742793099</span>
+          </div>
+        </li>
+      </ul>
+    </article>
+    <p style="margin: 22px 0 0; font-size: 13.5px; color: #6d8ba2;">Seuls les passages associés à ce compte sont visibles ici. Les ventes anonymes ne peuvent pas être retrouvées automatiquement.</p>
+  </div>
+</div>
+</body>
+</html>

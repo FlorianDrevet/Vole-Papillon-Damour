@@ -1,0 +1,7 @@
+.venv/
+cache/
+cache-build.log
+.env.local
+__pycache__/
+out/voisins-*.json
+out/rapport-fake.md

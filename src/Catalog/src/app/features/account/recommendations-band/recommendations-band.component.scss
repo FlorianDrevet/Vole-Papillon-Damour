@@ -1,0 +1,237 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.recommendations-band,
+.recommendations-band-empty {
+  margin-top: 32px;
+  padding: 28px 30px 30px;
+  border: 1px solid #d9e9f4;
+  border-radius: 2px;
+  background: #fff;
+  color: #072b45;
+}
+
+.recommendations-band-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.recommendations-band-header > div,
+.recommendations-band-empty > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recommendations-band-eyebrow {
+  color: #dc6412;
+  font: 500 10.5px/1.3 var(--catalog-mono);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.recommendations-band h2 {
+  margin: 0;
+  color: #072b45;
+  font: 500 26px/1.15 var(--catalog-display);
+}
+
+.recommendations-band-manage {
+  flex: none;
+  color: #0c6ea6;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.recommendations-band-manage:hover,
+.recommendations-band-manage:focus-visible {
+  color: #072b45;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.recommendations-band-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.recommendations-band-card {
+  display: flex;
+  min-width: 0;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid #e2eef7;
+  border-radius: 2px;
+  background: #f7fbfe;
+  color: #072b45;
+  text-decoration: none;
+}
+
+.recommendations-band-card:hover,
+.recommendations-band-card:focus-visible {
+  border-color: #9dc2da;
+  background: #fff;
+}
+
+.recommendations-band-cover {
+  display: block;
+  width: 64px;
+  height: 92px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid #d9e9f4;
+  background: repeating-linear-gradient(135deg, #dceffa 0 8px, #f2fafd 8px 16px);
+}
+
+.recommendations-band-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recommendations-band-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recommendations-band-title {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #072b45;
+  font: 500 16px/1.15 var(--catalog-display);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.recommendations-band-author {
+  overflow: hidden;
+  color: #4e6c84;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommendations-band-reason {
+  color: #33536e;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.recommendations-band-reason em {
+  color: #072b45;
+  font-family: var(--catalog-display);
+}
+
+.recommendations-band-availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: auto;
+  color: #18703a;
+  font: 500 9.5px/1.3 var(--catalog-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.recommendations-band-availability::before {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 999px;
+  background: #18703a;
+  content: '';
+}
+
+.recommendations-band-card-link {
+  display: inline-flex;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  padding: 0 20px;
+  border: 1px solid #9dc2da;
+  border-radius: 999px;
+  color: #072b45;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.recommendations-band-card-link:hover,
+.recommendations-band-card-link:focus-visible {
+  border-color: #072b45;
+  background: #f7fbfe;
+}
+
+.recommendations-band-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 26px 30px;
+  border: 1px dashed #9dc2da;
+}
+
+.recommendations-band-empty h2 {
+  font: 500 24px/1.15 var(--catalog-display);
+}
+
+.recommendations-band-empty p {
+  max-width: 760px;
+  margin: 0;
+  color: #4e6c84;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .recommendations-band,
+  .recommendations-band-empty {
+    margin-top: 24px;
+    padding: 22px 16px 24px;
+  }
+
+  .recommendations-band-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .recommendations-band h2 {
+    font-size: 22px;
+  }
+
+  .recommendations-band-list {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    margin: 18px -16px 0;
+    padding: 0 16px 8px;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 16px;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .recommendations-band-card {
+    width: 286px;
+    flex: 0 0 286px;
+    scroll-snap-align: start;
+  }
+
+  .recommendations-band-empty {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+}

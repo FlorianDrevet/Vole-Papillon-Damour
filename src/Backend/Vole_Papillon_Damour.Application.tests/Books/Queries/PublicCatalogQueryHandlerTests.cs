@@ -26,11 +26,14 @@ using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Queries;
 
@@ -722,6 +725,18 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
 
     public async Task SaveAsync() => await Context.SaveChangesAsync();
 
+    public void AddNeighbor(Guid generationId, string isbn13, byte rank, string neighborIsbn13, float score, NeighborReason reason)
+    {
+        Context.BookNeighbors.Add(new BookNeighbor(generationId, isbn13, rank, neighborIsbn13, score, reason));
+    }
+
+    public async Task SetCurrentGenerationAsync(Guid generationId, int bookCount = 0)
+    {
+        var generation = await Context.RecommendationGenerations.SingleAsync(candidate => candidate.Id == 1);
+        generation.Switch(generationId, bookCount, now);
+        await Context.SaveChangesAsync();
+    }
+
     public SearchCatalogQueryHandler CreateSearchHandler()
     {
         var clock = Substitute.For<IDateTimeProvider>();
@@ -798,6 +813,8 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
+    public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
+    public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
@@ -811,6 +828,8 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     DbSet<EmailBounceEvent> IProjectDbContext.EmailBounceEvents => throw new NotSupportedException();
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
+    DbSet<BookNeighbor> IProjectDbContext.BookNeighbors => BookNeighbors;
+    DbSet<RecommendationGeneration> IProjectDbContext.RecommendationGenerations => RecommendationGenerations;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -927,6 +946,9 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
             builder.Property(photo => photo.UploadedBy)
                 .HasConversion(id => id.Value, value => UserId.Create(value));
         });
+
+        modelBuilder.ApplyConfiguration(new BookNeighborConfiguration());
+        modelBuilder.ApplyConfiguration(new RecommendationGenerationConfiguration());
     }
 
     private static Isbn13 ParseIsbn(string value)

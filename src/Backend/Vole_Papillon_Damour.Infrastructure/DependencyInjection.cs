@@ -29,6 +29,7 @@ using Vole_Papillon_Damour.Infrastructure.Services.BookAlerts;
 using Vole_Papillon_Damour.Infrastructure.Services.BlobService;
 using Vole_Papillon_Damour.Infrastructure.Services.MemberCards;
 using Vole_Papillon_Damour.Infrastructure.Services.Ai;
+using Vole_Papillon_Damour.Infrastructure.Services.Recommendations;
 using Vole_Papillon_Damour.Infrastructure.Services.Social;
 
 namespace Vole_Papillon_Damour.Infrastructure;
@@ -98,10 +99,21 @@ public static class DependencyInjection
             builderConfiguration.GetSection(InstagramOptions.SectionName));
         services.Configure<TitleGenerationOptions>(
             builderConfiguration.GetSection(TitleGenerationOptions.SectionName));
+        services.Configure<RecommendationOptions>(
+            builderConfiguration.GetSection(RecommendationOptions.SectionName));
+        services.AddSingleton<IRecommendationSettings, RecommendationSettings>();
+        services.AddScoped<IBookNeighborWriter, SqlBookNeighborWriter>();
+        AddBookEmbeddings(services, builderConfiguration);
         services.AddHttpClient<IBnfSruClient, BnfSruClient>((serviceProvider, client) =>
         {
             var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
             client.Timeout = TimeSpan.FromMilliseconds(options.BnfTimeoutMilliseconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
+        });
+        services.AddHttpClient<IBibliographicNoticeReader, BibliographicNoticeReader>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<BibliographicOptions>>().Value;
+            client.Timeout = TimeSpan.FromMilliseconds(Math.Max(options.BnfTimeoutMilliseconds, options.OpenLibraryTimeoutMilliseconds) * 2);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
         });
         services.AddHttpClient<IBnfSruSearchClient, BnfSruSearchClient>((serviceProvider, client) =>
@@ -178,6 +190,30 @@ public static class DependencyInjection
                 .AsIChatClient();
         });
         services.AddScoped<IActualityTitleGenerator, FoundryActualityTitleGenerator>();
+    }
+
+    private static void AddBookEmbeddings(
+        IServiceCollection services,
+        IConfiguration builderConfiguration)
+    {
+        var section = builderConfiguration.GetSection(RecommendationOptions.SectionName);
+        var endpoint = section.GetValue<string>(nameof(RecommendationOptions.Endpoint));
+        var deploymentName = section.GetValue<string>(nameof(RecommendationOptions.EmbeddingDeploymentName));
+
+        if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(deploymentName))
+        {
+            services.AddScoped<IBookEmbeddingService, NoOpBookEmbeddingService>();
+            return;
+        }
+
+        services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<RecommendationOptions>>().Value;
+            return new AzureOpenAIClient(new Uri(options.Endpoint!), new DefaultAzureCredential())
+                .GetEmbeddingClient(options.EmbeddingDeploymentName)
+                .AsIEmbeddingGenerator();
+        });
+        services.AddScoped<IBookEmbeddingService, AzureOpenAiBookEmbeddingService>();
     }
 
     public static IServiceCollection AddBookMetadataEnrichmentProcessing(

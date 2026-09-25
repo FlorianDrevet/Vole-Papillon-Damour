@@ -20,6 +20,12 @@ param modelVersion string = '2025-04-14'
 @description('Initial provisioned throughput capacity')
 param capacity int = 1
 
+@description('Name of the optional embedding deployment consumed by recommendations')
+param embeddingDeploymentName string = ''
+
+@description('Initial provisioned throughput capacity for the embedding deployment')
+param embeddingCapacity int = 50
+
 @description('Principal ID of the Worker user-assigned identity')
 param workerPrincipalId string
 
@@ -58,6 +64,23 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01
       format: 'OpenAI'
       name: modelName
       version: modelVersion
+    }
+  }
+}
+
+resource embeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = if (!empty(embeddingDeploymentName)) {
+  parent: account
+  name: empty(embeddingDeploymentName) ? 'unused' : embeddingDeploymentName
+  dependsOn: [deployment]
+  sku: {
+    name: 'GlobalStandard'
+    capacity: embeddingCapacity
+  }
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'text-embedding-3-small'
+      version: '1'
     }
   }
 }

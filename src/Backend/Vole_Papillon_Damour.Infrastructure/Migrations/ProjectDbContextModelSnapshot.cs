@@ -1021,6 +1021,118 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("RareBooks", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.BookNeighbor", b =>
+                {
+                    b.Property<Guid>("GenerationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Isbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<byte>("Rank")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("NeighborIsbn13")
+                        .IsRequired()
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<byte>("Reason")
+                        .HasColumnType("tinyint");
+
+                    b.Property<float>("Score")
+                        .HasColumnType("real");
+
+                    b.HasKey("GenerationId", "Isbn13", "Rank");
+
+                    b.ToTable("BookNeighbors", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.BookSimilarityProfile", b =>
+                {
+                    b.Property<string>("Isbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<DateTime?>("EmbeddedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmbeddedTextHash")
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)");
+
+                    b.Property<byte[]>("Embedding")
+                        .HasColumnType("varbinary(2048)");
+
+                    b.Property<DateTime?>("NoticeFetchedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("NoticeFound")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NoticeJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfileText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfileTextHash")
+                        .IsUnicode(false)
+                        .HasColumnType("char(64)");
+
+                    b.HasKey("Isbn13");
+
+                    b.HasIndex("NoticeFetchedAt");
+
+                    b.ToTable("BookSimilarityProfiles", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.MemberRecommendationPreference", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("MemberRecommendationPreferences", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.RecommendationGeneration", b =>
+                {
+                    b.Property<byte>("Id")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int>("BookCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ComputedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CurrentGenerationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RecommendationGenerations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecommendationGenerations_Singleton", "[Id] = 1");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = (byte)1,
+                            BookCount = 0
+                        });
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1693,6 +1805,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("UpdatedBy")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.RecommendationAggregate.MemberRecommendationPreference", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.UserAggregate.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

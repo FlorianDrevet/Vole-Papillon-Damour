@@ -1,0 +1,41 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-09-24T21:10:00Z"},
+  "title": "Recommandations de livres",
+  "launch": {"view": "canvas", "page": "public"},
+  "pages": [
+    {"id": "public", "name": "Public — Dans le même esprit"},
+    {"id": "membre", "name": "Membre — Pour vous"}
+  ],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1960, "page": "public", "title": "R1 · Fiche livre — section « Dans le même esprit » (desktop)"},
+    "FicheMobile.dc.html": {"x": 1520, "y": 0, "w": 390, "h": 1560, "page": "public", "title": "R2 · Fiche livre — mobile 390 px"},
+    "FicheEtats.dc.html": {"x": 1990, "y": 0, "w": 1440, "h": 1400, "page": "public", "title": "R3 · Dans le même esprit — états"},
+    "AccueilPourVous.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1720, "page": "membre", "title": "R4 · Accueil connecté — section « Pour vous » (desktop)"},
+    "AccueilPourVousMobile.dc.html": {"x": 1520, "y": 0, "w": 390, "h": 1240, "page": "membre", "title": "R5 · Accueil connecté — mobile 390 px"},
+    "MesAchatsPourVous.dc.html": {"x": 1990, "y": 0, "w": 1440, "h": 1480, "page": "membre", "title": "R6 · Mes achats — bandeau « Pour prolonger vos lectures »"},
+    "ComptePreferences.dc.html": {"x": 0, "y": 1840, "w": 1440, "h": 1320, "page": "membre", "title": "R7 · Compte et données — suggestions personnalisées"},
+    "PourVousEtats.dc.html": {"x": 1520, "y": 1840, "w": 1440, "h": 1100, "page": "membre", "title": "R8 · Pour vous — états"}
+  },
+  "order": [
+    "Main.dc.html",
+    "FicheMobile.dc.html",
+    "FicheEtats.dc.html",
+    "AccueilPourVous.dc.html",
+    "AccueilPourVousMobile.dc.html",
+    "MesAchatsPourVous.dc.html",
+    "ComptePreferences.dc.html",
+    "PourVousEtats.dc.html"
+  ],
+  "notes": {
+    "titre-public": {"x": 0, "y": -340, "text": "Sous chaque fiche : des livres proches, pour tout le monde", "kind": "title1", "maxW": 3430, "page": "public"},
+    "note-public-regles": {"x": -560, "y": 0, "w": 480, "fill": "orange", "size": "m", "page": "public", "text": "Règles d'affichage (spec 07 §3) : au plus 5 livres ; seulement disponibles ou annoncés ; jamais une autre édition du même livre ; seuls les voisins au-dessus du seuil de score. Moins de 2 voisins : la section n'existe pas (R3, état C). Chargée après la fiche, sans bloquer son affichage."},
+    "note-public-raison": {"x": -560, "y": 720, "w": 480, "fill": "blue", "size": "m", "page": "public", "text": "Étiquette de raison, une seule par carte, par priorité : Tome suivant > Même série > Même auteur > Proche par le thème. Elle vient du calcul (reason), jamais d'un texte libre."},
+    "note-public-rgpd": {"x": -560, "y": 1300, "w": 480, "fill": "teal", "size": "m", "page": "public", "text": "Aucune donnée personnelle : la section est identique pour un visiteur anonyme et un membre connecté. Pas de profilage ici."},
+    "titre-membre": {"x": 0, "y": -340, "text": "Pour vous : à partir des achats associés, désactivable", "kind": "title1", "maxW": 3430, "page": "membre"},
+    "note-membre-regles": {"x": -560, "y": 0, "w": 480, "fill": "orange", "size": "m", "page": "membre", "text": "Graines = achats associés (CheckoutPassageLines non annulées). Voisins agrégés, disponibles ou annoncés, hors livres déjà achetés et hors Ma sélection. Accueil : 4 cartes (desktop) ; Mes achats : 4 cartes compactes. Moins de 3 suggestions : section absente de l'accueil, invitation dans Mes achats (R8, état A)."},
+    "note-membre-raison": {"x": -560, "y": 760, "w": 480, "fill": "blue", "size": "m", "page": "membre", "text": "Ligne de raison : « La suite de X » (tome suivant d'un achat), sinon « Parce que vous avez aimé X » où X est l'achat qui contribue le plus au score. Titre de X en italique Newsreader."},
+    "note-membre-rgpd": {"x": -560, "y": 1840, "w": 480, "fill": "teal", "size": "m", "page": "membre", "text": "Profilage à faible enjeu : activé par défaut (intérêt légitime), désactivable en un clic (R7, R8 état B). Désactivé : accueil et Mes achats n'affichent plus rien, l'API ne calcule rien. Page « Vos données » et doc 09 à mettre à jour."}
+  },
+  "designSystems": []
+}

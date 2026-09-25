@@ -26,6 +26,11 @@
       <div class="book-card-meta">
         <span>{{ book.genre || 'Catalogue' }}</span>
       </div>
+      @if (reason) {
+        <span class="book-card-reason" [class]="'book-card-reason ' + reasonClass()">
+          {{ reasonLabel() }}
+        </span>
+      }
       <h3>{{ book.title || 'Titre à compléter' }}</h3>
       <p class="authors">{{ book.authors || 'Auteur non renseigné' }}</p>
       <div class="book-card-footer">

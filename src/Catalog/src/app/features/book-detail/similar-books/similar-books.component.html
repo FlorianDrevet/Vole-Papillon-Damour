@@ -1,0 +1,70 @@
+@if (state() === 'loading') {
+  <section
+    class="similar-books similar-books--loading"
+    data-zone="R3-chargement"
+    aria-busy="true"
+    aria-label="Livres proches en cours de chargement">
+    <div class="similar-books-inner">
+      <div class="similar-heading">
+        <span class="similar-rule" aria-hidden="true"></span>
+        <span class="similar-eyebrow">Dans le même esprit</span>
+        <h2>Si ce livre vous a plu.</h2>
+      </div>
+      <div class="similar-books-grid similar-skeleton-grid" data-zone="similar-loading" aria-busy="true">
+        @for (skeleton of skeletons; track skeleton) {
+          <div class="similar-skeleton" aria-hidden="true">
+            <span class="similar-skeleton-cover"></span>
+            <span class="similar-skeleton-line similar-skeleton-line--short"></span>
+            <span class="similar-skeleton-line similar-skeleton-line--long"></span>
+            <span class="similar-skeleton-line similar-skeleton-line--medium"></span>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+} @else if (state() === 'ready') {
+  <section class="similar-books" data-zone="R1-section" aria-labelledby="similar-books-title">
+    <div class="similar-books-inner">
+      <div class="similar-header" data-zone="R1-entete">
+        <div class="similar-heading">
+          <span class="similar-rule" aria-hidden="true"></span>
+          <span class="similar-eyebrow">Dans le même esprit</span>
+          <h2 id="similar-books-title">Si ce livre vous a plu.</h2>
+          <p class="similar-intro">
+            Des livres proches par leur histoire, leur série ou leur auteur, disponibles maintenant ou annoncés pour la prochaine bourse.
+          </p>
+          <p class="similar-intro similar-intro--mobile">
+            Disponibles maintenant ou annoncés pour la prochaine bourse.
+          </p>
+        </div>
+        <p class="similar-privacy" data-zone="R1-mention">
+          Suggestions calculées à partir des notices des livres, sans aucune donnée personnelle.
+        </p>
+      </div>
+
+      <div class="similar-books-grid" data-zone="R1-grille">
+        <div class="similar-book-list" data-zone="R2-defilement" role="list" aria-label="Livres proches">
+          @for (book of books(); track book.isbn13) {
+            <app-book-card
+              class="similar-book-card"
+              role="listitem"
+              variant="home"
+              [book]="book"
+              [reason]="book.reason"></app-book-card>
+          }
+        </div>
+      </div>
+
+      <div class="similar-reason-legend" data-zone="R1-legende" aria-label="Étiquettes de recommandation">
+        <span class="similar-legend-label">Les étiquettes</span>
+        <span class="book-card-reason reason-next-tome">Tome suivant</span>
+        <span class="book-card-reason reason-same-series">Même série</span>
+        <span class="book-card-reason reason-same-author">Même auteur</span>
+        <span class="book-card-reason reason-theme">Proche par le thème</span>
+      </div>
+      <p class="similar-privacy similar-privacy--mobile">
+        Suggestions calculées à partir des notices des livres, sans aucune donnée personnelle.
+      </p>
+    </div>
+  </section>
+}

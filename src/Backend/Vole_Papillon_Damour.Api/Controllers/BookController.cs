@@ -21,6 +21,7 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
 using Vole_Papillon_Damour.Application.Books.Queries.GetVolunteerStatistics;
+using Vole_Papillon_Damour.Application.Recommendations.Queries.GetSimilarBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Common;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistItem;
@@ -29,6 +30,7 @@ using Vole_Papillon_Damour.Application.WatchlistFeature.Queries.GetMyWatchlist;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.SetMyAlertStatus;
 using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
+using Vole_Papillon_Damour.Contracts.Recommendations;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
@@ -111,6 +113,31 @@ public static class BookController
                             error => error.Result());
                     })
                 .WithName("GetPublicCatalogBook")
+                .AllowAnonymous()
+                .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
+
+            endpoints.MapGet(
+                    "/catalog/books/{isbn13}/similar",
+                    async (
+                        string isbn13,
+                        HttpContext httpContext,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetSimilarBooksQuery(isbn13),
+                            cancellationToken);
+
+                        return result.Match(
+                            books =>
+                            {
+                                httpContext.Response.Headers.CacheControl = "public, max-age=300";
+                                return Results.Ok(new SimilarBooksResponse(
+                                    books.Select(ToSimilarBookResponse).ToArray()));
+                            },
+                            error => error.Result());
+                    })
+                .WithName("GetSimilarBooks")
                 .AllowAnonymous()
                 .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 
@@ -843,6 +870,32 @@ public static class BookController
             result.IsRare,
             result.CoverSource,
             result.RareBookSlug);
+    }
+
+    private static SimilarBookResponse ToSimilarBookResponse(SimilarBookResult result)
+    {
+        var book = ToResponse(result.Book);
+        return new SimilarBookResponse(
+            book.Isbn13,
+            book.Title,
+            book.Authors,
+            book.Publisher,
+            book.PublicationYear,
+            book.PhysicalFormat,
+            book.Language,
+            book.Genre,
+            book.WorkId,
+            book.CoverUrl,
+            book.QuantityAvailable,
+            book.QuantityAnnounced,
+            book.NextFairAt,
+            book.LastAvailableAt,
+            book.FirstSeenAt,
+            book.UpdatedAt,
+            book.IsRare,
+            book.CoverSource,
+            book.RareBookSlug,
+            result.Reason.ToString());
     }
 
     private static PublicRareBookResponse ToResponse(PublicRareBookResult result)

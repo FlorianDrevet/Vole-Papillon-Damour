@@ -1,6 +1,10 @@
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 
-import {CatalogBook} from '../../core/catalog.models';
+import {
+  CatalogBook,
+  CatalogNeighborReason,
+  neighborReasonLabels,
+} from '../../core/catalog.models';
 import {publicBookPath} from '../catalog-url';
 import {catalogCoverUrl} from '../catalog-cover-url';
 
@@ -16,6 +20,7 @@ export type BookCardVariant = 'default' | 'grid' | 'list' | 'home';
 export class BookCardComponent {
   @Input({required: true}) book!: CatalogBook;
   @Input() variant: BookCardVariant = 'grid';
+  @Input() reason: CatalogNeighborReason | null = null;
 
   coverFailed = false;
 
@@ -61,6 +66,16 @@ export class BookCardComponent {
     return this.book.quantityAvailable > 0 || this.book.quantityAnnounced > 0
       ? 'Suivre'
       : "M'alerter";
+  }
+
+  reasonLabel(): string {
+    return this.reason ? neighborReasonLabels[this.reason] : '';
+  }
+
+  reasonClass(): string {
+    return this.reason
+      ? `reason-${this.reason.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`).replace(/^-/, '')}`
+      : '';
   }
 
   formatShortDate(value: string): string {
