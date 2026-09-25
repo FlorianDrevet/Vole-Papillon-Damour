@@ -1,12 +1,9 @@
 # Recommandations de livres — dossier de conception
 
-Ce dossier trace la réflexion sur une nouvelle capacité : **proposer à un membre des
-livres susceptibles de lui plaire**, à partir de ce qu'il a déjà acheté (et, le cas
-échéant, d'autres signaux de son compte).
-
-Rien n'est implémenté. Rien n'est encore décidé : le dossier sert d'abord à confronter
-l'idée initiale aux contraintes réelles du projet (données disponibles, coût, RGPD,
-maintenance par une personne seule) avant d'écrire une spécification.
+Ce dossier trace la conception et l'implémentation de la capacité **proposer à un membre
+des livres susceptibles de lui plaire**, à partir de ses achats associés. La conception
+est validée et l'implémentation est achevée sur `feat/book-recommendations` ; la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239)
+est ouverte vers `main` et attend sa revue.
 
 ## Par où commencer
 
@@ -32,10 +29,11 @@ maintenance par une personne seule) avant d'écrire une spécification.
 | [`maquettes/index.html`](maquettes/index.html) | Maquettes exportées du canvas [Claude Design](https://claude.ai/artifact/GYWEeUku7qofkTt5pdKtoM) : 8 écrans HTML autonomes, zones `data-zone`, sources `.dc.html`, archive `recommandations-maquettes-html.zip` |
 | [`maquettes/recommandations-de-livres-canvas.html`](maquettes/recommandations-de-livres-canvas.html) | Export officiel du canvas depuis Claude Design (fichier unique, hors ligne) : les deux pages et les notes, tel qu'affiché dans l'éditeur |
 
-Les documents suivants (spécification retenue, puis plan d'implémentation) seront
-ajoutés ici une fois l'approche validée.
+La spécification et le plan ci-dessus décrivent l'approche retenue et son implémentation.
 
 ## Statut
 
-**Conçu — 24 septembre 2026.** Méthode validée par le benchmark, spécification, maquettes
-et plan prêts pour l'implémentation. Branche `docs/book-recommendations-design`.
+**Implémentation terminée — 25 septembre 2026.** Spécification, maquettes, plan et code
+sont réunis dans `feat/book-recommendations` et livrés par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239).
+La fonctionnalité reste désactivée par défaut ; calibrage du seuil sur 50 fiches, validation
+de la base juridique et premier calcul nocturne réussi restent requis avant ouverture publique.

@@ -240,6 +240,7 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         paragraphs: [
           'Ma sélection conserve les éditions ou fiches rares choisies, leur état personnel et leurs dates. La Carte de compte utilise un QR code et un code de secours. Lorsqu’elle est présentée avant la validation d’une vente, Mes achats peut contenir la date, la bourse, les titres, les éditions et les quantités du passage associé.',
           'Cette association est facultative : la Vente anonyme reste toujours possible, et une vente anonyme ne peut pas être retrouvée automatiquement. Les bénévoles ne peuvent pas rechercher l’historique d’un membre ; la caisse ne leur montre que son prénom. Mes achats n’affiche aucun prix ni montant.',
+          'Les suggestions personnalisées utilisent uniquement les achats que vous avez associés à votre compte et votre préférence pour vous proposer des livres proches. La base juridique de ce traitement est l’intérêt légitime de l’association ; vous pouvez désactiver ce traitement à tout moment depuis les préférences de votre compte. Aucune donnée de votre compte ni aucun achat n’est transmis au fournisseur du service d’IA : seul le texte bibliographique des livres du catalogue est utilisé pour calculer leurs ressemblances.',
         ],
       },
       {

@@ -62,6 +62,9 @@ describe('LegalPageComponent', () => {
     expect(content).toContain('Ma sélection est supprimée');
     expect(content).toContain('Le lien personnel avec le passage est anonymisé');
     expect(content.toLowerCase()).toContain('les mouvements nécessaires à la traçabilité restent conservés sans identité exploitable');
+    expect(content).toContain('Les suggestions personnalisées utilisent uniquement les achats que vous avez associés à votre compte et votre préférence');
+    expect(content).toContain('vous pouvez désactiver ce traitement à tout moment depuis les préférences de votre compte');
+    expect(content).toContain('Aucune donnée de votre compte ni aucun achat n’est transmis au fournisseur du service d’IA');
 
     const requestLink = fixture.nativeElement.querySelector(
       '[data-testid="rights-request"]',

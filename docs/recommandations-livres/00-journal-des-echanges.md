@@ -425,3 +425,59 @@ Abandonner ISBNdb. À partir du résultat du benchmark :
   liste de recherche et Ma sélection ne servent pas de graines ; Ma sélection sert
   seulement à exclure.
 - **D9** — La préférence est activée par défaut et désactivable (intérêt légitime).
+
+---
+
+## Échange 11 — 25 septembre 2026 : implémentation des recommandations
+
+### Demande
+
+Exécuter le plan validé pour ajouter « Dans le même esprit » aux fiches et « Pour vous »
+aux espaces membre, avec exclusion des achats déjà associés, préférence désactivable,
+conception livrée avec le code et fonctionnalité désactivée par défaut.
+
+### Réponse — résumé
+
+- Les tâches 0 à 14 sont implémentées et committées sur `feat/book-recommendations`.
+  La [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) est ouverte
+  vers `main` et n'est pas fusionnée.
+- Les fiches publiques ont leurs voisins filtrés selon le stock et les seuils de la spec.
+  L'accueil et Mes achats proposent des livres à partir des achats associés ; toutes les
+  œuvres déjà achetées sont exclues. Le membre peut désactiver ces suggestions depuis ses
+  préférences. `Recommendations:Enabled` reste à `false` par défaut.
+- Le profil de similarité conserve les langues BnF (`101$a`) sans les ajouter au score.
+  Pour les graines personnelles, les 20 achats associés les plus récents sont utilisés,
+  tandis que toutes les œuvres achetées restent exclues des candidats.
+- La page « Vos données et le RGPD » et le registre décrivent les achats associés et la
+  préférence, la finalité, l'opposition par désactivation et l'absence de données du
+  compte transmises au fournisseur d'IA. L'intérêt légitime est la base proposée ;
+  l'association doit la valider avant l'ouverture publique.
+- Le déploiement Azure `text-embedding-3-small` existait déjà, créé manuellement le
+  24 septembre. Le Bicep reprend le même nom, `GlobalStandard` et la capacité 50 ; aucune
+  opération Azure de déploiement n'est effectuée pour cette livraison.
+
+### Validation locale
+
+- `dotnet build src/Backend/Vole_Papillon_Damour.slnx` : 14 projets, 0 erreur, 79 avertissements.
+  Les avertissements comprennent NU1903 pour `SQLitePCLRaw.lib.e_sqlite3` et
+  `Microsoft.OpenApi`, ainsi que les avertissements de compilation déjà présents.
+- `dotnet test src/Backend/Vole_Papillon_Damour.slnx` : 868/868 réussis — Domain 170,
+  Application 454, Infrastructure 177, API 63 et Worker 4.
+- `npx ng test --watch=false --browsers=ChromeHeadless` : 449/449 réussis.
+- `npx ng build` : réussi. Le bundle initial fait 1,30 Mo, au-dessus du budget de 500 Ko ;
+  le SCSS administration fait 59,99 Ko (budget 50 Ko). Les dépendances CommonJS de `qrcode`
+  produisent également des avertissements.
+- `az bicep build --file infra/main.bicep` : réussi ; deux avertissements BCP081 indiquent
+  que Bicep ne connaît pas encore les types du service Communication Email. Aucun
+  déploiement Azure n'a été exécuté.
+- `graphify update .` : réussi, 10 475 nœuds et 15 313 liens. La visualisation HTML est
+  sautée au-delà de sa limite de 5 000 nœuds.
+- Vérification responsive R1 à R8 à 390 px et 1 440 px : pas de défilement horizontal de
+  page ; en mobile, seules les rangées de cartes défilent.
+
+### Suivi avant ouverture publique
+
+- Relire environ 50 fiches réelles et calibrer `SimilarMinScore`.
+- Valider la base juridique de la personnalisation et le texte public.
+- Garder `RECOMMENDATIONS_ENABLED` désactivé jusqu'à un premier calcul nocturne réussi.
+- Compléter la liste des collections jeunesse à mesure que des erreurs sont observées.
