@@ -732,6 +732,23 @@ p {
     grid-column: auto;
   }
 
+  .rare-admin-text-button,
+  .rare-open-button {
+    min-height: 44px;
+  }
+
+  .rare-admin-text-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .rare-pagination button {
+    width: 44px;
+    min-height: 44px;
+  }
+
   .rare-filter-heading,
   .rare-photo-warning {
     align-items: flex-start;

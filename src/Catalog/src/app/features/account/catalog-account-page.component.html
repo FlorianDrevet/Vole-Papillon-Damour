@@ -422,7 +422,7 @@
 
             <section class="contribution-card contribution-cash-card" aria-labelledby="contribution-cash-title">
               <div class="contribution-card-heading"><div><p class="eyebrow">Caisse · bourse après bourse</p><h3 id="contribution-cash-title">Le coup de feu, sans inventer le prix du livre.</h3></div></div>
-              <div class="fair-chart" role="img" aria-label="Livres encaissés par bourse">
+              <div class="fair-chart" [class.fair-chart-empty]="!stats.cash.fairBreakdown.length" role="img" aria-label="Livres encaissés par bourse">
                 @for (fair of stats.cash.fairBreakdown; track fair.id) {
                   <div class="fair-column"><strong>{{ fair.netSoldQuantity }}</strong><span class="fair-bar" [style.height.%]="fairBarHeight(fair, stats.cash.fairBreakdown)"></span><small>{{ formatShortDate(fair.dateStart) }}</small></div>
                 } @empty {<p class="chart-note">Vos ventes par bourse apparaîtront ici.</p>}

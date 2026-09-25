@@ -3484,7 +3484,8 @@ input:disabled {
 
   .admin-nav-item {
     width: auto;
-    height: 36px;
+    min-height: 44px;
+    height: 44px;
     padding: 0 12px;
     border-left: 0;
     border-bottom: 2px solid transparent;
@@ -3571,36 +3572,42 @@ input:disabled {
 
   .admin-sidebar-title {
     margin-bottom: 10px;
-    font-size: 1.7rem;
   }
 
   .admin-nav-group,
   .admin-nav-group + .admin-nav-group {
-    margin-top: 16px;
-  }
-
-  .admin-nav-group {
-    overflow: visible;
+    margin-top: 12px;
   }
 
   .admin-nav-group nav {
-    display: flex;
-    width: 100%;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .admin-nav-item {
-    width: 100%;
-    height: 40px;
-    padding: 0 10px;
-    border-bottom: 0;
-    border-left: 3px solid transparent;
+    gap: 5px;
+    padding: 6px 5px;
+    font-size: 12px;
+    white-space: normal;
   }
 
-  .admin-nav-item.active {
-    padding-left: 7px;
-    border-left-color: var(--admin-orange);
-    background: var(--admin-white);
+  .admin-nav-item-label {
+    white-space: normal;
+  }
+
+  .admin-content button,
+  .admin-content .button {
+    min-height: 44px;
+  }
+
+  .catalogue-stepper-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .pagination button {
+    width: 44px;
   }
 
   .admin-heading-split,
