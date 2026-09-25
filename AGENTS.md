@@ -49,6 +49,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 | `angular-patterns` | Angular application patterns | `.github/skills/angular-patterns/SKILL.md` |
 | `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |
 | `delivery-workflow` | Mandatory worktree, branch, validation and PR delivery workflow | `.github/skills/delivery-workflow/SKILL.md` |
+| `implement-handoff` | Execute a validated design handoff (`docs/features/<slug>/HANDOFF.md`): plan, TDD, visual check against mockups, PR | `.agents/skills/implement-handoff/SKILL.md` |
 
 ## MCP Resources
 
