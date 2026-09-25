@@ -49,6 +49,10 @@ jobs:
       - name: Build and push the image
         run: |
           set -euo pipefail
+          sdk_context_file=src/Backend/global.json
+          test ! -e "$sdk_context_file"
+          trap 'rm -f "$sdk_context_file"' EXIT
+          cp global.json "$sdk_context_file"
           az acr login --name "$REGISTRY_NAME"
           docker build \
             --file "$DOCKERFILE" \
