@@ -60,8 +60,10 @@ export class CatalogNavigationComponent {
       }
 
       if (this.menuOpen()) {
+        this.renderer.addClass(document.documentElement, 'no-scroll');
         this.renderer.addClass(document.body, 'no-scroll');
       } else {
+        this.renderer.removeClass(document.documentElement, 'no-scroll');
         this.renderer.removeClass(document.body, 'no-scroll');
       }
     });
@@ -79,6 +81,11 @@ export class CatalogNavigationComponent {
   }
 
   ngOnDestroy(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.renderer.removeClass(document.documentElement, 'no-scroll');
+      this.renderer.removeClass(document.body, 'no-scroll');
+    }
+
     this.destroyed.next();
     this.destroyed.complete();
   }

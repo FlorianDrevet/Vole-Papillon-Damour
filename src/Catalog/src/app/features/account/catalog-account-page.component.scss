@@ -1148,6 +1148,18 @@ h3 {
   border-bottom: 1px solid var(--catalog-line);
 }
 
+.fair-chart-empty {
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.fair-chart-empty .chart-note {
+  margin: 0;
+  text-align: center;
+}
+
 .fair-column {
   display: grid;
   min-width: 26px;
@@ -1405,6 +1417,17 @@ h3 {
 
   .account-tab:disabled {
     background: var(--catalog-paper);
+  }
+
+  .account-button,
+  .remove-button,
+  .feedback-actions .account-button {
+    min-height: 44px;
+  }
+
+  .watchlist-item-actions .remove-button {
+    padding-right: 8px;
+    padding-left: 8px;
   }
 
   .watchlist-panel,

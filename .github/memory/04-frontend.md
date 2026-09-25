@@ -587,8 +587,15 @@ five-tab order. The `Ma carte` view and lazily loaded `Mes achats` tab are imple
 purchase history pages by fair, contains no amount or price, and shows cancelled lines
 without changing the local sale ledger. `Ma sélection`, the card and purchase tabs are
 responsive; an anonymous `/compte` render measured no horizontal overflow at 390 px.
-Authenticated card and purchase states still need a real-account visual check. Selection
-display contains no price data.
+Authenticated production review on 2026-09-25 covered the six account tabs and volunteer
++contribution view at 320×780 and 390×844. The account and selection pages had no document-level
++horizontal overflow; contribution session history stays in its own scroll region. The inspected
++account had no purchase rows, so populated purchase history remains unverified. On mobile, the
++shared menu locks document scrolling and uses 44 px controls, the empty cash chart is reduced from
++160 to 72 px, and the admin navigation uses a compact two-column layout. All nine administration
++sections were opened at 320 px without document-level horizontal overflow. The production API
++returned HTTP 500 for `/catalog/me/recommendations?limit=4` during account tab navigation; this
++is a separate API follow-up. Selection display contains no price data.
 
 ## Catalog not-found report administration
 

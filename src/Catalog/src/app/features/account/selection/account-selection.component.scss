@@ -660,6 +660,12 @@
     font-size: .72rem;
   }
 
+  .selection-remove-item {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 8px;
+  }
+
   .selection-remove-desktop {
     display: none;
   }
