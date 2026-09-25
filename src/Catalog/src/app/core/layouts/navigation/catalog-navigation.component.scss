@@ -549,8 +549,8 @@
   }
 
   .mobile-header-row .brand-subtitle {
-    font-size: .45rem;
-    letter-spacing: .13em;
+    font-size: .56rem;
+    letter-spacing: .11em;
   }
 
   .mobile-actions {
@@ -568,9 +568,9 @@
 
   .menu-toggle {
     display: flex;
-    width: 35px;
-    height: 35px;
-    padding: 7px;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
     border: 1px solid var(--catalog-mist);
     border-radius: 2px;
     background: transparent;
@@ -582,13 +582,13 @@
 
   .menu-toggle span {
     display: block;
-    width: 19px;
-    height: 1.5px;
+    width: 22px;
+    height: 2px;
     background: var(--catalog-ink-2);
   }
 
   .menu-toggle span:last-child {
-    width: 13px;
+    width: 15px;
   }
 
   .mobile-crumb {
@@ -614,7 +614,7 @@
     inset: 0;
     z-index: 100;
     display: flex;
-    padding: 18px 24px 30px;
+    padding: calc(18px + env(safe-area-inset-top)) 24px calc(30px + env(safe-area-inset-bottom));
     background: var(--catalog-ink);
     color: var(--catalog-paper);
     flex-direction: column;
@@ -622,8 +622,8 @@
 
   .mobile-close {
     align-self: flex-end;
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     border: 0;
     border-radius: 50%;
     background: rgba(255, 255, 255, .1);
@@ -710,8 +710,8 @@
 
   .mobile-socials a {
     display: grid;
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     place-items: center;
     border-radius: 50%;
     background: rgba(127, 216, 245, .14);

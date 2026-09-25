@@ -35,9 +35,22 @@
   object-fit: cover;
 }
 
-.rare-book-card-cover > span:not(.rare-book-card-badge) {
+.rare-book-card-placeholder-icon {
   color: #5f3a86;
   font-size: 2rem;
+}
+
+.rare-book-card-placeholder-label {
+  color: #5f3a86;
+  font: 500 .62rem/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.rare-book-card-cover--empty {
+  align-content: center;
+  justify-items: center;
+  gap: .45rem;
 }
 
 .rare-book-card-badge {
@@ -126,4 +139,10 @@
 
 .rare-book-card--sold .rare-book-card-action {
   color: #6d8ba2;
+}
+
+@media (max-width: 700px) {
+  .rare-book-card-cover--empty {
+    height: 180px;
+  }
 }
