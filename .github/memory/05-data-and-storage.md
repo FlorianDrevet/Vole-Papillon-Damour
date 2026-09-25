@@ -38,9 +38,13 @@ belonging to that container.
 - `BookNotFoundReports` persists member-originated not-found reports, optional location
   and comment, target, status, and closure data. Migration
   `20260924135152_AddBookNotFoundReports` creates the table and filtered unique indexes
-  for one open report per member and target; it is part of `feat/not-found-reports` and
-  has not been applied to an environment. `AssociationSettings.NotFoundReportDailyLimit`
-  defaults to 10 and is validated from 1 to 100.
+  for one open report per member and target. DEV treated this migration as already applied
+  in Books runtime run `36059976334`, but the follow-up
+  `20260924140025_RetireSelectionPersonalStatuses` failed before API/Worker rollout: raw
+  SQL joined `Books` on `b.Id`, while `BookConfiguration` persists domain `Book.Id` as
+  `Books.Isbn13`. The migration now joins on `b.Isbn13`; rerun Books runtime with migrations
+  enabled after merge. `AssociationSettings.NotFoundReportDailyLimit` defaults to 10 and is
+  validated from 1 to 100.
 
 - The private volunteer statistics query filters `ScanSessions` by `ScannedCount > 0` before calculating session count, duration, recent sessions, and scan-derived aggregates, so empty bootstrap/test sessions do not contribute time.
 
