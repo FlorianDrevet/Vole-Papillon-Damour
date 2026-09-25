@@ -14,17 +14,17 @@
       <h2 id="member-card-title">Ma carte de compte</h2>
       @if (qrSvg(); as svg) {
         <div
-          class="member-card-qr"
+          class="member-card-code member-card-qr"
           role="img"
           [attr.aria-label]="'QR code de votre carte de compte. Code de secours : ' + current.recoveryCode"
           [innerHTML]="svg"></div>
       } @else {
-        <div class="member-card-placeholder" data-testid="card-qr-placeholder" role="status">
+        <div class="member-card-code member-card-placeholder" data-testid="card-qr-placeholder" role="status">
           Le QR code n’est pas disponible sur cet appareil.
         </div>
       }
       <p class="member-card-name">{{ current.displayLabel }}</p>
-      <p class="member-card-recovery">Code de secours : <strong>{{ current.recoveryCode }}</strong></p>
+      <p class="member-card-recovery"><span>Code de secours :</span> <strong>{{ current.recoveryCode }}</strong></p>
       <p class="member-card-instruction">Présentez cette carte avant la validation de votre passage.</p>
       <button
         type="button"

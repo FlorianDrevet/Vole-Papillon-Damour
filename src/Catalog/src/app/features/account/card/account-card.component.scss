@@ -12,6 +12,15 @@
 
 .member-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'brand'
+    'title'
+    'qr'
+    'name'
+    'recovery'
+    'instruction'
+    'action';
   justify-items: center;
   width: min(100%, 430px);
   padding: clamp(24px, 6vw, 42px);
@@ -22,6 +31,7 @@
 }
 
 .member-card-brand {
+  grid-area: brand;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -53,14 +63,15 @@
 }
 
 .member-card h2 {
+  grid-area: title;
   margin: 26px 0 20px;
   color: var(--catalog-ink);
   font: 500 clamp(1.7rem, 7vw, 2.35rem)/1.06 var(--catalog-display);
   letter-spacing: -.035em;
 }
 
-.member-card-qr,
-.member-card-placeholder {
+.member-card-code {
+  grid-area: qr;
   display: grid;
   width: min(100%, 260px);
   min-height: 200px;
@@ -82,13 +93,25 @@
   line-height: 1.5;
 }
 
+.member-card-panel > .member-card-placeholder {
+  display: grid;
+  width: min(100%, 260px);
+  min-height: 200px;
+  place-items: center;
+  padding: 12px;
+  border: 1px solid var(--catalog-line);
+  background: var(--catalog-paper);
+}
+
 .member-card-name {
+  grid-area: name;
   margin: 21px 0 7px;
   color: var(--catalog-ink);
   font: 500 1.35rem/1.2 var(--catalog-display);
 }
 
 .member-card-recovery {
+  grid-area: recovery;
   margin: 0;
   color: var(--catalog-slate-2);
   font-size: .82rem;
@@ -104,6 +127,7 @@
 }
 
 .member-card-instruction {
+  grid-area: instruction;
   max-width: 290px;
   margin: 16px 0 22px;
   color: var(--catalog-slate-2);
@@ -112,6 +136,7 @@
 }
 
 .member-card-button {
+  grid-area: action;
   display: inline-flex;
   min-height: 44px;
   align-items: center;
@@ -198,6 +223,106 @@
   margin: 0;
   color: #a22a32;
   font-size: .86rem;
+}
+
+@media (min-width: 760px) {
+  .member-card-panel {
+    padding-top: 38px;
+  }
+
+  .member-card {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 310px);
+    grid-template-areas:
+      'brand qr'
+      'title qr'
+      'name qr'
+      'recovery qr'
+      'instruction qr'
+      'action qr';
+    align-items: start;
+    justify-items: stretch;
+    column-gap: clamp(36px, 6vw, 76px);
+    width: min(100%, 980px);
+    padding: clamp(34px, 4.4vw, 56px);
+    text-align: left;
+  }
+
+  .member-card-brand {
+    width: min(100%, 580px);
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+  }
+
+  .member-card-brand p {
+    font-size: .76rem;
+  }
+
+  .member-card h2 {
+    margin: 0 0 16px;
+    font-size: clamp(1.85rem, 3vw, 2.4rem);
+  }
+
+  .member-card-code {
+    align-self: center;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 310px;
+    min-height: 0;
+    aspect-ratio: 1;
+    padding: 18px;
+  }
+
+  .member-card-placeholder {
+    max-width: 310px;
+    color: var(--catalog-slate-2);
+  }
+
+  .member-card-name {
+    margin: 0 0 14px;
+    font-size: clamp(1.6rem, 2.5vw, 2rem);
+  }
+
+  .member-card-recovery {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 12px 14px;
+    border-left: 3px solid var(--catalog-orange);
+    background: var(--catalog-paper-2);
+  }
+
+  .member-card-instruction {
+    max-width: 430px;
+    margin: 17px 0 23px;
+  }
+
+  .member-card-button {
+    justify-self: start;
+    min-width: 190px;
+  }
+
+  .member-card-confirmation,
+  .member-card-note,
+  .member-card-error {
+    width: min(100%, 980px);
+  }
+
+  .member-card-note {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    gap: 0;
+    padding: 18px 24px;
+  }
+
+  .member-card-note p + p {
+    margin-top: 0;
+    padding-left: 24px;
+    border-left: 1px solid var(--catalog-line);
+  }
 }
 
 @media (max-width: 420px) {
