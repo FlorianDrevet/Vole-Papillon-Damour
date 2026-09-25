@@ -13,6 +13,7 @@ import {
   CatalogRareBookPage,
   CatalogSearchParams,
   CatalogSearchResponse,
+  CatalogSimilarBooksResponse,
   CatalogWorkResponse,
 } from './catalog.models';
 
@@ -57,6 +58,12 @@ export class CatalogApiService {
   getBook(isbn13: string): Observable<CatalogBook> {
     return this.http.get<CatalogBook>(
       `${this.apiUrl}/catalog/books/${encodeURIComponent(isbn13)}`,
+    );
+  }
+
+  getSimilarBooks(isbn13: string): Observable<CatalogSimilarBooksResponse> {
+    return this.http.get<CatalogSimilarBooksResponse>(
+      `${this.apiUrl}/catalog/books/${encodeURIComponent(isbn13)}/similar`,
     );
   }
 

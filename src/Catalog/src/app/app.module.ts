@@ -9,6 +9,7 @@ import localeFr from '@angular/common/locales/fr';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {CatalogBookDetailPageComponent} from './features/book-detail/catalog-book-detail-page.component';
+import {SimilarBooksComponent} from './features/book-detail/similar-books/similar-books.component';
 import {CatalogHomePageComponent} from './features/home/catalog-home-page.component';
 import {LegalPageComponent} from './features/legal/legal-page.component';
 import {CatalogSearchPageComponent} from './features/search/catalog-search-page.component';
@@ -46,6 +47,7 @@ registerLocaleData(localeFr);
     CatalogHomePageComponent,
     CatalogSearchPageComponent,
     CatalogBookDetailPageComponent,
+    SimilarBooksComponent,
     CatalogWorkPageComponent,
     LegalPageComponent,
     BookCardComponent,

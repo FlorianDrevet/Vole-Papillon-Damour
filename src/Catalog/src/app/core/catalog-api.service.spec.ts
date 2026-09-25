@@ -4,7 +4,13 @@ import {TestBed} from '@angular/core/testing';
 
 import {environment} from '../../environments/environment';
 import {CatalogApiService} from './catalog-api.service';
-import {CatalogRareBookDetail, CatalogRareBookFilters, CatalogRareBookPage, CatalogSearchResponse} from './catalog.models';
+import {
+  CatalogRareBookDetail,
+  CatalogRareBookFilters,
+  CatalogRareBookPage,
+  CatalogSearchResponse,
+  CatalogSimilarBooksResponse,
+} from './catalog.models';
 
 describe('CatalogApiService', () => {
   let service: CatalogApiService;
@@ -100,6 +106,39 @@ describe('CatalogApiService', () => {
       page: 2,
       pageSize: 20,
     });
+  });
+
+  it('requests similar books for the requested catalogue edition', () => {
+    const response = {
+      books: [{
+        isbn13: '9782070612758',
+        title: 'Le Petit Prince',
+        authors: 'Antoine de Saint-Exupéry',
+        publisher: 'Gallimard',
+        publicationYear: 1999,
+        physicalFormat: 'Poche',
+        language: 'fr',
+        genre: 'Jeunesse',
+        workId: 'work-1',
+        coverUrl: null,
+        quantityAvailable: 1,
+        quantityAnnounced: 0,
+        nextFairAt: null,
+        lastAvailableAt: '2026-09-10T10:00:00Z',
+        firstSeenAt: '2026-09-10T10:00:00Z',
+        updatedAt: '2026-09-10T10:00:00Z',
+        isRare: false,
+        reason: 'SameAuthor',
+      }],
+    } satisfies CatalogSimilarBooksResponse;
+
+    service.getSimilarBooks('9782070408504').subscribe(result => expect(result).toEqual(response));
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/catalog/books/9782070408504/similar`,
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush(response);
   });
 
   it('maps the public upcoming event collection and keeps only book fairs', () => {
