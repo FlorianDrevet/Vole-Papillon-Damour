@@ -62,10 +62,10 @@ describe('CatalogRareBookCardComponent', () => {
     fixture.detectChanges();
   });
 
-  it('shows the evidence details that distinguish a rare-book card', () => {
+  it('keeps the card focused on book details without a photo-count badge', () => {
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(element.querySelector('.rare-book-card-photo-count')?.textContent).toContain('2 photos');
+    expect(element.querySelector('.rare-book-card-photo-count')).toBeNull();
     expect(element.querySelector('.rare-book-card-technical-line')?.textContent)
       .toContain('Imprimerie royale · 1770 · sans ISBN');
     expect(element.querySelector('.rare-book-card-badge')?.textContent).toContain('Rare');
