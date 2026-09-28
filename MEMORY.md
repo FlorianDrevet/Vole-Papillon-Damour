@@ -42,6 +42,7 @@
 7. Do not assume every mutating HTTP route is admin-protected; check `10-api-endpoints.md` before touching auth-sensitive behavior.
 8. Every paginated or searchable list must query the API: send the filters, page and page size to the backend and render only the returned page; never load the full collection into the browser for client-side pagination or search.
 9. Raw SQL against `Books` must use persisted column `Isbn13`; `BookConfiguration` maps the domain key `Book.Id` to that column.
+10. Use `.agents/skills/book-data-reset/SKILL.md` for an explicitly requested deployed books-data reset; it preserves events/news and requires a verified PITR restore path.
 
 ## Commands To Remember
 
