@@ -19,4 +19,5 @@ public sealed record PublicCatalogBookResponse(
     DateTimeOffset UpdatedAt,
     bool IsRare,
     string? CoverSource = null,
-    string? RareBookSlug = null);
+    string? RareBookSlug = null,
+    Guid? RareBookId = null);

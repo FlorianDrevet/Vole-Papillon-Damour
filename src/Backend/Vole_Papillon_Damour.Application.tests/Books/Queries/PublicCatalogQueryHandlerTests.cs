@@ -383,7 +383,7 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
-    public async Task GetPublicBook_WhenPublishedRareBookSharesIsbn_ReturnsRareBookSlug()
+    public async Task GetPublicBook_WhenPublishedRareBookSharesIsbn_ReturnsRareBookIdAndSlug()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
         fixture.AddBook(
@@ -391,6 +391,7 @@ public sealed class PublicCatalogQueryHandlerTests
             "Le Petit Prince",
             "Antoine de Saint-Exupéry",
             rare: true);
+        var rareBookId = fixture.Context.RareBooks.Local.Single().Id.Value;
         await fixture.SaveAsync();
 
         var result = await fixture.CreatePublicBookHandler().Handle(
@@ -398,6 +399,7 @@ public sealed class PublicCatalogQueryHandlerTests
             CancellationToken.None);
 
         result.IsError.Should().BeFalse();
+        result.Value.RareBookId.Should().Be(rareBookId);
         result.Value.RareBookSlug.Should().Be("le-petit-prince-antoine-de-saint-exupery");
     }
 
@@ -566,6 +568,7 @@ public sealed class PublicCatalogQueryHandlerTests
             "Le Petit Prince",
             "Antoine de Saint-Exupéry",
             rare: true);
+        var rareBookId = fixture.Context.RareBooks.Local.Single().Id.Value;
         var redirected = fixture.AddBook(
             "9782253006329",
             "Une édition absorbée",
@@ -587,8 +590,7 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.Entries.Should().HaveCount(2);
         result.Value.Entries.Should().Contain(entry => entry.UrlPath ==
             "/livres/le-petit-prince-antoine-de-saint-exupery-9782070408504");
-        result.Value.Entries.Should().Contain(entry => entry.UrlPath ==
-            "/livres-rares/le-petit-prince-antoine-de-saint-exupery");
+        result.Value.Entries.Should().Contain(entry => entry.UrlPath == $"/livres-rares/{rareBookId:D}");
     }
 }
 

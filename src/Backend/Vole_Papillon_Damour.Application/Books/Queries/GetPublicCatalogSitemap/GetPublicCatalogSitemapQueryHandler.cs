@@ -44,7 +44,7 @@ public sealed class GetPublicCatalogSitemapQueryHandler(
                     $"/livres/{Slugify(book.Title, book.Authors)}-{book.Id.Value}",
                     new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero)))
                 .Concat(rareBooks.Select(book => new PublicCatalogSitemapEntry(
-                    $"/livres-rares/{book.Slug.Value}",
+                    $"/livres-rares/{book.Id.Value:D}",
                     new DateTimeOffset(book.UpdatedAt, TimeSpan.Zero))))
                 .ToArray());
     }

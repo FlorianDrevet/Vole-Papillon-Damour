@@ -78,4 +78,10 @@ describe('CatalogRareBookCardComponent', () => {
     expect(element.querySelector('.rare-book-card-price')?.classList).toContain('rare-book-card-price--sold');
     expect(element.querySelector('.rare-book-card-action')?.textContent).toContain('Vendu le 8 février');
   });
+
+  it('links the detail card by the stable rare-book id', () => {
+    const link = fixture.nativeElement.querySelector('.rare-book-card') as HTMLAnchorElement;
+
+    expect(link.getAttribute('href')).toBe(`/livres-rares/${book.id}`);
+  });
 });

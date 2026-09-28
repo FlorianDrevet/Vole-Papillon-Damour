@@ -55,8 +55,8 @@
           {{ item.publicationYear || '' }}
         </p>
       }
-      @if (item.rareBookSlug) {
-        <a class="rare-book-link" [routerLink]="['/livres-rares', item.rareBookSlug]">
+      @if (item.rareBookId) {
+        <a class="rare-book-link" [routerLink]="['/livres-rares', item.rareBookId]">
           Voir la fiche du livre rare →
         </a>
       }

@@ -3,7 +3,7 @@ using FluentAssertions;
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBooks;
-using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookBySlug;
+using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookByIdentifier;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.SearchRareBooksForCash;
 
@@ -25,6 +25,26 @@ public sealed class RareBookQueryHandlerTests
         result.IsError.Should().BeFalse();
         result.Value.Books.Select(book => book.Title)
             .Should().ContainInOrder("Prix fort", "Petit prix");
+    }
+
+    [Fact]
+    public async Task Public_detail_accepts_the_rare_book_id_and_legacy_slug()
+    {
+        await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
+        var published = await fixture.AddRareBookAsync("Les Fables", published: true);
+        var handler = new GetPublicRareBookByIdentifierQueryHandler(fixture.Context);
+
+        var byId = await handler.Handle(
+            new GetPublicRareBookByIdentifierQuery(published.Id.Value.ToString("D")),
+            CancellationToken.None);
+        var bySlug = await handler.Handle(
+            new GetPublicRareBookByIdentifierQuery(published.Slug.Value),
+            CancellationToken.None);
+
+        byId.IsError.Should().BeFalse();
+        byId.Value.RareBook.Id.Should().Be(published.Id.Value);
+        bySlug.IsError.Should().BeFalse();
+        bySlug.Value.RareBook.Id.Should().Be(published.Id.Value);
     }
 
     [Fact]
@@ -79,10 +99,10 @@ public sealed class RareBookQueryHandlerTests
 
         var listResult = await new GetPublicRareBooksQueryHandler(fixture.Context, fixture.Clock)
             .Handle(new GetPublicRareBooksQuery(IncludeSold: false), CancellationToken.None);
-        var detailResult = await new GetPublicRareBookBySlugQueryHandler(fixture.Context)
-            .Handle(new GetPublicRareBookBySlugQuery(draft.Slug.Value), CancellationToken.None);
-        var availableDetail = await new GetPublicRareBookBySlugQueryHandler(fixture.Context)
-            .Handle(new GetPublicRareBookBySlugQuery(available.Slug.Value), CancellationToken.None);
+        var detailResult = await new GetPublicRareBookByIdentifierQueryHandler(fixture.Context)
+            .Handle(new GetPublicRareBookByIdentifierQuery(draft.Slug.Value), CancellationToken.None);
+        var availableDetail = await new GetPublicRareBookByIdentifierQueryHandler(fixture.Context)
+            .Handle(new GetPublicRareBookByIdentifierQuery(available.Slug.Value), CancellationToken.None);
 
         listResult.IsError.Should().BeFalse();
         listResult.Value.Books.Should().ContainSingle(book => book.Title == "Disponible");

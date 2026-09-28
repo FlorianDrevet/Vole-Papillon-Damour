@@ -17,7 +17,7 @@ using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBookPhotoCap
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBooks;
-using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookBySlug;
+using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookByIdentifier;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.SearchRareBooksForCash;
 using Vole_Papillon_Damour.Contracts.RareBooks.Requests;
@@ -71,21 +71,21 @@ public static class RareBookController
                 .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 
             endpoints.MapGet(
-                    "/catalog/rare-books/{slug}",
+                    "/catalog/rare-books/{identifier}",
                     async (
-                        string slug,
+                        string identifier,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
                         var result = await mediator.Send(
-                            new GetPublicRareBookBySlugQuery(slug),
+                            new GetPublicRareBookByIdentifierQuery(identifier),
                             cancellationToken);
 
                         return result.Match(
                             book => Results.Ok(ToResponse(book)),
                             error => error.Result());
                     })
-                .WithName("GetPublicRareBookBySlug")
+                .WithName("GetPublicRareBookByIdentifier")
                 .AllowAnonymous()
                 .RequireRateLimiting(RateLimitingPolicies.PublicCatalog);
 

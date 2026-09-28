@@ -203,6 +203,7 @@ describe('CatalogBookDetailPageComponent', () => {
   it('links an ordinary book to its published rare-book detail when the ISBN is shared', async () => {
     api.getBook.and.returnValue(of({
       ...book,
+      rareBookId: 'e56118db-233a-4bb2-931d-4d2c50d98901',
       rareBookSlug: 'atlas-des-jardins',
     } as CatalogBook));
 
@@ -212,7 +213,7 @@ describe('CatalogBookDetailPageComponent', () => {
 
     const link = fixture.nativeElement.querySelector('.rare-book-link') as HTMLAnchorElement;
     expect(link).not.toBeNull();
-    expect(link.getAttribute('href')).toBe('/livres-rares/atlas-des-jardins');
+    expect(link.getAttribute('href')).toBe('/livres-rares/e56118db-233a-4bb2-931d-4d2c50d98901');
   });
 
   it('opens the auth prompt instead of sending an anonymous protected request', async () => {

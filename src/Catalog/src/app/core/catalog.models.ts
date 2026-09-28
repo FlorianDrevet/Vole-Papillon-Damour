@@ -21,6 +21,7 @@ export interface CatalogBook {
   updatedAt: string;
   isRare: boolean;
   rareBookSlug?: string | null;
+  rareBookId?: string | null;
 }
 
 export type CatalogNeighborReason = 'NextTome' | 'SameSeries' | 'SameAuthor' | 'Theme';

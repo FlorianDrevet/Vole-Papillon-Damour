@@ -66,7 +66,7 @@ public sealed class RareBookEndpointAuthorizationTests
         var expected = new (string Route, string Method)[]
         {
             ("/catalog/rare-books", "GET"),
-            ("/catalog/rare-books/{slug}", "GET"),
+            ("/catalog/rare-books/{identifier}", "GET"),
             ("/rare-books/admin", "GET"),
             ("/rare-books/admin/{id:guid}", "GET"),
             ("/rare-books/cash/search", "GET"),

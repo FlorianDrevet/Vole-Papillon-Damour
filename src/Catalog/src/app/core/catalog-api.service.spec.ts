@@ -244,9 +244,10 @@ describe('CatalogApiService', () => {
     listRequest.flush(page);
 
     const detail = {rareBook: {} as unknown as CatalogRareBookDetail['rareBook'], relatedBooks: []} as CatalogRareBookDetail;
-    service.getPublicRareBook('les-fables').subscribe(result => expect(result).toEqual(detail));
+    const rareBookId = 'e56118db-233a-4bb2-931d-4d2c50d98901';
+    service.getPublicRareBook(rareBookId).subscribe(result => expect(result).toEqual(detail));
     const detailRequest = http.expectOne(
-      request => request.url === `${environment.apiUrl}/catalog/rare-books/les-fables`,
+      request => request.url === `${environment.apiUrl}/catalog/rare-books/${rareBookId}`,
     );
     expect(detailRequest.request.method).toBe('GET');
     detailRequest.flush(detail);

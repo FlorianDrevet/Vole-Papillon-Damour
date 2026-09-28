@@ -157,7 +157,7 @@ describe('AdminRareBooksComponent', () => {
 
     const link = fixture.nativeElement.querySelector('[data-testid="rare-public-link"]') as HTMLAnchorElement;
     expect(link).not.toBeNull();
-    expect(link.getAttribute('href')).toBe('/livres-rares/livre-publie');
+    expect(link.getAttribute('href')).toBe('/livres-rares/published-rare-book-id');
     expect(link.textContent).toContain('Voir la fiche publique');
   });
 

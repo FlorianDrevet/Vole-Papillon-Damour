@@ -40,45 +40,27 @@
             <span *ngIf="rareBook.publicationYear"> · {{ rareBook.publicationYear }}</span>
           </p>
 
-          <div class="rare-detail-price" aria-label="Prix ferme à lire sur place">
-            <span>Prix ferme à lire</span>
+          <div class="rare-detail-price" aria-label="Prix">
+            <span>PRIX</span>
             <strong>{{ rareBook.price | number:'1.2-2' }} €</strong>
-            <small>Prix fixé par l’association, non négociable. Il s’applique en caisse, sur présentation du livre.</small>
           </div>
           <p class="rare-detail-availability" [class.sold]="rareBook.isSold">{{ availabilityLabel(rareBook) }}</p>
 
-          <dl class="rare-detail-facts">
-            <div><dt>État</dt><dd>{{ conditionLabel(rareBook) }}</dd></div>
-            <div><dt>ISBN</dt><dd [class.rare-detail-fact-empty]="!rareBook.isbn13">{{ rareBook.isbn13 || 'aucun (avant 1970)' }}</dd></div>
-          </dl>
+          <section class="rare-detail-about" aria-labelledby="rare-detail-about-title">
+            <p id="rare-detail-about-title" class="eyebrow">À propos de l’exemplaire</p>
+            <dl class="rare-detail-facts">
+              <div><dt>État</dt><dd>{{ conditionLabel(rareBook) }}</dd></div>
+              <div><dt>ISBN</dt><dd [class.rare-detail-fact-empty]="!rareBook.isbn13">{{ rareBook.isbn13 || 'aucun (avant 1970)' }}</dd></div>
+            </dl>
+            <p *ngIf="rareBook.publicDescription" class="rare-detail-description">{{ rareBook.publicDescription }}</p>
+          </section>
 
           <section class="rare-selection-visit" aria-labelledby="rare-selection-title">
             <p id="rare-selection-title" class="rare-selection-title">Préparer ma visite</p>
             <app-selection-button [ref]="{kind: 'rare', rareBookId: rareBook.id}" [title]="rareBook.title"></app-selection-button>
           </section>
-
-          <button
-            *ngIf="!rareBook.isSold"
-            type="button"
-            class="rare-follow-button"
-            [disabled]="followPending"
-            (click)="followRareBook(rareBook)">
-            <span aria-hidden="true">♡</span>
-            {{ followPending ? 'Ajout en cours…' : 'Suivre cet exemplaire' }}
-          </button>
-          <p *ngIf="followMessage" class="rare-follow-feedback success" role="status">
-            {{ followMessage }} <a routerLink="/compte">Voir ma liste de recherche</a>
-          </p>
-          <p *ngIf="followError" class="rare-follow-feedback error" role="alert">{{ followError }}</p>
-          <a class="rare-question-link" [href]="questionHref(rareBook)">Poser une question</a>
-          <p class="rare-detail-note">Aucune réservation : le livre part au premier qui se présente en caisse. L’alerte vous dit seulement qu’il n’est plus disponible, pour ne pas vous déplacer pour rien.</p>
         </article>
       </div>
-    </section>
-
-    <section *ngIf="rareBook.publicDescription" class="rare-detail-description page-width">
-      <p class="eyebrow">À propos de l’exemplaire</p>
-      <p>{{ rareBook.publicDescription }}</p>
     </section>
 
     <section *ngIf="relatedBooks.length" class="rare-related page-width" aria-labelledby="rare-related-title">
@@ -92,9 +74,3 @@
   <button type="button" class="rare-gallery-lightbox-close" (click)="closeGallery()" aria-label="Fermer la galerie">×</button>
   <img [src]="photoUrl(rareBook, selectedPhoto)" [alt]="'Photo de ' + rareBook.title">
 </div>
-
-<app-catalog-auth-prompt
-  [open]="authPromptOpen"
-  (closed)="closeAuthPrompt()"
-  (loginRequested)="confirmAuthPrompt('login')"
-  (registerRequested)="confirmAuthPrompt('register')"></app-catalog-auth-prompt>

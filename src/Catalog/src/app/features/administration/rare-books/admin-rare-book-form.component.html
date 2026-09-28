@@ -43,7 +43,7 @@
   <form class="rare-editor-form" (ngSubmit)="submit()" novalidate>
     <div class="rare-form-heading">
       <div><span class="rare-section-kicker">{{ isEditing() ? 'Fiche rare' : 'Nouvelle fiche' }}</span><h2 id="rare-form-title">{{ isEditing() ? 'Modifier la fiche rare' : 'Identité du livre' }}</h2></div>
-      @if (isEditing()) {<span class="rare-form-slug">/livres-rares/{{ book?.slug }}</span>}
+      @if (isEditing()) {<span class="rare-form-slug">/livres-rares/{{ book?.id }}</span>}
     </div>
 
     <div class="rare-field-grid">
