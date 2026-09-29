@@ -32,7 +32,7 @@ describe('AppRoutingModule', () => {
 
     expect(routes.find(item => item.path === 'livres-rares')?.component)
       .toBe(CatalogRareBooksPageComponent);
-    expect(routes.find(item => item.path === 'livres-rares/:slug')?.component)
+    expect(routes.find(item => item.path === 'livres-rares/:id')?.component)
       .toBe(CatalogRareBookDetailPageComponent);
   });
 });

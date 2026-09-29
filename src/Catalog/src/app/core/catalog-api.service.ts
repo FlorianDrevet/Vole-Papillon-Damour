@@ -154,9 +154,9 @@ export class CatalogApiService {
     });
   }
 
-  getPublicRareBook(slug: string): Observable<CatalogRareBookDetail> {
+  getPublicRareBook(identifier: string): Observable<CatalogRareBookDetail> {
     return this.http.get<CatalogRareBookDetail>(
-      `${this.apiUrl}/catalog/rare-books/${encodeURIComponent(slug)}`,
+      `${this.apiUrl}/catalog/rare-books/${encodeURIComponent(identifier)}`,
     );
   }
 }

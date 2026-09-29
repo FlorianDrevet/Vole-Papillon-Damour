@@ -1,17 +1,13 @@
 import {DOCUMENT} from '@angular/common';
-import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {Meta, Title} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
-import {Subject, catchError, firstValueFrom, of, switchMap, takeUntil} from 'rxjs';
+import {Subject, catchError, of, switchMap, takeUntil} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
-import {CatalogAuthService} from '../../core/catalog-auth.service';
-import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
-import {CatalogRareBook, CatalogWatchlistScope} from '../../core/catalog.models';
+import {CatalogRareBook} from '../../core/catalog.models';
 
 const CATALOG_ORIGIN = 'https://livres.volepapillondamour.fr';
-const CONTACT_EMAIL = 'volepapillondamour@sfr.fr';
 
 @Component({
   selector: 'app-catalog-rare-book-detail-page',
@@ -27,13 +23,8 @@ export class CatalogRareBookDetailPageComponent implements OnInit, OnDestroy {
   galleryOpen = false;
   loading = true;
   notFound = false;
-  followPending = false;
-  followMessage: string | null = null;
-  followError: string | null = null;
-  authPromptOpen = false;
 
   private readonly destroyed = new Subject<void>();
-  private pendingAuthFollow: CatalogRareBook | null = null;
   private canonicalElement: HTMLLinkElement | null = null;
   private structuredDataElement: HTMLScriptElement | null = null;
 
@@ -42,8 +33,6 @@ export class CatalogRareBookDetailPageComponent implements OnInit, OnDestroy {
     private readonly api: CatalogApiService,
     private readonly title: Title,
     private readonly meta: Meta,
-    private readonly auth: CatalogAuthService,
-    private readonly memberApi: CatalogMemberApiService,
     private readonly changeDetector: ChangeDetectorRef,
     @Inject(DOCUMENT) private readonly document: Document,
   ) {}
@@ -57,7 +46,7 @@ export class CatalogRareBookDetailPageComponent implements OnInit, OnDestroy {
           this.book = null;
           this.relatedBooks = [];
           this.selectedPhoto = 0;
-          return this.api.getPublicRareBook(params.get('slug') ?? '')
+          return this.api.getPublicRareBook(params.get('id') ?? '')
             .pipe(catchError(() => of(null)));
         }),
         takeUntil(this.destroyed),
@@ -110,71 +99,8 @@ export class CatalogRareBookDetailPageComponent implements OnInit, OnDestroy {
     this.galleryOpen = false;
   }
 
-  async followRareBook(book: CatalogRareBook): Promise<void> {
-    this.followMessage = null;
-    this.followError = null;
-
-    if (!this.auth.isAuthenticated()) {
-      this.pendingAuthFollow = book;
-      this.authPromptOpen = true;
-      return;
-    }
-
-    this.followPending = true;
-    try {
-      const token = await this.auth.getApiAccessToken();
-      await firstValueFrom(this.memberApi.addWatchlistItem(token, {
-        scope: 'RareBook' satisfies CatalogWatchlistScope,
-        workId: null,
-        isbn13: null,
-        rareBookId: book.id,
-        title: book.title,
-        authors: book.authorMention,
-        publisher: book.publisher,
-        publicationYear: book.publicationYear,
-        coverUrl: null,
-      }));
-      this.followMessage = 'Cet exemplaire est maintenant suivi.';
-    } catch (error: unknown) {
-      this.followError = this.describeFollowError(error);
-    } finally {
-      this.followPending = false;
-      this.changeDetector.markForCheck();
-    }
-  }
-
-  closeAuthPrompt(): void {
-    this.authPromptOpen = false;
-    this.pendingAuthFollow = null;
-  }
-
-  async confirmAuthPrompt(mode: 'login' | 'register'): Promise<void> {
-    const book = this.pendingAuthFollow;
-    this.authPromptOpen = false;
-    this.pendingAuthFollow = null;
-    if (!book) {
-      return;
-    }
-
-    const returnPath = ['/livres-rares', encodeURIComponent(book.slug)].join('/');
-    try {
-      if (mode === 'register') {
-        await this.auth.register(returnPath);
-      } else {
-        await this.auth.login(returnPath);
-      }
-    } catch {
-      this.followError = 'La connexion n’a pas pu être démarrée. Réessayez.';
-      this.changeDetector.markForCheck();
-    }
-  }
-
   trackBook(_index: number, book: CatalogRareBook): string {
     return book.id;
-  }
-
-  questionHref(book: CatalogRareBook): string {
-    return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Question — ${book.title}`)}`;
   }
 
   private setSeo(book: CatalogRareBook): void {
@@ -186,7 +112,7 @@ export class CatalogRareBookDetailPageComponent implements OnInit, OnDestroy {
     this.meta.updateTag({property: 'og:description', content: description.slice(0, 160)});
     this.meta.updateTag({property: 'og:type', content: 'product'});
 
-    const url = `${CATALOG_ORIGIN}/livres-rares/${encodeURIComponent(book.slug)}`;
+    const url = `${CATALOG_ORIGIN}/livres-rares/${encodeURIComponent(book.id)}`;
     this.canonicalElement?.remove();
     this.canonicalElement = this.document.createElement('link');
     this.canonicalElement.rel = 'canonical';
@@ -216,15 +142,4 @@ export class CatalogRareBookDetailPageComponent implements OnInit, OnDestroy {
     this.document.head.appendChild(this.structuredDataElement);
   }
 
-  private describeFollowError(error: unknown): string {
-    if (error instanceof HttpErrorResponse && error.status === 409) {
-      return 'Cet exemplaire est déjà présent dans votre liste.';
-    }
-
-    if (error instanceof HttpErrorResponse && error.status === 401) {
-      return 'La session a expiré. Reconnectez-vous pour continuer.';
-    }
-
-    return 'Cet exemplaire n’a pas pu être ajouté. Réessayez dans un instant.';
-  }
 }

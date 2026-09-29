@@ -9,7 +9,6 @@ import {of} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {CatalogAuthService} from '../../core/catalog-auth.service';
-import {CatalogMemberApiService} from '../../core/catalog-member-api.service';
 import {CatalogSelectionService} from '../../core/selection/catalog-selection.service';
 import {CatalogRareBook, CatalogRareBookDetail} from '../../core/catalog.models';
 import {CatalogRareBookCardComponent} from '../../shared/rare-book-card/rare-book-card.component';
@@ -24,11 +23,10 @@ describe('CatalogRareBookDetailPageComponent', () => {
   let fixture: ComponentFixture<CatalogRareBookDetailPageComponent>;
   let api: jasmine.SpyObj<CatalogApiService>;
   let auth: jasmine.SpyObj<CatalogAuthService>;
-  let memberApi: jasmine.SpyObj<CatalogMemberApiService>;
   let selection: jasmine.SpyObj<CatalogSelectionService>;
 
   const book: CatalogRareBook = {
-    id: 'rare-1',
+    id: 'e56118db-233a-4bb2-931d-4d2c50d98901',
     slug: 'les-fables',
     isbn13: null,
     title: 'Les Fables',
@@ -66,15 +64,6 @@ describe('CatalogRareBookDetailPageComponent', () => {
     auth.getApiAccessToken.and.resolveTo('member-token');
     auth.login.and.resolveTo();
     auth.register.and.resolveTo();
-    memberApi = jasmine.createSpyObj<CatalogMemberApiService>('CatalogMemberApiService', ['addWatchlistItem']);
-    memberApi.addWatchlistItem.and.returnValue(of({
-      id: 'watch-1',
-      scope: 'RareBook',
-      workId: null,
-      isbn13: null,
-      rareBookId: book.id,
-      addedAt: '2026-09-17T10:00:00Z',
-    }));
     selection = jasmine.createSpyObj<CatalogSelectionService>(
       'CatalogSelectionService',
       ['add', 'remove'],
@@ -94,10 +83,9 @@ describe('CatalogRareBookDetailPageComponent', () => {
       providers: [
         {provide: CatalogApiService, useValue: api},
         {provide: CatalogAuthService, useValue: auth},
-        {provide: CatalogMemberApiService, useValue: memberApi},
         {provide: CatalogSelectionService, useValue: selection},
         {provide: ActivatedRoute, useValue: {
-          paramMap: of(convertToParamMap({slug: 'les-fables'})),
+          paramMap: of(convertToParamMap({id: book.id})),
         }},
         {provide: LOCALE_ID, useValue: 'fr-FR'},
       ],
@@ -109,19 +97,34 @@ describe('CatalogRareBookDetailPageComponent', () => {
     fixture.detectChanges();
   });
 
-  it('loads the slug, publishes SEO metadata and leaves the price outside any total', () => {
-    expect(api.getPublicRareBook).toHaveBeenCalledWith('les-fables');
+  it('loads the id and publishes an id-based canonical URL', () => {
+    expect(api.getPublicRareBook).toHaveBeenCalledWith(book.id);
     expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain('Les Fables');
-    expect(fixture.nativeElement.textContent).toContain('60,00 €');
-    expect(fixture.nativeElement.textContent).toContain('Prix ferme à lire');
+    const canonicalUrl = `https://livres.volepapillondamour.fr/livres-rares/${book.id}`;
+    expect(document.head.querySelector(`link[rel="canonical"][href="${canonicalUrl}"]`)).not.toBeNull();
   });
 
-  it('offers a direct email question about this exact rare book', () => {
-    const link = fixture.nativeElement.querySelector('.rare-question-link') as HTMLAnchorElement;
+  it('shows only the concise price label and keeps the amount together', () => {
+    const price = fixture.nativeElement.querySelector('.rare-detail-price') as HTMLElement;
 
-    expect(link).not.toBeNull();
-    expect(link.getAttribute('href')).toContain('mailto:volepapillondamour@sfr.fr');
-    expect(link.getAttribute('href')).toContain(encodeURIComponent('Les Fables'));
+    expect(price.textContent).toContain('PRIX');
+    expect(fixture.nativeElement.textContent).toContain('60,00 €');
+    expect(price.textContent).not.toContain('Prix ferme à lire');
+    expect(price.textContent).not.toContain('Prix fixé par l’association');
+    expect(price.querySelector('small')).toBeNull();
+    expect(getComputedStyle(price.querySelector('strong') as HTMLElement).whiteSpace).toBe('nowrap');
+  });
+
+  it('places the copy details before the visit selection and removes the old actions', () => {
+    const element = fixture.nativeElement as HTMLElement;
+    const about = element.querySelector('.rare-detail-about') as HTMLElement;
+    const visit = element.querySelector('.rare-selection-visit') as HTMLElement;
+
+    expect(about).not.toBeNull();
+    expect(about.compareDocumentPosition(visit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(element.querySelector('.rare-follow-button')).toBeNull();
+    expect(element.querySelector('.rare-question-link')).toBeNull();
+    expect(element.querySelector('.rare-detail-note')).toBeNull();
   });
 
   it('explains the real-copy gallery and keeps an explicit no-isbn fact', () => {
@@ -141,31 +144,6 @@ describe('CatalogRareBookDetailPageComponent', () => {
     expect(text).not.toContain('Pages');
   });
 
-  it('lets an authenticated member follow the exact rare copy without creating an ordinary edition target', async () => {
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const followButton = fixture.nativeElement.querySelector('.rare-follow-button') as HTMLButtonElement;
-    expect(followButton).not.toBeNull();
-    followButton.click();
-    await fixture.whenStable();
-
-    const request = memberApi.addWatchlistItem.calls.mostRecent().args[1] as unknown as Record<string, unknown>;
-    expect(request).toEqual({
-      scope: 'RareBook',
-      workId: null,
-      isbn13: null,
-      rareBookId: 'rare-1',
-      title: 'Les Fables',
-      authors: 'Jean de La Fontaine',
-      publisher: 'Imprimerie royale',
-      publicationYear: 1770,
-      coverUrl: null,
-    });
-    expect(fixture.nativeElement.textContent).toContain('maintenant suivi');
-  });
-
   it('offers a selection action for this exact rare book', () => {
     const action = fixture.debugElement.query(By.directive(SelectionButtonComponent));
 
@@ -174,18 +152,4 @@ describe('CatalogRareBookDetailPageComponent', () => {
     expect(action.componentInstance.title()).toBe(book.title);
   });
 
-  it('opens the member prompt before following a rare copy anonymously', async () => {
-    auth.isAuthenticated.and.returnValue(false);
-
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    (fixture.nativeElement.querySelector('.rare-follow-button') as HTMLButtonElement).click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
-    expect(fixture.nativeElement.querySelector('[role="dialog"]')).not.toBeNull();
-  });
 });

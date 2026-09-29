@@ -22,7 +22,7 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
-    path: 'livres-rares/:slug',
+    path: 'livres-rares/:id',
     renderMode: RenderMode.Server,
   },
   {

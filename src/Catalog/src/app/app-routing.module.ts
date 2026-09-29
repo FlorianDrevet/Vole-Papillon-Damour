@@ -19,7 +19,7 @@ const routes: Routes = [
   {path: 'recherche', component: CatalogSearchPageComponent},
   {path: 'catalogue', component: CatalogSearchPageComponent, data: {browse: true}},
   {path: 'livres-rares', component: CatalogRareBooksPageComponent},
-  {path: 'livres-rares/:slug', component: CatalogRareBookDetailPageComponent},
+  {path: 'livres-rares/:id', component: CatalogRareBookDetailPageComponent},
   {path: 'livres/:slug', component: CatalogBookDetailPageComponent},
   {path: 'oeuvre/:workId', component: CatalogWorkPageComponent},
   {path: 'administration', component: CatalogAdministrationPageComponent},

@@ -54,6 +54,7 @@ public sealed class GetPublicBookQueryHandler(
                 .Select(rareBook => new
                 {
                     Isbn13 = rareBook.Isbn13!.Value.Value,
+                    Id = rareBook.Id.Value,
                     rareBook.Slug.Value,
                     rareBook.IsSold
                 })
@@ -66,6 +67,10 @@ public sealed class GetPublicBookQueryHandler(
             .Project([book], announcements, fairs, rareIsbns, nowUtc)
             .Single();
 
-        return result with { RareBookSlug = rareBook?.Value };
+        return result with
+        {
+            RareBookSlug = rareBook?.Value,
+            RareBookId = rareBook?.Id
+        };
     }
 }

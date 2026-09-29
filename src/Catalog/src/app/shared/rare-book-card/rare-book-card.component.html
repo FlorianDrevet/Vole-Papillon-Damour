@@ -1,4 +1,4 @@
-<a class="rare-book-card" [class.rare-book-card--sold]="book.isSold" [routerLink]="['/livres-rares', book.slug]" [attr.aria-label]="'Voir le livre rare ' + book.title">
+<a class="rare-book-card" [class.rare-book-card--sold]="book.isSold" [routerLink]="['/livres-rares', book.id]" [attr.aria-label]="'Voir le livre rare ' + book.title">
   <div class="rare-book-card-cover">
     <img *ngIf="thumbnail(); else rareCoverPlaceholder" [src]="thumbnail()" [alt]="'Photo de ' + book.title" loading="lazy">
     <ng-template #rareCoverPlaceholder><span aria-hidden="true">✦</span></ng-template>

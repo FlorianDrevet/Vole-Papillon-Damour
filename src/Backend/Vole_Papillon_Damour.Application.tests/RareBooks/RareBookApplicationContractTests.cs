@@ -14,7 +14,7 @@ using Vole_Papillon_Damour.Application.RareBooks.Commands.UpdateRareBookPhotoCap
 using Vole_Papillon_Damour.Application.RareBooks.Common;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBook;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetAdminRareBooks;
-using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookBySlug;
+using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBookByIdentifier;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.GetPublicRareBooks;
 using Vole_Papillon_Damour.Application.RareBooks.Queries.SearchRareBooksForCash;
 
@@ -48,7 +48,7 @@ public sealed class RareBookApplicationContractTests
         var queryTypes = new[]
         {
             typeof(GetPublicRareBooksQuery),
-            typeof(GetPublicRareBookBySlugQuery),
+            typeof(GetPublicRareBookByIdentifierQuery),
             typeof(GetAdminRareBooksQuery),
             typeof(GetAdminRareBookQuery),
             typeof(SearchRareBooksForCashQuery)
