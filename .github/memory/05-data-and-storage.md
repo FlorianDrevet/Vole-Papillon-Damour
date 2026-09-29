@@ -228,3 +228,7 @@ also exercise the translated query rather than evaluating it in memory.
 - A `false` result is a browser capability/permission limitation, not a failed server sync. The
   Scan UI therefore keeps the warning and recommends regular synchronization; it does not claim
   that local data is guaranteed.
+
+# Remise à zéro des données de livres
+
+La procédure répétable est dans `.agents/skills/book-data-reset/SKILL.md`, avec son script SQL en mode aperçu par défaut. Elle vise actuellement la base DEV `vole-papillon-damour-db`, conserve `floriandrevet@icloud.com` et `volepapillondamour@sfr.fr`, et protège les tables d'événements et d'actualités. Elle ne supprime ni les identités Entra ni les blobs.

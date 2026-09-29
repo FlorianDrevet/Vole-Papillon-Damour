@@ -24,6 +24,12 @@
 | **Branche** | `fix/not-found-report-migration`, basée sur `origin/main`. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
+### Remise à zéro de la base DEV — 2026-09-28
+
+Le contrôle PITR GitHub Actions [#36437080910](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36437080910) a réussi : une copie ponctuelle de `vole-papillon-damour-db` a été restaurée, lue par `DbSnapshot`, puis supprimée. La base source n'a pas été modifiée.
+
+La compétence `.agents/skills/book-data-reset/SKILL.md`, le SQL protégé et le workflow manuel `Database - reset books data` sont préparés dans la branche `docs/book-data-reset-playbook`. Le reset attend la revue et la fusion de sa PR ; une fois le workflow disponible sur `main`, faire d'abord un aperçu puis l'exécution demandée. Ne pas confondre la copie PITR vérifiée avec le reset effectif.
+
 ### Signalement livre introuvable — F-11 — 2026-09-24
 
 Les tâches SIG-1 à SIG-16 sont implémentées. La suppression de compte conserve les

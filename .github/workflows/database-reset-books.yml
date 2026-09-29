@@ -1,0 +1,140 @@
+name: Database - reset books data
+
+# Manual only. The target database is fixed in this workflow and the SQL file
+# defaults to a dry run. Applying requires both the exact target confirmation
+# and the explicit apply_reset input.
+on:
+  workflow_dispatch:
+    inputs:
+      target_confirmation:
+        description: Type exactly vole-papillon-damour-db
+        type: string
+        required: true
+      apply_reset:
+        description: Apply the reviewed reset (leave false for a dry run)
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: database-reset-books
+  cancel-in-progress: false
+
+env:
+  RESOURCE_GROUP: rg-vpd-dev
+  SQL_SERVER: vpd-sql-dev
+  SQL_DATABASE: vole-papillon-damour-db
+
+jobs:
+  reset:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate the fixed target and confirmation
+        env:
+          TARGET_CONFIRMATION: ${{ inputs.target_confirmation }}
+          APPLY_RESET: ${{ inputs.apply_reset }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Run this workflow from main after reviewing the change." >&2
+            exit 1
+          fi
+          if [[ "$TARGET_CONFIRMATION" != "$SQL_DATABASE" ]]; then
+            echo "Target confirmation did not match the fixed database name." >&2
+            exit 1
+          fi
+          if [[ "$APPLY_RESET" != "true" && "$APPLY_RESET" != "false" ]]; then
+            echo "apply_reset must be true or false." >&2
+            exit 1
+          fi
+
+      - name: Install Microsoft SQL command-line tools
+        run: |
+          set -euo pipefail
+          curl -sSL -O https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+
+      - name: Open the database to this runner
+        run: |
+          set -euo pipefail
+          RUNNER_IP=$(curl -fsS https://api.ipify.org)
+          az sql server firewall-rule create \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-book-reset-${GITHUB_RUN_ID}" \
+            --start-ip-address "$RUNNER_IP" \
+            --end-ip-address "$RUNNER_IP" \
+            --output none
+
+      - name: Preview or apply the reset transaction
+        env:
+          SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
+          SQLCMDPASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+          APPLY_RESET: ${{ inputs.apply_reset }}
+        run: |
+          set -euo pipefail
+          SQL_FQDN=$(az sql server show \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "$SQL_SERVER" \
+            --query fullyQualifiedDomainName \
+            --output tsv)
+          RESET_SQL=".agents/skills/book-data-reset/resources/reset-book-data.sql"
+          if [[ "$(grep -Fxc 'DECLARE @ApplyReset bit = 0;' "$RESET_SQL")" != "1" ]]; then
+            echo "The reset script execution guard changed; review the workflow before continuing." >&2
+            exit 1
+          fi
+          APPLY_VALUE=0
+          if [[ "$APPLY_RESET" == "true" ]]; then APPLY_VALUE=1; fi
+          sed "s/^DECLARE @ApplyReset bit = 0;$/DECLARE @ApplyReset bit = ${APPLY_VALUE};/" \
+            "$RESET_SQL" > "$RUNNER_TEMP/reset-book-data.sql"
+          sqlcmd \
+            -S "$SQL_FQDN,1433" \
+            -d "$SQL_DATABASE" \
+            -U "$SQL_ADMIN_LOGIN" \
+            -N \
+            -b \
+            -V 16 \
+            -i "$RUNNER_TEMP/reset-book-data.sql"
+
+      - name: Close the database firewall rule
+        if: always()
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$SQL_SERVER" \
+            --name "gh-book-reset-${GITHUB_RUN_ID}" \
+            --output none || true
+
+      - name: Report the reset mode
+        if: always()
+        env:
+          APPLY_RESET: ${{ inputs.apply_reset }}
+        run: |
+          {
+            echo "### Books database reset"
+            echo ""
+            echo "- Target: `$SQL_DATABASE` on `$SQL_SERVER`"
+            if [[ "$APPLY_RESET" == "true" ]]; then
+              echo "- Mode: apply requested; SQL guard checks and transaction determine commit or rollback."
+            else
+              echo "- Mode: dry run; no database rows are changed."
+            fi
+            echo "- SQL result: see the preceding step output."
+          } >> "$GITHUB_STEP_SUMMARY"
