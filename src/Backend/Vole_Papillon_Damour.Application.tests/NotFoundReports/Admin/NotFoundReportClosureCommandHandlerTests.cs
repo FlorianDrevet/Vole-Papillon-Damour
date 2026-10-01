@@ -167,7 +167,7 @@ public sealed class NotFoundReportClosureCommandHandlerTests
         await using var fixture = await MemberSelectionFixture.CreateAsync(Now);
         var rareBook = await fixture.AddRareBookAsync();
         var report = BookNotFoundReport.CreateForRareBook(
-            Guid.NewGuid(), UserId.CreateUnique(), rareBook.Id, null, null, Now.AddHours(-1));
+            Guid.NewGuid(), UserId.CreateUnique(), rareBook.Id, null, Now.AddHours(-1));
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();
 

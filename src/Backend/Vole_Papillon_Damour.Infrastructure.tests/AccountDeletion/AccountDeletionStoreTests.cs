@@ -290,14 +290,12 @@ public sealed class AccountDeletionStoreTests
             openReportId,
             userId,
             isbn13,
-            null,
             "Mon numéro : 06 12 34 56 78",
             Now);
         var closedReport = BookNotFoundReport.CreateForEdition(
             closedReportId,
             userId,
             isbn13,
-            null,
             "J'ai aussi cherché près de l'accueil",
             Now);
         closedReport.MarkFound(UserId.Create(Guid.NewGuid()), "Vérifié en rayon", Now.AddMinutes(1));

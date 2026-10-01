@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-11 — « Signalement livre introuvable », livré par les PR #229 et #233 ; le déploiement API/Worker DEV est bloqué par une erreur de migration SQL. |
-| **Prochaine action** | Fusionner le correctif `fix/not-found-report-migration`, puis relancer [Books runtime - deploy](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/workflows/books-runtime-deploy.yml) avec les migrations activées et vérifier les routes admin. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-report-migration` |
-| **Dernière mise à jour** | 2026-09-25 — le run [#36059976334](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36059976334) a échoué dans `RetireSelectionPersonalStatuses` avant le rollout. La jointure de `Books` utilisait `Id` au lieu de sa colonne `Isbn13`; correction préparée dans `fix/not-found-report-migration`. |
-| **Branche** | `fix/not-found-report-migration`, basée sur `origin/main`. |
+| **Lot en cours** | F-11 — suivi du formulaire et de la présentation du signalement; [PR #248](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/248) retire la localisation et ajoute la migration de suppression de colonne. |
+| **Prochaine action** | Fusionner d'abord le correctif de `RetireSelectionPersonalStatuses`, puis la PR #248. Relancer ensuite [Books runtime - deploy](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/workflows/books-runtime-deploy.yml) avec les migrations activées, vérifier les routes admin, puis déployer Catalog. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-report-location` |
+| **Dernière mise à jour** | 2026-10-01 — PR #248 ouverte vers `main`, non fusionnée. La migration `20261001111037_RemoveNotFoundReportLocation` n'est pas appliquée; aucun déploiement n'a été fait. La validation responsive Playwright a été exécutée avant le rebase sur la PR #247; elle n'a pas été répétée à la demande de l'utilisateur. |
+| **Branche** | `fix/not-found-report-location`, basée sur `origin/main` après la PR #247. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Remise à zéro de la base DEV — 2026-09-28
@@ -36,6 +36,23 @@ Les tâches SIG-1 à SIG-16 sont implémentées. La suppression de compte conser
 signalements ouverts et clôturés, détache le membre et efface le commentaire libre.
 Les décisions techniques appliquées fixent le plafond sur 24 heures glissantes, la
 caducité dans la transaction qui épuise le stock et la clôture groupée par fiche.
+
+### Suivi du signalement livre introuvable — 2026-10-01
+
+La [PR #248](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/248) retire le
+choix « bourse / local » du formulaire et du contrat, garde le commentaire facultatif,
+place le bloc de signalement dans sa propre cellule à côté du livre sur grand écran et
+supprime `BookNotFoundReports.Location` par la migration
+`20261001111037_RemoveNotFoundReportLocation`. La migration n'a pas été appliquée à une
+base. Le correctif séparé de `RetireSelectionPersonalStatuses` doit être fusionné avant le
+prochain déploiement `Books runtime - deploy` avec `run_migrations: true`; déployer Catalog
+après l'API.
+
+Validation locale : Domain/Application/Infrastructure/API 171/454/177/64 tests réussis,
+build Catalog réussi et suite Catalog 447 réussis avec 3 échecs AccountCard hors périmètre.
+Contrôle visuel avant rebase : 1440×1100 et 390×844 sans débordement horizontal. Le contrôle
+n'a pas été répété après le rebase sur la PR #247, à la demande de l'utilisateur. Aucun
+déploiement ni accès à une base distante n'a été effectué.
 
 ### Incident de déploiement DEV — 2026-09-25
 

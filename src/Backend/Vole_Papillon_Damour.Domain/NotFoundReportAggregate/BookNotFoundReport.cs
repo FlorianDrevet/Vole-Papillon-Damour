@@ -16,7 +16,6 @@ public sealed class BookNotFoundReport : Entity<Guid>
     public UserId? UserId { get; private set; }
     public Isbn13? Isbn13 { get; private set; }
     public RareBookId? RareBookId { get; private set; }
-    public NotFoundReportLocation? Location { get; private set; }
     public string? Comment { get; private set; }
     public NotFoundReportStatus Status { get; private set; } = NotFoundReportStatus.Open;
     public DateTime ReportedAt { get; private set; }
@@ -32,7 +31,6 @@ public sealed class BookNotFoundReport : Entity<Guid>
         UserId userId,
         Isbn13? isbn13,
         RareBookId? rareBookId,
-        NotFoundReportLocation? location,
         string? comment,
         DateTime reportedAt) : base(id)
     {
@@ -61,15 +59,9 @@ public sealed class BookNotFoundReport : Entity<Guid>
             throw new ArgumentException("A valid rare book identifier is required.", nameof(rareBookId));
         }
 
-        if (location is { } reportLocation && !Enum.IsDefined(reportLocation))
-        {
-            throw new ArgumentOutOfRangeException(nameof(location), reportLocation, "Unknown report location.");
-        }
-
         UserId = userId;
         Isbn13 = isbn13;
         RareBookId = rareBookId;
-        Location = location;
         Comment = NormalizeComment(comment);
         ReportedAt = DomainTime.RequireUtc(reportedAt, nameof(reportedAt));
     }
@@ -84,22 +76,20 @@ public sealed class BookNotFoundReport : Entity<Guid>
         Guid id,
         UserId userId,
         Isbn13 isbn13,
-        NotFoundReportLocation? location,
         string? comment,
         DateTime reportedAt)
     {
-        return new BookNotFoundReport(id, userId, isbn13, null, location, comment, reportedAt);
+        return new BookNotFoundReport(id, userId, isbn13, null, comment, reportedAt);
     }
 
     public static BookNotFoundReport CreateForRareBook(
         Guid id,
         UserId userId,
         RareBookId rareBookId,
-        NotFoundReportLocation? location,
         string? comment,
         DateTime reportedAt)
     {
-        return new BookNotFoundReport(id, userId, null, rareBookId, location, comment, reportedAt);
+        return new BookNotFoundReport(id, userId, null, rareBookId, comment, reportedAt);
     }
 
     public void Cancel(DateTime at)

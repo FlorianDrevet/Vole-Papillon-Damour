@@ -149,7 +149,6 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
             .Select(report => new LatestCommentProjection
             {
                 Text = report.Comment!,
-                Location = report.Location,
                 ReportedAt = report.ReportedAt
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -157,7 +156,6 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
             ? null
             : new NotFoundReportCommentResult(
                 comment.Text,
-                comment.Location?.ToString(),
                 ToOffset(comment.ReportedAt));
     }
 
@@ -170,7 +168,6 @@ public sealed class GetNotFoundReportSummaryQueryHandler(
     private sealed class LatestCommentProjection
     {
         public string Text { get; init; } = string.Empty;
-        public NotFoundReportLocation? Location { get; init; }
         public DateTime ReportedAt { get; init; }
     }
 }

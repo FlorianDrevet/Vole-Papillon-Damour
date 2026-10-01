@@ -30,7 +30,7 @@ describe('NotFoundReportsViewComponent', () => {
     firstReportedAt: '2026-09-01T10:00:00Z',
     lastReportedAt: '2026-09-05T10:00:00Z',
     overdue: false,
-    comments: [{text: 'Étagère du fond', location: 'Premises', reportedAt: '2026-09-05T10:00:00Z'}],
+    comments: [{text: 'Étagère du fond', reportedAt: '2026-09-05T10:00:00Z'}],
   };
   const queue: CatalogNotFoundQueue = {
     generatedAt: '2026-09-05T10:00:00Z',

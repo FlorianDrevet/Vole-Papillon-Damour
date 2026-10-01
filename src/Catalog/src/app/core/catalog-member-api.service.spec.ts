@@ -164,19 +164,19 @@ describe('CatalogMemberApiService', () => {
     request.flush(null);
   });
 
-  it('posts a typed not-found report with location, comment and bearer token', () => {
+  it('posts a typed not-found report with comment and bearer token', () => {
     const response = {
       reportId: 'report-id',
       reportedAt: '2026-09-24T10:00:00Z',
       alreadyOpen: false,
     };
 
-    service.reportNotFound('member-token', 'item-id', {location: 'Fair', comment: 'Rayon B'})
+    service.reportNotFound('member-token', 'item-id', {comment: 'Rayon B'})
       .subscribe(result => expect(result).toEqual(response));
 
     const request = http.expectOne(`${environment.apiUrl}/catalog/me/selection/item-id/not-found-report`);
     expect(request.request.method).toBe('POST');
-    expect(request.request.body).toEqual({location: 'Fair', comment: 'Rayon B'});
+    expect(request.request.body).toEqual({comment: 'Rayon B'});
     expect(request.request.headers.get('Authorization')).toBe('Bearer member-token');
     request.flush(response);
   });

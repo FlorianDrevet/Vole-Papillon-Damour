@@ -337,7 +337,7 @@ public static class NotFoundReportAdministrationController
             result.WithdrawalMovementIds);
 
     private static NotFoundReportCommentResponse ToResponse(NotFoundReportCommentResult result) =>
-        new(result.Text, result.Location, result.ReportedAt);
+        new(result.Text, result.ReportedAt);
 
     private static NotFoundClosureResponse ToResponse(NotFoundClosureResult result) =>
         new(result.ClosedReportCount, result.WithdrawnQuantity, result.QuantityAvailable, result.MovementId);

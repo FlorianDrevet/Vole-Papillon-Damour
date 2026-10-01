@@ -175,6 +175,17 @@ describe('AccountSelectionComponent', () => {
     expect(page.nativeElement.querySelector('[data-testid="cancel-not-found-report-reported"]')).not.toBeNull();
   });
 
+  it('places the report notice in its own cell beside the book details', () => {
+    snapshot.set(makeResponse([makeItem('reported', '9780000000001', 'ToTake', 'Available', {
+      id: 'report-1', status: 'Open', reportedAt: '2026-09-24T10:00:00Z', closedAt: null,
+    })]));
+    const page = render();
+    const row = page.nativeElement.querySelector('.selection-item') as HTMLElement;
+
+    expect(row.querySelector(':scope > .selection-item-report')?.querySelector('.selection-report-notice-open')).not.toBeNull();
+    expect(row.querySelector('.selection-item-copy .selection-report-notice')).toBeNull();
+  });
+
   it('cancelling a report calls the api and refreshes', async () => {
     snapshot.set(makeResponse([makeItem('reported', '9780000000001', 'ToTake', 'Available', {
       id: 'report-1', status: 'Open', reportedAt: '2026-09-24T10:00:00Z', closedAt: null,
@@ -242,7 +253,6 @@ describe('AccountSelectionComponent', () => {
     }
 
     await submitNotFoundReport.call(page.componentInstance, page.componentInstance.allItems()[0], {
-      location: null,
       comment: null,
     });
     page.detectChanges();
@@ -265,10 +275,7 @@ describe('AccountSelectionComponent', () => {
     await page.whenStable();
     page.detectChanges();
 
-    expect(api.reportNotFound).toHaveBeenCalledWith('member-token', 'available', {
-      location: null,
-      comment: 'Rayon vide',
-    });
+    expect(api.reportNotFound.calls.mostRecent().args[2] as unknown).toEqual({comment: 'Rayon vide'});
     expect(selection.refresh).toHaveBeenCalled();
     expect(page.nativeElement.querySelector('[role="dialog"]')).toBeNull();
     expect(page.nativeElement.querySelector('.selection-report-toast[role="status"]')?.textContent).toContain('Merci, un bénévole va vérifier.');

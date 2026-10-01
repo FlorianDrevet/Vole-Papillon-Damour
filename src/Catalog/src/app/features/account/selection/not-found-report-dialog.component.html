@@ -39,30 +39,6 @@
         Un bénévole ira vérifier en rayon. Si le livre a disparu, il sera retiré du catalogue. Merci de nous aider à le garder juste !
       </p>
 
-      <fieldset class="not-found-report-location">
-        <legend>Où l'avez-vous cherché ? <span>(facultatif)</span></legend>
-        <div class="not-found-report-location-options">
-          <label [class.selected]="location() === 'Fair'">
-            <input
-              type="radio"
-              name="not-found-report-location"
-              value="Fair"
-              [checked]="location() === 'Fair'"
-              (change)="selectLocation('Fair')">
-            À la bourse
-          </label>
-          <label [class.selected]="location() === 'Premises'">
-            <input
-              type="radio"
-              name="not-found-report-location"
-              value="Premises"
-              [checked]="location() === 'Premises'"
-              (change)="selectLocation('Premises')">
-            Au local
-          </label>
-        </div>
-      </fieldset>
-
       <label class="not-found-report-comment">
         <span class="not-found-report-comment-title">Un commentaire ?</span>
         <span class="not-found-report-comment-help">Facultatif · 280 caractères · pas de données personnelles</span>

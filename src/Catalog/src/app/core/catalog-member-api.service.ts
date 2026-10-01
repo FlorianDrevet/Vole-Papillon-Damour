@@ -14,7 +14,6 @@ import {
   CatalogSelectionMergeResult,
   CatalogSelectionResponse,
   CatalogSelectionTargetRequest,
-  CatalogNotFoundLocation,
   CatalogNotFoundReportCreated,
   CatalogWatchlistItemRequest,
   CatalogWatchlistResponse,
@@ -55,7 +54,7 @@ export class CatalogMemberApiService {
   reportNotFound(
     accessToken: string,
     itemId: string,
-    request: {location: CatalogNotFoundLocation | null; comment: string | null},
+    request: {comment: string | null},
   ): Observable<CatalogNotFoundReportCreated> {
     return this.http.post<CatalogNotFoundReportCreated>(
       `${this.apiUrl}/catalog/me/selection/${encodeURIComponent(itemId)}/not-found-report`,

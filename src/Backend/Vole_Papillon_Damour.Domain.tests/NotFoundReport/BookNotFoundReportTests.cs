@@ -16,6 +16,12 @@ public sealed class BookNotFoundReportTests
     private static readonly DateTime ClosedAt = new(2026, 9, 24, 11, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public void BookNotFoundReport_DoesNotExposeSearchLocation()
+    {
+        typeof(BookNotFoundReport).GetProperty("Location").Should().BeNull();
+    }
+
+    [Fact]
     public void CreateForEdition_StartsOpenWithTrimmedComment()
     {
         Isbn13.TryCreate("9782070612758", out var isbn).Should().BeTrue();
@@ -24,7 +30,6 @@ public sealed class BookNotFoundReportTests
             Guid.Parse("00000000-0000-0000-0000-000000000001"),
             Member,
             isbn,
-            NotFoundReportLocation.Fair,
             "  Rayon polar vide  ",
             ReportedAt);
 
@@ -33,7 +38,6 @@ public sealed class BookNotFoundReportTests
         report.UserId.Should().Be(Member);
         report.Isbn13.Should().Be(isbn);
         report.RareBookId.Should().BeNull();
-        report.Location.Should().Be(NotFoundReportLocation.Fair);
         report.Comment.Should().Be("Rayon polar vide");
         report.ReportedAt.Should().Be(ReportedAt);
         report.ClosedAt.Should().BeNull();
@@ -45,7 +49,7 @@ public sealed class BookNotFoundReportTests
         Isbn13.TryCreate("9782070612758", out var isbn);
 
         var report = BookNotFoundReport.CreateForEdition(
-            Guid.Parse("00000000-0000-0000-0000-000000000002"), Member, isbn, null, "  \t  ", ReportedAt);
+            Guid.Parse("00000000-0000-0000-0000-000000000002"), Member, isbn, "  \t  ", ReportedAt);
 
         report.Comment.Should().BeNull();
     }
@@ -56,7 +60,7 @@ public sealed class BookNotFoundReportTests
         Isbn13.TryCreate("9782070612758", out var isbn);
 
         var act = () => BookNotFoundReport.CreateForEdition(
-            Guid.Parse("00000000-0000-0000-0000-000000000003"), Member, isbn, null, new string('x', 281), ReportedAt);
+            Guid.Parse("00000000-0000-0000-0000-000000000003"), Member, isbn, new string('x', 281), ReportedAt);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -70,7 +74,6 @@ public sealed class BookNotFoundReportTests
             Guid.Parse("00000000-0000-0000-0000-000000000004"),
             Member,
             isbn,
-            null,
             null,
             DateTime.SpecifyKind(ReportedAt, DateTimeKind.Local));
 
@@ -169,7 +172,6 @@ public sealed class BookNotFoundReportTests
             Guid.Parse("00000000-0000-0000-0000-000000000022"),
             Member,
             rareBookId,
-            NotFoundReportLocation.Premises,
             "  Étagère 4  ",
             ReportedAt);
 
@@ -187,6 +189,6 @@ public sealed class BookNotFoundReportTests
         Isbn13.TryCreate("9782070612758", out var isbn);
 
         return BookNotFoundReport.CreateForEdition(
-            Guid.Parse("00000000-0000-0000-0000-000000000031"), Member, isbn, null, "Commentaire", ReportedAt);
+            Guid.Parse("00000000-0000-0000-0000-000000000031"), Member, isbn, "Commentaire", ReportedAt);
     }
 }

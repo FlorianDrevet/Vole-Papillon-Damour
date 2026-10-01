@@ -129,7 +129,6 @@ public static class MemberAccountController
                                 identity.FirstName,
                                 identity.LastName,
                                 id,
-                                request.Location,
                                 request.Comment),
                             cancellationToken);
                         return result.Match(

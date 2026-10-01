@@ -86,10 +86,10 @@ public sealed class ReportNotFoundCommandHandler(
         }
 
         var report = target.Isbn13 is { } targetIsbn
-            ? BookNotFoundReport.CreateForEdition(
-                Guid.NewGuid(), user.Id, targetIsbn, command.Location, command.Comment, now)
-            : BookNotFoundReport.CreateForRareBook(
-                Guid.NewGuid(), user.Id, target.RareBookId!, command.Location, command.Comment, now);
+                ? BookNotFoundReport.CreateForEdition(
+                    Guid.NewGuid(), user.Id, targetIsbn, command.Comment, now)
+                : BookNotFoundReport.CreateForRareBook(
+                    Guid.NewGuid(), user.Id, target.RareBookId!, command.Comment, now);
         dbContext.BookNotFoundReports.Add(report);
         try
         {

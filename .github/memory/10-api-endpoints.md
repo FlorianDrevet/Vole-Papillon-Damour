@@ -103,7 +103,8 @@ client-only/private.
   `POST /catalog/me/selection/merge` adds local entries idempotently. All routes require
   member authorization and derive identity from token claims.
 - `POST /catalog/me/selection/{id}/not-found-report` reports an available selection item;
-  a replay returns the existing open report. `DELETE /catalog/me/not-found-reports/{reportId}`
+  its optional request body is `{ comment }` with no search-location choice, and a replay
+  returns the existing open report. `DELETE /catalog/me/not-found-reports/{reportId}`
   cancels the authenticated member's own open report.
 - `GET /catalog/reference/search` - anonymous external bibliographic search with `q`, `page`,
   and `pageSize`; the Open Library adapter normalizes/deduplicates ISBN-10/ISBN-13 results.

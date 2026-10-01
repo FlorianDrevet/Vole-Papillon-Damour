@@ -1,7 +1,5 @@
 import {AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, input, OnDestroy, output, signal, ViewChild} from '@angular/core';
 
-import {CatalogNotFoundLocation} from '../../../core/catalog.models';
-
 export type NotFoundReportDialogMode = 'report' | 'login';
 
 export interface NotFoundReportDialogItem {
@@ -13,7 +11,6 @@ export interface NotFoundReportDialogItem {
 }
 
 export interface NotFoundReportSubmission {
-  location: CatalogNotFoundLocation | null;
   comment: string | null;
 }
 
@@ -32,7 +29,6 @@ export class NotFoundReportDialogComponent implements AfterViewInit, OnDestroy {
   readonly closed = output<void>();
   readonly loginRequested = output<void>();
 
-  readonly location = signal<CatalogNotFoundLocation | null>(null);
   readonly comment = signal('');
 
   @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
@@ -62,17 +58,13 @@ export class NotFoundReportDialogComponent implements AfterViewInit, OnDestroy {
     this.comment.set(value);
   }
 
-  selectLocation(location: CatalogNotFoundLocation): void {
-    this.location.set(location);
-  }
-
   submit(): void {
     if (this.sending()) {
       return;
     }
 
     const comment = this.comment().trim();
-    this.submitted.emit({location: this.location(), comment: comment || null});
+    this.submitted.emit({comment: comment || null});
   }
 
   requestClose(): void {

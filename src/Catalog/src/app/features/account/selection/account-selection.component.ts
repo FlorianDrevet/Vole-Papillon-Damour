@@ -7,7 +7,6 @@ import {CatalogMemberApiService} from '../../../core/catalog-member-api.service'
 import {
   CatalogSelectionAvailability,
   CatalogSelectionItem,
-  CatalogNotFoundLocation,
 } from '../../../core/catalog.models';
 import {CatalogSelectionService} from '../../../core/selection/catalog-selection.service';
 import {LocalSelectionEntry, SelectionRef, selectionKey} from '../../../core/selection/selection-merge';
@@ -223,7 +222,7 @@ export class AccountSelectionComponent implements OnDestroy {
 
   async submitFromNotFoundReportDialog(
     item: SelectionDisplayItem,
-    request: {location: CatalogNotFoundLocation | null; comment: string | null},
+    request: {comment: string | null},
   ): Promise<void> {
     await this.submitNotFoundReport(item, request);
     this.closeNotFoundReportDialog();
@@ -251,7 +250,7 @@ export class AccountSelectionComponent implements OnDestroy {
 
   async submitNotFoundReport(
     item: SelectionDisplayItem,
-    request: {location: CatalogNotFoundLocation | null; comment: string | null},
+    request: {comment: string | null},
   ): Promise<void> {
     const remote = item.remote;
     if (!remote || !this.auth.isAuthenticated() || !this.canReportNotFound(item) || this.busyItemId()) {
@@ -264,7 +263,6 @@ export class AccountSelectionComponent implements OnDestroy {
     try {
       const token = await this.auth.getApiAccessToken();
       await firstValueFrom(this.api.reportNotFound(token, remote.id, {
-        location: request.location,
         comment: request.comment?.trim() || null,
       }));
       await this.selection.refresh();
