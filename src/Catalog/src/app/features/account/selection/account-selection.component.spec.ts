@@ -207,7 +207,7 @@ describe('AccountSelectionComponent', () => {
     expect(page.nativeElement.textContent).toContain('Retiré du catalogue après votre signalement. Merci !');
   });
 
-  it('filters reported lines with the Signalés filter', () => {
+  it('shows every selected book without status filters', () => {
     snapshot.set(makeResponse([
       makeItem('reported', '9780000000001', 'ToTake', 'Available', {
         id: 'report-1', status: 'Open', reportedAt: '2026-09-24T10:00:00Z', closedAt: null,
@@ -216,22 +216,18 @@ describe('AccountSelectionComponent', () => {
     ]));
     const page = render();
 
-    (page.nativeElement.querySelector('[data-testid="selection-filter-reported"]') as HTMLButtonElement).click();
-    page.detectChanges();
-
-    expect(page.nativeElement.querySelectorAll('.selection-item').length).toBe(1);
+    expect(page.nativeElement.querySelector('.selection-filter-row')).toBeNull();
+    expect(page.nativeElement.querySelectorAll('.selection-item').length).toBe(2);
     expect(page.nativeElement.textContent).toContain('Livre 9780000000001');
-    expect(page.nativeElement.textContent).not.toContain('Livre 9780000000002');
+    expect(page.nativeElement.textContent).toContain('Livre 9780000000002');
   });
 
-  it('no longer offers Prochaine visite or Pas trouvé filters', () => {
+  it('removes desktop and mobile selection filters', () => {
     snapshot.set(makeResponse([makeItem('one', '9780000000001', 'ToTake', 'Available')]));
     const page = render();
 
-    const filters = Array.from(
-      page.nativeElement.querySelectorAll('.selection-filter-button') as NodeListOf<HTMLButtonElement>,
-    ).map(button => button.textContent);
-    expect(filters.join(' ')).not.toMatch(/Prochaine visite|Pas trouvé/);
+    expect(page.nativeElement.querySelector('.selection-filter-buttons')).toBeNull();
+    expect(page.nativeElement.querySelector('.selection-mobile-filter')).toBeNull();
   });
 
   it('maps a 429 to the daily limit message', async () => {
@@ -245,7 +241,7 @@ describe('AccountSelectionComponent', () => {
       return;
     }
 
-    await submitNotFoundReport.call(page.componentInstance, page.componentInstance.visibleItems()[0], {
+    await submitNotFoundReport.call(page.componentInstance, page.componentInstance.allItems()[0], {
       location: null,
       comment: null,
     });

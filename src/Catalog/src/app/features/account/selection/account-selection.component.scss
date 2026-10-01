@@ -11,8 +11,7 @@
 .selection-unsynced-banner,
 .selection-feedback,
 .selection-state,
-.selection-empty,
-.selection-filter-empty {
+.selection-empty {
   border: 1px solid var(--catalog-line);
   background: var(--catalog-white);
 }
@@ -106,7 +105,6 @@
 }
 
 .selection-account-button:focus-visible,
-.selection-filter-button:focus-visible,
 .selection-report-button:focus-visible,
 .selection-cancel-report:focus-visible,
 .selection-remove-item:focus-visible,
@@ -131,52 +129,6 @@
   color: var(--catalog-blue);
   font-weight: 600;
   text-underline-offset: .15em;
-}
-
-.selection-filter-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.3rem;
-}
-
-.selection-filter-buttons {
-  display: flex;
-  min-width: 0;
-  flex-wrap: wrap;
-  gap: .45rem;
-}
-
-.selection-filter-button {
-  display: inline-flex;
-  min-height: 2.55rem;
-  align-items: center;
-  gap: .5rem;
-  padding: .45rem .72rem;
-  border: 1px solid var(--catalog-line);
-  background: var(--catalog-white);
-  color: var(--catalog-slate-2);
-  font: 500 .64rem/1.2 var(--catalog-mono);
-  cursor: pointer;
-}
-
-.selection-filter-button span {
-  color: var(--catalog-slate-3);
-}
-
-.selection-filter-button.active {
-  border-color: var(--catalog-ink-2);
-  background: var(--catalog-ink-2);
-  color: var(--catalog-paper);
-}
-
-.selection-filter-button.active span {
-  color: var(--catalog-cyan);
-}
-
-.selection-mobile-filter {
-  display: none;
 }
 
 .selection-list {
@@ -449,13 +401,6 @@
   display: none;
 }
 
-.selection-filter-empty {
-  margin: 0;
-  padding: 1.2rem;
-  color: var(--catalog-slate-2);
-  font-size: .83rem;
-}
-
 .selection-freshness {
   margin: 1rem 0 0;
   color: var(--catalog-slate-2);
@@ -597,35 +542,6 @@
 }
 
 @media (max-width: 760px) {
-  .selection-filter-row {
-    margin-bottom: 1rem;
-  }
-
-  .selection-filter-buttons {
-    display: none;
-  }
-
-  .selection-mobile-filter {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    gap: .6rem;
-    color: var(--catalog-slate-2);
-    font: .63rem/1.3 var(--catalog-mono);
-  }
-
-  .selection-mobile-filter select {
-    min-width: 0;
-    min-height: 2.9rem;
-    flex: 1;
-    padding: .55rem .7rem;
-    border: 1px solid var(--catalog-line-strong);
-    border-radius: 0;
-    background: var(--catalog-white);
-    color: var(--catalog-ink-2);
-    font: 500 .72rem/1.2 var(--catalog-body);
-  }
-
   .selection-item {
     grid-template-columns: 58px minmax(0, 1fr);
     gap: .8rem;
@@ -709,7 +625,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .selection-account-button,
-  .selection-filter-button,
   .selection-report-button,
   .selection-cancel-report,
   .selection-merge-actions button {

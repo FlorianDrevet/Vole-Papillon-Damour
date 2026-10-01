@@ -37,34 +37,8 @@
       <p class="selection-search-note">Pour être prévenu de l'arrivée d'un livre, utilisez <a routerLink="/compte">Mes recherches</a>.</p>
     </div>
   } @else {
-    <div class="selection-filter-row">
-      <nav class="selection-filter-buttons" aria-label="Filtrer Ma sélection">
-        @for (option of filters; track option.id) {
-          <button
-            type="button"
-            class="selection-filter-button"
-            [class.active]="filter() === option.id"
-            [attr.aria-pressed]="filter() === option.id"
-            [attr.data-testid]="'selection-filter-' + option.id"
-            (click)="selectFilter(option.id)">
-            {{ option.label }} <span>{{ filterCount(option.id) }}</span>
-          </button>
-        }
-      </nav>
-
-      <label class="selection-mobile-filter">
-        <span>Afficher :</span>
-        <select [value]="filter()" (change)="changeFilter($event)">
-          @for (option of filters; track option.id) {
-            <option [value]="option.id">{{ option.label }} {{ filterCount(option.id) }}</option>
-          }
-        </select>
-      </label>
-    </div>
-
-    @if (visibleItems().length > 0) {
-      <div class="selection-list">
-        @for (item of visibleItems(); track trackByKey($index, item)) {
+    <div class="selection-list">
+      @for (item of allItems(); track trackByKey($index, item)) {
           <article class="selection-item">
             <div class="selection-cover">
               @if (item.remote?.coverUrl; as coverUrl) {
@@ -161,11 +135,8 @@
               </button>
             </div>
           </article>
-        }
-      </div>
-    } @else {
-      <p class="selection-filter-empty">Aucun livre ne correspond à ce filtre.</p>
-    }
+      }
+    </div>
 
     @if (freshnessLine(); as freshness) {
       <p class="selection-freshness">{{ freshness }}</p>

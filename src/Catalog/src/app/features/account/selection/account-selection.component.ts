@@ -14,8 +14,6 @@ import {LocalSelectionEntry, SelectionRef, selectionKey} from '../../../core/sel
 import {LocalSelectionStore} from '../../../core/selection/local-selection.store';
 import {NotFoundReportDialogItem} from './not-found-report-dialog.component';
 
-type SelectionFilter = 'all' | 'available' | 'purchased' | 'reported' | 'unavailable';
-
 interface SelectionDisplayItem {
   key: string;
   id: string | null;
@@ -24,14 +22,6 @@ interface SelectionDisplayItem {
   addedAt: string;
   remote: CatalogSelectionItem | null;
 }
-
-const FILTERS: ReadonlyArray<{id: SelectionFilter; label: string}> = [
-  {id: 'all', label: 'Tout'},
-  {id: 'available', label: 'Encore disponible'},
-  {id: 'purchased', label: 'Acheté'},
-  {id: 'reported', label: 'Signalés'},
-  {id: 'unavailable', label: 'Indisponibles'},
-];
 
 @Component({
   selector: 'app-account-selection',
@@ -45,8 +35,6 @@ export class AccountSelectionComponent implements OnDestroy {
   readonly selectionError = input<string | null>(null);
   @Output() retryRequested = new EventEmitter<void>();
 
-  readonly filters = FILTERS;
-  readonly filter = signal<SelectionFilter>('all');
   readonly busyItemId = signal<string | null>(null);
   readonly busyMerge = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -92,7 +80,6 @@ export class AccountSelectionComponent implements OnDestroy {
 
     return [...remote, ...local];
   });
-  readonly visibleItems = computed(() => this.allItems().filter(item => this.matchesFilter(item, this.filter())));
   readonly isLoading = computed(() => this.selectionLoading() ||
     (this.auth.isAuthenticated() && this.selection.snapshot() === null && !this.selectionError()));
   readonly localUnsynced = computed(() => this.mode() === 'local-unsynced');
@@ -114,21 +101,6 @@ export class AccountSelectionComponent implements OnDestroy {
 
   isAuthenticated(): boolean {
     return this.auth.isAuthenticated();
-  }
-
-  selectFilter(filter: SelectionFilter): void {
-    this.filter.set(filter);
-  }
-
-  changeFilter(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    if (FILTERS.some(option => option.id === value)) {
-      this.filter.set(value as SelectionFilter);
-    }
-  }
-
-  filterCount(filter: SelectionFilter): number {
-    return this.allItems().filter(item => this.matchesFilter(item, filter)).length;
   }
 
   availabilityLabel(availability: CatalogSelectionAvailability): string {
@@ -390,28 +362,6 @@ export class AccountSelectionComponent implements OnDestroy {
 
   selectionKeyForLocal(entry: LocalSelectionEntry): string {
     return selectionKey(entry.ref);
-  }
-
-  private matchesFilter(item: SelectionDisplayItem, filter: SelectionFilter): boolean {
-    const remote = item.remote;
-    if (!remote) {
-      return filter === 'all';
-    }
-
-    switch (filter) {
-      case 'all':
-        return true;
-      case 'available':
-        return remote.availability === 'Available' || remote.availability === 'Announced';
-      case 'purchased':
-        return remote.status === 'Purchased';
-      case 'reported':
-        return remote.notFoundReport !== null;
-      case 'unavailable':
-        return remote.availability === 'OutOfStock' ||
-          remote.availability === 'RareSold' ||
-          remote.availability === 'Unavailable';
-    }
   }
 
   private selectionRef(item: CatalogSelectionItem): SelectionRef | null {
