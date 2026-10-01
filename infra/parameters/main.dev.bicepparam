@@ -7,10 +7,11 @@ param environmentName = 'development'
 // -----------------------------------------------------------------------
 // Every image listens on 8080: the API through ASPNETCORE_URLS, the Website
 // through the SSR server's PORT, the BackOffice through nginx.conf.
+// All six apps use ACA's minimum Consumption allocation: 0.25 vCPU and 0.5 GiB.
 
 param containerAppApiContainerRuntime = {
-  cpuCores: '0.5'
-  memoryGi: '1.0Gi'
+  cpuCores: '0.25'
+  memoryGi: '0.5Gi'
 }
 param containerAppApiScaling = {
   minReplicas: 1
@@ -38,8 +39,8 @@ param containerAppApiHealthProbes = {
 }
 
 param containerAppWebsiteContainerRuntime = {
-  cpuCores: '0.5'
-  memoryGi: '1.0Gi'
+  cpuCores: '0.25'
+  memoryGi: '0.5Gi'
 }
 param containerAppWebsiteScaling = {
   minReplicas: 1
@@ -145,8 +146,8 @@ param containerAppScanHealthProbes = {
 }
 
 param containerAppCatalogContainerRuntime = {
-  cpuCores: '0.5'
-  memoryGi: '1.0Gi'
+  cpuCores: '0.25'
+  memoryGi: '0.5Gi'
 }
 param containerAppCatalogScaling = {
   minReplicas: 1
@@ -174,8 +175,8 @@ param containerAppCatalogHealthProbes = {
 }
 
 param containerAppWorkerContainerRuntime = {
-  cpuCores: '0.5'
-  memoryGi: '1.0Gi'
+  cpuCores: '0.25'
+  memoryGi: '0.5Gi'
 }
 // P1-1 measures whether a timer-triggered Function wakes correctly with no
 // warm host. Keep one maximum replica while observing the production timer.

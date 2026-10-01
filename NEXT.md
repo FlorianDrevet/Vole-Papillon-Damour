@@ -742,6 +742,16 @@ débordement à 320, 375 et 1440 px. `graphify update .` a ré-extrait 16 606 n�
 `fix/website-rare-book-detail-id` ; [PR #245](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/245)
 ouverte vers `main`, non fusionnée.
 
+### Infrastructure — ressources minimales ACA — 2026-10-01
+
+Dans le worktree `Vole-Papillon-Damour-aca-minimum-resources`, les paramètres DEV alignent
+l'API, Website, BackOffice, Scan, Catalog et Worker sur `0.25` vCPU / `0.5Gi` par réplique,
+la combinaison minimale Consumption documentée par Azure. Les compilations Bicep du template
+et des paramètres passent ; les valeurs de secrets manquantes localement ont été remplacées
+par des placeholders réservés à la compilation. `graphify update .` a reconstruit 16 613
+nœuds. La [PR #246](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/246) est
+ouverte vers `main`. Après fusion, lancer le `what-if` puis le déploiement manuel Infra.
+
 ### Books runtime — résolution du SDK Worker dans Docker — 2026-09-24
 
 Le run manuel [Books runtime - deploy #36054120349](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36054120349)
@@ -2165,6 +2175,11 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-10-01, les ressources minimales des six Container Apps sont préparées dans le dépôt
+sur `fix/aca-minimum-resources` ; la [PR #246](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/246)
+est ouverte. Azure garde son état actuel jusqu'au lancement du workflow manuel `Infra - deploy`
+après fusion.
+
 Au 2026-09-28, le travail sur la fiche livre rare a été vérifié dans un navigateur local
 avec une API simulée ; aucun changement d’Azure, de DNS, de tenant, de données ou de
 déploiement n’a été effectué.
@@ -2369,6 +2384,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-10-01 | Windows | **Infrastructure — ressources minimales ACA.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-aca-minimum-resources`, les six Container Apps DEV utilisent `0.25` vCPU / `0.5Gi` par réplique. Le template et les paramètres Bicep compilent avec des secrets factices locaux ; les avertissements ACS BCP081 préexistants restent. Documentation infra et mémoire mises à jour. `graphify update .` a reconstruit 16 613 nœuds. [PR #246](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/246) ouverte, aucun déploiement Azure effectué. |
 | 2026-09-28 | Windows | **Catalog — fiche publique livre rare.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-rare-book-detail-id`, les URLs publiques utilisent l’UUID, l’API maintient les slugs historiques et la fiche regroupe ses infos avant son panneau violet de sélection. Tests ciblés : Catalog 35/35, Application 455/455, endpoint API 5/5 ; build Catalog réussi. Suite Catalog 447/449 avec deux échecs AccountCard hors périmètre ; Playwright à 320/375/1440 px sans débordement, API simulée. Aucun changement externe ; [PR #245](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/245) ouverte vers `main`, non fusionnée. |
 | 2026-09-22 | Windows | **Infrastructure — réduction SQL/ACA.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-azure-cost-scaling`, alignement de `main.dev.bicepparam` sur Azure SQL `S0`/10 DTU ; BackOffice et Scan passent à `minReplicas: 0` avec réveil HTTP et cooldown de trois heures. Compilation du template et des paramètres Bicep réussie avec une clé de validation locale ; les avertissements ACS préexistants restent présents. `graphify update .` a ré-extrait le graphe ; aucun déploiement Azure n'a été effectué. |
 | 2026-09-16 | Windows | **Scan — retrait du bandeau de persistance hors ligne.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-remove-scan-offline-warning`, le bandeau compact ne s'affiche plus lorsque la seule alerte est « Données hors ligne non protégées » ; les alertes critiques et les autres états restent visibles, et la modal de protection est conservée. Validation : TDD rouge puis vert, 75 tests ciblés, 211 tests Scan ChromeHeadless, build de production et `git diff --check`. Graphify ré-extrait l’AST mais l’export HTML dépasse la limite de 5 114 nœuds ; le smoke Chrome local redirige `/tri` vers la connexion Entra, donc aucun contrôle authentifié, déploiement ou changement Azure. [PR #198](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/198) ouverte vers `main`, non fusionnée. |

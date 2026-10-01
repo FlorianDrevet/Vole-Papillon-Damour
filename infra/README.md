@@ -90,6 +90,8 @@ vérifier qu'aucun ancien consommateur ne le lit puis le supprimer explicitement
 Le scaling DEV est à `minReplicas: 1` pour l'API, le Website et le Catalog. Le BackOffice
 et le Scan sont à `minReplicas: 0`, `maxReplicas: 2`, avec un `cooldownPeriod` de
 `10 800` secondes (trois heures) avant le retour à zéro après la dernière requête HTTP.
+Les six Container Apps utilisent la [combinaison minimale documentée pour Consumption](https://learn.microsoft.com/en-us/azure/container-apps/containers)
+par réplique : `0.25` vCPU et `0.5Gi` de mémoire.
 Le module utilise `Microsoft.App/containerApps@2025-07-01`, qui déclare cette propriété
 dans le contrat ARM.
 Le premier appel HTTP réveille une réplique ; les usages rapprochés réinitialisent le délai
