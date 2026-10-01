@@ -29,7 +29,7 @@ public sealed class ReportNotFoundCommandHandlerTests
         var selectionItemId = await AddSelectionItemAsync(fixture, AvailableIsbn);
 
         var result = await fixture.CreateReportNotFoundHandler().Handle(
-            Command(selectionItemId, NotFoundReportLocation.Premises, "  Introuvable au rayon  "),
+            Command(selectionItemId, "  Introuvable au rayon  "),
             default);
 
         result.IsError.Should().BeFalse();
@@ -38,7 +38,6 @@ public sealed class ReportNotFoundCommandHandlerTests
         report.Id.Should().Be(result.Value.ReportId);
         report.UserId.Should().Be(UserId.Create(ExternalId));
         report.Isbn13!.Value.Value.Should().Be(AvailableIsbn);
-        report.Location.Should().Be(NotFoundReportLocation.Premises);
         report.Comment.Should().Be("Introuvable au rayon");
         report.Status.Should().Be(NotFoundReportStatus.Open);
         report.ReportedAt.Should().Be(Now);
@@ -125,7 +124,7 @@ public sealed class ReportNotFoundCommandHandlerTests
         var selectionItemId = await AddSelectionItemAsync(fixture, rareBook.Id.Value);
 
         var result = await fixture.CreateReportNotFoundHandler().Handle(
-            Command(selectionItemId, NotFoundReportLocation.Fair, null),
+            Command(selectionItemId),
             default);
 
         result.IsError.Should().BeFalse();
@@ -133,7 +132,6 @@ public sealed class ReportNotFoundCommandHandlerTests
         var report = await fixture.Context.BookNotFoundReports.SingleAsync();
         report.RareBookId.Should().Be(rareBook.Id);
         report.Isbn13.Should().BeNull();
-        report.Location.Should().Be(NotFoundReportLocation.Fair);
     }
 
     [Fact]
@@ -210,16 +208,6 @@ public sealed class ReportNotFoundCommandHandlerTests
         result.Errors.Should().Contain(error => error.PropertyName == "Comment");
     }
 
-    [Fact]
-    public void Validator_RejectsUndefinedLocation()
-    {
-        var result = new ReportNotFoundCommandValidator().Validate(
-            Command(Guid.NewGuid(), (NotFoundReportLocation)byte.MaxValue));
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(error => error.PropertyName == "Location");
-    }
-
     private static async Task<Guid> AddSelectionItemAsync(MemberSelectionFixture fixture, string isbn)
     {
         var result = await fixture.CreateAddHandler().Handle(
@@ -240,7 +228,6 @@ public sealed class ReportNotFoundCommandHandlerTests
 
     private static ReportNotFoundCommand Command(
         Guid selectionItemId,
-        NotFoundReportLocation? location = null,
         string? comment = null) =>
-        new(ExternalId, Email, "Test", "Member", selectionItemId, location, comment);
+        new(ExternalId, Email, "Test", "Member", selectionItemId, comment);
 }

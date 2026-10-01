@@ -9,7 +9,5 @@ public sealed class ReportNotFoundCommandValidator : AbstractValidator<ReportNot
     {
         RuleFor(command => command.Comment)
             .MaximumLength(BookNotFoundReport.CommentMaxLength);
-        RuleFor(command => command.Location)
-            .Must(location => location is null || Enum.IsDefined(location.Value));
     }
 }

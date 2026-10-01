@@ -130,7 +130,7 @@ public sealed class GetNotFoundReportQueueQueryHandlerTests
         var rareBook = await fixture.AddRareBookAsync(published: true);
         await AddEditionReportAsync(fixture, Isbn, UserId.CreateUnique(), Now.AddHours(-2));
         var rareReport = BookNotFoundReport.CreateForRareBook(
-            Guid.NewGuid(), UserId.CreateUnique(), rareBook.Id, null, "Rayon rare", Now.AddHours(-1));
+            Guid.NewGuid(), UserId.CreateUnique(), rareBook.Id, "Rayon rare", Now.AddHours(-1));
         fixture.Context.BookNotFoundReports.Add(rareReport);
         await fixture.Context.SaveChangesAsync();
 
@@ -154,7 +154,7 @@ public sealed class GetNotFoundReportQueueQueryHandlerTests
         string? comment = null)
     {
         var report = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), userId, ParseIsbn(isbn), null, comment, reportedAt);
+            Guid.NewGuid(), userId, ParseIsbn(isbn), comment, reportedAt);
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();
         return report;

@@ -30,7 +30,6 @@ public sealed record NotFoundReportTargetResponse(
 
 public sealed record NotFoundReportCommentResponse(
     string Text,
-    string? Location,
     DateTimeOffset ReportedAt);
 
 public sealed record ClosedNotFoundReportsResponse(

@@ -33,25 +33,25 @@ describe('NotFoundReportDialogComponent', () => {
     return fixture.nativeElement.querySelector('[data-testid="not-found-report-submit"]') as HTMLButtonElement;
   }
 
-  it('emits trimmed comment and selected location', () => {
+  it('does not ask for a location and emits only the trimmed comment', () => {
     const page = render();
     const submitted = spyOn(page.componentInstance.submitted, 'emit');
     const comment = page.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
     comment.value = '  Rayon polar vide  ';
     comment.dispatchEvent(new Event('input', {bubbles: true}));
-    (page.nativeElement.querySelector('input[value="Premises"]') as HTMLInputElement).click();
     submitButton().click();
 
-    expect(submitted).toHaveBeenCalledWith({location: 'Premises', comment: 'Rayon polar vide'});
+    expect(page.nativeElement.querySelector('[name="not-found-report-location"]')).toBeNull();
+    expect(submitted.calls.mostRecent().args[0] as unknown).toEqual({comment: 'Rayon polar vide'});
   });
 
-  it('emits null location when none chosen', () => {
+  it('emits a null comment when the field is blank', () => {
     const page = render();
     const submitted = spyOn(page.componentInstance.submitted, 'emit');
 
     submitButton().click();
 
-    expect(submitted).toHaveBeenCalledWith({location: null, comment: null});
+    expect(submitted.calls.mostRecent().args[0] as unknown).toEqual({comment: null});
   });
 
   it('limits the comment to 280 characters', () => {

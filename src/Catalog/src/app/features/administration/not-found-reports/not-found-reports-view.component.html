@@ -91,7 +91,7 @@
               </div>
               <p class="not-found-dates">1er signalement le {{ formatDate(target.firstReportedAt) }} · dernier le {{ formatDate(target.lastReportedAt) }} @if (target.overdue) {<strong> · en attente depuis {{ daysWaiting(target.firstReportedAt) }} jours</strong>}</p>
               @for (comment of target.comments; track comment.reportedAt + ':' + $index) {
-                <blockquote class="not-found-comment">« {{ comment.text }} » @if (comment.location) {<span>— {{ comment.location === 'Fair' ? 'À la bourse' : 'Au local' }}</span>}</blockquote>
+                <blockquote class="not-found-comment">« {{ comment.text }} »</blockquote>
               }
             </div>
             <div class="not-found-row-actions">

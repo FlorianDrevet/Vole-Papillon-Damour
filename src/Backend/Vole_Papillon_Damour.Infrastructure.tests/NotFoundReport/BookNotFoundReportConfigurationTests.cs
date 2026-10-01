@@ -26,6 +26,7 @@ public sealed class BookNotFoundReportConfigurationTests
         entityType.FindProperty(nameof(BookNotFoundReport.Comment))!.GetMaxLength().Should().Be(280);
         entityType.FindProperty(nameof(BookNotFoundReport.ClosureNote))!.GetMaxLength().Should().Be(500);
         entityType.FindProperty(nameof(BookNotFoundReport.Isbn13))!.GetColumnType().Should().Be("char(13)");
+        entityType.FindProperty("Location").Should().BeNull();
     }
 
     [Fact]
@@ -54,8 +55,8 @@ public sealed class BookNotFoundReportConfigurationTests
         Isbn13.TryCreate("9782070612758", out var isbn).Should().BeTrue();
         var member = CreateMember();
         context.Users.Add(member);
-        context.Add(BookNotFoundReport.CreateForEdition(Guid.NewGuid(), member.Id, isbn, null, null, Now));
-        context.Add(BookNotFoundReport.CreateForEdition(Guid.NewGuid(), member.Id, isbn, null, null, Now));
+        context.Add(BookNotFoundReport.CreateForEdition(Guid.NewGuid(), member.Id, isbn, null, Now));
+        context.Add(BookNotFoundReport.CreateForEdition(Guid.NewGuid(), member.Id, isbn, null, Now));
 
         var act = () => context.SaveChangesAsync();
 

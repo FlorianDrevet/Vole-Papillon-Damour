@@ -28,6 +28,15 @@ public sealed class NotFoundReportEndpointsTests
     private static readonly DateTimeOffset ReportedAt = new(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public void ReportNotFoundRequest_DoesNotExposeSearchLocation()
+    {
+        typeof(Vole_Papillon_Damour.Contracts.MemberSelection.ReportNotFoundRequest)
+            .GetProperty("Location")
+            .Should()
+            .BeNull();
+    }
+
+    [Fact]
     public async Task PostReport_WithoutAuthentication_Returns401()
     {
         await using var application = CreateApplication();
@@ -63,7 +72,7 @@ public sealed class NotFoundReportEndpointsTests
             application,
             endpoint,
             "POST",
-            "{\"location\":\"Premises\",\"comment\":\"not on shelf\"}",
+            "{\"comment\":\"not on shelf\"}",
             AuthenticatedPrincipal(),
             new Dictionary<string, object?> { ["id"] = SelectionItemId.ToString() });
 
@@ -75,7 +84,6 @@ public sealed class NotFoundReportEndpointsTests
                 command.FirstName == "Camille" &&
                 command.LastName == "Durand" &&
                 command.SelectionItemId == SelectionItemId &&
-                command.Location == Domain.NotFoundReportAggregate.ValueObjects.NotFoundReportLocation.Premises &&
                 command.Comment == "not on shelf"),
             Arg.Any<CancellationToken>());
     }

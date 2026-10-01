@@ -24,7 +24,7 @@ public sealed class RegisterSaleCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
         var report = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null, null,
+            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null,
             ScanBookCommandHandlerTests.ClientScanAt);
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();
@@ -43,7 +43,7 @@ public sealed class RegisterSaleCommandHandlerTests
         await using var fixture = await ScanBookFixture.CreateAsync();
         var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 2);
         var report = BookNotFoundReport.CreateForEdition(
-            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null, null,
+            Guid.NewGuid(), UserId.CreateUnique(), book.Isbn13, null,
             ScanBookCommandHandlerTests.ClientScanAt);
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();

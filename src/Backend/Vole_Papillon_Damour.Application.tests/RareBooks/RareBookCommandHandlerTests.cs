@@ -166,7 +166,7 @@ public sealed class RareBookCommandHandlerTests
         await using var fixture = await RareBookFeatureTestFixture.CreateAsync();
         var rareBook = await fixture.AddRareBookAsync("Signalé rare", published: true);
         var report = BookNotFoundReport.CreateForRareBook(
-            Guid.NewGuid(), UserId.CreateUnique(), rareBook.Id, null, null, fixture.Now.AddMinutes(-1));
+            Guid.NewGuid(), UserId.CreateUnique(), rareBook.Id, null, fixture.Now.AddMinutes(-1));
         fixture.Context.BookNotFoundReports.Add(report);
         await fixture.Context.SaveChangesAsync();
 

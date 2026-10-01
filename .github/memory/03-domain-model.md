@@ -94,8 +94,9 @@ only; `PurchasedAt` is set by an associated sale. The aggregate caps a member at
 items. A member cannot set or change `Purchased` manually.
 
 `BookNotFoundReport` targets one edition or one rare-book fiche and records the reporting
-member, optional location, optional comment, report time, status, and optional closure
-metadata. Open reports are grouped by target for the administration queue. `DetachMember()`
+member, optional comment, report time, status, and optional closure metadata. The report
+request and aggregate have no search-location field. Open reports are grouped by target for
+the administration queue. `DetachMember()`
 clears the member ID and free-text comment while preserving the report and its closure
 history; account deletion applies it to both open and closed reports.
 

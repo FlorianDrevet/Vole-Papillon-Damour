@@ -166,7 +166,6 @@ public sealed class GetNotFoundReportQueueQueryHandler(
                 group => (IReadOnlyList<NotFoundReportCommentResult>)group
                     .Select(row => new NotFoundReportCommentResult(
                         row.Text,
-                        row.Location?.ToString(),
                         ToOffset(row.ReportedAt)))
                     .ToArray());
 
@@ -237,7 +236,6 @@ public sealed class GetNotFoundReportQueueQueryHandler(
                 Isbn13 = report.Isbn13,
                 RareBookId = report.RareBookId,
                 Text = report.Comment!,
-                Location = report.Location,
                 ReportedAt = report.ReportedAt
             })
             .ToListAsync(cancellationToken);
@@ -300,7 +298,6 @@ public sealed class GetNotFoundReportQueueQueryHandler(
         public Isbn13? Isbn13 { get; init; }
         public RareBookId? RareBookId { get; init; }
         public string Text { get; init; } = string.Empty;
-        public NotFoundReportLocation? Location { get; init; }
         public DateTime ReportedAt { get; init; }
     }
 }

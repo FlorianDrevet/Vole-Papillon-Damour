@@ -936,7 +936,7 @@ describe('CatalogAdministrationPageComponent', () => {
       overdueTargetCount: 0,
       openReportCount: 2,
       firstReportedAt: '2026-09-01T10:00:00Z',
-      latestComment: {text: 'Étagère du fond', location: null, reportedAt: '2026-09-05T10:00:00Z'},
+      latestComment: {text: 'Étagère du fond', reportedAt: '2026-09-05T10:00:00Z'},
       withdrawalMovementIds: [],
     } as CatalogNotFoundSummary));
     fixture.detectChanges();

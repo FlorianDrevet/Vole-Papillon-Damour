@@ -588,7 +588,10 @@ member's typed `Ma sélection` independently of the alert watchlist (`Mes recher
 It reads the remote snapshot through `CatalogSelectionService`, uses `LocalSelectionStore`
 for anonymous entries, and uses typed member API calls for removals and not-found reports.
 Personal `NotFound` and `ToRevisit` status writes are retired; a report is created from a
-selection row and can be cancelled by its owner while open. The `/compte` page owns
+selection row and can be cancelled by its owner while open. The report dialog asks only
+for an optional comment. On wide account layouts the report notice occupies its own row
+cell beside the cover, book details, and actions; at 1024 px and below it stacks under the
+details. The `/compte` page owns
 authentication initialization and the
 five-tab order. The `Ma carte` view and lazily loaded `Mes achats` tab are implemented;
 purchase history pages by fair, contains no amount or price, and shows cancelled lines

@@ -130,7 +130,6 @@ export type CatalogSelectionStatus = 'ToTake' | 'Purchased';
 export type CatalogSelectionAvailability = 'Available' | 'Announced' | 'OutOfStock' | 'RareSold' | 'Unavailable';
 export type CatalogSelectionKind = 'edition' | 'rare';
 export type CatalogNotFoundReportStatus = 'Open' | 'Found' | 'Withdrawn' | 'Dismissed' | 'Lapsed';
-export type CatalogNotFoundLocation = 'Fair' | 'Premises';
 export type CatalogNotFoundWithdrawalReason = 'NotFoundOnShelf' | 'Damaged' | 'Other';
 
 export interface CatalogNotFoundReportSummary {
@@ -148,7 +147,6 @@ export interface CatalogNotFoundReportCreated {
 
 export interface CatalogNotFoundReportComment {
   text: string;
-  location: CatalogNotFoundLocation | null;
   reportedAt: string;
 }
 

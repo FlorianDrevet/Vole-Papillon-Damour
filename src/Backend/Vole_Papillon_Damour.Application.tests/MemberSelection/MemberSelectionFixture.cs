@@ -222,7 +222,6 @@ internal sealed class MemberSelectionFixture : IAsyncDisposable
             Guid.NewGuid(),
             userId,
             ParseIsbn(isbn),
-            NotFoundReportLocation.Fair,
             null,
             reportedAt);
         Context.BookNotFoundReports.Add(report);

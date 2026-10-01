@@ -30,8 +30,6 @@ public sealed class BookNotFoundReportConfiguration : IEntityTypeConfiguration<B
             .HasConversion(
                 rareBookId => rareBookId == null ? (Guid?)null : rareBookId.Value,
                 value => value.HasValue ? RareBookId.Create(value.Value) : null);
-        builder.Property(report => report.Location)
-            .HasConversion<byte>();
         builder.Property(report => report.Comment)
             .HasMaxLength(BookNotFoundReport.CommentMaxLength)
             .HasColumnType("nvarchar(280)");
