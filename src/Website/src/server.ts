@@ -6,10 +6,12 @@ import {
 } from '@angular/ssr/node';
 import express from 'express';
 import { join } from 'node:path';
+import { WEBSITE_ORIGIN } from './website-origin';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
+const canonicalHostname = new URL(WEBSITE_ORIGIN).hostname;
 const angularApp = new AngularNodeAppEngine({
   // Azure Container Apps terminates TLS at its ingress and forwards over plain
   // HTTP, so the original scheme, host and path only survive in the
@@ -39,6 +41,21 @@ const angularApp = new AngularNodeAppEngine({
  */
 app.use((req, _res, next) => {
   delete req.headers['x-forwarded-path'];
+  next();
+});
+
+// Use the same trusted Azure ingress host as Angular SSR. Keep local development
+// and Container Apps health probes on their own hostnames.
+app.use((req, res, next) => {
+  const hostname = (req.get('x-forwarded-host') ?? req.get('host') ?? '')
+    .split(',')[0].trim().toLowerCase().replace(/:\d+$/, '');
+  const isPublicHost = hostname === canonicalHostname || hostname === `www.${canonicalHostname}`;
+  if ((req.method === 'GET' || req.method === 'HEAD') && isPublicHost &&
+      (hostname !== canonicalHostname || req.path === '/')) {
+    const target = req.path === '/' ? `/accueil${req.originalUrl.slice(1)}` : req.originalUrl;
+    res.redirect(301, WEBSITE_ORIGIN + target);
+    return;
+  }
   next();
 });
 
