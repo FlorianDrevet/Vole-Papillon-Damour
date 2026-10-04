@@ -641,3 +641,26 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
   redirect `msal427c90de-bf59-4b01-af63-dc0799248496://auth` and an `AuthHandler`.
 - `IVpdApi.GetProductsAsync()` calls `GET /product`; the cash surface intentionally keeps the
   full projection, including products hidden from Website.
+
+
+## Website canonical URLs (2026-10-04)
+
+- Production inspection found both public hosts returning HTTP 200 and no canonical
+  link on the checked pages. `src/Website/src/website-origin.ts` now centralizes
+  `https://volepapillondamour.fr`, consistent with the existing sitemap.
+- Website `AppComponent` sets/reuses one canonical link in `DOCUMENT.head` after
+  successful routing, including SSR/prerender and browser navigation. It preserves
+  each page path/ID, removes query parameters/fragments/trailing slashes and maps `/`
+  to `/accueil`. No Website route currently uses functional query parameters.
+- Express redirects GET/HEAD requests from `www` with HTTP 301 before static files;
+  both public roots redirect directly to canonical `/accueil`. Queries are preserved
+  in redirects. Host selection respects the existing trusted Azure ingress model;
+  localhost/Container Apps health hosts are unaffected.
+- Validation: 90 Angular ChromeHeadless tests, production build (existing budget and
+  CommonJS warnings), 14 HTTP tests via `npm run test:seo` after the build. HTTP tests
+  cover direct/proxy redirects, root, sitemap, prerender and an SSR album without API.
+- Deploy through `Website - deploy` after merge. Live article/event content and Azure
+  behavior still need post-deployment checks; Search Console property access was not
+  used. Recrawl is needed before the report changes, and indexing is not guaranteed.
+- `python -m graphify update .` refreshed the AST graph (7,384 nodes) but exited 1
+  because the HTML visualization exceeds Graphify's size limit; graph query works.

@@ -14,6 +14,7 @@
     "prewatch": "npm run link:shared-ui",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:seo": "node --test scripts/seo-http.test.mjs",
     "serve:ssr:vole_papillon_damour_website": "node dist/vole_papillon_damour_website/server/server.mjs"
   },
   "private": true,

@@ -1,6 +1,8 @@
-import {Component, OnDestroy, OnInit, signal} from '@angular/core';
+import {DOCUMENT} from '@angular/common';
+import {Component, Inject, OnDestroy, OnInit, signal} from '@angular/core';
 import {NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router} from '@angular/router';
 import {Subject, filter, takeUntil} from 'rxjs';
+import {WEBSITE_ORIGIN} from '../website-origin';
 
 @Component({
     selector: 'app-root',
@@ -14,7 +16,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private readonly destroyed = new Subject<void>();
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    @Inject(DOCUMENT) private readonly document: Document,
+  ) {}
 
   ngOnInit(): void {
     this.router.events
@@ -27,11 +32,33 @@ export class AppComponent implements OnInit, OnDestroy {
         ),
         takeUntil(this.destroyed),
       )
-      .subscribe(event => this.isNavigating.set(event instanceof NavigationStart));
+      .subscribe(event => {
+        this.isNavigating.set(event instanceof NavigationStart);
+        if (event instanceof NavigationEnd) {
+          this.updateCanonical(event.urlAfterRedirects);
+        }
+      });
+
+    if (this.router.navigated) {
+      this.updateCanonical(this.router.url);
+    }
   }
 
   ngOnDestroy(): void {
     this.destroyed.next();
     this.destroyed.complete();
+  }
+
+  private updateCanonical(url: string): void {
+    const path = url.split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/accueil';
+    let canonical = this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+
+    if (!canonical) {
+      canonical = this.document.createElement('link');
+      canonical.rel = 'canonical';
+      this.document.head.appendChild(canonical);
+    }
+
+    canonical.href = `${WEBSITE_ORIGIN}${path}`;
   }
 }

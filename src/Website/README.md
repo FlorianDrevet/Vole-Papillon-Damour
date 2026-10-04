@@ -54,6 +54,28 @@ the site is deployed. Dynamic actuality and event detail URLs are not listed
 because their IDs come from the API; they remain discoverable through the
 internal links and their listing pages.
 
+The preferred origin is `https://volepapillondamour.fr`, matching the sitemap.
+Each routed page sets its own absolute `rel="canonical"` in the HTML head during
+SSR/prerendering and updates it after browser navigation. Query parameters
+and fragments are excluded. Actuality/event IDs remain part of the canonical path.
+The Express server permanently redirects `www` URLs to the same path on the
+preferred origin and both public domain roots to `/accueil`, preserving query
+parameters. Azure's `X-Forwarded-Host` is used consistently with the existing trusted
+ingress setup; localhost and Container Apps hostnames are not redirected.
+
+Run `npm run build` followed by `npm run test:seo` to check redirects and canonical
+links in the served HTML without a browser. Angular specs cover client navigation.
+
+After merging, run **Website - deploy**, then check that a live `www` URL returns a permanent redirect and that the source
+HTML for a static page, an actuality and an event contains the expected canonical.
+In Google Search Console, inspect the preferred URL and request indexing for a few
+canonical pages. After Google recrawls them, compare the user-declared and Google-selected
+canonicals. The live URL test checks access; it does not confirm Google’s selected
+canonical. Submit the sitemap if needed and start report validation. Redirected/alternate
+URLs are expected to remain excluded, and canonical signals do not guarantee indexing. Do not use
+`noindex` or robots.txt to suppress these duplicates.
+
+
 # Name Application
 
 It is important to go in package.json and change the name of the application. 
