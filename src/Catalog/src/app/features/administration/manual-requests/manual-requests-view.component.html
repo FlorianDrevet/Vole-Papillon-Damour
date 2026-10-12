@@ -2,7 +2,7 @@
   <header class="manual-requests-heading">
     <div class="manual-requests-heading-copy">
       <span class="admin-kicker">Pendant la bourse</span>
-      <h1 id="admin-title">Demandes manuelles.</h1>
+      <h1 #requestsHeading id="admin-title" tabindex="-1">Demandes manuelles.</h1>
       <p>Livres recherchés par des personnes sans internet. Quand un livre est trouvé, appelez la personne puis indiquez s'il a été donné ou refusé.</p>
     </div>
     <button class="button button-primary" data-testid="manual-request-new-requester" type="button" (click)="newRequester()">
@@ -64,7 +64,9 @@
       <span>{{ message }}</span>
       <button class="button button-outline" data-testid="manual-requests-retry" type="button" (click)="loadQueue()">Réessayer</button>
     </div>
-  } @else if (loading()) {
+  }
+
+  @if (loading() && !queue()) {
     <div class="manual-request-skeletons" role="status" aria-label="Chargement des demandes manuelles">
       <span></span><span></span><span></span>
     </div>
@@ -168,4 +170,15 @@
     <span aria-hidden="true">i</span>
     <p>Ces livres ne sont ni disponibles ni annoncés : aucun membre n'a été prévenu. Un refus les remet en stock et prévient aussitôt les membres qui les suivent. Les coordonnées sont effacées trois mois après la dernière demande close de la personne.</p>
   </aside>
+
+  @if (decision(); as currentDecision) {
+    <app-manual-request-decision-dialog
+      [mode]="currentDecision.mode"
+      [item]="currentDecision.item"
+      [requesterFirstName]="currentDecision.item.requesterFirstName || ''"
+      [requesterLastName]="currentDecision.item.requesterLastName || ''"
+      [pending]="actionPending() === currentDecision.item.requestId"
+      (closed)="closeDecision()"
+      (confirmed)="confirmDecision($event.keepSearching)"></app-manual-request-decision-dialog>
+  }
 </section>

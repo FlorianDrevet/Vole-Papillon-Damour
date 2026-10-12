@@ -25,6 +25,7 @@ import {NotFoundReportsViewComponent} from './features/administration/not-found-
 import {ManualRequestsViewComponent} from './features/administration/manual-requests/manual-requests-view.component';
 import {ManualRequesterDetailComponent} from './features/administration/manual-requests/manual-requester-detail.component';
 import {ManualRequestAddDialogComponent} from './features/administration/manual-requests/manual-request-add-dialog.component';
+import {ManualRequestDecisionDialogComponent} from './features/administration/manual-requests/manual-request-decision-dialog.component';
 import {CatalogAccountPageComponent} from './features/account/catalog-account-page.component';
 import {AccountSelectionComponent} from './features/account/selection/account-selection.component';
 import {NotFoundReportDialogComponent} from './features/account/selection/not-found-report-dialog.component';
@@ -65,6 +66,7 @@ registerLocaleData(localeFr);
     ManualRequestsViewComponent,
     ManualRequesterDetailComponent,
     ManualRequestAddDialogComponent,
+    ManualRequestDecisionDialogComponent,
     NotFoundReportCloseDialogComponent,
     CatalogAccountPageComponent,
     AccountSelectionComponent,

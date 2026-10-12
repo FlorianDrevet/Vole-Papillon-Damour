@@ -348,7 +348,8 @@
                 [accessToken]="manualRequestAccessToken()"
                 [requesterId]="requesterId"
                 (closed)="closeManualRequester()"
-                (requesterCreated)="openManualRequester($event)"></app-manual-requester-detail>
+                (requesterCreated)="openManualRequester($event)"
+                (countsChanged)="onManualRequestCountsChanged($event)"></app-manual-requester-detail>
             } @else {
               <app-manual-requests-view
                 [accessToken]="manualRequestAccessToken()"

@@ -7,6 +7,7 @@ import {CatalogApiService} from '../../../core/catalog-api.service';
 import {CatalogManualRequester} from '../../../core/catalog.models';
 import {ManualRequesterDetailComponent} from './manual-requester-detail.component';
 import {ManualRequestAddDialogComponent} from './manual-request-add-dialog.component';
+import {ManualRequestDecisionDialogComponent} from './manual-request-decision-dialog.component';
 
 describe('ManualRequesterDetailComponent', () => {
   let fixture: ComponentFixture<ManualRequesterDetailComponent>;
@@ -40,12 +41,13 @@ describe('ManualRequesterDetailComponent', () => {
 
   beforeEach(async () => {
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
-      'getManualRequester', 'createManualRequester', 'updateManualRequester', 'deleteManualRequester',
+      'getManualRequester', 'getManualRequestSummary', 'createManualRequester', 'updateManualRequester', 'deleteManualRequester',
       'pickManualRequest', 'markManualRequestGiven', 'refuseManualRequest', 'cancelManualRequest',
     ]);
     catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
     catalogApi.searchReferences.and.returnValue(of({generatedAt: '', query: '', items: [], page: 1, pageSize: 20}));
     api.getManualRequester.and.returnValue(of(requester));
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 0, foundOverdueCount: 0}));
     api.createManualRequester.and.returnValue(of({requesterId: 'created-1'}));
     api.updateManualRequester.and.returnValue(of(undefined));
     api.deleteManualRequester.and.returnValue(of({cancelledRequestCount: 1, notifiedMemberCount: 2}));
@@ -55,7 +57,7 @@ describe('ManualRequesterDetailComponent', () => {
     api.cancelManualRequest.and.returnValue(of({notifiedMemberCount: 0}));
 
     await TestBed.configureTestingModule({
-      declarations: [ManualRequesterDetailComponent, ManualRequestAddDialogComponent],
+      declarations: [ManualRequesterDetailComponent, ManualRequestAddDialogComponent, ManualRequestDecisionDialogComponent],
       imports: [FormsModule],
       providers: [
         {provide: CatalogAdminApiService, useValue: api},
@@ -134,5 +136,27 @@ describe('ManualRequesterDetailComponent', () => {
 
     expect(api.deleteManualRequester).toHaveBeenCalledWith('access-token', 'requester-1');
     expect(closed).toHaveBeenCalled();
+  });
+
+  it('confirms canceling a found request and refreshes the administration badge', async () => {
+    fixture.componentRef.setInput('requesterId', 'requester-1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const countsChanged = jasmine.createSpy('countsChanged');
+    fixture.componentInstance.countsChanged.subscribe(countsChanged);
+
+    fixture.componentInstance.cancelRequest(requester.requests[0]);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Annuler la demande de Jeanne MARTIN ?');
+    expect(api.cancelManualRequest).not.toHaveBeenCalled();
+    (root.querySelector('[data-testid="manual-request-decision-confirm"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.cancelManualRequest).toHaveBeenCalledWith('access-token', 'request-1');
+    expect(api.getManualRequestSummary).toHaveBeenCalledWith('access-token');
+    expect(countsChanged).toHaveBeenCalledWith({foundCount: 0, foundOverdueCount: 0});
   });
 });

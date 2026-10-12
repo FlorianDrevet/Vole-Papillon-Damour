@@ -5,9 +5,11 @@ import {firstValueFrom} from 'rxjs';
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
 import {
   CatalogManualRequestItem,
+  CatalogManualRequestSummary,
   CatalogManualRequester,
   CatalogManualRequesterWrite,
 } from '../../../core/catalog.models';
+import {ManualRequestDecisionMode} from './manual-request-decision-dialog.component';
 
 const NEW_REQUESTER_KEY = 'nouveau';
 
@@ -23,8 +25,10 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   @Output() closed = new EventEmitter<void>();
   @Output() requesterCreated = new EventEmitter<string>();
   @Output() addBookRequested = new EventEmitter<string>();
+  @Output() countsChanged = new EventEmitter<CatalogManualRequestSummary>();
 
   @ViewChild('deleteDialog') private deleteDialog?: ElementRef<HTMLElement>;
+  @ViewChild('requesterHeading') private requesterHeading?: ElementRef<HTMLElement>;
 
   readonly document = inject(DOCUMENT);
   readonly requester = signal<CatalogManualRequester | null>(null);
@@ -38,6 +42,8 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   readonly deleteDialogOpen = signal(false);
   readonly addBookDialogOpen = signal(false);
   readonly addBookRequesterId = signal<string | null>(null);
+  readonly decision = signal<{mode: ManualRequestDecisionMode; item: CatalogManualRequestItem} | null>(null);
+  readonly decisionPending = signal(false);
 
   lastName = '';
   firstName = '';
@@ -77,11 +83,17 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   }
 
   async loadRequester(): Promise<void> {
+    return this.refreshRequester(true);
+  }
+
+  private async refreshRequester(showLoading: boolean): Promise<void> {
     if (this.isNew || !this.accessToken) {
       return;
     }
 
-    this.loading.set(true);
+    if (showLoading) {
+      this.loading.set(true);
+    }
     this.error.set(null);
     try {
       const requester = await firstValueFrom(this.api.getManualRequester(this.accessToken, this.requesterId));
@@ -93,7 +105,9 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
     } catch {
       this.error.set('Impossible de charger cette fiche demandeur. Vérifiez la connexion puis réessayez.');
     } finally {
-      this.loading.set(false);
+      if (showLoading) {
+        this.loading.set(false);
+      }
     }
   }
 
@@ -186,31 +200,69 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   }
 
   async pick(item: CatalogManualRequestItem): Promise<void> {
-    await this.runRequestAction(item, async () => {
+    await this.runRequestAction(async () => {
       await firstValueFrom(this.api.pickManualRequest(this.accessToken, item.requestId));
       this.success.set('Exemplaire prélevé — demande trouvée');
     });
   }
 
-  async markGiven(item: CatalogManualRequestItem): Promise<void> {
-    await this.runRequestAction(item, async () => {
-      await firstValueFrom(this.api.markManualRequestGiven(this.accessToken, item.requestId));
-      this.success.set('Livre marqué comme donné');
-    });
+  markGiven(item: CatalogManualRequestItem): void {
+    this.decision.set({mode: 'given', item});
   }
 
-  async refuse(item: CatalogManualRequestItem): Promise<void> {
-    await this.runRequestAction(item, async () => {
-      const result = await firstValueFrom(this.api.refuseManualRequest(this.accessToken, item.requestId, {keepSearching: false}));
-      this.success.set(`Refus enregistré — ${result.notifiedMemberCount} membres prévenus`);
-    });
+  refuse(item: CatalogManualRequestItem): void {
+    this.decision.set({mode: 'refuse', item});
   }
 
   async cancelRequest(item: CatalogManualRequestItem): Promise<void> {
-    await this.runRequestAction(item, async () => {
+    if (item.status === 'Found') {
+      this.decision.set({mode: 'cancel-found', item});
+      return;
+    }
+    const requesterName = `${this.firstName.trim()} ${this.lastName.trim().toLocaleUpperCase('fr-FR')}`.trim();
+    if (this.document.defaultView && !this.document.defaultView.confirm(`Annuler la demande de ${requesterName} ?`)) {
+      return;
+    }
+    await this.runRequestAction(async () => {
       await firstValueFrom(this.api.cancelManualRequest(this.accessToken, item.requestId));
       this.success.set('Demande annulée');
     });
+  }
+
+  async confirmDecision(keepSearching: boolean): Promise<void> {
+    const decision = this.decision();
+    if (!decision || this.decisionPending()) {
+      return;
+    }
+
+    this.decisionPending.set(true);
+    const completed = await this.runRequestAction(async () => {
+      if (decision.mode === 'given') {
+        await firstValueFrom(this.api.markManualRequestGiven(this.accessToken, decision.item.requestId));
+        this.success.set('Livre marqué comme donné');
+      } else if (decision.mode === 'refuse') {
+        const result = await firstValueFrom(this.api.refuseManualRequest(
+          this.accessToken,
+          decision.item.requestId,
+          {keepSearching},
+        ));
+        this.success.set(`Refus enregistré — ${result.notifiedMemberCount} membres prévenus`);
+      } else {
+        const result = await firstValueFrom(this.api.cancelManualRequest(this.accessToken, decision.item.requestId));
+        this.success.set(`Demande annulée — ${result.notifiedMemberCount} membres prévenus`);
+      }
+    });
+    this.decisionPending.set(false);
+    if (completed) {
+      this.decision.set(null);
+      setTimeout(() => this.requesterHeading?.nativeElement.focus());
+    }
+  }
+
+  closeDecision(): void {
+    if (!this.decisionPending()) {
+      this.decision.set(null);
+    }
   }
 
   statusLabel(item: CatalogManualRequestItem): string {
@@ -267,17 +319,28 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
       : new Intl.DateTimeFormat('fr-FR', {day: 'numeric', month: 'short', year: 'numeric'}).format(date);
   }
 
-  private async runRequestAction(item: CatalogManualRequestItem, action: () => Promise<void>): Promise<void> {
+  private async runRequestAction(action: () => Promise<void>): Promise<boolean> {
     if (!this.accessToken) {
-      return;
+      return false;
     }
     this.error.set(null);
     this.success.set(null);
     try {
       await action();
-      await this.loadRequester();
+      await this.refreshRequester(false);
+      await this.refreshRequestCounts();
+      return true;
     } catch {
       this.error.set('Cette action n’a pas abouti. Vérifiez la connexion puis réessayez.');
+      return false;
+    }
+  }
+
+  private async refreshRequestCounts(): Promise<void> {
+    try {
+      this.countsChanged.emit(await firstValueFrom(this.api.getManualRequestSummary(this.accessToken)));
+    } catch {
+      // A summary refresh must not undo a completed decision.
     }
   }
 

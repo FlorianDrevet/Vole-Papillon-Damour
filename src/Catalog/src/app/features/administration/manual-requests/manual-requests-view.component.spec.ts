@@ -5,6 +5,7 @@ import {of, throwError} from 'rxjs';
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
 import {CatalogManualRequestItem, CatalogManualRequestQueue} from '../../../core/catalog.models';
 import {ManualRequestsViewComponent} from './manual-requests-view.component';
+import {ManualRequestDecisionDialogComponent} from './manual-request-decision-dialog.component';
 
 describe('ManualRequestsViewComponent', () => {
   let fixture: ComponentFixture<ManualRequestsViewComponent>;
@@ -37,7 +38,7 @@ describe('ManualRequestsViewComponent', () => {
     api.cancelManualRequest.and.returnValue(of({notifiedMemberCount: 0}));
 
     await TestBed.configureTestingModule({
-      declarations: [ManualRequestsViewComponent],
+      declarations: [ManualRequestsViewComponent, ManualRequestDecisionDialogComponent],
       imports: [FormsModule],
       providers: [{provide: CatalogAdminApiService, useValue: api}],
     }).compileComponents();
@@ -117,5 +118,46 @@ describe('ManualRequestsViewComponent', () => {
     expect(api.pickManualRequest).toHaveBeenCalledWith('access-token', 'request-1');
     expect(api.getManualRequests).toHaveBeenCalledTimes(1);
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Exemplaire prélevé — demande trouvée');
+  });
+
+  it('confirms refusal with the selected keep-searching choice and refreshes the sidebar counts', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const countsChanged = jasmine.createSpy('countsChanged');
+    fixture.componentInstance.countsChanged.subscribe(countsChanged);
+    api.getManualRequests.calls.reset();
+
+    fixture.componentInstance.refuse(item);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Jeanne MARTIN ne prend pas Le Petit Prince');
+    expect(api.refuseManualRequest).not.toHaveBeenCalled();
+    (root.querySelector('[data-testid="manual-request-keep-searching"]') as HTMLInputElement).click();
+    (root.querySelector('[data-testid="manual-request-decision-confirm"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.refuseManualRequest).toHaveBeenCalledWith('access-token', 'request-1', {keepSearching: true});
+    expect(api.getManualRequests).toHaveBeenCalledTimes(1);
+    expect(countsChanged).toHaveBeenCalledWith({foundCount: 1, foundOverdueCount: 0});
+    expect(root.textContent).toContain('Refus enregistré — 0 membres prévenus');
+  });
+
+  it('does not mark a found request given until the decision is confirmed', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+    api.getManualRequests.calls.reset();
+
+    fixture.componentInstance.markGiven(item);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Confirmer le don');
+    expect(api.markManualRequestGiven).not.toHaveBeenCalled();
+    (root.querySelector('[data-testid="manual-request-decision-confirm"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(api.markManualRequestGiven).toHaveBeenCalledWith('access-token', 'request-1');
+    expect(api.getManualRequests).toHaveBeenCalledTimes(1);
   });
 });

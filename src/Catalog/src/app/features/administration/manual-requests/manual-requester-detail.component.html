@@ -9,7 +9,7 @@
   } @else {
     <header class="manual-requester-heading">
       <span class="admin-kicker">Demandeur</span>
-      <h1 id="manual-requester-title">{{ displayName }}</h1>
+      <h1 #requesterHeading id="manual-requester-title" tabindex="-1">{{ displayName }}</h1>
       @if (requester(); as current) {
         <p class="manual-requester-consent-summary">{{ requesterSummary(current) }}</p>
       } @else {
@@ -108,6 +108,7 @@
                 <div class="manual-requester-request-actions">
                   <button class="button button-primary" type="button" (click)="markGiven(item)">Donné</button>
                   <button class="button button-outline" type="button" (click)="refuse(item)">Refusé…</button>
+                  <button class="button button-text" type="button" (click)="cancelRequest(item)">Annuler</button>
                 </div>
               } @else if (!current.erased && item.status === 'Searching') {
                 <div class="manual-requester-request-actions">
@@ -167,5 +168,16 @@
       [requesterLastName]="requester()?.lastName || lastName"
       (closed)="closeAddBook()"
       (added)="onBookAdded()"></app-manual-request-add-dialog>
+  }
+
+  @if (decision(); as currentDecision) {
+    <app-manual-request-decision-dialog
+      [mode]="currentDecision.mode"
+      [item]="currentDecision.item"
+      [requesterFirstName]="requester()?.firstName || firstName"
+      [requesterLastName]="requester()?.lastName || lastName"
+      [pending]="decisionPending()"
+      (closed)="closeDecision()"
+      (confirmed)="confirmDecision($event.keepSearching)"></app-manual-request-decision-dialog>
   }
 </section>

@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, signal} from '@angular/core';
+import {Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild, signal} from '@angular/core';
 import {firstValueFrom} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
@@ -9,6 +9,7 @@ import {
   CatalogManualRequestTab,
 } from '../../../core/catalog.models';
 import {formatManualRequesterName, formatManualRequesterPhone, manualRequesterPhoneHref} from './manual-request-format';
+import {ManualRequestDecisionMode} from './manual-request-decision-dialog.component';
 
 @Component({
   selector: 'app-manual-requests-view',
@@ -21,6 +22,8 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
   @Output() countsChanged = new EventEmitter<CatalogManualRequestSummary>();
   @Output() requesterSelected = new EventEmitter<string | null>();
 
+  @ViewChild('requestsHeading') private requestsHeading?: ElementRef<HTMLElement>;
+
   readonly activeTab = signal<CatalogManualRequestTab>('found');
   readonly queue = signal<CatalogManualRequestQueue | null>(null);
   readonly loading = signal(false);
@@ -29,6 +32,7 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
   readonly search = signal('');
   readonly page = signal(1);
   readonly actionPending = signal<string | null>(null);
+  readonly decision = signal<{mode: ManualRequestDecisionMode; item: CatalogManualRequestItem} | null>(null);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private loadSequence = 0;
@@ -111,32 +115,63 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     });
   }
 
-  async markGiven(item: CatalogManualRequestItem): Promise<void> {
-    await this.runAction(item.requestId, async () => {
-      await firstValueFrom(this.api.markManualRequestGiven(this.accessToken, item.requestId));
-      this.success.set('Livre marqué comme donné');
-      await this.loadQueue();
-    });
+  markGiven(item: CatalogManualRequestItem): void {
+    this.decision.set({mode: 'given', item});
   }
 
-  async refuse(item: CatalogManualRequestItem): Promise<void> {
-    await this.runAction(item.requestId, async () => {
-      const result = await firstValueFrom(this.api.refuseManualRequest(
-        this.accessToken,
-        item.requestId,
-        {keepSearching: false},
-      ));
-      this.success.set(`Refus enregistré — ${result.notifiedMemberCount} membres prévenus`);
-      await this.loadQueue();
-    });
+  refuse(item: CatalogManualRequestItem): void {
+    this.decision.set({mode: 'refuse', item});
   }
 
   async cancel(item: CatalogManualRequestItem): Promise<void> {
+    if (item.status === 'Found') {
+      this.decision.set({mode: 'cancel-found', item});
+      return;
+    }
+    const requester = formatManualRequesterName(item.requesterFirstName, item.requesterLastName, item.requesterErased);
+    if (typeof window !== 'undefined' && !window.confirm(`Annuler la demande de ${requester} ?`)) {
+      return;
+    }
     await this.runAction(item.requestId, async () => {
       await firstValueFrom(this.api.cancelManualRequest(this.accessToken, item.requestId));
       this.success.set('Demande annulée');
       await this.loadQueue();
     });
+  }
+
+  async confirmDecision(keepSearching: boolean): Promise<void> {
+    const decision = this.decision();
+    if (!decision || this.actionPending()) {
+      return;
+    }
+
+    const completed = await this.runAction(decision.item.requestId, async () => {
+      if (decision.mode === 'given') {
+        await firstValueFrom(this.api.markManualRequestGiven(this.accessToken, decision.item.requestId));
+        this.success.set('Livre marqué comme donné');
+      } else if (decision.mode === 'refuse') {
+        const result = await firstValueFrom(this.api.refuseManualRequest(
+          this.accessToken,
+          decision.item.requestId,
+          {keepSearching},
+        ));
+        this.success.set(`Refus enregistré — ${result.notifiedMemberCount} membres prévenus`);
+      } else {
+        const result = await firstValueFrom(this.api.cancelManualRequest(this.accessToken, decision.item.requestId));
+        this.success.set(`Demande annulée — ${result.notifiedMemberCount} membres prévenus`);
+      }
+      await this.loadQueue();
+    });
+    if (completed) {
+      this.decision.set(null);
+      setTimeout(() => this.requestsHeading?.nativeElement.focus());
+    }
+  }
+
+  closeDecision(): void {
+    if (!this.actionPending()) {
+      this.decision.set(null);
+    }
   }
 
   openRequester(requesterId: string): void {
@@ -196,9 +231,9 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     return Number.isNaN(date) ? 0 : Math.max(0, Math.floor((Date.now() - date) / 86_400_000));
   }
 
-  private async runAction(requestId: string, action: () => Promise<void>): Promise<void> {
+  private async runAction(requestId: string, action: () => Promise<void>): Promise<boolean> {
     if (!this.accessToken || this.actionPending()) {
-      return;
+      return false;
     }
 
     this.actionPending.set(requestId);
@@ -206,8 +241,10 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     this.success.set(null);
     try {
       await action();
+      return true;
     } catch {
       this.error.set('Cette action n’a pas abouti. Vérifiez la connexion puis réessayez.');
+      return false;
     } finally {
       this.actionPending.set(null);
     }
