@@ -29,6 +29,23 @@ valide, `baseProfile="tiny-ps"`, moins de 32 Ko, sans balise `image`, script ni
 référence externe. Une validation par un fournisseur BIMI reste recommandée avant
 publication DNS.
 
+## Gabarit des alertes
+
+Les alertes de liste de recherche utilisent le gabarit décrit dans
+`docs/features/book-alert-email-template/` (spec `RG-90` à `RG-99`, maquettes). Le HTML
+est produit par `BookAlertEmailHtml` (tableaux, styles en ligne, 600 px, variantes mobile
+et mode sombre par requêtes média) et la version texte par `BookAlertEmailText`.
+
+Liens cités par le message, avec leurs valeurs par défaut :
+
+| Clé | Défaut | Usage |
+|---|---|---|
+| `BookAlerts:Email:CatalogBaseUrl` | `https://livres.volepapillondamour.fr` | fiches livres et bouton « Voir ma liste de recherche » (`/compte`) |
+| `BookAlerts:Email:WebsiteUrl` | `https://volepapillondamour.fr` | lien du pied de message |
+
+Pour comparer le rendu aux maquettes : définir `VPD_EMAIL_SAMPLES_DIR` et lancer le test
+`BookAlertEmailSamples`.
+
 ## Logo à côté de l'expéditeur — BIMI
 
 Le logo de la liste de réception dépend du fournisseur de boîte mail. La procédure

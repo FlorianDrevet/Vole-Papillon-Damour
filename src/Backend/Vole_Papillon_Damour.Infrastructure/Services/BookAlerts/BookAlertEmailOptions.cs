@@ -11,4 +11,6 @@ public sealed class BookAlertEmailOptions
     public string AssociationName { get; set; } = "Vole Papillon d'Amour";
     public string? LogoUrl { get; set; } = "https://volepapillondamour.fr/icons/vpd_icon.png";
     public string? UnsubscribeUrl { get; set; }
+    public string CatalogBaseUrl { get; set; } = "https://livres.volepapillondamour.fr";
+    public string WebsiteUrl { get; set; } = "https://volepapillondamour.fr";
 }

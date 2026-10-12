@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
@@ -100,10 +102,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             .ToDictionary(
                 assoEvent => assoEvent.Id.Value,
                 GetOpeningInstant);
-        var nextBookFairOpening = activeBookFairOpenings.Values
-            .Where(opening => opening > new DateTimeOffset(closedAt))
-            .OrderBy(opening => opening)
-            .Select(opening => (DateTimeOffset?)opening)
+        var nextBookFair = activeBookFairOpenings
+            .Where(pair => pair.Value > new DateTimeOffset(closedAt))
+            .OrderBy(pair => pair.Value)
+            .Select(pair => (KeyValuePair<Guid, DateTimeOffset>?)pair)
             .FirstOrDefault();
 
         var candidates = movements
@@ -112,6 +114,13 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             {
                 var book = books.GetValueOrDefault(group.Key);
                 var firstMovement = group.First();
+                Guid? openingFairId =
+                    firstMovement.AssoEventsId is { } fairId &&
+                    activeBookFairOpenings.ContainsKey(fairId.Value)
+                        ? fairId.Value
+                        : session.Mode == ScanMode.AvailableNow
+                            ? nextBookFair?.Key
+                            : null;
                 return new AlertCandidate(
                     group.Key,
                     book?.WorkId,
@@ -123,12 +132,14 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                     group.Sum(movement => movement.Quantity),
                     session.Mode,
                     firstMovement.AssoEventsId,
-                    firstMovement.AssoEventsId is { } fairId &&
-                    activeBookFairOpenings.TryGetValue(fairId.Value, out var fairOpening)
-                        ? fairOpening
-                        : session.Mode == ScanMode.AvailableNow
-                            ? nextBookFairOpening
-                            : null);
+                    openingFairId is { } openingId
+                        ? activeBookFairOpenings[openingId]
+                        : null,
+                    book?.CoverUrl,
+                    book is { IsHiddenFromCatalog: false, RedirectedToIsbn13: null }
+                        ? PublicBookPath.For(book.Id, book.Title, book.Authors)
+                        : null,
+                    openingFairId);
             })
             .ToArray();
 
@@ -203,7 +214,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                     candidate.Quantity,
                     candidate.Mode,
                     candidate.AssoEventsId?.Value,
-                    candidate.FairOpeningAt))
+                    candidate.FairOpeningAt,
+                    candidate.CoverUrl,
+                    candidate.PublicPath,
+                    candidate.OpeningFairId))
                 .ToArray();
             dbContext.OutboxMessages.Add(new OutboxMessage
             {
@@ -574,16 +588,31 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             return null;
         }
 
-        var recipientName = user.Name is null
-            ? null
-            : $"{user.Name.FirstName} {user.Name.LastName}".Trim();
+        var openingFairIds = eligibleItems
+            .Select(item => item.OpeningFairId)
+            .OfType<Guid>()
+            .Distinct()
+            .Select(AssoEventsId.Create)
+            .ToArray();
+        BookAlertFair[] fairs = openingFairIds.Length == 0
+            ? []
+            : (await dbContext.AssoEvents
+                    .AsNoTracking()
+                    .WhereActiveBookFair()
+                    .Where(fair => openingFairIds.Contains(fair.Id))
+                    .ToListAsync(cancellationToken))
+                .Select(ToBookAlertFair)
+                .ToArray();
+
+        var recipientFirstName = user.Name?.FirstName?.Trim();
         return new BookAlertDelivery(
             message.Id,
             memberId.Value,
             user.Email,
-            string.IsNullOrWhiteSpace(recipientName) ? null : recipientName,
+            string.IsNullOrWhiteSpace(recipientFirstName) ? null : recipientFirstName,
             eligibleItems,
-            eligibleRareItems);
+            eligibleRareItems,
+            fairs);
     }
 
     public async Task<int> CancelAsync(
@@ -1112,7 +1141,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             item.Publisher,
             item.PublicationYear,
             item.PhysicalFormat,
-            item.FairOpeningAt);
+            item.FairOpeningAt,
+            item.CoverUrl,
+            item.PublicPath,
+            item.OpeningFairId);
     }
 
     private static RareBookAlertOutboxItem ToApplicationRareItem(RareAlertItemPayload item)
@@ -1122,6 +1154,39 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             item.Title,
             item.AuthorMention,
             item.Slug);
+    }
+
+    private static BookAlertFair ToBookAlertFair(AssoEvents fair)
+    {
+        return new BookAlertFair(
+            fair.Id.Value,
+            BookFairSchedule.GetOpeningInstant(fair),
+            fair.HourOpenDoors is null ? null : BookFairSchedule.GetOpeningInstant(fair),
+            fair.HourCloseDoors is null ? null : BookFairSchedule.GetClosingInstant(fair),
+            FormatAddress(fair.Adresse));
+    }
+
+    private static string? FormatAddress(Adresse? address)
+    {
+        if (address is null)
+        {
+            return null;
+        }
+
+        var street = string.Join(
+            ' ',
+            new[] { address.RoadNumber?.ToString(CultureInfo.InvariantCulture), address.Road?.Trim() }
+                .Where(part => !string.IsNullOrWhiteSpace(part)));
+        var city = string.Join(
+            ' ',
+            new[]
+                {
+                    address.CityCode > 0 ? address.CityCode.ToString("D5", CultureInfo.InvariantCulture) : null,
+                    address.City?.Trim()
+                }
+                .Where(part => !string.IsNullOrWhiteSpace(part)));
+        var line = string.Join(", ", new[] { street, city }.Where(part => part.Length > 0));
+        return line.Length == 0 ? null : line;
     }
 
     private static bool Matches(
@@ -1195,7 +1260,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         int Quantity,
         ScanMode Mode,
         Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects.AssoEventsId? AssoEventsId,
-        DateTimeOffset? FairOpeningAt);
+        DateTimeOffset? FairOpeningAt,
+        string? CoverUrl,
+        string? PublicPath,
+        Guid? OpeningFairId);
 
     private sealed record AlertEmailPayload(
         IReadOnlyList<AlertItemPayload>? Items,
@@ -1218,7 +1286,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         int Quantity,
         ScanMode Mode,
         Guid? AssoEventsId,
-        DateTimeOffset? FairOpeningAt);
+        DateTimeOffset? FairOpeningAt,
+        string? CoverUrl = null,
+        string? PublicPath = null,
+        Guid? OpeningFairId = null);
 
     private static DateTimeOffset GetOpeningInstant(AssoEvents assoEvent)
     {

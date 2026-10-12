@@ -66,9 +66,12 @@ public sealed class BookAlertEmailSender : IBookAlertEmailSender
 
         var emailContent = BookAlertEmailContentBuilder.Build(
             delivery,
-            _options.AssociationName,
-            _options.UnsubscribeUrl,
-            _options.LogoUrl);
+            new BookAlertEmailLinks(
+                _options.AssociationName,
+                _options.LogoUrl,
+                _options.CatalogBaseUrl,
+                _options.WebsiteUrl,
+                _options.UnsubscribeUrl));
         var content = new EmailContent(emailContent.Subject)
         {
             PlainText = emailContent.PlainText,

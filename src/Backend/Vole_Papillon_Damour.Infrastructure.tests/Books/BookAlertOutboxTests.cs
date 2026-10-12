@@ -342,6 +342,92 @@ public sealed class BookAlertOutboxTests
     }
 
     [Fact]
+    public async Task QueueForSession_CarriesCoverPublicPathAndOpeningFairIntoDelivery()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync(
+            "9782070363735",
+            "Le Petit Prince",
+            authors: "Antoine de Saint-Exupéry",
+            coverUrl: "https://covers.example.org/9782070363735.jpg");
+        var fair = await fixture.AddFairAsync();
+        var session = await fixture.AddSessionAsync(member.Id);
+        await fixture.AddDirectEntryAsync(session, book, member.Id);
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var delivery = await fixture.QueueClaimAndLoadDeliveryAsync(session);
+
+        var item = delivery.Items.Should().ContainSingle().Subject;
+        item.CoverUrl.Should().Be("https://covers.example.org/9782070363735.jpg");
+        item.PublicPath.Should().Be(
+            "/livres/le-petit-prince-antoine-de-saint-exupery-9782070363735");
+        item.OpeningFairId.Should().Be(fair.Id.Value);
+        item.AssoEventsId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task QueueForSession_LeavesThePublicPathEmptyForAHiddenBook()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        book.UpdateCatalogVisibility(true, StartedAt);
+        await fixture.Context.SaveChangesAsync();
+        var session = await fixture.AddSessionAsync(member.Id);
+        await fixture.AddDirectEntryAsync(session, book, member.Id);
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var delivery = await fixture.QueueClaimAndLoadDeliveryAsync(session);
+
+        delivery.Items.Should().ContainSingle().Which.PublicPath.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetPendingDelivery_LoadsScheduleAndAddressOfTheOpeningFair()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        var fair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-04T07:00:00+00:00"),
+            DateTimeOffset.Parse("2026-09-04T15:00:00+00:00"),
+            new Adresse(12, "Saint-Just", "rue des Fleurs", 1000));
+        var session = await fixture.AddSessionAsync(member.Id, ScanMode.NextFair, fair.Id);
+        await fixture.AddAnnouncementEntryAsync(session, book, member.Id, fair.Id);
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var delivery = await fixture.QueueClaimAndLoadDeliveryAsync(session);
+
+        delivery.RecipientName.Should().Be("Prénom");
+        var bookFair = delivery.Fairs.Should().ContainSingle().Subject;
+        bookFair.AssoEventsId.Should().Be(fair.Id.Value);
+        bookFair.OpeningAt.Should().Be(DateTimeOffset.Parse("2026-09-04T07:00:00+00:00"));
+        bookFair.DoorsOpenAt.Should().Be(DateTimeOffset.Parse("2026-09-04T07:00:00+00:00"));
+        bookFair.DoorsCloseAt.Should().Be(DateTimeOffset.Parse("2026-09-05T15:00:00+00:00"));
+        bookFair.Address.Should().Be("12 rue des Fleurs, 01000 Saint-Just");
+    }
+
+    [Fact]
+    public async Task GetPendingDelivery_WithoutDoorHoursLeavesTheScheduleEmpty()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        await fixture.AddFairAsync();
+        var session = await fixture.AddSessionAsync(member.Id);
+        await fixture.AddDirectEntryAsync(session, book, member.Id);
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var delivery = await fixture.QueueClaimAndLoadDeliveryAsync(session);
+
+        var bookFair = delivery.Fairs.Should().ContainSingle().Subject;
+        bookFair.DoorsOpenAt.Should().BeNull();
+        bookFair.DoorsCloseAt.Should().BeNull();
+        bookFair.Address.Should().Be("Rue de test, 75000 Paris");
+    }
+
+    [Fact]
     public async Task CancelPendingForSession_CancelsOnlyPendingAlertMessages()
     {
         await using var fixture = await BookAlertFixture.CreateAsync();
@@ -507,6 +593,8 @@ public sealed class BookAlertOutboxTests
         claimed.Should().HaveCount(1);
         claimed[0].MemberId.Should().Be(member.Id.Value);
         claimed[0].Items.Should().ContainSingle();
+        claimed[0].Items[0].CoverUrl.Should().BeNull();
+        claimed[0].Items[0].OpeningFairId.Should().BeNull();
         claimed[0].ClaimedUntil.Kind.Should().Be(DateTimeKind.Utc);
         var messages = await fixture.Context.OutboxMessages
             .OrderBy(message => message.DueAt)
@@ -898,10 +986,14 @@ public sealed class BookAlertOutboxTests
             string? workId = null,
             string? publisher = null,
             int? publicationYear = null,
-            string? physicalFormat = null)
+            string? physicalFormat = null,
+            string? authors = null,
+            string? coverUrl = null)
         {
             var book = Book.Create(ParseIsbn(isbn), StartedAt);
             var fields = new List<BookMetadataField> { BookMetadataField.Title };
+            if (authors is not null) fields.Add(BookMetadataField.Authors);
+            if (coverUrl is not null) fields.Add(BookMetadataField.CoverUrl);
             if (workId is not null) fields.Add(BookMetadataField.WorkId);
             if (publisher is not null) fields.Add(BookMetadataField.Publisher);
             if (publicationYear is not null) fields.Add(BookMetadataField.PublicationYear);
@@ -909,18 +1001,20 @@ public sealed class BookAlertOutboxTests
             book.ApplyAutomaticMetadata(
                 new BookMetadataPatch(
                     title,
-                    null,
+                    authors,
                     publisher,
                     publicationYear,
                     physicalFormat,
                     null,
                     null,
-                    null,
+                    coverUrl,
                     fields,
                     workId),
                 BookMetadataSource.OpenLibrary,
                 StartedAt,
-                rawPayload: null);
+                rawPayload: null,
+                coverSource: coverUrl is null ? null : BookCoverSource.OpenLibrary,
+                coverCheckedAt: coverUrl is null ? null : StartedAt);
             Context.Books.Add(book);
             await Context.SaveChangesAsync();
             return book;
@@ -937,7 +1031,10 @@ public sealed class BookAlertOutboxTests
             return session;
         }
 
-        public async Task<AssoEvents> AddFairAsync(DateTimeOffset? hourOpenDoors = null)
+        public async Task<AssoEvents> AddFairAsync(
+            DateTimeOffset? hourOpenDoors = null,
+            DateTimeOffset? hourCloseDoors = null,
+            Adresse? address = null)
         {
             var fair = AssoEvents.Create(
                 "Test book fair",
@@ -946,9 +1043,9 @@ public sealed class BookAlertOutboxTests
                 DateTimeOffset.Parse("2026-09-04T18:00:00+00:00"),
                 DateTimeOffset.Parse("2026-09-05T18:00:00+00:00"),
                 hourOpenDoors,
+                hourCloseDoors,
                 null,
-                null,
-                new Adresse(null, "Paris", "Rue de test", 75000),
+                address ?? new Adresse(null, "Paris", "Rue de test", 75000),
                 null,
                 [],
                 string.Empty);
@@ -1023,6 +1120,27 @@ public sealed class BookAlertOutboxTests
             }
 
             await Context.SaveChangesAsync();
+        }
+
+        public async Task<BookAlertDelivery> QueueClaimAndLoadDeliveryAsync(ScanSession session)
+        {
+            var outbox = new BookAlertOutbox(Context);
+            await outbox.QueueForSessionAsync(session.Id, ClosedAt, CancellationToken.None);
+            await Context.SaveChangesAsync();
+            var message = await Context.OutboxMessages.SingleAsync();
+            message.DueAt = ClosedAt;
+            await Context.SaveChangesAsync();
+            var claimed = await outbox.ClaimDueAsync(
+                ClosedAt,
+                TimeSpan.FromMinutes(5),
+                50,
+                CancellationToken.None);
+            var delivery = await outbox.GetPendingDeliveryAsync(
+                claimed[0].MessageId,
+                claimed[0].ClaimedUntil,
+                ClosedAt,
+                CancellationToken.None);
+            return delivery ?? throw new InvalidOperationException("No delivery was produced.");
         }
 
         public async Task AddSettingsAsync(UserId updatedBy, int alertDelayMinutes)
