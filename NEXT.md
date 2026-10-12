@@ -17,21 +17,23 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-12 — demandes manuelles de personnes sans compte; implémentation T0–T23 terminée sur `feat/manual-book-requests`, validation complète et PR encore à faire. |
-| **Prochaine action** | Terminer T24 (validation backend et frontends, contrôle visuel, zones), synchroniser avec `origin/main`, puis pousser et ouvrir la PR. La migration `AddManualBookRequests` est générée mais ne doit pas être appliquée à une base pour cette livraison. |
+| **Lot en cours** | F-12 — demandes manuelles de personnes sans compte; T0–T24 terminés sur `feat/manual-book-requests`; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) ouverte vers `main`, non fusionnée. |
+| **Prochaine action** | Suivre les GitHub Actions en attente et faire la revue de la PR #252. Après fusion, appliquer `AddManualBookRequests` avec `run_migrations: true` via `Books runtime - deploy`, puis déployer Catalog et Scan. |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-manual-book-requests` |
-| **Dernière mise à jour** | 2026-10-12 — F-12 est implémentée jusqu'à T23 sur la branche de travail; tests finaux, rebase et PR restent à faire. Aucun déploiement ni accès à une base distante n'a été effectué. |
+| **Dernière mise à jour** | 2026-10-12 — F-12 T0–T24 implémentée et validée localement; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) ouverte, checks GitHub en attente. Aucun déploiement ni accès à une base distante n'a été effectué. |
 | **Branche** | `feat/manual-book-requests`, basée sur `origin/main` fraîchement récupéré. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-12
 
-Les tâches T0–T23 du handoff sont implémentées sur `feat/manual-book-requests`. Les
-demandeurs manuels, leurs demandes, la mise de côté au tri, les décisions et leur
-présentation dans Catalog et Scan sont livrés dans la branche. T24 doit encore exécuter
-la validation complète, les contrôles visuels et l'ouverture de la PR. La migration
-`AddManualBookRequests` a été générée, mais n'a pas été appliquée ; aucune base distante
-ni aucun service Azure n'a été modifié.
+Les tâches T0–T23 du handoff sont implémentées sur `feat/manual-book-requests` et T24 est
+terminée. Build backend : 14 projets, 0 erreur; tests backend : 976/976; Scan : 300/300;
+Catalog : 485/487 (deux échecs AccountCard déjà signalés au baseline), avec les suites
+ciblées `manual-requests` 28/28, administration 61/61 et page légale 6/6. Les deux builds
+frontend passent; les 76 zones dans 17 pages sont vérifiées et les vues contrôlées à 390 /
+1440 px ne débordent pas horizontalement. Les checks GitHub de [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252)
+sont en attente. La migration `AddManualBookRequests` est générée, mais n'a pas été
+appliquée ; aucune base distante ni aucun service Azure n'a été modifié.
 
 ### Remise à zéro de la base DEV — 2026-09-28
 
