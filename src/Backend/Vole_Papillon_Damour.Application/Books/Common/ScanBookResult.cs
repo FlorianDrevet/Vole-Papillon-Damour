@@ -12,4 +12,5 @@ public sealed record ScanBookResult(
     ScanSessionId ScanSessionId,
     BookMovementType MovementType,
     bool AlreadyProcessed,
-    bool ClockSuspect);
+    bool ClockSuspect,
+    bool HeldForManualRequest);

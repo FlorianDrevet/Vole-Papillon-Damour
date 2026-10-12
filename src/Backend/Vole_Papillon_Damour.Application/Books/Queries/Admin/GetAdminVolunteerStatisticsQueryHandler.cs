@@ -79,6 +79,7 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
             .Where(movement =>
                 movement.Type == BookMovementType.DirectEntry ||
                 movement.Type == BookMovementType.AnnouncementEntry ||
+                movement.Type == BookMovementType.ManualRequestHold ||
                 movement.Type == BookMovementType.Rejection ||
                 movement.Type == BookMovementType.Sale ||
                 movement.Type == BookMovementType.Correction)
@@ -100,7 +101,8 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
             .Where(movement =>
                 movement.ScanSessionId is not null &&
                 sessionsById.ContainsKey(movement.ScanSessionId) &&
-                movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry or BookMovementType.Rejection)
+                movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry or
+                    BookMovementType.ManualRequestHold or BookMovementType.Rejection)
             .ToArray();
         var sales = BuildEffectiveSales(movements);
         var volunteerIds = sessions.Select(session => session.VolunteerId)
@@ -358,7 +360,8 @@ public sealed class GetAdminVolunteerStatisticsQueryHandler(
     }
 
     private static bool IsKeptScan(BookMovement movement) =>
-        movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry;
+        movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry or
+            BookMovementType.ManualRequestHold;
 
     private static decimal? Percent(int numerator, int denominator) =>
         denominator == 0

@@ -8,4 +8,5 @@ public sealed record ScanBookResponse(
     Guid ScanSessionId,
     string MovementType,
     bool AlreadyProcessed,
-    bool ClockSuspect);
+    bool ClockSuspect,
+    bool HeldForManualRequest);

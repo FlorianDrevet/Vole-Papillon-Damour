@@ -125,6 +125,19 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
+    public void Manual_request_scan_candidate_requires_the_scan_volunteer_policy()
+    {
+        var endpoint = RegisteredEndpoints()
+            .Single(endpoint => RouteOf(endpoint) == "/scan/manual-requests/candidate");
+
+        RequiresAuthorization(endpoint).Should().BeTrue();
+        endpoint.Metadata
+            .GetOrderedMetadata<IAuthorizeData>()
+            .Should()
+            .Contain(data => data.Policy == "Tri");
+    }
+
+    [Fact]
     public void Volunteer_statistics_require_the_scan_volunteer_policy()
     {
         var endpoint = RegisteredEndpoints()

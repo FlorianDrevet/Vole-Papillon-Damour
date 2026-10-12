@@ -210,6 +210,43 @@ public sealed class GetVolunteerStatisticsQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_counts_manual_request_holds_as_kept_scans()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(
+            ScanMode.AvailableNow,
+            volunteerId: VolunteerId,
+            startedAt: SessionStartedAt);
+        session.RecordScan(true, SessionStartedAt.AddMinutes(5), SessionStartedAt.AddMinutes(6));
+        session.Close(ScanCloseReason.Manual, SessionStartedAt.AddMinutes(15));
+        var book = await fixture.AddBookAsync("9782070363735", 0);
+        fixture.Context.BookMovements.Add(AddMovement(
+            book,
+            BookMovementType.ManualRequestHold,
+            SessionStartedAt.AddMinutes(5),
+            VolunteerId,
+            session.Id,
+            null));
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetVolunteerStatisticsQueryHandler(
+            fixture.Context,
+            clock,
+            fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new GetVolunteerStatisticsQuery(VolunteerId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Scan.Monthly.Single(month => month.PeriodStart.Month == 9).Kept.Should().Be(1);
+        result.Value.Scan.TopGenres.Should().ContainSingle(genre =>
+            genre.Name == "Sans genre" && genre.Quantity == 1);
+    }
+
+    [Fact]
     public async Task Handle_ignores_personal_sessions_without_scans_in_scan_statistics()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();

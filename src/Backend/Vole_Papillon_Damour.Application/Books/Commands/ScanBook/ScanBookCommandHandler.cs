@@ -6,12 +6,14 @@ using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Observability;
+using Vole_Papillon_Damour.Application.ManualRequests.Common;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using ScanSessionAggregate = Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession;
 using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
@@ -21,7 +23,8 @@ namespace Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 public sealed class ScanBookCommandHandler(
     IProjectDbContext dbContext,
     IDateTimeProvider dateTimeProvider,
-    IBookMetadataEnrichmentQueue? metadataEnrichmentQueue = null)
+    IBookMetadataEnrichmentQueue? metadataEnrichmentQueue = null,
+    IBibliographicMetadataResolver? metadataResolver = null)
     : IRequestHandler<ScanBookCommand, ErrorOr<ScanBookResult>>
 {
     private static readonly TimeSpan MaximumFutureSkew = TimeSpan.FromMinutes(2);
@@ -70,6 +73,14 @@ public sealed class ScanBookCommandHandler(
 
         try
         {
+            string? resolvedWorkId = null;
+            if (command.Kept &&
+                await ManualRequestMatcher.AnySearchingWorkRequestAsync(dbContext, cancellationToken))
+            {
+                resolvedWorkId = await ManualRequestMatcher.ResolveWorkIdAsync(
+                    dbContext, metadataResolver, isbn13, cancellationToken);
+            }
+
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
             var session = await dbContext.ScanSessions
@@ -163,6 +174,10 @@ public sealed class ScanBookCommandHandler(
 
             var settings = await GetOrCreateSettingsAsync(session, receivedAt, cancellationToken);
             var quantityAnnounced = await GetQuantityAnnouncedAsync(isbn13, cancellationToken);
+            var heldRequest = command.Kept
+                ? await ManualRequestMatcher.FindOldestSearchingAsync(
+                    dbContext, isbn13, resolvedWorkId ?? book.WorkId, cancellationToken)
+                : null;
             var decision = CalculateVerdict(
                 book,
                 quantityAnnounced,
@@ -178,7 +193,11 @@ public sealed class ScanBookCommandHandler(
 
             if (command.Kept)
             {
-                if (session.Mode == ScanMode.AvailableNow)
+                if (heldRequest is not null)
+                {
+                    movementType = BookMovementType.ManualRequestHold;
+                }
+                else if (session.Mode == ScanMode.AvailableNow)
                 {
                     book.RecordAvailableEntry(occurredAt);
                     movementType = BookMovementType.DirectEntry;
@@ -220,6 +239,13 @@ public sealed class ScanBookCommandHandler(
                 command.ClientGestureId);
             dbContext.BookMovements.Add(movement);
 
+            heldRequest?.MarkFoundByScan(
+                isbn13,
+                session.Id,
+                movement.Id,
+                session.VolunteerId,
+                occurredAt);
+
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
@@ -237,7 +263,8 @@ public sealed class ScanBookCommandHandler(
                 session.Id,
                 movementType,
                 AlreadyProcessed: false,
-                clockSuspect);
+                clockSuspect,
+                HeldForManualRequest: movementType == BookMovementType.ManualRequestHold);
             activity?.SetTag(BookScanTelemetry.BookIsbnTagName, result.Isbn13);
             activity?.SetStatus(ActivityStatusCode.Ok);
             outcome = BookScanTelemetry.PersistedOutcome;
@@ -296,7 +323,8 @@ public sealed class ScanBookCommandHandler(
             sessionId,
             movement.Type,
             AlreadyProcessed: true,
-            movement.ClockSuspect);
+            movement.ClockSuspect,
+            HeldForManualRequest: movement.Type == BookMovementType.ManualRequestHold);
     }
 
     private async Task<AssociationSettingsEntity> GetOrCreateSettingsAsync(

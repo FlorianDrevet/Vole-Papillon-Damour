@@ -539,7 +539,8 @@ public sealed class GetVolunteerStatisticsQueryHandler(
     }
 
     private static bool IsKeptScan(BookMovement movement) =>
-        movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry;
+        movement.Type is BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry or
+            BookMovementType.ManualRequestHold;
 
     private static decimal? Median(IEnumerable<decimal> values)
     {
