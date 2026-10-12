@@ -1303,6 +1303,11 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         value: entraAuthority
       }
       {
+        // Azure deployments always validate Entra tokens; Keycloak is local Aspire infrastructure only.
+        name: 'Authentication__Provider'
+        value: 'Entra'
+      }
+      {
         name: 'AzureAd__TenantId'
         value: entraTenantId
       }

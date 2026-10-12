@@ -32,6 +32,7 @@ Tu es l'expert C#/.NET de ce depot. Quelle que soit l'architecture, tu maitrises
    - Client MAUI ? → rester aligne sur MVVM, Refit, et SQLite deja presents
 6. Lire les fichiers proches du code a modifier pour comprendre le contexte exact.
 7. Pour toute tache Angular web, deleguer a `angular-front`.
+8. Pour tester des endpoints API avec des rôles locaux, charger `.github/skills/local-auth-testing/SKILL.md` et utiliser les personas Keycloak importées par Aspire.
 
 ## Graphify - Verification obligatoire avant modification transverse
 

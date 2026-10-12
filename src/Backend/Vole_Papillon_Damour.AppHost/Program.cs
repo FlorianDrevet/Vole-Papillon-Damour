@@ -1,7 +1,9 @@
+using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Microsoft.Extensions.Configuration;
 
 const string ApiResourceName = "api";
+const string AuthenticationProviderEnvironmentName = "Authentication__Provider";
 const string AzureBlobStorageConnectionStringEnvironmentName = "ConnectionStrings__AzureBlobStorageConnectionString";
 const string BlobContainerActualityImagesEnvironmentName = "BlobSettings__ContainerActualityImagesName";
 const string BlobContainerEventImagesEnvironmentName = "BlobSettings__BlobContainerEventImagesClient";
@@ -12,6 +14,11 @@ const string BackOfficeResourceName = "backoffice";
 const string CatalogResourceName = "catalog";
 const string DefaultHttpEndpointName = "http";
 const string ProjectDatabaseName = "ProjectDatabase";
+const string KeycloakAudienceEnvironmentName = "Authentication__Keycloak__Audience";
+const string KeycloakAuthorityEnvironmentName = "Authentication__Keycloak__Authority";
+const string KeycloakResourceName = "keycloak";
+const string KeycloakRealmAuthority = "http://localhost:8080/realms/vpd";
+const string KeycloakApiAudience = "vpd-api";
 const string ScanResourceName = "scan";
 const string SqlServerName = "sql-server";
 const string SqlServerPasswordParameterName = "sql-server-password";
@@ -35,6 +42,10 @@ var storage = builder.AddAzureStorage(StorageName);
 storage.RunAsEmulator(container => container.WithLifetime(ContainerLifetime.Persistent));
 var blobs = storage.AddBlobs("blobs");
 
+var keycloak = builder
+    .AddKeycloak(KeycloakResourceName, port: 8080)
+    .WithRealmImport("./Realms");
+
 var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithReference(projectDatabase)
     .WaitFor(projectDatabase)
@@ -47,6 +58,11 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithEnvironment(BlobContainerEventImagesEnvironmentName, "event-images")
     .WithEnvironment(BlobContainerProductsImagesEnvironmentName, "product-images")
     .WithEnvironment(BlobContainerRareBookPhotosEnvironmentName, "livres-rares")
+    .WithEnvironment(AuthenticationProviderEnvironmentName, "Keycloak")
+    .WithEnvironment(KeycloakAuthorityEnvironmentName, KeycloakRealmAuthority)
+    .WithEnvironment(KeycloakAudienceEnvironmentName, KeycloakApiAudience)
+    .WithReference(keycloak)
+    .WaitFor(keycloak)
     .WithExternalHttpEndpoints();
 
 builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")

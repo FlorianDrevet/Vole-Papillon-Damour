@@ -32,6 +32,7 @@
 
 - Base: `memory-management`, `graphify-corpus`, `tdd-workflow`, `audit-workflow`
 - Backend: `cqrs-feature`, `dotnet-patterns`, `xunit-unit-testing`
+- API persona smoke tests: `local-auth-testing` (Aspire Keycloak seeded users and API tokens)
 - Frontend: `angular-patterns`, `ui-ux-front-saas`
 - Operations: `book-data-reset` for explicitly requested SQL books-data resets that preserve events and news
 
@@ -45,3 +46,4 @@
 - Shared backend symbol change -> perform structural impact review first, then use `dotnet-dev`
 - Angular UI or state change -> `angular-front`, plus `ui-ux-front-saas` for visible UI work
 - Cross-surface contract change -> backend first, then Angular and MAUI follow-up validation
+- API authorization smoke test -> load `local-auth-testing` and use a seeded Keycloak persona

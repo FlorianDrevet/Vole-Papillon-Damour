@@ -45,6 +45,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 | `audit-workflow` | Audit report format and findings lifecycle | `.github/skills/audit-workflow/SKILL.md` |
 | `cqrs-feature` | CQRS workflow for backend features | `.github/skills/cqrs-feature/SKILL.md` |
 | `dotnet-patterns` | .NET backend conventions used in this repo | `.github/skills/dotnet-patterns/SKILL.md` |
+| `local-auth-testing` | Aspire Keycloak personas and non-interactive local API tokens | `.github/skills/local-auth-testing/SKILL.md` |
 | `xunit-unit-testing` | xUnit, FluentAssertions, NSubstitute, AutoFixture conventions | `.github/skills/xunit-unit-testing/SKILL.md` |
 | `angular-patterns` | Angular application patterns | `.github/skills/angular-patterns/SKILL.md` |
 | `ui-ux-front-saas` | UI guardrails for visible frontend work | `.github/skills/ui-ux-front-saas/SKILL.md` |

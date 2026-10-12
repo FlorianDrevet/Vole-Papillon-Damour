@@ -38,7 +38,16 @@ public static class DependencyInjection
 {
     private const string CompositeAuthenticationScheme = "Bearer";
     private const string EntraAuthenticationScheme = "Entra";
+    private const string KeycloakAuthenticationScheme = "Keycloak";
     private const string LegacyAuthenticationScheme = "LegacyJwt";
+    private const string EntraProvider = "Entra";
+    private const string KeycloakProvider = "Keycloak";
+    private const string KeycloakNameClaimType = "name";
+    private const string KeycloakRoleClaimType = "roles";
+    private const string AuthenticationProviderConfigurationKey = "Authentication:Provider";
+    private const string KeycloakAuthorityConfigurationKey = "Authentication:Keycloak:Authority";
+    private const string KeycloakAudienceConfigurationKey = "Authentication:Keycloak:Audience";
+    private const string BearerPrefix = "Bearer ";
     private const string AzureBlobStorageConnectionStringName = "AzureBlobStorageConnectionString";
     private const string ProjectDatabaseConnectionStringName = "ProjectDatabase";
 
@@ -269,11 +278,45 @@ public static class DependencyInjection
         var jwtSettings = new JwtSettings();
         builderConfiguration.Bind(JwtSettings.SectionName, jwtSettings);
 
+        var authenticationProvider = builderConfiguration[AuthenticationProviderConfigurationKey] ?? EntraProvider;
+        var useKeycloakAsDefault = authenticationProvider.Equals(KeycloakProvider, StringComparison.OrdinalIgnoreCase);
+        if (!useKeycloakAsDefault && !authenticationProvider.Equals(EntraProvider, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"{AuthenticationProviderConfigurationKey} must be either '{EntraProvider}' or '{KeycloakProvider}'.");
+        }
+
+        var keycloakAuthority = builderConfiguration[KeycloakAuthorityConfigurationKey];
+        var keycloakAudience = builderConfiguration[KeycloakAudienceConfigurationKey];
+        var hasKeycloakAuthority = !string.IsNullOrWhiteSpace(keycloakAuthority);
+        var hasKeycloakAudience = !string.IsNullOrWhiteSpace(keycloakAudience);
+        if (hasKeycloakAuthority != hasKeycloakAudience || (useKeycloakAsDefault && !hasKeycloakAuthority))
+        {
+            throw new InvalidOperationException(
+                $"{KeycloakAuthorityConfigurationKey} and {KeycloakAudienceConfigurationKey} are required when {AuthenticationProviderConfigurationKey} is Keycloak.");
+        }
+
+        var keycloakConfigured = hasKeycloakAuthority && hasKeycloakAudience;
+        var keycloakAuthorityIsValid = Uri.TryCreate(keycloakAuthority, UriKind.Absolute, out var keycloakAuthorityUri) &&
+            (keycloakAuthorityUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+             (keycloakAuthorityUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
+              keycloakAuthorityUri.IsLoopback));
+        if (keycloakConfigured && !keycloakAuthorityIsValid)
+        {
+            throw new InvalidOperationException(
+                $"{KeycloakAuthorityConfigurationKey} must use HTTPS, or HTTP on a loopback address for local development.");
+        }
+
+        var keycloakAuthorityIsHttp = keycloakAuthorityUri?.Scheme.Equals(
+            Uri.UriSchemeHttp,
+            StringComparison.OrdinalIgnoreCase) == true;
+        var requireHttpsKeycloakMetadata = !keycloakAuthorityIsHttp;
+
         services.AddSingleton(Options.Create(jwtSettings));
         services.AddSingleton<IJwtGenerator, JwtGenerator>();
         services.AddSingleton<IHashPassword, HashPassword>();
 
-        services
+        var authentication = services
             .AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = CompositeAuthenticationScheme;
@@ -282,9 +325,14 @@ public static class DependencyInjection
             })
             .AddPolicyScheme(CompositeAuthenticationScheme, null, options =>
             {
-                options.ForwardDefaultSelector = SelectAuthenticationScheme;
-            })
-            .AddJwtBearer(LegacyAuthenticationScheme, options => options.TokenValidationParameters = new TokenValidationParameters
+                options.ForwardDefaultSelector = context => SelectAuthenticationScheme(
+                    context,
+                    keycloakAuthority,
+                    jwtSettings.Issuer,
+                    useKeycloakAsDefault);
+            });
+
+        authentication.AddJwtBearer(LegacyAuthenticationScheme, options => options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
@@ -296,10 +344,11 @@ public static class DependencyInjection
                     Encoding.UTF8.GetBytes(jwtSettings.Secret)
                     ),
                 RoleClaimType = "role"
-            })
-            .AddMicrosoftIdentityWebApi(
-                builderConfiguration.GetSection("AzureAd"),
-                EntraAuthenticationScheme);
+            });
+
+        authentication.AddMicrosoftIdentityWebApi(
+            builderConfiguration.GetSection("AzureAd"),
+            EntraAuthenticationScheme);
 
         services.PostConfigure<JwtBearerOptions>(EntraAuthenticationScheme, options =>
         {
@@ -309,33 +358,62 @@ public static class DependencyInjection
             options.TokenValidationParameters.RoleClaimType = "roles";
         });
 
+        if (keycloakConfigured)
+        {
+            authentication.AddJwtBearer(KeycloakAuthenticationScheme, options =>
+            {
+                options.Authority = keycloakAuthority;
+                options.Audience = keycloakAudience;
+                options.RequireHttpsMetadata = requireHttpsKeycloakMetadata;
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters.NameClaimType = KeycloakNameClaimType;
+                options.TokenValidationParameters.RoleClaimType = KeycloakRoleClaimType;
+            });
+        }
+
         return services;
     }
 
-    private static string SelectAuthenticationScheme(HttpContext context)
+    private static string SelectAuthenticationScheme(
+        HttpContext context,
+        string? keycloakAuthority,
+        string legacyIssuer,
+        bool useKeycloakAsDefault)
     {
+        var defaultScheme = useKeycloakAsDefault ? KeycloakAuthenticationScheme : EntraAuthenticationScheme;
         var authorization = context.Request.Headers.Authorization.ToString();
-        if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        if (!authorization.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            return EntraAuthenticationScheme;
+            return defaultScheme;
         }
 
-        var token = authorization["Bearer ".Length..].Trim();
+        var token = authorization[BearerPrefix.Length..].Trim();
         if (string.IsNullOrWhiteSpace(token))
         {
-            return EntraAuthenticationScheme;
+            return defaultScheme;
         }
 
         try
         {
             var issuer = new JwtSecurityTokenHandler().ReadJwtToken(token).Issuer;
-            return issuer.Contains(".ciamlogin.com", StringComparison.OrdinalIgnoreCase)
-                ? EntraAuthenticationScheme
-                : LegacyAuthenticationScheme;
+            if (issuer.Contains(".ciamlogin.com", StringComparison.OrdinalIgnoreCase))
+            {
+                return EntraAuthenticationScheme;
+            }
+
+            if (!string.IsNullOrWhiteSpace(keycloakAuthority) &&
+                issuer.TrimEnd('/').Equals(keycloakAuthority.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
+            {
+                return KeycloakAuthenticationScheme;
+            }
+
+            return issuer.Equals(legacyIssuer, StringComparison.OrdinalIgnoreCase)
+                ? LegacyAuthenticationScheme
+                : defaultScheme;
         }
         catch (ArgumentException)
         {
-            return LegacyAuthenticationScheme;
+            return defaultScheme;
         }
     }
 }
