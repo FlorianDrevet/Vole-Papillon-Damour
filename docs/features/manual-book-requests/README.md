@@ -15,7 +15,7 @@
 
 - Worktree : `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-manual-book-requests`
 - Branche : `feat/manual-book-requests`
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : https://claude.ai/artifact/3fvLJibWN6627hDpbhaRW5
 
 ## Statut
 
