@@ -428,6 +428,119 @@ public sealed class BookAlertOutboxTests
     }
 
     [Fact]
+    public async Task QueueForRelease_DirectEntry_QueuesDueNowForWatchers()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var workMember = await fixture.AddMemberAsync("work@example.org");
+        var editionMember = await fixture.AddMemberAsync("edition@example.org");
+        var otherWorkMember = await fixture.AddMemberAsync("other@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre", workId: "work-42");
+        fixture.Context.Watchlists.Add(Watchlist.Create(workMember.Id, StartedAt));
+        fixture.Context.WatchlistItems.Add(WatchlistItem.CreateWork(
+            Guid.NewGuid(), workMember.Id, "work-42", StartedAt));
+        await fixture.AddWatchlistAsync(editionMember.Id, book);
+        fixture.Context.Watchlists.Add(Watchlist.Create(otherWorkMember.Id, StartedAt));
+        fixture.Context.WatchlistItems.Add(WatchlistItem.CreateWork(
+            Guid.NewGuid(), otherWorkMember.Id, "other-work", StartedAt));
+        var movement = await fixture.AddReleaseMovementAsync(book, editionMember.Id, BookMovementType.DirectEntry);
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+        var count = await outbox.QueueForReleaseAsync(movement.Id, ClosedAt, CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        count.Should().Be(2);
+        var messages = await fixture.Context.OutboxMessages.OrderBy(message => message.MemberId).ToListAsync();
+        messages.Should().HaveCount(2);
+        messages.Should().OnlyContain(message =>
+            message.DueAt == ClosedAt && message.ScanSessionId == null && message.Status == OutboxMessageStatus.Pending);
+        messages.Select(message => message.MemberId).Should().BeEquivalentTo(
+            new[] { workMember.Id.Value, editionMember.Id.Value });
+        var payload = JsonDocument.Parse(messages[0].PayloadJson).RootElement;
+        payload.GetProperty("items")[0].GetProperty("mode").GetString().Should().Be("AvailableNow");
+    }
+
+    [Fact]
+    public async Task QueueForRelease_AnnouncementEntry_UsesFairOpening()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        var fairOpening = DateTimeOffset.Parse("2026-09-04T18:30:00+00:00");
+        var fair = await fixture.AddFairAsync(fairOpening);
+        var movement = await fixture.AddReleaseMovementAsync(book, member.Id, BookMovementType.AnnouncementEntry, fair.Id);
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+        var count = await outbox.QueueForReleaseAsync(movement.Id, ClosedAt, CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        count.Should().Be(1);
+        var message = await fixture.Context.OutboxMessages.SingleAsync();
+        message.DueAt.Should().Be(ClosedAt);
+        message.ScanSessionId.Should().BeNull();
+        JsonDocument.Parse(message.PayloadJson).RootElement
+            .GetProperty("items")[0].GetProperty("fairOpeningAt").GetDateTimeOffset().Should().Be(fairOpening);
+    }
+
+    [Fact]
+    public async Task QueueForRelease_RespectsCooldownAndSuspendedWatchlists()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var recentMember = await fixture.AddMemberAsync("recent@example.org");
+        var suspendedMember = await fixture.AddMemberAsync("suspended@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        await fixture.AddWatchlistAsync(recentMember.Id, book);
+        await fixture.AddWatchlistAsync(suspendedMember.Id, book, suspended: true);
+        fixture.Context.UserAlertHistories.Add(UserAlertHistory.Create(
+            Guid.NewGuid(), recentMember.Id, book.Id, ClosedAt.AddDays(-1)));
+        var movement = await fixture.AddReleaseMovementAsync(book, recentMember.Id, BookMovementType.DirectEntry);
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+        var count = await outbox.QueueForReleaseAsync(movement.Id, ClosedAt, CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        count.Should().Be(0);
+        (await fixture.Context.OutboxMessages.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task QueueForRelease_OtherMovementType_QueuesNothing()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        await fixture.AddWatchlistAsync(member.Id, book);
+        var movement = await fixture.AddReleaseMovementAsync(book, member.Id, BookMovementType.ManualRequestHold);
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+        var count = await outbox.QueueForReleaseAsync(movement.Id, ClosedAt, CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        count.Should().Be(0);
+        (await fixture.Context.OutboxMessages.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task QueueForSession_IgnoresManualRequestHold()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        var session = await fixture.AddSessionAsync(member.Id);
+        fixture.Context.BookMovements.Add(BookMovement.Create(
+            BookMovementId.CreateUnique(), book.Id, BookMovementType.ManualRequestHold, 1,
+            StartedAt, StartedAt.AddMinutes(1), false, session.Id, member.Id, null,
+            "ManualRequest.Hold", Guid.NewGuid()));
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var outbox = new BookAlertOutbox(fixture.Context);
+        await outbox.QueueForSessionAsync(session.Id, ClosedAt, CancellationToken.None);
+        await fixture.Context.SaveChangesAsync();
+
+        (await fixture.Context.OutboxMessages.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task CancelPendingForSession_CancelsOnlyPendingAlertMessages()
     {
         await using var fixture = await BookAlertFixture.CreateAsync();

@@ -1,5 +1,6 @@
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Application.Common.Models;
 
@@ -10,6 +11,12 @@ public interface IBookAlertOutbox
     Task QueueForSessionAsync(
         ScanSessionId scanSessionId,
         DateTime closedAt,
+        CancellationToken cancellationToken);
+
+    /// <summary>RG-84: queues watcher alerts for a released copy with no session delay.</summary>
+    Task<int> QueueForReleaseAsync(
+        BookMovementId releaseMovementId,
+        DateTime releasedAt,
         CancellationToken cancellationToken);
 
     Task<int> CancelPendingForSessionAsync(
