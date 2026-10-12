@@ -78,4 +78,25 @@ public sealed class BookAlertEmailLayoutTests
 
         view.Groups.Should().ContainSingle().Which.NextOpening.Should().BeNull();
     }
+
+    [Fact]
+    public void Layout_GroupsLegacyAvailableNowItemsWithoutTrustingTheirQueuedOpeningDates()
+    {
+        var first = AvailableNowItem("Pêcheur d'Islande", openingFairId: null) with
+        {
+            FairOpeningAt = NovemberFair.OpeningAt
+        };
+        var second = AvailableNowItem("Autre titre", openingFairId: null) with
+        {
+            FairOpeningAt = DecemberFair.OpeningAt
+        };
+
+        var view = BookAlertEmailLayout.Build(Delivery([first, second]));
+
+        var group = view.Groups.Should().ContainSingle().Subject;
+        group.Items.Should().HaveCount(2);
+        group.NextOpening.Should().BeNull();
+        group.Hours.Should().BeNull();
+        group.Address.Should().BeNull();
+    }
 }

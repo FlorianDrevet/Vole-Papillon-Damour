@@ -41,12 +41,18 @@ public static class BookAlertEmailLayout
         var rareItems = delivery.RareItems ?? [];
 
         var slots = delivery.Items
-            .GroupBy(item => (item.Mode, Key: item.OpeningFairId ?? (object?)item.FairOpeningAt))
+            .GroupBy(item => (
+                item.Mode,
+                Key: item.Mode == ScanMode.AvailableNow
+                    ? (object?)item.OpeningFairId
+                    : item.OpeningFairId ?? (object?)item.FairOpeningAt))
             .Select(group =>
             {
                 var first = group.First();
                 var fair = first.OpeningFairId is { } fairId ? fairs.GetValueOrDefault(fairId) : null;
-                var openingAt = first.OpeningFairId is null ? first.FairOpeningAt : fair?.OpeningAt;
+                var openingAt = first.OpeningFairId is null
+                    ? first.Mode == ScanMode.AvailableNow ? null : first.FairOpeningAt
+                    : fair?.OpeningAt;
                 return (Mode: group.Key.Mode, Fair: fair, OpeningAt: openingAt, Items: group.ToArray());
             })
             .OrderBy(slot => slot.Mode == ScanMode.AvailableNow && slot.OpeningAt is null ? 0 : 1)
