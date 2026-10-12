@@ -1882,16 +1882,25 @@ gardés. » (titre du catalogue local, ISBN à défaut).
 
 ### Tâche 24 : validation complète et PR
 
-- [ ] `dotnet build src/Backend/Vole_Papillon_Damour.slnx` ; `dotnet test` sur les cinq
+- [x] `dotnet build src/Backend/Vole_Papillon_Damour.slnx` ; `dotnet test` sur les cinq
   projets `*.tests`.
-- [ ] `npm test -- --watch=false` et `npm run build` dans `src/Catalog` et `src/Scan`.
-- [ ] Contrôle visuel E1–E5, E7 à 1440 et 390 px, E6 à 390 px, contre
+- [x] `npm test -- --watch=false` et `npm run build` dans `src/Catalog` et `src/Scan`.
+- [x] Contrôle visuel E1–E5, E7 à 1440 et 390 px, E6 à 390 px, contre
   `maquettes/preview/` ; aucun défilement horizontal.
-- [ ] `python .claude/skills/feature/scripts/check_zones.py docs/features/manual-book-requests`
-- [ ] `graphify update .`
-- [ ] `rtk git fetch origin main`, `rtk git rebase origin/main`, relancer la suite.
+- [x] `python .claude/skills/feature/scripts/check_zones.py docs/features/manual-book-requests`
+- [x] `graphify update .`
+- [x] `rtk git fetch origin main`, `rtk git rebase origin/main`, relancer la suite.
 - [ ] Push et PR selon `implement-handoff` ; « Risks and follow-up » : arbitrages du plan,
   migration `AddManualBookRequests` non appliquée, échecs de la tâche 0, écarts.
+
+Résultats après rebase : build backend 14 projets sans erreur ; cinq suites backend, 976/976 ;
+Scan, 300/300 ; Catalog, 485/487. Les deux échecs Catalog portent sur des assertions
+`AccountCardComponent` déjà présentes dans la validation de base : rotation du code de
+récupération et affichage du QR. Les 28 tests du dossier `manual-requests`, les 61 tests de
+`CatalogAdministrationPageComponent` et les 6 tests de la page légale passent seuls. Les
+deux builds frontend passent avec les avertissements de budget déjà relevés. Les 76 zones
+des 17 pages sont référencées ; les vues contrôlées à 390/1440 px ne débordent pas sur
+l'axe horizontal.
 
 ---
 
