@@ -50,6 +50,17 @@ describe('LegalPageComponent', () => {
     expect(content.toLowerCase()).toContain('aucun prix ni montant n’est affiché');
   });
 
+  it('explains manual requests for people without an account', async () => {
+    const fixture = await renderPage('privacy');
+    const content = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+
+    expect(content).toContain('Demandes saisies pour des personnes sans compte');
+    expect(content).toContain('Le consentement de la personne est recueilli oralement');
+    expect(content).toContain('trois mois après la clôture de la dernière demande');
+    expect(content).toContain('demander l’accès, la rectification ou la suppression');
+    expect(content).toContain('volepapillondamour@sfr.fr');
+  });
+
   it('explains how members can access, export or delete their data', async () => {
     const fixture = await renderPage('rights');
     const content = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();

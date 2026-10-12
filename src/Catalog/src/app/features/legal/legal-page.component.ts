@@ -128,6 +128,14 @@ const LEGAL_PAGES: Record<CatalogLegalPage, LegalPageViewModel> = {
         ],
       },
       {
+        title: 'Demandes saisies pour des personnes sans compte',
+        paragraphs: [
+          'Pour gérer les livres recherchés par une personne sans compte et la rappeler au sujet des exemplaires trouvés, l’administration peut enregistrer son nom, son prénom et son téléphone. Le consentement de la personne est recueilli oralement ; sa date et le nom de la personne de l’association qui l’a recueilli sont conservés.',
+          'Les coordonnées sont accessibles aux personnes habilitées à l’administration. Lorsqu’un exemplaire lui est mis de côté, le nom, le prénom et le téléphone s’affichent aussi sur la Scanette en ligne pour cet exemplaire uniquement. Aucune coordonnée n’est copiée sur un appareil hors ligne ni publiée sur le site.',
+          `Vous pouvez demander l’accès, la rectification ou la suppression de ces données en écrivant à ${CONTACT_EMAIL}. Les demandes closes peuvent rester dans l’historique sous une forme anonyme. Les coordonnées sont effacées trois mois après la clôture de la dernière demande, si aucune autre demande n’est ouverte ; vous pouvez aussi demander leur suppression plus tôt.`,
+        ],
+      },
+      {
         title: 'Compte, Ma sélection, carte de compte, Mes achats et alertes',
         paragraphs: [
           'Si vous créez un compte, Microsoft Entra External ID peut traiter votre adresse électronique, votre prénom et votre nom lorsqu’ils sont renseignés, ainsi que les éléments nécessaires à l’authentification. Le catalogue associe ensuite à votre compte les livres suivis dans votre liste de recherche et dans Ma sélection, ainsi que votre préférence d’alertes. Le catalogue et son API ne conservent pas votre mot de passe.',

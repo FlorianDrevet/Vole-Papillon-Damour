@@ -17,12 +17,21 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-11 — suivi du formulaire et de la présentation du signalement; [PR #248](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/248) retire la localisation et ajoute la migration de suppression de colonne. |
-| **Prochaine action** | Fusionner d'abord le correctif de `RetireSelectionPersonalStatuses`, puis la PR #248. Relancer ensuite [Books runtime - deploy](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/workflows/books-runtime-deploy.yml) avec les migrations activées, vérifier les routes admin, puis déployer Catalog. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-not-found-report-location` |
-| **Dernière mise à jour** | 2026-10-01 — PR #248 ouverte vers `main`, non fusionnée. La migration `20261001111037_RemoveNotFoundReportLocation` n'est pas appliquée; aucun déploiement n'a été fait. La validation responsive Playwright a été exécutée avant le rebase sur la PR #247; elle n'a pas été répétée à la demande de l'utilisateur. |
-| **Branche** | `fix/not-found-report-location`, basée sur `origin/main` après la PR #247. |
+| **Lot en cours** | F-12 — demandes manuelles de personnes sans compte; implémentation T0–T23 terminée sur `feat/manual-book-requests`, validation complète et PR encore à faire. |
+| **Prochaine action** | Terminer T24 (validation backend et frontends, contrôle visuel, zones), synchroniser avec `origin/main`, puis pousser et ouvrir la PR. La migration `AddManualBookRequests` est générée mais ne doit pas être appliquée à une base pour cette livraison. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-manual-book-requests` |
+| **Dernière mise à jour** | 2026-10-12 — F-12 est implémentée jusqu'à T23 sur la branche de travail; tests finaux, rebase et PR restent à faire. Aucun déploiement ni accès à une base distante n'a été effectué. |
+| **Branche** | `feat/manual-book-requests`, basée sur `origin/main` fraîchement récupéré. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
+
+### Demandes manuelles sans compte — F-12 — 2026-10-12
+
+Les tâches T0–T23 du handoff sont implémentées sur `feat/manual-book-requests`. Les
+demandeurs manuels, leurs demandes, la mise de côté au tri, les décisions et leur
+présentation dans Catalog et Scan sont livrés dans la branche. T24 doit encore exécuter
+la validation complète, les contrôles visuels et l'ouverture de la PR. La migration
+`AddManualBookRequests` a été générée, mais n'a pas été appliquée ; aucune base distante
+ni aucun service Azure n'a été modifié.
 
 ### Remise à zéro de la base DEV — 2026-09-28
 

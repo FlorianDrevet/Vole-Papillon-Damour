@@ -561,6 +561,15 @@ relève, afin de permettre la reprise en bloc (`RG-25`).
 ### `RG-42` — Confidentialité des demandeurs
 L'identité des membres qui recherchent un livre n'est jamais exposée dans
 l'application de scan, ni sur le site public. Seul un décompte est affiché.
+Les demandes manuelles déposées pour une personne sans compte sont décrites par les
+règles `RG-77` à `RG-89` de la [spécification fonctionnelle des demandes manuelles](../features/manual-book-requests/01-fonctionnel.md).
+Par exception strictement limitée à `RG-80`, le tri en ligne affiche le nom, le prénom
+et le téléphone pour le seul exemplaire mis de côté. Ces coordonnées ne sont jamais
+copiées sur un appareil de scan pour un usage hors ligne.
+
+### Demandes manuelles pour une personne sans compte
+La gestion, l'accès aux coordonnées, leur conservation et leur effacement suivent les
+règles `RG-77` à `RG-89` de la [spécification fonctionnelle des demandes manuelles](../features/manual-book-requests/01-fonctionnel.md).
 
 ---
 

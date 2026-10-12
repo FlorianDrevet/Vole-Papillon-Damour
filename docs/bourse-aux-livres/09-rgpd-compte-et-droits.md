@@ -48,6 +48,7 @@ contrats et rôles de chaque fournisseur doivent être vérifiés.
 | Alertes | Préférence, historique d'alerte, état de remise et rebonds techniques | Envoyer l'information demandée et éviter les envois en échec | Exécution du service demandé ; absence de prospection, à maintenir |
 | Association de vente à un compte | Identifiant du compte, date, bourse, titres, éditions et quantités d'un passage associé | Afficher l'historique demandé et synchroniser une sélection | Exécution du service demandé ; information claire et association facultative |
 | Suggestions personnalisées | Achats associés (titres et éditions) et préférence activée/désactivée ; seul le texte bibliographique public est transmis au fournisseur d'IA, sans donnée personnelle | Proposer des livres proches de ceux des achats associés | Intérêt légitime de l'association ; opposition par désactivation de la préférence (base à valider avant l'ouverture publique) |
+| Demandeur manuel sans compte | Nom, prénom, téléphone, demandes de livres, date et administrateur ayant recueilli l'accord | Gérer les demandes et rappeler la personne au sujet des livres recherchés | Consentement de la personne, recueilli oralement et tracé ; base à valider par l'association |
 | Audience et carte | Données d'usage ou données techniques transmises au tiers | Mesurer l'usage ou afficher Maps | Consentement préalable et distinct |
 | Effacement | Données locales, identité Entra, éventuel mouvement métier conservé | Répondre à la demande d'effacement tout en préservant une trace légalement nécessaire | Effacement ; obligation légale/intérêt légitime uniquement pour le résiduel nécessaire |
 
@@ -169,6 +170,26 @@ suppression ou l'anonymisation du profil.
 
 Les parcours manuels de F-10 §14 (notamment deux appareils, lecture QR et suppression
 en DEV) restent à réaliser avant de déclarer le déploiement vérifié.
+
+### Demande manuelle pour une personne sans compte (F-12)
+
+L'administration peut enregistrer le nom, le prénom et le téléphone d'une personne qui
+ne possède pas de compte afin de gérer ses demandes de livres et de la rappeler au sujet
+des exemplaires trouvés. Le consentement de la personne est recueilli oralement ; sa
+date et l'administrateur qui l'a recueilli sont conservés. Ce traitement ne crée pas de
+compte et ne rattache pas la personne à un compte membre.
+
+Les coordonnées sont accessibles aux personnes habilitées à l'administration. Lors du
+tri en ligne, le bénévole voit le nom, le prénom et le téléphone du demandeur servi pour
+le seul exemplaire mis de côté. Aucune coordonnée n'est copiée sur les appareils de scan
+pour une utilisation hors ligne, ni publiée sur le site.
+
+La personne peut contacter l'association pour demander l'accès à ses données, leur
+rectification ou leur suppression. Une suppression annule les demandes encore ouvertes
+et anonymise les demandes closes conservées pour l'historique et les statistiques. Les
+coordonnées sont également effacées automatiquement trois mois après la clôture de la
+dernière demande, si aucune demande n'est ouverte. La base retenue dans la spécification
+est le consentement oral tracé ; l'association doit la valider avec son conseil.
 
 ## 6. Gaps à fermer avant mise en production
 

@@ -1873,10 +1873,10 @@ gardés. » (titre du catalogue local, ISBN à défaut).
   « Données personnelles » du Catalog (`features/legal/…`, même paragraphe en clair)
   et sa spec, `NEXT.md` (état de la feature).
 
-- [ ] **Étape 1 :** test de la page légale (le paragraphe « Demandes saisies pour des
+- [x] **Étape 1 :** test de la page légale (le paragraphe « Demandes saisies pour des
   personnes sans compte » est présent). **Étape 2 :** échec. **Étape 3 :** rédaction.
   **Étape 4 :** vert.
-- [ ] **Étape 5 :** `rtk git commit -m "docs(manual-requests): document rules and personal data"`
+- [x] **Étape 5 :** `rtk git commit -m "docs(manual-requests): document rules and personal data"`
 
 ---
 

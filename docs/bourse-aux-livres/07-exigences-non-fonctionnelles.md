@@ -66,8 +66,11 @@ l'association, et il vaut plus que n'importe quelle campagne de communication.
 Le compte utilise l'adresse e-mail, le prénom et le nom lorsqu'ils sont renseignés,
 l'identifiant externe nécessaire au rapprochement et les dates techniques de compte,
 ainsi que la liste de recherche et l'état technique des alertes lorsqu'ils sont utilisés.
-Ni adresse postale, ni téléphone, ni date de naissance ne sont nécessaires. Le mot de
-passe reste chez Microsoft Entra External ID et n'est pas stocké par l'association.
+Pour ce compte, aucune adresse postale, aucun téléphone ni aucune date de naissance ne
+sont nécessaires. Le mot de passe reste chez Microsoft Entra External ID et n'est pas
+stocké par l'association. Le téléphone est recueilli uniquement pour une demande
+manuelle déposée par l'administration pour une personne sans compte, avec son
+consentement (`RG-77` à `RG-89`).
 
 ### `ENF-11` — Information et consentement
 La finalité et les catégories de données sont annoncées avant ou au moment de
