@@ -343,10 +343,18 @@
           }
 
           @case ('manual-requests') {
-            <app-manual-requests-view
-              [accessToken]="manualRequestAccessToken()"
-              (countsChanged)="onManualRequestCountsChanged($event)"
-              (requesterSelected)="openManualRequester($event)"></app-manual-requests-view>
+            @if (manualRequesterId(); as requesterId) {
+              <app-manual-requester-detail
+                [accessToken]="manualRequestAccessToken()"
+                [requesterId]="requesterId"
+                (closed)="closeManualRequester()"
+                (requesterCreated)="openManualRequester($event)"></app-manual-requester-detail>
+            } @else {
+              <app-manual-requests-view
+                [accessToken]="manualRequestAccessToken()"
+                (countsChanged)="onManualRequestCountsChanged($event)"
+                (requesterSelected)="openManualRequester($event)"></app-manual-requests-view>
+            }
           }
 
           @case ('catalogue') {

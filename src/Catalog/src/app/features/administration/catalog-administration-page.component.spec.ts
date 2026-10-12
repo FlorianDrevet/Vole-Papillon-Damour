@@ -47,6 +47,7 @@ import {AdminRareBooksComponent} from './rare-books/admin-rare-books.component';
 import {NotFoundReportCloseDialogComponent} from './not-found-reports/not-found-report-close-dialog.component';
 import {NotFoundReportsViewComponent} from './not-found-reports/not-found-reports-view.component';
 import {ManualRequestsViewComponent} from './manual-requests/manual-requests-view.component';
+import {ManualRequesterDetailComponent} from './manual-requests/manual-requester-detail.component';
 
 describe('CatalogAdministrationPageComponent', () => {
   let fixture: ComponentFixture<CatalogAdministrationPageComponent>;
@@ -357,6 +358,7 @@ describe('CatalogAdministrationPageComponent', () => {
         AdminRareBookPhotosComponent,
         NotFoundReportsViewComponent,
         ManualRequestsViewComponent,
+        ManualRequesterDetailComponent,
         NotFoundReportCloseDialogComponent,
       ],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],

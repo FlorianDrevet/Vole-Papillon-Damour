@@ -267,6 +267,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
   readonly notFoundSummary = signal<CatalogNotFoundSummary | null>(null);
   readonly manualRequestSummary = signal<CatalogManualRequestSummary | null>(null);
+  readonly manualRequesterId = signal<string | null>(null);
   readonly manualRequestAccessToken = signal('');
   readonly selectedBookNotFoundSummary = signal<CatalogNotFoundSummary | null>(null);
   readonly notFoundAccessToken = signal('');
@@ -429,6 +430,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       .subscribe(([params, queryParams]) => this.applyRouteState(
         params.get('section'),
         queryParams.get('tab'),
+        queryParams.get('demandeur'),
       ));
     void this.initialize();
   }
@@ -547,7 +549,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private applyRouteState(sectionParam: string | null, statisticsTabParam: string | null): void {
+  private applyRouteState(sectionParam: string | null, statisticsTabParam: string | null, requesterParam: string | null): void {
     if (sectionParam && !isCatalogAdminSection(sectionParam)) {
       void this.router.navigate(['/administration', 'overview'], {replaceUrl: true});
       return;
@@ -560,6 +562,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
     this.activeSection.set(section);
     this.statisticsTab.set(statisticsTab);
+    this.manualRequesterId.set(section === 'manual-requests' ? requesterParam : null);
 
     if (!this.administrationInitialized || !this.auth.isAuthenticated()) {
       return;
@@ -951,6 +954,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {demandeur: requesterId ?? 'nouveau'},
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  closeManualRequester(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {demandeur: null},
       queryParamsHandling: 'merge',
     });
   }
