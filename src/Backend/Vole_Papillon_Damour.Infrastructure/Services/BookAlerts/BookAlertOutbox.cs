@@ -177,17 +177,20 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             .ToListAsync(cancellationToken);
         var activeBookFairOpenings = bookFairs
             .ToDictionary(assoEvent => assoEvent.Id.Value, GetOpeningInstant);
-        var nextBookFairOpening = activeBookFairOpenings.Values
-            .Where(opening => opening > new DateTimeOffset(releasedAt))
-            .OrderBy(opening => opening)
-            .Select(opening => (DateTimeOffset?)opening)
+        var nextBookFair = activeBookFairOpenings
+            .Where(pair => pair.Value > new DateTimeOffset(releasedAt))
+            .OrderBy(pair => pair.Value)
+            .Select(pair => (KeyValuePair<Guid, DateTimeOffset>?)pair)
             .FirstOrDefault();
-        var fairOpening = movement.AssoEventsId is { } fairId &&
-                          activeBookFairOpenings.TryGetValue(fairId.Value, out var opening)
-            ? opening
+        Guid? openingFairId = movement.AssoEventsId is { } fairId &&
+                              activeBookFairOpenings.ContainsKey(fairId.Value)
+            ? fairId.Value
             : mode == ScanMode.AvailableNow
-                ? nextBookFairOpening
+                ? nextBookFair?.Key
                 : null;
+        DateTimeOffset? fairOpening = openingFairId is { } openingId
+            ? activeBookFairOpenings[openingId]
+            : null;
         var candidate = new AlertCandidate(
             movement.Isbn13,
             book?.WorkId,
@@ -199,7 +202,12 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             movement.Quantity,
             mode,
             movement.AssoEventsId,
-            fairOpening);
+            fairOpening,
+            book?.CoverUrl,
+            book is { IsHiddenFromCatalog: false, RedirectedToIsbn13: null }
+                ? PublicBookPath.For(book.Id, book.Title, book.Authors)
+                : null,
+            openingFairId);
 
         return await QueueCandidatesAsync([candidate], releasedAt, releasedAt, null, cancellationToken);
     }

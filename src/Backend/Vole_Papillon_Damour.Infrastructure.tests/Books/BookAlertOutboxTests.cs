@@ -1144,6 +1144,39 @@ public sealed class BookAlertOutboxTests
             return session;
         }
 
+        public async Task<BookMovement> AddReleaseMovementAsync(
+            Book book,
+            UserId volunteerId,
+            BookMovementType type,
+            AssoEventsId? assoEventsId = null)
+        {
+            if (type == BookMovementType.DirectEntry)
+            {
+                book.RecordAvailableEntry(ClosedAt);
+            }
+            else if (type == BookMovementType.AnnouncementEntry)
+            {
+                book.RecordAnnouncementEntry(ClosedAt);
+            }
+
+            var movement = BookMovement.Create(
+                BookMovementId.CreateUnique(),
+                book.Id,
+                type,
+                1,
+                ClosedAt,
+                ClosedAt,
+                false,
+                null,
+                volunteerId,
+                assoEventsId,
+                "ManualRequest.Release",
+                null);
+            Context.BookMovements.Add(movement);
+            await Context.SaveChangesAsync();
+            return movement;
+        }
+
         public async Task<AssoEvents> AddFairAsync(
             DateTimeOffset? hourOpenDoors = null,
             DateTimeOffset? hourCloseDoors = null,
