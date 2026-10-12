@@ -628,6 +628,7 @@ public static class BookController
                     book.QtyAnnounced,
                     book.SalesCount,
                     book.IsWanted,
+                    book.IsManuallyRequested,
                     book.IsRare,
                     book.IsHidden,
                     book.UpdatedAt))

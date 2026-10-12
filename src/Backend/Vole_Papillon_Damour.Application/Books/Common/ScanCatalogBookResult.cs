@@ -9,6 +9,7 @@ public sealed record ScanCatalogBookResult(
     int QtyAnnounced,
     int SalesCount,
     bool IsWanted,
+    bool IsManuallyRequested,
     bool IsRare,
     bool IsHidden,
     DateTime UpdatedAt);

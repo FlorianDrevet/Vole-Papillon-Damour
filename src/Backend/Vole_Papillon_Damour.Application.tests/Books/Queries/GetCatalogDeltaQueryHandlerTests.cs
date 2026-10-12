@@ -6,6 +6,7 @@ using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Queries.GetCatalogDelta;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Contracts.Books.Responses;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
@@ -13,7 +14,10 @@ using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
@@ -25,6 +29,7 @@ using Vole_Papillon_Damour.Domain.UserAggregate;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
+using Vole_Papillon_Damour.Infrastructure.Persistence.Configurations;
 
 namespace Vole_Papillon_Damour.Application.tests.Books.Queries;
 
@@ -78,6 +83,131 @@ public sealed class GetCatalogDeltaQueryHandlerTests
 
         result.IsError.Should().BeFalse();
         result.Value.Books.Single().IsWanted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Delta_FullSync_FlagsBooksMatchingSearchingRequests()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var edition = await fixture.AddBookAsync("9782070363735", GeneratedAt.AddMinutes(-1));
+        var work = await fixture.AddBookAsync(
+            "9783140464079",
+            GeneratedAt.AddMinutes(-1),
+            workId: "OL123W");
+        var foundBook = await fixture.AddBookAsync("9791036377426", GeneratedAt.AddMinutes(-1));
+        var givenBook = await fixture.AddBookAsync("9780306406157", GeneratedAt.AddMinutes(-1));
+        var requester = await fixture.AddManualRequesterAsync(GeneratedAt.AddMinutes(-10));
+
+        await fixture.AddManualEditionRequestAsync(
+            requester.Id,
+            edition.Id.Value,
+            GeneratedAt.AddMinutes(-9));
+        await fixture.AddManualWorkRequestAsync(
+            requester.Id,
+            "OL123W",
+            GeneratedAt.AddMinutes(-8));
+        var foundRequest = await fixture.AddManualEditionRequestAsync(
+            requester.Id,
+            foundBook.Id.Value,
+            GeneratedAt.AddMinutes(-7));
+        foundRequest.MarkFoundFromStock(
+            foundBook.Id,
+            null,
+            null,
+            BookMovementId.CreateUnique(),
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            GeneratedAt.AddMinutes(-6));
+        var givenRequest = await fixture.AddManualEditionRequestAsync(
+            requester.Id,
+            givenBook.Id.Value,
+            GeneratedAt.AddMinutes(-5));
+        givenRequest.MarkFoundFromStock(
+            givenBook.Id,
+            null,
+            null,
+            BookMovementId.CreateUnique(),
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            GeneratedAt.AddMinutes(-4));
+        givenRequest.MarkGiven(
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            GeneratedAt.AddMinutes(-3));
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Books.Single(book => book.Isbn13 == edition.Id.Value).IsManuallyRequested.Should().BeTrue();
+        result.Value.Books.Single(book => book.Isbn13 == work.Id.Value).IsManuallyRequested.Should().BeTrue();
+        result.Value.Books.Single(book => book.Isbn13 == foundBook.Id.Value).IsManuallyRequested.Should().BeFalse();
+        result.Value.Books.Single(book => book.Isbn13 == givenBook.Id.Value).IsManuallyRequested.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Delta_Incremental_ReprojectsBooksWhoseManualRequestChanged()
+    {
+        await using var fixture = await CatalogDeltaFixture.CreateAsync();
+        var book = await fixture.AddBookAsync("9782070363735", GeneratedAt.AddMinutes(-60));
+        var initial = await fixture.CreateHandler(GeneratedAt.AddMinutes(-30)).Handle(
+            new GetCatalogDeltaQuery(null),
+            CancellationToken.None);
+        initial.IsError.Should().BeFalse();
+
+        var requester = await fixture.AddManualRequesterAsync(GeneratedAt.AddMinutes(-20));
+        var request = await fixture.AddManualEditionRequestAsync(
+            requester.Id,
+            book.Id.Value,
+            GeneratedAt.AddMinutes(-20));
+        var created = await fixture.CreateHandler(GeneratedAt.AddMinutes(-10)).Handle(
+            new GetCatalogDeltaQuery(initial.Value.NextWatermark),
+            CancellationToken.None);
+
+        created.IsError.Should().BeFalse();
+        created.Value.Books.Should().ContainSingle(resultBook => resultBook.Isbn13 == book.Id.Value);
+        created.Value.Books.Single().IsManuallyRequested.Should().BeTrue();
+
+        request.MarkFoundFromStock(
+            book.Id,
+            null,
+            null,
+            BookMovementId.CreateUnique(),
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            GeneratedAt.AddMinutes(-5));
+        await fixture.SaveAsync();
+        var found = await fixture.CreateHandler().Handle(
+            new GetCatalogDeltaQuery(created.Value.NextWatermark),
+            CancellationToken.None);
+
+        found.IsError.Should().BeFalse();
+        found.Value.Books.Should().ContainSingle(resultBook => resultBook.Isbn13 == book.Id.Value);
+        found.Value.Books.Single().IsManuallyRequested.Should().BeFalse();
+
+        request.Cancel(
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            BookMovementId.CreateUnique(),
+            GeneratedAt.AddMinutes(1));
+        await fixture.SaveAsync();
+        var cancelled = await fixture.CreateHandler(GeneratedAt.AddMinutes(2)).Handle(
+            new GetCatalogDeltaQuery(found.Value.NextWatermark),
+            CancellationToken.None);
+
+        cancelled.IsError.Should().BeFalse();
+        cancelled.Value.Books.Should().ContainSingle(resultBook => resultBook.Isbn13 == book.Id.Value);
+        cancelled.Value.Books.Single().IsManuallyRequested.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Delta_Response_HasNoRequesterData()
+    {
+        typeof(ScanCatalogBookResponse)
+            .GetProperties()
+            .Select(property => property.Name)
+            .Should()
+            .NotContain(name =>
+                name.Contains("FirstName", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("LastName", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("Phone", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -260,6 +390,7 @@ public sealed class GetCatalogDeltaQueryHandlerTests
         Isbn13.TryCreate(value, out var isbn).Should().BeTrue();
         return isbn;
     }
+
 }
 
 internal sealed class CatalogDeltaFixture : IAsyncDisposable
@@ -286,9 +417,28 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         return new CatalogDeltaFixture(connection, context);
     }
 
-    public async Task<Book> AddBookAsync(string isbn, DateTime updatedAt)
+    public async Task<Book> AddBookAsync(string isbn, DateTime updatedAt, string? workId = null)
     {
         var book = Book.Create(ParseIsbn(isbn), updatedAt);
+        if (workId is not null)
+        {
+            book.ApplyAutomaticMetadata(
+                new BookMetadataPatch(
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    [BookMetadataField.WorkId],
+                    workId),
+                BookMetadataSource.OpenLibrary,
+                updatedAt,
+                rawPayload: null);
+        }
+
         if (updatedAt == GetCatalogDeltaQueryHandlerTests.GeneratedAt.AddMinutes(-1))
         {
             book.RecordAvailableEntry(updatedAt);
@@ -297,6 +447,59 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         Context.Books.Add(book);
         await Context.SaveChangesAsync();
         return book;
+    }
+
+    public async Task<ManualRequester> AddManualRequesterAsync(DateTime consentAt)
+    {
+        var requester = ManualRequester.Create(
+            Guid.NewGuid(),
+            "Martin",
+            "Jeanne",
+            "0612345678",
+            consentGiven: true,
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000001")),
+            consentAt);
+        Context.ManualRequesters.Add(requester);
+        await Context.SaveChangesAsync();
+        return requester;
+    }
+
+    public async Task<ManualBookRequest> AddManualEditionRequestAsync(
+        Guid requesterId,
+        string isbn,
+        DateTime requestedAt)
+    {
+        var request = ManualBookRequest.CreateEdition(
+            Guid.NewGuid(),
+            requesterId,
+            ParseIsbn(isbn),
+            "Livre demandé",
+            null,
+            null,
+            null,
+            requestedAt);
+        Context.ManualBookRequests.Add(request);
+        await Context.SaveChangesAsync();
+        return request;
+    }
+
+    public async Task<ManualBookRequest> AddManualWorkRequestAsync(
+        Guid requesterId,
+        string workId,
+        DateTime requestedAt)
+    {
+        var request = ManualBookRequest.CreateWork(
+            Guid.NewGuid(),
+            requesterId,
+            workId,
+            "Livre demandé",
+            null,
+            null,
+            null,
+            requestedAt);
+        Context.ManualBookRequests.Add(request);
+        await Context.SaveChangesAsync();
+        return request;
     }
 
     public async Task AddSettingsAsync()
@@ -403,6 +606,13 @@ internal sealed class CatalogDeltaFixture : IAsyncDisposable
         return new GetCatalogDeltaQueryHandler(Context, clock);
     }
 
+    public GetCatalogDeltaQueryHandler CreateHandler(DateTime generatedAt)
+    {
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(generatedAt);
+        return new GetCatalogDeltaQueryHandler(Context, clock);
+    }
+
     public async ValueTask DisposeAsync()
     {
         await Context.DisposeAsync();
@@ -428,6 +638,8 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<RareBookTombstone> RareBookTombstones => Set<RareBookTombstone>();
+    public DbSet<ManualRequester> ManualRequesters => Set<ManualRequester>();
+    public DbSet<ManualBookRequest> ManualBookRequests => Set<ManualBookRequest>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
     DbSet<User> IProjectDbContext.Users => throw new NotSupportedException();
@@ -440,10 +652,14 @@ internal sealed class CatalogDeltaTestDbContext(DbContextOptions<CatalogDeltaTes
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
     DbSet<RareBookTombstone> IProjectDbContext.RareBookTombstones => RareBookTombstones;
+    DbSet<ManualRequester> IProjectDbContext.ManualRequesters => ManualRequesters;
+    DbSet<ManualBookRequest> IProjectDbContext.ManualBookRequests => ManualBookRequests;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         Vole_Papillon_Damour.Application.Common.Persistence.RowVersionQueries.Register(modelBuilder);
+        modelBuilder.ApplyConfiguration(new ManualRequesterConfiguration());
+        modelBuilder.ApplyConfiguration(new ManualBookRequestConfiguration());
         modelBuilder.Entity<Book>(builder =>
         {
             builder.HasKey(book => book.Id);
