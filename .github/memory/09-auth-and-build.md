@@ -24,6 +24,25 @@
 - `POST /auth/login` is public but explicitly rate-limited with the `Login` limiter.
 - `POST /auth/register` is public and still contains a commented-out `RequireAuthorization("IsAdmin")` line in code.
 
+## Local Keycloak API Test Identities
+
+- The Aspire AppHost adds `Aspire.Hosting.Keycloak` on stable local port `8080` and imports
+  `src/Backend/Vole_Papillon_Damour.AppHost/Realms/vpd-realm.json`. In Development,
+  `Authentication:Provider=Keycloak`, authority `http://localhost:8080/realms/vpd`, and
+  audience `vpd-api` select the local `JwtBearer` handler. HTTP metadata is accepted only
+  for loopback authorities; other Keycloak authorities must use HTTPS.
+- The Keycloak token handler leaves claim names unmapped, reads the `name` claim, and reads
+  application roles from a top-level `roles` claim. Realm personas carry a stable `oid` UUID,
+  email, and API client roles matching the VPD policies: `Administration`, `LivresRares`,
+  `Tri`, and `Caisse`.
+- `tools/Get-LocalApiToken.ps1 -Persona admin|tri-volunteer|cashier|member` retrieves a
+  non-interactive token using the local-only `vpd-local-test` Direct Access Grant client.
+  Seeded users/passwords are fixtures; use this client only for local API tests. Direct
+  account administration/Graph paths still need mocks or a dedicated test seam.
+- `infra/main.bicep` explicitly sets `Authentication__Provider=Entra`. BackOffice, Website,
+  Catalog, and Scan browser sign-in still use their Entra/MSAL configuration; these
+  Keycloak identities are for direct API testing.
+
 - Account administration keeps Entra app roles as the source of truth. The BackOffice
   uses the Administration-protected `/accounts/admin` endpoints; the API Graph adapter
   creates External ID local identities with `passwordPolicies=DisablePasswordExpiration`

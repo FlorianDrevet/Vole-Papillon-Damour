@@ -1,0 +1,165 @@
+{
+  "realm": "vpd",
+  "displayName": "Vole Papillon d'Amour (local)",
+  "enabled": true,
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "clients": [
+    {
+      "clientId": "vpd-api",
+      "name": "VPD API",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "vpd-local-test",
+      "name": "VPD local API test client",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "defaultClientScopes": ["profile", "email", "vpd-api-access"]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "vpd-api-access",
+      "description": "Local API audience, external member id, and VPD application roles",
+      "protocol": "openid-connect",
+      "attributes": {
+        "display.on.consent.screen": "false",
+        "include.in.token.scope": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "VPD external member id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "oid",
+            "claim.name": "oid",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "VPD API audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "vpd-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "VPD API roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "usermodel.clientRoleMapping.clientId": "vpd-api",
+            "claim.name": "roles",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "multivalued": "true",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "client": {
+      "vpd-api": [
+        { "name": "Administration", "composite": false },
+        { "name": "LivresRares", "composite": false },
+        { "name": "Tri", "composite": false },
+        { "name": "Caisse", "composite": false }
+      ]
+    }
+  },
+  "users": [
+    {
+      "username": "local-admin",
+      "email": "admin@vpd.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Camille",
+      "lastName": "Administratrice",
+      "attributes": {
+        "oid": ["10000000-0000-4000-8000-000000000001"]
+      },
+      "credentials": [
+        { "type": "password", "value": "VpdLocalDev!2026", "temporary": false }
+      ],
+      "clientRoles": {
+        "vpd-api": ["Administration", "LivresRares", "Tri", "Caisse"]
+      }
+    },
+    {
+      "username": "local-tri",
+      "email": "benevole.tri@vpd.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Bénévole Tri",
+      "attributes": {
+        "oid": ["10000000-0000-4000-8000-000000000002"]
+      },
+      "credentials": [
+        { "type": "password", "value": "VpdLocalDev!2026", "temporary": false }
+      ],
+      "clientRoles": {
+        "vpd-api": ["Tri"]
+      }
+    },
+    {
+      "username": "local-caisse",
+      "email": "benoit.caisse@vpd.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Benoît",
+      "lastName": "Caisse",
+      "attributes": {
+        "oid": ["10000000-0000-4000-8000-000000000003"]
+      },
+      "credentials": [
+        { "type": "password", "value": "VpdLocalDev!2026", "temporary": false }
+      ],
+      "clientRoles": {
+        "vpd-api": ["Caisse"]
+      }
+    },
+    {
+      "username": "local-member",
+      "email": "membre@vpd.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Élodie",
+      "lastName": "Adhérente",
+      "attributes": {
+        "oid": ["10000000-0000-4000-8000-000000000004"]
+      },
+      "credentials": [
+        { "type": "password", "value": "VpdLocalDev!2026", "temporary": false }
+      ],
+      "clientRoles": {
+        "vpd-api": []
+      }
+    }
+  ]
+}

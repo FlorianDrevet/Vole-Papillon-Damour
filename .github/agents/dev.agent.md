@@ -107,6 +107,10 @@ Avant toute generation de code, si un skill est pertinent :
 2. Appliquer ses instructions a la lettre
 3. Le skill prime sur toute connaissance generale
 
+Pour une tâche qui vérifie une API avec une identité locale, charger aussi
+`.github/skills/local-auth-testing/SKILL.md` afin d'utiliser les personas Keycloak Aspire
+et de vérifier les accès autorisés comme refusés sans compte Entra humain.
+
 ### 4. Executer la tache
 
 Utiliser les outils disponibles. Deleguer aux agents specialises si la tache depasse ton perimetre de coordination.
@@ -141,7 +145,7 @@ Utiliser les outils disponibles. Deleguer aux agents specialises si la tache dep
 | Revue technique anti-vibe coding | **`vibe-coding-refractaire`** |
 | Appliquer un backlog de correction issu d'une review | **`review-remediator`** |
 | Analyser une feature / challenger une demande / plan d'implementation | **`architect`** |
-| Modifier/creer du code backend .NET | **`dotnet-dev`** + skills `.NET` detectes (`tdd-workflow`, `dotnet-patterns`, `xunit-unit-testing`, `cqrs-feature`) |
+| Modifier/creer du code backend .NET | **`dotnet-dev`** + skills `.NET` detectes (`tdd-workflow`, `dotnet-patterns`, `xunit-unit-testing`, `cqrs-feature`); charger `local-auth-testing` si l'API demande une identité locale |
 | Modifier/creer du code frontend Angular | **`angular-front`** + skills frontend detectes (`tdd-workflow`, `angular-patterns`, `ui-ux-front-saas`) |
 | Modifier/creer du code client MAUI | **`dotnet-dev`** + skills `.NET` detectes |
 | Debug runtime Aspire | **`aspire-debug`** (conditionnel) |
