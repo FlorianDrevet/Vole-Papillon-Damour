@@ -7,7 +7,7 @@
 
 - Worktree : `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-book-alert-email-template`
 - Branche : `feat/book-alert-email-template`
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : https://claude.ai/artifact/Nj46cgkoVEM5S19T33m3kK
 
 ## Statut
 
