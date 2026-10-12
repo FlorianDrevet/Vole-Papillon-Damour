@@ -47,12 +47,12 @@ Deux problèmes en découlent :
 |---|---|
 | **Demandeur manuel** | Personne sans compte, enregistrée par un administrateur : nom, prénom, téléphone, accord de conservation. Un demandeur porte une ou plusieurs demandes. |
 | **Demande manuelle** | Un livre cherché par un demandeur manuel, avec une portée `ŒUVRE` (défaut) ou `ÉDITION`, comme une entrée de liste de recherche (`RG-46`). |
-| **Exemplaire mis de côté** | Exemplaire scanné au tri ou prélevé du stock pour une demande manuelle. Il n'est ni disponible ni annoncé ; il attend dans le bac « demandes manuelles ». |
+| **Exemplaire mis de côté** | Exemplaire scanné au tri ou prélevé du stock pour une demande manuelle. Il n'est ni disponible ni annoncé ; le bénévole le met de côté, sans lieu de rangement géré par le système. |
 
 | Acteur | Ce qu'il fait |
 |---|---|
 | **Administrateur** (rôle `Administration`, la présidente en pratique) | Crée et modifie les demandeurs et leurs demandes, prélève un exemplaire en stock, marque donné / refusé, annule, supprime. |
-| **Bénévole de tri** (rôle `Tri`) | Voit le verdict « À mettre de côté » au scan et, en ligne, les coordonnées du demandeur pour ce livre ; pose l'exemplaire dans le bac dédié. |
+| **Bénévole de tri** (rôle `Tri`) | Voit le verdict « À mettre de côté » au scan et, en ligne, les coordonnées du demandeur pour ce livre ; met l'exemplaire de côté. |
 | **Membre** | N'a aucune action : il est simplement alerté plus tard, ou pas, selon `RG-81` et `RG-84`. |
 | **Demandeur manuel** | N'a aucun accès au système. Il est appelé par la présidente. |
 
@@ -98,7 +98,7 @@ exemplaire mis de côté sert **une** demande.
    est en recherche pour ce titre.
 2. L'écran affiche le verdict « À METTRE DE CÔTÉ — demande manuelle », et en ligne
    « Mme Jeanne Martin · 06 12 34 56 78 » (E6).
-3. Le bénévole pose le livre dans le bac « demandes manuelles ». La demande passe à
+3. Le bénévole met le livre de côté. La demande passe à
    « trouvée » ; aucun membre n'est alerté pour cet exemplaire (`RG-81`).
 4. Un second exemplaire du même titre est scanné plus tard : s'il ne reste aucune
    demande manuelle en recherche pour ce livre, il suit le circuit normal (verdict
@@ -294,7 +294,6 @@ encart changent.
 │ ┌ Pour ──────────────────────────────┐│
 │ │ Jeanne MARTIN                      ││
 │ │ 06 12 34 56 78                     ││
-│ │ Bac « demandes manuelles »         ││
 │ └────────────────────────────────────┘│
 │  ┌────┐                               │
 │  │couv│  Le Petit Prince              │
@@ -494,6 +493,5 @@ restent, avec la mention « Demandeur effacé ».
 
 | # | Question | Proposition par défaut |
 |---|---|---|
-| QM-1 | Le bac « demandes manuelles » existe-t-il physiquement au local, et sous quel nom les bénévoles le connaissent-ils ? | « Bac demandes manuelles » ; libellé à ajuster avant les maquettes. |
 | QM-2 | Faut-il relancer la présidente pour un livre trouvé depuis longtemps sans décision ? | Simple mention « trouvé il y a plus de 14 jours » sur la tuile du tableau de bord, sans e-mail. |
-| QM-3 | La base légale de ce traitement : consentement oral (`RG-87`) ou intérêt légitime de l'association ? | Consentement oral recueilli par la présidente, tracé par la case à cocher ; à confirmer par le bureau. |
+| QM-3 | La base légale de ce traitement : consentement oral (`RG-87`) ou intérêt légitime de l'association ? | **Tranché (2026-10-12)** : consentement oral recueilli par la présidente, tracé par la case à cocher. |
