@@ -48,6 +48,7 @@ import {NotFoundReportCloseDialogComponent} from './not-found-reports/not-found-
 import {NotFoundReportsViewComponent} from './not-found-reports/not-found-reports-view.component';
 import {ManualRequestsViewComponent} from './manual-requests/manual-requests-view.component';
 import {ManualRequesterDetailComponent} from './manual-requests/manual-requester-detail.component';
+import {ManualRequestAddDialogComponent} from './manual-requests/manual-request-add-dialog.component';
 
 describe('CatalogAdministrationPageComponent', () => {
   let fixture: ComponentFixture<CatalogAdministrationPageComponent>;
@@ -359,6 +360,7 @@ describe('CatalogAdministrationPageComponent', () => {
         NotFoundReportsViewComponent,
         ManualRequestsViewComponent,
         ManualRequesterDetailComponent,
+        ManualRequestAddDialogComponent,
         NotFoundReportCloseDialogComponent,
       ],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],

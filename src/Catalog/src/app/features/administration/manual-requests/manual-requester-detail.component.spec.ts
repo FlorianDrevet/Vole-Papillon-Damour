@@ -3,12 +3,15 @@ import {FormsModule} from '@angular/forms';
 import {of} from 'rxjs';
 
 import {CatalogAdminApiService} from '../../../core/catalog-admin-api.service';
+import {CatalogApiService} from '../../../core/catalog-api.service';
 import {CatalogManualRequester} from '../../../core/catalog.models';
 import {ManualRequesterDetailComponent} from './manual-requester-detail.component';
+import {ManualRequestAddDialogComponent} from './manual-request-add-dialog.component';
 
 describe('ManualRequesterDetailComponent', () => {
   let fixture: ComponentFixture<ManualRequesterDetailComponent>;
   let api: jasmine.SpyObj<CatalogAdminApiService>;
+  let catalogApi: jasmine.SpyObj<CatalogApiService>;
 
   const requester: CatalogManualRequester = {
     requesterId: 'requester-1', lastName: 'Martin', firstName: 'Jeanne', phone: '0612345678', erased: false,
@@ -40,6 +43,8 @@ describe('ManualRequesterDetailComponent', () => {
       'getManualRequester', 'createManualRequester', 'updateManualRequester', 'deleteManualRequester',
       'pickManualRequest', 'markManualRequestGiven', 'refuseManualRequest', 'cancelManualRequest',
     ]);
+    catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
+    catalogApi.searchReferences.and.returnValue(of({generatedAt: '', query: '', items: [], page: 1, pageSize: 20}));
     api.getManualRequester.and.returnValue(of(requester));
     api.createManualRequester.and.returnValue(of({requesterId: 'created-1'}));
     api.updateManualRequester.and.returnValue(of(undefined));
@@ -50,9 +55,12 @@ describe('ManualRequesterDetailComponent', () => {
     api.cancelManualRequest.and.returnValue(of({notifiedMemberCount: 0}));
 
     await TestBed.configureTestingModule({
-      declarations: [ManualRequesterDetailComponent],
+      declarations: [ManualRequesterDetailComponent, ManualRequestAddDialogComponent],
       imports: [FormsModule],
-      providers: [{provide: CatalogAdminApiService, useValue: api}],
+      providers: [
+        {provide: CatalogAdminApiService, useValue: api},
+        {provide: CatalogApiService, useValue: catalogApi},
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ManualRequesterDetailComponent);
@@ -71,7 +79,7 @@ describe('ManualRequesterDetailComponent', () => {
     fixture.detectChanges();
 
     expect(api.createManualRequester).not.toHaveBeenCalled();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Sans l’accord de la personne, ses coordonnées ne peuvent pas être enregistrées.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain("Sans l'accord de la personne, ses coordonnées ne peuvent pas être enregistrées.");
     expect(fixture.nativeElement.querySelector('[name="consentGiven"]')?.getAttribute('aria-invalid')).toBe('true');
   });
 

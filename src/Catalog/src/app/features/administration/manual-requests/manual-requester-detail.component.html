@@ -69,7 +69,7 @@
             La personne a accepté que l'association conserve ses coordonnées pour la rappeler au sujet de ces livres.
             <strong>Obligatoire</strong>
             @if (consentError()) {
-              <em class="manual-requester-field-error" role="alert">Sans l’accord de la personne, ses coordonnées ne peuvent pas être enregistrées.</em>
+              <em class="manual-requester-field-error" role="alert">Sans l'accord de la personne, ses coordonnées ne peuvent pas être enregistrées.</em>
             }
           </span>
         </label>
@@ -127,7 +127,7 @@
       @if (!current.erased) {
         <footer class="manual-requester-delete-footer">
           <div>
-            <button #deleteTrigger class="manual-requester-delete-link" data-testid="manual-requester-delete" type="button" (click)="requestDelete()">
+            <button class="manual-requester-delete-link" data-testid="manual-requester-delete" type="button" (click)="requestDelete()">
               Supprimer ce demandeur et ses demandes…
             </button>
             <p>À la demande de la personne. Sans action, ses coordonnées sont effacées trois mois après la clôture de sa dernière demande.</p>
@@ -157,5 +157,15 @@
         </div>
       </section>
     </div>
+  }
+
+  @if (addBookDialogOpen() && addBookRequesterId(); as targetRequesterId) {
+    <app-manual-request-add-dialog
+      [accessToken]="accessToken"
+      [requesterId]="targetRequesterId"
+      [requesterFirstName]="requester()?.firstName || firstName"
+      [requesterLastName]="requester()?.lastName || lastName"
+      (closed)="closeAddBook()"
+      (added)="onBookAdded()"></app-manual-request-add-dialog>
   }
 </section>

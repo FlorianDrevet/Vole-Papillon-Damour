@@ -1,0 +1,97 @@
+<div class="manual-request-add-backdrop" role="presentation" (click)="closed.emit()">
+  <section class="manual-request-add-dialog" role="dialog" aria-modal="true" aria-labelledby="manual-request-add-title" (click)="$event.stopPropagation()">
+    <span class="manual-request-add-kicker">Nouvelle demande</span>
+    <h2 id="manual-request-add-title">Ajouter un livre pour {{ requesterDisplayName }}</h2>
+
+    <form class="manual-request-add-search" (ngSubmit)="searchBooks()">
+      <label>
+        <span>Rechercher un livre</span>
+        <input
+          data-testid="manual-request-reference-search"
+          type="search"
+          name="referenceQuery"
+          placeholder="Titre, auteur ou ISBN"
+          autocomplete="off"
+          [(ngModel)]="query">
+      </label>
+      <button class="button button-dark" data-testid="manual-request-reference-submit" type="submit" [disabled]="searching() || !query.trim()">
+        {{ searching() ? 'Recherche…' : 'Chercher' }}
+      </button>
+    </form>
+
+    @if (error(); as message) {
+      <p class="manual-request-add-error" role="alert" data-testid="manual-request-add-error">{{ message }}</p>
+    }
+
+    @if (searching()) {
+      <div class="manual-request-add-loading" role="status">Recherche dans les livres publiés…</div>
+    } @else if (searchComplete()) {
+      <fieldset class="manual-request-results" data-testid="manual-request-results">
+        <legend>Tous les livres publiés · {{ results().length }} résultats</legend>
+        @for (book of results(); track book.isbn13 || book.title) {
+          <label class="manual-request-result" [class.selected]="selectedBook()?.isbn13 === book.isbn13">
+            <input type="radio" name="manualBookReference" [checked]="selectedBook()?.isbn13 === book.isbn13" [disabled]="!book.isbn13 || loadingStock()" (change)="selectBook(book)">
+            <span>
+              <strong>{{ book.title || 'Titre inconnu' }}</strong>
+              <small>{{ book.authors || 'Auteur non renseigné' }}{{ book.publisher ? ' · ' + book.publisher : '' }}{{ book.publicationYear ? ' · ' + book.publicationYear : '' }}</small>
+              <small>ISBN {{ book.isbn13 || 'non renseigné' }}</small>
+            </span>
+          </label>
+        } @empty {
+          <p class="manual-request-add-empty">Aucun livre ne correspond à cette recherche.</p>
+        }
+      </fieldset>
+    }
+
+    @if (selectedBook(); as selected) {
+      <fieldset class="manual-request-scope" data-testid="manual-request-scope">
+        <legend>Que cherche-t-elle ?</legend>
+        <label [class.selected]="scope() === 'Work'">
+          <input
+            data-testid="manual-request-scope-work"
+            type="radio"
+            name="manualRequestScope"
+            [checked]="scope() === 'Work'"
+            [disabled]="!selected.workId || loadingStock()"
+            (change)="selectScope('Work')">
+          <span><strong>Toutes les éditions de cette œuvre · recommandé</strong></span>
+        </label>
+        <label [class.selected]="scope() === 'Edition'">
+          <input
+            data-testid="manual-request-scope-edition"
+            type="radio"
+            name="manualRequestScope"
+            [checked]="scope() === 'Edition'"
+            [disabled]="!selected.isbn13 || loadingStock()"
+            (change)="selectScope('Edition')">
+          <span>Uniquement cette édition <small>ISBN {{ selected.isbn13 }}</small></span>
+        </label>
+        @if (!selected.workId) {
+          <p class="manual-request-edition-only" data-testid="manual-request-edition-only">Ce livre ne peut être suivi que dans cette édition.</p>
+        }
+      </fieldset>
+    }
+
+    @if (loadingStock()) {
+      <div class="manual-request-stock-loading" role="status">Vérification du stock…</div>
+    } @else if (stock(); as currentStock) {
+      @if (currentStock.quantityAvailable + currentStock.quantityAnnounced > 0) {
+        <div class="manual-request-stock-panel" data-testid="manual-request-stock">
+          <span class="manual-request-stock-icon" aria-hidden="true">▣</span>
+          <div>
+            <strong>Déjà à la bourse</strong>
+            <p>{{ stockSummary(currentStock) }}</p>
+          </div>
+          <button class="button button-primary" data-testid="manual-request-pick-from-stock" type="button" [disabled]="saving()" (click)="add(true)">Prélever un exemplaire</button>
+        </div>
+      }
+    }
+
+    <footer class="manual-request-add-actions">
+      <button class="button button-outline" data-testid="manual-request-add-cancel" type="button" [disabled]="saving()" (click)="closed.emit()">Annuler</button>
+      <button class="button button-dark" data-testid="manual-request-add-submit" type="button" [disabled]="saving() || !selectedBook()?.isbn13" (click)="add(false)">
+        {{ saving() ? 'Ajout…' : 'Ajouter la demande' }}
+      </button>
+    </footer>
+  </section>
+</div>

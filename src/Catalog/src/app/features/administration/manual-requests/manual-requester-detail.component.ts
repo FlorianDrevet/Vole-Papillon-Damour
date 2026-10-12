@@ -8,7 +8,6 @@ import {
   CatalogManualRequester,
   CatalogManualRequesterWrite,
 } from '../../../core/catalog.models';
-import {formatManualRequesterPhone} from './manual-request-format';
 
 const NEW_REQUESTER_KEY = 'nouveau';
 
@@ -26,7 +25,6 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   @Output() addBookRequested = new EventEmitter<string>();
 
   @ViewChild('deleteDialog') private deleteDialog?: ElementRef<HTMLElement>;
-  @ViewChild('deleteTrigger') private deleteTrigger?: ElementRef<HTMLButtonElement>;
 
   readonly document = inject(DOCUMENT);
   readonly requester = signal<CatalogManualRequester | null>(null);
@@ -38,6 +36,8 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   readonly consentError = signal(false);
   readonly phoneError = signal(false);
   readonly deleteDialogOpen = signal(false);
+  readonly addBookDialogOpen = signal(false);
+  readonly addBookRequesterId = signal<string | null>(null);
 
   lastName = '';
   firstName = '';
@@ -124,6 +124,7 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
         }));
         this.requesterCreated.emit(created.requesterId);
         this.addBookRequested.emit(created.requesterId);
+        this.openAddBookDialog(created.requesterId);
       } else {
         await firstValueFrom(this.api.updateManualRequester(this.accessToken, this.requesterId, request));
         this.success.set('Coordonnées enregistrées');
@@ -169,7 +170,19 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   addBook(): void {
     if (!this.isNew && !this.requester()?.erased) {
       this.addBookRequested.emit(this.requesterId);
+      this.openAddBookDialog(this.requesterId);
     }
+  }
+
+  closeAddBook(): void {
+    this.addBookDialogOpen.set(false);
+    this.addBookRequesterId.set(null);
+  }
+
+  async onBookAdded(): Promise<void> {
+    this.closeAddBook();
+    this.success.set('Livre ajouté à la demande');
+    await this.loadRequester();
   }
 
   async pick(item: CatalogManualRequestItem): Promise<void> {
@@ -244,10 +257,6 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
     return clauses.join(' ');
   }
 
-  formatPhone(value: string | null): string {
-    return formatManualRequesterPhone(value);
-  }
-
   formatDate(value: string | null): string {
     if (!value) {
       return 'date inconnue';
@@ -275,6 +284,11 @@ export class ManualRequesterDetailComponent implements OnChanges, AfterViewInit 
   private isValidPhone(value: string): boolean {
     const normalized = value.trim().replace(/[\s().-]/g, '');
     return /^(?:0[1-9]\d{8}|\+[1-9]\d{7,14})$/.test(normalized);
+  }
+
+  private openAddBookDialog(requesterId: string): void {
+    this.addBookRequesterId.set(requesterId);
+    this.addBookDialogOpen.set(true);
   }
 
   @HostListener('document:keydown', ['$event'])
