@@ -384,6 +384,50 @@ public sealed class BookAlertOutboxTests
     }
 
     [Fact]
+    public async Task GetPendingDelivery_LoadsScheduleAndAddressOfTheOpeningFair()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        var fair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-04T07:00:00+00:00"),
+            DateTimeOffset.Parse("2026-09-04T15:00:00+00:00"),
+            new Adresse(12, "Saint-Just", "rue des Fleurs", 1000));
+        var session = await fixture.AddSessionAsync(member.Id, ScanMode.NextFair, fair.Id);
+        await fixture.AddAnnouncementEntryAsync(session, book, member.Id, fair.Id);
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var delivery = await fixture.QueueClaimAndLoadDeliveryAsync(session);
+
+        delivery.RecipientName.Should().Be("Prénom");
+        var bookFair = delivery.Fairs.Should().ContainSingle().Subject;
+        bookFair.AssoEventsId.Should().Be(fair.Id.Value);
+        bookFair.OpeningAt.Should().Be(DateTimeOffset.Parse("2026-09-04T07:00:00+00:00"));
+        bookFair.DoorsOpenAt.Should().Be(DateTimeOffset.Parse("2026-09-04T07:00:00+00:00"));
+        bookFair.DoorsCloseAt.Should().Be(DateTimeOffset.Parse("2026-09-05T15:00:00+00:00"));
+        bookFair.Address.Should().Be("12 rue des Fleurs, 01000 Saint-Just");
+    }
+
+    [Fact]
+    public async Task GetPendingDelivery_WithoutDoorHoursLeavesTheScheduleEmpty()
+    {
+        await using var fixture = await BookAlertFixture.CreateAsync();
+        var member = await fixture.AddMemberAsync("member@example.org");
+        var book = await fixture.AddBookAsync("9782070363735", "Titre");
+        await fixture.AddFairAsync();
+        var session = await fixture.AddSessionAsync(member.Id);
+        await fixture.AddDirectEntryAsync(session, book, member.Id);
+        await fixture.AddWatchlistAsync(member.Id, book);
+
+        var delivery = await fixture.QueueClaimAndLoadDeliveryAsync(session);
+
+        var bookFair = delivery.Fairs.Should().ContainSingle().Subject;
+        bookFair.DoorsOpenAt.Should().BeNull();
+        bookFair.DoorsCloseAt.Should().BeNull();
+        bookFair.Address.Should().Be("Rue de test, 75000 Paris");
+    }
+
+    [Fact]
     public async Task CancelPendingForSession_CancelsOnlyPendingAlertMessages()
     {
         await using var fixture = await BookAlertFixture.CreateAsync();
@@ -987,7 +1031,10 @@ public sealed class BookAlertOutboxTests
             return session;
         }
 
-        public async Task<AssoEvents> AddFairAsync(DateTimeOffset? hourOpenDoors = null)
+        public async Task<AssoEvents> AddFairAsync(
+            DateTimeOffset? hourOpenDoors = null,
+            DateTimeOffset? hourCloseDoors = null,
+            Adresse? address = null)
         {
             var fair = AssoEvents.Create(
                 "Test book fair",
@@ -996,9 +1043,9 @@ public sealed class BookAlertOutboxTests
                 DateTimeOffset.Parse("2026-09-04T18:00:00+00:00"),
                 DateTimeOffset.Parse("2026-09-05T18:00:00+00:00"),
                 hourOpenDoors,
+                hourCloseDoors,
                 null,
-                null,
-                new Adresse(null, "Paris", "Rue de test", 75000),
+                address ?? new Adresse(null, "Paris", "Rue de test", 75000),
                 null,
                 [],
                 string.Empty);

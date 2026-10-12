@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Vole_Papillon_Damour.Application.Common.Models;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Domain.AssociationSettingsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
+using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
@@ -586,16 +588,31 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             return null;
         }
 
-        var recipientName = user.Name is null
-            ? null
-            : $"{user.Name.FirstName} {user.Name.LastName}".Trim();
+        var openingFairIds = eligibleItems
+            .Select(item => item.OpeningFairId)
+            .OfType<Guid>()
+            .Distinct()
+            .Select(AssoEventsId.Create)
+            .ToArray();
+        BookAlertFair[] fairs = openingFairIds.Length == 0
+            ? []
+            : (await dbContext.AssoEvents
+                    .AsNoTracking()
+                    .WhereActiveBookFair()
+                    .Where(fair => openingFairIds.Contains(fair.Id))
+                    .ToListAsync(cancellationToken))
+                .Select(ToBookAlertFair)
+                .ToArray();
+
+        var recipientFirstName = user.Name?.FirstName?.Trim();
         return new BookAlertDelivery(
             message.Id,
             memberId.Value,
             user.Email,
-            string.IsNullOrWhiteSpace(recipientName) ? null : recipientName,
+            string.IsNullOrWhiteSpace(recipientFirstName) ? null : recipientFirstName,
             eligibleItems,
-            eligibleRareItems);
+            eligibleRareItems,
+            fairs);
     }
 
     public async Task<int> CancelAsync(
@@ -1137,6 +1154,39 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             item.Title,
             item.AuthorMention,
             item.Slug);
+    }
+
+    private static BookAlertFair ToBookAlertFair(AssoEvents fair)
+    {
+        return new BookAlertFair(
+            fair.Id.Value,
+            BookFairSchedule.GetOpeningInstant(fair),
+            fair.HourOpenDoors is null ? null : BookFairSchedule.GetOpeningInstant(fair),
+            fair.HourCloseDoors is null ? null : BookFairSchedule.GetClosingInstant(fair),
+            FormatAddress(fair.Adresse));
+    }
+
+    private static string? FormatAddress(Adresse? address)
+    {
+        if (address is null)
+        {
+            return null;
+        }
+
+        var street = string.Join(
+            ' ',
+            new[] { address.RoadNumber?.ToString(CultureInfo.InvariantCulture), address.Road?.Trim() }
+                .Where(part => !string.IsNullOrWhiteSpace(part)));
+        var city = string.Join(
+            ' ',
+            new[]
+                {
+                    address.CityCode > 0 ? address.CityCode.ToString("D5", CultureInfo.InvariantCulture) : null,
+                    address.City?.Trim()
+                }
+                .Where(part => !string.IsNullOrWhiteSpace(part)));
+        var line = string.Join(", ", new[] { street, city }.Where(part => part.Length > 0));
+        return line.Length == 0 ? null : line;
     }
 
     private static bool Matches(
