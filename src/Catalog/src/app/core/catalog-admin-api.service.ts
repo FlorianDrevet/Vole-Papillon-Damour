@@ -49,6 +49,19 @@ import {
   CatalogNotFoundSummary,
   CatalogNotFoundSummaryTarget,
   CatalogClosedNotFoundReports,
+  CatalogManualBookRequestCreated,
+  CatalogManualBookRequestWrite,
+  CatalogManualRequestParams,
+  CatalogManualRequestQueue,
+  CatalogManualRequestRefusal,
+  CatalogManualRequestRelease,
+  CatalogManualRequestStock,
+  CatalogManualRequestSummary,
+  CatalogManualRequester,
+  CatalogManualRequesterCreate,
+  CatalogManualRequesterCreated,
+  CatalogManualRequesterDeletion,
+  CatalogManualRequesterWrite,
 } from './catalog.models';
 
 type QueryValue = string | number | boolean | null | undefined;
@@ -548,6 +561,118 @@ export class CatalogAdminApiService {
     return this.http.post<CatalogNotFoundClosure>(
       `${this.apiUrl}/books/admin/not-found-reports/${targetPath}/${encodeURIComponent(target.reference)}/${action}`,
       body,
+      this.options(accessToken),
+    );
+  }
+
+  getManualRequests(
+    accessToken: string,
+    params: CatalogManualRequestParams,
+  ): Observable<CatalogManualRequestQueue> {
+    return this.http.get<CatalogManualRequestQueue>(
+      `${this.apiUrl}/books/admin/manual-requests`,
+      this.options(accessToken, this.params(params)),
+    );
+  }
+
+  getManualRequestSummary(accessToken: string): Observable<CatalogManualRequestSummary> {
+    return this.http.get<CatalogManualRequestSummary>(
+      `${this.apiUrl}/books/admin/manual-requests/summary`,
+      this.options(accessToken),
+    );
+  }
+
+  getManualRequestStock(
+    accessToken: string,
+    target: {scope: 'Work'; workId: string} | {scope: 'Edition'; isbn13: string},
+  ): Observable<CatalogManualRequestStock> {
+    return this.http.get<CatalogManualRequestStock>(
+      `${this.apiUrl}/books/admin/manual-requests/stock`,
+      this.options(accessToken, this.params(target)),
+    );
+  }
+
+  getManualRequester(accessToken: string, requesterId: string): Observable<CatalogManualRequester> {
+    return this.http.get<CatalogManualRequester>(
+      `${this.apiUrl}/books/admin/manual-requesters/${encodeURIComponent(requesterId)}`,
+      this.options(accessToken),
+    );
+  }
+
+  createManualRequester(
+    accessToken: string,
+    request: CatalogManualRequesterCreate,
+  ): Observable<CatalogManualRequesterCreated> {
+    return this.http.post<CatalogManualRequesterCreated>(
+      `${this.apiUrl}/books/admin/manual-requesters`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  updateManualRequester(
+    accessToken: string,
+    requesterId: string,
+    request: CatalogManualRequesterWrite,
+  ): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/books/admin/manual-requesters/${encodeURIComponent(requesterId)}`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  deleteManualRequester(accessToken: string, requesterId: string): Observable<CatalogManualRequesterDeletion> {
+    return this.http.delete<CatalogManualRequesterDeletion>(
+      `${this.apiUrl}/books/admin/manual-requesters/${encodeURIComponent(requesterId)}`,
+      this.options(accessToken),
+    );
+  }
+
+  addManualBookRequest(
+    accessToken: string,
+    requesterId: string,
+    request: CatalogManualBookRequestWrite,
+  ): Observable<CatalogManualBookRequestCreated> {
+    return this.http.post<CatalogManualBookRequestCreated>(
+      `${this.apiUrl}/books/admin/manual-requesters/${encodeURIComponent(requesterId)}/requests`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  pickManualRequest(accessToken: string, requestId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/books/admin/manual-requests/${encodeURIComponent(requestId)}/pick`,
+      null,
+      this.options(accessToken),
+    );
+  }
+
+  markManualRequestGiven(accessToken: string, requestId: string): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/books/admin/manual-requests/${encodeURIComponent(requestId)}/given`,
+      null,
+      this.options(accessToken),
+    );
+  }
+
+  refuseManualRequest(
+    accessToken: string,
+    requestId: string,
+    request: CatalogManualRequestRefusal,
+  ): Observable<CatalogManualRequestRelease> {
+    return this.http.post<CatalogManualRequestRelease>(
+      `${this.apiUrl}/books/admin/manual-requests/${encodeURIComponent(requestId)}/refuse`,
+      request,
+      this.options(accessToken),
+    );
+  }
+
+  cancelManualRequest(accessToken: string, requestId: string): Observable<CatalogManualRequestRelease> {
+    return this.http.post<CatalogManualRequestRelease>(
+      `${this.apiUrl}/books/admin/manual-requests/${encodeURIComponent(requestId)}/cancel`,
+      null,
       this.options(accessToken),
     );
   }

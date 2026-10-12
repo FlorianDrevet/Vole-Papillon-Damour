@@ -15,4 +15,11 @@ describe('catalog administration routes', () => {
     expect(isCatalogAdminSection('not-found')).toBeTrue();
     expect(catalogAdminSectionPath('not-found')).toBe('/administration/not-found');
   });
+
+  it('recognizes manual requests immediately after not-found', () => {
+    expect(CATALOG_ADMIN_SECTIONS.indexOf('manual-requests'))
+      .toBe(CATALOG_ADMIN_SECTIONS.indexOf('not-found') + 1);
+    expect(isCatalogAdminSection('manual-requests')).toBeTrue();
+    expect(catalogAdminSectionPath('manual-requests')).toBe('/administration/manual-requests');
+  });
 });

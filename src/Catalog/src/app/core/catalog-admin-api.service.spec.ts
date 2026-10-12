@@ -19,6 +19,14 @@ import {
   CatalogClosedNotFoundReports,
   CatalogNotFoundSummary,
   CatalogNotFoundClosure,
+  CatalogManualRequestQueue,
+  CatalogManualRequestSummary,
+  CatalogManualRequestStock,
+  CatalogManualRequester,
+  CatalogManualRequesterCreated,
+  CatalogManualBookRequestCreated,
+  CatalogManualRequestRelease,
+  CatalogManualRequesterDeletion,
 } from './catalog.models';
 
 describe('CatalogAdminApiService', () => {
@@ -141,6 +149,122 @@ describe('CatalogAdminApiService', () => {
     expect(request.request.body).toEqual(body);
     expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
     request.flush(response);
+  });
+
+  it('loads the manual request queue with tab, search, paging and bearer token', () => {
+    const response = {items: [], totalCount: 0, foundCount: 0, searchingCount: 0, closedCount: 0,
+      foundOverdueCount: 0, page: 2, pageSize: 25} as CatalogManualRequestQueue;
+    service.getManualRequests('access-token', {tab: 'found', q: 'Jeanne 06 12', page: 2, pageSize: 25})
+      .subscribe(result => expect(result).toBe(response));
+
+    const request = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/manual-requests`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('tab')).toBe('found');
+    expect(request.request.params.get('q')).toBe('Jeanne 06 12');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(request.request.params.get('pageSize')).toBe('25');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(response);
+  });
+
+  it('loads manual request summary and stock by target', () => {
+    const summary = {foundCount: 3, foundOverdueCount: 1} as CatalogManualRequestSummary;
+    const stock = {quantityAvailable: 2, quantityAnnounced: 4, nextFairStart: '2026-10-20T10:00:00+02:00'} as CatalogManualRequestStock;
+    service.getManualRequestSummary('access-token').subscribe(result => expect(result).toBe(summary));
+    service.getManualRequestStock('access-token', {scope: 'Work', workId: 'work/1'})
+      .subscribe(result => expect(result).toBe(stock));
+
+    const summaryRequest = http.expectOne(`${environment.apiUrl}/books/admin/manual-requests/summary`);
+    expect(summaryRequest.request.method).toBe('GET');
+    expect(summaryRequest.request.headers.get('Authorization')).toBe('Bearer access-token');
+    summaryRequest.flush(summary);
+    const stockRequest = http.expectOne(request =>
+      request.url === `${environment.apiUrl}/books/admin/manual-requests/stock` &&
+      request.params.get('scope') === 'Work' && request.params.get('workId') === 'work/1');
+    expect(stockRequest.request.method).toBe('GET');
+    expect(stockRequest.request.headers.get('Authorization')).toBe('Bearer access-token');
+    stockRequest.flush(stock);
+  });
+
+  it('gets, creates, updates and deletes a manual requester', () => {
+    const requester = {requesterId: 'requester-id', lastName: 'Martin', firstName: 'Jeanne', phone: '0612345678',
+      erased: false, consentRecordedAt: '2026-10-12T10:00:00Z', consentRecordedByName: 'Admin', requests: []} as CatalogManualRequester;
+    const created = {requesterId: 'new-requester'} as CatalogManualRequesterCreated;
+    const deletion = {cancelledRequestCount: 2, notifiedMemberCount: 1} as CatalogManualRequesterDeletion;
+
+    service.getManualRequester('access-token', 'requester-id').subscribe(result => expect(result).toBe(requester));
+    service.createManualRequester('access-token', {
+      lastName: 'Martin', firstName: 'Jeanne', phone: '06 12 34 56 78', consentGiven: true,
+    }).subscribe(result => expect(result).toBe(created));
+    service.updateManualRequester('access-token', 'requester-id', {
+      lastName: 'Durand', firstName: 'Alice', phone: '0611111111',
+    }).subscribe();
+    service.deleteManualRequester('access-token', 'requester-id').subscribe(result => expect(result).toBe(deletion));
+
+    const get = http.expectOne(request =>
+      request.url === `${environment.apiUrl}/books/admin/manual-requesters/requester-id` && request.method === 'GET');
+    expect(get.request.method).toBe('GET');
+    expect(get.request.headers.get('Authorization')).toBe('Bearer access-token');
+    get.flush(requester);
+    const create = http.expectOne(request =>
+      request.url === `${environment.apiUrl}/books/admin/manual-requesters` && request.method === 'POST');
+    expect(create.request.method).toBe('POST');
+    expect(create.request.headers.get('Authorization')).toBe('Bearer access-token');
+    expect(create.request.body).toEqual({
+      lastName: 'Martin', firstName: 'Jeanne', phone: '06 12 34 56 78', consentGiven: true,
+    });
+    create.flush(created);
+    const update = http.expectOne(request =>
+      request.url === `${environment.apiUrl}/books/admin/manual-requesters/requester-id` && request.method === 'PUT');
+    expect(update.request.method).toBe('PUT');
+    expect(update.request.headers.get('Authorization')).toBe('Bearer access-token');
+    expect(update.request.body).toEqual({lastName: 'Durand', firstName: 'Alice', phone: '0611111111'});
+    update.flush(null);
+    const remove = http.expectOne(request =>
+      request.url === `${environment.apiUrl}/books/admin/manual-requesters/requester-id` && request.method === 'DELETE');
+    expect(remove.request.method).toBe('DELETE');
+    expect(remove.request.headers.get('Authorization')).toBe('Bearer access-token');
+    remove.flush(deletion);
+  });
+
+  it('creates, picks, gives, refuses and cancels manual book requests', () => {
+    const created = {requestId: 'request-id', status: 'Searching'} as CatalogManualBookRequestCreated;
+    const release = {notifiedMemberCount: 2} as CatalogManualRequestRelease;
+    const addBody = {
+      scope: 'Edition', isbn13: '9782070612758', title: 'Le Petit Prince', authors: 'Antoine de Saint-Exupéry',
+      publisher: 'Gallimard', publicationYear: 1943, pickFromStock: false,
+    } as const;
+
+    service.addManualBookRequest('access-token', 'requester-id', addBody).subscribe(result => expect(result).toBe(created));
+    service.pickManualRequest('access-token', 'request-id').subscribe();
+    service.markManualRequestGiven('access-token', 'request-id').subscribe();
+    service.refuseManualRequest('access-token', 'request-id', {keepSearching: true})
+      .subscribe(result => expect(result).toBe(release));
+    service.cancelManualRequest('access-token', 'request-id').subscribe(result => expect(result).toBe(release));
+
+    const add = http.expectOne(`${environment.apiUrl}/books/admin/manual-requesters/requester-id/requests`);
+    expect(add.request.method).toBe('POST');
+    expect(add.request.headers.get('Authorization')).toBe('Bearer access-token');
+    expect(add.request.body).toEqual(addBody);
+    add.flush(created);
+    const pick = http.expectOne(`${environment.apiUrl}/books/admin/manual-requests/request-id/pick`);
+    expect(pick.request.method).toBe('POST');
+    expect(pick.request.headers.get('Authorization')).toBe('Bearer access-token');
+    expect(pick.request.body).toBeNull();
+    pick.flush(null);
+    const given = http.expectOne(`${environment.apiUrl}/books/admin/manual-requests/request-id/given`);
+    expect(given.request.method).toBe('POST');
+    expect(given.request.headers.get('Authorization')).toBe('Bearer access-token');
+    given.flush(null);
+    const refuse = http.expectOne(`${environment.apiUrl}/books/admin/manual-requests/request-id/refuse`);
+    expect(refuse.request.method).toBe('POST');
+    expect(refuse.request.headers.get('Authorization')).toBe('Bearer access-token');
+    expect(refuse.request.body).toEqual({keepSearching: true});
+    refuse.flush(release);
+    const cancel = http.expectOne(`${environment.apiUrl}/books/admin/manual-requests/request-id/cancel`);
+    expect(cancel.request.method).toBe('POST');
+    expect(cancel.request.headers.get('Authorization')).toBe('Bearer access-token');
+    cancel.flush(release);
   });
 
   it('loads the dashboard and forwards its optional period', () => {
