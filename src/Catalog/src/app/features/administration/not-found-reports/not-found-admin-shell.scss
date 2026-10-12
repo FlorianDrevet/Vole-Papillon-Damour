@@ -1,6 +1,19 @@
-.admin-nav-badge-not-found {
+.admin-nav-badge-not-found,
+.admin-nav-badge-manual-requests {
   background: var(--catalog-orange);
   color: var(--catalog-white);
+}
+
+.dashboard-attention-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.dashboard-attention-tiles .not-found-dashboard-tile {
+  height: 100%;
+  margin-top: 0;
 }
 
 .not-found-dashboard-tile {
@@ -72,6 +85,35 @@
   font-weight: 600;
 }
 
+.manual-request-dashboard-tile {
+  border-color: #a9d3d6;
+  border-left-color: var(--catalog-verdict-hold);
+  background: #eef7f7;
+}
+
+.manual-request-dashboard-tile:hover {
+  border-color: var(--catalog-verdict-hold);
+}
+
+.manual-request-dashboard-icon {
+  color: var(--catalog-verdict-hold);
+}
+
+.manual-request-dashboard-copy {
+  min-width: 0;
+}
+
+.manual-request-dashboard-kicker {
+  color: var(--catalog-verdict-hold);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+}
+
+.manual-request-dashboard-overdue {
+  color: #a33a0a;
+  font-weight: 600;
+}
+
 .not-found-book-alert {
   display: grid;
   gap: 12px;
@@ -138,6 +180,11 @@
 }
 
 @media (max-width: 680px) {
+  .dashboard-attention-tiles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
   .not-found-dashboard-tile {
     grid-template-columns: 40px minmax(0, 1fr);
   }

@@ -226,8 +226,8 @@
                       </button>
                     }
                     @if (manualRequestSummary()?.foundCount; as foundCount) {
-                      <button class="manual-request-dashboard-tile" data-testid="manual-request-dashboard-tile" type="button" (click)="selectSection('manual-requests')">
-                        <span class="manual-request-dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.3a11 11 0 0 0 6.2 6.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1-2-2z"></path></svg></span>
+                      <button class="not-found-dashboard-tile manual-request-dashboard-tile" data-testid="manual-request-dashboard-tile" type="button" (click)="selectSection('manual-requests')">
+                        <span class="not-found-dashboard-icon manual-request-dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.3a11 11 0 0 0 6.2 6.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1-2-2z"></path></svg></span>
                         <span class="manual-request-dashboard-copy">
                           <span class="manual-request-dashboard-kicker">Demandes manuelles</span>
                           <strong>{{ formatNumber(foundCount) }} {{ foundCount === 1 ? 'livre' : 'livres' }} à remettre</strong>
@@ -235,7 +235,7 @@
                             <span class="manual-request-dashboard-overdue">dont {{ formatNumber(overdueCount) }} {{ overdueCount === 1 ? 'trouvé' : 'trouvés' }} il y a plus de 14 jours</span>
                           }
                         </span>
-                        <span class="manual-request-dashboard-link">Ouvrir la liste →</span>
+                        <span class="not-found-dashboard-link">Ouvrir la liste →</span>
                       </button>
                     }
                   </div>
