@@ -440,6 +440,7 @@ export class ScanWorkflowService {
       await this.store.saveSession({
         ...session,
         counts: {
+          ...counts,
           scannedCount: counts.scannedCount + 1,
           keptCount: counts.keptCount + previousPendingEntries.length,
           rejectedCount: counts.rejectedCount,
@@ -485,6 +486,7 @@ export class ScanWorkflowService {
           await this.store.saveSession({
             ...currentSession,
             counts: {
+              ...counts,
               scannedCount: counts.scannedCount + (movedFromAnotherSession ? 1 : 0),
               keptCount: counts.keptCount + (kept ? 1 : 0),
               rejectedCount: counts.rejectedCount + (kept ? 0 : 1),

@@ -20,7 +20,10 @@ export class ScanSessionSummaryService {
   ): void {
     this.summaryState.set({
       session: {...session},
-      counts: {...counts},
+      counts: {
+        ...counts,
+        manualRequestMissedIsbns: [...counts.manualRequestMissedIsbns],
+      },
       durationLabel,
     });
   }

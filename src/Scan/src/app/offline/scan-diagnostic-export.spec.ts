@@ -41,7 +41,13 @@ describe('scan diagnostic export', () => {
         closeReason: 'Manual',
         requestedAt: '2026-09-09T09:42:00.000Z',
       }],
-      sessionCounts: {scannedCount: 2, keptCount: 1, rejectedCount: 0},
+      sessionCounts: {
+        scannedCount: 2,
+        keptCount: 1,
+        rejectedCount: 0,
+        heldForManualRequestCount: 0,
+        manualRequestMissedIsbns: [],
+      },
       outbox: [
         createOutboxEntry('Orphaned', 'gesture-orphaned'),
         createOutboxEntry('Quarantined', 'gesture-quarantined'),

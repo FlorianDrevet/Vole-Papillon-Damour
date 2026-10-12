@@ -201,6 +201,8 @@ export interface ScanSessionCounts {
   scannedCount: number;
   keptCount: number;
   rejectedCount: number;
+  heldForManualRequestCount: number;
+  manualRequestMissedIsbns: string[];
 }
 
 export interface ScanSessionCloseRequest {
@@ -234,6 +236,7 @@ export interface ScanOutboxEntry {
   lastError: string | null;
   lastFailureKind?: ScanFailureKind | null;
   setAsideReason?: ScanSetAsideReason | null;
+  manualRequestOutcome?: 'Held' | 'Missed' | null;
 }
 
 export interface ScanSaleOutboxEntry {

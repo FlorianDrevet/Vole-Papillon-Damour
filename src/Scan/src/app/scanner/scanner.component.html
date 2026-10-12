@@ -490,6 +490,19 @@
           <article><strong>{{ sessionRejectedCount }}</strong><span>Écartés</span></article>
         </div>
 
+        <div
+          *ngIf="manualRequestHoldSummary || completedSessionCounts.manualRequestMissedIsbns.length > 0"
+          class="manual-request-session-summary">
+          <p *ngIf="manualRequestHoldSummary" class="manual-request-summary-held">
+            {{ manualRequestHoldSummary }}
+          </p>
+          <p
+            *ngFor="let isbn13 of completedSessionCounts.manualRequestMissedIsbns"
+            class="manual-request-summary-missed">
+            {{ manualRequestMissedMessage(isbn13) }}
+          </p>
+        </div>
+
         <article class="session-effect-card">
           <div class="effect-row">
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

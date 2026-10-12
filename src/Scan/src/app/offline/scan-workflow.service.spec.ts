@@ -174,6 +174,8 @@ describe('ScanWorkflowService', () => {
       scannedCount: 0,
       keptCount: 0,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
   });
 
@@ -246,6 +248,8 @@ describe('ScanWorkflowService', () => {
       scannedCount: 1,
       keptCount: 1,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
   });
 
@@ -292,7 +296,13 @@ describe('ScanWorkflowService', () => {
       remoteSessionId: null,
       closeRequested: true,
       closeReason: 'Manual',
-      counts: {scannedCount: 1, keptCount: 1, rejectedCount: 0},
+      counts: {
+        scannedCount: 1,
+        keptCount: 1,
+        rejectedCount: 0,
+        heldForManualRequestCount: 0,
+        manualRequestMissedIsbns: [],
+      },
     }));
     expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.clientSessionId)
       .toBe(recovered!.clientSessionId);
@@ -349,6 +359,8 @@ describe('ScanWorkflowService', () => {
       scannedCount: 1,
       keptCount: 0,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
   });
 

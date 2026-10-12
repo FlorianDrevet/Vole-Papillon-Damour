@@ -166,6 +166,42 @@ describe('ScanSyncService', () => {
       scannedCount: 1,
       keptCount: 1,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    });
+  });
+
+  it('records held and missed manual request outcomes in the session summary', async () => {
+    const heldIsbn = '9782070363735';
+    const missedIsbn = '9783140464079';
+    await store.putCatalogBooks([
+      {...createBook(heldIsbn), isManuallyRequested: true},
+      {...createBook(missedIsbn), isManuallyRequested: true},
+    ]);
+
+    const held = await workflow.recordScan(heldIsbn, new Date('2026-09-03T08:01:00.000Z'));
+    await workflow.decide(held.entry.clientGestureId, true);
+    const missed = await workflow.recordScan(missedIsbn, new Date('2026-09-03T08:02:00.000Z'));
+    await workflow.decide(missed.entry.clientGestureId, true);
+    const session = await workflow.getSession();
+    api.scanBook.and.returnValues(
+      of({...createScanResponse(), isbn13: heldIsbn, heldForManualRequest: true}),
+      of({...createScanResponse(), isbn13: missedIsbn, heldForManualRequest: false}),
+    );
+    const recordManualRequestOutcome = spyOn(store, 'recordManualRequestOutcome').and.callThrough();
+
+    await service.flushOutbox();
+
+    expect(recordManualRequestOutcome.calls.allArgs()).toEqual([
+      [held.entry.clientGestureId, 'Held'],
+      [missed.entry.clientGestureId, 'Missed'],
+    ]);
+    expect(await workflow.getSessionCounts(session!.clientSessionId)).toEqual({
+      scannedCount: 2,
+      keptCount: 2,
+      rejectedCount: 0,
+      heldForManualRequestCount: 1,
+      manualRequestMissedIsbns: [missedIsbn],
     });
   });
 
