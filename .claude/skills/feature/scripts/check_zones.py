@@ -17,6 +17,7 @@ ZONE = re.compile(r"\b[A-Z]{1,3}\d+(?:-[\wÀ-ſ]+)+\b")
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     feature = Path(sys.argv[1])
@@ -44,7 +45,7 @@ def main():
         for page in re.findall(r"preview/([\w-]+\.html)", line):
             if page not in pages:
                 problems.append(f"ligne {number} : page inexistante preview/{page}")
-        for zone in ZONE.findall(line):
+        for zone in ZONE.findall(re.sub(r"preview/[\w-]+\.html", "", line)):
             if zone not in zones:
                 problems.append(f"ligne {number} : zone inexistante {zone}")
 
