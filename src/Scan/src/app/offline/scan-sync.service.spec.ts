@@ -798,6 +798,7 @@ describe('ScanSyncService', () => {
     return {
       isbn13: '9782070363735',
       verdict: 'FirstCopy',
+      heldForManualRequest: false,
       qtyAvailable: 1,
       qtyAnnounced: 0,
       scanSessionId: 'session-1',

@@ -667,6 +667,7 @@ export class ScanSyncService {
       qtyAnnounced: response.qtyAnnounced ?? current?.qtyAnnounced ?? 0,
       salesCount: response.salesCount ?? current?.salesCount ?? 0,
       isWanted: current?.isWanted ?? false,
+      isManuallyRequested: current?.isManuallyRequested ?? false,
       isRare: current?.isRare ?? isRare,
       updatedAt: new Date().toISOString(),
     };

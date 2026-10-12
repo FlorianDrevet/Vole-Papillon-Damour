@@ -15,6 +15,8 @@
   --scan-red: #b02a33;
   --scan-green: #18703a;
   --scan-purple: #5f3a86;
+  --scan-verdict-hold: #0d5c63;
+  --scan-verdict-hold-soft: #e3f1f2;
 }
 
 * {
@@ -946,6 +948,10 @@ input:focus-visible {
 
 .verdict-card-rare {
   background: var(--scan-purple);
+}
+
+.verdict-card-manual-request {
+  background: var(--scan-verdict-hold);
 }
 
 .verdict-card-first {

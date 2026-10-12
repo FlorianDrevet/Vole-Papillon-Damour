@@ -25,6 +25,7 @@ import {
   PersistentStorageStatus,
   ScanAssociationSettings,
   ScanCatalogBook,
+  ScanManualRequestCandidate,
   ScanLocalStoreError,
   ScanNextBookFair,
   ScanRareBook,
@@ -40,6 +41,10 @@ import {
   ScanPassageAssociationService,
   ScanPassageAssociationState,
 } from '../offline/scan-passage-association.service';
+import {
+  ScanManualRequestLookup,
+  ScanManualRequestService,
+} from '../offline/scan-manual-request.service';
 import {
   ScanRareCashService,
   ScanRareSaleReference,
@@ -144,6 +149,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   cameraActive = false;
   localScan: LocalScanResult | null = null;
   consultationResult: LocalCatalogResult | null = null;
+  manualRequestLookup: ScanManualRequestLookup = {state: 'none'};
   cashItems: CashScanItem[] = [];
   cashAssociationNoticeDismissed = false;
   availableRareBooks: ScanRareBook[] = [];
@@ -215,6 +221,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly sessionSummary: ScanSessionSummaryService | null = null,
     @Optional() private readonly scanRareCash: ScanRareCashService | null = null,
     @Optional() private readonly scanPassageAssociation: ScanPassageAssociationService | null = null,
+    @Optional() private readonly scanManualRequest: ScanManualRequestService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -590,7 +597,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.metadata?.isbn13 ?? this.activeBook?.isbn13 ?? this.isbnInput;
   }
 
-  get activeVerdictKey(): 'TooMany' | 'Wanted' | 'Selling' | 'FirstCopy' | 'Rare' {
+  get activeVerdictKey(): 'ManualRequest' | 'TooMany' | 'Wanted' | 'Selling' | 'FirstCopy' | 'Rare' {
+    if (this.activeVerdict?.verdict === 'ManualRequest' || this.manualRequestLookup.state === 'found') {
+      return 'ManualRequest';
+    }
+
     if (this.activeVerdict?.isRare) {
       return 'Rare';
     }
@@ -607,12 +618,35 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
   }
 
+  get isManualRequestVerdict(): boolean {
+    return this.activeVerdict?.verdict === 'ManualRequest' || this.manualRequestLookup.state === 'found';
+  }
+
+  get manualRequestCandidate(): ScanManualRequestCandidate | null {
+    return this.manualRequestLookup.state === 'found'
+      ? this.manualRequestLookup.candidate
+      : null;
+  }
+
+  formatManualRequestPhone(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+    const groups = digits.match(/\d{1,2}/g);
+    const prefix = phone.trim().startsWith('+') ? '+' : '';
+    return groups ? `${prefix}${groups.join(' ')}` : phone;
+  }
+
+  manualRequestPhoneLink(phone: string): string {
+    return `tel:${phone.replace(/[^\d+]/g, '')}`;
+  }
+
   get verdictTitle(): string {
     if (this.isImmediateRepeatScan) {
       return 'Déjà scanné à l’instant';
     }
 
     switch (this.activeVerdictKey) {
+      case 'ManualRequest':
+        return 'À mettre de côté';
       case 'Rare':
         return 'Bac « livres rares »';
       case 'Wanted':
@@ -631,7 +665,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   get verdictSummary(): string {
     const verdict = this.activeVerdict;
     if (!verdict) {
-      return '';
+      return this.activeVerdictKey === 'ManualRequest' ? 'Demande manuelle' : '';
     }
 
     if (this.isImmediateRepeatScan) {
@@ -639,6 +673,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     switch (this.activeVerdictKey) {
+      case 'ManualRequest':
+        return 'Demande manuelle';
       case 'Rare':
         return 'Signalé par un responsable — ne pas mettre en rayon';
       case 'Wanted':
@@ -742,6 +778,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.refreshView();
 
     const metadataPromise = firstValueFrom(this.metadataService.getMetadata(normalizedIsbn));
+    if (destination === 'tri') {
+      this.startManualRequestLookup(normalizedIsbn, lookupVersion);
+    }
     const localPromise = destination === 'tri' && this.scanWorkflow
       ? this.scanWorkflow.recordScan(normalizedIsbn)
       : (destination === 'cash' || destination === 'consultation') && this.scanWorkflow
@@ -2302,9 +2341,38 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.coverUrl = null;
     this.localScan = null;
     this.consultationResult = null;
+    this.manualRequestLookup = {state: 'none'};
     this.errorMessage = null;
     this.cameraError = null;
     this.isLoading = false;
+  }
+
+  private startManualRequestLookup(isbn13: string, lookupVersion: number): void {
+    if (!this.scanManualRequest) {
+      this.manualRequestLookup = {state: 'none'};
+      return;
+    }
+
+    const online = this.isOnline;
+    this.manualRequestLookup = online ? {state: 'loading'} : {state: 'unavailable'};
+    void this.scanManualRequest.lookup(isbn13, online).then(
+      result => {
+        if (lookupVersion !== this.lookupVersion) {
+          return;
+        }
+        this.manualRequestLookup = result.state === 'loading'
+          ? {state: 'unavailable'}
+          : result;
+        this.refreshView();
+      },
+      () => {
+        if (lookupVersion !== this.lookupVersion) {
+          return;
+        }
+        this.manualRequestLookup = {state: 'unavailable'};
+        this.refreshView();
+      },
+    );
   }
 
   private describeStorageError(error: unknown, fallback: string): string {

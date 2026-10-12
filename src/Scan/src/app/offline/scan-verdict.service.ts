@@ -28,8 +28,10 @@ export class ScanVerdictService {
     const duplicateThreshold = settings?.duplicateThreshold ?? defaultSettings.duplicateThreshold;
     const demandSalesThreshold = settings?.demandSalesThreshold ?? defaultSettings.demandSalesThreshold;
 
-    const verdict = activeRequesterCount > 0
-      ? 'Wanted'
+    const verdict = book?.isManuallyRequested === true
+      ? 'ManualRequest'
+      : activeRequesterCount > 0
+        ? 'Wanted'
       : salesCount >= demandSalesThreshold
         ? 'Selling'
         : totalKnownQuantity >= duplicateThreshold

@@ -27,6 +27,7 @@ import {ScanStatusBarComponent} from '../offline/scan-status-bar.component';
 import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {ScanManualRequestService} from '../offline/scan-manual-request.service';
 import {ScanRareCashService} from '../offline/scan-rare-cash.service';
 import {ScanPassageAssociationService, ScanPassageAssociationState} from '../offline/scan-passage-association.service';
 import {ScanConfirmationService} from '../scan-confirmation.service';
@@ -40,6 +41,7 @@ describe('ScannerComponent', () => {
   let confirmDialog: jasmine.Spy;
   let sessionSummary: ScanSessionSummaryService;
   let rareCash: jasmine.SpyObj<ScanRareCashService>;
+  let manualRequestService: jasmine.SpyObj<ScanManualRequestService>;
   let passageAssociation: ScanPassageAssociationService;
   let passageState: WritableSignal<ScanPassageAssociationState>;
   let commitPassageAssociation: jasmine.Spy;
@@ -65,6 +67,11 @@ describe('ScannerComponent', () => {
     rareCash.findAvailableByIsbn.and.resolveTo(null);
     rareCash.recordSales.and.resolveTo([]);
     rareCash.cancelSale.and.resolveTo('local');
+    manualRequestService = jasmine.createSpyObj<ScanManualRequestService>(
+      'ScanManualRequestService',
+      ['lookup'],
+    );
+    manualRequestService.lookup.and.resolveTo({state: 'none'});
 
     passageState = signal<ScanPassageAssociationState>({kind: 'anonymous'});
     const associationDouble = {
@@ -92,6 +99,7 @@ describe('ScannerComponent', () => {
         ScanStatusService,
         {provide: ScanWorkflowService, useValue: null},
         {provide: ScanRareCashService, useValue: rareCash},
+        {provide: ScanManualRequestService, useValue: manualRequestService},
         {provide: ScanPassageAssociationService, useValue: passageAssociation},
         {provide: ScanConfirmationService, useValue: confirmation},
         ScanSessionSummaryService,
@@ -114,6 +122,74 @@ describe('ScannerComponent', () => {
     expect(metadataService.getMetadata).toHaveBeenCalledOnceWith('9780306406157');
     expect(component.metadata).toEqual(metadata);
     expect(component.errorMessage).toBeNull();
+  });
+
+  it('looks up a manual requester in parallel and overrides a missing local catalog verdict', async () => {
+    const candidate = {
+      requestId: 'request-1',
+      firstName: 'Camille',
+      lastName: 'DUPONT',
+      phone: '0612345678',
+    };
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+    manualRequestService.lookup.and.resolveTo({state: 'found', candidate});
+    component.isOnline = true;
+
+    await component.lookup('9782070363735', 'tri');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(manualRequestService.lookup).toHaveBeenCalledOnceWith('9782070363735', true);
+    expect(component.activeVerdictKey).toBe('ManualRequest');
+    expect(component.verdictTitle).toBe('À mettre de côté');
+    expect(fixture.nativeElement.textContent).toContain('Demande manuelle');
+    expect(fixture.nativeElement.textContent).toContain('Camille DUPONT');
+    expect(fixture.nativeElement.textContent).toContain('06 12 34 56 78');
+  });
+
+  it('shows loading and administrator fallback details for a cached manual request', () => {
+    const manualFixture = TestBed.createComponent(ScannerComponent);
+    const manualComponent = manualFixture.componentInstance;
+    const result = createLocalScanResult();
+    result.entry.verdict = 'ManualRequest';
+    result.verdict.verdict = 'ManualRequest';
+    result.verdict.isRare = true;
+    manualComponent.localScan = result;
+    manualComponent.manualRequestLookup = {state: 'loading'};
+    manualFixture.detectChanges();
+
+    expect(manualFixture.nativeElement.textContent).toContain('À mettre de côté');
+    expect(manualFixture.nativeElement.textContent).toContain('Chargement des coordonnées…');
+    expect(manualFixture.nativeElement.querySelector('[data-testid="manual-request-contact-skeleton"]')).not.toBeNull();
+    expect(manualFixture.nativeElement.textContent).toContain('Fiche livre rare liée');
+    manualFixture.destroy();
+  });
+
+  it('shows the administrator fallback and set-aside action while offline', () => {
+    const manualFixture = TestBed.createComponent(ScannerComponent);
+    const manualComponent = manualFixture.componentInstance;
+    const result = createLocalScanResult();
+    result.entry.verdict = 'ManualRequest';
+    result.verdict.verdict = 'ManualRequest';
+    manualComponent.isOnline = false;
+    manualComponent.localScan = result;
+    manualComponent.manualRequestLookup = {state: 'unavailable'};
+    manualFixture.detectChanges();
+
+    expect(manualFixture.nativeElement.textContent).toContain('Coordonnées dans l’administration');
+    expect(manualFixture.nativeElement.textContent).toContain('Administration → Demandes manuelles');
+    expect(manualFixture.nativeElement.textContent).toContain('Scanner le suivant vaut « mettre de côté »');
+    expect(manualFixture.nativeElement.querySelector('.decision-keep')?.textContent).toContain('Mettre de côté');
+    manualFixture.destroy();
+  });
+
+  it('does not look up manual requester contacts in cash mode', async () => {
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+    component.screen = 'cash';
+
+    await component.lookup('9782070363735', 'cash');
+
+    expect(manualRequestService.lookup).not.toHaveBeenCalled();
   });
 
   it('subscribes to a login request started from the scanner surface', () => {

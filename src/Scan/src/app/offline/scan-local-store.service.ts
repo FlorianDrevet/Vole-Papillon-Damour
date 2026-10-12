@@ -951,6 +951,7 @@ export class ScanLocalStoreService {
             qtyAnnounced: 0,
             salesCount: 0,
             isWanted: false,
+            isManuallyRequested: false,
             isRare: false,
             updatedAt: entry.occurredAt,
           };

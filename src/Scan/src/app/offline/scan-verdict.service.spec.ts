@@ -31,6 +31,29 @@ describe('ScanVerdictService', () => {
     expect(result.activeRequesterCount).toBe(1);
   });
 
+  it('gives a manual request priority over an existing wish, sales and duplicate thresholds', () => {
+    const result = service.calculate({
+      ...createBook(),
+      qtyAvailable: 10,
+      qtyAnnounced: 10,
+      salesCount: 10,
+      isWanted: true,
+      isManuallyRequested: true,
+    }, createSettings(5, 1));
+
+    expect(result.verdict).toBe('ManualRequest');
+    expect(result.activeRequesterCount).toBe(1);
+  });
+
+  it('keeps existing rules for catalog records without the manual request flag', () => {
+    const legacyBook = {
+      ...createBook(),
+      salesCount: 1,
+    };
+
+    expect(service.calculate(legacyBook, createSettings(5, 1)).verdict).toBe('Selling');
+  });
+
   it('gives a selling title priority over the duplicate threshold', () => {
     const result = service.calculate({
       ...createBook(),
