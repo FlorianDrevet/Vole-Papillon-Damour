@@ -28,6 +28,102 @@
   background: var(--admin-paper);
 }
 
+.dashboard-attention-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.dashboard-attention-tiles .not-found-dashboard-tile {
+  height: 100%;
+  margin-top: 0;
+}
+
+.manual-request-dashboard-tile {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 88px;
+  padding: 16px 20px;
+  border: 1px solid #a9d3d6;
+  border-left: 4px solid var(--catalog-verdict-hold);
+  border-radius: 4px;
+  background: #eef7f7;
+  color: var(--admin-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.manual-request-dashboard-tile:hover {
+  border-color: var(--catalog-verdict-hold);
+}
+
+.manual-request-dashboard-tile:focus-visible {
+  outline: 3px solid var(--admin-blue-bright);
+  outline-offset: 3px;
+}
+
+.manual-request-dashboard-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #e3f1f2;
+  color: var(--catalog-verdict-hold);
+}
+
+.manual-request-dashboard-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.manual-request-dashboard-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.manual-request-dashboard-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--catalog-verdict-hold);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.manual-request-dashboard-copy strong {
+  color: var(--admin-ink);
+  font: 500 1.28rem/1.1 'Newsreader', Georgia, serif;
+}
+
+.manual-request-dashboard-overdue {
+  color: #a33a0a;
+  font-size: .8rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.manual-request-dashboard-link {
+  color: var(--catalog-blue);
+  font-size: .8rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
 .admin-heading-split,
 .period-chips,
 .section-heading,
@@ -4035,5 +4131,20 @@ input:disabled {
   .admin-toast {
     transition: none;
     animation: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .dashboard-attention-tiles {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .manual-request-dashboard-tile {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .manual-request-dashboard-link {
+    grid-column: 2;
   }
 }

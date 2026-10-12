@@ -521,6 +521,46 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.navBadge('not-found')).toBeNull();
     expect(fixture.componentInstance.navBadge('manual-requests')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="not-found-dashboard-tile"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="manual-request-dashboard-tile"]')).toBeNull();
+  });
+
+  it('shows the dashboard handover tile with the overdue count and opens manual requests', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 3, foundOverdueCount: 2}));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const tile = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="manual-request-dashboard-tile"]',
+    );
+    expect(tile).not.toBeNull();
+    expect(tile?.textContent).toContain('Demandes manuelles');
+    expect(tile?.textContent).toContain('3 livres à remettre');
+    expect(tile?.textContent).toContain('dont 2 trouvés il y a plus de 14 jours');
+    expect(tile?.textContent).toContain('Ouvrir la liste →');
+
+    const selectSection = spyOn(fixture.componentInstance, 'selectSection').and.resolveTo();
+    tile?.click();
+
+    expect(selectSection).toHaveBeenCalledOnceWith('manual-requests');
+  });
+
+  it('omits the dashboard handover overdue mention when no books are overdue', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 1, foundOverdueCount: 0}));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const tile = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '[data-testid="manual-request-dashboard-tile"]',
+    );
+    expect(tile).not.toBeNull();
+    expect(tile?.textContent).toContain('1 livre à remettre');
+    expect(tile?.textContent).not.toContain('plus de 14 jours');
   });
 
   it('does not expose the removed inventory workspace', () => {

@@ -216,12 +216,29 @@
                   </article>
                 </div>
 
-                @if (notFoundSummary()?.openTargetCount; as openCount) {
-                  <button class="not-found-dashboard-tile" data-testid="not-found-dashboard-tile" type="button" (click)="selectSection('not-found')">
-                    <span class="not-found-dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 21V4"></path><path d="M5 4h13l-2 4 2 4H5"></path></svg></span>
-                    <span><strong>À vérifier en rayon</strong><span>{{ formatNumber(openCount) }} livres introuvables · dont {{ formatNumber(notFoundSummary()?.overdueTargetCount ?? 0) }} signalés il y a plus de 7 jours</span></span>
-                    <span class="not-found-dashboard-link">Ouvrir la liste →</span>
-                  </button>
+                @if (notFoundSummary()?.openTargetCount || manualRequestSummary()?.foundCount) {
+                  <div class="dashboard-attention-tiles">
+                    @if (notFoundSummary()?.openTargetCount; as openCount) {
+                      <button class="not-found-dashboard-tile" data-testid="not-found-dashboard-tile" type="button" (click)="selectSection('not-found')">
+                        <span class="not-found-dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 21V4"></path><path d="M5 4h13l-2 4 2 4H5"></path></svg></span>
+                        <span><strong>À vérifier en rayon</strong><span>{{ formatNumber(openCount) }} livres introuvables · dont {{ formatNumber(notFoundSummary()?.overdueTargetCount ?? 0) }} signalés il y a plus de 7 jours</span></span>
+                        <span class="not-found-dashboard-link">Ouvrir la liste →</span>
+                      </button>
+                    }
+                    @if (manualRequestSummary()?.foundCount; as foundCount) {
+                      <button class="manual-request-dashboard-tile" data-testid="manual-request-dashboard-tile" type="button" (click)="selectSection('manual-requests')">
+                        <span class="manual-request-dashboard-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.3a11 11 0 0 0 6.2 6.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1-2-2z"></path></svg></span>
+                        <span class="manual-request-dashboard-copy">
+                          <span class="manual-request-dashboard-kicker">Demandes manuelles</span>
+                          <strong>{{ formatNumber(foundCount) }} {{ foundCount === 1 ? 'livre' : 'livres' }} à remettre</strong>
+                          @if (manualRequestSummary()?.foundOverdueCount; as overdueCount) {
+                            <span class="manual-request-dashboard-overdue">dont {{ formatNumber(overdueCount) }} {{ overdueCount === 1 ? 'trouvé' : 'trouvés' }} il y a plus de 14 jours</span>
+                          }
+                        </span>
+                        <span class="manual-request-dashboard-link">Ouvrir la liste →</span>
+                      </button>
+                    }
+                  </div>
                 }
 
                 <div class="section-heading section-heading-with-kicker">
