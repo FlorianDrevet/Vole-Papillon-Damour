@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Demandes manuelles — mobile</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</helmet>
+<div style="position: relative; width: 390px; height: 1300px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #d9e9f4;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background-image: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9px; font-weight: 600; letter-spacing: .06em; color: #ffffff;">VPD</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 15px; line-height: 1; color: #072b45;">Vole Papillon d'Amour</span>
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 8px; letter-spacing: .2em; text-transform: uppercase; color: #6d8ba2;">Bourse aux livres · catalogue</span>
+      </div>
+    </div>
+    <button type="button" aria-label="Menu administration, 9 éléments à traiter" data-zone="E1-menu-mobile" style="margin: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: #072b45; font-size: 13px; font-weight: 600; color: #ffffff;">Menu <span style="padding: 1px 7px; border-radius: 999px; background: #f0801c; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px;">9</span></button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px; padding: 26px 16px 8px;">
+    <span style="width: 56px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, #1497d6, #7fd8f5 50%, #f0801c);"></span>
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Pendant la bourse</span>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 32px; font-weight: 500; color: #072b45;">Demandes manuelles.</h1>
+    <p style="margin: 0; font-size: 14.5px; line-height: 1.5; color: #4e6c84;">Appelez la personne, puis indiquez si le livre a été donné ou refusé.</p>
+    <button type="button" style="align-self: stretch; margin: 6px 0 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border: 0; border-radius: 999px; background: #f0801c; font-size: 15px; font-weight: 600; color: #ffffff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nouveau demandeur</button>
+    <div style="display: flex; gap: 8px; margin-top: 8px; overflow-x: auto; padding-bottom: 4px;">
+      <button type="button" aria-pressed="true" style="flex: none; margin: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 14px; border: 1px solid #072b45; border-radius: 999px; background: #072b45; font-size: 13.5px; font-weight: 600; color: #ffffff;">À remettre<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #7fd8f5;">2</span></button>
+      <button type="button" aria-pressed="false" style="flex: none; margin: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 14px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 13.5px; font-weight: 600; color: #33536e;">En recherche<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #6d8ba2;">14</span></button>
+      <button type="button" aria-pressed="false" style="flex: none; margin: 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 14px; border: 1px solid #d9e9f4; border-radius: 999px; background: #ffffff; font-size: 13.5px; font-weight: 600; color: #33536e;">Closes<span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #6d8ba2;">31</span></button>
+    </div>
+    <label style="display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; box-sizing: border-box; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6d8ba2" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg><span style="position: absolute; left: -9999px;">Rechercher</span><input type="search" placeholder="Nom, téléphone ou titre" style="flex: 1 1 auto; min-width: 0; border: 0; outline: none; background: transparent; font-family: inherit; font-size: 14px; color: #072b45;"></label>
+  </div>
+
+  <article style="display: flex; flex-direction: column; gap: 8px; padding: 18px 16px; border-bottom: 1px solid #d9e9f4;">
+    <h2 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500; color: #072b45;">Le Petit Prince</h2>
+    <span style="font-size: 13px; color: #4e6c84;">Saint-Exupéry · mis de côté : Gallimard 1999</span>
+    <div><span style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #e3f1f2; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; color: #0d5c63;">Trouvé au tri par Michel · 12 oct.</span></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 4px; background: #ffffff; border: 1px solid #e2eef7;">
+      <a href="AdminDemandeurMobile.dc.html" style="font-size: 15.5px; font-weight: 600; color: #0c6ea6;">Jeanne MARTIN</a>
+      <a href="tel:0612345678" data-zone="E2-lien-appeler" style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 16px; font-weight: 600; color: #072b45;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4-2 1.3a11 11 0 0 0 6.2 6.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"></path></svg>06 12 34 56 78</a>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #0c6ea6;">Refusé…</button>
+      <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 0; border-radius: 999px; background: #f0801c; font-size: 14px; font-weight: 600; color: #ffffff;">Donné</button>
+    </div>
+  </article>
+
+  <article style="display: flex; flex-direction: column; gap: 8px; padding: 18px 16px; border-bottom: 1px solid #d9e9f4;">
+    <h2 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500; color: #072b45;">Les Misérables, tome 1</h2>
+    <span style="font-size: 13px; color: #4e6c84;">Victor Hugo · mis de côté : Folio 1999</span>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;"><span style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; background: #e9f4fb; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; color: #0c6ea6;">Prélevé en stock · 24 sept.</span><span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; color: #a33a0a; align-self: center;">il y a 18 jours</span></div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 4px; background: #ffffff; border: 1px solid #e2eef7;">
+      <a href="AdminDemandeurMobile.dc.html" style="font-size: 15.5px; font-weight: 600; color: #0c6ea6;">Robert DUVAL</a>
+      <a href="tel:0241221890" style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 16px; font-weight: 600; color: #072b45;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4-2 1.3a11 11 0 0 0 6.2 6.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"></path></svg>02 41 22 18 90</a>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #0c6ea6;">Refusé…</button>
+      <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 0; border-radius: 999px; background: #f0801c; font-size: 14px; font-weight: 600; color: #ffffff;">Donné</button>
+    </div>
+  </article>
+
+  <div style="margin: 20px 16px 0; padding: 14px 16px; border-radius: 4px; background: #e9f4fb; font-size: 13.5px; line-height: 1.5; color: #33536e;">Aucun membre n'a été prévenu pour ces livres. Un refus les remet en stock et prévient aussitôt les membres qui les suivent.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

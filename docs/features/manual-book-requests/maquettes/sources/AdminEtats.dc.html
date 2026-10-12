@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Demandes manuelles — états</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #e9f4fb; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</helmet>
+<div style="width: 1440px; height: 1500px; box-sizing: border-box; padding: 44px; overflow: hidden; background: #e9f4fb; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45; display: flex; flex-direction: column; gap: 28px;">
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Référence</span>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 34px; font-weight: 500; color: #072b45;">États, erreurs et confirmations</h1>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+
+    <section data-zone="E2-etat-vide" style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E2 · Trouvés à remettre — vide</span>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px 12px; border: 1px dashed #c4dceb; border-radius: 4px; text-align: center;">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#9dc2da" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"></path></svg>
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 20px; color: #072b45;">Aucun livre à remettre pour le moment.</span>
+        <span style="font-size: 13.5px; color: #4e6c84;">Les livres trouvés au tri apparaîtront ici.</span>
+      </div>
+    </section>
+
+    <section data-zone="E2-etat-chargement" aria-busy="true" style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E2 · Chargement</span>
+      <div style="display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e2eef7;"><span style="width: 40px; height: 58px; background: #e9f4fb;"></span><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px;"><span style="height: 14px; width: 70%; border-radius: 3px; background: #e9f4fb;"></span><span style="height: 10px; width: 50%; border-radius: 3px; background: #eef5fa;"></span><span style="height: 10px; width: 40%; border-radius: 3px; background: #eef5fa;"></span></span></div>
+      <div style="display: flex; gap: 14px; padding: 12px 0;"><span style="width: 40px; height: 58px; background: #e9f4fb;"></span><span style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px;"><span style="height: 14px; width: 60%; border-radius: 3px; background: #e9f4fb;"></span><span style="height: 10px; width: 45%; border-radius: 3px; background: #eef5fa;"></span><span style="height: 10px; width: 35%; border-radius: 3px; background: #eef5fa;"></span></span></div>
+      <span style="font-size: 13px; color: #6d8ba2;">Chargement des demandes…</span>
+    </section>
+
+    <section data-zone="E2-etat-erreur" style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E2 · Erreur de chargement</span>
+      <div role="alert" style="display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-radius: 4px; background: #fbeced; font-size: 14px; line-height: 1.5; color: #7d1f25;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b02a33" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px;"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><span>Impossible de charger les demandes manuelles. Vérifiez la connexion puis réessayez.</span></div>
+      <button type="button" style="align-self: flex-start; margin: 0; font-family: inherit; cursor: pointer; min-height: 44px; padding: 0 18px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #0c6ea6;">Réessayer</button>
+    </section>
+
+    <section style="grid-column: span 2; display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E2 · Onglet Closes</span>
+      <div data-zone="E2-ligne-close" style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 1.6fr); gap: 16px; align-items: center; padding: 14px 0; border-bottom: 1px solid #e2eef7;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px; color: #072b45;">Le Grand Meaulnes</span>
+        <span style="font-size: 14px; font-weight: 600; color: #0c6ea6;">Jeanne MARTIN</span>
+        <span style="justify-self: start; padding: 5px 11px; border-radius: 999px; background: #eef3f6; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; color: #4e6c84;">Donné le 2 oct. · Martine</span>
+      </div>
+      <div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 1.6fr); gap: 16px; align-items: center; padding: 14px 0; border-bottom: 1px solid #e2eef7;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px; color: #072b45;">Bel-Ami</span>
+        <span style="font-size: 14px; font-weight: 600; color: #0c6ea6;">Robert DUVAL</span>
+        <span style="justify-self: start; padding: 5px 11px; border-radius: 999px; background: #eef3f6; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; color: #4e6c84;">Refusé le 28 sept. · 2 membres prévenus</span>
+      </div>
+      <div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 1.6fr); gap: 16px; align-items: center; padding: 14px 0;">
+        <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px; color: #072b45;">Le Comte de Monte-Cristo</span>
+        <span data-zone="E2-demandeur-efface" style="font-size: 14px; font-style: italic; color: #6d8ba2;">Demandeur effacé</span>
+        <span style="justify-self: start; padding: 5px 11px; border-radius: 999px; background: #eef3f6; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; color: #4e6c84;">Annulé le 12 juin</span>
+      </div>
+    </section>
+
+    <section data-zone="E5-toast" style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E5 · Messages après geste</span>
+      <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 4px; background: #072b45; font-size: 14px; color: #ffffff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fd8f5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"></path></svg>Livre marqué comme donné</div>
+      <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 4px; background: #072b45; font-size: 14px; color: #ffffff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fd8f5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"></path></svg>Refus enregistré — 3 membres prévenus</div>
+      <div role="status" style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 4px; background: #072b45; font-size: 14px; color: #ffffff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fd8f5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"></path></svg>Exemplaire prélevé — demande trouvée</div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E4 · Référentiel indisponible</span>
+      <div role="alert" data-zone="E4-erreur-referentiel" style="display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-radius: 4px; background: #fbeced; font-size: 14px; line-height: 1.5; color: #7d1f25;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b02a33" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px;"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><span>La recherche de livres est momentanément indisponible. Réessayez dans quelques minutes.</span></div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E4 · Demande en double</span>
+      <div role="alert" data-zone="E4-erreur-doublon" style="display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-radius: 4px; background: #fff6ec; font-size: 14px; line-height: 1.5; color: #072b45;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc6412" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px;"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><span>Jeanne Martin cherche déjà ce livre.</span></div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E4 · Notice sans œuvre</span>
+      <div data-zone="E4-edition-seule" style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border: 1.5px solid #0c6ea6; border-radius: 4px; background: #e9f4fb; font-size: 14.5px; color: #072b45;"><input type="radio" checked disabled style="margin: 0; width: 18px; height: 18px; accent-color: #0c6ea6;">Uniquement cette édition</label>
+        <span style="font-size: 13.5px; color: #4e6c84;">Ce livre ne peut être suivi que dans cette édition.</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E3 · Accord non coché</span>
+      <label data-zone="E3-erreur-accord" style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #072b45;">
+        <span style="display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid #b02a33; border-radius: 4px; background: #ffffff; line-height: 1.45;"><input type="checkbox" style="flex: none; width: 20px; height: 20px; margin: 1px 0 0;" aria-invalid="true">La personne a accepté que l'association conserve ses coordonnées pour la rappeler au sujet de ces livres.</span>
+        <span style="font-size: 13.5px; font-weight: 600; color: #b02a33;">Sans l'accord de la personne, ses coordonnées ne peuvent pas être enregistrées.</span>
+      </label>
+    </section>
+
+    <section data-zone="E3-dialogue-suppression" role="dialog" aria-modal="true" aria-labelledby="delete-title" style="display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; border-radius: 6px; background: #ffffff; box-shadow: 0 18px 40px rgba(4, 29, 48, .16);">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E3 · Supprimer le demandeur</span>
+      <h2 id="delete-title" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500; color: #072b45;">Supprimer Jeanne MARTIN ?</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #33536e;">Ses 2 demandes en recherche sont annulées. Le Petit Prince, trouvé et non remis, rejoint le stock et les membres qui le suivent sont prévenus. Ses coordonnées sont effacées définitivement.</p>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 44px; padding: 0 18px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #072b45;">Annuler</button>
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #b02a33; font-size: 14px; font-weight: 600; color: #ffffff;">Supprimer</button>
+      </div>
+    </section>
+
+    <section data-zone="E2-dialogue-annulation-trouvee" role="dialog" aria-modal="true" aria-labelledby="cancel-title" style="display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; border-radius: 6px; background: #ffffff; box-shadow: 0 18px 40px rgba(4, 29, 48, .16);">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E2/E3 · Annuler une demande trouvée</span>
+      <h2 id="cancel-title" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 22px; font-weight: 500; color: #072b45;">Annuler la demande de Jeanne MARTIN ?</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #33536e;">Le livre a déjà été mis de côté. Il rejoindra le stock et 3 membres qui le suivent seront prévenus dès maintenant.</p>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 44px; padding: 0 18px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #072b45;">Garder la demande</button>
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #f0801c; font-size: 14px; font-weight: 600; color: #ffffff;">Annuler la demande</button>
+      </div>
+    </section>
+
+    <section data-zone="E5-variante-annonce" style="display: flex; flex-direction: column; gap: 12px; padding: 22px 24px; border-radius: 6px; background: #ffffff;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: #6d8ba2;">E5 · Refus d'un livre scanné en « prochaine bourse »</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #d9e9f4; border-radius: 4px;">
+        <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Mise à disposition</span>
+        <span style="padding: 5px 12px; border-radius: 999px; background: #1497d6; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #ffffff;">Annoncé · bourse du 14 mars</span>
+      </div>
+      <span style="font-size: 13px; color: #6d8ba2;">Si la bourse est passée ou annulée : « Disponible maintenant ».</span>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
