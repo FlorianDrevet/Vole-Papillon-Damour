@@ -100,10 +100,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             .ToDictionary(
                 assoEvent => assoEvent.Id.Value,
                 GetOpeningInstant);
-        var nextBookFairOpening = activeBookFairOpenings.Values
-            .Where(opening => opening > new DateTimeOffset(closedAt))
-            .OrderBy(opening => opening)
-            .Select(opening => (DateTimeOffset?)opening)
+        var nextBookFair = activeBookFairOpenings
+            .Where(pair => pair.Value > new DateTimeOffset(closedAt))
+            .OrderBy(pair => pair.Value)
+            .Select(pair => (KeyValuePair<Guid, DateTimeOffset>?)pair)
             .FirstOrDefault();
 
         var candidates = movements
@@ -112,6 +112,13 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             {
                 var book = books.GetValueOrDefault(group.Key);
                 var firstMovement = group.First();
+                Guid? openingFairId =
+                    firstMovement.AssoEventsId is { } fairId &&
+                    activeBookFairOpenings.ContainsKey(fairId.Value)
+                        ? fairId.Value
+                        : session.Mode == ScanMode.AvailableNow
+                            ? nextBookFair?.Key
+                            : null;
                 return new AlertCandidate(
                     group.Key,
                     book?.WorkId,
@@ -123,12 +130,14 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                     group.Sum(movement => movement.Quantity),
                     session.Mode,
                     firstMovement.AssoEventsId,
-                    firstMovement.AssoEventsId is { } fairId &&
-                    activeBookFairOpenings.TryGetValue(fairId.Value, out var fairOpening)
-                        ? fairOpening
-                        : session.Mode == ScanMode.AvailableNow
-                            ? nextBookFairOpening
-                            : null);
+                    openingFairId is { } openingId
+                        ? activeBookFairOpenings[openingId]
+                        : null,
+                    book?.CoverUrl,
+                    book is { IsHiddenFromCatalog: false, RedirectedToIsbn13: null }
+                        ? PublicBookPath.For(book.Id, book.Title, book.Authors)
+                        : null,
+                    openingFairId);
             })
             .ToArray();
 
@@ -203,7 +212,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                     candidate.Quantity,
                     candidate.Mode,
                     candidate.AssoEventsId?.Value,
-                    candidate.FairOpeningAt))
+                    candidate.FairOpeningAt,
+                    candidate.CoverUrl,
+                    candidate.PublicPath,
+                    candidate.OpeningFairId))
                 .ToArray();
             dbContext.OutboxMessages.Add(new OutboxMessage
             {
@@ -1112,7 +1124,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             item.Publisher,
             item.PublicationYear,
             item.PhysicalFormat,
-            item.FairOpeningAt);
+            item.FairOpeningAt,
+            item.CoverUrl,
+            item.PublicPath,
+            item.OpeningFairId);
     }
 
     private static RareBookAlertOutboxItem ToApplicationRareItem(RareAlertItemPayload item)
@@ -1195,7 +1210,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         int Quantity,
         ScanMode Mode,
         Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects.AssoEventsId? AssoEventsId,
-        DateTimeOffset? FairOpeningAt);
+        DateTimeOffset? FairOpeningAt,
+        string? CoverUrl,
+        string? PublicPath,
+        Guid? OpeningFairId);
 
     private sealed record AlertEmailPayload(
         IReadOnlyList<AlertItemPayload>? Items,
@@ -1218,7 +1236,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
         int Quantity,
         ScanMode Mode,
         Guid? AssoEventsId,
-        DateTimeOffset? FairOpeningAt);
+        DateTimeOffset? FairOpeningAt,
+        string? CoverUrl = null,
+        string? PublicPath = null,
+        Guid? OpeningFairId = null);
 
     private static DateTimeOffset GetOpeningInstant(AssoEvents assoEvent)
     {

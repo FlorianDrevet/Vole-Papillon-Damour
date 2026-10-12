@@ -14,7 +14,10 @@ public sealed record BookAlertOutboxItem(
     string? Publisher = null,
     int? PublicationYear = null,
     string? PhysicalFormat = null,
-    DateTimeOffset? FairOpeningAt = null);
+    DateTimeOffset? FairOpeningAt = null,
+    string? CoverUrl = null,
+    string? PublicPath = null,
+    Guid? OpeningFairId = null);
 
 public sealed record RareBookAlertOutboxItem(
     Guid RareBookId,
@@ -36,4 +39,16 @@ public sealed record BookAlertDelivery(
     string Email,
     string? RecipientName,
     IReadOnlyList<BookAlertOutboxItem> Items,
-    IReadOnlyList<RareBookAlertOutboxItem>? RareItems = null);
+    IReadOnlyList<RareBookAlertOutboxItem>? RareItems = null,
+    IReadOnlyList<BookAlertFair>? Fairs = null);
+
+/// <summary>
+/// Bourse citée par une alerte, relue à l'envoi : date d'ouverture, horaires (null si non
+/// saisis) et adresse sur une ligne.
+/// </summary>
+public sealed record BookAlertFair(
+    Guid AssoEventsId,
+    DateTimeOffset OpeningAt,
+    DateTimeOffset? DoorsOpenAt,
+    DateTimeOffset? DoorsCloseAt,
+    string? Address);
