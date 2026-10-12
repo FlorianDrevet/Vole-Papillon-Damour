@@ -190,7 +190,7 @@ public static class PublicBookPath
  using MediatR;
  using Microsoft.EntityFrameworkCore;
 @@ -41,46 +39,11 @@ public sealed class GetPublicCatalogSitemapQueryHandler(
- 
+
          return new PublicCatalogSitemapResult(
              books.Select(book => new PublicCatalogSitemapEntry(
 -                    $"/livres/{Slugify(book.Title, book.Authors)}-{book.Id.Value}",
@@ -270,7 +270,7 @@ en tâche 3.
 @@ -341,6 +341,48 @@ public sealed class BookAlertOutboxTests
          item.FairOpeningAt.Should().Be(fair.HourOpenDoors);
      }
- 
+
 +    [Fact]
 +    public async Task QueueForSession_CarriesCoverPublicPathAndOpeningFairIntoDelivery()
 +    {
@@ -368,7 +368,7 @@ en tâche 3.
 @@ -1025,6 +1075,27 @@ public sealed class BookAlertOutboxTests
              await Context.SaveChangesAsync();
          }
- 
+
 +        public async Task<BookAlertDelivery> QueueClaimAndLoadDeliveryAsync(ScanSession session)
 +        {
 +            var outbox = new BookAlertOutbox(Context);
@@ -410,7 +410,7 @@ en tâche 3.
 +    string? CoverUrl = null,
 +    string? PublicPath = null,
 +    Guid? OpeningFairId = null);
- 
+
  public sealed record RareBookAlertOutboxItem(
      Guid RareBookId,
 @@ -36,4 +39,16 @@ public sealed record BookAlertDelivery(
@@ -451,7 +451,7 @@ en tâche 3.
 +            .OrderBy(pair => pair.Value)
 +            .Select(pair => (KeyValuePair<Guid, DateTimeOffset>?)pair)
              .FirstOrDefault();
- 
+
          var candidates = movements
 @@ -112,6 +112,13 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
              {
@@ -487,7 +487,7 @@ en tâche 3.
 +                    openingFairId);
              })
              .ToArray();
- 
+
 @@ -203,7 +212,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                      candidate.Quantity,
                      candidate.Mode,
@@ -510,7 +510,7 @@ en tâche 3.
 +            item.PublicPath,
 +            item.OpeningFairId);
      }
- 
+
      private static RareBookAlertOutboxItem ToApplicationRareItem(RareAlertItemPayload item)
 @@ -1195,7 +1210,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
          int Quantity,
@@ -521,7 +521,7 @@ en tâche 3.
 +        string? CoverUrl,
 +        string? PublicPath,
 +        Guid? OpeningFairId);
- 
+
      private sealed record AlertEmailPayload(
          IReadOnlyList<AlertItemPayload>? Items,
 @@ -1218,7 +1236,10 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
@@ -533,7 +533,7 @@ en tâche 3.
 +        string? CoverUrl = null,
 +        string? PublicPath = null,
 +        Guid? OpeningFairId = null);
- 
+
      private static DateTimeOffset GetOpeningInstant(AssoEvents assoEvent)
      {
 ```
@@ -562,7 +562,7 @@ prénom du membre (« Bonjour Marie, »).
 @@ -366,6 +366,50 @@ public sealed class BookAlertOutboxTests
          item.AssoEventsId.Should().BeNull();
      }
- 
+
 +    [Fact]
 +    public async Task GetPendingDelivery_LoadsScheduleAndAddressOfTheOpeningFair()
 +    {
@@ -613,7 +613,7 @@ prénom du membre (« Bonjour Marie, »).
 @@ -987,7 +1031,10 @@ public sealed class BookAlertOutboxTests
              return session;
          }
- 
+
 -        public async Task<AssoEvents> AddFairAsync(DateTimeOffset? hourOpenDoors = null)
 +        public async Task<AssoEvents> AddFairAsync(
 +            DateTimeOffset? hourOpenDoors = null,
@@ -660,7 +660,7 @@ prénom du membre (« Bonjour Marie, »).
 @@ -586,16 +588,31 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
              return null;
          }
- 
+
 -        var recipientName = user.Name is null
 -            ? null
 -            : $"{user.Name.FirstName} {user.Name.LastName}".Trim();
@@ -692,12 +692,12 @@ prénom du membre (« Bonjour Marie, »).
 +            eligibleRareItems,
 +            fairs);
      }
- 
+
      public async Task<int> CancelAsync(
 @@ -1130,6 +1147,39 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
              item.OpeningFairId);
      }
- 
+
 +    private static BookAlertFair ToBookAlertFair(AssoEvents fair)
 +    {
 +        return new BookAlertFair(
@@ -1851,7 +1851,7 @@ public static class BookAlertEmailContentBuilder
 --- a/src/Backend/Vole_Papillon_Damour.Infrastructure/Services/BookAlerts/BookAlertEmailSender.cs
 +++ b/src/Backend/Vole_Papillon_Damour.Infrastructure/Services/BookAlerts/BookAlertEmailSender.cs
 @@ -66,9 +66,12 @@ public sealed class BookAlertEmailSender : IBookAlertEmailSender
- 
+
          var emailContent = BookAlertEmailContentBuilder.Build(
              delivery,
 -            _options.AssociationName,
