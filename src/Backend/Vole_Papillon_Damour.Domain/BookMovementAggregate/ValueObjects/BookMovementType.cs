@@ -8,5 +8,6 @@ public enum BookMovementType : byte
     Sale,
     Rejection,
     Correction,
-    Withdrawal
+    Withdrawal,
+    ManualRequestHold
 }
