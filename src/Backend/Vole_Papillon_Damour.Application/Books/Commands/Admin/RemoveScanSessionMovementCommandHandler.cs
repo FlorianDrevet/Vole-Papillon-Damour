@@ -8,6 +8,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
@@ -53,7 +54,8 @@ public sealed class RemoveScanSessionMovementCommandHandler(
                 candidate.ScanSessionId == session.Id &&
                 !dbContext.BookMovements.Any(reversal => reversal.ReversalOfMovementId == candidate.Id) &&
                 (candidate.Type == BookMovementType.DirectEntry ||
-                 candidate.Type == BookMovementType.AnnouncementEntry),
+                 candidate.Type == BookMovementType.AnnouncementEntry ||
+                 candidate.Type == BookMovementType.ManualRequestHold),
             cancellationToken);
         if (movement is null)
         {
@@ -75,7 +77,40 @@ public sealed class RemoveScanSessionMovementCommandHandler(
             return Error.Unexpected("Book.MovementWithoutBook", "The session movement points to a missing book.");
         }
 
-        if (movement.Type == BookMovementType.AnnouncementEntry)
+        if (movement.Type == BookMovementType.ManualRequestHold)
+        {
+            var request = await dbContext.ManualBookRequests.SingleOrDefaultAsync(
+                candidate => candidate.HoldMovementId == movement.Id,
+                cancellationToken);
+            if (request is null || request.Status != ManualBookRequestStatus.Found)
+            {
+                return Errors.Book.SessionMovementAlreadyConsumed(movement.Id.Value);
+            }
+
+            if (movement.Quantity <= 0)
+            {
+                return Error.Unexpected(
+                    "Book.InvalidManualRequestHoldQuantity",
+                    "A held manual request must have a positive quantity before removal.");
+            }
+
+            request.RevertScanHold(correctedAt);
+            dbContext.BookMovements.Add(BookMovement.Create(
+                BookMovementId.CreateUnique(),
+                movement.Isbn13,
+                BookMovementType.ManualRequestHold,
+                -movement.Quantity,
+                correctedAt,
+                correctedAt,
+                clockSuspect: false,
+                session.Id,
+                command.UpdatedBy,
+                movement.AssoEventsId,
+                "Session.Movement.Remove.ManualRequestHold.Reversal",
+                clientGestureId: null,
+                movement.Id));
+        }
+        else if (movement.Type == BookMovementType.AnnouncementEntry)
         {
             var announcement = await dbContext.BookAnnouncements.SingleOrDefaultAsync(
                 candidate =>

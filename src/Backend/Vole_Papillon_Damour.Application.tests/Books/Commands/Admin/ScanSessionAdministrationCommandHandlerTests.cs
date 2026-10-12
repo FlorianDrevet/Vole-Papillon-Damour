@@ -6,10 +6,14 @@ using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
@@ -101,6 +105,62 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
     }
 
     [Fact]
+    public async Task RemoveMovement_ManualRequestHold_RevertsRequestToSearching()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var (book, request, movement) = await AddManualHoldAsync(fixture, session, "9782070363735");
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new RemoveScanSessionMovementCommandHandler(
+            fixture.Context,
+            clock,
+            fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new RemoveScanSessionMovementCommand(session.Id, movement.Id.Value, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        (await fixture.Context.ManualBookRequests.SingleAsync()).Status.Should().Be(ManualBookRequestStatus.Searching);
+        (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(0);
+        var reversal = await fixture.Context.BookMovements
+            .SingleAsync(candidate => candidate.ReversalOfMovementId == movement.Id);
+        reversal.Type.Should().Be(BookMovementType.ManualRequestHold);
+        reversal.Quantity.Should().Be(-1);
+        request.Status.Should().Be(ManualBookRequestStatus.Searching);
+        book.QuantityAvailable.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RemoveMovement_HoldOfGivenRequest_ReturnsAlreadyConsumed()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var (book, request, movement) = await AddManualHoldAsync(
+            fixture,
+            session,
+            "9782070363735",
+            markGiven: true);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new RemoveScanSessionMovementCommandHandler(
+            fixture.Context,
+            clock,
+            fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new RemoveScanSessionMovementCommand(session.Id, movement.Id.Value, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be(Errors.Book.SessionMovementAlreadyConsumed(movement.Id.Value).Code);
+        request.Status.Should().Be(ManualBookRequestStatus.Given);
+        book.QuantityAvailable.Should().Be(0);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
     public async Task CancelSession_ReversesKeptEntriesAndMarksAnnouncementCorrectionsOutOfAvailableStock()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -138,6 +198,45 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
     }
 
     [Fact]
+    public async Task CancelSession_RevertsFoundHoldsAndSkipsClosedOnes()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var (foundBook, foundRequest, foundMovement) = await AddManualHoldAsync(
+            fixture,
+            session,
+            "9782070363735");
+        var (givenBook, givenRequest, givenMovement) = await AddManualHoldAsync(
+            fixture,
+            session,
+            "9783140464079",
+            markGiven: true);
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new CancelScanSessionCommandHandler(
+            fixture.Context,
+            clock,
+            fixture.AlertOutbox);
+
+        var result = await handler.Handle(
+            new CancelScanSessionCommand(session.Id, AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.AffectedMovementCount.Should().Be(1);
+        foundRequest.Status.Should().Be(ManualBookRequestStatus.Searching);
+        givenRequest.Status.Should().Be(ManualBookRequestStatus.Given);
+        foundBook.QuantityAvailable.Should().Be(0);
+        givenBook.QuantityAvailable.Should().Be(0);
+        (await fixture.Context.BookMovements
+            .SingleAsync(movement => movement.ReversalOfMovementId == foundMovement.Id))
+            .Type.Should().Be(BookMovementType.ManualRequestHold);
+        (await fixture.Context.BookMovements
+            .AnyAsync(movement => movement.ReversalOfMovementId == givenMovement.Id))
+            .Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ForceClose_UsesTheSessionOwnerForTheSharedCloseHandlerAndStoresAdminForced()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
@@ -158,5 +257,65 @@ public sealed class ScanSessionAdministrationCommandHandlerTests
             session.Id,
             ScanBookCommandHandlerTests.ReceivedAt,
             Arg.Any<CancellationToken>());
+    }
+
+    private static async Task<(Book Book, ManualBookRequest Request, BookMovement Movement)> AddManualHoldAsync(
+        ScanBookFixture fixture,
+        Vole_Papillon_Damour.Domain.ScanSessionAggregate.ScanSession session,
+        string isbn,
+        bool markGiven = false)
+    {
+        var occurredAt = ScanBookCommandHandlerTests.ClientScanAt;
+        var book = await fixture.AddBookAsync(isbn, quantityAvailable: 0);
+        var requesterId = Guid.NewGuid();
+        var request = ManualBookRequest.CreateEdition(
+            Guid.NewGuid(),
+            requesterId,
+            ParseIsbn(isbn),
+            "Livre demandé",
+            null,
+            null,
+            null,
+            occurredAt.AddMinutes(-1));
+        var movement = BookMovement.Create(
+            BookMovementId.CreateUnique(),
+            book.Id,
+            BookMovementType.ManualRequestHold,
+            1,
+            occurredAt,
+            occurredAt.AddMinutes(1),
+            clockSuspect: false,
+            session.Id,
+            session.VolunteerId,
+            session.TargetAssoEventsId,
+            note: null,
+            clientGestureId: Guid.NewGuid(),
+            reversalOfMovementId: null);
+        var requester = ManualRequester.Create(
+            requesterId,
+            "Martin",
+            "Jeanne",
+            "0612345678",
+            consentGiven: true,
+            AdministratorId,
+            occurredAt.AddMinutes(-1));
+        request.MarkFoundByScan(book.Id, session.Id, movement.Id, session.VolunteerId, occurredAt);
+        if (markGiven)
+        {
+            request.MarkGiven(AdministratorId, occurredAt.AddMinutes(2));
+        }
+
+        fixture.Context.ManualRequesters.Add(requester);
+        fixture.Context.ManualBookRequests.Add(request);
+        fixture.Context.BookMovements.Add(movement);
+        await fixture.Context.SaveChangesAsync();
+        return (book, request, movement);
+    }
+
+    private static Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.Isbn13 ParseIsbn(string value)
+    {
+        Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects.Isbn13.TryCreate(value, out var isbn)
+            .Should().BeTrue();
+        return isbn;
     }
 }
