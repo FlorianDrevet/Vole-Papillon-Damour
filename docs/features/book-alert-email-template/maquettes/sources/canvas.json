@@ -1,0 +1,29 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-12T09:40:00+02:00"},
+  "title": "Mail d'alerte livres",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 680, "h": 1320, "title": "E1 · Alerte, un livre — 600 px"},
+    "E1-Mobile.dc.html": {"x": 760, "y": 0, "w": 390, "h": 1500, "title": "E1 · Alerte, un livre — mobile"},
+    "E2-Desktop.dc.html": {"x": 0, "y": 1900, "w": 680, "h": 2060, "title": "E2 · Plusieurs livres, deux bourses — 600 px"},
+    "E2-Mobile.dc.html": {"x": 760, "y": 1900, "w": 390, "h": 2400, "title": "E2 · Plusieurs livres, deux bourses — mobile"},
+    "E3-Desktop.dc.html": {"x": 0, "y": 4720, "w": 680, "h": 1640, "title": "E3 · Alerte mixte avec livres rares — 600 px"},
+    "E3-Mobile.dc.html": {"x": 760, "y": 4720, "w": 390, "h": 1900, "title": "E3 · Alerte mixte avec livres rares — mobile"},
+    "E4-Etats.dc.html": {"x": 0, "y": 7040, "w": 1440, "h": 1960, "title": "E4 · États et cas limites"}
+  },
+  "order": ["Main.dc.html", "E1-Mobile.dc.html", "E2-Desktop.dc.html", "E2-Mobile.dc.html", "E3-Desktop.dc.html", "E3-Mobile.dc.html", "E4-Etats.dc.html"],
+  "notes": {
+    "t1": {"x": 0, "y": -300, "text": "E1 · Alerte, un livre", "kind": "title1", "maxW": 1150},
+    "t2": {"x": 0, "y": 1600, "text": "E2 · Plusieurs livres, deux bourses", "kind": "title1", "maxW": 1150},
+    "t3": {"x": 0, "y": 4420, "text": "E3 · Alerte mixte", "kind": "title1", "maxW": 1150},
+    "t4": {"x": 0, "y": 6740, "text": "E4 · États", "kind": "title1", "maxW": 1440},
+    "n1": {"x": 1230, "y": 0, "w": 380, "fill": "blue", "text": "Ordre de lecture (RG-90, RG-91) : en-tête → accroche → encart bourse (date + horaires + adresse) AVANT les cartes → carte livre (RG-92) → non-réservation (RG-94) → bouton « Voir ma liste de recherche » (RG-95) → pied de message.\n\nLa ligne « Boîte de réception » au-dessus du mail montre le texte d'aperçu (RG-96) : il n'apparaît pas dans le corps.\n\nDonnées d'exemple (livres, dates, adresse)."},
+    "n1b": {"x": 1230, "y": 560, "w": 380, "fill": "orange", "text": "Contraintes mail : 600 px, une colonne, mise en page en tableaux et styles en ligne à l'implémentation. La règle de marque est faite de trois segments pleins (pas de dégradé, ignoré par Outlook). Titres Newsreader → repli Georgia ; texte Libre Franklin → repli Arial ; libellés IBM Plex Mono → repli Courier New.\n\nLa couverture est une vraie <img> HTTPS, alt = titre du livre (RG-98)."},
+    "n2": {"x": 1230, "y": 1900, "w": 380, "fill": "blue", "text": "RG-93 : un groupe par bourse et par mode, trié par date (le plus proche d'abord ; « Disponible dès maintenant » sans date en tête). Chaque groupe = encart + ses cartes.\n\nRG-90 : accroche au pluriel « 3 livres de votre liste vous attendent ».\n\nRG-94 : non-réservation au pluriel."},
+    "n3": {"x": 1230, "y": 4720, "w": 380, "fill": "blue", "text": "RG-97 : les livres rares vendus restent de simples lignes, dans une section « Livres rares suivis » placée après les cartes et avant la non-réservation. Pas de photo, pas de carte (hors périmètre).\n\nL'encart ici est en mode « Disponible dès maintenant » avec prochaine ouverture (RG-91)."},
+    "n4": {"x": 1520, "y": 7040, "w": 380, "fill": "blue", "text": "E4 : sans couverture (bloc papillon, RG-92) · images bloquées (RG-98) · mode sombre (RG-98) · sans prénom · rares seuls (pas d'encart, pas de non-réservation, pas de bouton, RG-97) · version texte (RG-99) · disponible maintenant sans ouverture connue (RG-91)."}
+  },
+  "designSystems": []
+}
