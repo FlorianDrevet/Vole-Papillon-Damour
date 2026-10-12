@@ -13,6 +13,7 @@ using Vole_Papillon_Damour.Domain.MemberSelectionAggregate;
 using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
@@ -54,6 +55,8 @@ public class ProjectDbContext(DbContextOptions<ProjectDbContext> options) : DbCo
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
     public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
     public DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => Set<MemberRecommendationPreference>();
+    public DbSet<ManualRequester> ManualRequesters => Set<ManualRequester>();
+    public DbSet<ManualBookRequest> ManualBookRequests => Set<ManualBookRequest>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
