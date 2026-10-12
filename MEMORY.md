@@ -28,6 +28,7 @@
 | `.github/memory/09-auth-and-build.md` | Auth behavior, config sources, and verified build/test commands |
 | `.github/memory/10-api-endpoints.md` | Grouped HTTP endpoints, public/admin split, and live routes |
 | `.github/memory/11-frontend-design-system.md` | Angular Material, Tailwind, theme tokens, and UI guardrails |
+| `.github/memory/12-manual-book-requests.md` | F-12 domain, privacy, rollout, and validation notes |
 | `.github/memory/changelog.md` | Memory changelog |
 | `.github/memory/dream-state.md` | Dream gate state and code graph choice |
 
