@@ -225,6 +225,12 @@
   font: 500 10px/1 'IBM Plex Mono', ui-monospace, monospace;
 }
 
+.admin-nav-badge-not-found,
+.admin-nav-badge-manual-requests {
+  background: var(--admin-orange);
+  color: var(--admin-white);
+}
+
 .admin-role-card {
   margin: 34px 10px 0;
   padding: 16px;

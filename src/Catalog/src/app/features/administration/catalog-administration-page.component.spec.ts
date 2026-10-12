@@ -46,6 +46,7 @@ import {AdminRareBookPhotosComponent} from './rare-books/admin-rare-book-photos.
 import {AdminRareBooksComponent} from './rare-books/admin-rare-books.component';
 import {NotFoundReportCloseDialogComponent} from './not-found-reports/not-found-report-close-dialog.component';
 import {NotFoundReportsViewComponent} from './not-found-reports/not-found-reports-view.component';
+import {ManualRequestsViewComponent} from './manual-requests/manual-requests-view.component';
 
 describe('CatalogAdministrationPageComponent', () => {
   let fixture: ComponentFixture<CatalogAdministrationPageComponent>;
@@ -232,6 +233,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'addRareBookPhoto', 'reorderRareBookPhotos', 'updateRareBookPhotoCaption',
       'deleteRareBookPhoto',
       'getNotFoundQueue', 'getClosedNotFoundReports', 'getNotFoundSummary', 'closeNotFound',
+      'getManualRequests', 'getManualRequestSummary',
     ]);
     catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
     catalogApi.searchReferences.and.returnValue(of({
@@ -329,6 +331,11 @@ describe('CatalogAdministrationPageComponent', () => {
       latestComment: null,
       withdrawalMovementIds: [],
     } as CatalogNotFoundSummary));
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 0, foundOverdueCount: 0}));
+    api.getManualRequests.and.returnValue(of({
+      items: [], totalCount: 0, foundCount: 0, searchingCount: 0, closedCount: 0,
+      foundOverdueCount: 0, page: 1, pageSize: 50,
+    }));
     api.getDeadStock.and.returnValue(of(response));
     api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminRareBookPage));
     api.getRareBook.and.returnValue(of({} as CatalogAdminRareBook));
@@ -349,6 +356,7 @@ describe('CatalogAdministrationPageComponent', () => {
         AdminRareBookFormComponent,
         AdminRareBookPhotosComponent,
         NotFoundReportsViewComponent,
+        ManualRequestsViewComponent,
         NotFoundReportCloseDialogComponent,
       ],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
@@ -450,6 +458,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'Sessions de scan',
       'Désengorgement',
       'Livres introuvables',
+      'Demandes manuelles',
       'Catalogue',
       'Livres rares',
       'Statistiques',
@@ -482,6 +491,20 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('À vérifier en rayon');
   });
 
+  it('shows a manual request sidebar badge only for administrators with books to hand over', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 2, foundOverdueCount: 1}));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const duringFair = fixture.componentInstance.navGroups()[0].items;
+    expect(duringFair.map(item => item.id)).toContain('manual-requests');
+    expect(fixture.componentInstance.navBadge('manual-requests')).toBe('2');
+    expect(fixture.nativeElement.querySelector('.admin-nav-badge-manual-requests')).not.toBeNull();
+  });
+
   it('hides the badge and the dashboard tile when nothing is open', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
@@ -490,6 +513,7 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.navBadge('not-found')).toBeNull();
+    expect(fixture.componentInstance.navBadge('manual-requests')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="not-found-dashboard-tile"]')).toBeNull();
   });
 
@@ -516,6 +540,7 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/sessions',
       '/administration/dead-stock',
       '/administration/not-found',
+      '/administration/manual-requests',
       '/administration/catalogue',
       '/administration/rare-books',
       '/administration/statistics',
