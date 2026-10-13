@@ -29,6 +29,12 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
     public decimal? BookRevenue { get; private set; }
     
     public int CurrentPartieIndex { get; set; } = 0;
+
+    /// <summary>
+    /// Incremented by every live tableau change. It orders the snapshots sent to
+    /// the public tableau and lets each API replica detect changes made on another one.
+    /// </summary>
+    public int LiveRevision { get; private set; }
     
     private IList<Partie>? _parties = new List<Partie>();
     public IReadOnlyList<Partie>? Parties => _parties?.AsReadOnly();
@@ -146,6 +152,65 @@ public sealed class AssoEvents : AggregateRoot<AssoEventsId>
         Adresse = adresse;
         Description = description;
         UrlRegistration = urlRegistration;
+    }
+
+    public void MarkLiveChange()
+    {
+        LiveRevision++;
+    }
+
+    public LiveTableauStatus GetLiveStatus()
+    {
+        if (_parties is null || _parties.Count == 0)
+        {
+            return LiveTableauStatus.NotStarted;
+        }
+
+        if (CurrentPartieIndex >= _parties.Count)
+        {
+            return LiveTableauStatus.Finished;
+        }
+
+        return _parties.Any(partie => partie.LastNumeros.Count > 0)
+            ? LiveTableauStatus.Live
+            : LiveTableauStatus.NotStarted;
+    }
+
+    /// <summary>
+    /// The last number drawn in the current partie, or in the closest previous
+    /// partie when the current one has not drawn any number yet.
+    /// </summary>
+    public int? GetLastDrawnNumero()
+    {
+        if (_parties is null)
+        {
+            return null;
+        }
+
+        return _parties
+            .Where(partie => partie.Index <= CurrentPartieIndex && partie.LastNumeros.Count > 0)
+            .OrderByDescending(partie => partie.Index)
+            .Select(partie => (int?)partie.LastNumeros[^1])
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// True when <paramref name="day"/>, a calendar day in <paramref name="zone"/>,
+    /// falls between the event's start and end days. A cancelled event never happens.
+    /// </summary>
+    public bool IsHappeningOn(DateOnly day, TimeZoneInfo zone)
+    {
+        if (IsCancelled)
+        {
+            return false;
+        }
+
+        var firstDay = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateStart, zone).DateTime);
+        var lastDay = DateEnd is null
+            ? firstDay
+            : DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateEnd.Value, zone).DateTime);
+
+        return firstDay <= day && day <= (lastDay < firstDay ? firstDay : lastDay);
     }
 
     public bool AddBingoNumero(int numero)
