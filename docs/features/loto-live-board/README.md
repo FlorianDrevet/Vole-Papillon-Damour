@@ -8,7 +8,7 @@
 
 - Worktree : `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-loto-live-board`
 - Branche : `feat/loto-live-board`
-- Canvas Claude Design : <lien, ajouté en phase 2>
+- Canvas Claude Design : https://claude.ai/artifact/UBbiYvymt2pBPJKVfgRnkR
 
 ## Statut
 

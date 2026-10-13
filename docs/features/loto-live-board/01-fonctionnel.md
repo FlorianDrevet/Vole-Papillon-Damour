@@ -221,6 +221,7 @@ la fiche. Les autres jours, rien ne change.
 | **RG-21** | Le QR code et le bouton « Suivre le tableau » mènent à la même adresse publique, `/evenement/<id>/tableau`. Le QR code n'apparaît que sur les écrans « Avant le début » et « Pause » de la projection, jamais sur le tableau en jeu. |
 | **RG-22** | Le tableau projeté propose deux palettes, A « sombre » et B « claire », avec la même mise en page ; chacune respecte RG-01 à RG-03. L'animateur bascule de l'une à l'autre à tout moment (bouton de régie ou touche P). La bascule est instantanée et n'affecte ni la saisie ni les téléphones. Le dernier choix est mémorisé sur le poste. |
 | **RG-23** | Pendant le jeu, la grille occupe toute la hauteur disponible et au moins les trois quarts de la largeur de l'écran projeté, en laissant juste la place nécessaire aux informations de partie. |
+| **RG-24** | L'adresse courte `volepapillondamour.fr/loto`, affichée en clair sous le QR code, redirige vers le tableau en direct du loto du jour (RG-16). Sans loto ce jour-là, elle mène à la fiche du prochain loto, ou à la page des événements s'il n'y en a pas. Le QR code encode cette même adresse courte. |
 
 ## 8. Critères d'acceptation
 
