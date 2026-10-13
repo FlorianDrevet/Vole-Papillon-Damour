@@ -79,7 +79,6 @@ public static class DependencyInjection
         }
         
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-        services.AddSingleton<ISSEClientManager, SSEClientManager>();
         services.AddScoped<IUserDeletionRetentionPolicy, NoRetainedSalesMovementsPolicy>();
         services.AddScoped<IAccountDeletionStore, AccountDeletionStore>();
         services.AddScoped<IBookAlertOutbox, BookAlertOutbox>();
