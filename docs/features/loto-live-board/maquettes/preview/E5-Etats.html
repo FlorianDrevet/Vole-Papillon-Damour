@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E5 · Bandeau — états</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#ffffff}a:hover{color:#7fd8f5}
+.mono{font-family:'IBM Plex Mono',monospace}
+.lbl{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#4e6c84}
+.ban{display:flex;align-items:center;gap:18px;height:52px;padding:0 12px 0 44px;background:#041d30;color:#ffffff;border-radius:6px}
+.tag{display:inline-flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#7fd8f5}
+.lnk{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:underline;text-underline-offset:3px}
+.x{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:999px;background:transparent;color:#9dc2da}
+</style>
+</head>
+<body>
+<div style="width:1440px;height:900px;box-sizing:border-box;padding:48px 44px;display:flex;flex-direction:column;gap:30px;background:#f7fbfe;color:#072b45;font-family:'Libre Franklin',system-ui,sans-serif">
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span class="lbl">Loto · avant le premier numéro (RG-18)</span>
+    <div class="ban" data-zone="E5-variante-avant">
+      <span class="tag">Aujourd'hui</span>
+      <span style="font-size:15px;font-weight:600">Grand loto de Vole Papillon d'Amour</span>
+      <span style="font-size:14px;color:#dcecf7">Ouverture des portes 13 h 30 · [Salle] · [Ville]</span>
+      <a data-zone="E5-lien-evenement" class="lnk" href="#">Voir l'événement</a>
+      <button type="button" class="x" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span class="lbl">Loto · en direct — voir E5 desktop</span>
+    <div class="ban">
+      <span class="tag" style="color:#f9a93c"><span aria-hidden="true" style="width:9px;height:9px;border-radius:999px;background:#f0801c"></span>En direct</span>
+      <span style="font-size:15px;font-weight:600">Grand loto de Vole Papillon d'Amour</span>
+      <span style="font-size:14px;color:#dcecf7">Dernier numéro <strong style="display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:30px;margin-left:6px;border-radius:8px;background:#f0801c;color:#041d30;font-size:18px">42</strong></span>
+      <a class="lnk" href="#" style="text-decoration:none;height:36px;padding:0 16px;border-radius:999px;background:#ffffff;color:#041d30">Suivre le tableau →</a>
+      <button type="button" class="x" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span class="lbl">Loto · terminé</span>
+    <div class="ban" data-zone="E5-variante-termine">
+      <span class="tag">Aujourd'hui</span>
+      <span style="font-size:15px;font-weight:600">Le loto est terminé, merci à tous !</span>
+      <a class="lnk" href="#">Voir le tableau final</a>
+      <button type="button" class="x" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span class="lbl">Autre événement du jour (bourse aux livres, autre) — pas d'état « En direct »</span>
+    <div class="ban" data-zone="E5-variante-autre">
+      <span class="tag">Aujourd'hui</span>
+      <span style="font-size:15px;font-weight:600">Bourse aux livres</span>
+      <span style="font-size:14px;color:#dcecf7">9 h 00 – 18 h 00 · [Salle] · [Ville]</span>
+      <a class="lnk" href="#">Voir l'événement</a>
+      <button type="button" class="x" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <span class="lbl">Mobile 390 px · avant · terminé · autre</span>
+    <div style="display:flex;gap:24px;align-items:flex-start">
+      <div style="width:390px;display:flex;flex-direction:column;gap:6px;padding:10px 8px 12px 16px;background:#041d30;color:#ffffff;border-radius:6px;box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:10px"><span class="tag">Aujourd'hui</span><span style="font-size:14px;font-weight:600">Grand loto</span><button type="button" class="x" style="margin-left:auto;height:32px" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+        <div style="display:flex;align-items:center;gap:10px;padding-right:8px"><span style="font-size:13px;color:#dcecf7">Portes 13 h 30 · [Ville]</span><a class="lnk" href="#">Voir l'événement</a></div>
+      </div>
+      <div style="width:390px;display:flex;flex-direction:column;gap:6px;padding:10px 8px 12px 16px;background:#041d30;color:#ffffff;border-radius:6px;box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:10px"><span class="tag">Aujourd'hui</span><span style="font-size:14px;font-weight:600">Loto terminé, merci !</span><button type="button" class="x" style="margin-left:auto;height:32px" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+        <div style="display:flex;padding-right:8px"><a class="lnk" href="#">Voir le tableau final</a></div>
+      </div>
+      <div style="width:390px;display:flex;flex-direction:column;gap:6px;padding:10px 8px 12px 16px;background:#041d30;color:#ffffff;border-radius:6px;box-sizing:border-box">
+        <div style="display:flex;align-items:center;gap:10px"><span class="tag">Aujourd'hui</span><span style="font-size:14px;font-weight:600">Bourse aux livres</span><button type="button" class="x" style="margin-left:auto;height:32px" aria-label="Masquer le bandeau"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg></button></div>
+        <div style="display:flex;align-items:center;gap:10px;padding-right:8px"><span style="font-size:13px;color:#dcecf7">9 h – 18 h · [Ville]</span><a class="lnk" href="#">Voir l'événement</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

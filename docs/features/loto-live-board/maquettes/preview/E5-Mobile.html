@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E5 · Bandeau En direct — mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;family=Libre+Franklin:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0c6ea6}a:hover{color:#072b45}
+.mono{font-family:'IBM Plex Mono',monospace}
+</style>
+</head>
+<body>
+<div style="width:390px;height:700px;overflow:hidden;background:#f7fbfe;color:#072b45;font-family:'Libre Franklin',system-ui,sans-serif">
+
+  <div data-zone="E5-bandeau" role="region" aria-label="Événement du jour" style="display:flex;flex-direction:column;gap:8px;padding:10px 8px 12px 16px;background:#041d30;color:#ffffff">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span data-zone="E5-statut-direct" class="mono" style="display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#f9a93c">
+        <span aria-hidden="true" style="width:8px;height:8px;border-radius:999px;background:#f0801c;box-shadow:0 0 0 3px rgba(240,128,28,.25)"></span>
+        En direct
+      </span>
+      <span style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Grand loto</span>
+      <button type="button" data-zone="E5-fermer" aria-label="Masquer le bandeau" style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:44px;height:36px;border:0;background:transparent;color:#9dc2da">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+      </button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding-right:8px">
+      <span data-zone="E5-dernier-numero" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#dcecf7">
+        Dernier numéro
+        <span style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;padding:0 6px;border-radius:8px;background:#f0801c;color:#041d30;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums">42</span>
+      </span>
+      <a data-zone="E5-bouton-suivre" href="#" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:999px;background:#ffffff;color:#041d30;font-size:14px;font-weight:700;text-decoration:none">
+        Suivre le tableau
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+      </a>
+    </div>
+  </div>
+
+  <header style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #d9e9f4">
+    <span style="display:flex;align-items:center;gap:10px">
+      <span aria-hidden="true" style="width:34px;height:34px;border-radius:999px;background:linear-gradient(135deg,#7fd8f5,#1497d6 55%,#f0801c)"></span>
+      <span style="font-family:'Newsreader',Georgia,serif;font-size:16px">Vole Papillon d'Amour</span>
+    </span>
+    <button type="button" aria-label="Ouvrir le menu" style="width:44px;height:44px;border:1px solid #d9e9f4;border-radius:10px;background:#ffffff;color:#072b45">
+      <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"></path></svg>
+    </button>
+  </header>
+
+  <section style="padding:40px 16px;background:linear-gradient(205deg,#7fd8f5 0%,#1497d6 26%,#0c6ea6 52%,#062a44 100%);color:#ffffff;height:520px;box-sizing:border-box">
+    <span class="mono" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#dcecf7">Page d'accueil — contenu existant</span>
+    <h1 style="margin:14px 0 0;font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:40px;line-height:1;letter-spacing:-.02em">Ensemble pour Maxence</h1>
+  </section>
+</div>
+</body>
+</html>
