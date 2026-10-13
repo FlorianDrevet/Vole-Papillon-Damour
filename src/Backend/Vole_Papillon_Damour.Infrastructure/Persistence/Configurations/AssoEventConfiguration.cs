@@ -40,6 +40,12 @@ public class AssoEventConfiguration : IEntityTypeConfiguration<AssoEvents>
                 value => new EventsType((EventsType.EventsTypeEnum)value)
             );
 
+        // Every live tableau mutation increments it: concurrent mutations of the same
+        // event cannot both succeed, and each revision describes one board state.
+        builder.Property(events => events.LiveRevision)
+            .IsConcurrencyToken()
+            .HasDefaultValue(0);
+
         builder.Property(events => events.IsCancelled)
             .HasDefaultValue(false);
 
