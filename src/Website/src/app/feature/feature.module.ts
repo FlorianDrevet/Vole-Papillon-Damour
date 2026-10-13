@@ -59,9 +59,6 @@ import {CoreModule} from "../core/core.module";
 import { PartieCardComponent } from './event-detail/components/bingo-event/components/partie-card/partie-card.component';
 import { LotCardComponent } from './event-detail/components/bingo-event/components/lot-card/lot-card.component';
 import {TableauComponent} from "./tableau/tableau.component";
-import {ModalComponent} from "./tableau/components/modal-tableau/modal.component";
-import {TagComponent} from "./tableau/components/tag/tag.component";
-import {NumberComponent} from "./tableau/components/number/number.component";
 import {VpdAllEventsComponent} from "./vpd-all-events/vpd-all-events.component";
 import {MaladiesListComponent} from "./maxence/diseases/maladies-list/maladies-list.component";
 import {ActionsComponent} from "./actions/actions.component";
@@ -129,9 +126,6 @@ import {SouvenirsComponent} from './maxence/souvenirs/souvenirs.component';
     PartieCardComponent,
     LotCardComponent,
     TableauComponent,
-    ModalComponent,
-    TagComponent,
-    NumberComponent,
     VpdAllEventsComponent,
   ],
   imports: [
