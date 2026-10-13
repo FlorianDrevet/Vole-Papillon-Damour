@@ -28,6 +28,9 @@ public class EventResponse
     public List<int> BingoNumeros { get; set; }
     public bool BingoHasBeenWon { get; set; }
     public int CurrentPartieIndex { get; set; }
+
+    /// <summary>Revision of the live tableau, sent as the SSE event id.</summary>
+    public int LiveRevision { get; set; }
 }
 
 public class CreatePartiesResponse
