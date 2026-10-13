@@ -1,6 +1,6 @@
 # Tableau de loto en direct — spécification fonctionnelle
 
-> Statut : brouillon à relire · 2026-10-13
+> Statut : validée le 2026-10-13
 
 ## 1. Contexte
 
@@ -34,14 +34,17 @@ jeu côté serveur sont saines. Les défauts sont dans la présentation et dans 
 ## 2. Objectifs
 
 1. Un tableau projeté **lisible à 20–30 m sous un fort éclairage de scène**, où l'état
-   « sorti » se lit par la **luminosité** et non par la seule couleur.
-2. **Aucun élément de régie visible par la salle** pendant le jeu, sans perdre en rapidité de
+   « sorti » se lit par la **luminosité** et non par la seule couleur. Deux palettes (sombre et
+   claire) sont disponibles, et l'animateur bascule de l'une à l'autre en direct pour choisir sur
+   place celle qui rend le mieux.
+2. Une grille qui occupe **le maximum de la surface projetée** pendant le jeu.
+3. **Aucun élément de régie visible par la salle** pendant le jeu, sans perdre en rapidité de
    saisie pour l'animateur (un seul écran, contrôles discrets).
-3. Un **tableau mobile** centré sur le dernier numéro, qui reste à jour et signale clairement une
+4. Un **tableau mobile** centré sur le dernier numéro, qui reste à jour et signale clairement une
    perte de connexion.
-4. Le **jour J**, un bandeau sur tout le site annonce l'événement et, pendant le loto, mène au
+5. Le **jour J**, un bandeau sur tout le site annonce l'événement et, pendant le loto, mène au
    tableau en direct.
-5. Un direct **fiable** : chaque téléphone reçoit chaque changement en quelques secondes au plus,
+6. Un direct **fiable** : chaque téléphone reçoit chaque changement en quelques secondes au plus,
    quel que soit le nombre d'instances de l'API, et se resynchronise seul après une coupure.
 
 ## 3. Hors périmètre
@@ -69,8 +72,9 @@ jeu côté serveur sont saines. Les défauts sont dans la présentation et dans 
 
 1. L'animateur ouvre le tableau de l'événement et passe en plein écran. Le PC est relié au
    vidéoprojecteur en recopie d'écran.
-2. Avant la première partie, la toile affiche un écran d'accueil (nom de l'événement, première
-   partie et ses lots).
+2. Avant la première partie, la toile affiche un écran d'accueil : nom de l'événement, première
+   partie et ses lots, et un grand QR code qui mène au tableau mobile. L'animateur choisit la
+   palette (sombre ou claire) d'une touche, en regardant la toile.
 3. Il saisit un numéro, au clavier (chiffres puis Entrée) ou d'un clic sur sa case. Le numéro
    s'affiche en plein écran environ 2 secondes, puis le tableau revient avec la case allumée et
    le numéro en tête de l'historique.
@@ -78,14 +82,15 @@ jeu côté serveur sont saines. Les défauts sont dans la présentation et dans 
    s'éteint.
 5. Quand un joueur crie, l'animateur vérifie le carton, puis déclare la ligne gagnée. La ligne
    suivante, ou la partie suivante, s'affiche.
-6. Une partie marquée « pause après » affiche l'écran Pause, avec les numéros du bingo, jusqu'à
-   ce que l'animateur reprenne.
+6. Une partie marquée « pause après » affiche l'écran Pause, avec les numéros du bingo et le QR
+   code, jusqu'à ce que l'animateur reprenne. L'écran Pause n'existe que sur la projection : les
+   téléphones ne l'affichent pas.
 7. Après la dernière partie, la toile affiche « Loto terminé — merci ! ».
 
 ### P2 — Suivre le loto sur son téléphone
 
-1. Le jour J, le visiteur voit le bandeau sur le site, ou scanne le QR code projeté, et ouvre le
-   tableau en direct.
+1. Le jour J, le visiteur voit le bandeau sur le site, ou scanne le QR code projeté avant le
+   début ou pendant une pause, et ouvre le tableau en direct.
 2. Il voit en très grand le dernier numéro, les cinq précédents, la partie et la ligne en cours,
    les lots, puis la grille des 90 numéros et les numéros du bingo.
 3. Chaque nouveau numéro apparaît sans action de sa part. Si la connexion tombe, un message
@@ -107,8 +112,8 @@ jeu côté serveur sont saines. Les défauts sont dans la présentation et dans 
 | # | Écran | Nature | Origine |
 |---|---|---|---|
 | **E1** | Tableau de projection — en jeu | *modifié* | Backoffice `evenement/:id/loto-tableau` (`TableauComponent` backoffice) |
-| **E2** | Annonces plein écran de la projection : numéro tiré, pause, avant le début, loto terminé | *modifié* | Modales « Numéro » et « Pause » du même écran ; les états « avant » et « terminé » sont *nouveaux* |
-| **E3** | Contrôles discrets de la régie : barre escamotable, saisie clavier, retour d'erreur | *modifié* | Boutons `undo` / `check` / `trophy` de E1 |
+| **E2** | Annonces plein écran de la projection : numéro tiré, pause (avec QR code), avant le début (avec QR code), loto terminé | *modifié* | Modales « Numéro » et « Pause » du même écran ; les états « avant » et « terminé » sont *nouveaux* |
+| **E3** | Contrôles discrets de la régie : barre escamotable, saisie clavier, bascule de palette, retour d'erreur | *modifié* | Boutons `undo` / `check` / `trophy` de E1 |
 | **E4** | Tableau en direct mobile | *modifié* | Site `evenement/:id/tableau` (`TableauComponent` site) |
 | **E5** | Bandeau « Aujourd'hui » du site | *nouveau* | Au-dessus de l'en-tête (`navigation.component`) |
 | **E6** | Fiche d'un événement loto : accès au tableau en direct | *modifié* | Site `evenement/:id` (`event-detail`) |
@@ -116,33 +121,46 @@ jeu côté serveur sont saines. Les défauts sont dans la présentation et dans 
 ### E1 — Tableau de projection, en jeu
 
 Format de référence : 1920 × 1080 (16:9), plein écran. Il doit rester lisible en 1280 × 720 et en
-1440 px de large. Contenu, par ordre d'importance :
+1440 px de large.
 
-1. **Grille 9 × 10** des numéros 1 à 90, sur environ deux tiers de la largeur.
+Deux palettes partagent la même mise en page :
+- **A, « sombre / tableau lumineux »** : fond sombre, numéros sortis allumés ;
+- **B, « claire »** : fond clair, numéros sortis en pavé plein.
+
+La grille occupe **le maximum de la surface** : aucune marge décorative, aucun en-tête de site,
+aucun QR code pendant le jeu. Contenu, par ordre d'importance :
+
+1. **Grille 9 × 10** des numéros 1 à 90, sur toute la hauteur et au moins les trois quarts de la
+   largeur.
 2. **Dernier numéro** en très grand dans une colonne latérale, avec les **cinq précédents**
    dessous.
 3. **Partie en cours** : nom, ligne en cours (« 1 ligne », « 2 lignes », « Carton plein »),
    compteur « 1ʳᵉ fois » / « 2ᵉ fois » en une ligne, type spécial (« Américaine », « +1 / −1 »).
 4. **Lots** de la ligne en cours, avec les lots déjà gagnés barrés.
 5. **Bingo** : ses numéros, ou « Bingo gagné ! ».
-6. **QR code** discret « Suivez le tableau sur votre téléphone », qui mène à E4.
+
+Pas de QR code sur cet écran : il n'apparaît qu'avant le début et pendant la pause (E2).
 
 ### E2 — Annonces plein écran
 
 - **Numéro tiré** : le numéro occupe la hauteur de l'écran pendant environ 2 s, puis le tableau
   revient. Pendant ce temps, une nouvelle saisie remplace l'annonce.
-- **Pause** : titre « Pause », numéros du bingo et partie suivante. Il dure jusqu'à la reprise.
+- **Pause** : titre « Pause », numéros du bingo, partie suivante et **QR code** « Suivez le
+  tableau sur votre téléphone ». Il dure jusqu'à la reprise.
 - **Avant le début** : nom de l'événement, « Le loto va commencer », première partie, ses lots,
-  QR code.
+  et un **grand QR code** avec l'adresse courte en clair.
 - **Loto terminé** : « Loto terminé — merci ! », bingo gagné ou non.
 
 ### E3 — Contrôles discrets
 
-- La barre de régie (annuler, ligne gagnée, bingo, pause / reprise, plein écran) est **masquée
+- La barre de régie (annuler, ligne gagnée, bingo, pause / reprise, palette sombre / claire,
+  plein écran) est **masquée
   par défaut**. Elle apparaît quand la souris bouge ou qu'elle approche du bas de l'écran, puis
   se masque après 3 s d'inactivité. Le curseur se masque aussi.
 - Saisie clavier : chiffres puis Entrée. La saisie en cours apparaît dans un petit témoin, dans
   un coin, et non au centre de l'écran.
+- Bascule de palette : bouton de la barre et touche **P**, sans recharger la page ni perdre
+  l'annonce en cours. Le choix est mémorisé sur le poste.
 - Toute action est **désactivée pendant son envoi**, pour éviter les doublons au double-clic.
 - Une erreur (numéro déjà sorti, réseau) s'affiche dans un toast discret, en bas de l'écran.
 
@@ -200,12 +218,16 @@ la fiche. Les autres jours, rien ne change.
 | **RG-18** | Le bandeau d'un loto passe à « En direct » dès qu'un premier numéro est sorti et que toutes les parties ne sont pas terminées. Il passe à « Terminé » une fois la dernière partie gagnée. |
 | **RG-19** | La fermeture du bandeau est mémorisée sur l'appareil pour l'événement et la journée. Le passage de « avant » à « En direct » le fait réapparaître une fois. |
 | **RG-20** | Le bandeau n'apparaît pas sur la page du tableau en direct elle-même. Il ne doit pas décaler la mise en page de façon visible au chargement (place réservée ou apparition sans saut). |
-| **RG-21** | Le QR code de la projection et le bouton « Suivre le tableau » mènent à la même adresse publique, `/evenement/<id>/tableau`. |
+| **RG-21** | Le QR code et le bouton « Suivre le tableau » mènent à la même adresse publique, `/evenement/<id>/tableau`. Le QR code n'apparaît que sur les écrans « Avant le début » et « Pause » de la projection, jamais sur le tableau en jeu. |
+| **RG-22** | Le tableau projeté propose deux palettes, A « sombre » et B « claire », avec la même mise en page ; chacune respecte RG-01 à RG-03. L'animateur bascule de l'une à l'autre à tout moment (bouton de régie ou touche P). La bascule est instantanée et n'affecte ni la saisie ni les téléphones. Le dernier choix est mémorisé sur le poste. |
+| **RG-23** | Pendant le jeu, la grille occupe toute la hauteur disponible et au moins les trois quarts de la largeur de l'écran projeté, en laissant juste la place nécessaire aux informations de partie. |
 
 ## 8. Critères d'acceptation
 
 1. Sur un vidéoprojecteur, ou en simulation (capture désaturée à 50 % avec noirs relevés),
-   numéros sortis, non sortis et dernier numéro restent distinguables en niveaux de gris (RG-01).
+   numéros sortis, non sortis et dernier numéro restent distinguables en niveaux de gris, dans
+   les deux palettes (RG-01, RG-22). La touche P bascule de palette sans perte d'état, et un
+   rechargement conserve la palette choisie.
 2. Tableau projeté et annonces respectent RG-02 et RG-03 en 1920 × 1080 et restent sans
    débordement en 1280 × 720.
 3. Après 3 s sans souris, aucun contrôle ni curseur n'est visible (RG-04). La saisie de « 4 », «
@@ -222,7 +244,8 @@ la fiche. Les autres jours, rien ne change.
 10. `/evenement/<id inconnu>/tableau` affiche le message de RG-15.
 11. Le jour d'un loto, le bandeau suit les états avant → en direct → terminé (RG-16 à RG-18). Il
     est absent de la page du tableau (RG-20) et absent les autres jours.
-12. Le QR code projeté, scanné avec un téléphone, ouvre E4 (RG-21).
+12. Scanné avec un téléphone, le QR code projeté avant le début et pendant la pause ouvre E4. Il
+    est absent du tableau en jeu, où la grille respecte RG-23 (RG-21, RG-23).
 
 ## 9. Contraintes
 
@@ -239,13 +262,11 @@ la fiche. Les autres jours, rien ne change.
   contraste, documentée dans les maquettes.
 - Les règles de jeu côté serveur et leurs tests existants restent inchangés.
 
-## 10. Questions ouvertes
+## 10. Décisions du 2026-10-13
 
-1. **Palette de projection** : les maquettes proposent deux variantes pour E1 et E2, tranchées en
-   phase 2 :
-   - **A**, « tableau lumineux » : fond sombre, numéros sortis allumés en blanc et jaune vif,
-     comme les tableaux électriques de loto ;
-   - **B**, « fond clair » : fond blanc, numéros sortis en pavé plein encre. Elle donne plus de
-     lumière totale face à l'éclairage de scène.
-2. Faut-il afficher l'heure du prochain événement dans le bandeau la veille ? Proposition : non,
-   le bandeau ne concerne que le jour J.
+1. **Palettes** : A « sombre » et B « claire », basculables en direct le jour J (RG-22).
+2. **Bandeau** : sur tout le site, pour tous les types d'événements du jour ; seul le loto a un
+   état « En direct ».
+3. **Pause** : propre à la projection, non diffusée aux téléphones.
+4. **QR code** : affiché avant le début et pendant la pause, jamais pendant le jeu, pour laisser
+   toute la place à la grille (RG-21, RG-23).
