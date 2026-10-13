@@ -25,3 +25,5 @@ export * from './lib/components/vpd-loader/vpd-loader.component';
 export * from './lib/pipes/vpd-price.pipe';
 export * from './lib/pipes/vpd-capitalize.pipe';
 export * from './lib/pipes/vpd-line-number-title.pipe';
+
+export * from './lib/loto/loto-tableau-view';
