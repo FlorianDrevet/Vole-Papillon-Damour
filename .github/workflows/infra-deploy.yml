@@ -21,6 +21,31 @@ on:
         type: boolean
         required: true
         default: false
+      website_apex_certificate_name:
+        description: Existing managed certificate name for volepapillondamour.fr
+        type: string
+        required: false
+        default: ''
+      website_www_certificate_name:
+        description: Existing managed certificate name for www.volepapillondamour.fr
+        type: string
+        required: false
+        default: ''
+      backoffice_certificate_name:
+        description: Existing managed certificate name for backoffice.volepapillondamour.fr
+        type: string
+        required: false
+        default: ''
+      catalog_certificate_name:
+        description: Existing managed certificate name for livres.volepapillondamour.fr
+        type: string
+        required: false
+        default: ''
+      scan_certificate_name:
+        description: Existing managed certificate name for scan.volepapillondamour.fr
+        type: string
+        required: false
+        default: ''
 
 permissions:
   id-token: write
@@ -132,13 +157,26 @@ jobs:
           TITLE_GENERATION_ENABLED: ${{ secrets.TITLE_GENERATION_ENABLED }}
           TITLE_GENERATION_ACCOUNT_NAME: ${{ secrets.TITLE_GENERATION_ACCOUNT_NAME }}
           TITLE_GENERATION_DEPLOYMENT_NAME: ${{ secrets.TITLE_GENERATION_DEPLOYMENT_NAME }}
+          WEBSITE_APEX_CERT_NAME: ${{ inputs.website_apex_certificate_name }}
+          WEBSITE_WWW_CERT_NAME: ${{ inputs.website_www_certificate_name }}
+          BACKOFFICE_CERT_NAME: ${{ inputs.backoffice_certificate_name }}
+          CATALOG_CERT_NAME: ${{ inputs.catalog_certificate_name }}
+          SCAN_CERT_NAME: ${{ inputs.scan_certificate_name }}
         run: |
+          set -euo pipefail
+          CUSTOM_DOMAIN_PARAMETERS=()
+          [[ -z "$WEBSITE_APEX_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("websiteCustomDomainCertificateName=$WEBSITE_APEX_CERT_NAME")
+          [[ -z "$WEBSITE_WWW_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("websiteWwwCustomDomainCertificateName=$WEBSITE_WWW_CERT_NAME")
+          [[ -z "$BACKOFFICE_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("backOfficeCustomDomainCertificateName=$BACKOFFICE_CERT_NAME")
+          [[ -z "$CATALOG_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("catalogCustomDomainCertificateName=$CATALOG_CERT_NAME")
+          [[ -z "$SCAN_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("scanCustomDomainCertificateName=$SCAN_CERT_NAME")
           az deployment sub what-if \
             --name "vpd-infra-${{ github.run_number }}" \
             --location "$AZURE_LOCATION" \
             --parameters "$PARAMETERS_FILE" \
             communicationEmailCreateResources=${{ inputs.bootstrap_email_resources }} \
-            bookAlertsEmailEnabled=${{ inputs.enable_book_alert_emails }}
+            bookAlertsEmailEnabled=${{ inputs.enable_book_alert_emails }} \
+            "${CUSTOM_DOMAIN_PARAMETERS[@]}"
 
       - name: Deploy
         id: deploy
@@ -160,14 +198,26 @@ jobs:
           TITLE_GENERATION_ENABLED: ${{ secrets.TITLE_GENERATION_ENABLED }}
           TITLE_GENERATION_ACCOUNT_NAME: ${{ secrets.TITLE_GENERATION_ACCOUNT_NAME }}
           TITLE_GENERATION_DEPLOYMENT_NAME: ${{ secrets.TITLE_GENERATION_DEPLOYMENT_NAME }}
+          WEBSITE_APEX_CERT_NAME: ${{ inputs.website_apex_certificate_name }}
+          WEBSITE_WWW_CERT_NAME: ${{ inputs.website_www_certificate_name }}
+          BACKOFFICE_CERT_NAME: ${{ inputs.backoffice_certificate_name }}
+          CATALOG_CERT_NAME: ${{ inputs.catalog_certificate_name }}
+          SCAN_CERT_NAME: ${{ inputs.scan_certificate_name }}
         run: |
           set -euo pipefail
+          CUSTOM_DOMAIN_PARAMETERS=()
+          [[ -z "$WEBSITE_APEX_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("websiteCustomDomainCertificateName=$WEBSITE_APEX_CERT_NAME")
+          [[ -z "$WEBSITE_WWW_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("websiteWwwCustomDomainCertificateName=$WEBSITE_WWW_CERT_NAME")
+          [[ -z "$BACKOFFICE_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("backOfficeCustomDomainCertificateName=$BACKOFFICE_CERT_NAME")
+          [[ -z "$CATALOG_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("catalogCustomDomainCertificateName=$CATALOG_CERT_NAME")
+          [[ -z "$SCAN_CERT_NAME" ]] || CUSTOM_DOMAIN_PARAMETERS+=("scanCustomDomainCertificateName=$SCAN_CERT_NAME")
           az deployment sub create \
             --name "vpd-infra-${{ github.run_number }}" \
             --location "$AZURE_LOCATION" \
             --parameters "$PARAMETERS_FILE" \
             communicationEmailCreateResources=${{ inputs.bootstrap_email_resources }} \
             bookAlertsEmailEnabled=${{ inputs.enable_book_alert_emails }} \
+            "${CUSTOM_DOMAIN_PARAMETERS[@]}" \
             --query properties.outputs \
             --output json > outputs.json
           cat outputs.json
