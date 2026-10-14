@@ -64,7 +64,6 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                 candidate => candidate.Id == AssociationSettings.SingletonId,
                 cancellationToken);
         var alertDelayMinutes = settings?.AlertDelayMinutes ?? 120;
-        var alertCooldownDays = settings?.AlertCooldownDays ?? 30;
 
         var movementType = session.Mode == ScanMode.AvailableNow
             ? BookMovementType.DirectEntry
@@ -143,13 +142,95 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             })
             .ToArray();
 
+        var dueAt = closedAt.AddMinutes(alertDelayMinutes);
+        await QueueCandidatesAsync(candidates, closedAt, dueAt, scanSessionId.Value, cancellationToken);
+    }
+
+    /// <summary>RG-84: queues watcher alerts immediately after a copy is released into stock.</summary>
+    public async Task<int> QueueForReleaseAsync(
+        BookMovementId releaseMovementId,
+        DateTime releasedAt,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(releaseMovementId);
+        ValidateUtc(releasedAt, nameof(releasedAt));
+
+        var movement = await dbContext.BookMovements
+            .AsNoTracking()
+            .SingleOrDefaultAsync(candidate => candidate.Id == releaseMovementId, cancellationToken);
+        if (movement is null ||
+            movement.Quantity <= 0 ||
+            movement.Type is not (BookMovementType.DirectEntry or BookMovementType.AnnouncementEntry))
+        {
+            return 0;
+        }
+
+        var book = await dbContext.Books
+            .AsNoTracking()
+            .SingleOrDefaultAsync(candidate => candidate.Id == movement.Isbn13, cancellationToken);
+        var mode = movement.Type == BookMovementType.DirectEntry
+            ? ScanMode.AvailableNow
+            : ScanMode.NextFair;
+        var bookFairs = await dbContext.AssoEvents
+            .AsNoTracking()
+            .WhereActiveBookFair()
+            .ToListAsync(cancellationToken);
+        var activeBookFairOpenings = bookFairs
+            .ToDictionary(assoEvent => assoEvent.Id.Value, GetOpeningInstant);
+        var nextBookFair = activeBookFairOpenings
+            .Where(pair => pair.Value > new DateTimeOffset(releasedAt))
+            .OrderBy(pair => pair.Value)
+            .Select(pair => (KeyValuePair<Guid, DateTimeOffset>?)pair)
+            .FirstOrDefault();
+        Guid? openingFairId = movement.AssoEventsId is { } fairId &&
+                              activeBookFairOpenings.ContainsKey(fairId.Value)
+            ? fairId.Value
+            : mode == ScanMode.AvailableNow
+                ? nextBookFair?.Key
+                : null;
+        DateTimeOffset? fairOpening = openingFairId is { } openingId
+            ? activeBookFairOpenings[openingId]
+            : null;
+        var candidate = new AlertCandidate(
+            movement.Isbn13,
+            book?.WorkId,
+            book?.Title,
+            book?.Authors,
+            book?.Publisher,
+            book?.PublicationYear,
+            book?.PhysicalFormat,
+            movement.Quantity,
+            mode,
+            movement.AssoEventsId,
+            fairOpening,
+            book?.CoverUrl,
+            book is { IsHiddenFromCatalog: false, RedirectedToIsbn13: null }
+                ? PublicBookPath.For(book.Id, book.Title, book.Authors)
+                : null,
+            openingFairId);
+
+        return await QueueCandidatesAsync([candidate], releasedAt, releasedAt, null, cancellationToken);
+    }
+
+    private async Task<int> QueueCandidatesAsync(
+        IReadOnlyList<AlertCandidate> candidates,
+        DateTime referenceAt,
+        DateTime dueAt,
+        Guid? scanSessionId,
+        CancellationToken cancellationToken)
+    {
+        if (candidates.Count == 0)
+        {
+            return 0;
+        }
+
         var activeWatchlists = await dbContext.Watchlists
             .AsNoTracking()
             .Where(watchlist => watchlist.AlertStatus == WatchlistAlertStatus.Active)
             .ToListAsync(cancellationToken);
         if (activeWatchlists.Count == 0)
         {
-            return;
+            return 0;
         }
 
         var activeMemberIds = activeWatchlists
@@ -161,16 +242,22 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             .ToListAsync(cancellationToken);
         if (watchlistItems.Count == 0)
         {
-            return;
+            return 0;
         }
 
-        var cooldownStart = closedAt.AddDays(-alertCooldownDays);
+        var settings = await dbContext.AssociationSettings
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                candidate => candidate.Id == AssociationSettings.SingletonId,
+                cancellationToken);
+        var alertCooldownDays = settings?.AlertCooldownDays ?? 30;
+        var cooldownStart = referenceAt.AddDays(-alertCooldownDays);
         var recentHistory = await dbContext.UserAlertHistories
             .AsNoTracking()
             .Where(history =>
                 activeMemberIds.Contains(history.UserId) &&
                 history.SentAt >= cooldownStart &&
-                history.SentAt <= closedAt)
+                history.SentAt <= referenceAt)
             .ToListAsync(cancellationToken);
 
         var matchedItems = new Dictionary<UserId, List<AlertCandidate>>();
@@ -198,7 +285,6 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
             }
         }
 
-        var dueAt = closedAt.AddMinutes(alertDelayMinutes);
         foreach (var member in matchedItems.OrderBy(pair => pair.Key.Value))
         {
             var items = member.Value
@@ -229,11 +315,13 @@ public sealed class BookAlertOutbox(ProjectDbContext dbContext) : IBookAlertOutb
                 DueAt = dueAt,
                 Status = OutboxMessageStatus.Pending,
                 Attempts = 0,
-                ScanSessionId = scanSessionId.Value,
+                ScanSessionId = scanSessionId,
                 MemberId = member.Key.Value,
-                CreatedAt = closedAt
+                CreatedAt = referenceAt
             });
         }
+
+        return matchedItems.Count;
     }
 
     public async Task<int> CancelPendingForSessionAsync(

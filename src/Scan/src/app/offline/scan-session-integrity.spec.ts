@@ -52,11 +52,19 @@ describe('scan session integrity', () => {
 
     const counts = await workflow.getSessionCounts(session!.clientSessionId);
 
-    expect(counts).toEqual({scannedCount: 2, keptCount: 1, rejectedCount: 0});
+    expect(counts).toEqual({
+      scannedCount: 2,
+      keptCount: 1,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    });
     expect((await store.getSession())?.counts).toEqual({
       scannedCount: 2,
       keptCount: 1,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
     expect(Object.prototype.hasOwnProperty.call(await store.getSession(), 'scannedCount')).toBeFalse();
   });
@@ -72,6 +80,8 @@ describe('scan session integrity', () => {
       scannedCount: 1,
       keptCount: 1,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
   });
 

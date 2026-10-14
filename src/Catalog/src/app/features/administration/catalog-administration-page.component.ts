@@ -65,6 +65,7 @@ import {
   CatalogNotFoundCloseAction,
   CatalogNotFoundQueueTarget,
   CatalogNotFoundSummary,
+  CatalogManualRequestSummary,
 } from '../../core/catalog.models';
 import {toDeadStockCsv} from './dead-stock-export';
 import {NotFoundCloseConfirmation} from './not-found-reports/not-found-report-close-dialog.component';
@@ -101,6 +102,7 @@ type CatalogAdminNavIcon =
   | 'scan'
   | 'dead-stock'
   | 'flag'
+  | 'phone'
   | 'catalogue'
   | 'rare-books'
   | 'statistics'
@@ -126,6 +128,7 @@ const FULL_NAV_GROUPS: CatalogAdminNavGroup[] = [
       {id: 'sessions', label: 'Sessions de scan', icon: 'scan'},
       {id: 'dead-stock', label: 'Désengorgement', icon: 'dead-stock'},
       {id: 'not-found', label: 'Livres introuvables', icon: 'flag'},
+      {id: 'manual-requests', label: 'Demandes manuelles', icon: 'phone'},
     ],
   },
   {
@@ -236,6 +239,10 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       const count = this.notFoundSummary()?.openTargetCount ?? 0;
       return count > 0 ? this.formatNumber(count) : null;
     }
+    if (section === 'manual-requests') {
+      const count = this.manualRequestSummary()?.foundCount ?? 0;
+      return count > 0 ? this.formatNumber(count) : null;
+    }
 
     const totalCount = section === 'sessions'
       ? this.sessionsPage() ? this.correctableSessionCount() : undefined
@@ -259,6 +266,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly sessionConfirmation = signal<CatalogAdminSessionConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
   readonly notFoundSummary = signal<CatalogNotFoundSummary | null>(null);
+  readonly manualRequestSummary = signal<CatalogManualRequestSummary | null>(null);
+  readonly manualRequesterId = signal<string | null>(null);
+  readonly manualRequestAccessToken = signal('');
   readonly selectedBookNotFoundSummary = signal<CatalogNotFoundSummary | null>(null);
   readonly notFoundAccessToken = signal('');
   readonly bookNotFoundDialog = signal<{target: CatalogNotFoundQueueTarget; action: CatalogNotFoundCloseAction} | null>(null);
@@ -420,6 +430,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       .subscribe(([params, queryParams]) => this.applyRouteState(
         params.get('section'),
         queryParams.get('tab'),
+        queryParams.get('demandeur'),
       ));
     void this.initialize();
   }
@@ -447,6 +458,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         await this.loadSessions();
         await this.loadDeadStock();
         await this.loadNotFoundSummary();
+        await this.loadManualRequestSummary();
 
         if (!(['overview', 'sessions', 'dead-stock'] as CatalogAdminSection[]).includes(this.activeSection())) {
           await this.loadSection(this.activeSection());
@@ -514,6 +526,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       case 'not-found':
         await this.loadNotFoundWorkspace();
         break;
+      case 'manual-requests':
+        await this.loadManualRequestWorkspace();
+        break;
       case 'catalogue':
         await this.loadCatalogue();
         break;
@@ -534,7 +549,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private applyRouteState(sectionParam: string | null, statisticsTabParam: string | null): void {
+  private applyRouteState(sectionParam: string | null, statisticsTabParam: string | null, requesterParam: string | null): void {
     if (sectionParam && !isCatalogAdminSection(sectionParam)) {
       void this.router.navigate(['/administration', 'overview'], {replaceUrl: true});
       return;
@@ -547,6 +562,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
     this.activeSection.set(section);
     this.statisticsTab.set(statisticsTab);
+    this.manualRequesterId.set(section === 'manual-requests' ? requesterParam : null);
 
     if (!this.administrationInitialized || !this.auth.isAuthenticated()) {
       return;
@@ -930,10 +946,50 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.notFoundSummary.set(summary);
   }
 
+  onManualRequestCountsChanged(summary: CatalogManualRequestSummary): void {
+    this.manualRequestSummary.set(summary);
+  }
+
+  openManualRequester(requesterId: string | null): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {demandeur: requesterId ?? 'nouveau'},
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  closeManualRequester(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {demandeur: null},
+      queryParamsHandling: 'merge',
+    });
+  }
+
   private async loadNotFoundWorkspace(): Promise<void> {
     await this.run('not-found-access', async token => {
       this.notFoundAccessToken.set(token);
       this.notFoundSummary.set(await firstValueFrom(this.api.getNotFoundSummary(token)));
+    });
+  }
+
+  private async loadManualRequestSummary(): Promise<void> {
+    if (!this.auth.isAuthenticated()) {
+      return;
+    }
+
+    try {
+      const token = await this.auth.getApiAccessToken();
+      this.manualRequestSummary.set(await firstValueFrom(this.api.getManualRequestSummary(token)));
+    } catch {
+      this.manualRequestSummary.set(null);
+    }
+  }
+
+  private async loadManualRequestWorkspace(): Promise<void> {
+    await this.run('manual-requests-access', async token => {
+      this.manualRequestAccessToken.set(token);
+      this.manualRequestSummary.set(await firstValueFrom(this.api.getManualRequestSummary(token)));
     });
   }
 

@@ -16,6 +16,7 @@ import {
   ScanSessionCloseRequest,
   ScanSessionSnapshot,
   ScanSessionResponse,
+  ScanSessionCounts,
 } from './scan-offline.model';
 import {ScanWorkflowService} from './scan-workflow.service';
 import {ScanRareBookService} from '../rare-books/scan-rare-book.service';
@@ -42,6 +43,7 @@ export interface SessionSyncSummary {
   catalog: CatalogSyncSummary | null;
   outbox: OutboxSyncSummary;
   closed: boolean;
+  sessionCounts?: ScanSessionCounts | null;
 }
 
 @Injectable({providedIn: 'root'})
@@ -88,8 +90,12 @@ export class ScanSyncService {
       }
 
       const transfer = await this.flushOutboxInternal();
+      const localSession = await this.workflow.getSession();
+      const sessionCounts = localSession
+        ? await this.workflow.getSessionCounts(localSession.clientSessionId)
+        : null;
       const closed = await this.closeRequestedSessions();
-      return {catalog, outbox: transfer, closed};
+      return {catalog, outbox: transfer, closed, sessionCounts};
     });
   }
 
@@ -254,6 +260,17 @@ export class ScanSyncService {
             null,
             null,
           );
+          const manualRequestOutcome = response.heldForManualRequest
+            ? 'Held'
+            : entry.verdict === 'ManualRequest' && entry.kept === true
+              ? 'Missed'
+              : null;
+          if (manualRequestOutcome) {
+            await this.store.recordManualRequestOutcome(
+              entry.clientGestureId,
+              manualRequestOutcome,
+            );
+          }
           await this.applyServerProjection(entry.isbn13, entry.isRare, response);
           await this.store.deleteOutboxEntry(entry.clientGestureId);
           sent += 1;
@@ -667,6 +684,7 @@ export class ScanSyncService {
       qtyAnnounced: response.qtyAnnounced ?? current?.qtyAnnounced ?? 0,
       salesCount: response.salesCount ?? current?.salesCount ?? 0,
       isWanted: current?.isWanted ?? false,
+      isManuallyRequested: current?.isManuallyRequested ?? false,
       isRare: current?.isRare ?? isRare,
       updatedAt: new Date().toISOString(),
     };

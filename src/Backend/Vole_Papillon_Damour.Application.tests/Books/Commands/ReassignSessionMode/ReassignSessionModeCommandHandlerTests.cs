@@ -5,9 +5,12 @@ using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanSession;
 using Vole_Papillon_Damour.Application.tests.Books.Commands.ScanBook;
+using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
@@ -152,5 +155,77 @@ public sealed class ReassignSessionModeCommandHandlerTests
         firstResult.IsError.Should().BeFalse();
         secondResult.IsError.Should().BeTrue();
         secondResult.FirstError.Code.Should().Be("Book.ScanSessionAlreadyReassigned");
+    }
+
+    [Fact]
+    public async Task ReassignMode_LeavesHoldsUntouched()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var fair = await fixture.AddFairAsync(
+            DateTimeOffset.Parse("2026-09-10T00:00:00+02:00"),
+            DateTimeOffset.Parse("2026-09-11T00:00:00+02:00"),
+            null,
+            null);
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow, volunteerId: AdministratorId);
+        var book = await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
+        var requesterId = Guid.NewGuid();
+        var request = ManualBookRequest.CreateEdition(
+            Guid.NewGuid(),
+            requesterId,
+            Isbn13.TryCreate("9782070363735", out var isbn) ? isbn : throw new InvalidOperationException(),
+            "Le Petit Prince",
+            null,
+            null,
+            null,
+            ScanBookCommandHandlerTests.ClientScanAt.AddMinutes(-1));
+        var movement = BookMovement.Create(
+            BookMovementId.CreateUnique(),
+            book.Id,
+            BookMovementType.ManualRequestHold,
+            1,
+            ScanBookCommandHandlerTests.ClientScanAt,
+            ScanBookCommandHandlerTests.ReceivedAt,
+            clockSuspect: false,
+            session.Id,
+            session.VolunteerId,
+            null,
+            note: null,
+            clientGestureId: Guid.NewGuid(),
+            reversalOfMovementId: null);
+        fixture.Context.ManualRequesters.Add(ManualRequester.Create(
+            requesterId,
+            "Martin",
+            "Jeanne",
+            "0612345678",
+            consentGiven: true,
+            AdministratorId,
+            ScanBookCommandHandlerTests.ClientScanAt.AddMinutes(-1)));
+        request.MarkFoundByScan(
+            book.Id,
+            session.Id,
+            movement.Id,
+            session.VolunteerId,
+            ScanBookCommandHandlerTests.ClientScanAt);
+        fixture.Context.ManualBookRequests.Add(request);
+        fixture.Context.BookMovements.Add(movement);
+        await fixture.Context.SaveChangesAsync();
+        await fixture.CreateCloseScanSessionHandler().Handle(
+            new CloseScanSessionCommand(session.Id, ScanCloseReason.Manual, session.VolunteerId),
+            CancellationToken.None);
+
+        var result = await fixture.CreateReassignSessionModeHandler().Handle(
+            new ReassignSessionModeCommand(
+                session.Id,
+                ScanMode.NextFair,
+                fair.Id,
+                AdministratorId),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.ReversedMovementCount.Should().Be(0);
+        result.Value.ReplayedMovementCount.Should().Be(0);
+        request.Status.Should().Be(Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects.ManualBookRequestStatus.Found);
+        book.QuantityAvailable.Should().Be(0);
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(1);
     }
 }

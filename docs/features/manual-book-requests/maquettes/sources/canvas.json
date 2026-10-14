@@ -1,0 +1,62 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-12T09:30:00Z" },
+  "title": "Demandes manuelles",
+  "launch": { "view": "canvas", "page": "admin" },
+  "pages": [
+    { "id": "admin", "name": "Administration" },
+    { "id": "scan", "name": "Scanette" }
+  ],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1440, "h": 1260, "title": "E1/E2 · Demandes manuelles — Trouvés à remettre (desktop)", "page": "admin" },
+    "AdminEnRecherche.dc.html": { "x": 1520, "y": 0, "w": 1440, "h": 1260, "title": "E2 · Demandes manuelles — En recherche (desktop)", "page": "admin" },
+    "AdminDemandeur.dc.html": { "x": 0, "y": 1500, "w": 1440, "h": 1260, "title": "E3 · Fiche demandeur (desktop)", "page": "admin" },
+    "AdminAjoutLivre.dc.html": { "x": 1520, "y": 1500, "w": 1440, "h": 1260, "title": "E4 · Ajouter un livre (desktop)", "page": "admin" },
+    "AdminDonne.dc.html": { "x": 0, "y": 3000, "w": 1440, "h": 900, "title": "E5 · Donné — confirmation (desktop)", "page": "admin" },
+    "AdminRefus.dc.html": { "x": 1520, "y": 3000, "w": 1440, "h": 900, "title": "E5 · Refusé — suite et mise à disposition (desktop)", "page": "admin" },
+    "AdminTableauDeBord.dc.html": { "x": 0, "y": 4140, "w": 1440, "h": 700, "title": "E7 · Tableau de bord — tuile « à remettre » (desktop)", "page": "admin" },
+    "AdminEtats.dc.html": { "x": 1520, "y": 4140, "w": 1440, "h": 1500, "title": "E2–E5 · États : vide, chargement, erreurs, closes, confirmations", "page": "admin" },
+    "AdminDemandesMobile.dc.html": { "x": 0, "y": 5880, "w": 390, "h": 1300, "title": "E1/E2 · Demandes manuelles — mobile", "page": "admin" },
+    "AdminDemandeurMobile.dc.html": { "x": 470, "y": 5880, "w": 390, "h": 1300, "title": "E3 · Fiche demandeur — mobile", "page": "admin" },
+    "AdminAjoutLivreMobile.dc.html": { "x": 940, "y": 5880, "w": 390, "h": 1300, "title": "E4 · Ajouter un livre — mobile", "page": "admin" },
+    "AdminRefusMobile.dc.html": { "x": 1410, "y": 5880, "w": 390, "h": 900, "title": "E5 · Refusé — feuille mobile", "page": "admin" },
+    "AdminTableauDeBordMobile.dc.html": { "x": 1880, "y": 5880, "w": 390, "h": 700, "title": "E7 · Tableau de bord — mobile", "page": "admin" },
+    "ScanMiseDeCote.dc.html": { "x": 0, "y": 0, "w": 390, "h": 844, "title": "E6 · Verdict « À mettre de côté » — en ligne", "page": "scan" },
+    "ScanMiseDeCoteHorsLigne.dc.html": { "x": 470, "y": 0, "w": 390, "h": 844, "title": "E6 · Verdict « À mettre de côté » — hors ligne", "page": "scan" },
+    "ScanCoordonneesChargement.dc.html": { "x": 940, "y": 0, "w": 390, "h": 844, "title": "E6 · États : coordonnées en chargement, livre rare en complément", "page": "scan" },
+    "ScanFinSession.dc.html": { "x": 1410, "y": 0, "w": 390, "h": 844, "title": "E6 · Fin de session — livres mis de côté", "page": "scan" }
+  },
+  "order": [
+    "Main.dc.html",
+    "AdminEnRecherche.dc.html",
+    "AdminDemandeur.dc.html",
+    "AdminAjoutLivre.dc.html",
+    "AdminDonne.dc.html",
+    "AdminRefus.dc.html",
+    "AdminTableauDeBord.dc.html",
+    "AdminEtats.dc.html",
+    "AdminDemandesMobile.dc.html",
+    "AdminDemandeurMobile.dc.html",
+    "AdminAjoutLivreMobile.dc.html",
+    "AdminRefusMobile.dc.html",
+    "AdminTableauDeBordMobile.dc.html",
+    "ScanMiseDeCote.dc.html",
+    "ScanMiseDeCoteHorsLigne.dc.html",
+    "ScanCoordonneesChargement.dc.html",
+    "ScanFinSession.dc.html"
+  ],
+  "notes": {
+    "titreAdmin": { "x": 0, "y": -300, "text": "Demandes manuelles — administration", "kind": "title1", "maxW": 2960, "page": "admin" },
+    "noteRg77": { "x": 3040, "y": 0, "w": 420, "fill": "blue", "page": "admin", "text": "RG-77 — Entrée « Demandes manuelles » et écrans visibles uniquement du rôle Administration. Badge = demandes trouvées à remettre, masqué à 0 (E1)." },
+    "noteRg79": { "x": 3040, "y": 620, "w": 420, "fill": "teal", "page": "admin", "text": "RG-79 — Trouvés à remettre : de la plus ancienne trouvaille à la plus récente. Origine affichée : « au tri par Michel » ou « prélevé en stock » (RG-82)." },
+    "noteRg78": { "x": 3040, "y": 1500, "w": 420, "fill": "blue", "page": "admin", "text": "RG-78 / RG-87 — Nom, prénom, téléphone et accord obligatoires. Un demandeur porte plusieurs demandes ; pas deux demandes ouvertes sur la même cible." },
+    "noteRg82": { "x": 3040, "y": 2120, "w": 420, "fill": "orange", "page": "admin", "text": "RG-82 — « Déjà à la bourse » n'apparaît que si un exemplaire correspondant est disponible ou annoncé. « Prélever » prend un disponible en priorité, sinon un annoncé, et crée la demande directement « trouvée »." },
+    "noteRg83": { "x": 3040, "y": 3000, "w": 420, "fill": "green", "page": "admin", "text": "RG-83 — Donné : l'exemplaire sort définitivement, geste tracé et attribué. Ne compte pas comme une vente (pas de « ce titre se vend »)." },
+    "noteRg84": { "x": 3040, "y": 3520, "w": 420, "fill": "red", "page": "admin", "text": "RG-84 — Refusé : l'exemplaire reprend le mode de sa session de scan (bourse passée ou annulée → disponible). Alertes membres constituées et envoyées immédiatement (pas de délai de 2 h), avec RG-28, RG-29, RG-30. « Continuer à chercher » garde l'ancienneté d'origine." },
+    "noteRg86": { "x": 3040, "y": 4140, "w": 420, "fill": "purple", "page": "admin", "text": "RG-86 / RG-88 / RG-89 — Annuler une demande trouvée vaut refus. Supprimer un demandeur annule ses demandes ouvertes puis efface ses coordonnées. Effacement automatique 3 mois après la dernière demande close → « Demandeur effacé »." },
+    "titreScan": { "x": 0, "y": -300, "text": "Demandes manuelles — scanette (tri)", "kind": "title1", "maxW": 1800, "page": "scan" },
+    "noteScanMobile": { "x": 1880, "y": 0, "w": 420, "fill": "gray", "page": "scan", "text": "La scanette est une application téléphone : pas d'artboard 1440 px. Seul l'écran de résultat du tri change ; le reste reprend docs/bourse-aux-livres/maquettes/scanette à l'identique." },
+    "noteRg80": { "x": 1880, "y": 400, "w": 420, "fill": "teal", "page": "scan", "text": "RG-79 / RG-80 — Verdict prioritaire sur tous ceux de RG-15. Nom, prénom et téléphone uniquement en ligne, pour ce seul exemplaire. Hors ligne : mention seule, aucune donnée personnelle sur l'appareil. Couleur de verdict nouvelle : pétrole #0d5c63." },
+    "noteRg81": { "x": 1880, "y": 820, "w": 420, "fill": "green", "page": "scan", "text": "RG-81 / RG-85 — Exemplaire mis de côté : aucune alerte membre. « Écarter » laisse la demande en recherche. Annuler le scan remet la demande en recherche." }
+  }
+}

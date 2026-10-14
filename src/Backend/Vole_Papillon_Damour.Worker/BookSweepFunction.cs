@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Vole_Papillon_Damour.Application.Books.Commands.Background;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Common.Services;
+using Vole_Papillon_Damour.Application.ManualRequests.Commands.EraseExpired;
 
 namespace Vole_Papillon_Damour.Worker;
 
@@ -34,6 +35,9 @@ public sealed class BookSweepFunction(
 
         var accountDeletionService = scope.ServiceProvider.GetRequiredService<IAccountDeletionService>();
         var deletedAccounts = await accountDeletionService.ProcessPendingAsync(cancellationToken);
+        var erasedManualRequesters = await sender.Send(
+            new EraseExpiredManualRequestersCommand(),
+            cancellationToken);
 
         logger.LogInformation(
             "Worker sweep completed. IdleCandidates: {IdleCandidates}, IdleClosed: {IdleClosed}, " +
@@ -42,7 +46,7 @@ public sealed class BookSweepFunction(
             "ReleasedQuantity: {ReleasedQuantity}, AlertClaimed: {AlertClaimed}, " +
             "AlertSent: {AlertSent}, AlertCancelled: {AlertCancelled}, AlertFailed: {AlertFailed}, " +
             "AlertDisabled: {AlertDisabled}, DueUnreleasedAnnouncements: {DueUnreleasedAnnouncements}, " +
-            "DeletedAccounts: {DeletedAccounts}",
+            "DeletedAccounts: {DeletedAccounts}, ErasedManualRequesters: {ErasedManualRequesters}",
             closeResult.CandidateCount,
             closeResult.ClosedCount,
             attachResult.AttachedCount,
@@ -55,7 +59,8 @@ public sealed class BookSweepFunction(
             alertResult.FailedCount,
             alertResult.Disabled,
             releaseResult.DueUnreleasedCount,
-            deletedAccounts);
+            deletedAccounts,
+            erasedManualRequesters);
 
         if (releaseResult.DueUnreleasedCount > 0)
         {

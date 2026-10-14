@@ -3,6 +3,8 @@ import {
   ScanCatalogBook,
   ScanOutboxEntry,
   ScanOutboxStatus,
+  ScanSessionCounts,
+  ScanSessionSnapshot,
   ScanRareBook,
   ScanRareSaleOutboxEntry,
   ScanPassageAssociationEntry,
@@ -74,6 +76,73 @@ describe('ScanLocalStoreService', () => {
       watermark: '2026-09-03T08:00:00.000Z',
       updatedAt: '2026-09-03T08:00:00.000Z',
       nextFair: null,
+    });
+  });
+
+  it('treats missing manual request counters in an older session as zero', async () => {
+    const session: ScanSessionSnapshot = {
+      key: 'active-session',
+      clientSessionId: 'legacy-session',
+      remoteSessionId: null,
+      volunteerId: null,
+      mode: 'AvailableNow',
+      targetAssoEventsId: null,
+      startedAt: '2026-09-03T08:00:00.000Z',
+      lastScanAt: '2026-09-03T08:01:00.000Z',
+      lastSyncAt: '2026-09-03T08:00:00.000Z',
+      counts: {scannedCount: 2, keptCount: 1, rejectedCount: 1} as ScanSessionCounts,
+    };
+    await service.saveSession(session);
+
+    expect(await service.getSessionCounts(session.clientSessionId)).toEqual({
+      scannedCount: 2,
+      keptCount: 1,
+      rejectedCount: 1,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    });
+  });
+
+  it('stores manual request outcomes and avoids counting a replay twice', async () => {
+    await service.saveSession({
+      key: 'active-session',
+      clientSessionId: 'session-1',
+      remoteSessionId: null,
+      volunteerId: null,
+      mode: 'AvailableNow',
+      targetAssoEventsId: null,
+      startedAt: '2026-09-03T08:00:00.000Z',
+      lastScanAt: '2026-09-03T08:01:00.000Z',
+      lastSyncAt: '2026-09-03T08:00:00.000Z',
+      counts: {
+        scannedCount: 2,
+        keptCount: 2,
+        rejectedCount: 0,
+        heldForManualRequestCount: 0,
+        manualRequestMissedIsbns: [],
+      },
+    });
+    const held = {...createOutboxEntry('gesture-held', undefined, 'Kept'), verdict: 'ManualRequest' as const};
+    const missed = {
+      ...createOutboxEntry('gesture-missed', undefined, 'Kept'),
+      isbn13: '9783140464079',
+      verdict: 'ManualRequest' as const,
+    };
+    await service.addOutboxEntry(held);
+    await service.addOutboxEntry(missed);
+
+    await service.recordManualRequestOutcome(held.clientGestureId, 'Held');
+    await service.recordManualRequestOutcome(held.clientGestureId, 'Held');
+    await service.recordManualRequestOutcome(missed.clientGestureId, 'Missed');
+
+    expect((await service.getOutboxEntry(held.clientGestureId))?.manualRequestOutcome).toBe('Held');
+    expect((await service.getOutboxEntry(missed.clientGestureId))?.manualRequestOutcome).toBe('Missed');
+    expect(await service.getSessionCounts('session-1')).toEqual({
+      scannedCount: 2,
+      keptCount: 2,
+      rejectedCount: 0,
+      heldForManualRequestCount: 1,
+      manualRequestMissedIsbns: ['9783140464079'],
     });
   });
 

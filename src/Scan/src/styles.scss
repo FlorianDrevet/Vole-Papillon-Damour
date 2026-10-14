@@ -15,6 +15,8 @@
   --scan-red: #b02a33;
   --scan-green: #18703a;
   --scan-purple: #5f3a86;
+  --scan-verdict-hold: #0d5c63;
+  --scan-verdict-hold-soft: #e3f1f2;
 }
 
 * {
@@ -948,6 +950,10 @@ input:focus-visible {
   background: var(--scan-purple);
 }
 
+.verdict-card-manual-request {
+  background: var(--scan-verdict-hold);
+}
+
 .verdict-card-first {
   background: var(--scan-ink);
 }
@@ -1328,6 +1334,8 @@ input:focus-visible {
 
 .session-end-screen {
   background: var(--scan-paper);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .session-end-header {
@@ -1374,6 +1382,31 @@ input:focus-visible {
   font-weight: 500;
   letter-spacing: .14em;
   text-transform: uppercase;
+}
+
+.manual-request-session-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: none;
+  margin: 18px 20px 0;
+}
+
+.manual-request-session-summary p {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 4px;
+  color: var(--scan-ink);
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.manual-request-summary-held {
+  background: #e3f1f2;
+}
+
+.manual-request-summary-missed {
+  background: #fff6ec;
 }
 
 .session-effect-card {

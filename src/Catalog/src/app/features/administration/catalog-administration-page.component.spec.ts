@@ -46,6 +46,10 @@ import {AdminRareBookPhotosComponent} from './rare-books/admin-rare-book-photos.
 import {AdminRareBooksComponent} from './rare-books/admin-rare-books.component';
 import {NotFoundReportCloseDialogComponent} from './not-found-reports/not-found-report-close-dialog.component';
 import {NotFoundReportsViewComponent} from './not-found-reports/not-found-reports-view.component';
+import {ManualRequestsViewComponent} from './manual-requests/manual-requests-view.component';
+import {ManualRequesterDetailComponent} from './manual-requests/manual-requester-detail.component';
+import {ManualRequestAddDialogComponent} from './manual-requests/manual-request-add-dialog.component';
+import {ManualRequestDecisionDialogComponent} from './manual-requests/manual-request-decision-dialog.component';
 
 describe('CatalogAdministrationPageComponent', () => {
   let fixture: ComponentFixture<CatalogAdministrationPageComponent>;
@@ -232,6 +236,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'addRareBookPhoto', 'reorderRareBookPhotos', 'updateRareBookPhotoCaption',
       'deleteRareBookPhoto',
       'getNotFoundQueue', 'getClosedNotFoundReports', 'getNotFoundSummary', 'closeNotFound',
+      'getManualRequests', 'getManualRequestSummary',
     ]);
     catalogApi = jasmine.createSpyObj<CatalogApiService>('CatalogApiService', ['searchReferences']);
     catalogApi.searchReferences.and.returnValue(of({
@@ -329,6 +334,11 @@ describe('CatalogAdministrationPageComponent', () => {
       latestComment: null,
       withdrawalMovementIds: [],
     } as CatalogNotFoundSummary));
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 0, foundOverdueCount: 0}));
+    api.getManualRequests.and.returnValue(of({
+      items: [], totalCount: 0, foundCount: 0, searchingCount: 0, closedCount: 0,
+      foundOverdueCount: 0, page: 1, pageSize: 50,
+    }));
     api.getDeadStock.and.returnValue(of(response));
     api.getRareBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminRareBookPage));
     api.getRareBook.and.returnValue(of({} as CatalogAdminRareBook));
@@ -349,6 +359,10 @@ describe('CatalogAdministrationPageComponent', () => {
         AdminRareBookFormComponent,
         AdminRareBookPhotosComponent,
         NotFoundReportsViewComponent,
+        ManualRequestsViewComponent,
+        ManualRequesterDetailComponent,
+        ManualRequestAddDialogComponent,
+        ManualRequestDecisionDialogComponent,
         NotFoundReportCloseDialogComponent,
       ],
       imports: [FormsModule, RouterModule.forRoot([]), DesignSystemModule],
@@ -450,6 +464,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'Sessions de scan',
       'Désengorgement',
       'Livres introuvables',
+      'Demandes manuelles',
       'Catalogue',
       'Livres rares',
       'Statistiques',
@@ -482,6 +497,20 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('À vérifier en rayon');
   });
 
+  it('shows a manual request sidebar badge only for administrators with books to hand over', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 2, foundOverdueCount: 1}));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const duringFair = fixture.componentInstance.navGroups()[0].items;
+    expect(duringFair.map(item => item.id)).toContain('manual-requests');
+    expect(fixture.componentInstance.navBadge('manual-requests')).toBe('2');
+    expect(fixture.nativeElement.querySelector('.admin-nav-badge-manual-requests')).not.toBeNull();
+  });
+
   it('hides the badge and the dashboard tile when nothing is open', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);
@@ -490,7 +519,48 @@ describe('CatalogAdministrationPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.navBadge('not-found')).toBeNull();
+    expect(fixture.componentInstance.navBadge('manual-requests')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-testid="not-found-dashboard-tile"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="manual-request-dashboard-tile"]')).toBeNull();
+  });
+
+  it('shows the dashboard handover tile with the overdue count and opens manual requests', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 3, foundOverdueCount: 2}));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const tile = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="manual-request-dashboard-tile"]',
+    );
+    expect(tile).not.toBeNull();
+    expect(tile?.textContent).toContain('Demandes manuelles');
+    expect(tile?.textContent).toContain('3 livres à remettre');
+    expect(tile?.textContent).toContain('dont 2 trouvés il y a plus de 14 jours');
+    expect(tile?.textContent).toContain('Ouvrir la liste →');
+
+    const selectSection = spyOn(fixture.componentInstance, 'selectSection').and.resolveTo();
+    tile?.click();
+
+    expect(selectSection).toHaveBeenCalledOnceWith('manual-requests');
+  });
+
+  it('omits the dashboard handover overdue mention when no books are overdue', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getManualRequestSummary.and.returnValue(of({foundCount: 1, foundOverdueCount: 0}));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    fixture.detectChanges();
+
+    const tile = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '[data-testid="manual-request-dashboard-tile"]',
+    );
+    expect(tile).not.toBeNull();
+    expect(tile?.textContent).toContain('1 livre à remettre');
+    expect(tile?.textContent).not.toContain('plus de 14 jours');
   });
 
   it('does not expose the removed inventory workspace', () => {
@@ -516,6 +586,7 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/sessions',
       '/administration/dead-stock',
       '/administration/not-found',
+      '/administration/manual-requests',
       '/administration/catalogue',
       '/administration/rare-books',
       '/administration/statistics',

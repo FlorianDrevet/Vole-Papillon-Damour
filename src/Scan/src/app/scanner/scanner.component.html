@@ -262,6 +262,7 @@
             <section class="tri-result" aria-live="polite" aria-labelledby="verdict-title">
               <article
                 class="verdict-card"
+                [class.verdict-card-manual-request]="activeVerdictKey === 'ManualRequest'"
                 [class.verdict-card-too-many]="activeVerdictKey === 'TooMany'"
                 [class.verdict-card-wanted]="activeVerdictKey === 'Wanted' || activeVerdictKey === 'Selling'"
                 [class.verdict-card-rare]="activeVerdictKey === 'Rare'"
@@ -283,6 +284,10 @@
                       <path d="M6.2 4.5h11.6l3.7 5.3L12 20.4 2.5 9.8z"></path>
                       <path d="M2.5 9.8h19M8.6 4.5 12 20.4 15.4 4.5"></path>
                     </svg>
+                    <svg *ngSwitchCase="'ManualRequest'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="8" r="3.2"></circle>
+                      <path d="M5 20c.6-3.2 3.1-5.1 7-5.1s6.4 1.9 7 5.1"></path>
+                    </svg>
                     <svg *ngSwitchDefault viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                       <circle cx="12" cy="12" r="8.6"></circle>
                       <path d="M12 8v8M8 12h8"></path>
@@ -294,6 +299,31 @@
                   </div>
                 </div>
                 <p *ngIf="!isOnline" class="verdict-freshness">{{ offlineFreshnessLabel }}</p>
+              </article>
+
+              <p *ngIf="activeVerdictKey === 'ManualRequest' && activeVerdict?.isRare" class="manual-request-rare-note">
+                Fiche livre rare liée
+              </p>
+
+              <article *ngIf="isManualRequestVerdict" class="manual-request-contact" aria-label="Coordonnées du demandeur">
+                <span class="manual-request-contact-label">Pour</span>
+                <div *ngIf="manualRequestLookup.state === 'loading'; else manualRequestContactResult" class="manual-request-contact-loading" data-testid="manual-request-contact-skeleton" role="status" aria-live="polite">
+                  <span class="manual-request-skeleton manual-request-skeleton-name" aria-hidden="true"></span>
+                  <span class="manual-request-skeleton manual-request-skeleton-phone" aria-hidden="true"></span>
+                  <span>Chargement des coordonnées…</span>
+                </div>
+                <ng-template #manualRequestContactResult>
+                  <div *ngIf="manualRequestCandidate as candidate; else manualRequestContactFallback" class="manual-request-contact-details">
+                    <strong>{{ candidate.firstName }} {{ candidate.lastName | uppercase }}</strong>
+                    <a [href]="manualRequestPhoneLink(candidate.phone)">{{ formatManualRequestPhone(candidate.phone) }}</a>
+                  </div>
+                </ng-template>
+                <ng-template #manualRequestContactFallback>
+                  <div class="manual-request-contact-fallback">
+                    <strong>Coordonnées dans l’administration</strong>
+                    <span>Administration → Demandes manuelles</span>
+                  </div>
+                </ng-template>
               </article>
 
               <article class="book-card">
@@ -357,10 +387,10 @@
         </footer>
 
         <footer *ngIf="localScan" class="action-dock decision-dock">
-          <p>Scanner le suivant vaut « garder »</p>
+          <p>{{ activeVerdictKey === 'ManualRequest' ? 'Scanner le suivant vaut « mettre de côté »' : 'Scanner le suivant vaut « garder »' }}</p>
           <div class="decision-buttons" *ngIf="localScan.entry.status === 'Pending'; else savedDecision">
             <button type="button" class="decision-reject" (click)="rejectCurrentScan()">Écarter</button>
-            <button type="button" class="decision-keep" (click)="keepCurrentScan()">Garder</button>
+            <button type="button" class="decision-keep" [class.decision-keep-manual-request]="activeVerdictKey === 'ManualRequest'" (click)="keepCurrentScan()">{{ activeVerdictKey === 'ManualRequest' ? 'Mettre de côté' : 'Garder' }}</button>
           </div>
           <ng-template #savedDecision>
             <span class="saved-decision">Décision conservée · scannez le suivant</span>
@@ -458,6 +488,19 @@
           <article><strong>{{ sessionScannedCount }}</strong><span>Scannés</span></article>
           <article><strong>{{ sessionKeptCount }}</strong><span>Gardés</span></article>
           <article><strong>{{ sessionRejectedCount }}</strong><span>Écartés</span></article>
+        </div>
+
+        <div
+          *ngIf="manualRequestHoldSummary || completedSessionCounts.manualRequestMissedIsbns.length > 0"
+          class="manual-request-session-summary">
+          <p *ngIf="manualRequestHoldSummary" class="manual-request-summary-held">
+            {{ manualRequestHoldSummary }}
+          </p>
+          <p
+            *ngFor="let isbn13 of completedSessionCounts.manualRequestMissedIsbns"
+            class="manual-request-summary-missed">
+            {{ manualRequestMissedMessage(isbn13) }}
+          </p>
         </div>
 
         <article class="session-effect-card">

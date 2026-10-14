@@ -25,6 +25,7 @@ import {
   PersistentStorageStatus,
   ScanAssociationSettings,
   ScanCatalogBook,
+  ScanManualRequestCandidate,
   ScanLocalStoreError,
   ScanNextBookFair,
   ScanRareBook,
@@ -40,6 +41,10 @@ import {
   ScanPassageAssociationService,
   ScanPassageAssociationState,
 } from '../offline/scan-passage-association.service';
+import {
+  ScanManualRequestLookup,
+  ScanManualRequestService,
+} from '../offline/scan-manual-request.service';
 import {
   ScanRareCashService,
   ScanRareSaleReference,
@@ -144,6 +149,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   cameraActive = false;
   localScan: LocalScanResult | null = null;
   consultationResult: LocalCatalogResult | null = null;
+  manualRequestLookup: ScanManualRequestLookup = {state: 'none'};
   cashItems: CashScanItem[] = [];
   cashAssociationNoticeDismissed = false;
   availableRareBooks: ScanRareBook[] = [];
@@ -160,6 +166,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   sessionCounts: ScanSessionCounts = emptySessionCounts();
   completedSession: ScanSessionSnapshot | null = null;
   completedSessionCounts: ScanSessionCounts = emptySessionCounts();
+  manualRequestMissedTitles = new Map<string, string>();
   sessionDurationLabel = '0 min de tri';
   authAvailable = false;
   isAuthenticated = false;
@@ -215,6 +222,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     @Optional() private readonly sessionSummary: ScanSessionSummaryService | null = null,
     @Optional() private readonly scanRareCash: ScanRareCashService | null = null,
     @Optional() private readonly scanPassageAssociation: ScanPassageAssociationService | null = null,
+    @Optional() private readonly scanManualRequest: ScanManualRequestService | null = null,
   ) {
     // The isolated component tests do not provide the local workflow. Keeping
     // them on the scan surface preserves the old direct-lookup test harness;
@@ -346,6 +354,20 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.screen === 'session-end' && this.completedSession
       ? this.completedSessionCounts.rejectedCount
       : this.session?.counts?.rejectedCount ?? this.sessionCounts.rejectedCount;
+  }
+
+  get manualRequestHoldSummary(): string | null {
+    const count = this.screen === 'session-end' && this.completedSession
+      ? this.completedSessionCounts.heldForManualRequestCount
+      : this.sessionCounts.heldForManualRequestCount;
+    return count > 0
+      ? `${count} livres mis de côté pour des demandes manuelles. La présidente les retrouve dans l’administration.`
+      : null;
+  }
+
+  manualRequestMissedMessage(isbn13: string): string {
+    const title = this.manualRequestMissedTitles.get(isbn13) || isbn13;
+    return `${title} n'est plus attendu : la demande a été servie par un autre poste. Remettez-le avec les livres gardés.`;
   }
 
   get manualDigitCount(): number {
@@ -590,7 +612,11 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     return this.metadata?.isbn13 ?? this.activeBook?.isbn13 ?? this.isbnInput;
   }
 
-  get activeVerdictKey(): 'TooMany' | 'Wanted' | 'Selling' | 'FirstCopy' | 'Rare' {
+  get activeVerdictKey(): 'ManualRequest' | 'TooMany' | 'Wanted' | 'Selling' | 'FirstCopy' | 'Rare' {
+    if (this.activeVerdict?.verdict === 'ManualRequest' || this.manualRequestLookup.state === 'found') {
+      return 'ManualRequest';
+    }
+
     if (this.activeVerdict?.isRare) {
       return 'Rare';
     }
@@ -607,12 +633,35 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
   }
 
+  get isManualRequestVerdict(): boolean {
+    return this.activeVerdict?.verdict === 'ManualRequest' || this.manualRequestLookup.state === 'found';
+  }
+
+  get manualRequestCandidate(): ScanManualRequestCandidate | null {
+    return this.manualRequestLookup.state === 'found'
+      ? this.manualRequestLookup.candidate
+      : null;
+  }
+
+  formatManualRequestPhone(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+    const groups = digits.match(/\d{1,2}/g);
+    const prefix = phone.trim().startsWith('+') ? '+' : '';
+    return groups ? `${prefix}${groups.join(' ')}` : phone;
+  }
+
+  manualRequestPhoneLink(phone: string): string {
+    return `tel:${phone.replace(/[^\d+]/g, '')}`;
+  }
+
   get verdictTitle(): string {
     if (this.isImmediateRepeatScan) {
       return 'Déjà scanné à l’instant';
     }
 
     switch (this.activeVerdictKey) {
+      case 'ManualRequest':
+        return 'À mettre de côté';
       case 'Rare':
         return 'Bac « livres rares »';
       case 'Wanted':
@@ -631,7 +680,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
   get verdictSummary(): string {
     const verdict = this.activeVerdict;
     if (!verdict) {
-      return '';
+      return this.activeVerdictKey === 'ManualRequest' ? 'Demande manuelle' : '';
     }
 
     if (this.isImmediateRepeatScan) {
@@ -639,6 +688,8 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     }
 
     switch (this.activeVerdictKey) {
+      case 'ManualRequest':
+        return 'Demande manuelle';
       case 'Rare':
         return 'Signalé par un responsable — ne pas mettre en rayon';
       case 'Wanted':
@@ -742,6 +793,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.refreshView();
 
     const metadataPromise = firstValueFrom(this.metadataService.getMetadata(normalizedIsbn));
+    if (destination === 'tri') {
+      this.startManualRequestLookup(normalizedIsbn, lookupVersion);
+    }
     const localPromise = destination === 'tri' && this.scanWorkflow
       ? this.scanWorkflow.recordScan(normalizedIsbn)
       : (destination === 'cash' || destination === 'consultation') && this.scanWorkflow
@@ -850,6 +904,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       this.sessionCounts = emptySessionCounts();
       this.completedSession = null;
       this.completedSessionCounts = emptySessionCounts();
+      this.manualRequestMissedTitles.clear();
       this.sessionEnded = false;
       this.sessionCloseCompleted = false;
       this.sessionSummary?.clear();
@@ -1341,6 +1396,9 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       );
       await this.refreshLocalState();
       await this.refreshSaleCancellationState();
+      if (this.completedSession) {
+        await this.refreshCompletedManualRequestSummary(summary.sessionCounts);
+      }
       const closeRequested = this.session?.closeRequested === true;
       if (summary.closed) {
         this.sessionCloseCompleted = true;
@@ -1408,6 +1466,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         this.completedSessionCounts,
         this.sessionDurationLabel,
       );
+      await this.loadManualRequestMissedTitles(this.completedSessionCounts);
       this.sessionEnded = true;
       this.sessionCloseCompleted = false;
       this.stopCamera();
@@ -1416,6 +1475,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
         try {
           this.session = await this.scanWorkflow.requestClose('Manual');
           await this.refreshLocalState();
+          await this.refreshCompletedManualRequestSummary();
         } catch (error: unknown) {
           this.sessionCloseError = this.describeStorageError(
             error,
@@ -1423,6 +1483,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
           );
           this.completedSession = null;
           this.completedSessionCounts = emptySessionCounts();
+          this.manualRequestMissedTitles.clear();
           this.sessionEnded = false;
           this.sessionSummary?.clear();
           this.screen = 'tri';
@@ -2254,6 +2315,55 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.sessionDurationLabel = summary.durationLabel;
     this.selectedMode = summary.session.mode;
     this.sessionEnded = true;
+    void this.loadManualRequestMissedTitles(this.completedSessionCounts);
+  }
+
+  private async refreshCompletedManualRequestSummary(
+    synchronizedCounts?: ScanSessionCounts | null,
+  ): Promise<void> {
+    if (!this.completedSession) {
+      return;
+    }
+
+    let counts = synchronizedCounts ?? this.completedSessionCounts;
+    const workflow = this.scanWorkflow as ScanWorkflowService & {
+      getSessionCounts?: (clientSessionId: string) => Promise<ScanSessionCounts>;
+    } | null;
+    if (
+      !synchronizedCounts &&
+      this.session?.clientSessionId === this.completedSession.clientSessionId &&
+      typeof workflow?.getSessionCounts === 'function'
+    ) {
+      counts = await workflow.getSessionCounts(this.completedSession.clientSessionId);
+    }
+
+    this.completedSessionCounts = {...counts};
+    await this.loadManualRequestMissedTitles(this.completedSessionCounts);
+    this.sessionSummary?.setSummary(
+      this.completedSession,
+      this.completedSessionCounts,
+      this.sessionDurationLabel,
+    );
+  }
+
+  private async loadManualRequestMissedTitles(counts: ScanSessionCounts): Promise<void> {
+    const titles = new Map<string, string>();
+    const workflow = this.scanWorkflow as ScanWorkflowService & {
+      getCatalogBook?: (isbn13: string) => Promise<ScanCatalogBook | null>;
+    } | null;
+    if (typeof workflow?.getCatalogBook === 'function') {
+      await Promise.all(counts.manualRequestMissedIsbns.map(async isbn13 => {
+        try {
+          const title = (await workflow.getCatalogBook!(isbn13))?.title?.trim();
+          if (title) {
+            titles.set(isbn13, title);
+          }
+        } catch {
+          // The ISBN remains a useful fallback when its cached title is unavailable.
+        }
+      }));
+    }
+    this.manualRequestMissedTitles = titles;
   }
 
   private trySync(): void {
@@ -2302,9 +2412,38 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
     this.coverUrl = null;
     this.localScan = null;
     this.consultationResult = null;
+    this.manualRequestLookup = {state: 'none'};
     this.errorMessage = null;
     this.cameraError = null;
     this.isLoading = false;
+  }
+
+  private startManualRequestLookup(isbn13: string, lookupVersion: number): void {
+    if (!this.scanManualRequest) {
+      this.manualRequestLookup = {state: 'none'};
+      return;
+    }
+
+    const online = this.isOnline;
+    this.manualRequestLookup = online ? {state: 'loading'} : {state: 'unavailable'};
+    void this.scanManualRequest.lookup(isbn13, online).then(
+      result => {
+        if (lookupVersion !== this.lookupVersion) {
+          return;
+        }
+        this.manualRequestLookup = result.state === 'loading'
+          ? {state: 'unavailable'}
+          : result;
+        this.refreshView();
+      },
+      () => {
+        if (lookupVersion !== this.lookupVersion) {
+          return;
+        }
+        this.manualRequestLookup = {state: 'unavailable'};
+        this.refreshView();
+      },
+    );
   }
 
   private describeStorageError(error: unknown, fallback: string): string {
@@ -2390,7 +2529,13 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
 }
 
 function emptySessionCounts(): ScanSessionCounts {
-  return {scannedCount: 0, keptCount: 0, rejectedCount: 0};
+  return {
+    scannedCount: 0,
+    keptCount: 0,
+    rejectedCount: 0,
+    heldForManualRequestCount: 0,
+    manualRequestMissedIsbns: [],
+  };
 }
 
 function formatFairDate(value: string): string {

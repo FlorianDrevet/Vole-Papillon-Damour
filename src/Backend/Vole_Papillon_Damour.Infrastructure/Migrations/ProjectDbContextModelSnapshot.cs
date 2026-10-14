@@ -645,6 +645,139 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.ToTable("CheckoutPassageLines", (string)null);
                 });
 
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.ManualRequestAggregate.ManualBookRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Authors")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ClosedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("FoundAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("FoundBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("FoundIsbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<byte?>("FoundOrigin")
+                        .HasColumnType("tinyint");
+
+                    b.Property<Guid?>("FoundScanSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("HoldMovementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Isbn13")
+                        .IsUnicode(false)
+                        .HasColumnType("char(13)");
+
+                    b.Property<Guid?>("PickedFromFairId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("PublicationYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Publisher")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("ReleaseMovementId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("RequesterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("Scope")
+                        .HasColumnType("tinyint");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<string>("WorkId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HoldMovementId")
+                        .HasDatabaseName("IX_ManualBookRequests_HoldMovementId");
+
+                    b.HasIndex("RequesterId")
+                        .HasDatabaseName("IX_ManualBookRequests_RequesterId");
+
+                    b.HasIndex("Status", "Isbn13")
+                        .HasDatabaseName("IX_ManualBookRequests_Status_Isbn13");
+
+                    b.HasIndex("Status", "WorkId")
+                        .HasDatabaseName("IX_ManualBookRequests_Status_WorkId");
+
+                    b.ToTable("ManualBookRequests", (string)null);
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.ManualRequestAggregate.ManualRequester", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ConsentRecordedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ConsentRecordedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ErasedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(16)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ManualRequesters", (string)null);
+                });
+
             modelBuilder.Entity("Vole_Papillon_Damour.Domain.MemberCardAggregate.MemberCard", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1679,6 +1812,15 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("CheckoutPassageId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Vole_Papillon_Damour.Domain.ManualRequestAggregate.ManualBookRequest", b =>
+                {
+                    b.HasOne("Vole_Papillon_Damour.Domain.ManualRequestAggregate.ManualRequester", null)
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

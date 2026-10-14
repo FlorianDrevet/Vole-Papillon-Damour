@@ -17,6 +17,7 @@ using Vole_Papillon_Damour.Domain.MemberCardAggregate;
 using Vole_Papillon_Damour.Domain.CheckoutPassageAggregate;
 using Vole_Papillon_Damour.Domain.NotFoundReportAggregate;
 using Vole_Papillon_Damour.Domain.RecommendationAggregate;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
 
 namespace Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 
@@ -51,4 +52,6 @@ public interface IProjectDbContext
     DbSet<BookNeighbor> BookNeighbors => throw new NotSupportedException();
     DbSet<RecommendationGeneration> RecommendationGenerations => throw new NotSupportedException();
     DbSet<MemberRecommendationPreference> MemberRecommendationPreferences => throw new NotSupportedException();
+    DbSet<ManualRequester> ManualRequesters => throw new NotSupportedException();
+    DbSet<ManualBookRequest> ManualBookRequests => throw new NotSupportedException();
 }

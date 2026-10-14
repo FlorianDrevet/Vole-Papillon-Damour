@@ -224,6 +224,126 @@ export interface CatalogNotFoundSummary {
   withdrawalMovementIds: string[];
 }
 
+export type CatalogManualRequestTab = 'found' | 'searching' | 'closed';
+export type CatalogManualRequestScope = 'Work' | 'Edition';
+export type CatalogManualRequestStatus = 'Searching' | 'Found' | 'Given' | 'Refused' | 'Cancelled';
+export type CatalogManualRequestFoundOrigin = 'Scan' | 'StockAvailable' | 'StockAnnounced';
+export type CatalogManualRequestReleaseMode = 'AvailableNow' | 'NextFair';
+
+export interface CatalogManualRequestParams {
+  tab: CatalogManualRequestTab;
+  q?: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogManualRequestQueue {
+  items: CatalogManualRequestItem[];
+  totalCount: number;
+  foundCount: number;
+  searchingCount: number;
+  closedCount: number;
+  foundOverdueCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogManualRequestItem {
+  requestId: string;
+  requesterId: string;
+  requesterLastName: string | null;
+  requesterFirstName: string | null;
+  requesterPhone: string | null;
+  requesterErased: boolean;
+  scope: CatalogManualRequestScope;
+  workId: string | null;
+  isbn13: string | null;
+  title: string | null;
+  authors: string | null;
+  publisher: string | null;
+  publicationYear: number | null;
+  requestedAt: string;
+  status: CatalogManualRequestStatus;
+  foundOrigin: CatalogManualRequestFoundOrigin | null;
+  foundIsbn13: string | null;
+  foundPublisher: string | null;
+  foundPublicationYear: number | null;
+  foundAt: string | null;
+  foundByName: string | null;
+  quantityAvailable: number;
+  quantityAnnounced: number;
+  watcherCount: number;
+  releaseMode: CatalogManualRequestReleaseMode | null;
+  releaseFairStart: string | null;
+  closedAt: string | null;
+  closedByName: string | null;
+}
+
+export interface CatalogManualRequestSummary {
+  foundCount: number;
+  foundOverdueCount: number;
+}
+
+export interface CatalogManualRequestStock {
+  quantityAvailable: number;
+  quantityAnnounced: number;
+  nextFairStart: string | null;
+}
+
+export interface CatalogManualRequester {
+  requesterId: string;
+  lastName: string | null;
+  firstName: string | null;
+  phone: string | null;
+  erased: boolean;
+  consentRecordedAt: string;
+  consentRecordedByName: string | null;
+  requests: CatalogManualRequestItem[];
+}
+
+export interface CatalogManualRequesterWrite {
+  lastName: string;
+  firstName: string;
+  phone: string;
+}
+
+export interface CatalogManualRequesterCreate extends CatalogManualRequesterWrite {
+  consentGiven: boolean;
+}
+
+export interface CatalogManualRequesterCreated {
+  requesterId: string;
+}
+
+export interface CatalogManualBookRequestWrite {
+  scope: CatalogManualRequestScope;
+  workId?: string | null;
+  isbn13?: string | null;
+  title?: string | null;
+  authors?: string | null;
+  publisher?: string | null;
+  publicationYear?: number | null;
+  pickFromStock: boolean;
+}
+
+export interface CatalogManualBookRequestCreated {
+  requestId: string;
+  status: CatalogManualRequestStatus;
+}
+
+export interface CatalogManualRequestRelease {
+  notifiedMemberCount: number;
+}
+
+export interface CatalogManualRequesterDeletion {
+  cancelledRequestCount: number;
+  notifiedMemberCount: number;
+}
+
+export interface CatalogManualRequestRefusal {
+  keepSearching: boolean;
+}
+
 export interface CatalogNotFoundClosure {
   closedReportCount: number;
   withdrawnQuantity: number | null;

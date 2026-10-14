@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fiche demandeur — mobile</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</head>
+<body>
+<div style="position: relative; width: 390px; height: 1300px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #d9e9f4;">
+    <a href="AdminDemandesMobile.html" style="display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14.5px; font-weight: 600; color: #0c6ea6;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0c6ea6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>Demandes manuelles</a>
+    <button type="button" aria-label="Menu administration" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: #072b45; font-size: 13px; font-weight: 600; color: #ffffff;">Menu</button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px; padding: 22px 16px 6px;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Demandeur</span>
+    <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 30px; font-weight: 500; color: #072b45;">Jeanne MARTIN</h1>
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; color: #6d8ba2;">Accord recueilli par Martine le 3 sept. 2026</span>
+  </div>
+
+  <form style="display: flex; flex-direction: column; gap: 14px; margin: 16px 16px 0; padding: 18px 16px; border: 1px solid #d9e9f4; border-radius: 4px; background: #ffffff;">
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600;">Nom
+      <input type="text" value="Martin" style="box-sizing: border-box; width: 100%; height: 46px; padding: 0 12px; border: 1px solid #d9e9f4; border-radius: 4px; font-family: inherit; font-size: 15px; color: #072b45;">
+    </label>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600;">Prénom
+      <input type="text" value="Jeanne" style="box-sizing: border-box; width: 100%; height: 46px; padding: 0 12px; border: 1px solid #d9e9f4; border-radius: 4px; font-family: inherit; font-size: 15px; color: #072b45;">
+    </label>
+    <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600;">Téléphone
+      <input type="tel" value="06 12 34 56 78" style="box-sizing: border-box; width: 100%; height: 46px; padding: 0 12px; border: 1px solid #d9e9f4; border-radius: 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 15px; color: #072b45;">
+    </label>
+    <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1.5px solid #0c6ea6; border-radius: 4px; background: #e9f4fb; font-size: 13.5px; line-height: 1.45;">
+      <input type="checkbox" checked style="flex: none; width: 20px; height: 20px; margin: 0; accent-color: #0c6ea6;">
+      <span>La personne a accepté que l'association conserve ses coordonnées pour la rappeler au sujet de ces livres.</span>
+    </label>
+    <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 46px; border: 0; border-radius: 999px; background: #072b45; font-size: 15px; font-weight: 600; color: #ffffff;">Enregistrer</button>
+  </form>
+
+  <section style="display: flex; flex-direction: column; margin: 20px 16px 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid #d9e9f4;">
+      <span style="font-family: 'Newsreader', Georgia, serif; font-size: 20px; font-weight: 500;">Livres recherchés</span>
+      <a href="AdminAjoutLivreMobile.html" style="display: inline-flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 14px; border: 1.5px solid #9dc2da; border-radius: 999px; font-size: 13.5px; font-weight: 600; color: #0c6ea6;">+ Ajouter</a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-bottom: 1px solid #e2eef7;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span style="font-family: 'Newsreader', Georgia, serif; font-size: 17.5px;">Le Petit Prince</span><span style="padding: 4px 10px; border-radius: 999px; background: #e3f1f2; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 600; color: #0d5c63;">À remettre</span></div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font-size: 14px; font-weight: 600; color: #0c6ea6;">Refusé…</button>
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 0; border-radius: 999px; background: #f0801c; font-size: 14px; font-weight: 600; color: #ffffff;">Donné</button>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-bottom: 1px solid #e2eef7;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;"><span style="font-family: 'Newsreader', Georgia, serif; font-size: 17.5px;">L'Étranger</span><span style="padding: 4px 10px; border-radius: 999px; background: #e9f4fb; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 600; color: #0c6ea6;">En recherche</span></div>
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; color: #dc6412;">Déjà en stock : 2</span>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 0; background: transparent; font-size: 13.5px; font-weight: 600; color: #4e6c84;">Annuler</button>
+        <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; flex: 1 1 0; min-height: 44px; border: 0; border-radius: 999px; background: #f0801c; font-size: 14px; font-weight: 600; color: #ffffff;">Prélever</button>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0; border-bottom: 1px solid #e2eef7;"><span style="font-family: 'Newsreader', Georgia, serif; font-size: 17.5px;">Les Misérables <span style="font-family: 'Libre Franklin', system-ui, sans-serif; font-size: 12.5px; color: #6d8ba2;">Folio</span></span><span style="padding: 4px 10px; border-radius: 999px; background: #e9f4fb; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 600; color: #0c6ea6;">En recherche</span></div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 0;"><span style="font-family: 'Newsreader', Georgia, serif; font-size: 17.5px; color: #6d8ba2;">Le Grand Meaulnes</span><span style="padding: 4px 10px; border-radius: 999px; background: #eef3f6; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 600; color: #4e6c84;">Donné le 2 oct.</span></div>
+  </section>
+
+  <button type="button" style="margin: 18px 16px 0; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0; border: 0; background: transparent; font-size: 14px; font-weight: 600; color: #b02a33;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b02a33" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"></path></svg>Supprimer ce demandeur…</button>
+</div>
+</body>
+</html>

@@ -677,7 +677,7 @@ export class ScanLocalStoreService {
   async getSessionCounts(clientSessionId: string): Promise<ScanSessionCounts> {
     const session = await this.getSession();
     if (session?.clientSessionId === clientSessionId && session.counts) {
-      return {...session.counts};
+      return normalizeSessionCounts(session.counts);
     }
 
     const entries = await this.listOutboxEntries();
@@ -686,7 +686,62 @@ export class ScanLocalStoreService {
       scannedCount: sessionEntries.filter(entry => entry.status !== 'CancelledLocal').length,
       keptCount: sessionEntries.filter(entry => entry.status === 'Kept').length,
       rejectedCount: sessionEntries.filter(entry => entry.status === 'Rejected').length,
+      heldForManualRequestCount: sessionEntries.filter(entry => entry.manualRequestOutcome === 'Held').length,
+      manualRequestMissedIsbns: [...new Set(sessionEntries
+        .filter(entry => entry.manualRequestOutcome === 'Missed')
+        .map(entry => entry.isbn13))],
     };
+  }
+
+  async recordManualRequestOutcome(
+    clientGestureId: string,
+    outcome: NonNullable<ScanOutboxEntry['manualRequestOutcome']>,
+  ): Promise<void> {
+    await this.runTransaction(
+      [scanStoreNames.outbox, scanStoreNames.session],
+      'readwrite',
+      stores => {
+        const outbox = stores[scanStoreNames.outbox];
+        const sessions = stores[scanStoreNames.session];
+        const entryRequest = outbox.get(clientGestureId);
+        entryRequest.onsuccess = () => {
+          const rawEntry = entryRequest.result as LegacyScanOutboxEntry | undefined;
+          if (!rawEntry) {
+            return;
+          }
+
+          const entry = migrateLegacyScanOutboxEntry(rawEntry);
+          if (entry.manualRequestOutcome) {
+            return;
+          }
+
+          const sessionRequest = sessions.get('active-session');
+          sessionRequest.onsuccess = () => {
+            outbox.put({...entry, manualRequestOutcome: outcome});
+
+            const rawSession = sessionRequest.result as RawScanSessionRecord | undefined;
+            if (!rawSession || normalizeSession(rawSession).clientSessionId !== entry.clientSessionId) {
+              return;
+            }
+
+            const currentCounts = normalizeSessionCounts(normalizeSession(rawSession).counts);
+            const counts: ScanSessionCounts = outcome === 'Held'
+              ? {
+                ...currentCounts,
+                heldForManualRequestCount: currentCounts.heldForManualRequestCount + 1,
+              }
+              : {
+                ...currentCounts,
+                manualRequestMissedIsbns: [...new Set([
+                  ...currentCounts.manualRequestMissedIsbns,
+                  entry.isbn13,
+                ])],
+              };
+            sessions.put({...rawSession, counts});
+          };
+        };
+      },
+    );
   }
 
   async countBlockingOutboxEntries(): Promise<number> {
@@ -951,6 +1006,7 @@ export class ScanLocalStoreService {
             qtyAnnounced: 0,
             salesCount: 0,
             isWanted: false,
+            isManuallyRequested: false,
             isRare: false,
             updatedAt: entry.occurredAt,
           };
@@ -1574,7 +1630,7 @@ interface RawScanSessionRecord {
   startedAt: string;
   lastScanAt: string;
   lastSyncAt: string;
-  counts?: ScanSessionCounts;
+  counts?: Partial<ScanSessionCounts>;
   closeRequested?: boolean;
   closeReason?: ScanSessionSnapshot['closeReason'] | null;
 }
@@ -1608,9 +1664,19 @@ function normalizeSession(record: RawScanSessionRecord): ScanSessionSnapshot {
     startedAt: record.startedAt,
     lastScanAt: record.lastScanAt,
     lastSyncAt: record.lastSyncAt,
-    ...(record.counts ? {counts: {...record.counts}} : {}),
+    ...(record.counts ? {counts: normalizeSessionCounts(record.counts)} : {}),
     closeRequested: record.closeRequested ?? false,
     closeReason: record.closeReason ?? null,
+  };
+}
+
+function normalizeSessionCounts(counts?: Partial<ScanSessionCounts> | null): ScanSessionCounts {
+  return {
+    scannedCount: counts?.scannedCount ?? 0,
+    keptCount: counts?.keptCount ?? 0,
+    rejectedCount: counts?.rejectedCount ?? 0,
+    heldForManualRequestCount: counts?.heldForManualRequestCount ?? 0,
+    manualRequestMissedIsbns: [...(counts?.manualRequestMissedIsbns ?? [])],
   };
 }
 

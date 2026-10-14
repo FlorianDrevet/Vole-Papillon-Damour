@@ -1,6 +1,6 @@
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable, timeout} from 'rxjs';
+import {Observable, map, timeout} from 'rxjs';
 
 import {environment} from '../../environments/environment';
 import {
@@ -8,6 +8,7 @@ import {
   ScanCatalogDeltaResponse,
   ScanSaleResponse,
   ScanSessionResponse,
+  ScanManualRequestCandidate,
   ScanVolunteerStatisticsResponse,
 } from './scan-offline.model';
 import {ScanRareBook} from './scan-offline.model';
@@ -131,6 +132,14 @@ export class ScanApiService {
       `${this.baseUrl}/scan/catalog/delta`,
       {params},
     );
+  }
+
+  getManualRequestCandidate(isbn13: string): Observable<ScanManualRequestCandidate | null> {
+    const params = new HttpParams().set('isbn13', isbn13);
+    return this.http.get<ScanManualRequestCandidate>(
+      `${this.baseUrl}/scan/manual-requests/candidate`,
+      {params, observe: 'response'},
+    ).pipe(map(response => response.body));
   }
 
   getVolunteerStatistics(): Observable<ScanVolunteerStatisticsResponse> {

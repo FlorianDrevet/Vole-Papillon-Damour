@@ -1,0 +1,183 @@
+<section class="manual-requester-detail" aria-labelledby="manual-requester-title">
+  <button class="manual-requester-back" data-testid="manual-requester-back" type="button" (click)="closed.emit()">
+    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"></path></svg>
+    Demandes manuelles
+  </button>
+
+  @if (loading()) {
+    <div class="manual-requester-loading" role="status">Chargement de la fiche demandeur…</div>
+  } @else {
+    <header class="manual-requester-heading">
+      <span class="admin-kicker">Demandeur</span>
+      <h1 #requesterHeading id="manual-requester-title" tabindex="-1">{{ displayName }}</h1>
+      @if (requester(); as current) {
+        <p class="manual-requester-consent-summary">{{ requesterSummary(current) }}</p>
+      } @else {
+        <p class="manual-requester-consent-summary">Les coordonnées restent dans l’administration.</p>
+      }
+    </header>
+
+    @if (error(); as message) {
+      <div class="manual-requester-feedback error" role="alert">{{ message }}</div>
+    }
+    @if (success(); as message) {
+      <div class="manual-requester-feedback success" role="status" aria-live="polite">{{ message }}</div>
+    }
+
+    <form class="manual-requester-form" (ngSubmit)="save()" novalidate>
+      <div class="manual-requester-section-heading">
+        <h2>Coordonnées</h2>
+        @if (requester()?.erased) {
+          <span class="manual-requester-erased-tag">Coordonnées effacées</span>
+        }
+      </div>
+
+      @if (requester()?.erased) {
+        <p class="manual-requester-erased-copy">Les coordonnées de cette personne ont été effacées après la clôture de ses demandes.</p>
+      } @else {
+        <label class="manual-requester-field">
+          <span>Nom</span>
+          <input name="lastName" autocomplete="family-name" [(ngModel)]="lastName" [disabled]="saving()">
+        </label>
+        <label class="manual-requester-field">
+          <span>Prénom</span>
+          <input name="firstName" autocomplete="given-name" [(ngModel)]="firstName" [disabled]="saving()">
+        </label>
+        <label class="manual-requester-field">
+          <span>Téléphone</span>
+          <input
+            name="phone"
+            type="tel"
+            autocomplete="tel"
+            [attr.aria-invalid]="phoneError() ? 'true' : null"
+            [(ngModel)]="phone"
+            [disabled]="saving()">
+          <small>Obligatoire · fixe, mobile ou international</small>
+          @if (phoneError()) {
+            <span class="manual-requester-field-error" role="alert">Ce numéro de téléphone n'est pas valide.</span>
+          }
+        </label>
+        <label class="manual-requester-consent" [class.invalid]="consentError()">
+          <input
+            name="consentGiven"
+            type="checkbox"
+            [checked]="consentGiven"
+            [disabled]="!isNew || saving()"
+            [attr.aria-invalid]="consentError() ? 'true' : null"
+            (change)="consentGiven = $any($event.target).checked">
+          <span>
+            La personne a accepté que l'association conserve ses coordonnées pour la rappeler au sujet de ces livres.
+            <strong>Obligatoire</strong>
+            @if (consentError()) {
+              <em class="manual-requester-field-error" role="alert">Sans l'accord de la personne, ses coordonnées ne peuvent pas être enregistrées.</em>
+            }
+          </span>
+        </label>
+        <div class="manual-requester-form-actions">
+          <button class="button button-primary" data-testid="manual-requester-save" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+          </button>
+        </div>
+      }
+    </form>
+
+    @if (requester(); as current) {
+      <section class="manual-requester-requests" aria-labelledby="manual-requester-requests-title">
+        <header class="manual-requester-section-heading">
+          <h2 id="manual-requester-requests-title">Livres recherchés</h2>
+          @if (!current.erased) {
+            <button class="button button-outline" data-testid="manual-requester-add-book" type="button" (click)="addBook()">
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+              Ajouter un livre
+            </button>
+          }
+        </header>
+
+        <div class="manual-requester-request-list">
+          @for (item of current.requests; track item.requestId) {
+            <article class="manual-requester-request" [attr.data-testid]="'manual-requester-request-' + item.requestId">
+              <div class="manual-requester-request-copy">
+                <h3>{{ item.title || 'Titre inconnu' }}</h3>
+                <p>{{ scopeLabel(item) }} · demandé le {{ formatDate(item.requestedAt) }}@if (item.isbn13) { · ISBN {{ item.isbn13 }}}</p>
+                @if (item.status === 'Searching' && item.quantityAvailable + item.quantityAnnounced > 0) {
+                  <p class="manual-requester-stock">Déjà en stock : {{ item.quantityAvailable + item.quantityAnnounced }}</p>
+                }
+              </div>
+              <span class="manual-requester-status" [class.found]="item.status === 'Found'" [class.closed]="item.status === 'Given' || item.status === 'Refused' || item.status === 'Cancelled'">{{ statusLabel(item) }}</span>
+              @if (!current.erased && item.status === 'Found') {
+                <div class="manual-requester-request-actions">
+                  <button class="button button-primary" type="button" (click)="markGiven(item)">Donné</button>
+                  <button class="button button-outline" type="button" (click)="refuse(item)">Refusé…</button>
+                  <button class="button button-text" type="button" (click)="cancelRequest(item)">Annuler</button>
+                </div>
+              } @else if (!current.erased && item.status === 'Searching') {
+                <div class="manual-requester-request-actions">
+                  @if (item.quantityAvailable > 0 || item.quantityAnnounced > 0) {
+                    <button class="button button-primary" type="button" (click)="pick(item)">Prélever</button>
+                  }
+                  <button class="button button-text" type="button" (click)="cancelRequest(item)">Annuler</button>
+                </div>
+              }
+            </article>
+          } @empty {
+            <p class="manual-requester-empty">Aucun livre recherché n'est associé à cette fiche.</p>
+          }
+        </div>
+      </section>
+
+      @if (!current.erased) {
+        <footer class="manual-requester-delete-footer">
+          <div>
+            <button class="manual-requester-delete-link" data-testid="manual-requester-delete" type="button" (click)="requestDelete()">
+              Supprimer ce demandeur et ses demandes…
+            </button>
+            <p>À la demande de la personne. Sans action, ses coordonnées sont effacées trois mois après la clôture de sa dernière demande.</p>
+          </div>
+        </footer>
+      }
+    }
+  }
+
+  @if (deleteDialogOpen() && requester(); as current) {
+    <div class="manual-requester-delete-backdrop" role="presentation" (click)="cancelDelete()">
+      <section
+        #deleteDialog
+        class="manual-requester-delete-dialog"
+        data-testid="manual-requester-delete-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="manual-requester-delete-title"
+        tabindex="-1"
+        (click)="$event.stopPropagation()">
+        <span class="manual-requester-dialog-kicker">E3 · Supprimer le demandeur</span>
+        <h2 id="manual-requester-delete-title">Supprimer {{ (current.firstName || '') + ' ' + (current.lastName || '').toLocaleUpperCase('fr-FR') }} ?</h2>
+        <p>{{ requestDeletionSummary() }}</p>
+        <div class="manual-requester-dialog-actions">
+          <button class="button button-outline" type="button" [disabled]="deleting()" (click)="cancelDelete()">Annuler</button>
+          <button class="button button-danger" data-testid="manual-requester-delete-confirm" type="button" [disabled]="deleting()" (click)="confirmDelete()">{{ deleting() ? 'Suppression…' : 'Supprimer' }}</button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (addBookDialogOpen() && addBookRequesterId(); as targetRequesterId) {
+    <app-manual-request-add-dialog
+      [accessToken]="accessToken"
+      [requesterId]="targetRequesterId"
+      [requesterFirstName]="requester()?.firstName || firstName"
+      [requesterLastName]="requester()?.lastName || lastName"
+      (closed)="closeAddBook()"
+      (added)="onBookAdded()"></app-manual-request-add-dialog>
+  }
+
+  @if (decision(); as currentDecision) {
+    <app-manual-request-decision-dialog
+      [mode]="currentDecision.mode"
+      [item]="currentDecision.item"
+      [requesterFirstName]="requester()?.firstName || firstName"
+      [requesterLastName]="requester()?.lastName || lastName"
+      [pending]="decisionPending()"
+      (closed)="closeDecision()"
+      (confirmed)="confirmDecision($event.keepSearching)"></app-manual-request-decision-dialog>
+  }
+</section>

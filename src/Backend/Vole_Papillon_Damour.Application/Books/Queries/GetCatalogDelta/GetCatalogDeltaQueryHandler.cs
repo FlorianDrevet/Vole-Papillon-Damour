@@ -9,6 +9,7 @@ using Vole_Papillon_Damour.Application.Common.Persistence;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.WatchlistAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
 using AssociationSettingsEntity = Vole_Papillon_Damour.Domain.AssociationSettingsAggregate.AssociationSettings;
@@ -56,6 +57,7 @@ public sealed class GetCatalogDeltaQueryHandler(
             generatedAt,
             cancellationToken);
         var wantedTargets = await GetWantedTargetsAsync(cancellationToken);
+        var manualTargets = await GetManualTargetsAsync(cancellationToken);
         var announcedQuantities = await dbContext.BookAnnouncements
             .AsNoTracking()
             .Where(announcement => announcement.Status == BookAnnouncementStatus.Announced)
@@ -86,6 +88,7 @@ public sealed class GetCatalogDeltaQueryHandler(
                 announcedQuantities.GetValueOrDefault(book.Isbn13),
                 book.SalesCount,
                 wantedTargets.Matches(book),
+                manualTargets.Matches(book),
                 false,
                 book.IsHiddenFromCatalog,
                 book.UpdatedAt))
@@ -233,12 +236,17 @@ public sealed class GetCatalogDeltaQueryHandler(
             .Where(item => item.AddedAt > since.AsOf && item.AddedAt <= generatedAt)
             .Select(item => new WatchlistTarget(item.Scope, item.Isbn13, item.WorkId))
             .ToListAsync(cancellationToken);
+        var recentlyChangedManualRequests = await dbContext.ManualBookRequests
+            .AsNoTracking()
+            .Where(request => request.UpdatedAt > since.AsOf && request.UpdatedAt <= generatedAt)
+            .Select(request => new ManualRequestTarget(request.Scope, request.Isbn13, request.WorkId))
+            .ToListAsync(cancellationToken);
         var watchlistStateChanged = await dbContext.Watchlists
             .AsNoTracking()
             .AnyAsync(
                 watchlist => watchlist.UpdatedAt > since.AsOf && watchlist.UpdatedAt <= generatedAt,
                 cancellationToken);
-        if (recentWatchlistItems.Count == 0 && !watchlistStateChanged)
+        if (recentWatchlistItems.Count == 0 && recentlyChangedManualRequests.Count == 0 && !watchlistStateChanged)
         {
             return new CatalogBookSelection(changedBooks, rowVersion);
         }
@@ -246,12 +254,17 @@ public sealed class GetCatalogDeltaQueryHandler(
         var visibleCatalog = catalog.Where(book => !book.IsHiddenFromCatalog);
         if (!watchlistStateChanged)
         {
-            // Only the fiches targeted by the newly added items can change their flag.
-            // A suspended, reactivated or removed item cannot be traced back to its
-            // fiches, so that case still re-projects the visible catalog.
+            // Only fiches targeted by recently added watchlist items or changed manual
+            // requests can have a different flag. A watchlist state change cannot be
+            // traced back to its fiches, so that case re-projects the visible catalog.
             var targets = WantedTargets.From(recentWatchlistItems);
-            var isbn13s = targets.Isbn13s.ToArray();
-            var workIds = targets.WorkIds.ToArray();
+            var manualTargets = ManualTargets.From(recentlyChangedManualRequests);
+            var isbn13s = targets.Isbn13s
+                .Concat(manualTargets.Isbn13s)
+                .ToArray();
+            var workIds = targets.WorkIds
+                .Concat(manualTargets.WorkIds)
+                .ToArray();
             visibleCatalog = visibleCatalog.Where(book =>
                 isbn13s.Contains(book.Id) ||
                 (book.WorkId != null && workIds.Contains(book.WorkId)));
@@ -329,6 +342,16 @@ public sealed class GetCatalogDeltaQueryHandler(
             .Select(item => new WatchlistTarget(item.Scope, item.Isbn13, item.WorkId))
             .ToListAsync(cancellationToken);
         return WantedTargets.From(items);
+    }
+
+    private async Task<ManualTargets> GetManualTargetsAsync(CancellationToken cancellationToken)
+    {
+        var items = await dbContext.ManualBookRequests
+            .AsNoTracking()
+            .Where(request => request.Status == ManualBookRequestStatus.Searching)
+            .Select(request => new ManualRequestTarget(request.Scope, request.Isbn13, request.WorkId))
+            .ToListAsync(cancellationToken);
+        return ManualTargets.From(items);
     }
 
     private static bool TryParseWatermark(
@@ -498,6 +521,11 @@ public sealed class GetCatalogDeltaQueryHandler(
         Isbn13? Isbn13,
         string? WorkId);
 
+    private sealed record ManualRequestTarget(
+        ManualBookRequestScope Scope,
+        Isbn13? Isbn13,
+        string? WorkId);
+
     private sealed class WantedTargets
     {
         private readonly HashSet<Isbn13> isbn13s;
@@ -523,6 +551,41 @@ public sealed class GetCatalogDeltaQueryHandler(
                 items
                     .Where(item => item.Scope == WatchlistItemScope.Work && item.WorkId is not null)
                     .Select(item => item.WorkId!)
+                    .ToHashSet(StringComparer.Ordinal));
+        }
+
+        public bool Matches(CatalogBookRow book)
+        {
+            return isbn13s.Contains(book.Isbn13) ||
+                   (book.WorkId is not null && workIds.Contains(book.WorkId));
+        }
+    }
+
+    private sealed class ManualTargets
+    {
+        private readonly HashSet<Isbn13> isbn13s;
+        private readonly HashSet<string> workIds;
+
+        private ManualTargets(HashSet<Isbn13> isbn13s, HashSet<string> workIds)
+        {
+            this.isbn13s = isbn13s;
+            this.workIds = workIds;
+        }
+
+        public IReadOnlyCollection<Isbn13> Isbn13s => isbn13s;
+
+        public IReadOnlyCollection<string> WorkIds => workIds;
+
+        public static ManualTargets From(IReadOnlyCollection<ManualRequestTarget> requests)
+        {
+            return new ManualTargets(
+                requests
+                    .Where(request => request.Scope == ManualBookRequestScope.Edition && request.Isbn13 is not null)
+                    .Select(request => request.Isbn13!.Value)
+                    .ToHashSet(),
+                requests
+                    .Where(request => request.Scope == ManualBookRequestScope.Work && request.WorkId is not null)
+                    .Select(request => request.WorkId!)
                     .ToHashSet(StringComparer.Ordinal));
         }
 

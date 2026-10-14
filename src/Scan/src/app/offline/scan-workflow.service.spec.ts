@@ -91,6 +91,31 @@ describe('ScanWorkflowService', () => {
     expect((await store.getSession())?.lastScanAt).toBe('2026-09-03T08:01:00.000Z');
   });
 
+  it('keeps requester contact details out of local scan records', async () => {
+    await store.putCatalogBooks([createBook({isManuallyRequested: true})]);
+    const candidate = {
+      requestId: 'request-1',
+      firstName: 'Camille',
+      lastName: 'DUPONT',
+      phone: '0612345678',
+    };
+
+    const result = await service.recordScan(
+      '9782070363735',
+      new Date('2026-09-03T08:01:00.000Z'),
+    );
+    const storedRecords = JSON.stringify({
+      catalog: await store.getCatalogBook('9782070363735'),
+      outbox: await store.listOutboxEntries(),
+    });
+
+    expect(result.verdict.verdict).toBe('ManualRequest');
+    expect(storedRecords).not.toContain(candidate.firstName);
+    expect(storedRecords).not.toContain(candidate.lastName);
+    expect(storedRecords).not.toContain(candidate.phone);
+    expect(storedRecords).not.toMatch(/"(phone|firstName|lastName)"/i);
+  });
+
   it('automatically keeps the previous pending scan when the next book is scanned', async () => {
     await store.saveSettings(createSettings(10, 10));
 
@@ -149,6 +174,8 @@ describe('ScanWorkflowService', () => {
       scannedCount: 0,
       keptCount: 0,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
   });
 
@@ -221,6 +248,8 @@ describe('ScanWorkflowService', () => {
       scannedCount: 1,
       keptCount: 1,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
   });
 
@@ -267,7 +296,13 @@ describe('ScanWorkflowService', () => {
       remoteSessionId: null,
       closeRequested: true,
       closeReason: 'Manual',
-      counts: {scannedCount: 1, keptCount: 1, rejectedCount: 0},
+      counts: {
+        scannedCount: 1,
+        keptCount: 1,
+        rejectedCount: 0,
+        heldForManualRequestCount: 0,
+        manualRequestMissedIsbns: [],
+      },
     }));
     expect((await store.getOutboxEntry(scan.entry.clientGestureId))?.clientSessionId)
       .toBe(recovered!.clientSessionId);
@@ -324,6 +359,8 @@ describe('ScanWorkflowService', () => {
       scannedCount: 1,
       keptCount: 0,
       rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
     });
   });
 

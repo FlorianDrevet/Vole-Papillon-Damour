@@ -13,15 +13,28 @@ describe('ScanSessionSummaryService', () => {
 
   it('stores an immutable summary until the summary screen is left', () => {
     const session = createSession();
-    const counts: ScanSessionCounts = {scannedCount: 2, keptCount: 1, rejectedCount: 1};
+    const counts: ScanSessionCounts = {
+      scannedCount: 2,
+      keptCount: 1,
+      rejectedCount: 1,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
 
     service.setSummary(session, counts, '3 min de tri');
     session.lastScanAt = 'changed';
     counts.keptCount = 99;
+    counts.manualRequestMissedIsbns.push('9782070363735');
 
     expect(service.summary()).toEqual({
       session: {...createSession()},
-      counts: {scannedCount: 2, keptCount: 1, rejectedCount: 1},
+      counts: {
+        scannedCount: 2,
+        keptCount: 1,
+        rejectedCount: 1,
+        heldForManualRequestCount: 0,
+        manualRequestMissedIsbns: [],
+      },
       durationLabel: '3 min de tri',
     });
 

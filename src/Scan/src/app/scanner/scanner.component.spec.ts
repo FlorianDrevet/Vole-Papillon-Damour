@@ -27,6 +27,7 @@ import {ScanStatusBarComponent} from '../offline/scan-status-bar.component';
 import {ScanRecoveryComponent} from '../offline/scan-recovery.component';
 import {ScanStatusService} from '../offline/scan-status.service';
 import {ScanWorkflowService} from '../offline/scan-workflow.service';
+import {ScanManualRequestService} from '../offline/scan-manual-request.service';
 import {ScanRareCashService} from '../offline/scan-rare-cash.service';
 import {ScanPassageAssociationService, ScanPassageAssociationState} from '../offline/scan-passage-association.service';
 import {ScanConfirmationService} from '../scan-confirmation.service';
@@ -40,6 +41,7 @@ describe('ScannerComponent', () => {
   let confirmDialog: jasmine.Spy;
   let sessionSummary: ScanSessionSummaryService;
   let rareCash: jasmine.SpyObj<ScanRareCashService>;
+  let manualRequestService: jasmine.SpyObj<ScanManualRequestService>;
   let passageAssociation: ScanPassageAssociationService;
   let passageState: WritableSignal<ScanPassageAssociationState>;
   let commitPassageAssociation: jasmine.Spy;
@@ -65,6 +67,11 @@ describe('ScannerComponent', () => {
     rareCash.findAvailableByIsbn.and.resolveTo(null);
     rareCash.recordSales.and.resolveTo([]);
     rareCash.cancelSale.and.resolveTo('local');
+    manualRequestService = jasmine.createSpyObj<ScanManualRequestService>(
+      'ScanManualRequestService',
+      ['lookup'],
+    );
+    manualRequestService.lookup.and.resolveTo({state: 'none'});
 
     passageState = signal<ScanPassageAssociationState>({kind: 'anonymous'});
     const associationDouble = {
@@ -92,6 +99,7 @@ describe('ScannerComponent', () => {
         ScanStatusService,
         {provide: ScanWorkflowService, useValue: null},
         {provide: ScanRareCashService, useValue: rareCash},
+        {provide: ScanManualRequestService, useValue: manualRequestService},
         {provide: ScanPassageAssociationService, useValue: passageAssociation},
         {provide: ScanConfirmationService, useValue: confirmation},
         ScanSessionSummaryService,
@@ -114,6 +122,74 @@ describe('ScannerComponent', () => {
     expect(metadataService.getMetadata).toHaveBeenCalledOnceWith('9780306406157');
     expect(component.metadata).toEqual(metadata);
     expect(component.errorMessage).toBeNull();
+  });
+
+  it('looks up a manual requester in parallel and overrides a missing local catalog verdict', async () => {
+    const candidate = {
+      requestId: 'request-1',
+      firstName: 'Camille',
+      lastName: 'DUPONT',
+      phone: '0612345678',
+    };
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+    manualRequestService.lookup.and.resolveTo({state: 'found', candidate});
+    component.isOnline = true;
+
+    await component.lookup('9782070363735', 'tri');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(manualRequestService.lookup).toHaveBeenCalledOnceWith('9782070363735', true);
+    expect(component.activeVerdictKey).toBe('ManualRequest');
+    expect(component.verdictTitle).toBe('À mettre de côté');
+    expect(fixture.nativeElement.textContent).toContain('Demande manuelle');
+    expect(fixture.nativeElement.textContent).toContain('Camille DUPONT');
+    expect(fixture.nativeElement.textContent).toContain('06 12 34 56 78');
+  });
+
+  it('shows loading and administrator fallback details for a cached manual request', () => {
+    const manualFixture = TestBed.createComponent(ScannerComponent);
+    const manualComponent = manualFixture.componentInstance;
+    const result = createLocalScanResult();
+    result.entry.verdict = 'ManualRequest';
+    result.verdict.verdict = 'ManualRequest';
+    result.verdict.isRare = true;
+    manualComponent.localScan = result;
+    manualComponent.manualRequestLookup = {state: 'loading'};
+    manualFixture.detectChanges();
+
+    expect(manualFixture.nativeElement.textContent).toContain('À mettre de côté');
+    expect(manualFixture.nativeElement.textContent).toContain('Chargement des coordonnées…');
+    expect(manualFixture.nativeElement.querySelector('[data-testid="manual-request-contact-skeleton"]')).not.toBeNull();
+    expect(manualFixture.nativeElement.textContent).toContain('Fiche livre rare liée');
+    manualFixture.destroy();
+  });
+
+  it('shows the administrator fallback and set-aside action while offline', () => {
+    const manualFixture = TestBed.createComponent(ScannerComponent);
+    const manualComponent = manualFixture.componentInstance;
+    const result = createLocalScanResult();
+    result.entry.verdict = 'ManualRequest';
+    result.verdict.verdict = 'ManualRequest';
+    manualComponent.isOnline = false;
+    manualComponent.localScan = result;
+    manualComponent.manualRequestLookup = {state: 'unavailable'};
+    manualFixture.detectChanges();
+
+    expect(manualFixture.nativeElement.textContent).toContain('Coordonnées dans l’administration');
+    expect(manualFixture.nativeElement.textContent).toContain('Administration → Demandes manuelles');
+    expect(manualFixture.nativeElement.textContent).toContain('Scanner le suivant vaut « mettre de côté »');
+    expect(manualFixture.nativeElement.querySelector('.decision-keep')?.textContent).toContain('Mettre de côté');
+    manualFixture.destroy();
+  });
+
+  it('does not look up manual requester contacts in cash mode', async () => {
+    metadataService.getMetadata.and.returnValue(of(createMetadata()));
+    component.screen = 'cash';
+
+    await component.lookup('9782070363735', 'cash');
+
+    expect(manualRequestService.lookup).not.toHaveBeenCalled();
   });
 
   it('subscribes to a login request started from the scanner surface', () => {
@@ -178,7 +254,13 @@ describe('ScannerComponent', () => {
     workflow.bindSessionToVolunteer.and.resolveTo();
     workflow.reattachNeedsReattachToCurrentSession.and.resolveTo(2);
     workflow.getSession.and.resolveTo(session);
-    workflow.getSessionCounts.and.resolveTo({scannedCount: 0, keptCount: 0, rejectedCount: 0});
+    workflow.getSessionCounts.and.resolveTo({
+      scannedCount: 0,
+      keptCount: 0,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    });
     workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
     workflow.getSettings.and.resolveTo(null);
     workflow.getCatalogSyncState.and.resolveTo(null);
@@ -547,7 +629,13 @@ describe('ScannerComponent', () => {
   it('keeps the closing action once the session holds a sorted book', () => {
     const sortedFixture = TestBed.createComponent(ScannerComponent);
     sortedFixture.componentInstance.session = createSession();
-    sortedFixture.componentInstance.sessionCounts = {scannedCount: 2, keptCount: 2, rejectedCount: 0};
+    sortedFixture.componentInstance.sessionCounts = {
+      scannedCount: 2,
+      keptCount: 2,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
     sortedFixture.detectChanges();
 
     expect(sortedFixture.componentInstance.canLeaveSession).toBeFalse();
@@ -1075,7 +1163,13 @@ describe('ScannerComponent', () => {
   it('asks for confirmation before ending a session', async () => {
     confirmDialog.and.returnValue(false);
     component.session = createSession();
-    component.sessionCounts = {scannedCount: 1, keptCount: 1, rejectedCount: 0};
+    component.sessionCounts = {
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
 
     await component.endSession();
 
@@ -1098,7 +1192,13 @@ describe('ScannerComponent', () => {
     workflow.initialize.and.resolveTo({available: true, persisted: true, requestAttempted: false});
     workflow.getLatestPendingResult.and.resolveTo(null);
     workflow.getSession.and.resolveTo(closingSession);
-    workflow.getSessionCounts.and.resolveTo({scannedCount: 1, keptCount: 1, rejectedCount: 0});
+    workflow.getSessionCounts.and.resolveTo({
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    });
     workflow.getOutboxCounts.and.resolveTo({pendingDecisionCount: 0, pendingTransmissionCount: 0});
     workflow.getSettings.and.resolveTo(null);
     workflow.getCatalogSyncState.and.resolveTo(null);
@@ -1117,12 +1217,24 @@ describe('ScannerComponent', () => {
 
   it('restores the completed counters when the summary route creates a new scanner', () => {
     const session = createSession({mode: 'NextFair', closeRequested: true, closeReason: 'Manual'});
-    const counts = {scannedCount: 3, keptCount: 2, rejectedCount: 1};
+    const counts = {
+      scannedCount: 3,
+      keptCount: 2,
+      rejectedCount: 1,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
     sessionSummary.setSummary(session, counts, '4 min de tri');
 
     component.routeScreen = 'session-end';
     component.session = createSession({mode: 'AvailableNow'});
-    component.sessionCounts = {scannedCount: 0, keptCount: 0, rejectedCount: 0};
+    component.sessionCounts = {
+      scannedCount: 0,
+      keptCount: 0,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
 
     expect(component.completedSession).toEqual(session);
     expect(component.completedSessionCounts).toEqual(counts);
@@ -1179,7 +1291,13 @@ describe('ScannerComponent', () => {
     );
     localComponent.routeScreen = 'tri';
     localComponent.session = session;
-    localComponent.sessionCounts = {scannedCount: 1, keptCount: 1, rejectedCount: 0};
+    localComponent.sessionCounts = {
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
     localComponent.authAvailable = true;
     localComponent.isAuthenticated = true;
     localComponent.isOnline = true;
@@ -1861,7 +1979,13 @@ describe('ScannerComponent', () => {
 
   it('opens a new session mode screen after a session has been ended', async () => {
     component.session = createSession();
-    component.sessionCounts = {scannedCount: 2, keptCount: 2, rejectedCount: 0};
+    component.sessionCounts = {
+      scannedCount: 2,
+      keptCount: 2,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
 
     await component.endSession();
     component.returnHome();
@@ -1894,6 +2018,13 @@ describe('ScannerComponent', () => {
       catalog: {booksReceived: 0, booksRemoved: 0, watermark: 'watermark'},
       outbox: {sent: 1, remaining: 0, stoppedOnError: false, newlyOrphaned: 0, newlyQuarantined: 0},
       closed: true,
+      sessionCounts: {
+        scannedCount: 1,
+        keptCount: 1,
+        rejectedCount: 0,
+        heldForManualRequestCount: 1,
+        manualRequestMissedIsbns: ['9782070363735'],
+      },
     });
 
     (component as unknown as {scanWorkflow: ScanWorkflowService}).scanWorkflow = workflow;
@@ -1903,7 +2034,13 @@ describe('ScannerComponent', () => {
     component.isAuthenticated = true;
     component.isOnline = true;
     component.session = session;
-    component.sessionCounts = {scannedCount: 1, keptCount: 1, rejectedCount: 0};
+    component.sessionCounts = {
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+      heldForManualRequestCount: 0,
+      manualRequestMissedIsbns: [],
+    };
     component.localScan = completedScan;
 
     await component.endSession();
@@ -1912,7 +2049,38 @@ describe('ScannerComponent', () => {
     expect(sync.syncAll).toHaveBeenCalledOnceWith();
     expect(component.session).toBeNull();
     expect(component.screen).toBe('session-end');
-    expect(sessionSummary.summary()?.counts).toEqual({scannedCount: 1, keptCount: 1, rejectedCount: 0});
+    expect(sessionSummary.summary()?.counts).toEqual({
+      scannedCount: 1,
+      keptCount: 1,
+      rejectedCount: 0,
+      heldForManualRequestCount: 1,
+      manualRequestMissedIsbns: ['9782070363735'],
+    });
+  });
+
+  it('shows the manual request hold and missed-book messages at session end', () => {
+    const missedIsbn = '9782070363735';
+    const summaryFixture = TestBed.createComponent(ScannerComponent);
+    const summaryComponent = summaryFixture.componentInstance;
+    const counts = {
+      scannedCount: 2,
+      keptCount: 2,
+      rejectedCount: 0,
+      heldForManualRequestCount: 1,
+      manualRequestMissedIsbns: [missedIsbn],
+    };
+    summaryComponent.completedSession = createSession();
+    summaryComponent.completedSessionCounts = counts;
+    summaryComponent.sessionDurationLabel = '2 min de tri';
+    summaryComponent.manualRequestMissedTitles.set(missedIsbn, 'Le Petit Prince');
+    summaryComponent.screen = 'session-end';
+    summaryFixture.detectChanges();
+
+    expect(summaryFixture.nativeElement.querySelector('.manual-request-summary-held')?.textContent.trim())
+      .toBe('1 livres mis de côté pour des demandes manuelles. La présidente les retrouve dans l’administration.');
+    expect(summaryFixture.nativeElement.querySelector('.manual-request-summary-missed')?.textContent.trim())
+      .toBe("Le Petit Prince n'est plus attendu : la demande a été servie par un autre poste. Remettez-le avec les livres gardés.");
+    summaryFixture.destroy();
   });
   it('starts synchronizing after a scan is stored locally', async () => {
     const workflow = jasmine.createSpyObj<ScanWorkflowService>(

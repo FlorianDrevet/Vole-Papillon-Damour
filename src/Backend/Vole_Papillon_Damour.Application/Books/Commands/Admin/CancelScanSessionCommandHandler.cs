@@ -8,6 +8,7 @@ using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate;
 using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.Common.Errors;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.ScanSessionAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
@@ -57,7 +58,8 @@ public sealed class CancelScanSessionCommandHandler(
                 movement.ScanSessionId == session.Id &&
                 !dbContext.BookMovements.Any(reversal => reversal.ReversalOfMovementId == movement.Id) &&
                 (movement.Type == BookMovementType.DirectEntry ||
-                 movement.Type == BookMovementType.AnnouncementEntry))
+                 movement.Type == BookMovementType.AnnouncementEntry ||
+                 movement.Type == BookMovementType.ManualRequestHold))
             .OrderBy(movement => movement.OccurredAt)
             .ThenBy(movement => movement.Id)
             .ToListAsync(cancellationToken);
@@ -65,6 +67,42 @@ public sealed class CancelScanSessionCommandHandler(
         var reversedMovementCount = 0;
         foreach (var movement in movements)
         {
+            if (movement.Type == BookMovementType.ManualRequestHold)
+            {
+                var request = await dbContext.ManualBookRequests.SingleOrDefaultAsync(
+                    candidate => candidate.HoldMovementId == movement.Id,
+                    cancellationToken);
+                if (request is null || request.Status != ManualBookRequestStatus.Found)
+                {
+                    continue;
+                }
+
+                if (movement.Quantity <= 0)
+                {
+                    return Error.Unexpected(
+                        "Book.InvalidManualRequestHoldQuantity",
+                        "A held manual request must have a positive quantity before cancellation.");
+                }
+
+                request.RevertScanHold(correctedAt);
+                dbContext.BookMovements.Add(BookMovement.Create(
+                    BookMovementId.CreateUnique(),
+                    movement.Isbn13,
+                    BookMovementType.ManualRequestHold,
+                    -movement.Quantity,
+                    correctedAt,
+                    correctedAt,
+                    clockSuspect: false,
+                    session.Id,
+                    command.UpdatedBy,
+                    movement.AssoEventsId,
+                    "Session.Cancel.ManualRequestHold.Reversal",
+                    clientGestureId: null,
+                    movement.Id));
+                reversedMovementCount++;
+                continue;
+            }
+
             var book = await dbContext.Books.SingleOrDefaultAsync(
                 candidate => candidate.Id == movement.Isbn13,
                 cancellationToken);

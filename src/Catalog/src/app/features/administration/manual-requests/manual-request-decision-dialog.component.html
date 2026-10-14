@@ -1,0 +1,60 @@
+<div class="manual-request-decision-backdrop" role="presentation" (click)="cancel()">
+  <section
+    #dialog
+    class="manual-request-decision-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="manual-request-decision-title"
+    tabindex="-1"
+    (click)="$event.stopPropagation()">
+    <button class="manual-request-decision-close" type="button" aria-label="Fermer" [disabled]="pending" (click)="cancel()">×</button>
+
+    @if (mode === 'given') {
+      <span class="manual-request-decision-kicker">Remise</span>
+      <h2 id="manual-request-decision-title">{{ title }} a été remis à {{ requesterName }} ?</h2>
+      <div class="manual-request-decision-tags">
+        <span>{{ foundEditionLabel() }}</span>
+        <span>{{ foundOriginLabel() }}</span>
+      </div>
+      <p class="manual-request-decision-body">L'exemplaire sort définitivement du stock de la bourse. Il n'est pas compté comme une vente. La demande est close.</p>
+    } @else if (mode === 'refuse') {
+      <span class="manual-request-decision-kicker">Refus</span>
+      <h2 id="manual-request-decision-title">{{ requesterName }} ne prend pas {{ title }}</h2>
+      <p class="manual-request-decision-warning">{{ watcherWarning() }}</p>
+
+      <section class="manual-request-release-mode" aria-labelledby="manual-request-release-title">
+        <h3 id="manual-request-release-title">Mise à disposition</h3>
+        <span class="manual-request-release-tag">{{ releaseModeLabel() }}</span>
+        <p>{{ releaseModeHelp() }}</p>
+      </section>
+
+      <fieldset class="manual-request-keep-searching">
+        <legend>Et ensuite ?</legend>
+        <label [class.selected]="!keepSearching()">
+          <input type="radio" name="keepSearching" [checked]="!keepSearching()" [disabled]="pending" (change)="keepSearching.set(false)">
+          <span><strong>Clore la demande</strong><small>Elle ne cherche plus ce livre.</small></span>
+        </label>
+        <label [class.selected]="keepSearching()">
+          <input data-testid="manual-request-keep-searching" type="radio" name="keepSearching" [checked]="keepSearching()" [disabled]="pending" (change)="keepSearching.set(true)">
+          <span><strong>Continuer à chercher ce livre pour elle</strong><small>Autre édition, exemplaire abîmé… La demande garde sa date du {{ formatDate(item?.requestedAt) }}.</small></span>
+        </label>
+      </fieldset>
+    } @else {
+      <span class="manual-request-decision-kicker">Annuler une demande trouvée</span>
+      <h2 id="manual-request-decision-title">Annuler la demande de {{ requesterName }} ?</h2>
+      <p class="manual-request-decision-body">{{ cancelFoundSummary() }}</p>
+    }
+
+    <div class="manual-request-decision-actions">
+      @if (mode === 'cancel-found') {
+        <button class="button button-outline" data-testid="manual-request-decision-close" type="button" [disabled]="pending" (click)="cancel()">Garder la demande</button>
+        <button class="button button-primary" data-testid="manual-request-decision-confirm" type="button" [disabled]="pending" (click)="submit()">{{ pending ? 'Annulation…' : 'Annuler la demande' }}</button>
+      } @else {
+        <button class="button button-outline" data-testid="manual-request-decision-close" type="button" [disabled]="pending" (click)="cancel()">Annuler</button>
+        <button class="button button-primary" data-testid="manual-request-decision-confirm" type="button" [disabled]="pending" (click)="submit()">
+          @if (pending) {Enregistrement…} @else if (mode === 'given') {Confirmer le don} @else {Confirmer le refus}
+        </button>
+      }
+    </div>
+  </section>
+</div>

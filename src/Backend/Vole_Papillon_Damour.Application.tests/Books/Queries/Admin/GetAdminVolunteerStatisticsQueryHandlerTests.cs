@@ -143,6 +143,46 @@ public sealed class GetAdminVolunteerStatisticsQueryHandlerTests
         result.FirstError.Code.Should().Be("Book.InvalidPeriod");
     }
 
+    [Fact]
+    public async Task Handle_includes_manual_request_holds_in_scan_statistics()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var fair = await fixture.AddFairAsync(
+            new DateTimeOffset(2026, 9, 10, 0, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 9, 10, 0, 0, 0, TimeSpan.Zero),
+            null,
+            null);
+        var volunteerId = UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000011"));
+        var session = await fixture.AddSessionAsync(
+            ScanMode.NextFair,
+            fair.Id,
+            volunteerId,
+            new DateTime(2026, 9, 9, 8, 0, 0, DateTimeKind.Utc));
+        session.RecordScan(true, session.StartedAt.AddMinutes(5), session.StartedAt.AddMinutes(6));
+        session.Close(ScanCloseReason.Manual, session.StartedAt.AddMinutes(15));
+        var book = await fixture.AddBookAsync("9782070363735", 0);
+        fixture.Context.BookMovements.Add(AddMovement(
+            book,
+            BookMovementType.ManualRequestHold,
+            session.StartedAt.AddMinutes(5),
+            volunteerId,
+            session.Id,
+            fair.Id));
+        await fixture.Context.SaveChangesAsync();
+
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(GeneratedAt);
+        var handler = new GetAdminVolunteerStatisticsQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetAdminVolunteerStatisticsQuery(null, null, fair.Id.Value),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.DominantGenres.Should().ContainSingle(genre =>
+            genre.Name == "Sans genre" && genre.Quantity == 1);
+    }
+
     private static BookMovement AddMovement(
         Book book,
         BookMovementType type,

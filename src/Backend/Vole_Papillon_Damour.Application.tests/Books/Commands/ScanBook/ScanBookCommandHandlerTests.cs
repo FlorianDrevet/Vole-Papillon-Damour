@@ -17,6 +17,9 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.CheckoutPassages.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
+using Vole_Papillon_Damour.Application.Books.Common;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate;
+using Vole_Papillon_Damour.Domain.ManualRequestAggregate.ValueObjects;
 using Vole_Papillon_Damour.Application.NotFoundReports.Common;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate.ValueObjects;
@@ -325,6 +328,179 @@ public sealed class ScanBookCommandHandlerTests
         (await fixture.Context.BookMovements.CountAsync()).Should().Be(0);
     }
 
+    [Fact]
+    public async Task Handle_KeptWithSearchingEditionRequest_HoldsCopyWithoutStock()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var request = await AddManualRequestAsync(fixture, ManualBookRequestScope.Edition, isbn: "9782070363735");
+
+        var result = await fixture.CreateHandler().Handle(
+            CreateCommand(session, "9782070363735", kept: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.HeldForManualRequest.Should().BeTrue();
+        result.Value.MovementType.Should().Be(BookMovementType.ManualRequestHold);
+        result.Value.QuantityAvailable.Should().Be(0);
+        result.Value.QuantityAnnounced.Should().Be(0);
+        (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(0);
+        (await fixture.Context.BookAnnouncements.CountAsync()).Should().Be(0);
+        var movement = await fixture.Context.BookMovements.SingleAsync();
+        movement.Type.Should().Be(BookMovementType.ManualRequestHold);
+        movement.Quantity.Should().Be(1);
+        var savedRequest = await fixture.Context.ManualBookRequests.SingleAsync();
+        savedRequest.Status.Should().Be(ManualBookRequestStatus.Found);
+        savedRequest.HoldMovementId.Should().Be(movement.Id);
+        (await fixture.Context.ScanSessions.SingleAsync()).KeptCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_KeptUnknownBookWithWorkRequest_ResolvesWorkIdAndHolds()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var request = await AddManualRequestAsync(fixture, ManualBookRequestScope.Work, workId: "OL123W");
+        const string isbn = "9782070363735";
+        var resolver = Substitute.For<IBibliographicMetadataResolver>();
+        resolver.ResolveAsync(ParseIsbn(isbn), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<BookMetadataResult?>(new BookMetadataResult(
+                isbn, "Le Petit Prince", null, null, null, null, "OpenLibrary", "OL123W", ReceivedAt)));
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ReceivedAt);
+        var handler = new ScanBookCommandHandler(fixture.Context, clock, metadataResolver: resolver);
+
+        var result = await handler.Handle(CreateCommand(session, isbn, kept: true), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.HeldForManualRequest.Should().BeTrue();
+        (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(0);
+        (await fixture.Context.ManualBookRequests.SingleAsync()).Id.Should().Be(request.Id);
+        (await fixture.Context.ManualBookRequests.SingleAsync()).Status.Should().Be(ManualBookRequestStatus.Found);
+        await resolver.Received(1).ResolveAsync(ParseIsbn(isbn), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_TwoCopies_SecondServesNextRequestThirdGoesToStock()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var firstRequest = await AddManualRequestAsync(
+            fixture, ManualBookRequestScope.Edition, isbn: "9782070363735", requestedAt: SessionStartedAt.AddMinutes(-10));
+        var secondRequest = await AddManualRequestAsync(
+            fixture, ManualBookRequestScope.Edition, isbn: "9782070363735", requestedAt: SessionStartedAt.AddMinutes(-5));
+        var handler = fixture.CreateHandler();
+
+        var first = await handler.Handle(CreateCommand(session, "9782070363735", kept: true), CancellationToken.None);
+        var second = await handler.Handle(CreateCommand(session, "9782070363735", kept: true), CancellationToken.None);
+        var third = await handler.Handle(CreateCommand(session, "9782070363735", kept: true), CancellationToken.None);
+
+        first.Value.HeldForManualRequest.Should().BeTrue();
+        second.Value.HeldForManualRequest.Should().BeTrue();
+        third.Value.HeldForManualRequest.Should().BeFalse();
+        third.Value.MovementType.Should().Be(BookMovementType.DirectEntry);
+        (await fixture.Context.ManualBookRequests.SingleAsync(request => request.Id == firstRequest.Id)).Status
+            .Should().Be(ManualBookRequestStatus.Found);
+        (await fixture.Context.ManualBookRequests.SingleAsync(request => request.Id == secondRequest.Id)).Status
+            .Should().Be(ManualBookRequestStatus.Found);
+        (await fixture.Context.BookMovements.CountAsync(movement => movement.Type == BookMovementType.ManualRequestHold))
+            .Should().Be(2);
+        (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_Rejected_DoesNotHold()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        var request = await AddManualRequestAsync(fixture, ManualBookRequestScope.Edition, isbn: "9782070363735");
+
+        var result = await fixture.CreateHandler().Handle(
+            CreateCommand(session, "9782070363735", kept: false),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.HeldForManualRequest.Should().BeFalse();
+        result.Value.MovementType.Should().Be(BookMovementType.Rejection);
+        (await fixture.Context.ManualBookRequests.SingleAsync(candidate => candidate.Id == request.Id)).Status
+            .Should().Be(ManualBookRequestStatus.Searching);
+    }
+
+    [Fact]
+    public async Task Handle_ReplayOfHeldGesture_IsIdempotent()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var session = await fixture.AddSessionAsync(ScanMode.AvailableNow);
+        await AddManualRequestAsync(fixture, ManualBookRequestScope.Edition, isbn: "9782070363735");
+        var gestureId = Guid.NewGuid();
+        var handler = fixture.CreateHandler();
+
+        var first = await handler.Handle(
+            CreateCommand(session, "9782070363735", kept: true, clientGestureId: gestureId), CancellationToken.None);
+        var replay = await handler.Handle(
+            CreateCommand(session, "9782070363735", kept: true, clientGestureId: gestureId), CancellationToken.None);
+
+        first.Value.HeldForManualRequest.Should().BeTrue();
+        replay.IsError.Should().BeFalse();
+        replay.Value.AlreadyProcessed.Should().BeTrue();
+        replay.Value.HeldForManualRequest.Should().BeTrue();
+        (await fixture.Context.BookMovements.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_NextFairSession_HoldsWithoutAnnouncement()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var fair = await fixture.AddFairAsync(
+            new DateTimeOffset(SessionStartedAt.AddDays(7)),
+            new DateTimeOffset(SessionStartedAt.AddDays(8)),
+            null,
+            null);
+        var session = await fixture.AddSessionAsync(ScanMode.NextFair, fair.Id);
+        await AddManualRequestAsync(fixture, ManualBookRequestScope.Edition, isbn: "9782070363735");
+
+        var result = await fixture.CreateHandler().Handle(
+            CreateCommand(session, "9782070363735", kept: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.HeldForManualRequest.Should().BeTrue();
+        result.Value.MovementType.Should().Be(BookMovementType.ManualRequestHold);
+        result.Value.QuantityAnnounced.Should().Be(0);
+        (await fixture.Context.BookAnnouncements.CountAsync()).Should().Be(0);
+        var movement = await fixture.Context.BookMovements.SingleAsync();
+        movement.AssoEventsId.Should().Be(fair.Id);
+        (await fixture.Context.Books.SingleAsync()).QuantityAvailable.Should().Be(0);
+    }
+
+    private static async Task<ManualBookRequest> AddManualRequestAsync(
+        ScanBookFixture fixture,
+        ManualBookRequestScope scope,
+        string? workId = null,
+        string? isbn = null,
+        DateTime? requestedAt = null)
+    {
+        var requesterId = Guid.NewGuid();
+        fixture.Context.ManualRequesters.Add(ManualRequester.Create(
+            requesterId,
+            "Martin",
+            "Jeanne",
+            "0612345678",
+            consentGiven: true,
+            UserId.Create(Guid.Parse("00000000-0000-0000-0000-000000000002")),
+            SessionStartedAt));
+        var request = scope == ManualBookRequestScope.Work
+            ? ManualBookRequest.CreateWork(
+                Guid.NewGuid(), requesterId, workId!, "Le Petit Prince", null, null, null,
+                requestedAt ?? SessionStartedAt)
+            : ManualBookRequest.CreateEdition(
+                Guid.NewGuid(), requesterId, ParseIsbn(isbn!), "Le Petit Prince", null, null, null,
+                requestedAt ?? SessionStartedAt);
+        fixture.Context.ManualBookRequests.Add(request);
+        await fixture.Context.SaveChangesAsync();
+        return request;
+    }
+
     private static ScanBookCommand CreateCommand(
         DomainScanSession session,
         string isbn,
@@ -572,6 +748,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookAnnouncement> BookAnnouncements => Set<BookAnnouncement>();
     public DbSet<BookMovement> BookMovements => Set<BookMovement>();
+    public DbSet<ManualRequester> ManualRequesters => Set<ManualRequester>();
+    public DbSet<ManualBookRequest> ManualBookRequests => Set<ManualBookRequest>();
     public DbSet<DomainScanSession> ScanSessions => Set<DomainScanSession>();
     public DbSet<AssociationSettingsEntity> AssociationSettings => Set<AssociationSettingsEntity>();
     public DbSet<AssoEvents> AssoEvents => Set<AssoEvents>();
@@ -721,6 +899,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.ApplyConfiguration(new CheckoutPassageConfiguration());
         modelBuilder.ApplyConfiguration(new CheckoutPassageLineConfiguration());
         modelBuilder.ApplyConfiguration(new BookNotFoundReportConfiguration());
+        modelBuilder.ApplyConfiguration(new ManualRequesterConfiguration());
+        modelBuilder.ApplyConfiguration(new ManualBookRequestConfiguration());
 
         modelBuilder.Entity<AssociationSettingsEntity>(builder =>
         {

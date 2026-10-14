@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Livre refusé — suite</title>
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+  <style>
+    body { margin: 0; background: #f7fbfe; -webkit-font-smoothing: antialiased; }
+    a { color: #0c6ea6; text-decoration: none; }
+    a:hover { color: #072b45; }
+  </style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #f7fbfe; font-family: 'Libre Franklin', system-ui, sans-serif; color: #072b45;">
+
+  <div style="display: flex; align-items: center; gap: 12px; padding: 20px 32px; border-bottom: 1px solid #d9e9f4;">
+    <div style="width: 42px; height: 42px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background-image: linear-gradient(205deg, #7fd8f5 0%, #1497d6 26%, #0c6ea6 52%, #062a44 100%);">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .06em; color: #ffffff;">VPD</span>
+    </div>
+    <span style="font-family: 'Newsreader', Georgia, serif; font-size: 18px; color: #072b45;">Vole Papillon d'Amour</span>
+    <span style="margin-left: 8px; padding: 6px 12px; border-radius: 999px; background: #072b45; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #7fd8f5;">Administration</span>
+  </div>
+  <div style="display: flex; align-items: stretch;">
+    <div style="flex: none; width: 244px; min-height: 817px; background: #072b45;"></div>
+    <main style="flex: 1 1 auto; padding: 40px 44px;">
+      <h1 style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-size: 40px; font-weight: 500; color: #072b45;">Demandes manuelles.</h1>
+    </main>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(4, 29, 48, .46);"></div>
+
+  <section role="dialog" aria-modal="true" aria-labelledby="refuse-title" data-zone="E5-dialogue-refus" style="position: absolute; left: 450px; top: 90px; width: 580px; box-sizing: border-box; padding: 30px 32px 28px; border-radius: 6px; background: #ffffff; box-shadow: 0 24px 60px rgba(4, 29, 48, .28); display: flex; flex-direction: column; gap: 18px;">
+    <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #dc6412;">Refus</span>
+    <h2 id="refuse-title" style="margin: -6px 0 0; font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 500; line-height: 1.15; color: #072b45;">Jeanne MARTIN ne prend pas Le Petit Prince</h2>
+
+    <div data-zone="E5-avertissement-alertes" style="display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 4px; background: #fff6ec; font-size: 14.5px; line-height: 1.5; color: #072b45;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc6412" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px;"><path d="M4 6.5h16v11H4z"></path><path d="m4.5 7 7.5 6 7.5-6"></path></svg><span>Le livre rejoint le stock et <strong>3 membres</strong> qui le suivent seront prévenus par e-mail <strong>dès maintenant</strong>.</span></div>
+
+    <div data-zone="E5-mise-a-disposition" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border: 1px solid #d9e9f4; border-radius: 4px;">
+      <span style="font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: #6d8ba2;">Mise à disposition</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; background: #072b45; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #ffffff;">Disponible maintenant</span>
+    </div>
+    <span style="margin-top: -10px; font-size: 13px; color: #6d8ba2;">Mode de la session de scan du 12 oct. Non modifiable.</span>
+
+    <fieldset data-zone="E5-choix-suite" style="margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px;">
+      <legend style="margin-bottom: 8px; font-size: 14.5px; font-weight: 600; color: #072b45;">Et ensuite ?</legend>
+      <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1.5px solid #0c6ea6; border-radius: 4px; background: #e9f4fb; font-size: 14.5px; color: #072b45;"><input type="radio" name="next" checked style="margin: 2px 0 0; width: 18px; height: 18px; accent-color: #0c6ea6;"><span><span style="font-weight: 600;">Clore la demande</span><span style="display: block; margin-top: 2px; font-size: 13.5px; color: #4e6c84;">Elle ne cherche plus ce livre.</span></span></label>
+      <label style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid #d9e9f4; border-radius: 4px; font-size: 14.5px; color: #33536e;"><input type="radio" name="next" style="margin: 2px 0 0; width: 18px; height: 18px; accent-color: #0c6ea6;"><span><span style="font-weight: 600; color: #072b45;">Continuer à chercher ce livre pour elle</span><span style="display: block; margin-top: 2px; font-size: 13.5px; color: #4e6c84;">Autre édition, exemplaire abîmé… La demande garde sa date du 3 sept.</span></span></label>
+    </fieldset>
+
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 4px;">
+      <button type="button" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 48px; padding: 0 22px; border: 1.5px solid #9dc2da; border-radius: 999px; background: #ffffff; font-size: 15px; font-weight: 600; color: #072b45;">Annuler</button>
+      <button type="button" data-zone="E5-bouton-confirmer-refus" style="margin: 0; font-family: inherit; cursor: pointer; min-height: 48px; padding: 0 24px; border: 0; border-radius: 999px; background: #f0801c; font-size: 15px; font-weight: 600; color: #ffffff;">Confirmer le refus</button>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

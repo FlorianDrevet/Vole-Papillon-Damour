@@ -1,0 +1,184 @@
+<section class="manual-requests-view" aria-labelledby="admin-title">
+  <header class="manual-requests-heading">
+    <div class="manual-requests-heading-copy">
+      <span class="admin-kicker">Pendant la bourse</span>
+      <h1 #requestsHeading id="admin-title" tabindex="-1">Demandes manuelles.</h1>
+      <p>Livres recherchés par des personnes sans internet. Quand un livre est trouvé, appelez la personne puis indiquez s'il a été donné ou refusé.</p>
+    </div>
+    <button class="button button-primary" data-testid="manual-request-new-requester" type="button" (click)="newRequester()">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg> Nouveau demandeur
+    </button>
+  </header>
+
+  <div class="manual-request-tabs" role="tablist" aria-label="Demandes manuelles">
+    <button
+      id="manual-requests-tab-found"
+      data-testid="manual-requests-tab-found"
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'found'"
+      [class.active]="activeTab() === 'found'"
+      (click)="selectTab('found')">
+      Trouvés à remettre <span>{{ queue()?.foundCount ?? 0 }}</span>
+    </button>
+    <button
+      id="manual-requests-tab-searching"
+      data-testid="manual-requests-tab-searching"
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'searching'"
+      [class.active]="activeTab() === 'searching'"
+      (click)="selectTab('searching')">
+      En recherche <span>{{ queue()?.searchingCount ?? 0 }}</span>
+    </button>
+    <button
+      id="manual-requests-tab-closed"
+      data-testid="manual-requests-tab-closed"
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'closed'"
+      [class.active]="activeTab() === 'closed'"
+      (click)="selectTab('closed')">
+      Closes <span>{{ queue()?.closedCount ?? 0 }}</span>
+    </button>
+  </div>
+
+  <label class="manual-request-search">
+    <span class="sr-only">Rechercher</span>
+    <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.2"></circle><path d="m15.3 15.3 5 5"></path></svg>
+    <input
+      data-testid="manual-requests-search"
+      type="search"
+      [value]="search()"
+      placeholder="Nom, téléphone ou titre"
+      autocomplete="off"
+      (input)="updateSearch($any($event.target).value)">
+  </label>
+
+  @if (success(); as message) {
+    <p class="manual-request-feedback manual-request-feedback-success" role="status" aria-live="polite">{{ message }}</p>
+  }
+
+  @if (error(); as message) {
+    <div class="manual-request-feedback manual-request-feedback-error" role="alert">
+      <span>{{ message }}</span>
+      <button class="button button-outline" data-testid="manual-requests-retry" type="button" (click)="loadQueue()">Réessayer</button>
+    </div>
+  }
+
+  @if (loading() && !queue()) {
+    <div class="manual-request-skeletons" role="status" aria-label="Chargement des demandes manuelles">
+      <span></span><span></span><span></span>
+    </div>
+  } @else if (queue(); as current) {
+    @if (current.items.length === 0) {
+      <div class="manual-request-empty" data-testid="manual-requests-empty">
+        <span class="manual-request-empty-icon" aria-hidden="true">⌕</span>
+        <h2>Aucun livre à remettre pour le moment.</h2>
+        <p>Les livres trouvés au tri apparaîtront ici.</p>
+      </div>
+    } @else {
+      <div class="manual-request-list" [attr.aria-busy]="loading()">
+        @for (item of current.items; track item.requestId) {
+          <article class="manual-request-row" [attr.data-testid]="'manual-request-row-' + item.requestId">
+            @if (item.status === 'Found') {
+              <div class="manual-request-found-row">
+                <div class="manual-request-cover" aria-hidden="true"><span>Couv.</span></div>
+                <div class="manual-request-book-copy">
+                  <div class="manual-request-title-line">
+                    <div>
+                      <h2>{{ item.title || 'Titre inconnu' }}</h2>
+                      <p>{{ item.authors || 'Auteur non renseigné' }}</p>
+                    </div>
+                    <span class="manual-request-origin" [class.manual-request-origin-stock]="item.foundOrigin !== 'Scan'">{{ foundOriginLabel(item) }}</span>
+                  </div>
+                  @if (item.foundPublisher || item.foundPublicationYear) {
+                    <p class="manual-request-edition">Édition mise de côté : {{ item.foundPublisher || 'éditeur non renseigné' }}{{ item.foundPublicationYear ? ' · ' + item.foundPublicationYear : '' }}</p>
+                  }
+                  <p class="manual-request-isbn">ISBN {{ item.foundIsbn13 || item.isbn13 || 'non renseigné' }}</p>
+                  <div class="manual-request-contact">
+                    <span>Demande : {{ scopeLabel(item) }}</span>
+                    @if (item.requesterErased) {
+                      <span class="manual-request-erased"><em>{{ requesterName(item) }}</em></span>
+                    } @else {
+                      <button class="manual-request-name" type="button" (click)="openRequester(item.requesterId)">{{ requesterName(item) }}</button>
+                      @if (item.requesterPhone) {
+                        <a class="manual-request-phone" [href]="requesterPhoneHref(item.requesterPhone)">{{ requesterPhone(item.requesterPhone) }}</a>
+                      }
+                    }
+                    <span>Demandé le {{ formatDate(item.requestedAt) }}</span>
+                    @if (item.foundAt) {
+                      <span class="manual-request-age" [class.overdue]="daysWaiting(item.foundAt) > 14">· trouvé il y a {{ daysWaiting(item.foundAt) }} jours</span>
+                    }
+                  </div>
+                </div>
+                <div class="manual-request-actions">
+                  <button class="button button-primary" type="button" [disabled]="actionPending() === item.requestId" (click)="markGiven(item)">Donné</button>
+                  <button class="button button-outline" type="button" [disabled]="actionPending() === item.requestId" (click)="refuse(item)">Refusé…</button>
+                </div>
+              </div>
+            } @else if (item.status === 'Searching') {
+              <div class="manual-request-searching-row">
+                <div class="manual-request-row-main">
+                  <div class="manual-request-cover compact" aria-hidden="true"><span>Couv.</span></div>
+                  <div class="manual-request-book-copy">
+                    <h2>{{ item.title || 'Titre inconnu' }}</h2>
+                    <p>{{ item.authors || 'Auteur non renseigné' }}{{ item.isbn13 ? ' · ISBN ' + item.isbn13 : '' }}</p>
+                  </div>
+                </div>
+                <span class="manual-request-scope">{{ scopeLabel(item) }}</span>
+                <div class="manual-request-for">
+                  @if (item.requesterErased) {
+                    <em>{{ requesterName(item) }}</em>
+                  } @else {
+                    <button class="manual-request-name" type="button" (click)="openRequester(item.requesterId)">{{ requesterName(item) }}</button>
+                    @if (item.requesterPhone) {<a class="manual-request-phone" [href]="requesterPhoneHref(item.requesterPhone)">{{ requesterPhone(item.requesterPhone) }}</a>}
+                  }
+                </div>
+                <span class="manual-request-date">{{ formatDate(item.requestedAt) }}</span>
+                @if (item.quantityAvailable + item.quantityAnnounced > 0) {
+                  <span class="manual-request-stock-note">Déjà en stock · {{ item.quantityAvailable + item.quantityAnnounced }} disponibles</span>
+                }
+                <div class="manual-request-actions">
+                  @if (item.quantityAvailable > 0 || item.quantityAnnounced > 0) {
+                    <button class="button button-primary" data-testid="manual-request-pick" type="button" [disabled]="actionPending() === item.requestId" (click)="pick(item)">Prélever</button>
+                  }
+                  <button class="button button-outline" type="button" [disabled]="actionPending() === item.requestId" (click)="cancel(item)">Annuler</button>
+                </div>
+              </div>
+            } @else {
+              <div class="manual-request-closed-row">
+                <div class="manual-request-book-copy">
+                  <h2>{{ item.title || 'Titre inconnu' }}</h2>
+                  <p>{{ item.authors || 'Auteur non renseigné' }}{{ item.isbn13 ? ' · ISBN ' + item.isbn13 : '' }}</p>
+                </div>
+                <span class="manual-request-closed-status">{{ closedStatusLabel(item) }}</span>
+                @if (item.requesterErased) {
+                  <em class="manual-request-erased">Demandeur effacé</em>
+                } @else {
+                  <button class="manual-request-name" type="button" (click)="openRequester(item.requesterId)">{{ requesterName(item) }}</button>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  }
+
+  <aside class="manual-request-privacy-note">
+    <span aria-hidden="true">i</span>
+    <p>Ces livres ne sont ni disponibles ni annoncés : aucun membre n'a été prévenu. Un refus les remet en stock et prévient aussitôt les membres qui les suivent. Les coordonnées sont effacées trois mois après la dernière demande close de la personne.</p>
+  </aside>
+
+  @if (decision(); as currentDecision) {
+    <app-manual-request-decision-dialog
+      [mode]="currentDecision.mode"
+      [item]="currentDecision.item"
+      [requesterFirstName]="currentDecision.item.requesterFirstName || ''"
+      [requesterLastName]="currentDecision.item.requesterLastName || ''"
+      [pending]="actionPending() === currentDecision.item.requestId"
+      (closed)="closeDecision()"
+      (confirmed)="confirmDecision($event.keepSearching)"></app-manual-request-decision-dialog>
+  }
+</section>

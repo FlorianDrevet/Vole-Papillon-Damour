@@ -182,6 +182,37 @@ describe('ScanApiService', () => {
     request.flush(createDelta());
   });
 
+  it('retrieves the matching manual requester contact for a scanned ISBN', () => {
+    const candidate = {
+      requestId: 'request-1',
+      firstName: 'Camille',
+      lastName: 'DUPONT',
+      phone: '0612345678',
+    };
+    let received: typeof candidate | null | undefined;
+    service.getManualRequestCandidate('9782070363735').subscribe(value => received = value);
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/scan/manual-requests/candidate?isbn13=9782070363735`,
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush(candidate);
+
+    expect(received).toEqual(candidate);
+  });
+
+  it('maps an empty manual request candidate response to null', () => {
+    let received: unknown;
+    service.getManualRequestCandidate('9782070363735').subscribe(value => received = value);
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/scan/manual-requests/candidate?isbn13=9782070363735`,
+    );
+    request.flush(null, {status: 204, statusText: 'No Content'});
+
+    expect(received).toBeNull();
+  });
+
   function createDelta(): ScanCatalogDeltaResponse {
     return {
       generatedAt: '2026-09-03T08:00:00.000Z',
@@ -208,6 +239,7 @@ describe('ScanApiService', () => {
     return {
       isbn13: '9782070363735',
       verdict: 'FirstCopy',
+      heldForManualRequest: false,
       qtyAvailable: 1,
       qtyAnnounced: 0,
       scanSessionId: 'session-1',

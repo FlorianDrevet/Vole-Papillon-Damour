@@ -28,8 +28,10 @@ using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.AddWatchlistIte
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.RemoveWatchlistItem;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Queries.GetMyWatchlist;
 using Vole_Papillon_Damour.Application.WatchlistFeature.Commands.SetMyAlertStatus;
+using Vole_Papillon_Damour.Application.ManualRequests.Queries.GetScanCandidate;
 using Vole_Papillon_Damour.Contracts.Books.Requests;
 using Vole_Papillon_Damour.Contracts.Books.Responses;
+using Vole_Papillon_Damour.Contracts.ManualRequests;
 using Vole_Papillon_Damour.Contracts.Recommendations;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
 using DomainErrors = Vole_Papillon_Damour.Domain.Common.Errors.Errors;
@@ -525,6 +527,30 @@ public static class BookController
                 .WithName("ScanBook")
                 .RequireAuthorization("Tri");
 
+            endpoints.MapGet(
+                    "/scan/manual-requests/candidate",
+                    async (
+                        string isbn13,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetManualRequestScanCandidateQuery(isbn13),
+                            cancellationToken);
+
+                        return result.Match(
+                            candidate => candidate is null
+                                ? Results.NoContent()
+                                : Results.Ok(new ManualRequestScanCandidateResponse(
+                                    candidate.RequestId,
+                                    candidate.FirstName,
+                                    candidate.LastName,
+                                    candidate.Phone)),
+                            error => error.Result());
+                    })
+                .WithName("GetManualRequestScanCandidate")
+                .RequireAuthorization("Tri");
+
             endpoints.MapPost(
                     "/scan/sessions/{scanSessionId:guid}/close",
                     async (
@@ -602,6 +628,7 @@ public static class BookController
                     book.QtyAnnounced,
                     book.SalesCount,
                     book.IsWanted,
+                    book.IsManuallyRequested,
                     book.IsRare,
                     book.IsHidden,
                     book.UpdatedAt))
@@ -763,7 +790,8 @@ public static class BookController
             result.ScanSessionId.Value,
             result.MovementType.ToString(),
             result.AlreadyProcessed,
-            result.ClockSuspect);
+            result.ClockSuspect,
+            result.HeldForManualRequest);
     }
 
     private static RegisterSaleResponse ToResponse(RegisterSaleResult result)

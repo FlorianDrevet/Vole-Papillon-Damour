@@ -40,7 +40,7 @@ export class ScanSessionClosePendingError extends Error {
   }
 }
 
-export type LocalBookVerdict = 'Wanted' | 'Selling' | 'TooMany' | 'FirstCopy';
+export type LocalBookVerdict = 'ManualRequest' | 'Wanted' | 'Selling' | 'TooMany' | 'FirstCopy';
 
 export type ScanOutboxStatus =
   | 'Pending'
@@ -75,8 +75,16 @@ export interface ScanCatalogBook {
   qtyAnnounced: number;
   salesCount: number;
   isWanted: boolean;
+  isManuallyRequested?: boolean;
   isRare: boolean;
   updatedAt: string;
+}
+
+export interface ScanManualRequestCandidate {
+  requestId: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
 }
 
 export type ScanRareBookStatus = 'Draft' | 'Published';
@@ -193,6 +201,8 @@ export interface ScanSessionCounts {
   scannedCount: number;
   keptCount: number;
   rejectedCount: number;
+  heldForManualRequestCount: number;
+  manualRequestMissedIsbns: string[];
 }
 
 export interface ScanSessionCloseRequest {
@@ -226,6 +236,7 @@ export interface ScanOutboxEntry {
   lastError: string | null;
   lastFailureKind?: ScanFailureKind | null;
   setAsideReason?: ScanSetAsideReason | null;
+  manualRequestOutcome?: 'Held' | 'Missed' | null;
 }
 
 export interface ScanSaleOutboxEntry {
@@ -328,6 +339,7 @@ export interface ScanSessionResponse {
 export interface ScanBookResponse {
   isbn13: string;
   verdict: LocalBookVerdict;
+  heldForManualRequest: boolean;
   qtyAvailable: number;
   qtyAnnounced: number;
   scanSessionId: string;
