@@ -9,11 +9,15 @@ on:
       source_account:
         description: Storage account to copy the blobs from
         type: string
-        default: vpdstowebsite
+        default: vpdstdev
+      target_account:
+        description: Storage account to receive the blobs
+        type: string
+        default: vpdstdevfc
       rewrite_urls:
         description: Rewrite the image URLs stored in the database
         type: boolean
-        default: true
+        default: false
 
 permissions:
   id-token: write
@@ -21,7 +25,6 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-vpd-dev
-  TARGET_ACCOUNT: vpdstdev
   SQL_SERVER: vpd-sql-dev
   SQL_DATABASE: vole-papillon-damour-db
 
@@ -29,6 +32,8 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
     environment: development
+    env:
+      TARGET_ACCOUNT: ${{ inputs.target_account }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,13 +64,17 @@ jobs:
 
           for container in $containers; do
             echo "::group::$container"
+            access=$(az storage container show --name "$container" --account-name "$SOURCE" \
+              --account-key "$SOURCE_KEY" --query "properties.publicAccess" --output tsv)
+            if [ -z "$access" ] || [ "$access" = "None" ]; then access=off; fi
 
-            # The old account holds a container the new one was never given, so
-            # it is created rather than skipped — a missing one would break
-            # every URL pointing into it.
+            # Preserve each source container's ACL. In particular, the Azure
+            # Functions host and secrets containers must remain private.
             az storage container create --name "$container" \
+              --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" --output none
+            az storage container set-permission --name "$container" \
               --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
-              --public-access blob --output none
+              --public-access "$access" --output none
 
             az storage blob copy start-batch \
               --source-account-name "$SOURCE" --source-account-key "$SOURCE_KEY" \
@@ -88,18 +97,32 @@ jobs:
       - name: Wait for the copies to settle
         run: |
           set -euo pipefail
+          settled=false
           for attempt in $(seq 1 60); do
             pending=0
+            failed=0
             for container in $CONTAINERS; do
               count=$(az storage blob list --container-name "$container" \
                 --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
                 --query "length([?properties.copy.status=='pending'])" --output tsv)
               pending=$((pending + count))
+              count=$(az storage blob list --container-name "$container" \
+                --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
+                --query "length([?properties.copy.status=='failed'])" --output tsv)
+              failed=$((failed + count))
             done
-            if [ "$pending" -eq 0 ]; then echo "all copies settled"; break; fi
+            if [ "$failed" -gt 0 ]; then
+              echo "$failed blob copies failed" >&2
+              exit 1
+            fi
+            if [ "$pending" -eq 0 ]; then settled=true; break; fi
             echo "attempt $attempt: $pending blobs still copying"
             sleep 5
           done
+          if [ "$settled" != true ]; then
+            echo "blob copies did not settle before the timeout" >&2
+            exit 1
+          fi
 
       - name: Report the blob counts
         run: |
@@ -120,6 +143,10 @@ jobs:
               b=$(az storage blob list --container-name "$container" --account-name "$TARGET_ACCOUNT" \
                 --account-key "$TARGET_KEY" --query "length(@)" --output tsv)
               echo "| $container | $a | $b |"
+              if [ "$a" -ne "$b" ]; then
+                echo "Blob count mismatch in $container: source=$a target=$b" >&2
+                exit 1
+              fi
             done
           } >> "$GITHUB_STEP_SUMMARY"
 

@@ -24,13 +24,13 @@ env:
   RESOURCE_GROUP: rg-vpd-dev
   ACS_EMAIL_SERVICE: vpd-acs-email-dev
   ACS_EMAIL_DOMAIN: mail.volepapillondamour.fr
-  API_CONTAINER_APP: vpd-api-ca-dev
-  WORKER_CONTAINER_APP: vpd-worker-ca-dev
-  API_IDENTITY: vpd-api-id-dev
-  WORKER_IDENTITY: vpd-worker-id-dev
+  API_CONTAINER_APP: vpd-api-ca-dev-fc
+  WORKER_CONTAINER_APP: vpd-worker-ca-dev-fc
+  API_IDENTITY: vpd-api-id-dev-fc
+  WORKER_IDENTITY: vpd-worker-id-dev-fc
   DEPLOY_IDENTITY_RESOURCE_GROUP: rg-vpd-identity-dev
   DEPLOY_IDENTITY: vpd-github-deploy-id
-  KEY_VAULT: vpd-kv-dev
+  KEY_VAULT: vpd-kv-dev-fc
   COMMUNICATION_SERVICE: vpd-acs-comm-dev
   WEBHOOK_SECRET_NAME: email-bounce-webhook-secret
   EVENT_SUBSCRIPTION_NAME: vpd-acs-email-delivery-reports-dev

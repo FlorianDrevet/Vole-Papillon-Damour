@@ -1,12 +1,11 @@
 targetScope = 'subscription'
 
 import { EnvironmentName, environments } from './types.bicep'
-import { BuildContainerRegistryName, BuildResourceGroupName, BuildResourceName, BuildStorageAccountName } from './functions.bicep'
+import { BuildResourceName, BuildStorageAccountName } from './functions.bicep'
 import { RbacRoles } from './constants.bicep'
 import { ContainerRuntimeConfig, HealthProbeConfig, IngressConfig, ScalingConfig } from './modules/ContainerApp/types.bicep'
 import { SkuName as KeyVaultSkuName } from './modules/KeyVault/types.bicep'
 import { SkuName as StorageSkuName } from './modules/StorageAccount/types.bicep'
-import { DatabaseSkuConfig } from './modules/SqlServer/types.bicep'
 
 // -----------------------------------------------------------------------
 // Environment
@@ -14,6 +13,30 @@ import { DatabaseSkuConfig } from './modules/SqlServer/types.bicep'
 
 @description('The target deployment environment')
 param environmentName EnvironmentName
+
+@description('Existing application resource group. Its Azure metadata location remains unchanged while regional resources are deployed beside it.')
+param applicationResourceGroupName string
+
+@description('Azure region for the parallel application resources')
+param targetLocation string
+
+@description('Suffix added to region-specific resource names')
+param targetEnvironmentSuffix string
+
+@description('Short environment suffix used by globally scoped resource names')
+param targetEnvironmentShort string
+
+@description('Name of the shared Container Registry')
+param containerRegistryName string
+
+@description('Resource group containing the shared Container Registry')
+param containerRegistryResourceGroupName string
+
+@description('Subscription containing the shared Container Registry')
+param containerRegistrySubscriptionId string = subscription().subscriptionId
+
+@description('Principal ID of the CI identity that receives full access to the shared Container Registry')
+param containerRegistryCiPrincipalId string = ''
 
 // -----------------------------------------------------------------------
 // Container Apps - runtime configuration
@@ -133,14 +156,8 @@ param sqlAdministratorLogin string
 @secure()
 param sqlAdministratorLoginPassword string
 
-@description('Region hosting the SQL Server. Kept separate from the environment region: the subscription is not allowed to provision Azure SQL everywhere.')
-param sqlLocation string
-
 @description('Name of the application database')
 param sqlDatabaseName string
-
-@description('SKU of the application database')
-param sqlDatabaseSku DatabaseSkuConfig
 
 // -----------------------------------------------------------------------
 // Storage
@@ -298,7 +315,7 @@ param socialImportMaxPostsPerRun int = 5
 @description('ISO-8601 timestamp when the configured Instagram long-lived token was issued')
 param socialImportAccessTokenIssuedAt string = ''
 
-@description('Whether to provision the Azure OpenAI title-generation account')
+@description('Whether the Worker uses the existing Azure OpenAI account')
 param titleGenerationEnabled bool = false
 
 @description('Whether personalized and similar-book recommendations are enabled')
@@ -313,35 +330,32 @@ param titleGenerationAccountName string = ''
 @description('Name of the Azure OpenAI title-generation deployment')
 param titleGenerationDeploymentName string = 'actuality-title'
 
-@description('Model family used to propose actuality titles')
-param titleGenerationModelName string = 'gpt-4.1-nano'
-
-@description('Model version used to propose actuality titles')
-param titleGenerationModelVersion string = '2025-04-14'
-
-@description('Azure region hosting the title-generation account')
-param titleGenerationLocation string = 'francecentral'
-
 // -----------------------------------------------------------------------
 // Computed
 // -----------------------------------------------------------------------
 
 var env = environments[environmentName]
 var tags = env.tags
+var targetEnv = {
+  envName: env.envName
+  envShort: targetEnvironmentShort
+  envSuffix: targetEnvironmentSuffix
+  envPrefix: '${targetEnvironmentShort}-'
+  location: targetLocation
+  tags: tags
+}
 var corsEnvVars = [for (origin, index) in corsAllowedOrigins: {
   name: 'Cors__AllowedOrigins__${index}'
   value: origin
 }]
+var containerRegistryResourceGroup = resourceGroup(containerRegistrySubscriptionId, containerRegistryResourceGroupName)
 var managedCertificateNames = concat(
-  [
-    websiteCustomDomainCertificateName
-    websiteWwwCustomDomainCertificateName
-    backOfficeCustomDomainCertificateName
-  ],
+  !empty(websiteCustomDomain) && !empty(websiteCustomDomainCertificateName) ? [websiteCustomDomainCertificateName] : [],
+  !empty(websiteWwwCustomDomain) && !empty(websiteWwwCustomDomainCertificateName) ? [websiteWwwCustomDomainCertificateName] : [],
+  !empty(backOfficeCustomDomain) && !empty(backOfficeCustomDomainCertificateName) ? [backOfficeCustomDomainCertificateName] : [],
   !empty(catalogCustomDomain) && !empty(catalogCustomDomainCertificateName) ? [catalogCustomDomainCertificateName] : [],
   !empty(scanCustomDomain) && !empty(scanCustomDomainCertificateName) ? [scanCustomDomainCertificateName] : []
 )
-var scanManagedCertificateIndex = !empty(catalogCustomDomain) && !empty(catalogCustomDomainCertificateName) ? 4 : 3
 
 // Deployed until an application pipeline pushes the first real image.
 var placeholderImage = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
@@ -349,32 +363,37 @@ var communicationServiceEndpoint = 'https://${communicationServiceName}.communic
 var bookAlertsEmailFrom = 'DoNotReply@${communicationEmailSendingDomain}'
 var bookAlertsUnsubscribeEndpoint = 'https://${containerAppApiModule.outputs.containerAppFqdn}/integrations/email/unsubscribe'
 
-resource applicationResourceGroup 'Microsoft.Resources/resourceGroups@2024-07-01' = {
-  name: BuildResourceGroupName('vpd', 'rg', env)
-  location: env.location
-  tags: tags
+resource applicationResourceGroup 'Microsoft.Resources/resourceGroups@2024-07-01' existing = {
+  name: applicationResourceGroupName
+}
+
+resource sharedContainerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: containerRegistryName
+  scope: containerRegistryResourceGroup
+}
+
+// SQL is deliberately read as an existing resource. This regional rollout
+// reuses the live database and must not reconfigure its server, SKU, or firewall.
+resource existingSqlServer 'Microsoft.Sql/servers@2023-08-01-preview' existing = {
+  name: BuildResourceName('vpd', 'sql', env)
+  scope: applicationResourceGroup
+}
+
+resource existingSqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' existing = {
+  parent: existingSqlServer
+  name: sqlDatabaseName
 }
 
 // -----------------------------------------------------------------------
 // Platform
 // -----------------------------------------------------------------------
 
-module containerRegistryModule './modules/ContainerRegistry/containerRegistry.module.bicep' = {
-  name: 'containerRegistry'
-  scope: applicationResourceGroup
-  params: {
-    location: env.location
-    name: BuildContainerRegistryName('vpd', 'acr', env)
-    tags: tags
-  }
-}
-
 module logAnalyticsWorkspaceModule './modules/LogAnalyticsWorkspace/logAnalyticsWorkspace.module.bicep' = {
   name: 'logAnalyticsWorkspace'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd', 'law', env)
+    location: targetLocation
+    name: BuildResourceName('vpd', 'law', targetEnv)
     tags: tags
   }
 }
@@ -383,8 +402,8 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
   name: 'containerAppEnvironment'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd', 'cae', env)
+    location: targetLocation
+    name: BuildResourceName('vpd', 'cae', targetEnv)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     managedCertificateNames: managedCertificateNames
@@ -395,8 +414,8 @@ module keyVaultModule './modules/KeyVault/keyVault.module.bicep' = {
   name: 'keyVault'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd', 'kv', env)
+    location: targetLocation
+    name: BuildResourceName('vpd', 'kv', targetEnv)
     tags: tags
     sku: keyVaultSku
     enablePurgeProtection: keyVaultEnablePurgeProtection
@@ -423,8 +442,8 @@ module applicationInsightsApiModule './modules/ApplicationInsights/applicationIn
   name: 'applicationInsightsApi'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-api', 'appi', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-api', 'appi', targetEnv)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
   }
@@ -434,8 +453,8 @@ module applicationInsightsWebsiteModule './modules/ApplicationInsights/applicati
   name: 'applicationInsightsWebsite'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-web', 'appi', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-web', 'appi', targetEnv)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     samplingPercentage: applicationInsightsUiSamplingPercentage
@@ -446,8 +465,8 @@ module applicationInsightsBackOfficeModule './modules/ApplicationInsights/applic
   name: 'applicationInsightsBackOffice'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-bo', 'appi', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-bo', 'appi', targetEnv)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     samplingPercentage: applicationInsightsUiSamplingPercentage
@@ -458,8 +477,8 @@ module applicationInsightsScanModule './modules/ApplicationInsights/applicationI
   name: 'applicationInsightsScan'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-scan', 'appi', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-scan', 'appi', targetEnv)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
   }
@@ -469,8 +488,8 @@ module applicationInsightsCatalogModule './modules/ApplicationInsights/applicati
   name: 'applicationInsightsCatalog'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-catalog', 'appi', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-catalog', 'appi', targetEnv)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     samplingPercentage: applicationInsightsUiSamplingPercentage
@@ -481,8 +500,8 @@ module applicationInsightsWorkerModule './modules/ApplicationInsights/applicatio
   name: 'applicationInsightsWorker'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-worker', 'appi', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-worker', 'appi', targetEnv)
     tags: tags
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
   }
@@ -496,7 +515,7 @@ module monitoringActionGroup './modules/Monitor/actionGroup.module.bicep' = {
   name: 'monitoringActionGroup'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd', 'alerts', env)
+    name: BuildResourceName('vpd', 'alerts', targetEnv)
     emailAddress: monitoringAlertEmail
     tags: tags
   }
@@ -506,7 +525,7 @@ module workerHeartbeatAlert './modules/Monitor/scheduledQueryRule.module.bicep' 
   name: 'workerHeartbeatAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-worker-heartbeat', 'alert', env)
+    name: BuildResourceName('vpd-worker-heartbeat', 'alert', targetEnv)
     displayName: 'VPD worker heartbeat missing'
     ruleDescription: 'The worker has not completed a sweep in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -525,7 +544,7 @@ module workerEnrichmentHeartbeatAlert './modules/Monitor/scheduledQueryRule.modu
   name: 'workerEnrichmentHeartbeatAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-worker-enrichment-heartbeat', 'alert', env)
+    name: BuildResourceName('vpd-worker-enrichment-heartbeat', 'alert', targetEnv)
     displayName: 'VPD worker enrichment heartbeat missing'
     ruleDescription: 'The worker has not completed an enrichment run in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -544,7 +563,7 @@ module lateAnnouncementAlert './modules/Monitor/scheduledQueryRule.module.bicep'
   name: 'lateAnnouncementAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-book-announcements-late', 'alert', env)
+    name: BuildResourceName('vpd-book-announcements-late', 'alert', targetEnv)
     displayName: 'Book announcements are late'
     ruleDescription: 'Due book announcements remain unreleased after a worker sweep.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -563,7 +582,7 @@ module lateAlertQueueAlert './modules/Monitor/scheduledQueryRule.module.bicep' =
   name: 'lateAlertQueueAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-book-alert-queue-late', 'alert', env)
+    name: BuildResourceName('vpd-book-alert-queue-late', 'alert', targetEnv)
     displayName: 'Book alert queue is late'
     ruleDescription: 'The oldest due book alert has been waiting for at least 30 minutes.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -582,7 +601,7 @@ module slowBookMetadataAlert './modules/Monitor/scheduledQueryRule.module.bicep'
   name: 'slowBookMetadataAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-book-metadata-slow', 'alert', env)
+    name: BuildResourceName('vpd-book-metadata-slow', 'alert', targetEnv)
     displayName: 'Book metadata lookup is slow'
     ruleDescription: 'At least one API book metadata request exceeded three seconds in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -601,7 +620,7 @@ module socialImportFailureAlert './modules/Monitor/scheduledQueryRule.module.bic
   name: 'socialImportFailureAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-social-import-failures', 'alert', env)
+    name: BuildResourceName('vpd-social-import-failures', 'alert', targetEnv)
     displayName: 'Social actuality import failed three times'
     ruleDescription: 'Three consecutive social actuality import passes failed within the configured observation window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -620,7 +639,7 @@ module socialImportAuthenticationAlert './modules/Monitor/scheduledQueryRule.mod
   name: 'socialImportAuthenticationAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-social-authentication', 'alert', env)
+    name: BuildResourceName('vpd-social-authentication', 'alert', targetEnv)
     displayName: 'Social actuality import authentication rejected'
     ruleDescription: 'The Instagram provider rejected the configured access token or permissions.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -639,7 +658,7 @@ module socialImportTokenExpiryAlert './modules/Monitor/scheduledQueryRule.module
   name: 'socialImportTokenExpiryAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-social-token-expiry', 'alert', env)
+    name: BuildResourceName('vpd-social-token-expiry', 'alert', targetEnv)
     displayName: 'Social actuality access token is near expiry'
     ruleDescription: 'The configured long-lived Instagram access token is at least 45 days old and must be renewed.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -658,7 +677,7 @@ module alertDeliveryFailureAlert './modules/Monitor/scheduledQueryRule.module.bi
   name: 'alertDeliveryFailureAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-book-alert-delivery-failed', 'alert', env)
+    name: BuildResourceName('vpd-book-alert-delivery-failed', 'alert', targetEnv)
     displayName: 'Book alert e-mails failed'
     ruleDescription: 'A worker sweep moved at least one book alert e-mail to Failed (sending domain, quota or credentials).'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -681,7 +700,7 @@ module apiServerErrorsAlert './modules/Monitor/scheduledQueryRule.module.bicep' 
   name: 'apiServerErrorsAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-api-server-errors', 'alert', env)
+    name: BuildResourceName('vpd-api-server-errors', 'alert', targetEnv)
     displayName: 'API returns server errors'
     ruleDescription: 'The API answered at least five 5xx responses in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -700,7 +719,7 @@ module apiLatencyAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
   name: 'apiLatencyAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-api-latency', 'alert', env)
+    name: BuildResourceName('vpd-api-latency', 'alert', targetEnv)
     displayName: 'API operation is slow'
     ruleDescription: 'An API operation with at least ten calls had a P95 above two seconds in the configured monitoring window. Metadata lookups have their own rule.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -719,7 +738,7 @@ module slowSqlAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
   name: 'slowSqlAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-sql-slow', 'alert', env)
+    name: BuildResourceName('vpd-sql-slow', 'alert', targetEnv)
     displayName: 'SQL queries are slow'
     ruleDescription: 'At least ten SQL calls from one service took more than one second in the configured monitoring window (missing index, lock, or DTU saturation).'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -738,7 +757,7 @@ module backendExceptionsAlert './modules/Monitor/scheduledQueryRule.module.bicep
   name: 'backendExceptionsAlert'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-backend-exceptions', 'alert', env)
+    name: BuildResourceName('vpd-backend-exceptions', 'alert', targetEnv)
     displayName: 'Backend exceptions are repeating'
     ruleDescription: 'The same server-side exception occurred at least five times in the configured monitoring window in the API, the worker or the Catalog SSR host.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -798,9 +817,9 @@ module apiAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = {
   name: 'apiAvailabilityTest'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-api-health', 'webtest', env)
+    name: BuildResourceName('vpd-api-health', 'webtest', targetEnv)
     displayName: 'API /health'
-    location: env.location
+    location: targetLocation
     applicationInsightsId: applicationInsightsApiModule.outputs.resourceId
     url: 'https://${containerAppApiModule.outputs.containerAppFqdn}/health'
     actionGroupId: monitoringActionGroup.outputs.resourceId
@@ -813,9 +832,9 @@ module websiteAvailabilityTest './modules/Monitor/availabilityTest.module.bicep'
   name: 'websiteAvailabilityTest'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-web-home', 'webtest', env)
+    name: BuildResourceName('vpd-web-home', 'webtest', targetEnv)
     displayName: 'Website home page'
-    location: env.location
+    location: targetLocation
     applicationInsightsId: applicationInsightsWebsiteModule.outputs.resourceId
     url: 'https://${empty(websiteCustomDomain) ? containerAppWebsiteModule.outputs.containerAppFqdn : websiteCustomDomain}/'
     actionGroupId: monitoringActionGroup.outputs.resourceId
@@ -828,9 +847,9 @@ module catalogAvailabilityTest './modules/Monitor/availabilityTest.module.bicep'
   name: 'catalogAvailabilityTest'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-catalog-home', 'webtest', env)
+    name: BuildResourceName('vpd-catalog-home', 'webtest', targetEnv)
     displayName: 'Catalog home page'
-    location: env.location
+    location: targetLocation
     applicationInsightsId: applicationInsightsCatalogModule.outputs.resourceId
     url: 'https://${empty(catalogCustomDomain) ? containerAppCatalogModule.outputs.containerAppFqdn : catalogCustomDomain}/'
     actionGroupId: monitoringActionGroup.outputs.resourceId
@@ -843,9 +862,9 @@ module scanAvailabilityTest './modules/Monitor/availabilityTest.module.bicep' = 
   name: 'scanAvailabilityTest'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-scan-home', 'webtest', env)
+    name: BuildResourceName('vpd-scan-home', 'webtest', targetEnv)
     displayName: 'Scan application shell'
-    location: env.location
+    location: targetLocation
     applicationInsightsId: applicationInsightsScanModule.outputs.resourceId
     url: 'https://${empty(scanCustomDomain) ? containerAppScanModule.outputs.containerAppFqdn : scanCustomDomain}/'
     actionGroupId: monitoringActionGroup.outputs.resourceId
@@ -862,7 +881,7 @@ module performanceWorkbook './modules/Monitor/workbook.module.bicep' = {
   name: 'performanceWorkbook'
   scope: applicationResourceGroup
   params: {
-    location: env.location
+    location: targetLocation
     displayName: 'VPD - Performance et santé'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     tags: tags
@@ -873,26 +892,12 @@ module performanceWorkbook './modules/Monitor/workbook.module.bicep' = {
 // Data
 // -----------------------------------------------------------------------
 
-module sqlServerModule './modules/SqlServer/sqlServer.module.bicep' = {
-  name: 'sqlServer'
-  scope: applicationResourceGroup
-  params: {
-    location: sqlLocation
-    name: BuildResourceName('vpd', 'sql', env)
-    tags: tags
-    databaseName: sqlDatabaseName
-    databaseSku: sqlDatabaseSku
-    administratorLogin: sqlAdministratorLogin
-    administratorLoginPassword: sqlAdministratorLoginPassword
-  }
-}
-
 module storageAccountModule './modules/StorageAccount/storageAccount.module.bicep' = {
   name: 'storageAccount'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildStorageAccountName('vpd', 'st', env)
+    location: targetLocation
+    name: BuildStorageAccountName('vpd', 'st', targetEnv)
     tags: tags
     sku: storageAccountSku
     containers: [
@@ -924,10 +929,10 @@ module appSecretsModule './modules/KeyVault/appSecrets.module.bicep' = {
   name: 'appSecrets'
   scope: applicationResourceGroup
   params: {
-    keyVaultName: BuildResourceName('vpd', 'kv', env)
+    keyVaultName: BuildResourceName('vpd', 'kv', targetEnv)
     storageAccountName: storageAccountModule.outputs.name
-    sqlServerFqdn: sqlServerModule.outputs.fullyQualifiedDomainName
-    sqlDatabaseName: sqlServerModule.outputs.databaseName
+    sqlServerFqdn: existingSqlServer.properties.fullyQualifiedDomainName
+    sqlDatabaseName: existingSqlDatabase.name
     sqlAdministratorLogin: sqlAdministratorLogin
     sqlAdministratorLoginPassword: sqlAdministratorLoginPassword
     jwtSecret: jwtSecret
@@ -951,8 +956,8 @@ module userAssignedIdentityApiModule './modules/UserAssignedIdentity/userAssigne
   name: 'userAssignedIdentityApi'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-api', 'id', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-api', 'id', targetEnv)
     tags: tags
   }
 }
@@ -961,8 +966,8 @@ module userAssignedIdentityWebsiteModule './modules/UserAssignedIdentity/userAss
   name: 'userAssignedIdentityWebsite'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-web', 'id', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-web', 'id', targetEnv)
     tags: tags
   }
 }
@@ -971,8 +976,8 @@ module userAssignedIdentityBackOfficeModule './modules/UserAssignedIdentity/user
   name: 'userAssignedIdentityBackOffice'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-bo', 'id', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-bo', 'id', targetEnv)
     tags: tags
   }
 }
@@ -981,8 +986,8 @@ module userAssignedIdentityScanModule './modules/UserAssignedIdentity/userAssign
   name: 'userAssignedIdentityScan'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-scan', 'id', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-scan', 'id', targetEnv)
     tags: tags
   }
 }
@@ -991,8 +996,8 @@ module userAssignedIdentityCatalogModule './modules/UserAssignedIdentity/userAss
   name: 'userAssignedIdentityCatalog'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-catalog', 'id', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-catalog', 'id', targetEnv)
     tags: tags
   }
 }
@@ -1001,8 +1006,8 @@ module userAssignedIdentityWorkerModule './modules/UserAssignedIdentity/userAssi
   name: 'userAssignedIdentityWorker'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-worker', 'id', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-worker', 'id', targetEnv)
     tags: tags
   }
 }
@@ -1012,13 +1017,10 @@ module communicationServiceModule './modules/CommunicationService/communicationS
   scope: applicationResourceGroup
   params: {
     name: communicationServiceName
-    dataLocation: communicationEmailDataLocation
-    linkedDomainId: communicationEmailModule.outputs.domainResourceId
-    linkEmailDomain: !communicationEmailCreateResources || bookAlertsEmailEnabled
     workerPrincipalId: userAssignedIdentityWorkerModule.outputs.principalId
     roleAssignmentName: communicationServiceRoleAssignmentName
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
-    tags: tags
+    diagnosticSettingsName: 'emailOperationalLogs-${targetEnvironmentShort}'
   }
 }
 
@@ -1026,15 +1028,8 @@ module actualityTitleGenerationModule './modules/AiFoundry/aiFoundry.module.bice
   name: 'actualityTitleGeneration'
   scope: applicationResourceGroup
   params: {
-    location: titleGenerationLocation
     name: titleGenerationAccountName
-    deploymentName: titleGenerationDeploymentName
-    modelName: titleGenerationModelName
-    modelVersion: titleGenerationModelVersion
     workerPrincipalId: userAssignedIdentityWorkerModule.outputs.principalId
-    embeddingDeploymentName: recommendationsEmbeddingDeploymentName
-    embeddingCapacity: 50
-    tags: tags
   }
 }
 
@@ -1042,94 +1037,90 @@ module actualityTitleGenerationModule './modules/AiFoundry/aiFoundry.module.bice
 // Role assignments
 // -----------------------------------------------------------------------
 
+module containerRegistryCiRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = if (!empty(containerRegistryCiPrincipalId)) {
+  name: 'containerRegistryCiRoles'
+  scope: containerRegistryResourceGroup
+  params: {
+    name: containerRegistryName
+    principalId: containerRegistryCiPrincipalId
+    roles: [
+      RbacRoles.containerregistry.Owner
+      RbacRoles.containerregistry.AcrPush
+      RbacRoles.containerregistry.AcrDelete
+    ]
+  }
+}
+
 module containerAppApiAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
   name: 'containerAppApiAcrRoles'
-  scope: applicationResourceGroup
+  scope: containerRegistryResourceGroup
   params: {
-    name: BuildContainerRegistryName('vpd', 'acr', env)
+    name: containerRegistryName
     principalId: userAssignedIdentityApiModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
-  dependsOn: [
-    containerRegistryModule
-  ]
 }
 
 module containerAppWebsiteAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
   name: 'containerAppWebsiteAcrRoles'
-  scope: applicationResourceGroup
+  scope: containerRegistryResourceGroup
   params: {
-    name: BuildContainerRegistryName('vpd', 'acr', env)
+    name: containerRegistryName
     principalId: userAssignedIdentityWebsiteModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
-  dependsOn: [
-    containerRegistryModule
-  ]
 }
 
 module containerAppBackOfficeAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
   name: 'containerAppBackOfficeAcrRoles'
-  scope: applicationResourceGroup
+  scope: containerRegistryResourceGroup
   params: {
-    name: BuildContainerRegistryName('vpd', 'acr', env)
+    name: containerRegistryName
     principalId: userAssignedIdentityBackOfficeModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
-  dependsOn: [
-    containerRegistryModule
-  ]
 }
 
 module containerAppScanAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
   name: 'containerAppScanAcrRoles'
-  scope: applicationResourceGroup
+  scope: containerRegistryResourceGroup
   params: {
-    name: BuildContainerRegistryName('vpd', 'acr', env)
+    name: containerRegistryName
     principalId: userAssignedIdentityScanModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
-  dependsOn: [
-    containerRegistryModule
-  ]
 }
 
 module containerAppCatalogAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
   name: 'containerAppCatalogAcrRoles'
-  scope: applicationResourceGroup
+  scope: containerRegistryResourceGroup
   params: {
-    name: BuildContainerRegistryName('vpd', 'acr', env)
+    name: containerRegistryName
     principalId: userAssignedIdentityCatalogModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
-  dependsOn: [
-    containerRegistryModule
-  ]
 }
 
 module containerAppWorkerAcrRoles './modules/ContainerRegistry/containerregistry.roleassignments.module.bicep' = {
   name: 'containerAppWorkerAcrRoles'
-  scope: applicationResourceGroup
+  scope: containerRegistryResourceGroup
   params: {
-    name: BuildContainerRegistryName('vpd', 'acr', env)
+    name: containerRegistryName
     principalId: userAssignedIdentityWorkerModule.outputs.principalId
     roles: [
       RbacRoles.containerregistry.AcrPull
     ]
   }
-  dependsOn: [
-    containerRegistryModule
-  ]
 }
 
 // The API and the worker read secrets: the front-ends carry no secretRef.
@@ -1137,7 +1128,7 @@ module containerAppApiKeyVaultRoles './modules/KeyVault/keyvault.roleassignments
   name: 'containerAppApiKeyVaultRoles'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd', 'kv', env)
+    name: BuildResourceName('vpd', 'kv', targetEnv)
     principalId: userAssignedIdentityApiModule.outputs.principalId
     roles: [
       RbacRoles.keyvault['Key Vault Secrets User']
@@ -1152,7 +1143,7 @@ module containerAppApiApplicationInsightsRoles './modules/ApplicationInsights/ap
   name: 'containerAppApiApplicationInsightsRoles'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-api', 'appi', env)
+    name: BuildResourceName('vpd-api', 'appi', targetEnv)
     principalId: userAssignedIdentityApiModule.outputs.principalId
     roles: [
       RbacRoles.monitor.MonitoringMetricsPublisher
@@ -1167,7 +1158,7 @@ module containerAppWorkerKeyVaultRoles './modules/KeyVault/keyvault.roleassignme
   name: 'containerAppWorkerKeyVaultRoles'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd', 'kv', env)
+    name: BuildResourceName('vpd', 'kv', targetEnv)
     principalId: userAssignedIdentityWorkerModule.outputs.principalId
     roles: [
       RbacRoles.keyvault['Key Vault Secrets User']
@@ -1182,7 +1173,7 @@ module containerAppWorkerApplicationInsightsRoles './modules/ApplicationInsights
   name: 'containerAppWorkerApplicationInsightsRoles'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd-worker', 'appi', env)
+    name: BuildResourceName('vpd-worker', 'appi', targetEnv)
     principalId: userAssignedIdentityWorkerModule.outputs.principalId
     roles: [
       RbacRoles.monitor.MonitoringMetricsPublisher
@@ -1201,8 +1192,8 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
   name: 'containerAppApi'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-api', 'ca', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-api', 'ca', targetEnv)
     tags: tags
     containerImage: empty(apiImage) ? placeholderImage : apiImage
     containerRuntime: containerAppApiContainerRuntime
@@ -1210,7 +1201,7 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
     ingress: containerAppApiIngress
     healthProbes: containerAppApiHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
-    acrLoginServer: containerRegistryModule.outputs.loginServer
+    acrLoginServer: sharedContainerRegistry.properties.loginServer
     userAssignedIdentityId: userAssignedIdentityApiModule.outputs.resourceId
     keyVaultSecrets: concat([
       {
@@ -1393,31 +1384,30 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
   name: 'containerAppWebsite'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-web', 'ca', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-web', 'ca', targetEnv)
     tags: tags
     containerImage: empty(websiteImage) ? placeholderImage : websiteImage
     containerRuntime: containerAppWebsiteContainerRuntime
     scaling: containerAppWebsiteScaling
     ingress: containerAppWebsiteIngress
-    // The managed certificate resources were created by Azure with generated
-    // names. Their names are kept in the environment parameter file so an ARM
-    // PUT does not remove the existing SNI bindings.
-    customDomains: [
-      {
+    // Bind only certificates already issued in this new environment. This lets
+    // the parallel apps start before OVH DNS is switched for domain validation.
+    customDomains: concat(
+      !empty(websiteCustomDomain) && !empty(websiteCustomDomainCertificateName) ? [{
         name: websiteCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[0]
-      }
-      {
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, websiteCustomDomainCertificateName)]
+      }] : [],
+      !empty(websiteWwwCustomDomain) && !empty(websiteWwwCustomDomainCertificateName) ? [{
         name: websiteWwwCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[1]
-      }
-    ]
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, websiteWwwCustomDomainCertificateName)]
+      }] : []
+    )
     healthProbes: containerAppWebsiteHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
-    acrLoginServer: containerRegistryModule.outputs.loginServer
+    acrLoginServer: sharedContainerRegistry.properties.loginServer
     userAssignedIdentityId: userAssignedIdentityWebsiteModule.outputs.resourceId
     envVars: [
       {
@@ -1445,23 +1435,21 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
   name: 'containerAppBackOffice'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-bo', 'ca', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-bo', 'ca', targetEnv)
     tags: tags
     containerImage: empty(backOfficeImage) ? placeholderImage : backOfficeImage
     containerRuntime: containerAppBackOfficeContainerRuntime
     scaling: containerAppBackOfficeScaling
     ingress: containerAppBackOfficeIngress
-    customDomains: [
-      {
-        name: backOfficeCustomDomain
-        bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[2]
-      }
-    ]
+    customDomains: !empty(backOfficeCustomDomain) && !empty(backOfficeCustomDomainCertificateName) ? [{
+      name: backOfficeCustomDomain
+      bindingType: 'SniEnabled'
+      certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, backOfficeCustomDomainCertificateName)]
+    }] : []
     healthProbes: containerAppBackOfficeHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
-    acrLoginServer: containerRegistryModule.outputs.loginServer
+    acrLoginServer: sharedContainerRegistry.properties.loginServer
     userAssignedIdentityId: userAssignedIdentityBackOfficeModule.outputs.resourceId
     envVars: [
       // The BackOffice image is static content served by nginx: this value is
@@ -1481,8 +1469,8 @@ module containerAppScanModule './modules/ContainerApp/containerApp.module.bicep'
   name: 'containerAppScan'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-scan', 'ca', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-scan', 'ca', targetEnv)
     tags: tags
     containerImage: empty(scanImage) ? placeholderImage : scanImage
     containerRuntime: containerAppScanContainerRuntime
@@ -1492,12 +1480,12 @@ module containerAppScanModule './modules/ContainerApp/containerApp.module.bicep'
       {
         name: scanCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[scanManagedCertificateIndex]
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, scanCustomDomainCertificateName)]
       }
     ] : []
     healthProbes: containerAppScanHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
-    acrLoginServer: containerRegistryModule.outputs.loginServer
+    acrLoginServer: sharedContainerRegistry.properties.loginServer
     userAssignedIdentityId: userAssignedIdentityScanModule.outputs.resourceId
     envVars: [
       // API_URL and the public host are compiled into the Angular bundle by
@@ -1519,8 +1507,8 @@ module containerAppCatalogModule './modules/ContainerApp/containerApp.module.bic
   name: 'containerAppCatalog'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-catalog', 'ca', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-catalog', 'ca', targetEnv)
     tags: tags
     containerImage: empty(catalogImage) ? placeholderImage : catalogImage
     containerRuntime: containerAppCatalogContainerRuntime
@@ -1531,11 +1519,11 @@ module containerAppCatalogModule './modules/ContainerApp/containerApp.module.bic
       {
         name: catalogCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[3]
+        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, catalogCustomDomainCertificateName)]
       }
     ] : []
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
-    acrLoginServer: containerRegistryModule.outputs.loginServer
+    acrLoginServer: sharedContainerRegistry.properties.loginServer
     userAssignedIdentityId: userAssignedIdentityCatalogModule.outputs.resourceId
     envVars: [
       // Catalog pages are public and carry no secrets. This connection string
@@ -1560,14 +1548,14 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
   name: 'containerAppWorker'
   scope: applicationResourceGroup
   params: {
-    location: env.location
-    name: BuildResourceName('vpd-worker', 'ca', env)
+    location: targetLocation
+    name: BuildResourceName('vpd-worker', 'ca', targetEnv)
     tags: tags
     containerImage: empty(workerImage) ? placeholderImage : workerImage
     containerRuntime: containerAppWorkerContainerRuntime
     scaling: containerAppWorkerScaling
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
-    acrLoginServer: containerRegistryModule.outputs.loginServer
+    acrLoginServer: sharedContainerRegistry.properties.loginServer
     userAssignedIdentityId: userAssignedIdentityWorkerModule.outputs.resourceId
     keyVaultSecrets: concat([
       {
@@ -1790,8 +1778,8 @@ module webhookReadinessModule './modules/DeploymentScript/webhookReadiness.modul
   name: 'acsEmailWebhookReadiness'
   scope: applicationResourceGroup
   params: {
-    name: BuildResourceName('vpd', 'acs-webhook-ready', env)
-    location: env.location
+    name: BuildResourceName('vpd', 'acs-webhook-ready', targetEnv)
+    location: targetLocation
     endpointUrl: 'https://${containerAppApiModule.outputs.containerAppFqdn}/integrations/acs/email-delivery-reports'
     webhookHeaderName: communicationEmailWebhookHeaderName
     webhookSecret: acsEmailWebhookSecret
@@ -1821,15 +1809,15 @@ module communicationEmailEventSubscriptionModule './modules/EventGrid/communicat
 // -----------------------------------------------------------------------
 
 output resourceGroupName string = applicationResourceGroup.name
-output containerRegistryName string = BuildContainerRegistryName('vpd', 'acr', env)
-output containerRegistryLoginServer string = containerRegistryModule.outputs.loginServer
+output containerRegistryName string = containerRegistryName
+output containerRegistryLoginServer string = sharedContainerRegistry.properties.loginServer
 
-output apiContainerAppName string = BuildResourceName('vpd-api', 'ca', env)
-output websiteContainerAppName string = BuildResourceName('vpd-web', 'ca', env)
-output backOfficeContainerAppName string = BuildResourceName('vpd-bo', 'ca', env)
-output scanContainerAppName string = BuildResourceName('vpd-scan', 'ca', env)
-output catalogContainerAppName string = BuildResourceName('vpd-catalog', 'ca', env)
-output workerContainerAppName string = BuildResourceName('vpd-worker', 'ca', env)
+output apiContainerAppName string = BuildResourceName('vpd-api', 'ca', targetEnv)
+output websiteContainerAppName string = BuildResourceName('vpd-web', 'ca', targetEnv)
+output backOfficeContainerAppName string = BuildResourceName('vpd-bo', 'ca', targetEnv)
+output scanContainerAppName string = BuildResourceName('vpd-scan', 'ca', targetEnv)
+output catalogContainerAppName string = BuildResourceName('vpd-catalog', 'ca', targetEnv)
+output workerContainerAppName string = BuildResourceName('vpd-worker', 'ca', targetEnv)
 
 output apiUrl string = 'https://${containerAppApiModule.outputs.containerAppFqdn}'
 output websiteUrl string = 'https://${containerAppWebsiteModule.outputs.containerAppFqdn}'
@@ -1837,11 +1825,11 @@ output backOfficeUrl string = 'https://${containerAppBackOfficeModule.outputs.co
 output scanUrl string = 'https://${containerAppScanModule.outputs.containerAppFqdn}'
 output catalogUrl string = 'https://${containerAppCatalogModule.outputs.containerAppFqdn}'
 
-output sqlServerName string = sqlServerModule.outputs.name
-output sqlServerFqdn string = sqlServerModule.outputs.fullyQualifiedDomainName
-output sqlDatabaseName string = sqlServerModule.outputs.databaseName
+output sqlServerName string = existingSqlServer.name
+output sqlServerFqdn string = existingSqlServer.properties.fullyQualifiedDomainName
+output sqlDatabaseName string = existingSqlDatabase.name
 output storageAccountName string = storageAccountModule.outputs.name
-output keyVaultName string = BuildResourceName('vpd', 'kv', env)
+output keyVaultName string = BuildResourceName('vpd', 'kv', targetEnv)
 output communicationEmailServiceName string = communicationEmailModule.outputs.name
 output communicationEmailSendingDomain string = communicationEmailModule.outputs.sendingDomain
 output communicationServiceName string = communicationServiceName

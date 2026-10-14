@@ -7,6 +7,18 @@ var RbacRoles = {
       id: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
       description: 'Allows pull of images from an Azure Container Registry.'
     }
+    AcrPush: {
+      id: '8311e382-0749-4cb8-b61a-304f252e45ec'
+      description: 'Allows pull and push of images in an Azure Container Registry.'
+    }
+    AcrDelete: {
+      id: 'c2f4ef07-c644-48eb-af81-4b1d0623c2d8'
+      description: 'Allows deletion of image data in an Azure Container Registry.'
+    }
+    Owner: {
+      id: '8e3af657-a8ff-443c-a75c-2fe8c4bcb635'
+      description: 'Allows full management and role assignment control over the shared Azure Container Registry.'
+    }
   }
   keyvault: {
     'Key Vault Secrets User': {

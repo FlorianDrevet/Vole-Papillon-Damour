@@ -20,22 +20,26 @@ on:
         description: Enable the Worker email path (set false while the API still runs the placeholder image)
         type: boolean
         required: true
-        default: true
+        default: false
 
 permissions:
   id-token: write
   contents: read
 
 env:
-  AZURE_LOCATION: westeurope
+  AZURE_LOCATION: francecentral
   PARAMETERS_FILE: infra/parameters/main.dev.bicepparam
   RESOURCE_GROUP: rg-vpd-dev
-  API_CONTAINER_APP: vpd-api-ca-dev
-  WEBSITE_CONTAINER_APP: vpd-web-ca-dev
-  BACKOFFICE_CONTAINER_APP: vpd-bo-ca-dev
-  SCAN_CONTAINER_APP: vpd-scan-ca-dev
-  CATALOG_CONTAINER_APP: vpd-catalog-ca-dev
-  WORKER_CONTAINER_APP: vpd-worker-ca-dev
+  API_CONTAINER_APP: vpd-api-ca-dev-fc
+  WEBSITE_CONTAINER_APP: vpd-web-ca-dev-fc
+  BACKOFFICE_CONTAINER_APP: vpd-bo-ca-dev-fc
+  SCAN_CONTAINER_APP: vpd-scan-ca-dev-fc
+  CATALOG_CONTAINER_APP: vpd-catalog-ca-dev-fc
+  WORKER_CONTAINER_APP: vpd-worker-ca-dev-fc
+  ACR_NAME: ${{ vars.ACR_NAME }}
+  ACR_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
+  ACR_SUBSCRIPTION_ID: ${{ vars.ACR_SUBSCRIPTION_ID }}
+  ACR_CI_PRINCIPAL_ID: ${{ vars.ACR_CI_PRINCIPAL_ID }}
 
 jobs:
   deploy:
@@ -85,16 +89,28 @@ jobs:
         run: |
           set -euo pipefail
           read_image () {
-            az containerapp show --name "$1" --resource-group "$RESOURCE_GROUP" \
-              --query "properties.template.containers[0].image" --output tsv 2>/dev/null || true
+            target_app="$1"
+            legacy_app="$2"
+            image=$(az containerapp show --name "$target_app" --resource-group "$RESOURCE_GROUP" \
+              --query "properties.template.containers[0].image" --output tsv 2>/dev/null || true)
+            if [ -z "$image" ] || [ "$image" = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest" ]; then
+              image=$(az containerapp show --name "$legacy_app" --resource-group "$RESOURCE_GROUP" \
+                --query "properties.template.containers[0].image" --output tsv 2>/dev/null || true)
+            fi
+            case "$image" in
+              vpdacrdev.azurecr.io/*)
+                image="$ACR_NAME.azurecr.io/${image#vpdacrdev.azurecr.io/}"
+                ;;
+            esac
+            echo "$image"
           }
           {
-            echo "API_IMAGE=$(read_image "$API_CONTAINER_APP")"
-            echo "WEBSITE_IMAGE=$(read_image "$WEBSITE_CONTAINER_APP")"
-            echo "BACKOFFICE_IMAGE=$(read_image "$BACKOFFICE_CONTAINER_APP")"
-            echo "SCAN_IMAGE=$(read_image "$SCAN_CONTAINER_APP")"
-            echo "CATALOG_IMAGE=$(read_image "$CATALOG_CONTAINER_APP")"
-            echo "WORKER_IMAGE=$(read_image "$WORKER_CONTAINER_APP")"
+            echo "API_IMAGE=$(read_image "$API_CONTAINER_APP" vpd-api-ca-dev)"
+            echo "WEBSITE_IMAGE=$(read_image "$WEBSITE_CONTAINER_APP" vpd-web-ca-dev)"
+            echo "BACKOFFICE_IMAGE=$(read_image "$BACKOFFICE_CONTAINER_APP" vpd-bo-ca-dev)"
+            echo "SCAN_IMAGE=$(read_image "$SCAN_CONTAINER_APP" vpd-scan-ca-dev)"
+            echo "CATALOG_IMAGE=$(read_image "$CATALOG_CONTAINER_APP" vpd-catalog-ca-dev)"
+            echo "WORKER_IMAGE=$(read_image "$WORKER_CONTAINER_APP" vpd-worker-ca-dev)"
           } >> "$GITHUB_ENV"
 
       - name: Preview the changes

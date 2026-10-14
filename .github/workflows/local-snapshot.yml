@@ -14,7 +14,7 @@ env:
   RESOURCE_GROUP: rg-vpd-dev
   SQL_SERVER: vpd-sql-dev
   SQL_DATABASE: vole-papillon-damour-db
-  STORAGE_ACCOUNT: vpdstdev
+  STORAGE_ACCOUNT: vpdstdevfc
 
 jobs:
   snapshot:

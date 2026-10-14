@@ -17,9 +17,10 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-vpd-dev
-  REGISTRY_NAME: vpdacrdev
-  CONTAINER_APP: vpd-catalog-ca-dev
-  API_CONTAINER_APP: vpd-api-ca-dev
+  REGISTRY_NAME: ${{ vars.ACR_NAME }}
+  REGISTRY_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
+  CONTAINER_APP: vpd-catalog-ca-dev-fc
+  API_CONTAINER_APP: vpd-api-ca-dev-fc
   IMAGE_NAME: vpd-catalog
   DOCKERFILE: src/Catalog/Dockerfile
   BUILD_CONTEXT: src
@@ -50,7 +51,7 @@ jobs:
           set -euo pipefail
           TAG="${{ inputs.image_tag }}"
           if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
-          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
+          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --resource-group "$REGISTRY_RESOURCE_GROUP" --query loginServer --output tsv)
           API_FQDN=$(az containerapp show --name "$API_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
             --query properties.configuration.ingress.fqdn --output tsv)
           CATALOG_FQDN=$(az containerapp show --name "$CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \

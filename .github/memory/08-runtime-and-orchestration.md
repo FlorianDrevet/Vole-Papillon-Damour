@@ -192,3 +192,11 @@ The API startup wires:
   is present in the deployed main line; rollout did not rerun EF migrations because DEV was current.
 - Catalog SSR keeps public routes indexable and private account/admin routes `noindex, nofollow`;
   this behavior and the robots/sitemap smoke checks are retained as deployment invariants.
+
+## Azure regional migration
+
+- `infra/main.bicep` keeps the existing `rg-vpd-dev` resource group and provisions parallel regional resources with `-dev-fc` names in France Central. SQL server/database, ACS Communication Service, and the Azure OpenAI account are declared as existing resources so their configuration is not reapplied.
+- Shared ACR `vpdacrshared` is in `rg-core-florian`, France Central, Basic, public network enabled, and admin authentication disabled. Its name, resource group, subscription, and CI principal are parameterized; six new ACA identities receive `AcrPull`, and the GitHub deployment identity receives `Owner` on the registry.
+- GitHub application workflows target the `-dev-fc` Container Apps and shared ACR. `ACR - migrate images` imports and compares all tagged repositories from `vpdacrdev`; the old registry remains available for rollback.
+- `Storage - migrate blobs` copies from `vpdstdev` to `vpdstdevfc`, preserves each source container ACL, fails on incomplete copies/count mismatches, and defaults database URL rewriting off. For cutover, stop old API writes before the final copy and URL rewrite; never run both scheduled Workers together.
+- Keep DNS/CDN and ACA custom-domain cutover pending until the OVH setup and certificate method are verified. Retain West Europe resources until the owner explicitly confirms deletion.

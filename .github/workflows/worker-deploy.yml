@@ -16,8 +16,9 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-vpd-dev
-  REGISTRY_NAME: vpdacrdev
-  CONTAINER_APP: vpd-worker-ca-dev
+  REGISTRY_NAME: ${{ vars.ACR_NAME }}
+  REGISTRY_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
+  CONTAINER_APP: vpd-worker-ca-dev-fc
   IMAGE_NAME: vpd-worker
   DOCKERFILE: src/Backend/Vole_Papillon_Damour.Worker/Dockerfile
   BUILD_CONTEXT: src/Backend
@@ -43,7 +44,7 @@ jobs:
           set -euo pipefail
           TAG="${{ inputs.image_tag }}"
           if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
-          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
+          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --resource-group "$REGISTRY_RESOURCE_GROUP" --query loginServer --output tsv)
           echo "IMAGE=$LOGIN_SERVER/$IMAGE_NAME:$TAG" >> "$GITHUB_ENV"
 
       - name: Build and push the image
