@@ -1,11 +1,55 @@
 # Infrastructure Azure - Vole-Papillon-Damour
 
+## Migration France Central
+
+`rg-vpd-dev` garde sa localisation de groupe de ressources en West Europe. Le
+Bicep le reference comme groupe existant et cree en parallele les ressources
+regionales avec le suffixe `-dev-fc` en France Central. Le serveur `vpd-sql-dev`
+et la base `vole-papillon-damour-db` restent en France Central et ne sont pas
+recrees ni deplaces.
+
+| Ressource cible | Nom France Central |
+| --- | --- |
+| Container Apps Environment | `vpd-cae-dev-fc` |
+| API / Website / BackOffice | `vpd-api-ca-dev-fc` / `vpd-web-ca-dev-fc` / `vpd-bo-ca-dev-fc` |
+| Scan / Catalog / Worker | `vpd-scan-ca-dev-fc` / `vpd-catalog-ca-dev-fc` / `vpd-worker-ca-dev-fc` |
+| Storage Account | `vpdstdevfc` |
+| Key Vault | `vpd-kv-dev-fc` |
+| Log Analytics | `vpd-law-dev-fc` |
+| Application Insights | `vpd-<api,web,bo,scan,catalog,worker>-appi-dev-fc` |
+| Managed identities | `vpd-<api,web,bo,scan,catalog,worker>-id-dev-fc` |
+
+Les deux piles restent disponibles pour le retour arriere. La zone DNS OVH
+pointe maintenant l'apex et les quatre CNAME (`www`, `backoffice`, `livres`,
+`scan`) directement vers les ACA France Central. Les cinq domaines repondent en
+HTTPS avec certificat valide et les parcours testés renvoient `200`. Aucun
+service CDN OVH actif n'a ete trouve dans le compte consulte. Le worker
+West Europe est arrete; le worker France Central reste limite a une replique.
+Le webhook ACS vise l'API France Central. Les anciennes ressources ne seront
+supprimees qu'apres validation et confirmation explicite du proprietaire.
+
+Le stockage migre de `vpdstdev` vers `vpdstdevfc` sans déployer ni reconfigurer
+SQL. Le workflow
+`Storage - migrate blobs` effectue une premiere copie sans reecriture de la base.
+Le dernier passage se fait avec les ecritures arretees et reecrit uniquement
+les URL de blobs stockees en base; le meme workflow permet le retour inverse
+pendant le rollback.
+
+L'ACR partage `vpdacrshared` est dans `rg-core-florian`, en France Central, avec
+le SKU Basic, l'admin desactive et l'acces public active comme l'ancien ACR.
+`main.bicep` ne le cree pas: il recoit `containerRegistryName`,
+`containerRegistryResourceGroupName` et `containerRegistrySubscriptionId`, puis
+attribue les roles de lecture aux identites des ACA et les droits complets a
+l'identite CI fournie. Les variables GitHub de depot sont `ACR_NAME`,
+`ACR_RESOURCE_GROUP`, `ACR_SUBSCRIPTION_ID` et `ACR_CI_PRINCIPAL_ID`.
+
 Déploiement de l'environnement `development` : un Container App Environment
 hébergeant les six applications, chacune avec son Application Insights.
 
-## Ressources déployées
+## Inventaire West Europe conservé pendant la migration
 
-Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`).
+Le tableau décrit la pile West Europe existante. Elle reste disponible pour le
+retour arrière jusqu'à la confirmation explicite de suppression des anciennes ressources.
 
 | Ressource | Nom | Rôle |
 | --- | --- | --- |
@@ -27,14 +71,14 @@ Tout est créé dans le groupe de ressources `rg-vpd-dev` (région `westeurope`)
 | Key Vault | `vpd-kv-dev` | Connection strings SQL et Storage, clé de signature JWT (à supprimer avec l'authentification maison, voir `infra/entra/`) |
 | Managed Identity | `vpd-api-id-dev` / `vpd-web-id-dev` / `vpd-bo-id-dev` / `vpd-scan-id-dev` / `vpd-catalog-id-dev` / `vpd-worker-id-dev` | Une par application |
 
-Chaque Container App tourne sous sa propre identité managée. Les six ont
-`AcrPull` sur le registry ; l'API et le worker ont en plus `Key Vault Secrets User`.
-Le Worker possède aussi `Communication and Email Service Owner` sur le service ACS.
-Le secret `email-bounce-webhook-secret` est écrit dans Key Vault par Bicep et n'est
-jamais exposé dans les outputs.
-Pour DEV, `main.dev.bicepparam` reprend l'identifiant de l'affectation ACS créée par
-l'ancien workflow afin que Bicep l'adopte sans créer de doublon ; un nouvel environnement
-laisse ce paramètre vide et reçoit un identifiant déterministe.
+Chaque Container App France Central utilise sa propre identité managée `-dev-fc`.
+Les six identités ont `AcrPull` sur l'ACR partagé ; l'API et le worker ont aussi
+`Key Vault Secrets User`. Le worker reçoit `Communication and Email Service Owner`
+sur le service ACS global. Le secret `email-bounce-webhook-secret` est écrit dans le
+nouveau Key Vault par Bicep et n'est jamais exposé dans les outputs.
+`communicationServiceRoleAssignmentName` reste vide afin que Bicep crée une
+affectation déterministe pour la nouvelle identité worker, sans remplacer l'accès
+de l'ancienne identité pendant le rollback.
 L'API et le worker ont chacun `Monitoring Metrics Publisher` sur leur Application
 Insights. Le worker est une Azure Function native (`kind=functionapp`). La configuration
 de mesure `P1-1` vise `minReplicas: 0` et `maxReplicas: 1` pour vérifier que le timer se
@@ -43,7 +87,7 @@ heures échoue.
 
 Les six composants Application Insights ont un plafond de 1 Go/jour via leur
 ressource `pricingPlans`. Toutes les alertes Azure Monitor passent par le groupe
-`vpd-alerts-dev`, qui écrit **uniquement à `afdrevet@outlook.com`**
+`vpd-alerts-dev-fc`, qui écrit **uniquement à `afdrevet@outlook.com`**
 (`monitoringAlertEmail`) ; aucune notification d'infrastructure ne part vers
 `volepapillondamour@sfr.fr`. Les règles couvrent le worker (heartbeat, annonces et
 file d'e-mails en retard, e-mails en échec), l'import social, les performances de
@@ -123,7 +167,7 @@ et que `azure/login` traite exactement comme une app registration.
 SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 
 az group create -n rg-vpd-identity-dev -l westeurope
-az identity create -g rg-vpd-identity-dev -n vpd-github-deploy-id -l westeurope   --query "{clientId:clientId, principalId:principalId}" -o json
+az identity create -g rg-vpd-identity-dev -n vpd-github-deploy-id -l francecentral --query "{clientId:clientId, principalId:principalId}" -o json
 ```
 
 Deux rôles au niveau **subscription** sont nécessaires. `Role Based Access
@@ -166,22 +210,19 @@ C'est aussi l'endroit où activer une *required reviewer* si un déploiement doi
 
 ### 5. Vérifier les noms globalement uniques
 
-`vpdacrdev`, `vpd-kv-dev`, `vpd-sql-dev` et `vpdstdev` doivent être libres à
-l'échelle d'Azure. En cas de collision, changer le préfixe `vpd` dans
-`main.bicep` et répercuter les valeurs `REGISTRY_NAME` / `SQL_SERVER` des
-workflows.
+`vpdacrshared`, `vpd-kv-dev-fc`, `vpd-sql-dev` et `vpdstdevfc` sont les noms
+utilisés par la migration. L'ACR est déjà créé dans `rg-core-florian`; le serveur
+SQL existant reste `vpd-sql-dev`. Le stockage et Key Vault ont des noms globaux
+et doivent être disponibles avant le déploiement.
 
-### 6. Vérifier la région autorisée pour Azure SQL
+### 6. Vérifier l'ACR partagé
 
-La subscription n'a pas le droit de provisionner Azure SQL partout, et la
-restriction n'apparaît qu'à la création (`ProvisioningDisabled`) : `az provider
-show` liste des régions qui sont en fait refusées. `sqlLocation` vaut
-`francecentral`, validé sur cette subscription ; le reste de l'environnement
-est en `westeurope`. Pour tester une autre région :
-
-```bash
-az sql server create -n vpd-sql-probe-$RANDOM -g rg-vpd-identity-dev   -l <region> -u probeadmin -p "<mot-de-passe-sans-caractère-!>"
-```
+Le registre `vpdacrshared` existe dans `rg-core-florian` en France Central. Les
+variables de dépôt GitHub `ACR_NAME`, `ACR_RESOURCE_GROUP`,
+`ACR_SUBSCRIPTION_ID` et `ACR_CI_PRINCIPAL_ID` pilotent Bicep et les workflows.
+Le principal CI reçoit le rôle `Owner` sur ce registre; les six identités ACA
+reçoivent `AcrPull`. `ACR - migrate images` copie et vérifie tous les tags de
+`vpdacrdev` sans supprimer les images source.
 
 ## Pipelines
 
@@ -191,34 +232,51 @@ Azure sans un lancement manuel.
 | Workflow | Ce qu'il fait |
 | --- | --- |
 | `Infra - deploy` | `what-if` (défaut) ou `deploy` de `main.bicep` sur la subscription ; possède aussi l'option ponctuelle de bootstrap ACS Email |
-| `API - deploy` | build + push de l'image API, bascule de `vpd-api-ca-dev`, migrations EF optionnelles |
-| `Website - deploy` | build + push de l'image Website, bascule de `vpd-web-ca-dev` |
-| `BackOffice - deploy` | build + push de l'image BackOffice, bascule de `vpd-bo-ca-dev` |
-| `Scan - deploy` | build + push de l'image Scan avec l'URL API et l'origine `https://scan.volepapillondamour.fr`, bascule de `vpd-scan-ca-dev` et publication HTTPS |
-| `Catalog - deploy` | build + push de l'image Catalogue avec les URLs API/domaine et les identifiants publics GA4/Clarity, bascule de `vpd-catalog-ca-dev` |
-| `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev` et contrôle du host |
+| `ACR - migrate images` | importe sans écraser les tags conflictuels les images de `vpdacrdev` vers l'ACR partagé, puis vérifie les digests |
+| `API - deploy` | build + push de l'image API dans l'ACR partagé, bascule de `vpd-api-ca-dev-fc`, migrations EF optionnelles |
+| `Website - deploy` | build + push de l'image Website dans l'ACR partagé, bascule de `vpd-web-ca-dev-fc` |
+| `BackOffice - deploy` | build + push de l'image BackOffice dans l'ACR partagé, bascule de `vpd-bo-ca-dev-fc` |
+| `Scan - deploy` | build + push de l'image Scan avec l'URL API et l'origine `https://scan.volepapillondamour.fr`, bascule de `vpd-scan-ca-dev-fc` |
+| `Catalog - deploy` | build + push de l'image Catalogue avec les URLs API/domaine et les identifiants publics GA4/Clarity, bascule de `vpd-catalog-ca-dev-fc` |
+| `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev-fc` et contrôle du host |
 | `Books runtime - deploy` | build + push coordonné API + Worker, migration EF optionnelle avant rollout, puis bascule des deux Container Apps |
+| `Storage - migrate blobs` | copie incrementale les blobs absents ou source-plus-recents vers `vpdstdevfc`, preserve les blobs plus recents ou propres a la cible, verifie les noms source et propose `skip`/`preview`/`apply` pour la reecriture des URL SQL |
 | `ACS Email - configure` | vérification DNS/amorçage ACS et réparation manuelle de compatibilité ; le câblage normal est dans Bicep |
 
-### Ordre du premier déploiement
+### Ordre de migration France Central
 
-1. `Infra - deploy` en mode `what-if`, pour relire ce qui va être créé. Pour un
-   nouvel environnement, cocher `bootstrap_email_resources` et laisser
-   `enable_book_alert_emails` décoché.
-2. `Infra - deploy` en mode `deploy` avec ces mêmes options. Le service ACS Email
-   et son domaine sont créés, mais le handshake Event Grid reste désactivé tant
-   que l'API utilise l'image placeholder.
-3. Publier les valeurs TXT/SPF/CNAME affichées par ACS dans le DNS du domaine,
-   puis lancer `ACS Email - configure` pour initier et contrôler la vérification.
-4. Lancer `Books runtime - deploy` avec `run_migrations` coché afin de publier une
-   vraie API, puis relancer `Infra - deploy` avec les deux options à false/true :
-   le domaine est référencé sans PUT et le câblage Event Grid est activé.
-5. `Scan - deploy`, puis `Worker - deploy`.
-6. `Website - deploy`, puis `BackOffice - deploy` si leurs images doivent aussi être
-   reconstruites sur cette branche.
+1. Exécuter `Infra - deploy` en mode `what-if` et vérifier que le plan ne modifie
+   ni SQL, ni les anciennes ACA, ni l'ACR `vpdacrdev`.
+2. Lancer `ACR - migrate images` pour importer tous les dépôts et tags de
+   `vpdacrdev` vers `vpdacrshared`, puis vérifier que les six images actuellement
+   utilisées sont présentes.
+3. Déployer Bicep avec `bootstrap_email_resources` et `enable_book_alert_emails`
+   désactivés. Les nouvelles ressources sont créées en parallèle dans `rg-vpd-dev`;
+   le worker reste à zéro et les ACA reprennent les images actives par leurs tags.
+4. Lancer `Storage - migrate blobs` de `vpdstdev` vers `vpdstdevfc` avec
+   `rewrite_urls=false`. Vérifier le nombre de blobs et l'accès aux images.
+5. Publier API et fronts vers les nouvelles ACA, avec migrations EF désactivées
+   puisque la base existante est conservée. Vérifier les endpoints ACA, Key Vault,
+   SQL, Storage, Application Insights et les journaux.
+6. Préparer les certificats et les enregistrements DNS OVH pour les domaines
+   existants (`volepapillondamour.fr` et `www` vers Website, `backoffice` vers
+   BackOffice, `livres` vers Catalog, `scan` vers Scan). Vérifier dans OVH les
+   réglages CDN et les certificats existants avant de changer chaque origine;
+   pour une entrée sans CDN, suivre les enregistrements de preuve et de routage
+   exigés par ACA. Conserver les anciennes entrées jusqu'à validation DNS/TLS
+   et des parcours utilisateurs.
+7. Au cutover, arrêter les écritures côté ancienne API, lancer la synchronisation
+   finale du stockage avec `rewrite_urls=true`, puis vérifier les URLs en base et
+   les images servies. Basculer ensuite Event Grid vers la nouvelle API et démarrer
+   le worker France Central; ne jamais exécuter les deux workers en parallèle.
+8. Observer erreurs, latence, e-mails et traitements planifiés pendant la fenêtre
+   convenue. En rollback, rétablir DNS/Event Grid, arrêter le worker France Central
+   et recopier blobs et URL vers l'ancien stockage.
+9. Après validation, demander une confirmation explicite avant toute suppression
+   des ressources West Europe.
 
 Les fronts doivent être déployés après l'API : le bundle Angular embarque
-l'`api_url` en dur, donc la pipeline lit le FQDN de `vpd-api-ca-dev` et le
+l'`api_url` en dur, donc la pipeline lit le FQDN de `vpd-api-ca-dev-fc` et le
 passe en `--build-arg` au moment du build de l'image.
 
 ### Google Analytics 4 du Website
