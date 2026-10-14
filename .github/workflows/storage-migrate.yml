@@ -73,6 +73,19 @@ jobs:
               --account-key "$SOURCE_KEY" --query "properties.publicAccess" --output tsv)
             if [ -z "$access" ] || [ "$access" = "None" ]; then access=off; fi
 
+            # The target needs read/list to compare destination timestamps when
+            # AzCopy applies --overwrite=ifSourceNewer. Keep both SAS tokens short-lived.
+            SAS_START=$(date -u -d "5 minutes ago" '+%Y-%m-%dT%H:%MZ')
+            SAS_EXPIRY=$(date -u -d "2 hours" '+%Y-%m-%dT%H:%MZ')
+            SOURCE_SAS=$(az storage container generate-sas --name "$container" \
+              --account-name "$SOURCE" --account-key "$SOURCE_KEY" \
+              --permissions rl --start "$SAS_START" --expiry "$SAS_EXPIRY" --https-only --output tsv)
+            TARGET_SAS=$(az storage container generate-sas --name "$container" \
+              --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
+              --permissions racwl --start "$SAS_START" --expiry "$SAS_EXPIRY" --https-only --output tsv)
+            echo "::add-mask::$SOURCE_SAS"
+            echo "::add-mask::$TARGET_SAS"
+
             # Preserve each source container's ACL. In particular, the Azure
             # Functions host and secrets containers must remain private.
             az storage container create --name "$container" \
@@ -85,8 +98,8 @@ jobs:
               --source "https://$SOURCE.blob.core.windows.net/$container" \
               --destination "https://$TARGET_ACCOUNT.blob.core.windows.net/$container" \
               --recursive \
-              --source-account-name "$SOURCE" --source-account-key "$SOURCE_KEY" \
-              --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
+              --source-account-name "$SOURCE" --source-sas "$SOURCE_SAS" \
+              --account-name "$TARGET_ACCOUNT" --sas-token "$TARGET_SAS" \
               -- --overwrite=ifSourceNewer
 
             echo "::endgroup::"
