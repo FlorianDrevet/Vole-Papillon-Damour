@@ -21,7 +21,7 @@ env:
   REGISTRY_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
   CONTAINER_APP: vpd-scan-ca-dev-fc
   API_CONTAINER_APP: vpd-api-ca-dev-fc
-  APPLICATION_INSIGHTS: vpd-scan-appi-dev
+  APPLICATION_INSIGHTS: vpd-scan-appi-dev-fc
   IMAGE_NAME: vpd-scan
   DOCKERFILE: src/Scan/Dockerfile
   BUILD_CONTEXT: src

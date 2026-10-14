@@ -19,7 +19,7 @@ env:
   REGISTRY_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
   CONTAINER_APP: vpd-web-ca-dev-fc
   API_CONTAINER_APP: vpd-api-ca-dev-fc
-  APPLICATION_INSIGHTS: vpd-web-appi-dev
+  APPLICATION_INSIGHTS: vpd-web-appi-dev-fc
   IMAGE_NAME: vpd-web
   DOCKERFILE: src/Website/Dockerfile
   BUILD_CONTEXT: src

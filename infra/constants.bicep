@@ -12,7 +12,7 @@ var RbacRoles = {
       description: 'Allows pull and push of images in an Azure Container Registry.'
     }
     AcrDelete: {
-      id: 'c2f4ef07-c644-48eb-af81-4b1d0623c2d8'
+      id: 'c2f4ef07-c644-48eb-af81-4b1b4947fb11'
       description: 'Allows deletion of image data in an Azure Container Registry.'
     }
     Owner: {

@@ -20,7 +20,7 @@ env:
   CONTAINER_APP: vpd-bo-ca-dev-fc
   API_CONTAINER_APP: vpd-api-ca-dev-fc
   WEBSITE_CONTAINER_APP: vpd-web-ca-dev-fc
-  APPLICATION_INSIGHTS: vpd-bo-appi-dev
+  APPLICATION_INSIGHTS: vpd-bo-appi-dev-fc
   IMAGE_NAME: vpd-bo
   DOCKERFILE: src/BackOffice/Dockerfile
   BUILD_CONTEXT: src
