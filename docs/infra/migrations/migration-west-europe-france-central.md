@@ -31,7 +31,7 @@ Le nettoyage des anciennes ressources a été lancé avant la fin de la fenêtre
 - Le registre partagé a conservé l'accès public et l'admin désactivé comme configuré. L'identité de déploiement a `Owner`; les identités des six ACA ont `AcrPull`.
 - Les blobs de `vpdstdev` ont été synchronisés vers `vpdstdevfc`, puis 346 URL ont été réécrites dans la base existante. La vérification n'a trouvé aucune URL restante vers le compte source.
 - L'ancien ACR `vpdacrdev` et l'ancien Storage `vpdstdev` ont été supprimés.
-- Le Key Vault `vpd-kv-dev` a été supprimé avec la rétention Azure soft-delete. Il n'a pas été purgé.
+- Le Key Vault `vpd-kv-dev` a été placé en soft-delete puis purgé définitivement le 15 octobre 2026 après vérification de son identifiant et de son emplacement West Europe.
 
 ## DNS, domaines et trafic
 
@@ -81,4 +81,4 @@ Les ressources conservées sont le groupe `rg-vpd-dev`, le serveur et les bases 
 - Vérifier les parcours Entra de bout en bout, observer les erreurs et alertes après nettoyage, puis effectuer un e-mail ACS de test contrôlé.
 - Fusionner la PR Mariage #8 avant un nouveau déploiement de ce projet.
 - Le registre Basic contient environ 39 Go alors que 10 Go sont inclus; surveiller le volume et les coûts.
-- Le retour arrière vers West Europe n'est plus disponible. Azure conserve temporairement le Key Vault supprimé selon sa politique soft-delete; il n'a pas été purgé.
+- Le retour arrière vers West Europe n'est plus disponible. Le Key Vault West Europe est purgé; seul l'environnement ACA `vpd-cae-dev` reste en attente de suppression Azure.
