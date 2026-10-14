@@ -1,5 +1,14 @@
 # 08 - Runtime And Orchestration
 
+## Azure regional migration — plan 2026-10-14
+
+- User-confirmed approach: keep rg-vpd-dev and the existing SQL server/database in place; create the West Europe regional replacements in France Central side by side, then retire the old resources after cutover and a rollback window.
+- The planned replacements are the shared ACR, Blob Storage, Key Vault, Container Apps environment/apps, Log Analytics and Application Insights. Bicep must separate resource-group metadata location from resource location and accept the shared ACR name and resource group.
+- Existing ACA public hostnames stay on their corresponding new apps: apex/www Website, backoffice BackOffice, livres Catalog, and scan Scan. The six app pipelines, infra pipeline, storage workflow, and ACS configuration workflow need target names/configuration updated.
+- Keep SQL/ACS/Foundry and GitHub OIDC resources; do not run EF migrations or copy the SQL database for this regional move. The storage workflow may rewrite only absolute Blob account URLs in the same database if references require it.
+- New and old Workers must not run scheduled work at the same time. Move the ACS Event Grid webhook once during cutover. OVH CDN origin and ACA certificate renewal need a tested DNS/TLS path before changing public routing.
+- Detailed phase order and gates: [docs/infra/migrations/migration-west-europe-france-central.md](../../docs/infra/migrations/migration-west-europe-france-central.md). This is a plan; no Azure resources were changed.
+
 ## Deployable Surfaces
 
 - `src/Backend/Vole_Papillon_Damour.Api/` - ASP.NET Core HTTP API

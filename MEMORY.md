@@ -24,7 +24,7 @@
 | `.github/memory/05-data-and-storage.md` | Persistence, auth, external services |
 | `.github/memory/06-agents-skills.md` | Generated agents, skills, and routing rules |
 | `.github/memory/07-code-graph.md` | Graphify workflow and code graph notes |
-| `.github/memory/08-runtime-and-orchestration.md` | Entry points, runtime surfaces, and local execution paths |
+| `.github/memory/08-runtime-and-orchestration.md` | Entry points, runtime surfaces, Azure hosting, and regional migration decisions |
 | `.github/memory/09-auth-and-build.md` | Auth behavior, config sources, and verified build/test commands |
 | `.github/memory/10-api-endpoints.md` | Grouped HTTP endpoints, public/admin split, and live routes |
 | `.github/memory/11-frontend-design-system.md` | Angular Material, Tailwind, theme tokens, and UI guardrails |
@@ -43,6 +43,7 @@
 8. Every paginated or searchable list must query the API: send the filters, page and page size to the backend and render only the returned page; never load the full collection into the browser for client-side pagination or search.
 9. Raw SQL against `Books` must use persisted column `Isbn13`; `BookConfiguration` maps the domain key `Book.Id` to that column.
 10. Use `.agents/skills/book-data-reset/SKILL.md` for an explicitly requested deployed books-data reset; it preserves events/news and requires a verified PITR restore path.
+11. The France Central migration is planned in `docs/infra/migrations/migration-west-europe-france-central.md`; keep rg-vpd-dev and SQL in place, deploy regional replacements in parallel, and do not remove West Europe resources before the rollback window ends.
 
 ## Commands To Remember
 
