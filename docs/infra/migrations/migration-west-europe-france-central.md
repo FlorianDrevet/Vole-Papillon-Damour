@@ -1,8 +1,17 @@
 # Migration de West Europe vers France Central
 
-**Statut :** plan validé pour préparation, aucune ressource Azure n’a été modifiée par ce document.
+**Statut d'exécution :** migration en cours. La pile France Central et l’ACR partagé sont déployés. L’apex et les quatre CNAME publics ont été basculés vers France Central ; le certificat de `www` est actif, les autres certificats managés sont en cours d’émission. La synchronisation finale Blob et la validation complète restent à terminer. Aucune ancienne ressource n’a été supprimée.
 **Révision :** 14 octobre 2026
 **Groupe de ressources conservé :** rg-vpd-dev
+
+## État réel au 14 octobre 2026
+
+- L’ACR partagé `vpdacrshared` est créé dans `rg-core-florian`, en France Central, SKU Basic, accès administrateur désactivé. Les 300 tags des six dépôts VPD ont été copiés et vérifiés par digest. Les 99 tags des deux dépôts `mariage-edwige-henri` ont aussi été importés ; ses deux workflows GitHub déploient maintenant sur cet ACR avec OIDC. Le pipeline VPD utilise également ce registre. Les identités de déploiement ont les rôles demandés sur l’ACR et les identités ACA ont AcrPull. Les PR de livraison des changements GitHub restent à ouvrir.
+- L’environnement Container Apps et les six applications, le stockage `vpdstdevfc`, le Key Vault, Log Analytics, les six Application Insights, les alertes et tests de disponibilité sont déployés en France Central dans `rg-vpd-dev`.
+- La première copie de `vpdstdev` vers `vpdstdevfc` est terminée, avec vérification des volumes par conteneur et conservation des ACL. La base SQL est conservée ; aucun déploiement EF ni déplacement de base n’a été lancé. Une synchronisation finale et la prévisualisation des références Blob encore présentes attendent la stabilisation de la bascule.
+- L’API cible est saine sur `/health` et utilise une image reconstruite depuis la révision de l’API actuellement en production. Website, BackOffice, Catalogue et Scan ont aussi été reconstruits depuis leurs révisions actuellement en production, avec l’API France Central. Le Worker France Central est sain avec une réplique (min=0/max=1) ; le Worker West Europe n’a aucune réplique au contrôle. Vérifier les déclenchements planifiés et notifications pendant la validation.
+- Dans la zone DNS OVH, `volepapillondamour.fr` pointe vers `51.138.199.49`, et les CNAME `www`, `backoffice`, `livres` et `scan` pointent directement vers les FQDN ACA France Central. La résolution a été vérifiée depuis un résolveur public. Le certificat managé de `www.volepapillondamour.fr` est émis et HTTPS répond avec un certificat valide ; l’apex et les trois autres certificats sont en cours. L’ancien A record `20.4.178.125` correspondait à l’adresse de l’environnement ACA West Europe. Aucun service CDN actif n’a été identifié dans les services OVH consultés ; le routage configuré est DNS direct vers ACA.
+- Le serveur/base SQL, ACS et les anciennes ressources West Europe sont conservés. La synchronisation finale du stockage, la réécriture ciblée des URL Blob en base et le nettoyage attendent la bascule et la validation. Le nettoyage nécessitera l’accord explicite du propriétaire.
 
 ## 1. Décision et périmètre
 
@@ -12,7 +21,7 @@ Décisions confirmées :
 
 - Conserver le groupe rg-vpd-dev. Sa propriété de région reste West Europe : elle décrit l’emplacement de ses métadonnées ARM, pas celui de toutes ses ressources. Les nouvelles ressources régionales seront explicitement créées en France Central.
 - Garder le serveur Azure SQL vpd-sql-dev et la base vole-papillon-damour-db en place. Il n’y aura ni copie/restauration SQL, ni changement de schéma, ni migration EF pour ce chantier. La base auxiliaire vpd-sql-import reste également en place.
-- Créer un nouvel ACR en France Central et le partager entre les projets. Bicep recevra au minimum le nom et le groupe de ressources de l’ACR au lieu de créer systématiquement vpdacrdev.
+- Créer un nouvel ACR partagé en France Central dans `rg-core-florian`. Bicep reçoit le nom, le groupe de ressources et l’abonnement de l’ACR au lieu de créer systématiquement `vpdacrdev`.
 - Garder les noms de domaines publics déjà utilisés par les ACA et les associer aux nouvelles applications correspondantes.
 - Ne supprimer aucune ressource West Europe avant la validation de la bascule et la fin de la fenêtre de retour arrière.
 
@@ -25,7 +34,7 @@ Inventaire en lecture seule du 14 octobre 2026. Il faudra le rafraîchir avant l
 | Surface | Source actuelle | Cible et traitement |
 | --- | --- | --- |
 | Groupe de ressources | rg-vpd-dev, métadonnées en West Europe | Le même groupe ; ne pas le recréer et ne pas modifier sa région de métadonnées |
-| ACR | vpdacrdev, West Europe, utilisé par les déploiements applicatifs | Nouvel ACR partagé, France Central, nom globalement unique ; copie des dépôts, images et tags |
+| ACR | vpdacrdev, West Europe, encore conservé pour le retour arrière | `vpdacrshared`, `rg-core-florian`, France Central, Basic, admin désactivé ; les dépôts VPD et `mariage-edwige-henri` y sont importés et les workflows correspondants poussent vers ce registre |
 | Stockage Blob | vpdstdev, West Europe | Nouveau compte France Central ; copie de tous les conteneurs et de leurs blobs |
 | Key Vault | vpd-kv-dev, West Europe | Nouveau coffre France Central ; reprise contrôlée des secrets et des autorisations |
 | Container Apps | Environnement vpd-cae-dev et six applications en West Europe | Nouvel environnement et six applications France Central, avec des noms distincts pendant la coexistence |
@@ -34,7 +43,7 @@ Inventaire en lecture seule du 14 octobre 2026. Il faudra le rafraîchir avant l
 | Génération de titres | vpd-actuality-title-dev, déjà en France Central | Conserver ; vérifier seulement les références et permissions |
 | Communication | ACS Email et ACS Communication Service, ressources globales, domaine mail.volepapillondamour.fr vérifié | Conserver sans recréation ni réamorçage DNS ; ne pas réinitialiser la vérification du domaine |
 | Identités | Identités des applications et vpd-github-deploy-id ; cette dernière est en France Central | Conserver les identités réutilisables ; vérifier l’isolation régionale de chacune avant attachement aux nouvelles ACA |
-| DNS/CDN | Les CNAME publics observés pointent vers les FQDN ACA West Europe. La configuration OVH CDN n’est pas déclarée dans le dépôt | Inventorier le compte OVH, ses domaines, origines, règles de cache, certificats et valeurs DNS avant de préparer la bascule |
+| DNS/CDN | Zone OVH avec un A apex et quatre CNAME directs, auparavant vers l’environnement ACA West Europe | Les cinq valeurs DNS sont maintenant orientées vers l’environnement France Central. Aucun produit CDN actif n’a été trouvé dans les services consultés ; pas de CDN à reconfigurer dans l’état constaté |
 
 Les domaines déjà déclarés dans main.dev.bicepparam sont :
 
@@ -192,15 +201,15 @@ Références : [certificats managés et domaines ACA](https://learn.microsoft.co
 - Configurer les nouvelles références SQL (même serveur/base), Storage, Key Vault, ACS, Application Insights, identité et CORS.
 - Tester via les FQDN ACA : health API, pages, connexion Entra, API, upload/download Blob, accès SQL, Scan, Catalog et envoi d’e-mail de test contrôlé. Vérifier les références et rôles prévus pour le Worker sans démarrer ses timers.
 - Ne pas encore déployer/démarrer le Worker cible et ne pas réorienter Event Grid ou les domaines publics.
-- Valider le scénario OVH CDN/TLS et préparer l’attachement des mêmes domaines aux nouvelles apps avec les preuves DNS requises. Ne pas supposer qu’un hostname peut rester attaché en même temps aux deux environnements : vérifier ce point avant la fenêtre. Si Azure l’interdit, attacher le hostname cible pendant la bascule, avec le certificat prêt et l’ancien environnement conservé pour le retour arrière.
+- Attacher les domaines ACA après vérification des enregistrements DNS directs : A apex vers l’IP de l’environnement et CNAME des sous-domaines directement vers les FQDN ACA. Ne pas réutiliser un certificat de l’ancien environnement. Pendant l’exécution, OVH a déjà été basculé vers France Central ; le certificat `www` est actif, ceux de l’apex et des trois autres sous-domaines restent à confirmer.
 
 ### Phase F — Bascule contrôlée
 
 - Activer la fenêtre de maintenance courte, arrêter les nouvelles écritures Blob et arrêter l’ancien Worker.
 - Exécuter la dernière copie des blobs et vérifier qu’aucune copie n’est en cours ; prévisualiser puis appliquer la réécriture d’URL Blob dans la base existante si elle est nécessaire.
 - Déployer les images finales et secrets cibles. Reconfigurer la souscription Event Grid ACS vers la nouvelle API.
-- Modifier les DNS OVH/CDN selon le routage TLS validé. Vérifier DNS public, certificat, HTTP(S), routes frontend/API, CORS et parcours Entra.
-- Déployer et activer le Worker France Central une fois l’ancien à l’arrêt. Confirmer exactement un seul traitement de chaque timer et une seule souscription webhook active.
+- Vérifier que les DNS publics OVH résolvent vers France Central et que les cinq domaines servent HTTPS avec un certificat valide ; les DNS ont déjà été basculés directement vers les ACA. Aucun service CDN OVH actif n’a été trouvé dans le compte consulté, donc la configuration actuelle ne comporte pas d’origine CDN à modifier.
+- Le Worker France Central étant déjà déployé et sain, ne pas le redéployer pendant la bascule. Confirmer que le Worker West Europe reste sans réplique, puis vérifier un seul traitement de chaque timer et une seule souscription webhook active.
 - Rétablir les écritures et surveiller API, erreurs, latences, stockage, e-mails et compteurs du Worker.
 
 ### Phase G — Stabilisation, retour arrière, suppression
@@ -218,7 +227,7 @@ La bascule est validée quand :
 - toutes les images et tags nécessaires sont lisibles dans l’ACR partagé, chaque pipeline pertinent pousse et déploie avec OIDC, et toutes les identités de projets consommateurs sont listées ;
 - les comptes Blob sont cohérents, tous les blobs sont copiés, les conteneurs et permissions répondent comme prévu et les références persistées ont été vérifiées ;
 - API /health, Website, BackOffice, Catalog, Scan et parcours Entra réussissent sur les domaines publics avec certificats valides ;
-- le CDN OVH sert le bon origin, le bypass fonctionne et aucune route personnalisée n’est mise en cache ;
+- les cinq domaines publics répondent en HTTPS sur les ACA France Central avec des certificats valides ; si un CDN OVH est découvert ultérieurement, valider son origine et le bypass avant activation ;
 - la base reste vpd-sql-dev / vole-papillon-damour-db, les écritures métier fonctionnent et aucun Worker ou webhook en double ne s’exécute ;
 - les nouvelles traces arrivent dans le workspace France Central, les alertes et tests de disponibilité ciblent le bon environnement, et les notifications de test arrivent au bon destinataire ;
 - les pipelines opérationnels (backup, import, snapshot, reset et migration de stockage) pointent toujours vers les ressources prévues.
@@ -234,15 +243,15 @@ Ordre de retrait des doublons :
 
 Après le nettoyage, enlever les paramètres de coexistence devenus inutiles, garder les noms finaux France Central dans Bicep et actualiser infra/README.md ainsi que cette fiche avec le mapping réel et la date de fin.
 
-## 10. Points à confirmer au démarrage d’exécution
+## 10. Suivi avant toute suppression
 
-- Disponibilité globale du nom de l’ACR partagé, son SKU final et le groupe cible. La proposition de départ est rg-vpd-dev, avec paramètre de groupe pour garder la possibilité d’un RG central.
-- Liste complète des identités GitHub Actions des autres projets auxquelles donner les droits complets demandés sur le registry.
-- État réel de l’isolation régionale des identités ACA actuelles.
-- Services CDN OVH actifs et modèle choisi pour TLS entre OVH, le domaine personnalisé et ACA. Le dépôt ne donne pas la configuration CDN.
-- Présence et nombre de références Blob absolues dans la base ; le workflow existant a une option pour réécrire ces URL.
-- Fenêtre de maintenance acceptable pour la synchronisation Blob finale et la bascule.
-- Budget de coexistence des deux régions, surtout ACR, ACA, stockage, workspace et Application Insights.
+- Confirmer les certificats managés et l’accès HTTPS pour l’apex, `www`, `backoffice`, `livres` et `scan`.
+- Faire la synchronisation finale de `vpdstdev` vers `vpdstdevfc`, puis lancer le mode `preview` du workflow pour compter les références à `vpdstdev.blob.core.windows.net`. Le mode `apply` ne sera utilisé que si la prévisualisation confirme des références à réécrire vers le nouveau stockage.
+- Vérifier les parcours Website, BackOffice, Catalogue, Scan, API et Entra sur les domaines publics, ainsi que les écritures Blob, l’alerte/supervision, le webhook ACS et l’absence d’exécution Worker en double.
+- Le dépôt `mariage-edwige-henri` a aussi migré ses workflows de déploiement vers `vpdacrshared`; conserver `acrweh` pour le retour arrière. La PR de ce projet et la PR VPD restent à valider.
+- Aucun CDN OVH n’a été trouvé dans les services consultés et l’ancien A record correspondait à l’IP de l’environnement ACA West Europe. Réexaminer uniquement si le compte révèle ultérieurement un produit CDN.
+- Conserver les ressources West Europe au moins sept jours après validation de la production. Avant leur retrait, fournir le mapping final et demander une confirmation explicite ; ne jamais supprimer `rg-vpd-dev`, SQL, ACS, les identités encore utilisées, `acrweh` ou l’ACR partagé.
+- Le registre Basic partagé stocke environ 39 GB pour les deux projets, au-dessus des 10 GB inclus ; surveiller le stockage et le coût, et revoir le SKU si le volume augmente.
 
 ## 11. Documentation technique de référence
 
