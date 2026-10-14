@@ -30,8 +30,10 @@ The usual change path is:
 
 ## Live Loto Tableau Flow
 
-- The live bingo/loto mutation path is `EventsController` -> `AddNumeroToEvent`, `RemoveLastNumero`, `AddWinPartie`, or `AddBingoWin` handler -> `IEventRepository.UpdateAsync` -> event-scoped SSE broadcast.
-- SSE delivery is scoped by `AssoEventsId` through `ISSEClientManager.SendToEvent`; do not reintroduce all-client broadcasts for `/asso-events/{id}/tableau/sse`.
+- `AssoEvents.LiveRevision` starts at zero and `MarkLiveChange()` increments it for `AddNumeroToEvent`, `RemoveLastNumero`, `AddWinPartie`, and `AddBingoWin`. EF maps it as a concurrency token; a conflicting write becomes HTTP `409 Conflict`. Migration `20261013150626_AddAssoEventLiveRevision` adds the integer column with default `0` and must be applied before deploying the API change.
+- `EventsController` publishes the mapped full `EventResponse` after each successful mutation through `ILiveTableauHub`. The hub keeps a bounded, latest-snapshot channel per event and API replica. `/asso-events/{id}/tableau/sse` subscribes before reading the initial database snapshot, uses `LiveRevision` as the SSE event ID, suggests a 3-second retry, emits a `ping` after 15 seconds of silence, and returns 404 for a missing event.
+- `LiveTableauSyncService` is a hosted service. Every second it checks database revisions only for events watched on its replica, loads a full snapshot only when a revision advanced, then publishes it through that replica's hub. This replaces the former `ISSEClientManager.SendToEvent` path and keeps clients on different API replicas in sync.
+- `GET /asso-events/today` uses `ParisCalendar` and excludes cancelled events. It returns the earliest event happening on the current Paris day, prioritizes Bingo, and supplies `LiveStatus` (`NotStarted`, `Live`, `Finished`) and the last drawn number for Bingo events only. The API returns 204 when none is happening and caches the endpoint for 10 seconds.
 - `RemoveLastNumeroCommandHandler` supports rollback across multiple empty previous parties, cleans the removed partie's `AddedBingoNumber` from `BingoNumeros`, and resets `BingoHasBeenWon` when undoing a bingo partie numero.
 - `Partie.RemoveLastNumero()` tolerates parties without line parties and inconsistent live state where the last drawn numero is absent from `LiveNumeros`.
 - `Partie.AddWin()` now safely returns `false` when no numero is drawn, when the current line is missing, or when the last numero already won.
