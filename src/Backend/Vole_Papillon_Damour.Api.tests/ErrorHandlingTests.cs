@@ -4,6 +4,7 @@ using ErrorOr;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Vole_Papillon_Damour.Api.Errors;
 
@@ -42,5 +43,29 @@ public sealed class ErrorHandlingTests
         await pipeline(context);
 
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.ServiceUnavailable);
+    }
+
+    [Fact]
+    public async Task UseErrorHandling_WhenTwoUpdatesCollide_ReturnsConflict()
+    {
+        var services = new ServiceCollection()
+            .AddLogging()
+            .AddMetrics()
+            .AddSingleton<DiagnosticListener>(_ => new DiagnosticListener("Vpd.Api.Tests"))
+            .BuildServiceProvider();
+        var application = new ApplicationBuilder(services);
+        application.UseErrorHandling();
+        application.Run(_ => throw new DbUpdateConcurrencyException("live tableau changed meanwhile"));
+        var pipeline = application.Build();
+        var context = new DefaultHttpContext
+        {
+            RequestServices = services
+        };
+        await using var responseBody = new MemoryStream();
+        context.Response.Body = responseBody;
+
+        await pipeline(context);
+
+        context.Response.StatusCode.Should().Be((int)HttpStatusCode.Conflict);
     }
 }

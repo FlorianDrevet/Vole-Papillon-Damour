@@ -192,3 +192,12 @@ The API startup wires:
   is present in the deployed main line; rollout did not rerun EF migrations because DEV was current.
 - Catalog SSR keeps public routes indexable and private account/admin routes `noindex, nofollow`;
   this behavior and the robots/sitemap smoke checks are retained as deployment invariants.
+
+## Azure regional migration
+
+- `infra/main.bicep` keeps the existing `rg-vpd-dev` resource group and provisions parallel regional resources with `-dev-fc` names in France Central. SQL server/database, ACS Communication Service, and the Azure OpenAI account are declared as existing resources so their configuration is not reapplied.
+- Shared ACR `vpdacrshared` is in `rg-core-florian`, France Central, Basic, public network enabled, and admin authentication disabled. Its name, resource group, subscription, and CI principal are parameterized; six new ACA identities receive `AcrPull`, and the GitHub deployment identity receives `Owner` on the registry.
+- GitHub application workflows target the `-dev-fc` Container Apps and shared ACR. `ACR - migrate images` imports and compares all tagged repositories from `vpdacrdev`; the old registry remains available for rollback.
+- `Storage - migrate blobs` copies from `vpdstdev` to `vpdstdevfc`, preserves each source container ACL, copies only missing or source-newer blobs, leaves newer/extra target blobs intact, validates that every source blob name exists at the target, and defaults database URL rewriting to `skip`. Its `preview` mode reports old Blob URL references before the separate `apply` mode can change them.
+- The OVH zone now routes the apex A record and `www`, `backoffice`, `livres`, and `scan` CNAMEs directly to the France Central ACA environment. All five domains have secured managed certificates and returned HTTP 200 with TLS verification successful. No active OVH CDN service was identified in the account; the former apex IP belonged to the old West Europe ACA environment.
+- Shared registry `vpdacrshared` in `rg-core-florian` now serves this repo and `mariage-edwige-henri`. The wedding project's 99 existing tags were imported with digests verified, and its backend/frontend GitHub workflows succeeded with OIDC. Keep the old `acrweh` and `vpdacrdev` registries and all other West Europe resources until the owner explicitly confirms deletion.

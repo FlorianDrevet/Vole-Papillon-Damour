@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E6 · Fiche loto le jour J — desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;family=Libre+Franklin:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#7fd8f5}a:hover{color:#ffffff}
+.mono{font-family:'IBM Plex Mono',monospace}
+.meta{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
+</style>
+</helmet>
+<div style="width:1440px;height:720px;box-sizing:border-box;background:#041d30;color:#dcecf7;font-family:'Libre Franklin',system-ui,sans-serif;padding:56px 44px">
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:64px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <a href="#" class="mono" style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none">← Tous les évènements</a>
+
+      <!-- E6 : encart du jour J, en tête de fiche -->
+      <div data-zone="E6-encart-direct" style="display:flex;align-items:center;gap:20px;padding:18px 20px;border-radius:12px;background:#0b2438;border:1px solid rgba(249,169,60,.45);max-width:650px;box-sizing:border-box">
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0">
+          <span class="mono" style="display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#f9a93c">
+            <span aria-hidden="true" style="width:9px;height:9px;border-radius:999px;background:#f0801c;box-shadow:0 0 0 4px rgba(240,128,28,.25)"></span>Tableau en direct
+          </span>
+          <span style="font-size:17px;font-weight:600;color:#ffffff">Le loto a commencé · dernier numéro <strong style="display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;margin-left:4px;border-radius:7px;background:#f0801c;color:#041d30;font-size:17px">42</strong></span>
+        </div>
+        <a data-zone="E6-bouton-suivre" href="#" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:999px;background:#ffffff;color:#041d30;font-size:15px;font-weight:700;text-decoration:none;white-space:nowrap">Suivre le tableau →</a>
+      </div>
+
+      <span class="mono" style="display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#f9a93c"><span aria-hidden="true" style="width:6px;height:6px;border-radius:999px;background:#f9a93c"></span>Loto</span>
+      <h1 style="margin:0;max-width:15ch;font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:64px;line-height:.98;letter-spacing:-.025em;color:#ffffff">Grand loto de Vole Papillon d'Amour</h1>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:650px;border-top:1px solid rgba(255,255,255,.1);padding-top:20px">
+        <div class="meta"><div style="display:flex;flex-direction:column;gap:4px"><span class="mono" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7fd8f5">Date</span><strong style="font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:19px;color:#ffffff">Dimanche [date]</strong></div></div>
+        <div class="meta"><div style="display:flex;flex-direction:column;gap:4px"><span class="mono" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7fd8f5">Horaires</span><strong style="font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:17px;color:#ffffff">Début 14:00 · Fin 18:30</strong></div></div>
+      </div>
+    </div>
+    <div style="height:420px;border-radius:12px;background:#ffffff;display:flex;align-items:center;justify-content:center;color:#6d8ba2;font-size:14px">Carte du lieu — inchangée</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

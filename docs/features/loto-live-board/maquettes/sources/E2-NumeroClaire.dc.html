@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E2 · Numéro tiré — palette B</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;800;900&amp;family=IBM+Plex+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.pal-a{--bg:#020e18;--panel:#071b2b;--line:#1b3c57;--text:#ffffff;--muted:#9dc2da;--last:#f0801c;--accent:#f9a93c}
+.pal-b{--bg:#ffffff;--panel:#f3f8fc;--line:#d9e9f4;--text:#041d30;--muted:#33536e;--last:#f0801c;--accent:#dc6412}
+.k{font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+</style>
+</helmet>
+<div class="pal-b" data-zone="E2-annonce-numero" style="width:1920px;height:1080px;box-sizing:border-box;padding:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font-family:'Libre Franklin',system-ui,sans-serif">
+  <span class="k">Numéro</span>
+  <span style="display:flex;align-items:center;justify-content:center;width:1240px;height:780px;border-radius:48px;background:var(--last);color:#041d30;font-size:780px;font-weight:900;line-height:1;letter-spacing:-.06em;font-variant-numeric:tabular-nums">42</span>
+  <span style="margin-top:28px;font-size:34px;font-weight:600;color:var(--muted)">Le jambon · 2 lignes · voisins 41 et 43</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

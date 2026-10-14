@@ -8,6 +8,10 @@ on:
         description: Image tag to build and deploy (default - the commit sha)
         type: string
         default: ''
+      source_ref:
+        description: Source commit or branch to build (default - the workflow ref)
+        type: string
+        default: ''
       run_migrations:
         description: Apply the EF Core migrations before deploying the new image
         type: boolean
@@ -20,8 +24,9 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-vpd-dev
-  REGISTRY_NAME: vpdacrdev
-  CONTAINER_APP: vpd-api-ca-dev
+  REGISTRY_NAME: ${{ vars.ACR_NAME }}
+  REGISTRY_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
+  CONTAINER_APP: vpd-api-ca-dev-fc
   IMAGE_NAME: vpd-api
   SQL_SERVER: vpd-sql-dev
   SQL_DATABASE: vole-papillon-damour-db
@@ -34,6 +39,8 @@ jobs:
     environment: development
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - uses: azure/login@v2
         with:
@@ -49,7 +56,7 @@ jobs:
           set -euo pipefail
           TAG="${{ inputs.image_tag }}"
           if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
-          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
+          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --resource-group "$REGISTRY_RESOURCE_GROUP" --query loginServer --output tsv)
           {
             echo "IMAGE_TAG=$TAG"
             echo "IMAGE=$LOGIN_SERVER/$IMAGE_NAME:$TAG"

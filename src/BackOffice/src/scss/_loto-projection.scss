@@ -1,0 +1,554 @@
+// Tableau du loto projeté en salle (E1, E2, E3) — maquettes
+// docs/features/loto-live-board/maquettes/preview/Main.html (palette A) et preview/E1-Claire.html (B).
+// Feuille globale, préfixée par .loto-projection : le budget de style d'un composant
+// (4 Ko) est trop petit pour une page plein écran à deux palettes. Les deux palettes
+// partagent la mise en page ; seules les variables changent (RG-22). Les états d'une
+// case se lisent par la luminosité (RG-01).
+.loto-projection {
+  .pal-a {
+    --bg: #020e18;
+    --panel: #071b2b;
+    --line: #1b3c57;
+    --cell: #0b2438;
+    --cell-num: #5f8199;
+    --on: #ffffff;
+    --on-num: #041d30;
+    --last: #f0801c;
+    --last-num: #041d30;
+    --last-big-bg: transparent;
+    --last-big-color: #f0801c;
+    --text: #ffffff;
+    --muted: #9dc2da;
+    --chip: #123552;
+    --accent: #f9a93c;
+    --won: #5f8199;
+    --qr-border: transparent;
+  }
+
+  .pal-b {
+    --bg: #ffffff;
+    --panel: #f3f8fc;
+    --line: #d9e9f4;
+    --cell: #e6eff6;
+    --cell-num: #5b7a92;
+    --on: #072b45;
+    --on-num: #ffffff;
+    --last: #f0801c;
+    --last-num: #041d30;
+    // Orange sur blanc = 2,6:1 : le dernier numéro devient un pavé orange à chiffres encre.
+    --last-big-bg: #f0801c;
+    --last-big-color: #041d30;
+    --text: #041d30;
+    --muted: #33536e;
+    --chip: #e9f4fb;
+    --accent: #b4500e;
+    --won: #6d8ba2;
+    --qr-border: #072b45;
+  }
+
+  .viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Libre Franklin', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cursor-hidden,
+  .cursor-hidden * {
+    cursor: none !important;
+  }
+
+  .stage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1920px;
+    height: 1080px;
+    transform-origin: center;
+  }
+
+  .screen {
+    width: 1920px;
+    height: 1080px;
+    box-sizing: border-box;
+  }
+
+  .screen-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 96px;
+    text-align: center;
+  }
+
+  .screen-split {
+    display: flex;
+    align-items: center;
+    gap: 96px;
+    padding: 80px 96px;
+  }
+
+  .split-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .k {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .k-lg {
+    font-size: 30px;
+    letter-spacing: .2em;
+  }
+
+  .k-accent {
+    color: var(--accent);
+  }
+
+  .muted {
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .lead {
+    font-size: 44px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  // E1 ---------------------------------------------------------------------------
+  .board {
+    width: 1920px;
+    height: 1080px;
+    box-sizing: border-box;
+    padding: 24px;
+    display: flex;
+    gap: 24px;
+  }
+
+  .grid {
+    flex: 0 0 1448px; // RG-23 : 75 % de la largeur, toute la hauteur.
+    display: grid;
+    grid-template-columns: repeat(10, minmax(0, 1fr));
+    grid-template-rows: repeat(9, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .c {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 10px;
+    padding: 0;
+    background: var(--cell);
+    color: var(--cell-num);
+    font: 800 76px/1 'Libre Franklin', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: progress;
+    }
+
+    &.on {
+      background: var(--on);
+      color: var(--on-num);
+    }
+
+    &.last {
+      background: var(--last);
+      color: var(--last-num);
+      font-weight: 900;
+    }
+
+    &.nb {
+      background: var(--cell);
+      color: var(--text);
+      box-shadow: inset 0 0 0 8px var(--text);
+    }
+  }
+
+  .side {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .side-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .side-rule {
+    border-top: 2px solid var(--line);
+    padding-top: 18px;
+  }
+
+  .partie-name {
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -.02em;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    height: 48px;
+    padding: 0 18px;
+    border-radius: 999px;
+    background: var(--chip);
+    font-size: 26px;
+    font-weight: 700;
+  }
+
+  .chip-lg {
+    height: 52px;
+    padding: 0 20px;
+    font-size: 28px;
+  }
+
+  .chip-accent {
+    background: var(--accent);
+    color: #041d30;
+  }
+
+  .chip-strong {
+    background: var(--on);
+    color: var(--on-num);
+  }
+
+  .last-big {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    border-radius: 20px;
+    background: var(--last-big-bg);
+    color: var(--last-big-color);
+    font-size: 300px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -.06em;
+  }
+
+  .neighbours {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .prev-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .prev {
+    flex: 1;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--on);
+    color: var(--on-num);
+    font-size: 44px;
+    font-weight: 800;
+  }
+
+  .lot {
+    font-size: 34px;
+    font-weight: 800;
+  }
+
+  .lot-won {
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--won);
+    text-decoration: line-through;
+  }
+
+  .bingo-panel {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 20px;
+    border-radius: 14px;
+    background: var(--panel);
+    border: 2px solid var(--accent);
+  }
+
+  .bingo-numbers {
+    font-size: 42px;
+    font-weight: 800;
+  }
+
+  // E2 ---------------------------------------------------------------------------
+  .announce {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1240px;
+    height: 780px;
+    border-radius: 48px;
+    background: var(--last-big-bg);
+    color: var(--last-big-color);
+    font-size: 780px; // RG-03 : ≥ 60 % de la hauteur.
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -.06em;
+  }
+
+  .announce-caption {
+    font-size: 34px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .pause-title {
+    font-size: 240px;
+    font-weight: 900;
+    line-height: .85;
+    letter-spacing: -.05em;
+  }
+
+  .bingo-panel-lg {
+    margin-top: 0;
+    padding: 28px 32px;
+    border-width: 3px;
+    border-radius: 20px;
+  }
+
+  .bingo-numbers-lg {
+    font-size: 96px;
+    font-weight: 900;
+    letter-spacing: -.02em;
+  }
+
+  .next-partie {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+  }
+
+  .next-partie-name {
+    font-size: 48px;
+    font-weight: 800;
+  }
+
+  .before-title {
+    font-size: 132px;
+    font-weight: 900;
+    line-height: .95;
+    letter-spacing: -.035em;
+  }
+
+  .first-partie {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-top: 3px solid var(--line);
+    padding-top: 32px;
+  }
+
+  .first-partie-name {
+    font-size: 60px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+
+  .finished-title {
+    font-size: 170px;
+    font-weight: 900;
+    line-height: .92;
+    letter-spacing: -.04em;
+  }
+
+  .finished-thanks {
+    font-size: 96px;
+    font-weight: 800;
+    color: var(--last);
+    letter-spacing: -.02em;
+  }
+
+  .bingo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 30px;
+    border-radius: 999px;
+    background: var(--panel);
+    border: 3px solid var(--accent);
+    font-size: 40px;
+    font-weight: 800;
+  }
+
+  .qr-card {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    padding: 36px;
+    border-radius: 28px;
+    background: #ffffff;
+    border: 4px solid var(--qr-border);
+    color: #041d30;
+
+    img {
+      image-rendering: pixelated;
+    }
+  }
+
+  .qr-title {
+    font-size: 32px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.15;
+  }
+
+  .qr-url {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    color: #0c6ea6;
+  }
+
+  // E3 ---------------------------------------------------------------------------
+  kbd {
+    font: 600 12px 'IBM Plex Mono', monospace;
+    padding: 3px 7px;
+    border-radius: 5px;
+    border: 1px solid #33536e;
+    color: #9dc2da;
+    background: #041d30;
+  }
+
+  .bar {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(7, 27, 43, .94);
+    border: 1px solid #1b3c57;
+    box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .8);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 52px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid #1b3c57;
+    background: #0b2438;
+    color: #dcecf7;
+    font: 600 17px 'Libre Franklin', sans-serif;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: .6;
+      cursor: progress;
+    }
+  }
+
+  .sep {
+    width: 1px;
+    height: 36px;
+    margin: 0 4px;
+    background: #1b3c57;
+  }
+
+  .hint {
+    padding: 0 6px;
+    font: 500 13px 'IBM Plex Mono', monospace;
+    color: #9dc2da;
+  }
+
+  .key-buffer {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(7, 27, 43, .94);
+    border: 1px solid #1b3c57;
+  }
+
+  .kbd-label {
+    font: 600 12px 'IBM Plex Mono', monospace;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #9dc2da;
+  }
+
+  .key-buffer-value {
+    font-size: 30px;
+    font-weight: 800;
+    color: #ffffff;
+  }
+
+  .toast {
+    position: absolute;
+    left: 50%;
+    bottom: 104px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    background: #3a1406;
+    border: 1px solid #dc6412;
+    color: #ffd9bf;
+    font-size: 18px;
+    font-weight: 600;
+
+    svg {
+      color: #f9a93c;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bar,
+    .toast,
+    .key-buffer {
+      transition: opacity .15s ease;
+    }
+  }
+}

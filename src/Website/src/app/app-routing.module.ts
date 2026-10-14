@@ -30,6 +30,7 @@ import {HospitalCareComponent} from "./feature/maxence/daily-life/hospital-care/
 import {SchoolComponent} from "./feature/maxence/daily-life/school/school.component";
 import {OrgansTransplantComponent} from "./feature/maxence/daily-life/organs-transplant/organs-transplant.component";
 import {TableauComponent} from "./feature/tableau/tableau.component";
+import {lotoRedirectGuard} from "./feature/tableau/loto-redirect.guard";
 import {VpdAllEventsComponent} from "./feature/vpd-all-events/vpd-all-events.component";
 import {LegalPageComponent} from "./feature/legal/legal-page.component";
 import {LEGAL_PAGE_PATHS} from "./feature/legal/legal-page-paths";
@@ -111,6 +112,11 @@ const routes: Routes = [
   {
     path: 'evenement/:id/tableau',
     component: TableauComponent
+  },
+  {
+    path: 'loto',
+    canActivate: [lotoRedirectGuard],
+    children: []
   },
   {
     path: 'maxence',

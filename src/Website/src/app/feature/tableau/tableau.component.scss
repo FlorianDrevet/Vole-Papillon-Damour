@@ -1,120 +1,48 @@
-.container-tableau {
-  @apply w-screen bg-ink-2 pb-10;
+// E4 : sorti = case claire, dernier = orange, voisin = case cerclée (mêmes repères que la projection).
+.k {
+  @apply font-mono text-[10px] font-semibold uppercase tracking-[.16em] text-mist lg:text-[11px];
 }
 
-.info-partie {
-  @apply flex flex-row justify-between md:h-[150px];
+.card {
+  @apply flex flex-col gap-2.5 rounded-[14px] border border-[#1b3c57] bg-[#071b2b] p-4 lg:p-[18px];
 }
 
-.partie {
-  @apply flex flex-row mb-[20px] md:mb-auto w-screen mt-[20px] md:mt-auto;
+.card-bingo {
+  @apply border-orange-2;
 }
 
-.tableau {
-  @apply flex flex-col w-[98%] m-auto;
+.k-accent {
+  @apply text-orange-2;
 }
 
-app-number {
-  border-width: 2px;
-  @apply w-full border-ink-2;
+.chip {
+  @apply inline-flex h-[30px] items-center rounded-full bg-[#123552] px-3 text-[13px] font-bold lg:h-8 lg:px-3.5 lg:text-sm;
 }
 
-app-number:last-child {
-  border-bottom-right-radius: 25px;
+.chip-accent {
+  @apply bg-orange-2 text-ink;
 }
 
-.ligne {
-  @apply flex flex-row;
+.chip-strong {
+  @apply bg-white text-ink;
 }
 
-.lots {
-  @apply flex flex-col mr-[5%] justify-end
+.prev {
+  @apply flex h-12 flex-1 items-center justify-center rounded-lg bg-white text-2xl font-extrabold tabular-nums text-ink lg:h-14 lg:text-[28px];
 }
 
-.lots app-tag {
-  width: fit-content;
-  margin-bottom: 10px;
-  margin-left: auto;
+.cell {
+  @apply flex h-8 items-center justify-center rounded-[5px] bg-[#0b2438] text-sm font-bold tabular-nums text-[#6d8ba2] lg:h-[84px] lg:rounded-lg lg:text-4xl lg:font-extrabold;
 }
 
-.bingo {
-  margin-top: 70px;
-  margin-left: 5%;
-  @apply  flex-row justify-between;
+.cell-on {
+  @apply bg-white font-extrabold text-ink;
 }
 
-.utils {
-  margin-right: 5%;
-  @apply flex flex-row;
+.cell-last {
+  @apply bg-orange font-black text-ink;
 }
 
-.win {
-  border: green 5px solid;
-  border-radius: 500px;
-  height: fit-content;
-  padding: 10px;
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-right: 10px;
-}
-
-.win img {
-  margin: auto;
-  height: auto;
-  width: 100px;
-}
-
-.bingo-won {
-  border: yellow 5px solid;
-  border-radius: 500px;
-  height: fit-content;
-  padding: 10px;
-  margin-top: auto;
-  margin-bottom: auto;
-}
-
-.bingo-won img {
-  margin: auto;
-  height: auto;
-  width: 100px;
-}
-
-.rollback {
-  border: red 5px solid;
-  border-radius: 500px;
-  height: fit-content;
-  padding: 10px;
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-right: 10px;
-}
-
-.rollback img {
-  margin: auto;
-  height: auto;
-  width: 100px;
-}
-
-.pause-title {
-  font-size: 200px;
-  width: fit-content;
-  @apply ml-auto mr-auto text-ink-2;
-}
-
-.bingo-numero-pause {
-  font-size: 150px;
-  text-align: center;
-  @apply ml-auto mr-auto text-ink-2;
-}
-
-.last-numero-title {
-  font-size: 150px;
-  width: fit-content;
-  @apply mr-auto text-ink-2;
-}
-
-.last-numero {
-  font-size: 250px;
-  text-align: center;
-  @apply ml-auto mr-auto text-ink-2;
+.cell-nb {
+  @apply bg-[#0b2438] text-white shadow-[inset_0_0_0_2px_#ffffff] lg:shadow-[inset_0_0_0_4px_#ffffff];
 }

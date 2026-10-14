@@ -27,6 +27,7 @@ public class AddBingoWinCommandHandler(IEventRepository eventRepository, IMapper
         } 
         
         assoEvent.BingoHasBeenWon = command.HasBeenWon;
+        assoEvent.MarkLiveChange();
         assoEvent = await eventRepository.UpdateAsync(assoEvent);
         return mapper.Map<AssoEventResult>(assoEvent);
     }

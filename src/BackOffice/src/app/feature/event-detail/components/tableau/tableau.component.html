@@ -1,71 +1,203 @@
-@if (assoEvent() === null || currentPartie() === null || currentLine() === null) {
-  <div class="flex h-screen items-center justify-center bg-ink-2">
-    <mat-spinner></mat-spinner>
-  </div>
-} @else {
-  <app-modal (closeModal)="isPaused.set(false)" [showModal]="isPaused()">
-    <h1 class="pause-title">Pause</h1>
-    <h2 class="bingo-numero-pause">{{ assoEvent()?.bingoNumeros?.join(" - ") }}</h2>
-  </app-modal>
-
-  <app-modal (closeModal)="isLastNumero.set(false)" [showModal]="isLastNumero()">
-    <h1 class="last-numero-title">Numéro :</h1>
-    <h2 class="last-numero">{{ lastNumero() }}</h2>
-  </app-modal>
-
-  <div class="container-tableau">
-    <div class="info-partie">
-      <div class="partie">
-        <app-tag [value]="currentPartie()?.name ?? ''" class="mr-10 ml-[6%]"></app-tag>
-        <app-tag [value]="currentLine()!.numberLine | lineNumberTitle"></app-tag>
-        @if (currentLine()!.numberLine === NumberLineEnum.ONELINE) {
-          <app-tag [value]="titleNbTimes()" class="ml-10"></app-tag>
-        }
-        @if (currentPartie()?.partieType !== PartieTypeEnum.STANDARD &&
-        (currentPartie()?.partieType !== PartieTypeEnum.CARTONPLEIN &&
-          currentPartie()?.partieType !== PartieTypeEnum.BINGO)) {
-          <app-tag [isBingo]='true' [value]="(currentPartie()?.partieType?.toString()) ?? ''" class="ml-10"></app-tag>
-        }
-      </div>
-      <div class="utils">
-        <button type="button" (click)="onRollBackClicked()" aria-label="Annuler le dernier numéro" class="util-btn util-btn-danger">
-          <app-icon name="undo" [size]="26"></app-icon>
-        </button>
-        <button type="button" (click)="onWinClicked()" aria-label="Marquer une ligne gagnante" class="util-btn util-btn-success">
-          <app-icon name="check" [size]="26"></app-icon>
-        </button>
-        <button type="button" (click)="onBingoWinClicked()" aria-label="Marquer le bingo gagné" class="util-btn util-btn-gold">
-          <app-icon name="trophy" [size]="26"></app-icon>
-        </button>
-      </div>
-    </div>
-    <div class="tableau">
-      @for (i of [].constructor(9); track i; let idx = $index) {
-        <div class="ligne">
-          @for (j of [].constructor(10); track j; let jdx = $index) {
-            <app-number
-              [assoEventId]="assoEvent()?.id ?? ''"
-              [isNeighbour]="isNeighboor((jdx + 1) + (idx) * 10)"
-              [partieId]="currentPartie()?.id ?? ''"
-              [isLastValue]="(jdx + 1) + (idx) * 10 === (currentPartie()?.lastNumeros!.slice(-1))[0]"
-              [isExited]="currentPartie()?.liveNumeros?.includes((jdx + 1) + (idx) * 10) ?? false"
-              [value]="(jdx + 1) + (idx) * 10" (newAssoEvent)="onNumberClicked($event)"></app-number>
-          }
+<div class="viewport"
+     [class.pal-a]="palette() === 'dark'"
+     [class.pal-b]="palette() === 'light'"
+     [class.cursor-hidden]="!controlsVisible()">
+  <div class="stage" [style.transform]="'translate(-50%, -50%) scale(' + stageScale() + ')'">
+    @switch (screen()) {
+      @case ('loading') {
+        <div class="screen screen-center" role="status" aria-label="Chargement du tableau">
+          <span class="k">Chargement du tableau…</span>
         </div>
       }
-    </div>
-    <div class="bingo">
-      @if ((currentPartie()?.partieType ?? PartieTypeEnum.BINGO).toString() !== 'Bingo') {
-        <app-tag [isBingo]="true"
-                 [value]="'Bingo :  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
-      } @else {
-        <div class="w-1/5"></div> <!-- To put on the right the Lot tag -->
+
+      @case ('numero') {
+        <!-- E2 · Numéro tiré -->
+        <div class="screen screen-center" aria-live="assertive">
+          <span class="k k-lg">Numéro</span>
+          <span class="announce">{{ announcedNumero() }}</span>
+          <span class="announce-caption">
+            {{ view().partieName }}
+            @if (view().lineLabel) { · {{ view().lineLabel }} }
+            @if (view().timesLabel) { · {{ view().timesLabel }} }
+            @if (view().neighbours.length > 0) { · voisins {{ view().neighbours.join(' et ') }} }
+          </span>
+        </div>
       }
-      <div class="lots">
-        @for (lot of currentLots(); track lot.id) {
-          <app-tag [value]="lot.name"></app-tag>
-        }
+
+      @case ('pause') {
+        <!-- E2 · Pause -->
+        <div class="screen screen-split">
+          <div class="split-main">
+            <span class="pause-title">Pause</span>
+            <span class="lead">On reprend dans quelques minutes.</span>
+            @if (view().showBingo || view().bingoWon) {
+              <div class="bingo-panel bingo-panel-lg">
+                <span class="k k-accent">Numéros du bingo</span>
+                <span class="bingo-numbers-lg">{{ view().bingoWon ? 'Gagné !' : view().bingoNumeros.join(' · ') }}</span>
+              </div>
+            }
+            @if (view().nextPartie; as next) {
+              <div class="next-partie">
+                <span class="k">Ensuite</span>
+                <span class="next-partie-name">
+                  Partie {{ view().partieNumber + 1 }} · {{ next.name }}
+                  @if (next.typeLabel) { <span class="muted">· {{ next.typeLabel }}</span> }
+                </span>
+              </div>
+            }
+          </div>
+          <ng-container [ngTemplateOutlet]="qrCode" [ngTemplateOutletContext]="{size: 420}"></ng-container>
+        </div>
+      }
+
+      @case ('before') {
+        <!-- E2 · Avant le début -->
+        <div class="screen screen-split">
+          <div class="split-main">
+            <span class="k">Vole Papillon d'Amour · {{ view().eventName }}</span>
+            <span class="before-title">Le loto va commencer</span>
+            @if (view().firstPartie; as first) {
+              <div class="first-partie">
+                <span class="k">Première partie</span>
+                <span class="first-partie-name">{{ first.name }}</span>
+                <div class="chips">
+                  @for (line of first.lines; track line.label) {
+                    <span class="chip chip-lg">{{ line.label }} · {{ line.lots.join(', ') }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          <ng-container [ngTemplateOutlet]="qrCode" [ngTemplateOutletContext]="{size: 480}"></ng-container>
+        </div>
+      }
+
+      @case ('finished') {
+        <!-- E2 · Loto terminé -->
+        <div class="screen screen-center finished">
+          <span class="k">Vole Papillon d'Amour · {{ view().eventName }}</span>
+          <span class="finished-title">Loto terminé</span>
+          <span class="finished-thanks">Merci à tous !</span>
+          <span class="bingo-pill"><span class="k k-accent">Bingo</span> {{ view().bingoWon ? 'Gagné !' : view().bingoNumeros.join(' · ') }}</span>
+          <span class="lead">Les bénéfices de cet après-midi soutiennent Maxence et sa famille.</span>
+        </div>
+      }
+
+      @default {
+        <!-- E1 · Tableau en jeu -->
+        <div class="board">
+          <div class="grid" aria-label="Grille des numéros 1 à 90">
+            @for (cell of view().cells; track cell.value) {
+              <button type="button"
+                      class="c"
+                      [class.on]="cell.state === 'drawn'"
+                      [class.last]="cell.state === 'last'"
+                      [class.nb]="cell.state === 'neighbour'"
+                      [disabled]="busy()"
+                      [attr.aria-label]="'Tirer le ' + cell.value"
+                      (click)="onCellClicked(cell)">{{ cell.value }}</button>
+            }
+          </div>
+
+          <div class="side">
+            <div class="side-block">
+              <span class="k">Partie {{ view().partieNumber }} / {{ view().partieCount }}</span>
+              <span class="partie-name">{{ view().partieName }}</span>
+              <div class="chips">
+                @if (view().lineLabel) { <span class="chip">{{ view().lineLabel }}</span> }
+                @if (view().timesLabel) { <span class="chip chip-accent">{{ view().timesLabel }}</span> }
+                @if (view().typeLabel) { <span class="chip chip-strong">{{ view().typeLabel }}</span> }
+              </div>
+            </div>
+
+            <div class="side-block side-rule">
+              <span class="k">Dernier numéro</span>
+              <span class="last-big">{{ view().lastNumero ?? '—' }}</span>
+              @if (view().neighbours.length > 0) {
+                <span class="neighbours">Voisins : {{ view().neighbours.join(' et ') }}</span>
+              }
+            </div>
+
+            @if (view().previousNumeros.length > 0) {
+              <div class="side-block">
+                <span class="k">Précédents</span>
+                <div class="prev-row">
+                  @for (numero of view().previousNumeros; track $index) {
+                    <span class="prev">{{ numero }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="side-block side-rule">
+              <span class="k">Lots de la ligne</span>
+              @for (lot of view().lots; track lot.id) {
+                <span class="lot" [class.lot-won]="lot.won">{{ lot.name }}</span>
+              }
+            </div>
+
+            @if (view().showBingo) {
+              <div class="bingo-panel">
+                <span class="k k-accent">Bingo</span>
+                <span class="bingo-numbers">{{ view().bingoWon ? 'Gagné !' : view().bingoNumeros.join(' · ') }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+
+    <!-- E3 · Régie discrète : masquée après 3 s sans souris (RG-04) -->
+    @if (controlsVisible() && keyBuffer() !== '') {
+      <div class="key-buffer" aria-live="polite">
+        <span class="kbd-label">Saisie</span>
+        <span class="key-buffer-value">{{ keyBuffer() }}_</span>
+        <kbd>Entrée</kbd>
       </div>
-    </div>
+    }
+
+    @if (toast(); as message) {
+      <div class="toast" role="alert">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>
+        {{ message }}
+      </div>
+    }
+
+    @if (controlsVisible()) {
+      <div class="bar" role="toolbar" aria-label="Régie du loto">
+        <button type="button" class="btn" [disabled]="busy()" (click)="run({type: 'undo'})">
+          <app-icon name="undo" [size]="22"></app-icon> Annuler le dernier <kbd>⌫</kbd>
+        </button>
+        <button type="button" class="btn" [disabled]="busy()" [attr.aria-busy]="busy()" (click)="run({type: 'line'})">
+          <app-icon name="check" [size]="22"></app-icon> Ligne gagnée <kbd>L</kbd>
+        </button>
+        <button type="button" class="btn" [disabled]="busy()" (click)="run({type: 'bingo'})">
+          <app-icon name="trophy" [size]="22"></app-icon> {{ view().bingoWon ? 'Annuler le bingo' : 'Bingo gagné' }} <kbd>B</kbd>
+        </button>
+        <button type="button" class="btn" (click)="run({type: 'pause'})">
+          <app-icon [name]="overlay() === 'pause' ? 'play' : 'pause'" [size]="22"></app-icon>
+          {{ overlay() === 'pause' ? 'Reprendre' : 'Pause' }} <kbd>Espace</kbd>
+        </button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="btn" (click)="run({type: 'palette'})"
+                [attr.aria-label]="palette() === 'dark' ? 'Passer en palette claire' : 'Passer en palette sombre'">
+          <app-icon name="contrast" [size]="22"></app-icon>
+          {{ palette() === 'dark' ? 'Palette claire' : 'Palette sombre' }} <kbd>P</kbd>
+        </button>
+        <button type="button" class="btn" (click)="run({type: 'fullscreen'})" aria-label="Plein écran">
+          <app-icon name="fullscreen" [size]="22"></app-icon> <kbd>F</kbd>
+        </button>
+        <span class="sep" aria-hidden="true"></span>
+        <span class="hint">Clic sur une case ou chiffres + <kbd>Entrée</kbd></span>
+      </div>
+    }
   </div>
-}
+</div>
+
+<ng-template #qrCode let-size="size">
+  <div class="qr-card">
+    <img src="images/loto-qr.svg" [width]="size" [height]="size" alt="QR code vers volepapillondamour.fr/loto">
+    <span class="qr-title">Suivez le tableau<br>sur votre téléphone</span>
+    <span class="qr-url">{{ shortUrl }}</span>
+  </div>
+</ng-template>

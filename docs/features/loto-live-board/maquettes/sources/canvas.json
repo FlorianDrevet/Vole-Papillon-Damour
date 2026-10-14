@@ -1,0 +1,56 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-10-13T13:30:00Z"},
+  "title": "Loto — tableau en direct",
+  "launch": {"view": "canvas", "page": "projection"},
+  "pages": [
+    {"id": "projection", "name": "Projection (backoffice)"},
+    {"id": "site", "name": "Site public"}
+  ],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1920, "h": 1080, "title": "E1 · Tableau projeté — palette A sombre", "page": "projection"},
+    "E1-Claire.dc.html": {"x": 2000, "y": 0, "w": 1920, "h": 1080, "title": "E1 · Tableau projeté — palette B claire (partie +1 / −1)", "page": "projection"},
+    "E3-Regie.dc.html": {"x": 0, "y": 1500, "w": 1920, "h": 1080, "title": "E3 · Contrôles visibles (souris active) — palette A", "page": "projection"},
+    "E2-Numero.dc.html": {"x": 0, "y": 3000, "w": 1920, "h": 1080, "title": "E2 · Numéro tiré — palette A", "page": "projection"},
+    "E2-AvantDebut.dc.html": {"x": 2000, "y": 3000, "w": 1920, "h": 1080, "title": "E2 · Avant le début (QR code) — palette A", "page": "projection"},
+    "E2-Pause.dc.html": {"x": 4000, "y": 3000, "w": 1920, "h": 1080, "title": "E2 · Pause (QR code) — palette A", "page": "projection"},
+    "E2-Termine.dc.html": {"x": 6000, "y": 3000, "w": 1920, "h": 1080, "title": "E2 · Loto terminé — palette A", "page": "projection"},
+    "E2-NumeroClaire.dc.html": {"x": 0, "y": 4500, "w": 1920, "h": 1080, "title": "E2 · Numéro tiré — palette B", "page": "projection"},
+    "E2-PauseClaire.dc.html": {"x": 2000, "y": 4500, "w": 1920, "h": 1080, "title": "E2 · Pause (QR code) — palette B", "page": "projection"},
+    "E2-AvantDebutClaire.dc.html": {"x": 4000, "y": 4500, "w": 1920, "h": 1080, "title": "E2 · Avant le début (QR code) — palette B", "page": "projection"},
+
+    "E5-Desktop.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 640, "title": "E5 · Bandeau « En direct » — desktop", "page": "site"},
+    "E5-Mobile.dc.html": {"x": 1520, "y": 0, "w": 390, "h": 700, "title": "E5 · Bandeau « En direct » — mobile", "page": "site"},
+    "E5-Etats.dc.html": {"x": 1990, "y": 0, "w": 1440, "h": 900, "title": "E5 · Bandeau — états", "page": "site"},
+    "E4-Mobile.dc.html": {"x": 0, "y": 1300, "w": 390, "h": 1560, "title": "E4 · Tableau en direct — mobile", "page": "site"},
+    "E4-Desktop.dc.html": {"x": 470, "y": 1300, "w": 1440, "h": 1000, "title": "E4 · Tableau en direct — desktop", "page": "site"},
+    "E4-Etats.dc.html": {"x": 1990, "y": 1300, "w": 1760, "h": 900, "title": "E4 · Tableau en direct — états", "page": "site"},
+    "E6-Desktop.dc.html": {"x": 0, "y": 3260, "w": 1440, "h": 720, "title": "E6 · Fiche loto le jour J — desktop", "page": "site"},
+    "E6-Mobile.dc.html": {"x": 1520, "y": 3260, "w": 390, "h": 980, "title": "E6 · Fiche loto le jour J — mobile", "page": "site"}
+  },
+  "order": [
+    "Main.dc.html", "E1-Claire.dc.html", "E3-Regie.dc.html",
+    "E2-Numero.dc.html", "E2-AvantDebut.dc.html", "E2-Pause.dc.html", "E2-Termine.dc.html",
+    "E2-NumeroClaire.dc.html", "E2-PauseClaire.dc.html", "E2-AvantDebutClaire.dc.html",
+    "E5-Desktop.dc.html", "E5-Mobile.dc.html", "E5-Etats.dc.html",
+    "E4-Mobile.dc.html", "E4-Desktop.dc.html", "E4-Etats.dc.html",
+    "E6-Desktop.dc.html", "E6-Mobile.dc.html"
+  ],
+  "notes": {
+    "tE1": {"x": 0, "y": -300, "text": "E1 · Tableau projeté — deux palettes, même mise en page", "kind": "title1", "maxW": 3920, "page": "projection"},
+    "nE1": {"x": 4000, "y": 0, "w": 420, "page": "projection", "fill": "orange", "text": "RG-01 : sorti / non sorti se lisent par la luminosité. 4 états lisibles en gris : non sorti (sombre), sorti (plein clair en A / plein encre en B), dernier (orange), voisin +1/−1 (case cerclée).\nRG-02/03 : chiffres grille 76 px, dernier numéro 320 px, Libre Franklin 800, chiffres tabulaires.\nRG-23 : grille = 75 % de la largeur, toute la hauteur. Pas de QR code ici (RG-21)."},
+    "nE1b": {"x": 4000, "y": 560, "w": 420, "page": "projection", "fill": "blue", "text": "RG-22 : palette basculée en direct par la touche P ou le bouton de régie (voir E3). Les deux palettes sont deux jeux de variables CSS sur la même mise en page."},
+    "tE3": {"x": 0, "y": 1200, "text": "E3 · Régie discrète (un seul écran projeté)", "kind": "title1", "maxW": 1920, "page": "projection"},
+    "nE3": {"x": 2000, "y": 1500, "w": 460, "page": "projection", "fill": "orange", "text": "RG-04 : barre, curseur et témoin de saisie masqués après 3 s sans souris. La barre réapparaît au mouvement de la souris.\nClavier : chiffres + Entrée = tirer · Retour arrière = annuler · L = ligne gagnée · B = bingo · Espace = pause / reprise · P = palette · F = plein écran.\nRG-05 : actions désactivées pendant l'envoi (bouton « en cours »).\nRG-06 : toast « Le numéro 42 est déjà sorti. »"},
+    "tE2": {"x": 0, "y": 2700, "text": "E2 · Annonces plein écran — palette A", "kind": "title1", "maxW": 7920, "page": "projection"},
+    "tE2b": {"x": 0, "y": 4200, "text": "E2 · Annonces plein écran — palette B", "kind": "title1", "maxW": 5920, "page": "projection"},
+    "nE2": {"x": 6000, "y": 4500, "w": 460, "page": "projection", "fill": "orange", "text": "RG-07 : annonce du numéro 2 s, remplacée par la saisie suivante.\nRG-08 : Pause après la ligne qui termine une partie « pause après », fermée par « Reprendre ».\nRG-09 : avant la 1re partie / après la dernière → ces écrans, jamais d'erreur.\nRG-21/24 : QR code uniquement Avant le début et Pause ; adresse courte volepapillondamour.fr/loto."},
+
+    "tE5": {"x": 0, "y": -300, "text": "E5 · Bandeau « Aujourd'hui » — toutes les pages du site", "kind": "title1", "maxW": 3430, "page": "site"},
+    "nE5": {"x": 3510, "y": 0, "w": 420, "page": "site", "fill": "orange", "text": "RG-16 : jour J = date de Paris entre début et fin ; annulé exclu.\nRG-17 : loto prioritaire si plusieurs événements.\nRG-18 : avant → En direct (1er numéro) → Terminé.\nRG-19 : fermeture mémorisée pour la journée ; réapparaît une fois au passage En direct.\nRG-20 : absent de la page du tableau ; pas de saut de mise en page."},
+    "tE4": {"x": 0, "y": 1000, "text": "E4 · Tableau en direct — téléphone des joueurs", "kind": "title1", "maxW": 3750, "page": "site"},
+    "nE4": {"x": 3830, "y": 1300, "w": 420, "page": "site", "fill": "orange", "text": "RG-10 : chaque changement en ≤ 2 s.\nRG-12 : reconnexion seule + état complet resynchronisé.\nRG-13 : « Reconnexion… » après 5 s, « Hors ligne » si le téléphone n'a plus de réseau ; dernier état gardé.\nRG-15 : événement inconnu → message dédié.\nPas d'écran Pause côté téléphone (décision du 13/10)."},
+    "tE6": {"x": 0, "y": 2960, "text": "E6 · Fiche d'un événement loto — le jour J", "kind": "title1", "maxW": 1910, "page": "site"}
+  },
+  "designSystems": []
+}

@@ -10,4 +10,12 @@ public interface IEventRepository: IRepository<AssoEvents>
     Task<AssoEvents?> GetNextBooksAsync();
     Task<List<AssoEvents>> GetNextOtherAsync();
     Task<List<AssoEvents>> GetNextEventsAsync();
+
+    /// <summary>Events not cancelled that start or end at or after <paramref name="fromUtc"/>.</summary>
+    Task<List<AssoEvents>> GetNotCancelledFromAsync(DateTimeOffset fromUtc, CancellationToken cancellationToken);
+
+    /// <summary>Current <c>LiveRevision</c> of each existing event among <paramref name="ids"/>.</summary>
+    Task<IReadOnlyDictionary<AssoEventsId, int>> GetLiveRevisionsAsync(
+        IReadOnlyCollection<AssoEventsId> ids,
+        CancellationToken cancellationToken);
 }

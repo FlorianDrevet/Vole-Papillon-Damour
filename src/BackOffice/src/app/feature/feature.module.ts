@@ -47,9 +47,6 @@ import {
   CreationUpdateLotComponent
 } from './event-detail/components/bingo-event/components/dialogs/creation-update-line-partie/creation-update-lot.component';
 import {TableauComponent} from "./event-detail/components/tableau/tableau.component";
-import {ModalComponent} from "./event-detail/components/tableau/components/modal-tableau/modal.component";
-import {TagComponent} from "./event-detail/components/tableau/components/tag/tag.component";
-import {NumberComponent} from "./event-detail/components/tableau/components/number/number.component";
 import {
   CreateUpdateProductDialogComponent
 } from '../shared/components/dialogs/create-update-product-dialog/create-update-product-dialog.component';
@@ -88,9 +85,6 @@ export const MY_DATE_FORMATS: MatDateFormats = {
     CreationUpdatePartieComponent,
     CreationUpdateLotComponent,
     TableauComponent,
-    ModalComponent,
-    TagComponent,
-    NumberComponent,
     CreateUpdateProductDialogComponent,
     CatalogAdministrationComponent,
   ],

@@ -6,6 +6,7 @@ import {RouterLink, RouterLinkActive} from "@angular/router";
 import { NavigationMobileComponent } from './layouts/navigation/navigation-mobile/navigation-mobile.component';
 import { CarouselComponent } from './layouts/footer/components/carousel/carousel.component';
 import {SharedModule} from "../shared/shared.module";
+import { TodayBannerComponent } from './layouts/today-banner/today-banner.component';
 
 
 
@@ -15,6 +16,7 @@ import {SharedModule} from "../shared/shared.module";
     NavigationComponent,
     NavigationMobileComponent,
     CarouselComponent,
+    TodayBannerComponent,
   ],
   exports: [
     FooterComponent,

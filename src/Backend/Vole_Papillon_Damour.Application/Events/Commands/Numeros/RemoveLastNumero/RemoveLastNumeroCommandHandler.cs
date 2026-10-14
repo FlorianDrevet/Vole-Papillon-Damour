@@ -65,6 +65,7 @@ public class RemoveLastNumeroCommandHandler(IEventRepository eventRepository, IM
             assoEvent.BingoHasBeenWon = false;
         }
 
+        assoEvent.MarkLiveChange();
         assoEvent = await eventRepository.UpdateAsync(assoEvent);
         return mapper.Map<AssoEventResult>(assoEvent);
     }

@@ -8,6 +8,10 @@ on:
         description: Image tag to build and deploy (default - the commit sha)
         type: string
         default: ''
+      source_ref:
+        description: Source commit or branch to build (default - the workflow ref)
+        type: string
+        default: ''
 
 permissions:
   id-token: write
@@ -15,11 +19,12 @@ permissions:
 
 env:
   RESOURCE_GROUP: rg-vpd-dev
-  REGISTRY_NAME: vpdacrdev
-  CONTAINER_APP: vpd-bo-ca-dev
-  API_CONTAINER_APP: vpd-api-ca-dev
-  WEBSITE_CONTAINER_APP: vpd-web-ca-dev
-  APPLICATION_INSIGHTS: vpd-bo-appi-dev
+  REGISTRY_NAME: ${{ vars.ACR_NAME }}
+  REGISTRY_RESOURCE_GROUP: ${{ vars.ACR_RESOURCE_GROUP }}
+  CONTAINER_APP: vpd-bo-ca-dev-fc
+  API_CONTAINER_APP: vpd-api-ca-dev-fc
+  WEBSITE_CONTAINER_APP: vpd-web-ca-dev-fc
+  APPLICATION_INSIGHTS: vpd-bo-appi-dev-fc
   IMAGE_NAME: vpd-bo
   DOCKERFILE: src/BackOffice/Dockerfile
   BUILD_CONTEXT: src
@@ -30,6 +35,8 @@ jobs:
     environment: development
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - uses: azure/login@v2
         with:
@@ -47,7 +54,7 @@ jobs:
           set -euo pipefail
           TAG="${{ inputs.image_tag }}"
           if [ -z "$TAG" ]; then TAG="${GITHUB_SHA::7}"; fi
-          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --query loginServer --output tsv)
+          LOGIN_SERVER=$(az acr show --name "$REGISTRY_NAME" --resource-group "$REGISTRY_RESOURCE_GROUP" --query loginServer --output tsv)
           API_FQDN=$(az containerapp show --name "$API_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \
             --query properties.configuration.ingress.fqdn --output tsv)
           WEBSITE_FQDN=$(az containerapp show --name "$WEBSITE_CONTAINER_APP" --resource-group "$RESOURCE_GROUP" \

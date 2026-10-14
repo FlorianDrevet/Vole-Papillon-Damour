@@ -5,6 +5,9 @@
 @description('Name of the scheduled query rule')
 param name string
 
+@description('Azure region that stores this alert rule')
+param location string
+
 @description('Display name shown in Azure Monitor')
 param displayName string
 
@@ -40,7 +43,7 @@ param tags object = {}
 
 resource scheduledQueryRule 'Microsoft.Insights/scheduledQueryRules@2023-12-01' = {
   name: name
-  location: resourceGroup().location
+  location: location
   kind: 'LogAlert'
   tags: tags
   properties: {

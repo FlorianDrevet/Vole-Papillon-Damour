@@ -72,4 +72,33 @@ public class EventRepository: BaseRepository<AssoEvents, ProjectDbContext>, IEve
             .OrderBy(x => x.DateStart)
             .ToListAsync();
     }
+
+    public async Task<List<AssoEvents>> GetNotCancelledFromAsync(
+        DateTimeOffset fromUtc,
+        CancellationToken cancellationToken)
+    {
+        return await Context.AssoEvents
+            .Where(x => !x.IsCancelled && (x.DateStart >= fromUtc || x.DateEnd >= fromUtc))
+            .OrderBy(x => x.DateStart)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyDictionary<AssoEventsId, int>> GetLiveRevisionsAsync(
+        IReadOnlyCollection<AssoEventsId> ids,
+        CancellationToken cancellationToken)
+    {
+        if (ids.Count == 0)
+        {
+            return new Dictionary<AssoEventsId, int>();
+        }
+
+        var requestedIds = ids.ToList();
+        var revisions = await Context.AssoEvents
+            .AsNoTracking()
+            .Where(x => requestedIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.LiveRevision })
+            .ToListAsync(cancellationToken);
+
+        return revisions.ToDictionary(x => x.Id, x => x.LiveRevision);
+    }
 }

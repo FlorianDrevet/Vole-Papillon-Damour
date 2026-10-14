@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E4 · Tableau en direct — mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#7fd8f5}a:hover{color:#ffffff}
+.k{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#9dc2da}
+.g{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}
+.c{display:flex;align-items:center;justify-content:center;height:32px;border-radius:5px;background:#0b2438;color:#6d8ba2;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.c.on{background:#ffffff;color:#041d30;font-weight:800}
+.c.last{background:#f0801c;color:#041d30;font-weight:900}
+.p{flex:1;height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#ffffff;color:#041d30;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:999px;background:#123552;font-size:13px;font-weight:700}
+.card{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:14px;background:#071b2b;border:1px solid #1b3c57}
+</style>
+</head>
+<body>
+<div style="width:390px;min-height:1560px;box-sizing:border-box;padding:12px 16px 40px;display:flex;flex-direction:column;gap:14px;background:#020e18;color:#ffffff;font-family:'Libre Franklin',system-ui,sans-serif">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;height:44px">
+    <a href="#" style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;text-decoration:none">← Grand loto</a>
+    <span data-zone="E4-etat-connexion" role="status" style="display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:999px;background:#0b2438;border:1px solid #1b3c57;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#f9a93c">
+      <span aria-hidden="true" style="width:8px;height:8px;border-radius:999px;background:#f0801c;box-shadow:0 0 0 3px rgba(240,128,28,.25)"></span>
+      En direct
+    </span>
+  </div>
+
+  <div data-zone="E4-dernier-numero" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:18px 16px 22px;border-radius:18px;background:#071b2b;border:1px solid #1b3c57" aria-live="polite">
+    <span class="k">Dernier numéro</span>
+    <span style="font-size:184px;font-weight:900;line-height:.9;letter-spacing:-.06em;color:#f0801c;font-variant-numeric:tabular-nums">42</span>
+  </div>
+
+  <div data-zone="E4-precedents" style="display:flex;flex-direction:column;gap:8px">
+    <span class="k">Précédents</span>
+    <div style="display:flex;gap:8px"><span class="p">75</span><span class="p">12</span><span class="p">88</span><span class="p">31</span><span class="p">56</span></div>
+  </div>
+
+  <div data-zone="E4-partie" class="card">
+    <span class="k">Partie 3 / 8</span>
+    <span style="font-size:24px;font-weight:800;letter-spacing:-.01em">Panier gourmand</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip">1 ligne</span><span class="chip" style="background:#f9a93c;color:#041d30">2ᵉ fois</span></div>
+    <div data-zone="E4-lots" style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #1b3c57;padding-top:10px">
+      <span class="k">Lots de la ligne</span>
+      <span style="font-size:15px;color:#6d8ba2;text-decoration:line-through">Bon d'achat 30 €</span>
+      <span style="font-size:17px;font-weight:700">Panier garni du terroir</span>
+    </div>
+  </div>
+
+  <div data-zone="E4-grille" style="display:flex;flex-direction:column;gap:8px">
+    <span class="k">Tous les numéros</span>
+    <div class="g" aria-label="Grille des numéros 1 à 90">
+      <span class="c">1</span><span class="c">2</span><span class="c on">3</span><span class="c">4</span><span class="c">5</span><span class="c">6</span><span class="c on">7</span><span class="c">8</span><span class="c">9</span><span class="c">10</span>
+      <span class="c">11</span><span class="c on">12</span><span class="c">13</span><span class="c on">14</span><span class="c">15</span><span class="c">16</span><span class="c">17</span><span class="c on">18</span><span class="c">19</span><span class="c">20</span>
+      <span class="c">21</span><span class="c">22</span><span class="c on">23</span><span class="c">24</span><span class="c">25</span><span class="c">26</span><span class="c on">27</span><span class="c">28</span><span class="c">29</span><span class="c">30</span>
+      <span class="c on">31</span><span class="c">32</span><span class="c">33</span><span class="c on">34</span><span class="c">35</span><span class="c">36</span><span class="c">37</span><span class="c">38</span><span class="c">39</span><span class="c">40</span>
+      <span class="c">41</span><span class="c last">42</span><span class="c">43</span><span class="c">44</span><span class="c on">45</span><span class="c">46</span><span class="c">47</span><span class="c">48</span><span class="c on">49</span><span class="c">50</span>
+      <span class="c">51</span><span class="c on">52</span><span class="c">53</span><span class="c">54</span><span class="c">55</span><span class="c on">56</span><span class="c">57</span><span class="c">58</span><span class="c">59</span><span class="c on">60</span>
+      <span class="c on">61</span><span class="c">62</span><span class="c on">63</span><span class="c">64</span><span class="c">65</span><span class="c">66</span><span class="c on">67</span><span class="c">68</span><span class="c">69</span><span class="c">70</span>
+      <span class="c">71</span><span class="c on">72</span><span class="c">73</span><span class="c">74</span><span class="c on">75</span><span class="c">76</span><span class="c">77</span><span class="c">78</span><span class="c on">79</span><span class="c">80</span>
+      <span class="c">81</span><span class="c">82</span><span class="c">83</span><span class="c on">84</span><span class="c">85</span><span class="c">86</span><span class="c">87</span><span class="c on">88</span><span class="c">89</span><span class="c">90</span>
+    </div>
+    <span style="font-size:12px;color:#9dc2da">23 numéros sortis</span>
+  </div>
+
+  <div data-zone="E4-bingo" class="card" style="border-color:#f9a93c">
+    <span class="k" style="color:#f9a93c">Bingo</span>
+    <span style="font-size:30px;font-weight:800;font-variant-numeric:tabular-nums">14 · 63 · 7</span>
+  </div>
+
+  <span style="font-size:12px;color:#9dc2da;text-align:center">Mis à jour automatiquement, pas besoin de recharger la page.</span>
+</div>
+</body>
+</html>

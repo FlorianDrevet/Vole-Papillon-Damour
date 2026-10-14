@@ -10,6 +10,33 @@
         ← Tous les évènements
       </a>
 
+      @if (liveLoto(); as loto) {
+        <!-- E6 : maquettes preview/E6-Desktop.html, preview/E6-Mobile.html -->
+        <div class="flex max-w-[650px] flex-col gap-3 rounded-xl border border-orange-2/45 bg-[#0b2438] p-4 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-[18px]">
+          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span class="inline-flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[.18em] text-orange-2 sm:text-[11px]">
+              <span aria-hidden="true" class="h-2 w-2 rounded-full bg-orange shadow-[0_0_0_4px_rgba(240,128,28,.25)]"></span>Tableau en direct
+            </span>
+            <span class="text-base font-semibold text-white sm:text-[17px]">
+              @switch (loto.liveStatus) {
+                @case ('Live') {
+                  Le loto a commencé
+                  @if (loto.lastNumero !== null) {
+                    · dernier numéro <strong class="ml-1 inline-flex h-7 min-w-[32px] items-center justify-center rounded-[7px] bg-orange px-1 text-ink">{{ loto.lastNumero }}</strong>
+                  }
+                }
+                @case ('Finished') { Le loto est terminé, merci à tous ! }
+                @default { Le tableau s'animera au premier numéro tiré. }
+              }
+            </span>
+          </div>
+          <a [routerLink]="['/evenement', loto.id, 'tableau']"
+             class="inline-flex h-12 items-center justify-center whitespace-nowrap rounded-full bg-white px-5 text-[15px] font-bold text-ink transition hover:bg-mist-2 sm:h-11">
+            {{ loto.liveStatus === 'Finished' ? 'Voir le tableau final' : 'Suivre le tableau' }} →
+          </a>
+        </div>
+      }
+
       <div class="flex flex-wrap items-center gap-3">
         <span class="inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[.18em] text-orange-2">
           <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-orange-2"></span>
