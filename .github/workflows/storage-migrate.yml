@@ -1,8 +1,8 @@
 name: Storage - migrate blobs
 
-# Manual only. Server-side copies every blob of the old storage account into the
-# new one, then repoints the URLs held in the database. The old account is only
-# ever read, so it keeps serving the images until you decide to retire it.
+# Manual only. Incrementally copies missing or source-newer blobs into the new
+# account, preserves newer destination blobs and never deletes destination data.
+# Database URL rewriting is separately selectable and defaults to skip.
 on:
   workflow_dispatch:
     inputs:
@@ -14,10 +14,14 @@ on:
         description: Storage account to receive the blobs
         type: string
         default: vpdstdevfc
-      rewrite_urls:
-        description: Rewrite the image URLs stored in the database
-        type: boolean
-        default: false
+      rewrite_mode:
+        description: Preview matching database URLs, apply the rewrite, or skip it
+        type: choice
+        options:
+          - skip
+          - preview
+          - apply
+        default: skip
 
 permissions:
   id-token: write
@@ -34,6 +38,7 @@ jobs:
     environment: development
     env:
       TARGET_ACCOUNT: ${{ inputs.target_account }}
+      REWRITE_MODE: ${{ inputs.rewrite_mode }}
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +52,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Copy the blobs
+      - name: Copy missing or source-newer blobs
         run: |
           set -euo pipefail
           SOURCE="${{ inputs.source_account }}"
@@ -76,12 +81,13 @@ jobs:
               --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
               --public-access "$access" --output none
 
-            az storage blob copy start-batch \
+            az storage copy \
+              --source "https://$SOURCE.blob.core.windows.net/$container" \
+              --destination "https://$TARGET_ACCOUNT.blob.core.windows.net/$container" \
+              --recursive \
               --source-account-name "$SOURCE" --source-account-key "$SOURCE_KEY" \
-              --source-container "$container" \
               --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
-              --destination-container "$container" \
-              --output none
+              -- --overwrite=ifSourceNewer
 
             echo "::endgroup::"
           done
@@ -90,39 +96,6 @@ jobs:
           echo "$containers" >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
           echo "TARGET_KEY=$TARGET_KEY" >> "$GITHUB_ENV"
-
-      # start-batch returns as soon as the service accepts the copies, so the
-      # run waits for them rather than reporting a success the blobs have not
-      # reached yet.
-      - name: Wait for the copies to settle
-        run: |
-          set -euo pipefail
-          settled=false
-          for attempt in $(seq 1 60); do
-            pending=0
-            failed=0
-            for container in $CONTAINERS; do
-              count=$(az storage blob list --container-name "$container" \
-                --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
-                --query "length([?properties.copy.status=='pending'])" --output tsv)
-              pending=$((pending + count))
-              count=$(az storage blob list --container-name "$container" \
-                --account-name "$TARGET_ACCOUNT" --account-key "$TARGET_KEY" \
-                --query "length([?properties.copy.status=='failed'])" --output tsv)
-              failed=$((failed + count))
-            done
-            if [ "$failed" -gt 0 ]; then
-              echo "$failed blob copies failed" >&2
-              exit 1
-            fi
-            if [ "$pending" -eq 0 ]; then settled=true; break; fi
-            echo "attempt $attempt: $pending blobs still copying"
-            sleep 5
-          done
-          if [ "$settled" != true ]; then
-            echo "blob copies did not settle before the timeout" >&2
-            exit 1
-          fi
 
       - name: Report the blob counts
         run: |
@@ -135,23 +108,39 @@ jobs:
           {
             echo "### Blobs"
             echo ""
-            echo "| Container | $SOURCE | $TARGET_ACCOUNT |"
-            echo "| --- | ---: | ---: |"
+            echo "| Container | $SOURCE source blobs | $TARGET_ACCOUNT target blobs | Source blobs missing at target |"
+            echo "| --- | ---: | ---: | ---: |"
             for container in $CONTAINERS; do
-              a=$(az storage blob list --container-name "$container" --account-name "$SOURCE" \
-                --account-key "$SOURCE_KEY" --query "length(@)" --output tsv)
-              b=$(az storage blob list --container-name "$container" --account-name "$TARGET_ACCOUNT" \
-                --account-key "$TARGET_KEY" --query "length(@)" --output tsv)
-              echo "| $container | $a | $b |"
-              if [ "$a" -ne "$b" ]; then
-                echo "Blob count mismatch in $container: source=$a target=$b" >&2
+              source_names=$(mktemp)
+              target_names=$(mktemp)
+              az storage blob list --container-name "$container" --account-name "$SOURCE" \
+                --account-key "$SOURCE_KEY" --query "[].name" --output json > "$source_names"
+              az storage blob list --container-name "$container" --account-name "$TARGET_ACCOUNT" \
+                --account-key "$TARGET_KEY" --query "[].name" --output json > "$target_names"
+              missing=$(python3 - "$source_names" "$target_names" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as source_file:
+              source = set(json.load(source_file))
+          with open(sys.argv[2], encoding="utf-8") as target_file:
+              target = set(json.load(target_file))
+          print(len(source - target))
+          PY
+              )
+              a=$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1], encoding="utf-8"))))' "$source_names")
+              b=$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1], encoding="utf-8"))))' "$target_names")
+              rm -f "$source_names" "$target_names"
+              echo "| $container | $a | $b | $missing |"
+              if [ "$missing" -ne 0 ]; then
+                echo "$missing source blobs are missing from target container $container" >&2
                 exit 1
               fi
             done
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open the database to this runner
-        if: inputs.rewrite_urls
+        if: inputs.rewrite_mode != 'skip'
         run: |
           set -euo pipefail
           RUNNER_IP=$(curl -fsS https://api.ipify.org)
@@ -161,7 +150,7 @@ jobs:
             --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP" --output none
 
       - name: Rewrite the stored URLs
-        if: inputs.rewrite_urls
+        if: inputs.rewrite_mode != 'skip'
         env:
           SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
           SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
@@ -172,18 +161,20 @@ jobs:
           CONNECTION="Server=tcp:$SQL_FQDN,1433;Initial Catalog=$SQL_DATABASE;User ID=$SQL_ADMIN_LOGIN;Password=$SQL_ADMIN_PASSWORD;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
           OLD="https://${{ inputs.source_account }}.blob.core.windows.net/"
           NEW="https://$TARGET_ACCOUNT.blob.core.windows.net/"
+          APPLY_ARGS=()
+          if [ "$REWRITE_MODE" = "apply" ]; then APPLY_ARGS+=(--apply); fi
           dotnet run --project tools/DbRewriteUrls --configuration Release -- \
-            "$CONNECTION" "$OLD" "$NEW" --apply | tee rewrite.log
+            "$CONNECTION" "$OLD" "$NEW" "${APPLY_ARGS[@]}" | tee rewrite.log
 
       - name: Close the database to this runner
-        if: always() && inputs.rewrite_urls
+        if: always() && inputs.rewrite_mode != 'skip'
         run: |
           az sql server firewall-rule delete \
             --resource-group "$RESOURCE_GROUP" --server "$SQL_SERVER" \
             --name "gh-rewrite-${{ github.run_id }}" --output none || true
 
       - name: Report the rewrite
-        if: always() && inputs.rewrite_urls
+        if: always() && inputs.rewrite_mode != 'skip'
         run: |
           {
             echo "### URLs"
