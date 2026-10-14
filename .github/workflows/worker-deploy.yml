@@ -9,6 +9,10 @@ on:
         description: Image tag to build and deploy (default - the commit sha)
         type: string
         default: ''
+      source_ref:
+        description: Source commit or branch to build (default - the workflow ref)
+        type: string
+        default: ''
 
 permissions:
   id-token: write
@@ -29,6 +33,8 @@ jobs:
     environment: development
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - uses: azure/login@v2
         with:
