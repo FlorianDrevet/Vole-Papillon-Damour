@@ -143,15 +143,25 @@ jobs:
 
           echo "Final ACS verification states: Domain=$domain_status SPF=$spf_status DKIM=$dkim_status DKIM2=$dkim2_status DMARC=$dmarc_status"
 
-          if az communication show \
+          if COMMUNICATION_ID=$(az communication show \
               --name "$COMMUNICATION_SERVICE" \
               --resource-group "$RESOURCE_GROUP" \
-              --only-show-errors >/dev/null 2>&1; then
-            az communication update \
-              --name "$COMMUNICATION_SERVICE" \
-              --resource-group "$RESOURCE_GROUP" \
-              --linked-domains "$DOMAIN_ID" \
-              --output none
+              --query id --output tsv --only-show-errors 2>/dev/null); then
+            LINKED_DOMAINS=$(az resource show \
+              --ids "$COMMUNICATION_ID" \
+              --query properties.linkedDomains --output json)
+            if jq -e --arg domain "$DOMAIN_ID" '. // [] | index($domain) != null' \
+                <<<"$LINKED_DOMAINS" >/dev/null; then
+              echo "ACS email domain is already linked to the Communication Service."
+            else
+              mapfile -t linked_domains < <(jq -r '.[]?' <<<"$LINKED_DOMAINS")
+              linked_domains+=("$DOMAIN_ID")
+              az communication update \
+                --name "$COMMUNICATION_SERVICE" \
+                --resource-group "$RESOURCE_GROUP" \
+                --linked-domains "${linked_domains[@]}" \
+                --output none
+            fi
           else
             az communication create \
               --name "$COMMUNICATION_SERVICE" \
