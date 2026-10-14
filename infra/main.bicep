@@ -884,6 +884,7 @@ module performanceWorkbook './modules/Monitor/workbook.module.bicep' = {
     location: targetLocation
     displayName: 'VPD - Performance et santé'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    resourceNameSuffix: targetEnvironmentShort
     tags: tags
   }
 }

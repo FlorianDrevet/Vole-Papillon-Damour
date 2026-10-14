@@ -16,12 +16,15 @@ param displayName string
 @description('Resource ID of the Log Analytics workspace queried by the workbook')
 param workspaceId string
 
+@description('Optional suffix to give a parallel regional workbook its own resource identity')
+param resourceNameSuffix string = ''
+
 @description('Resource tags')
 param tags object = {}
 
 resource workbook 'Microsoft.Insights/workbooks@2023-06-01' = {
-  // A workbook name must be a GUID; keep it stable so redeployments update in place.
-  name: guid(resourceGroup().id, 'vpd-performance-workbook')
+  // A workbook name must be a GUID; include a regional suffix for parallel workbooks.
+  name: guid(resourceGroup().id, 'vpd-performance-workbook', resourceNameSuffix)
   location: location
   tags: tags
   kind: 'shared'
