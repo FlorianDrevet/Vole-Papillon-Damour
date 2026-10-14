@@ -526,6 +526,7 @@ module workerHeartbeatAlert './modules/Monitor/scheduledQueryRule.module.bicep' 
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-worker-heartbeat', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'VPD worker heartbeat missing'
     ruleDescription: 'The worker has not completed a sweep in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -545,6 +546,7 @@ module workerEnrichmentHeartbeatAlert './modules/Monitor/scheduledQueryRule.modu
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-worker-enrichment-heartbeat', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'VPD worker enrichment heartbeat missing'
     ruleDescription: 'The worker has not completed an enrichment run in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -564,6 +566,7 @@ module lateAnnouncementAlert './modules/Monitor/scheduledQueryRule.module.bicep'
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-book-announcements-late', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Book announcements are late'
     ruleDescription: 'Due book announcements remain unreleased after a worker sweep.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -583,6 +586,7 @@ module lateAlertQueueAlert './modules/Monitor/scheduledQueryRule.module.bicep' =
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-book-alert-queue-late', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Book alert queue is late'
     ruleDescription: 'The oldest due book alert has been waiting for at least 30 minutes.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -602,6 +606,7 @@ module slowBookMetadataAlert './modules/Monitor/scheduledQueryRule.module.bicep'
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-book-metadata-slow', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Book metadata lookup is slow'
     ruleDescription: 'At least one API book metadata request exceeded three seconds in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -621,6 +626,7 @@ module socialImportFailureAlert './modules/Monitor/scheduledQueryRule.module.bic
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-social-import-failures', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Social actuality import failed three times'
     ruleDescription: 'Three consecutive social actuality import passes failed within the configured observation window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -640,6 +646,7 @@ module socialImportAuthenticationAlert './modules/Monitor/scheduledQueryRule.mod
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-social-authentication', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Social actuality import authentication rejected'
     ruleDescription: 'The Instagram provider rejected the configured access token or permissions.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -659,6 +666,7 @@ module socialImportTokenExpiryAlert './modules/Monitor/scheduledQueryRule.module
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-social-token-expiry', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Social actuality access token is near expiry'
     ruleDescription: 'The configured long-lived Instagram access token is at least 45 days old and must be renewed.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -678,6 +686,7 @@ module alertDeliveryFailureAlert './modules/Monitor/scheduledQueryRule.module.bi
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-book-alert-delivery-failed', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Book alert e-mails failed'
     ruleDescription: 'A worker sweep moved at least one book alert e-mail to Failed (sending domain, quota or credentials).'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -701,6 +710,7 @@ module apiServerErrorsAlert './modules/Monitor/scheduledQueryRule.module.bicep' 
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-api-server-errors', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'API returns server errors'
     ruleDescription: 'The API answered at least five 5xx responses in the configured monitoring window.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -720,6 +730,7 @@ module apiLatencyAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-api-latency', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'API operation is slow'
     ruleDescription: 'An API operation with at least ten calls had a P95 above two seconds in the configured monitoring window. Metadata lookups have their own rule.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -739,6 +750,7 @@ module slowSqlAlert './modules/Monitor/scheduledQueryRule.module.bicep' = {
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-sql-slow', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'SQL queries are slow'
     ruleDescription: 'At least ten SQL calls from one service took more than one second in the configured monitoring window (missing index, lock, or DTU saturation).'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
@@ -758,6 +770,7 @@ module backendExceptionsAlert './modules/Monitor/scheduledQueryRule.module.bicep
   scope: applicationResourceGroup
   params: {
     name: BuildResourceName('vpd-backend-exceptions', 'alert', targetEnv)
+    location: targetLocation
     displayName: 'Backend exceptions are repeating'
     ruleDescription: 'The same server-side exception occurred at least five times in the configured monitoring window in the API, the worker or the Catalog SSR host.'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
