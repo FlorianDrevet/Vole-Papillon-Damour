@@ -86,14 +86,14 @@ param containerAppWebsiteHealthProbes = {
 param websiteCustomDomain = 'volepapillondamour.fr'
 param websiteWwwCustomDomain = 'www.volepapillondamour.fr'
 param backOfficeCustomDomain = 'backoffice.volepapillondamour.fr'
-// Leave the target environment unbound until its domain certificate is issued.
-param websiteCustomDomainCertificateName = ''
-param websiteWwwCustomDomainCertificateName = ''
-param backOfficeCustomDomainCertificateName = ''
+// Keep the deployed ACA domain bindings and managed certificates in sync with IaC.
+param websiteCustomDomainCertificateName = 'mc-vpd-cae-dev-fc-volepapillondamo-1244'
+param websiteWwwCustomDomainCertificateName = 'mc-vpd-cae-dev-fc-www-volepapillon-1019'
+param backOfficeCustomDomainCertificateName = 'mc-vpd-cae-dev-fc-backoffice-volep-1256'
 param catalogCustomDomain = 'livres.volepapillondamour.fr'
-param catalogCustomDomainCertificateName = ''
+param catalogCustomDomainCertificateName = 'mc-vpd-cae-dev-fc-livres-volepapil-5855'
 param scanCustomDomain = 'scan.volepapillondamour.fr'
-param scanCustomDomainCertificateName = ''
+param scanCustomDomainCertificateName = 'mc-vpd-cae-dev-fc-scan-volepapillo-6143'
 
 param containerAppBackOfficeContainerRuntime = {
   cpuCores: '0.25'

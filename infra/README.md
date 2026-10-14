@@ -19,13 +19,14 @@ recrees ni deplaces.
 | Application Insights | `vpd-<api,web,bo,scan,catalog,worker>-appi-dev-fc` |
 | Managed identities | `vpd-<api,web,bo,scan,catalog,worker>-id-dev-fc` |
 
-Les deux piles restent disponibles pendant la validation. Les domaines
-`volepapillondamour.fr`, `www`, `backoffice`, `livres` et `scan` restent lies
-aux anciennes ACA jusqu'a la bascule DNS et la validation des certificats.
-Le worker France Central reste a zero avant la bascule; l'abonnement Event Grid
-ACS conserve son endpoint API actuel. La suppression des anciennes ressources
-attend la confirmation explicite du proprietaire apres la fenetre de retour
-arriere.
+Les deux piles restent disponibles pour le retour arriere. La zone DNS OVH
+pointe maintenant l'apex et les quatre CNAME (`www`, `backoffice`, `livres`,
+`scan`) directement vers les ACA France Central. Les cinq domaines repondent en
+HTTPS avec certificat valide et les parcours testés renvoient `200`. Aucun
+service CDN OVH actif n'a ete trouve dans le compte consulte. Le worker
+West Europe est arrete; le worker France Central reste limite a une replique.
+Le webhook ACS vise l'API France Central. Les anciennes ressources ne seront
+supprimees qu'apres validation et confirmation explicite du proprietaire.
 
 Le stockage migre de `vpdstdev` vers `vpdstdevfc` sans déployer ni reconfigurer
 SQL. Le workflow
@@ -239,7 +240,7 @@ Azure sans un lancement manuel.
 | `Catalog - deploy` | build + push de l'image Catalogue avec les URLs API/domaine et les identifiants publics GA4/Clarity, bascule de `vpd-catalog-ca-dev-fc` |
 | `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev-fc` et contrôle du host |
 | `Books runtime - deploy` | build + push coordonné API + Worker, migration EF optionnelle avant rollout, puis bascule des deux Container Apps |
-| `Storage - migrate blobs` | copie les blobs de l'ancien stockage vers `vpdstdevfc`, puis synchronisation finale avec réécriture des URL pendant la bascule |
+| `Storage - migrate blobs` | copie incrementale les blobs absents ou source-plus-recents vers `vpdstdevfc`, preserve les blobs plus recents ou propres a la cible, verifie les noms source et propose `skip`/`preview`/`apply` pour la reecriture des URL SQL |
 | `ACS Email - configure` | vérification DNS/amorçage ACS et réparation manuelle de compatibilité ; le câblage normal est dans Bicep |
 
 ### Ordre de migration France Central
