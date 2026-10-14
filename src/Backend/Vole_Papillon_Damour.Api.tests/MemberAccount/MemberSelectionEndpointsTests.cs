@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Vole_Papillon_Damour.Api.Controllers;
+using Vole_Papillon_Damour.Api.LiveTableau;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.MemberSelection.Commands.AddSelectionItem;
 using Vole_Papillon_Damour.Application.MemberSelection.Common;
@@ -122,7 +123,7 @@ public sealed class MemberSelectionEndpointsTests
         builder.Services.AddAuthorization();
         builder.Services.AddSingleton(mediator ?? Substitute.For<IMediator>());
         builder.Services.AddSingleton(Substitute.For<IMapper>());
-        builder.Services.AddSingleton(Substitute.For<ISSEClientManager>());
+        builder.Services.AddSingleton(Substitute.For<ILiveTableauHub>());
         builder.Services.AddSingleton(Substitute.For<IAccountDeletionService>());
 
         var application = builder.Build();

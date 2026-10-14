@@ -1,97 +1,151 @@
-@if (assoEvent() === null || currentPartie() === null || currentLine() === null) {
-  <div class="min-h-[70vh] bg-ink-2 px-3 py-10" role="status" aria-label="Chargement du tableau de loto">
-    <div class="mx-auto flex w-full max-w-[1200px] flex-col gap-8" aria-hidden="true">
-      <div class="flex justify-center">
-        <span class="skeleton skeleton-dark h-9 w-44 rounded-sm"></span>
-      </div>
-      <div class="grid grid-cols-5 gap-1 sm:grid-cols-10">
-        @for (number of loadingNumbers; track number) {
-          <span class="skeleton skeleton-dark h-10 rounded-sm sm:h-12"></span>
-        }
-      </div>
-      <div class="flex flex-wrap justify-center gap-3 border-t border-white/10 pt-6">
-        <span class="skeleton skeleton-dark h-8 w-28 rounded-sm"></span>
-        <span class="skeleton skeleton-dark h-8 w-36 rounded-sm"></span>
-        <span class="skeleton skeleton-dark h-8 w-24 rounded-sm"></span>
-      </div>
-    </div>
-  </div>
-} @else {
-  <app-modal (closeModal)="isPaused.set(false)" [showModal]="isPaused()">
-    <h1 class="pause-title">Pause</h1>
-    <h2 class="bingo-numero-pause">{{ assoEvent()?.bingoNumeros?.join(" - ") }}</h2>
-  </app-modal>
-
-  <app-modal (closeModal)="isLastNumero.set(false)" [showModal]="isLastNumero()">
-    <h1 class="last-numero-title">Numéro:</h1>
-    <h2 class="last-numero">{{ lastNumero() }}</h2>
-  </app-modal>
-
-  <div class="container-tableau">
-    <div class="info-partie">
-      <div class="partie">
-        <app-tag [value]="currentPartie()?.name ?? ''" class="mr-auto ml-auto lg:mr-10 lg:ml-[6%]"></app-tag>
-        <app-tag class="hidden lg:block" [value]="currentLine()!.numberLine | lineNumberTitle"></app-tag>
-        @if (currentLine()!.numberLine === NumberLineEnum.ONELINE) {
-          <app-tag [value]="titleNbTimes()" class="ml-10 hidden lg:block"></app-tag>
-        }
-        @if (currentPartie()?.partieType !== PartieTypeEnum.STANDARD &&
-        (currentPartie()?.partieType !== PartieTypeEnum.CARTONPLEIN &&
-          currentPartie()?.partieType !== PartieTypeEnum.BINGO)) {
-          <app-tag [isBingo]='true' [value]="(currentPartie()?.partieType?.toString()) ?? ''" class="ml-10 hidden lg:block"></app-tag>
-        }
-      </div>
-    </div>
-    <div class="tableau">
-      @for (i of [].constructor(9); track i; let idx = $index) {
-        <div class="ligne">
-          @for (j of [].constructor(10); track j; let jdx = $index) {
-            <app-number
-              [assoEventId]="assoEvent()?.id ?? ''"
-              [isNeighbour]="isNeighboor((jdx + 1) + (idx) * 10)"
-              [partieId]="currentPartie()?.id ?? ''"
-              [isLastValue]="(jdx + 1) + (idx) * 10 === (currentPartie()?.lastNumeros!.slice(-1))[0]"
-              [isExited]="currentPartie()?.liveNumeros?.includes((jdx + 1) + (idx) * 10) ?? false"
-              [value]="(jdx + 1) + (idx) * 10"></app-number>
-          }
-        </div>
-      }
-    </div>
-    <div class="partie">
-      <app-tag class="lg:hidden ml-5 lg:ml-0 lg:mr-0" [value]="currentLine()!.numberLine | lineNumberTitle"></app-tag>
-      @if (currentLine()!.numberLine === NumberLineEnum.ONELINE) {
-        <app-tag [value]="titleNbTimes()" class="ml-auto mr-5 lg:hidden"></app-tag>
-      }
-      @if (currentPartie()?.partieType !== PartieTypeEnum.STANDARD &&
-      (currentPartie()?.partieType !== PartieTypeEnum.CARTONPLEIN &&
-        currentPartie()?.partieType !== PartieTypeEnum.BINGO)) {
-        <app-tag [isBingo]='true' [value]="(currentPartie()?.partieType?.toString()) ?? ''" class="mr-10 lg:hidden"></app-tag>
-      }
-    </div>
-    <div class="bingo hidden lg:flex">
-      @if ((currentPartie()?.partieType ?? PartieTypeEnum.BINGO).toString() !== 'Bingo') {
-        <app-tag [isBingo]="true"
-                 [value]="'Bingo:  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
+<!-- E4 : maquettes preview/E4-Mobile.html (390 px), preview/E4-Desktop.html (1440 px), preview/E4-Etats.html -->
+<main class="tableau min-h-screen bg-[#020e18] px-4 pb-10 pt-3 text-white lg:px-shell lg:pb-11 lg:pt-5">
+  <div class="mx-auto flex w-full max-w-[1352px] flex-col gap-3.5 lg:gap-5">
+    <div class="flex h-11 items-center justify-between lg:h-12">
+      @if (connection() === 'not-found') {
+        <a routerLink="/evenement" class="text-sm font-semibold text-cyan no-underline hover:text-white">← Évènements</a>
       } @else {
-        <div class="w-1/5"></div> <!-- To put on the right the Lot tag -->
+        <a [routerLink]="['/evenement', live.eventAsso()?.id]" class="min-w-0 truncate text-sm font-semibold text-cyan no-underline hover:text-white lg:text-[15px]">← {{ view().eventName || 'Grand loto' }}</a>
+        <span role="status" class="inline-flex h-[30px] shrink-0 items-center gap-[7px] rounded-full border border-[#1b3c57] bg-[#0b2438] px-3 font-mono text-[10px] font-semibold uppercase tracking-[.14em]" [class]="connection() === 'live' ? 'text-orange-2' : 'text-mist-2'">
+          @switch (connection()) {
+            @case ('live') {
+              @if (view().phase === 'finished') {
+                Terminé
+              } @else if (view().phase === 'before') {
+                <span aria-hidden="true" class="h-2 w-2 rounded-full bg-cyan"></span> Connecté
+              } @else {
+                <span aria-hidden="true" class="h-2 w-2 rounded-full bg-orange shadow-[0_0_0_3px_rgba(240,128,28,.25)]"></span> En direct
+              }
+            }
+            @case ('reconnecting') {
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.5-3.5M13 3v2.5h-2.5"></path></svg>
+              Reconnexion…
+            }
+            @case ('offline') { Hors ligne }
+            @default { Connexion… }
+          }
+        </span>
       }
-      <div class="lots">
-        @for (lot of currentLots(); track lot.id) {
-          <app-tag [value]="lot.name"></app-tag>
-        }
-      </div>
     </div>
 
-    <div class="flex flex-col lg:hidden ml-5 pb-20">
-      <div class="flex flex-col mb-5 gap-2">
-        @for (lot of currentLots(); track lot.id) {
-          <app-tag [value]="lot.name"></app-tag>
+    @if (connection() === 'reconnecting' || connection() === 'offline') {
+      <p class="rounded-xl bg-[#123552] px-3.5 py-3 text-sm leading-snug text-mist-2">
+        Connexion perdue. Le tableau se remettra à jour tout seul dès le retour du réseau.
+      </p>
+    }
+
+    @if (connection() === 'not-found') {
+      <!-- RG-15 -->
+      <section class="flex max-w-[420px] flex-col gap-3.5 pt-16">
+        <svg viewBox="0 0 48 48" width="56" height="56" fill="none" stroke="#9dc2da" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><rect x="7" y="7" width="34" height="34" rx="6"></rect><path d="M17 17l14 14M31 17L17 31"></path></svg>
+        <h1 class="text-[30px] font-extrabold leading-tight">Ce tableau n'existe pas ou n'est plus disponible.</h1>
+        <p class="text-[15px] leading-relaxed text-mist-2">Vérifiez le lien, ou retrouvez le loto du jour depuis la page des événements.</p>
+        <a routerLink="/evenement" class="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-white text-[15px] font-bold text-ink no-underline hover:bg-mist-2">Voir les événements</a>
+      </section>
+    } @else {
+      @switch (view().phase) {
+        @case ('loading') {
+          <div class="flex flex-col gap-3.5" role="status" aria-label="Chargement du tableau de loto">
+            <span class="skeleton skeleton-dark h-[220px] rounded-[18px]"></span>
+            <span class="skeleton skeleton-dark h-12 rounded-lg"></span>
+            <span class="skeleton skeleton-dark h-[320px] rounded-[14px]"></span>
+          </div>
         }
-      </div>
-      @if ((currentPartie()?.partieType ?? PartieTypeEnum.BINGO).toString() !== 'Bingo') {
-        <app-tag [isBingo]="true"
-                 [value]="'Bingo:  ' + (assoEvent()?.bingoHasBeenWon ? 'Gagné !' : (assoEvent()?.bingoNumeros ?? []).join(' - '))"></app-tag>
+
+        @case ('before') {
+          <section class="flex max-w-[560px] flex-col gap-3.5">
+            <div class="flex flex-col gap-3 px-1 pb-2 pt-7">
+              <span class="k">{{ view().eventName }} · aujourd'hui</span>
+              <h1 class="text-[44px] font-black leading-none tracking-[-.03em]">Le loto va commencer</h1>
+              <p class="text-[15px] leading-relaxed text-mist-2">Gardez cette page ouverte : les numéros s'afficheront ici dès le premier tirage.</p>
+            </div>
+            @if (view().firstPartie; as first) {
+              <div class="card">
+                <span class="k">Première partie</span>
+                <span class="text-[22px] font-extrabold">{{ first.name }}</span>
+                @for (line of first.lines; track line.label) {
+                  <span class="text-[15px]">{{ line.label }} · {{ line.lots.join(', ') }}</span>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        @case ('finished') {
+          <section class="flex max-w-[560px] flex-col gap-3.5">
+            <div class="flex flex-col gap-3 px-1 pb-2 pt-7">
+              <h1 class="text-[48px] font-black leading-none tracking-[-.03em]">Loto terminé</h1>
+              <span class="text-[30px] font-extrabold text-orange">Merci à tous !</span>
+              <p class="text-[15px] leading-relaxed text-mist-2">Les bénéfices de cet après-midi soutiennent Maxence et sa famille.</p>
+            </div>
+            <div class="card card-bingo">
+              <span class="k k-accent">Bingo</span>
+              <span class="text-[26px] font-extrabold">{{ view().bingoWon ? 'Gagné !' : view().bingoNumeros.join(' · ') }}</span>
+            </div>
+            <a routerLink="/evenement" class="mt-2 inline-flex h-12 items-center justify-center rounded-full bg-white text-[15px] font-bold text-ink no-underline hover:bg-mist-2">Voir les prochains événements</a>
+          </section>
+        }
+
+        @default {
+          <div class="flex flex-col gap-3.5 lg:flex-row lg:items-start lg:gap-7">
+            <div class="flex flex-col gap-3.5 lg:w-[360px] lg:flex-none lg:gap-4">
+              <div class="flex flex-col items-center gap-0.5 rounded-[18px] border border-[#1b3c57] bg-[#071b2b] px-4 pb-[22px] pt-[18px]" aria-live="polite">
+                <span class="k">Dernier numéro</span>
+                <span class="text-[184px] font-black leading-[.9] tracking-[-.06em] text-orange tabular-nums lg:text-[200px]">{{ view().lastNumero ?? '—' }}</span>
+              </div>
+
+              @if (view().previousNumeros.length > 0) {
+                <div class="flex flex-col gap-2">
+                  <span class="k">Précédents</span>
+                  <div class="flex gap-2">
+                    @for (numero of view().previousNumeros; track $index) {
+                      <span class="prev">{{ numero }}</span>
+                    }
+                  </div>
+                </div>
+              }
+
+              <div class="card">
+                <span class="k">Partie {{ view().partieNumber }} / {{ view().partieCount }}</span>
+                <span class="text-2xl font-extrabold tracking-[-.01em] lg:text-[26px]">{{ view().partieName }}</span>
+                <div class="flex flex-wrap gap-2">
+                  @if (view().lineLabel) { <span class="chip">{{ view().lineLabel }}</span> }
+                  @if (view().timesLabel) { <span class="chip chip-accent">{{ view().timesLabel }}</span> }
+                  @if (view().typeLabel) { <span class="chip chip-strong">{{ view().typeLabel }}</span> }
+                </div>
+                <div class="flex flex-col gap-1.5 border-t border-[#1b3c57] pt-2.5">
+                  <span class="k">Lots de la ligne</span>
+                  @for (lot of view().lots; track lot.id) {
+                    <span [class]="lot.won ? 'text-[15px] text-[#6d8ba2] line-through' : 'text-[17px] font-bold lg:text-lg'">{{ lot.name }}</span>
+                  }
+                </div>
+              </div>
+
+              @if (view().showBingo) {
+                <div class="card card-bingo max-lg:order-last">
+                  <span class="k k-accent">Bingo</span>
+                  <span class="text-[30px] font-extrabold tabular-nums lg:text-[32px]">{{ view().bingoWon ? 'Gagné !' : (view().bingoNumeros.join(' · ') || '—') }}</span>
+                </div>
+              }
+            </div>
+
+            <div class="flex flex-col gap-2 lg:min-w-0 lg:flex-1">
+              <span class="k lg:hidden">Tous les numéros</span>
+              <div class="grid grid-cols-10 gap-[3px] lg:gap-1.5" aria-label="Grille des numéros 1 à 90">
+                @for (cell of view().cells; track cell.value) {
+                  <span class="cell"
+                        [class.cell-on]="cell.state === 'drawn'"
+                        [class.cell-last]="cell.state === 'last'"
+                        [class.cell-nb]="cell.state === 'neighbour'">{{ cell.value }}</span>
+                }
+              </div>
+              <span class="text-xs text-mist">{{ view().drawnCount }} numéros sortis@if (view().neighbours.length > 0) { · voisins du +1 / −1 cerclés }</span>
+            </div>
+          </div>
+
+          <p class="text-center text-xs text-mist">Mis à jour automatiquement, pas besoin de recharger la page.</p>
+        }
       }
-    </div>
+    }
   </div>
-}
+</main>

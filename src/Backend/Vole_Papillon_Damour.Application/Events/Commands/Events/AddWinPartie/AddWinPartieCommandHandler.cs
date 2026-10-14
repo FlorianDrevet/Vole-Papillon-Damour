@@ -50,6 +50,7 @@ public class AddWinPartieCommandHandler(IEventRepository eventRepository, IMappe
             assoEvent.BingoHasBeenWon = true;
         }
         
+        assoEvent.MarkLiveChange();
         assoEvent = await eventRepository.UpdateAsync(assoEvent);
         return mapper.Map<AssoEventResult>(assoEvent);
     }

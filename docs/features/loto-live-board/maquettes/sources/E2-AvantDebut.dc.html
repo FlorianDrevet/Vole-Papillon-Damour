@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E2 · Avant le début — palette A</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;700;800;900&amp;family=IBM+Plex+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.pal-a{--bg:#020e18;--panel:#071b2b;--line:#1b3c57;--text:#ffffff;--muted:#9dc2da;--last:#f0801c;--accent:#f9a93c;--chip:#123552}
+.pal-b{--bg:#ffffff;--panel:#f3f8fc;--line:#d9e9f4;--text:#041d30;--muted:#33536e;--last:#f0801c;--accent:#dc6412;--chip:#e9f4fb}
+.k{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;height:52px;padding:0 20px;border-radius:999px;background:var(--chip);font-size:28px;font-weight:700}
+</style>
+</helmet>
+<div class="pal-a" data-zone="E2-avant-debut" style="width:1920px;height:1080px;box-sizing:border-box;padding:80px 96px;display:flex;gap:96px;align-items:center;background:var(--bg);color:var(--text);font-family:'Libre Franklin',system-ui,sans-serif">
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:28px">
+    <span class="k">Vole Papillon d'Amour · Grand loto</span>
+    <span style="font-size:132px;font-weight:900;line-height:.95;letter-spacing:-.035em">Le loto va commencer</span>
+    <div style="display:flex;flex-direction:column;gap:16px;border-top:3px solid var(--line);padding-top:32px;margin-top:12px" data-zone="E2-premiere-partie">
+      <span class="k">Première partie</span>
+      <span style="font-size:60px;font-weight:800;letter-spacing:-.02em">Le panier de saison</span>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <span class="chip">1 ligne · Bon d'achat 30 €</span>
+        <span class="chip">2 lignes · Panier garni</span>
+        <span class="chip">Carton plein · Robot pâtissier</span>
+      </div>
+    </div>
+  </div>
+
+  <div data-zone="E2-qr-code" style="flex:0 0 600px;display:flex;flex-direction:column;align-items:center;gap:24px;padding:40px;border-radius:28px;background:#ffffff;color:#041d30">
+    <svg viewBox="0 0 29 29" width="480" height="480" role="img" aria-label="QR code vers volepapillondamour.fr/loto" shape-rendering="crispEdges">
+      <rect width="29" height="29" fill="#ffffff"></rect>
+      <path fill="#041d30" d="M0 0h7v7H0zM22 0h7v7h-7zM0 22h7v7H0z"></path>
+      <path fill="#ffffff" d="M1 1h5v5H1zM23 1h5v5h-5zM1 23h5v5H1z"></path>
+      <path fill="#041d30" d="M2 2h3v3H2zM24 2h3v3h-3zM2 24h3v3H2zM9 1h2v2H9zM13 0h3v1h-3zM12 3h2v3h-2zM17 2h3v2h-3zM9 8h4v2H9zM15 7h2v4h-2zM19 9h3v2h-3zM24 9h4v1h-4zM1 10h3v2H1zM6 12h3v1H6zM11 12h2v3h-2zM15 13h5v2h-5zM22 12h2v4h-2zM26 13h2v2h-2zM2 15h2v3H2zM8 16h3v2H8zM13 17h2v2h-2zM18 17h3v1h-3zM24 18h4v2h-4zM9 21h2v3H9zM13 22h4v1h-4zM19 21h2v3h-2zM23 22h2v2h-2zM26 23h2v5h-2zM12 25h2v3h-2zM16 26h3v2h-3zM21 26h3v1h-3z"></path>
+    </svg>
+    <span style="font-size:34px;font-weight:800;text-align:center;line-height:1.15">Suivez le tableau<br>sur votre téléphone</span>
+    <span data-zone="E2-adresse-courte" style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;color:#0c6ea6">volepapillondamour.fr/loto</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

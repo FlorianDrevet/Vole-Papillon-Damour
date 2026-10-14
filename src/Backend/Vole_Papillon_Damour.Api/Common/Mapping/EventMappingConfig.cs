@@ -64,6 +64,11 @@ public class EventMappingConfig : IRegister
             .Map(dest => dest.CityCode, src => src.Adresse.CityCode)
             .Map(dest => dest.RoadNumber, src => src.Adresse.RoadNumber);
 
+        config.NewConfig<TodayEventResult, TodayEventResponse>()
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.EventType, src => src.EventsType.Value.ToString())
+            .Map(dest => dest.LiveStatus, src => src.LiveStatus == null ? null : src.LiveStatus.Value.ToString());
+
         config.NewConfig<AddPartieToEventRequest, AddPartieToEventCommand>()
             .Map(dest => dest.PartiesCommand, src => src.Partie);
 

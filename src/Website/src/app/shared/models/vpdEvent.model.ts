@@ -22,6 +22,8 @@ export interface VpdEventModel {
   currentPartieIndex: number,
   bingoHasBeenWon: boolean
   bingoNumeros: number[]
+  /** Révision du tableau en direct : un état plus ancien que celui affiché est ignoré. */
+  liveRevision?: number
 }
 
 export interface VpdEventPartieModel {

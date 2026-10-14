@@ -2,6 +2,7 @@ import {Component, computed, inject, OnInit, signal} from '@angular/core';
 import {DomSanitizer, SafeResourceUrl} from '@angular/platform-browser';
 import {ActivatedRoute} from "@angular/router";
 import {VpdEventsFacadeService} from "../../shared/facades/vpd-events.facade.service";
+import {TodayEventService} from "../../shared/services/today-event.service";
 import {VpdEventModel} from "../../shared/models/vpdEvent.model";
 import {VpdEventEnum} from "../../shared/enums/vpdEvent.enum";
 import {eventMapsEmbedUrl, eventMapsUrl, formatEventAddress} from "../../shared/utils/event-address.util";
@@ -13,6 +14,16 @@ import {eventMapsEmbedUrl, eventMapsUrl, formatEventAddress} from "../../shared/
 })
 export class EventDetailComponent implements OnInit {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly todayEvent = inject(TodayEventService);
+
+  /** E6 : le jour du loto, l'encart « Tableau en direct » en tête de fiche. */
+  liveLoto = computed(() => {
+    const today = this.todayEvent.today();
+    const event = this.vpdEvent();
+    return today !== null && event !== null && today.id === event.id && today.eventType === 'Bingo'
+      ? today
+      : null;
+  });
 
   vpdEvent = signal<VpdEventModel | null>(null)
   isLoading = signal(true);
@@ -77,6 +88,7 @@ export class EventDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    void this.todayEvent.start();
     this.getEvents()
   }
 

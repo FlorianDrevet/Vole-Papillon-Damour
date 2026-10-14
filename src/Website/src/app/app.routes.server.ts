@@ -132,6 +132,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    path: 'loto',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'evenement/:id',
     renderMode: RenderMode.Server,
   },

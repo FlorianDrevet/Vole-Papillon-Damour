@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E2 · Pause — palette B</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@600;700;800;900&amp;family=IBM+Plex+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.pal-a{--bg:#020e18;--panel:#071b2b;--line:#1b3c57;--text:#ffffff;--muted:#9dc2da;--last:#f0801c;--accent:#f9a93c;--chip:#123552}
+.pal-b{--bg:#ffffff;--panel:#f3f8fc;--line:#d9e9f4;--text:#041d30;--muted:#33536e;--last:#f0801c;--accent:#b4500e;--chip:#e9f4fb}
+.k{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+</style>
+</helmet>
+<div class="pal-b" data-zone="E2-pause" style="width:1920px;height:1080px;box-sizing:border-box;padding:80px 96px;display:flex;gap:96px;align-items:center;background:var(--bg);color:var(--text);font-family:'Libre Franklin',system-ui,sans-serif">
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:36px">
+    <span style="font-size:240px;font-weight:900;line-height:.85;letter-spacing:-.05em">Pause</span>
+    <span style="font-size:44px;font-weight:600;color:var(--muted)">On reprend dans quelques minutes.</span>
+
+    <div data-zone="E2-bingo-pause" style="display:flex;flex-direction:column;gap:14px;padding:28px 32px;border-radius:20px;background:#072b45;color:#ffffff">
+      <span class="k" style="color:#f9a93c">Numéros du bingo</span>
+      <span style="font-size:96px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums">14 · 63 · 7 · 51</span>
+    </div>
+
+    <div data-zone="E2-partie-suivante" style="display:flex;align-items:baseline;gap:20px">
+      <span class="k">Ensuite</span>
+      <span style="font-size:48px;font-weight:800">Partie 5 · Le jambon <span style="color:var(--muted);font-weight:600">· +1 / −1</span></span>
+    </div>
+  </div>
+
+  <div data-zone="E2-qr-code" style="flex:0 0 520px;display:flex;flex-direction:column;align-items:center;gap:22px;padding:36px;border-radius:28px;background:#ffffff;border:4px solid #072b45;color:#041d30">
+    <svg viewBox="0 0 29 29" width="420" height="420" role="img" aria-label="QR code vers volepapillondamour.fr/loto" shape-rendering="crispEdges">
+      <rect width="29" height="29" fill="#ffffff"></rect>
+      <path fill="#041d30" d="M0 0h7v7H0zM22 0h7v7h-7zM0 22h7v7H0z"></path>
+      <path fill="#ffffff" d="M1 1h5v5H1zM23 1h5v5h-5zM1 23h5v5H1z"></path>
+      <path fill="#041d30" d="M2 2h3v3H2zM24 2h3v3h-3zM2 24h3v3H2zM9 1h2v2H9zM13 0h3v1h-3zM12 3h2v3h-2zM17 2h3v2h-3zM9 8h4v2H9zM15 7h2v4h-2zM19 9h3v2h-3zM24 9h4v1h-4zM1 10h3v2H1zM6 12h3v1H6zM11 12h2v3h-2zM15 13h5v2h-5zM22 12h2v4h-2zM26 13h2v2h-2zM2 15h2v3H2zM8 16h3v2H8zM13 17h2v2h-2zM18 17h3v1h-3zM24 18h4v2h-4zM9 21h2v3H9zM13 22h4v1h-4zM19 21h2v3h-2zM23 22h2v2h-2zM26 23h2v5h-2zM12 25h2v3h-2zM16 26h3v2h-3zM21 26h3v1h-3z"></path>
+    </svg>
+    <span style="font-size:30px;font-weight:800;text-align:center;line-height:1.15">Suivez le tableau<br>sur votre téléphone</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;color:#0c6ea6">volepapillondamour.fr/loto</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

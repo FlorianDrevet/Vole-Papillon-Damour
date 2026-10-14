@@ -6,6 +6,7 @@
 @use '@angular/material' as mat;
 @use '@dhutaryan/ngx-mat-timepicker' as mat-timepicker;
 @use "scss/main" as *;
+@use "scss/loto-projection";
 
 @include mat.elevation-classes();
 @include mat.app-background();

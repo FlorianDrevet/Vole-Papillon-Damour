@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E3 · Régie discrète</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700;800;900&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.pal-a{--bg:#020e18;--panel:#071b2b;--line:#1b3c57;--cell:#0b2438;--cell-num:#5f8199;--on:#ffffff;--on-num:#041d30;--last:#f0801c;--last-num:#041d30;--text:#ffffff;--muted:#9dc2da;--chip:#123552;--accent:#f9a93c;--won:#5f8199}
+.board{position:relative;width:1920px;height:1080px;box-sizing:border-box;padding:24px;display:flex;gap:24px;background:var(--bg);color:var(--text);font-family:'Libre Franklin',system-ui,sans-serif;overflow:hidden}
+.grid{flex:0 0 1448px;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));grid-template-rows:repeat(9,minmax(0,1fr));gap:8px}
+.c{display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--cell);color:var(--cell-num);font-weight:800;font-size:76px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.c.on{background:var(--on);color:var(--on-num)}
+.c.last{background:var(--last);color:var(--last-num);font-weight:900}
+.c.nb{background:var(--cell);color:var(--text);box-shadow:inset 0 0 0 8px var(--text)}
+.side{flex:1;min-width:0;display:flex;flex-direction:column;gap:22px}
+.k{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;height:48px;padding:0 18px;border-radius:999px;background:var(--chip);font-size:26px;font-weight:700}
+.prev{flex:1;height:72px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--on);color:var(--on-num);font-size:44px;font-weight:800;font-variant-numeric:tabular-nums}
+.bar{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:10px;border-radius:16px;background:rgba(7,27,43,.94);border:1px solid #1b3c57;box-shadow:0 18px 40px -20px rgba(0,0,0,.8)}
+.btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 16px;border-radius:10px;border:1px solid #1b3c57;background:#0b2438;color:#dcecf7;font:600 17px 'Libre Franklin',sans-serif;cursor:pointer}
+.btn svg{width:22px;height:22px;flex:none}
+kbd{font:600 12px 'IBM Plex Mono',monospace;padding:3px 7px;border-radius:5px;border:1px solid #33536e;color:#9dc2da;background:#041d30}
+.sep{width:1px;height:36px;background:#1b3c57;margin:0 4px}
+</style>
+</helmet>
+<div class="board pal-a">
+  <div class="grid" aria-label="Grille des numéros 1 à 90">
+    <span class="c">1</span><span class="c">2</span><span class="c">3</span><span class="c on">4</span><span class="c on">5</span><span class="c on">6</span><span class="c">7</span><span class="c">8</span><span class="c">9</span><span class="c">10</span>
+    <span class="c">11</span><span class="c">12</span><span class="c">13</span><span class="c">14</span><span class="c">15</span><span class="c">16</span><span class="c on">17</span><span class="c on">18</span><span class="c on">19</span><span class="c">20</span>
+    <span class="c">21</span><span class="c">22</span><span class="c">23</span><span class="c">24</span><span class="c">25</span><span class="c">26</span><span class="c">27</span><span class="c">28</span><span class="c">29</span><span class="c">30</span>
+    <span class="c">31</span><span class="c on">32</span><span class="c on">33</span><span class="c on">34</span><span class="c">35</span><span class="c">36</span><span class="c">37</span><span class="c">38</span><span class="c">39</span><span class="c">40</span>
+    <span class="c nb">41</span><span class="c last">42</span><span class="c nb">43</span><span class="c">44</span><span class="c">45</span><span class="c">46</span><span class="c">47</span><span class="c">48</span><span class="c">49</span><span class="c">50</span>
+    <span class="c">51</span><span class="c">52</span><span class="c">53</span><span class="c">54</span><span class="c">55</span><span class="c">56</span><span class="c">57</span><span class="c">58</span><span class="c">59</span><span class="c on">60</span>
+    <span class="c on">61</span><span class="c on">62</span><span class="c">63</span><span class="c">64</span><span class="c">65</span><span class="c">66</span><span class="c">67</span><span class="c">68</span><span class="c on">69</span><span class="c on">70</span>
+    <span class="c on">71</span><span class="c">72</span><span class="c">73</span><span class="c">74</span><span class="c">75</span><span class="c">76</span><span class="c">77</span><span class="c">78</span><span class="c">79</span><span class="c">80</span>
+    <span class="c">81</span><span class="c">82</span><span class="c">83</span><span class="c">84</span><span class="c">85</span><span class="c">86</span><span class="c">87</span><span class="c">88</span><span class="c">89</span><span class="c">90</span>
+  </div>
+
+  <div class="side">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <span class="k">Partie 5 / 8</span>
+      <span style="font-size:44px;font-weight:800;line-height:1.05;letter-spacing:-.02em">Le jambon</span>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <span class="chip">2 lignes</span>
+        <span class="chip" style="background:var(--on);color:var(--on-num)">+1 / −1</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;border-top:2px solid var(--line);padding-top:18px">
+      <span class="k">Dernier numéro</span>
+      <span style="font-size:320px;font-weight:900;line-height:.86;letter-spacing:-.06em;color:var(--last);font-variant-numeric:tabular-nums">42</span>
+      <span style="font-size:26px;font-weight:700;color:var(--muted)">Voisins : 41 et 43</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="k">Précédents</span>
+      <div style="display:flex;gap:10px">
+        <span class="prev">5</span><span class="prev">70</span><span class="prev">33</span><span class="prev">61</span><span class="prev">18</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;border-top:2px solid var(--line);padding-top:18px">
+      <span class="k">Lots de la ligne</span>
+      <span style="font-size:34px;font-weight:800">Jambon sec entier</span>
+    </div>
+  </div>
+
+  <!-- Témoin de saisie clavier : petit, dans un coin (pas au centre de la toile) -->
+  <div data-zone="E3-saisie-clavier" style="position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:12px;padding:8px 14px;border-radius:10px;background:rgba(7,27,43,.94);border:1px solid #1b3c57">
+    <span style="font:600 12px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#9dc2da">Saisie</span>
+    <span style="font-size:30px;font-weight:800;color:#ffffff;font-variant-numeric:tabular-nums">7_</span>
+    <kbd>Entrée</kbd>
+  </div>
+
+  <!-- Toast d'erreur RG-06 -->
+  <div data-zone="E3-toast-erreur" role="alert" style="position:absolute;left:50%;bottom:104px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:12px;background:#3a1406;border:1px solid #dc6412;color:#ffd9bf;font-size:18px;font-weight:600">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f9a93c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg>
+    Le numéro 33 est déjà sorti.
+  </div>
+
+  <!-- Barre de régie escamotable (RG-04) -->
+  <div class="bar" data-zone="E3-barre-regie" role="toolbar" aria-label="Régie du loto">
+    <button type="button" class="btn" data-zone="E3-bouton-annuler">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h11a5 5 0 0 1 0 10h-3"></path></svg>
+      Annuler le dernier <kbd>⌫</kbd>
+    </button>
+    <button type="button" class="btn" disabled="disabled" aria-busy="true" style="opacity:.6" data-zone="E3-bouton-ligne">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+      Ligne gagnée… <kbd>L</kbd>
+    </button>
+    <button type="button" class="btn" data-zone="E3-bouton-bingo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"></path><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
+      Bingo gagné <kbd>B</kbd>
+    </button>
+    <button type="button" class="btn" data-zone="E3-bouton-pause">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
+      Pause <kbd>Espace</kbd>
+    </button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" class="btn" data-zone="E3-bouton-palette" aria-label="Passer en palette claire">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"></path></svg>
+      Palette claire <kbd>P</kbd>
+    </button>
+    <button type="button" class="btn" data-zone="E3-bouton-plein-ecran" aria-label="Plein écran">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path></svg>
+      <kbd>F</kbd>
+    </button>
+    <span class="sep" aria-hidden="true"></span>
+    <span data-zone="E3-aide-raccourcis" style="font:500 13px 'IBM Plex Mono',monospace;color:#9dc2da;padding:0 6px">Clic sur une case ou chiffres + <kbd>Entrée</kbd></span>
+  </div>
+
+  <!-- Curseur visible tant que la souris bouge -->
+  <svg viewBox="0 0 24 24" width="30" height="30" style="position:absolute;left:1180px;bottom:66px" aria-hidden="true"><path d="M5 3l14 8-6 2-2 6z" fill="#ffffff" stroke="#041d30" stroke-width="1.5" stroke-linejoin="round"></path></svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1920,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

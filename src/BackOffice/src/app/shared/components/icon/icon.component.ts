@@ -7,10 +7,14 @@ export type IconName =
   | 'check'
   | 'chevron-right'
   | 'close'
+  | 'contrast'
   | 'delete'
   | 'download'
   | 'edit'
+  | 'fullscreen'
   | 'menu'
+  | 'pause'
+  | 'play'
   | 'trophy'
   | 'undo';
 

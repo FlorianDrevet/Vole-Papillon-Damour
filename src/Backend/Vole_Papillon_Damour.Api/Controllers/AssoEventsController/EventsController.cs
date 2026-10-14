@@ -1,10 +1,10 @@
 using MapsterMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Vole_Papillon_Damour.Api.Common.Utils;
+using Microsoft.Extensions.Options;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Api.LiveTableau;
 using Vole_Papillon_Damour.Application.Actuality.Commands.DeleteActuality;
-using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Application.Events.Commands.CreateEvent;
 using Vole_Papillon_Damour.Application.Events.Commands.Events.AddBingoWin;
 using Vole_Papillon_Damour.Application.Events.Commands.Events.AddWinPartie;
@@ -16,10 +16,10 @@ using Vole_Papillon_Damour.Application.Events.Queries;
 using Vole_Papillon_Damour.Application.Events.Queries.GetAssoEventById;
 using Vole_Papillon_Damour.Application.Events.Queries.GetNextBingo;
 using Vole_Papillon_Damour.Application.Events.Queries.GetNextBooks;
+using Vole_Papillon_Damour.Application.Events.Queries.GetTodayEvent;
 using Vole_Papillon_Damour.Contracts.Events.Requests;
 using Vole_Papillon_Damour.Contracts.Events.Responses;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
-using Vole_Papillon_Damour.Infrastructure.Services;
 
 namespace Vole_Papillon_Damour.Api.Controllers.AssoEventsController;
 
@@ -114,6 +114,17 @@ public static class EventsController
                             error => error.Result());
                     })
                 .WithName("Get next other event");
+
+            endpoints.MapGet("/asso-events/today",
+                    async (IMediator mediator, IMapper mapper, CancellationToken cancellationToken) =>
+                    {
+                        var todayEvent = await mediator.Send(new GetTodayEventQuery(), cancellationToken);
+                        return todayEvent is null
+                            ? Results.NoContent()
+                            : Results.Ok(mapper.Map<TodayEventResponse>(todayEvent));
+                    })
+                .WithName("Get today event")
+                .CacheOutput(policy => policy.Expire(TimeSpan.FromSeconds(10)));
             
             endpoints.MapGet("/asso-events/{id}",
                     async (Guid id,
@@ -183,7 +194,7 @@ public static class EventsController
             endpoints.MapPost("/asso-events/{id}/numeros",
                     async (AddNumeroToPartieRequest request, 
                         Guid id,
-                        IMediator mediator, IMapper mapper, ISSEClientManager sseClientManager) =>
+                        IMediator mediator, IMapper mapper, ILiveTableauHub liveTableauHub) =>
                     {
                         var command = new AddNumeroToEventCommand(
                             new AssoEventsId(id),
@@ -191,134 +202,113 @@ public static class EventsController
                         
                         var addNumeroResult = await mediator.Send(command);
 
-                        return await addNumeroResult.MatchAsync(
-                            async addNumeroResult =>
+                        return addNumeroResult.Match(
+                            addNumeroResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(addNumeroResult);
-                                
-                                var jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
+                                liveTableauHub.Publish(command.AssoEventsId, LiveTableauSnapshot.From(eventResponse));
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => Task.FromResult(error.Result()));
+                            error => error.Result());
                     })
                 .WithName("Add a number to a partie")
                 .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapDelete("/asso-events/{id}/numeros",
                     async (Guid id,
-                        IMediator mediator, IMapper mapper, ISSEClientManager sseClientManager) =>
+                        IMediator mediator, IMapper mapper, ILiveTableauHub liveTableauHub) =>
                     {
                         var command = new RemoveLastNumeroCommand(
                             new AssoEventsId(id));
                         
                         var removeLastNumeroResult = await mediator.Send(command);
 
-                        return await removeLastNumeroResult.MatchAsync(
-                            async removeLastNumeroResult =>
+                        return removeLastNumeroResult.Match(
+                            removeLastNumeroResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(removeLastNumeroResult);
-                                
-                                var jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
+                                liveTableauHub.Publish(command.AssoEventsId, LiveTableauSnapshot.From(eventResponse));
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => Task.FromResult(error.Result()));
+                            error => error.Result());
                     })
                 .WithName("Remove last numero of a partie")
                 .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapPost("/asso-events/{id}/win-partie",
                     async (Guid id,
-                        IMediator mediator, IMapper mapper, ISSEClientManager sseClientManager) =>
+                        IMediator mediator, IMapper mapper, ILiveTableauHub liveTableauHub) =>
                     {
                         var command = new AddWinPartieCommand(
                             new AssoEventsId(id));
                                     
                         var createPartieResult = await mediator.Send(command);
             
-                        return await createPartieResult.MatchAsync(
-                            async createPartieResult =>
+                        return createPartieResult.Match(
+                            createPartieResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(createPartieResult);
-                                
-                                var  jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
+                                liveTableauHub.Publish(command.AssoEventsId, LiveTableauSnapshot.From(eventResponse));
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => Task.FromResult(error.Result()));
+                            error => error.Result());
                     })
                 .WithName("Add win to a partie")
                 .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapPut("/asso-events/{id}/bingo-win",
                     async (AddBingoWinRequest request, Guid id,
-                        IMediator mediator, IMapper mapper, ISSEClientManager sseClientManager) =>
+                        IMediator mediator, IMapper mapper, ILiveTableauHub liveTableauHub) =>
                     {
                         var command = new AddBingoWinCommand(
                             new AssoEventsId(id), request.HasBeenWon!.Value);
                                     
                         var createPartieResult = await mediator.Send(command);
             
-                        return await createPartieResult.MatchAsync(
-                            async createPartieResult =>
+                        return createPartieResult.Match(
+                            createPartieResult =>
                             {
                                 var eventResponse = mapper.Map<EventResponse>(createPartieResult);
-                                
-                                var jsonMessage = JsonSerializerHelper.Serialize(eventResponse);
-                                await sseClientManager.SendToEvent(command.AssoEventsId, jsonMessage);
+                                liveTableauHub.Publish(command.AssoEventsId, LiveTableauSnapshot.From(eventResponse));
                                 
                                 return Results.Ok(eventResponse);
                             },
-                            error => Task.FromResult(error.Result()));
+                            error => error.Result());
                     })
                 .WithName("Update Bingo win")
                 .RequireAuthorization(AdminPolicyName);
             
             endpoints.MapGet("/asso-events/{id}/tableau/sse",
-                    async (HttpContext ctx, Guid id, 
+                    async (HttpContext context, Guid id,
                         IMediator mediator, IMapper mapper,
-                        ISSEClientManager sseClientManager, CancellationToken ct) =>
+                        ILiveTableauHub liveTableauHub, IOptions<LiveTableauOptions> options,
+                        CancellationToken cancellationToken) =>
                     {
-                        ctx.Response.Headers.Append("Content-Type", "text/event-stream");
-                        ctx.Response.Headers.Append("Cache-Control", "no-cache");
-    
-                        var clientId = ctx.Connection.Id;
-                        var streamWriter = new StreamWriter(ctx.Response.Body);
-
-                        sseClientManager.AddClient(new AssoEventsId(id), clientId, streamWriter);
-                        
-                        var command = new GetAssoEventByIdQuery(
-                            new AssoEventsId(id));
-                        
-                        var assoEventResult = await mediator.Send(command, ct);
-
-                        await assoEventResult.MatchAsync(
-                            async assoEventResult =>
-                            {
-                                var eventResponse = mapper.Map<EventResponse>(assoEventResult);
-                                await sseClientManager.SendToClient(clientId, JsonSerializerHelper.Serialize(eventResponse));
-                                return Task.CompletedTask;
-                            },
-                            async error =>
-                            {
-                                return Task.CompletedTask;
-                            });
-
-                        var connectionClosed = new TaskCompletionSource();
-                        using var cancellationRegistration = ctx.RequestAborted.Register(() => connectionClosed.TrySetResult());
-
-                        try
+                        var assoEventsId = new AssoEventsId(id);
+                        // Subscribe before reading the state: a change made in between is
+                        // then queued instead of lost.
+                        var subscription = liveTableauHub.Subscribe(assoEventsId);
+                        var assoEventResult = await mediator.Send(new GetAssoEventByIdQuery(assoEventsId), cancellationToken);
+                        if (assoEventResult.IsError)
                         {
-                            await connectionClosed.Task;
+                            subscription.Dispose();
+                            return assoEventResult.FirstError.Result();
                         }
-                        finally
-                        {
-                            sseClientManager.RemoveClient(clientId);
-                        }
+
+                        var initial = LiveTableauSnapshot.From(mapper.Map<EventResponse>(assoEventResult.Value));
+                        liveTableauHub.ObserveRevision(assoEventsId, initial.Revision);
+                        // Reverse proxies (nginx, Render) must not buffer the stream.
+                        context.Response.Headers["X-Accel-Buffering"] = "no";
+
+                        return TypedResults.ServerSentEvents(LiveTableauStream.ReadAsync(
+                            initial,
+                            subscription,
+                            options.Value.HeartbeatInterval,
+                            options.Value.ReconnectionInterval,
+                            cancellationToken));
                     })
                 .WithName("Get SSE for a tableau");
         });

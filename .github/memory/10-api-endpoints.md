@@ -23,11 +23,12 @@
 - `GET /asso-events`, `GET /asso-events/{id}` - public event reads; the Catalog home uses the
   collection response for the upcoming calendar and filters the typed `Books` event kind.
 - `GET /asso-events/next-bingo`, `GET /asso-events/next-books`, `GET /asso-events/next-other-event` - public next-event projections
+- `GET /asso-events/today` - public compact projection for the current Paris calendar day; returns `204` when no non-cancelled event is happening, otherwise prefers a Bingo event and then the earliest start. Output caching is 10 seconds. The typed response includes event identity/name/type, dates, opening/closing times, city, and loto-only `liveStatus` / `lastNumero`.
 - `POST /asso-events`, `PUT /asso-events/{id}` - admin-protected event writes
 - `POST /asso-events/{id}/numeros`, `DELETE /asso-events/{id}/numeros`, `POST /asso-events/{id}/win-partie`, `PUT /asso-events/{id}/bingo-win` - admin-protected live bingo mutations
-- `GET /asso-events/{id}/tableau/sse` - public SSE stream used by the website live tableau
+- `GET /asso-events/{id}/tableau/sse` - public SSE stream of full `EventResponse` snapshots. The SSE `id` is `LiveRevision`; the initial snapshot includes a 3-second `retry`, and idle streams emit `ping` events every 15 seconds. Unknown event IDs return `404`.
 
-Live bingo mutations broadcast the updated `EventResponse` only to SSE clients registered for the same `{id}`. The SSE endpoint sends an initial snapshot after registration and removes the client when the request is aborted.
+Each successful live bingo mutation increments the event's `LiveRevision`, saves it as an EF concurrency token, then publishes the updated snapshot to subscribers for that event. A concurrent write conflict maps to `409 Conflict`. The endpoint subscribes before loading its initial snapshot to avoid missing a change in that interval, and disposes the subscription when the request ends. `LiveTableauSyncService` checks revisions for locally watched events every second and loads/publishes a fresh snapshot when another API replica advanced one; clients connected to any replica therefore receive the same live state.
 
 ## Nested Event Subresources
 

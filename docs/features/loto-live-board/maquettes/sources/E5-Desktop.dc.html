@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>E5 · Bandeau En direct — desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&amp;family=Libre+Franklin:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#0c6ea6}a:hover{color:#072b45}
+.mono{font-family:'IBM Plex Mono',monospace}
+.navl{color:#4e6c84;text-decoration:none;font-size:14px;border-bottom:2px solid transparent;padding-bottom:3px}
+</style>
+</helmet>
+<div style="width:1440px;min-height:640px;background:#f7fbfe;color:#072b45;font-family:'Libre Franklin',system-ui,sans-serif">
+
+  <!-- E5 : bandeau du jour, au-dessus de l'en-tête -->
+  <div data-zone="E5-bandeau" role="region" aria-label="Événement du jour" style="display:flex;align-items:center;gap:20px;height:52px;padding:0 44px;background:#041d30;color:#ffffff">
+    <span data-zone="E5-statut-direct" class="mono" style="display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#f9a93c">
+      <span aria-hidden="true" style="width:9px;height:9px;border-radius:999px;background:#f0801c;box-shadow:0 0 0 4px rgba(240,128,28,.25)"></span>
+      En direct
+    </span>
+    <span style="font-size:15px;font-weight:600">Grand loto de Vole Papillon d'Amour</span>
+    <span style="color:#6d8ba2" aria-hidden="true">·</span>
+    <span data-zone="E5-dernier-numero" style="display:inline-flex;align-items:center;gap:10px;font-size:14px;color:#dcecf7">
+      Dernier numéro
+      <span style="display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:30px;padding:0 8px;border-radius:8px;background:#f0801c;color:#041d30;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums">42</span>
+    </span>
+    <a data-zone="E5-bouton-suivre" href="#" style="margin-left:auto;display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 16px;border-radius:999px;background:#ffffff;color:#041d30;font-size:14px;font-weight:700;text-decoration:none">
+      Suivre le tableau
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+    </a>
+    <button type="button" data-zone="E5-fermer" aria-label="Masquer le bandeau" style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:999px;background:transparent;color:#9dc2da;cursor:pointer">
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+    </button>
+  </div>
+
+  <!-- En-tête existant du site (inchangé) -->
+  <header style="display:flex;align-items:center;justify-content:space-between;padding:20px 44px;border-bottom:1px solid #d9e9f4;background:#f7fbfe">
+    <a href="#" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:#072b45">
+      <span aria-hidden="true" style="width:42px;height:42px;border-radius:999px;background:linear-gradient(135deg,#7fd8f5,#1497d6 55%,#f0801c)"></span>
+      <span style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-family:'Newsreader',Georgia,serif;font-size:18px;line-height:1">Vole Papillon d'Amour</span>
+        <span class="mono" style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#6d8ba2">Association loi 1901 · depuis 2010</span>
+      </span>
+    </a>
+    <nav aria-label="Navigation principale" style="display:flex;align-items:center;gap:24px">
+      <a class="navl" href="#" style="color:#072b45;font-weight:600;border-color:#f0801c">Accueil</a>
+      <a class="navl" href="#">L'association</a>
+      <a class="navl" href="#">Maxence</a>
+      <a class="navl" href="#">Nos actions</a>
+      <a class="navl" href="#">Évènements</a>
+      <a class="navl" href="#">Actualités</a>
+      <a class="navl" href="#">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Début de la page d'accueil (contexte) -->
+  <section style="padding:72px 44px;background:linear-gradient(205deg,#7fd8f5 0%,#1497d6 26%,#0c6ea6 52%,#062a44 100%);color:#ffffff;min-height:360px;box-sizing:border-box">
+    <span class="mono" style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#dcecf7">Page d'accueil — contenu existant</span>
+    <h1 style="margin:16px 0 0;max-width:14ch;font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:64px;line-height:.98;letter-spacing:-.025em">Ensemble pour Maxence</h1>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

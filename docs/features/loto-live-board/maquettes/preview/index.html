@@ -1,0 +1,49 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Maquettes — Loto — tableau en direct</title>
+<style>body{margin:0;padding:40px;font-family:'Libre Franklin',system-ui,sans-serif;background:#f7fbfe;color:#072b45}h1,h2{font-family:Georgia,serif;font-weight:500}h2{margin-top:36px}table{border-collapse:collapse;width:100%;background:#fff}td,th{border:1px solid #d9e9f4;padding:10px;text-align:left;vertical-align:top;font-size:14px}code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:#e9f4fb;padding:1px 4px}.note{background:#fff;border:1px solid #d9e9f4;padding:12px 16px;margin:8px 0;font-size:14px;line-height:1.5}</style></head><body>
+<h1>Maquettes — Loto — tableau en direct</h1>
+<p>Export du canvas Claude Design <a href="https://claude.ai/artifact/UBbiYvymt2pBPJKVfgRnkR">https://claude.ai/artifact/UBbiYvymt2pBPJKVfgRnkR</a>. Chaque page est autonome. Les zones à implémenter portent un attribut <code>data-zone</code>, cité par le plan.</p>
+<h2>Projection (backoffice)</h2><table><tr><th>Écran</th><th>Taille</th><th>Zones</th></tr>
+<tr><td><a href="Main.html">E1 · Tableau projeté — palette A sombre</a><br><code>preview/Main.html</code></td><td>1920 × 1080</td><td><code>E1-bingo</code> <code>E1-case-derniere</code> <code>E1-case-non-sortie</code> <code>E1-case-sortie</code> <code>E1-compteur-fois</code> <code>E1-dernier-numero</code> <code>E1-grille</code> <code>E1-ligne</code> <code>E1-lots</code> <code>E1-partie</code> <code>E1-precedents</code> <code>E1-tableau</code></td></tr>
+<tr><td><a href="E1-Claire.html">E1 · Tableau projeté — palette B claire (partie +1 / −1)</a><br><code>preview/E1-Claire.html</code></td><td>1920 × 1080</td><td><code>E1-bingo</code> <code>E1-case-voisin</code> <code>E1-dernier-numero</code> <code>E1-grille</code> <code>E1-ligne</code> <code>E1-lots</code> <code>E1-partie</code> <code>E1-precedents</code> <code>E1-tableau</code> <code>E1-type-partie</code></td></tr>
+<tr><td><a href="E3-Regie.html">E3 · Contrôles visibles (souris active) — palette A</a><br><code>preview/E3-Regie.html</code></td><td>1920 × 1080</td><td><code>E3-aide-raccourcis</code> <code>E3-barre-regie</code> <code>E3-bouton-annuler</code> <code>E3-bouton-bingo</code> <code>E3-bouton-ligne</code> <code>E3-bouton-palette</code> <code>E3-bouton-pause</code> <code>E3-bouton-plein-ecran</code> <code>E3-saisie-clavier</code> <code>E3-toast-erreur</code></td></tr>
+<tr><td><a href="E2-Numero.html">E2 · Numéro tiré — palette A</a><br><code>preview/E2-Numero.html</code></td><td>1920 × 1080</td><td><code>E2-annonce-numero</code></td></tr>
+<tr><td><a href="E2-AvantDebut.html">E2 · Avant le début (QR code) — palette A</a><br><code>preview/E2-AvantDebut.html</code></td><td>1920 × 1080</td><td><code>E2-adresse-courte</code> <code>E2-avant-debut</code> <code>E2-premiere-partie</code> <code>E2-qr-code</code></td></tr>
+<tr><td><a href="E2-Pause.html">E2 · Pause (QR code) — palette A</a><br><code>preview/E2-Pause.html</code></td><td>1920 × 1080</td><td><code>E2-bingo-pause</code> <code>E2-partie-suivante</code> <code>E2-pause</code> <code>E2-qr-code</code></td></tr>
+<tr><td><a href="E2-Termine.html">E2 · Loto terminé — palette A</a><br><code>preview/E2-Termine.html</code></td><td>1920 × 1080</td><td><code>E2-bilan-bingo</code> <code>E2-termine</code></td></tr>
+<tr><td><a href="E2-NumeroClaire.html">E2 · Numéro tiré — palette B</a><br><code>preview/E2-NumeroClaire.html</code></td><td>1920 × 1080</td><td><code>E2-annonce-numero</code></td></tr>
+<tr><td><a href="E2-PauseClaire.html">E2 · Pause (QR code) — palette B</a><br><code>preview/E2-PauseClaire.html</code></td><td>1920 × 1080</td><td><code>E2-bingo-pause</code> <code>E2-partie-suivante</code> <code>E2-pause</code> <code>E2-qr-code</code></td></tr>
+<tr><td><a href="E2-AvantDebutClaire.html">E2 · Avant le début (QR code) — palette B</a><br><code>preview/E2-AvantDebutClaire.html</code></td><td>1920 × 1080</td><td><code>E2-adresse-courte</code> <code>E2-avant-debut</code> <code>E2-premiere-partie</code> <code>E2-qr-code</code></td></tr>
+</table>
+<div class="note">RG-01 : sorti / non sorti se lisent par la luminosité. 4 états lisibles en gris : non sorti (sombre), sorti (plein clair en A / plein encre en B), dernier (orange), voisin +1/−1 (case cerclée).
+RG-02/03 : chiffres grille 76 px, dernier numéro 320 px, Libre Franklin 800, chiffres tabulaires.
+RG-23 : grille = 75 % de la largeur, toute la hauteur. Pas de QR code ici (RG-21).</div>
+<div class="note">RG-22 : palette basculée en direct par la touche P ou le bouton de régie (voir E3). Les deux palettes sont deux jeux de variables CSS sur la même mise en page.</div>
+<div class="note">RG-04 : barre, curseur et témoin de saisie masqués après 3 s sans souris. La barre réapparaît au mouvement de la souris.
+Clavier : chiffres + Entrée = tirer · Retour arrière = annuler · L = ligne gagnée · B = bingo · Espace = pause / reprise · P = palette · F = plein écran.
+RG-05 : actions désactivées pendant l&#x27;envoi (bouton « en cours »).
+RG-06 : toast « Le numéro 42 est déjà sorti. »</div>
+<div class="note">RG-07 : annonce du numéro 2 s, remplacée par la saisie suivante.
+RG-08 : Pause après la ligne qui termine une partie « pause après », fermée par « Reprendre ».
+RG-09 : avant la 1re partie / après la dernière → ces écrans, jamais d&#x27;erreur.
+RG-21/24 : QR code uniquement Avant le début et Pause ; adresse courte volepapillondamour.fr/loto.</div>
+<h2>Site public</h2><table><tr><th>Écran</th><th>Taille</th><th>Zones</th></tr>
+<tr><td><a href="E5-Desktop.html">E5 · Bandeau « En direct » — desktop</a><br><code>preview/E5-Desktop.html</code></td><td>1440 × 640</td><td><code>E5-bandeau</code> <code>E5-bouton-suivre</code> <code>E5-dernier-numero</code> <code>E5-fermer</code> <code>E5-statut-direct</code></td></tr>
+<tr><td><a href="E5-Mobile.html">E5 · Bandeau « En direct » — mobile</a><br><code>preview/E5-Mobile.html</code></td><td>390 × 700</td><td><code>E5-bandeau</code> <code>E5-bouton-suivre</code> <code>E5-dernier-numero</code> <code>E5-fermer</code> <code>E5-statut-direct</code></td></tr>
+<tr><td><a href="E5-Etats.html">E5 · Bandeau — états</a><br><code>preview/E5-Etats.html</code></td><td>1440 × 900</td><td><code>E5-lien-evenement</code> <code>E5-variante-autre</code> <code>E5-variante-avant</code> <code>E5-variante-termine</code></td></tr>
+<tr><td><a href="E4-Mobile.html">E4 · Tableau en direct — mobile</a><br><code>preview/E4-Mobile.html</code></td><td>390 × 1560</td><td><code>E4-bingo</code> <code>E4-dernier-numero</code> <code>E4-etat-connexion</code> <code>E4-grille</code> <code>E4-lots</code> <code>E4-partie</code> <code>E4-precedents</code></td></tr>
+<tr><td><a href="E4-Desktop.html">E4 · Tableau en direct — desktop</a><br><code>preview/E4-Desktop.html</code></td><td>1440 × 1000</td><td><code>E4-bingo</code> <code>E4-dernier-numero</code> <code>E4-etat-connexion</code> <code>E4-grille</code> <code>E4-lots</code> <code>E4-partie</code> <code>E4-precedents</code></td></tr>
+<tr><td><a href="E4-Etats.html">E4 · Tableau en direct — états</a><br><code>preview/E4-Etats.html</code></td><td>1760 × 900</td><td><code>E4-avant-debut</code> <code>E4-introuvable</code> <code>E4-reconnexion</code> <code>E4-termine</code></td></tr>
+<tr><td><a href="E6-Desktop.html">E6 · Fiche loto le jour J — desktop</a><br><code>preview/E6-Desktop.html</code></td><td>1440 × 720</td><td><code>E6-bouton-suivre</code> <code>E6-encart-direct</code></td></tr>
+<tr><td><a href="E6-Mobile.html">E6 · Fiche loto le jour J — mobile</a><br><code>preview/E6-Mobile.html</code></td><td>390 × 980</td><td><code>E6-bouton-suivre</code> <code>E6-encart-direct</code></td></tr>
+</table>
+<div class="note">RG-16 : jour J = date de Paris entre début et fin ; annulé exclu.
+RG-17 : loto prioritaire si plusieurs événements.
+RG-18 : avant → En direct (1er numéro) → Terminé.
+RG-19 : fermeture mémorisée pour la journée ; réapparaît une fois au passage En direct.
+RG-20 : absent de la page du tableau ; pas de saut de mise en page.</div>
+<div class="note">RG-10 : chaque changement en ≤ 2 s.
+RG-12 : reconnexion seule + état complet resynchronisé.
+RG-13 : « Reconnexion… » après 5 s, « Hors ligne » si le téléphone n&#x27;a plus de réseau ; dernier état gardé.
+RG-15 : événement inconnu → message dédié.
+Pas d&#x27;écran Pause côté téléphone (décision du 13/10).</div>
+</body></html>

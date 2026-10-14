@@ -41,6 +41,7 @@ public class AddNumeroToEventCommandHandler(IEventRepository eventRepository, IM
             }
         }
 
+        assoEvent.MarkLiveChange();
         assoEvent = await eventRepository.UpdateAsync(assoEvent);
         return mapper.Map<AssoEventResult>(assoEvent);
     }
