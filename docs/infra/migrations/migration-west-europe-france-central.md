@@ -177,7 +177,7 @@ Références : [certificats managés et domaines ACA](https://learn.microsoft.co
 - Création des ressources ACR, stockage, Key Vault, Container Apps et supervision en France Central, dans `rg-vpd-dev` pour les ressources VPD. SQL, ACS et le groupe de ressources existant sont conservés.
 - Import des images VPD et Mariage dans `vpdacrshared`, rôles d’accès, OIDC et adaptation des workflows. Les déploiements de validation vers l’ACR partagé ont réussi.
 - Synchronisation finale incrémentale des blobs et réécriture des 346 URL dans la même base SQL ; aucune migration de schéma/base.
-- Arrêt du Worker West Europe, mise en service du Worker France Central (min=0/max=1) et réorientation du webhook ACS.
+- Arrêt du Worker West Europe, mise en service du Worker France Central (min=0/max=1) et réorientation du webhook ACS. Le workflow ACS `38637592645` a vérifié le domaine d’envoi, les permissions et les références de secret, puis mis à jour l’abonnement Event Grid vers l’API France Central. Il n’envoie pas d’e-mail de test.
 - Bascule OVH : l’apex A vise `51.138.199.49` et les CNAME `www`, `backoffice`, `livres`, `scan` visent les FQDN ACA France Central. Les cinq certificats managés sont liés et les cinq routes HTTPS renvoient `200` avec validation TLS réussie. Aucun CDN OVH actif n’a été trouvé ; le DNS est direct vers ACA.
 - Les anciennes ressources restent disponibles et n’ont pas été supprimées.
 
@@ -219,8 +219,8 @@ Après le nettoyage, enlever les paramètres de coexistence devenus inutiles, ga
 
 - Le What-If Bicep `38636020253` et le déploiement d’alignement `38636607517` ont réussi sans suppression de ressource. La sonde webhook ACS a passé. Après le déploiement, apex et `www` redirigent vers `/accueil`, les trois autres domaines répondent directement ; les cinq contrôles finaux HTTPS ont abouti à HTTP 200 avec TLS valide.
 - Les cinq domaines ont déjà répondu `200` en HTTPS avec validation TLS réussie ; refaire le contrôle après la stabilisation si un changement DNS/certificat intervient.
-- Les workflows Storage (`38634898966`) et ACS Email (`38621723956`) ont réussi. La base conserve son serveur et son schéma ; 346 références ont été mises à jour et ne correspondent plus à l’URL source.
-- Vérifier sur la durée les parcours Entra, les écritures Blob, la remontée des alertes/supervision, le webhook ACS et l’absence d’exécution Worker en double.
+- Les workflows Storage (`38634898966`), ACS Email (`38621723956`, `38637592645`) et Infrastructure (`38636607517`) ont réussi. ACS est lié au webhook France Central ; aucun e-mail de test n’a été envoyé. La base conserve son serveur et son schéma ; 346 références ont été mises à jour et ne correspondent plus à l’URL source.
+- Vérifier sur la durée les parcours Entra, les écritures Blob, la remontée des alertes/supervision, un e-mail de test contrôlé et l’absence d’exécution Worker en double.
 - Les PR [VPD #255](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/255) et [Mariage #8](https://github.com/FlorianDrevet/mariage-edwige-henri/pull/8) sont ouvertes, non fusionnées ; les runs de validation cités sont réussis. Laisser le propriétaire les examiner/fusionner et conserver `acrweh` pour le retour arrière.
 - Aucun CDN OVH n’a été trouvé dans les services consultés et l’ancien A record correspondait à l’IP de l’environnement ACA West Europe. Réexaminer uniquement si le compte révèle ultérieurement un produit CDN.
 - Conserver les ressources West Europe au moins sept jours après validation de la production. Avant leur retrait, fournir le mapping final et demander une confirmation explicite ; ne jamais supprimer `rg-vpd-dev`, SQL, ACS, les identités encore utilisées, `acrweh` ou l’ACR partagé.
