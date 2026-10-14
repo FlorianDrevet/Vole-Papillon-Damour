@@ -1,17 +1,19 @@
 # Migration de West Europe vers France Central
 
-**Statut d'exécution :** migration en cours. La pile France Central et l’ACR partagé sont déployés. L’apex et les quatre CNAME publics ont été basculés vers France Central ; le certificat de `www` est actif, les autres certificats managés sont en cours d’émission. La synchronisation finale Blob et la validation complète restent à terminer. Aucune ancienne ressource n’a été supprimée.
+**Statut d'exécution :** bascule France Central réalisée le 14 octobre 2026. Les ressources cibles, l’ACR partagé, les pipelines de déploiement (branches de livraison), les cinq domaines HTTPS et la réécriture des URL Blob sont en place. Le What-If et le déploiement d’alignement Bicep ont réussi (`38636020253`, `38636607517`). Les anciennes ressources sont conservées pour le retour arrière ; leur suppression attend au moins sept jours de stabilisation et une confirmation explicite du propriétaire. Les PR VPD #255 et Mariage #8 sont ouvertes, non fusionnées.
 **Révision :** 14 octobre 2026
 **Groupe de ressources conservé :** rg-vpd-dev
 
+Les sections 1 à 7 conservent le périmètre, les contraintes et l’analyse de conception. Pour l’avancement réel, les validations restantes et le nettoyage, suivre les sections 8 à 10.
+
 ## État réel au 14 octobre 2026
 
-- L’ACR partagé `vpdacrshared` est créé dans `rg-core-florian`, en France Central, SKU Basic, accès administrateur désactivé. Les 300 tags des six dépôts VPD ont été copiés et vérifiés par digest. Les 99 tags des deux dépôts `mariage-edwige-henri` ont aussi été importés ; ses deux workflows GitHub déploient maintenant sur cet ACR avec OIDC. Le pipeline VPD utilise également ce registre. Les identités de déploiement ont les rôles demandés sur l’ACR et les identités ACA ont AcrPull. Les PR de livraison des changements GitHub restent à ouvrir.
+- L’ACR partagé `vpdacrshared` est créé dans `rg-core-florian`, en France Central, SKU Basic, accès administrateur désactivé. Les 300 tags des six dépôts VPD ont été copiés et vérifiés par digest. Les 99 tags des deux dépôts `mariage-edwige-henri` ont aussi été importés ; ses workflows backend/frontend ont réussi avec OIDC (runs `38627063181` et `38627062615`). Les workflows VPD ont été adaptés dans la branche de livraison et leur CI a réussi (`38633773357`, `38636004188`). Les identités de déploiement ont les rôles requis sur l’ACR et les identités ACA ont AcrPull. Les PR VPD [#255](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/255) et Mariage [#8](https://github.com/FlorianDrevet/mariage-edwige-henri/pull/8) sont ouvertes. L’ACR contient environ 39 GB, au-dessus des 10 GB inclus au SKU Basic.
 - L’environnement Container Apps et les six applications, le stockage `vpdstdevfc`, le Key Vault, Log Analytics, les six Application Insights, les alertes et tests de disponibilité sont déployés en France Central dans `rg-vpd-dev`.
-- La première copie de `vpdstdev` vers `vpdstdevfc` est terminée, avec vérification des volumes par conteneur et conservation des ACL. La base SQL est conservée ; aucun déploiement EF ni déplacement de base n’a été lancé. Une synchronisation finale et la prévisualisation des références Blob encore présentes attendent la stabilisation de la bascule.
+- La copie initiale puis la synchronisation finale de `vpdstdev` vers `vpdstdevfc` sont terminées. Le workflow `38634898966` a vérifié chaque nom de blob source sans en trouver d’absent ; aucun blob plus récent ne restait à recopier. L’aperçu `38633960661` a identifié 346 URL SQL. L’application `38634898966` a réécrit les 346 lignes, avec zéro ancienne URL restante dans chacune des six colonnes contrôlées. La base SQL est conservée ; aucun déplacement de base ni déploiement EF n’a été lancé.
 - L’API cible est saine sur `/health` et utilise une image reconstruite depuis la révision de l’API actuellement en production. Website, BackOffice, Catalogue et Scan ont aussi été reconstruits depuis leurs révisions actuellement en production, avec l’API France Central. Le Worker France Central est sain avec une réplique (min=0/max=1) ; le Worker West Europe n’a aucune réplique au contrôle. Vérifier les déclenchements planifiés et notifications pendant la validation.
-- Dans la zone DNS OVH, `volepapillondamour.fr` pointe vers `51.138.199.49`, et les CNAME `www`, `backoffice`, `livres` et `scan` pointent directement vers les FQDN ACA France Central. La résolution a été vérifiée depuis un résolveur public. Le certificat managé de `www.volepapillondamour.fr` est émis et HTTPS répond avec un certificat valide ; l’apex et les trois autres certificats sont en cours. L’ancien A record `20.4.178.125` correspondait à l’adresse de l’environnement ACA West Europe. Aucun service CDN actif n’a été identifié dans les services OVH consultés ; le routage configuré est DNS direct vers ACA.
-- Le serveur/base SQL, ACS et les anciennes ressources West Europe sont conservés. La synchronisation finale du stockage, la réécriture ciblée des URL Blob en base et le nettoyage attendent la bascule et la validation. Le nettoyage nécessitera l’accord explicite du propriétaire.
+- Dans la zone DNS OVH, `volepapillondamour.fr` pointe vers `51.138.199.49`, et les CNAME `www`, `backoffice`, `livres` et `scan` pointent directement vers les FQDN ACA France Central. Les cinq domaines répondent `200` en HTTPS avec validation TLS réussie ; la résolution a été vérifiée depuis un résolveur public. L’ancien A record `20.4.178.125` correspondait à l’adresse de l’environnement ACA West Europe. Aucun service CDN actif n’a été identifié dans les services OVH consultés ; le routage configuré est DNS direct vers ACA.
+- Le serveur/base SQL, ACS et les anciennes ressources West Europe sont conservés. L’API cible utilise le stockage France Central ; ACS/Event Grid vise le webhook France Central. Aucun nettoyage n’a été lancé. Le nettoyage attend au moins sept jours de stabilisation ainsi que l’accord explicite du propriétaire.
 
 ## 1. Décision et périmètre
 
@@ -168,69 +170,39 @@ La souscription Event Grid des rapports ACS est une intégration globale à réo
 
 Références : [certificats managés et domaines ACA](https://learn.microsoft.com/en-us/azure/container-apps/custom-domains-managed-certificates), [configuration du domaine sur OVH CDN](https://docs.ovhcloud.com/en/guides/network/content-delivery-network-infrastructure/cdn-infrastructure-first-domain-configuration).
 
-## 8. Ordre d’exécution proposé
+## 8. Exécution et prochaines étapes
 
-### Phase A — Préparation et point de retour arrière
+### Réalisé
 
-- Rafraîchir l’inventaire Azure/OVH et confirmer les accès régionaux, quotas, providers, noms disponibles, limites ACA/ACR et budget de coexistence.
-- Capturer un What-If de référence, les versions d’images, réglages des ressources, rôles, DNS/TTL et secrets par nom uniquement. Vérifier la sauvegarde PITR du SQL, sans restaurer ni déplacer la base.
-- Abaisser le TTL des enregistrements publics assez tôt pour laisser les caches DNS expirer avant la fenêtre.
-- Établir le mapping source-cible, la procédure retour arrière et la durée de conservation des ressources anciennes.
+- Création des ressources ACR, stockage, Key Vault, Container Apps et supervision en France Central, dans `rg-vpd-dev` pour les ressources VPD. SQL, ACS et le groupe de ressources existant sont conservés.
+- Import des images VPD et Mariage dans `vpdacrshared`, rôles d’accès, OIDC et adaptation des workflows. Les déploiements de validation vers l’ACR partagé ont réussi.
+- Synchronisation finale incrémentale des blobs et réécriture des 346 URL dans la même base SQL ; aucune migration de schéma/base.
+- Arrêt du Worker West Europe, mise en service du Worker France Central (min=0/max=1) et réorientation du webhook ACS.
+- Bascule OVH : l’apex A vise `51.138.199.49` et les CNAME `www`, `backoffice`, `livres`, `scan` visent les FQDN ACA France Central. Les cinq certificats managés sont liés et les cinq routes HTTPS renvoient `200` avec validation TLS réussie. Aucun CDN OVH actif n’a été trouvé ; le DNS est direct vers ACA.
+- Les anciennes ressources restent disponibles et n’ont pas été supprimées.
 
-### Phase B — Bicep et accès
+### Stabilisation et clôture
 
-- Refactorer Bicep pour séparer région du groupe et région des ressources ; paramétrer les noms cibles, ACR et ressources SQL/ACS existantes.
-- Ajouter les affectations de rôles à l’ACR externe et vérifier l’isolation régionale des identités.
-- Compiler Bicep et les paramètres dev, examiner le What-If. Bloquer la suite si l’outil prévoit une suppression, un déplacement, une modification SQL/ACS ou un changement du groupe.
-
-### Phase C — ACR et déploiements reproductibles
-
-- Créer et configurer l’ACR partagé France Central par Azure CLI.
-- Migrer les dépôts/tags, appliquer les rôles requis, tester les pulls ACA et pousser une image de test depuis les workflows OIDC.
-- Basculer les workflows sur l’ACR partagé ; confirmer que tous les projets consommateurs ont une configuration documentée.
-
-### Phase D — Stockage, coffre et supervision
-
-- Créer stockage, Key Vault, workspace et Application Insights en France Central dans rg-vpd-dev avec les noms de coexistence.
-- Recopier les blobs, valider les objets et secrets, puis préparer une seconde synchronisation finale.
-- Déployer alertes et tableaux de bord ciblant les nouvelles ressources. Laisser les sources actives jusqu’à la bascule.
-
-### Phase E — ACA de préproduction
-
-- Créer le nouvel environnement et les six apps ; déployer des images cohérentes avec le code actuellement en service.
-- Configurer les nouvelles références SQL (même serveur/base), Storage, Key Vault, ACS, Application Insights, identité et CORS.
-- Tester via les FQDN ACA : health API, pages, connexion Entra, API, upload/download Blob, accès SQL, Scan, Catalog et envoi d’e-mail de test contrôlé. Vérifier les références et rôles prévus pour le Worker sans démarrer ses timers.
-- Ne pas encore déployer/démarrer le Worker cible et ne pas réorienter Event Grid ou les domaines publics.
-- Attacher les domaines ACA après vérification des enregistrements DNS directs : A apex vers l’IP de l’environnement et CNAME des sous-domaines directement vers les FQDN ACA. Ne pas réutiliser un certificat de l’ancien environnement. Pendant l’exécution, OVH a déjà été basculé vers France Central ; le certificat `www` est actif, ceux de l’apex et des trois autres sous-domaines restent à confirmer.
-
-### Phase F — Bascule contrôlée
-
-- Activer la fenêtre de maintenance courte, arrêter les nouvelles écritures Blob et arrêter l’ancien Worker.
-- Exécuter la dernière copie des blobs et vérifier qu’aucune copie n’est en cours ; prévisualiser puis appliquer la réécriture d’URL Blob dans la base existante si elle est nécessaire.
-- Déployer les images finales et secrets cibles. Reconfigurer la souscription Event Grid ACS vers la nouvelle API.
-- Vérifier que les DNS publics OVH résolvent vers France Central et que les cinq domaines servent HTTPS avec un certificat valide ; les DNS ont déjà été basculés directement vers les ACA. Aucun service CDN OVH actif n’a été trouvé dans le compte consulté, donc la configuration actuelle ne comporte pas d’origine CDN à modifier.
-- Le Worker France Central étant déjà déployé et sain, ne pas le redéployer pendant la bascule. Confirmer que le Worker West Europe reste sans réplique, puis vérifier un seul traitement de chaque timer et une seule souscription webhook active.
-- Rétablir les écritures et surveiller API, erreurs, latences, stockage, e-mails et compteurs du Worker.
-
-### Phase G — Stabilisation, retour arrière, suppression
-
-- Garder les anciennes ressources disponibles au moins sept jours après la validation de production, ou plus longtemps si les signaux/volumes le justifient.
-- Pendant cette période, ne pas republier uniquement dans l’ancien ACR et ne pas laisser tourner deux Workers. Conserver un journal des corrections et des images utilisées.
-- Si le retour arrière est requis : remettre l’origine/DNS OVH vers l’ancien environnement, rebasculer les secrets et le webhook, arrêter le Worker France Central et synchroniser les blobs écrits après la bascule. Ne restaurer la base SQL que si un incident distinct l’exige ; cette migration ne déplace pas SQL.
-- Après accord des critères ci-dessous, supprimer les ressources West Europe individuellement, par dépendance. Ne jamais supprimer le groupe rg-vpd-dev.
+- Surveiller pendant au moins sept jours les erreurs, latences, alertes, uploads/lectures Blob, flux mail et traitement des timers du Worker. Confirmer qu’aucun traitement ni webhook ne s’exécute en double.
+- Le What-If `38636020253` a réussi : aucune suppression de ressource n’est annoncée (1 création de script de validation du webhook, 35 ressources modifiées, 40 sans changement, 72 `Ignore`). ARM indique aussi qu’il ne peut pas analyser certaines affectations de rôles dynamiques avant le déploiement. Le déploiement Bicep `38636607517` a réussi et la sonde de validation du webhook a passé.
+- Faire examiner les PR [VPD #255](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/255) et [Mariage #8](https://github.com/FlorianDrevet/mariage-edwige-henri/pull/8), puis les fusionner par le propriétaire avant de considérer les workflows `main` définitivement alignés.
+- Documenter le mapping de chaque ancienne ressource vers sa cible et vérifier les dépendances/références avant tout nettoyage.
+- Après la période de retour arrière, présenter la liste précise des anciennes ressources candidates. Demander une confirmation explicite avant toute suppression ; ne jamais supprimer le groupe, SQL, ACS, les identités toujours utilisées, `acrweh` ou `vpdacrshared`.
 
 ## 9. Critères d’acceptation et nettoyage
 
-La bascule est validée quand :
+État des critères au 14 octobre 2026 :
 
-- le What-If et le déploiement Bicep ne montrent aucune modification de région ou suppression du SQL, ACS, du groupe, des identités préservées ou des ressources globales ;
-- toutes les images et tags nécessaires sont lisibles dans l’ACR partagé, chaque pipeline pertinent pousse et déploie avec OIDC, et toutes les identités de projets consommateurs sont listées ;
-- les comptes Blob sont cohérents, tous les blobs sont copiés, les conteneurs et permissions répondent comme prévu et les références persistées ont été vérifiées ;
-- API /health, Website, BackOffice, Catalog, Scan et parcours Entra réussissent sur les domaines publics avec certificats valides ;
-- les cinq domaines publics répondent en HTTPS sur les ACA France Central avec des certificats valides ; si un CDN OVH est découvert ultérieurement, valider son origine et le bypass avant activation ;
-- la base reste vpd-sql-dev / vole-papillon-damour-db, les écritures métier fonctionnent et aucun Worker ou webhook en double ne s’exécute ;
-- les nouvelles traces arrivent dans le workspace France Central, les alertes et tests de disponibilité ciblent le bon environnement, et les notifications de test arrivent au bon destinataire ;
-- les pipelines opérationnels (backup, import, snapshot, reset et migration de stockage) pointent toujours vers les ressources prévues.
+- [x] Le What-If `38636020253` s’est terminé sans suppression de ressource ; il prévoyait une validation du webhook et des changements sur les ressources cibles.
+- [x] Le déploiement Bicep `38636607517` a réussi. Les cinq domaines ont conservé leur liaison SNI et répondent après déploiement ; l’API `/health` est saine. Le serveur/base SQL et l’ancienne pile restent en place.
+- [x] Les tags des six dépôts VPD et des deux dépôts Mariage sont présents dans l’ACR partagé ; les déploiements OIDC exécutés pour les deux projets ont réussi. Les PR qui rendent la configuration permanente sur `main` restent à examiner.
+- [x] La synchronisation incrémentale finale a validé la présence de tous les blobs source ; les ACL source ont été reprises et 346 URL en base ont été réécrites, avec zéro correspondance restante vers l’ancien compte.
+- [x] Les cinq routes publiques (apex, `www`, `backoffice`, `livres`, `scan`) ont renvoyé HTTP 200 en HTTPS avec validation TLS réussie ; `/health` de l’API cible a répondu sainement. Le parcours Entra complet reste à vérifier.
+- [x] La base est toujours `vpd-sql-dev` / `vole-papillon-damour-db` ; aucune migration EF ou de schéma n’a été exécutée.
+- [ ] Confirmer pendant la stabilisation les écritures Blob, les parcours Entra, les traces/alertes, le flux mail ACS et l’exécution unique des timers Worker/webhook.
+- [ ] Vérifier que les workflows opérationnels (backup, import, snapshot et reset) pointent toujours vers les ressources attendues, puis examiner/fusionner les PR de livraison.
+
+Le nettoyage ne commence qu’après au moins sept jours de validation et une confirmation explicite du propriétaire. Si un critère reste ouvert, prolonger la coexistence et conserver le retour arrière.
 
 Ordre de retrait des doublons :
 
@@ -245,10 +217,11 @@ Après le nettoyage, enlever les paramètres de coexistence devenus inutiles, ga
 
 ## 10. Suivi avant toute suppression
 
-- Confirmer les certificats managés et l’accès HTTPS pour l’apex, `www`, `backoffice`, `livres` et `scan`.
-- Faire la synchronisation finale de `vpdstdev` vers `vpdstdevfc`, puis lancer le mode `preview` du workflow pour compter les références à `vpdstdev.blob.core.windows.net`. Le mode `apply` ne sera utilisé que si la prévisualisation confirme des références à réécrire vers le nouveau stockage.
-- Vérifier les parcours Website, BackOffice, Catalogue, Scan, API et Entra sur les domaines publics, ainsi que les écritures Blob, l’alerte/supervision, le webhook ACS et l’absence d’exécution Worker en double.
-- Le dépôt `mariage-edwige-henri` a aussi migré ses workflows de déploiement vers `vpdacrshared`; conserver `acrweh` pour le retour arrière. La PR de ce projet et la PR VPD restent à valider.
+- Le What-If Bicep `38636020253` et le déploiement d’alignement `38636607517` ont réussi sans suppression de ressource. La sonde webhook ACS a passé. Après le déploiement, apex et `www` redirigent vers `/accueil`, les trois autres domaines répondent directement ; les cinq contrôles finaux HTTPS ont abouti à HTTP 200 avec TLS valide.
+- Les cinq domaines ont déjà répondu `200` en HTTPS avec validation TLS réussie ; refaire le contrôle après la stabilisation si un changement DNS/certificat intervient.
+- Les workflows Storage (`38634898966`) et ACS Email (`38621723956`) ont réussi. La base conserve son serveur et son schéma ; 346 références ont été mises à jour et ne correspondent plus à l’URL source.
+- Vérifier sur la durée les parcours Entra, les écritures Blob, la remontée des alertes/supervision, le webhook ACS et l’absence d’exécution Worker en double.
+- Les PR [VPD #255](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/255) et [Mariage #8](https://github.com/FlorianDrevet/mariage-edwige-henri/pull/8) sont ouvertes, non fusionnées ; les runs de validation cités sont réussis. Laisser le propriétaire les examiner/fusionner et conserver `acrweh` pour le retour arrière.
 - Aucun CDN OVH n’a été trouvé dans les services consultés et l’ancien A record correspondait à l’IP de l’environnement ACA West Europe. Réexaminer uniquement si le compte révèle ultérieurement un produit CDN.
 - Conserver les ressources West Europe au moins sept jours après validation de la production. Avant leur retrait, fournir le mapping final et demander une confirmation explicite ; ne jamais supprimer `rg-vpd-dev`, SQL, ACS, les identités encore utilisées, `acrweh` ou l’ACR partagé.
 - Le registre Basic partagé stocke environ 39 GB pour les deux projets, au-dessus des 10 GB inclus ; surveiller le stockage et le coût, et revoir le SKU si le volume augmente.
