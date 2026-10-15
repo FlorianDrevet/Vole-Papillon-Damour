@@ -18,11 +18,11 @@
 | | |
 |---|---|
 | **Palier en cours** | Rétablissement opérationnel de l'import v1 : le Worker France Central échoue au démarrage sur la validation de la clé des cartes membres |
-| **Prochaine action** | Après fusion du correctif `fix/worker-membercard-signingkey`, relancer `Worker - deploy`, vérifier que le host Functions liste ses fonctions, puis contrôler le prochain import à 00:00 ou 12:00 UTC |
+| **Prochaine action** | Fusionner le [correctif PR #257](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/257), relancer `Worker - deploy`, vérifier que le host Functions liste ses fonctions, puis contrôler le prochain import à 00:00 ou 12:00 UTC |
 | **Ce qui est prêt dans le code** | Publication directe des imports Instagram, lectures publiques filtrées, relecture BackOffice, import minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-worker-membercard-signingkey` |
 | **Dernière mise à jour** | 2026-10-15 — incident de démarrage confirmé sur la révision Worker `0000004`; correctif préparé mais pas encore déployé |
-| **Branche** | `fix/worker-membercard-signingkey` — PR à ouvrir vers `main` |
+| **Branche** | `fix/worker-membercard-signingkey` — [PR #257](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/257) ouverte vers `main`, non fusionnée |
 
 ---
 
@@ -125,9 +125,10 @@ Le dernier élément renvoyé par `/actuality/latest` date du 9 septembre et son
 12 septembre. L'arrêt actuel est confirmé ; son lien avec l'absence d'import antérieure au
 déploiement du 15 octobre reste à établir.
 
-La correction est dans `fix/worker-membercard-signingkey` ; aucune ressource Azure n'a été
-modifiée. Après revue et fusion de la PR, déployer le Worker puis vérifier le host Functions,
-le minuteur social et un nouvel import réel.
+La correction est dans la [PR #257](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/257),
+ouverte vers `main` et non fusionnée ; aucune ressource Azure n'a été modifiée. Après revue
+et fusion, déployer le Worker puis vérifier le host Functions, le minuteur social et un nouvel
+import réel.
 
 ### 2026-09-22 — réduction des cadences du Worker
 
