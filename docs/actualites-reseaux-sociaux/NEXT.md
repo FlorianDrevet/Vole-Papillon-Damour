@@ -17,12 +17,12 @@
 
 | | |
 |---|---|
-| **Palier en cours** | Rétablissement opérationnel de l'import v1 : le Worker France Central échoue au démarrage sur la validation de la clé des cartes membres |
-| **Prochaine action** | Fusionner le [correctif PR #257](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/257), relancer `Worker - deploy`, vérifier que le host Functions liste ses fonctions, puis contrôler le prochain import à 00:00 ou 12:00 UTC |
+| **Palier en cours** | Vérification opérationnelle de l'import v1 sur `development` après le déploiement du correctif Worker |
+| **Prochaine action** | Vérifier le passage automatique du minuteur à 00:00 ou 12:00 UTC. Pour un essai manuel, rétablir l'accès à la clé `_master` puis contrôler l'import réel sur le site |
 | **Ce qui est prêt dans le code** | Publication directe des imports Instagram, lectures publiques filtrées, relecture BackOffice, import minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-worker-membercard-signingkey` |
-| **Dernière mise à jour** | 2026-10-15 — incident de démarrage confirmé sur la révision Worker `0000004`; correctif préparé mais pas encore déployé |
-| **Branche** | `fix/worker-membercard-signingkey` — [PR #257](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/257) ouverte vers `main`, non fusionnée |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-social-import-trigger-status` |
+| **Dernière mise à jour** | 2026-10-15 — révision Worker `0000005` saine et minuteur enregistré ; aucune invocation récente, clé `_master` inaccessible pour l'essai manuel |
+| **Branche** | `docs/social-import-trigger-status` — suivi de la vérification opérationnelle post-déploiement |
 
 ---
 
@@ -110,6 +110,26 @@ développeur seul.
 ---
 
 ## Journal
+
+### 2026-10-15 — vérification après déploiement du Worker
+
+La [PR #257](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/257) a été
+fusionnée et le workflow `Worker - deploy` (`38707033515`) a réussi. La révision
+`vpd-worker-ca-dev-fc--0000005` est `Healthy`. Le host Functions enregistre les quatre
+fonctions minutées, dont `ImportSocialActualities`; les journaux confirment que son listener
+a démarré. La configuration active est `0 0 0,12 * * *` (00:00 et 12:00 UTC).
+
+Sur les deux dernières heures observées, le résumé d'invocations indique 0 succès et 0 échec,
+et aucune trace : aucun import manuel n'a donc été confirmé. Le portail Azure ne présente que
+la clé d'hôte `default`. La commande Azure CLI de lecture des clés principales échoue avec
+`ErrorGeneratingAuthToken` (erreur WebSocket 500) ; la clé `default` ne donne pas accès aux
+routes d'administration. Or l'appel manuel d'une fonction minutée requiert
+`POST /admin/functions/ImportSocialActualities`, la clé `_master` dans `x-functions-key` et
+un corps `{}` ([procédure Microsoft](https://learn.microsoft.com/azure/azure-functions/functions-manually-run-non-http)).
+La fonction n'a pas été déclenchée manuellement et aucune clé n'a été créée ou remplacée.
+
+Le prochain passage automatique attendu est à 12:00 UTC. Il reste à vérifier une invocation
+réussie et l'apparition d'une actualité récente sur le site.
 
 ### 2026-10-15 — Worker Functions bloqué au démarrage
 
