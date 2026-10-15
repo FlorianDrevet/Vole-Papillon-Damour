@@ -48,15 +48,15 @@ describe('ManualRequestAddDialogComponent', () => {
     fixture.componentRef.setInput('requesterLastName', 'Martin');
   });
 
-  it('defaults to work scope for a reference attached to a work', async () => {
+  it('switches to edition scope when an edition is selected', async () => {
     fixture.detectChanges();
     await fixture.componentInstance.searchBooks();
     await fixture.componentInstance.selectBook(workBook);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.scope()).toBe('Work');
-    expect(adminApi.getManualRequestStock).toHaveBeenCalledWith('access-token', {scope: 'Work', workId: 'OL123W'});
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Toutes les éditions de cette œuvre · recommandé');
+    expect(fixture.componentInstance.scope()).toBe('Edition');
+    expect(adminApi.getManualRequestStock).toHaveBeenCalledWith('access-token', {scope: 'Edition', isbn13: '9782070612758'});
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Toutes les éditions d’une œuvre');
   });
 
   it('locks an edition-only reference to edition scope and explains why', async () => {
@@ -81,6 +81,7 @@ describe('ManualRequestAddDialogComponent', () => {
     adminApi.getManualRequestStock.and.returnValue(of({quantityAvailable: 2, quantityAnnounced: 1, nextFairStart: '2027-03-14'}));
     fixture.detectChanges();
     await fixture.componentInstance.selectBook(workBook);
+    await fixture.componentInstance.selectScope('Work');
     await fixture.componentInstance.add(true);
 
     expect(adminApi.addManualBookRequest).toHaveBeenCalledWith('access-token', 'requester-1', jasmine.objectContaining({

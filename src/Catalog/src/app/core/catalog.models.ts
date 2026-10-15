@@ -284,6 +284,29 @@ export interface CatalogManualRequestSummary {
   foundOverdueCount: number;
 }
 
+export interface CatalogManualRequesterSearchParams {
+  q?: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogManualRequesterPage {
+  requesters: CatalogManualRequesterListItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogManualRequesterListItem {
+  requesterId: string;
+  lastName: string;
+  firstName: string;
+  phone: string;
+  requestCount: number;
+  searchingCount: number;
+  foundCount: number;
+}
+
 export interface CatalogManualRequestStock {
   quantityAvailable: number;
   quantityAnnounced: number;
