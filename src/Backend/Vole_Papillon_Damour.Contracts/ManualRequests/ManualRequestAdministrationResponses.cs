@@ -57,6 +57,21 @@ public sealed record ManualRequesterDetailResponse(
     string? ConsentRecordedByName,
     IReadOnlyList<ManualRequestQueueItemResponse> Requests);
 
+public sealed record ManualRequesterPageResponse(
+    IReadOnlyList<ManualRequesterSummaryResponse> Requesters,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public sealed record ManualRequesterSummaryResponse(
+    Guid RequesterId,
+    string LastName,
+    string FirstName,
+    string Phone,
+    int RequestCount,
+    int SearchingCount,
+    int FoundCount);
+
 public sealed record ManualRequesterCreatedResponse(Guid RequesterId);
 
 public sealed record ManualBookRequestCreatedResponse(Guid RequestId, string Status);

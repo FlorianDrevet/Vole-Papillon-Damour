@@ -15,6 +15,7 @@ using Vole_Papillon_Damour.Application.ManualRequests.Commands.Refuse;
 using Vole_Papillon_Damour.Application.ManualRequests.Commands.UpdateRequester;
 using Vole_Papillon_Damour.Application.ManualRequests.Queries.GetQueue;
 using Vole_Papillon_Damour.Application.ManualRequests.Queries.GetRequester;
+using Vole_Papillon_Damour.Application.ManualRequests.Queries.GetRequesters;
 using Vole_Papillon_Damour.Application.ManualRequests.Queries.GetStock;
 using Vole_Papillon_Damour.Application.ManualRequests.Queries.GetSummary;
 using Vole_Papillon_Damour.Contracts.ManualRequests;
@@ -199,6 +200,25 @@ public static class ManualRequestAdministrationController
                             error => Task.FromResult(error.Result()));
                     })
                 .WithName("CancelManualRequest")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/manual-requesters",
+                    async (
+                        string? q,
+                        int? page,
+                        int? pageSize,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetManualRequestersQuery(q, page ?? 1, pageSize ?? 50),
+                            cancellationToken);
+                        return result.Match(
+                            requesters => Results.Ok(ToResponse(requesters)),
+                            error => error.Result());
+                    })
+                .WithName("GetManualRequesters")
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(
@@ -427,4 +447,18 @@ public static class ManualRequestAdministrationController
             result.ConsentRecordedAt,
             result.ConsentRecordedByName,
             result.Requests.Select(ToResponse).ToArray());
+
+    private static ManualRequesterPageResponse ToResponse(ManualRequesterPageResult result) =>
+        new(
+            result.Requesters.Select(requester => new ManualRequesterSummaryResponse(
+                requester.RequesterId,
+                requester.LastName,
+                requester.FirstName,
+                requester.Phone,
+                requester.RequestCount,
+                requester.SearchingCount,
+                requester.FoundCount)).ToArray(),
+            result.TotalCount,
+            result.Page,
+            result.PageSize);
 }

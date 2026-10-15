@@ -61,6 +61,8 @@ import {
   CatalogManualRequesterCreate,
   CatalogManualRequesterCreated,
   CatalogManualRequesterDeletion,
+  CatalogManualRequesterPage,
+  CatalogManualRequesterSearchParams,
   CatalogManualRequesterWrite,
 } from './catalog.models';
 
@@ -596,6 +598,16 @@ export class CatalogAdminApiService {
     return this.http.get<CatalogManualRequester>(
       `${this.apiUrl}/books/admin/manual-requesters/${encodeURIComponent(requesterId)}`,
       this.options(accessToken),
+    );
+  }
+
+  getManualRequesters(
+    accessToken: string,
+    params: CatalogManualRequesterSearchParams,
+  ): Observable<CatalogManualRequesterPage> {
+    return this.http.get<CatalogManualRequesterPage>(
+      `${this.apiUrl}/books/admin/manual-requesters`,
+      this.options(accessToken, this.params(params)),
     );
   }
 

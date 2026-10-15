@@ -9,17 +9,26 @@
 }
 
 .manual-request-add-dialog {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   width: min(100%, 720px);
-  max-height: min(92vh, 880px);
-  overflow: auto;
+  height: min(92dvh, 880px);
+  max-height: min(92dvh, 880px);
+  overflow: hidden;
   padding: 30px 32px 28px;
   border-radius: 6px;
   background: var(--catalog-white);
   box-shadow: 0 24px 60px color-mix(in srgb, var(--catalog-ink) 28%, transparent);
   color: var(--catalog-ink);
+}
+
+.manual-request-add-header {
+  display: grid;
+  flex: none;
+  gap: 14px;
+  min-width: 0;
 }
 
 .manual-request-add-kicker {
@@ -104,6 +113,25 @@
   margin: 0;
   padding: 0;
   border: 0;
+}
+
+.manual-request-add-results-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.manual-request-add-prompt {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--catalog-line-strong);
+  border-radius: 4px;
+  background: var(--catalog-paper-2);
+  color: var(--catalog-slate);
+  font-size: .86rem;
+  line-height: 1.5;
 }
 
 .manual-request-results legend {
@@ -258,7 +286,16 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 2px;
+}
+
+.manual-request-add-footer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--catalog-line);
+  background: var(--catalog-white);
 }
 
 .manual-request-add-dialog button:focus-visible,
@@ -278,8 +315,8 @@
     width: 100%;
     height: 100dvh;
     max-height: none;
-    overflow-y: auto;
-    padding: 26px 20px 92px;
+    overflow: hidden;
+    padding: 24px 20px max(12px, env(safe-area-inset-bottom));
     border-radius: 0;
   }
 
@@ -309,18 +346,9 @@
   }
 
   .manual-request-add-actions {
-    position: fixed;
-    z-index: 1;
-    right: 0;
-    bottom: 0;
-    left: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
     gap: 10px;
-    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
-    border-top: 1px solid var(--catalog-line);
-    background: white;
-    box-shadow: 0 -8px 24px rgb(7 43 69 / 8%);
   }
 
   .manual-request-add-actions .button {

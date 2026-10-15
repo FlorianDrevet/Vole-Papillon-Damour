@@ -36,6 +36,8 @@ export class ManualRequestAddDialogComponent {
   readonly error = signal<string | null>(null);
 
   query = '';
+  private referenceSearchSequence = 0;
+  private stockLoadSequence = 0;
 
   constructor(
     private readonly catalogApi: CatalogApiService,
@@ -55,36 +57,58 @@ export class ManualRequestAddDialogComponent {
     if (!query || this.searching()) {
       return;
     }
+    const sequence = ++this.referenceSearchSequence;
+    this.scope.set('Work');
     this.searching.set(true);
     this.error.set(null);
     this.searchComplete.set(false);
-    this.selectedBook.set(null);
-    this.stock.set(null);
+    this.results.set([]);
+    this.clearBookSelection();
     try {
       const response = await firstValueFrom(this.catalogApi.searchReferences(query, 1, 20));
+      if (sequence !== this.referenceSearchSequence) {
+        return;
+      }
       this.results.set(response.items);
       this.searchComplete.set(true);
     } catch {
-      this.results.set([]);
-      this.error.set('La recherche de livres est momentanément indisponible. Réessayez dans quelques minutes.');
+      if (sequence === this.referenceSearchSequence) {
+        this.results.set([]);
+        this.error.set('La recherche de livres est momentanément indisponible. Réessayez dans quelques minutes.');
+      }
     } finally {
-      this.searching.set(false);
+      if (sequence === this.referenceSearchSequence) {
+        this.searching.set(false);
+      }
     }
+  }
+
+  onSearchQueryChanged(): void {
+    this.referenceSearchSequence++;
+    this.searching.set(false);
+    this.searchComplete.set(false);
+    this.results.set([]);
+    this.scope.set('Work');
+    this.clearBookSelection();
+    this.error.set(null);
   }
 
   async selectBook(book: CatalogBookReference): Promise<void> {
     this.error.set(null);
     this.selectedBook.set(book);
-    this.scope.set(book.workId ? 'Work' : 'Edition');
+    this.scope.set('Edition');
     await this.loadStock();
   }
 
   async selectScope(scope: CatalogManualRequestScope): Promise<void> {
     const book = this.selectedBook();
-    if (!book || (scope === 'Work' && !book.workId) || (scope === 'Edition' && !book.isbn13)) {
+    if (book && ((scope === 'Work' && !book.workId) || (scope === 'Edition' && !book.isbn13))) {
       return;
     }
     this.scope.set(scope);
+    if (!book) {
+      return;
+    }
     await this.loadStock();
   }
 
@@ -135,10 +159,12 @@ export class ManualRequestAddDialogComponent {
   }
 
   private async loadStock(): Promise<void> {
+    const sequence = ++this.stockLoadSequence;
     const book = this.selectedBook();
     const scope = this.scope();
     if (!this.accessToken || !book || (scope === 'Work' && !book.workId) || (scope === 'Edition' && !book.isbn13)) {
       this.stock.set(null);
+      this.loadingStock.set(false);
       return;
     }
 
@@ -148,12 +174,26 @@ export class ManualRequestAddDialogComponent {
     this.loadingStock.set(true);
     this.stock.set(null);
     try {
-      this.stock.set(await firstValueFrom(this.adminApi.getManualRequestStock(this.accessToken, target)));
+      const stock = await firstValueFrom(this.adminApi.getManualRequestStock(this.accessToken, target));
+      if (sequence === this.stockLoadSequence) {
+        this.stock.set(stock);
+      }
     } catch {
-      this.error.set('Le stock n’a pas pu être vérifié. Vous pouvez toujours ajouter la demande.');
+      if (sequence === this.stockLoadSequence) {
+        this.error.set('Le stock n’a pas pu être vérifié. Vous pouvez toujours ajouter la demande.');
+      }
     } finally {
-      this.loadingStock.set(false);
+      if (sequence === this.stockLoadSequence) {
+        this.loadingStock.set(false);
+      }
     }
+  }
+
+  private clearBookSelection(): void {
+    this.stockLoadSequence++;
+    this.selectedBook.set(null);
+    this.stock.set(null);
+    this.loadingStock.set(false);
   }
 
   private isDuplicateError(error: unknown): boolean {
