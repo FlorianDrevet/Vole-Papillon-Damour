@@ -19,21 +19,20 @@ recrees ni deplaces.
 | Application Insights | `vpd-<api,web,bo,scan,catalog,worker>-appi-dev-fc` |
 | Managed identities | `vpd-<api,web,bo,scan,catalog,worker>-id-dev-fc` |
 
-Les deux piles restent disponibles pour le retour arriere. La zone DNS OVH
-pointe maintenant l'apex et les quatre CNAME (`www`, `backoffice`, `livres`,
-`scan`) directement vers les ACA France Central. Les cinq domaines repondent en
-HTTPS avec certificat valide et les parcours testés renvoient `200`. Aucun
-service CDN OVH actif n'a ete trouve dans le compte consulte. Le worker
-West Europe est arrete; le worker France Central reste limite a une replique.
-Le webhook ACS vise l'API France Central. Les anciennes ressources ne seront
-supprimees qu'apres validation et confirmation explicite du proprietaire.
+La migration a été basculée le 14 octobre 2026 après confirmation explicite du
+propriétaire. Les anciennes ressources sont retirées; Azure finalise encore
+l'environnement ACA `vpd-cae-dev`, marqué `ScheduledForDelete`. OVH pointe l'apex
+et les quatre CNAME (`www`, `backoffice`, `livres`, `scan`) directement vers les
+ACA France Central. L'apex et `www` redirigent en HTTPS vers `/accueil`; les trois
+autres domaines répondent `200` avec des certificats valides. Aucun service CDN
+OVH actif n'a été trouvé. Le worker France Central est le seul worker conservé;
+le webhook ACS vise l'API France Central. Le retour vers la pile West Europe
+n'est plus disponible.
 
-Le stockage migre de `vpdstdev` vers `vpdstdevfc` sans déployer ni reconfigurer
-SQL. Le workflow
-`Storage - migrate blobs` effectue une premiere copie sans reecriture de la base.
-Le dernier passage se fait avec les ecritures arretees et reecrit uniquement
-les URL de blobs stockees en base; le meme workflow permet le retour inverse
-pendant le rollback.
+Les blobs ont été synchronisés de `vpdstdev` vers `vpdstdevfc` et les 346 URL en
+base ont été réécrites avant la suppression de l'ancien compte. Le workflow de
+migration ponctuelle a été retiré. La base SQL n'a été ni déplacée ni
+reconfigurée.
 
 L'ACR partage `vpdacrshared` est dans `rg-core-florian`, en France Central, avec
 le SKU Basic, l'admin desactive et l'acces public active comme l'ancien ACR.
@@ -46,10 +45,12 @@ l'identite CI fournie. Les variables GitHub de depot sont `ACR_NAME`,
 Déploiement de l'environnement `development` : un Container App Environment
 hébergeant les six applications, chacune avec son Application Insights.
 
-## Inventaire West Europe conservé pendant la migration
+## Inventaire historique des ressources West Europe
 
-Le tableau décrit la pile West Europe existante. Elle reste disponible pour le
-retour arrière jusqu'à la confirmation explicite de suppression des anciennes ressources.
+Le tableau conserve les noms de l'ancienne pile pour référence. Les apps,
+certificats et ressources régionales en double ont été supprimés le 14 octobre
+2026; l'environnement ACA est en cours de suppression. SQL et ACS, déjà
+partagés ou conservés en place, n'ont pas été supprimés.
 
 | Ressource | Nom | Rôle |
 | --- | --- | --- |
@@ -77,8 +78,7 @@ Les six identités ont `AcrPull` sur l'ACR partagé ; l'API et le worker ont aus
 sur le service ACS global. Le secret `email-bounce-webhook-secret` est écrit dans le
 nouveau Key Vault par Bicep et n'est jamais exposé dans les outputs.
 `communicationServiceRoleAssignmentName` reste vide afin que Bicep crée une
-affectation déterministe pour la nouvelle identité worker, sans remplacer l'accès
-de l'ancienne identité pendant le rollback.
+affectation déterministe pour l'identité Worker France Central.
 L'API et le worker ont chacun `Monitoring Metrics Publisher` sur leur Application
 Insights. Le worker est une Azure Function native (`kind=functionapp`). La configuration
 de mesure `P1-1` vise `minReplicas: 0` et `maxReplicas: 1` pour vérifier que le timer se
@@ -221,8 +221,9 @@ Le registre `vpdacrshared` existe dans `rg-core-florian` en France Central. Les
 variables de dépôt GitHub `ACR_NAME`, `ACR_RESOURCE_GROUP`,
 `ACR_SUBSCRIPTION_ID` et `ACR_CI_PRINCIPAL_ID` pilotent Bicep et les workflows.
 Le principal CI reçoit le rôle `Owner` sur ce registre; les six identités ACA
-reçoivent `AcrPull`. `ACR - migrate images` copie et vérifie tous les tags de
-`vpdacrdev` sans supprimer les images source.
+reçoivent `AcrPull`. Les tags de `vpdacrdev` ont été importés et vérifiés dans
+`vpdacrshared` avant suppression de l'ancien registre. Le workflow ponctuel de
+migration ACR a été retiré.
 
 ## Pipelines
 
@@ -231,8 +232,7 @@ Azure sans un lancement manuel.
 
 | Workflow | Ce qu'il fait |
 | --- | --- |
-| `Infra - deploy` | `what-if` (défaut) ou `deploy` de `main.bicep` sur la subscription ; possède aussi l'option ponctuelle de bootstrap ACS Email |
-| `ACR - migrate images` | importe sans écraser les tags conflictuels les images de `vpdacrdev` vers l'ACR partagé, puis vérifie les digests |
+| `Infra - deploy` | `what-if` (défaut) ou `deploy` de `main.bicep` sur la subscription; le seul paramètre manuel est le mode |
 | `API - deploy` | build + push de l'image API dans l'ACR partagé, bascule de `vpd-api-ca-dev-fc`, migrations EF optionnelles |
 | `Website - deploy` | build + push de l'image Website dans l'ACR partagé, bascule de `vpd-web-ca-dev-fc` |
 | `BackOffice - deploy` | build + push de l'image BackOffice dans l'ACR partagé, bascule de `vpd-bo-ca-dev-fc` |
@@ -240,40 +240,15 @@ Azure sans un lancement manuel.
 | `Catalog - deploy` | build + push de l'image Catalogue avec les URLs API/domaine et les identifiants publics GA4/Clarity, bascule de `vpd-catalog-ca-dev-fc` |
 | `Worker - deploy` | build + push de l'image Functions, bascule de `vpd-worker-ca-dev-fc` et contrôle du host |
 | `Books runtime - deploy` | build + push coordonné API + Worker, migration EF optionnelle avant rollout, puis bascule des deux Container Apps |
-| `Storage - migrate blobs` | copie incrementale les blobs absents ou source-plus-recents vers `vpdstdevfc`, preserve les blobs plus recents ou propres a la cible, verifie les noms source et propose `skip`/`preview`/`apply` pour la reecriture des URL SQL |
 | `ACS Email - configure` | vérification DNS/amorçage ACS et réparation manuelle de compatibilité ; le câblage normal est dans Bicep |
 
-### Ordre de migration France Central
+### Étapes réalisées (référence historique)
 
-1. Exécuter `Infra - deploy` en mode `what-if` et vérifier que le plan ne modifie
-   ni SQL, ni les anciennes ACA, ni l'ACR `vpdacrdev`.
-2. Lancer `ACR - migrate images` pour importer tous les dépôts et tags de
-   `vpdacrdev` vers `vpdacrshared`, puis vérifier que les six images actuellement
-   utilisées sont présentes.
-3. Déployer Bicep avec `bootstrap_email_resources` et `enable_book_alert_emails`
-   désactivés. Les nouvelles ressources sont créées en parallèle dans `rg-vpd-dev`;
-   le worker reste à zéro et les ACA reprennent les images actives par leurs tags.
-4. Lancer `Storage - migrate blobs` de `vpdstdev` vers `vpdstdevfc` avec
-   `rewrite_urls=false`. Vérifier le nombre de blobs et l'accès aux images.
-5. Publier API et fronts vers les nouvelles ACA, avec migrations EF désactivées
-   puisque la base existante est conservée. Vérifier les endpoints ACA, Key Vault,
-   SQL, Storage, Application Insights et les journaux.
-6. Préparer les certificats et les enregistrements DNS OVH pour les domaines
-   existants (`volepapillondamour.fr` et `www` vers Website, `backoffice` vers
-   BackOffice, `livres` vers Catalog, `scan` vers Scan). Vérifier dans OVH les
-   réglages CDN et les certificats existants avant de changer chaque origine;
-   pour une entrée sans CDN, suivre les enregistrements de preuve et de routage
-   exigés par ACA. Conserver les anciennes entrées jusqu'à validation DNS/TLS
-   et des parcours utilisateurs.
-7. Au cutover, arrêter les écritures côté ancienne API, lancer la synchronisation
-   finale du stockage avec `rewrite_urls=true`, puis vérifier les URLs en base et
-   les images servies. Basculer ensuite Event Grid vers la nouvelle API et démarrer
-   le worker France Central; ne jamais exécuter les deux workers en parallèle.
-8. Observer erreurs, latence, e-mails et traitements planifiés pendant la fenêtre
-   convenue. En rollback, rétablir DNS/Event Grid, arrêter le worker France Central
-   et recopier blobs et URL vers l'ancien stockage.
-9. Après validation, demander une confirmation explicite avant toute suppression
-   des ressources West Europe.
+La pile France Central a été déployée et validée avant le basculement OVH. Les
+images ont été copiées dans l'ACR partagé, les blobs synchronisés et les 346 URL
+SQL réécrites, puis les apps, la supervision et les workflows ont été basculés.
+L'API et les cinq domaines ont été contrôlés avant suppression des doublons.
+Les workflows ponctuels ACR et Storage ont été retirés après leur usage.
 
 Les fronts doivent être déployés après l'API : le bundle Angular embarque
 l'`api_url` en dur, donc la pipeline lit le FQDN de `vpd-api-ca-dev-fc` et le
