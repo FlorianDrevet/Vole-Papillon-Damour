@@ -85,10 +85,9 @@ Verified aggregate folders in `Domain` include:
 
 `RareBookAggregate.RareBook` is separate from the ordinary ISBN `Book` aggregate. A rare
 book keeps bibliographic data, its firm display price, condition, publication/sale state,
-and photos; it no longer has a display shelf, binding, dimensions, page count, physical
-location, or price-setter field. Rare-book checkout snapshots therefore carry no physical
-format. Ordinary `Book` shelf and physical-format metadata remain part of the regular
-catalogue.
+and photos. Rare-book checkout snapshots carry no physical-format fields. The ordinary
+ISBN `Book` aggregate holds catalogue metadata separately from its append-only inventory
+movements.
 
 `MemberSelectionItem` is keyed by `Guid` and belongs to one `UserId`; each row targets
 exactly one edition ISBN-13 or rare-book ID. Its statuses are `ToTake`, `Purchased`,

@@ -77,13 +77,10 @@ Cette séquence a été exécutée pour `livres.volepapillondamour.fr` : le CNAM
 `asuid`, la liaison ACA et le certificat managé SNI sont vérifiés ; elle ne constitue donc
 plus un blocage du palier 2.
 
-**Les genres viennent des sources, et rien n'indique où est le livre.** `Q-07` est
-tranchée : le filtre par genre s'appuie sur ce que renvoient les sources bibliographiques,
-normalisé, et sur rien d'autre. Pas de nomenclature maison calquée sur les rayons, donc pas
-de correspondance à tenir à la main — et **aucune indication d'emplacement nulle part** :
-ni sur la fiche, ni dans les résultats, ni dans une alerte. Le système suit des ISBN et des
-quantités, pas des exemplaires : il ne sait pas où est un livre, et l'annoncer serait
-promettre une précision qu'il n'a pas.
+**Les genres viennent des sources bibliographiques.** `Q-07` est tranchée : les filtres par
+genre utilisent les métadonnées normalisées renvoyées par ces sources. Le catalogue suit les
+livres par ISBN et quantité, et présente leurs informations bibliographiques et leur
+disponibilité.
 
 *Conséquence à assumer en écrivant l'écran* : les genres des sources sont lacunaires. Le
 filtre est un confort, pas un classement — un livre sans genre doit rester parfaitement

@@ -14,7 +14,7 @@ liste papier** des livres qu'elles cherchent et doit s'en souvenir au tri.
 Deux problèmes en découlent :
 
 - au scan, rien ne signale aux bénévoles qu'un livre est attendu par l'une de ces
-  personnes ; il part en rayon et peut être vendu à quelqu'un d'autre ;
+  personnes ; il devient disponible et peut être vendu à quelqu'un d'autre ;
 - un membre inscrit qui suit le même livre est alerté, et la personne sans internet,
   souvent inscrite depuis plus longtemps sur la liste papier, passe après lui.
 
@@ -92,7 +92,7 @@ exemplaire mis de côté sert **une** demande.
 1. À l'ajout du livre (E4), l'encart indique « Déjà 2 exemplaires disponibles ».
 2. La présidente choisit « Prélever un exemplaire » : le stock disponible passe à 1, la
    demande passe directement à « trouvée » (`RG-82`).
-3. Elle récupère le livre en rayon, puis le traite comme au parcours D.
+3. Elle prend le livre dans le stock, puis le traite comme au parcours D.
 
 ### Parcours C — Le livre arrive au tri
 

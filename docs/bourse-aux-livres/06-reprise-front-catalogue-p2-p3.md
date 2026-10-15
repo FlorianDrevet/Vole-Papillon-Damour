@@ -18,8 +18,8 @@
   route publique indexable.
 - Les instants JSON sont en UTC (`DateTimeOffset`). Les jours de ventes sont des
   `DateOnly` au format ISO `YYYY-MM-DD`.
-- Le backend ne connaît ni prix par livre ni emplacement dans le local. Le front ne
-  doit donc afficher ni prix unitaire, ni rayon, ni promesse de réservation.
+- Le front s'appuie sur le stock et les métadonnées renvoyés par le backend ; il ne doit
+  afficher ni prix unitaire ni promesse de réservation.
 
 ## Authentification et règles de séparation
 

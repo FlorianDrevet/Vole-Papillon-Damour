@@ -542,7 +542,6 @@ consignées dans [`08-questions-ouvertes.md`](08-questions-ouvertes.md).
 - Notification e-mail au membre.
 - Signalement d'un livre **abîmé** ou d'une **erreur de fiche** (titre, couverture) :
   besoin voisin mais distinct, à traiter séparément si demandé.
-- Géolocalisation / numéro de rayon (le stock n'a pas d'emplacement aujourd'hui).
 
 ## 15. Suite
 

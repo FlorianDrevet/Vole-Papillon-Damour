@@ -83,9 +83,9 @@ inventory, fair statistics, accounts and settings workspaces. The navigation gro
 site-member and volunteer surfaces under `Réservé à l'administration` → `Comptes & rôles`;
 the workspace keeps the existing `/accounts/admin` contract for typed listing, account
 creation and role updates and shows a contextual notice when the Entra directory cannot be
-read. The inventory workspace keeps physical history and carton/rayon actions explicitly
-empty or disabled because no corresponding endpoint or domain model exists; the UI does not
-invent those values. Opening a scan session now upserts the local member projection with
+read. The inventory workspace keeps unsupported actions explicitly empty or disabled
+because no corresponding endpoint or domain model exists; the UI does not invent those
+values. Opening a scan session now upserts the local member projection with
 the display-name claim; session reads show that first/last name only and never expose the
 stored volunteer email as a substitute. Historic sessions with neither a local user row nor
 stored contact data show a neutral missing-name label and require reopening or a separate
@@ -147,13 +147,10 @@ authenticated role, real API/blob and responsive checks remain manual gates.
 
 As of 2026-09-24, the Catalog rare-book editor shows local photo previews immediately and
 queues files chosen for a new draft, uploading them after the fiche is created. The gallery
-then replaces previews with saved photos and revokes its object URLs. The rare-book
-classification and the binding, dimensions, page-count, physical-location, and price-setter
-fields were removed from the Catalog forms and public surfaces; the public list no longer
-offers shelf filters. The gallery reports only its photo count, and the price label no longer
-includes the “never totalled by the application” copy. Scan forms, offline projections, and
-typed API clients use the reduced contract. The follow-up EF migration must be applied during
-an approved backend rollout to remove the retired `RareBooks` columns.
+then replaces previews with saved photos and revokes its object URLs. Catalog forms collect
+rare-book bibliographic details, price, condition, public description, and photos. Public
+pages, Scan forms, offline projections, and typed API clients use the same rare-book
+contract. The gallery reports its photo count, and the price label stays concise.
 
 As of 2026-09-16, the Catalog administration `Inventaire` workspace is removed. It is no
 longer a sidebar item or a valid administration section, and the old queue/manual-add state,
@@ -260,8 +257,8 @@ opt-out; and `/administration` exposes every currently available admin workspace
 typed filters, details, corrections, confirmations and truthful empty/error states. The
 Catalog client keeps private data client-rendered and marks `/compte`, `/administration`
 and `/desinscription` `noindex, nofollow`. It deliberately does not add role-editing or
-physical-carton controls without a contract: role assignment in the Catalog volunteer
-workspace uses the existing `/accounts/admin` contract, while physical carton/rayon
+physical inventory controls without a contract: role assignment in the Catalog volunteer
+workspace uses the existing `/accounts/admin` contract, while unavailable inventory
 controls remain explanatory rather than fake.
 
 As of 2026-09-12, the Catalog administration Inventory workspace is fiche-first: it loads
@@ -272,7 +269,7 @@ typed reference API; adding a selected reference sends its bibliographic metadat
 available quantity and required note through `POST /books/admin/books`. Each local row exposes
 confirmed `+`/`−` corrections through the typed quantity endpoint, while announced quantity
 remains visibly separate and redirected fiches are read-only for stock actions. The view does
-not invent carton/rayon counts or a bulk physical-count workflow.
+not invent container counts or a bulk physical-count workflow.
 
 As of 2026-09-15, the Inventory workspace presents `Le fonds de livres` / `Toutes les fiches`
 before the external-reference add flow. Selecting `Utiliser cette fiche` renders the candidate

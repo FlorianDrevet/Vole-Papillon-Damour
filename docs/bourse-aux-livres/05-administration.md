@@ -75,8 +75,7 @@ qu'il se vend ? ».
 
 Le marquage n'est plus une case de la fiche catalogue : une fiche rare autonome porte
 les informations bibliographiques de l'exemplaire, son état, sa description honnête, son
-prix ferme et ses photos. Elle n'a pas de classement par rayon, format matériel,
-emplacement ni champ « Prix fixé par ». Un bénévole habilité peut la créer depuis une fiche
+prix ferme et ses photos. Un bénévole habilité peut la créer depuis une fiche
 ordinaire préremplie, la modifier, la publier ou la supprimer. Les photos choisies pendant
 la création sont prévisualisées et envoyées après l'enregistrement de la fiche. Une fiche
 publiée sans photo reste repérable dans la file de travail afin d'être complétée ; le prix
@@ -115,7 +114,7 @@ Des listes de travail concrètes, plutôt que des écrans de recherche :
 
 ## 4 bis. Sessions de scan
 
-Écran indispensable depuis l'abandon du geste de mise en rayon. Le mode d'une session
+Écran indispensable pour suivre la mise à disposition des livres. Le mode d'une session
 détermine l'effet public de deux cents scans, et sa clôture déclenche les e-mails
 (`RG-44`) : c'est le seul endroit d'où l'on voit ce qui s'est réellement passé.
 
@@ -202,10 +201,9 @@ référentiel externe, puis corrige le stock disponible par petits ajustements t
 Les quantités annoncées restent une projection distincte ; elles ne sont jamais écrasées
 par une correction du stock disponible.
 
-Le produit ne modélise pas d'exemplaire individuel, d'emplacement, de carton ou de saisie
-collective de comptage. Les écarts constatés sur le terrain sont donc traités sur la fiche
-concernée, avec une note et une ligne de ledger, sans inventer de mesure globale ni de
-capacité physique que le domaine ne possède pas (`RG-34`, `RG-35`).
+Le stock est suivi par ISBN et par quantité. Les écarts constatés sont traités sur la fiche
+concernée, avec une note et une ligne de ledger, sans mesure globale supplémentaire
+(`RG-34`, `RG-35`).
 
 ## 7. Gestion des membres du site
 

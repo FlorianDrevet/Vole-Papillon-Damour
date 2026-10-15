@@ -6,7 +6,7 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 
 | # | Sujet | Statut | Qui décide |
 |---|---|---|---|
-| `Q-01` | Passage du tri au rayon | ✅ **Tranchée** | — |
+| `Q-01` | Disponibilité après le tri | ✅ **Tranchée** | — |
 | `Q-02` | Source de la valeur marchande | 🟢 **Reportée hors v1** | — |
 | `Q-03` | Proportion de livres sans ISBN | 🟠 À mesurer | Palier 0 |
 | `Q-04` | Dérive du stock | 🟡 Risque assumé | — |
@@ -20,7 +20,7 @@ Ce document recense ce qui n'est pas tranché et ce qui est tranché mais risqu�
 
 ---
 
-## `Q-01` — Comment les livres passent-ils du tri au rayon ?
+## `Q-01` — Quand les livres deviennent-ils disponibles après le tri ?
 
 > ✅ **Tranchée.** Aucune des trois options initialement proposées n'a été retenue.
 > La solution adoptée supprime l'étape.
@@ -35,28 +35,9 @@ s'appliquent à tous les scans de la session (`RG-20`) :
 | `DISPONIBLE MAINTENANT` | Les livres sont vendables immédiatement et apparaissent comme disponibles sur le site (`RG-21`) |
 | `PROCHAINE BOURSE` | Les livres sont **annoncés en ligne avec la date de la prochaine bourse**, sans être vendables. À cette date, ils deviennent disponibles **automatiquement** (`RG-22`, `RG-23`) |
 
-### Pourquoi cette solution est meilleure que les trois options écartées
-
-Le besoin d'origine était : *ne pas annoncer comme disponible un livre encore dans un
-carton*. Les trois options y répondaient toutes par un **geste humain de publication**,
-et c'est précisément ce geste qui posait problème.
-
-| Option écartée | Ce qui la disqualifie |
-|---|---|
-| **A — Carton étiqueté** | Imprimante et étiquettes dans le local ; un carton dont l'étiquette est perdue devient un problème ; le geste de scan de l'étiquette peut être oublié |
-| **B — Lot nommé** | Rien ne relie un lot au carton physique ; ingérable dès que plusieurs cartons attendent ; risque de valider le mauvais lot |
-| **C — Double scan** | Double le travail de scan : sur mille livres par session, une heure de bénévolat perdue à chaque fois |
-
-La solution retenue **supprime le geste au lieu de l'optimiser**. Elle apporte :
-
-- **Aucune tâche supplémentaire dans le local.** Le rangement physique reste manuel,
-  mais ne s'accompagne d'aucune saisie.
-- **Rien qui puisse être oublié.** La bascule est pilotée par une date, pas par une
-  personne. Il n'existe plus de carton qu'on aurait négligé de déclarer.
-- **Aucun matériel supplémentaire.** Ni imprimante, ni étiquettes.
-- **Aucun double scan.** Chaque livre est scanné une fois.
-- **Une promesse publique datée**, donc tenable : le site n'affiche jamais « disponible »
-  pour un livre qui ne l'est pas, il affiche « disponible à partir du 14 mars ».
+Le mode de session détermine la date de disponibilité. La bascule automatique supprime
+une validation manuelle ultérieure ; chaque livre est scanné une seule fois et le site
+public affiche une date lorsque le livre n'est pas encore disponible.
 
 ### Ce que cette solution coûte en retour
 
@@ -226,37 +207,16 @@ développement.
 
 ---
 
-## `Q-07` — Genres et classement
+## `Q-07` — Genres du catalogue
 
-> ✅ **Tranchée.** Le genre vient des sources bibliographiques, et **le site n'indique
-> jamais où se trouve physiquement un livre dans le local.**
+> ✅ **Tranchée.** Le genre du catalogue vient des sources bibliographiques.
 
-**La décision.** La navigation par genre du catalogue (`04` §4) s'appuie sur ce que
-renvoient les sources de métadonnées, normalisé, et sur rien d'autre. Aucune nomenclature
-maison calquée sur les rayons, aucune correspondance à tenir à la main, aucune indication
-d'emplacement — ni sur la fiche, ni dans les résultats, ni dans une alerte.
+**La décision.** La navigation par genre du catalogue (`04` §4) utilise les métadonnées
+bibliographiques normalisées. La recherche par titre et auteur reste le chemin principal.
 
-**Pourquoi.** L'option inverse — une liste courte calquée sur l'organisation réelle des
-rayons — permettait de dire au visiteur *où* chercher. Elle a été écartée pour ce qu'elle
-coûte et pour ce qu'elle promet :
-
-| Ce qu'elle aurait coûté | Ce qu'elle aurait promis |
-|---|---|
-| Un travail de correspondance et de correction manuelle sur chaque fiche, indéfiniment | Une information qui cesse d'être vraie à la première réorganisation du local |
-| Une nomenclature à maintenir en parallèle de celle des sources | Une exactitude que le suivi par quantité, sans exemplaire individuel, ne permet de toute façon pas de garantir |
-
-Le système ne sait pas *quel* exemplaire est où : il connaît un ISBN et une quantité
-(`01` §6). Annoncer un emplacement, c'est promettre une précision qu'on n'a pas.
-
-**Ce que cela accepte.** Les genres des sources sont hétérogènes et souvent absents. Le
-filtre par genre sera donc **imparfait et lacunaire** — un livre sans genre reste
-trouvable par la recherche, il ne sort simplement pas des filtres. C'est un confort de
-navigation dégradé, pas une fonctionnalité perdue : la recherche par titre et auteur reste
-le chemin principal, et c'est celui que les gens utilisent.
-
-**Ce que cela évite, et ce n'est pas rien.** Un visiteur qui vient avec un emplacement en
-tête et ne trouve pas le livre tient l'outil pour faux. Un visiteur qui vient avec un titre
-et une disponibilité datée demande à un bénévole, qui sait où sont ses rayons.
+**Limite connue.** Les genres fournis par les sources sont hétérogènes et parfois absents.
+Un livre sans genre reste trouvable par la recherche, mais n'apparaît pas dans les filtres
+par genre.
 
 ---
 
@@ -349,7 +309,7 @@ qu'un membre jamais prévenu, dans un contexte sans réservation ni engagement.
 démarre vide, et le système ne connaît que ce qu'il a scanné.
 
 **La décision.** On ne reprend pas l'existant avant de démarrer. Le catalogue se
-remplit au fil des tris. Une ou plusieurs sessions de scan des rayons déjà remplis
+remplit au fil des tris. Une ou plusieurs sessions de scan du stock déjà présent
 peuvent accélérer les choses, en mode `DISPONIBLE MAINTENANT`, mais ce n'est **pas un
 prérequis** et cela ne conditionne aucun palier.
 
@@ -361,7 +321,7 @@ catalogue public n'expose qu'une fraction du fonds réel.
 **La conséquence à ne pas négliger est humaine.** Un bénévole à qui l'outil annonce
 « premier exemplaire » sur un livre qu'il sait présent en cinq exemplaires conclura que
 l'outil ne marche pas. Il faut le dire avant, pas après. C'est aussi un argument pour
-prioriser le scan des rayons les plus denses : c'est là que le doublon coûte le plus
+prioriser les scans des titres les plus présents : c'est là que le doublon coûte le plus
 cher, et là que l'outil devient crédible le plus vite.
 
 ---
@@ -432,7 +392,7 @@ Les hypothèses retenues par le plan SIG sont maintenant appliquées dans F-11 :
 | 2026-08-31 | Catalogue public | Complet et parcourable |
 | 2026-08-31 | Comptes du public | Microsoft Entra External ID |
 | 2026-08-31 | Découpage de livraison | Palier 0 (sonde) puis socle interne, vitrine, alertes |
-| 2026-08-31 | Passage du tri au rayon | **Deux modes choisis avant de scanner**, plus bascule automatique à la date de la bourse. Aucune des trois options lot/carton n'a été retenue — `Q-01` |
+| 2026-08-31 | Disponibilité après le tri | **Deux modes choisis avant de scanner**, plus bascule automatique à la date de la bourse — `Q-01` |
 | 2026-08-31 | Moment d'envoi de l'alerte | Au scan, avec la date annoncée — pas à la bascule |
 | 2026-08-31 | Mode « prochaine bourse » sans bourse programmée | Accepté ; rattachement à la prochaine bourse créée, alertes différées |
 | 2026-08-31 | Correction d'une erreur de mode | Reprise en bloc de la session entière |

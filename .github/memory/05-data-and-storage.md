@@ -44,8 +44,8 @@ belonging to that container.
   SQL joined `Books` on `b.Id`, while `BookConfiguration` persists domain `Book.Id` as
   `Books.Isbn13`. The migration now joins on `b.Isbn13`; rerun Books runtime with migrations
   enabled after the fix is merged. Migration `20261001111037_RemoveNotFoundReportLocation`
-  drops the retired `Location` column; it is generated on the follow-up branch and has not
-  been applied to an environment.
+  aligns the report table with its final contract; its database rollout status was not
+  checked during this documentation update.
   `AssociationSettings.NotFoundReportDailyLimit` defaults to 10 and is
   validated from 1 to 100.
 
@@ -54,7 +54,7 @@ belonging to that container.
 ### Rare books persistence
 
 - `ProjectDbContext` and `IProjectDbContext` expose `RareBooks` and `RareBookPhotos`. `RareBookConfiguration` and `RareBookPhotoConfiguration` convert the aggregate value objects, persist the firm price as SQL Server `decimal(10,2)`, use `RowVersion` for optimistic concurrency, keep slug and non-null ISBN unique, index `(Status, IsSold, Price)`, and enforce unique `(RareBookId, Position)` photo ordering.
-- Migration `20260916143408_AddRareBooks` creates `RareBooks` and `RareBookPhotos`, cascades only the photo rows when a rare-book row is deleted, and deliberately leaves `Books.IsRare` in place. Follow-up migration `20260924112034_RemoveRareBookEditorialDetails` removes `RareBooks.Shelf`, `Binding`, `Dimensions`, `PageCount`, `ShelfLocation`, and `PriceSetBy`; it does not remove ordinary-book `Books.IsRare`. Applying it drops any values stored in those six columns. The separate legacy `Books.IsRare` cleanup and non-converting ISBN export remain lot 6 work; a rare-book application handler must delete blobs explicitly before deleting rows.
+- Migration `20260916143408_AddRareBooks` creates `RareBooks` and `RareBookPhotos`, cascades only the photo rows when a rare-book row is deleted, and deliberately leaves `Books.IsRare` in place. Follow-up migration `20260924112034_RemoveRareBookEditorialDetails` removes six retired columns from `RareBooks` and their stored values; it does not remove ordinary-book `Books.IsRare`. The separate legacy `Books.IsRare` cleanup and non-converting ISBN export remain lot 6 work; a rare-book application handler must delete blobs explicitly before deleting rows.
 - The rare-book application slice provides create/update/publish/unpublish/delete/sell commands, photo upload/reorder/caption/delete commands, public/admin/cash queries, and contracts under `Application/RareBooks`, `Contracts/RareBooks`, and `Api/Controllers/RareBookController.cs`. Administration routes use the `RareBooks` policy (`LivresRares`, `Administration`, or legacy `Admin`); cash search uses `ScanVolunteer`.
 - Rare-book prices are firm display data only: they are stored on `RareBooks` and returned by the public, administration, and cash read models, but no basket, total, receipt amount, or sale-line price is persisted. The existing manual fair-revenue rule `RG-51` is unchanged.
 - Rare-book photos are validated as JPEG, WebP, or PNG up to 8 MiB and stored in the dedicated `rare-book-photos` Blob container. Photo deletion and rare-book deletion call the container-aware Blob service before removing database rows; failed blob deletion leaves the row intact.
