@@ -5,8 +5,8 @@
       <h1 #requestsHeading id="admin-title" tabindex="-1">Demandes manuelles.</h1>
       <p>Livres recherchés par des personnes sans internet. Quand un livre est trouvé, appelez la personne puis indiquez s'il a été donné ou refusé.</p>
     </div>
-    <button class="button button-primary" data-testid="manual-request-new-requester" type="button" (click)="newRequester()">
-      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg> Nouveau demandeur
+    <button class="button button-primary" data-testid="manual-request-new-requester" type="button" (click)="selectTab('requesters')">
+      <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg> Gérer les personnes
     </button>
   </header>
 
@@ -41,18 +41,28 @@
       (click)="selectTab('closed')">
       Closes <span>{{ queue()?.closedCount ?? 0 }}</span>
     </button>
+    <button
+      id="manual-requests-tab-requesters"
+      data-testid="manual-requests-tab-requesters"
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'requesters'"
+      [class.active]="activeTab() === 'requesters'"
+      (click)="selectTab('requesters')">
+      Personnes @if (requesterListLoaded()) { <span>{{ requesterTotal() }}</span> }
+    </button>
   </div>
 
   <label class="manual-request-search">
-    <span class="sr-only">Rechercher</span>
+    <span class="sr-only">{{ activeTab() === 'requesters' ? 'Rechercher une personne' : 'Rechercher une demande' }}</span>
     <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.2"></circle><path d="m15.3 15.3 5 5"></path></svg>
     <input
       data-testid="manual-requests-search"
       type="search"
-      [value]="search()"
-      placeholder="Nom, téléphone ou titre"
+      [value]="activeTab() === 'requesters' ? requesterSearch() : search()"
+      [placeholder]="activeTab() === 'requesters' ? 'Nom, prénom ou téléphone' : 'Nom, téléphone ou titre'"
       autocomplete="off"
-      (input)="updateSearch($any($event.target).value)">
+      (input)="activeTab() === 'requesters' ? updateRequesterSearch($any($event.target).value) : updateSearch($any($event.target).value)">
   </label>
 
   @if (success(); as message) {
@@ -62,11 +72,64 @@
   @if (error(); as message) {
     <div class="manual-request-feedback manual-request-feedback-error" role="alert">
       <span>{{ message }}</span>
-      <button class="button button-outline" data-testid="manual-requests-retry" type="button" (click)="loadQueue()">Réessayer</button>
+      <button class="button button-outline" data-testid="manual-requests-retry" type="button" (click)="loadActiveView()">Réessayer</button>
     </div>
   }
 
-  @if (loading() && !queue()) {
+  @if (activeTab() === 'requesters') {
+    <section class="manual-requester-directory" [attr.aria-busy]="loading()" aria-labelledby="manual-requesters-title">
+      <header class="manual-requester-directory-heading">
+        <div>
+          <h2 id="manual-requesters-title">Personnes enregistrées</h2>
+          <p>Recherchez par nom ou téléphone pour réutiliser une fiche existante avant d’en créer une nouvelle.</p>
+        </div>
+        <button class="button button-primary" data-testid="manual-requester-create" type="button" [disabled]="!canCreateRequester()" title="Recherchez d’abord le nom ou le téléphone." (click)="newRequester()">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg> {{ requesterTotal() > 0 ? 'Créer une fiche pour une autre personne' : 'Créer une nouvelle fiche' }}
+        </button>
+      </header>
+
+      @if (canCreateRequester() && requesterTotal() > 0) {
+        <p class="manual-requester-directory-hint" role="status">{{ requesterTotal() }} personne{{ requesterTotal() === 1 ? '' : 's' }} correspond{{ requesterTotal() === 1 ? '' : 'ent' }} à la recherche. Ouvrez sa fiche pour la réutiliser.</p>
+      }
+
+      @if (loading() && !requesterListLoaded()) {
+        <div class="manual-request-skeletons" role="status" aria-label="Chargement des personnes">
+          <span></span><span></span><span></span>
+        </div>
+      } @else if (requesters().length === 0) {
+        <div class="manual-request-empty" data-testid="manual-requesters-empty">
+          <span class="manual-request-empty-icon" aria-hidden="true">⌕</span>
+          <h3>Aucune personne trouvée.</h3>
+          <p>Modifiez votre recherche ou créez une nouvelle fiche.</p>
+        </div>
+      } @else {
+        <div class="manual-requester-directory-list">
+          @for (requester of requesters(); track requester.requesterId) {
+            <button
+              class="manual-requester-directory-item"
+              [attr.data-testid]="'manual-requester-row-' + requester.requesterId"
+              type="button"
+              (click)="openRequester(requester.requesterId)">
+              <span class="manual-requester-directory-copy">
+                <strong>{{ requesterListName(requester) }}</strong>
+                <small>{{ requesterPhone(requester.phone) }}</small>
+              </span>
+              <span class="manual-requester-directory-counts">
+                <span>{{ requester.requestCount }} demande{{ requester.requestCount === 1 ? '' : 's' }} au total</span>
+                <span>{{ requester.searchingCount }} en recherche · {{ requester.foundCount }} trouvée{{ requester.foundCount === 1 ? '' : 's' }}</span>
+              </span>
+              <span class="manual-requester-directory-action">Gérer les livres <span aria-hidden="true">→</span></span>
+            </button>
+          }
+        </div>
+        <div class="manual-requester-directory-pagination" aria-label="Pages des personnes">
+          <button class="button button-outline" type="button" [disabled]="page() <= 1 || loading()" (click)="loadRequesterPage(page() - 1)">← Précédente</button>
+          <span>Page {{ page() }} sur {{ requesterPageCount() }}</span>
+          <button class="button button-outline" type="button" [disabled]="isLastRequesterPage() || loading()" (click)="loadRequesterPage(page() + 1)">Suivante →</button>
+        </div>
+      }
+    </section>
+  } @else if (loading() && !queue()) {
     <div class="manual-request-skeletons" role="status" aria-label="Chargement des demandes manuelles">
       <span></span><span></span><span></span>
     </div>
@@ -166,10 +229,12 @@
     }
   }
 
-  <aside class="manual-request-privacy-note">
-    <span aria-hidden="true">i</span>
-    <p>Ces livres ne sont ni disponibles ni annoncés : aucun membre n'a été prévenu. Un refus les remet en stock et prévient aussitôt les membres qui les suivent. Les coordonnées sont effacées trois mois après la dernière demande close de la personne.</p>
-  </aside>
+  @if (activeTab() !== 'requesters') {
+    <aside class="manual-request-privacy-note">
+      <span aria-hidden="true">i</span>
+      <p>Ces livres ne sont ni disponibles ni annoncés : aucun membre n'a été prévenu. Un refus les remet en stock et prévient aussitôt les membres qui les suivent. Les coordonnées sont effacées trois mois après la dernière demande close de la personne.</p>
+    </aside>
+  }
 
   @if (decision(); as currentDecision) {
     <app-manual-request-decision-dialog

@@ -79,8 +79,10 @@ exemplaire mis de côté sert **une** demande.
 
 ### Parcours A — Saisie depuis la liste papier
 
-1. La présidente ouvre *Demandes manuelles* (E1, E2) puis « Nouveau demandeur ».
-2. Elle saisit nom, prénom, téléphone et coche l'accord de la personne (E3).
+1. La présidente ouvre *Demandes manuelles* (E1, E2), puis l'onglet « Personnes ».
+2. Elle recherche d'abord le nom ou le téléphone. Si la personne existe, elle ouvre sa
+   fiche ; sinon, elle crée une nouvelle fiche et saisit les coordonnées avec l'accord
+   de la personne (E3).
 3. Elle ajoute un livre : recherche par titre, auteur ou ISBN dans le référentiel
    bibliographique, choix de la portée (E4). La demande est créée « en recherche ».
 4. Elle ajoute les autres livres de cette personne de la même façon.
@@ -159,9 +161,10 @@ Demandes manuelles.
 Livres recherchés par des personnes sans internet. Quand un livre est trouvé,
 appelez la personne puis indiquez s'il a été donné ou refusé.
 
-[ + Nouveau demandeur ]
+[ Gérer les personnes ]
 
-[ Trouvés à remettre 2 ] [ En recherche 14 ] [ Closes 31 ]    Rechercher : [ nom, titre… ]
+[ Trouvés à remettre 2 ] [ En recherche 14 ] [ Closes 31 ] [ Personnes 42 ]
+Rechercher : [ nom, téléphone ou titre… ]
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ Le Petit Prince · A. de Saint-Exupéry          Trouvé le 12 oct. au tri      │
@@ -182,6 +185,11 @@ appelez la personne puis indiquez s'il a été donné ou refusé.
   effacé » (`RG-89`).
 - La recherche porte sur le nom, le prénom, le téléphone et le titre.
 - Un clic sur le nom du demandeur ouvre sa fiche (E3).
+- L'onglet **Personnes** liste les fiches dont les coordonnées sont conservées et permet
+  de les rechercher par nom, prénom ou téléphone. L'ouverture d'une fiche permet
+  d'ajouter d'autres livres sans recréer la personne. La création d'une nouvelle fiche
+  n'est activée qu'après une recherche ; les correspondances restent visibles à côté de
+  l'action de création.
 - **État vide** de *Trouvés à remettre* : « Aucun livre à remettre pour le moment. »
 
 ### E3 — Fiche demandeur (nouveau)
@@ -211,6 +219,8 @@ Supprimer ce demandeur et ses demandes…
 - Nom, prénom, téléphone et accord sont obligatoires ; un téléphone français ou
   international est accepté, affiché par groupes de deux chiffres.
 - « Supprimer ce demandeur » demande une confirmation et applique `RG-88`.
+- La fiche n'est créée qu'après la recherche dans l'onglet *Personnes* ; une personne
+  existante est réutilisée en ouvrant sa fiche.
 - À la création, la fiche s'ouvre directement sur l'ajout d'un premier livre (E4).
 
 ### E4 — Ajout d'un livre (nouveau)
@@ -219,13 +229,16 @@ Supprimer ce demandeur et ses demandes…
 Ajouter un livre pour Jeanne MARTIN
 
 Rechercher  [ titre, auteur ou ISBN            ] [ Chercher ]
+Portée
+  (●) Toutes les éditions d'une œuvre (par défaut)
+  ( ) Uniquement une édition
 
+Éditions trouvées (défilement dans cette zone)
   ○ Le Petit Prince — Antoine de Saint-Exupéry — Gallimard, 1999
   ● Le Petit Prince — Antoine de Saint-Exupéry — Folio, 2007
+  (cliquer une édition sélectionne automatiquement « Uniquement une édition »)
 
-Portée
-  (●) Toutes les éditions de cette œuvre   (recommandé)
-  ( ) Uniquement cette édition (ISBN 978-2-07-061275-8)
+[ Annuler ]                                        [ Ajouter la demande ]
 
 ┌ Déjà à la bourse ───────────────────────────────────────────┐
 │ 2 exemplaires disponibles · 1 annoncé pour le 14 mars       │

@@ -17,23 +17,38 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-12 — demandes manuelles de personnes sans compte; T0–T24 terminés sur `feat/manual-book-requests`; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) ouverte vers `main`, non fusionnée. |
-| **Prochaine action** | Suivre les GitHub Actions en attente et faire la revue de la PR #252. Après fusion, appliquer `AddManualBookRequests` avec `run_migrations: true` via `Books runtime - deploy`, puis déployer Catalog et Scan. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-manual-book-requests` |
-| **Dernière mise à jour** | 2026-10-12 — F-12 T0–T24 implémentée et validée localement; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) ouverte, checks GitHub en attente. Aucun déploiement ni accès à une base distante n'a été effectué. |
-| **Branche** | `feat/manual-book-requests`, basée sur `origin/main` fraîchement récupéré. |
+| **Lot en cours** | F-12 — demandes manuelles de personnes sans compte; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) fusionnée le 2026-10-14 et déployée; amélioration UX en cours dans [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259). |
+| **Prochaine action** | Revoir et valider la PR #259. Avant sa fusion, vérifier le réemploi d'une personne et le dialogue d'ajout de livres sur bureau et mobile avec une session administration. Après fusion, déployer API puis Catalog; aucune migration n'est requise et Scan n'est pas concerné. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-manual-request-admin-ux` |
+| **Dernière mise à jour** | 2026-10-15 — état de déploiement F-12 vérifié; PR #259 ouverte pour le répertoire des personnes et l'amélioration du dialogue. L'API et Catalog compilent; le contrôle visuel authentifié reste à faire. |
+| **Branche** | `feat/manual-request-admin-ux`, issue d'un worktree dédié créé depuis `origin/main` à jour. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
-### Demandes manuelles sans compte — F-12 — 2026-10-12
+### Demandes manuelles sans compte — F-12 — 2026-10-15
 
-Les tâches T0–T23 du handoff sont implémentées sur `feat/manual-book-requests` et T24 est
-terminée. Build backend : 14 projets, 0 erreur; tests backend : 976/976; Scan : 300/300;
-Catalog : 485/487 (deux échecs AccountCard déjà signalés au baseline), avec les suites
-ciblées `manual-requests` 28/28, administration 61/61 et page légale 6/6. Les deux builds
-frontend passent; les 76 zones dans 17 pages sont vérifiées et les vues contrôlées à 390 /
-1440 px ne débordent pas horizontalement. Les checks GitHub de [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252)
-sont en attente. La migration `AddManualBookRequests` est générée, mais n'a pas été
-appliquée ; aucune base distante ni aucun service Azure n'a été modifié.
+Les tâches T0–T24 ont été livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252),
+fusionnée le 2026-10-14. Le run [Books runtime - deploy #38689858408](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/38689858408)
+a appliqué la migration `AddManualBookRequests` et déployé l'API/Worker; les déploiements
+[Catalog #38689891967](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/38689891967)
+et [Scan #38689915502](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/38689915502)
+ont aussi réussi le 2026-10-15 sur `e26dacc8`.
+
+L'amélioration UX est en revue dans [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259)
+sur `feat/manual-request-admin-ux`. Elle ajoute l'onglet paginé des personnes et la recherche
+avant création, puis garde portée, recherche et actions fixes autour d'une liste d'éditions
+défilante. Aucun changement de schéma n'est inclus dans cette PR.
+
+Validation UX du 2026-10-15 : build API (5 projets, 0 erreur) et build Catalog (0 erreur),
+`git diff --check` et `graphify update .` réussis. Les avertissements existants de budget
+bundle/CSS et de dépendances CommonJS restent présents. Aucun test automatisé n'a été lancé
+sur ce suivi. La page locale reste derrière Microsoft Entra et l'API locale n'était pas
+disponible; le contrôle visuel authentifié du dialogue à 390 / 1440 px reste à faire.
+
+Validation initiale du 2026-10-12 avant fusion de #252 : build backend 14 projets sans erreur,
+976 tests backend réussis, Scan 300/300 et Catalog 485/487 (deux échecs AccountCard déjà
+signalés au baseline); suites ciblées `manual-requests` 28/28, administration 61/61 et page
+légale 6/6. Les 76 zones dans 17 pages étaient vérifiées et les vues contrôlées à 390 / 1440 px
+ne débordaient pas horizontalement.
 
 ### Remise à zéro de la base DEV — 2026-09-28
 

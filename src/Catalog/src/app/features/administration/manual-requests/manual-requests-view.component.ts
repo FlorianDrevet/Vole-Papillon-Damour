@@ -7,9 +7,12 @@ import {
   CatalogManualRequestQueue,
   CatalogManualRequestSummary,
   CatalogManualRequestTab,
+  CatalogManualRequesterListItem,
 } from '../../../core/catalog.models';
 import {formatManualRequesterName, formatManualRequesterPhone, manualRequesterPhoneHref} from './manual-request-format';
 import {ManualRequestDecisionMode} from './manual-request-decision-dialog.component';
+
+type ManualRequestsAdminTab = CatalogManualRequestTab | 'requesters';
 
 @Component({
   selector: 'app-manual-requests-view',
@@ -24,12 +27,17 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
 
   @ViewChild('requestsHeading') private requestsHeading?: ElementRef<HTMLElement>;
 
-  readonly activeTab = signal<CatalogManualRequestTab>('found');
+  readonly activeTab = signal<ManualRequestsAdminTab>('found');
   readonly queue = signal<CatalogManualRequestQueue | null>(null);
+  readonly requesters = signal<CatalogManualRequesterListItem[]>([]);
+  readonly requesterTotal = signal(0);
+  readonly requesterListLoaded = signal(false);
+  readonly lastRequesterSearch = signal<string | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
   readonly search = signal('');
+  readonly requesterSearch = signal('');
   readonly page = signal(1);
   readonly actionPending = signal<string | null>(null);
   readonly decision = signal<{mode: ManualRequestDecisionMode; item: CatalogManualRequestItem} | null>(null);
@@ -51,13 +59,13 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     }
   }
 
-  async selectTab(tab: CatalogManualRequestTab): Promise<void> {
+  async selectTab(tab: ManualRequestsAdminTab): Promise<void> {
     if (this.activeTab() === tab) {
       return;
     }
     this.activeTab.set(tab);
     this.page.set(1);
-    await this.loadQueue();
+    await this.loadActiveView();
   }
 
   updateSearch(value: string): void {
@@ -72,18 +80,40 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     }, 300);
   }
 
+  updateRequesterSearch(value: string): void {
+    this.requesterSearch.set(value);
+    this.page.set(1);
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+    this.searchTimer = setTimeout(() => {
+      this.searchTimer = null;
+      void this.loadRequesters();
+    }, 300);
+  }
+
+  async loadActiveView(): Promise<void> {
+    if (this.activeTab() === 'requesters') {
+      await this.loadRequesters();
+      return;
+    }
+    await this.loadQueue();
+  }
+
   async loadQueue(): Promise<void> {
-    if (!this.accessToken) {
+    const tab = this.activeTab();
+    if (!this.accessToken || tab === 'requesters') {
       return;
     }
 
     const sequence = ++this.loadSequence;
+    const search = this.search().trim();
     this.loading.set(true);
     this.error.set(null);
     try {
       const response = await firstValueFrom(this.api.getManualRequests(this.accessToken, {
-        tab: this.activeTab(),
-        q: this.search().trim(),
+        tab,
+        q: search,
         page: this.page(),
         pageSize: 50,
       }));
@@ -99,6 +129,40 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     } catch {
       if (sequence === this.loadSequence) {
         this.error.set('Impossible de charger les demandes manuelles. Vérifiez la connexion puis réessayez.');
+      }
+    } finally {
+      if (sequence === this.loadSequence) {
+        this.loading.set(false);
+      }
+    }
+  }
+
+  async loadRequesters(): Promise<void> {
+    if (!this.accessToken || this.activeTab() !== 'requesters') {
+      return;
+    }
+
+    const sequence = ++this.loadSequence;
+    const search = this.requesterSearch().trim();
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const response = await firstValueFrom(this.api.getManualRequesters(this.accessToken, {
+        q: search,
+        page: this.page(),
+        pageSize: 25,
+      }));
+      if (sequence !== this.loadSequence) {
+        return;
+      }
+      this.requesters.set(response.requesters);
+      this.requesterTotal.set(response.totalCount);
+      this.page.set(response.page);
+      this.lastRequesterSearch.set(search);
+      this.requesterListLoaded.set(true);
+    } catch {
+      if (sequence === this.loadSequence) {
+        this.error.set('Impossible de charger les personnes. Vérifiez la connexion puis réessayez.');
       }
     } finally {
       if (sequence === this.loadSequence) {
@@ -179,7 +243,19 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
   }
 
   newRequester(): void {
+    if (!this.canCreateRequester()) {
+      return;
+    }
     this.requesterSelected.emit(null);
+  }
+
+  canCreateRequester(): boolean {
+    const search = this.requesterSearch().trim();
+    return search.length > 0 && this.lastRequesterSearch() === search && !this.loading();
+  }
+
+  requesterListName(requester: CatalogManualRequesterListItem): string {
+    return formatManualRequesterName(requester.firstName, requester.lastName, false);
   }
 
   requesterName(item: CatalogManualRequestItem): string {
@@ -221,6 +297,22 @@ export class ManualRequestsViewComponent implements OnChanges, OnDestroy {
     return Number.isNaN(date.getTime())
       ? 'date inconnue'
       : new Intl.DateTimeFormat('fr-FR', {day: 'numeric', month: 'short', year: 'numeric'}).format(date);
+  }
+
+  isLastRequesterPage(): boolean {
+    return this.page() * 25 >= this.requesterTotal();
+  }
+
+  requesterPageCount(): number {
+    return Math.max(1, Math.ceil(this.requesterTotal() / 25));
+  }
+
+  loadRequesterPage(page: number): void {
+    if (page < 1 || page > this.requesterPageCount() || this.loading()) {
+      return;
+    }
+    this.page.set(page);
+    void this.loadRequesters();
   }
 
   daysWaiting(value: string | null): number {
