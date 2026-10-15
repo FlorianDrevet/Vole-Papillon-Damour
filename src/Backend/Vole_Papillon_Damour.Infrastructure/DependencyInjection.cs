@@ -55,7 +55,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration builderConfiguration,
         bool runMigrations = true,
-        bool registerAuthentication = true)
+        bool registerAuthentication = true,
+        bool registerMemberCardTokens = true)
     {
         var connectionString = builderConfiguration.GetConnectionString(ProjectDatabaseConnectionStringName);
 
@@ -88,12 +89,15 @@ public static class DependencyInjection
             builderConfiguration.GetSection(UnsubscribeTokenOptions.SectionName));
         services.AddSingleton<IUnsubscribeTokenService, UnsubscribeTokenService>();
         services.AddSingleton<IRandomIndexSource, CryptographicRandomIndexSource>();
-        services.AddOptions<MemberCardTokenOptions>()
-            .Bind(builderConfiguration.GetSection(MemberCardTokenOptions.SectionName))
-            .Validate(options => MemberCardTokenOptions.TryDecodeSigningKey(options.SigningKey, out _),
-                "MemberCards:SigningKey must be a Base64 key of at least 32 bytes.")
-            .ValidateOnStart();
-        services.AddSingleton<IMemberCardTokenService, MemberCardTokenService>();
+        if (registerMemberCardTokens)
+        {
+            services.AddOptions<MemberCardTokenOptions>()
+                .Bind(builderConfiguration.GetSection(MemberCardTokenOptions.SectionName))
+                .Validate(options => MemberCardTokenOptions.TryDecodeSigningKey(options.SigningKey, out _),
+                    "MemberCards:SigningKey must be a Base64 key of at least 32 bytes.")
+                .ValidateOnStart();
+            services.AddSingleton<IMemberCardTokenService, MemberCardTokenService>();
+        }
         services.AddSingleton<IBookAlertEmailSender, BookAlertEmailSender>();
         services.Configure<EntraGraphOptions>(builderConfiguration.GetSection(EntraGraphOptions.SectionName));
         services.AddHttpClient<EntraGraphUserDirectory>();

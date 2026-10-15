@@ -14,6 +14,23 @@ namespace Vole_Papillon_Damour.Infrastructure.tests;
 public class InfrastructureRegistrationTests
 {
     [Fact]
+    public async Task WorkerInfrastructureStartup_DoesNotRequireMemberCardSigningKey()
+    {
+        var configuration = new ConfigurationManager();
+        using var host = new HostBuilder()
+            .ConfigureServices((_, services) => services.AddInfrastructure(
+                configuration,
+                runMigrations: false,
+                registerAuthentication: false,
+                registerMemberCardTokens: false))
+            .Build();
+
+        await host.StartAsync();
+        host.Services.GetService<IMemberCardTokenService>().Should().BeNull();
+        await host.StopAsync();
+    }
+
+    [Fact]
     public void AddInfrastructure_WhenAuthenticationIsDisabled_DoesNotRegisterAuthenticationSchemes()
     {
         var services = new ServiceCollection();

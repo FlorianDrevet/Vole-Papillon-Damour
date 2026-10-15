@@ -17,12 +17,12 @@
 
 | | |
 |---|---|
-| **Palier en cours** | Vérification opérationnelle de la v1 sur `development` après configuration externe |
-| **Prochaine action** | Laisser le Worker exécuter son prochain passage planifié à 00:00 ou 12:00 UTC, puis vérifier un import réel publié directement avec un titre Foundry ; renouveler le jeton avant son seuil d'alerte |
+| **Palier en cours** | Rétablissement opérationnel de l'import v1 : le Worker France Central échoue au démarrage sur la validation de la clé des cartes membres |
+| **Prochaine action** | Après fusion du correctif `fix/worker-membercard-signingkey`, relancer `Worker - deploy`, vérifier que le host Functions liste ses fonctions, puis contrôler le prochain import à 00:00 ou 12:00 UTC |
 | **Ce qui est prêt dans le code** | Publication directe des imports Instagram, lectures publiques filtrées, relecture BackOffice, import minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-instagram-activation` |
-| **Dernière mise à jour** | 2026-09-22 — cadences du Worker réduites : Sweep horaire et import social deux fois par jour |
-| **Branche** | `docs/record-instagram-activation-state` — worktree dédié pour documenter l'activation post-PR `#122` |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-worker-membercard-signingkey` |
+| **Dernière mise à jour** | 2026-10-15 — incident de démarrage confirmé sur la révision Worker `0000004`; correctif préparé mais pas encore déployé |
+| **Branche** | `fix/worker-membercard-signingkey` — PR à ouvrir vers `main` |
 
 ---
 
@@ -110,6 +110,24 @@ développeur seul.
 ---
 
 ## Journal
+
+### 2026-10-15 — Worker Functions bloqué au démarrage
+
+La révision `vpd-worker-ca-dev-fc--0000004` est en `CrashLoopBackOff`. Les logs montrent
+`OptionsValidationException: MemberCards:SigningKey must be a Base64 key of at least 32 bytes`.
+Le Worker partageait l'enregistrement Infrastructure de l'API, qui validait cette clé au
+démarrage, alors que sa Container App ne la reçoit pas et que ses fonctions n'utilisent pas
+le service de jetons des cartes membres.
+
+Le correctif garde l'enregistrement et la validation dans l'API, mais les désactive pour le
+Worker. Le test de démarrage du Worker reproduit l'exception avant le correctif et passe après.
+Le dernier élément renvoyé par `/actuality/latest` date du 9 septembre et son import du
+12 septembre. L'arrêt actuel est confirmé ; son lien avec l'absence d'import antérieure au
+déploiement du 15 octobre reste à établir.
+
+La correction est dans `fix/worker-membercard-signingkey` ; aucune ressource Azure n'a été
+modifiée. Après revue et fusion de la PR, déployer le Worker puis vérifier le host Functions,
+le minuteur social et un nouvel import réel.
 
 ### 2026-09-22 — réduction des cadences du Worker
 
