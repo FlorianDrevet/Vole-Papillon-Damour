@@ -33,7 +33,7 @@ En moins d'une seconde, l'écran affiche :
 
 > **Le Petit Prince** — Antoine de Saint-Exupéry — Gallimard
 >
-> ⚠️ **Déjà 5 exemplaires en rayon** — inutile d'en garder un de plus
+> ⚠️ **Déjà 5 exemplaires enregistrés** — inutile d'en garder un de plus
 > ✅ **7 exemplaires vendus lors des dernières bourses** — ce titre part bien
 > 🔔 **2 personnes recherchent ce livre**
 
@@ -49,13 +49,13 @@ d'eux arrive.
 ### Pour le bénévole qui trie
 
 Il travaille avec un appareil de la taille d'un téléphone. Devant chaque livre, il
-appuie sur un bouton, vise le code-barres, lit la réponse, et pose le livre dans un
-bac ou dans l'autre. **Un geste de plus par livre, deux secondes environ.**
+appuie sur un bouton, vise le code-barres et lit la réponse. **Un geste de plus par
+livre, deux secondes environ.**
 
 Il n'a rien à taper, rien à chercher, aucune liste à tenir. C'est l'application qui
 se souvient à sa place.
 
-### Pour le bénévole qui range les rayons
+### Pour les bénévoles de la bourse
 
 **Rien ne change, et aucune saisie ne lui est demandée.**
 
@@ -158,8 +158,8 @@ le sait pas encore. **Ce n'est pas une panne, c'est une période d'apprentissage
 
 Nous avons choisi de ne pas scanner tout le stock existant avant de démarrer : ce serait
 des milliers de livres à passer sans bénéfice immédiat. Le catalogue se remplira au fil
-des tris. Si l'on veut accélérer, on peut scanner les rayons petit à petit, en
-commençant par les plus remplis — mais ce n'est pas obligatoire.
+des tris. Si l'on veut accélérer, on peut scanner le stock déjà présent petit à petit,
+en commençant par les titres les plus courants — mais ce n'est pas obligatoire.
 
 **Il faut prévenir les bénévoles**, sans quoi ils concluront à juste titre que l'outil
 raconte n'importe quoi.
@@ -172,7 +172,7 @@ raconte n'importe quoi.
 3. **L'engagement de tenir les dates des bourses à jour** dans l'outil, puisque ce sont
    elles qui déclenchent la mise à disposition des livres annoncés.
 
-*La question de la manière de faire passer les livres du tri au rayon a été tranchée :
+*La question du moment où les livres deviennent disponibles après le tri a été tranchée :
 c'est la réponse donnée au début de chaque tri, décrite plus haut. Le détail figure
 dans [`08-questions-ouvertes.md`](08-questions-ouvertes.md), question `Q-01`.*
 

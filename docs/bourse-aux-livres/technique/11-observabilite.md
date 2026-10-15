@@ -11,7 +11,7 @@ reste.
 | Panne | Ce que voit le code | Ce que voit l'utilisateur |
 |---|---|---|
 | Le worker ne s'exécute plus (`QT-02`) | Rien | Rien — jusqu'à ce qu'un membre ne soit pas prévenu |
-| Une annonce ne bascule pas (`RG-23`) | Rien | Un livre annoncé qui n'arrive jamais en rayon |
+| Une annonce ne bascule pas (`RG-23`) | Rien | Un livre annoncé qui ne devient jamais disponible |
 | La file d'un appareil ne se vide pas | Rien côté serveur | Un bénévole qui range son téléphone, travail perdu |
 | Une session reste ouverte indéfiniment | Rien | Des alertes qui ne partent jamais |
 | Le `WorkId` manque (`RG-46`) | Rien | Une alerte manquée, en silence — `07` §4 |

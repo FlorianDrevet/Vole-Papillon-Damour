@@ -176,7 +176,7 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   confirmation modal with the fiche, recorded reason, current quantity and post-correction
   quantity; cancel, backdrop click and `Escape` leave the stock untouched. The layout
   collapses the lookup fields, adjustment controls, confirmation quantities and book-row
-  actions at the mobile breakpoint without introducing physical-location data.
+  actions at the mobile breakpoint while keeping the catalogue focused on bibliographic data.
 - The September 11 Catalog polish keeps the search section rules on the shared blue-to-orange
   brand gradient, gives the `Disponibilité` legend a visible gap before its options, and
   replaces the external-reference scope modal with one explanatory all-editions callout above

@@ -19,9 +19,9 @@
 |---|---|
 | **Lot en cours** | F-12 — demandes manuelles de personnes sans compte; T0–T24 terminés sur `feat/manual-book-requests`; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) ouverte vers `main`, non fusionnée. |
 | **Prochaine action** | Suivre les GitHub Actions en attente et faire la revue de la PR #252. Après fusion, appliquer `AddManualBookRequests` avec `run_migrations: true` via `Books runtime - deploy`, puis déployer Catalog et Scan. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-manual-book-requests` |
-| **Dernière mise à jour** | 2026-10-12 — F-12 T0–T24 implémentée et validée localement; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) ouverte, checks GitHub en attente. Aucun déploiement ni accès à une base distante n'a été effectué. |
-| **Branche** | `feat/manual-book-requests`, basée sur `origin/main` fraîchement récupéré. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-remove-book-locations` |
+| **Dernière mise à jour** | 2026-10-15 — Texte de réglage Catalog, documentation fonctionnelle et maquettes alignés sur le modèle actif. Builds de production Catalog/Scan, `graphify update .` et `git diff --check` réussis ; aucun test automatisé ni contrôle visuel navigateur lancé. Aucun modèle, aucune fiche, base distante ou service n'ont été modifiés. PR à ouvrir. |
+| **Branche** | `feat/remove-book-locations`, basée sur `origin/main` fraîchement récupéré. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-12
@@ -50,14 +50,13 @@ caducité dans la transaction qui épuise le stock et la clôture groupée par f
 
 ### Suivi du signalement livre introuvable — 2026-10-01
 
-La [PR #248](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/248) retire le
-choix « bourse / local » du formulaire et du contrat, garde le commentaire facultatif,
-place le bloc de signalement dans sa propre cellule à côté du livre sur grand écran et
-supprime `BookNotFoundReports.Location` par la migration
-`20261001111037_RemoveNotFoundReportLocation`. La migration n'a pas été appliquée à une
-base. Le correctif séparé de `RetireSelectionPersonalStatuses` doit être fusionné avant le
-prochain déploiement `Books runtime - deploy` avec `run_migrations: true`; déployer Catalog
-après l'API.
+La [PR #248](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/248), fusionnée le
+1er octobre, limite le formulaire et le contrat à un commentaire facultatif, place le bloc
+de signalement dans sa propre cellule à côté du livre sur grand écran et aligne le schéma
+final avec la migration `20261001111037_RemoveNotFoundReportLocation`. L'application de
+cette migration en base n'a pas été vérifiée dans cette mise à jour. Le correctif séparé de
+`RetireSelectionPersonalStatuses` doit être fusionné avant le prochain déploiement
+`Books runtime - deploy` avec `run_migrations: true`; déployer Catalog après l'API.
 
 Validation locale : Domain/Application/Infrastructure/API 171/454/177/64 tests réussis,
 build Catalog réussi et suite Catalog 447 réussis avec 3 échecs AccountCard hors périmètre.
@@ -124,10 +123,9 @@ Bicep a uniquement été compilé localement : aucun déploiement Azure n'a ét�
 
 Les photos sélectionnées dans le formulaire de création sont désormais prévisualisées
 immédiatement et mises en attente jusqu'à l'enregistrement de la fiche. Leur envoi commence
-ensuite. Les champs `Reliure`, `Format`, `Pages`, `Emplacement` et `Prix fixé par`, ainsi que
-le classement `Rayon d'affichage`, ont été retirés du Catalog, de Scan, des contrats API et du
-modèle EF. Le filtre et les compteurs de rayons publics disparaissent aussi. Le poids/le nom
-du conteneur dans la galerie et la mention sur la totalisation du prix sont supprimés.
+ensuite. Les fiches rares, les contrats API et les écrans Catalog/Scan partagent un modèle
+centré sur les informations bibliographiques, l'état, le prix et les photos. La galerie
+affiche le nombre de photos et le prix est présenté sans note de totalisation.
 
 Validation locale : 381 tests Catalog, 283 Scan, 151 Domain, 339 Application (deux tests de
 tri par prix exclus car la collation SQLite locale ne parse pas `10.0` sous la culture
@@ -253,10 +251,9 @@ la limite de 5 100 nœuds. Aucun déploiement Azure ni contrôle de production n
 ### État actualisé — 2026-09-16 — Livres rares, lot 1
 
 Le domaine `RareBook` est ajouté sous `Domain/RareBookAggregate`. L’agrégat porte ses
-métadonnées, son ISBN facultatif, son prix ferme en `decimal`, son état brouillon/publié, la
-traçabilité de sortie et une collection de photos protégée. Le slug est calculé une seule fois,
-normalisé sans accents et limité à 120 caractères ; la liste de rayons reste une valeur texte
-validée afin de pouvoir être fermée et éditée par `AssociationSettings` selon Q4. La publication
+les métadonnées bibliographiques, son ISBN facultatif, son prix ferme en `decimal`, son état
+brouillon/publié, la traçabilité de sortie et une collection de photos protégée. Le slug est
+calculé une seule fois, normalisé sans accents et limité à 120 caractères. La publication
 autorise l’absence de photo comme avertissement non bloquant, tandis que la vente exige une fiche
 publiée et reste idempotente. Aucune logique de panier, de total ou de recette n’est introduite.
 
@@ -391,13 +388,13 @@ Validation locale : tests rouges puis verts sur le service hors ligne, la synchr
 le formulaire et le routage Scanette ; la compatibilité du delta conserve les fiches rares
 publiées et disponibles, et les suppressions rares sont transmises par tombstones. Aucun
 compte Entra, appareil réel, quota navigateur réel ou appel API authentifié n'a été contrôlé
-manuellement. Q4 reste le défaut des quatre rayons fermés ;
+manuellement. Q4 reste configuré par défaut ;
 la gestion Scanette ne modifie pas les livres ordinaires.
 
 ### État actualisé — 2026-09-17 — Livres rares, lot 8
 
-Le Catalog public expose `/livres-rares` et `/livres-rares/:slug` avec une liste filtrable
-par rayon, triable par prix ou arrivée, une carte dédiée et une fiche galerie. Les livres
+Le Catalog public expose `/livres-rares` et `/livres-rares/:slug` avec une liste triable
+par prix ou arrivée, une carte dédiée et une fiche galerie. Les livres
 rares ne sont pas mélangés aux cartes ordinaires ; la fiche affiche le prix ferme comme
 information à lire, sans panier, paiement ni total. L'accueil, l'en-tête, le pied de page,
 les routes SSR et le sitemap dynamique renvoient vers la section dédiée. Q2 est appliqué
@@ -753,6 +750,14 @@ git pull
 | Docker | pour les images | — |
 
 ## En cours
+
+### Alignement des documents du catalogue — 2026-10-15
+
+Dans le worktree `Vole-Papillon-Damour-remove-book-locations`, le texte d'administration,
+les spécifications fonctionnelles, les notes de modèle et les maquettes ont été alignés sur
+le catalogue actuel. Les fiches existantes et les formulations de signalement sont conservées.
+Aucune donnée, migration, API ou page d'administration n'a été supprimée ou ajoutée.
+`PR à ouvrir`.
 
 ### Fiche publique livre rare — URLs par identifiant et présentation — 2026-09-28
 
@@ -2203,6 +2208,9 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-10-15, cette tâche reste limitée au dépôt : aucun accès à une base ou à un service,
+aucun déploiement et aucune suppression de fiche ou de donnée n'ont été effectués.
+
 Au 2026-10-01, les ressources minimales des six Container Apps sont préparées dans le dépôt
 sur `fix/aca-minimum-resources` ; la [PR #246](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/246)
 est ouverte. Azure garde son état actuel jusqu'au lancement du workflow manuel `Infra - deploy`
@@ -2412,6 +2420,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-10-15 | Windows | **Catalogue — retrait des références de rangement.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-remove-book-locations`, reformulation des libellés d'administration et de scan et alignement des documents, contrats décrits et maquettes sur le modèle actuel. Le vocabulaire et les formulaires de signalement restent inchangés ; aucune fiche, donnée, migration ou API n'a changé. Builds de production Catalog et Scan, `graphify update .` et `git diff --check` réussis. Aucun test automatisé ni contrôle visuel navigateur lancé. PR à ouvrir. |
 | 2026-10-01 | Windows | **Infrastructure — ressources minimales ACA.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-aca-minimum-resources`, les six Container Apps DEV utilisent `0.25` vCPU / `0.5Gi` par réplique. Le template et les paramètres Bicep compilent avec des secrets factices locaux ; les avertissements ACS BCP081 préexistants restent. Documentation infra et mémoire mises à jour. `graphify update .` a reconstruit 16 613 nœuds. [PR #246](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/246) ouverte, aucun déploiement Azure effectué. |
 | 2026-09-28 | Windows | **Catalog — fiche publique livre rare.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-rare-book-detail-id`, les URLs publiques utilisent l’UUID, l’API maintient les slugs historiques et la fiche regroupe ses infos avant son panneau violet de sélection. Tests ciblés : Catalog 35/35, Application 455/455, endpoint API 5/5 ; build Catalog réussi. Suite Catalog 447/449 avec deux échecs AccountCard hors périmètre ; Playwright à 320/375/1440 px sans débordement, API simulée. Aucun changement externe ; [PR #245](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/245) ouverte vers `main`, non fusionnée. |
 | 2026-09-22 | Windows | **Infrastructure — réduction SQL/ACA.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-azure-cost-scaling`, alignement de `main.dev.bicepparam` sur Azure SQL `S0`/10 DTU ; BackOffice et Scan passent à `minReplicas: 0` avec réveil HTTP et cooldown de trois heures. Compilation du template et des paramètres Bicep réussie avec une clé de validation locale ; les avertissements ACS préexistants restent présents. `graphify update .` a ré-extrait le graphe ; aucun déploiement Azure n'a été effectué. |

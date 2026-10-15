@@ -691,7 +691,7 @@ export class ScannerComponent implements OnInit, DoCheck, AfterViewChecked, OnDe
       case 'ManualRequest':
         return 'Demande manuelle';
       case 'Rare':
-        return 'Signalé par un responsable — ne pas mettre en rayon';
+        return 'Signalé par un responsable';
       case 'Wanted':
         return `${verdict.activeRequesterCount} personne${verdict.activeRequesterCount > 1 ? 's' : ''} le recherche${verdict.activeRequesterCount > 1 ? 'nt' : ''}`;
       case 'Selling':

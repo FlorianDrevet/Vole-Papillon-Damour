@@ -54,7 +54,6 @@ tranche autrement, seules les tâches citées changent.
 | `Q-SIG-1` Qui vérifie | Rôle `Administration` (éditions) ; rôle `RareBooks` pour les fiches rares ; export CSV pour les bénévoles de terrain | SIG-8, SIG-12 |
 | `Q-SIG-2` Reprise des « Pas trouvé » | Convertis en signalements **ouverts** si `StatusChangedAt` < 30 jours **et** édition encore disponible ; sinon remis à l'état neutre | SIG-3 |
 | `Q-SIG-3` « Acheté » manuel | Supprimé ; `Purchased` n'est posé que par la caisse | SIG-3, SIG-10 |
-| `Q-SIG-4` Lieu (« À la bourse / Au local ») | Champ **facultatif** présent (maquette) ; `null` accepté | SIG-5, SIG-11 |
 | `Q-SIG-5` Fiche rare introuvable | « Retirer la fiche rare » = `RareBook.Unpublish(...)` + note | SIG-8 |
 | `Q-SIG-6` E-mail au membre | Aucun | — |
 | `Q-SIG-7` Autres points d'entrée | Ma sélection uniquement | — |
@@ -123,7 +122,6 @@ Décisions **techniques** prises par ce plan (à reporter en `DT-nn`, tâche SIG
 |---|---|
 | `NotFoundReportAggregate/BookNotFoundReport.cs` | Créer — agrégat |
 | `NotFoundReportAggregate/ValueObjects/NotFoundReportStatus.cs` | Créer — `Open, Cancelled, Found, Withdrawn, Dismissed, Lapsed` |
-| `NotFoundReportAggregate/ValueObjects/NotFoundReportLocation.cs` | Créer — `Fair, Premises` |
 | `NotFoundReportAggregate/ValueObjects/NotFoundWithdrawalReason.cs` | Créer — `NotFoundOnShelf, Damaged, Other` |
 | `Common/Errors/Errors.NotFoundReport.cs` | Créer |
 | `MemberSelectionAggregate/ValueObjects/MemberSelectionStatus.cs` | Modifier — ne garder que `ToTake`, `Purchased` |
@@ -189,7 +187,7 @@ Décisions **techniques** prises par ce plan (à reporter en `DT-nn`, tâche SIG
 ### Task SIG-1 : Agrégat `BookNotFoundReport`
 
 **Files :**
-- Create : `Domain/NotFoundReportAggregate/BookNotFoundReport.cs`, `…/ValueObjects/{NotFoundReportStatus,NotFoundReportLocation,NotFoundWithdrawalReason}.cs`, `Domain/Common/Errors/Errors.NotFoundReport.cs`
+- Create : `Domain/NotFoundReportAggregate/BookNotFoundReport.cs`, `…/ValueObjects/{NotFoundReportStatus,NotFoundWithdrawalReason}.cs`, `Domain/Common/Errors/Errors.NotFoundReport.cs`
 - Test : `src/Backend/Vole_Papillon_Damour.Domain.tests/NotFoundReport/BookNotFoundReportTests.cs`
 
 **Interfaces — Produces :**
@@ -203,7 +201,6 @@ public sealed class BookNotFoundReport : Entity<Guid>
     public UserId? UserId { get; private set; }          // null après suppression du compte
     public Isbn13? Isbn13 { get; private set; }          // exactement un des deux
     public RareBookId? RareBookId { get; private set; }
-    public NotFoundReportLocation? Location { get; private set; }
     public string? Comment { get; private set; }
     public NotFoundReportStatus Status { get; private set; }
     public DateTime ReportedAt { get; private set; }
@@ -215,9 +212,9 @@ public sealed class BookNotFoundReport : Entity<Guid>
     public BookMovementId? WithdrawalMovementId { get; private set; }
 
     public static BookNotFoundReport CreateForEdition(Guid id, UserId userId, Isbn13 isbn13,
-        NotFoundReportLocation? location, string? comment, DateTime reportedAt);
+        string? comment, DateTime reportedAt);
     public static BookNotFoundReport CreateForRareBook(Guid id, UserId userId, RareBookId rareBookId,
-        NotFoundReportLocation? location, string? comment, DateTime reportedAt);
+        string? comment, DateTime reportedAt);
 
     public bool IsOpen => Status == NotFoundReportStatus.Open;
     public void Cancel(DateTime at);                                        // membre
@@ -291,8 +288,8 @@ Migration (SQL brut dans `Up`, **dans cet ordre**) — `Q-SIG-2` :
 
 ```sql
 -- 1. « Pas trouvé » récents sur une édition encore disponible → signalement ouvert
-INSERT INTO BookNotFoundReports (Id, UserId, Isbn13, RareBookId, Location, Comment, Status, ReportedAt)
-SELECT NEWID(), s.UserId, s.Isbn13, NULL, NULL, NULL, 0, s.StatusChangedAt
+INSERT INTO BookNotFoundReports (Id, UserId, Isbn13, RareBookId, Comment, Status, ReportedAt)
+SELECT NEWID(), s.UserId, s.Isbn13, NULL, NULL, 0, s.StatusChangedAt
 FROM MemberSelectionItems s
 JOIN Books b ON b.Id = s.Isbn13
 WHERE s.Status = 2 AND s.Isbn13 IS NOT NULL
@@ -343,7 +340,6 @@ public sealed record ReportNotFoundCommand(
     string? FirstName,
     string? LastName,
     Guid SelectionItemId,
-    NotFoundReportLocation? Location,
     string? Comment) : IRequest<ErrorOr<NotFoundReportCreatedResult>>;
 
 public sealed record NotFoundReportCreatedResult(Guid ReportId, DateTimeOffset ReportedAt, bool AlreadyOpen);
@@ -369,7 +365,7 @@ Algorithme de `ReportNotFoundCommandHandler` :
 6. Créer, `SaveChanges`, log `NotFoundReportCreated { reportId, targetKind, alreadyOpen }`.
 7. `DbUpdateException` sur l'index unique (course) → relire et renvoyer l'existant.
 
-Validator : `Comment` ≤ 280 ; `Location` défini si présent.
+Validator : `Comment` ≤ 280.
 
 `CancelNotFoundReportCommandHandler` : signalement du membre (sinon `NotFound`) ; `Open`
 → `Cancel` ; déjà clos → `Errors.NotFoundReport.AlreadyClosed()` (409).
@@ -424,7 +420,7 @@ ou clos **depuis moins de 30 jours** (hors `Cancelled`, jamais renvoyé). Sinon 
 Une seule requête groupée pour toute la sélection (pas de N+1).
 
 Routes membre ajoutées dans cette tâche (même contrôleur) :
-- `POST /catalog/me/selection/{id:guid}/not-found-report` body `{ location?: "Fair"|"Premises", comment?: string }` → `201 { reportId, reportedAt, alreadyOpen: false }` ou `200 {…, alreadyOpen: true }` ; erreurs `400` (validation), `404`, `409 NotReportable`, `429 DailyLimitReached`.
+- `POST /catalog/me/selection/{id:guid}/not-found-report` body `{ comment?: string }` → `201 { reportId, reportedAt, alreadyOpen: false }` ou `200 {…, alreadyOpen: true }` ; erreurs `400` (validation), `404`, `409 NotReportable`, `429 DailyLimitReached`.
 - `DELETE /catalog/me/not-found-reports/{reportId:guid}` → `204` ; `404` ; `409`.
 
 Mapping d'erreurs : ajouter `NotFoundReport.DailyLimitReached` → `429` dans `Api/Errors/ErrorOrStatusCode.cs` (vérifier le mécanisme existant ; sinon `Error.Custom(429, …)`).
@@ -532,7 +528,7 @@ public sealed record NotFoundReportTargetResult(string Kind, string? Isbn13, Gui
     DateTimeOffset FirstReportedAt, DateTimeOffset LastReportedAt, bool Overdue,
     IReadOnlyList<NotFoundReportCommentResult> Comments);
 
-public sealed record NotFoundReportCommentResult(string Text, string? Location, DateTimeOffset ReportedAt);
+public sealed record NotFoundReportCommentResult(string Text, DateTimeOffset ReportedAt);
 
 public sealed record GetClosedNotFoundReportsQuery(int Page, int PageSize, bool RareOnly)
     : IRequest<ErrorOr<ClosedNotFoundReportsResult>>;
@@ -590,12 +586,11 @@ Identité de l'auteur : `TryGetUserId(principal, out var userId)` comme pour
 ```ts
 export type CatalogSelectionStatus = 'ToTake' | 'Purchased';
 export type CatalogNotFoundReportStatus = 'Open' | 'Found' | 'Withdrawn' | 'Dismissed' | 'Lapsed';
-export type CatalogNotFoundLocation = 'Fair' | 'Premises';
 export interface CatalogNotFoundReportSummary { id: string; status: CatalogNotFoundReportStatus; reportedAt: string; closedAt: string | null; }
 // CatalogSelectionItem gagne : notFoundReport: CatalogNotFoundReportSummary | null;
 
 // CatalogMemberApiService
-reportNotFound(token: string, selectionItemId: string, body: {location: CatalogNotFoundLocation | null; comment: string | null}): Observable<{reportId: string; reportedAt: string; alreadyOpen: boolean}>;
+reportNotFound(token: string, selectionItemId: string, body: {comment: string | null}): Observable<{reportId: string; reportedAt: string; alreadyOpen: boolean}>;
 cancelNotFoundReport(token: string, reportId: string): Observable<void>;
 // supprimer setSelectionStatus
 
@@ -655,13 +650,13 @@ Comportement :
 
 **Files :** Create `features/account/selection/not-found-report-dialog.component.{ts,html,scss,spec.ts}` ; Modify `app.module.ts`, `account-selection.component.*`.
 
-Composant `app-not-found-report-dialog` (inputs : `item` titre/auteur/éditeur/couverture, `mode: 'report' | 'login'` ; outputs : `submitted({location, comment})`, `closed()`, `loginRequested()`) :
-- mode `report` : titre « Vous n'avez pas trouvé ce livre ? », rappel du livre, texte « Un bénévole ira vérifier en rayon. Si le livre a disparu, il sera retiré du catalogue. Merci de nous aider à le garder juste ! », radios facultatives **« À la bourse » / « Au local »** (aucune présélection côté code ; la maquette montre un état sélectionné), `textarea` 280 caractères avec compteur, boutons « Annuler » / « Envoyer le signalement » (désactivé pendant l'envoi).
+Composant `app-not-found-report-dialog` (inputs : `item` titre/auteur/éditeur/couverture, `mode: 'report' | 'login'` ; outputs : `submitted({comment})`, `closed()`, `loginRequested()`) :
+- mode `report` : titre « Vous n'avez pas trouvé ce livre ? », rappel du livre, texte « Un bénévole ira vérifier en rayon. Si le livre a disparu, il sera retiré du catalogue. Merci de nous aider à le garder juste ! », `textarea` 280 caractères avec compteur, boutons « Annuler » / « Envoyer le signalement » (désactivé pendant l'envoi).
 - mode `login` : « Connectez-vous pour signaler ce livre », texte de la maquette, « Se connecter » (`auth.login('/compte')`) / « Plus tard ».
 - Accessibilité : `role="dialog"`, `aria-modal`, `aria-labelledby`, focus initial sur le premier contrôle, piège de focus, `Échap` = fermer, retour du focus au bouton d'origine.
 - < 640 px : feuille ancrée en bas (poignée, coins supérieurs arrondis) ; ≥ 640 px : modale centrée 500 px.
 
-- [ ] **Step 1 :** specs rouges — `emits trimmed comment and selected location`, `emits null location when none chosen`, `limits the comment to 280 characters`, `disables submit while sending`, `closes on Escape and restores focus`, `login mode requests login`.
+- [ ] **Step 1 :** specs rouges — `emits a trimmed comment`, `limits the comment to 280 characters`, `disables submit while sending`, `closes on Escape and restores focus`, `login mode requests login`.
 - [ ] **Step 2–4 :** FAIL → implémenter → PASS.
 - [ ] **Step 5 :** 🧪 comparaison aux trois maquettes, clavier seul, lecteur d'écran (NVDA ou VoiceOver) : annonce du titre de la modale.
 - [ ] **Step 6 :** `git commit -m "feat(catalog): add the not-found report dialog"`

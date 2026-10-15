@@ -321,7 +321,6 @@ BookNotFoundReports
   UserId               uniqueidentifier NULL       -- NULL après suppression du compte
   Isbn13               char(13)         NULL       -- exactement une cible ISBN ou fiche rare
   RareBookId           uniqueidentifier NULL
-  Location             tinyint          NULL       -- Fair|Premises
   Comment              nvarchar(280)     NULL       -- commentaire libre du membre
   Status               tinyint          NOT NULL -- Open|Cancelled|Found|Withdrawn|Dismissed|Lapsed
   ReportedAt           datetime2        NOT NULL

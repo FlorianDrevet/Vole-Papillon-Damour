@@ -181,7 +181,7 @@ requête distincte, best-effort, dont l'échec est sans effet.
 
 **La péremption est le point à comprendre.** Deux bénévoles trient en parallèle sur deux
 appareils. A scanne un titre, voit 5 exemplaires, en garde un. B fait de même au même
-moment, voit 5 aussi. Résultat : 7 en rayon pour un seuil à 5.
+moment, voit 5 aussi. Résultat : 7 exemplaires enregistrés pour un seuil à 5.
 
 C'est inhérent à une décision prise localement, et **ce n'est pas grave** : `RG-10` est
 un seuil indicatif, pas une contrainte comptable. Mais cela impose de synchroniser

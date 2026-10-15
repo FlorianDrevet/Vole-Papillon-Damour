@@ -43,7 +43,6 @@ documents et le code.
 | « Carte de fidélité » | Suggère des points ou une remise | Carte de compte |
 | « Commande » | Réservé à l'agrégat `Order` de la buvette | Vente |
 | « Lot », « carton » | Ces notions ont été écartées (`Q-01`). Il n'existe aucun regroupement physique suivi par le système. | Session de scan |
-| « Mise en rayon » | Suggère un geste humain de publication, qui n'existe pas | Mise à disposition |
 | « Réservé » | Aucune réservation n'existe en v1 | — |
 
 ## 2. Cycle de vie d'un livre
@@ -108,7 +107,7 @@ toute la session (`RG-20`).
 
 | | `DISPONIBLE MAINTENANT` | `PROCHAINE BOURSE` |
 |---|---|---|
-| **Quand l'utiliser** | Les livres partent directement en rayon, ou y sont déjà | Les livres sont triés en avance et seront rangés d'ici la prochaine bourse |
+| **Quand l'utiliser** | Les livres deviennent disponibles immédiatement | Les livres sont triés en avance et seront disponibles à la prochaine bourse |
 | **Effet immédiat** | Quantité disponible +1 | Quantité annoncée +1, rattachée à une bourse |
 | **Sur le site public** | « Disponible » | « Disponible à partir du 14 mars » |
 | **Effet différé** | aucun | Bascule automatique en disponible à la date d'ouverture |

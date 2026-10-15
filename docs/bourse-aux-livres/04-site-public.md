@@ -138,14 +138,14 @@ qu'une promesse démentie sur place.
 ## 5 bis. Catalogue des livres rares
 
 La page publique `/livres-rares` liste uniquement les fiches rares publiées. Elle permet
-d'inclure explicitement les exemplaires vendus et de trier par arrivée ou par prix ; les
-fiches rares ne sont plus classées par rayon. Chaque résultat utilise une carte dédiée
-avec photo, état, disponibilité et prix ferme. Ce prix est une information de l'exemplaire,
-visible pour préparer la visite ; le site ne propose ni panier, ni paiement, ni total.
+d'inclure explicitement les exemplaires vendus et de trier par arrivée ou par prix. Chaque
+résultat utilise une carte dédiée avec photo, état, disponibilité et prix ferme. Ce prix
+est une information de l'exemplaire, visible pour préparer la visite ; le site ne propose
+ni panier, ni paiement, ni total.
 
-La fiche `/livres-rares/:slug` présente la galerie, les informations bibliographiques et
-l'état de l'exemplaire sans afficher de format matériel ni d'emplacement,
-avec un lien de contact `mailto:volepapillondamour@sfr.fr` comme défaut de Q2. Un exemplaire
+La fiche `/livres-rares/:slug` présente la galerie, les informations bibliographiques,
+l'état et la disponibilité de l'exemplaire, avec un lien de contact
+`mailto:volepapillondamour@sfr.fr` comme défaut de Q2. Un exemplaire
 vendu reste consultable mais est clairement signalé comme indisponible. Le référencement
 comprend les routes dédiées, une URL canonique, les métadonnées `Book` et le sitemap
 dynamique ; aucune fiche brouillon n'est publiée.
@@ -296,11 +296,6 @@ Côté parcours visible :
 - Pas de réservation ni de mise de côté.
 - Pas de compte pour les bénévoles : ils utilisent l'application de scan.
 - Pas d'affichage des livres écartés au tri.
-- **Pas d'indication d'emplacement** : le site ne dit jamais dans quel rayon ni dans quel
-  bac se trouve un livre (`Q-07`). Le suivi se fait par ISBN et par quantité, sans
-  exemplaire individuel : le système ne le sait pas, et l'annoncer serait promettre une
-  précision qu'il n'a pas. Le visiteur vient avec un titre ; le bénévole sait où sont ses
-  rayons.
 
 ## 10. Évolution identifiée : la réservation
 

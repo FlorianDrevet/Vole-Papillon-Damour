@@ -54,10 +54,9 @@ l'écran, libellé en toutes lettres. Un scan de vente déclenché depuis le mod
 serait une erreur coûteuse et silencieuse : la couleur du bandeau est la garantie
 principale contre cette confusion.
 
-Il n'existe pas de mode de mise en rayon : la publication ne repose sur aucun geste de
-validation. Elle découle du mode de mise à disposition choisi à l'ouverture d'une
-session de tri (§3.1) et, le cas échéant, d'une bascule automatique à la date de la
-bourse (`RG-23`).
+La publication ne repose sur aucun geste de validation. Elle découle du mode de mise à
+disposition choisi à l'ouverture d'une session de tri (§3.1) et, le cas échéant, d'une
+bascule automatique à la date de la bourse (`RG-23`).
 
 ## 3. Mode TRI
 
@@ -259,11 +258,10 @@ Si l'estimation de valeur marchande est un jour implémentée, c'est aussi sur c
 qu'apparaîtront les livres signalés comme potentiellement chers (`RG-14`) : le calcul
 étant asynchrone, ses résultats arrivent après le scan, jamais pendant.
 
-## 4. Ce qui remplace la mise en rayon
+## 4. Disponibilité après la session
 
-Il n'y a **aucun geste de mise en rayon**. La question `Q-01` a été tranchée dans un
-sens qui supprime l'étape : la publication est décidée en amont, par le mode de la
-session, et la disponibilité effective survient toute seule.
+La publication est décidée en amont par le mode de la session ; la disponibilité
+effective survient automatiquement.
 
 | Mode de la session | À la fin du scan | À la date de la bourse |
 |---|---|---|
@@ -337,9 +335,9 @@ Points de conception :
 - **Un livre scanné alors que la quantité disponible est à zéro est quand même vendu** :
   le client le tient en main, la réalité prime sur le compteur. L'écart est enregistré
   pour la remise à plat (`RG-37`).
-- **Un livre encore annoncé et non basculé est signalé au caissier** — il n'était pas
-  censé être en rayon — mais la vente n'est pas bloquée pour autant (`RG-37`). C'est le
-  signe que des livres ont été rangés en avance sur leur date d'annonce.
+- **Un livre encore annoncé et non basculé est signalé au caissier** — il n'est pas
+  encore marqué disponible — mais la vente n'est pas bloquée pour autant (`RG-37`).
+  Cela permet de traiter les livres proposés avant leur date d'annonce.
 
 ### 5.1. Ajouter un livre rare
 
@@ -370,8 +368,8 @@ aucune alerte. C'est l'outil de la sonde de faisabilité du palier 0 (`01` §7),
 **conservé ensuite** comme mode « je vérifie quelque chose » sans risque de polluer les
 données.
 
-Usage courant après le palier 0 : savoir combien d'exemplaires d'un titre sont en rayon
-avant de réorganiser une étagère, ou lever un doute sans ouvrir une session de tri.
+Usage courant après le palier 0 : savoir combien d'exemplaires d'un titre sont disponibles,
+ou lever un doute sans ouvrir une session de tri.
 
 ## 7. Cas d'erreur et de bord
 

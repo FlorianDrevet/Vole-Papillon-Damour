@@ -298,6 +298,6 @@ valeur d'une série qu'on suivra dans le temps.
 
 **Ce qui ne se teste toujours pas seul, et qu'il faut savoir en attendant.** Le catalogue
 démarre vide (`RG-48`) : pendant des mois, « inutile d'en garder » ne se déclenchera presque
-jamais et « premier exemplaire » se déclenchera à tort sur des titres déjà en rayon. Un
-bénévole non prévenu en conclut que l'outil ne marche pas. Ce n'est pas une étape du plan,
+jamais et « premier exemplaire » se déclenchera à tort sur des titres déjà présents dans le
+stock. Un bénévole non prévenu en conclut que l'outil ne marche pas. Ce n'est pas une étape du plan,
 c'est une phrase à dire le jour de la première utilisation réelle.

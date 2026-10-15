@@ -12,7 +12,7 @@ successives, aujourd'hui déconnectées les unes des autres :
 
 Le tri est le point de décision central, et c'est celui où l'information manque. Le
 bénévole n'a accès ni à l'état du stock, ni à l'historique des ventes, ni à la demande
-exprimée par le public. Il arbitre à l'intuition une ressource rare : la place en rayon.
+exprimée par le public. Il arbitre donc à l'intuition quels titres intégrer au catalogue.
 
 ## 2. Objectifs
 
@@ -89,14 +89,14 @@ documentées car elles pèsent sur le reste.
 
 | Décision | Conséquence à assumer |
 |---|---|
-| **Suivi par ISBN avec quantité**, pas par exemplaire | On ne peut pas savoir *quel* exemplaire est parti, ni depuis quand un livre dort en rayon. Un livre vendu sans être scanné reste « disponible » indéfiniment : d'où l'obligation d'une remise à plat périodique (`RG-34`). |
+| **Suivi par ISBN avec quantité**, pas par exemplaire | On ne peut pas savoir *quel* exemplaire est parti ni reconstituer chaque changement du stock. Un livre vendu sans être scanné reste « disponible » indéfiniment : d'où l'obligation d'une remise à plat périodique (`RG-34`). |
 | **Scan systématique en caisse** | La fiabilité du catalogue public dépend entièrement de la discipline des caissiers. C'est le principal risque humain du projet. |
 | **Livres sans ISBN hors périmètre** | Une partie du stock restera invisible du système comme du site. |
 | **Site public en application distincte** | Une charte graphique, une authentification et un déploiement de plus à maintenir, en marge du `Website` et du `BackOffice` existants. |
 | **Administration dans le site public**, pas dans le `BackOffice` existant | Les administrateurs auront deux outils. L'authentification, elle, n'est pas à refaire : elle devient la même partout (`DT-10`). |
 | **Microsoft Entra External ID pour tous les publics** | Le service qui remplace Azure AD B2C, cohérent avec l'hébergement Azure existant. L'association ne stocke aucun mot de passe, nulle part. En contrepartie, **l'authentification maison actuelle du `BackOffice` et de la caisse est à supprimer**, ce qui est un chantier en soi (`DT-10`, `10` §6). |
 | **Écart au tri enregistré sans motif** | On connaîtra le volume écarté, pas les raisons. Impossible d'affiner les seuils de tri à partir des données. |
-| **Deux modes de mise à disposition choisis avant le scan**, plutôt qu'un geste de mise en rayon (`Q-01`) | Aucun geste de publication à faire dans le local, et rien qui puisse être oublié. En contrepartie : le risque se déplace sur une **erreur de mode en début de session**, silencieuse, qui n'est rattrapable qu'en bloc (`RG-25`). Et l'agenda des bourses cesse d'être un simple affichage : sa date **pilote la disponibilité réelle** du catalogue (`RG-36`). |
+| **Deux modes de mise à disposition choisis avant le scan** (`Q-01`) | La publication découle du mode choisi pour la session. En contrepartie : le risque se déplace sur une **erreur de mode en début de session**, silencieuse, qui n'est rattrapable qu'en bloc (`RG-25`). Et l'agenda des bourses cesse d'être un simple affichage : sa date **pilote la disponibilité réelle** du catalogue (`RG-36`). |
 
 ## 7. Paliers de livraison
 
@@ -176,12 +176,12 @@ risque humain du projet, et il n'y a pas de moyen de l'éprouver d'avance.
 plusieurs milliers de livres. Il n'y a **pas de reprise préalable de l'existant** : le
 catalogue se remplit au fil des tris (`RG-48`). Pendant cette période, l'aide à la
 décision est partielle — « inutile d'en garder » ne se déclenche presque jamais et
-« premier exemplaire » se déclenche à tort sur des titres déjà en rayon.
+« premier exemplaire » se déclenche à tort sur des titres déjà présents dans le stock.
 
 C'est un choix assumé : la reprise de l'existant représenterait des milliers de scans
 sans contrepartie immédiate. Elle peut se faire progressivement, par des sessions de
-scan des rayons en mode `DISPONIBLE MAINTENANT`, en commençant par les rayons les plus
-denses. Ce n'est pas un prérequis.
+scan du stock existant en mode `DISPONIBLE MAINTENANT`, en commençant par les titres les
+plus présents. Ce n'est pas un prérequis.
 
 **Ce point doit être annoncé aux bénévoles.** Un outil qui répond « premier exemplaire »
 sur un livre qu'ils savent présent en cinq exemplaires perd leur confiance si personne

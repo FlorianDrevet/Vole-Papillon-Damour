@@ -90,8 +90,8 @@ résultats apparaissent :
   d'être triés,
 - et dans une file de travail en administration (`05` §4), pour traitement différé.
 
-**Conséquence à assumer d'ici là** : un livre de valeur passe en rayon au tarif
-ordinaire et devra être retiré physiquement une fois signalé. Le repérage à l'œil par
+**Conséquence à assumer d'ici là** : un livre de valeur peut être enregistré au tarif
+ordinaire et devra être retiré du stock une fois signalé. Le repérage à l'œil par
 les bénévoles expérimentés reste donc le seul filet en v1. L'objectif `O4` n'est pas
 couvert par la v1.
 
@@ -271,7 +271,7 @@ définie dans l'agenda (`RG-36`).
 cette bourse deviennent disponibles. La quantité annoncée passe en quantité disponible.
 
 **Cette bascule est automatique. Aucun geste humain ne la déclenche et aucun oubli ne
-peut la retarder.** C'est ce qui remplace le geste de mise en rayon.
+peut la retarder.** La disponibilité découle ainsi de la date prévue.
 
 Aucune alerte n'est envoyée à la bascule : elle l'a déjà été à l'annonce (`RG-28`).
 
@@ -360,7 +360,7 @@ La recherche du site public interroge **deux ensembles distincts**, jamais méla
 
 Un membre peut ajouter à sa liste de recherche **n'importe quel livre du référentiel**,
 qu'il ait été donné à l'association ou non. C'est le cas d'usage central des alertes :
-sans lui, on ne pourrait déclarer que des livres déjà en rayon.
+sans lui, on ne pourrait déclarer que des livres déjà reçus par l'association.
 
 Un livre ainsi suivi mais jamais reçu **n'apparaît pas au catalogue public** : il
 n'existe que dans la liste du membre. Aucune fiche n'est créée tant qu'aucun exemplaire
@@ -388,8 +388,7 @@ Le message diffère selon le mode :
 | `PROCHAINE BOURSE`, date inconnue | alerte différée jusqu'à ce que la date existe (`RG-24`) |
 
 Annoncer tôt avec une date est délibéré : le membre a le temps de s'organiser, et la
-promesse reste tenable puisqu'elle est datée. C'est ce qui remplace la garantie
-apportée auparavant par le geste de mise en rayon.
+promesse reste tenable puisqu'elle est datée et rattachée à une bourse.
 
 ### `RG-29` — Regroupement
 Plusieurs livres d'un même membre rendus disponibles ou annoncés dans une même session
@@ -450,9 +449,8 @@ Les dates, horaires et adresses affichés sur le site public, ainsi que **la dat
 déclenche la bascule automatique**, proviennent des `AssoEvents` existants. Aucune
 ressaisie.
 
-Cette règle a pris une importance nouvelle avec l'abandon du geste de mise en rayon :
-l'agenda n'est plus seulement de l'affichage, il pilote la disponibilité réelle du
-catalogue.
+Cette règle a pris une importance nouvelle : l'agenda n'est plus seulement de l'affichage,
+il pilote la disponibilité réelle du catalogue.
 
 Pour le module livres, `DateStart`, `DateEnd`, `HourOpenDoors` et `HourCloseDoors` sont
 les seules sources de l'intervalle métier. La création ou la modification d'une
@@ -466,7 +464,7 @@ malgré tout** : le client l'a en main. La quantité reste à zéro, la vente es
 enregistrée, et l'écart est comptabilisé pour la remise à plat.
 
 Si le livre est annoncé mais pas encore basculé, la caisse le signale au caissier
-— l'exemplaire n'était pas censé être en rayon — mais **ne bloque pas la vente**.
+— l'exemplaire n'est pas encore marqué disponible — mais **ne bloque pas la vente**.
 
 ### `RG-48` — Montée en charge du catalogue
 Le catalogue démarre vide, alors que le local contient déjà plusieurs milliers de
@@ -477,21 +475,20 @@ Conséquences pendant la montée en charge, à connaître et à accepter :
 
 | Règle | Comportement au démarrage |
 |---|---|
-| `RG-10` « inutile d'en garder » | Ne se déclenche presque jamais : les exemplaires déjà en rayon sont invisibles du système |
+| `RG-10` « inutile d'en garder » | Ne se déclenche presque jamais : les exemplaires déjà présents dans le stock sont invisibles du système |
 | `RG-11` « premier exemplaire » | Se déclenche sur presque tout, y compris des titres présents en cinq exemplaires |
 | `RG-12` « ce titre se vend » | Sans historique, reste muet plusieurs bourses durant |
 | Catalogue public | N'affiche que les livres passés par le scan, pas le fonds déjà en place |
 
 **L'aide à la décision devient donc réellement utile après plusieurs mois d'usage.**
 Ce point doit être annoncé aux bénévoles : un outil qui répond « premier exemplaire »
-sur un livre qu'ils savent présent en rayon perd leur confiance si personne ne les a
+sur un livre qu'ils savent déjà présent dans le stock perd leur confiance si personne ne les a
 prévenus.
 
 Deux moyens d'accélérer, ni l'un ni l'autre obligatoire :
 
-- une ou plusieurs **sessions de scan de l'existant**, en mode `DISPONIBLE MAINTENANT`,
-  menées sur les rayons déjà remplis ;
-- la priorité donnée aux rayons les plus denses, où le doublon est le plus coûteux.
+- une ou plusieurs **sessions de scan du stock existant**, en mode `DISPONIBLE MAINTENANT` ;
+- la priorité donnée aux titres avec les quantités les plus importantes, où le doublon est le plus coûteux.
 
 ### `RG-50` — Le système ne compte aucun argent
 Pour les livres ordinaires, aucun prix n'est stocké, affiché, calculé ni totalisé par
