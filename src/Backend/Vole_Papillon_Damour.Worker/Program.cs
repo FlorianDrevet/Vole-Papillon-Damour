@@ -28,7 +28,8 @@ var host = new HostBuilder()
             .AddInfrastructure(
                 context.Configuration,
                 runMigrations: false,
-                registerAuthentication: false);
+                registerAuthentication: false,
+                registerMemberCardTokens: false);
 
         if (!string.IsNullOrWhiteSpace(context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
         {
