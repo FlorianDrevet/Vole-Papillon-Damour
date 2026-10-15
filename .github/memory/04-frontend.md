@@ -661,3 +661,13 @@ unpublication, found, and dismissal actions. The visual shell styles use existin
   used. Recrawl is needed before the report changes, and indexing is not guaranteed.
 - `python -m graphify update .` refreshed the AST graph (7,384 nodes) but exited 1
   because the HTML visualization exceeds Graphify's size limit; graph query works.
+
+## Catalog mobile navigation (2026-10-15)
+
+`src/Catalog/src/app/core/layouts/navigation/catalog-navigation.component.html` keeps
+the `Catalogue par genre` parent route in the mobile drawer and omits its dynamic genre
+children; the desktop dropdown still renders them. The mobile account link is outside
+the scrollable navigation, pinned at the drawer bottom with safe-area padding, and shows
+`Mon compte` or the signed-in display name. Responsive review covered 320×568,
+390×844, and 1440×900. The Catalog production build passes with existing bundle/style
+budget and CommonJS warnings; local API data was unavailable during the browser review.
