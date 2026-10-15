@@ -154,16 +154,8 @@
               <span class="mobile-index">{{ (i + 1).toString().padStart(2, '0') }}</span>
               <span>{{ item.label }}</span>
             </a>
-            @if (item.children) {
-              <ul>
-                @for (child of item.children; track child.label) {
-                  <li><a [routerLink]="child.url" [queryParams]="child.queryParams" (click)="closeMobileMenu()" [class.active]="isChildActive(child)">{{ child.label }}</a></li>
-                }
-              </ul>
-            }
           </div>
         }
-        <a class="mobile-account-link" routerLink="/compte" (click)="closeMobileMenu()">{{ accountTriggerLabel() }}</a>
         @if (isAuthenticated() && isAdministrator()) {
           <a
             class="mobile-admin-link"
@@ -176,10 +168,22 @@
           <a class="mobile-rare-books-link" routerLink="/administration/rare-books" (click)="closeMobileMenu()">Livres rares</a>
         }
         <a class="mobile-site-link" href="https://volepapillondamour.fr" target="_blank" rel="noopener noreferrer">Le site de l’association ↗</a>
+        <div class="mobile-socials">
+          <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><img src="images/instagram.svg" alt="" width="16" height="16"></a>
+        </div>
       </nav>
-      <div class="mobile-socials">
-        <a href="https://www.instagram.com/vole_papillon_damour" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><img src="images/instagram.svg" alt="" width="16" height="16"></a>
-      </div>
+      <a class="mobile-account-link" routerLink="/compte" (click)="closeMobileMenu()" title="Votre espace personnel">
+        <span class="mobile-account-label-group">
+          <svg class="mobile-account-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <circle cx="12" cy="7.5" r="3.25" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M4.75 20c.72-3.1 3.1-5.1 7.25-5.1s6.53 2 7.25 5.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+          <span class="mobile-account-label">{{ accountTriggerLabel() }}</span>
+        </span>
+        <svg class="mobile-account-arrow" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
     </div>
   }
 </header>

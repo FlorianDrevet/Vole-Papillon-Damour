@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-12 — demandes manuelles de personnes sans compte; T0–T24 terminés sur `feat/manual-book-requests`; [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252) ouverte vers `main`, non fusionnée. |
-| **Prochaine action** | Suivre les GitHub Actions en attente et faire la revue de la PR #252. Après fusion, appliquer `AddManualBookRequests` avec `run_migrations: true` via `Books runtime - deploy`, puis déployer Catalog et Scan. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-remove-book-locations` |
-| **Dernière mise à jour** | 2026-10-15 — Texte Catalog/Scan, documentation fonctionnelle et maquettes alignés sur le modèle actif. Builds de production Catalog/Scan, `graphify update .` et `git diff --check` réussis ; aucun test automatisé ni contrôle visuel navigateur lancé. Aucun modèle, aucune fiche, base distante ou service n'ont été modifiés. [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) ouverte vers `main`, non fusionnée. |
-| **Branche** | `feat/remove-book-locations`, basée sur `origin/main` fraîchement récupéré. |
+| **Lot en cours** | F-12 — demandes manuelles sans compte livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252), fusionnée et déployée; les suivis Catalog des [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259) et [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) sont fusionnés. La navigation mobile reste en revue dans [PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261). |
+| **Prochaine action** | Revoir la PR #261. Après fusion, déployer Catalog avec `Catalog - deploy`; aucune migration n'est requise. |
+| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-mobile-navigation` |
+| **Dernière mise à jour** | 2026-10-15 — PR #261 ouverte pour la navigation mobile. Build Catalog réussi après rebase; contrôle responsive à 320×568, 390×844 et 1440×900. Les déploiements API et Catalog sur `main` ont réussi après les PR #259/#260. Aucun déploiement ni changement de base/API n'a été effectué pour la PR #261. |
+| **Branche** | `fix/catalog-mobile-navigation`, basée sur `origin/main` rebasé. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -33,16 +33,28 @@ a appliqué la migration `AddManualBookRequests` et déployé l'API/Worker; les 
 et [Scan #38689915502](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/38689915502)
 ont aussi réussi le 2026-10-15 sur `e26dacc8`.
 
-L'amélioration UX est en revue dans [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259)
-sur `feat/manual-request-admin-ux`. Elle ajoute l'onglet paginé des personnes et la recherche
-avant création, puis garde portée, recherche et actions fixes autour d'une liste d'éditions
-défilante. Aucun changement de schéma n'est inclus dans cette PR.
+L'amélioration UX a été livrée par [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259),
+fusionnée le 2026-10-15 depuis `feat/manual-request-admin-ux`. Elle ajoute l'onglet paginé des
+personnes et la recherche avant création, puis garde portée, recherche et actions fixes autour
+d'une liste d'éditions défilante. Aucun changement de schéma n'est inclus dans cette PR.
 
 Validation UX du 2026-10-15 : build API (5 projets, 0 erreur) et build Catalog (0 erreur),
 `git diff --check` et `graphify update .` réussis. Les avertissements existants de budget
 bundle/CSS et de dépendances CommonJS restent présents. Aucun test automatisé n'a été lancé
 sur ce suivi. La page locale reste derrière Microsoft Entra et l'API locale n'était pas
 disponible; le contrôle visuel authentifié du dialogue à 390 / 1440 px reste à faire.
+
+### Navigation mobile du Catalog — 2026-10-15
+
+[PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261) est ouverte vers
+`main`, non fusionnée. Le menu mobile garde uniquement les entrées principales; la liste des
+genres reste dans le sous-menu desktop. Le lien « Mon compte » ou le nom du membre connecté
+est fixé sous la zone défilante, au-dessus de la zone de sécurité de l'écran.
+
+Le build Catalog passe après rebase. Le contrôle responsive couvre 320×568, 390×844 et
+1440×900. Les tests automatisés n'ont pas été lancés. L'API locale et une session authentifiée
+n'étaient pas disponibles pour le contrôle visuel. Aucun déploiement ni changement de base
+n'est inclus; lancer `Catalog - deploy` après fusion, sans migration.
 
 Validation initiale du 2026-10-12 avant fusion de #252 : build backend 14 projets sans erreur,
 976 tests backend réussis, Scan 300/300 et Catalog 485/487 (deux échecs AccountCard déjà

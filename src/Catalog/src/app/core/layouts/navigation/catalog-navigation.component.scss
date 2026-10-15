@@ -616,7 +616,7 @@
     inset: 0;
     z-index: 100;
     display: flex;
-    padding: 18px 24px 30px;
+    padding: 18px 24px max(18px, env(safe-area-inset-bottom, 0px));
     background: var(--catalog-ink);
     color: var(--catalog-paper);
     flex-direction: column;
@@ -636,6 +636,7 @@
   }
 
   .mobile-drawer nav {
+    flex: 1 1 auto;
     min-height: 0;
     margin-top: 14px;
     overflow-y: auto;
@@ -657,7 +658,6 @@
   }
 
   .mobile-nav-item > a.active,
-  .mobile-account-link,
   .mobile-admin-link,
   .mobile-rare-books-link {
     color: var(--catalog-orange-2) !important;
@@ -690,7 +690,6 @@
     font-weight: 600;
   }
 
-  .mobile-account-link,
   .mobile-admin-link,
   .mobile-rare-books-link,
   .mobile-site-link {
@@ -700,6 +699,49 @@
     color: var(--catalog-paper);
     font: 500 1.15rem/1 var(--catalog-display);
     text-decoration: none;
+  }
+
+  .mobile-account-link {
+    display: flex;
+    min-height: 56px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 14px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 2px;
+    background: rgba(127, 216, 245, .12);
+    color: var(--catalog-orange-2);
+    font: 500 1.08rem/1.2 var(--catalog-display);
+    text-decoration: none;
+  }
+
+  .mobile-account-link:focus-visible {
+    outline: 2px solid var(--catalog-paper);
+    outline-offset: 3px;
+  }
+
+  .mobile-account-label-group {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mobile-account-icon {
+    flex: 0 0 auto;
+  }
+
+  .mobile-account-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-account-arrow {
+    flex: 0 0 auto;
   }
 
   .mobile-site-link {
