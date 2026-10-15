@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Palier en cours** | Vérification opérationnelle de l'import v1 sur `development` après le déploiement du correctif Worker |
-| **Prochaine action** | Vérifier le passage automatique du minuteur à 00:00 ou 12:00 UTC. Pour un essai manuel, rétablir l'accès à la clé `_master` puis contrôler l'import réel sur le site |
+| **Prochaine action** | Vérifier le prochain passage automatique du minuteur à 00:00 ou 12:00 UTC, puis renouveler le jeton Instagram avant son seuil d'alerte |
 | **Ce qui est prêt dans le code** | Publication directe des imports Instagram, lectures publiques filtrées, relecture BackOffice, import minuté, copie des médias, idempotence, titres Foundry avec repli, alertes et garde-fou de volume |
 | **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-social-import-trigger-status` |
-| **Dernière mise à jour** | 2026-10-15 — révision Worker `0000005` saine et minuteur enregistré ; aucune invocation récente, clé `_master` inaccessible pour l'essai manuel |
+| **Dernière mise à jour** | 2026-10-15 — clé `_master` recréée ; les quatre fonctions ont réussi ; deux actualités importées sont visibles sur le site public |
 | **Branche** | `docs/social-import-trigger-status` — suivi de la vérification opérationnelle post-déploiement |
 
 ---
@@ -119,17 +119,21 @@ fusionnée et le workflow `Worker - deploy` (`38707033515`) a réussi. La révis
 fonctions minutées, dont `ImportSocialActualities`; les journaux confirment que son listener
 a démarré. La configuration active est `0 0 0,12 * * *` (00:00 et 12:00 UTC).
 
-Sur les deux dernières heures observées, le résumé d'invocations indique 0 succès et 0 échec,
-et aucune trace : aucun import manuel n'a donc été confirmé. Le portail Azure ne présente que
-la clé d'hôte `default`. La commande Azure CLI de lecture des clés principales échoue avec
-`ErrorGeneratingAuthToken` (erreur WebSocket 500) ; la clé `default` ne donne pas accès aux
-routes d'administration. Or l'appel manuel d'une fonction minutée requiert
-`POST /admin/functions/ImportSocialActualities`, la clé `_master` dans `x-functions-key` et
-un corps `{}` ([procédure Microsoft](https://learn.microsoft.com/azure/azure-functions/functions-manually-run-non-http)).
-La fonction n'a pas été déclenchée manuellement et aucune clé n'a été créée ou remplacée.
+Le 15 octobre à 10:07 UTC, la clé d'hôte `_master` a été recréée dans le stockage des secrets
+du Worker. Les quatre fonctions minutées ont été appelées par
+`POST /admin/functions/{nom}` avec cette clé dans `x-functions-key` ; chaque appel a renvoyé
+`202` ([procédure Microsoft](https://learn.microsoft.com/azure/azure-functions/functions-manually-run-non-http)).
+Les traces Application Insights confirment `Enrich` (2 succès), `ImportSocialActualities`
+(1), `Recommendations` (1) et `Sweep` (2), avec 0 échec pour chacune. Les doubles succès
+d'`Enrich` et `Sweep` comprennent leur passage automatique de 10:00 UTC.
 
-Le prochain passage automatique attendu est à 12:00 UTC. Il reste à vérifier une invocation
-réussie et l'apparition d'une actualité récente sur le site.
+Le journal d'import indique : 100 publications examinées, 2 importées, 19 déjà connues,
+0 échec, 0 média manquant et 0 titre de repli. L'API publique `/actuality/all` renvoie ces
+deux nouvelles actualités avec le statut `Published` ; leurs trois images répondent `200`.
+La page publique [`/toute-l-actualite`](https://volepapillondamour.fr/toute-l-actualite)
+affiche les deux cartes. La révision `vpd-worker-ca-dev-fc--0000005` reste saine et le
+minuteur est configuré à 00:00 et 12:00 UTC ; son prochain passage automatique reste à
+vérifier. La valeur de la clé n'est pas conservée dans git.
 
 ### 2026-10-15 — Worker Functions bloqué au démarrage
 
