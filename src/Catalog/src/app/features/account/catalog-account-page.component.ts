@@ -459,7 +459,7 @@ export class CatalogAccountPageComponent implements OnInit {
     }
 
     if (item.scope === 'Work') {
-      return 'Toutes éditions';
+      return 'Toutes les éditions';
     }
 
     return item.book ? 'Édition suivie' : 'Édition recherchée';

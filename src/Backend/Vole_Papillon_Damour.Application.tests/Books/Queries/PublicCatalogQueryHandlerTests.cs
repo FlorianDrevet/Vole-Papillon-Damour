@@ -59,7 +59,7 @@ public sealed class PublicCatalogQueryHandlerTests
         await fixture.SaveAsync();
 
         var result = await fixture.CreateSearchHandler().Handle(
-            new SearchCatalogQuery("petit", null, PublicCatalogAvailabilityFilter.All,
+            new SearchCatalogQuery("PETIT", null, PublicCatalogAvailabilityFilter.All,
                 RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20),
             CancellationToken.None);
 

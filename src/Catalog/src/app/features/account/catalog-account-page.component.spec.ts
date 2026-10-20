@@ -611,6 +611,31 @@ describe('CatalogAccountPageComponent', () => {
     expect(card.textContent).not.toContain('Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.');
   });
 
+  it('shows the followed title and all-editions scope in Mes recherches', async () => {
+    auth.account.set(account('Member'));
+    auth.isAuthenticated.set(true);
+    const current = structuredClone(watchlist);
+    Object.assign(current.items[0], {
+      scope: 'Work',
+      workId: 'OL42W',
+      isbn13: null,
+      title: 'Le grand cahier',
+      book: null,
+    });
+    api.getWatchlist.and.returnValue(of(current));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    (fixture.nativeElement.querySelector('#account-watchlist-tab') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const card = fixture.nativeElement.querySelector('.watchlist-item') as HTMLElement;
+
+    expect(card.querySelector('.watchlist-title')?.textContent?.trim()).toBe('Le grand cahier');
+    expect(card.querySelector('.watchlist-edition')?.textContent?.trim()).toBe('Toutes les éditions');
+    expect(card.querySelector('.watchlist-isbn')).toBeNull();
+  });
+
   it('renders the saved reference cover when an edition is not yet in the catalogue', async () => {
     auth.account.set(account('Member'));
     auth.isAuthenticated.set(true);

@@ -29,7 +29,7 @@ public sealed class SearchBibliographicReferencesQueryHandlerTests
                 new Uri("https://covers.openlibrary.org/b/id/1-M.jpg"),
                 "OpenLibrary")
         };
-        searchService.SearchAsync("Le Petit Prince", 2, 5, Arg.Any<CancellationToken>())
+        searchService.SearchAsync("le petit prince", 2, 5, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<BookReferenceSearchItem>>(items));
 
         var handler = new SearchBibliographicReferencesQueryHandler(searchService, clock);
@@ -44,9 +44,36 @@ public sealed class SearchBibliographicReferencesQueryHandlerTests
         result.Value.PageSize.Should().Be(5);
         result.Value.Items.Should().ContainSingle().Which.Isbn13.Should().Be("9782070363735");
         await searchService.Received(1).SearchAsync(
-            "Le Petit Prince",
+            "le petit prince",
             2,
             5,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WhenReferenceQueryUsesUppercase_SendsCaseNormalizedQueryToProviders()
+    {
+        var searchService = Substitute.For<IBibliographicSearchService>();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(Now);
+        searchService.SearchAsync(
+                Arg.Any<string>(),
+                1,
+                20,
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<BookReferenceSearchItem>>([]));
+        var handler = new SearchBibliographicReferencesQueryHandler(searchService, clock);
+
+        var result = await handler.Handle(
+            new SearchBibliographicReferencesQuery("  LE GRAND  "),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Query.Should().Be("LE GRAND");
+        await searchService.Received(1).SearchAsync(
+            "le grand",
+            1,
+            20,
             Arg.Any<CancellationToken>());
     }
 
