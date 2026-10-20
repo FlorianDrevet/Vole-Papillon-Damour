@@ -3,9 +3,10 @@
 
    Default: dry run. Review the counts, then set @ApplyReset = 1 and run again.
    Target guard: vole-papillon-damour-db.
-   Keeper accounts: floriandrevet@icloud.com and volepapillondamour@sfr.fr.
+   Protected keeper: floriandrevet@icloud.com.
    Other dbo.Users rows are deleted only when their ExternalId is in the
-   disabled Entra account set supplied by the reset workflow.
+   disabled Entra account set supplied by the reset workflow. All other SQL
+   user profiles are retained.
 
    This script intentionally does not delete events, news, products, orders,
    Entra identities, blobs, or account-deletion outbox jobs.
@@ -14,12 +15,9 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 DECLARE @ApplyReset bit = 0;
-DECLARE @KeeperEmail1 nvarchar(320) = N'floriandrevet@icloud.com';
-DECLARE @KeeperEmail2 nvarchar(320) = N'volepapillondamour@sfr.fr';
-DECLARE @KeeperId1 uniqueidentifier;
-DECLARE @KeeperId2 uniqueidentifier;
-DECLARE @KeeperCount1 bigint;
-DECLARE @KeeperCount2 bigint;
+DECLARE @KeeperEmail nvarchar(320) = N'floriandrevet@icloud.com';
+DECLARE @KeeperId uniqueidentifier;
+DECLARE @KeeperCount bigint;
 DECLARE @DisabledUsersToDelete bigint = 0;
 DECLARE @DisabledEntraIdCount bigint = 0;
 DECLARE @UnlinkedDisabledEntraIds bigint = 0;
@@ -150,21 +148,16 @@ BEGIN TRY
     SELECT TRY_CONVERT(uniqueidentifier, [value])
     FROM OPENJSON(@DisabledEntraIdsJson);
 
-    SELECT @KeeperCount1 = COUNT_BIG(*)
+    SELECT @KeeperCount = COUNT_BIG(*)
     FROM dbo.Users
-    WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail1;
+    WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail;
 
-    SELECT @KeeperCount2 = COUNT_BIG(*)
-    FROM dbo.Users
-    WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail2;
-
-    IF @KeeperCount1 <> 1 OR @KeeperCount2 <> 1
+    IF @KeeperCount <> 1
     BEGIN
-        ;THROW 51003, N'Each keeper email must match exactly one row in dbo.Users. Nothing was changed.', 1;
+        ;THROW 51003, N'The protected keeper email must match exactly one row in dbo.Users. Nothing was changed.', 1;
     END;
 
-    SELECT @KeeperId1 = Id FROM dbo.Users WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail1;
-    SELECT @KeeperId2 = Id FROM dbo.Users WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail2;
+    SELECT @KeeperId = Id FROM dbo.Users WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail;
 
     SELECT @DisabledEntraIdCount = COUNT_BIG(*)
     FROM @DisabledEntraUsers;
@@ -173,7 +166,7 @@ BEGIN TRY
     FROM dbo.Users AS user_row
     INNER JOIN @DisabledEntraUsers AS disabled_user
         ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
-    WHERE user_row.Id NOT IN (@KeeperId1, @KeeperId2);
+    WHERE user_row.Id <> @KeeperId;
 
     SELECT @UnlinkedDisabledEntraIds = COUNT_BIG(*)
     FROM @DisabledEntraUsers AS disabled_user
@@ -188,12 +181,12 @@ BEGIN TRY
     FROM dbo.Users AS user_row
     INNER JOIN @DisabledEntraUsers AS disabled_user
         ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
-    WHERE user_row.Id IN (@KeeperId1, @KeeperId2);
+    WHERE user_row.Id = @KeeperId;
 
     INSERT INTO @RetainedUserIds (Id)
     SELECT user_row.Id
     FROM dbo.Users AS user_row
-    WHERE user_row.Id IN (@KeeperId1, @KeeperId2)
+    WHERE user_row.Id = @KeeperId
        OR NOT EXISTS
        (
            SELECT 1
@@ -313,8 +306,11 @@ BEGIN TRY
     IF OBJECT_ID(N'dbo.AssociationSettings', N'U') IS NOT NULL
     BEGIN
         SELECT @AssociationSettingsAuditRows = COUNT_BIG(*)
-        FROM dbo.AssociationSettings
-        WHERE UpdatedBy NOT IN (@KeeperId1, @KeeperId2);
+        FROM dbo.AssociationSettings AS settings
+        INNER JOIN dbo.Users AS user_row ON settings.UpdatedBy = user_row.Id
+        INNER JOIN @DisabledEntraUsers AS disabled_user
+            ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+        WHERE user_row.Id <> @KeeperId;
 
         INSERT INTO @Preview (TableName, RowsBefore)
         VALUES (N'AssociationSettings audit reassignment', @AssociationSettingsAuditRows);
@@ -358,8 +354,7 @@ BEGIN TRY
         ROLLBACK TRANSACTION;
         SELECT N'DRY RUN - no data changed. Review counts, set @ApplyReset = 1, and execute again.' AS Result,
                DB_NAME() AS DatabaseName,
-               @KeeperCount1 AS Keeper1Matches,
-               @KeeperCount2 AS Keeper2Matches;
+               @KeeperCount AS ProtectedKeeperMatches;
         RETURN;
     END;
 
@@ -395,10 +390,14 @@ BEGIN TRY
 
     IF OBJECT_ID(N'dbo.AssociationSettings', N'U') IS NOT NULL
     BEGIN
-        UPDATE dbo.AssociationSettings
-        SET UpdatedBy = @KeeperId1,
+        UPDATE settings
+        SET UpdatedBy = @KeeperId,
             UpdatedAt = SYSUTCDATETIME()
-        WHERE UpdatedBy NOT IN (@KeeperId1, @KeeperId2);
+        FROM dbo.AssociationSettings AS settings
+        INNER JOIN dbo.Users AS user_row ON settings.UpdatedBy = user_row.Id
+        INNER JOIN @DisabledEntraUsers AS disabled_user
+            ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+        WHERE user_row.Id <> @KeeperId;
     END;
 
     IF OBJECT_ID(N'dbo.RecommendationGenerations', N'U') IS NOT NULL
@@ -413,7 +412,7 @@ BEGIN TRY
     FROM dbo.Users AS user_row
     INNER JOIN @DisabledEntraUsers AS disabled_user
         ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
-    WHERE user_row.Id NOT IN (@KeeperId1, @KeeperId2);
+    WHERE user_row.Id <> @KeeperId;
 
     DECLARE verify_book_tables CURSOR LOCAL FAST_FORWARD FOR
         SELECT TableName FROM @BookTables ORDER BY SortOrder;
@@ -449,15 +448,15 @@ BEGIN TRY
            FROM dbo.Users AS user_row
            INNER JOIN @DisabledEntraUsers AS disabled_user
                ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
-           WHERE user_row.Id NOT IN (@KeeperId1, @KeeperId2)
+           WHERE user_row.Id <> @KeeperId
        )
     BEGIN
         ;THROW 51008, N'Disabled Entra user profiles remain after deletion. The transaction will roll back.', 1;
     END;
 
-    IF (SELECT COUNT_BIG(*) FROM dbo.Users WHERE Id IN (@KeeperId1, @KeeperId2)) <> 2
+    IF (SELECT COUNT_BIG(*) FROM dbo.Users WHERE Id = @KeeperId) <> 1
     BEGIN
-        ;THROW 51013, N'The two keeper accounts are not both present. The transaction will roll back.', 1;
+        ;THROW 51013, N'The protected keeper account is missing. The transaction will roll back.', 1;
     END;
 
     IF EXISTS (SELECT Id FROM @RetainedUserIds EXCEPT SELECT Id FROM dbo.Users)
@@ -501,8 +500,7 @@ BEGIN TRY
 
     SELECT N'COMMITTED' AS Result,
            DB_NAME() AS DatabaseName,
-           @KeeperEmail1 AS Keeper1,
-           @KeeperEmail2 AS Keeper2,
+           @KeeperEmail AS ProtectedKeeper,
            @DisabledUsersToDelete AS DisabledUsersDeleted,
            @AlertOutboxRows AS BookAlertOutboxRowsDeleted,
            SYSUTCDATETIME() AS CompletedAtUtc;
