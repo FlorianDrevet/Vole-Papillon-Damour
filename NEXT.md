@@ -19,9 +19,10 @@
 |---|---|
 | **Lot en cours** | Préparer l'import progressif du CSV application : 155 fichiers de 50 ISBN maximum dans `C:\Users\flori\Downloads\Import_ISBN_2026-10-20\application-only\lots_50`. |
 | **Prochaine action** | Revoir et fusionner la [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271), puis lancer Books runtime - deploy avec `run_migrations: true`, déployer Catalog et vérifier la file ISBN ainsi que le catalogue public. Ensuite, importer les lots un par un et reporter leur état dans `lots_50\avancement.csv`. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-pr271-conflict-fix` |
-| **Dernière mise à jour** | 2026-10-20 — la branche de la PR #271 a été synchronisée avec `origin/main` pour résoudre ses conflits. Validation combinée : Domain 208, Application 548, API 85, Infrastructure 204 ; 91 tests Catalog ciblés, build Catalog et build Worker réussis ; EF ne détecte aucune modification de modèle en attente. Les checks GitHub sont à vérifier après push. Aucun déploiement ni import de lots. La suite Catalog complète n'a pas été relancée (la PR avait précédemment relevé 489/492 avec trois échecs dans des specs non touchées). Le contrôle visuel authentifié reste à faire. Graphify a extrait l'AST mais n'a pas pu produire la visualisation HTML, le graphe ayant 8 227 nœuds. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-admin-catalog-csv-import-ux-20261020` |
+| **Dernière mise à jour** | 2026-10-20 — la branche de la PR #271 a été synchronisée avec `origin/main` pour résoudre ses conflits. Validation combinée : Domain 208, Application 548, API 85, Infrastructure 204 ; 91 tests Catalog ciblés, build Catalog et build Worker réussis ; EF ne détecte aucune modification de modèle en attente. Les checks GitHub sont à vérifier après push. Aucun déploiement ni import de lots. La suite Catalog complète n'a pas été relancée (la PR avait précédemment relevé 489/492 avec trois échecs dans des specs non touchées). Le contrôle visuel authentifié reste à faire. Graphify a extrait l'AST mais n'a pas pu produire la visualisation HTML, le graphe ayant 8 227 nœuds. La PR #300 ajoute la sélection multi-CSV à l'import Catalog ; build réussi après rebase, tests non lancés, contrôle responsive authentifié à faire. |
 | **Branche** | `fix/catalog-pending-isbn-queue`; PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) ouverte, non fusionnée. La branche inclut la dernière version de `main`, dont la PR #275 fusionnée. |
+| **Amélioration UI import CSV** | PR [#300](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/300) ouverte sur `fix/admin-catalog-csv-import-ux`; aucun import ni déploiement effectué. |
 | **Recommandations** | Implémentées et livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239), mais toujours désactivées en DEV. Cette branche ajoute l'activation via `Infra - deploy` et le lancement manuel ; aucun déploiement ni calcul n'a été fait. Le reset catalogue est terminé, mais les lots ISBN restent à importer. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` sur environ 50 fiches. |
 
 ### Téléversement manuel des couvertures — 2026-10-20
@@ -150,6 +151,14 @@ dans le traitement de la file API et dans le balayage groupé Worker. La file AP
 mémoire ; le balayage horaire reste le mécanisme de reprise après redémarrage. La cadence est
 appliquée par processus et n'est pas un limiteur distribué partagé entre API et Worker.
 La fonctionnalité n'est pas encore confirmée déployée dans l'environnement DEV.
+
+La PR [#300](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/300), ouverte le
+2026-10-20, améliore l'interface d'import : elle accepte plusieurs CSV à la fois ou ajoutés
+successivement, déduplique les ISBN entre fichiers et affiche une aide sur le format UTF-8
+attendu. Le build Catalog passe après rebase sur `origin/main`. Aucun test automatisé n'a été
+lancé et le contrôle responsive authentifié reste à faire, car la page locale demande une
+connexion. Aucun lot n'a été importé et aucun déploiement n'a eu lieu ; après fusion, lancer
+`Catalog - deploy` sans migration.
 
 ### File d'analyse des ISBN incomplets — 2026-10-20
 
