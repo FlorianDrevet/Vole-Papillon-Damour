@@ -756,8 +756,15 @@
   font-weight: 700;
 }
 
-.external-follow-copy > p:last-child {
+.external-follow-copy > #external-follow-description {
   margin: 0;
+  color: var(--catalog-slate-2);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
+.external-follow-hint {
+  margin: 6px 0 0;
   color: var(--catalog-slate-2);
   font-size: .78rem;
   line-height: 1.5;
