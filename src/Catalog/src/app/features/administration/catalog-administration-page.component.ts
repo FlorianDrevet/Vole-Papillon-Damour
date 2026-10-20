@@ -382,7 +382,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   catalogueIsbn = '';
   catalogueReferenceQuery = '';
   cataloguePage = 1;
-  readonly cataloguePageSize = 25;
+  readonly cataloguePageSize = 5;
   metadataQueuePage = 1;
   readonly metadataQueuePageSize = 50;
   catalogueAddQuantity = 1;
@@ -743,6 +743,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
         this.catalogueLookupError.set('Aucune notice bibliographique ne correspond à cet ISBN.');
         return;
       }
+      this.catalogueReferenceResults.set([reference]);
       await this.selectCatalogueCandidate(reference);
     });
   }
