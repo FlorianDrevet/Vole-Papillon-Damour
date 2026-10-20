@@ -52,6 +52,7 @@ This repository has been bootstrapped for the actual `Vole-Papillon-Damour` appl
 | `delivery-workflow` | Mandatory worktree, branch, validation and PR delivery workflow | `.github/skills/delivery-workflow/SKILL.md` |
 | `implement-handoff` | Execute a validated design handoff (`docs/features/<slug>/HANDOFF.md`): plan, TDD, visual check against mockups, PR | `.agents/skills/implement-handoff/SKILL.md` |
 | `book-data-reset` | Safely reset deployed book data while retaining two users and preserving events/news | `.agents/skills/book-data-reset/SKILL.md` |
+| `vpd-prod-backup` | Export the production Azure SQL database and Blob containers to a dated Desktop folder; restore guidance | `.agents/skills/vpd-prod-backup/SKILL.md` |
 
 ## MCP Resources
 
