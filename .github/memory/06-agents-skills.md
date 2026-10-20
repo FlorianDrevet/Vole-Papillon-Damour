@@ -34,7 +34,7 @@
 - Backend: `cqrs-feature`, `dotnet-patterns`, `xunit-unit-testing`
 - API persona smoke tests: `local-auth-testing` (Aspire Keycloak seeded users and API tokens)
 - Frontend: `angular-patterns`, `ui-ux-front-saas`
-- Operations: `book-data-reset` for explicitly requested SQL books-data resets that preserve events and news
+- Operations: `book-data-reset` for explicitly requested SQL books-data resets that preserve events and news; `vpd-prod-backup` for explicit local backups of the user's production Azure SQL and Blob data
 
 ## Skills Not Generated
 

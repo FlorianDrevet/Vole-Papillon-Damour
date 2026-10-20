@@ -46,6 +46,7 @@
 10. Use `.agents/skills/book-data-reset/SKILL.md` for an explicitly requested deployed books-data reset; it preserves events/news and requires a verified PITR restore path.
 11. The France Central migration is planned in `docs/infra/migrations/migration-west-europe-france-central.md`; keep rg-vpd-dev and SQL in place, deploy regional replacements in parallel, and do not remove West Europe resources before the rollback window ends.
 12. A completed loto sets `CurrentPartieIndex` to the party count; `RemoveLastNumeroCommandHandler` rewinds to the last party before undoing the final draw. See `.github/memory/03-domain-model.md`.
+13. Use `.agents/skills/vpd-prod-backup/SKILL.md` for an explicitly requested local backup. The Azure resources named `rg-vpd-dev`, `vpd-sql-dev`, and `vpdstdevfc` are the user's production environment; do not treat them as disposable development resources.
 
 ## Commands To Remember
 
