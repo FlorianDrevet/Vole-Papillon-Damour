@@ -20,6 +20,7 @@ import {PartieTypeEnum} from "../../../../../../shared/enums/partieType.enum";
 @Component({
     selector: 'app-lot-card',
     templateUrl: './lot-card.component.html',
+    host: {class: 'block w-full min-w-0'},
     standalone: false
 })
 export class LotCardComponent {

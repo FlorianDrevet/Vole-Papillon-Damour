@@ -9,6 +9,7 @@ import {CreationUpdatePartieComponent} from "./components/dialogs/creation-parti
 @Component({
     selector: 'app-bingo-event',
     templateUrl: './bingo-event.component.html',
+    host: {class: 'block w-full min-w-0'},
     standalone: false
 })
 export class BingoEventComponent {

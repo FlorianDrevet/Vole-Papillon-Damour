@@ -6,6 +6,7 @@ import {BackgroundColorEnum} from '../../../../shared/enums/backgroundColor.enum
     selector: 'app-general-infos',
     templateUrl: './general-infos.component.html',
     styleUrl: './general-infos.component.scss',
+    host: {class: 'block w-full min-w-0'},
     standalone: false
 })
 export class GeneralInfosComponent {
