@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
-import {MsalService} from '@azure/msal-angular';
-import {AccountInfo, InteractionRequiredAuthError} from '@azure/msal-browser';
-import {catchError, Observable, throwError} from 'rxjs';
+import {MsalBroadcastService, MsalService} from '@azure/msal-angular';
+import {AccountInfo, InteractionRequiredAuthError, InteractionStatus} from '@azure/msal-browser';
+import {catchError, filter, Observable, switchMap, take, throwError} from 'rxjs';
 import {map} from 'rxjs/operators';
 
 import {environment} from '../../../environments/environment';
@@ -39,44 +39,53 @@ const INTERACTION_REQUIRED_SUBERRORS = new Set([
 export class ApiAccessTokenService {
   private interactiveRedirectStarted = false;
 
-  constructor(private readonly msalService: MsalService) {}
+  constructor(
+    private readonly msalService: MsalService,
+    private readonly msalBroadcastService: MsalBroadcastService,
+  ) {}
 
   public getApiAccessToken$(): Observable<string> {
-    const account = this.getActiveAccount();
+    return this.msalBroadcastService.inProgress$.pipe(
+      filter(status => status === InteractionStatus.None),
+      take(1),
+      switchMap(() => {
+        const account = this.getActiveAccount();
 
-    if (!account) {
-      return throwError(() => new Error('No active Entra account is available.'));
-    }
-
-    return this.msalService.acquireTokenSilent({
-      account,
-      scopes: [environment.entra.apiScope],
-    }).pipe(
-      map(result => result.accessToken),
-      catchError((error: unknown) => {
-        // Le compte est encore en cache mais Entra refuse de renouveler le jeton
-        // sans intervention (session expirée, consentement révoqué, MFA demandé).
-        // Renvoyer sur l'écran de connexion ne débloquerait rien — le compte y est
-        // toujours vu comme valide : seule une redirection interactive rétablit la
-        // session, on la déclenche donc directement.
-        if (isInteractionRequiredError(error) && !this.interactiveRedirectStarted) {
-          this.interactiveRedirectStarted = true;
-          this.msalService
-            .acquireTokenRedirect({
-              ...loginRequest,
-              account,
-              redirectStartPage: window.location.href,
-            })
-            .subscribe({
-              error: () => {
-                // Allow the retry action on the page to start a new redirect if
-                // MSAL rejected the first one before navigating away.
-                this.interactiveRedirectStarted = false;
-              },
-            });
+        if (!account) {
+          return throwError(() => new Error('No active Entra account is available.'));
         }
 
-        return throwError(() => error);
+        return this.msalService.acquireTokenSilent({
+          account,
+          scopes: [environment.entra.apiScope],
+        }).pipe(
+          map(result => result.accessToken),
+          catchError((error: unknown) => {
+            // Le compte est encore en cache mais Entra refuse de renouveler le jeton
+            // sans intervention (session expirée, consentement révoqué, MFA demandé).
+            // Renvoyer sur l'écran de connexion ne débloquerait rien — le compte y est
+            // toujours vu comme valide : seule une redirection interactive rétablit la
+            // session, on la déclenche donc directement.
+            if (isInteractionRequiredError(error) && !this.interactiveRedirectStarted) {
+              this.interactiveRedirectStarted = true;
+              this.msalService
+                .acquireTokenRedirect({
+                  ...loginRequest,
+                  account,
+                  redirectStartPage: window.location.href,
+                })
+                .subscribe({
+                  error: () => {
+                    // Allow the retry action on the page to start a new redirect if
+                    // MSAL rejected the first one before navigating away.
+                    this.interactiveRedirectStarted = false;
+                  },
+                });
+            }
+
+            return throwError(() => error);
+          }),
+        );
       }),
     );
   }

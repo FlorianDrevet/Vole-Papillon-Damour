@@ -84,9 +84,13 @@
   a normal refresh can construct `AuthSessionService` before MSAL is initialized and leave
   the BackOffice blank with `uninitialized_public_client_application`; a hard refresh only
   masks the race.
-- `ApiAccessTokenService` calls `MsalService.acquireTokenSilent` for the API scope and
-  `AxiosService` adds the resulting bearer token to every API request. `MsalInterceptor` is
-  intentionally not registered because BackOffice uses Axios rather than Angular `HttpClient`.
+- `ApiAccessTokenService` waits for `MsalBroadcastService.inProgress$` to reach
+  `InteractionStatus.None` before resolving the cached account and calling
+  `MsalService.acquireTokenSilent` for the API scope. This keeps Axios requests from racing
+  MSAL redirect handling; cached-account fallback and the interaction-required redirect
+  behavior remain in place. `AxiosService` adds the resulting bearer token to every API
+  request. `MsalInterceptor` is intentionally not registered because BackOffice uses Axios
+  rather than Angular `HttpClient`.
   Silent MSAL failures must be classified by their error code as well as by
   `InteractionRequiredAuthError`: iframe timeouts and cross-bundle error objects otherwise
   reject before Axios sends anything. The BackOffice service starts one interactive redirect
