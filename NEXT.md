@@ -26,19 +26,13 @@
 
 ### Vues de recherche du Catalogue — 2026-10-20
 
-La [PR #281](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/281) est ouverte,
-non fusionnée. Elle ajoute deux modes aux résultats : Grille carrée par défaut et Liste.
-La liste est un choix explicite avec le paramètre URL view=list ; les URL existantes avec
-view=grid restent compatibles. Recherche, filtres et pagination sont conservés lors du
-changement ; les livres rares gardent leur présentation dédiée.
+La [PR #281](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/281) a été fusionnée le 2026-10-20. Elle ajoute deux modes aux résultats : Grille carrée par défaut et Liste. La liste est un choix explicite avec le paramètre URL view=list ; les URL existantes avec view=grid restent compatibles. Recherche, filtres et pagination sont conservés lors du changement ; les livres rares gardent leur présentation dédiée.
 
-Validation : 39 tests ciblés réussis et build Catalog réussi. Sur la suite complète,
-504/506 tests passent ; les deux échecs sont dans les specs AccountCard préexistantes,
-non modifiées. Build réussi avec les avertissements de budget et CommonJS déjà présents.
-Contrôle à 1440×900 et 390×844 ; le sélecteur grille est actif aux deux tailles. API locale
-indisponible pour inspecter des fiches peuplées. Graphify a extrait l’AST, mais ne peut pas
-rendre la visualisation HTML avec un graphe de 8 242 nœuds. Après fusion, lancer
-Catalog - deploy ; aucune migration n’est nécessaire.
+Validation de la PR #281 : 39 tests ciblés réussis et build Catalog réussi. Sur la suite complète, 504/506 tests passent ; les deux échecs sont dans les specs AccountCard préexistantes, non modifiées. Contrôle à 1440×900 et 390×844 ; l’API locale était indisponible pour inspecter des fiches peuplées. Graphify a extrait l’AST, mais ne peut pas rendre la visualisation HTML avec un graphe de 8 242 nœuds.
+
+La [PR #294](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/294) est ouverte, non fusionnée. Elle réduit « Suivre » en mode grille à un libellé bleu compact en bas à droite du pied de carte, avec une cible de 44 px et un focus visible ; le statut « Suivi » est compact lui aussi. La vue liste n’est pas modifiée.
+
+Validation de la PR #294 : build Catalog réussi avec les avertissements de budget et CommonJS déjà présents ; aucun test automatisé n’a été lancé. Graphify a réextrait les fichiers mais échoue au rendu HTML sur la limite de 8 272 nœuds. Le contrôle visuel responsive avec des fiches peuplées reste à faire. Après fusion, lancer Catalog - deploy ; aucune migration n’est nécessaire.
 
 ### Page publique Livres rares du Catalogue — 2026-10-20
 
