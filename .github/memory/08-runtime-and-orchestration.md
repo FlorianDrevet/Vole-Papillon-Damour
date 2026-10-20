@@ -274,9 +274,12 @@ Paid and Polish are not enabled. Do not add `robots.txt` bot-preference synchron
 bot setting remains off. The Catalog feature branch builds transformation URLs for these sources
 and falls back to the direct image URL after a transformation error.
 
-GitHub Actions run 39466843276 is an Azure `what-if` (`recommendations_enabled=false`) and was
-queued at the latest check. No Azure certificate import, infrastructure deployment, application
-deployment, or DNS proxying has happened yet. Keep all five website records DNS-only until the
-certificate is imported and the Bicep deployment has completed. After that, proxy only those
-five website records, keep mail/authentication DNS-only, deploy Catalog, and smoke-test all five
-hostnames and image fallback. Keep the zone and Images on Free; do not enable paid products.
+GitHub Actions run 39482297824 completed successfully as an Azure `what-if` with
+`recommendations_enabled=true`; the deployment step was skipped. Azure reported 32 resources to
+modify, 40 unchanged, 12 unsupported, and 21 ignored, with no creates or deletes. The preview
+keeps `Recommendations__Enabled=True` in the API and Worker configurations. No Azure certificate
+import, infrastructure deployment, application deployment, or DNS proxying has happened yet.
+Keep all five website records DNS-only until the certificate is imported and the Bicep deployment
+has completed. After that, proxy only those five website records, keep mail/authentication
+DNS-only, deploy Catalog, and smoke-test all five hostnames and image fallback. Keep the zone
+and Images on Free; do not enable paid products.
