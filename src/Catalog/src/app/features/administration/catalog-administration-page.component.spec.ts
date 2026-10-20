@@ -225,7 +225,7 @@ describe('CatalogAdministrationPageComponent', () => {
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
       'getOverview', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
       'addBook', 'updateMetadata', 'uploadBookCover', 'correctQuantity',
-      'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook',
+      'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook', 'permanentlyDeleteBook',
       'getFairs', 'getFairStats', 'setFairRevenue', 'getSessions', 'getSession',
       'getVolunteerStatistics', 'getFairsEvolution', 'getCatalogueFlowStats',
       'removeMovement', 'reassignSession', 'cancelSession', 'cancelSessionAlerts',
@@ -1128,6 +1128,63 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.detail-screen')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Le Petit Prince');
     expect(fixture.nativeElement.textContent).not.toContain('Inventaire.');
+  });
+
+  it('permanently deletes an unused catalogue fiche with direct stock history after confirmation', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = catalogueBook({
+      quantityAnnounced: 0,
+      salesCount: 0,
+      announcements: [],
+      movements: [scanMovement({type: 'DirectEntry', scanSessionId: null, fairId: null})],
+    });
+    const confirmSpy = spyOn(window, 'confirm').and.returnValue(true);
+    api.getBook.and.returnValue(of(book));
+    api.permanentlyDeleteBook.and.returnValue(of(undefined));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.openBook(book.isbn13);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.canPermanentlyDeleteBook(book)).toBeTrue();
+    expect(fixture.componentInstance.loading()).toBeFalse();
+
+    const deleteButton = (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('[data-testid="permanently-delete-book"]');
+    expect(deleteButton).not.toBeNull();
+    expect(deleteButton!.disabled).withContext(deleteButton!.outerHTML).toBeFalse();
+    deleteButton!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(api.permanentlyDeleteBook).toHaveBeenCalledWith('access-token', book.isbn13);
+    expect(api.deleteBook).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.selectedBook()).toBeNull();
+  });
+
+  it('disables permanent deletion when a catalogue fiche has sale history', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = catalogueBook({
+      quantityAnnounced: 0,
+      salesCount: 1,
+      announcements: [],
+      movements: [scanMovement({type: 'Sale'})],
+    });
+    api.getBook.and.returnValue(of(book));
+
+    fixture.detectChanges();
+    await fixture.componentInstance.openBook(book.isbn13);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const deleteButton = (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('[data-testid="permanently-delete-book"]');
+    expect(deleteButton).not.toBeNull();
+    expect(deleteButton!.disabled).toBeTrue();
   });
 
   it('book detail shows the reported box when summary has open reports', async () => {

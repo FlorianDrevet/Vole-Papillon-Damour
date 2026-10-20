@@ -9,6 +9,7 @@ using Vole_Papillon_Damour.Application.Books.Commands.AssociationSettings;
 using Vole_Papillon_Damour.Application.Books.Commands.BookFlags;
 using Vole_Papillon_Damour.Application.Books.Commands.CancelBookAlerts;
 using Vole_Papillon_Damour.Application.Books.Commands.DeleteBook;
+using Vole_Papillon_Damour.Application.Books.Commands.PermanentlyDeleteBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ForceBookAlerts;
 using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 using Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
@@ -430,6 +431,29 @@ public static class BookAdministrationController
                             error => error.Result());
                     })
                 .WithName("MergeAdminBooks")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapDelete(
+                    "/books/admin/books/{isbn13}/permanent",
+                    async (
+                        string isbn13,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new PermanentlyDeleteBookCommand(isbn13, userId),
+                            cancellationToken);
+                        return result.Match(
+                            _ => Results.NoContent(),
+                            error => error.Result());
+                    })
+                .WithName("PermanentlyDeleteAdminBook")
                 .RequireAuthorization("Administration");
 
             endpoints.MapDelete(

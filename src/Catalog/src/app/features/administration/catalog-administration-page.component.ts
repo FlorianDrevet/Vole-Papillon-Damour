@@ -1432,14 +1432,24 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  async deleteBook(book: CatalogAdminBook): Promise<void> {
-    if (!this.confirmAction(`Supprimer définitivement la fiche ${book.isbn13} ?`)) {
+  canPermanentlyDeleteBook(book: CatalogAdminBook): boolean {
+    return book.redirectedToIsbn13 === null &&
+      book.salesCount === 0 &&
+      book.announcements.length === 0 &&
+      !book.movements.some(movement =>
+        movement.type === 'Sale' || movement.scanSessionId !== null || movement.fairId !== null);
+  }
+
+  async permanentlyDeleteBook(book: CatalogAdminBook): Promise<void> {
+    if (!this.canPermanentlyDeleteBook(book) || !this.confirmAction(
+      `Supprimer définitivement la fiche ${book.isbn13} ? La fiche, son stock, ses mouvements et ses suivis seront effacés. Cette action est irréversible. Elle est indisponible après une vente, une annonce, un scan ou une fusion.`,
+    )) {
       return;
     }
 
-    await this.run('delete-book', async token => {
-      await firstValueFrom(this.api.deleteBook(token, book.isbn13));
-      this.showSuccess('La fiche a été supprimée.');
+    await this.run('permanent-delete-book', async token => {
+      await firstValueFrom(this.api.permanentlyDeleteBook(token, book.isbn13));
+      this.showSuccess('La fiche et ses données associées ont été supprimées définitivement.');
       this.selectedBook.set(null);
       await this.loadCatalogue();
     });

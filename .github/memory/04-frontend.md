@@ -715,6 +715,12 @@ timing without a placeholder title, and links to manual correction, immediate re
 removal. Removing a ledger-backed candidate uses the API's audited discard/withdrawal path;
 it does not delete its movement history.
 
+The ordinary catalogue fiche detail also offers « Supprimer définitivement ». It uses a
+separate administration API route from the ISBN-queue discard action, confirms that stock
+movements and member tracking will be erased, and is disabled for sales, announcements,
+scan/fair history, and merged fiches. « Retirer des exemplaires » remains a separate,
+audited stock operation.
+
 ## Catalog book detail summary (2026-10-20)
 
 The public `/livres/:slug` detail page renders a `Résumé` section from the optional `summary`
