@@ -420,6 +420,26 @@ Le point de départ est le classeur Azure Monitor **« VPD - Performance et sant
 Après correction, le même tableau sert de preuve : P95 avant/après sur une période
 comparable, en tenant compte du rythme d'une bourse par mois.
 
+### Embeddings et coût estimé
+
+L'onglet **Embeddings et coûts** suit chaque lot envoyé par l'API ou le Worker à Azure
+OpenAI : réussite/échec, nombre de textes du lot, modèle, tokens d'entrée remontés par le
+SDK, durée et percentiles. La dépendance `books.recommendations.embedding.generate` ne
+contient ni texte, ni ISBN, ni identifiant de livre.
+
+Le coût affiché est une estimation : tokens d'entrée observés × tarif USD par million de
+tokens. Le tarif initial est `0.02` USD et peut être changé avec le paramètre Bicep
+`embeddingCostUsdPerMillionTokens` (ou dans le paramètre du classeur). Il faut le remplacer
+par le tarif du modèle, de la région et du contrat Azure réellement utilisés. Ce calcul ne
+remplace pas Cost Management/la facture, ne comprend que les tokens rapportés par le SDK et
+affiche séparément les lots sans comptage de tokens. Sans appels au modèle pendant la période,
+les vues restent vides ; elles ne génèrent pas de données synthétiques.
+
+L'onglet **Infrastructure** affiche les pics de CPU et de mémoire, le nombre de réplicas et
+les redémarrages des six Container Apps, ainsi que le maximum de DTU SQL. Les pourcentages
+CPU/mémoire sont les métriques de plateforme par replica ; une app à zéro replica peut ne
+pas avoir de point. Les latences P95/P99 des services restent accessibles dans la même vue.
+
 ### La télémétrie côté navigateur
 
 L'application de scan tourne sur le téléphone personnel d'un bénévole, dans un local mal

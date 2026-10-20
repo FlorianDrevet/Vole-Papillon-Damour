@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using FluentAssertions;
 using Microsoft.Extensions.AI;
 using NSubstitute;
@@ -46,6 +47,51 @@ public sealed class AzureOpenAiBookEmbeddingServiceTests
     }
 
     [Fact]
+    public async Task EmbedAsync_EmitsBatchActivityWithProviderTokenUsage()
+    {
+        var activities = new List<Activity>();
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == "Vpd.Recommendations",
+            Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = activities.Add
+        };
+        ActivitySource.AddActivityListener(listener);
+        var service = new AzureOpenAiBookEmbeddingService(
+            CreateGenerator(_ => Vector(1f, 0f), inputTokenCount: 123));
+
+        await service.EmbedAsync(["notice"], CancellationToken.None);
+
+        activities.Should().ContainSingle();
+        activities[0].OperationName.Should().Be("books.recommendations.embedding.generate");
+        activities[0].GetTagItem("embedding.input_count").Should().Be(1);
+        activities[0].GetTagItem("gen_ai.usage.input_tokens").Should().Be(123L);
+        activities[0].GetTagItem("embedding.outcome").Should().Be("success");
+    }
+
+    [Fact]
+    public async Task EmbedAsync_RecordsFailedActivityWhenProviderThrows()
+    {
+        var activities = new List<Activity>();
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == "Vpd.Recommendations",
+            Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+            ActivityStopped = activities.Add
+        };
+        ActivitySource.AddActivityListener(listener);
+        var service = new AzureOpenAiBookEmbeddingService(
+            CreateGenerator(_ => Vector(1f, 0f), exception: new InvalidOperationException("provider failure")));
+
+        var act = () => service.EmbedAsync(["notice"], CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        activities.Should().ContainSingle();
+        activities[0].GetTagItem("embedding.outcome").Should().Be("failed");
+        activities[0].Status.Should().Be(ActivityStatusCode.Error);
+    }
+
+    [Fact]
     public async Task EmbedAsync_RejectsVectorsWithUnexpectedDimension()
     {
         var service = new AzureOpenAiBookEmbeddingService(CreateGenerator(_ => new float[1536]));
@@ -61,7 +107,9 @@ public sealed class AzureOpenAiBookEmbeddingServiceTests
     private static IEmbeddingGenerator<string, Embedding<float>> CreateGenerator(
         Func<string, float[]> vectorFactory,
         Action<EmbeddingGenerationOptions>? onOptions = null,
-        Action<int>? onBatch = null)
+        Action<int>? onBatch = null,
+        long? inputTokenCount = null,
+        Exception? exception = null)
     {
         var generator = Substitute.For<IEmbeddingGenerator<string, Embedding<float>>>();
         generator.GenerateAsync(
@@ -73,8 +121,16 @@ public sealed class AzureOpenAiBookEmbeddingServiceTests
                 var inputs = call.Arg<IEnumerable<string>>().ToArray();
                 onOptions?.Invoke(call.Arg<EmbeddingGenerationOptions>());
                 onBatch?.Invoke(inputs.Length);
+                if (exception is not null)
+                {
+                    return Task.FromException<GeneratedEmbeddings<Embedding<float>>>(exception);
+                }
+
                 var embeddings = inputs.Select(input => new Embedding<float>(vectorFactory(input))).ToArray();
-                return Task.FromResult(new GeneratedEmbeddings<Embedding<float>>(embeddings));
+                return Task.FromResult(new GeneratedEmbeddings<Embedding<float>>(embeddings)
+                {
+                    Usage = inputTokenCount is null ? null : new UsageDetails { InputTokenCount = inputTokenCount }
+                });
             });
         return generator;
     }

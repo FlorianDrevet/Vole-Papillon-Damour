@@ -93,3 +93,5 @@ resource functionContainerApp 'Microsoft.App/containerApps@2025-07-01' = {
     }
   }
 }
+
+output containerAppResourceId string = functionContainerApp.id

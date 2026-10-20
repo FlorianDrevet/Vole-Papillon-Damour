@@ -41,6 +41,7 @@ var host = new HostBuilder()
                 .UseFunctionsWorkerDefaults()
                 .WithTracing(tracing => tracing
                     .AddSource(BookScanTelemetry.ActivitySourceName)
+                    .AddSource(BookRecommendationTelemetry.ActivitySourceName)
                     .AddHttpClientInstrumentation()
                     .AddSqlClientInstrumentation())
                 .WithMetrics(metrics => metrics.AddMeter(BookScanTelemetry.MeterName))

@@ -133,3 +133,4 @@ resource containerApp 'Microsoft.App/containerApps@2025-07-01' = {
 
 // Output the fully qualified domain name (FQDN) of the Container App
 output containerAppFqdn string = containerApp.properties.configuration.ingress.fqdn
+output containerAppResourceId string = containerApp.id

@@ -105,7 +105,14 @@ d'ingestion en DEV ; l'API, le worker et la Scanette restent à 100 % pour conse
 les signaux opérationnels. Les valeurs par défaut de production restent à 100 % et
 les tests de disponibilité actifs. Le classeur partagé
 « VPD - Performance et santé » regroupe latences, dépendances, erreurs, worker et
-front-ends. La liste détaillée est dans
+front-ends. Ses onglets **Embeddings et coûts** et **Infrastructure** ajoutent les
+tokens d'entrée et la durée de chaque lot Azure OpenAI, un coût estimatif, les pics de
+CPU/mémoire, les réplicas/redémarrages des six Container Apps et l'utilisation DTU de
+la base SQL. Le tarif estimatif par million de tokens est le paramètre Bicep
+`embeddingCostUsdPerMillionTokens` (0,02 USD par défaut) ; il doit être ajusté au tarif
+du modèle, de la région et du contrat Azure. Ce n'est pas une donnée de facturation.
+Les spans d'embeddings n'incluent ni texte, ni ISBN, ni identifiant de livre.
+La liste détaillée est dans
 `docs/bourse-aux-livres/technique/11-observabilite.md` §8. Un changement de
 destinataire déclenche un e-mail de confirmation d'Azure à accepter.
 

@@ -36,6 +36,28 @@ function query(title, kql, visualization = 'table', extra = {}) {
   };
 }
 
+function metric(title, resourceType, resourceIds, metrics, chartId) {
+  sequence += 1;
+  return {
+    type: 10,
+    content: {
+      chartId,
+      version: 'MetricsItem/2.0',
+      size: 2,
+      chartType: 2,
+      resourceType,
+      metricScope: 0,
+      resourceIds,
+      timeContextFromParameter: 'TimeRange',
+      timeContext: {durationMs: 0},
+      metrics,
+      title,
+      gridSettings: {rowLimit: 10000},
+    },
+    name: `metric-${sequence}`,
+  };
+}
+
 function half(item) {
   return {...item, customWidth: '50'};
 }
@@ -93,6 +115,28 @@ const workbook = {
       name: 'parameters',
     },
     {
+      type: 9,
+      content: {
+        version: 'KqlParameterItem/1.0',
+        parameters: [
+          {
+            id: '73bc047d-87cc-4e25-b1a6-2ec01884717d',
+            version: 'KqlParameterItem/1.0',
+            name: 'EmbeddingCostPerMillionUsd',
+            label: 'Tarif embedding (USD / million tokens)',
+            description: 'Tarif d’entrée du déploiement Azure OpenAI utilisé pour estimer le coût. Ajuster à la facturation de l’abonnement.',
+            type: 1,
+            isRequired: true,
+            value: '__EMBEDDING_COST_PER_MILLION_USD__',
+          },
+        ],
+        style: 'formHorizontal',
+        queryType: 0,
+        resourceType: 'microsoft.operationalinsights/workspaces',
+      },
+      name: 'embedding-cost-parameter',
+    },
+    {
       type: 11,
       content: {
         version: 'LinkItem/1.0',
@@ -103,6 +147,8 @@ const workbook = {
           ['errors', 'Erreurs'],
           ['worker', 'Worker'],
           ['clients', 'Front-ends et disponibilité'],
+          ['embeddings', 'Embeddings et coûts'],
+          ['infrastructure', 'Infrastructure'],
         ].map(([id, label]) => ({
           id: `tab-link-${id}`,
           cellValue: 'Tab',
@@ -223,6 +269,107 @@ const workbook = {
         'Erreurs navigateur',
         `AppExceptions\n| where ClientType == "Browser"\n| ${browserApp}\n| summarize Occurrences = count(), Exemple = take_any(OuterMessage), Derniere = max(TimeGenerated) by App, ProblemId\n| order by Occurrences desc`,
       )),
+    ]),
+    tab('embeddings', [
+      markdown(
+        'Les spans couvrent un lot envoyé au service d’embeddings. Le texte, les ISBN et les identifiants de livre ne sont pas enregistrés. ' +
+          'Le coût est estimé à partir des tokens d’entrée renvoyés par Azure OpenAI et du tarif unitaire ci-dessus ; il ne remplace pas la facture Azure.',
+      ),
+      query(
+        'Volumes, erreurs, couverture des tokens et coût estimé',
+        `AppDependencies
+| where Name == "books.recommendations.embedding.generate"
+| extend Outcome = coalesce(tostring(Properties["embedding.outcome"]), iff(Success == false, "failed", "unknown"))
+| extend InputTokens = tolong(Properties["gen_ai.usage.input_tokens"])
+| extend EstimatedCostUsd = coalesce(InputTokens, 0) * todouble('{EmbeddingCostPerMillionUsd}') / 1000000.0
+| summarize Lots = count(), Reussites = countif(Outcome == "success"), Echecs = countif(Outcome == "failed"), Annulations = countif(Outcome == "cancelled"), TokensComptabilises = countif(isnotnull(InputTokens)), TokensManquants = countif(isnull(InputTokens)), TokensEntree = sum(coalesce(InputTokens, 0)), CoutEstimeUsd = round(sum(EstimatedCostUsd), 6), P95Ms = round(percentile(DurationMs, 95)), MaxMs = round(max(DurationMs)) by AppRoleName
+| order by AppRoleName asc`,
+      ),
+      half(query(
+        'Tokens d’entrée dans le temps',
+        `AppDependencies
+| where Name == "books.recommendations.embedding.generate"
+| extend InputTokens = tolong(Properties["gen_ai.usage.input_tokens"])
+| summarize TokensEntree = sum(coalesce(InputTokens, 0)) by bin(TimeGenerated, ${grain}), AppRoleName`,
+        'timechart',
+      )),
+      half(query(
+        'Coût estimé dans le temps (USD)',
+        `AppDependencies
+| where Name == "books.recommendations.embedding.generate"
+| extend InputTokens = tolong(Properties["gen_ai.usage.input_tokens"])
+| extend CoutEstimeUsd = coalesce(InputTokens, 0) * todouble('{EmbeddingCostPerMillionUsd}') / 1000000.0
+| summarize CoutEstimeUsd = sum(CoutEstimeUsd) by bin(TimeGenerated, ${grain}), AppRoleName`,
+        'timechart',
+      )),
+      half(query(
+        'Latence des lots (P50 / P95 / P99 / maximum)',
+        `AppDependencies
+| where Name == "books.recommendations.embedding.generate"
+| summarize P50 = percentile(DurationMs, 50), P95 = percentile(DurationMs, 95), P99 = percentile(DurationMs, 99), MaxMs = max(DurationMs) by bin(TimeGenerated, ${grain}), AppRoleName`,
+        'timechart',
+      )),
+      half(query(
+        'Lots en échec dans le temps',
+        `AppDependencies
+| where Name == "books.recommendations.embedding.generate"
+| summarize Echecs = countif(tostring(Properties["embedding.outcome"]) == "failed") by bin(TimeGenerated, ${grain}), AppRoleName`,
+        'timechart',
+      )),
+      query(
+        'Lots récents et consommation détaillée',
+        `AppDependencies
+| where Name == "books.recommendations.embedding.generate"
+| extend Modele = tostring(Properties["gen_ai.request.model"]), Outcome = tostring(Properties["embedding.outcome"]), Textes = toint(Properties["embedding.input_count"]), TokensEntree = tolong(Properties["gen_ai.usage.input_tokens"])
+| extend CoutEstimeUsd = coalesce(TokensEntree, 0) * todouble('{EmbeddingCostPerMillionUsd}') / 1000000.0
+| project TimeGenerated, AppRoleName, Modele, Outcome, Textes, TokensEntree, CoutEstimeUsd = round(CoutEstimeUsd, 6), DureeMs = round(DurationMs, 1), Success, ResultCode, OperationId
+| order by TimeGenerated desc
+| take 100`,
+      ),
+    ]),
+    tab('infrastructure', [
+      markdown(
+        'Métriques de plateforme Azure par application conteneur et base SQL. CPU et mémoire indiquent les pics par replica ; une application à zéro replica ne produit pas de mesures CPU/mémoire.',
+      ),
+      metric(
+        'CPU des Container Apps (maximum, %)',
+        'microsoft.app/containerapps',
+        ['__CONTAINER_APP_IDS__'],
+        [{namespace: 'microsoft.app/containerapps', metric: 'microsoft.app/containerapps-Basic-CpuPercentage', aggregation: 3, splitBy: null}],
+        'workbook-vpd-containerapp-cpu',
+      ),
+      metric(
+        'Mémoire des Container Apps (maximum, %)',
+        'microsoft.app/containerapps',
+        ['__CONTAINER_APP_IDS__'],
+        [{namespace: 'microsoft.app/containerapps', metric: 'microsoft.app/containerapps-Basic-MemoryPercentage', aggregation: 3, splitBy: null}],
+        'workbook-vpd-containerapp-memory',
+      ),
+      metric(
+        'Réplicas et redémarrages des Container Apps',
+        'microsoft.app/containerapps',
+        ['__CONTAINER_APP_IDS__'],
+        [
+          {namespace: 'microsoft.app/containerapps', metric: 'microsoft.app/containerapps-Basic-Replicas', aggregation: 3, splitBy: null},
+          {namespace: 'microsoft.app/containerapps', metric: 'microsoft.app/containerapps-Basic-RestartCount', aggregation: 3, splitBy: null},
+        ],
+        'workbook-vpd-containerapp-replicas',
+      ),
+      metric(
+        'Base SQL (DTU maximum, %)',
+        'microsoft.sql/servers/databases',
+        ['__SQL_DATABASE_ID__'],
+        [{namespace: 'microsoft.sql/servers/databases', metric: 'microsoft.sql/servers/databases-Basic-dtu_consumption_percent', aggregation: 3, splitBy: null}],
+        'workbook-vpd-sql-dtu',
+      ),
+      query(
+        'Latences et erreurs applicatives',
+        `AppRequests
+| where AppRoleName in ("vpd-api", "vpd-worker", "vpd-catalog", "vpd-scan", "vpd-web", "vpd-bo")
+| summarize Requetes = count(), Echecs = countif(Success == false), P95Ms = percentile(DurationMs, 95), P99Ms = percentile(DurationMs, 99), PicMs = max(DurationMs) by AppRoleName, bin(TimeGenerated, ${grain})
+| order by TimeGenerated desc`,
+        'timechart',
+      ),
     ]),
   ],
   fallbackResourceIds: [WORKSPACE],

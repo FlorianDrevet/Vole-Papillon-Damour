@@ -1,5 +1,6 @@
 using Microsoft.Extensions.AI;
 using System.Numerics.Tensors;
+using Vole_Papillon_Damour.Application.Common.Observability;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 
 namespace Vole_Papillon_Damour.Infrastructure.Services.Recommendations;
@@ -28,35 +29,57 @@ public sealed class AzureOpenAiBookEmbeddingService(
                 batch[index] = texts[offset + index];
             }
 
-            var embeddings = await generator.GenerateAsync(
-                batch,
-                new EmbeddingGenerationOptions { Dimensions = Dimensions },
-                cancellationToken);
-
-            if (embeddings.Count != count)
+            using var activity = BookRecommendationTelemetry.StartEmbeddingGeneration(
+                count,
+                Dimensions,
+                generator.GetService<EmbeddingGeneratorMetadata>()?.DefaultModelId);
+            try
             {
-                throw new InvalidOperationException(
-                    $"The embedding provider returned {embeddings.Count} vectors for {count} texts.");
-            }
+                var embeddings = await generator.GenerateAsync(
+                    batch,
+                    new EmbeddingGenerationOptions { Dimensions = Dimensions },
+                    cancellationToken);
 
-            foreach (var embedding in embeddings)
-            {
-                var vector = embedding.Vector.ToArray();
-                if (vector.Length != Dimensions)
+                if (embeddings.Count != count)
                 {
                     throw new InvalidOperationException(
-                        $"Expected a {Dimensions}-dimensional embedding, but received {vector.Length} values.");
+                        $"The embedding provider returned {embeddings.Count} vectors for {count} texts.");
                 }
 
-                var norm = TensorPrimitives.Norm(vector.AsSpan());
-                if (!float.IsFinite(norm) || norm <= 0f)
+                foreach (var embedding in embeddings)
                 {
-                    throw new InvalidOperationException("The embedding provider returned a vector that cannot be normalized.");
+                    var vector = embedding.Vector.ToArray();
+                    if (vector.Length != Dimensions)
+                    {
+                        throw new InvalidOperationException(
+                            $"Expected a {Dimensions}-dimensional embedding, but received {vector.Length} values.");
+                    }
+
+                    var norm = TensorPrimitives.Norm(vector.AsSpan());
+                    if (!float.IsFinite(norm) || norm <= 0f)
+                    {
+                        throw new InvalidOperationException("The embedding provider returned a vector that cannot be normalized.");
+                    }
+
+                    var normalized = new float[Dimensions];
+                    TensorPrimitives.Divide(vector.AsSpan(), norm, normalized.AsSpan());
+                    vectors.Add(normalized);
                 }
 
-                var normalized = new float[Dimensions];
-                TensorPrimitives.Divide(vector.AsSpan(), norm, normalized.AsSpan());
-                vectors.Add(normalized);
+                BookRecommendationTelemetry.RecordEmbeddingOutcome(
+                    activity,
+                    "success",
+                    embeddings.Usage?.InputTokenCount);
+            }
+            catch (OperationCanceledException)
+            {
+                BookRecommendationTelemetry.RecordEmbeddingOutcome(activity, "cancelled", null);
+                throw;
+            }
+            catch (Exception)
+            {
+                BookRecommendationTelemetry.RecordEmbeddingOutcome(activity, "failed", null);
+                throw;
             }
         }
 
