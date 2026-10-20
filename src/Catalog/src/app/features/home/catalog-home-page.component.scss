@@ -5,10 +5,15 @@
 .hero {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
   padding: clamp(68px, 5.85vw, 84px) 0 0;
   background: #062a44;
   color: var(--catalog-paper);
+}
+
+.hero--genre-menu-open {
+  z-index: 20;
 }
 
 .hero::before {
@@ -217,12 +222,13 @@ h2 {
 }
 
 .hero-genre-select-panel {
+  display: flex;
   position: absolute;
   top: calc(100% + 10px);
   left: 0;
   z-index: 30;
-  width: min(280px, calc(100vw - 2rem));
-  max-height: min(360px, calc(100dvh - 12rem));
+  width: min(300px, calc(100vw - 2rem));
+  max-height: min(22rem, 70dvh);
   overflow-x: hidden;
   overflow-y: auto;
   padding: 8px;
@@ -231,6 +237,7 @@ h2 {
   background: var(--catalog-white);
   box-shadow: 0 22px 44px -24px rgba(7, 43, 69, .45);
   overscroll-behavior: contain;
+  flex-direction: column;
   transform-origin: top left;
   animation: hero-genre-panel-in 160ms var(--catalog-ease-out);
 }
@@ -252,12 +259,65 @@ h2 {
   text-transform: uppercase;
 }
 
+.hero-genre-panel-search {
+  position: relative;
+  flex: none;
+  margin: 0 4px 8px;
+}
+
+.hero-genre-panel-search svg {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  width: 15px;
+  height: 15px;
+  transform: translateY(-50%);
+  fill: none;
+  pointer-events: none;
+  stroke: var(--catalog-slate-3);
+  stroke-linecap: round;
+  stroke-width: 1.6;
+}
+
+.hero-genre-panel-search input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 11px 0 34px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 10px;
+  outline: 0;
+  background: var(--catalog-paper);
+  color: var(--catalog-ink);
+  font-size: .78rem;
+}
+
+.hero-genre-panel-search input::placeholder {
+  color: var(--catalog-slate-3);
+}
+
+.hero-genre-panel-search input:focus-visible {
+  border-color: var(--catalog-blue);
+  box-shadow: 0 0 0 3px rgba(20, 151, 214, .14);
+}
+
 .hero-genre-panel-options {
   display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
   padding-top: 5px;
+  overflow-y: auto;
   flex-direction: column;
   gap: 3px;
   border-top: 1px solid var(--catalog-line-2);
+  overscroll-behavior: contain;
+}
+
+.hero-genre-empty {
+  margin: 0;
+  padding: 12px 9px;
+  color: var(--catalog-slate-3);
+  font-size: .77rem;
+  line-height: 1.4;
 }
 
 .hero-genre-option {
