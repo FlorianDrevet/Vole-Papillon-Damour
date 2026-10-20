@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Vole_Papillon_Damour.Application.Books.Commands.ScanBook;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
@@ -16,9 +17,16 @@ public sealed class GetAdminBooksQueryHandlerTests
     public async Task Handle_WhenPageIsRequested_ReturnsOnlyThatPageAndKeepsTheTotalCount()
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
-        await fixture.AddBookAsync("9782070363735", quantityAvailable: 0);
-        await fixture.AddBookAsync("9782070408504", quantityAvailable: 0);
-        await fixture.AddBookAsync("9783140464079", quantityAvailable: 0);
+        var books = new[]
+        {
+            await fixture.AddBookAsync("9782070363735", quantityAvailable: 0),
+            await fixture.AddBookAsync("9782070408504", quantityAvailable: 0),
+            await fixture.AddBookAsync("9783140464079", quantityAvailable: 0),
+        };
+        SetTitle(books[0], "Livre un");
+        SetTitle(books[1], "Livre deux");
+        SetTitle(books[2], "Livre trois");
+        await fixture.Context.SaveChangesAsync();
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
         var handler = new GetAdminBooksQueryHandler(fixture.Context, clock);
@@ -49,6 +57,10 @@ public sealed class GetAdminBooksQueryHandlerTests
                 ClientGestureId: Guid.NewGuid(),
                 VolunteerId: session.VolunteerId),
             CancellationToken.None);
+        Isbn13.TryCreate("9782070408504", out var scannedIsbn).Should().BeTrue();
+        var scannedBook = await fixture.Context.Books.SingleAsync(book => book.Id == scannedIsbn);
+        SetTitle(scannedBook, "Livre scanné");
+        await fixture.Context.SaveChangesAsync();
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
         var handler = new GetAdminBooksQueryHandler(fixture.Context, clock);
@@ -73,21 +85,11 @@ public sealed class GetAdminBooksQueryHandlerTests
     {
         await using var fixture = await ScanBookFixture.CreateAsync();
         var petitPrince = await fixture.AddBookAsync("9782070408504", quantityAvailable: 1);
-        await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
-        await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
-        petitPrince.ApplyManualMetadata(
-            new BookMetadataPatch(
-                "Le Petit Prince",
-                "Antoine de Saint-Exupéry",
-                null,
-                null,
-                PhysicalFormat: null,
-                Language: null,
-                null,
-                null,
-                [BookMetadataField.Title, BookMetadataField.Authors],
-                null),
-            ScanBookCommandHandlerTests.ReceivedAt);
+        var second = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        var third = await fixture.AddBookAsync("9783140464079", quantityAvailable: 1);
+        SetTitle(petitPrince, "Le Petit Prince");
+        SetTitle(second, "Autre livre");
+        SetTitle(third, "Troisième livre");
         await fixture.Context.SaveChangesAsync();
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
@@ -108,5 +110,34 @@ public sealed class GetAdminBooksQueryHandlerTests
             result.Value.TotalCount.Should().Be(1);
             result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be(expectedIsbn);
         }
+    }
+
+    [Fact]
+    public async Task Handle_ExcludesPendingBooksFromTheGeneralAdminCatalogue()
+    {
+        await using var fixture = await ScanBookFixture.CreateAsync();
+        var complete = await fixture.AddBookAsync("9782070363735", quantityAvailable: 1);
+        SetTitle(complete, "Livre complet");
+        await fixture.AddBookAsync("9782070408504", quantityAvailable: 1);
+        await fixture.Context.SaveChangesAsync();
+        var clock = Substitute.For<IDateTimeProvider>();
+        clock.UtcNow.Returns(ScanBookCommandHandlerTests.ReceivedAt);
+        var handler = new GetAdminBooksQueryHandler(fixture.Context, clock);
+
+        var result = await handler.Handle(
+            new GetAdminBooksQuery(null, null, null, null, 1, 50),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(1);
+        result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be("9782070363735");
+    }
+
+    private static void SetTitle(Book book, string title)
+    {
+        book.ApplyManualMetadata(
+            new BookMetadataPatch(title, null, null, null, null, null, null, null,
+                [BookMetadataField.Title]),
+            ScanBookCommandHandlerTests.ReceivedAt);
     }
 }

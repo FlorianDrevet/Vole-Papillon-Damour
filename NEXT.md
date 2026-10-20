@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | Préparer l'import du seul `ISBN_application.csv` après la remise à zéro vérifiée de la base DEV le 2026-10-20. |
-| **Prochaine action** | PR [#269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) ouverte vers `main`, non fusionnée. Après fusion, déployer l'API et Catalog, relire l'état du Worker puis charger le fichier original dans l'administration Catalog DEV. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-isbn-import` |
-| **Dernière mise à jour** | 2026-10-20 — l'aperçu local confirme 7 748 ISBN valides, 0 invalide, 0 doublon et 0 ligne vide. L'import corrigé créera 1 exemplaire disponible par nouvel ISBN, avec un mouvement d'entrée attribué à l'administrateur. Builds API et Catalog réussis ; revue responsive à 320, 390 et 1440 px sans débordement horizontal. L'écran est visible en local, mais l'API locale n'est pas démarrée ; aucun test automatisé ni import en base. Le Worker a exécuté Enrich et Sweep avec succès malgré les alertes de probe de démarrage persistantes dans le portail. |
-| **Branche** | `feat/isbn-batch-import`, créée depuis `origin/main`; PR [#269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) ouverte, non fusionnée. |
+| **Lot en cours** | Corriger le traitement des ISBN dont la notice bibliographique est en attente ou en échec avant l'import de `ISBN_application.csv`. |
+| **Prochaine action** | Revoir et fusionner la PR du correctif de file ISBN. Après fusion, déployer l'API et Catalog, appliquer la migration, vérifier la file et le catalogue public, relire l'état du Worker puis charger le CSV original dans Catalog DEV. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-pending-isbn-analysis` |
+| **Dernière mise à jour** | 2026-10-20 — les livres incomplets sont filtrés du catalogue public et du catalogue admin principal ; une file dédiée expose ISBN, état, motif et actions. Build Catalog et validations backend ciblées réussis. La suite Catalog complète reste à 489/492 avec trois échecs dans AccountCard et CatalogNavigation, fichiers non touchés. Ce correctif n'est pas déployé et n'a changé aucune base ; le contrôle visuel authentifié reste à faire. |
+| **Branche** | `fix/catalog-pending-isbn-queue`, créée depuis `origin/main`; PR en préparation. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -97,9 +97,9 @@ original, présente les lignes valides/invalides et envoie les ISBN en lots séq
 nouvelle fiche reçoit un exemplaire disponible et une entrée de stock `DirectEntry`, attribuée
 au compte administrateur connecté ; les métadonnées restent en attente. Les fiches déjà
 présentes ne sont pas modifiées, ce qui rend la relance idempotente. Aucun mouvement ni scan
-de session n'est recréé pour les anciens scans effacés. La fonctionnalité corrigée est proposée
-dans la [PR #269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269), ouverte vers
-`main` mais pas encore fusionnée ni déployée ; aucune ligne du CSV n'est encore en base.
+de session n'est recréé pour les anciens scans effacés. La fonctionnalité a été fusionnée dans
+la [PR #269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) le 2026-10-20.
+Son déploiement n'est pas confirmé dans ce suivi ; aucune ligne du CSV n'a été importée en base.
 
 Contrôle du Worker effectué dans Azure Container Apps après le reset :
 `vpd-worker-ca-dev-fc` était `Running` et `Ready for traffic`, avec `minReplicas: 0` et
@@ -109,6 +109,23 @@ code 1 et un délai de 1 seconde), mais les invocations `Functions.Enrich` et `F
 attendues. Recontrôler les alertes et le prochain passage du Worker avant l'envoi des lots.
 Une fois l'API et Catalog déployés, charger le fichier original et vérifier les compteurs de
 création / fiches déjà présentes ainsi que le stock nul ; ne pas charger les autres CSV.
+
+### File d'analyse des ISBN incomplets — 2026-10-20
+
+Les livres au statut `Pending`, `Failed` ou `NotFound`, ainsi que les fiches sans titre,
+n'apparaissent plus dans les résultats, les détails et le sitemap du catalogue public ni dans
+la liste principale d'administration. Catalog ajoute `/administration/isbn-queue` : chaque
+ligne montre uniquement l'ISBN, l'état, le motif d'échec, la date et le nombre de tentatives,
+avec accès à la correction manuelle, à une relance immédiate ou à la suppression.
+
+La suppression est auditable : pour une fiche incomplète avec mouvements, elle passe au statut
+`Discarded` et retire le stock disponible par un mouvement de retrait ; les lignes sans
+mouvement sont supprimées. La migration `20261020132445_AddBookMetadataFailureReason` ajoute
+le motif de 500 caractères. La suite Catalog ciblée passe à 91 tests ; les suites Domain,
+Application et API passent à 208, 546 et 85 tests. Le build Catalog réussit ; les trois échecs
+de sa suite complète sont dans AccountCard et CatalogNavigation, sans fichier modifié dans ces
+zones. Cette modification est locale sur la branche `fix/catalog-pending-isbn-queue` ; elle
+n'a pas été déployée et aucun ISBN n'a été importé.
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 

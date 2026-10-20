@@ -20,6 +20,7 @@ import {
   CatalogAdminAccount,
   CatalogAdminAccountPage,
   CatalogAdminBook,
+  CatalogAdminBookMetadataQueue,
   CatalogAdminBookMovement,
   CatalogAdminBookPage,
   CatalogAdminFairPage,
@@ -222,7 +223,8 @@ describe('CatalogAdministrationPageComponent', () => {
     routeQueryParams = new BehaviorSubject(convertToParamMap({}));
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
-      'getOverview', 'getBooks', 'getBook', 'addBook', 'updateMetadata', 'correctQuantity',
+      'getOverview', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
+      'addBook', 'updateMetadata', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook',
       'getFairs', 'getFairStats', 'setFairRevenue', 'getSessions', 'getSession',
       'getVolunteerStatistics', 'getFairsEvolution', 'getCatalogueFlowStats',
@@ -261,6 +263,8 @@ describe('CatalogAdministrationPageComponent', () => {
       pendingAlerts: {pendingCount: 0, oldestDueAt: null, nextDueAt: null},
     } as CatalogAdminOverview));
     api.getBooks.and.returnValue(of({generatedAt: '', books: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookPage));
+    api.getBookMetadataQueue.and.returnValue(of({generatedAt: '', items: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminBookMetadataQueue));
+    api.retryBookMetadata.and.returnValue(of({isbn13: '9782070363735', metadataStatus: 'Pending', queued: true}));
     api.getFairs.and.returnValue(of({generatedAt: '', fairs: [], totalCount: 0, page: 1, pageSize: 50} as CatalogAdminFairPage));
     api.getVolunteerStatistics.and.returnValue(of({
       generatedAt: '',
@@ -466,6 +470,7 @@ describe('CatalogAdministrationPageComponent', () => {
       'Livres introuvables',
       'Demandes manuelles',
       'Catalogue',
+      'ISBN en cours d’analyse',
       'Livres rares',
       'Statistiques',
       'Comptes & rôles',
@@ -588,6 +593,7 @@ describe('CatalogAdministrationPageComponent', () => {
       '/administration/not-found',
       '/administration/manual-requests',
       '/administration/catalogue',
+      '/administration/isbn-queue',
       '/administration/rare-books',
       '/administration/statistics',
       '/administration/accounts',
@@ -645,11 +651,14 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(api.getDeadStock).not.toHaveBeenCalled();
   });
 
-  it('keeps the catalogue workspace as the only book-management entry', () => {
+  it('offers a separate navigation entry for ISBN that are still being analyzed', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.navItems.filter(item => item.id === 'catalogue')).toEqual([
       {id: 'catalogue', label: 'Catalogue', icon: 'catalogue'},
+    ]);
+    expect(fixture.componentInstance.navItems.filter(item => item.id === 'isbn-queue')).toEqual([
+      {id: 'isbn-queue', label: 'ISBN en cours d’analyse', icon: 'isbn'},
     ]);
   });
 
@@ -662,6 +671,94 @@ describe('CatalogAdministrationPageComponent', () => {
     await fixture.componentInstance.selectSection('catalogue');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('Catalogue.');
+  });
+
+  it('shows ISBN, status, and failure reason in the separate metadata queue', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    api.getBookMetadataQueue.and.returnValue(of({
+      generatedAt: '2026-10-20T10:00:00Z',
+      items: [{
+        isbn13: '9782070363735',
+        metadataStatus: 'Failed',
+        failureReason: 'Aucune notice bibliographique exploitable.',
+        resolveAttempts: 2,
+        lastAttemptAt: '2026-10-20T09:00:00Z',
+      }],
+      totalCount: 1,
+      page: 1,
+      pageSize: 50,
+    } as CatalogAdminBookMetadataQueue));
+    fixture.detectChanges();
+
+    await fixture.componentInstance.selectSection('isbn-queue');
+    fixture.detectChanges();
+
+    const row = fixture.nativeElement.querySelector('[data-testid="isbn-analysis-9782070363735"]') as HTMLElement;
+    expect(api.getBookMetadataQueue).toHaveBeenCalledWith('access-token', {page: 1, pageSize: 50});
+    expect(row.textContent).toContain('9782070363735');
+    expect(row.textContent).toContain('Échec');
+    expect(row.textContent).toContain('Aucune notice bibliographique exploitable.');
+    expect(row.textContent).not.toContain('Titre à compléter');
+    expect(row.querySelectorAll('button').length).toBe(3);
+  });
+
+  it('retries an ISBN from its analysis row and refreshes the queue', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const item = {
+      isbn13: '9782070363735',
+      metadataStatus: 'Failed',
+      failureReason: 'Erreur réseau.',
+      resolveAttempts: 1,
+      lastAttemptAt: '2026-10-20T09:00:00Z',
+    };
+    fixture.detectChanges();
+
+    await fixture.componentInstance.retryIsbnMetadata(item);
+
+    expect(api.retryBookMetadata).toHaveBeenCalledWith('access-token', item.isbn13);
+    expect(api.getBookMetadataQueue).toHaveBeenCalled();
+    expect(fixture.componentInstance.successMessage()).toContain(item.isbn13);
+  });
+
+  it('opens correction for an ISBN without presenting it as a catalog title', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = catalogueBook({title: null, metadataStatus: 'Failed'});
+    api.getBook.and.returnValue(of(book));
+    spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
+    fixture.componentInstance.activeSection.set('isbn-queue');
+    fixture.detectChanges();
+
+    await fixture.componentInstance.openBook(book.isbn13, 'isbn-queue');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedBook()?.isbn13).toBe(book.isbn13);
+    expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('ISBN en cours d’analyse');
+    expect(fixture.nativeElement.textContent).not.toContain('Titre à compléter');
+  });
+
+  it('removes an ISBN from the analysis queue after confirmation', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const confirmSpy = spyOn(window, 'confirm').and.returnValue(true);
+    const item = {
+      isbn13: '9782070363735',
+      metadataStatus: 'Failed',
+      failureReason: 'Erreur réseau.',
+      resolveAttempts: 1,
+      lastAttemptAt: '2026-10-20T09:00:00Z',
+    };
+    api.deleteBook.and.returnValue(of(undefined));
+    fixture.detectChanges();
+
+    await fixture.componentInstance.deleteIsbnMetadataCandidate(item);
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(api.deleteBook).toHaveBeenCalledWith('access-token', item.isbn13);
+    expect(api.getBookMetadataQueue).toHaveBeenCalled();
+    expect(fixture.componentInstance.successMessage()).toContain('retiré de la file');
   });
 
   it('redirects the removed inventory route to the administration dashboard', () => {

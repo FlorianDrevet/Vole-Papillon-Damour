@@ -5,6 +5,7 @@ export const CATALOG_ADMIN_SECTIONS = [
   'not-found',
   'manual-requests',
   'catalogue',
+  'isbn-queue',
   'rare-books',
   'statistics',
   'alerts',

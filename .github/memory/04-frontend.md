@@ -682,3 +682,9 @@ new unique ISBN adds one available copy; already-present books are unchanged. Th
 this stock behavior and can restart the full list after interruption because the API is
 idempotent. The feature is being prepared for DEV and has not been deployed or used to write
 books yet.
+
+The ISBN analysis queue is the dedicated `/administration/isbn-queue` section. It keeps
+incomplete ISBNs out of the main admin list, displays ISBN/status/failure reason and retry
+timing without a placeholder title, and links to manual correction, immediate retry, or
+removal. Removing a ledger-backed candidate uses the API's audited discard/withdrawal path;
+it does not delete its movement history.

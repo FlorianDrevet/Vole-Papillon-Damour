@@ -5,5 +5,7 @@ public enum BookMetadataStatus : byte
     Pending,
     Resolved,
     NotFound,
-    Manual
+    Manual,
+    Failed,
+    Discarded
 }

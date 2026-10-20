@@ -194,6 +194,21 @@ public class EndpointAuthorizationTests
     }
 
     [Fact]
+    public void Book_metadata_queue_and_retry_require_administration_policy()
+    {
+        var endpoints = RegisteredEndpoints()
+            .Where(endpoint => RouteOf(endpoint) is
+                "/books/admin/books/metadata-queue" or
+                "/books/admin/books/{isbn13}/metadata/retry")
+            .ToList();
+
+        endpoints.Should().HaveCount(2);
+        endpoints.Should().OnlyContain(endpoint => RequiresAuthorization(endpoint));
+        endpoints.SelectMany(endpoint => endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>())
+            .Should().Contain(data => data.Policy == "Administration");
+    }
+
+    [Fact]
     public void Force_closing_a_scan_session_requires_the_administration_policy()
     {
         var endpoint = RegisteredEndpoints()

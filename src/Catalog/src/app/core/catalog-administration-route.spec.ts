@@ -22,4 +22,9 @@ describe('catalog administration routes', () => {
     expect(isCatalogAdminSection('manual-requests')).toBeTrue();
     expect(catalogAdminSectionPath('manual-requests')).toBe('/administration/manual-requests');
   });
+
+  it('recognizes the ISBN analysis queue as an administration section', () => {
+    expect(isCatalogAdminSection('isbn-queue')).toBeTrue();
+    expect(catalogAdminSectionPath('isbn-queue')).toBe('/administration/isbn-queue');
+  });
 });

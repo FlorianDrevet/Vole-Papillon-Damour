@@ -42,7 +42,7 @@ public sealed class SearchCatalogQueryHandler(
 
         var catalogBooksQuery = dbContext.Books
             .AsNoTracking()
-            .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null);
+            .Where(PublicCatalogBookVisibility.Predicate);
         var normalizedSearch = Normalize(query.Search);
         var searchTerms = query.Search?
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

@@ -38,7 +38,7 @@ public static class PublicCatalogProjector
                 StringComparer.Ordinal);
 
         return books
-            .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 is null)
+            .Where(PublicCatalogBookVisibility.IsVisible)
             .Select(book =>
             {
                 availabilityByIsbn.TryGetValue(book.Id.Value, out var availability);

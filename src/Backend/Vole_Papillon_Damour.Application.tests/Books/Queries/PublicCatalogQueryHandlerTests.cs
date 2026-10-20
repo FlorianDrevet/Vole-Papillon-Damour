@@ -71,6 +71,26 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task SearchCatalog_ExcludesBooksThatArePendingOrHaveNoTitle()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Livre complet", "Auteur", quantityAvailable: 1);
+        fixture.AddPendingBook("9782070363735", quantityAvailable: 1);
+        fixture.AddResolvedBookWithoutTitle("9782253006329");
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSearchHandler().Handle(
+            new SearchCatalogQuery(null, null, PublicCatalogAvailabilityFilter.All,
+                RareOnly: false, PublicCatalogSortOrder.Relevance, Page: 1, PageSize: 20,
+                IncludeExhausted: true),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.TotalCount.Should().Be(1);
+        result.Value.Books.Should().ContainSingle().Which.Isbn13.Should().Be("9782070408504");
+    }
+
+    [Fact]
     public async Task SearchCatalog_WhenQueryHasNoAccents_FindsAccentedTitleAndAppliesRareGenreFilter()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -443,6 +463,21 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task GetPublicBook_WhenMetadataIsPending_ReturnsNotFound()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddPendingBook("9782070408504", quantityAvailable: 1);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreatePublicBookHandler().Handle(
+            new GetPublicBookQuery("9782070408504"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Book.NotFound");
+    }
+
+    [Fact]
     public async Task GetNextBookFair_SkipsCancelledFairsAndReturnsPublicSchedule()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -560,6 +595,26 @@ public sealed class PublicCatalogQueryHandlerTests
     }
 
     [Fact]
+    public async Task GetPublicWork_ExcludesEditionsWithoutAUsableTitle()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Livre complet", "Auteur", workId: "work-test");
+        var incomplete = fixture.AddPendingBook("9782070363735", quantityAvailable: 1);
+        incomplete.ApplyManualMetadata(
+            new BookMetadataPatch(null, null, null, null, null, null, null, null,
+                [BookMetadataField.WorkId], "work-test"),
+            Now);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreatePublicWorkHandler().Handle(
+            new GetPublicWorkQuery("work-test"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Editions.Should().ContainSingle().Which.Isbn13.Should().Be("9782070408504");
+    }
+
+    [Fact]
     public async Task GetPublicCatalogSitemap_ContainsCanonicalVisibleBookUrlsOnly()
     {
         await using var fixture = await PublicCatalogFixture.CreateAsync();
@@ -591,6 +646,23 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.Entries.Should().Contain(entry => entry.UrlPath ==
             "/livres/le-petit-prince-antoine-de-saint-exupery-9782070408504");
         result.Value.Entries.Should().Contain(entry => entry.UrlPath == $"/livres-rares/{rareBookId:D}");
+    }
+
+    [Fact]
+    public async Task GetPublicCatalogSitemap_ExcludesPendingIsbns()
+    {
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Livre complet", "Auteur");
+        fixture.AddPendingBook("9782070363735", quantityAvailable: 1);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreateSitemapHandler().Handle(
+            new GetPublicCatalogSitemapQuery(),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Entries.Should().ContainSingle();
+        result.Value.Entries[0].UrlPath.Should().Contain("9782070408504");
     }
 }
 
@@ -687,6 +759,33 @@ internal sealed class PublicCatalogFixture : IAsyncDisposable
                 now.AddMinutes(-3));
             Context.RareBooks.Add(rareBook);
         }
+        return book;
+    }
+
+    public Book AddPendingBook(string isbn, int quantityAvailable = 0)
+    {
+        Isbn13.TryCreate(isbn, out var isbn13).Should().BeTrue();
+        var book = Book.Create(isbn13, now.AddMinutes(-10));
+        for (var index = 0; index < quantityAvailable; index++)
+        {
+            book.RecordAvailableEntry(now.AddMinutes(-index - 1));
+        }
+        Context.Books.Add(book);
+        return book;
+    }
+
+    public Book AddResolvedBookWithoutTitle(string isbn)
+    {
+        Isbn13.TryCreate(isbn, out var isbn13).Should().BeTrue();
+        var book = Book.Create(isbn13, now.AddMinutes(-10));
+        book.ApplyAutomaticMetadata(
+            new BookMetadataPatch(null, null, null, null, null, null, null,
+                "https://covers.example.test/cover.jpg", [BookMetadataField.CoverUrl]),
+            BookMetadataSource.Bnf,
+            now.AddMinutes(-5),
+            rawPayload: null,
+            coverSource: BookCoverSource.Bnf);
+        Context.Books.Add(book);
         return book;
     }
 
