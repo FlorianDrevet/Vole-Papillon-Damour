@@ -37,57 +37,59 @@
             Disponibles maintenant ou annoncés pour la prochaine bourse.
           </p>
         </div>
-        <p class="similar-privacy" data-zone="R1-mention">
-          Suggestions calculées à partir des notices des livres, sans aucune donnée personnelle.
-        </p>
       </div>
 
-      @if (canScrollPrevious() || canScrollNext()) {
-        <div class="similar-carousel-controls" role="group" aria-label="Navigation des livres similaires">
-          @if (canScrollPrevious()) {
-            <button
-              class="similar-carousel-button"
-              type="button"
-              data-action="similar-previous"
-              aria-label="Afficher les livres précédents"
-              aria-controls="similar-book-list"
-              (click)="scrollCarousel('previous', bookList)">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-            </button>
-          }
-          @if (canScrollNext()) {
-            <button
-              class="similar-carousel-button"
-              type="button"
-              data-action="similar-next"
-              aria-label="Afficher les livres suivants"
-              aria-controls="similar-book-list"
-              (click)="scrollCarousel('next', bookList)">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
-            </button>
-          }
-        </div>
-      }
+      <div
+        class="similar-carousel"
+        [class.similar-carousel--navigable]="canScrollPrevious() || canScrollNext()"
+        role="group"
+        aria-label="Navigation des livres similaires">
+        @if (canScrollPrevious() || canScrollNext()) {
+          <button
+            class="similar-carousel-button"
+            type="button"
+            data-action="similar-previous"
+            aria-label="Afficher les livres précédents"
+            aria-controls="similar-book-list"
+            [disabled]="!canScrollPrevious()"
+            (click)="scrollCarousel('previous', bookList)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
+        }
 
-      <div class="similar-books-grid" data-zone="R1-grille">
-        <div
-          id="similar-book-list"
-          #bookList
-          class="similar-book-list"
-          data-zone="R2-defilement"
-          role="list"
-          aria-label="Livres proches"
-          tabindex="0"
-          (scroll)="updateCarouselNavigation(bookList)">
-          @for (book of books(); track book.isbn13) {
-            <app-book-card
-              class="similar-book-card"
-              role="listitem"
-              variant="home"
-              [book]="book"
-              [reason]="book.reason"></app-book-card>
-          }
+        <div class="similar-books-grid" data-zone="R1-grille">
+          <div
+            id="similar-book-list"
+            #bookList
+            class="similar-book-list"
+            data-zone="R2-defilement"
+            role="list"
+            aria-label="Livres proches"
+            tabindex="0"
+            (scroll)="updateCarouselNavigation(bookList)">
+            @for (book of books(); track book.isbn13) {
+              <app-book-card
+                class="similar-book-card"
+                role="listitem"
+                variant="home"
+                [book]="book"
+                [reason]="book.reason"></app-book-card>
+            }
+          </div>
         </div>
+
+        @if (canScrollPrevious() || canScrollNext()) {
+          <button
+            class="similar-carousel-button"
+            type="button"
+            data-action="similar-next"
+            aria-label="Afficher les livres suivants"
+            aria-controls="similar-book-list"
+            [disabled]="!canScrollNext()"
+            (click)="scrollCarousel('next', bookList)">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+          </button>
+        }
       </div>
 
       <div class="similar-reason-legend" data-zone="R1-legende" aria-label="Étiquettes de recommandation">
@@ -97,9 +99,6 @@
         <span class="book-card-reason reason-same-author">Même auteur</span>
         <span class="book-card-reason reason-theme">Proche par le thème</span>
       </div>
-      <p class="similar-privacy similar-privacy--mobile">
-        Suggestions calculées à partir des notices des livres, sans aucune donnée personnelle.
-      </p>
     </div>
   </section>
 }
