@@ -49,7 +49,7 @@ La [PR #294](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/294) a �
 
 La [PR #298](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/298) est ouverte, non fusionnée. Elle aligne « Suivre » à droite de la disponibilité dans la carte, sans bandeau inférieur ; la vue liste reste inchangée. Le clic ajoute le livre au suivi membre existant (œuvre ou édition selon son identifiant) ; le compte membre présente cette destination sous « Livres suivis », distincte de la recherche du catalogue. Le bouton conserve une cible tactile de 44 px et le statut « Suivi » garde la même hauteur pour l’alignement.
 
-Validation : `npm ci` et build Catalog réussis. npm signale 33 vulnérabilités dans les dépendances installées ; le build conserve les avertissements existants de budget et CommonJS. Aucun test automatisé n’a été lancé. L’API du catalogue répond HTTP 503, donc le contrôle visuel responsive avec des fiches peuplées reste à faire. Graphify a extrait l’AST, mais échoue au rendu HTML sur la limite de 8 293 nœuds après le rebase. Après fusion, lancer Catalog - deploy ; aucune migration n’est nécessaire.
+Validation : `npm ci` et build Catalog réussis. npm signale 33 vulnérabilités dans les dépendances installées ; le build conserve les avertissements existants de budget et CommonJS. Aucun test automatisé n’a été lancé. L’API du catalogue répond HTTP 503, donc le contrôle visuel responsive avec des fiches peuplées reste à faire. Graphify a extrait l’AST, mais échoue au rendu HTML sur la limite de 8 312 nœuds après le rebase. Après fusion, lancer Catalog - deploy ; aucune migration n’est nécessaire.
 
 ### Page publique Livres rares du Catalogue — 2026-10-20
 
