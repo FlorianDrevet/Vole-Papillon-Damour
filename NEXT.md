@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | Corriger le traitement des ISBN dont la notice bibliographique est en attente ou en échec avant l'import de `ISBN_application.csv`. |
-| **Prochaine action** | Revoir et fusionner la PR du correctif de file ISBN. Après fusion, déployer l'API et Catalog, appliquer la migration, vérifier la file et le catalogue public, relire l'état du Worker puis charger le CSV original dans Catalog DEV. |
+| **Prochaine action** | Revoir et fusionner la [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271). Après fusion, déployer l'API et Catalog, appliquer la migration, vérifier la file et le catalogue public, relire l'état du Worker puis charger le CSV original dans Catalog DEV. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-pending-isbn-analysis` |
 | **Dernière mise à jour** | 2026-10-20 — les livres incomplets sont filtrés du catalogue public et du catalogue admin principal ; une file dédiée expose ISBN, état, motif et actions. Build Catalog et validations backend ciblées réussis. La suite Catalog complète reste à 489/492 avec trois échecs dans AccountCard et CatalogNavigation, fichiers non touchés. Ce correctif n'est pas déployé et n'a changé aucune base ; le contrôle visuel authentifié reste à faire. |
-| **Branche** | `fix/catalog-pending-isbn-queue`, créée depuis `origin/main`; PR en préparation. |
+| **Branche** | `fix/catalog-pending-isbn-queue`, créée depuis `origin/main`; [PR #271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) ouverte vers `main`, non fusionnée. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
