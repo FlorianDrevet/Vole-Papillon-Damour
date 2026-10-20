@@ -383,6 +383,13 @@ export class CatalogAdminApiService {
     );
   }
 
+  permanentlyDeleteBook(accessToken: string, isbn13: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/permanent`,
+      this.options(accessToken),
+    );
+  }
+
   getFairs(accessToken: string, includeCancelled = false, page = 1, pageSize = 50): Observable<CatalogAdminFairPage> {
     return this.http.get<CatalogAdminFairPage>(
       `${this.apiUrl}/books/admin/fairs`,

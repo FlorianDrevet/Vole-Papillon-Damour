@@ -71,6 +71,17 @@ describe('CatalogAdminApiService', () => {
     );
   });
 
+  it('permanently deletes an admin catalogue book through the dedicated endpoint', () => {
+    service.permanentlyDeleteBook('access-token', '9782070363735').subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/books/admin/books/9782070363735/permanent`,
+    );
+    expect(request.request.method).toBe('DELETE');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    request.flush(null);
+  });
+
   it('loads a typed not-found queue with filters and the administrator bearer token', () => {
     const response = {
       generatedAt: '2026-09-24T10:00:00Z',

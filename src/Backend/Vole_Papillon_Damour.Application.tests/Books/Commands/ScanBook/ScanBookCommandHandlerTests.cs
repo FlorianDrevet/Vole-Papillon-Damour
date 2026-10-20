@@ -36,6 +36,7 @@ using Vole_Papillon_Damour.Domain.Common.Errors;
 using Vole_Papillon_Damour.Domain.EventsAggregate.ValueObjects;
 using Vole_Papillon_Damour.Domain.OrderAggregate;
 using Vole_Papillon_Damour.Domain.ProductAggregate;
+using Vole_Papillon_Damour.Domain.RecommendationAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.Entities;
 using Vole_Papillon_Damour.Domain.RareBookAggregate.ValueObjects;
@@ -761,6 +762,8 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<MemberSelectionItem> MemberSelectionItems => Set<MemberSelectionItem>();
     public DbSet<BookNotFoundReport> BookNotFoundReports => Set<BookNotFoundReport>();
+    public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
+    public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
     public DbSet<MemberCard> MemberCards => Set<MemberCard>();
     public DbSet<CheckoutPassage> CheckoutPassages => Set<CheckoutPassage>();
     public DbSet<CheckoutPassageLine> CheckoutPassageLines => Set<CheckoutPassageLine>();
@@ -780,8 +783,6 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.Ignore<Order>();
         modelBuilder.Ignore<EmailBounceEvent>();
         modelBuilder.Ignore<Watchlist>();
-        modelBuilder.Ignore<WatchlistItem>();
-        modelBuilder.Ignore<UserAlertHistory>();
 
         modelBuilder.Entity<AssoEvents>(builder =>
         {
@@ -901,6 +902,51 @@ internal sealed class ScanBookTestDbContext(DbContextOptions<ScanBookTestDbConte
         modelBuilder.ApplyConfiguration(new BookNotFoundReportConfiguration());
         modelBuilder.ApplyConfiguration(new ManualRequesterConfiguration());
         modelBuilder.ApplyConfiguration(new ManualBookRequestConfiguration());
+
+        modelBuilder.Entity<WatchlistItem>(builder =>
+        {
+            builder.HasKey(item => item.Id);
+            builder.Property(item => item.Id).ValueGeneratedNever();
+            builder.Property(item => item.UserId)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Property(item => item.Scope).HasConversion<byte>();
+            builder.Property(item => item.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(item => item.RareBookId)
+                .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value == null ? null : RareBookId.Create(value.Value)));
+        });
+
+        modelBuilder.Entity<UserAlertHistory>(builder =>
+        {
+            builder.HasKey(history => history.Id);
+            builder.Property(history => history.Id).ValueGeneratedNever();
+            builder.Property(history => history.UserId)
+                .HasConversion(userId => userId.Value, value => UserId.Create(value));
+            builder.Property(history => history.Isbn13)
+                .HasConversion(new ValueConverter<Isbn13?, string?>(
+                    isbn => isbn == null ? null : isbn.Value.Value,
+                    value => value == null ? null : ParseIsbn(value)));
+            builder.Property(history => history.RareBookId)
+                .HasConversion(new ValueConverter<RareBookId?, Guid?>(
+                    id => id == null ? null : id.Value,
+                    value => value == null ? null : RareBookId.Create(value.Value)));
+        });
+
+        modelBuilder.Entity<BookSimilarityProfile>(builder =>
+        {
+            builder.Ignore(profile => profile.Id);
+            builder.HasKey(profile => profile.Isbn13);
+        });
+
+        modelBuilder.Entity<BookNeighbor>(builder =>
+        {
+            builder.HasKey(neighbor => new { neighbor.GenerationId, neighbor.Isbn13, neighbor.Rank });
+            builder.Property(neighbor => neighbor.Reason).HasConversion<byte>();
+        });
 
         modelBuilder.Entity<AssociationSettingsEntity>(builder =>
         {

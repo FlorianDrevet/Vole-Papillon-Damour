@@ -130,7 +130,13 @@ client-only/private.
   enqueues enrichment immediately. Both routes require the `Administration` policy.
 - `GET/POST/PATCH/DELETE /books/admin/books...` - Administration-policy book list/detail,
   manual add, metadata/quantity corrections, withdrawals, rare/visibility flags, merges and
-  guarded deletion; announcement quantity correction is under
+  guarded deletion. `DELETE /books/admin/books/{isbn13}/permanent` is the catalogue's
+  separate hard-delete route: it removes an unused erroneous fiche and associated stock,
+  selection, watchlist, report, alert-history and recommendation rows, but refuses sale or
+  checkout, announcement, scan/fair, redirect, and fulfilled manual-request history. The
+  plain `DELETE /books/admin/books/{isbn13}` remains the ISBN-queue discard path, which
+  archives ledger-backed candidates and records a withdrawal. Announcement quantity
+  correction is under
   `PATCH /books/admin/announcements/{announcementId}/quantity`.
 - `GET /books/admin/fairs`, `GET /books/admin/fairs/{fairId}/stats`, and
   `PUT /books/admin/fairs/{fairId}/revenue` - fair list, sales analysis and optional nullable
