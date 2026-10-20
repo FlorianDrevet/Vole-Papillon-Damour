@@ -13,22 +13,72 @@ class FakeResponse(BytesIO):
 
 
 class PrepareResetSqlTests(unittest.TestCase):
-    def test_safe_failure_summary_reports_http_status_without_echoing_url_or_body(self):
+    def test_safe_failure_summary_reports_structured_entra_error_without_sensitive_details(self):
         from urllib.error import HTTPError
 
         error = HTTPError(
-            "https://login.microsoftonline.com/tenant/token?secret=hidden",
+            "https://login.microsoftonline.com/tenant-id/oauth2/v2.0/token?secret=hidden",
             403,
             "Forbidden",
             hdrs=None,
-            fp=BytesIO(b"client_secret=hidden"),
+            fp=BytesIO(json.dumps({
+                "error": "invalid_client",
+                "error_description": "AADSTS7000215: Invalid secret client_secret=hidden tenant-id",
+                "error_codes": [7000215],
+            }).encode()),
         )
 
         summary = safe_failure_summary(error)
 
         self.assertIn("HTTP 403", summary)
+        self.assertIn("Entra token endpoint", summary)
+        self.assertIn("invalid_client", summary)
+        self.assertIn("AADSTS7000215", summary)
         self.assertNotIn("hidden", summary)
-        self.assertNotIn("tenant", summary)
+        self.assertNotIn("tenant-id", summary)
+        self.assertNotIn("Invalid secret", summary)
+        error.close()
+
+    def test_safe_failure_summary_reports_graph_error_code_only(self):
+        from urllib.error import HTTPError
+
+        error = HTTPError(
+            "https://graph.microsoft.com/v1.0/users?$filter=private",
+            403,
+            "Forbidden",
+            hdrs=None,
+            fp=BytesIO(json.dumps({
+                "error": {
+                    "code": "Authorization_RequestDenied",
+                    "message": "Sensitive response detail",
+                }
+            }).encode()),
+        )
+
+        summary = safe_failure_summary(error)
+
+        self.assertIn("Microsoft Graph", summary)
+        self.assertIn("Authorization_RequestDenied", summary)
+        self.assertNotIn("private", summary)
+        self.assertNotIn("Sensitive response detail", summary)
+        error.close()
+
+    def test_safe_failure_summary_does_not_report_an_unrecognized_host(self):
+        from urllib.error import HTTPError
+
+        error = HTTPError(
+            "https://attacker.example/private-path",
+            400,
+            "Bad Request",
+            hdrs=None,
+            fp=BytesIO(json.dumps({"error": "invalid_request"}).encode()),
+        )
+
+        summary = safe_failure_summary(error)
+
+        self.assertIn("Microsoft endpoint", summary)
+        self.assertNotIn("attacker.example", summary)
+        self.assertNotIn("private-path", summary)
         error.close()
 
     def test_safe_failure_summary_reports_network_error_type_without_reason(self):

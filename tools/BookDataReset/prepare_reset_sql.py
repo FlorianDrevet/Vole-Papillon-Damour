@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Callable
@@ -130,7 +131,49 @@ def _write_github_outputs(output_path: Path, disabled_external_ids: list[str]) -
 def safe_failure_summary(exception: Exception) -> str:
     """Describe setup failures without logging URLs, response bodies, or credentials."""
     if isinstance(exception, HTTPError):
-        return f"Microsoft endpoint returned HTTP {exception.code}."
+        hostname = urlparse(getattr(exception, "url", "") or "").hostname
+        endpoint = {
+            "login.microsoftonline.com": "Entra token endpoint",
+            "graph.microsoft.com": "Microsoft Graph",
+        }.get(hostname, "Microsoft endpoint")
+        details = [f"{endpoint} returned HTTP {exception.code}"]
+
+        try:
+            payload = json.loads(exception.read(16_384).decode("utf-8"))
+        except (AttributeError, OSError, UnicodeDecodeError, json.JSONDecodeError):
+            payload = {}
+
+        error = payload.get("error") if isinstance(payload, dict) else None
+        if isinstance(error, dict):
+            error_code = error.get("code")
+            description = error.get("message", "")
+        else:
+            error_code = error
+            description = payload.get("error_description", "") if isinstance(payload, dict) else ""
+
+        if isinstance(error_code, str) and re.fullmatch(
+            r"[A-Za-z][A-Za-z0-9_.-]{0,79}", error_code
+        ):
+            details.append(f"error={error_code}")
+
+        aadsts_match = (
+            re.search(r"\bAADSTS(\d{5,})\b", description)
+            if isinstance(description, str)
+            else None
+        )
+        aadsts_codes = []
+        if aadsts_match:
+            aadsts_codes.append(aadsts_match.group(1))
+        codes = payload.get("error_codes", []) if isinstance(payload, dict) else []
+        if isinstance(codes, list):
+            aadsts_codes.extend(
+                str(code) for code in codes
+                if isinstance(code, int) and not isinstance(code, bool) and 10000 <= code <= 999999999
+            )
+        if aadsts_codes:
+            details.append(",".join(f"AADSTS{code}" for code in dict.fromkeys(aadsts_codes[:3])))
+
+        return "; ".join(details) + "."
     if isinstance(exception, URLError):
         return f"Microsoft endpoint network error ({type(exception.reason).__name__})."
     if isinstance(exception, ValueError):
