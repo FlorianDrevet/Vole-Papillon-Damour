@@ -757,7 +757,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     if (this.rareOnly) params['rare'] = true;
     if (this.includeExhausted) params['includeExhausted'] = true;
     if (this.sort !== (this.rareOnly ? 'price-desc' : 'relevance')) params['sort'] = this.sort;
-    if (!this.rareOnly && this.view === 'grid') params['view'] = this.view;
+    if (!this.rareOnly && this.view === 'list') params['view'] = this.view;
     if (includePagination) {
       if (this.currentPage > 1) params['page'] = this.currentPage;
       if (this.currentReferencePage > 1) params['referencePage'] = this.currentReferencePage;
@@ -827,7 +827,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       query: params.get('q') || '',
       genre: params.get('genre') || '',
       availability: this.readAvailability(params.get('availability')),
-      view: !rareOnly && params.get('view') === 'grid' ? 'grid' : 'list',
+      view: rareOnly || params.get('view') === 'list' ? 'list' : 'grid',
       rareOnly,
       includeExhausted: params.get('includeExhausted') === 'true',
       sort: rareOnly

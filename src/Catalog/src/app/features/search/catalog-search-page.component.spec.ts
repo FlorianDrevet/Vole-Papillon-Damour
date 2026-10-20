@@ -164,7 +164,10 @@ describe('CatalogSearchPageComponent', () => {
     fixture = TestBed.createComponent(CatalogSearchPageComponent);
   });
 
-  it('offers list and grid controls and keeps the current list view as the default', () => {
+  it('offers list and grid controls and makes the grid view the default', async () => {
+    api.search.and.returnValue(of(response));
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
 
     const viewGroup = fixture.nativeElement.querySelector(
@@ -174,11 +177,13 @@ describe('CatalogSearchPageComponent', () => {
     const gridButton = viewGroup?.querySelector('[data-view="grid"]') as HTMLButtonElement;
 
     expect(viewGroup).not.toBeNull();
-    expect(listButton.getAttribute('aria-pressed')).toBe('true');
-    expect(gridButton.getAttribute('aria-pressed')).toBe('false');
+    expect(listButton.getAttribute('aria-pressed')).toBe('false');
+    expect(gridButton.getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.nativeElement.querySelector('.book-list.book-grid')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.book-card--square')).not.toBeNull();
   });
 
-  it('switches to square cards while preserving the search URL and avoiding a catalogue reload', async () => {
+  it('switches to list cards while preserving the search URL and avoiding a catalogue reload', async () => {
     routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Jeunesse', page: '2'}));
     api.search.and.returnValue(of({...response, page: 2}));
 
@@ -190,7 +195,7 @@ describe('CatalogSearchPageComponent', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
     const searchCount = api.search.calls.count();
 
-    fixture.componentInstance.selectView('grid');
+    fixture.componentInstance.selectView('list');
     fixture.detectChanges();
 
     expect(router.navigate).toHaveBeenCalledOnceWith(['/recherche'], {
@@ -198,20 +203,19 @@ describe('CatalogSearchPageComponent', () => {
         q: 'saint-exupéry',
         genre: 'Jeunesse',
         page: 2,
-        view: 'grid',
+        view: 'list',
       }),
     });
-    expect(fixture.componentInstance.view).toBe('grid');
+    expect(fixture.componentInstance.view).toBe('list');
     expect(fixture.componentInstance.response?.books).toHaveSize(1);
-    expect(fixture.nativeElement.querySelector('.book-grid')).not.toBeNull();
-    const squareCard = fixture.nativeElement.querySelector('.book-card--square') as HTMLElement;
-    expect(squareCard).not.toBeNull();
-    expect(squareCard.textContent).toContain('3 disponibles');
-    expect(squareCard.textContent).not.toContain('Suivre');
+    expect(fixture.nativeElement.querySelector('.book-list.book-grid')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.book-card--square')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.book-list')).not.toBeNull();
 
-    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Jeunesse', page: '2', view: 'grid'}));
+    routeParams.next(convertToParamMap({q: 'saint-exupéry', genre: 'Jeunesse', page: '2', view: 'list'}));
     fixture.detectChanges();
 
+    expect(fixture.componentInstance.view).toBe('list');
     expect(api.search).toHaveBeenCalledTimes(searchCount);
   });
 

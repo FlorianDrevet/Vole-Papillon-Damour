@@ -139,9 +139,10 @@ The detailed local reference is [the Catalogue V2 convention](../../docs/bourse-
   affordance. BnF cover URLs are normalized through the shared Catalog cover helper so legacy
   thumbnails become original 660×990 images; the home tile removes image padding and uses
   `object-fit: cover` to fill its square frame. Public search and browse results default to
-  the shared `list` variant and expose a `view=grid` URL option using the `square` variant.
-  Square search cards retain ordinary edition metadata and availability instead of the home
-  card's follow/alert affordance; switching views does not reload the API. Rare-only search
+  the `square` variant; `view=list` explicitly selects the shared `list` variant. Existing
+  `view=grid` URLs remain valid. Square search cards retain ordinary edition metadata and
+  availability instead of the home card's follow/alert affordance; switching views does not
+  reload the API. Rare-only search
   keeps its dedicated rare-book cards and hides this toggle. The default/grid variants remain
   the visual contract for work and detail entry points, including the shared no-cover placeholder.
 - Public catalogue, search, work, detail, account, legal, and existing administration

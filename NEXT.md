@@ -27,15 +27,17 @@
 ### Vues de recherche du Catalogue — 2026-10-20
 
 La [PR #281](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/281) est ouverte,
-non fusionnée. Elle ajoute aux résultats de recherche une vue Liste (par défaut) et une vue
-Grille carrée, restaurée par le paramètre URL view=grid. Le choix conserve la recherche,
-les filtres et la pagination ; les livres rares gardent leur présentation dédiée.
+non fusionnée. Elle ajoute deux modes aux résultats : Grille carrée par défaut et Liste.
+La liste est un choix explicite avec le paramètre URL view=list ; les URL existantes avec
+view=grid restent compatibles. Recherche, filtres et pagination sont conservés lors du
+changement ; les livres rares gardent leur présentation dédiée.
 
 Validation : 37 tests ciblés réussis et build Catalog réussi. Sur la suite complète,
-500/503 tests passent ; les trois échecs sont dans les specs AccountCard préexistantes,
-non modifiées. Contrôle à 1440×900 et 390×844 sans débordement horizontal ; API locale
+501/504 tests passent ; les trois échecs sont dans les specs AccountCard préexistantes,
+non modifiées. Build réussi avec les avertissements de budget et CommonJS déjà présents.
+Contrôle à 1440×900 et 390×844 ; le sélecteur grille est actif aux deux tailles. API locale
 indisponible pour inspecter des fiches peuplées. Graphify a extrait l’AST, mais ne peut pas
-rendre la visualisation HTML avec un graphe de 8 240 nœuds. Après fusion, lancer
+rendre la visualisation HTML avec un graphe de 8 243 nœuds. Après fusion, lancer
 Catalog - deploy ; aucune migration n’est nécessaire.
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
