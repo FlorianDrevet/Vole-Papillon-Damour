@@ -127,6 +127,17 @@ def _write_github_outputs(output_path: Path, disabled_external_ids: list[str]) -
         output.write(f"disabled_entra_id_sha256={digest}\n")
 
 
+def safe_failure_summary(exception: Exception) -> str:
+    """Describe setup failures without logging URLs, response bodies, or credentials."""
+    if isinstance(exception, HTTPError):
+        return f"Microsoft endpoint returned HTTP {exception.code}."
+    if isinstance(exception, URLError):
+        return f"Microsoft endpoint network error ({type(exception.reason).__name__})."
+    if isinstance(exception, ValueError):
+        return f"Reset input validation failed: {exception}"
+    return f"Reset preparation failed ({type(exception).__name__})."
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--template", required=True, type=Path)
@@ -145,9 +156,9 @@ def main() -> int:
         arguments.output.write_text(prepared_sql, encoding="utf-8", newline="\n")
         if arguments.github_output is not None:
             _write_github_outputs(arguments.github_output, disabled_ids)
-    except (HTTPError, URLError, OSError, ValueError, json.JSONDecodeError):
+    except (HTTPError, URLError, OSError, ValueError, json.JSONDecodeError) as exception:
         print(
-            "Reset preparation failed. Check Microsoft Graph access and the SQL template; no database connection was opened.",
+            f"{safe_failure_summary(exception)} No database connection was opened.",
             file=sys.stderr,
         )
         return 1

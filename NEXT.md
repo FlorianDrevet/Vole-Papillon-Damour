@@ -18,10 +18,10 @@
 | | |
 |---|---|
 | **Lot en cours** | F-12 — demandes manuelles sans compte livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252); les suivis Catalog des [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259), [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) et [PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261) sont fusionnés. Préparation de la remise à zéro DEV avant l'import ISBN. |
-| **Prochaine action** | Revoir et fusionner la [PR #262](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/262); ensuite relancer PITR, suspendre les écritures livres, faire un aperçu valide puis exécuter le reset approuvé. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-reset-disabled-users` |
-| **Dernière mise à jour** | 2026-10-19 — correction du script de remise à zéro en cours; aucun livre, scan ou compte n'a été supprimé. L'aperçu #39327940690 a exposé des erreurs SQL et ne fournit pas de comptes valides. |
-| **Branche** | `fix/book-data-reset-disabled-users`, basée sur `origin/main` (`0d2e04a`). |
+| **Prochaine action** | Revoir et fusionner la [PR #263](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/263); relancer l'aperçu et vérifier les comptes/volumes. La remise à zéro ne pourra être appliquée qu'après une PITR réussie, la pause des écritures et la revue du hash. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-reset-graph-diagnostics` |
+| **Dernière mise à jour** | 2026-10-20 — PR #262 fusionnée. La PITR #39380946520 est en cours. L'aperçu #39380982647 a échoué à l'étape Microsoft Graph avant le pare-feu SQL; aucune connexion ni suppression en base. |
+| **Branche** | `fix/book-reset-graph-diagnostics`, basée sur `origin/main` (`3218eda`). |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -62,13 +62,15 @@ signalés au baseline); suites ciblées `manual-requests` 28/28, administration 
 légale 6/6. Les 76 zones dans 17 pages étaient vérifiées et les vues contrôlées à 390 / 1440 px
 ne débordaient pas horizontalement.
 
-### Remise à zéro avant import ISBN — DEV — 2026-10-19
+### Remise à zéro avant import ISBN — DEV — 2026-10-20
 
 La procédure protégée a été livrée par la [PR #244](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/244), fusionnée. La vérification PITR [#36437080910](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36437080910) a réussi le 28 septembre; la relancer avant toute remise à zéro effective.
 
 La cible confirmée pour cette demande est `vole-papillon-damour-db` en DEV. L'aperçu [#39327940690](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39327940690) n'a supprimé aucune donnée, mais il n'est pas exploitable : le SQL a échoué sur l'alias réservé `RowCount`, alors que le workflow le déclarait vert. Le script doit aussi supprimer uniquement les profils SQL liés aux comptes Entra désactivés (`accountEnabled=false`), garder les profils actifs et les deux comptes protégés, puis vérifier les comptes conservés. Les identités Entra, événements/actualités, télémétrie Azure et blobs de photos restent conservés.
 
-La [PR #262](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/262) corrige le traitement des erreurs SQL, limite la suppression des profils aux seuls comptes Entra désactivés, ajoute un contrôle hash du périmètre et inclut `ManualBookRequests`/`ManualRequesters` dans l'ordre requis par leur clé étrangère. Elle doit être revue et fusionnée avant reset. Ensuite : relancer la vérification PITR, arrêter les scans et attendre leur synchronisation, mettre le worker d'alertes en pause, lancer un nouvel aperçu et examiner les comptes/lignes concernés et son hash, puis appliquer avec ce même hash. Le reset réel n'a pas encore eu lieu.
+La [PR #262](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/262) est fusionnée le 20 octobre. Elle corrige le traitement des erreurs SQL, limite la suppression des profils aux seuls comptes Entra désactivés, ajoute un contrôle hash du périmètre et inclut `ManualBookRequests`/`ManualRequesters` dans l'ordre requis par leur clé étrangère.
+
+La nouvelle vérification PITR [#39380946520](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39380946520) est encore en cours. L'aperçu [#39380982647](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39380982647) a échoué à la résolution Microsoft Graph avant l'ouverture du pare-feu SQL; le helper a masqué le statut HTTP, aucune connexion DB ni modification n'a eu lieu. La [PR #263](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/263) ajoute un diagnostic sûr. Après fusion, relancer l'aperçu, examiner les comptes/volumes et son hash. Avant application : confirmer l'arrêt et la synchronisation des scans/écritures et mettre le Worker en pause. Aucun reset effectif à ce jour.
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 

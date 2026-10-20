@@ -5,7 +5,7 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from prepare_reset_sql import fetch_disabled_external_ids, render_reset_sql
+from prepare_reset_sql import fetch_disabled_external_ids, render_reset_sql, safe_failure_summary
 
 
 class FakeResponse(BytesIO):
@@ -13,6 +13,33 @@ class FakeResponse(BytesIO):
 
 
 class PrepareResetSqlTests(unittest.TestCase):
+    def test_safe_failure_summary_reports_http_status_without_echoing_url_or_body(self):
+        from urllib.error import HTTPError
+
+        error = HTTPError(
+            "https://login.microsoftonline.com/tenant/token?secret=hidden",
+            403,
+            "Forbidden",
+            hdrs=None,
+            fp=BytesIO(b"client_secret=hidden"),
+        )
+
+        summary = safe_failure_summary(error)
+
+        self.assertIn("HTTP 403", summary)
+        self.assertNotIn("hidden", summary)
+        self.assertNotIn("tenant", summary)
+        error.close()
+
+    def test_safe_failure_summary_reports_network_error_type_without_reason(self):
+        from urllib.error import URLError
+
+        summary = safe_failure_summary(URLError("client_secret=hidden"))
+
+        self.assertIn("network error", summary)
+        self.assertIn("str", summary)
+        self.assertNotIn("hidden", summary)
+
     def test_fetch_disabled_external_ids_paginates_and_only_accepts_disabled_users(self):
         first_id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         second_id = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
