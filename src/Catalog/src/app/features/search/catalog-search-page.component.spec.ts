@@ -288,7 +288,7 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.reference-card')).toHaveSize(0);
   });
 
-  it('limits the search tab to available books by default', async () => {
+  it('limits the search tab to available books by default without an exhausted filter', async () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -300,10 +300,43 @@ describe('CatalogSearchPageComponent', () => {
     expect((fixture.nativeElement.querySelector(
       'input[name="availability"][value="available"]',
     ) as HTMLInputElement).checked).toBeTrue();
-    expect((fixture.nativeElement.querySelector(
-      'input[name="includeExhausted"]',
-    ) as HTMLInputElement).checked).toBeFalse();
-    expect(fixture.nativeElement.textContent).toContain('Afficher les livres épuisés');
+    expect(fixture.nativeElement.querySelector('input[name="includeExhausted"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Afficher les livres épuisés');
+  });
+
+  it('shows every genre supplied by the catalog without a see-all button', async () => {
+    const genres = ['Jeunesse', 'Romans', 'Policier', 'Histoire', 'Poésie', 'Théâtre', 'Sciences'];
+    api.search.and.returnValue(of({...response, genres}));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const genreGroup = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLFieldSetElement>('.filter-group'),
+    ).find(group => group.querySelector('legend')?.textContent?.trim() === 'Genre');
+    const options = Array.from(genreGroup?.querySelectorAll('label') ?? [])
+      .map(label => label.textContent?.trim());
+
+    expect(options).toEqual(['Tous les genres', ...genres]);
+    expect(fixture.nativeElement.querySelector('.all-genres-link')).toBeNull();
+  });
+
+  it('centers the search bar within the content width', () => {
+    fixture.detectChanges();
+
+    const pageWidth = fixture.nativeElement.querySelector('.search-toolbar .page-width') as HTMLElement;
+    const searchForm = fixture.nativeElement.querySelector('.search-form') as HTMLElement;
+    pageWidth.style.width = '1200px';
+    pageWidth.style.maxWidth = 'none';
+    pageWidth.style.marginInline = '0';
+    fixture.detectChanges();
+
+    const containerBounds = pageWidth.getBoundingClientRect();
+    const formBounds = searchForm.getBoundingClientRect();
+    expect(formBounds.left + formBounds.width / 2).toBeCloseTo(
+      containerBounds.left + containerBounds.width / 2,
+      0,
+    );
   });
 
   it('restores the available scope when search filters are reset', () => {
@@ -326,9 +359,7 @@ describe('CatalogSearchPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.includeExhausted).toBeTrue();
-    expect((fixture.nativeElement.querySelector(
-      'input[name="includeExhausted"]',
-    ) as HTMLInputElement).checked).toBeTrue();
+    expect(fixture.nativeElement.querySelector('input[name="includeExhausted"]')).toBeNull();
     expect(api.search).toHaveBeenCalledWith(jasmine.objectContaining({includeExhausted: true}));
 
     const router = TestBed.inject(Router);

@@ -608,15 +608,6 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     return mergeCatalogGenres(this.response?.genres, this.genre);
   }
 
-  visibleGenres(): string[] {
-    const genres = this.availableGenres();
-    const visible = genres.slice(0, 4);
-    if (this.genre && !visible.includes(this.genre)) {
-      visible.unshift(this.genre);
-    }
-    return visible;
-  }
-
   trackBook(_index: number, isbn13: string): string {
     return isbn13;
   }

@@ -102,22 +102,6 @@
           </label>
         </fieldset>
 
-        <div class="exhausted-filter">
-          <label class="filter-option filter-option--checkbox exhausted-option">
-            <input
-              type="checkbox"
-              name="includeExhausted"
-              [(ngModel)]="includeExhausted"
-              aria-describedby="exhausted-filter-help"
-              (ngModelChange)="applyFilters()">
-            <span class="filter-control checkbox-control" aria-hidden="true"></span>
-            <span>Afficher les livres épuisés</span>
-          </label>
-          <p id="exhausted-filter-help" class="filter-help">
-            Masqués par défaut ; les autres filtres restent appliqués.
-          </p>
-        </div>
-
         <div class="filter-divider" aria-hidden="true"></div>
 
         <fieldset class="filter-group">
@@ -127,15 +111,12 @@
             <span class="filter-control checkbox-control" aria-hidden="true"></span>
             <span>Tous les genres</span>
           </label>
-          @for (availableGenre of visibleGenres(); track availableGenre) {
+          @for (availableGenre of availableGenres(); track availableGenre) {
             <label class="filter-option filter-option--checkbox">
               <input type="radio" name="genre" [value]="availableGenre" [(ngModel)]="genre" (ngModelChange)="applyFilters()">
               <span class="filter-control checkbox-control" aria-hidden="true"></span>
               <span>{{ availableGenre }}</span>
             </label>
-          }
-          @if (availableGenres().length > visibleGenres().length) {
-            <button type="button" class="all-genres-link" (click)="genre = ''; applyFilters()">Tous les genres <span aria-hidden="true">→</span></button>
           }
         </fieldset>
 

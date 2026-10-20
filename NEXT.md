@@ -855,6 +855,20 @@ git pull
 
 ## En cours
 
+### Recherche publique Catalog — genres et navigation — 2026-10-20
+
+Dans le worktree `VPD-catalog-search-filters-20261020`, `/recherche` affiche tous les genres
+retournés par le catalogue, sans bouton pour développer la liste. La case « Afficher les livres
+épuisés » a été retirée de l’interface ; les anciens paramètres `includeExhausted` dans les URL
+restent pris en charge. La recherche est centrée et l’entrée « Catalogue par genre » a disparu
+des navigations desktop, mobile et du pied de page.
+
+Validation : 58 tests Catalog ciblés réussis et build Catalog réussi. La suite complète passe
+499/502 ; les trois échecs connus de `AccountCardComponent` sont hors périmètre. Contrôle visuel
+au bureau et à 390 × 844 px ; l’API locale n’était pas disponible, donc les genres réels sont
+couverts par la fixture de test. `graphify update .` a ré-extrait 1 729 fichiers AST, mais
+l’export HTML échoue à 8 239 nœuds. Branche `fix/catalog-search-filters-navigation` ; PR à ouvrir.
+
 ### Alignement des documents du catalogue — 2026-10-15
 
 Dans le worktree `Vole-Papillon-Damour-remove-book-locations`, le texte d'administration,
@@ -2312,6 +2326,11 @@ DKIM. La réputation du domaine d'envoi reste à construire et le cycle d'e-mail
 **La section qui justifie ce fichier.** Tout ce qui a été fait à la main, ou qui existe
 dans Azure sans être déductible du dépôt.
 
+Au 2026-10-20, l’ajustement de l’interface publique du Catalog reste limité au dépôt et à la
+branche `fix/catalog-search-filters-navigation`. Aucun appel à une API de données réelle,
+changement de base, Azure, DNS, tenant, compte ou déploiement n’a été effectué ; l’API locale
+n’était pas démarrée pendant le contrôle visuel.
+
 Au 2026-10-15, cette tâche reste limitée au dépôt : aucun accès à une base ou à un service,
 aucun déploiement et aucune suppression de fiche ou de donnée n'ont été effectués.
 
@@ -2524,6 +2543,7 @@ Une ligne par session de travail. Le plus récent en haut.
 
 | Date | Machine | Ce qui a avancé |
 |---|---|---|
+| 2026-10-20 | Windows | **Catalog — recherche et navigation simplifiées.** Depuis `origin/main` dans le worktree `VPD-catalog-search-filters-20261020`, tous les genres renvoyés apparaissent dans `/recherche`, le contrôle des livres épuisés disparaît de l’interface et la barre est centrée. « Catalogue par genre » est retiré des menus et du pied de page ; la navigation cesse aussi de charger la liste de genres. Tests ciblés 58/58 et build Catalog réussis ; suite complète 499/502 avec les trois échecs `AccountCardComponent` hors périmètre. Contrôle visuel desktop et 390 × 844 px ; API locale indisponible. Graphify a relu l’AST mais l’export HTML dépasse la limite de 8 239 nœuds. Aucun changement hors dépôt ; PR à ouvrir. |
 | 2026-10-15 | Windows | **Catalogue — retrait des références de rangement.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-remove-book-locations`, reformulation des libellés d'administration et de scan et alignement des documents, contrats décrits et maquettes sur le modèle actuel. Le vocabulaire et les formulaires de signalement restent inchangés ; aucune fiche, donnée, migration ou API n'a changé. Builds de production Catalog et Scan, `graphify update .` et `git diff --check` réussis. Aucun test automatisé ni contrôle visuel navigateur lancé. [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) ouverte vers `main`, non fusionnée. |
 | 2026-10-01 | Windows | **Infrastructure — ressources minimales ACA.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-aca-minimum-resources`, les six Container Apps DEV utilisent `0.25` vCPU / `0.5Gi` par réplique. Le template et les paramètres Bicep compilent avec des secrets factices locaux ; les avertissements ACS BCP081 préexistants restent. Documentation infra et mémoire mises à jour. `graphify update .` a reconstruit 16 613 nœuds. [PR #246](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/246) ouverte, aucun déploiement Azure effectué. |
 | 2026-09-28 | Windows | **Catalog — fiche publique livre rare.** Depuis `origin/main` dans le worktree `Vole-Papillon-Damour-rare-book-detail-id`, les URLs publiques utilisent l’UUID, l’API maintient les slugs historiques et la fiche regroupe ses infos avant son panneau violet de sélection. Tests ciblés : Catalog 35/35, Application 455/455, endpoint API 5/5 ; build Catalog réussi. Suite Catalog 447/449 avec deux échecs AccountCard hors périmètre ; Playwright à 320/375/1440 px sans débordement, API simulée. Aucun changement externe ; [PR #245](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/245) ouverte vers `main`, non fusionnée. |
