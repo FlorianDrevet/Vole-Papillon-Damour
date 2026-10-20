@@ -38,6 +38,8 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   tags: tags
   properties: {
     zoneRedundant: zoneRedundancyEnabled
+    // This environment intentionally uses ACA-managed networking. With no
+    // custom VNet and internal=false, apps retain standard internet egress.
     vnetConfiguration: {
       internal: internalLoadBalancerEnabled
     }

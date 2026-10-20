@@ -1,9 +1,10 @@
 # Recommandations de livres — dossier de conception
 
 Ce dossier trace la conception et l'implémentation de la capacité **proposer à un membre
-des livres susceptibles de lui plaire**, à partir de ses achats associés. La conception
-est validée et l'implémentation est achevée sur `feat/book-recommendations` ; la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239)
-est ouverte vers `main` et attend sa revue.
+des livres susceptibles de lui plaire**, à partir de ses achats associés. La conception et
+l'implémentation sont livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239).
+La fonctionnalité reste désactivée par défaut ; le runbook d'activation et de lancement
+manuel est dans [`10-runbook-activation-et-lancement.md`](10-runbook-activation-et-lancement.md).
 
 ## Par où commencer
 
@@ -26,6 +27,7 @@ est ouverte vers `main` et attend sa revue.
 | [`06-tutoriel-foundry-embeddings.md`](06-tutoriel-foundry-embeddings.md) | Déployer `text-embedding-3-small` sur le compte Foundry existant et lancer le benchmark |
 | [`07-specification.md`](07-specification.md) | **Spécification** : surfaces, méthode de calcul, règles d'affichage, RGPD, architecture, critères d'acceptation |
 | [`08-plan-implementation.md`](08-plan-implementation.md) | **Plan d'implémentation** en 14 tâches, avec tests d'abord et renvois aux zones des maquettes |
+| [`10-runbook-activation-et-lancement.md`](10-runbook-activation-et-lancement.md) | Activer en DEV avec le workflow d'infrastructure et lancer/suivre manuellement la fonction Worker |
 | [`maquettes/index.html`](maquettes/index.html) | Maquettes exportées du canvas [Claude Design](https://claude.ai/artifact/GYWEeUku7qofkTt5pdKtoM) : 8 écrans HTML autonomes, zones `data-zone`, sources `.dc.html`, archive `recommandations-maquettes-html.zip` |
 | [`maquettes/recommandations-de-livres-canvas.html`](maquettes/recommandations-de-livres-canvas.html) | Export officiel du canvas depuis Claude Design (fichier unique, hors ligne) : les deux pages et les notes, tel qu'affiché dans l'éditeur |
 
@@ -35,5 +37,6 @@ La spécification et le plan ci-dessus décrivent l'approche retenue et son impl
 
 **Implémentation terminée — 25 septembre 2026.** Spécification, maquettes, plan et code
 sont réunis dans `feat/book-recommendations` et livrés par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239).
-La fonctionnalité reste désactivée par défaut ; calibrage du seuil sur 50 fiches, validation
-de la base juridique et premier calcul nocturne réussi restent requis avant ouverture publique.
+La fonctionnalité reste désactivée par défaut jusqu'à un déploiement d'infrastructure avec
+`recommendations_enabled=true`. Avant ouverture publique, réussir un premier calcul, calibrer
+le seuil sur 50 fiches et valider la base juridique des suggestions personnalisées.
