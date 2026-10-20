@@ -24,6 +24,20 @@
 | **Branche** | `fix/catalog-pending-isbn-queue`; PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) ouverte, non fusionnée. La branche inclut la dernière version de `main`, dont la PR #275 fusionnée. |
 | **Recommandations** | Implémentées et livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239), mais toujours désactivées en DEV. Cette branche ajoute l'activation via `Infra - deploy` et le lancement manuel ; aucun déploiement ni calcul n'a été fait. Le reset catalogue est terminé, mais les lots ISBN restent à importer. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` sur environ 50 fiches. |
 
+### Vues de recherche du Catalogue — 2026-10-20
+
+La [PR #281](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/281) est ouverte,
+non fusionnée. Elle ajoute aux résultats de recherche une vue Liste (par défaut) et une vue
+Grille carrée, restaurée par le paramètre URL view=grid. Le choix conserve la recherche,
+les filtres et la pagination ; les livres rares gardent leur présentation dédiée.
+
+Validation : 37 tests ciblés réussis et build Catalog réussi. Sur la suite complète,
+500/503 tests passent ; les trois échecs sont dans les specs AccountCard préexistantes,
+non modifiées. Contrôle à 1440×900 et 390×844 sans débordement horizontal ; API locale
+indisponible pour inspecter des fiches peuplées. Graphify a extrait l’AST, mais ne peut pas
+rendre la visualisation HTML avec un graphe de 8 240 nœuds. Après fusion, lancer
+Catalog - deploy ; aucune migration n’est nécessaire.
+
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
 
 Les tâches T0–T24 ont été livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252),
