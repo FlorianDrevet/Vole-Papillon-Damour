@@ -59,13 +59,14 @@ az containerapp exec `
   --command bash
 ```
 
-Dans ce shell, saisir la clé de façon masquée puis envoyer le POST local. L'image Worker
-expose le port `8080`.
+Dans ce shell, saisir la clé de façon masquée puis envoyer le POST local. Azure Functions
+écoute par défaut sur le port `80` dans un conteneur. La déclaration `EXPOSE 8080` du
+Dockerfile ne configure pas le port d'écoute du host.
 
 ```bash
 read -r -s -p 'Master key: ' key; echo
 curl --fail-with-body -i -X POST \
-  'http://127.0.0.1:8080/admin/functions/Recommendations' \
+  'http://127.0.0.1:80/admin/functions/Recommendations' \
   -H "x-functions-key: $key" \
   -H 'Content-Type: application/json' \
   --data '{}'
@@ -78,6 +79,23 @@ gestion des clés Container Apps est en préversion et nécessite au moins un r�
 Voir la documentation Microsoft sur [l'exécution manuelle d'une fonction non HTTP](https://learn.microsoft.com/fr-fr/azure/azure-functions/functions-manually-run-non-http),
 les [clés des fonctions sur Container Apps](https://learn.microsoft.com/en-us/cli/azure/containerapp/function/keys?view=azure-cli-latest)
 et [l'administration des fonctions dans Container Apps](https://learn.microsoft.com/en-us/azure/container-apps/functions-cli).
+
+Si la connexion locale au port `80` est refusée, le host Functions n'écoute pas dans ce
+réplica. Depuis PowerShell, consulter ses journaux console et système avant de relancer :
+
+```powershell
+az containerapp logs show `
+  --name vpd-worker-ca-dev-fc `
+  --resource-group rg-vpd-dev `
+  --type console `
+  --tail 100
+
+az containerapp logs show `
+  --name vpd-worker-ca-dev-fc `
+  --resource-group rg-vpd-dev `
+  --type system `
+  --tail 50
+```
 
 ## Suivre le calcul
 
