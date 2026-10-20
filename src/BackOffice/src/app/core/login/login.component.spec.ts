@@ -1,3 +1,4 @@
+import {NO_ERRORS_SCHEMA} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, convertToParamMap} from '@angular/router';
 import {Subject, throwError} from 'rxjs';
@@ -20,6 +21,7 @@ describe('LoginComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [LoginComponent],
+      schemas: [NO_ERRORS_SCHEMA],
       providers: [
         {provide: AuthSessionService, useValue: authSession},
         {
@@ -27,9 +29,7 @@ describe('LoginComponent', () => {
           useValue: {snapshot: {queryParamMap: convertToParamMap({})}},
         },
       ],
-    })
-      .overrideComponent(LoginComponent, {set: {template: ''}})
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
@@ -47,5 +47,17 @@ describe('LoginComponent', () => {
     component.onLoginClick();
 
     expect(component.hasFailed()).toBeTrue();
+  });
+
+  it('shows a provider-neutral sign-in action and avoids viewport gutters in split panels', () => {
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const signInButton = host.querySelector('button[type="button"]');
+    const panels = Array.from(host.querySelectorAll('section'));
+
+    expect(signInButton?.textContent?.trim()).toBe('Connexion');
+    expect(host.textContent).not.toContain('Microsoft');
+    expect(panels.every(panel => !panel.classList.contains('px-shell'))).toBeTrue();
   });
 });
