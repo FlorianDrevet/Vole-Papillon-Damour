@@ -478,48 +478,114 @@
                 } @else if (loading()) {<p class="admin-status" role="status">Chargement du catalogue…</p>}
                 </section>
 
-                <section class="catalogue-add-zone" aria-labelledby="isbn-application-import-title" data-testid="isbn-application-import">
-                  <div class="catalogue-zone-heading">
+                <section class="catalogue-add-zone isbn-application-import-zone" aria-labelledby="isbn-application-import-title" data-testid="isbn-application-import">
+                  <div class="isbn-import-header">
                     <div>
                       <span class="section-kicker">Import en lot</span>
                       <h2 id="isbn-application-import-title">Importer les ISBN de l’application</h2>
-                      <p>Chargez le CSV avec les colonnes « ISBN » et « Nombre_de_photos », séparées par un point-virgule.</p>
+                      <p>Ajoutez un ou plusieurs fichiers CSV. Les doublons entre fichiers sont écartés avant l’envoi.</p>
                     </div>
+                    <button
+                      class="button button-outline isbn-import-help-toggle"
+                      type="button"
+                      aria-controls="isbn-application-format-help"
+                      [attr.aria-expanded]="isbnApplicationHelpOpen()"
+                      (click)="toggleIsbnApplicationHelp()">
+                      <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.7 9a2.4 2.4 0 1 1 4.1 1.7c-1 .9-1.8 1.3-1.8 2.8M12 17h.01"></path></svg>
+                      Format attendu
+                    </button>
                   </div>
-                  <div>
-                    <label class="catalogue-lookup-card" for="isbn-application-file">
-                      <span class="section-kicker">Fichier CSV</span>
+
+                  @if (isbnApplicationHelpOpen()) {
+                    <div class="isbn-import-help" id="isbn-application-format-help" role="region" aria-labelledby="isbn-application-format-title">
+                      <div>
+                        <h3 id="isbn-application-format-title">Préparer le fichier</h3>
+                        <ul>
+                          <li>La première ligne contient exactement <code>ISBN;Nombre_de_photos</code>.</li>
+                          <li>Les deux colonnes sont séparées par un point-virgule ; une ligne correspond à un livre.</li>
+                          <li>Enregistrez le fichier au format CSV UTF-8.</li>
+                          <li>Les ISBN-10 et ISBN-13 sont acceptés. Les ISBN-10 sont convertis en ISBN-13.</li>
+                          <li>La valeur de <code>Nombre_de_photos</code> est ignorée pendant l’import.</li>
+                        </ul>
+                      </div>
+                      <pre aria-label="Exemple de contenu CSV"><code>ISBN;Nombre_de_photos
+9782070363735;1</code></pre>
+                    </div>
+                  }
+
+                  <div class="isbn-import-picker">
+                    <div class="isbn-import-picker-copy">
+                      <span class="isbn-import-file-icon" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V9z"></path><path d="M13 3v6h6M8 14h8M8 17h5"></path></svg>
+                      </span>
+                      <div>
+                        <strong>Fichiers à importer</strong>
+                        <p>Sélectionnez plusieurs CSV à la fois ou ajoutez-les en plusieurs fois.</p>
+                      </div>
+                    </div>
+                    <div class="isbn-import-picker-action">
                       <input
                         id="isbn-application-file"
+                        class="isbn-import-file-input"
                         data-testid="isbn-application-file"
                         type="file"
                         accept=".csv,text/csv"
-                        style="width: 100%"
+                        multiple
                         [disabled]="isbnApplicationReading() || isbnApplicationRunning()"
                         (change)="readIsbnApplicationFile($event)">
-                    </label>
-                    @if (isbnApplicationFileName(); as fileName) {
-                      <div class="catalogue-import-file-actions">
-                        <span class="catalogue-import-file-name">{{ fileName }}</span>
-                        <button class="text-link" type="button" [disabled]="isbnApplicationReading() || isbnApplicationRunning()" (click)="clearIsbnApplicationFile()">Retirer</button>
-                      </div>
-                    }
+                      <label
+                        class="button button-primary isbn-import-select"
+                        [class.is-disabled]="isbnApplicationReading() || isbnApplicationRunning()"
+                        [attr.aria-disabled]="isbnApplicationReading() || isbnApplicationRunning()"
+                        for="isbn-application-file">
+                        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V15"></path></svg>
+                        @if (isbnApplicationReading()) {Lecture des fichiers…} @else {Choisir des fichiers CSV}
+                      </label>
+                      <span>CSV · sélection multiple</span>
+                    </div>
                   </div>
-                  <p class="detail-help">Seuls les ISBN normalisés sont envoyés à l’API ; « Nombre_de_photos » est ignoré. Chaque nouvelle fiche ajoute 1 exemplaire disponible et un mouvement d’entrée. Les fiches déjà présentes ne sont pas modifiées.</p>
+
+                  @if (isbnApplicationFiles().length > 0) {
+                    <div class="isbn-import-files" role="group" aria-label="Fichiers CSV sélectionnés">
+                      <div class="isbn-import-files-heading">
+                        <strong>{{ formatNumber(isbnApplicationFiles().length) }} fichier{{ isbnApplicationFiles().length > 1 ? 's' : '' }} prêt{{ isbnApplicationFiles().length > 1 ? 's' : '' }}</strong>
+                        <button class="text-link" type="button" [disabled]="isbnApplicationReading() || isbnApplicationRunning()" (click)="clearIsbnApplicationFiles()">Tout retirer</button>
+                      </div>
+                      <div class="isbn-import-file-list" role="list">
+                        @for (file of isbnApplicationFiles(); track $index) {
+                          <article class="isbn-import-file" role="listitem">
+                            <span class="isbn-import-file-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V9z"></path><path d="M13 3v6h6M8 14h8M8 17h5"></path></svg></span>
+                            <div class="isbn-import-file-copy">
+                              <strong [title]="file.fileName">{{ file.fileName }}</strong>
+                              <span>{{ formatNumber(file.preview.isbns.length) }} ISBN valides · {{ formatNumber(file.preview.invalidCount) }} ligne{{ file.preview.invalidCount > 1 ? 's' : '' }} invalide{{ file.preview.invalidCount > 1 ? 's' : '' }}</span>
+                            </div>
+                            <button
+                              class="isbn-import-file-remove"
+                              type="button"
+                              [disabled]="isbnApplicationReading() || isbnApplicationRunning()"
+                              [attr.aria-label]="'Retirer le fichier ' + file.fileName"
+                              (click)="removeIsbnApplicationFile($index)">×</button>
+                          </article>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <p class="isbn-import-note">Seuls les ISBN valides et uniques sont envoyés. Chaque nouvelle fiche reçoit un exemplaire disponible ; les fiches déjà présentes ne sont pas modifiées.</p>
                   @if (isbnApplicationReading()) {
-                    <p class="catalogue-lookup-status" role="status">Lecture et vérification du fichier…</p>
+                    <p class="catalogue-lookup-status" role="status">Lecture et vérification des fichiers…</p>
                   }
                   @if (isbnApplicationError(); as message) {
                     <p class="catalogue-lookup-status catalogue-lookup-status-error" role="alert">{{ message }}</p>
                   }
                   @if (isbnApplicationPreview(); as preview) {
-                    <div class="catalogue-reference-results" data-testid="isbn-application-preview">
-                      <p class="catalogue-import-summary">{{ formatNumber(preview.dataRowCount) }} lignes de données lues · les ISBN-10 sont convertis en ISBN-13 · un exemplaire disponible sera créé par nouvel ISBN unique</p>
-                      <dl class="filter-card">
-                        <div class="session-metrics"><dt><span>ISBN uniques valides</span></dt><dd><strong>{{ formatNumber(preview.isbns.length) }}</strong></dd></div>
-                        <div class="session-metrics"><dt><span>Lignes invalides</span></dt><dd><strong>{{ formatNumber(preview.invalidCount) }}</strong></dd></div>
-                        <div class="session-metrics"><dt><span>Doublons ignorés</span></dt><dd><strong>{{ formatNumber(preview.duplicateCount) }}</strong></dd></div>
-                        <div class="session-metrics"><dt><span>Lignes vides</span></dt><dd><strong>{{ formatNumber(preview.emptyRowCount) }}</strong></dd></div>
+                    <div class="catalogue-reference-results isbn-import-preview" data-testid="isbn-application-preview">
+                      <p class="catalogue-import-summary">{{ formatNumber(preview.fileCount) }} fichier{{ preview.fileCount > 1 ? 's' : '' }} · {{ formatNumber(preview.dataRowCount) }} lignes lues · les ISBN-10 sont convertis en ISBN-13.</p>
+                      <dl class="isbn-import-metrics">
+                        <div class="isbn-import-metric"><dt>ISBN uniques valides</dt><dd>{{ formatNumber(preview.isbns.length) }}</dd></div>
+                        <div class="isbn-import-metric"><dt>Lignes invalides</dt><dd>{{ formatNumber(preview.invalidCount) }}</dd></div>
+                        <div class="isbn-import-metric"><dt>Doublons écartés</dt><dd>{{ formatNumber(preview.duplicateCount) }}</dd></div>
+                        <div class="isbn-import-metric"><dt>Lignes vides</dt><dd>{{ formatNumber(preview.emptyRowCount) }}</dd></div>
                       </dl>
                       @if (preview.isbns.length > 0) {
                         <div>
@@ -533,8 +599,8 @@
                         <details class="secondary-detail">
                           <summary>Voir les premières lignes invalides ({{ formatNumber(preview.invalidCount) }} au total)</summary>
                           <ul>
-                            @for (row of preview.invalidExamples; track row.rowNumber) {
-                              <li>Ligne {{ row.rowNumber }} · {{ row.value }} · {{ row.reason }}</li>
+                            @for (row of preview.invalidExamples; track $index) {
+                              <li>{{ row.fileName }} · ligne {{ row.rowNumber }} · {{ row.value }} · {{ row.reason }}</li>
                             }
                           </ul>
                           @if (preview.invalidCount > preview.invalidExamples.length) {
@@ -550,7 +616,7 @@
                           class="button button-primary"
                           data-testid="isbn-application-import-submit"
                           type="button"
-                          [disabled]="isbnApplicationRunning() || preview.isbns.length === 0 || isbnApplicationStatus() === 'complete'"
+                          [disabled]="isbnApplicationReading() || isbnApplicationRunning() || preview.isbns.length === 0 || isbnApplicationStatus() === 'complete'"
                           (click)="importIsbnApplication()">
                           @if (isbnApplicationRunning()) {Import en cours…} @else if (isbnApplicationStatus() === 'interrupted') {Relancer l’import complet} @else if (isbnApplicationStatus() === 'complete') {Import terminé} @else {Importer {{ formatNumber(preview.isbns.length) }} livres}
                         </button>

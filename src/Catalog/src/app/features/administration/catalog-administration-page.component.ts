@@ -120,6 +120,20 @@ interface IsbnApplicationImportProgress {
   alreadyPresentCount: number;
 }
 
+interface IsbnApplicationFilePreview {
+  fileName: string;
+  preview: IsbnApplicationCsvPreview;
+}
+
+type IsbnApplicationInvalidExample = IsbnApplicationCsvPreview['invalidExamples'][number] & {
+  fileName: string;
+};
+
+interface IsbnApplicationCombinedPreview extends Omit<IsbnApplicationCsvPreview, 'invalidExamples'> {
+  fileCount: number;
+  invalidExamples: IsbnApplicationInvalidExample[];
+}
+
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
 export type CatalogAdminAccountsTab = 'volunteers' | 'members';
@@ -294,8 +308,9 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly catalogueCandidateStatus = signal<CatalogBookCandidateStatus | null>(null);
   readonly catalogueLookupLoading = signal(false);
   readonly catalogueLookupError = signal<string | null>(null);
-  readonly isbnApplicationFileName = signal<string | null>(null);
-  readonly isbnApplicationPreview = signal<IsbnApplicationCsvPreview | null>(null);
+  readonly isbnApplicationFiles = signal<IsbnApplicationFilePreview[]>([]);
+  readonly isbnApplicationPreview = signal<IsbnApplicationCombinedPreview | null>(null);
+  readonly isbnApplicationHelpOpen = signal(false);
   readonly isbnApplicationReading = signal(false);
   readonly isbnApplicationRunning = signal(false);
   readonly isbnApplicationStatus = signal<'idle' | 'interrupted' | 'complete'>('idle');
@@ -775,45 +790,69 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
 
     const input = event.currentTarget as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
+    const selectedFiles = Array.from(input.files ?? []);
+    if (selectedFiles.length === 0) {
       return;
     }
 
-    this.isbnApplicationFileName.set(file.name);
-    this.isbnApplicationPreview.set(null);
-    this.isbnApplicationStatus.set('idle');
-    this.isbnApplicationProgress.set(null);
     this.isbnApplicationError.set(null);
-    this.isbnApplicationRefreshWarning.set(null);
-
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      this.isbnApplicationFileName.set(null);
-      this.isbnApplicationError.set('Sélectionnez un fichier CSV.');
-      input.value = '';
-      return;
-    }
-
     this.isbnApplicationReading.set(true);
+    let currentFile = selectedFiles[0];
     try {
-      this.isbnApplicationPreview.set(parseIsbnApplicationCsv(await file.text()));
+      const parsedFiles: IsbnApplicationFilePreview[] = [];
+      for (const file of selectedFiles) {
+        currentFile = file;
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+          throw new IsbnApplicationCsvFormatError('ce fichier n’a pas l’extension .csv.');
+        }
+
+        parsedFiles.push({
+          fileName: file.name,
+          preview: parseIsbnApplicationCsv(await file.text()),
+        });
+      }
+
+      const files = [...this.isbnApplicationFiles(), ...parsedFiles];
+      this.isbnApplicationFiles.set(files);
+      this.isbnApplicationPreview.set(this.combineIsbnApplicationFiles(files));
+      this.isbnApplicationStatus.set('idle');
+      this.isbnApplicationProgress.set(null);
+      this.isbnApplicationRefreshWarning.set(null);
     } catch (error: unknown) {
-      this.isbnApplicationFileName.set(null);
-      this.isbnApplicationError.set(error instanceof IsbnApplicationCsvFormatError
+      const message = error instanceof IsbnApplicationCsvFormatError
         ? error.message
-        : 'Le fichier n’a pas pu être lu.');
-      input.value = '';
+        : 'ce fichier n’a pas pu être lu.';
+      this.isbnApplicationError.set(`« ${currentFile.name} » : ${message}`);
     } finally {
       this.isbnApplicationReading.set(false);
+      input.value = '';
     }
   }
 
-  clearIsbnApplicationFile(): void {
+  toggleIsbnApplicationHelp(): void {
+    this.isbnApplicationHelpOpen.update(open => !open);
+  }
+
+  removeIsbnApplicationFile(index: number): void {
     if (this.isbnApplicationRunning() || this.isbnApplicationReading()) {
       return;
     }
 
-    this.isbnApplicationFileName.set(null);
+    const files = this.isbnApplicationFiles().filter((_, fileIndex) => fileIndex !== index);
+    this.isbnApplicationFiles.set(files);
+    this.isbnApplicationPreview.set(files.length > 0 ? this.combineIsbnApplicationFiles(files) : null);
+    this.isbnApplicationStatus.set('idle');
+    this.isbnApplicationProgress.set(null);
+    this.isbnApplicationError.set(null);
+    this.isbnApplicationRefreshWarning.set(null);
+  }
+
+  clearIsbnApplicationFiles(): void {
+    if (this.isbnApplicationRunning() || this.isbnApplicationReading()) {
+      return;
+    }
+
+    this.isbnApplicationFiles.set([]);
     this.isbnApplicationPreview.set(null);
     this.isbnApplicationStatus.set('idle');
     this.isbnApplicationProgress.set(null);
@@ -823,6 +862,47 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     if (input) {
       input.value = '';
     }
+  }
+
+  private combineIsbnApplicationFiles(files: readonly IsbnApplicationFilePreview[]): IsbnApplicationCombinedPreview {
+    const uniqueIsbns = new Set<string>();
+    const invalidExamples: IsbnApplicationInvalidExample[] = [];
+    let dataRowCount = 0;
+    let emptyRowCount = 0;
+    let duplicateCount = 0;
+    let invalidCount = 0;
+
+    for (const file of files) {
+      dataRowCount += file.preview.dataRowCount;
+      emptyRowCount += file.preview.emptyRowCount;
+      duplicateCount += file.preview.duplicateCount;
+      invalidCount += file.preview.invalidCount;
+
+      for (const example of file.preview.invalidExamples) {
+        if (invalidExamples.length >= 10) {
+          break;
+        }
+        invalidExamples.push({...example, fileName: file.fileName});
+      }
+
+      for (const isbn of file.preview.isbns) {
+        if (uniqueIsbns.has(isbn)) {
+          duplicateCount += 1;
+        } else {
+          uniqueIsbns.add(isbn);
+        }
+      }
+    }
+
+    return {
+      fileCount: files.length,
+      dataRowCount,
+      emptyRowCount,
+      duplicateCount,
+      invalidCount,
+      invalidExamples,
+      isbns: [...uniqueIsbns],
+    };
   }
 
   async importIsbnApplication(): Promise<void> {
