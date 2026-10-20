@@ -1,5 +1,10 @@
 # 08 - Runtime And Orchestration
 
+## Azure environment naming — user-confirmed 2026-10-20
+
+- In the user's current Azure subscription, resources named with `dev` are the user's actual production environment, not a development/test environment. The known production targets include resource group `rg-vpd-dev`, SQL server `vpd-sql-dev`, database `vole-papillon-damour-db`, and Blob Storage account `vpdstdevfc`.
+- Treat those resources as production for backup, access, deployment, reset, and data-migration decisions. Never infer that a destructive or test-only operation is safe because a resource name includes `dev`; confirm before any production data replacement or deletion.
+
 ## Azure regional migration — plan 2026-10-14
 
 - User-confirmed approach: keep rg-vpd-dev and the existing SQL server/database in place; create the West Europe regional replacements in France Central side by side, then retire the old resources after cutover and a rollback window.
