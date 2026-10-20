@@ -45,9 +45,11 @@ La [PR #281](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/281) a �
 
 Validation de la PR #281 : 39 tests ciblés réussis et build Catalog réussi. Sur la suite complète, 504/506 tests passent ; les deux échecs sont dans les specs AccountCard préexistantes, non modifiées. Contrôle à 1440×900 et 390×844 ; l’API locale était indisponible pour inspecter des fiches peuplées. Graphify a extrait l’AST, mais ne peut pas rendre la visualisation HTML avec un graphe de 8 242 nœuds.
 
-La [PR #294](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/294) est ouverte, non fusionnée. Elle réduit « Suivre » en mode grille à un libellé bleu compact en bas à droite du pied de carte, avec une cible de 44 px et un focus visible ; le statut « Suivi » est compact lui aussi. La vue liste n’est pas modifiée.
+La [PR #294](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/294) a été fusionnée le 2026-10-20. Elle a compacté « Suivre » en mode grille, mais le bouton restait dans un pied de carte séparé.
 
-Validation de la PR #294 : build Catalog réussi avec les avertissements de budget et CommonJS déjà présents ; aucun test automatisé n’a été lancé. Graphify a réextrait les fichiers mais échoue au rendu HTML sur la limite de 8 272 nœuds. Le contrôle visuel responsive avec des fiches peuplées reste à faire. Après fusion, lancer Catalog - deploy ; aucune migration n’est nécessaire.
+La [PR #298](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/298) est ouverte, non fusionnée. Elle aligne « Suivre » à droite de la disponibilité dans la carte, sans bandeau inférieur ; la vue liste reste inchangée. Le clic ajoute le livre au suivi membre existant (œuvre ou édition selon son identifiant) ; le compte membre présente cette destination sous « Livres suivis », distincte de la recherche du catalogue. Le bouton conserve une cible tactile de 44 px et le statut « Suivi » garde la même hauteur pour l’alignement.
+
+Validation : `npm ci` et build Catalog réussis. npm signale 33 vulnérabilités dans les dépendances installées ; le build conserve les avertissements existants de budget et CommonJS. Aucun test automatisé n’a été lancé. L’API du catalogue répond HTTP 503, donc le contrôle visuel responsive avec des fiches peuplées reste à faire. Graphify a extrait l’AST, mais échoue au rendu HTML sur la limite de 8 312 nœuds après le rebase. Après fusion, lancer Catalog - deploy ; aucune migration n’est nécessaire.
 
 ### Page publique Livres rares du Catalogue — 2026-10-20
 

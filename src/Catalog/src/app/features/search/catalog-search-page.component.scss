@@ -627,6 +627,8 @@
 }
 
 .book-search-result--grid {
+  --book-card-availability-action-space: 60px;
+  position: relative;
   display: flex;
   height: 100%;
   min-width: 0;
@@ -662,10 +664,29 @@
 }
 
 .book-search-result--grid .book-follow-actions {
-  padding: 2px 12px;
-  border: 1px solid var(--catalog-line);
-  border-top: 0;
-  background: var(--catalog-white);
+  position: absolute;
+  right: 12px;
+  bottom: 0;
+  left: 12px;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+  transition: transform 180ms var(--catalog-ease-out);
+}
+
+.book-search-result--grid-with-announced .book-follow-actions {
+  bottom: 18px;
+}
+
+.book-search-result--grid:hover .book-follow-actions,
+.book-search-result--grid:focus-within .book-follow-actions {
+  transform: translateY(-3px);
+}
+
+.book-search-result--grid .book-follow-actions > * {
+  pointer-events: auto;
 }
 
 .book-search-result--grid .book-follow-button {
@@ -695,8 +716,19 @@
 
 .book-search-result--grid .book-followed {
   width: auto;
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 44px;
+  padding: 0 6px;
+}
+
+.book-search-result--grid .book-follow-error {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  width: max-content;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--catalog-line);
+  background: var(--catalog-white);
 }
 
 .book-grid {

@@ -394,13 +394,13 @@ describe('CatalogAccountPageComponent', () => {
 
     expect(api.getWatchlist).toHaveBeenCalledWith('member-token');
     expect(fixture.nativeElement.textContent).toContain('Le livre suivi');
-    expect(fixture.nativeElement.textContent).toContain('Mes recherches.');
+    expect(fixture.nativeElement.textContent).toContain('Mes livres suivis.');
 
     await fixture.componentInstance.removeItem(watchlist.items[0]);
     fixture.detectChanges();
 
     expect(api.removeWatchlistItem).toHaveBeenCalledWith('member-token', 'item-1');
-    expect(fixture.nativeElement.textContent).toContain('Aucun titre dans votre liste de recherche');
+    expect(fixture.nativeElement.textContent).toContain('Aucun livre suivi pour le moment');
   });
 
   it('shows the separate Entra name claims in the account heading', async () => {
@@ -436,7 +436,7 @@ describe('CatalogAccountPageComponent', () => {
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
       'Ma sélection',
       'Mes achats',
-      'Mes recherches',
+      'Livres suivis',
       'Ma carte',
       'Compte et données',
     ]);
@@ -488,7 +488,7 @@ describe('CatalogAccountPageComponent', () => {
     expect(tabs.map(tab => tab.textContent?.trim())).toEqual([
       'Ma sélection',
       'Mes achats',
-      'Mes recherches',
+      'Livres suivis',
       'Ma carte',
       'Compte et données',
       'Ma contribution',
@@ -611,7 +611,7 @@ describe('CatalogAccountPageComponent', () => {
     expect(card.textContent).not.toContain('Nous vous préviendrons dès qu’une édition correspondante sera au catalogue.');
   });
 
-  it('shows the followed title and all-editions scope in Mes recherches', async () => {
+  it('shows the followed title and all-editions scope in Livres suivis', async () => {
     auth.account.set(account('Member'));
     auth.isAuthenticated.set(true);
     const current = structuredClone(watchlist);
