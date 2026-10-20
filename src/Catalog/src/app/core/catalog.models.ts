@@ -755,6 +755,28 @@ export interface CatalogAdminBookPage {
   pageSize: number;
 }
 
+export interface CatalogAdminBookMetadataQueueItem {
+  isbn13: string;
+  metadataStatus: string;
+  failureReason: string | null;
+  resolveAttempts: number;
+  lastAttemptAt: string | null;
+}
+
+export interface CatalogAdminBookMetadataQueue {
+  generatedAt: string;
+  items: CatalogAdminBookMetadataQueueItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CatalogAdminMetadataRetry {
+  isbn13: string;
+  metadataStatus: string;
+  queued: boolean;
+}
+
 export interface CatalogAdminOperation {
   isbn13?: string;
   quantityAvailable?: number;

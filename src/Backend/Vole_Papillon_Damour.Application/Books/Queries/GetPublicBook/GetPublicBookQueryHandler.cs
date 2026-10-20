@@ -35,7 +35,7 @@ public sealed class GetPublicBookQueryHandler(
         var book = await dbContext.Books
             .AsNoTracking()
             .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
-        if (book is null || book.IsHiddenFromCatalog || book.RedirectedToIsbn13 is not null)
+        if (book is null || !PublicCatalogBookVisibility.IsVisible(book))
         {
             return DomainErrors.Book.NotFound(isbn13.Value);
         }

@@ -41,6 +41,9 @@ public sealed class EnrichPendingBooksCommandHandler(
                 (book.MetadataStatus == BookMetadataStatus.Pending &&
                  (book.LastAttemptAt == null ||
                   book.LastAttemptAt <= now.Subtract(ProviderFailureRetryAfter))) ||
+                (book.MetadataStatus == BookMetadataStatus.Failed &&
+                 (book.LastAttemptAt == null ||
+                  book.LastAttemptAt <= now.Subtract(ProviderFailureRetryAfter))) ||
                 (book.MetadataStatus == BookMetadataStatus.NotFound &&
                  ((book.ResolveAttempts == 1 &&
                    book.LastAttemptAt <= now.Subtract(NotFoundRetryAfterFirstAttempt)) ||
@@ -93,12 +96,13 @@ public sealed class EnrichPendingBooksCommandHandler(
             {
                 throw;
             }
-            catch
+            catch (Exception exception)
             {
                 failedCount++;
                 await RecordProviderFailureAsync(
                     isbn13,
                     now,
+                    DescribeProviderFailure(exception),
                     command.IncludeMissingGenres,
                     cancellationToken);
                 continue;
@@ -107,6 +111,11 @@ public sealed class EnrichPendingBooksCommandHandler(
             var book = await dbContext.Books
                 .SingleOrDefaultAsync(candidate => candidate.Id == isbn13, cancellationToken);
             if (book is null)
+            {
+                continue;
+            }
+
+            if (book.MetadataStatus == BookMetadataStatus.Discarded)
             {
                 continue;
             }
@@ -158,7 +167,9 @@ public sealed class EnrichPendingBooksCommandHandler(
                 }
                 else
                 {
-                    book.RecordMetadataProviderFailure(now);
+                    book.RecordMetadataProviderFailure(
+                        now,
+                        "La source a renvoyé un autre ISBN que celui demandé.");
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -182,7 +193,9 @@ public sealed class EnrichPendingBooksCommandHandler(
                 }
                 else
                 {
-                    book.RecordMetadataProviderFailure(now);
+                    book.RecordMetadataProviderFailure(
+                        now,
+                        "La notice ne contient aucune métadonnée exploitable.");
                 }
                 await dbContext.SaveChangesAsync(cancellationToken);
                 continue;
@@ -204,7 +217,9 @@ public sealed class EnrichPendingBooksCommandHandler(
                 }
                 else
                 {
-                    book.RecordMetadataProviderFailure(now);
+                    book.RecordMetadataProviderFailure(
+                        now,
+                        "La notice indique une source de couverture non reconnue.");
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -242,7 +257,9 @@ public sealed class EnrichPendingBooksCommandHandler(
                 }
                 else
                 {
-                    book.RecordMetadataProviderFailure(now);
+                    book.RecordMetadataProviderFailure(
+                        now,
+                        "Les métadonnées de la notice ne peuvent pas être enregistrées.");
                 }
 
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -254,7 +271,15 @@ public sealed class EnrichPendingBooksCommandHandler(
                 coverUpdatedCount++;
             }
 
-            if (!coverOnly && !wasResolved)
+            if (!coverOnly && string.IsNullOrWhiteSpace(book.Title))
+            {
+                failedCount++;
+                book.RecordMetadataProviderFailure(
+                    now,
+                    "La notice ne contient pas de titre exploitable.",
+                    countAttempt: false);
+            }
+            else if (!coverOnly && !wasResolved)
             {
                 resolvedCount++;
             }
@@ -274,6 +299,7 @@ public sealed class EnrichPendingBooksCommandHandler(
     private async Task RecordProviderFailureAsync(
         Isbn13 isbn13,
         DateTime attemptedAt,
+        string reason,
         bool includeMissingGenres,
         CancellationToken cancellationToken)
     {
@@ -310,10 +336,18 @@ public sealed class EnrichPendingBooksCommandHandler(
             return;
         }
 
-        if (book.RecordMetadataProviderFailure(attemptedAt))
+        if (book.RecordMetadataProviderFailure(attemptedAt, reason))
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private static string DescribeProviderFailure(Exception exception)
+    {
+        var detail = string.IsNullOrWhiteSpace(exception.Message)
+            ? exception.GetType().Name
+            : $"{exception.GetType().Name} : {exception.Message.Trim()}";
+        return $"Échec technique de la recherche bibliographique — {detail}";
     }
 
     private static BookMetadataPatch CreatePatch(

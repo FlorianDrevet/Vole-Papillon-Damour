@@ -56,6 +56,25 @@ public sealed record AdminBookPageResult(
     int Page,
     int PageSize);
 
+public sealed record BookMetadataQueuePageResult(
+    DateTimeOffset GeneratedAt,
+    IReadOnlyList<BookMetadataQueueItemResult> Items,
+    int TotalCount,
+    int Page,
+    int PageSize);
+
+public sealed record BookMetadataQueueItemResult(
+    string Isbn13,
+    string MetadataStatus,
+    string? FailureReason,
+    int ResolveAttempts,
+    DateTimeOffset? LastAttemptAt);
+
+public sealed record RetryBookMetadataResult(
+    string Isbn13,
+    string MetadataStatus,
+    bool Queued);
+
 public sealed record AdminBookResult(
     string Isbn13,
     string? WorkId,

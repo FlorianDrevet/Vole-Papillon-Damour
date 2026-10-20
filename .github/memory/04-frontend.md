@@ -695,3 +695,9 @@ idempotent. The CSV parser requires the exact `ISBN;Nombre_de_photos` header; fi
 books enter metadata enrichment immediately with a one-second inter-ISBN delay. A local copy
 of the 7,748-ISBN application file has been divided into 155 upload lots of at most 50 rows;
 no full-file import has been performed by the assistant.
+
+The ISBN analysis queue is the dedicated `/administration/isbn-queue` section. It keeps
+incomplete ISBNs out of the main admin list, displays ISBN/status/failure reason and retry
+timing without a placeholder title, and links to manual correction, immediate retry, or
+removal. Removing a ledger-backed candidate uses the API's audited discard/withdrawal path;
+it does not delete its movement history.

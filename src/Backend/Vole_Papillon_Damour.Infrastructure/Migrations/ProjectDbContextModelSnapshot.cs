@@ -306,6 +306,10 @@ namespace Vole_Papillon_Damour.Infrastructure.Migrations
                     b.Property<string>("ManuallyEditedFields")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("MetadataFailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime?>("MetadataFetchedAt")
                         .HasColumnType("datetime2");
 

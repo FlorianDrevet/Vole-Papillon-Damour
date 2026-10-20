@@ -33,6 +33,11 @@ public sealed class GetAdminBooksQueryHandler(
 
         var booksQuery = dbContext.Books
             .AsNoTracking()
+            .Where(book =>
+                (book.MetadataStatus == BookMetadataStatus.Resolved ||
+                 book.MetadataStatus == BookMetadataStatus.Manual) &&
+                book.Title != null &&
+                book.Title.Trim() != string.Empty)
             .Where(book => query.Rare == null || dbContext.RareBooks
                 .AsNoTracking()
                 .Any(rareBook => rareBook.Isbn13 == book.Id) == query.Rare)

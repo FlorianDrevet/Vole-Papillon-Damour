@@ -78,7 +78,11 @@ public sealed class GetSimilarBooksQueryHandler(
             .Where(book =>
                 candidateIsbns.Contains(book.Id) &&
                 !book.IsHiddenFromCatalog &&
-                book.RedirectedToIsbn13 == null)
+                book.RedirectedToIsbn13 == null &&
+                (book.MetadataStatus == BookMetadataStatus.Resolved ||
+                 book.MetadataStatus == BookMetadataStatus.Manual) &&
+                book.Title != null &&
+                book.Title.Trim() != string.Empty)
             .ToListAsync(cancellationToken);
         var announcements = await dbContext.BookAnnouncements
             .AsNoTracking()

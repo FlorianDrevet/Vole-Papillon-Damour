@@ -27,7 +27,7 @@ public sealed class GetPublicCatalogSitemapQueryHandler(
 
         var books = await dbContext.Books
             .AsNoTracking()
-            .Where(book => !book.IsHiddenFromCatalog && book.RedirectedToIsbn13 == null)
+            .Where(PublicCatalogBookVisibility.Predicate)
             .OrderBy(book => book.Id)
             .ToListAsync(cancellationToken);
 

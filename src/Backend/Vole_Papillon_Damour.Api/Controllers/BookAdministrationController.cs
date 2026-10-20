@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Vole_Papillon_Damour.Api.Errors;
+using Vole_Papillon_Damour.Application.Books.Commands.Background;
 using Vole_Papillon_Damour.Application.Books.Commands.Admin;
 using Vole_Papillon_Damour.Application.Books.Commands.AdjustQuantity;
 using Vole_Papillon_Damour.Application.Books.Commands.AssociationSettings;
@@ -75,6 +76,24 @@ public static class BookAdministrationController
                             error => error.Result());
                     })
                 .WithName("GetAdminBooks")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapGet(
+                    "/books/admin/books/metadata-queue",
+                    async (
+                        int? page,
+                        int? pageSize,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        var result = await mediator.Send(
+                            new GetBookMetadataQueueQuery(page ?? 1, pageSize ?? 100),
+                            cancellationToken);
+                        return result.Match(
+                            queue => Results.Ok(ToResponse(queue)),
+                            error => error.Result());
+                    })
+                .WithName("GetAdminBookMetadataQueue")
                 .RequireAuthorization("Administration");
 
             endpoints.MapGet(
@@ -204,6 +223,32 @@ public static class BookAdministrationController
                             error => error.Result());
                     })
                 .WithName("UpdateAdminBookMetadata")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/books/{isbn13}/metadata/retry",
+                    async (
+                        string isbn13,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        var result = await mediator.Send(
+                            new RetryBookMetadataCommand(isbn13, userId),
+                            cancellationToken);
+                        return result.Match(
+                            retry => Results.Ok(new AdminBookMetadataRetryResponse(
+                                retry.Isbn13,
+                                retry.MetadataStatus,
+                                retry.Queued)),
+                            error => error.Result());
+                    })
+                .WithName("RetryAdminBookMetadata")
                 .RequireAuthorization("Administration");
 
             endpoints.MapPatch(
@@ -1035,6 +1080,19 @@ public static class BookAdministrationController
     private static AdminBookPageResponse ToResponse(AdminBookPageResult result) =>
         new(result.GeneratedAt, result.Books.Select(ToResponse).ToArray(), result.TotalCount,
             result.Page, result.PageSize);
+
+    private static AdminBookMetadataQueuePageResponse ToResponse(BookMetadataQueuePageResult result) =>
+        new(
+            result.GeneratedAt,
+            result.Items.Select(item => new AdminBookMetadataQueueItemResponse(
+                item.Isbn13,
+                item.MetadataStatus,
+                item.FailureReason,
+                item.ResolveAttempts,
+                item.LastAttemptAt)).ToArray(),
+            result.TotalCount,
+            result.Page,
+            result.PageSize);
 
     private static AdminBooksImportResponse ToResponse(AdminBooksImportResult result) =>
         new(

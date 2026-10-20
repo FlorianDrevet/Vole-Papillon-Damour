@@ -121,6 +121,10 @@ client-only/private.
   missing books receive pending metadata, one available copy, and a `DirectEntry` movement
   attributed to the authenticated administrator. Existing or duplicate values are reported
   as already present and unchanged so a full-list retry does not add stock twice.
+- `GET /books/admin/books/metadata-queue?page=&pageSize=` returns the paged ISBN analysis
+  queue with status, bounded failure reason, attempt count, and last-attempt time.
+  `POST /books/admin/books/{isbn13}/metadata/retry` resets the candidate to `Pending` and
+  enqueues enrichment immediately. Both routes require the `Administration` policy.
 - `GET/POST/PATCH/DELETE /books/admin/books...` - Administration-policy book list/detail,
   manual add, metadata/quantity corrections, withdrawals, rare/visibility flags, merges and
   guarded deletion; announcement quantity correction is under
