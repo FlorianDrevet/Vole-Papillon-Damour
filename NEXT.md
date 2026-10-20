@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-12 — demandes manuelles sans compte livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252); les suivis Catalog des [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259), [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) et [PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261) sont fusionnés. Préparation de la remise à zéro DEV avant l'import ISBN. |
-| **Prochaine action** | Fusionner le correctif `QUOTED_IDENTIFIER`, relancer l'aperçu et appliquer le reset avec son hash exact ; vérifier les tables et les profils, puis redémarrer le Worker. Les scans et sessions caisse sont arrêtés/synchronisés. |
-| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-reset-quoted-identifier` |
-| **Dernière mise à jour** | 2026-10-20 — PR #266 fusionnée. L'aperçu #39386475994 a réussi ; l'application #39387038172 a échoué sur `QUOTED_IDENTIFIER`. L'aperçu de vérification #39387249034 confirme les données intactes. Le Worker DEV est arrêté en attendant le correctif et le reset. |
-| **Branche** | `fix/book-reset-quoted-identifier`, basée sur `origin/main` (`4956de2`), correction de l'option SQL en cours. |
+| **Lot en cours** | Préparation de l'import ISBN après remise à zéro de la base DEV le 2026-10-20. |
+| **Prochaine action** | Reprendre le plan `C:\Users\flori\Downloads\PLAN_IMPORT_ISBN.md` et préparer l'import des CSV sur la base DEV nettoyée. Examiner les alertes du Worker avant l'import. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-reset-completion` |
+| **Dernière mise à jour** | 2026-10-20 — le reset DEV est commité et vérifié (PITR #39380946520, application #39389885124, contrôle #39390080334). Le Worker est Running avec 1 réplica ; Azure signale aussi des erreurs de probe/scaler à examiner. |
+| **Branche** | `docs/book-reset-completion`, basée sur `origin/main` (`722a0be`), compte-rendu du reset DEV. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -72,7 +72,13 @@ L'aperçu [#39383030122](https://github.com/FlorianDrevet/Vole-Papillon-Damour/a
 
 L'utilisateur confirme que seul `floriandrevet@icloud.com` doit être protégé spécifiquement ; tout autre profil SQL reste conservé s'il n'est pas lié à un identifiant Entra désactivé. La [PR #266](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/266) adapte le script et la procédure à cette règle, puis a été fusionnée. L'aperçu [#39386475994](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39386475994) a réussi : 31 livres, 24 sessions, 75 mouvements, 1 demande manuelle, 1 livre rare, 5 alertes en attente ; 4 profils SQL à conserver, keeper iCloud trouvé exactement une fois, zéro profil Entra désactivé. Les comptes d'événements et d'actualités sont protégés et leur prévisualisation est intacte.
 
-L'application [#39387038172](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39387038172) a échoué avec SQL Server `Msg 1934` : `QUOTED_IDENTIFIER` était désactivé pendant le `DELETE`. Le run n'a pas retourné `COMMITTED`. L'aperçu de vérification [#39387249034](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39387249034) montre les mêmes volumes et hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`, confirmant que les données n'ont pas changé. Le Worker `vpd-worker-ca-dev-fc` est actuellement arrêté dans Azure. La PR courante active `QUOTED_IDENTIFIER` avant les instructions SQL ; après fusion, relancer l'aperçu, appliquer avec son hash exact, vérifier le résultat, puis redémarrer le Worker. Aucun reset effectif à ce jour.
+L'application initiale [#39387038172](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39387038172) a échoué avec SQL Server `Msg 1934` : `QUOTED_IDENTIFIER` était désactivé pendant le `DELETE`. Elle n'a pas retourné `COMMITTED`, et l'aperçu [#39387249034](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39387249034) a confirmé le rollback. La correction a été fusionnée dans la [PR #267](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/267).
+
+Après réussite de la PITR [#39380946520](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39380946520), l'aperçu [#39389628834](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39389628834) a confirmé la cible DEV, un profil `floriandrevet@icloud.com`, 4 profils SQL conservés, 0 identité Entra désactivée et le hash `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. Les volumes avant reset étaient de 31 livres, 24 sessions de scan, 75 mouvements et 5 alertes livres en attente.
+
+L'application [#39389885124](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39389885124) a retourné `COMMITTED` le 2026-10-20 : le compte protégé iCloud est conservé, aucun profil lié à une identité désactivée n'a été supprimé (Graph en a renvoyé 0), et 5 alertes livres en attente ont été supprimées. L'aperçu de contrôle [#39390080334](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39390080334) montre à zéro toutes les tables livres, scans et alertes répertoriées, 4 profils SQL conservés, et des volumes protégés inchangés : Actualities 23, AssoEvents 29, LinePartie 186, Lots 240, Parties 78, SocialPostImports 21.
+
+Le Worker `vpd-worker-ca-dev-fc` a été redémarré après le contrôle ; Azure Container Apps affiche `Running`, `Ready for traffic` et 1 réplica. Le portail signale également une erreur de probe de démarrage (`ProbeFailed`, code 1), une erreur de scaler (`ScaledObjectCheckFailed`) et d'autres erreurs actives ; les journaux du Worker restent à examiner avant l'import ISBN. L'opération concerne les lignes SQL ; elle ne supprime ni identités Entra ni images rares dans Blob Storage.
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 
