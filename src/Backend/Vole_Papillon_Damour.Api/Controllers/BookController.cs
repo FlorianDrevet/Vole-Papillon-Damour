@@ -898,7 +898,8 @@ public static class BookController
             result.IsRare,
             result.CoverSource,
             result.RareBookSlug,
-            result.RareBookId);
+            result.RareBookId,
+            result.Summary);
     }
 
     private static SimilarBookResponse ToSimilarBookResponse(SimilarBookResult result)

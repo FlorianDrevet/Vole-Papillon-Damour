@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ using Vole_Papillon_Damour.Application.Books.Queries.GetPublicNextBookFair;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicWork;
 using Vole_Papillon_Damour.Application.Books.Queries.GetPublicCatalogSitemap;
 using Vole_Papillon_Damour.Application.Books.Queries.SearchCatalog;
+using Vole_Papillon_Damour.Application.Recommendations.Similarity;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.AssoEventsAggregate;
@@ -400,6 +402,48 @@ public sealed class PublicCatalogQueryHandlerTests
         result.Value.WorkId.Should().Be("work-antoine-1");
         result.Value.CoverUrl.Should().Be("https://covers.example/petit-prince.jpg");
         result.Value.QuantityAvailable.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetPublicBook_WhenSimilarityProfileHasDescription_ReturnsTheSummary()
+    {
+        const string summary = "Un jeune prince voyage de planète en planète et rencontre des personnages qui l'aident à comprendre l'amitié, la solitude et la responsabilité.";
+        await using var fixture = await PublicCatalogFixture.CreateAsync();
+        fixture.AddBook("9782070408504", "Le Petit Prince", "Antoine de Saint-Exupéry");
+        var profile = BookSimilarityProfile.Create("9782070408504");
+        profile.RecordNotice(
+            JsonSerializer.Serialize(new SimilarityEdition(
+                "9782070408504",
+                "Le Petit Prince",
+                null,
+                null,
+                null,
+                [],
+                [],
+                "Gallimard",
+                null,
+                null,
+                null,
+                null,
+                null,
+                [],
+                [],
+                null,
+                false,
+                null,
+                EditionSummary: null,
+                OpenLibraryDescription: summary)),
+            found: true,
+            Now);
+        fixture.Context.BookSimilarityProfiles.Add(profile);
+        await fixture.SaveAsync();
+
+        var result = await fixture.CreatePublicBookHandler().Handle(
+            new GetPublicBookQuery("9782070408504"),
+            CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        result.Value.Summary.Should().Be(summary);
     }
 
     [Fact]
@@ -915,6 +959,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     public DbSet<RareBook> RareBooks => Set<RareBook>();
     public DbSet<RareBookPhoto> RareBookPhotos => Set<RareBookPhoto>();
     public DbSet<BookNeighbor> BookNeighbors => Set<BookNeighbor>();
+    public DbSet<BookSimilarityProfile> BookSimilarityProfiles => Set<BookSimilarityProfile>();
     public DbSet<RecommendationGeneration> RecommendationGenerations => Set<RecommendationGeneration>();
 
     DbSet<Product> IProjectDbContext.Products => throw new NotSupportedException();
@@ -930,6 +975,7 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
     DbSet<RareBook> IProjectDbContext.RareBooks => RareBooks;
     DbSet<RareBookPhoto> IProjectDbContext.RareBookPhotos => RareBookPhotos;
     DbSet<BookNeighbor> IProjectDbContext.BookNeighbors => BookNeighbors;
+    DbSet<BookSimilarityProfile> IProjectDbContext.BookSimilarityProfiles => BookSimilarityProfiles;
     DbSet<RecommendationGeneration> IProjectDbContext.RecommendationGenerations => RecommendationGenerations;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -983,6 +1029,15 @@ internal sealed class PublicCatalogTestDbContext(DbContextOptions<PublicCatalogT
             builder.Ignore(assoEvent => assoEvent.UrlImageMap);
             builder.Ignore(assoEvent => assoEvent.Parties);
             builder.Ignore(assoEvent => assoEvent.BingoNumeros);
+        });
+
+        modelBuilder.Entity<BookSimilarityProfile>(builder =>
+        {
+            builder.Ignore(profile => profile.Id);
+            builder.HasKey(profile => profile.Isbn13);
+            builder.Property(profile => profile.Isbn13).ValueGeneratedNever();
+            builder.Property(profile => profile.NoticeJson).HasColumnType("TEXT");
+            builder.Property(profile => profile.ProfileText).HasColumnType("TEXT");
         });
 
         modelBuilder.Ignore<Product>();

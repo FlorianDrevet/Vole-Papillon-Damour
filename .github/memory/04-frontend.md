@@ -704,3 +704,11 @@ incomplete ISBNs out of the main admin list, displays ISBN/status/failure reason
 timing without a placeholder title, and links to manual correction, immediate retry, or
 removal. Removing a ledger-backed candidate uses the API's audited discard/withdrawal path;
 it does not delete its movement history.
+
+## Catalog book detail summary (2026-10-20)
+
+The public `/livres/:slug` detail page renders a `Résumé` section from the optional `summary`
+field on `GET /catalog/books/{isbn13}`. It sits after the edition metadata and before
+availability, and is omitted when the API has no usable text. The summary comes from an
+already refreshed similarity notice; it is not fetched when someone opens the detail page.
+Responsive visual review covered 320×568, 390×844, and 1440×900 with no horizontal overflow.

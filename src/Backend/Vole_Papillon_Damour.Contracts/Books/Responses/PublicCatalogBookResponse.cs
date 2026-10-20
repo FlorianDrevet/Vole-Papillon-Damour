@@ -20,4 +20,5 @@ public sealed record PublicCatalogBookResponse(
     bool IsRare,
     string? CoverSource = null,
     string? RareBookSlug = null,
-    Guid? RareBookId = null);
+    Guid? RareBookId = null,
+    string? Summary = null);

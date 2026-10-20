@@ -33,7 +33,8 @@ public sealed record PublicCatalogBookResult(
     bool IsRare,
     string? CoverSource = null,
     string? RareBookSlug = null,
-    Guid? RareBookId = null);
+    Guid? RareBookId = null,
+    string? Summary = null);
 
 public sealed record PublicCatalogSearchResult(
     DateTime GeneratedAt,
