@@ -42,7 +42,8 @@ export class TableauComponent implements OnInit {
   protected readonly announcedNumero = signal<number | null>(null);
   protected readonly busy = signal(false);
   protected readonly toast = signal<string | null>(null);
-  protected readonly controlsVisible = signal(true);
+  protected readonly controlsVisible = signal(false);
+  protected readonly cursorVisible = signal(true);
   protected readonly keyBuffer = signal('');
   protected readonly stageScale = signal(1);
   protected readonly palette = this.paletteService.palette;
@@ -62,11 +63,12 @@ export class TableauComponent implements OnInit {
 
   private announceTimer: ReturnType<typeof setTimeout> | undefined;
   private controlsTimer: ReturnType<typeof setTimeout> | undefined;
+  private cursorTimer: ReturnType<typeof setTimeout> | undefined;
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   ngOnInit(): void {
     this.updateStageScale();
-    this.showControls();
+    this.showCursor();
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
@@ -78,6 +80,7 @@ export class TableauComponent implements OnInit {
     this.destroyRef.onDestroy(() => {
       clearTimeout(this.announceTimer);
       clearTimeout(this.controlsTimer);
+      clearTimeout(this.cursorTimer);
       clearTimeout(this.toastTimer);
     });
   }
@@ -87,12 +90,12 @@ export class TableauComponent implements OnInit {
     this.stageScale.set(Math.min(window.innerWidth / STAGE_WIDTH, window.innerHeight / STAGE_HEIGHT));
   }
 
-  /** RG-04 : la barre et le curseur n'apparaissent que tant que la souris bouge. */
+  /** Le mouvement de la souris révèle le curseur sans ouvrir l'aide clavier. */
   @HostListener('document:mousemove')
-  showControls(): void {
-    this.controlsVisible.set(true);
-    clearTimeout(this.controlsTimer);
-    this.controlsTimer = setTimeout(() => this.controlsVisible.set(false), CONTROLS_IDLE_MS);
+  showCursor(): void {
+    this.cursorVisible.set(true);
+    clearTimeout(this.cursorTimer);
+    this.cursorTimer = setTimeout(() => this.cursorVisible.set(false), CONTROLS_IDLE_MS);
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -100,6 +103,7 @@ export class TableauComponent implements OnInit {
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
+    this.showControls();
     const result = reduceRegieKey(this.keyBuffer(), event.key);
     if (result.action !== null || result.buffer !== this.keyBuffer()) {
       event.preventDefault();
@@ -108,6 +112,13 @@ export class TableauComponent implements OnInit {
     if (result.action !== null) {
       void this.run(result.action);
     }
+  }
+
+  /** La barre d'aide aux touches suit l'activité clavier et non le mouvement du pointeur. */
+  private showControls(): void {
+    this.controlsVisible.set(true);
+    clearTimeout(this.controlsTimer);
+    this.controlsTimer = setTimeout(() => this.controlsVisible.set(false), CONTROLS_IDLE_MS);
   }
 
   protected onCellClicked(cell: LotoCell): void {

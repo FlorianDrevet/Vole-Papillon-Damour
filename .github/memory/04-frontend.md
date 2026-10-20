@@ -11,6 +11,16 @@ The Angular web apps are Angular 21 projects with Angular Material and Tailwind 
 - `src/Scan/` - Angular 21 Scanette PWA for ISBN capture, offline triage, consultation, cash
   sales, IndexedDB persistence, and volunteer authentication/synchronization
 
+### Live loto board
+
+The BackOffice projection lives in `src/BackOffice/src/app/feature/event-detail/components/tableau/`;
+number cells are buttons that call the same draw action as keyboard entry. The keyboard help bar is
+opened by key presses and times out after 3 seconds without keyboard activity; mouse movement only
+reveals the cursor. The public Website route uses `src/Website/src/app/feature/tableau/` and the
+shared `buildLotoTableauView` projection. At phone widths its live order is the latest number, up to
+five previous numbers, the 90-cell grid, then the current party, prizes, and bingo; desktop keeps
+the summary and party details in the left column beside the grid.
+
 As of 2026-09-22, the Scan rare-book surfaces follow the supplied Claude mockups: the home
 orders `Trier des livres`, `Livres rares`, `Caisse`, and `Consulter`; the rare-book list has a
 compact search/header, all/draft tabs, editorial cards and a bottom add action; the create
