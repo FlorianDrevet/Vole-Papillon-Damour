@@ -324,6 +324,9 @@ param recommendationsEnabled bool = false
 @description('Name of the Azure OpenAI embedding deployment used for recommendations')
 param recommendationsEmbeddingDeploymentName string = 'text-embedding-3-small'
 
+@description('Estimated Azure OpenAI embedding input price in USD per million tokens, shown in the monitoring workbook')
+param embeddingCostUsdPerMillionTokens string = '0.02'
+
 @description('Name of the existing Azure OpenAI account shared by Worker AI features')
 param titleGenerationAccountName string = ''
 
@@ -900,6 +903,16 @@ module performanceWorkbook './modules/Monitor/workbook.module.bicep' = {
     location: targetLocation
     displayName: 'VPD - Performance et santé'
     workspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
+    containerAppResourceIds: [
+      containerAppApiModule.outputs.containerAppResourceId
+      containerAppWebsiteModule.outputs.containerAppResourceId
+      containerAppBackOfficeModule.outputs.containerAppResourceId
+      containerAppScanModule.outputs.containerAppResourceId
+      containerAppCatalogModule.outputs.containerAppResourceId
+      containerAppWorkerModule.outputs.containerAppResourceId
+    ]
+    sqlDatabaseResourceId: existingSqlDatabase.id
+    embeddingCostUsdPerMillionTokens: embeddingCostUsdPerMillionTokens
     resourceNameSuffix: targetEnvironmentShort
     tags: tags
   }

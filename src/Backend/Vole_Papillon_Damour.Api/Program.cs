@@ -80,7 +80,9 @@ if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
     builder.Services
         .AddOpenTelemetry()
         .UseAzureMonitor(AzureMonitorTelemetry.ConfigureSampling)
-        .WithTracing(tracing => tracing.AddSource(BookScanTelemetry.ActivitySourceName))
+        .WithTracing(tracing => tracing
+            .AddSource(BookScanTelemetry.ActivitySourceName)
+            .AddSource(BookRecommendationTelemetry.ActivitySourceName))
         .WithMetrics(metrics => metrics.AddMeter(BookScanTelemetry.MeterName));
 }
 

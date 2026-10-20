@@ -16,6 +16,15 @@ param displayName string
 @description('Resource ID of the Log Analytics workspace queried by the workbook')
 param workspaceId string
 
+@description('Resource IDs of all Container Apps represented in the infrastructure tab')
+param containerAppResourceIds array
+
+@description('Resource ID of the existing SQL database represented in the infrastructure tab')
+param sqlDatabaseResourceId string
+
+@description('Estimated embedding input price in USD per million tokens')
+param embeddingCostUsdPerMillionTokens string = '0.02'
+
 @description('Optional suffix to give a parallel regional workbook its own resource identity')
 param resourceNameSuffix string = ''
 
@@ -33,7 +42,19 @@ resource workbook 'Microsoft.Insights/workbooks@2023-06-01' = {
     category: 'workbook'
     sourceId: workspaceId
     version: 'Notebook/1.0'
-    serializedData: replace(loadTextContent('workbooks/vpd-performance.workbook.json'), '__WORKSPACE_ID__', workspaceId)
+    serializedData: replace(
+      replace(
+        replace(
+          replace(loadTextContent('workbooks/vpd-performance.workbook.json'), '__WORKSPACE_ID__', workspaceId),
+          '__CONTAINER_APP_IDS__',
+          join(containerAppResourceIds, '","')
+        ),
+        '__SQL_DATABASE_ID__',
+        sqlDatabaseResourceId
+      ),
+      '__EMBEDDING_COST_PER_MILLION_USD__',
+      embeddingCostUsdPerMillionTokens
+    )
   }
 }
 

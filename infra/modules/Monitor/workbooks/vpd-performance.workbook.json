@@ -58,6 +58,28 @@
       "name": "parameters"
     },
     {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "73bc047d-87cc-4e25-b1a6-2ec01884717d",
+            "version": "KqlParameterItem/1.0",
+            "name": "EmbeddingCostPerMillionUsd",
+            "label": "Tarif embedding (USD / million tokens)",
+            "description": "Tarif d’entrée du déploiement Azure OpenAI utilisé pour estimer le coût. Ajuster à la facturation de l’abonnement.",
+            "type": 1,
+            "isRequired": true,
+            "value": "__EMBEDDING_COST_PER_MILLION_USD__"
+          }
+        ],
+        "style": "formHorizontal",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "embedding-cost-parameter"
+    },
+    {
       "type": 11,
       "content": {
         "version": "LinkItem/1.0",
@@ -101,6 +123,22 @@
             "linkTarget": "parameter",
             "linkLabel": "Front-ends et disponibilité",
             "subTarget": "clients",
+            "style": "link"
+          },
+          {
+            "id": "tab-link-embeddings",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Embeddings et coûts",
+            "subTarget": "embeddings",
+            "style": "link"
+          },
+          {
+            "id": "tab-link-infrastructure",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Infrastructure",
+            "subTarget": "infrastructure",
             "style": "link"
           }
         ]
@@ -576,6 +614,303 @@
         "value": "clients"
       },
       "name": "tab-clients"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Les spans couvrent un lot envoyé au service d’embeddings. Le texte, les ISBN et les identifiants de livre ne sont pas enregistrés. Le coût est estimé à partir des tokens d’entrée renvoyés par Azure OpenAI et du tarif unitaire ci-dessus ; il ne remplace pas la facture Azure."
+            },
+            "name": "text-25"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where Name == \"books.recommendations.embedding.generate\"\n| extend Outcome = coalesce(tostring(Properties[\"embedding.outcome\"]), iff(Success == false, \"failed\", \"unknown\"))\n| extend InputTokens = tolong(Properties[\"gen_ai.usage.input_tokens\"])\n| extend EstimatedCostUsd = coalesce(InputTokens, 0) * todouble('{EmbeddingCostPerMillionUsd}') / 1000000.0\n| summarize Lots = count(), Reussites = countif(Outcome == \"success\"), Echecs = countif(Outcome == \"failed\"), Annulations = countif(Outcome == \"cancelled\"), TokensComptabilises = countif(isnotnull(InputTokens)), TokensManquants = countif(isnull(InputTokens)), TokensEntree = sum(coalesce(InputTokens, 0)), CoutEstimeUsd = round(sum(EstimatedCostUsd), 6), P95Ms = round(percentile(DurationMs, 95)), MaxMs = round(max(DurationMs)) by AppRoleName\n| order by AppRoleName asc",
+              "size": 0,
+              "title": "Volumes, erreurs, couverture des tokens et coût estimé",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-26"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where Name == \"books.recommendations.embedding.generate\"\n| extend InputTokens = tolong(Properties[\"gen_ai.usage.input_tokens\"])\n| summarize TokensEntree = sum(coalesce(InputTokens, 0)) by bin(TimeGenerated, {TimeRange:grain}), AppRoleName",
+              "size": 0,
+              "title": "Tokens d’entrée dans le temps",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-27"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where Name == \"books.recommendations.embedding.generate\"\n| extend InputTokens = tolong(Properties[\"gen_ai.usage.input_tokens\"])\n| extend CoutEstimeUsd = coalesce(InputTokens, 0) * todouble('{EmbeddingCostPerMillionUsd}') / 1000000.0\n| summarize CoutEstimeUsd = sum(CoutEstimeUsd) by bin(TimeGenerated, {TimeRange:grain}), AppRoleName",
+              "size": 0,
+              "title": "Coût estimé dans le temps (USD)",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-28"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where Name == \"books.recommendations.embedding.generate\"\n| summarize P50 = percentile(DurationMs, 50), P95 = percentile(DurationMs, 95), P99 = percentile(DurationMs, 99), MaxMs = max(DurationMs) by bin(TimeGenerated, {TimeRange:grain}), AppRoleName",
+              "size": 0,
+              "title": "Latence des lots (P50 / P95 / P99 / maximum)",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-29"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where Name == \"books.recommendations.embedding.generate\"\n| summarize Echecs = countif(tostring(Properties[\"embedding.outcome\"]) == \"failed\") by bin(TimeGenerated, {TimeRange:grain}), AppRoleName",
+              "size": 0,
+              "title": "Lots en échec dans le temps",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "customWidth": "50",
+            "name": "query-30"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where Name == \"books.recommendations.embedding.generate\"\n| extend Modele = tostring(Properties[\"gen_ai.request.model\"]), Outcome = tostring(Properties[\"embedding.outcome\"]), Textes = toint(Properties[\"embedding.input_count\"]), TokensEntree = tolong(Properties[\"gen_ai.usage.input_tokens\"])\n| extend CoutEstimeUsd = coalesce(TokensEntree, 0) * todouble('{EmbeddingCostPerMillionUsd}') / 1000000.0\n| project TimeGenerated, AppRoleName, Modele, Outcome, Textes, TokensEntree, CoutEstimeUsd = round(CoutEstimeUsd, 6), DureeMs = round(DurationMs, 1), Success, ResultCode, OperationId\n| order by TimeGenerated desc\n| take 100",
+              "size": 0,
+              "title": "Lots récents et consommation détaillée",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "table"
+            },
+            "name": "query-31"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "embeddings"
+      },
+      "name": "tab-embeddings"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "Métriques de plateforme Azure par application conteneur et base SQL. CPU et mémoire indiquent les pics par replica ; une application à zéro replica ne produit pas de mesures CPU/mémoire."
+            },
+            "name": "text-32"
+          },
+          {
+            "type": 10,
+            "content": {
+              "chartId": "workbook-vpd-containerapp-cpu",
+              "version": "MetricsItem/2.0",
+              "size": 2,
+              "chartType": 2,
+              "resourceType": "microsoft.app/containerapps",
+              "metricScope": 0,
+              "resourceIds": [
+                "__CONTAINER_APP_IDS__"
+              ],
+              "timeContextFromParameter": "TimeRange",
+              "timeContext": {
+                "durationMs": 0
+              },
+              "metrics": [
+                {
+                  "namespace": "microsoft.app/containerapps",
+                  "metric": "microsoft.app/containerapps-Basic-CpuPercentage",
+                  "aggregation": 3,
+                  "splitBy": null
+                }
+              ],
+              "title": "CPU des Container Apps (maximum, %)",
+              "gridSettings": {
+                "rowLimit": 10000
+              }
+            },
+            "name": "metric-33"
+          },
+          {
+            "type": 10,
+            "content": {
+              "chartId": "workbook-vpd-containerapp-memory",
+              "version": "MetricsItem/2.0",
+              "size": 2,
+              "chartType": 2,
+              "resourceType": "microsoft.app/containerapps",
+              "metricScope": 0,
+              "resourceIds": [
+                "__CONTAINER_APP_IDS__"
+              ],
+              "timeContextFromParameter": "TimeRange",
+              "timeContext": {
+                "durationMs": 0
+              },
+              "metrics": [
+                {
+                  "namespace": "microsoft.app/containerapps",
+                  "metric": "microsoft.app/containerapps-Basic-MemoryPercentage",
+                  "aggregation": 3,
+                  "splitBy": null
+                }
+              ],
+              "title": "Mémoire des Container Apps (maximum, %)",
+              "gridSettings": {
+                "rowLimit": 10000
+              }
+            },
+            "name": "metric-34"
+          },
+          {
+            "type": 10,
+            "content": {
+              "chartId": "workbook-vpd-containerapp-replicas",
+              "version": "MetricsItem/2.0",
+              "size": 2,
+              "chartType": 2,
+              "resourceType": "microsoft.app/containerapps",
+              "metricScope": 0,
+              "resourceIds": [
+                "__CONTAINER_APP_IDS__"
+              ],
+              "timeContextFromParameter": "TimeRange",
+              "timeContext": {
+                "durationMs": 0
+              },
+              "metrics": [
+                {
+                  "namespace": "microsoft.app/containerapps",
+                  "metric": "microsoft.app/containerapps-Basic-Replicas",
+                  "aggregation": 3,
+                  "splitBy": null
+                },
+                {
+                  "namespace": "microsoft.app/containerapps",
+                  "metric": "microsoft.app/containerapps-Basic-RestartCount",
+                  "aggregation": 3,
+                  "splitBy": null
+                }
+              ],
+              "title": "Réplicas et redémarrages des Container Apps",
+              "gridSettings": {
+                "rowLimit": 10000
+              }
+            },
+            "name": "metric-35"
+          },
+          {
+            "type": 10,
+            "content": {
+              "chartId": "workbook-vpd-sql-dtu",
+              "version": "MetricsItem/2.0",
+              "size": 2,
+              "chartType": 2,
+              "resourceType": "microsoft.sql/servers/databases",
+              "metricScope": 0,
+              "resourceIds": [
+                "__SQL_DATABASE_ID__"
+              ],
+              "timeContextFromParameter": "TimeRange",
+              "timeContext": {
+                "durationMs": 0
+              },
+              "metrics": [
+                {
+                  "namespace": "microsoft.sql/servers/databases",
+                  "metric": "microsoft.sql/servers/databases-Basic-dtu_consumption_percent",
+                  "aggregation": 3,
+                  "splitBy": null
+                }
+              ],
+              "title": "Base SQL (DTU maximum, %)",
+              "gridSettings": {
+                "rowLimit": 10000
+              }
+            },
+            "name": "metric-36"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where AppRoleName in (\"vpd-api\", \"vpd-worker\", \"vpd-catalog\", \"vpd-scan\", \"vpd-web\", \"vpd-bo\")\n| summarize Requetes = count(), Echecs = countif(Success == false), P95Ms = percentile(DurationMs, 95), P99Ms = percentile(DurationMs, 99), PicMs = max(DurationMs) by AppRoleName, bin(TimeGenerated, {TimeRange:grain})\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "Latences et erreurs applicatives",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "__WORKSPACE_ID__"
+              ],
+              "visualization": "timechart"
+            },
+            "name": "query-37"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "Tab",
+        "comparison": "isEqualTo",
+        "value": "infrastructure"
+      },
+      "name": "tab-infrastructure"
     }
   ],
   "fallbackResourceIds": [

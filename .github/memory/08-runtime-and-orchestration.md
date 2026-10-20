@@ -155,6 +155,23 @@ The API startup wires:
   so they copy the root file into that context and the Worker Dockerfile copies it to `/src` before
   restore. Keep both workflow copies and the Dockerfile `COPY` together if the context or SDK mapping changes.
 
+## Monitoring workbook expansion — worktree 2026-10-20
+
+- The shared Bicep workbook now has Embeddings and costs plus Infrastructure tabs. Bicep injects
+  resource IDs for the six Container Apps and the existing SQL database; no Azure deployment was
+  performed as part of the PR.
+- `Vpd.Recommendations` emits one `books.recommendations.embedding.generate` dependency span per
+  Azure OpenAI batch with outcome, input count, dimensions, deployment model, provider-reported input
+  token count, and duration. It deliberately excludes text, ISBNs, and book identifiers. API and
+  Worker export this ActivitySource through their existing Azure Monitor OpenTelemetry setup.
+- The workbook estimates embedding input cost using `embeddingCostUsdPerMillionTokens` (string,
+  default `0.02` USD/million) and counts batches without token usage separately. This is not invoice
+  data; adjust the default for the tenant/model/region and compare with Azure Cost Management.
+- Infrastructure charts query ACA CPU/memory percentages, replicas/restarts and SQL DTU maximum;
+  CPU/memory are per replica and may be absent when an app is scaled to zero. The workbook is
+  generated from `infra/modules/Monitor/workbooks/generate-performance-workbook.mjs`; after Bicep
+  deploy, verify charts/queries against live telemetry and the actual metric series in the portal.
+
 ## DEV observability cost tuning — 2026-09-22
 
 - The DEV Bicep parameters disable the four synthetic availability tests without removing
