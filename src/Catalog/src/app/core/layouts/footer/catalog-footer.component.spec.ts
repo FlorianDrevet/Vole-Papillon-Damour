@@ -31,7 +31,6 @@ describe('CatalogFooterComponent', () => {
       href: link.getAttribute('href'),
     }))).toEqual([
       {text: 'Rechercher un livre', href: '/recherche'},
-      {text: 'Catalogue par genre', href: '/catalogue'},
       {text: 'Livres rares', href: '/livres-rares'},
       {text: 'Les prochaines dates', href: '/prochaines-dates'},
       {text: 'Ma liste de recherche', href: '/compte'},

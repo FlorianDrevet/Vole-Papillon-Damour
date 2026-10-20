@@ -14,7 +14,6 @@ import {Subject, filter, takeUntil} from 'rxjs';
 
 import {CatalogAuthService} from '../../catalog-auth.service';
 import {getCatalogAccountDisplayName} from '../../catalog-account-name';
-import {CatalogGenresService} from '../../catalog-genres.service';
 import {CatalogNavItem, createCatalogNavItems} from './catalog-nav-items';
 
 @Component({
@@ -26,9 +25,8 @@ import {CatalogNavItem, createCatalogNavItems} from './catalog-nav-items';
 })
 export class CatalogNavigationComponent {
   private readonly auth = inject(CatalogAuthService);
-  private readonly catalogGenres = inject(CatalogGenresService);
 
-  readonly navItems = computed(() => createCatalogNavItems(this.catalogGenres.genres()));
+  readonly navItems = computed(() => createCatalogNavItems());
   readonly url = signal('');
   readonly menuOpen = signal(false);
   readonly accountMenuOpen = signal(false);
@@ -53,7 +51,6 @@ export class CatalogNavigationComponent {
   private readonly suppressedGenreMenu = signal(false);
 
   constructor() {
-    this.catalogGenres.load();
     effect(() => {
       if (!isPlatformBrowser(this.platformId)) {
         return;

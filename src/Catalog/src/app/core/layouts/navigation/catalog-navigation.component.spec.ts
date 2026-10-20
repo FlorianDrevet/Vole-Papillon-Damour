@@ -84,29 +84,19 @@ describe('CatalogNavigationComponent', () => {
     expect(eventLink?.textContent).toContain('Les prochaines dates');
   });
 
-  it('uses only genres returned by the public API in both navigation variants', () => {
-    const desktopGenreLinks = Array.from(
-      fixture.nativeElement.querySelectorAll('.dropdown-panel li a'),
-    ) as HTMLAnchorElement[];
-    const desktopLabels = desktopGenreLinks.map(link => link.querySelector('span')?.textContent?.trim());
+  it('omits the genre catalogue from desktop and mobile navigation', () => {
+    const desktopNavigation = fixture.nativeElement.querySelector('.main-navigation') as HTMLElement;
+    expect(desktopNavigation.textContent).not.toContain('Catalogue par genre');
+    expect(desktopNavigation.querySelector('.dropdown-panel')).toBeNull();
+    expect(api.search).not.toHaveBeenCalled();
 
     const menuButton = fixture.nativeElement.querySelector('.menu-toggle') as HTMLButtonElement;
     menuButton.click();
     fixture.detectChanges();
-    const mobileGenreLinks = Array.from(
-      fixture.nativeElement.querySelectorAll('.mobile-nav-item ul a'),
-    ) as HTMLAnchorElement[];
+    const mobileNavigation = fixture.nativeElement.querySelector('.mobile-drawer nav') as HTMLElement;
 
-    expect(api.search).toHaveBeenCalledWith({pageSize: 1});
-    expect(desktopLabels).toEqual([
-      'Essais',
-      'Voir tous les genres',
-    ]);
-    expect(mobileGenreLinks.map(link => link.textContent?.trim())).toEqual([
-      'Essais',
-      'Voir tous les genres',
-    ]);
-    expect(fixture.nativeElement.textContent).not.toContain('Jeunesse');
+    expect(mobileNavigation.textContent).not.toContain('Catalogue par genre');
+    expect(mobileNavigation.querySelector('.mobile-nav-item ul')).toBeNull();
   });
 
   it('does not expose the personal Facebook profile as an association link', () => {
