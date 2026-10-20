@@ -101,10 +101,41 @@ h1 {
 }
 
 .detail-edition {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 7px;
   margin: 8px 0 0;
   color: var(--catalog-slate-3);
   font: .68rem/1.35 var(--catalog-mono);
   letter-spacing: .04em;
+}
+
+.detail-isbn {
+  white-space: nowrap;
+}
+
+.detail-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 15px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-genre-tag {
+  padding: 5px 9px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 999px;
+  background: var(--catalog-paper-2);
+  color: var(--catalog-ink-2);
+  font: .61rem/1.2 var(--catalog-mono);
+  letter-spacing: .03em;
+}
+
+.detail-selection-action {
+  margin-top: 20px;
 }
 
 .book-summary {
@@ -150,33 +181,6 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 9px;
-}
-
-.selection-visit {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: .7rem;
-  margin-top: 1.8rem;
-  padding: 1.1rem 1.15rem;
-  border-left: 2px solid var(--catalog-blue-2);
-  background: var(--catalog-paper-2);
-}
-
-.selection-visit-title {
-  margin: 0;
-  color: var(--catalog-ink-2);
-  font: 500 .66rem/1.2 var(--catalog-mono);
-  letter-spacing: .15em;
-  text-transform: uppercase;
-}
-
-.selection-visit-intro {
-  max-width: 34rem;
-  margin: 0;
-  color: var(--catalog-ink-soft);
-  font-size: .82rem;
-  line-height: 1.5;
 }
 
 .availability-line {
@@ -357,35 +361,6 @@ h1 {
   font-weight: 600;
 }
 
-.freshness-note {
-  display: flex;
-  gap: 11px;
-  margin-top: 25px;
-  padding: 14px 16px;
-  background: var(--catalog-paper-2);
-  color: var(--catalog-ink-soft);
-  font-size: .78rem;
-  line-height: 1.55;
-}
-
-.info-icon {
-  display: grid;
-  width: 18px;
-  height: 18px;
-  flex: none;
-  place-items: center;
-  border: 1.4px solid var(--catalog-slate-2);
-  border-radius: 50%;
-  font: 600 .69rem/1 var(--catalog-mono);
-}
-
-.isbn {
-  margin: 23px 0 0;
-  color: var(--catalog-slate-3);
-  font: .65rem/1.2 var(--catalog-mono);
-  letter-spacing: .06em;
-}
-
 .work-link {
   align-self: flex-start;
   margin-top: 14px;
@@ -487,16 +462,5 @@ h1 {
   .detail-state {
     padding-top: 54px;
     padding-bottom: 80px;
-  }
-}
-
-@media (max-width: 700px) {
-  .selection-visit {
-    margin-top: 1.35rem;
-    padding: .95rem;
-  }
-
-  .selection-visit-intro {
-    display: none;
   }
 }

@@ -108,6 +108,10 @@ export class CatalogBookDetailPageComponent implements OnInit, OnDestroy {
     return `${quantity} ${quantity === 1 ? singular : plural}`;
   }
 
+  genreTags(value: string | null): string[] {
+    return value?.split(/[,;|]/).map(genre => genre.trim()).filter(Boolean) ?? [];
+  }
+
   onCoverError(): void {
     this.coverFailed = true;
   }
