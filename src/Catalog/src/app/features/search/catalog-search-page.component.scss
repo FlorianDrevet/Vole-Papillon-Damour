@@ -662,15 +662,41 @@
 }
 
 .book-search-result--grid .book-follow-actions {
-  padding: 10px 12px;
+  padding: 2px 12px;
   border: 1px solid var(--catalog-line);
   border-top: 0;
   background: var(--catalog-white);
 }
 
-.book-search-result--grid .book-follow-button,
+.book-search-result--grid .book-follow-button {
+  width: auto;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--catalog-blue);
+  font-size: .76rem;
+  gap: 6px;
+  line-height: 1.35;
+}
+
+.book-search-result--grid .book-follow-button:hover {
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: .18em;
+}
+
+.book-search-result--grid .book-follow-button:focus-visible {
+  background: var(--catalog-paper-2);
+  outline: 2px solid var(--catalog-blue);
+  outline-offset: 2px;
+}
+
 .book-search-result--grid .book-followed {
-  width: 100%;
+  width: auto;
+  min-height: 34px;
+  padding: 0 10px;
 }
 
 .book-grid {
