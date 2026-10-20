@@ -84,6 +84,10 @@ The external-results « Suivre ces titres » action follows only distinct refere
 of the bulk title action; it is disabled with guidance to use the per-edition button when no work
 identifier is available. Individual edition actions retain their `Edition` scope.
 
+When the submitted query contains only digits (an ISBN), the page hides
+the global “Suivre les titres de cette recherche” callout and keeps the matching edition's
+follow action.
+
 Rare-book cards, Catalog admin links, canonical metadata, sitemap entries and links from
 edition details use the rare-book UUID; the API detail endpoint still accepts legacy slugs
 for existing links. The detail page places condition, ISBN and public description before the

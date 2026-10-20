@@ -584,6 +584,23 @@ describe('CatalogSearchPageComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(2);
   });
 
+  it('Given_NumericIsbnSearch_When_ResultsLoad_Then_OnlyEditionFollowRemains', () => {
+    routeParams.next(convertToParamMap({q: '9782070612758'}));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: '9782070612758',
+      items: [reference],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.external-follow-callout')).toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--edition').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('.reference-card .reference-follow--work').length).toBe(0);
+  });
+
   it('uses the submitted search text in the callout instead of one result title', () => {
     routeParams.next(convertToParamMap({q: 'Le grand'}));
     api.searchReferences.and.returnValue(of({
