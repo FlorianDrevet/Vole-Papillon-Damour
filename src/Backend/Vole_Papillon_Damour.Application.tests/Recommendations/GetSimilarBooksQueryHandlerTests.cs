@@ -48,7 +48,7 @@ public sealed class GetSimilarBooksQueryHandlerTests
         fixture.AddNeighbor(CurrentGeneration, SourceIsbn, 2, SecondNeighborIsbn, 0.8f, NeighborReason.Theme);
         await fixture.SaveAsync();
 
-        var result = await CreateHandler(fixture, minimumCount: 1)
+        var result = await CreateHandler(fixture)
             .Handle(new GetSimilarBooksQuery(SourceIsbn), CancellationToken.None);
 
         result.IsError.Should().BeFalse();
@@ -146,13 +146,13 @@ public sealed class GetSimilarBooksQueryHandlerTests
 
     private static GetSimilarBooksQueryHandler CreateHandler(
         PublicCatalogFixture fixture,
-        int minimumCount = 2,
+        int minimumCount = 1,
         float minimumScore = 0.5f)
     {
         var settings = Substitute.For<IRecommendationSettings>();
         settings.Enabled.Returns(true);
         settings.SimilarMinScore.Returns(minimumScore);
-        settings.SimilarMaxCount.Returns(5);
+        settings.SimilarMaxCount.Returns(20);
         settings.SimilarMinCount.Returns(minimumCount);
         var clock = Substitute.For<IDateTimeProvider>();
         clock.UtcNow.Returns(Now);
