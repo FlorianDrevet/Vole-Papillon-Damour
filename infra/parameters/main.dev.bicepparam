@@ -271,6 +271,7 @@ param blobContainerActualityImages = 'actuality-images'
 param blobContainerEventImages = 'event-images'
 param blobContainerProductImages = 'product-images'
 param blobContainerRareBookPhotos = 'livres-rares'
+param blobContainerBookCovers = 'book-covers'
 
 param jwtIssuer = 'Vole_Papillon_Damour'
 param jwtAudience = 'Vole_Papillon_Damour'

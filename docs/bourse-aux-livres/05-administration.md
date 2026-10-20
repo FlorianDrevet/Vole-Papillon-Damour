@@ -61,7 +61,7 @@ qu'il se vend ? ».
 
 | Action | Détail |
 |---|---|
-| Corriger les métadonnées | Titre, auteur, éditeur, année, genre, couverture. Une correction manuelle **ne doit jamais être écrasée** par une actualisation automatique ultérieure (`RG-05`) |
+| Corriger les métadonnées | Titre, auteur, éditeur, année, genre et couverture. Une couverture choisie par l'administrateur (JPEG, PNG ou WebP, 8 Mio maximum) est envoyée dans Blob ; son URL est enregistrée sur la fiche. La correction manuelle **ne doit jamais être écrasée** par une actualisation automatique ultérieure (`RG-05`) |
 | Ajouter une fiche à la main | Pour les cas où le scan est impossible mais l'ISBN connu |
 | Ajuster les quantités disponible et annoncée | Génère un mouvement de type `CORRECTION`, tracé et attribué (`RG-35`) |
 | Retirer des livres | Mouvement `RETRAIT` : désherbage, don à une autre structure, mise au rebut |

@@ -12,6 +12,7 @@ using Vole_Papillon_Damour.Application.Books.Commands.DeleteBook;
 using Vole_Papillon_Damour.Application.Books.Commands.ForceBookAlerts;
 using Vole_Papillon_Damour.Application.Books.Commands.ReassignSessionMode;
 using Vole_Papillon_Damour.Application.Books.Commands.UpdateBookMetadata;
+using Vole_Papillon_Damour.Application.Books.Commands.UploadBookCover;
 using Vole_Papillon_Damour.Application.Books.Common;
 using Vole_Papillon_Damour.Application.Books.Queries.Admin;
 using Vole_Papillon_Damour.Application.Books.Queries.GetAssociationSettings;
@@ -223,6 +224,47 @@ public static class BookAdministrationController
                             error => error.Result());
                     })
                 .WithName("UpdateAdminBookMetadata")
+                .RequireAuthorization("Administration");
+
+            endpoints.MapPost(
+                    "/books/admin/books/{isbn13}/cover",
+                    async (
+                        string isbn13,
+                        [FromForm] UploadAdminBookCoverRequest request,
+                        ClaimsPrincipal principal,
+                        IMediator mediator,
+                        CancellationToken cancellationToken) =>
+                    {
+                        if (request.File is null)
+                        {
+                            return Results.BadRequest(new { error = "A book cover image file is required." });
+                        }
+
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        await using var stream = request.File.OpenReadStream();
+                        var result = await mediator.Send(
+                            new UploadBookCoverCommand(
+                                isbn13,
+                                stream,
+                                request.File.ContentType,
+                                request.File.Length,
+                                userId),
+                            cancellationToken);
+
+                        return result.Match(
+                            cover => Results.Ok(new AdminBookCoverUploadResponse(
+                                cover.Isbn13,
+                                cover.CoverUrl.ToString(),
+                                cover.Changed,
+                                new DateTimeOffset(cover.UpdatedAt, TimeSpan.Zero))),
+                            error => error.Result());
+                    })
+                .WithName("UploadAdminBookCover")
+                .DisableAntiforgery()
                 .RequireAuthorization("Administration");
 
             endpoints.MapPost(

@@ -146,9 +146,10 @@ chaque candidate, un GET exige un statut de succès et un `Content-Type` commen�
 signal de repli, pas une erreur applicative exposée au navigateur.
 
 L'URL vérifiée est conservée directement dans `Books.CoverUrl`, avec `CoverSource` et
-`CoverCheckedAt`. Il n'y a plus de téléchargement ni d'upload de couverture dans Blob.
-Les fiches résolues sans image sont contrôlées à nouveau après 30 jours ; le catalogue
-et la Scanette affichent entre-temps le placeholder générique de `SharedUi`.
+`CoverCheckedAt` ; les images automatiques ne sont pas copiées dans Blob. Une correction
+manuelle envoyée depuis l'administration est téléversée dans `book-covers` et devient
+l'URL de la fiche. Les fiches résolues sans image sont contrôlées à nouveau après 30 jours ;
+le catalogue et la Scanette affichent entre-temps le placeholder générique de `SharedUi`.
 
 ## 7. Envoi d'e-mails
 

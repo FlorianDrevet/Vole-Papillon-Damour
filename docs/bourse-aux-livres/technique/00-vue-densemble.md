@@ -99,8 +99,9 @@ instruit au réexamen de `DT-04`, et l'alternative écartée en `DT-09`.
 ```
 
 Le worker ne parle qu'à SQL et aux services externes. **Il ne passe pas par l'API.**
-Les couvertures de livres ne transitent plus par le stockage Blob : seules les URLs
-HTTPS validées des sources sont conservées dans SQL et renvoyées au client. Concrètement,
+Les couvertures découvertes automatiquement utilisent les URLs HTTPS validées des sources.
+Une couverture téléversée par un administrateur est stockée dans le conteneur Blob public
+`book-covers`; son URL est enregistrée dans la même colonne `CoverUrl`. Concrètement,
 c'est un second projet exécutable de la même solution, qui
 **référence les mêmes bibliothèques** `Application`, `Domain` et `Infrastructure` et
 appelle les mêmes handlers MediatR en direct. Rien n'est dupliqué ; deux processus, un

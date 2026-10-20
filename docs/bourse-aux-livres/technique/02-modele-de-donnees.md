@@ -53,7 +53,7 @@ RejectionCount        int           NOT NULL DEFAULT 0
 
 IsRare                bit           NOT NULL DEFAULT 0   -- marquage manuel, RG-50
 IsHiddenFromCatalog   bit           NOT NULL DEFAULT 0
-CoverUrl              nvarchar(2048) NULL  -- URL HTTPS vérifiée de l'image
+CoverUrl              nvarchar(2048) NULL  -- URL HTTPS de la source ou du blob manuel
 CoverSource           tinyint       NULL  -- Bnf|OpenLibrary|GoogleBooks|Manual
 CoverCheckedAt        datetime2     NULL  -- dernier contrôle de couverture
 
@@ -578,7 +578,8 @@ par palier fonctionnel plutôt qu'une seule massive :
 | `AssociationSettings` | **1** | Une ligne, par construction |
 | **Total hors images** | **< 100 Mo** | Justifie `DT-02` |
 
-Les couvertures ne sont plus stockées dans la base ni dans un conteneur Blob dédié :
-seule leur URL (au plus 2 048 caractères) et son origine sont persistées. Une image
-indisponible est reconstruite par le worker depuis les sources ou remplacée par le
-placeholder partagé côté interface.
+Les octets des images ne sont pas stockés dans la base. Pour les couvertures automatiques,
+la fiche conserve l'URL HTTPS vérifiée de la source. Pour une couverture téléversée
+manuellement, les octets sont stockés dans `book-covers` et seule son URL HTTPS est
+conservée dans la colonne (au plus 2 048 caractères). Une image automatique indisponible
+est reconstruite par le worker ou remplacée par le placeholder partagé côté interface.

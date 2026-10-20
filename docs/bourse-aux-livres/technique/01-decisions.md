@@ -1031,8 +1031,9 @@ tant que le domaine et un parcours réel ne sont pas validés.
 stockage Blob. Ce coût est disproportionné pour des images reconstructibles, et une
 URL BnF enregistrée sans vérification pouvait renvoyer `HTTP 500` au navigateur.
 
-**Décision.** Le champ `Books.CoverUrl` conserve directement une URL HTTPS de la source,
-avec `CoverSource` et `CoverCheckedAt`. Avant de la persister, l'Infrastructure vérifie
+**Décision.** Pour les couvertures issues de l'enrichissement bibliographique, le champ
+`Books.CoverUrl` conserve directement une URL HTTPS de la source, avec `CoverSource` et
+`CoverCheckedAt`. Avant de la persister, l'Infrastructure vérifie
 que l'URL répond en succès avec un contenu `image/*`. Une erreur BnF — notamment le
 `HTTP 500` « id to load is required for loading » — est donc traitée comme une
 couverture absente, et le résolveur essaie successivement Open Library puis Google Books.
@@ -1045,13 +1046,20 @@ un visuel générique partagé dans `SharedUi`.
 **Migration.** La migration renomme la colonne historique sans perte de schéma, élargit
 sa taille pour les URLs externes, ajoute les deux attributs de suivi, puis vide les
 anciennes références Blob afin que le worker les reconstruise avec le nouveau pipeline.
-Le conteneur `book-covers` et le service d'upload dédié ne font plus partie de
-l'infrastructure.
+Le conteneur `book-covers` et son service d'upload ont été retirés de l'infrastructure
+après cette migration.
 
-**Conséquence.** Le catalogue ne dépend plus de notre stockage pour servir une image,
-mais dépend de la disponibilité ultérieure des sources. Le contrôle périodique des
-fiches sans couverture (30 jours) et le placeholder générique absorbent cette
-fragilité ; le budget d'images Blob disparaît.
+**Évolution — téléversement manuel dans l'administration.** Une couverture envoyée par
+un administrateur est stockée dans le conteneur Blob public `book-covers`; son URL HTTPS
+est enregistrée dans `Books.CoverUrl`, avec `CoverSource=Manual`, et le champ est verrouillé
+contre les actualisations automatiques. Une nouvelle image remplace l'ancienne après
+l'enregistrement réussi de la fiche. Les URLs trouvées automatiquement restent directes
+et ne sont pas copiées dans Blob.
+
+**Conséquence.** Les images automatiques dépendent de la disponibilité ultérieure de leurs
+sources et les images manuelles dépendent de notre stockage. Le contrôle périodique des
+fiches sans couverture (30 jours) et le placeholder générique absorbent la fragilité des
+sources externes.
 
 ## DT-25 — Carte de compte signée par HMAC
 

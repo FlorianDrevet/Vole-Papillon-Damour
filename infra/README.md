@@ -130,13 +130,11 @@ déployé, utiliser les requêtes du §7 de la documentation d'observabilité po
 destinataire iCloud. Il n'y a pas de liste blanche iCloud à configurer dans ACS ; côté
 iCloud, vérifier les indésirables, les règles et les expéditeurs bloqués.
 
-Les conteneurs blob restants sont en accès `Blob` (lecture anonyme) : `BlobService`
-renvoie l'URL brute du blob au client, les images doivent donc être lisibles
-sans SAS. Les couvertures de livres ne font plus partie de ce stockage : elles
-utilisent directement les URLs HTTPS vérifiées de BnF, Open Library ou Google Books.
-Le retrait de `book-covers` du template Bicep ne supprime pas un conteneur déjà
-provisionné en mode incrémental : après application de la migration et smoke test,
-vérifier qu'aucun ancien consommateur ne le lit puis le supprimer explicitement.
+Les conteneurs blob servis par URL brute sont en accès `Blob` (lecture anonyme), donc les
+images doivent être lisibles sans SAS. Les couvertures issues de BnF, Open Library ou
+Google Books continuent d'utiliser directement leurs URLs HTTPS vérifiées. Les images
+choisies dans le catalogue administratif sont stockées dans le conteneur public
+`book-covers`, déclaré par le template Bicep.
 
 Le scaling DEV est à `minReplicas: 1` pour l'API, le Website et le Catalog. Le BackOffice
 et le Scan sont à `minReplicas: 0`, `maxReplicas: 2`, avec un `cooldownPeriod` de

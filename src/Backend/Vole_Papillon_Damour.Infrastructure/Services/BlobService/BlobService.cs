@@ -1,4 +1,5 @@
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Options;
@@ -14,6 +15,7 @@ public class BlobService
     private readonly BlobContainerClient _blobContainerEventImagesClient;
     private readonly BlobContainerClient _blobContaineProductsImagesClient;
     private readonly BlobContainerClient _blobContainerRareBookPhotosClient;
+    private readonly BlobContainerClient _blobContainerBookCoversClient;
 
     public BlobService(
         BlobServiceClient blobServiceClient,
@@ -28,6 +30,8 @@ public class BlobService
             .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerProductsImagesClient);
         _blobContainerRareBookPhotosClient = blobServiceClient
             .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerRareBookPhotosClient);
+        _blobContainerBookCoversClient = blobServiceClient
+            .GetBlobContainerClient(blobStorageSettings.Value.BlobContainerBookCoversClient);
     }
     
     public async Task<Uri> UploadLotoImagesAsync(string fileName, Stream stream)
@@ -53,6 +57,27 @@ public class BlobService
     public async Task<Uri> UploadRareBookPhotoAsync(string fileName, Stream stream)
     {
         return await UploadAsync(fileName, stream, _blobContainerRareBookPhotosClient);
+    }
+
+    public async Task<Uri> UploadBookCoverAsync(
+        string fileName,
+        Stream stream,
+        string contentType,
+        CancellationToken cancellationToken)
+    {
+        await _blobContainerBookCoversClient.CreateIfNotExistsAsync(
+            PublicAccessType.Blob,
+            cancellationToken: cancellationToken);
+
+        var blobClient = _blobContainerBookCoversClient.GetBlobClient(fileName);
+        await blobClient.UploadAsync(
+            stream,
+            new BlobUploadOptions
+            {
+                HttpHeaders = new BlobHttpHeaders { ContentType = contentType }
+            },
+            cancellationToken);
+        return blobClient.Uri;
     }
 
     private async Task<Uri> UploadAsync(string fileName, Stream stream, BlobContainerClient blobContainerClient)
@@ -103,6 +128,7 @@ public class BlobService
             BlobContainer.EventImages => _blobContainerEventImagesClient,
             BlobContainer.ProductsImages => _blobContaineProductsImagesClient,
             BlobContainer.RareBookPhotos => _blobContainerRareBookPhotosClient,
+            BlobContainer.BookCovers => _blobContainerBookCoversClient,
             _ => throw new ArgumentOutOfRangeException(nameof(container), container, "Unknown blob container.")
         };
     }

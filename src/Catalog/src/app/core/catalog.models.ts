@@ -778,6 +778,13 @@ export interface CatalogAdminMetadataRetry {
   queued: boolean;
 }
 
+export interface CatalogAdminBookCoverUpload {
+  isbn13: string;
+  coverUrl: string;
+  changed: boolean;
+  updatedAt: string;
+}
+
 export interface CatalogAdminOperation {
   isbn13?: string;
   quantityAvailable?: number;

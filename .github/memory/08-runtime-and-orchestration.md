@@ -232,9 +232,12 @@ The API startup wires:
   `bookAlertsEmailEnabled` only after a real API image is running. The deployment script
   waits for the API's Key Vault secret reference before ARM creates the Event Grid webhook,
   avoiding the 503 validation race from run `35098468030`.
-- Bibliographic covers now use validated direct HTTPS provider URLs; the dedicated Blob cover
-  container/upload path is gone. Migration `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl`
-  is present in the deployed main line; rollout did not rerun EF migrations because DEV was current.
+- Bibliographic covers found by enrichment continue to use validated direct HTTPS provider URLs.
+  Catalog administrators can upload a manual override to the public `book-covers` Blob container;
+  the same `Books.CoverUrl` field stores its URL and the manual metadata lock protects it from
+  later enrichment. The container is provisioned by `infra/main.bicep`; after merge, deploy Infra,
+  then API, then Catalog. No EF migration is needed. Migration
+  `20260906101426_ReplaceBookCoverBlobWithDirectCoverUrl` is present in the deployed main line.
 - Catalog SSR keeps public routes indexable and private account/admin routes `noindex, nofollow`;
   this behavior and the robots/sitemap smoke checks are retained as deployment invariants.
 

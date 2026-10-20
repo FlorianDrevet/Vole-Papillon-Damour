@@ -10,6 +10,7 @@ const string BlobContainerEventImagesEnvironmentName = "BlobSettings__BlobContai
 const string BlobContainerLotoImagesEnvironmentName = "BlobSettings__ContainerName";
 const string BlobContainerProductsImagesEnvironmentName = "BlobSettings__BlobContainerProductsImagesClient";
 const string BlobContainerRareBookPhotosEnvironmentName = "BlobSettings__BlobContainerRareBookPhotosClient";
+const string BlobContainerBookCoversEnvironmentName = "BlobSettings__BlobContainerBookCoversClient";
 const string BackOfficeResourceName = "backoffice";
 const string CatalogResourceName = "catalog";
 const string DefaultHttpEndpointName = "http";
@@ -58,6 +59,7 @@ var api = builder.AddProject<Projects.Vole_Papillon_Damour_Api>(ApiResourceName)
     .WithEnvironment(BlobContainerEventImagesEnvironmentName, "event-images")
     .WithEnvironment(BlobContainerProductsImagesEnvironmentName, "product-images")
     .WithEnvironment(BlobContainerRareBookPhotosEnvironmentName, "livres-rares")
+    .WithEnvironment(BlobContainerBookCoversEnvironmentName, "book-covers")
     .WithEnvironment(AuthenticationProviderEnvironmentName, "Keycloak")
     .WithEnvironment(KeycloakAuthorityEnvironmentName, KeycloakRealmAuthority)
     .WithEnvironment(KeycloakAudienceEnvironmentName, KeycloakApiAudience)
@@ -75,6 +77,7 @@ builder.AddAzureFunctionsProject<Projects.Vole_Papillon_Damour_Worker>("worker")
     .WithEnvironment(BlobContainerEventImagesEnvironmentName, "event-images")
     .WithEnvironment(BlobContainerProductsImagesEnvironmentName, "product-images")
     .WithEnvironment(BlobContainerRareBookPhotosEnvironmentName, "livres-rares")
+    .WithEnvironment(BlobContainerBookCoversEnvironmentName, "book-covers")
     .WaitFor(projectDatabase)
     .WaitFor(storage);
 

@@ -14,6 +14,7 @@ import {
   CatalogAdminAddBookRequest,
   CatalogAdminBookImportRequest,
   CatalogAdminBookImportResponse,
+  CatalogAdminBookCoverUpload,
   CatalogAdminBook,
   CatalogAdminBookMetadataQueue,
   CatalogAdminMetadataRetry,
@@ -313,6 +314,20 @@ export class CatalogAdminApiService {
     return this.http.patch<object>(
       `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/metadata`,
       request,
+      this.options(accessToken),
+    );
+  }
+
+  uploadBookCover(
+    accessToken: string,
+    isbn13: string,
+    file: File,
+  ): Observable<CatalogAdminBookCoverUpload> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<CatalogAdminBookCoverUpload>(
+      `${this.apiUrl}/books/admin/books/${encodeURIComponent(isbn13)}/cover`,
+      formData,
       this.options(accessToken),
     );
   }

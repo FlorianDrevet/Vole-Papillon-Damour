@@ -24,6 +24,16 @@
 | **Branche** | `fix/catalog-pending-isbn-queue`; PR [#271](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/271) ouverte, non fusionnée. La branche inclut la dernière version de `main`, dont la PR #275 fusionnée. |
 | **Recommandations** | Implémentées et livrées par la [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239), mais toujours désactivées en DEV. Cette branche ajoute l'activation via `Infra - deploy` et le lancement manuel ; aucun déploiement ni calcul n'a été fait. Le reset catalogue est terminé, mais les lots ISBN restent à importer. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` sur environ 50 fiches. |
 
+### Téléversement manuel des couvertures — 2026-10-20
+
+La branche `feat/admin-book-cover-upload` ajoute le remplacement de couverture dans la
+fiche Catalog d'administration. Les images JPEG, PNG et WebP (8 Mio maximum) vont dans
+le conteneur public `book-covers`; leur URL est enregistrée dans `Books.CoverUrl` et la
+correction manuelle est verrouillée contre l'enrichissement. Les couvertures découvertes
+par BnF/Open Library/Google Books gardent leurs URLs directes. La PR est en préparation,
+aucun déploiement n'a été fait. Après fusion : lancer `Infra - deploy` pour créer le
+conteneur, puis déployer l'API et Catalog. Aucune migration SQL n'est requise.
+
 ### Vues de recherche du Catalogue — 2026-10-20
 
 La [PR #281](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/281) a été fusionnée le 2026-10-20. Elle ajoute deux modes aux résultats : Grille carrée par défaut et Liste. La liste est un choix explicite avec le paramètre URL view=list ; les URL existantes avec view=grid restent compatibles. Recherche, filtres et pagination sont conservés lors du changement ; les livres rares gardent leur présentation dédiée.

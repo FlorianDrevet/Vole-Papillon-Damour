@@ -195,12 +195,10 @@ Deux obstacles connus (`revue.md` `R-21`, `R-22`) :
 - `main.bicep` n'a **aucune boucle**. C'est le moment de peser un passage en tableau typé,
   plutôt qu'à la sixième application.
 
-Ajouter le conteneur blob des couvertures, absent des quatre déclarés (`revue.md` `R-24`)
-— et **trancher au passage comment il est servi** : accès public `Blob` comme les quatre
-autres, ou passage par l'API. Les quatre existants sont publics ; reprendre ce choix par
-défaut est défendable pour des couvertures de livres, mais c'est un choix, pas une
-reconduction automatique. Le décider ici évite d'avoir à le changer une fois les URL
-publiées dans le catalogue.
+✅ `R-24` a été traité par `DT-24` : les couvertures automatiques gardent leurs URLs
+fournisseurs vérifiées. À la demande d'ajouter une correction manuelle depuis Catalog,
+le conteneur `book-covers` a été réintroduit avec accès public `Blob` pour les seules
+images téléversées par les administrateurs ; `Books.CoverUrl` conserve leur URL.
 
 **Resserrer le CORS** (`revue.md` `R-30`). L'API est en `AllowAnyOrigin` dans
 `Program.cs`. C'est acceptable avec des jetons porteurs, et c'est exactement le moment que
