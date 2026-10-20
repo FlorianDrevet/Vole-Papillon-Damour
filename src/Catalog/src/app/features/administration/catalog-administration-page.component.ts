@@ -16,6 +16,13 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {Meta} from '@angular/platform-browser';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Subject, combineLatest, firstValueFrom, takeUntil} from 'rxjs';
+import {
+  getTemporaryPasswordIssue,
+  isTemporaryPasswordPolicyProblemDetail,
+  temporaryPasswordIssueMessage,
+  TEMPORARY_PASSWORD_GUIDANCE,
+  type TemporaryPasswordIssue,
+} from '@vpd/ui';
 
 import {CatalogAdminApiService} from '../../core/catalog-admin-api.service';
 import {CatalogApiService} from '../../core/catalog-api.service';
@@ -340,6 +347,8 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly editingAccountId = signal<string | null>(null);
   readonly editingAccountRoles = signal<CatalogAdminAccountRole[]>([]);
   readonly showCreateAccount = signal(false);
+  createAccountSubmitted = false;
+  readonly temporaryPasswordGuidance = TEMPORARY_PASSWORD_GUIDANCE;
 
   readonly deadStockBooks = signal<CatalogDeadStockBook[]>([]);
   readonly deadStockGeneratedAt = signal<string | null>(null);
@@ -1913,8 +1922,15 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
 
   async createAccount(): Promise<void> {
     const form = this.createAccountForm;
-    if (!form.email.trim() || !form.firstName.trim() || !form.lastName.trim() || form.temporaryPassword.length < 8 || form.roles.length === 0) {
-      this.showError('E-mail, prénom, nom, mot de passe temporaire et au moins un droit sont obligatoires.');
+    this.createAccountSubmitted = true;
+    if (!form.email.trim() || !form.firstName.trim() || !form.lastName.trim() || form.roles.length === 0) {
+      this.showError('E-mail, prénom, nom et au moins un droit sont obligatoires.');
+      return;
+    }
+
+    const passwordIssue = getTemporaryPasswordIssue(form.temporaryPassword);
+    if (passwordIssue) {
+      this.showError(temporaryPasswordIssueMessage(passwordIssue));
       return;
     }
 
@@ -1932,9 +1948,18 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
       form.lastName = '';
       form.temporaryPassword = '';
       form.roles = [];
+      this.createAccountSubmitted = false;
       this.showCreateAccount.set(false);
       await this.loadAccounts();
-    });
+    }, this.errorMessage, error => this.describeCreateAccountError(error));
+  }
+
+  getTemporaryPasswordIssue(password: string | null | undefined): TemporaryPasswordIssue | null {
+    return getTemporaryPasswordIssue(password);
+  }
+
+  temporaryPasswordMessage(issue: TemporaryPasswordIssue): string {
+    return temporaryPasswordIssueMessage(issue);
   }
 
   toggleCreateRole(role: CatalogAdminAccountRole): void {
@@ -2905,6 +2930,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     }
 
     return 'L’opération n’a pas pu être effectuée. Réessayez dans un instant.';
+  }
+
+  private describeCreateAccountError(error: unknown): string {
+    if (error instanceof HttpErrorResponse && isTemporaryPasswordPolicyProblemDetail(error.error?.detail)) {
+      return error.error.detail;
+    }
+
+    return this.describeError(error);
   }
 
   private describeAccountError(error: unknown): string {

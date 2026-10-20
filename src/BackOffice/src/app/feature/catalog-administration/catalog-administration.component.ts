@@ -1,5 +1,14 @@
 import {Component, OnInit, inject, signal} from '@angular/core';
 import {FormBuilder, Validators} from '@angular/forms';
+import {
+  getTemporaryPasswordIssue,
+  isTemporaryPasswordPolicyProblemDetail,
+  TEMPORARY_PASSWORD_GUIDANCE,
+  temporaryPasswordCategoriesValidator,
+  temporaryPasswordIssueMessage,
+  TEMPORARY_PASSWORD_MAX_LENGTH,
+  TEMPORARY_PASSWORD_MIN_LENGTH,
+} from '@vpd/ui';
 
 import {
   AdminAccount,
@@ -56,6 +65,7 @@ export class CatalogAdministrationComponent implements OnInit {
   protected readonly editingAccountId = signal<string | null>(null);
   protected readonly editingRoles = signal<AdminAccountRole[]>([]);
   protected readonly settings = signal<AdminSettings | null>(null);
+  protected readonly temporaryPasswordGuidance = TEMPORARY_PASSWORD_GUIDANCE;
 
   protected bookSearch = '';
   protected metadataStatus = '';
@@ -141,7 +151,12 @@ export class CatalogAdministrationComponent implements OnInit {
     email: ['', [Validators.required, Validators.email, Validators.maxLength(320)]],
     firstName: ['', [Validators.required, Validators.maxLength(64)]],
     lastName: ['', [Validators.required, Validators.maxLength(64)]],
-    temporaryPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(256)]],
+    temporaryPassword: this.formBuilder.nonNullable.control('', [
+      Validators.required,
+      Validators.minLength(TEMPORARY_PASSWORD_MIN_LENGTH),
+      Validators.maxLength(TEMPORARY_PASSWORD_MAX_LENGTH),
+      temporaryPasswordCategoriesValidator,
+    ]),
     roles: this.formBuilder.nonNullable.control<AdminAccountRole[]>([], Validators.required),
   });
 
@@ -447,7 +462,18 @@ export class CatalogAdministrationComponent implements OnInit {
         this.showCreateAccount.set(false);
         this.loadAccounts();
       },
+      error => this.readCreateAccountError(error),
     );
+  }
+
+  protected temporaryPasswordErrorMessage(): string | null {
+    const control = this.createAccountForm.controls.temporaryPassword;
+    if (!control.touched || control.valid) {
+      return null;
+    }
+
+    const issue = getTemporaryPasswordIssue(control.value);
+    return issue ? temporaryPasswordIssueMessage(issue) : null;
   }
 
   protected toggleCreateRole(role: AdminAccountRole): void {
@@ -534,7 +560,12 @@ export class CatalogAdministrationComponent implements OnInit {
       .finally(() => this.isLoading.set(false));
   }
 
-  private save<T>(request: () => Promise<T>, message: string, after: () => void): void {
+  private save<T>(
+    request: () => Promise<T>,
+    message: string,
+    after: () => void,
+    describeError: (error: unknown) => string = error => this.readError(error),
+  ): void {
     this.isSaving.set(true);
     this.clearMessages();
     request()
@@ -542,7 +573,7 @@ export class CatalogAdministrationComponent implements OnInit {
         after();
         this.successMessage.set(message);
       })
-      .catch(error => this.errorMessage.set(this.readError(error)))
+      .catch(error => this.errorMessage.set(describeError(error)))
       .finally(() => this.isSaving.set(false));
   }
 
@@ -557,5 +588,10 @@ export class CatalogAdministrationComponent implements OnInit {
 
   private readError(error: any): string {
     return error?.response?.data?.description ?? error?.response?.data?.error ?? error?.message ?? 'Une erreur est survenue.';
+  }
+
+  private readCreateAccountError(error: unknown): string {
+    const detail = (error as {response?: {data?: {detail?: unknown}}} | null)?.response?.data?.detail;
+    return isTemporaryPasswordPolicyProblemDetail(detail) ? detail : this.readError(error);
   }
 }

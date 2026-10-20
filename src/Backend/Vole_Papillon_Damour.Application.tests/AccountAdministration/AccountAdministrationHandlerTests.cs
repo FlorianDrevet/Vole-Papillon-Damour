@@ -95,6 +95,37 @@ public sealed class AccountAdministrationHandlerTests
     }
 
     [Fact]
+    public async Task CreateAdminAccountCommand_WhenEntraRejectsPasswordPolicy_ReturnsSpecificValidationError()
+    {
+        var directory = Substitute.For<IEntraAccountDirectory>();
+        directory.CreateAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<IReadOnlyCollection<string>>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<EntraAccount>(
+                new EntraAccountDirectoryException(EntraAccountDirectoryException.TemporaryPasswordRejected, 400)));
+
+        var handler = new CreateAdminAccountCommandHandler(directory);
+
+        var result = await handler.Handle(
+            new CreateAdminAccountCommand(
+                "marie@example.test",
+                "Marie",
+                "Tri",
+                "trop-faible",
+                [AccountRoles.Tri]),
+            CancellationToken.None);
+
+        result.IsError.Should().BeTrue();
+        result.FirstError.Code.Should().Be("Account.InvalidTemporaryPassword");
+        result.FirstError.Description.Should().Contain("8");
+        result.FirstError.Description.Should().Contain("3 catégories");
+    }
+
+    [Fact]
     public async Task CreateAdminAccountCommand_RequiresAtLeastOneRole()
     {
         var directory = Substitute.For<IEntraAccountDirectory>();

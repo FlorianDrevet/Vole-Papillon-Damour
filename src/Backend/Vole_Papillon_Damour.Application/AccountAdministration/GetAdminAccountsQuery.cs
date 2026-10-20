@@ -72,6 +72,13 @@ public sealed class GetAdminAccountsQueryHandler(
 
     internal static Error ToDirectoryError(EntraAccountDirectoryException exception)
     {
+        if (exception.FailureCode == EntraAccountDirectoryException.TemporaryPasswordRejected)
+        {
+            return Error.Validation(
+                "Account.InvalidTemporaryPassword",
+                "Le mot de passe temporaire ne respecte pas la politique Microsoft Entra. Il doit contenir 8 à 256 caractères et au moins 3 catégories parmi les minuscules, les majuscules, les chiffres et les symboles. Évitez aussi les mots de passe trop courants.");
+        }
+
         return exception.StatusCode switch
         {
             StatusCodes.Status404NotFound => Error.NotFound(

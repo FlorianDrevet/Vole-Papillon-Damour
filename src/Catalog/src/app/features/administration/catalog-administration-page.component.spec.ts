@@ -2009,6 +2009,59 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.showCreateAccount()).toBeFalse();
   });
 
+  it('shows the temporary password policy and rejects a password with too few categories locally', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.componentInstance.showCreateAccount.set(true);
+    Object.assign(fixture.componentInstance.createAccountForm, {
+      email: 'marie@example.test',
+      firstName: 'Marie',
+      lastName: 'Tri',
+      temporaryPassword: 'abcdef12',
+      roles: ['Tri'],
+    });
+    fixture.detectChanges();
+
+    const form = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.account-create-card');
+    expect(form?.textContent).toContain('8 à 256 caractères');
+    expect(form?.textContent).toContain('au moins 3 des 4 catégories');
+
+    await fixture.componentInstance.createAccount();
+    fixture.detectChanges();
+
+    expect(api.createAdminAccount).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.errorMessage()).toContain('au moins 3 des 4 catégories');
+    expect(form?.querySelector('#account-password-error')?.textContent).toContain('au moins 3 des 4 catégories');
+  });
+
+  it('displays the Entra password policy detail returned by account creation', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const detail = 'Le mot de passe temporaire ne respecte pas la politique Microsoft Entra. Choisissez un autre mot de passe.';
+    api.createAdminAccount.and.returnValue(throwError(() => new HttpErrorResponse({
+      status: 400,
+      error: {detail, status: 400},
+    })));
+    fixture.detectChanges();
+    await fixture.componentInstance.initialize();
+    await fixture.componentInstance.selectSection('accounts');
+    fixture.componentInstance.showCreateAccount.set(true);
+    Object.assign(fixture.componentInstance.createAccountForm, {
+      email: 'marie@example.test',
+      firstName: 'Marie',
+      lastName: 'Tri',
+      temporaryPassword: 'Abcdef1!',
+      roles: ['Tri'],
+    });
+
+    await fixture.componentInstance.createAccount();
+
+    expect(fixture.componentInstance.errorMessage()).toBe(detail);
+  });
+
   it('offers volunteer and site-member subtabs in the accounts workspace', async () => {
     auth.account.set(account('Administrator'));
     auth.isAuthenticated.set(true);

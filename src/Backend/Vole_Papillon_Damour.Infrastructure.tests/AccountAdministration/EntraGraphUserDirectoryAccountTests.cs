@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Vole_Papillon_Damour.Application.AccountAdministration;
 using Vole_Papillon_Damour.Infrastructure.AccountDeletion;
 
 namespace Vole_Papillon_Damour.Infrastructure.tests.AccountAdministration;
@@ -80,6 +81,50 @@ public sealed class EntraGraphUserDirectoryAccountTests
         createBody.Should().Contain("\"issuerAssignedId\":\"marie@example.test\"");
         createBody.Should().Contain("\"forceChangePasswordNextSignIn\":true");
         createBody.Should().Contain("\"passwordPolicies\":\"DisablePasswordExpiration\"");
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenGraphRejectsPasswordPolicy_IdentifiesTheTemporaryPasswordFailure()
+    {
+        using var client = new HttpClient(new RecordingHandler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (request.Method == HttpMethod.Post && path.EndsWith("/token", StringComparison.Ordinal))
+            {
+                return JsonResponse("{\"access_token\":\"access-token\"}");
+            }
+
+            if (request.Method == HttpMethod.Post && path == "/v1.0/users")
+            {
+                return JsonResponse(
+                    "{\"error\":{\"code\":\"Request_BadRequest\",\"message\":\"The password does not meet the length, complexity, history, or age requirements of the domain.\"}}",
+                    HttpStatusCode.BadRequest);
+            }
+
+            throw new InvalidOperationException($"Unexpected Graph request: {request.Method} {request.RequestUri}");
+        }));
+        var options = Options.Create(new EntraGraphOptions
+        {
+            TenantId = "tenant-id",
+            TenantDomain = "volepapillondamour.onmicrosoft.com",
+            ApiClientId = "api-client-id",
+            ClientId = "client-id",
+            ClientSecret = "client-secret"
+        });
+        var directory = new EntraGraphUserDirectory(client, options);
+
+        var exception = await FluentActions.Invoking(() => directory.CreateAsync(
+                "marie@example.test",
+                "Marie",
+                "Tri",
+                "too-weak",
+                ["Tri"],
+                CancellationToken.None))
+            .Should()
+            .ThrowAsync<EntraAccountDirectoryException>();
+
+        exception.Which.FailureCode.Should().Be(EntraAccountDirectoryException.TemporaryPasswordRejected);
+        exception.Which.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -192,9 +237,9 @@ public sealed class EntraGraphUserDirectoryAccountTests
         requests.Should().Contain(request => request.Method == HttpMethod.Patch && request.RequestUri!.AbsolutePath == "/v1.0/users/account-1");
     }
 
-    private static HttpResponseMessage JsonResponse(string json)
+    private static HttpResponseMessage JsonResponse(string json, HttpStatusCode statusCode = HttpStatusCode.OK)
     {
-        return new HttpResponseMessage(HttpStatusCode.OK)
+        return new HttpResponseMessage(statusCode)
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };

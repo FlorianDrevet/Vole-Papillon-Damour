@@ -27,3 +27,4 @@ export * from './lib/pipes/vpd-capitalize.pipe';
 export * from './lib/pipes/vpd-line-number-title.pipe';
 
 export * from './lib/loto/loto-tableau-view';
+export * from './lib/auth/temporary-password-policy';
