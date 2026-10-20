@@ -30,9 +30,13 @@ La branche `feat/admin-book-cover-upload` ajoute le remplacement de couverture d
 fiche Catalog d'administration. Les images JPEG, PNG et WebP (8 Mio maximum) vont dans
 le conteneur public `book-covers`; leur URL est enregistrée dans `Books.CoverUrl` et la
 correction manuelle est verrouillée contre l'enrichissement. Les couvertures découvertes
-par BnF/Open Library/Google Books gardent leurs URLs directes. La PR est en préparation,
-aucun déploiement n'a été fait. Après fusion : lancer `Infra - deploy` pour créer le
-conteneur, puis déployer l'API et Catalog. Aucune migration SQL n'est requise.
+par BnF/Open Library/Google Books gardent leurs URLs directes. La [PR #297](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/297)
+est ouverte, non fusionnée, et aucun déploiement n'a été fait. Les tests Catalog ciblés
+(91), handler (2), Blob (3), builds Catalog/API/AppHost et compilation Bicep passent.
+Le contrôle admin authentifié reste à faire ; `graphify update .` a réextrait l'AST mais
+la visualisation dépasse la limite de 8 293 nœuds. Après fusion : `Infra - deploy`
+(what-if puis deploy), `Books runtime - deploy`, puis `Catalog - deploy`. Aucune migration
+SQL n'est requise.
 
 ### Vues de recherche du Catalogue — 2026-10-20
 
