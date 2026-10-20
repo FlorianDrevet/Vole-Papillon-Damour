@@ -219,19 +219,56 @@ class PrepareResetSqlTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "valid Entra object ID"):
             render_reset_sql(sql_template, ["not-a-guid"])
 
-    def test_reset_sql_deletes_only_disabled_non_keeper_users(self):
+    def test_reset_sql_deletes_only_disabled_non_icloud_keeper_users(self):
         sql = self._reset_sql()
 
         self.assertRegex(
             sql,
             r"DELETE\s+user_row\s+FROM dbo\.Users AS user_row\s+INNER JOIN @DisabledEntraUsers AS disabled_user",
         )
-        self.assertIn("user_row.Id NOT IN (@KeeperId1, @KeeperId2)", sql)
+        self.assertIn("user_row.Id <> @KeeperId", sql)
         self.assertIn("@DisabledUsersToDelete", sql)
         self.assertIn("INSERT INTO @RetainedUserIds", sql)
         self.assertIn("SQL user profiles to retain", sql)
         self.assertIn("EXCEPT SELECT Id FROM dbo.Users", sql)
-        self.assertNotIn("DELETE FROM dbo.Users\n    WHERE Id NOT IN (@KeeperId1, @KeeperId2)", sql)
+        self.assertIn("user_row.Id = @KeeperId", sql)
+        self.assertIn("OR NOT EXISTS", sql)
+        self.assertNotIn("@KeeperId2", sql)
+        self.assertNotIn("volepapillondamour@sfr.fr", sql)
+        self.assertNotIn("DELETE FROM dbo.Users\n    WHERE Id <> @KeeperId", sql)
+
+    def test_reset_sql_requires_only_the_icloud_profile_and_reports_that_keeper(self):
+        sql = self._reset_sql()
+
+        self.assertIn("@KeeperEmail nvarchar(320) = N'floriandrevet@icloud.com'", sql)
+        self.assertIn("IF @KeeperCount <> 1", sql)
+        self.assertIn("COUNT_BIG(*) FROM dbo.Users WHERE Id = @KeeperId", sql)
+        self.assertIn("@KeeperEmail AS ProtectedKeeper", sql)
+        self.assertNotIn("@KeeperEmail2", sql)
+        self.assertNotIn("volepapillondamour@sfr.fr", sql)
+
+    def test_reset_sql_reassigns_audit_only_when_its_profile_will_be_deleted(self):
+        sql = self._reset_sql()
+
+        self.assertRegex(
+            sql,
+            r"SELECT @AssociationSettingsAuditRows = COUNT_BIG\(\*\)\s+"
+            r"FROM dbo\.AssociationSettings AS settings\s+"
+            r"INNER JOIN dbo\.Users AS user_row ON settings\.UpdatedBy = user_row\.Id\s+"
+            r"INNER JOIN @DisabledEntraUsers AS disabled_user\s+"
+            r"ON TRY_CONVERT\(uniqueidentifier, user_row\.ExternalId\) = disabled_user\.ExternalId\s+"
+            r"WHERE user_row\.Id <> @KeeperId",
+        )
+        self.assertRegex(
+            sql,
+            r"UPDATE settings\s+SET UpdatedBy = @KeeperId,\s+"
+            r"UpdatedAt = SYSUTCDATETIME\(\)\s+"
+            r"FROM dbo\.AssociationSettings AS settings\s+"
+            r"INNER JOIN dbo\.Users AS user_row ON settings\.UpdatedBy = user_row\.Id\s+"
+            r"INNER JOIN @DisabledEntraUsers AS disabled_user\s+"
+            r"ON TRY_CONVERT\(uniqueidentifier, user_row\.ExternalId\) = disabled_user\.ExternalId\s+"
+            r"WHERE user_row\.Id <> @KeeperId",
+        )
 
     def test_reset_sql_brackets_reserved_rowcount_aliases(self):
         sql = self._reset_sql()

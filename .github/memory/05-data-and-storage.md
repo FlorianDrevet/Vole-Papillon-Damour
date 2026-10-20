@@ -234,4 +234,4 @@ also exercise the translated query rather than evaluating it in memory.
 
 # Remise à zéro des données de livres
 
-La procédure répétable est dans `.agents/skills/book-data-reset/SKILL.md`, avec son script SQL en mode aperçu par défaut. Elle vise actuellement la base DEV `vole-papillon-damour-db`, conserve `floriandrevet@icloud.com` et `volepapillondamour@sfr.fr`, et protège les tables d'événements et d'actualités. Elle ne supprime ni les identités Entra ni les blobs.
+La procédure répétable est dans `.agents/skills/book-data-reset/SKILL.md`, avec son script SQL en mode aperçu par défaut. Elle vise actuellement la base DEV `vole-papillon-damour-db`, protège `floriandrevet@icloud.com`, supprime uniquement les profils SQL dont l'identité Entra est désactivée, et conserve les autres profils actifs ou non associés. Elle protège les tables d'événements et d'actualités, les identités Entra et les blobs.
