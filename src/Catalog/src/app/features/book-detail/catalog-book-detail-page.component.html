@@ -42,18 +42,27 @@
     <div class="detail-content">
       <div class="detail-kicker">
         <span class="detail-rule" aria-hidden="true"></span>
-        <span>{{ item.genre || 'Catalogue de la bourse aux livres' }}</span>
+        <span>Bourse aux livres</span>
       </div>
       <h1>{{ item.title || 'Titre à compléter' }}</h1>
       @if (item.authors) {
         <p class="detail-authors">{{ item.authors }}</p>
       }
-      @if (item.publisher || item.publicationYear) {
-        <p class="detail-edition">
-          {{ item.publisher || 'Éditeur non renseigné' }}
-          @if (item.publisher && item.publicationYear) { <span>·</span> }
-          {{ item.publicationYear || '' }}
-        </p>
+      <p class="detail-edition">
+        @if (item.publisher || item.publicationYear) {
+          <span>{{ item.publisher || 'Éditeur non renseigné' }}</span>
+          @if (item.publisher && item.publicationYear) { <span aria-hidden="true">·</span> }
+          @if (item.publicationYear) { <span>{{ item.publicationYear }}</span> }
+          <span aria-hidden="true">·</span>
+        }
+        <span class="detail-isbn">ISBN {{ item.isbn13 }}</span>
+      </p>
+      @if (genreTags(item.genre).length) {
+        <ul class="detail-genres" aria-label="Genres du livre">
+          @for (genre of genreTags(item.genre); track genre) {
+            <li class="detail-genre-tag">{{ genre }}</li>
+          }
+        </ul>
       }
       @if (item.summary) {
         <section class="book-summary" aria-labelledby="book-summary-title">
@@ -110,11 +119,11 @@
         <p class="separation-note">Ces deux lignes ne s'additionnent pas. Si vous venez aujourd'hui, seule la première vous concerne.</p>
       }
 
-      <section class="selection-visit" aria-labelledby="selection-visit-title">
-        <p id="selection-visit-title" class="selection-visit-title">Préparer ma visite</p>
-        <p class="selection-visit-intro">Gardez cette édition sous la main pour la retrouver sur place.</p>
-        <app-selection-button [ref]="{kind: 'edition', isbn13: item.isbn13}" [title]="item.title || 'Titre à compléter'"></app-selection-button>
-      </section>
+      <app-selection-button
+        class="detail-selection-action"
+        [ref]="{kind: 'edition', isbn13: item.isbn13}"
+        [title]="item.title || 'Titre à compléter'"
+        [helpText]="''"></app-selection-button>
 
       @if (item.physicalFormat || item.language) {
         <dl class="detail-facts">
@@ -173,12 +182,6 @@
         }
       }
 
-      <div class="freshness-note">
-        <span class="info-icon" aria-hidden="true">i</span>
-        <span>Disponibilité indicative, mise à jour à chaque vente. Les livres partent vite, et rien n'est mis de côté.</span>
-      </div>
-
-      <p class="isbn">ISBN {{ item.isbn13 }}</p>
       @if (item.workId) {
         <a class="work-link" [routerLink]="['/oeuvre', item.workId]">Voir les autres éditions de cette œuvre →</a>
       }
