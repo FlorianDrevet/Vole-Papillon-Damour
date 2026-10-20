@@ -190,7 +190,11 @@
           } @else if (!rareOnly && response?.books?.length) {
             <div class="book-list" [class.book-grid]="view === 'grid'">
               @for (book of response?.books || []; track trackBook($index, book.isbn13)) {
-                <article class="book-search-result" [class.book-search-result--grid]="view === 'grid'" [class.book-search-result--list]="view === 'list'">
+                <article
+                  class="book-search-result"
+                  [class.book-search-result--grid]="view === 'grid'"
+                  [class.book-search-result--grid-with-announced]="view === 'grid' && book.quantityAnnounced > 0"
+                  [class.book-search-result--list]="view === 'list'">
                   <app-book-card [book]="book" [variant]="view === 'grid' ? 'square' : 'list'"></app-book-card>
                   <div class="book-follow-actions">
                     @if (referenceFollowed(bookFollowReference(book), bookFollowScope(book))) {

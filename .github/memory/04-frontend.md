@@ -76,7 +76,8 @@ and the application gates Microsoft Clarity, Google Analytics 4 and the Google M
 Catalog `/recherche` result cards expose a watchlist action in both list and grid views. The
 search page reuses its typed member watchlist flow, following the whole work when `workId` is
 available and the exact edition otherwise; authenticated watchlist state replaces the action
-with a followed status.
+with a followed status. In the grid, the action sits beside the availability count inside the
+card without a separate footer strip; the list action remains beside the card.
 
 Rare-book cards, Catalog admin links, canonical metadata, sitemap entries and links from
 edition details use the rare-book UUID; the API detail endpoint still accepts legacy slugs
