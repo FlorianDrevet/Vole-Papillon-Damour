@@ -312,7 +312,8 @@ if ($manifest.status -in @('Completed', 'CompletedWithCleanupWarning')) {
 }
 if ($failureMessage) {
     $cleanupDetails = if ($script:cleanupFailures.Count -gt 0) { '; nettoyage à vérifier : ' + ($script:cleanupFailures -join '; ') } else { '' }
-    throw "Sauvegarde incomplète. Dossier conservé : $backupPath. Détail : $failureMessage$cleanupDetails"
+    $folderStatus = if (Test-Path -LiteralPath $backupPath) { "Dossier partiel conservé : $backupPath" } else { "Aucun dossier de sauvegarde créé ($backupPath)" }
+    throw "Sauvegarde incomplète. $folderStatus. Détail : $failureMessage$cleanupDetails"
 }
 if ($script:cleanupFailures.Count -gt 0) {
     throw ("Nettoyage Azure à vérifier : " + ($script:cleanupFailures -join '; '))
