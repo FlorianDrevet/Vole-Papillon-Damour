@@ -654,10 +654,31 @@ describe('CatalogSearchPageComponent', () => {
 
     const requests = memberApi.addWatchlistItem.calls.allArgs()
       .map(args => args[1] as unknown as Record<string, unknown>);
-    expect(requests.map(request => request['scope'])).toEqual(['Work', 'Work', 'Edition']);
+    expect(requests.map(request => request['scope'])).toEqual(['Work', 'Work']);
     expect(requests.map(request => request['workId'] ?? request['isbn13']))
-      .toEqual(['OL42W', 'OL99W', '9782070612761']);
+      .toEqual(['OL42W', 'OL99W']);
     expect(fixture.nativeElement.textContent).toContain('Les titres ont été ajoutés');
+  });
+
+  it('disables title-level follow when search results only identify editions', async () => {
+    routeParams.next(convertToParamMap({q: 'Le grand'}));
+    api.searchReferences.and.returnValue(of({
+      generatedAt: '',
+      query: 'Le grand',
+      items: [{...reference, workId: null, source: 'BnF'}],
+      page: 1,
+      pageSize: 20,
+    }));
+
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.reference-follow--work') as HTMLButtonElement;
+
+    expect(button.disabled).toBeTrue();
+    expect(fixture.nativeElement.textContent).toContain('Le suivi par titre n’est pas disponible');
+    button.click();
+    await fixture.whenStable();
+    expect(memberApi.addWatchlistItem).not.toHaveBeenCalled();
   });
 
   it('enables following different titles returned for the same search', () => {

@@ -270,7 +270,15 @@
             <div class="external-follow-callout">
               <div class="external-follow-copy">
                 <p class="external-follow-kicker">Suivre les titres de cette recherche</p>
-                <p id="external-follow-description">Les éditions affichées ci-dessous correspondent à « {{ submittedQuery.trim() }} ». Suivez-les en une fois, ou choisissez une édition précise.</p>
+                <p id="external-follow-description">
+                  Les éditions affichées ci-dessous correspondent à « {{ submittedQuery.trim() }} ».
+                  Suivez les titres reconnus en une fois, ou choisissez une édition précise.
+                </p>
+                @if (visibleExternalReferences().length && !hasSearchFollowTargets()) {
+                  <p id="external-follow-disabled-hint" class="external-follow-hint">
+                    Le suivi par titre n’est pas disponible pour ces résultats. Choisissez une édition précise ci-dessous.
+                  </p>
+                }
               </div>
               @if (searchFollowed()) {
                 <span class="reference-followed reference-followed--work" role="status">
@@ -281,7 +289,11 @@
                 <button
                   type="button"
                   class="reference-follow reference-follow--work"
-                  aria-describedby="external-follow-description"
+                  [attr.aria-describedby]="
+                    visibleExternalReferences().length && !hasSearchFollowTargets()
+                      ? 'external-follow-description external-follow-disabled-hint'
+                      : 'external-follow-description'
+                  "
                   [attr.aria-label]="searchFollowPending() ? 'Ajout en cours' : 'Suivre les titres de cette recherche'"
                   [attr.aria-busy]="searchFollowPending() ? 'true' : null"
                   [disabled]="!hasSearchFollowTargets() || referenceFollowPending !== null"

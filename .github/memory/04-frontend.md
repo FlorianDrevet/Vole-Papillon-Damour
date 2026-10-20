@@ -79,6 +79,11 @@ available and the exact edition otherwise; authenticated watchlist state replace
 with a followed status. In the grid, the action sits beside the availability count inside the
 card without a separate footer strip; the list action remains beside the card.
 
+The external-results « Suivre ces titres » action follows only distinct references with a
+`workId` and stores them at `Work` scope. Edition-only results do not become accidental targets
+of the bulk title action; it is disabled with guidance to use the per-edition button when no work
+identifier is available. Individual edition actions retain their `Edition` scope.
+
 Rare-book cards, Catalog admin links, canonical metadata, sitemap entries and links from
 edition details use the rare-book UUID; the API detail endpoint still accepts legacy slugs
 for existing links. The detail page places condition, ISBN and public description before the

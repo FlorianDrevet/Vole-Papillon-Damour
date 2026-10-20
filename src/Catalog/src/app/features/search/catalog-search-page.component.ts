@@ -403,16 +403,17 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     const seenKeys = new Set<string>();
     const targets: CatalogReferenceFollowTarget[] = [];
     for (const item of items) {
-      const scope: CatalogReferenceFollowScope | null = item.workId?.trim()
-        ? 'Work'
-        : item.isbn13?.trim()
-          ? 'Edition'
-          : null;
-      const key = scope ? this.referenceFollowKey(item, scope) : null;
-      if (scope && key && !seenKeys.has(key)) {
-        seenKeys.add(key);
-        targets.push({item, scope});
+      if (!item.workId?.trim()) {
+        continue;
       }
+
+      const key = this.referenceFollowKey(item, 'Work');
+      if (!key || seenKeys.has(key)) {
+        continue;
+      }
+
+      seenKeys.add(key);
+      targets.push({item, scope: 'Work'});
     }
 
     return targets;
