@@ -51,6 +51,7 @@ labels.
 ## Guardrails For Future UI Work
 
 - Preserve the custom handwritten/association visual identity rather than default enterprise styling.
+- In BackOffice, use `px-shell` on full-width bands; use fixed `px-6 lg:px-11` gutters inside centered `max-w-*` shells so the parent-scaled gutter cannot consume the content width on ultra-wide screens.
 - Extend existing Tailwind tokens and Material themes before introducing raw hex colors in components.
 - Recheck desktop/mobile behavior on navigation and event-table screens when changing layout or theme code.
 - For public-shell refinements, prefer evolving the semantic tokens and shared shell primitives in `src/styles.scss` before adding one-off component-level styling.
