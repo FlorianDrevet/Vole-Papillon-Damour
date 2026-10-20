@@ -275,3 +275,181 @@ app-catalog-administration-page .passage-dissociation-form textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+app-catalog-administration-page {
+  .isbn-application-import-zone {
+    display: grid;
+    gap: 16px;
+    border-top: 2px solid var(--admin-blue-bright);
+    border-radius: 6px;
+  }
+
+  .isbn-import-header,
+  .isbn-import-files-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .isbn-import-header h2 {
+    margin: 7px 0 0;
+    color: var(--admin-ink);
+    font: 500 25px/1.1 'Newsreader', Georgia, serif;
+  }
+
+  .isbn-import-header p {
+    margin: 8px 0 0;
+    color: var(--admin-slate);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .isbn-import-help-toggle { flex: none; min-height: 40px; }
+  .isbn-import-help-toggle svg,
+  .isbn-import-select svg { flex: none; }
+
+  .isbn-import-help {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, .65fr);
+    align-items: center;
+    gap: 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    background: var(--admin-paper);
+  }
+
+  .isbn-import-help h3 { margin: 0; font-size: 14px; }
+  .isbn-import-help ul {
+    display: grid;
+    gap: 5px;
+    margin: 9px 0 0;
+    padding-left: 19px;
+    color: var(--admin-slate);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .isbn-import-help code { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .isbn-import-help pre {
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    border: 1px solid var(--admin-line-soft);
+    border-radius: 5px;
+    background: var(--admin-white);
+    color: var(--admin-blue);
+    font: 12px/1.8 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  .isbn-import-picker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 18px 20px;
+    border: 1px dashed var(--admin-mist);
+    border-radius: 6px;
+    background: var(--admin-paper);
+  }
+
+  .isbn-import-picker-copy { display: flex; min-width: 0; align-items: center; gap: 12px; }
+  .isbn-import-file-icon {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--admin-line);
+    border-radius: 6px;
+    background: var(--admin-white);
+    color: var(--admin-blue);
+  }
+
+  .isbn-import-picker-copy p {
+    margin: 4px 0 0;
+    color: var(--admin-slate);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .isbn-import-picker-action { display: flex; flex: none; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .isbn-import-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .isbn-import-file-input:focus-visible + .isbn-import-select { outline: 3px solid rgba(20, 151, 214, .24); outline-offset: 3px; }
+  .isbn-import-select { min-height: 44px; padding: 0 20px; }
+  .isbn-import-select.is-disabled { cursor: not-allowed; opacity: .48; }
+  .isbn-import-picker-action > span {
+    color: var(--admin-muted);
+    font: 9px/1.3 'IBM Plex Mono', ui-monospace, monospace;
+    text-transform: uppercase;
+  }
+
+  .isbn-import-files { display: grid; gap: 8px; }
+  .isbn-import-files-heading { align-items: center; color: var(--admin-ink); font-size: 12.5px; }
+  .isbn-import-file-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 9px; }
+  .isbn-import-file {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px;
+    border: 1px solid var(--admin-line-soft);
+    border-radius: 5px;
+    background: var(--admin-white);
+  }
+
+  .isbn-import-file .isbn-import-file-icon { width: 34px; height: 34px; }
+  .isbn-import-file-copy { display: grid; min-width: 0; flex: 1; gap: 4px; }
+  .isbn-import-file-copy strong { overflow: hidden; font-size: 11.5px; text-overflow: ellipsis; white-space: nowrap; }
+  .isbn-import-file-copy span { color: var(--admin-muted); font-size: 10.5px; line-height: 1.35; }
+  .isbn-import-file-remove {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    flex: none;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--admin-muted);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .isbn-import-file-remove:hover:not(:disabled) { border-color: var(--admin-line); background: var(--admin-paper); color: var(--admin-ink); }
+  .isbn-import-file-remove:disabled { cursor: not-allowed; opacity: .48; }
+  .isbn-import-note { margin: -3px 0 0; color: var(--admin-muted); font-size: 11.5px; line-height: 1.5; }
+  .isbn-import-preview { padding-top: 18px; }
+  .isbn-import-preview .catalogue-import-summary { margin: 0; color: var(--admin-slate); font-size: 12.5px; line-height: 1.5; }
+  .isbn-import-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 15px 0 0; }
+  .isbn-import-metric { min-width: 0; padding: 12px; border: 1px solid var(--admin-line-soft); border-radius: 5px; background: var(--admin-white); }
+  .isbn-import-metric dt { color: var(--admin-muted); font: 9px/1.4 'IBM Plex Mono', ui-monospace, monospace; text-transform: uppercase; }
+  .isbn-import-metric dd { margin: 7px 0 0; color: var(--admin-ink); font: 500 24px/1 'Newsreader', Georgia, serif; }
+  .isbn-import-metric:first-child dd { color: var(--admin-blue); }
+
+  @media (max-width: 680px) {
+    .catalogue-add-zone.isbn-application-import-zone { padding: 18px; }
+    .isbn-import-header { align-items: stretch; flex-direction: column; gap: 14px; }
+    .isbn-import-header h2 { font-size: 23px; }
+    .isbn-import-help-toggle { align-self: flex-start; }
+    .isbn-import-help { grid-template-columns: 1fr; gap: 15px; padding: 15px; }
+    .isbn-import-picker { align-items: stretch; flex-direction: column; gap: 16px; padding: 16px; }
+    .isbn-import-picker-action { align-items: stretch; }
+    .isbn-import-select { width: 100%; }
+    .isbn-import-picker-action > span { text-align: center; }
+    .isbn-import-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+}

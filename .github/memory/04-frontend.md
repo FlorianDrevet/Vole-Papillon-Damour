@@ -709,6 +709,14 @@ books enter metadata enrichment immediately with a one-second inter-ISBN delay. 
 of the 7,748-ISBN application file has been divided into 155 upload lots of at most 50 rows;
 no full-file import has been performed by the assistant.
 
+The follow-up Catalog admin UI accepts several CSV files at once or in successive selections,
+shows each file's valid/invalid counts, and combines canonical ISBNs before the existing
+100-item API batching. Cross-file duplicates are ignored and invalid examples retain their
+source filename. The format help describes the exact UTF-8, semicolon-separated header and
+the ignored photo-count column; selected files can be removed individually. The responsive
+file-picker styles are scoped in `src/Catalog/src/styles.scss` because the admin component
+stylesheet is already at its Angular style budget.
+
 The ISBN analysis queue is the dedicated `/administration/isbn-queue` section. It keeps
 incomplete ISBNs out of the main admin list, displays ISBN/status/failure reason and retry
 timing without a placeholder title, and links to manual correction, immediate retry, or
