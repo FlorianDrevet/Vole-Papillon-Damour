@@ -788,6 +788,24 @@ export interface CatalogAdminAddBookRequest {
   fields?: string[] | null;
 }
 
+export interface CatalogAdminBookImportRequest {
+  isbns: string[];
+}
+
+export type CatalogAdminBookImportResultStatus = 'created' | 'alreadyPresent';
+
+export interface CatalogAdminBookImportResult {
+  isbn13: string;
+  status: CatalogAdminBookImportResultStatus;
+}
+
+export interface CatalogAdminBookImportResponse {
+  requestedCount: number;
+  createdCount: number;
+  alreadyPresentCount: number;
+  results: CatalogAdminBookImportResult[];
+}
+
 export interface CatalogAdminQuantityCorrectionRequest {
   quantityAvailable: number;
   note: string;

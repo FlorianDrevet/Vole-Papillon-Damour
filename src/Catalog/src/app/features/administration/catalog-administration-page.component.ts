@@ -43,6 +43,7 @@ import {
   CatalogAdminAlertFilters,
   CatalogAdminAlertPage,
   CatalogAdminBook,
+  CatalogAdminBookImportResponse,
   CatalogAdminBookMovement,
   CatalogAdminBookPage,
   CatalogAdminFair,
@@ -67,6 +68,11 @@ import {
   CatalogNotFoundSummary,
   CatalogManualRequestSummary,
 } from '../../core/catalog.models';
+import {
+  IsbnApplicationCsvFormatError,
+  parseIsbnApplicationCsv,
+  type IsbnApplicationCsvPreview,
+} from './isbn-application-import';
 import {toDeadStockCsv} from './dead-stock-export';
 import {NotFoundCloseConfirmation} from './not-found-reports/not-found-report-close-dialog.component';
 import {buildFairsEvolutionView, toFairsEvolutionCsv} from './fairs-evolution-view';
@@ -92,6 +98,16 @@ const MAX_BOOK_QUANTITY = 100_000;
 const CATALOGUE_SEARCH_DEBOUNCE_MS = 2_000;
 const CATALOGUE_ADJUSTMENT_QUANTITY = 1;
 const CATALOGUE_ADJUSTMENT_NOTE = 'Correction depuis le catalogue';
+const ISBN_APPLICATION_IMPORT_BATCH_SIZE = 100;
+
+interface IsbnApplicationImportProgress {
+  processedCount: number;
+  totalCount: number;
+  completedBatches: number;
+  totalBatches: number;
+  createdCount: number;
+  alreadyPresentCount: number;
+}
 
 export type CatalogAdminOverviewPeriod = '30-days' | '3-months' | 'year';
 export type CatalogAdminStatisticsPeriod = '30-days' | 'year' | 'all' | 'fair';
@@ -262,6 +278,14 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly catalogueCandidateStatus = signal<CatalogBookCandidateStatus | null>(null);
   readonly catalogueLookupLoading = signal(false);
   readonly catalogueLookupError = signal<string | null>(null);
+  readonly isbnApplicationFileName = signal<string | null>(null);
+  readonly isbnApplicationPreview = signal<IsbnApplicationCsvPreview | null>(null);
+  readonly isbnApplicationReading = signal(false);
+  readonly isbnApplicationRunning = signal(false);
+  readonly isbnApplicationStatus = signal<'idle' | 'interrupted' | 'complete'>('idle');
+  readonly isbnApplicationProgress = signal<IsbnApplicationImportProgress | null>(null);
+  readonly isbnApplicationError = signal<string | null>(null);
+  readonly isbnApplicationRefreshWarning = signal<string | null>(null);
   readonly catalogueConfirmation = signal<CatalogQuantityConfirmation | null>(null);
   readonly sessionConfirmation = signal<CatalogAdminSessionConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
@@ -699,6 +723,138 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     this.catalogueAddNote = 'Ajout depuis le catalogue';
     this.catalogueLookupError.set(null);
     await this.loadCatalogueCandidateStatus(candidate.isbn13);
+  }
+
+  async readIsbnApplicationFile(event: Event): Promise<void> {
+    if (this.isbnApplicationRunning() || this.isbnApplicationReading() || !this.isAdministrator()) {
+      return;
+    }
+
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    this.isbnApplicationFileName.set(file.name);
+    this.isbnApplicationPreview.set(null);
+    this.isbnApplicationStatus.set('idle');
+    this.isbnApplicationProgress.set(null);
+    this.isbnApplicationError.set(null);
+    this.isbnApplicationRefreshWarning.set(null);
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      this.isbnApplicationFileName.set(null);
+      this.isbnApplicationError.set('Sélectionnez un fichier CSV.');
+      input.value = '';
+      return;
+    }
+
+    this.isbnApplicationReading.set(true);
+    try {
+      this.isbnApplicationPreview.set(parseIsbnApplicationCsv(await file.text()));
+    } catch (error: unknown) {
+      this.isbnApplicationFileName.set(null);
+      this.isbnApplicationError.set(error instanceof IsbnApplicationCsvFormatError
+        ? error.message
+        : 'Le fichier n’a pas pu être lu.');
+      input.value = '';
+    } finally {
+      this.isbnApplicationReading.set(false);
+    }
+  }
+
+  clearIsbnApplicationFile(): void {
+    if (this.isbnApplicationRunning() || this.isbnApplicationReading()) {
+      return;
+    }
+
+    this.isbnApplicationFileName.set(null);
+    this.isbnApplicationPreview.set(null);
+    this.isbnApplicationStatus.set('idle');
+    this.isbnApplicationProgress.set(null);
+    this.isbnApplicationError.set(null);
+    this.isbnApplicationRefreshWarning.set(null);
+    const input = this.document.getElementById('isbn-application-file') as HTMLInputElement | null;
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  async importIsbnApplication(): Promise<void> {
+    const preview = this.isbnApplicationPreview();
+    if (!preview || preview.isbns.length === 0 || this.isbnApplicationRunning() || !this.isAdministrator()) {
+      return;
+    }
+
+    if (!this.auth.isAuthenticated()) {
+      this.isbnApplicationError.set('Reconnectez-vous avec un compte administrateur pour lancer l’import.');
+      return;
+    }
+
+    const totalBatches = Math.ceil(preview.isbns.length / ISBN_APPLICATION_IMPORT_BATCH_SIZE);
+    this.isbnApplicationRunning.set(true);
+    this.isbnApplicationStatus.set('idle');
+    this.isbnApplicationError.set(null);
+    this.isbnApplicationRefreshWarning.set(null);
+    this.isbnApplicationProgress.set({
+      processedCount: 0,
+      totalCount: preview.isbns.length,
+      completedBatches: 0,
+      totalBatches,
+      createdCount: 0,
+      alreadyPresentCount: 0,
+    });
+
+    try {
+      const token = await this.auth.getApiAccessToken();
+      for (let offset = 0; offset < preview.isbns.length; offset += ISBN_APPLICATION_IMPORT_BATCH_SIZE) {
+        const batch = preview.isbns.slice(offset, offset + ISBN_APPLICATION_IMPORT_BATCH_SIZE);
+        const result = await firstValueFrom(this.api.importBooks(token, {isbns: batch}));
+        this.validateIsbnImportBatchResponse(result, batch.length);
+
+        this.isbnApplicationProgress.update(progress => progress ? {
+          ...progress,
+          processedCount: progress.processedCount + batch.length,
+          completedBatches: progress.completedBatches + 1,
+          createdCount: progress.createdCount + result.createdCount,
+          alreadyPresentCount: progress.alreadyPresentCount + result.alreadyPresentCount,
+        } : progress);
+      }
+
+      this.isbnApplicationStatus.set('complete');
+      try {
+        await this.loadCataloguePage(token);
+      } catch {
+        this.isbnApplicationRefreshWarning.set(
+          'L’import est terminé, mais la liste du catalogue n’a pas pu être actualisée. Utilisez « Actualiser » pour la recharger.',
+        );
+      }
+    } catch (error: unknown) {
+      this.isbnApplicationStatus.set('interrupted');
+      const progress = this.isbnApplicationProgress();
+      const description = error instanceof CatalogAuthenticationRedirectStartedError
+        ? 'Redirection vers Microsoft pour renouveler votre session…'
+        : error instanceof HttpErrorResponse
+          ? this.describeError(error)
+          : error instanceof Error
+            ? error.message
+            : this.describeError(error);
+      const completedBatches = progress?.completedBatches ?? 0;
+      this.isbnApplicationError.set(
+        `L’import s’est arrêté après ${this.formatNumber(completedBatches)} lot${completedBatches === 1 ? '' : 's'} sur ${this.formatNumber(totalBatches)}. ${description} Relancez l’import complet : les fiches déjà créées seront reconnues comme déjà présentes.`,
+      );
+    } finally {
+      this.isbnApplicationRunning.set(false);
+    }
+  }
+
+  private validateIsbnImportBatchResponse(result: CatalogAdminBookImportResponse, batchSize: number): void {
+    if (result.requestedCount !== batchSize
+      || result.createdCount + result.alreadyPresentCount !== batchSize
+      || result.results.length !== batchSize) {
+      throw new Error('La réponse du serveur ne correspond pas au lot envoyé.');
+    }
   }
 
   adjustCatalogueAddQuantity(delta: number): void {

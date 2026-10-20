@@ -116,6 +116,11 @@ client-only/private.
   `alertStatus`, `bounceCount`, and `changed`. A member cannot reactivate a `Blocked` list.
 - `GET /books/admin/overview` - Administration-policy KPIs for stock, scan/sale periods,
   last fair, dead stock, rare/metadata/undated queues, inventory drift, and pending alerts.
+- `POST /books/admin/books/import` - Administration-only batch creation of 1–100 canonical
+  ISBN-13 values. The handler validates before writing and uses one transaction per batch;
+  missing books receive pending metadata, one available copy, and a `DirectEntry` movement
+  attributed to the authenticated administrator. Existing or duplicate values are reported
+  as already present and unchanged so a full-list retry does not add stock twice.
 - `GET/POST/PATCH/DELETE /books/admin/books...` - Administration-policy book list/detail,
   manual add, metadata/quantity corrections, withdrawals, rare/visibility flags, merges and
   guarded deletion; announcement quantity correction is under

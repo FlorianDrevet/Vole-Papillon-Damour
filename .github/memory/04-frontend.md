@@ -671,3 +671,14 @@ the scrollable navigation, pinned at the drawer bottom with safe-area padding, a
 `Mon compte` or the signed-in display name. Responsive review covered 320×568,
 390×844, and 1440×900. The Catalog production build passes with existing bundle/style
 budget and CommonJS warnings; local API data was unavailable during the browser review.
+
+## Catalog ISBN application import — 2026-10-20
+
+Catalog administration accepts the original semicolon-separated `ISBN_application.csv`
+(`ISBN;Nombre_de_photos`). The local preview validates ISBN checksums, converts ISBN-10 to
+ISBN-13, removes canonical duplicates and reports invalid/empty lines. Only ISBN-13 values
+are posted to the admin API in sequential batches of 100; photo counts remain unused. Each
+new unique ISBN adds one available copy; already-present books are unchanged. The UI shows
+this stock behavior and can restart the full list after interruption because the API is
+idempotent. The feature is being prepared for DEV and has not been deployed or used to write
+books yet.

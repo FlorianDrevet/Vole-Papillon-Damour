@@ -434,6 +434,106 @@
                 } @else if (loading()) {<p class="admin-status" role="status">Chargement du catalogue…</p>}
                 </section>
 
+                <section class="catalogue-add-zone" aria-labelledby="isbn-application-import-title" data-testid="isbn-application-import">
+                  <div class="catalogue-zone-heading">
+                    <div>
+                      <span class="section-kicker">Import en lot</span>
+                      <h2 id="isbn-application-import-title">Importer les ISBN de l’application</h2>
+                      <p>Chargez le CSV avec les colonnes « ISBN » et « Nombre_de_photos », séparées par un point-virgule.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="catalogue-lookup-card" for="isbn-application-file">
+                      <span class="section-kicker">Fichier CSV</span>
+                      <input
+                        id="isbn-application-file"
+                        data-testid="isbn-application-file"
+                        type="file"
+                        accept=".csv,text/csv"
+                        style="width: 100%"
+                        [disabled]="isbnApplicationReading() || isbnApplicationRunning()"
+                        (change)="readIsbnApplicationFile($event)">
+                    </label>
+                    @if (isbnApplicationFileName(); as fileName) {
+                      <div class="catalogue-import-file-actions">
+                        <span class="catalogue-import-file-name">{{ fileName }}</span>
+                        <button class="text-link" type="button" [disabled]="isbnApplicationReading() || isbnApplicationRunning()" (click)="clearIsbnApplicationFile()">Retirer</button>
+                      </div>
+                    }
+                  </div>
+                  <p class="detail-help">Seuls les ISBN normalisés sont envoyés à l’API ; « Nombre_de_photos » est ignoré. Chaque nouvelle fiche ajoute 1 exemplaire disponible et un mouvement d’entrée. Les fiches déjà présentes ne sont pas modifiées.</p>
+                  @if (isbnApplicationReading()) {
+                    <p class="catalogue-lookup-status" role="status">Lecture et vérification du fichier…</p>
+                  }
+                  @if (isbnApplicationError(); as message) {
+                    <p class="catalogue-lookup-status catalogue-lookup-status-error" role="alert">{{ message }}</p>
+                  }
+                  @if (isbnApplicationPreview(); as preview) {
+                    <div class="catalogue-reference-results" data-testid="isbn-application-preview">
+                      <p class="catalogue-import-summary">{{ formatNumber(preview.dataRowCount) }} lignes de données lues · les ISBN-10 sont convertis en ISBN-13 · un exemplaire disponible sera créé par nouvel ISBN unique</p>
+                      <dl class="filter-card">
+                        <div class="session-metrics"><dt><span>ISBN uniques valides</span></dt><dd><strong>{{ formatNumber(preview.isbns.length) }}</strong></dd></div>
+                        <div class="session-metrics"><dt><span>Lignes invalides</span></dt><dd><strong>{{ formatNumber(preview.invalidCount) }}</strong></dd></div>
+                        <div class="session-metrics"><dt><span>Doublons ignorés</span></dt><dd><strong>{{ formatNumber(preview.duplicateCount) }}</strong></dd></div>
+                        <div class="session-metrics"><dt><span>Lignes vides</span></dt><dd><strong>{{ formatNumber(preview.emptyRowCount) }}</strong></dd></div>
+                      </dl>
+                      @if (preview.isbns.length > 0) {
+                        <div>
+                          <span class="section-kicker">Exemple d’ISBN envoyés</span>
+                          <div class="catalogue-book-tags" role="list" aria-label="Exemple des ISBN normalisés">
+                            @for (isbn of preview.isbns.slice(0, 8); track isbn) {<span role="listitem">{{ isbn }}</span>}
+                          </div>
+                        </div>
+                      }
+                      @if (preview.invalidExamples.length > 0) {
+                        <details class="secondary-detail">
+                          <summary>Voir les premières lignes invalides ({{ formatNumber(preview.invalidCount) }} au total)</summary>
+                          <ul>
+                            @for (row of preview.invalidExamples; track row.rowNumber) {
+                              <li>Ligne {{ row.rowNumber }} · {{ row.value }} · {{ row.reason }}</li>
+                            }
+                          </ul>
+                          @if (preview.invalidCount > preview.invalidExamples.length) {
+                            <p>{{ formatNumber(preview.invalidCount - preview.invalidExamples.length) }} autres lignes invalides ne sont pas affichées.</p>
+                          }
+                        </details>
+                      }
+                      @if (preview.isbns.length === 0) {
+                        <p class="catalogue-lookup-status catalogue-lookup-status-error" role="status">Aucun ISBN valide à importer.</p>
+                      }
+                      <div class="catalogue-import-actions">
+                        <button
+                          class="button button-primary"
+                          data-testid="isbn-application-import-submit"
+                          type="button"
+                          [disabled]="isbnApplicationRunning() || preview.isbns.length === 0 || isbnApplicationStatus() === 'complete'"
+                          (click)="importIsbnApplication()">
+                          @if (isbnApplicationRunning()) {Import en cours…} @else if (isbnApplicationStatus() === 'interrupted') {Relancer l’import complet} @else if (isbnApplicationStatus() === 'complete') {Import terminé} @else {Importer {{ formatNumber(preview.isbns.length) }} livres}
+                        </button>
+                        @if (isbnApplicationStatus() === 'interrupted') {
+                          <span>La relance renvoie toute la liste ; les livres déjà importés ne recevront pas d’exemplaire en double.</span>
+                        } @else {
+                          <span>Envoi séquentiel par lots de 100 ; 1 exemplaire ajouté par nouvel ISBN.</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                  @if (isbnApplicationProgress(); as progress) {
+                    <div class="catalogue-candidate-status" data-testid="isbn-application-progress">
+                      <p id="isbn-application-progress-label" role="status">
+                        @if (isbnApplicationRunning()) {Import en cours : {{ formatNumber(progress.processedCount) }} sur {{ formatNumber(progress.totalCount) }} ISBN (lot {{ formatNumber(progress.completedBatches) }} sur {{ formatNumber(progress.totalBatches) }} terminé).}
+                        @else if (isbnApplicationStatus() === 'complete') {Import terminé : {{ formatNumber(progress.createdCount) }} fiches créées avec 1 exemplaire chacune, {{ formatNumber(progress.alreadyPresentCount) }} déjà présentes sans changement.}
+                        @else {Import interrompu : {{ formatNumber(progress.processedCount) }} sur {{ formatNumber(progress.totalCount) }} ISBN traités.}
+                      </p>
+                      <progress aria-labelledby="isbn-application-progress-label" [value]="progress.processedCount" [max]="progress.totalCount" style="width: 100%"></progress>
+                      <p>{{ formatNumber(progress.createdCount) }} exemplaires ajoutés · {{ formatNumber(progress.alreadyPresentCount) }} livres déjà présents sans changement</p>
+                    </div>
+                  }
+                  @if (isbnApplicationRefreshWarning(); as warning) {
+                    <p class="catalogue-lookup-status" role="status">{{ warning }}</p>
+                  }
+                </section>
+
                 <section class="catalogue-add-zone" aria-labelledby="catalogue-add-title">
                 <div class="catalogue-zone-heading">
                   <div>
