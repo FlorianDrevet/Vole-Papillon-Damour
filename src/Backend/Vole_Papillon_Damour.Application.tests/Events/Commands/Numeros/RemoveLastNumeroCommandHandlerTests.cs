@@ -65,6 +65,28 @@ public class RemoveLastNumeroCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenEventIsFinished_RollsBackLastPartieAndPersists()
+    {
+        var eventRepository = Substitute.For<IEventRepository>();
+        var lastPartie = LiveTableauTestData.CreatePartie(0);
+        var assoEvent = LiveTableauTestData.CreateEvent(lastPartie);
+        LiveTableauTestData.DrawNumeroAddingBingoNumber(assoEvent, lastPartie, 25);
+        assoEvent.CurrentPartieIndex = 1;
+        eventRepository.GetByIdAsync(assoEvent.Id).Returns(Task.FromResult<AssoEvents?>(assoEvent));
+        eventRepository.UpdateAsync(Arg.Any<AssoEvents>()).Returns(callInfo => Task.FromResult(callInfo.Arg<AssoEvents>()));
+        var handler = new RemoveLastNumeroCommandHandler(eventRepository, TestMapperFactory.Create());
+
+        var result = await handler.Handle(new RemoveLastNumeroCommand(assoEvent.Id), CancellationToken.None);
+
+        result.IsError.Should().BeFalse();
+        assoEvent.CurrentPartieIndex.Should().Be(0);
+        lastPartie.LastNumeros.Should().BeEmpty();
+        lastPartie.AddedBingoNumber.Should().BeNull();
+        assoEvent.BingoNumeros.Should().BeEmpty();
+        await eventRepository.Received(1).UpdateAsync(assoEvent);
+    }
+
+    [Fact]
     public async Task Handle_WhenCurrentPartieIsEmpty_RollsBackPreviousPartieAndRemovesItsBingoNumero()
     {
         var eventRepository = Substitute.For<IEventRepository>();
