@@ -175,7 +175,11 @@
           <label class="admin-field"><span>Adresse e-mail *</span><input formControlName="email" type="email" autocomplete="email"></label>
           <label class="admin-field"><span>Prénom *</span><input formControlName="firstName" autocomplete="given-name" maxlength="64"></label>
           <label class="admin-field"><span>Nom *</span><input formControlName="lastName" autocomplete="family-name" maxlength="64"></label>
-          <label class="admin-field sm:col-span-2"><span>Mot de passe temporaire *</span><input formControlName="temporaryPassword" type="password" autocomplete="new-password" minlength="8"></label>
+          <div class="sm:col-span-2">
+            <label class="admin-field"><span>Mot de passe temporaire *</span><input formControlName="temporaryPassword" type="password" autocomplete="new-password" minlength="8" maxlength="256" required [attr.aria-invalid]="createAccountForm.controls.temporaryPassword.invalid && createAccountForm.controls.temporaryPassword.touched ? 'true' : null" [attr.aria-describedby]="createAccountForm.controls.temporaryPassword.invalid && createAccountForm.controls.temporaryPassword.touched ? 'create-account-password-hint create-account-password-error' : 'create-account-password-hint'"></label>
+            <p id="create-account-password-hint" class="mt-2 text-xs leading-relaxed text-slate-2">{{ temporaryPasswordGuidance }}</p>
+            @if (temporaryPasswordErrorMessage(); as passwordError) { <p id="create-account-password-error" class="mt-2 text-sm text-danger" role="alert">{{ passwordError }}</p> }
+          </div>
           <fieldset class="sm:col-span-2 lg:col-span-4" [attr.aria-describedby]="createAccountForm.controls.roles.invalid && createAccountForm.controls.roles.touched ? 'create-account-role-error' : null">
             <legend class="mb-2 text-sm font-semibold text-ink-2">Rôles *</legend>
             <div class="flex flex-wrap gap-3">

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using Vole_Papillon_Damour.Application.AccountAdministration;
@@ -331,11 +332,61 @@ public sealed class EntraGraphUserDirectory(
         if (!response.IsSuccessStatusCode)
         {
             var statusCode = (int)response.StatusCode;
-            response.Dispose();
-            throw new EntraAccountDirectoryException($"graph-http-{statusCode}", statusCode);
+            var failureCode = $"graph-http-{statusCode}";
+            try
+            {
+                if (statusCode == (int)HttpStatusCode.BadRequest
+                    && method == HttpMethod.Post
+                    && requestUri.AbsolutePath.EndsWith("/v1.0/users", StringComparison.OrdinalIgnoreCase)
+                    && await IsTemporaryPasswordPolicyFailureAsync(response, cancellationToken))
+                {
+                    failureCode = EntraAccountDirectoryException.TemporaryPasswordRejected;
+                }
+            }
+            finally
+            {
+                response.Dispose();
+            }
+
+            throw new EntraAccountDirectoryException(failureCode, statusCode);
         }
 
         return response;
+    }
+
+    private static async Task<bool> IsTemporaryPasswordPolicyFailureAsync(
+        HttpResponseMessage response,
+        CancellationToken cancellationToken)
+    {
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            if (!document.RootElement.TryGetProperty("error", out var error))
+            {
+                return false;
+            }
+
+            var code = ReadGraphErrorString(error, "code");
+            var message = ReadGraphErrorString(error, "message");
+            var detail = $"{code} {message}";
+            return detail.Contains("password", StringComparison.OrdinalIgnoreCase)
+                && new[] { "length", "complex", "weak", "policy", "requirement", "banned", "common", "strength" }
+                    .Any(indicator => detail.Contains(indicator, StringComparison.OrdinalIgnoreCase));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static string ReadGraphErrorString(JsonElement error, string propertyName)
+    {
+        return error.ValueKind == JsonValueKind.Object
+            && error.TryGetProperty(propertyName, out var value)
+            && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
     }
 
     private async Task<string> GetAccessTokenAsync(

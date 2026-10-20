@@ -86,7 +86,10 @@ route now consumes the typed admin APIs for overview, catalogue, sessions, dead 
 fairs, alerts, members and settings; the BackOffice administration screen also exposes a
 typed **Comptes et rôles** tab for creating Entra accounts and assigning `Tri`, `Caisse`
 or `Administration` roles. The API remains the authorization boundary and the current
-administrator cannot remove their own `Administration` role.
+administrator cannot remove their own `Administration` role. Both administration forms
+show Entra's temporary-password rule (8–256 characters and at least three of four character
+categories) and validate it locally; the API turns Graph password-policy rejections into a
+specific validation detail.
 As of 2026-09-11, Catalog `/administration` keeps the public catalogue header and uses the
 AdminSidebar visual language for its dashboard, scan sessions, catalogue, dead-stock,
 inventory, fair statistics, accounts and settings workspaces. The navigation groups the
