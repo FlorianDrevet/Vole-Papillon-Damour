@@ -142,11 +142,17 @@ public static class BookAdministrationController
                     "/books/admin/books/import",
                     async (
                         ImportAdminBooksRequest? request,
+                        ClaimsPrincipal principal,
                         IMediator mediator,
                         CancellationToken cancellationToken) =>
                     {
+                        if (!TryGetUserId(principal, out var userId))
+                        {
+                            return Results.Unauthorized();
+                        }
+
                         var result = await mediator.Send(
-                            new ImportAdminBooksCommand(request?.Isbns),
+                            new ImportAdminBooksCommand(request?.Isbns, userId),
                             cancellationToken);
                         return result.Match(
                             imported => Results.Ok(ToResponse(imported)),

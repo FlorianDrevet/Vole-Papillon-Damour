@@ -20,7 +20,7 @@
 | **Lot en cours** | Préparer l'import du seul `ISBN_application.csv` après la remise à zéro vérifiée de la base DEV le 2026-10-20. |
 | **Prochaine action** | PR [#269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) ouverte vers `main`, non fusionnée. Après fusion, déployer l'API et Catalog, relire l'état du Worker puis charger le fichier original dans l'administration Catalog DEV. |
 | **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\VPD-isbn-import` |
-| **Dernière mise à jour** | 2026-10-20 — l'aperçu local du CSV original confirme 7 748 ISBN valides, 0 invalide, 0 doublon et 0 ligne vide. Builds API et Catalog réussis, revue responsive à 320 / 390 / 1440 px sans débordement ; aucun test automatisé ni import en base. Le Worker a exécuté Enrich et Sweep avec succès malgré les alertes de probe de démarrage persistantes dans le portail. |
+| **Dernière mise à jour** | 2026-10-20 — l'aperçu local confirme 7 748 ISBN valides, 0 invalide, 0 doublon et 0 ligne vide. L'import corrigé créera 1 exemplaire disponible par nouvel ISBN, avec un mouvement d'entrée attribué à l'administrateur. Builds API et Catalog réussis ; revue responsive à 320, 390 et 1440 px sans débordement horizontal. L'écran est visible en local, mais l'API locale n'est pas démarrée ; aucun test automatisé ni import en base. Le Worker a exécuté Enrich et Sweep avec succès malgré les alertes de probe de démarrage persistantes dans le portail. |
 | **Branche** | `feat/isbn-batch-import`, créée depuis `origin/main`; PR [#269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269) ouverte, non fusionnée. |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
@@ -94,9 +94,12 @@ Le worktree `feat/isbn-batch-import` prépare une route d'administration
 `POST /books/admin/books/import` limitée à 100 ISBN-13 par lot, avec validation complète,
 transaction par lot et reprise idempotente. L'écran d'administration Catalog lit le CSV
 original, présente les lignes valides/invalides et envoie les ISBN en lots séquentiels. Chaque
-nouvelle fiche reste au stock zéro avec métadonnées en attente ; aucun mouvement, scan ou
-quantité n'est créé par l'import. La fonctionnalité est proposée dans la [PR #269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269), ouverte vers `main` mais pas encore fusionnée ni déployée,
-donc aucune ligne du CSV n'est encore en base.
+nouvelle fiche reçoit un exemplaire disponible et une entrée de stock `DirectEntry`, attribuée
+au compte administrateur connecté ; les métadonnées restent en attente. Les fiches déjà
+présentes ne sont pas modifiées, ce qui rend la relance idempotente. Aucun mouvement ni scan
+de session n'est recréé pour les anciens scans effacés. La fonctionnalité corrigée est proposée
+dans la [PR #269](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/269), ouverte vers
+`main` mais pas encore fusionnée ni déployée ; aucune ligne du CSV n'est encore en base.
 
 Contrôle du Worker effectué dans Azure Container Apps après le reset :
 `vpd-worker-ca-dev-fc` était `Running` et `Ready for traffic`, avec `minReplicas: 0` et

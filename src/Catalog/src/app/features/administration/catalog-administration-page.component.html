@@ -461,7 +461,7 @@
                       </div>
                     }
                   </div>
-                  <p class="detail-help">Seuls les ISBN normalisés sont envoyés à l’API ; « Nombre_de_photos » est ignoré. Chaque nouvelle fiche est créée avec un stock disponible de 0 exemplaire.</p>
+                  <p class="detail-help">Seuls les ISBN normalisés sont envoyés à l’API ; « Nombre_de_photos » est ignoré. Chaque nouvelle fiche ajoute 1 exemplaire disponible et un mouvement d’entrée. Les fiches déjà présentes ne sont pas modifiées.</p>
                   @if (isbnApplicationReading()) {
                     <p class="catalogue-lookup-status" role="status">Lecture et vérification du fichier…</p>
                   }
@@ -470,7 +470,7 @@
                   }
                   @if (isbnApplicationPreview(); as preview) {
                     <div class="catalogue-reference-results" data-testid="isbn-application-preview">
-                      <p class="catalogue-import-summary">{{ formatNumber(preview.dataRowCount) }} lignes de données lues · les ISBN-10 sont convertis en ISBN-13 · doublons canoniques envoyés une seule fois</p>
+                      <p class="catalogue-import-summary">{{ formatNumber(preview.dataRowCount) }} lignes de données lues · les ISBN-10 sont convertis en ISBN-13 · un exemplaire disponible sera créé par nouvel ISBN unique</p>
                       <dl class="filter-card">
                         <div class="session-metrics"><dt><span>ISBN uniques valides</span></dt><dd><strong>{{ formatNumber(preview.isbns.length) }}</strong></dd></div>
                         <div class="session-metrics"><dt><span>Lignes invalides</span></dt><dd><strong>{{ formatNumber(preview.invalidCount) }}</strong></dd></div>
@@ -508,12 +508,12 @@
                           type="button"
                           [disabled]="isbnApplicationRunning() || preview.isbns.length === 0 || isbnApplicationStatus() === 'complete'"
                           (click)="importIsbnApplication()">
-                          @if (isbnApplicationRunning()) {Import en cours…} @else if (isbnApplicationStatus() === 'interrupted') {Relancer l’import complet} @else if (isbnApplicationStatus() === 'complete') {Import terminé} @else {Importer {{ formatNumber(preview.isbns.length) }} ISBN}
+                          @if (isbnApplicationRunning()) {Import en cours…} @else if (isbnApplicationStatus() === 'interrupted') {Relancer l’import complet} @else if (isbnApplicationStatus() === 'complete') {Import terminé} @else {Importer {{ formatNumber(preview.isbns.length) }} livres}
                         </button>
                         @if (isbnApplicationStatus() === 'interrupted') {
-                          <span>La relance renvoie toute la liste ; les fiches déjà présentes ne seront pas créées en double.</span>
+                          <span>La relance renvoie toute la liste ; les livres déjà importés ne recevront pas d’exemplaire en double.</span>
                         } @else {
-                          <span>Envoi séquentiel par lots de 100 ISBN.</span>
+                          <span>Envoi séquentiel par lots de 100 ; 1 exemplaire ajouté par nouvel ISBN.</span>
                         }
                       </div>
                     </div>
@@ -522,11 +522,11 @@
                     <div class="catalogue-candidate-status" data-testid="isbn-application-progress">
                       <p id="isbn-application-progress-label" role="status">
                         @if (isbnApplicationRunning()) {Import en cours : {{ formatNumber(progress.processedCount) }} sur {{ formatNumber(progress.totalCount) }} ISBN (lot {{ formatNumber(progress.completedBatches) }} sur {{ formatNumber(progress.totalBatches) }} terminé).}
-                        @else if (isbnApplicationStatus() === 'complete') {Import terminé : {{ formatNumber(progress.createdCount) }} créés, {{ formatNumber(progress.alreadyPresentCount) }} déjà présents.}
+                        @else if (isbnApplicationStatus() === 'complete') {Import terminé : {{ formatNumber(progress.createdCount) }} fiches créées avec 1 exemplaire chacune, {{ formatNumber(progress.alreadyPresentCount) }} déjà présentes sans changement.}
                         @else {Import interrompu : {{ formatNumber(progress.processedCount) }} sur {{ formatNumber(progress.totalCount) }} ISBN traités.}
                       </p>
                       <progress aria-labelledby="isbn-application-progress-label" [value]="progress.processedCount" [max]="progress.totalCount" style="width: 100%"></progress>
-                      <p>{{ formatNumber(progress.createdCount) }} créés · {{ formatNumber(progress.alreadyPresentCount) }} déjà présents</p>
+                      <p>{{ formatNumber(progress.createdCount) }} exemplaires ajoutés · {{ formatNumber(progress.alreadyPresentCount) }} livres déjà présents sans changement</p>
                     </div>
                   }
                   @if (isbnApplicationRefreshWarning(); as warning) {

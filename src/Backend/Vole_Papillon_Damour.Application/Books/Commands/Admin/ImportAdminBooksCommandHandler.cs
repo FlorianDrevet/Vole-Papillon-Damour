@@ -6,6 +6,9 @@ using Vole_Papillon_Damour.Application.Common.Interfaces.Persistence;
 using Vole_Papillon_Damour.Application.Common.Interfaces.Services;
 using Vole_Papillon_Damour.Domain.BookAggregate;
 using Vole_Papillon_Damour.Domain.BookAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate;
+using Vole_Papillon_Damour.Domain.BookMovementAggregate.ValueObjects;
+using Vole_Papillon_Damour.Domain.UserAggregate.ValueObjects;
 
 namespace Vole_Papillon_Damour.Application.Books.Commands.Admin;
 
@@ -15,6 +18,7 @@ public sealed class ImportAdminBooksCommandHandler(
     : IRequestHandler<ImportAdminBooksCommand, ErrorOr<AdminBooksImportResult>>
 {
     private const int MaximumBatchSize = 100;
+    private const string ImportMovementNote = "Import ISBN_application.csv";
 
     public async Task<ErrorOr<AdminBooksImportResult>> Handle(
         ImportAdminBooksCommand command,
@@ -32,6 +36,13 @@ public sealed class ImportAdminBooksCommandHandler(
             return Error.Validation(
                 "Book.ImportBatchTooLarge",
                 $"An import batch cannot contain more than {MaximumBatchSize} ISBN-13 values.");
+        }
+
+        if (command.AddedBy is null || command.AddedBy.Value == Guid.Empty)
+        {
+            return Error.Validation(
+                "Book.InvalidImportAddedBy",
+                "An administrator identifier is required for inventory movements.");
         }
 
         var requestedIsbns = new List<Isbn13>(command.Isbns.Count);
@@ -83,7 +94,23 @@ public sealed class ImportAdminBooksCommandHandler(
                 continue;
             }
 
-            dbContext.Books.Add(Book.Create(isbn13, utcNow));
+            var book = Book.Create(isbn13, utcNow);
+            book.RecordAvailableEntry(utcNow);
+            dbContext.Books.Add(book);
+
+            dbContext.BookMovements.Add(BookMovement.Create(
+                BookMovementId.CreateUnique(),
+                isbn13,
+                BookMovementType.DirectEntry,
+                quantity: 1,
+                occurredAt: utcNow,
+                receivedAt: utcNow,
+                clockSuspect: false,
+                scanSessionId: null,
+                command.AddedBy,
+                assoEventsId: null,
+                ImportMovementNote,
+                clientGestureId: null));
             results.Add(new AdminBooksImportResult.Item(
                 isbn13.Value,
                 AdminBooksImportResult.Status.Created));

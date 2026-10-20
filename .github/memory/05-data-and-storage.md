@@ -242,9 +242,12 @@ The first planned import uses only the actual `ISBN_application.csv`, whose head
 `ISBN;Nombre_de_photos` and which contains 7,748 valid unique canonical ISBN-13 values after
 normalization (7,747 source ISBN-13 and one ISBN-10 converted to `9782702112649`).
 `Nombre_de_photos` is source annotation only: it is not an inventory quantity, a book field,
-or an import request value. The admin import creates ordinary `Book` records through
-`Book.Create`, leaving quantity at zero and metadata pending; it creates no movement, scan,
-or announcement. The CSV is prepared for DEV, but no import has happened yet.
+or an import request value. The user confirmed each scanned unique ISBN represents a physical
+book available for the fair, so each newly created `Book` receives quantity 1 and one
+`DirectEntry` movement attributed to the administrator performing the import. Already-present
+ISBNs remain unchanged for safe retries. This represents one copy per unique CSV row; the file
+does not encode extra copies for a repeated ISBN. Metadata stays pending and no prior scan
+sessions are recreated. The CSV is prepared for DEV, but no import has happened yet.
 
 Before applying the import, review the Worker health state in `NEXT.md`. Azure Container Apps
 showed successful `Functions.Enrich` and `Functions.Sweep` timer invocations despite startup
