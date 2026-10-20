@@ -17,11 +17,11 @@
 
 | | |
 |---|---|
-| **Lot en cours** | F-12 — demandes manuelles sans compte livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252), fusionnée et déployée; les suivis Catalog des [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259) et [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) sont fusionnés. La navigation mobile reste en revue dans [PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261). |
-| **Prochaine action** | Revoir la PR #261. Après fusion, déployer Catalog avec `Catalog - deploy`; aucune migration n'est requise. |
-| **Dernière machine** | Windows — `C:\Users\florian.drevet\RiderProjects\Vole-Papillon-Damour-mobile-navigation` |
-| **Dernière mise à jour** | 2026-10-15 — PR #261 ouverte pour la navigation mobile. Build Catalog réussi après rebase; contrôle responsive à 320×568, 390×844 et 1440×900. Les déploiements API et Catalog sur `main` ont réussi après les PR #259/#260. Aucun déploiement ni changement de base/API n'a été effectué pour la PR #261. |
-| **Branche** | `fix/catalog-mobile-navigation`, basée sur `origin/main` rebasé. |
+| **Lot en cours** | F-12 — demandes manuelles sans compte livrées par [PR #252](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/252); les suivis Catalog des [PR #259](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/259), [PR #260](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/260) et [PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261) sont fusionnés. Préparation de la remise à zéro DEV avant l'import ISBN. |
+| **Prochaine action** | Revoir et fusionner la [PR #262](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/262); ensuite relancer PITR, suspendre les écritures livres, faire un aperçu valide puis exécuter le reset approuvé. |
+| **Dernière machine** | Windows — `C:\Users\flori\RiderProjects\Vole-Papillon-Damour-reset-disabled-users` |
+| **Dernière mise à jour** | 2026-10-19 — correction du script de remise à zéro en cours; aucun livre, scan ou compte n'a été supprimé. L'aperçu #39327940690 a exposé des erreurs SQL et ne fournit pas de comptes valides. |
+| **Branche** | `fix/book-data-reset-disabled-users`, basée sur `origin/main` (`0d2e04a`). |
 | **Recommandations** | Implémentées dans `feat/book-recommendations`; [PR #239](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/239) ouverte vers `main`, non fusionnée. Avant ouverture publique : valider la base juridique des suggestions personnalisées et calibrer `SimilarMinScore` en relisant 50 fiches. Garder `RECOMMENDATIONS_ENABLED` à `false` jusqu'au premier calcul nocturne réussi, puis activer la fonctionnalité. |
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
@@ -46,8 +46,8 @@ disponible; le contrôle visuel authentifié du dialogue à 390 / 1440 px reste 
 
 ### Navigation mobile du Catalog — 2026-10-15
 
-[PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261) est ouverte vers
-`main`, non fusionnée. Le menu mobile garde uniquement les entrées principales; la liste des
+[PR #261](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/261) a été fusionnée le
+15 octobre. Le menu mobile garde uniquement les entrées principales; la liste des
 genres reste dans le sous-menu desktop. Le lien « Mon compte » ou le nom du membre connecté
 est fixé sous la zone défilante, au-dessus de la zone de sécurité de l'écran.
 
@@ -62,11 +62,13 @@ signalés au baseline); suites ciblées `manual-requests` 28/28, administration 
 légale 6/6. Les 76 zones dans 17 pages étaient vérifiées et les vues contrôlées à 390 / 1440 px
 ne débordaient pas horizontalement.
 
-### Remise à zéro de la base DEV — 2026-09-28
+### Remise à zéro avant import ISBN — DEV — 2026-10-19
 
-Le contrôle PITR GitHub Actions [#36437080910](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36437080910) a réussi : une copie ponctuelle de `vole-papillon-damour-db` a été restaurée, lue par `DbSnapshot`, puis supprimée. La base source n'a pas été modifiée.
+La procédure protégée a été livrée par la [PR #244](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/244), fusionnée. La vérification PITR [#36437080910](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/36437080910) a réussi le 28 septembre; la relancer avant toute remise à zéro effective.
 
-La compétence `.agents/skills/book-data-reset/SKILL.md`, le SQL protégé et le workflow manuel `Database - reset books data` sont préparés dans la branche `docs/book-data-reset-playbook`. Le reset attend la revue et la fusion de sa PR ; une fois le workflow disponible sur `main`, faire d'abord un aperçu puis l'exécution demandée. Ne pas confondre la copie PITR vérifiée avec le reset effectif.
+La cible confirmée pour cette demande est `vole-papillon-damour-db` en DEV. L'aperçu [#39327940690](https://github.com/FlorianDrevet/Vole-Papillon-Damour/actions/runs/39327940690) n'a supprimé aucune donnée, mais il n'est pas exploitable : le SQL a échoué sur l'alias réservé `RowCount`, alors que le workflow le déclarait vert. Le script doit aussi supprimer uniquement les profils SQL liés aux comptes Entra désactivés (`accountEnabled=false`), garder les profils actifs et les deux comptes protégés, puis vérifier les comptes conservés. Les identités Entra, événements/actualités, télémétrie Azure et blobs de photos restent conservés.
+
+La [PR #262](https://github.com/FlorianDrevet/Vole-Papillon-Damour/pull/262) corrige le traitement des erreurs SQL, limite la suppression des profils aux seuls comptes Entra désactivés, ajoute un contrôle hash du périmètre et inclut `ManualBookRequests`/`ManualRequesters` dans l'ordre requis par leur clé étrangère. Elle doit être revue et fusionnée avant reset. Ensuite : relancer la vérification PITR, arrêter les scans et attendre leur synchronisation, mettre le worker d'alertes en pause, lancer un nouvel aperçu et examiner les comptes/lignes concernés et son hash, puis appliquer avec ce même hash. Le reset réel n'a pas encore eu lieu.
 
 ### Signalement livre introuvable — F-11 — 2026-09-24
 

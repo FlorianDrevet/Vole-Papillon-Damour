@@ -1,8 +1,8 @@
 name: Database - reset books data
 
 # Manual only. The target database is fixed in this workflow and the SQL file
-# defaults to a dry run. Applying requires both the exact target confirmation
-# and the explicit apply_reset input.
+# defaults to a dry run. Only profiles linked to disabled Entra accounts are
+# removed; Entra identities themselves are left untouched.
 on:
   workflow_dispatch:
     inputs:
@@ -15,6 +15,11 @@ on:
         type: boolean
         required: true
         default: false
+      disabled_users_confirmation:
+        description: SHA-256 from the latest dry run; required when apply_reset is true
+        type: string
+        required: false
+        default: ""
 
 permissions:
   id-token: write
@@ -71,6 +76,32 @@ jobs:
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
           echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
 
+      - name: Resolve disabled Entra accounts and prepare reset SQL
+        id: prepare-reset
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ENTRA_GRAPH_CLIENT_ID: ${{ secrets.ENTRA_GRAPH_CLIENT_ID }}
+          ENTRA_GRAPH_CLIENT_SECRET: ${{ secrets.ENTRA_GRAPH_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          python3 tools/BookDataReset/prepare_reset_sql.py \
+            --template ".agents/skills/book-data-reset/resources/reset-book-data.sql" \
+            --output "$RUNNER_TEMP/reset-book-data-template.sql" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Require the same disabled-user set as the reviewed preview
+        if: inputs.apply_reset
+        env:
+          EXPECTED_DISABLED_USERS_SHA256: ${{ inputs.disabled_users_confirmation }}
+          ACTUAL_DISABLED_USERS_SHA256: ${{ steps.prepare-reset.outputs.disabled_entra_id_sha256 }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$EXPECTED_DISABLED_USERS_SHA256" =~ ^[0-9a-f]{64}$ ]] || \
+             [[ "$EXPECTED_DISABLED_USERS_SHA256" != "$ACTUAL_DISABLED_USERS_SHA256" ]]; then
+            echo "Disabled Entra users differ from the reviewed preview. Run a new dry run before applying." >&2
+            exit 1
+          fi
+
       - name: Open the database to this runner
         run: |
           set -euo pipefail
@@ -84,10 +115,13 @@ jobs:
             --output none
 
       - name: Preview or apply the reset transaction
+        id: execute-reset
         env:
           SQL_ADMIN_LOGIN: ${{ secrets.SQL_ADMIN_LOGIN }}
           SQLCMDPASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
           APPLY_RESET: ${{ inputs.apply_reset }}
+          DISABLED_ENTRA_ID_COUNT: ${{ steps.prepare-reset.outputs.disabled_entra_id_count }}
+          DISABLED_ENTRA_ID_SHA256: ${{ steps.prepare-reset.outputs.disabled_entra_id_sha256 }}
         run: |
           set -euo pipefail
           SQL_FQDN=$(az sql server show \
@@ -103,15 +137,17 @@ jobs:
           APPLY_VALUE=0
           if [[ "$APPLY_RESET" == "true" ]]; then APPLY_VALUE=1; fi
           sed "s/^DECLARE @ApplyReset bit = 0;$/DECLARE @ApplyReset bit = ${APPLY_VALUE};/" \
-            "$RESET_SQL" > "$RUNNER_TEMP/reset-book-data.sql"
+            "$RUNNER_TEMP/reset-book-data-template.sql" > "$RUNNER_TEMP/reset-book-data.sql"
           sqlcmd \
             -S "$SQL_FQDN,1433" \
             -d "$SQL_DATABASE" \
             -U "$SQL_ADMIN_LOGIN" \
             -N \
             -b \
-            -V 16 \
-            -i "$RUNNER_TEMP/reset-book-data.sql"
+            -V 11 \
+            -i "$RUNNER_TEMP/reset-book-data.sql" \
+            -o "$RUNNER_TEMP/reset-output.txt"
+          cat "$RUNNER_TEMP/reset-output.txt"
 
       - name: Close the database firewall rule
         if: always()
@@ -126,15 +162,30 @@ jobs:
         if: always()
         env:
           APPLY_RESET: ${{ inputs.apply_reset }}
+          RESET_SQL_OUTCOME: ${{ steps.execute-reset.outcome }}
+          DISABLED_ENTRA_ID_COUNT: ${{ steps.prepare-reset.outputs.disabled_entra_id_count }}
+          DISABLED_ENTRA_ID_SHA256: ${{ steps.prepare-reset.outputs.disabled_entra_id_sha256 }}
         run: |
           {
             echo "### Books database reset"
             echo ""
-            echo "- Target: `$SQL_DATABASE` on `$SQL_SERVER`"
+            echo "- Target: $SQL_DATABASE on $SQL_SERVER"
             if [[ "$APPLY_RESET" == "true" ]]; then
               echo "- Mode: apply requested; SQL guard checks and transaction determine commit or rollback."
             else
               echo "- Mode: dry run; no database rows are changed."
             fi
-            echo "- SQL result: see the preceding step output."
+            if [[ "$RESET_SQL_OUTCOME" == "success" ]]; then
+              echo "- Disabled Entra account IDs resolved: ${DISABLED_ENTRA_ID_COUNT:-unavailable}"
+              echo "- Disabled Entra account set SHA-256: ${DISABLED_ENTRA_ID_SHA256:-unavailable}"
+            else
+              echo "- SQL preview/apply failed; no confirmation hash is available from this run."
+            fi
+            if [[ -f "$RUNNER_TEMP/reset-output.txt" ]]; then
+              echo ""
+              echo "#### SQL counts and result"
+              echo '```text'
+              cat "$RUNNER_TEMP/reset-output.txt"
+              echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

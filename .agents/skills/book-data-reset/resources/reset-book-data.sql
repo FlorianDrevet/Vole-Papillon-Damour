@@ -4,6 +4,8 @@
    Default: dry run. Review the counts, then set @ApplyReset = 1 and run again.
    Target guard: vole-papillon-damour-db.
    Keeper accounts: floriandrevet@icloud.com and volepapillondamour@sfr.fr.
+   Other dbo.Users rows are deleted only when their ExternalId is in the
+   disabled Entra account set supplied by the reset workflow.
 
    This script intentionally does not delete events, news, products, orders,
    Entra identities, blobs, or account-deletion outbox jobs.
@@ -18,12 +20,27 @@ DECLARE @KeeperId1 uniqueidentifier;
 DECLARE @KeeperId2 uniqueidentifier;
 DECLARE @KeeperCount1 bigint;
 DECLARE @KeeperCount2 bigint;
-DECLARE @OtherUsers bigint;
+DECLARE @DisabledUsersToDelete bigint = 0;
+DECLARE @DisabledEntraIdCount bigint = 0;
+DECLARE @UnlinkedDisabledEntraIds bigint = 0;
+DECLARE @DisabledKeeperRows bigint = 0;
+DECLARE @RetainedUserCount bigint = 0;
+DECLARE @DisabledEntraIdsJson nvarchar(max) = N'__DISABLED_ENTRA_USER_IDS_JSON__';
 DECLARE @AssociationSettingsAuditRows bigint = 0;
 DECLARE @AlertOutboxRows bigint = 0;
 DECLARE @TableName sysname;
 DECLARE @RowCount bigint;
 DECLARE @Sql nvarchar(max);
+
+DECLARE @DisabledEntraUsers table
+(
+    ExternalId uniqueidentifier NOT NULL PRIMARY KEY
+);
+
+DECLARE @RetainedUserIds table
+(
+    Id uniqueidentifier NOT NULL PRIMARY KEY
+);
 
 DECLARE @BookTables table
 (
@@ -33,25 +50,27 @@ DECLARE @BookTables table
 
 INSERT INTO @BookTables (SortOrder, TableName)
 VALUES
-    (1, N'BookAnnouncements'),
-    (2, N'BookMovements'),
-    (3, N'CheckoutPassageLines'),
-    (4, N'CheckoutPassages'),
-    (5, N'MemberSelectionItems'),
-    (6, N'WatchlistItems'),
-    (7, N'UserAlertHistory'),
-    (8, N'EmailBounceEvents'),
-    (9, N'MemberCards'),
-    (10, N'MemberRecommendationPreferences'),
-    (11, N'BookNotFoundReports'),
-    (12, N'BookNeighbors'),
-    (13, N'BookSimilarityProfiles'),
-    (14, N'RareBookPhotos'),
-    (15, N'RareBookTombstones'),
-    (16, N'ScanSessions'),
-    (17, N'RareBooks'),
-    (18, N'Watchlists'),
-    (19, N'Books');
+    (1, N'ManualBookRequests'),
+    (2, N'ManualRequesters'),
+    (3, N'BookAnnouncements'),
+    (4, N'BookMovements'),
+    (5, N'CheckoutPassageLines'),
+    (6, N'CheckoutPassages'),
+    (7, N'MemberSelectionItems'),
+    (8, N'WatchlistItems'),
+    (9, N'UserAlertHistory'),
+    (10, N'EmailBounceEvents'),
+    (11, N'MemberCards'),
+    (12, N'MemberRecommendationPreferences'),
+    (13, N'BookNotFoundReports'),
+    (14, N'BookNeighbors'),
+    (15, N'BookSimilarityProfiles'),
+    (16, N'RareBookPhotos'),
+    (17, N'RareBookTombstones'),
+    (18, N'ScanSessions'),
+    (19, N'RareBooks'),
+    (20, N'Watchlists'),
+    (21, N'Books');
 
 DECLARE @ProtectedTables table (TableName sysname NOT NULL PRIMARY KEY);
 INSERT INTO @ProtectedTables (TableName)
@@ -112,6 +131,25 @@ END;
 BEGIN TRY
     BEGIN TRANSACTION;
 
+    IF ISJSON(@DisabledEntraIdsJson) <> 1
+    BEGIN
+        ;THROW 51011, N'The disabled Entra user list is not valid JSON. Nothing was changed.', 1;
+    END;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM OPENJSON(@DisabledEntraIdsJson)
+        WHERE [type] <> 1 OR TRY_CONVERT(uniqueidentifier, [value]) IS NULL
+    )
+    BEGIN
+        ;THROW 51012, N'The disabled Entra user list contains an invalid object ID. Nothing was changed.', 1;
+    END;
+
+    INSERT INTO @DisabledEntraUsers (ExternalId)
+    SELECT TRY_CONVERT(uniqueidentifier, [value])
+    FROM OPENJSON(@DisabledEntraIdsJson);
+
     SELECT @KeeperCount1 = COUNT_BIG(*)
     FROM dbo.Users
     WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail1;
@@ -128,9 +166,51 @@ BEGIN TRY
     SELECT @KeeperId1 = Id FROM dbo.Users WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail1;
     SELECT @KeeperId2 = Id FROM dbo.Users WHERE LOWER(LTRIM(RTRIM(Email))) = @KeeperEmail2;
 
-    SELECT @OtherUsers = COUNT_BIG(*)
-    FROM dbo.Users
-    WHERE Id NOT IN (@KeeperId1, @KeeperId2);
+    SELECT @DisabledEntraIdCount = COUNT_BIG(*)
+    FROM @DisabledEntraUsers;
+
+    SELECT @DisabledUsersToDelete = COUNT_BIG(*)
+    FROM dbo.Users AS user_row
+    INNER JOIN @DisabledEntraUsers AS disabled_user
+        ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+    WHERE user_row.Id NOT IN (@KeeperId1, @KeeperId2);
+
+    SELECT @UnlinkedDisabledEntraIds = COUNT_BIG(*)
+    FROM @DisabledEntraUsers AS disabled_user
+    WHERE NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.Users AS user_row
+        WHERE TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+    );
+
+    SELECT @DisabledKeeperRows = COUNT_BIG(*)
+    FROM dbo.Users AS user_row
+    INNER JOIN @DisabledEntraUsers AS disabled_user
+        ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+    WHERE user_row.Id IN (@KeeperId1, @KeeperId2);
+
+    INSERT INTO @RetainedUserIds (Id)
+    SELECT user_row.Id
+    FROM dbo.Users AS user_row
+    WHERE user_row.Id IN (@KeeperId1, @KeeperId2)
+       OR NOT EXISTS
+       (
+           SELECT 1
+           FROM @DisabledEntraUsers AS disabled_user
+           WHERE TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+       );
+
+    SELECT @RetainedUserCount = COUNT_BIG(*)
+    FROM @RetainedUserIds;
+
+    INSERT INTO @Preview (TableName, RowsBefore)
+    VALUES
+        (N'Disabled Entra IDs from Graph', @DisabledEntraIdCount),
+        (N'Disabled Entra profiles to delete', @DisabledUsersToDelete),
+        (N'Disabled Entra IDs without a SQL profile', @UnlinkedDisabledEntraIds),
+        (N'Disabled protected profiles retained', @DisabledKeeperRows),
+        (N'SQL user profiles to retain', @RetainedUserCount);
 
     IF EXISTS
     (
@@ -240,9 +320,8 @@ BEGIN TRY
         VALUES (N'AssociationSettings audit reassignment', @AssociationSettingsAuditRows);
     END;
 
-    SELECT N'Users to delete' AS TableName, @OtherUsers AS RowCount
-    UNION ALL
-    SELECT TableName, RowsBefore AS RowCount FROM @Preview
+    SELECT TableName, RowsBefore AS [RowCount]
+    FROM @Preview
     ORDER BY TableName;
 
     DECLARE protected_counts CURSOR LOCAL FAST_FORWARD FOR
@@ -270,7 +349,7 @@ BEGIN TRY
     CLOSE protected_counts;
     DEALLOCATE protected_counts;
 
-    SELECT N'Protected event/news counts before reset' AS CheckName, TableName, RowsBefore AS RowCount
+    SELECT N'Protected event/news counts before reset' AS CheckName, TableName, RowsBefore AS [RowCount]
     FROM @ProtectedCounts
     ORDER BY TableName;
 
@@ -330,8 +409,11 @@ BEGIN TRY
             BookCount = 0;
     END;
 
-    DELETE FROM dbo.Users
-    WHERE Id NOT IN (@KeeperId1, @KeeperId2);
+    DELETE user_row
+    FROM dbo.Users AS user_row
+    INNER JOIN @DisabledEntraUsers AS disabled_user
+        ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+    WHERE user_row.Id NOT IN (@KeeperId1, @KeeperId2);
 
     DECLARE verify_book_tables CURSOR LOCAL FAST_FORWARD FOR
         SELECT TableName FROM @BookTables ORDER BY SortOrder;
@@ -361,16 +443,27 @@ BEGIN TRY
     CLOSE verify_book_tables;
     DEALLOCATE verify_book_tables;
 
-    IF (SELECT COUNT_BIG(*) FROM dbo.Users) <> 2
-       OR EXISTS
+    IF EXISTS
        (
            SELECT 1
-           FROM dbo.Users
-           WHERE LOWER(LTRIM(RTRIM(Email))) NOT IN (@KeeperEmail1, @KeeperEmail2)
-              OR Email IS NULL
+           FROM dbo.Users AS user_row
+           INNER JOIN @DisabledEntraUsers AS disabled_user
+               ON TRY_CONVERT(uniqueidentifier, user_row.ExternalId) = disabled_user.ExternalId
+           WHERE user_row.Id NOT IN (@KeeperId1, @KeeperId2)
        )
     BEGIN
-        ;THROW 51008, N'dbo.Users does not contain exactly the two keeper accounts. The transaction will roll back.', 1;
+        ;THROW 51008, N'Disabled Entra user profiles remain after deletion. The transaction will roll back.', 1;
+    END;
+
+    IF (SELECT COUNT_BIG(*) FROM dbo.Users WHERE Id IN (@KeeperId1, @KeeperId2)) <> 2
+    BEGIN
+        ;THROW 51013, N'The two keeper accounts are not both present. The transaction will roll back.', 1;
+    END;
+
+    IF EXISTS (SELECT Id FROM @RetainedUserIds EXCEPT SELECT Id FROM dbo.Users)
+       OR EXISTS (SELECT Id FROM dbo.Users EXCEPT SELECT Id FROM @RetainedUserIds)
+    BEGIN
+        ;THROW 51014, N'The SQL user profiles to retain changed during the reset. The transaction will roll back.', 1;
     END;
 
     IF OBJECT_ID(N'dbo.OutboxMessages', N'U') IS NOT NULL
@@ -410,7 +503,7 @@ BEGIN TRY
            DB_NAME() AS DatabaseName,
            @KeeperEmail1 AS Keeper1,
            @KeeperEmail2 AS Keeper2,
-           @OtherUsers AS UsersDeleted,
+           @DisabledUsersToDelete AS DisabledUsersDeleted,
            @AlertOutboxRows AS BookAlertOutboxRowsDeleted,
            SYSUTCDATETIME() AS CompletedAtUtc;
 
