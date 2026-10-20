@@ -13,6 +13,7 @@ public sealed class EnrichPendingBooksCommandHandler(
     IDateTimeProvider dateTimeProvider)
     : IRequestHandler<EnrichPendingBooksCommand, EnrichPendingBooksResult>
 {
+    private static readonly TimeSpan InterIsbnDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan ProviderFailureRetryAfter = TimeSpan.FromHours(1);
     private static readonly TimeSpan NotFoundRetryAfterFirstAttempt = TimeSpan.FromDays(7);
     private static readonly TimeSpan NotFoundRetryAfterSecondAttempt = TimeSpan.FromDays(30);
@@ -74,8 +75,15 @@ public sealed class EnrichPendingBooksCommandHandler(
         var failedCount = 0;
         var coverUpdatedCount = 0;
         var genreUpdatedCount = 0;
+        var hasProcessedCandidate = false;
         foreach (var isbn13 in candidates)
         {
+            if (hasProcessedCandidate && command.Isbn13 is null)
+            {
+                await Task.Delay(InterIsbnDelay, cancellationToken);
+            }
+
+            hasProcessedCandidate = true;
             BookMetadataResult? metadata;
             try
             {

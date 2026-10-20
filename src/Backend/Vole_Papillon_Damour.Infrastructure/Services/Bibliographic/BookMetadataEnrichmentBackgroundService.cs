@@ -13,6 +13,8 @@ public sealed class BookMetadataEnrichmentBackgroundService(
     IServiceScopeFactory scopeFactory,
     ILogger<BookMetadataEnrichmentBackgroundService> logger) : BackgroundService
 {
+    private static readonly TimeSpan InterIsbnDelay = TimeSpan.FromSeconds(1);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -54,6 +56,15 @@ public sealed class BookMetadataEnrichmentBackgroundService(
                     exception,
                     "Immediate book metadata enrichment failed for ISBN {Isbn13}; the scheduled worker will retry it.",
                     isbn13.Value);
+            }
+
+            try
+            {
+                await Task.Delay(InterIsbnDelay, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
             }
         }
     }

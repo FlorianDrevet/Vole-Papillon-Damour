@@ -57,6 +57,12 @@ The API startup wires:
 - `GET /health`, backed by an Infrastructure database connectivity check, for API liveness and readiness
 - endpoint registration through `UseAuthenticationController()`, `UseActualityController()`, `UseProductController()`, `UseOrdersController()`, and `UseEventsController()`
 
+## ISBN metadata import and enrichment
+
+- `ImportAdminBooksCommandHandler` creates new book/inventory rows in a serializable transaction, commits, then enqueues only ISBNs created by that batch through `IBookMetadataEnrichmentQueue`. Existing books remain unchanged.
+- The API registers `BookMetadataEnrichmentBackgroundService`; it consumes the in-memory queue with one reader, starts enrichment immediately, and waits one second after each attempt before the next queued ISBN. The queue is not durable, so the hourly `BookEnrichmentFunction` remains the recovery path for pending records after a process restart.
+- The Worker’s bulk `EnrichPendingBooksCommand` path also waits one second between candidate ISBNs. These limits serialize work within each host; they are not a distributed rate limiter across separate API and Worker processes.
+
 ## Multi-Runtime Notes
 
 - The Website consumes the backend SSE stream for event table updates.
