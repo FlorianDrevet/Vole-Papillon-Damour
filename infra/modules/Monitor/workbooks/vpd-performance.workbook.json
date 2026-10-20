@@ -155,7 +155,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize Requetes = count(), Echecs = countif(Success == false) by bin(TimeGenerated, {TimeRange:grain})",
+              "query": "AppRequests\n| where AppRoleName contains \"vpd-api\"\n| summarize Requetes = count(), Echecs = countif(Success == false) by bin(TimeGenerated, {TimeRange:grain})",
               "size": 0,
               "title": "Débit et échecs",
               "timeContextFromParameter": "TimeRange",
@@ -173,7 +173,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize P50 = percentile(DurationMs, 50), P95 = percentile(DurationMs, 95), P99 = percentile(DurationMs, 99) by bin(TimeGenerated, {TimeRange:grain})",
+              "query": "AppRequests\n| where AppRoleName contains \"vpd-api\"\n| summarize P50 = percentile(DurationMs, 50), P95 = percentile(DurationMs, 95), P99 = percentile(DurationMs, 99) by bin(TimeGenerated, {TimeRange:grain})",
               "size": 0,
               "title": "Latence (ms) — P50 / P95 / P99",
               "timeContextFromParameter": "TimeRange",
@@ -191,7 +191,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize Requetes = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)), P99 = round(percentile(DurationMs, 99)), Max = round(max(DurationMs)) by Name\n| extend TauxEchec = round(100.0 * Echecs / Requetes, 1)\n| order by P95 desc",
+              "query": "AppRequests\n| where AppRoleName contains \"vpd-api\"\n| summarize Requetes = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)), P99 = round(percentile(DurationMs, 99)), Max = round(max(DurationMs)) by Name\n| extend TauxEchec = round(100.0 * Echecs / Requetes, 1)\n| order by P95 desc",
               "size": 0,
               "title": "Opérations, triées par P95",
               "timeContextFromParameter": "TimeRange",
@@ -208,7 +208,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| top 50 by DurationMs desc\n| project TimeGenerated, Name, DurationMs = round(DurationMs), ResultCode, OperationId",
+              "query": "AppRequests\n| where AppRoleName contains \"vpd-api\"\n| top 50 by DurationMs desc\n| project TimeGenerated, Name, DurationMs = round(DurationMs), ResultCode, OperationId",
               "size": 0,
               "title": "Les 50 requêtes les plus lentes",
               "timeContextFromParameter": "TimeRange",
@@ -226,7 +226,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppRequests\n| where AppRoleName == \"vpd-api\"\n| summarize Requetes = count() by ResultCode, bin(TimeGenerated, {TimeRange:grain})",
+              "query": "AppRequests\n| where AppRoleName contains \"vpd-api\"\n| summarize Requetes = count() by ResultCode, bin(TimeGenerated, {TimeRange:grain})",
               "size": 0,
               "title": "Codes de réponse",
               "timeContextFromParameter": "TimeRange",
@@ -266,7 +266,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "let requests = AppRequests | where AppRoleName == \"vpd-api\"\n    | project OperationId, Operation = Name, RequestMs = DurationMs;\nAppDependencies\n| where AppRoleName == \"vpd-api\"\n| summarize DependencyMs = sum(DurationMs), Calls = count() by OperationId, DependencyType\n| join kind=inner requests on OperationId\n| summarize Requetes = dcount(OperationId), DureeMoyenneMs = round(avg(RequestMs)), DependanceMoyenneMs = round(avg(DependencyMs)), AppelsMoyens = round(avg(Calls), 1) by Operation, DependencyType\n| extend PartDependance = round(100.0 * DependanceMoyenneMs / DureeMoyenneMs, 1)\n| order by DependanceMoyenneMs desc",
+              "query": "let requests = AppRequests | where AppRoleName contains \"vpd-api\"\n    | project OperationId, Operation = Name, RequestMs = DurationMs;\nAppDependencies\n| where AppRoleName contains \"vpd-api\"\n| summarize DependencyMs = sum(DurationMs), Calls = count() by OperationId, DependencyType\n| join kind=inner requests on OperationId\n| summarize Requetes = dcount(OperationId), DureeMoyenneMs = round(avg(RequestMs)), DependanceMoyenneMs = round(avg(DependencyMs)), AppelsMoyens = round(avg(Calls), 1) by Operation, DependencyType\n| extend PartDependance = round(100.0 * DependanceMoyenneMs / DureeMoyenneMs, 1)\n| order by DependanceMoyenneMs desc",
               "size": 0,
               "title": "Décomposition moyenne par opération",
               "timeContextFromParameter": "TimeRange",
@@ -283,7 +283,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppDependencies\n| where AppRoleName == \"vpd-api\" and DependencyType =~ \"SQL\"\n| summarize SqlCalls = count() by OperationId\n| join kind=inner (AppRequests | where AppRoleName == \"vpd-api\" | project OperationId, Name) on OperationId\n| summarize AppelsSqlMoyens = round(avg(SqlCalls), 1), AppelsSqlMax = max(SqlCalls), Requetes = count() by Name\n| order by AppelsSqlMax desc\n| take 20",
+              "query": "AppDependencies\n| where AppRoleName contains \"vpd-api\" and DependencyType =~ \"SQL\"\n| summarize SqlCalls = count() by OperationId\n| join kind=inner (AppRequests | where AppRoleName contains \"vpd-api\" | project OperationId, Name) on OperationId\n| summarize AppelsSqlMoyens = round(avg(SqlCalls), 1), AppelsSqlMax = max(SqlCalls), Requetes = count() by Name\n| order by AppelsSqlMax desc\n| take 20",
               "size": 0,
               "title": "Requêtes SQL par opération (détection N+1)",
               "timeContextFromParameter": "TimeRange",
@@ -319,7 +319,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppDependencies\n| where AppRoleName in (\"vpd-api\", \"vpd-worker\", \"vpd-catalog\")\n| summarize Appels = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)) by AppRoleName, DependencyType, Target\n| order by P95 desc",
+              "query": "AppDependencies\n| where (AppRoleName contains \"vpd-api\" or AppRoleName contains \"vpd-worker\" or AppRoleName contains \"vpd-catalog\")\n| summarize Appels = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)) by AppRoleName, DependencyType, Target\n| order by P95 desc",
               "size": 0,
               "title": "Dépendances par cible",
               "timeContextFromParameter": "TimeRange",
@@ -421,7 +421,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppTraces\n| where SeverityLevel >= 2\n| summarize Occurrences = count(), Dernier = max(TimeGenerated), Exemple = take_any(Message) by AppRoleName, SeverityLevel, Modele = tostring(Properties[\"{OriginalFormat}\"])\n| order by Occurrences desc\n| take 50",
+              "query": "AppTraces\n| where SeverityLevel >= 2\n| summarize Occurrences = count(), Dernier = max(TimeGenerated), Exemple = take_any(Message) by AppRoleName, SeverityLevel, Modele = tostring(Properties[strcat(\"{\", \"OriginalFormat\", \"}\")])\n| order by Occurrences desc\n| take 50",
               "size": 0,
               "title": "Journaux Warning et Error",
               "timeContextFromParameter": "TimeRange",
@@ -539,7 +539,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppRequests\n| where AppRoleName == \"vpd-catalog\"\n| summarize Requetes = count(), P95 = percentile(DurationMs, 95), Echecs = countif(Success == false) by bin(TimeGenerated, {TimeRange:grain})",
+              "query": "AppRequests\n| where AppRoleName contains \"vpd-catalog\"\n| summarize Requetes = count(), P95 = percentile(DurationMs, 95), Echecs = countif(Success == false) by bin(TimeGenerated, {TimeRange:grain})",
               "size": 0,
               "title": "Rendu SSR du catalogue",
               "timeContextFromParameter": "TimeRange",
@@ -890,7 +890,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "AppRequests\n| where AppRoleName in (\"vpd-api\", \"vpd-worker\", \"vpd-catalog\", \"vpd-scan\", \"vpd-web\", \"vpd-bo\")\n| summarize Requetes = count(), Echecs = countif(Success == false), P95Ms = percentile(DurationMs, 95), P99Ms = percentile(DurationMs, 99), PicMs = max(DurationMs) by AppRoleName, bin(TimeGenerated, {TimeRange:grain})\n| order by TimeGenerated desc",
+              "query": "AppRequests\n| where (AppRoleName contains \"vpd-api\" or AppRoleName contains \"vpd-worker\" or AppRoleName contains \"vpd-catalog\" or AppRoleName contains \"vpd-scan\" or AppRoleName contains \"vpd-web\" or AppRoleName contains \"vpd-bo\")\n| summarize Requetes = count(), Echecs = countif(Success == false), P95Ms = percentile(DurationMs, 95), P99Ms = percentile(DurationMs, 99), PicMs = max(DurationMs) by AppRoleName, bin(TimeGenerated, {TimeRange:grain})\n| order by TimeGenerated desc",
               "size": 0,
               "title": "Latences et erreurs applicatives",
               "timeContextFromParameter": "TimeRange",

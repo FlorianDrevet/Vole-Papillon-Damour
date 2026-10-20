@@ -71,7 +71,12 @@ function tab(id, items) {
   };
 }
 
-const api = 'AppRequests\n| where AppRoleName == "vpd-api"';
+const apiRolePredicate = 'AppRoleName contains "vpd-api"';
+const backendRolePredicate =
+  '(AppRoleName contains "vpd-api" or AppRoleName contains "vpd-worker" or AppRoleName contains "vpd-catalog")';
+const allApplicationRolePredicate =
+  '(AppRoleName contains "vpd-api" or AppRoleName contains "vpd-worker" or AppRoleName contains "vpd-catalog" or AppRoleName contains "vpd-scan" or AppRoleName contains "vpd-web" or AppRoleName contains "vpd-bo")';
+const api = `AppRequests\n| where ${apiRolePredicate}`;
 
 const workbook = {
   version: 'Notebook/1.0',
@@ -192,11 +197,11 @@ const workbook = {
       ),
       query(
         'Décomposition moyenne par opération',
-        `let requests = ${api.replace('\n', ' ')}\n    | project OperationId, Operation = Name, RequestMs = DurationMs;\nAppDependencies\n| where AppRoleName == "vpd-api"\n| summarize DependencyMs = sum(DurationMs), Calls = count() by OperationId, DependencyType\n| join kind=inner requests on OperationId\n| summarize Requetes = dcount(OperationId), DureeMoyenneMs = round(avg(RequestMs)), DependanceMoyenneMs = round(avg(DependencyMs)), AppelsMoyens = round(avg(Calls), 1) by Operation, DependencyType\n| extend PartDependance = round(100.0 * DependanceMoyenneMs / DureeMoyenneMs, 1)\n| order by DependanceMoyenneMs desc`,
+        `let requests = ${api.replaceAll('\n', ' ')}\n    | project OperationId, Operation = Name, RequestMs = DurationMs;\nAppDependencies\n| where ${apiRolePredicate}\n| summarize DependencyMs = sum(DurationMs), Calls = count() by OperationId, DependencyType\n| join kind=inner requests on OperationId\n| summarize Requetes = dcount(OperationId), DureeMoyenneMs = round(avg(RequestMs)), DependanceMoyenneMs = round(avg(DependencyMs)), AppelsMoyens = round(avg(Calls), 1) by Operation, DependencyType\n| extend PartDependance = round(100.0 * DependanceMoyenneMs / DureeMoyenneMs, 1)\n| order by DependanceMoyenneMs desc`,
       ),
       half(query(
         'Requêtes SQL par opération (détection N+1)',
-        `AppDependencies\n| where AppRoleName == "vpd-api" and DependencyType =~ "SQL"\n| summarize SqlCalls = count() by OperationId\n| join kind=inner (${api.replace('\n', ' ')} | project OperationId, Name) on OperationId\n| summarize AppelsSqlMoyens = round(avg(SqlCalls), 1), AppelsSqlMax = max(SqlCalls), Requetes = count() by Name\n| order by AppelsSqlMax desc\n| take 20`,
+        `AppDependencies\n| where ${apiRolePredicate} and DependencyType =~ "SQL"\n| summarize SqlCalls = count() by OperationId\n| join kind=inner (${api.replaceAll('\n', ' ')} | project OperationId, Name) on OperationId\n| summarize AppelsSqlMoyens = round(avg(SqlCalls), 1), AppelsSqlMax = max(SqlCalls), Requetes = count() by Name\n| order by AppelsSqlMax desc\n| take 20`,
       )),
       half(query(
         'Instructions SQL les plus lentes',
@@ -204,7 +209,7 @@ const workbook = {
       )),
       query(
         'Dépendances par cible',
-        `AppDependencies\n| where AppRoleName in ("vpd-api", "vpd-worker", "vpd-catalog")\n| summarize Appels = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)) by AppRoleName, DependencyType, Target\n| order by P95 desc`,
+        `AppDependencies\n| where ${backendRolePredicate}\n| summarize Appels = count(), Echecs = countif(Success == false), P50 = round(percentile(DurationMs, 50)), P95 = round(percentile(DurationMs, 95)) by AppRoleName, DependencyType, Target\n| order by P95 desc`,
       ),
       query(
         'Fournisseurs bibliographiques',
@@ -227,7 +232,7 @@ const workbook = {
       ),
       query(
         'Journaux Warning et Error',
-        `AppTraces\n| where SeverityLevel >= 2\n| summarize Occurrences = count(), Dernier = max(TimeGenerated), Exemple = take_any(Message) by AppRoleName, SeverityLevel, Modele = tostring(Properties["{OriginalFormat}"])\n| order by Occurrences desc\n| take 50`,
+        `AppTraces\n| where SeverityLevel >= 2\n| summarize Occurrences = count(), Dernier = max(TimeGenerated), Exemple = take_any(Message) by AppRoleName, SeverityLevel, Modele = tostring(Properties[strcat("{", "OriginalFormat", "}")])\n| order by Occurrences desc\n| take 50`,
       ),
     ]),
     tab('worker', [
@@ -254,7 +259,7 @@ const workbook = {
       )),
       half(query(
         'Rendu SSR du catalogue',
-        `AppRequests\n| where AppRoleName == "vpd-catalog"\n| summarize Requetes = count(), P95 = percentile(DurationMs, 95), Echecs = countif(Success == false) by bin(TimeGenerated, ${grain})`,
+        `AppRequests\n| where AppRoleName contains "vpd-catalog"\n| summarize Requetes = count(), P95 = percentile(DurationMs, 95), Echecs = countif(Success == false) by bin(TimeGenerated, ${grain})`,
         'timechart',
       )),
       query(
@@ -365,7 +370,7 @@ const workbook = {
       query(
         'Latences et erreurs applicatives',
         `AppRequests
-| where AppRoleName in ("vpd-api", "vpd-worker", "vpd-catalog", "vpd-scan", "vpd-web", "vpd-bo")
+| where ${allApplicationRolePredicate}
 | summarize Requetes = count(), Echecs = countif(Success == false), P95Ms = percentile(DurationMs, 95), P99Ms = percentile(DurationMs, 99), PicMs = max(DurationMs) by AppRoleName, bin(TimeGenerated, ${grain})
 | order by TimeGenerated desc`,
         'timechart',
