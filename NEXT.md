@@ -32,12 +32,12 @@ La liste est un choix explicite avec le paramètre URL view=list ; les URL exist
 view=grid restent compatibles. Recherche, filtres et pagination sont conservés lors du
 changement ; les livres rares gardent leur présentation dédiée.
 
-Validation : 37 tests ciblés réussis et build Catalog réussi. Sur la suite complète,
-501/504 tests passent ; les trois échecs sont dans les specs AccountCard préexistantes,
+Validation : 39 tests ciblés réussis et build Catalog réussi. Sur la suite complète,
+504/506 tests passent ; les deux échecs sont dans les specs AccountCard préexistantes,
 non modifiées. Build réussi avec les avertissements de budget et CommonJS déjà présents.
 Contrôle à 1440×900 et 390×844 ; le sélecteur grille est actif aux deux tailles. API locale
 indisponible pour inspecter des fiches peuplées. Graphify a extrait l’AST, mais ne peut pas
-rendre la visualisation HTML avec un graphe de 8 243 nœuds. Après fusion, lancer
+rendre la visualisation HTML avec un graphe de 8 242 nœuds. Après fusion, lancer
 Catalog - deploy ; aucune migration n’est nécessaire.
 
 ### Demandes manuelles sans compte — F-12 — 2026-10-15
