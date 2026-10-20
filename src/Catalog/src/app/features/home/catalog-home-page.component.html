@@ -175,7 +175,7 @@
     <div class="catalog-notice" role="status">Les dates et le catalogue se mettent à jour. Réessayez dans un instant.</div>
   }
 } @else {
-  <section class="hero">
+  <section class="hero" [class.hero--genre-menu-open]="heroGenreMenuOpen">
     <div class="hero-visual" aria-hidden="true">
       <img class="hero-butterfly" src="images/papillon_without_back.png" alt="" width="340" height="340">
     </div>
@@ -206,8 +206,22 @@
             @if (heroGenreMenuOpen) {
               <div id="catalog-home-genre-menu" class="hero-genre-select-panel" role="menu" aria-label="Options de genre">
                 <span class="hero-genre-panel-kicker">Filtrer par genre</span>
+                <div class="hero-genre-panel-search">
+                  <svg aria-hidden="true" viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"></circle><path d="m13 13 4 4"></path></svg>
+                  <label class="visually-hidden" for="catalog-home-genre-search">Rechercher un genre</label>
+                  <input
+                    id="catalog-home-genre-search"
+                    name="homeGenreQuery"
+                    type="search"
+                    placeholder="Rechercher un genre"
+                    autocomplete="off"
+                    spellcheck="false"
+                    [(ngModel)]="heroGenreQuery"
+                    (ngModelChange)="onHeroGenreQueryChange($event)"
+                    (keydown)="handleHeroGenreSearchKeydown($event)">
+                </div>
                 <div class="hero-genre-panel-options">
-                  @for (choice of heroGenreChoices(); track choice.value; let index = $index) {
+                  @for (choice of filteredHeroGenreChoices(); track choice.value; let index = $index) {
                     <button
                       [id]="'catalog-home-genre-option-' + index"
                       type="button"
@@ -229,6 +243,9 @@
                         <strong>{{ choice.label }}</strong>
                       </span>
                     </button>
+                  }
+                  @if (!filteredHeroGenreChoices().length) {
+                    <p class="hero-genre-empty" role="status">Aucun genre ne correspond à cette recherche.</p>
                   }
                 </div>
               </div>

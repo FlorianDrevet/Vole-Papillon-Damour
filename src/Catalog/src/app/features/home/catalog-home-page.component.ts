@@ -50,6 +50,7 @@ export class CatalogHomePageComponent implements OnInit {
   upcomingOnly = signal(false);
   search = '';
   heroGenre = '';
+  heroGenreQuery = '';
   heroGenreMenuOpen = false;
   heroGenreMenuActiveIndex = 0;
   loading = signal(true);
@@ -124,6 +125,23 @@ export class CatalogHomePageComponent implements OnInit {
     ];
   }
 
+  filteredHeroGenreChoices(): ReadonlyArray<HeroGenreChoice> {
+    const query = this.normalizeGenreQuery(this.heroGenreQuery);
+    if (!query) {
+      return this.heroGenreChoices();
+    }
+
+    return this.heroGenreChoices().filter(choice =>
+      this.normalizeGenreQuery(choice.label).includes(query));
+  }
+
+  onHeroGenreQueryChange(query: string): void {
+    this.heroGenreQuery = query;
+    const choices = this.filteredHeroGenreChoices();
+    const selectedIndex = choices.findIndex(choice => choice.value === this.heroGenre);
+    this.heroGenreMenuActiveIndex = selectedIndex >= 0 ? selectedIndex : (choices.length ? 0 : -1);
+  }
+
   heroGenreLabel(): string {
     return this.heroGenre || 'Tous les genres';
   }
@@ -170,11 +188,13 @@ export class CatalogHomePageComponent implements OnInit {
   }
 
   handleHeroGenreOptionKeydown(event: KeyboardEvent, index: number): void {
+    const choices = this.filteredHeroGenreChoices();
+
     switch (event.key) {
       case 'Enter':
       case ' ':
         event.preventDefault();
-        this.selectHeroGenre(this.heroGenreChoices()[index].value);
+        this.selectHeroGenre(choices[index].value);
         break;
       case 'ArrowDown':
         event.preventDefault();
@@ -190,7 +210,7 @@ export class CatalogHomePageComponent implements OnInit {
         break;
       case 'End':
         event.preventDefault();
-        this.focusHeroGenreOption(this.heroGenreChoices().length - 1);
+        this.focusHeroGenreOption(choices.length - 1);
         break;
       case 'Escape':
         event.preventDefault();
@@ -199,6 +219,37 @@ export class CatalogHomePageComponent implements OnInit {
         break;
       case 'Tab':
         this.closeHeroGenreMenu();
+        break;
+    }
+  }
+
+  handleHeroGenreSearchKeydown(event: KeyboardEvent): void {
+    const choices = this.filteredHeroGenreChoices();
+
+    switch (event.key) {
+      case 'Enter':
+        event.preventDefault();
+        if (choices.length) {
+          const index = this.heroGenreMenuActiveIndex >= 0 ? this.heroGenreMenuActiveIndex : 0;
+          this.selectHeroGenre(choices[index].value);
+        }
+        break;
+      case 'ArrowDown':
+        if (choices.length) {
+          event.preventDefault();
+          this.focusHeroGenreOption(this.heroGenreMenuActiveIndex >= 0 ? this.heroGenreMenuActiveIndex : 0);
+        }
+        break;
+      case 'ArrowUp':
+        if (choices.length) {
+          event.preventDefault();
+          this.focusHeroGenreOption(this.heroGenreMenuActiveIndex >= 0 ? this.heroGenreMenuActiveIndex : choices.length - 1);
+        }
+        break;
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeHeroGenreMenu(true);
         break;
     }
   }
@@ -316,9 +367,15 @@ export class CatalogHomePageComponent implements OnInit {
       return;
     }
 
+    this.heroGenreQuery = '';
     this.heroGenreMenuActiveIndex = this.heroGenreIndex();
     this.heroGenreMenuOpen = true;
     this.changeDetector.markForCheck();
+    setTimeout(() => {
+      if (this.heroGenreMenuOpen) {
+        this.elementRef.nativeElement.querySelector<HTMLInputElement>('.hero-genre-panel-search input')?.focus();
+      }
+    });
   }
 
   private closeHeroGenreMenu(returnFocus = false): void {
@@ -327,6 +384,8 @@ export class CatalogHomePageComponent implements OnInit {
     }
 
     this.heroGenreMenuOpen = false;
+    this.heroGenreQuery = '';
+    this.heroGenreMenuActiveIndex = this.heroGenreIndex();
     this.changeDetector.markForCheck();
     if (returnFocus) {
       this.elementRef.nativeElement.querySelector<HTMLButtonElement>('.hero-genre-select-trigger')?.focus();
@@ -339,12 +398,20 @@ export class CatalogHomePageComponent implements OnInit {
   }
 
   private moveHeroGenreFocus(delta: number): void {
-    const optionCount = this.heroGenreChoices().length;
+    const optionCount = this.filteredHeroGenreChoices().length;
+    if (!optionCount) {
+      return;
+    }
+
     this.focusHeroGenreOption((this.heroGenreMenuActiveIndex + delta + optionCount) % optionCount);
   }
 
   private focusHeroGenreOption(index: number): void {
-    const optionCount = this.heroGenreChoices().length;
+    const optionCount = this.filteredHeroGenreChoices().length;
+    if (!optionCount) {
+      return;
+    }
+
     this.heroGenreMenuActiveIndex = (index + optionCount) % optionCount;
     setTimeout(() => {
       if (!this.heroGenreMenuOpen) {
@@ -355,5 +422,13 @@ export class CatalogHomePageComponent implements OnInit {
         .querySelector<HTMLButtonElement>(`#catalog-home-genre-option-${this.heroGenreMenuActiveIndex}`)
         ?.focus();
     });
+  }
+
+  private normalizeGenreQuery(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('fr-FR')
+      .trim();
   }
 }
