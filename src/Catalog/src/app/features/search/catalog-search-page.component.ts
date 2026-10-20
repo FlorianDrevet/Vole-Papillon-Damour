@@ -15,6 +15,7 @@ import {CatalogApiService} from '../../core/catalog-api.service';
 import {mergeCatalogGenres} from '../../core/catalog-genres';
 import {
   CatalogAvailability,
+  CatalogBook,
   CatalogBookReference,
   CatalogSearchParams,
   CatalogSearchResponse,
@@ -70,6 +71,8 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   referenceFollowPending: string | null = null;
   referenceFollowMessage: string | null = null;
   referenceFollowError: string | null = null;
+  bookFollowErrorKey: string | null = null;
+  bookFollowError: string | null = null;
   authPromptOpen = false;
 
   private readonly followedReferenceKeys = new Set<string>();
@@ -330,6 +333,41 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     await this.submitReferenceFollow(item, scope, key);
   }
 
+  async followBook(book: CatalogBook): Promise<void> {
+    const reference = this.bookFollowReference(book);
+    const scope = this.bookFollowScope(book);
+    const key = this.referenceFollowKey(reference, scope);
+    this.bookFollowErrorKey = key;
+    this.bookFollowError = null;
+
+    await this.followReference(reference, scope);
+  }
+
+  bookFollowReference(book: CatalogBook): CatalogBookReference {
+    return {
+      isbn13: book.isbn13,
+      workId: book.workId,
+      title: book.title,
+      authors: book.authors,
+      publisher: book.publisher,
+      publicationYear: book.publicationYear,
+      coverUrl: book.coverUrl,
+      source: 'catalog',
+    };
+  }
+
+  bookFollowScope(book: CatalogBook): CatalogWatchlistScope {
+    return book.workId?.trim() ? 'Work' : 'Edition';
+  }
+
+  bookFollowKey(book: CatalogBook): string | null {
+    return this.referenceFollowKey(this.bookFollowReference(book), this.bookFollowScope(book));
+  }
+
+  bookFollowErrorFor(book: CatalogBook): string | null {
+    return this.bookFollowKey(book) === this.bookFollowErrorKey ? this.bookFollowError : null;
+  }
+
   referenceFollowKey(item: CatalogBookReference, scope: CatalogWatchlistScope): string | null {
     const target = scope === 'Work' ? item.workId : item.isbn13;
     return target ? `${scope}:${target}` : null;
@@ -447,7 +485,13 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       }
     } catch {
       this.clearPendingReferenceFollow();
-      this.referenceFollowError = 'La connexion n’a pas pu être démarrée. Réessayez.';
+      const message = 'La connexion n’a pas pu être démarrée. Réessayez.';
+      if (pending.items.some(item => item.source === 'catalog')) {
+        this.bookFollowErrorKey = this.referenceFollowKey(pending.items[0], pending.scope);
+        this.bookFollowError = message;
+      } else {
+        this.referenceFollowError = message;
+      }
       this.changeDetector.markForCheck();
     }
   }
@@ -489,19 +533,33 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       const token = await this.auth.getApiAccessToken();
       const request = this.followRequest(item, scope);
       if (!request) {
-        this.referenceFollowError = 'Cette référence ne permet pas ce type de suivi.';
+        const message = 'Cette référence ne permet pas ce type de suivi.';
+        if (item.source === 'catalog') {
+          this.bookFollowErrorKey = key;
+          this.bookFollowError = message;
+        } else {
+          this.referenceFollowError = message;
+        }
         return;
       }
 
       await firstValueFrom(this.memberApi.addWatchlistItem(token, request));
       this.followedReferenceKeys.add(key);
-      this.referenceFollowMessage = scope === 'Work'
-        ? 'Le titre a été ajouté à votre liste de recherche.'
-        : 'L’édition a été ajoutée à votre liste de recherche.';
+      this.referenceFollowMessage = item.source === 'catalog'
+        ? null
+        : scope === 'Work'
+          ? 'Le titre a été ajouté à votre liste de recherche.'
+          : 'L’édition a été ajoutée à votre liste de recherche.';
     } catch (error: unknown) {
-      this.referenceFollowError = error instanceof HttpErrorResponse && error.status === 409
+      const message = error instanceof HttpErrorResponse && error.status === 409
         ? 'Ce titre est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
         : 'Le titre n’a pas pu être ajouté. Réessayez dans un instant.';
+      if (item.source === 'catalog') {
+        this.bookFollowErrorKey = key;
+        this.bookFollowError = message;
+      } else {
+        this.referenceFollowError = message;
+      }
     } finally {
       this.referenceFollowPending = null;
       this.changeDetector.markForCheck();
@@ -535,14 +593,22 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       }
 
       if (addedCount > 0) {
-        this.referenceFollowMessage = addedCount === 1
-          ? 'Le titre a été ajouté à votre liste de recherche.'
-          : 'Les éditions ont été ajoutées à votre liste de recherche.';
+        this.referenceFollowMessage = items.some(item => item.source === 'catalog')
+          ? null
+          : addedCount === 1
+            ? 'Le titre a été ajouté à votre liste de recherche.'
+            : 'Les éditions ont été ajoutées à votre liste de recherche.';
       }
     } catch (error: unknown) {
-      this.referenceFollowError = error instanceof HttpErrorResponse && error.status === 409
+      const message = error instanceof HttpErrorResponse && error.status === 409
         ? 'Un de ces titres est déjà présent dans votre liste de recherche, ou votre liste est pleine.'
         : 'Les titres n’ont pas pu être ajoutés. Réessayez dans un instant.';
+      if (items.some(item => item.source === 'catalog')) {
+        this.bookFollowErrorKey = key;
+        this.bookFollowError = message;
+      } else {
+        this.referenceFollowError = message;
+      }
     } finally {
       this.referenceFollowPending = null;
       this.changeDetector.markForCheck();
