@@ -141,6 +141,7 @@ destructives et affiche les états `401`/`403` sans simuler une autorisation.
 | `GET /books/admin/books/{isbn13}` | détail, annonces et ledger des mouvements |
 | `POST /books/admin/books` | `AddAdminBookRequest` : ISBN, quantité, note et métadonnées facultatives |
 | `PATCH /books/admin/books/{isbn13}/metadata` | `UpdateAdminBookMetadataRequest` |
+| `POST /books/admin/books/{isbn13}/cover` | Multipart `UploadAdminBookCoverRequest` : fichier `file` (JPEG, PNG ou WebP, 8 Mio maximum) |
 | `PATCH /books/admin/books/{isbn13}/quantity` | `{ quantityAvailable, note }` |
 | `POST /books/admin/books/{isbn13}/withdrawals` | `{ quantity, note }` |
 | `PATCH /books/admin/announcements/{announcementId}/quantity` | `{ quantity, note }` |

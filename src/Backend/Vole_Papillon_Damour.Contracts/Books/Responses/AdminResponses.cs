@@ -1,5 +1,11 @@
 namespace Vole_Papillon_Damour.Contracts.Books.Responses;
 
+public sealed record AdminBookCoverUploadResponse(
+    string Isbn13,
+    string CoverUrl,
+    bool Changed,
+    DateTimeOffset UpdatedAt);
+
 public sealed record AdminStockSummaryResponse(
     int AvailableQuantity,
     int AvailableTitles,

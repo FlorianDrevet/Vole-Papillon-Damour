@@ -1,4 +1,11 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Vole_Papillon_Damour.Contracts.Books.Requests;
+
+public sealed class UploadAdminBookCoverRequest
+{
+    public IFormFile? File { get; set; }
+}
 
 public sealed record AddAdminBookRequest(
     string Isbn13,

@@ -224,7 +224,7 @@ describe('CatalogAdministrationPageComponent', () => {
 
     api = jasmine.createSpyObj<CatalogAdminApiService>('CatalogAdminApiService', [
       'getOverview', 'getBooks', 'getBook', 'getBookMetadataQueue', 'retryBookMetadata',
-      'addBook', 'updateMetadata', 'correctQuantity',
+      'addBook', 'updateMetadata', 'uploadBookCover', 'correctQuantity',
       'withdraw', 'correctAnnouncement', 'setVisibility', 'merge', 'deleteBook',
       'getFairs', 'getFairStats', 'setFairRevenue', 'getSessions', 'getSession',
       'getVolunteerStatistics', 'getFairsEvolution', 'getCatalogueFlowStats',
@@ -737,6 +737,41 @@ describe('CatalogAdministrationPageComponent', () => {
     expect(fixture.componentInstance.selectedBook()?.isbn13).toBe(book.isbn13);
     expect(fixture.nativeElement.querySelector('#admin-title')?.textContent).toContain('ISBN en cours d’analyse');
     expect(fixture.nativeElement.textContent).not.toContain('Titre à compléter');
+    expect(fixture.nativeElement.querySelector('input[type="file"][accept*="image/jpeg"]')).not.toBeNull();
+  });
+
+  it('previews a selected cover and uploads it separately from metadata', async () => {
+    auth.account.set(account('Administrator'));
+    auth.isAuthenticated.set(true);
+    const book = catalogueBook({coverUrl: null});
+    const uploadedBook = {...book, coverUrl: 'https://storage.example.test/book-covers/cover.jpg'};
+    api.getBook.and.returnValues(of(book), of(uploadedBook));
+    api.uploadBookCover.and.returnValue(of({
+      isbn13: book.isbn13,
+      coverUrl: uploadedBook.coverUrl,
+      changed: true,
+      updatedAt: book.updatedAt,
+    }));
+    fixture.detectChanges();
+
+    await fixture.componentInstance.openBook(book.isbn13);
+    fixture.detectChanges();
+
+    const file = new File(['cover'], 'cover.jpg', {type: 'image/jpeg'});
+    const input = fixture.nativeElement.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', {value: [file], configurable: true});
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.cover-column img')?.getAttribute('src')).toContain('blob:');
+    expect(fixture.nativeElement.textContent).toContain('Envoyer l’image');
+
+    await fixture.componentInstance.uploadBookCover(book);
+    fixture.detectChanges();
+
+    expect(api.uploadBookCover).toHaveBeenCalledWith('access-token', book.isbn13, file);
+    expect(fixture.componentInstance.selectedBook()?.coverUrl).toBe(uploadedBook.coverUrl);
+    expect(fixture.componentInstance.successMessage()).toBe('La couverture a été enregistrée.');
   });
 
   it('removes an ISBN from the analysis queue after confirmation', async () => {

@@ -108,6 +108,8 @@ const CATALOGUE_SEARCH_DEBOUNCE_MS = 2_000;
 const CATALOGUE_ADJUSTMENT_QUANTITY = 1;
 const CATALOGUE_ADJUSTMENT_NOTE = 'Correction depuis le catalogue';
 const ISBN_APPLICATION_IMPORT_BATCH_SIZE = 100;
+const MAX_BOOK_COVER_SIZE_BYTES = 8 * 1024 * 1024;
+const SUPPORTED_BOOK_COVER_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 interface IsbnApplicationImportProgress {
   processedCount: number;
@@ -303,6 +305,11 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   readonly catalogueConfirmation = signal<CatalogQuantityConfirmation | null>(null);
   readonly sessionConfirmation = signal<CatalogAdminSessionConfirmation | null>(null);
   readonly selectedBook = signal<CatalogAdminBook | null>(null);
+  readonly pendingBookCover = signal<{
+    isbn13: string;
+    file: File;
+    previewUrl: string | null;
+  } | null>(null);
   readonly bookDetailReturnSection = signal<CatalogAdminSection>('catalogue');
   readonly notFoundSummary = signal<CatalogNotFoundSummary | null>(null);
   readonly manualRequestSummary = signal<CatalogManualRequestSummary | null>(null);
@@ -479,6 +486,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearPendingBookCover();
     this.destroyed.next();
     this.destroyed.complete();
     this.cancelCatalogueSearch();
@@ -1025,6 +1033,7 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     isbn13: string,
     returnSection: CatalogAdminSection = 'catalogue',
   ): Promise<void> {
+    this.clearPendingBookCover();
     this.bookDetailReturnSection.set(returnSection);
     if (returnSection === 'isbn-queue' && this.activeSection() !== 'catalogue') {
       await this.router.navigate(['/administration', 'catalogue']);
@@ -1227,6 +1236,74 @@ export class CatalogAdministrationPageComponent implements OnInit, OnDestroy {
     if (await this.rareBooksFacade.openOrCreateFromCatalogBook(book)) {
       await this.selectSection('rare-books');
     }
+  }
+
+  bookCoverPreviewUrl(book: CatalogAdminBook): string | null {
+    const pending = this.pendingBookCover();
+    return pending?.isbn13 === book.isbn13 && pending.previewUrl
+      ? pending.previewUrl
+      : book.coverUrl;
+  }
+
+  hasPendingBookCover(book: CatalogAdminBook): boolean {
+    return this.pendingBookCover()?.isbn13 === book.isbn13;
+  }
+
+  selectBookCover(event: Event, book: CatalogAdminBook): void {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!input || !file) {
+      return;
+    }
+    input.value = '';
+
+    if (book.redirectedToIsbn13) {
+      return;
+    }
+
+    if (!SUPPORTED_BOOK_COVER_TYPES.has(file.type)) {
+      this.clearPendingBookCover(book);
+      this.showError('Choisissez une image JPEG, PNG ou WebP.');
+      return;
+    }
+
+    if (file.size <= 0 || file.size > MAX_BOOK_COVER_SIZE_BYTES) {
+      this.clearPendingBookCover(book);
+      this.showError('L’image doit peser 8 Mo maximum.');
+      return;
+    }
+
+    this.clearPendingBookCover();
+    const previewUrl = isPlatformBrowser(this.platformId) ? URL.createObjectURL(file) : null;
+    this.pendingBookCover.set({isbn13: book.isbn13, file, previewUrl});
+    this.clearFeedback();
+  }
+
+  clearPendingBookCover(book?: CatalogAdminBook): void {
+    const pending = this.pendingBookCover();
+    if (book && pending?.isbn13 !== book.isbn13) {
+      return;
+    }
+
+    if (pending?.previewUrl && isPlatformBrowser(this.platformId)) {
+      URL.revokeObjectURL(pending.previewUrl);
+    }
+    this.pendingBookCover.set(null);
+  }
+
+  async uploadBookCover(book: CatalogAdminBook): Promise<void> {
+    const pending = this.pendingBookCover();
+    if (!pending || pending.isbn13 !== book.isbn13 || book.redirectedToIsbn13) {
+      return;
+    }
+
+    const returnSection = this.bookDetailReturnSection();
+    await this.run('book-cover-upload', async token => {
+      await firstValueFrom(this.api.uploadBookCover(token, book.isbn13, pending.file));
+      this.clearPendingBookCover(book);
+      this.showSuccess('La couverture a été enregistrée.');
+      await this.openBook(book.isbn13, returnSection);
+    });
   }
 
   async updateMetadata(book: CatalogAdminBook): Promise<void> {

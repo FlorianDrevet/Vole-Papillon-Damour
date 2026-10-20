@@ -167,7 +167,7 @@ latence de réveil est acceptable.
 | Entra External ID | Utilisateur actif mensuel, bénévoles compris. **Les 50 000 premiers sont gratuits** (`QT-04`) : sans objet à notre échelle |
 | Envoi d'e-mails — ACS (`DT-12`) | 0,00025 $ par message. À quelques dizaines par semaine : **quelques centimes** |
 | Domaine et certificat (`DT-13`) | **0 €** — certificat managé gratuit sur Container Apps |
-| Storage | Les couvertures de livres n'utilisent plus Blob ; seuls les médias existants restent stockés |
+| Storage | Les couvertures automatiques restent hébergées par leurs fournisseurs ; les images choisies par un administrateur utilisent `book-covers` en lecture publique |
 | BnF, Open Library, Google Books | **0 €** hors éventuelle clé/quota Google |
 | Log Analytics | Ingestion en hausse avec deux applications de plus, et sans échantillonnage (`11` §5). **Plafond journalier obligatoire** sur chaque Application Insights — voir ci-dessous |
 

@@ -386,7 +386,48 @@
                   <div class="detail-heading"><div><span class="admin-kicker">{{ book.title ? 'Catalogue · Fiche' : 'ISBN en cours d’analyse' }}</span><h1 id="admin-title" tabindex="-1">{{ book.title || 'ISBN en cours d’analyse' }}</h1><p>ISBN {{ book.isbn13 }} · créée le {{ formatDate(book.firstSeenAt) }}</p></div>@if (book.title) {<a class="button button-outline" routerLink="/recherche">Voir la fiche publique →</a>}</div>
                   <div class="detail-layout">
                     <div class="detail-main-column">
-                      <section class="detail-section"><div class="section-heading"><h2>Métadonnées</h2><span class="mono-note">{{ book.metadataStatus }}</span></div><div class="metadata-editor"><div class="cover-column">@if (book.coverUrl) {<img class="book-cover" [src]="book.coverUrl" alt="">} @else {<span class="book-cover book-cover-placeholder" aria-hidden="true"></span>}<button class="button button-outline" type="button" disabled>Remplacer</button></div><form class="detail-form" (ngSubmit)="updateMetadata(book)"><label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title"></label><label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors"></label><label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher"></label><label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear"></label><label><span>Genre</span><input name="metaGenre" [(ngModel)]="metadataForm.genre"></label><label><span>ISBN</span><input name="metaIsbn" [value]="book.isbn13" readonly></label><button class="button button-primary detail-form-action" type="submit" [disabled]="loading() || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button></form></div><div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>La correction manuelle est conservée comme telle et ne sera pas écrasée par une prochaine mise à jour automatique.</p></div></section>
+                      <section class="detail-section">
+                        <div class="section-heading"><h2>Métadonnées</h2><span class="mono-note">{{ book.metadataStatus }}</span></div>
+                        <div class="metadata-editor">
+                          <div class="cover-column">
+                            @if (bookCoverPreviewUrl(book); as coverUrl) {
+                              <img class="book-cover" [src]="coverUrl" [alt]="'Couverture de ' + (book.title || book.isbn13)">
+                            } @else {
+                              <span class="book-cover book-cover-placeholder" aria-hidden="true"></span>
+                            }
+                          </div>
+                          <form class="detail-form" (ngSubmit)="updateMetadata(book)">
+                            <label><span>Titre</span><input name="metaTitle" [(ngModel)]="metadataForm.title"></label>
+                            <label><span>Auteur</span><input name="metaAuthors" [(ngModel)]="metadataForm.authors"></label>
+                            <label><span>Éditeur</span><input name="metaPublisher" [(ngModel)]="metadataForm.publisher"></label>
+                            <label><span>Année</span><input type="number" name="metaYear" [(ngModel)]="metadataForm.publicationYear"></label>
+                            <label><span>Genre</span><input name="metaGenre" [(ngModel)]="metadataForm.genre"></label>
+                            <label><span>ISBN</span><input name="metaIsbn" [value]="book.isbn13" readonly></label>
+                            <button class="button button-primary detail-form-action" type="submit" [disabled]="loading() || !!book.redirectedToIsbn13">Enregistrer les métadonnées</button>
+                          </form>
+                        </div>
+                        <p class="detail-help"><strong>Couverture</strong></p>
+                        <p>
+                          <label>
+                            {{ book.coverUrl ? 'Remplacer la couverture' : 'Ajouter une couverture' }}
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              aria-label="Choisir une couverture pour cette fiche"
+                              [disabled]="loading() || !!book.redirectedToIsbn13"
+                              (change)="selectBookCover($event, book)">
+                          </label>
+                        </p>
+                        <p class="detail-help">JPEG, PNG ou WebP · 8 Mo maximum</p>
+                        @if (hasPendingBookCover(book)) {
+                          <p class="detail-help">{{ pendingBookCover()?.file?.name }}</p>
+                          <div>
+                            <button class="button button-primary" type="button" [disabled]="loading()" (click)="uploadBookCover(book)">Envoyer l’image</button>
+                            <button class="text-link" type="button" [disabled]="loading()" (click)="clearPendingBookCover(book)">Annuler</button>
+                          </div>
+                        }
+                        <div class="info-strip"><svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.8v5M12 16.3h.01"></path></svg><p>La correction manuelle est conservée comme telle et ne sera pas écrasée par une prochaine mise à jour automatique.</p></div>
+                      </section>
                       <section class="detail-section"><div class="section-heading"><h2>Quantités</h2><span class="mono-note">stock déclaré</span></div><div class="quantity-editor"><label><span>Disponible</span><input type="number" name="quantityCorrection" [(ngModel)]="quantityCorrection" min="0"></label><label><span>Annoncé</span><input type="number" name="quantityAnnounced" [value]="book.quantityAnnounced" readonly></label><button class="button button-primary" type="button" [disabled]="loading() || !!book.redirectedToIsbn13" (click)="correctBookQuantity(book)">Enregistrer la correction</button></div><p class="detail-help">Toute modification produit un mouvement CORRECTION dans le ledger. Une note obligatoire explique le geste.</p><input class="wide-input" name="quantityNote" [(ngModel)]="quantityNote" placeholder="Note obligatoire pour la correction"></section>
                       <section class="detail-section"><div class="section-heading"><h2>Historique des mouvements</h2><span class="mono-note">{{ formatNumber(book.movements.length) }} mouvements</span></div><div class="movement-list">@for (movement of book.movements; track movement.id) {<div class="movement-row"><span>{{ formatDate(movement.occurredAt) }}</span><span class="movement-type" [class]="movementClass(movement.type)">{{ movementLabel(movement.type) }}</span><strong [class.movement-negative]="movement.quantity < 0">{{ movementQuantity(movement.quantity) }}</strong><span>{{ movement.note || movement.volunteerId || 'Système' }}</span>@if (isNotFoundMovement(movement)) {<span class="not-found-movement-tag">suite à signalement</span>}</div>} @empty {<div class="empty-inline">Aucun mouvement enregistré.</div>}</div></section>
                       <details class="secondary-detail"><summary>Annonces et corrections avancées</summary><div class="announcement-editor">@for (announcement of book.announcements; track announcement.id) {<div class="announcement-row"><span>{{ announcement.fairId || 'Sans bourse' }}</span><input type="number" [name]="'announcement-' + announcement.id" [value]="announcementQuantities[announcement.id]" (input)="setAnnouncementQuantity(announcement.id, $any($event.target).value)" min="0"><span>{{ statusLabel(announcement.status) }}</span><button class="text-link" type="button" (click)="correctAnnouncement(book, announcement.id)">Corriger</button></div>} @empty {<p>Aucune annonce.</p>}<input class="wide-input" name="announcementNote" [(ngModel)]="announcementNote" placeholder="Note obligatoire pour corriger une annonce"></div></details>

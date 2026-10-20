@@ -8,4 +8,5 @@ public class BlobSettings
     public string BlobContainerEventImagesClient { get; init; } = null!;
     public string BlobContainerProductsImagesClient { get; init; } = null!;
     public string BlobContainerRareBookPhotosClient { get; init; } = null!;
+    public string BlobContainerBookCoversClient { get; init; } = "book-covers";
 }

@@ -176,6 +176,8 @@ param blobContainerEventImages string
 param blobContainerProductImages string
 @description('Blob container holding the rare book photos (BlobSettings__BlobContainerRareBookPhotosClient)')
 param blobContainerRareBookPhotos string
+@description('Blob container holding manually uploaded book covers (BlobSettings__BlobContainerBookCoversClient)')
+param blobContainerBookCovers string
 // -----------------------------------------------------------------------
 // ACS Email
 // -----------------------------------------------------------------------
@@ -951,6 +953,10 @@ module storageAccountModule './modules/StorageAccount/storageAccount.module.bice
         name: blobContainerRareBookPhotos
         publicAccess: 'Blob'
       }
+      {
+        name: blobContainerBookCovers
+        publicAccess: 'Blob'
+      }
     ]
   }
 }
@@ -1384,6 +1390,10 @@ module containerAppApiModule './modules/ContainerApp/containerApp.module.bicep' 
         value: blobContainerRareBookPhotos
       }
       {
+        name: 'BlobSettings__BlobContainerBookCoversClient'
+        value: blobContainerBookCovers
+      }
+      {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: applicationInsightsApiModule.outputs.connectionString
       }
@@ -1687,6 +1697,10 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
       {
         name: 'BlobSettings__BlobContainerRareBookPhotosClient'
         value: blobContainerRareBookPhotos
+      }
+      {
+        name: 'BlobSettings__BlobContainerBookCoversClient'
+        value: blobContainerBookCovers
       }
       {
         name: 'EntraGraph__TenantId'

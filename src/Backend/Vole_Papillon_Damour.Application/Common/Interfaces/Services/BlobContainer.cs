@@ -6,5 +6,6 @@ public enum BlobContainer
     ActualityImages,
     EventImages,
     ProductsImages,
-    RareBookPhotos
+    RareBookPhotos,
+    BookCovers
 }

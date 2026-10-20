@@ -445,6 +445,23 @@ describe('CatalogAdminApiService', () => {
     removeBook.flush(null);
   });
 
+  it('uploads a book cover as multipart form data with the administrator token', () => {
+    const file = new File(['cover'], 'cover.jpg', {type: 'image/jpeg'});
+
+    service.uploadBookCover('access-token', '9782070363735', file).subscribe();
+
+    const request = http.expectOne(
+      `${environment.apiUrl}/books/admin/books/9782070363735/cover`,
+    );
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-token');
+    expect(request.request.headers.has('Content-Type')).toBeFalse();
+    expect(request.request.body).toEqual(jasmine.any(FormData));
+    expect((request.request.body as FormData).get('file'))
+      .toEqual(jasmine.objectContaining({name: 'cover.jpg', type: 'image/jpeg'}));
+    request.flush({});
+  });
+
   it('uses the typed mutation endpoints and keeps the bearer token on every action', () => {
     service.setAlertStatus('access-token', 'member-id', false).subscribe();
     const memberRequest = http.expectOne(request => request.url === `${environment.apiUrl}/books/admin/members/member-id/block`);
