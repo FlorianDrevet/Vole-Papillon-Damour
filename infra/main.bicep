@@ -315,7 +315,7 @@ param socialImportMaxPostsPerRun int = 5
 @description('ISO-8601 timestamp when the configured Instagram long-lived token was issued')
 param socialImportAccessTokenIssuedAt string = ''
 
-@description('Whether the Worker uses the existing Azure OpenAI account')
+@description('Whether Worker title generation is enabled')
 param titleGenerationEnabled bool = false
 
 @description('Whether personalized and similar-book recommendations are enabled')
@@ -324,7 +324,7 @@ param recommendationsEnabled bool = false
 @description('Name of the Azure OpenAI embedding deployment used for recommendations')
 param recommendationsEmbeddingDeploymentName string = 'text-embedding-3-small'
 
-@description('Name of the Azure OpenAI title-generation account')
+@description('Name of the existing Azure OpenAI account shared by Worker AI features')
 param titleGenerationAccountName string = ''
 
 @description('Name of the Azure OpenAI title-generation deployment')
@@ -405,6 +405,9 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     location: targetLocation
     name: BuildResourceName('vpd', 'cae', targetEnv)
     tags: tags
+    // Keep the ACA-managed external environment: it has standard internet
+    // egress for the Worker to reach the public Azure OpenAI endpoint.
+    internalLoadBalancerEnabled: false
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     managedCertificateNames: managedCertificateNames
   }
@@ -1038,8 +1041,8 @@ module communicationServiceModule './modules/CommunicationService/communicationS
   }
 }
 
-module actualityTitleGenerationModule './modules/AiFoundry/aiFoundry.module.bicep' = if (titleGenerationEnabled) {
-  name: 'actualityTitleGeneration'
+module workerAzureOpenAiModule './modules/AiFoundry/aiFoundry.module.bicep' = if (titleGenerationEnabled || recommendationsEnabled) {
+  name: 'workerAzureOpenAiAccess'
   scope: applicationResourceGroup
   params: {
     name: titleGenerationAccountName
@@ -1765,15 +1768,16 @@ module containerAppWorkerModule './modules/ContainerApp/functionContainerApp.mod
     ], titleGenerationEnabled ? [
       {
         name: 'TitleGeneration__Endpoint'
-        value: actualityTitleGenerationModule!.outputs.endpoint
+        value: workerAzureOpenAiModule!.outputs.endpoint
       }
       {
         name: 'TitleGeneration__DeploymentName'
         value: titleGenerationDeploymentName
       }
+    ] : [], recommendationsEnabled ? [
       {
         name: 'Recommendations__Endpoint'
-        value: actualityTitleGenerationModule!.outputs.endpoint
+        value: workerAzureOpenAiModule!.outputs.endpoint
       }
       {
         name: 'Recommendations__EmbeddingDeploymentName'

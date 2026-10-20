@@ -11,6 +11,10 @@ on:
           - what-if
           - deploy
         default: what-if
+      recommendations_enabled:
+        description: Enable similar-book and personalized recommendations in the API and Worker
+        type: boolean
+        default: true
 
 permissions:
   id-token: write
@@ -58,6 +62,10 @@ jobs:
           ACS_EMAIL_WEBHOOK_SECRET: ${{ secrets.ACS_EMAIL_WEBHOOK_SECRET }}
           BOOK_ALERTS_UNSUBSCRIBE_SIGNING_KEY: ${{ secrets.BOOK_ALERTS_UNSUBSCRIBE_SIGNING_KEY }}
           MEMBER_CARD_SIGNING_KEY: ${{ secrets.MEMBER_CARD_SIGNING_KEY }}
+          RECOMMENDATIONS_ENABLED: ${{ inputs.recommendations_enabled }}
+          TITLE_GENERATION_ENABLED: ${{ secrets.TITLE_GENERATION_ENABLED }}
+          TITLE_GENERATION_ACCOUNT_NAME: ${{ secrets.TITLE_GENERATION_ACCOUNT_NAME }}
+          TITLE_GENERATION_DEPLOYMENT_NAME: ${{ secrets.TITLE_GENERATION_DEPLOYMENT_NAME }}
         run: |
           set -euo pipefail
           if [ -z "${ACS_EMAIL_WEBHOOK_SECRET:-}" ]; then
@@ -70,6 +78,16 @@ jobs:
           fi
           if [ -z "${MEMBER_CARD_SIGNING_KEY:-}" ]; then
             echo "The development secret MEMBER_CARD_SIGNING_KEY is not configured." >&2
+            exit 1
+          fi
+          if [ "${RECOMMENDATIONS_ENABLED:-false}" = "true" ] || [ "${TITLE_GENERATION_ENABLED:-false}" = "true" ]; then
+            if [ -z "${TITLE_GENERATION_ACCOUNT_NAME:-}" ]; then
+              echo "The development secret TITLE_GENERATION_ACCOUNT_NAME is required for Worker Azure OpenAI access." >&2
+              exit 1
+            fi
+          fi
+          if [ "${TITLE_GENERATION_ENABLED:-false}" = "true" ] && [ -z "${TITLE_GENERATION_DEPLOYMENT_NAME:-}" ]; then
+            echo "The development secret TITLE_GENERATION_DEPLOYMENT_NAME is required when title generation is enabled." >&2
             exit 1
           fi
 
@@ -115,6 +133,7 @@ jobs:
           TITLE_GENERATION_ENABLED: ${{ secrets.TITLE_GENERATION_ENABLED }}
           TITLE_GENERATION_ACCOUNT_NAME: ${{ secrets.TITLE_GENERATION_ACCOUNT_NAME }}
           TITLE_GENERATION_DEPLOYMENT_NAME: ${{ secrets.TITLE_GENERATION_DEPLOYMENT_NAME }}
+          RECOMMENDATIONS_ENABLED: ${{ inputs.recommendations_enabled }}
         run: |
           set -euo pipefail
           az deployment sub what-if \
@@ -142,6 +161,7 @@ jobs:
           TITLE_GENERATION_ENABLED: ${{ secrets.TITLE_GENERATION_ENABLED }}
           TITLE_GENERATION_ACCOUNT_NAME: ${{ secrets.TITLE_GENERATION_ACCOUNT_NAME }}
           TITLE_GENERATION_DEPLOYMENT_NAME: ${{ secrets.TITLE_GENERATION_DEPLOYMENT_NAME }}
+          RECOMMENDATIONS_ENABLED: ${{ inputs.recommendations_enabled }}
         run: |
           set -euo pipefail
           az deployment sub create \
@@ -169,6 +189,7 @@ jobs:
             echo "| Scan | $(jq -r .scanUrl.value outputs.json) |"
             echo "| Catalog | $(jq -r .catalogUrl.value outputs.json) |"
             echo "| Worker | \`$(jq -r .workerContainerAppName.value outputs.json)\` (Functions timer) |"
+            echo "| Recommendations | \`${{ inputs.recommendations_enabled }}\` (API and Worker) |"
             echo "| SQL server | \`$(jq -r .sqlServerFqdn.value outputs.json)\` |"
             echo "| Storage account | \`$(jq -r .storageAccountName.value outputs.json)\` |"
             echo "| Key Vault | \`$(jq -r .keyVaultName.value outputs.json)\` |"
