@@ -30,7 +30,7 @@
           <div class="rare-reference-results-heading"><strong>{{ referenceResults().length }} références trouvées</strong><span>À vérifier avant l’enregistrement</span></div>
           @for (reference of referenceResults(); track reference.isbn13 || reference.workId || reference.title) {
             <article class="rare-reference-row">
-              @if (reference.coverUrl) {<img [src]="reference.coverUrl" alt="">} @else {<span class="rare-reference-cover" aria-hidden="true"></span>}
+              @if (reference.coverUrl) {<img [catalogCover]="reference.coverUrl" alt="">} @else {<span class="rare-reference-cover" aria-hidden="true"></span>}
               <div><strong>{{ reference.title || 'Titre à compléter' }}</strong><span>{{ reference.authors || 'Auteur non renseigné' }}{{ reference.publisher ? ' · ' + reference.publisher : '' }}{{ reference.publicationYear ? ' · ' + reference.publicationYear : '' }}</span><small>{{ reference.isbn13 ? 'ISBN ' + reference.isbn13 : 'ISBN non renseigné' }} · {{ reference.source }}</small></div>
               <button class="rare-button rare-button-outline" type="button" [disabled]="!reference.isbn13" (click)="useReference(reference)">{{ reference.isbn13 ? 'Utiliser cette notice' : 'ISBN manquant' }}</button>
             </article>

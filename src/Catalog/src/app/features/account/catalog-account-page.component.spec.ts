@@ -18,6 +18,7 @@ import {AccountCardComponent} from './card/account-card.component';
 import {AccountPurchasesComponent} from './purchases/account-purchases.component';
 import {RecommendationsBandComponent} from './recommendations-band/recommendations-band.component';
 import {CatalogAccountPageComponent} from './catalog-account-page.component';
+import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
 
 describe('CatalogAccountPageComponent', () => {
   let fixture: ComponentFixture<CatalogAccountPageComponent>;
@@ -214,6 +215,7 @@ describe('CatalogAccountPageComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [
         CatalogAccountPageComponent,
+        CatalogCoverDirective,
         AccountSelectionComponent,
         AccountCardComponent,
         AccountPurchasesComponent,

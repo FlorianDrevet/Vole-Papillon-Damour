@@ -4,7 +4,6 @@ import {firstValueFrom} from 'rxjs';
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
 import {CatalogPersonalRecommendation} from '../../../core/catalog.models';
-import {catalogCoverUrl} from '../../../shared/catalog-cover-url';
 import {publicBookPath} from '../../../shared/catalog-url';
 
 type RecommendationsBandState = 'hidden' | 'enabled' | 'no-purchases';
@@ -31,10 +30,6 @@ export class RecommendationsBandComponent implements OnInit {
 
   bookPath(item: CatalogPersonalRecommendation): string {
     return publicBookPath(item);
-  }
-
-  coverUrl(item: CatalogPersonalRecommendation): string | null {
-    return catalogCoverUrl(item.coverUrl);
   }
 
   availabilityLabel(item: CatalogPersonalRecommendation): string {

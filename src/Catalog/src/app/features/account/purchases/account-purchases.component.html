@@ -27,7 +27,7 @@
               @for (line of passage.lines; track line.id) {
                 <li class="purchase-line" [class.cancelled]="line.state === 'Cancelled'">
                   @if (line.currentCoverUrl) {
-                    <img class="purchase-cover" [src]="line.currentCoverUrl" alt="" loading="lazy">
+                    <img class="purchase-cover" [catalogCover]="line.currentCoverUrl" alt="" loading="lazy">
                   } @else {
                     <span class="purchase-cover-placeholder" aria-hidden="true">Livre</span>
                   }

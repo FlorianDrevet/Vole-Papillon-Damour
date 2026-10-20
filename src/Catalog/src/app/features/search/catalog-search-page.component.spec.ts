@@ -22,6 +22,7 @@ import {CatalogSearchPageComponent} from './catalog-search-page.component';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
 import {CatalogRareBookCardComponent} from '../../shared/rare-book-card/rare-book-card.component';
 import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
+import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
 
 function emptyWatchlist(items: CatalogWatchlistResponse['items'] = []): CatalogWatchlistResponse {
   return {
@@ -147,6 +148,7 @@ describe('CatalogSearchPageComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [
         CatalogSearchPageComponent,
+        CatalogCoverDirective,
         BookCardComponent,
         CatalogRareBookCardComponent,
         CatalogAuthPromptComponent,

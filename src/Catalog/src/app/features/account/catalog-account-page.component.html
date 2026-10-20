@@ -255,7 +255,7 @@
                 <article class="watchlist-item">
                   <div class="watchlist-cover">
                     @if (itemCoverUrl(item); as coverUrl) {
-                      <img [src]="coverUrl" [alt]="'Couverture de ' + itemLabel(item)" loading="lazy">
+                      <img [catalogCover]="coverUrl" [alt]="'Couverture de ' + itemLabel(item)" loading="lazy">
                     } @else {
                       <span aria-hidden="true">Couv.</span>
                     }

@@ -6,6 +6,7 @@ import {of} from 'rxjs';
 import {CatalogAuthService} from '../../../core/catalog-auth.service';
 import {CatalogMemberApiService} from '../../../core/catalog-member-api.service';
 import {CatalogPurchasesResponse, CatalogPurchasePassage} from '../../../core/catalog.models';
+import {CatalogCoverDirective} from '../../../shared/catalog-cover.directive';
 import {RecommendationsBandComponent} from '../recommendations-band/recommendations-band.component';
 import {AccountPurchasesComponent} from './account-purchases.component';
 
@@ -68,7 +69,7 @@ describe('AccountPurchasesComponent', () => {
     api.getPurchases.and.returnValue(of(response([passage()])));
 
     await TestBed.configureTestingModule({
-      declarations: [AccountPurchasesComponent, RecommendationsBandComponent],
+      declarations: [AccountPurchasesComponent, CatalogCoverDirective, RecommendationsBandComponent],
       imports: [RouterModule.forRoot([])],
       providers: [
         {provide: CatalogAuthService, useValue: auth},
@@ -94,6 +95,24 @@ describe('AccountPurchasesComponent', () => {
     expect(text).toContain('Antoine de Saint-Exupéry');
     expect(text).toContain('Poche');
     expect(text).toContain('9782070612758');
+  });
+
+  it('loads purchase covers through the optimized catalog cover URL', async () => {
+    api.getPurchases.and.returnValue(of(response([passage({
+      lines: passage().lines.map((line, index) => ({
+        ...line,
+        currentCoverUrl: index === 0
+          ? 'https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782070612758&couverture=1'
+          : null,
+      })),
+    })])));
+
+    const page = render();
+    await settle(page);
+
+    expect(page.nativeElement.querySelector('.purchase-cover')?.getAttribute('src')).toBe(
+      'https://livres.volepapillondamour.fr/cdn-cgi/image/width=660,height=990,fit=scale-down,quality=80,format=auto/https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782070612758&couverture=1&taille=originale&largeur=660&hauteur=990',
+    );
   });
 
   it('shows cancelled lines with the "Annulée" badge', async () => {

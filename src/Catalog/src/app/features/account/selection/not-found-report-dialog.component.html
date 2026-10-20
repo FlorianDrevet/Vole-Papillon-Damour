@@ -22,7 +22,7 @@
 
     <article class="not-found-report-book">
       @if (item().coverUrl; as coverUrl) {
-        <img [src]="coverUrl" alt="" loading="lazy">
+        <img [catalogCover]="coverUrl" alt="" loading="lazy">
       } @else {
         <span class="not-found-report-cover-placeholder" aria-hidden="true">Couv.</span>
       }

@@ -755,3 +755,15 @@ Responsive visual review covered 320×568, 390×844, and 1440×900 with no horiz
 ## Catalog search grid follow action (2026-10-20)
 
 In the public Catalog search grid, each card places « Suivre » beside its availability indicator with no extra footer strip. The click writes the book or its editions to the existing member watchlist, which the member interface calls « Livres suivis » to distinguish it from a new catalogue search. The touch target remains at least 44 px, keyboard focus stays visible, the followed state is compact, and list view styling is unchanged. The scoped styles live in `src/Catalog/src/app/features/search/catalog-search-page.component.scss`. The change is in open PR #298.
+
+## Catalog remote cover optimization — 2026-10-20
+
+`src/Catalog/src/app/shared/catalog-cover-url.ts` sends production covers from the exact
+hosts `openapi.bnf.fr`, `covers.openlibrary.org`, and `books.google.com` through the
+Catalog zone's `/cdn-cgi/image/` URL with one fixed 660×990, scale-down, quality-80,
+auto-format variant. `CatalogCoverDirective` falls back once to the normalized source URL
+if transformation fails, then hides the image and emits its failure event if the source
+also fails. Book cards, details, search/reference results, account, recommendations, and
+administration cover slots use this directive; non-production and other hosts stay direct.
+The Cloudflare Images Free plan has a 5,000 unique transformation monthly cap; after that,
+new variants fail without overage billing, so the source fallback is part of the feature.

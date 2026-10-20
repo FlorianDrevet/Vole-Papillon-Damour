@@ -42,7 +42,7 @@
         <article class="selection-item" [class.selection-item-reported]="item.remote?.notFoundReport">
             <div class="selection-cover">
               @if (item.remote?.coverUrl; as coverUrl) {
-                <img [src]="coverUrl" [alt]="'Couverture de ' + item.title" loading="lazy">
+                <img [catalogCover]="coverUrl" [alt]="'Couverture de ' + item.title" loading="lazy">
               } @else {
                 <span aria-hidden="true">Couv.</span>
               }

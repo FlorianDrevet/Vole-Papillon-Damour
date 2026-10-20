@@ -94,6 +94,8 @@ param catalogCustomDomain = 'livres.volepapillondamour.fr'
 param catalogCustomDomainCertificateName = 'mc-vpd-cae-dev-fc-livres-volepapil-5855'
 param scanCustomDomain = 'scan.volepapillondamour.fr'
 param scanCustomDomainCertificateName = 'mc-vpd-cae-dev-fc-scan-volepapillo-6143'
+// This certificate must be uploaded to vpd-cae-dev-fc before applying the proxy binding.
+param cloudflareOriginCertificateName = 'cf-origin-volepapillondamour'
 
 param containerAppBackOfficeContainerRuntime = {
   cpuCores: '0.25'

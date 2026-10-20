@@ -19,6 +19,7 @@ import {SimilarBooksComponent} from './similar-books/similar-books.component';
 import {CatalogAuthPromptComponent} from '../../shared/components/auth-prompt/catalog-auth-prompt.component';
 import {SelectionButtonComponent} from '../../shared/components/selection-button/selection-button.component';
 import {BookCardComponent} from '../../shared/book-card/book-card.component';
+import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
 
 describe('CatalogBookDetailPageComponent', () => {
   let fixture: ComponentFixture<CatalogBookDetailPageComponent>;
@@ -110,6 +111,7 @@ describe('CatalogBookDetailPageComponent', () => {
         CatalogBookDetailPageComponent,
         SimilarBooksComponent,
         BookCardComponent,
+        CatalogCoverDirective,
         CatalogAuthPromptComponent,
         SelectionButtonComponent,
       ],
@@ -309,7 +311,7 @@ describe('CatalogBookDetailPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.detail-cover img')?.getAttribute('src'))
-      .toBe('https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
+      .toBe('https://livres.volepapillondamour.fr/cdn-cgi/image/width=660,height=990,fit=scale-down,quality=80,format=auto/https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
   });
 
   it('removes book-specific SEO nodes when the detail page is destroyed', async () => {

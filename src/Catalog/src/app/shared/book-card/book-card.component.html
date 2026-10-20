@@ -12,10 +12,10 @@
     }
     @if (book.coverUrl && !coverFailed) {
       <img
-        [src]="displayCoverUrl()"
+        [catalogCover]="book.coverUrl"
         [alt]="book.title ? 'Couverture de ' + book.title : 'Couverture du livre'"
         loading="lazy"
-        (error)="onCoverError()">
+        (catalogCoverFailed)="onCoverError()">
     } @else {
       <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
     }

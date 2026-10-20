@@ -25,10 +25,10 @@
       <div class="detail-cover">
         @if (item.coverUrl && !coverFailed) {
           <img
-            [src]="detailCoverUrl(item.coverUrl)"
+            [catalogCover]="item.coverUrl"
             [alt]="item.title ? 'Couverture de ' + item.title : 'Couverture du livre'"
             fetchpriority="high"
-            (error)="onCoverError()">
+            (catalogCoverFailed)="onCoverError()">
         } @else {
           <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
         }

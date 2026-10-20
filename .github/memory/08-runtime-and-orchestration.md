@@ -249,3 +249,21 @@ The API startup wires:
 - `Storage - migrate blobs` copies from `vpdstdev` to `vpdstdevfc`, preserves each source container ACL, copies only missing or source-newer blobs, leaves newer/extra target blobs intact, validates that every source blob name exists at the target, and defaults database URL rewriting to `skip`. Its `preview` mode reports old Blob URL references before the separate `apply` mode can change them.
 - The OVH zone now routes the apex A record and `www`, `backoffice`, `livres`, and `scan` CNAMEs directly to the France Central ACA environment. All five domains have secured managed certificates and returned HTTP 200 with TLS verification successful. No active OVH CDN service was identified in the account; the former apex IP belonged to the old West Europe ACA environment.
 - Shared registry `vpdacrshared` in `rg-core-florian` now serves this repo and `mariage-edwige-henri`. The wedding project's 99 existing tags were imported with digests verified, and its backend/frontend GitHub workflows succeeded with OIDC. Keep the old `acrweh` and `vpdacrdev` registries and all other West Europe resources until the owner explicitly confirms deletion.
+
+## Cloudflare proxy preparation — 2026-10-20
+
+The Cloudflare zone `volepapillondamour.fr` is on the Free plan and currently awaiting
+nameserver propagation. OVH still delegates to `dns104.ovh.net` and `ns104.ovh.net`; the
+Cloudflare zone contains the 27 non-NS records from OVH, with mail/authentication records
+DNS-only. Cloudflare assigned `david.ns.cloudflare.com` and `monroe.ns.cloudflare.com`.
+The five ACA custom hostnames currently use free Azure-managed certificates. Because proxying
+the subdomain CNAMEs can prevent ACA managed-certificate renewal, the feature branch adds an
+optional `cloudflareOriginCertificateName` binding in Bicep; upload the Origin CA certificate
+to `vpd-cae-dev-fc` before deploying that binding. Cloudflare rejected Origin CA creation with
+an issuer-access error; its troubleshooting guide lists missing member API access as one possible
+cause, while the member list currently shows no API access. Confirm and resolve the account
+prerequisite before issuing the certificate. Do not switch OVH nameservers until the
+origin certificate and deployment are ready. The image transformation feature is not yet
+enabled; after zone activation, keep the Cloudflare Images plan on Free and enable the
+5,000-unique-transformations monthly quota, which returns error 9422 after the cap without
+overage billing.

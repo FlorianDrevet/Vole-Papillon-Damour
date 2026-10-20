@@ -391,7 +391,7 @@
                         <div class="metadata-editor">
                           <div class="cover-column">
                             @if (bookCoverPreviewUrl(book); as coverUrl) {
-                              <img class="book-cover" [src]="coverUrl" [alt]="'Couverture de ' + (book.title || book.isbn13)">
+                              <img class="book-cover" [catalogCover]="coverUrl" [alt]="'Couverture de ' + (book.title || book.isbn13)">
                             } @else {
                               <span class="book-cover book-cover-placeholder" aria-hidden="true"></span>
                             }
