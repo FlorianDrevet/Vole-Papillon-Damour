@@ -247,6 +247,12 @@ class PrepareResetSqlTests(unittest.TestCase):
         self.assertNotIn("@KeeperEmail2", sql)
         self.assertNotIn("volepapillondamour@sfr.fr", sql)
 
+    def test_reset_sql_enables_quoted_identifier_before_transaction(self):
+        sql = self._reset_sql()
+
+        self.assertIn("SET QUOTED_IDENTIFIER ON;", sql)
+        self.assertLess(sql.index("SET QUOTED_IDENTIFIER ON;"), sql.index("DECLARE @ApplyReset"))
+
     def test_reset_sql_reassigns_audit_only_when_its_profile_will_be_deleted(self):
         sql = self._reset_sql()
 

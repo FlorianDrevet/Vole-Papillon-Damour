@@ -12,6 +12,7 @@
    Entra identities, blobs, or account-deletion outbox jobs.
 */
 SET NOCOUNT ON;
+SET QUOTED_IDENTIFIER ON;
 SET XACT_ABORT ON;
 
 DECLARE @ApplyReset bit = 0;
