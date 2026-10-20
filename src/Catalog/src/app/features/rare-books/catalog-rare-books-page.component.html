@@ -4,29 +4,54 @@
       <p class="eyebrow">La sélection de l’association</p>
       <h1 id="rare-page-title">Livres rares.</h1>
       <p>Des exemplaires singuliers, décrits et photographiés par les bénévoles. Ils sont proposés sur place, pendant la bourse aux livres.</p>
-      <aside *ngIf="nextFair" class="rare-next-fair" aria-label="Prochaine bourse aux livres">
-        <span class="rare-next-fair-kicker">Prochaine bourse</span>
-        <strong>{{ nextFair.name }}</strong>
-        <time [attr.datetime]="nextFair.dateStart">{{ formatFairDateRange(nextFair) }}</time>
-        <span>{{ formatFairTime(nextFair.openAt) }} · {{ fairAddress(nextFair) }}</span>
-      </aside>
     </div>
   </section>
 
   <section class="rare-public-content page-width">
     <div class="rare-public-toolbar" aria-label="Filtres des livres rares">
-      <label>
-        <span>Trier</span>
-        <select [(ngModel)]="sort" (change)="page = 1; applyFilters()">
-          <option value="recent">Ajouts récents</option>
-          <option value="price-asc">Prix croissant</option>
-          <option value="price-desc">Prix décroissant</option>
-        </select>
-      </label>
-      <label class="rare-sold-filter">
-        <input type="checkbox" [(ngModel)]="includeSold" (change)="page = 1; applyFilters()">
-        <span>Voir les exemplaires partis</span>
-      </label>
+      <div class="rare-sort-control">
+        <span class="rare-sort-control-label">Trier par :</span>
+        <span class="rare-sort-select">
+          <button
+            type="button"
+            class="rare-sort-trigger"
+            aria-label="Trier les livres rares"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="sortMenuOpen"
+            aria-controls="rare-sort-menu"
+            (click)="toggleSortMenu()"
+            (keydown)="handleSortTriggerKeydown($event)">
+            <span>{{ sortLabel() }}</span>
+            <svg class="rare-sort-chevron" [class.rare-sort-chevron--open]="sortMenuOpen" aria-hidden="true" viewBox="0 0 12 8"><path d="m1 1 5 5 5-5"></path></svg>
+          </button>
+          <div *ngIf="sortMenuOpen" id="rare-sort-menu" class="rare-sort-panel" role="menu" aria-label="Options de tri">
+            <span class="rare-sort-panel-kicker">Ordre d’affichage</span>
+            <div class="rare-sort-panel-options">
+              <button
+                *ngFor="let choice of sortChoices; let index = index"
+                [id]="'rare-sort-option-' + index"
+                type="button"
+                class="rare-sort-option"
+                [class.rare-sort-option--selected]="sort === choice.value"
+                [class.rare-sort-option--active]="sortMenuActiveIndex === index"
+                role="menuitemradio"
+                [attr.aria-checked]="sort === choice.value"
+                [attr.tabindex]="sortMenuActiveIndex === index ? 0 : -1"
+                [attr.data-sort]="choice.value"
+                (click)="selectSort(choice.value)"
+                (keydown)="handleSortOptionKeydown($event, index)">
+                <span class="rare-sort-option-mark" aria-hidden="true">
+                  <svg *ngIf="sort === choice.value" viewBox="0 0 16 16"><path d="m3.2 8.4 3 3 6.6-6.8"></path></svg>
+                </span>
+                <span class="rare-sort-option-copy">
+                  <strong>{{ choice.label }}</strong>
+                  <small>{{ choice.description }}</small>
+                </span>
+              </button>
+            </div>
+          </div>
+        </span>
+      </div>
     </div>
 
     <p *ngIf="error" class="rare-public-error" role="alert">

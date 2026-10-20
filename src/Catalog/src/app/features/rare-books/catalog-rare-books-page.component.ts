@@ -1,14 +1,23 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {Subject, catchError, of, switchMap, takeUntil} from 'rxjs';
 
 import {CatalogApiService} from '../../core/catalog-api.service';
 import {
-  CatalogFair,
   CatalogRareBook,
   CatalogRareBookPage,
   CatalogRareBookFilters,
 } from '../../core/catalog.models';
+
+type RareBookSort = NonNullable<CatalogRareBookFilters['sort']>;
 
 const EMPTY_PAGE: CatalogRareBookPage = {
   generatedAt: '',
@@ -27,14 +36,36 @@ const EMPTY_PAGE: CatalogRareBookPage = {
 })
 export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
   books: CatalogRareBook[] = [];
-  nextFair: CatalogFair | null = null;
-  includeSold = true;
-  sort: CatalogRareBookFilters['sort'] = 'price-desc';
+  sort: RareBookSort = 'price-desc';
+  sortMenuOpen = false;
+  sortMenuActiveIndex = 0;
   page = 1;
   pageSize = 24;
   totalCount = 0;
   loading = true;
   error = false;
+
+  readonly sortChoices: ReadonlyArray<{
+    value: RareBookSort;
+    label: string;
+    description: string;
+  }> = [
+    {
+      value: 'recent',
+      label: 'Arrivée récente',
+      description: 'Exemplaires ajoutés récemment',
+    },
+    {
+      value: 'price-desc',
+      label: 'Prix décroissant',
+      description: 'Les exemplaires les plus chers en premier',
+    },
+    {
+      value: 'price-asc',
+      label: 'Prix croissant',
+      description: 'Les exemplaires les moins chers en premier',
+    },
+  ];
 
   private readonly destroyed = new Subject<void>();
 
@@ -43,25 +74,17 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
     private readonly api: CatalogApiService,
     private readonly router: Router,
     private readonly changeDetector: ChangeDetectorRef,
+    private readonly elementRef: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
-    this.api.getUpcomingFairs()
-      .pipe(
-        catchError(() => of([] as CatalogFair[])),
-        takeUntil(this.destroyed),
-      )
-      .subscribe(fairs => {
-        this.nextFair = fairs[0] ?? null;
-        this.changeDetector.markForCheck();
-      });
-
     this.route.queryParamMap
       .pipe(
         switchMap(params => {
-          this.includeSold = params.get('includeSold') !== 'false';
           this.sort = parseSort(params.get('sort'));
           this.page = parsePage(params.get('page'));
+          this.sortMenuOpen = false;
+          this.sortMenuActiveIndex = this.sortIndex();
           this.loading = true;
           this.error = false;
           return this.api.getPublicRareBooks(this.filters()).pipe(
@@ -84,12 +107,102 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
     this.destroyed.complete();
   }
 
+  sortLabel(): string {
+    return this.sortChoices.find(choice => choice.value === this.sort)?.label ?? 'Prix décroissant';
+  }
+
+  toggleSortMenu(): void {
+    if (this.sortMenuOpen) {
+      this.closeSortMenu();
+      return;
+    }
+
+    this.openSortMenu();
+  }
+
+  selectSort(value: RareBookSort): void {
+    this.sort = value;
+    this.page = 1;
+    this.sortMenuActiveIndex = this.sortChoices.findIndex(choice => choice.value === value);
+    this.closeSortMenu(true);
+    this.applyFilters();
+    this.changeDetector.markForCheck();
+  }
+
+  handleSortTriggerKeydown(event: KeyboardEvent): void {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.toggleSortMenu();
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.openSortMenu();
+        this.moveSortMenuFocus(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.openSortMenu();
+        this.moveSortMenuFocus(-1);
+        break;
+      case 'Escape':
+        if (this.sortMenuOpen) {
+          event.preventDefault();
+          this.closeSortMenu();
+        }
+        break;
+    }
+  }
+
+  handleSortOptionKeydown(event: KeyboardEvent, index: number): void {
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        this.selectSort(this.sortChoices[index].value);
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.moveSortMenuFocus(1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.moveSortMenuFocus(-1);
+        break;
+      case 'Home':
+        event.preventDefault();
+        this.sortMenuActiveIndex = 0;
+        this.focusSortOption(this.sortMenuActiveIndex);
+        break;
+      case 'End':
+        event.preventDefault();
+        this.sortMenuActiveIndex = this.sortChoices.length - 1;
+        this.focusSortOption(this.sortMenuActiveIndex);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        this.closeSortMenu(true);
+        break;
+      case 'Tab':
+        this.closeSortMenu();
+        break;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  closeSortMenuOnDocumentClick(event: MouseEvent): void {
+    if (this.sortMenuOpen && !this.elementRef.nativeElement.contains(event.target as Node)) {
+      this.closeSortMenu();
+    }
+  }
+
   applyFilters(): void {
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        ...(!this.includeSold ? {includeSold: false} : {}),
-        ...(this.sort !== 'recent' ? {sort: this.sort} : {}),
+        ...(this.sort !== 'price-desc' ? {sort: this.sort} : {}),
         ...(this.page > 1 ? {page: this.page} : {}),
       },
     });
@@ -117,32 +230,9 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
     return book.id;
   }
 
-  formatFairDateRange(fair: CatalogFair): string {
-    const start = this.formatFairDate(fair.dateStart);
-    if (!fair.dateEnd) {
-      return start;
-    }
-
-    const end = this.formatFairDate(fair.dateEnd);
-    return start === end ? start : `Du ${start} au ${end}`;
-  }
-
-  formatFairTime(value: string): string {
-    return new Intl.DateTimeFormat('fr-FR', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZone: 'UTC',
-    }).format(new Date(value)).replace(':', ' h ');
-  }
-
-  fairAddress(fair: CatalogFair): string {
-    const street = [fair.roadNumber, fair.road].filter(Boolean).join(' ');
-    return [street, [fair.cityCode, fair.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-  }
-
   private filters(): CatalogRareBookFilters {
     return {
-      includeSold: this.includeSold,
+      includeSold: false,
       sort: this.sort,
       page: this.page,
       pageSize: this.pageSize,
@@ -156,13 +246,51 @@ export class CatalogRareBooksPageComponent implements OnInit, OnDestroy {
     this.loading = false;
   }
 
-  private formatFairDate(value: string): string {
-    return new Intl.DateTimeFormat('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'Europe/Paris',
-    }).format(new Date(value));
+  private openSortMenu(): void {
+    if (this.sortMenuOpen) {
+      return;
+    }
+
+    this.sortMenuActiveIndex = this.sortIndex();
+    this.sortMenuOpen = true;
+    this.changeDetector.markForCheck();
+  }
+
+  private closeSortMenu(returnFocus = false): void {
+    if (!this.sortMenuOpen) {
+      return;
+    }
+
+    this.sortMenuOpen = false;
+    this.changeDetector.markForCheck();
+    if (returnFocus) {
+      this.elementRef.nativeElement.querySelector<HTMLButtonElement>('.rare-sort-trigger')?.focus();
+    }
+  }
+
+  private sortIndex(): number {
+    const index = this.sortChoices.findIndex(choice => choice.value === this.sort);
+    return index >= 0 ? index : 0;
+  }
+
+  private moveSortMenuFocus(delta: number): void {
+    const optionCount = this.sortChoices.length;
+    this.sortMenuActiveIndex = (this.sortMenuActiveIndex + delta + optionCount) % optionCount;
+    this.focusSortOption(this.sortMenuActiveIndex);
+  }
+
+  private focusSortOption(index: number): void {
+    const optionCount = this.sortChoices.length;
+    this.sortMenuActiveIndex = (index + optionCount) % optionCount;
+    setTimeout(() => {
+      if (!this.sortMenuOpen) {
+        return;
+      }
+
+      this.elementRef.nativeElement
+        .querySelector<HTMLButtonElement>(`#rare-sort-option-${this.sortMenuActiveIndex}`)
+        ?.focus();
+    });
   }
 }
 
@@ -171,7 +299,7 @@ function parsePage(value: string | null): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-function parseSort(value: string | null): CatalogRareBookFilters['sort'] {
+function parseSort(value: string | null): RareBookSort {
   return value === 'price-asc' || value === 'price-desc' || value === 'recent'
     ? value
     : 'price-desc';

@@ -77,6 +77,10 @@ Rare-book cards, Catalog admin links, canonical metadata, sitemap entries and li
 edition details use the rare-book UUID; the API detail endpoint still accepts legacy slugs
 for existing links. The detail page places condition, ISBN and public description before the
 violet visit-selection panel, labels the amount `PRIX`, and keeps the euro amount unbroken.
+The public `/livres-rares` list requests available copies only (`includeSold=false`) regardless
+of legacy query parameters, keeps API-backed pagination, and uses a keyboard-accessible purple
+sort menu matching the structure of the `/recherche` sort control. The next-fair card is not part
+of the rare-books hero.
 
 The `/compte` member route uses a dynamic,
 SSR-safe MSAL Browser loader, reads/removes watchlist items through bearer-protected API
