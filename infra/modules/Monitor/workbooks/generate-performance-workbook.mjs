@@ -197,11 +197,11 @@ const workbook = {
       ),
       query(
         'Décomposition moyenne par opération',
-        `let requests = ${api.replace('\n', ' ')}\n    | project OperationId, Operation = Name, RequestMs = DurationMs;\nAppDependencies\n| where ${apiRolePredicate}\n| summarize DependencyMs = sum(DurationMs), Calls = count() by OperationId, DependencyType\n| join kind=inner requests on OperationId\n| summarize Requetes = dcount(OperationId), DureeMoyenneMs = round(avg(RequestMs)), DependanceMoyenneMs = round(avg(DependencyMs)), AppelsMoyens = round(avg(Calls), 1) by Operation, DependencyType\n| extend PartDependance = round(100.0 * DependanceMoyenneMs / DureeMoyenneMs, 1)\n| order by DependanceMoyenneMs desc`,
+        `let requests = ${api.replaceAll('\n', ' ')}\n    | project OperationId, Operation = Name, RequestMs = DurationMs;\nAppDependencies\n| where ${apiRolePredicate}\n| summarize DependencyMs = sum(DurationMs), Calls = count() by OperationId, DependencyType\n| join kind=inner requests on OperationId\n| summarize Requetes = dcount(OperationId), DureeMoyenneMs = round(avg(RequestMs)), DependanceMoyenneMs = round(avg(DependencyMs)), AppelsMoyens = round(avg(Calls), 1) by Operation, DependencyType\n| extend PartDependance = round(100.0 * DependanceMoyenneMs / DureeMoyenneMs, 1)\n| order by DependanceMoyenneMs desc`,
       ),
       half(query(
         'Requêtes SQL par opération (détection N+1)',
-        `AppDependencies\n| where ${apiRolePredicate} and DependencyType =~ "SQL"\n| summarize SqlCalls = count() by OperationId\n| join kind=inner (${api.replace('\n', ' ')} | project OperationId, Name) on OperationId\n| summarize AppelsSqlMoyens = round(avg(SqlCalls), 1), AppelsSqlMax = max(SqlCalls), Requetes = count() by Name\n| order by AppelsSqlMax desc\n| take 20`,
+        `AppDependencies\n| where ${apiRolePredicate} and DependencyType =~ "SQL"\n| summarize SqlCalls = count() by OperationId\n| join kind=inner (${api.replaceAll('\n', ' ')} | project OperationId, Name) on OperationId\n| summarize AppelsSqlMoyens = round(avg(SqlCalls), 1), AppelsSqlMax = max(SqlCalls), Requetes = count() by Name\n| order by AppelsSqlMax desc\n| take 20`,
       )),
       half(query(
         'Instructions SQL les plus lentes',
