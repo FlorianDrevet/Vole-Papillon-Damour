@@ -31,12 +31,15 @@ interface CatalogSearchRouteState {
   query: string;
   genre: string;
   availability: CatalogAvailability;
+  view: CatalogSearchView;
   rareOnly: boolean;
   includeExhausted: boolean;
   sort: CatalogSort;
   page: number;
   referencePage: number;
 }
+
+type CatalogSearchView = 'list' | 'grid';
 
 @Component({
   selector: 'app-catalog-search-page',
@@ -56,6 +59,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   sortMenuOpen = false;
   sortMenuActiveIndex = 0;
   browseMode = false;
+  view: CatalogSearchView = 'list';
   loading = true;
   error = false;
   response: CatalogSearchResponse | null = null;
@@ -128,6 +132,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
         this.submittedQuery = nextState.query;
         this.genre = nextState.genre;
         this.availability = nextState.availability;
+        this.view = nextState.view;
         this.rareOnly = nextState.rareOnly;
         this.includeExhausted = nextState.includeExhausted;
         this.sort = nextState.sort;
@@ -163,6 +168,18 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
   applyFilters(): void {
     void this.router.navigate([this.browseMode ? '/catalogue' : '/recherche'], {
       queryParams: this.queryParams(),
+    });
+  }
+
+  selectView(view: CatalogSearchView): void {
+    if (this.rareOnly || this.view === view) {
+      return;
+    }
+
+    this.view = view;
+    this.changeDetector.markForCheck();
+    void this.router.navigate([this.browseMode ? '/catalogue' : '/recherche'], {
+      queryParams: this.queryParams(true, this.submittedQuery),
     });
   }
 
@@ -740,6 +757,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
     if (this.rareOnly) params['rare'] = true;
     if (this.includeExhausted) params['includeExhausted'] = true;
     if (this.sort !== (this.rareOnly ? 'price-desc' : 'relevance')) params['sort'] = this.sort;
+    if (!this.rareOnly && this.view === 'grid') params['view'] = this.view;
     if (includePagination) {
       if (this.currentPage > 1) params['page'] = this.currentPage;
       if (this.currentReferencePage > 1) params['referencePage'] = this.currentReferencePage;
@@ -809,6 +827,7 @@ export class CatalogSearchPageComponent implements OnInit, OnDestroy {
       query: params.get('q') || '',
       genre: params.get('genre') || '',
       availability: this.readAvailability(params.get('availability')),
+      view: !rareOnly && params.get('view') === 'grid' ? 'grid' : 'list',
       rareOnly,
       includeExhausted: params.get('includeExhausted') === 'true',
       sort: rareOnly

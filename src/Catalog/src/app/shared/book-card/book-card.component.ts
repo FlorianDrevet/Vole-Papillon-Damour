@@ -8,7 +8,7 @@ import {
 import {publicBookPath} from '../catalog-url';
 import {catalogCoverUrl} from '../catalog-cover-url';
 
-export type BookCardVariant = 'default' | 'grid' | 'list' | 'home';
+export type BookCardVariant = 'default' | 'grid' | 'list' | 'home' | 'square';
 
 @Component({
   selector: 'app-book-card',

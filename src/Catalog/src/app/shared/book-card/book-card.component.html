@@ -1,4 +1,4 @@
-<a class="book-card" [class.book-card--list]="variant === 'list'" [class.book-card--home]="variant === 'home'" [routerLink]="bookPath()" [attr.aria-label]="book.title || 'Voir la fiche du livre'">
+<a class="book-card" [class.book-card--list]="variant === 'list'" [class.book-card--home]="variant === 'home'" [class.book-card--square]="variant === 'square'" [routerLink]="bookPath()" [attr.aria-label]="book.title || 'Voir la fiche du livre'">
   <div class="cover-frame">
     @if (variant === 'home') {
       <p
