@@ -41,6 +41,7 @@ import {
   CatalogNotFoundSummary,
 } from '../../core/catalog.models';
 import {CatalogAdministrationPageComponent} from './catalog-administration-page.component';
+import {CatalogCoverDirective} from '../../shared/catalog-cover.directive';
 import {toDeadStockCsv} from './dead-stock-export';
 import {AdminRareBookFormComponent} from './rare-books/admin-rare-book-form.component';
 import {AdminRareBookPhotosComponent} from './rare-books/admin-rare-book-photos.component';
@@ -359,6 +360,7 @@ describe('CatalogAdministrationPageComponent', () => {
     await TestBed.configureTestingModule({
       declarations: [
         CatalogAdministrationPageComponent,
+        CatalogCoverDirective,
         AdminRareBooksComponent,
         AdminRareBookFormComponent,
         AdminRareBookPhotosComponent,

@@ -3,6 +3,7 @@ import {RouterModule} from '@angular/router';
 import {DesignSystemModule} from '@vpd/ui';
 
 import {CatalogBook, CatalogNeighborReason} from '../../core/catalog.models';
+import {CatalogCoverDirective} from '../catalog-cover.directive';
 import {BookCardComponent} from './book-card.component';
 
 describe('BookCardComponent', () => {
@@ -10,7 +11,7 @@ describe('BookCardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [BookCardComponent],
+      declarations: [BookCardComponent, CatalogCoverDirective],
       imports: [RouterModule.forRoot([]), DesignSystemModule],
     }).compileComponents();
 
@@ -272,7 +273,7 @@ describe('BookCardComponent', () => {
 
     const image = fixture.nativeElement.querySelector('.book-card--home .cover-frame img') as HTMLImageElement;
     expect(image.getAttribute('src'))
-      .toBe('https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
+      .toBe('https://livres.volepapillondamour.fr/cdn-cgi/image/width=660,height=990,fit=scale-down,quality=80,format=auto/https://openapi.bnf.fr/couverture/image/image/recupererImage?ISBN=9782266339568&couverture=1&taille=originale&largeur=660&hauteur=990');
     expect(getComputedStyle(image).objectFit).toBe('cover');
     expect(getComputedStyle(image).padding).toBe('0px');
   });

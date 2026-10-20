@@ -314,7 +314,7 @@
                   <article class="reference-card">
                     <div class="reference-cover">
                       @if (reference.coverUrl) {
-                        <img [src]="reference.coverUrl" [alt]="reference.title ? 'Couverture de ' + reference.title : 'Couverture indicative'" loading="lazy">
+                        <img [catalogCover]="reference.coverUrl" [alt]="reference.title ? 'Couverture de ' + reference.title : 'Couverture indicative'" loading="lazy">
                       } @else {
                         <vpd-book-cover-placeholder></vpd-book-cover-placeholder>
                       }

@@ -112,6 +112,8 @@ param catalogCustomDomainCertificateName string = ''
 param scanCustomDomain string = ''
 @description('Existing managed certificate resource name for the Scan hostname')
 param scanCustomDomainCertificateName string = ''
+@description('Uploaded Cloudflare Origin CA certificate name for all proxied custom domains; leave empty to keep ACA managed certificates')
+param cloudflareOriginCertificateName string = ''
 
 // -----------------------------------------------------------------------
 // Container images
@@ -415,6 +417,7 @@ module containerAppEnvironmentModule './modules/ContainerAppEnvironment/containe
     internalLoadBalancerEnabled: false
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceModule.outputs.logAnalyticsWorkspaceId
     managedCertificateNames: managedCertificateNames
+    cloudflareOriginCertificateName: cloudflareOriginCertificateName
   }
 }
 
@@ -1437,12 +1440,16 @@ module containerAppWebsiteModule './modules/ContainerApp/containerApp.module.bic
       !empty(websiteCustomDomain) && !empty(websiteCustomDomainCertificateName) ? [{
         name: websiteCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, websiteCustomDomainCertificateName)]
+        certificateId: !empty(cloudflareOriginCertificateName)
+          ? containerAppEnvironmentModule.outputs.cloudflareOriginCertificateId
+          : containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, websiteCustomDomainCertificateName)]
       }] : [],
       !empty(websiteWwwCustomDomain) && !empty(websiteWwwCustomDomainCertificateName) ? [{
         name: websiteWwwCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, websiteWwwCustomDomainCertificateName)]
+        certificateId: !empty(cloudflareOriginCertificateName)
+          ? containerAppEnvironmentModule.outputs.cloudflareOriginCertificateId
+          : containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, websiteWwwCustomDomainCertificateName)]
       }] : []
     )
     healthProbes: containerAppWebsiteHealthProbes
@@ -1485,7 +1492,9 @@ module containerAppBackOfficeModule './modules/ContainerApp/containerApp.module.
     customDomains: !empty(backOfficeCustomDomain) && !empty(backOfficeCustomDomainCertificateName) ? [{
       name: backOfficeCustomDomain
       bindingType: 'SniEnabled'
-      certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, backOfficeCustomDomainCertificateName)]
+      certificateId: !empty(cloudflareOriginCertificateName)
+        ? containerAppEnvironmentModule.outputs.cloudflareOriginCertificateId
+        : containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, backOfficeCustomDomainCertificateName)]
     }] : []
     healthProbes: containerAppBackOfficeHealthProbes
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id
@@ -1520,7 +1529,9 @@ module containerAppScanModule './modules/ContainerApp/containerApp.module.bicep'
       {
         name: scanCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, scanCustomDomainCertificateName)]
+        certificateId: !empty(cloudflareOriginCertificateName)
+          ? containerAppEnvironmentModule.outputs.cloudflareOriginCertificateId
+          : containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, scanCustomDomainCertificateName)]
       }
     ] : []
     healthProbes: containerAppScanHealthProbes
@@ -1559,7 +1570,9 @@ module containerAppCatalogModule './modules/ContainerApp/containerApp.module.bic
       {
         name: catalogCustomDomain
         bindingType: 'SniEnabled'
-        certificateId: containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, catalogCustomDomainCertificateName)]
+        certificateId: !empty(cloudflareOriginCertificateName)
+          ? containerAppEnvironmentModule.outputs.cloudflareOriginCertificateId
+          : containerAppEnvironmentModule.outputs.managedCertificateIds[indexOf(managedCertificateNames, catalogCustomDomainCertificateName)]
       }
     ] : []
     containerAppEnvironmentId: containerAppEnvironmentModule.outputs.id

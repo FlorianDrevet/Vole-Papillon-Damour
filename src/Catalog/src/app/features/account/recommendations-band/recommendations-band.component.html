@@ -22,8 +22,8 @@
           data-zone="R6-carte"
           role="listitem">
           <span class="recommendations-band-cover" aria-hidden="true">
-            @if (coverUrl(item); as cover) {
-              <img [src]="cover" alt="" loading="lazy">
+            @if (item.coverUrl) {
+              <img [catalogCover]="item.coverUrl" alt="" loading="lazy">
             }
           </span>
           <span class="recommendations-band-copy">

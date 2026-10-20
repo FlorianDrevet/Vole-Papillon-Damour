@@ -74,7 +74,7 @@
         @for (target of filteredTargets(); track target.kind + ':' + (target.isbn13 ?? target.rareBookId)) {
           <article class="not-found-target-row" data-testid="not-found-report-row">
             <div class="not-found-target-cover">
-              @if (target.coverUrl) {<img [src]="target.coverUrl" alt="">} @else {<span aria-hidden="true">Livre</span>}
+              @if (target.coverUrl) {<img [catalogCover]="target.coverUrl" alt="">} @else {<span aria-hidden="true">Livre</span>}
             </div>
             <div class="not-found-target-details">
               <div class="not-found-target-titleline">

@@ -249,3 +249,37 @@ The API startup wires:
 - `Storage - migrate blobs` copies from `vpdstdev` to `vpdstdevfc`, preserves each source container ACL, copies only missing or source-newer blobs, leaves newer/extra target blobs intact, validates that every source blob name exists at the target, and defaults database URL rewriting to `skip`. Its `preview` mode reports old Blob URL references before the separate `apply` mode can change them.
 - The OVH zone now routes the apex A record and `www`, `backoffice`, `livres`, and `scan` CNAMEs directly to the France Central ACA environment. All five domains have secured managed certificates and returned HTTP 200 with TLS verification successful. No active OVH CDN service was identified in the account; the former apex IP belonged to the old West Europe ACA environment.
 - Shared registry `vpdacrshared` in `rg-core-florian` now serves this repo and `mariage-edwige-henri`. The wedding project's 99 existing tags were imported with digests verified, and its backend/frontend GitHub workflows succeeded with OIDC. Keep the old `acrweh` and `vpdacrdev` registries and all other West Europe resources until the owner explicitly confirms deletion.
+
+## Cloudflare proxy preparation — 2026-10-20
+
+The `volepapillondamour.fr` zone is active on Cloudflare Free. OVH accepted the nameserver
+change, and the `.fr` parent now publishes `david.ns.cloudflare.com` and
+`monroe.ns.cloudflare.com`; recursive resolvers may still have different cached answers during
+propagation. Cloudflare has the 27 non-NS records copied from OVH. The five website records —
+apex, `www`, `backoffice`, `livres`, and `scan` — still point to the France Central ACA and
+remain DNS-only. Mail and authentication records also remain DNS-only.
+
+A Cloudflare Origin CA certificate for the apex and `*.volepapillondamour.fr` was issued with a
+15-year validity. Its certificate and matching private key were used locally to create and
+validate a password-protected PFX. The PFX has not been transferred to Azure. Importing it into
+the `vpd-cae-dev-fc` Container Apps environment (`rg-vpd-dev`) requires explicit action-time
+confirmation because the PFX contains the private key. The feature branch adds an optional
+`cloudflareOriginCertificateName` binding in Bicep for the five ACA custom hostnames; DEV expects
+`cf-origin-volepapillondamour`.
+
+Cloudflare Images Transformations are enabled on the Free plan and show 0/5,000 unique
+transformations used. The permitted external image origins are `openapi.bnf.fr`,
+`covers.openlibrary.org`, and `books.google.com`, in addition to the zone's own origin. Images
+Paid and Polish are not enabled. Do not add `robots.txt` bot-preference synchronization; the AI
+bot setting remains off. The Catalog feature branch builds transformation URLs for these sources
+and falls back to the direct image URL after a transformation error.
+
+GitHub Actions run 39482297824 completed successfully as an Azure `what-if` with
+`recommendations_enabled=true`; the deployment step was skipped. Azure reported 32 resources to
+modify, 40 unchanged, 12 unsupported, and 21 ignored, with no creates or deletes. The preview
+keeps `Recommendations__Enabled=True` in the API and Worker configurations. No Azure certificate
+import, infrastructure deployment, application deployment, or DNS proxying has happened yet.
+Keep all five website records DNS-only until the certificate is imported and the Bicep deployment
+has completed. After that, proxy only those five website records, keep mail/authentication
+DNS-only, deploy Catalog, and smoke-test all five hostnames and image fallback. Keep the zone
+and Images on Free; do not enable paid products.

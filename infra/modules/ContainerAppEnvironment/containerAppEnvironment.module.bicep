@@ -32,6 +32,9 @@ param tags object = {}
 @description('Existing managed certificate resource names used by Container App custom domains')
 param managedCertificateNames array = []
 
+@description('Name of the uploaded Cloudflare Origin CA certificate in this environment, when custom domains are proxied')
+param cloudflareOriginCertificateName string = ''
+
 resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: name
   location: location
@@ -80,3 +83,8 @@ output defaultDomain string = containerAppEnv.properties.defaultDomain
 
 @description('Resource IDs of existing managed certificates, in the same order as managedCertificateNames')
 output managedCertificateIds array = [for (certificateName, index) in managedCertificateNames: managedCertificateResources[index].id]
+
+@description('Resource ID of the uploaded Cloudflare Origin CA certificate, or an empty string when the existing managed certificates are used')
+output cloudflareOriginCertificateId string = empty(cloudflareOriginCertificateName)
+  ? ''
+  : resourceId('Microsoft.App/managedEnvironments/certificates', name, cloudflareOriginCertificateName)
