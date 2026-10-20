@@ -252,23 +252,31 @@ The API startup wires:
 
 ## Cloudflare proxy preparation — 2026-10-20
 
-The Cloudflare zone `volepapillondamour.fr` is on the Free plan and currently awaiting
-nameserver propagation. The OVH console accepted the delegation change and shows
-`david.ns.cloudflare.com` and `monroe.ns.cloudflare.com` as "En cours d'activation" while the
-old `ns104.ovh.net` and `dns104.ovh.net` are "En cours de suppression". Public resolvers still
-return the OVH nameservers, and Cloudflare still reports the zone as pending. Its DNS table has
-the 27 non-NS records copied from OVH; all five website records and all mail/authentication
-records remain DNS-only during propagation. The five ACA hostnames are apex, `www`,
-`backoffice`, `livres`, and `scan`, pointed at the current France Central Container Apps.
+The `volepapillondamour.fr` zone is active on Cloudflare Free. OVH accepted the nameserver
+change, and the `.fr` parent now publishes `david.ns.cloudflare.com` and
+`monroe.ns.cloudflare.com`; recursive resolvers may still have different cached answers during
+propagation. Cloudflare has the 27 non-NS records copied from OVH. The five website records —
+apex, `www`, `backoffice`, `livres`, and `scan` — still point to the France Central ACA and
+remain DNS-only. Mail and authentication records also remain DNS-only.
 
-The five ACA custom hostnames currently use free Azure-managed certificates. The feature branch
-adds an optional `cloudflareOriginCertificateName` binding in Bicep so a Cloudflare Origin CA
-certificate can replace them before the website hostnames are proxied. Origin CA creation was
-previously rejected while Cloudflare still considered the zone unavailable; retry after the zone
-becomes active, and investigate account API access only if the error persists. Uploading the
-certificate's private key to Azure requires explicit action-time user confirmation. No Azure
-certificate import or deployment has happened yet. Cloudflare Images transformations are not
-enabled; after activation, remain on Free, use the 5,000-unique-transformations monthly cap, and
-allow only `openapi.bnf.fr`, `covers.openlibrary.org`, and `books.google.com`. Free-plan quota
-exhaustion should fail new transforms with error 9422 without overage billing, allowing the
-Catalog's one-time original-image fallback.
+A Cloudflare Origin CA certificate for the apex and `*.volepapillondamour.fr` was issued with a
+15-year validity. Its certificate and matching private key were used locally to create and
+validate a password-protected PFX. The PFX has not been transferred to Azure. Importing it into
+the `vpd-cae-dev-fc` Container Apps environment (`rg-vpd-dev`) requires explicit action-time
+confirmation because the PFX contains the private key. The feature branch adds an optional
+`cloudflareOriginCertificateName` binding in Bicep for the five ACA custom hostnames; DEV expects
+`cf-origin-volepapillondamour`.
+
+Cloudflare Images Transformations are enabled on the Free plan and show 0/5,000 unique
+transformations used. The permitted external image origins are `openapi.bnf.fr`,
+`covers.openlibrary.org`, and `books.google.com`, in addition to the zone's own origin. Images
+Paid and Polish are not enabled. Do not add `robots.txt` bot-preference synchronization; the AI
+bot setting remains off. The Catalog feature branch builds transformation URLs for these sources
+and falls back to the direct image URL after a transformation error.
+
+GitHub Actions run 39466843276 is an Azure `what-if` (`recommendations_enabled=false`) and was
+queued at the latest check. No Azure certificate import, infrastructure deployment, application
+deployment, or DNS proxying has happened yet. Keep all five website records DNS-only until the
+certificate is imported and the Bicep deployment has completed. After that, proxy only those
+five website records, keep mail/authentication DNS-only, deploy Catalog, and smoke-test all five
+hostnames and image fallback. Keep the zone and Images on Free; do not enable paid products.
