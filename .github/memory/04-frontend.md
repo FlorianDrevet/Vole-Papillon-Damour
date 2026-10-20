@@ -722,3 +722,7 @@ field on `GET /catalog/books/{isbn13}`. It sits after the edition metadata and b
 availability, and is omitted when the API has no usable text. The summary comes from an
 already refreshed similarity notice; it is not fetched when someone opens the detail page.
 Responsive visual review covered 320×568, 390×844, and 1440×900 with no horizontal overflow.
+
+## Catalog search grid follow action (2026-10-20)
+
+In the public Catalog search grid, the real « Suivre » button sits in the card footer at the bottom right and uses the compact blue typography of the home-card action. The touch target remains at least 44 px, keyboard focus stays visible, the followed state is compact, and list view styling is unchanged. The scoped styles live in `src/Catalog/src/app/features/search/catalog-search-page.component.scss`. The change is in open PR #294.
